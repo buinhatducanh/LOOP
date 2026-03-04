@@ -1,0 +1,119 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Service {
+  id               String   @id @default(cuid())
+  slug             String   @unique
+  icon             String
+  title            String
+  shortDescription String   @map("short_description")
+  longDescription  String   @map("long_description")
+  features         String[]
+  technologies     String[]
+  startingPrice    Int      @map("starting_price")
+  deliveryTime     String   @map("delivery_time")
+  category         String
+  isActive         Boolean  @default(true) @map("is_active")
+  sortOrder        Int      @default(0) @map("sort_order")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+  projects         Project[]
+  @@map("services")
+}
+
+model Project {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  category    String
+  client      String
+  year        String
+  image       String
+  description String
+  techStack   String[] @map("tech_stack")
+  features    String[]
+  results     String
+  screenshots String[]
+  isPublished Boolean  @default(true) @map("is_published")
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  serviceId   String?  @map("service_id")
+  service     Service? @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+  @@map("projects")
+}
+
+model PricingPlan {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  price       Int?
+  period      String
+  tagline     String
+  features    String[]
+  notIncluded String[] @map("not_included")
+  highlighted Boolean  @default(false)
+  cta         String   @default("Get Started")
+  color       String   @default("#3B82F6")
+  sortOrder   Int      @default(0) @map("sort_order")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  @@map("pricing_plans")
+}
+
+model Testimonial {
+  id        String   @id @default(cuid())
+  name      String
+  role      String
+  company   String
+  avatar    String
+  rating    Int      @default(5)
+  text      String
+  isActive  Boolean  @default(true) @map("is_active")
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  @@map("testimonials")
+}
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String?
+  service   String?
+  message   String
+  status    String   @default("new")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  @@map("contact_messages")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String?  @map("password_hash")
+  avatar       String?
+  role         String   @default("user")
+  googleId     String?  @unique @map("google_id")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  @@map("users")
+}
+
+model SiteSetting {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String
+  group String @default("general")
+  @@map("site_settings")
+}

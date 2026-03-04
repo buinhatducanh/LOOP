@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { getPricingPlans } from "@/lib/db/queries";
+import { pricingPlans as mockPlans } from "@/data/mockData";
 import { PricingPage } from "./pricing-page";
 
 export const metadata: Metadata = {
@@ -8,6 +10,17 @@ export const metadata: Metadata = {
   alternates: { canonical: "https://loop.vn/pricing" },
 };
 
-export default function Page() {
-  return <PricingPage />;
+export default async function Page() {
+  let plans;
+  try {
+    const dbPlans = await getPricingPlans();
+    plans = dbPlans.length > 0 ? dbPlans.map((p) => ({
+      id: p.slug, name: p.name, price: p.price, period: p.period,
+      tagline: p.tagline, features: p.features, notIncluded: p.notIncluded,
+      highlighted: p.highlighted, cta: p.cta, color: p.color,
+    })) : mockPlans;
+  } catch {
+    plans = mockPlans;
+  }
+  return <PricingPage plans={plans} />;
 }

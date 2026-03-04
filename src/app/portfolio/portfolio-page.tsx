@@ -3,10 +3,10 @@
 import { useRef, useState } from "react";
 import { motion, useInView } from "motion/react";
 import { Briefcase } from "lucide-react";
-import { projects } from "@/data/mockData";
+import { projects as mockProjects } from "@/data/mockData";
 import { ProjectCard } from "@/components/cards/ProjectCard";
 
-const categories = ["All", ...Array.from(new Set(projects.map((p) => p.category)))];
+type ProjectData = (typeof mockProjects)[number];
 
 function GradientText({ children }: { children: React.ReactNode }) {
   return (
@@ -38,8 +38,9 @@ function FadeIn({ children, delay = 0 }: { children: React.ReactNode; delay?: nu
   );
 }
 
-export function PortfolioPage() {
+export function PortfolioPage({ projects = mockProjects }: { projects?: ProjectData[] }) {
   const [activeFilter, setActiveFilter] = useState("All");
+  const categories = ["All", ...Array.from(new Set(projects.map((p) => p.category)))];
 
   const filtered = activeFilter === "All"
     ? projects

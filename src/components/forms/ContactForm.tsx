@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Send, CheckCircle, AlertCircle } from "lucide-react";
-import { services } from "@/data/mockData";
 
 interface ContactFormProps {
   preselectedService?: string;
@@ -30,7 +29,7 @@ export function ContactForm({ preselectedService = "", compact = false }: Contac
     return newErrors;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const validationErrors = validate();
     if (Object.keys(validationErrors).length > 0) {
@@ -39,10 +38,19 @@ export function ContactForm({ preselectedService = "", compact = false }: Contac
     }
     setErrors({});
     setStatus("loading");
-    setTimeout(() => {
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+      if (!res.ok) throw new Error("Failed");
       setStatus("success");
       setFormData({ name: "", email: "", phone: "", service: "", message: "" });
-    }, 1800);
+    } catch {
+      setStatus("error");
+      setTimeout(() => setStatus("idle"), 3000);
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -126,9 +134,11 @@ export function ContactForm({ preselectedService = "", compact = false }: Contac
             onBlur={(e) => { (e.target as HTMLElement).style.borderColor = "#1F2937"; }}
           >
             <option value="" style={{ background: "#0F172A" }}>Select a service...</option>
-            {services.map((s) => (
-              <option key={s.id} value={s.id} style={{ background: "#0F172A" }}>{s.title}</option>
-            ))}
+            <option value="business-website" style={{ background: "#0F172A" }}>Business Website</option>
+            <option value="branch-website-system" style={{ background: "#0F172A" }}>Branch Website System</option>
+            <option value="ecommerce-website" style={{ background: "#0F172A" }}>E-Commerce Website</option>
+            <option value="landing-page" style={{ background: "#0F172A" }}>Landing Page Website</option>
+            <option value="custom-web-application" style={{ background: "#0F172A" }}>Custom Web Application</option>
             <option value="other" style={{ background: "#0F172A" }}>Other / Not Sure Yet</option>
           </select>
         </div>

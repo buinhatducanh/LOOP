@@ -4,8 +4,10 @@ import { useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion, useInView } from "motion/react";
 import { ArrowRight, DollarSign, HelpCircle, Check } from "lucide-react";
-import { pricingPlans } from "@/data/mockData";
+import { pricingPlans as mockPlans } from "@/data/mockData";
 import { PricingCard } from "@/components/cards/PricingCard";
+
+type PlanData = (typeof mockPlans)[number];
 
 const faqs = [
   {
@@ -60,7 +62,7 @@ function FadeIn({ children, delay = 0 }: { children: React.ReactNode; delay?: nu
   );
 }
 
-export function PricingPage() {
+export function PricingPage({ plans: pricingPlans = mockPlans }: { plans?: PlanData[] }) {
   const router = useRouter();
 
   return (

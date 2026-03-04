@@ -18,7 +18,7 @@ import {
   Code2,
   MessageSquare,
 } from "lucide-react";
-import { projects } from "@/data/mockData";
+import { projects as mockProjects } from "@/data/mockData";
 
 const iconMap: Record<string, React.ComponentType<{ size?: number; color?: string }>> = {
   Building2, GitBranch, ShoppingCart, Rocket, Code2,
@@ -67,10 +67,10 @@ function FadeIn({ children, delay = 0 }: { children: React.ReactNode; delay?: nu
   );
 }
 
-export function ServiceDetailPage({ service }: { service: Service }) {
+export function ServiceDetailPage({ service, relatedProjects: propProjects }: { service: Service; relatedProjects?: { id: string; title: string; client: string; image: string; results: string }[] }) {
   const router = useRouter();
   const Icon = iconMap[service.icon] || Code2;
-  const relatedProjects = projects.filter((p) => p.serviceId === service.id);
+  const relatedProjects = propProjects ?? mockProjects.filter((p) => p.serviceId === service.id);
 
   return (
     <div style={{ color: "#FFFFFF", minHeight: "100vh" }}>

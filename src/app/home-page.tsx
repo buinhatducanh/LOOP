@@ -15,10 +15,20 @@ import {
   ShieldCheck,
   Play,
 } from "lucide-react";
-import { services, projects, testimonials } from "@/data/mockData";
+import {
+  services as mockServices,
+  projects as mockProjects,
+  testimonials as mockTestimonials,
+} from "@/data/mockData";
 import { ServiceCard } from "@/components/cards/ServiceCard";
 import { ProjectCard } from "@/components/cards/ProjectCard";
 import { HeroCanvas } from "@/components/shared/HeroCanvas";
+
+interface HomePageProps {
+  services?: typeof mockServices;
+  projects?: typeof mockProjects;
+  testimonials?: typeof mockTestimonials;
+}
 
 const stats = [
   { value: "150+", label: "Projects Delivered", icon: TrendingUp },
@@ -73,7 +83,11 @@ function FadeInSection({
   );
 }
 
-export function HomePage() {
+export function HomePage({
+  services = mockServices,
+  projects = mockProjects,
+  testimonials = mockTestimonials,
+}: HomePageProps) {
   const router = useRouter();
 
   return (

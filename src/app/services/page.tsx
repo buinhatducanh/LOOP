@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { getServices } from "@/lib/db/queries";
+import { services as mockServices } from "@/data/mockData";
 import { ServicesPage } from "./services-page";
 
 export const metadata: Metadata = {
@@ -8,6 +10,17 @@ export const metadata: Metadata = {
   alternates: { canonical: "https://loop.vn/services" },
 };
 
-export default function Page() {
-  return <ServicesPage />;
+export default async function Page() {
+  let services;
+  try {
+    const dbServices = await getServices();
+    services = dbServices.length > 0 ? dbServices.map((s) => ({
+      id: s.slug, icon: s.icon, title: s.title, shortDescription: s.shortDescription,
+      longDescription: s.longDescription, features: s.features, technologies: s.technologies,
+      startingPrice: s.startingPrice, deliveryTime: s.deliveryTime, category: s.category,
+    })) : mockServices;
+  } catch {
+    services = mockServices;
+  }
+  return <ServicesPage services={services} />;
 }

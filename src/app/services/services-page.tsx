@@ -4,8 +4,10 @@ import { useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion, useInView } from "motion/react";
 import { ArrowRight, Layers } from "lucide-react";
-import { services } from "@/data/mockData";
+import { services as mockServices } from "@/data/mockData";
 import { ServiceCard } from "@/components/cards/ServiceCard";
+
+type ServiceData = (typeof mockServices)[number];
 
 function GradientText({ children }: { children: React.ReactNode }) {
   return (
@@ -37,7 +39,7 @@ function FadeIn({ children, delay = 0 }: { children: React.ReactNode; delay?: nu
   );
 }
 
-export function ServicesPage() {
+export function ServicesPage({ services = mockServices }: { services?: ServiceData[] }) {
   const router = useRouter();
 
   const steps = [
