@@ -122,7 +122,7 @@ export function Customers() {
               </div>
               <div style={{ background: "#020617", borderRadius: "8px", padding: "8px 12px", textAlign: "right" }}>
                 <p style={{ color: "#94A3B8", fontSize: "10px", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "2px" }}>Total Spent</p>
-                <p style={{ color: "#22C55E", fontSize: "14px", fontWeight: 700 }}>${c.spent.toLocaleString()}</p>
+                <p style={{ color: "#22C55E", fontSize: "14px", fontWeight: 700 }}>${c.spent.toLocaleString("en-US")}</p>
               </div>
             </div>
           </div>
@@ -159,7 +159,7 @@ export function Customers() {
                 { label: "Phone", value: selectedCustomer.phone },
                 { label: "Service", value: selectedCustomer.service },
                 { label: "Status", value: selectedCustomer.status },
-                { label: "Total Spent", value: `$${selectedCustomer.spent.toLocaleString()}` },
+                { label: "Total Spent", value: `$${selectedCustomer.spent.toLocaleString("en-US")}` },
                 { label: "Join Date", value: selectedCustomer.joinDate },
               ].map(({ label, value }) => (
                 <div key={label} style={{ display: "flex", justifyContent: "space-between", padding: "12px 16px", background: "#020617", borderRadius: "10px" }}>

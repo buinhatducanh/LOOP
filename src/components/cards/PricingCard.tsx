@@ -97,7 +97,7 @@ export function PricingCard({ plan }: PricingCardProps) {
               WebkitTextFillColor: plan.highlighted ? "transparent" : "#FFFFFF",
               lineHeight: 1,
             }}>
-              {plan.price.toLocaleString()}
+              {plan.price.toLocaleString("en-US")}
             </span>
             <span style={{ color: "#94A3B8", fontSize: "14px", marginBottom: "8px" }}>/ {plan.period}</span>
           </>

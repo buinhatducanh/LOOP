@@ -70,7 +70,7 @@ export function ServiceDetail() {
             <div style={{ background: "#0F172A", border: "1px solid #1F2937", borderRadius: "20px", padding: "32px", minWidth: "260px", textAlign: "center", boxShadow: "0 0 40px rgba(59,130,246,0.08)" }}>
               <p style={{ color: "#94A3B8", fontSize: "13px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "1px", marginBottom: "8px" }}>Starting From</p>
               <div style={{ fontSize: "52px", fontWeight: 800, background: "linear-gradient(135deg, #3B82F6, #6366F1)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", lineHeight: 1, marginBottom: "4px" }}>
-                ${service.startingPrice.toLocaleString()}
+                ${service.startingPrice.toLocaleString("en-US")}
               </div>
               <p style={{ color: "#4B5563", fontSize: "13px", marginBottom: "20px" }}>one-time payment</p>
 
@@ -176,7 +176,7 @@ export function ServiceDetail() {
             {/* Info Cards */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
               {[
-                { icon: DollarSign, label: "Starting Price", value: `$${service.startingPrice.toLocaleString()}` },
+                { icon: DollarSign, label: "Starting Price", value: `$${service.startingPrice.toLocaleString("en-US")}` },
                 { icon: Clock, label: "Delivery Time", value: service.deliveryTime },
               ].map(({ icon: Icon, label, value }) => (
                 <div key={label} style={{ background: "#0F172A", border: "1px solid #1F2937", borderRadius: "14px", padding: "20px" }}>
@@ -249,7 +249,7 @@ export function ServiceDetail() {
                   </div>
                   <div>
                     <h4 style={{ color: "#FFFFFF", fontSize: "16px", fontWeight: 700, marginBottom: "6px" }}>{s.title}</h4>
-                    <p style={{ color: "#94A3B8", fontSize: "13px" }}>From ${s.startingPrice.toLocaleString()}</p>
+                    <p style={{ color: "#94A3B8", fontSize: "13px" }}>From ${s.startingPrice.toLocaleString("en-US")}</p>
                   </div>
                 </div>
               );

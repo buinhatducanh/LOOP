@@ -170,7 +170,7 @@ export function Projects() {
                       <span style={{ color: "#94A3B8", fontSize: "11px", minWidth: "30px" }}>{p.progress}%</span>
                     </div>
                   </td>
-                  <td style={{ padding: "14px 16px", color: "#FFFFFF", fontSize: "13px", fontWeight: 600, whiteSpace: "nowrap" }}>${p.budget.toLocaleString()}</td>
+                  <td style={{ padding: "14px 16px", color: "#FFFFFF", fontSize: "13px", fontWeight: 600, whiteSpace: "nowrap" }}>${p.budget.toLocaleString("en-US")}</td>
                   <td style={{ padding: "14px 16px" }}>
                     {editingId === p.id ? (
                       <select

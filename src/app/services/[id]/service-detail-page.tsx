@@ -174,7 +174,7 @@ export function ServiceDetailPage({ service, relatedProjects: propProjects }: { 
               <DollarSign size={18} color="#3B82F6" />
               <span style={{ color: "#94A3B8", fontSize: "14px" }}>Starting from</span>
               <span style={{ color: "#3B82F6", fontSize: "20px", fontWeight: 700 }}>
-                ${service.startingPrice.toLocaleString()}
+                ${service.startingPrice.toLocaleString("en-US")}
               </span>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>

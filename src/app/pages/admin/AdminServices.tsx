@@ -109,14 +109,16 @@ export function AdminServices() {
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px", marginBottom: "20px" }}>
                 {[
                   { label: "Category", value: s.category },
-                  { label: "Starting Price", value: editingId === s.id ? (
-                    <input
-                      type="number"
-                      value={s.startingPrice}
-                      onChange={(e) => handleEdit(s.id, "startingPrice", Number(e.target.value))}
-                      style={{ ...inputStyle, padding: "4px 8px", fontSize: "12px" }}
-                    />
-                  ) : `$${s.startingPrice.toLocaleString()}` },
+                  {
+                    label: "Starting Price", value: editingId === s.id ? (
+                      <input
+                        type="number"
+                        value={s.startingPrice}
+                        onChange={(e) => handleEdit(s.id, "startingPrice", Number(e.target.value))}
+                        style={{ ...inputStyle, padding: "4px 8px", fontSize: "12px" }}
+                      />
+                    ) : `$${s.startingPrice.toLocaleString("en-US")}`
+                  },
                   { label: "Projects", value: s.projectsCount },
                 ].map(({ label, value }) => (
                   <div key={label} style={{ background: "#020617", borderRadius: "8px", padding: "10px 12px" }}>

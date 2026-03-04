@@ -308,7 +308,7 @@ export function HomePage({
                 whileTap={{ scale: 0.97 }}
                 onClick={() => router.push("/portfolio")}
                 style={{
-                  background: "transparent",
+                  background: "rgba(0,0,0,0)",
                   color: "#FFFFFF",
                   border: "1px solid #1F2937",
                   padding: "16px 32px",
@@ -489,7 +489,7 @@ export function HomePage({
                 whileTap={{ scale: 0.97 }}
                 onClick={() => router.push("/services")}
                 style={{
-                  background: "transparent",
+                  background: "rgba(0,0,0,0)",
                   color: "#3B82F6",
                   border: "1px solid #3B82F6",
                   padding: "13px 32px",
@@ -581,7 +581,7 @@ export function HomePage({
                 whileTap={{ scale: 0.97 }}
                 onClick={() => router.push("/portfolio")}
                 style={{
-                  background: "transparent",
+                  background: "rgba(0,0,0,0)",
                   color: "#6366F1",
                   border: "1px solid #6366F1",
                   padding: "13px 32px",
@@ -938,7 +938,7 @@ export function HomePage({
                 whileTap={{ scale: 0.97 }}
                 onClick={() => router.push("/pricing")}
                 style={{
-                  background: "transparent",
+                  background: "rgba(0,0,0,0)",
                   color: "#94A3B8",
                   border: "1px solid #1F2937",
                   padding: "18px 44px",

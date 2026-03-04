@@ -184,7 +184,7 @@ export function Dashboard() {
                       {c.status}
                     </span>
                   </td>
-                  <td style={{ padding: "12px", color: "#FFFFFF", fontSize: "13px", fontWeight: 600 }}>${c.spent.toLocaleString()}</td>
+                  <td style={{ padding: "12px", color: "#FFFFFF", fontSize: "13px", fontWeight: 600 }}>${c.spent.toLocaleString("en-US")}</td>
                 </tr>
               ))}
             </tbody>
