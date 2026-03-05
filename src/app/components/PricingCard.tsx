@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router";
+import { useRouter } from "next/navigation";
 import { Check, X, Zap } from "lucide-react";
 
 interface PricingPlan {
@@ -19,7 +19,7 @@ interface PricingCardProps {
 }
 
 export function PricingCard({ plan }: PricingCardProps) {
-  const navigate = useNavigate();
+  const router = useRouter();
 
   return (
     <div
@@ -135,7 +135,7 @@ export function PricingCard({ plan }: PricingCardProps) {
 
       {/* CTA */}
       <button
-        onClick={() => navigate("/contact")}
+        onClick={() => router.push("/contact")}
         style={{
           width: "100%",
           background: plan.highlighted ? "linear-gradient(135deg, #3B82F6, #6366F1)" : "transparent",

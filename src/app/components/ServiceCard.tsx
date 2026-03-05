@@ -1,8 +1,10 @@
-import { useNavigate } from "react-router";
+"use client";
+
+import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
 import { Building2, GitBranch, ShoppingCart, Rocket, Code2, ArrowRight, MessageSquare } from "lucide-react";
 
-const iconMap: Record<string, React.ComponentType<{ size?: number; color?: string }>> = {
+const iconMap: Record<string, React.ComponentType<{ size?: number | string; color?: string }>> = {
   Building2, GitBranch, ShoppingCart, Rocket, Code2,
 };
 
@@ -17,13 +19,13 @@ interface Service {
 }
 
 export function ServiceCard({ service }: { service: Service }) {
-  const navigate = useNavigate();
+  const router = useRouter();
   const Icon = iconMap[service.icon] || Code2;
 
   return (
     <motion.div
       whileHover={{ y: -6, borderColor: "#3B82F6", boxShadow: "0 24px 60px rgba(59,130,246,0.15)" }}
-      onClick={() => navigate(`/services/${service.id}`)}
+      onClick={() => router.push(`/services/${service.id}`)}
       style={{
         background: "#0F172A",
         border: "1px solid #1F2937",
@@ -83,7 +85,7 @@ export function ServiceCard({ service }: { service: Service }) {
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.97 }}
-          onClick={(e) => { e.stopPropagation(); navigate(`/services/${service.id}`); }}
+          onClick={(e) => { e.stopPropagation(); router.push(`/services/${service.id}`); }}
           style={{ flex: 1, background: "rgba(59,130,246,0.1)", color: "#3B82F6", border: "1px solid rgba(59,130,246,0.3)", padding: "10px", borderRadius: "8px", fontSize: "13px", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
         >
           View Details <ArrowRight size={13} />
@@ -91,7 +93,7 @@ export function ServiceCard({ service }: { service: Service }) {
         <motion.button
           whileHover={{ scale: 1.02, opacity: 0.9 }}
           whileTap={{ scale: 0.97 }}
-          onClick={(e) => { e.stopPropagation(); navigate(`/contact?service=${service.id}`); }}
+          onClick={(e) => { e.stopPropagation(); router.push(`/contact?service=${service.id}`); }}
           style={{ flex: 1, background: "linear-gradient(135deg, #3B82F6, #6366F1)", color: "#fff", border: "none", padding: "10px", borderRadius: "8px", fontSize: "13px", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
         >
           <MessageSquare size={13} /> Request Quote
