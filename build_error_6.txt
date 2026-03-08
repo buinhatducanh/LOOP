@@ -1,0 +1,132 @@
+﻿
+> loop-website@1.0.0 build
+> next build
+
+   Γû▓ Next.js 15.1.0
+   - Environments: .env
+
+   Creating an optimized production build ...
+ Γ£ô Compiled successfully
+   Linting and checking validity of types ...
+node.exe : Failed to 
+compile.
+At line:1 char:1
++ & "C:\Program 
+Files\nodejs/node.exe" 
+"C:\Program 
+Files\nodejs/node_mo 
+...
++ ~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
+~~
+    + CategoryInfo     
+         : NotSpecifi  
+  ed: (Failed to com   
+ pile.:String) [],     
+RemoteException
+    + FullyQualifiedEr 
+   rorId : NativeComm  
+  andError
+ 
+
+./src/app/[locale]/pric
+ing/page.tsx:25:23
+Type error: Type '{ 
+id: string; name: 
+string; price: number 
+| null; period: 
+string; tagline: 
+string; features: 
+string[]; notIncluded: 
+string[]; highlighted: 
+boolean; cta: string; 
+color: string; }[]' is 
+not assignable to type 
+'({ id: string; name: 
+string; price: number; 
+period: string; 
+tagline: string; 
+features: string[]; 
+notIncluded: string[]; 
+highlighted: boolean; 
+cta: string; color: 
+string; } | { id: 
+string; name: string; 
+price: null; ... 6 
+more ...; color: 
+string; })[]'.
+  Type '{ id: string; 
+name: string; price: 
+number | null; period: 
+string; tagline: 
+string; features: 
+string[]; notIncluded: 
+string[]; highlighted: 
+boolean; cta: string; 
+color: string; }' is 
+not assignable to type 
+'{ id: string; name: 
+string; price: number; 
+period: string; 
+tagline: string; 
+features: string[]; 
+notIncluded: string[]; 
+highlighted: boolean; 
+cta: string; color: 
+string; } | { id: 
+string; name: string; 
+price: null; ... 6 
+more ...; color: 
+string; }'.
+    Type '{ id: 
+string; name: string; 
+price: number | null; 
+period: string; 
+tagline: string; 
+features: string[]; 
+notIncluded: string[]; 
+highlighted: boolean; 
+cta: string; color: 
+string; }' is not 
+assignable to type '{ 
+id: string; name: 
+string; price: null; 
+period: string; 
+tagline: string; 
+features: string[]; 
+notIncluded: never[]; 
+highlighted: boolean; 
+cta: string; color: 
+string; }'.
+      Types of 
+property 'price' are 
+incompatible.
+        Type 'number | 
+null' is not 
+assignable to type 
+'null'.
+          Type 
+'number' is not 
+assignable to type 
+'null'.
+
+[0m [90m 23 |[39m   
+  plans [33m=[39m moc
+kPlans[33m;[39m[0m
+[0m [90m 24 |[39m   
+}[0m
+[0m[31m[1m>[22m[39
+m[90m 25 |[39m   
+[36mreturn[39m [33m<
+[39m[33mPricingPage[
+39m plans[33m=[39m{pl
+ans} [33m/[39m[33m>
+[39m[33m;[39m[0m
+[0m [90m    |[39m   
+                    [3
+1m[1m^[22m[39m[0m
+[0m [90m 26 |[39m 
+}[0m
+[0m [90m 27 
+|[39m[0m

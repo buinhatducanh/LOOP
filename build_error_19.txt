@@ -1,0 +1,78 @@
+﻿
+> loop-website@1.0.0 build
+> next build
+
+   Γû▓ Next.js 15.1.0
+   - Environments: .env.local, .env
+
+   Creating an optimized production build ...
+ Γ£ô Compiled successfully
+   Linting and checking validity of types ...
+   Collecting page data ...
+node.exe : Error: 
+Missing environment 
+variable: NEXT_PUBLIC_S
+ANITY_DATASET
+At line:1 char:1
++ & "C:\Program 
+Files\nodejs/node.exe" 
+"C:\Program 
+Files\nodejs/node_mo 
+...
++ ~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
+~~
+    + CategoryInfo     
+         : NotSpecifi  
+  ed: (Error: Missin   
+ g ..._SANITY_DATAS    
+ET:String) [], Rem    
+oteException
+    + FullyQualifiedEr 
+   rorId : NativeComm  
+  andError
+ 
+    at a (D:\LOOP_COMPA
+NY\LOOP\.next\server\ap
+p\feed.xml\route.js:1:4
+4438)
+    at 68926 (D:\LOOP_C
+OMPANY\LOOP\.next\serve
+r\app\feed.xml\route.js
+:1:44192)
+    at t (D:\LOOP_COMPA
+NY\LOOP\.next\server\we
+bpack-runtime.js:1:127)
+    at 94254 (D:\LOOP_C
+OMPANY\LOOP\.next\serve
+r\app\feed.xml\route.js
+:1:43980)
+    at t (D:\LOOP_COMPA
+NY\LOOP\.next\server\we
+bpack-runtime.js:1:127)
+    at 57313 (D:\LOOP_C
+OMPANY\LOOP\.next\serve
+r\app\feed.xml\route.js
+:1:8896)
+    at t (D:\LOOP_COMPA
+NY\LOOP\.next\server\we
+bpack-runtime.js:1:127)
+    at i (D:\LOOP_COMPA
+NY\LOOP\.next\server\ap
+p\feed.xml\route.js:24:
+64)
+    at <unknown> (D:\LO
+OP_COMPANY\LOOP\.next\s
+erver\app\feed.xml\rout
+e.js:24:95)
+    at t.X (D:\LOOP_COM
+PANY\LOOP\.next\server\
+webpack-runtime.js:1:11
+91)
+
+> Build error occurred
+[Error: Failed to 
+collect page data for 
+/feed.xml] { type: 
+'Error' }

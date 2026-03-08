@@ -1,10 +1,16 @@
 import type { MetadataRoute } from "next";
 import { getServices, getProjects } from "@/lib/db/queries";
 import { services as mockServices, projects as mockProjects } from "@/data/mockData";
+import { routing } from "@/i18n/routing";
+
+const baseUrl = "https://loop.vn";
+
+function getLocalizedUrl(path: string, locale: string) {
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  return `${baseUrl}/${locale}${normalizedPath === "/" ? "" : normalizedPath}`;
+}
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = "https://loop.vn";
-
   let serviceSlugs: string[];
   let projectSlugs: string[];
 
@@ -17,28 +23,40 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     projectSlugs = mockProjects.map((p) => p.id);
   }
 
-  const staticPages = [
-    { url: baseUrl, lastModified: new Date(), changeFrequency: "monthly" as const, priority: 1.0 },
-    { url: `${baseUrl}/services`, lastModified: new Date(), changeFrequency: "monthly" as const, priority: 0.9 },
-    { url: `${baseUrl}/portfolio`, lastModified: new Date(), changeFrequency: "monthly" as const, priority: 0.8 },
-    { url: `${baseUrl}/pricing`, lastModified: new Date(), changeFrequency: "monthly" as const, priority: 0.8 },
-    { url: `${baseUrl}/about`, lastModified: new Date(), changeFrequency: "monthly" as const, priority: 0.7 },
-    { url: `${baseUrl}/contact`, lastModified: new Date(), changeFrequency: "monthly" as const, priority: 0.7 },
+  const routes = [
+    { path: "/", priority: 1.0, changeFrequency: "monthly" as const },
+    { path: "/services", priority: 0.9, changeFrequency: "monthly" as const },
+    { path: "/portfolio", priority: 0.8, changeFrequency: "monthly" as const },
+    { path: "/pricing", priority: 0.8, changeFrequency: "monthly" as const },
+    { path: "/about", priority: 0.7, changeFrequency: "monthly" as const },
+    { path: "/contact", priority: 0.7, changeFrequency: "monthly" as const },
   ];
 
-  const servicePages = serviceSlugs.map((slug) => ({
-    url: `${baseUrl}/services/${slug}`,
-    lastModified: new Date(),
-    changeFrequency: "monthly" as const,
-    priority: 0.8,
-  }));
+  serviceSlugs.forEach(slug => {
+    routes.push({ path: `/services/${slug}`, priority: 0.8, changeFrequency: "monthly" as const });
+  });
 
-  const portfolioPages = projectSlugs.map((slug) => ({
-    url: `${baseUrl}/portfolio/${slug}`,
-    lastModified: new Date(),
-    changeFrequency: "monthly" as const,
-    priority: 0.7,
-  }));
+  projectSlugs.forEach(slug => {
+    routes.push({ path: `/portfolio/${slug}`, priority: 0.7, changeFrequency: "monthly" as const });
+  });
 
-  return [...staticPages, ...servicePages, ...portfolioPages];
+  const sitemapEntries: MetadataRoute.Sitemap = [];
+
+  routes.forEach((route) => {
+    routing.locales.forEach((locale) => {
+      sitemapEntries.push({
+        url: getLocalizedUrl(route.path, locale),
+        lastModified: new Date(),
+        changeFrequency: route.changeFrequency,
+        priority: route.priority,
+        alternates: {
+          languages: Object.fromEntries(
+            routing.locales.map((l) => [l, getLocalizedUrl(route.path, l)])
+          ),
+        },
+      });
+    });
+  });
+
+  return sitemapEntries;
 }

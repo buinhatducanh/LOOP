@@ -10,5 +10,11 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <>{children}</>;
+  return (
+    <html lang="vi">
+      <body>
+        {children}
+      </body>
+    </html>
+  );
 }

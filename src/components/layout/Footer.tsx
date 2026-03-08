@@ -1,7 +1,8 @@
 "use client";
 
-import Link from "next/link";
+import { Link } from "@/i18n/routing";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { motion } from "motion/react";
 import {
   Zap,
@@ -16,19 +17,19 @@ import {
 } from "lucide-react";
 
 const serviceLinks = [
-  { label: "Web Development", path: "/services#web-development" },
-  { label: "Mobile Apps", path: "/services#mobile-apps" },
-  { label: "UI/UX Design", path: "/services#ui-ux-design" },
-  { label: "Cloud Solutions", path: "/services#cloud-solutions" },
-  { label: "AI & ML", path: "/services#ai-ml" },
-  { label: "DevOps", path: "/services#devops" },
+  { key: "serviceWeb", path: "/services#web-development" },
+  { key: "serviceMobile", path: "/services#mobile-apps" },
+  { key: "serviceDesign", path: "/services#ui-ux-design" },
+  { key: "serviceCloud", path: "/services#cloud-solutions" },
+  { key: "serviceAI", path: "/services#ai-ml" },
+  { key: "serviceDevops", path: "/services#devops" },
 ];
 
 const companyLinks = [
-  { label: "About Us", path: "/about" },
-  { label: "Portfolio", path: "/portfolio" },
-  { label: "Pricing", path: "/pricing" },
-  { label: "Contact", path: "/contact" },
+  { key: "about", path: "/about" },
+  { key: "portfolio", path: "/portfolio" },
+  { key: "pricing", path: "/pricing" },
+  { key: "contact", path: "/contact" },
 ];
 
 const socialLinks = [
@@ -40,6 +41,8 @@ const socialLinks = [
 
 export default function Footer() {
   const pathname = usePathname();
+  const t = useTranslations("Footer");
+  const nav = useTranslations("Navigation");
 
   return (
     <footer className="relative bg-gray-950 border-t border-white/5">
@@ -56,17 +59,17 @@ export default function Footer() {
           <div className="relative flex flex-col md:flex-row items-center justify-between gap-6">
             <div>
               <h3 className="text-2xl md:text-3xl font-bold text-white mb-2">
-                Ready to start your project?
+                {t('ctaTitle')}
               </h3>
               <p className="text-white/80 text-lg">
-                Let&apos;s build something amazing together.
+                {t('ctaDesc')}
               </p>
             </div>
             <Link
               href="/contact"
               className="flex items-center space-x-2 px-8 py-4 bg-white text-gray-900 rounded-xl font-semibold hover:bg-gray-100 transition-all duration-200 shadow-lg shadow-black/20 group whitespace-nowrap"
             >
-              <span>Get in Touch</span>
+              <span>{t('getInTouch')}</span>
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Link>
           </div>
@@ -90,7 +93,7 @@ export default function Footer() {
               </span>
             </Link>
             <p className="text-gray-400 text-sm leading-relaxed mb-6">
-              We craft premium digital experiences for businesses worldwide.
+              {t('description')}
             </p>
             <div className="space-y-3">
               <a
@@ -117,7 +120,7 @@ export default function Footer() {
           {/* Services Links */}
           <div>
             <h4 className="text-white font-semibold text-sm uppercase tracking-wider mb-6">
-              Services
+              {t('services')}
             </h4>
             <ul className="space-y-3">
               {serviceLinks.map((link) => (
@@ -126,7 +129,7 @@ export default function Footer() {
                     href={link.path}
                     className="text-sm text-gray-400 hover:text-white transition-colors duration-200 hover:translate-x-1 inline-block"
                   >
-                    {link.label}
+                    {t(link.key as any)}
                   </Link>
                 </li>
               ))}
@@ -136,20 +139,19 @@ export default function Footer() {
           {/* Company Links */}
           <div>
             <h4 className="text-white font-semibold text-sm uppercase tracking-wider mb-6">
-              Company
+              {t('company')}
             </h4>
             <ul className="space-y-3">
               {companyLinks.map((link) => (
                 <li key={link.path}>
                   <Link
                     href={link.path}
-                    className={`text-sm transition-colors duration-200 hover:translate-x-1 inline-block ${
-                      pathname === link.path
+                    className={`text-sm transition-colors duration-200 hover:translate-x-1 inline-block ${pathname === link.path
                         ? "text-purple-400"
                         : "text-gray-400 hover:text-white"
-                    }`}
+                      }`}
                   >
-                    {link.label}
+                    {nav(link.key as any)}
                   </Link>
                 </li>
               ))}
@@ -159,10 +161,10 @@ export default function Footer() {
           {/* Newsletter / Social */}
           <div>
             <h4 className="text-white font-semibold text-sm uppercase tracking-wider mb-6">
-              Stay Connected
+              {t('stayConnected')}
             </h4>
             <p className="text-sm text-gray-400 mb-4">
-              Follow us on social media for updates and insights.
+              {t('stayConnectedDesc')}
             </p>
             <div className="flex items-center space-x-3">
               {socialLinks.map((social) => (
@@ -184,20 +186,20 @@ export default function Footer() {
         {/* Bottom Bar */}
         <div className="mt-12 pt-8 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-sm text-gray-500">
-            &copy; 2025 LOOP. All rights reserved.
+            {t('rights')}
           </p>
           <div className="flex items-center space-x-6">
             <Link
               href="/privacy"
               className="text-sm text-gray-500 hover:text-gray-300 transition-colors"
             >
-              Privacy Policy
+              {t('privacyPolicy')}
             </Link>
             <Link
               href="/terms"
               className="text-sm text-gray-500 hover:text-gray-300 transition-colors"
             >
-              Terms of Service
+              {t('termsOfService')}
             </Link>
           </div>
         </div>

@@ -1,25 +1,27 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { Link, useRouter, usePathname } from "@/i18n/routing";
 import { motion, AnimatePresence } from "motion/react";
 import { Menu, X, Zap, LogIn, LogOut, User, ChevronDown } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { LanguageSwitcher } from "@/components/shared/LanguageSwitcher";
 
 const navLinks = [
-  { label: "Home", path: "/" },
-  { label: "Services", path: "/services" },
-  { label: "Portfolio", path: "/portfolio" },
-  { label: "Pricing", path: "/pricing" },
-  { label: "About", path: "/about" },
-  { label: "Contact", path: "/contact" },
+  { key: "home", path: "/" },
+  { key: "services", path: "/services" },
+  { key: "portfolio", path: "/portfolio" },
+  { key: "pricing", path: "/pricing" },
+  { key: "about", path: "/about" },
+  { key: "contact", path: "/contact" },
 ];
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const t = useTranslations('Navigation');
   const pathname = usePathname();
   const router = useRouter();
   const { user, isAuthenticated, isAdmin, logout } = useAuth();
@@ -47,11 +49,10 @@ export default function Navbar() {
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       transition={{ duration: 0.5 }}
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled
           ? "bg-gray-900/95 backdrop-blur-xl shadow-lg shadow-black/20 border-b border-white/5"
           : "bg-transparent"
-      }`}
+        }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 md:h-20">
@@ -74,11 +75,10 @@ export default function Navbar() {
               <Link
                 key={link.path}
                 href={link.path}
-                className={`relative px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
-                  pathname === link.path
+                className={`relative px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${pathname === link.path
                     ? "text-white"
                     : "text-gray-400 hover:text-white"
-                }`}
+                  }`}
               >
                 {pathname === link.path && (
                   <motion.div
@@ -87,7 +87,7 @@ export default function Navbar() {
                     transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                   />
                 )}
-                <span className="relative z-10">{link.label}</span>
+                <span className="relative z-10">{t(link.key as any)}</span>
               </Link>
             ))}
           </div>
@@ -105,9 +105,8 @@ export default function Navbar() {
                   </div>
                   <span className="text-sm text-gray-300">{user.name}</span>
                   <ChevronDown
-                    className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${
-                      userMenuOpen ? "rotate-180" : ""
-                    }`}
+                    className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${userMenuOpen ? "rotate-180" : ""
+                      }`}
                   />
                 </button>
 
@@ -141,7 +140,7 @@ export default function Navbar() {
                           className="flex items-center space-x-2 px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
                         >
                           <User className="w-4 h-4" />
-                          <span>Dashboard</span>
+                          <span>{t('dashboard')}</span>
                         </Link>
                         <button
                           onClick={handleLogout}
@@ -162,19 +161,20 @@ export default function Navbar() {
                   className="flex items-center space-x-1 px-4 py-2 text-sm text-gray-300 hover:text-white transition-colors"
                 >
                   <LogIn className="w-4 h-4" />
-                  <span>Sign In</span>
+                  <span>{t('login')}</span>
                 </Link>
                 <Link
                   href="/register"
                   className="px-5 py-2 text-sm font-medium text-white bg-gradient-to-r from-purple-500 to-cyan-500 rounded-lg hover:shadow-lg hover:shadow-purple-500/25 transition-all duration-200"
                 >
-                  Get Started
+                  {t('register')}
                 </Link>
               </>
             )}
           </div>
 
-          {/* Mobile Menu Toggle */}
+          <LanguageSwitcher />
+
           <button
             onClick={() => setIsOpen(!isOpen)}
             className="md:hidden p-2 text-gray-400 hover:text-white transition-colors"
@@ -199,13 +199,12 @@ export default function Navbar() {
                 <Link
                   key={link.path}
                   href={link.path}
-                  className={`block px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 ${
-                    pathname === link.path
+                  className={`block px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 ${pathname === link.path
                       ? "text-white bg-white/10"
                       : "text-gray-400 hover:text-white hover:bg-white/5"
-                  }`}
+                    }`}
                 >
-                  {link.label}
+                  {t(link.key as any)}
                 </Link>
               ))}
 
@@ -235,7 +234,7 @@ export default function Navbar() {
                       href="/dashboard"
                       className="block px-4 py-3 text-sm text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
                     >
-                      Dashboard
+                      {t('dashboard')}
                     </Link>
                     <button
                       onClick={handleLogout}
@@ -250,13 +249,13 @@ export default function Navbar() {
                       href="/login"
                       className="block px-4 py-3 text-sm text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
                     >
-                      Sign In
+                      {t('login')}
                     </Link>
                     <Link
                       href="/register"
                       className="block px-4 py-3 text-sm font-medium text-center text-white bg-gradient-to-r from-purple-500 to-cyan-500 rounded-lg"
                     >
-                      Get Started
+                      {t('register')}
                     </Link>
                   </>
                 )}

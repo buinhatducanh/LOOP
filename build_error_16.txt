@@ -1,0 +1,119 @@
+﻿
+> loop-website@1.0.0 build
+> next build
+
+   Γû▓ Next.js 15.1.0
+   - Environments: .env.local, .env
+
+   Creating an optimized production build ...
+node.exe : Failed to 
+compile.
+At line:1 char:1
++ & "C:\Program 
+Files\nodejs/node.exe" 
+"C:\Program 
+Files\nodejs/node_mo 
+...
++ ~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
+~~
+    + CategoryInfo     
+         : NotSpecifi  
+  ed: (Failed to com   
+ pile.:String) [],     
+RemoteException
+    + FullyQualifiedEr 
+   rorId : NativeComm  
+  andError
+ 
+
+./node_modules/@sanity/
+vision/lib/_chunks-es/S
+anityVision.js
+Attempted import 
+error: 
+'useEffectEvent' is 
+not exported from 
+'react' (imported as 
+'useEffectEvent').
+
+Import trace for 
+requested module:
+./node_modules/@sanity/
+vision/lib/_chunks-es/S
+anityVision.js
+./node_modules/@sanity/
+vision/lib/_chunks-es/i
+ndex.js
+./node_modules/@sanity/
+vision/lib/index.js
+./sanity.config.ts
+
+./node_modules/sanity/l
+ib/_chunks-es/pane.js
+Attempted import 
+error: 
+'useEffectEvent' is 
+not exported from 
+'react' (imported as 
+'useEffectEvent').
+
+Import trace for 
+requested module:
+./node_modules/sanity/l
+ib/_chunks-es/pane.js
+./node_modules/sanity/l
+ib/structure.js
+./sanity.config.ts
+
+./node_modules/sanity/l
+ib/_chunks-es/pane.js
+Attempted import 
+error: 
+'useEffectEvent' is 
+not exported from 
+'react' (imported as 
+'useEffectEvent').
+
+Import trace for 
+requested module:
+./node_modules/sanity/l
+ib/_chunks-es/pane.js
+./node_modules/sanity/l
+ib/structure.js
+./sanity.config.ts
+
+./node_modules/sanity/l
+ib/index.js
+Attempted import 
+error: 
+'useEffectEvent' is 
+not exported from 
+'react' (imported as 
+'useEffectEvent').
+
+Import trace for 
+requested module:
+./node_modules/sanity/l
+ib/index.js
+./sanity.config.ts
+
+./node_modules/sanity/l
+ib/index.js
+Attempted import 
+error: 
+'useEffectEvent' is 
+not exported from 
+'react' (imported as 
+'useEffectEvent').
+
+Import trace for 
+requested module:
+./node_modules/sanity/l
+ib/index.js
+./sanity.config.ts
+
+
+> Build failed because 
+of webpack errors

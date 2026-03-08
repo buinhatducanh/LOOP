@@ -1,7 +1,7 @@
 "use client";
 
-import { Navbar } from "./Navbar";
-import { Footer } from "./Footer";
+import Navbar from "./Navbar";
+import Footer from "./Footer";
 import { AuthProvider } from "@/contexts/AuthContext";
 
 export function PublicShell({ children }: { children: React.ReactNode }) {

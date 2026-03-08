@@ -1,0 +1,71 @@
+﻿
+> loop-website@1.0.0 build
+> next build
+
+   Γû▓ Next.js 15.1.0
+   - Environments: .env
+
+   Creating an optimized production build ...
+ Γ£ô Compiled successfully
+   Linting and checking validity of types ...
+node.exe : Failed to 
+compile.
+At line:1 char:1
++ & "C:\Program 
+Files\nodejs/node.exe" 
+"C:\Program 
+Files\nodejs/node_mo 
+...
++ ~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
+~~
+    + CategoryInfo     
+         : NotSpecifi  
+  ed: (Failed to com   
+ pile.:String) [],     
+RemoteException
+    + FullyQualifiedEr 
+   rorId : NativeComm  
+  andError
+ 
+
+./src/app/[locale]/logi
+n/login-page.tsx:31:11
+Type error: This 
+condition will always 
+return true since this 
+'Promise<{ success: 
+boolean; message: 
+string; }>' is always 
+defined.
+
+[0m [90m 29 |[39m   
+  setTimeout(() 
+[33m=>[39m {[0m
+[0m [90m 30 |[39m   
+    [36mconst[39m 
+success [33m=[39m 
+login(email[33m,[39m 
+password)[33m;[39m[0
+m
+[0m[31m[1m>[22m[39
+m[90m 31 |[39m       
+[36mif[39m (success) 
+{[0m
+[0m [90m    |[39m   
+        [31m[1m^[22m
+[39m[0m
+[0m [90m 32 |[39m   
+      router[33m.[39m
+push([32m"/admin"[39m
+)[33m;[39m[0m
+[0m [90m 33 |[39m   
+    } [36melse[39m 
+{[0m
+[0m [90m 34 |[39m   
+      
+setError([32m"Invalid 
+email or password. Try 
+admin@loop.vn / admin12
+3"[39m)[33m;[39m[0m

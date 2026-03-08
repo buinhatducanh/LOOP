@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
 import { ExternalLink } from "lucide-react";
+import Image from "next/image";
 
 interface Project {
   id: string;
@@ -26,13 +27,19 @@ export function ProjectCard({ project }: { project: Project }) {
     >
       {/* Image */}
       <div style={{ position: "relative", height: "200px", overflow: "hidden" }}>
-        <motion.img
+        <motion.div
           whileHover={{ scale: 1.08 }}
           transition={{ duration: 0.5 }}
-          src={project.image}
-          alt={project.title}
-          style={{ width: "100%", height: "100%", objectFit: "cover" }}
-        />
+          style={{ width: "100%", height: "100%", position: "relative" }}
+        >
+          <Image
+            src={project.image}
+            alt={`${project.title} - Dự án bởi LOOP`}
+            fill
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            style={{ objectFit: "cover" }}
+          />
+        </motion.div>
         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(15,23,42,0.9) 0%, transparent 50%)" }} />
         {/* Category badge */}
         <motion.div
