@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 
 import Link from "next/link";
-import { type TeamMember } from "@prisma/client";
+import { type TeamMember } from "@/generated/prisma/client";
 
 const getStats = (tStat: any) => [
   { value: "150+", label: tStat("projects_label"), icon: TrendingUp },
