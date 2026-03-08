@@ -64,3 +64,14 @@ export async function getUserByEmail(email: string) {
 export async function getUserByGoogleId(googleId: string) {
   return prisma.user.findUnique({ where: { googleId } });
 }
+
+export async function getTeamMembers() {
+  return prisma.teamMember.findMany({
+    where: { isActive: true },
+    orderBy: { sortOrder: "asc" },
+  });
+}
+
+export async function getTeamMemberBySlug(slug: string) {
+  return prisma.teamMember.findUnique({ where: { slug } });
+}

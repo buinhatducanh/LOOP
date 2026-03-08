@@ -1,13 +1,22 @@
 "use client";
 
-import { useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRef, useMemo } from "react";
+import { useRouter } from "@/i18n/routing";
+import { useTranslations } from "next-intl";
 import { motion, useInView } from "motion/react";
-import { ArrowRight, Layers } from "lucide-react";
+import { ArrowRight, Layers, HelpCircle } from "lucide-react";
 import { services as mockServices } from "@/data/mockData";
 import { ServiceCard } from "@/components/cards/ServiceCard";
 
 type ServiceData = (typeof mockServices)[number];
+
+const getFaqs = (t: any) => [
+  { q: t("faq1_q"), a: t("faq1_a") },
+  { q: t("faq2_q"), a: t("faq2_a") },
+  { q: t("faq3_q"), a: t("faq3_a") },
+  { q: t("faq4_q"), a: t("faq4_a") },
+  { q: t("faq5_q"), a: t("faq5_a") },
+];
 
 function GradientText({ children }: { children: React.ReactNode }) {
   return (
@@ -41,29 +50,32 @@ function FadeIn({ children, delay = 0 }: { children: React.ReactNode; delay?: nu
 
 export function ServicesPage({ services = mockServices }: { services?: ServiceData[] }) {
   const router = useRouter();
+  const t = useTranslations("ServicesPage");
 
-  const steps = [
+  const steps = useMemo(() => [
     {
       step: "01",
-      title: "Discovery Call",
-      desc: "We learn about your business, goals, and project requirements in detail.",
+      title: t("step1Title"),
+      desc: t("step1Desc"),
     },
     {
       step: "02",
-      title: "Strategy & Proposal",
-      desc: "We create a custom proposal with timeline, tech stack, and transparent pricing.",
+      title: t("step2Title"),
+      desc: t("step2Desc"),
     },
     {
       step: "03",
-      title: "Design & Build",
-      desc: "Our team designs and develops your solution with regular progress updates.",
+      title: t("step3Title"),
+      desc: t("step3Desc"),
     },
     {
       step: "04",
-      title: "Launch & Support",
-      desc: "We deploy your project and provide ongoing support and maintenance.",
+      title: t("step4Title"),
+      desc: t("step4Desc"),
     },
-  ];
+  ], [t]);
+
+  const faqs = useMemo(() => getFaqs(t), [t]);
 
   return (
     <div style={{ color: "#FFFFFF", minHeight: "100vh" }}>
@@ -116,7 +128,7 @@ export function ServicesPage({ services = mockServices }: { services?: ServiceDa
           >
             <Layers size={14} color="#6366F1" />
             <span style={{ color: "#94A3B8", fontSize: "13px", fontWeight: 500 }}>
-              Everything You Need
+              {t("badge")}
             </span>
           </motion.div>
           <motion.h1
@@ -130,7 +142,7 @@ export function ServicesPage({ services = mockServices }: { services?: ServiceDa
               marginBottom: "20px",
             }}
           >
-            Our <GradientText>Services</GradientText>
+            {t("heroTitle1")} <GradientText>{t("heroHighlight")}</GradientText>
           </motion.h1>
           <motion.p
             initial={{ opacity: 0, y: 16 }}
@@ -144,8 +156,7 @@ export function ServicesPage({ services = mockServices }: { services?: ServiceDa
               margin: "0 auto 40px",
             }}
           >
-            From simple landing pages to enterprise-grade web applications — we deliver
-            solutions that drive real business growth.
+            {t("heroDesc")}
           </motion.p>
           <motion.div
             initial={{ opacity: 0, y: 16 }}
@@ -171,7 +182,7 @@ export function ServicesPage({ services = mockServices }: { services?: ServiceDa
                 boxShadow: "0 0 30px rgba(99,102,241,0.3)",
               }}
             >
-              Get a Free Quote <ArrowRight size={16} />
+              {t("btnQuote")} <ArrowRight size={16} />
             </motion.button>
           </motion.div>
         </div>
@@ -210,10 +221,10 @@ export function ServicesPage({ services = mockServices }: { services?: ServiceDa
               <h2
                 style={{ fontSize: "36px", fontWeight: 800, letterSpacing: "-1px" }}
               >
-                Our <GradientText>Process</GradientText>
+                {t("processTitle1")} <GradientText>{t("processHighlight")}</GradientText>
               </h2>
               <p style={{ color: "#94A3B8", fontSize: "16px", marginTop: "12px" }}>
-                Simple, transparent, and results-focused
+                {t("processDesc")}
               </p>
             </div>
           </FadeIn>
@@ -266,6 +277,41 @@ export function ServicesPage({ services = mockServices }: { services?: ServiceDa
                     {desc}
                   </p>
                 </motion.div>
+              </FadeIn>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section style={{ padding: "80px 24px" }}>
+        <div style={{ maxWidth: "800px", margin: "0 auto" }}>
+          <FadeIn>
+            <div style={{ textAlign: "center", marginBottom: "48px" }}>
+              <HelpCircle size={32} color="#6366F1" style={{ margin: "0 auto 16px" }} />
+              <h2 style={{ fontSize: "32px", fontWeight: 800, letterSpacing: "-1px" }}>
+                {t("faqTitle1")} <GradientText>{t("faqHighlight")}</GradientText>
+              </h2>
+            </div>
+          </FadeIn>
+          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+            {faqs.map((faq, i) => (
+              <FadeIn key={i} delay={i * 0.08}>
+                <div
+                  style={{
+                    background: "#0F172A",
+                    border: "1px solid #1F2937",
+                    borderRadius: "12px",
+                    padding: "24px",
+                  }}
+                >
+                  <h3 style={{ color: "#FFFFFF", fontSize: "16px", fontWeight: 700, marginBottom: "10px" }}>
+                    {faq.q}
+                  </h3>
+                  <p style={{ color: "#94A3B8", fontSize: "14px", lineHeight: 1.7 }}>
+                    {faq.a}
+                  </p>
+                </div>
               </FadeIn>
             ))}
           </div>

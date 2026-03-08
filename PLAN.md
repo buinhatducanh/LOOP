@@ -665,6 +665,30 @@ Mỗi trang tự động có:
 
 ---
 
+### PHASE 8: CHUẨN HOÁ PROFILE & MỞ RỘNG MÔ HÌNH KINH DOANH
+**Mức độ ưu tiên: HIGH | Thời gian ước tính: 4-6 tuần**
+
+#### 8.1 Hệ thống Team & Profile (Tăng độ tin cậy / E-E-A-T)
+- Xây dựng trang profile chi tiết cho Ban Lãnh đạo (CEO, CTO) và các chuyên gia nòng cốt.
+- Nội dung: Tiểu sử, kinh nghiệm chuyên môn, dự án đã thực hiện, chứng chỉ, links mạng xã hội (LinkedIn).
+- SEO: Áp dụng JSON-LD `Person` schema cho từng chuyên gia để tăng mức độ uy tín trên Google.
+
+#### 8.2 Tái cấu trúc Sản Phẩm & Gói Dịch Vụ
+Thiết kế lại hệ thống dịch vụ phục vụ đa dạng nhu cầu và chiến lược dài hạn:
+- **Gói Web Sẵn Có (Ready-made Templates)**: Chức năng xem trước mẫu (live preview), thông tin chi tiết gói, giỏ hàng hoặc form đặt mua trực tiếp.
+- **Gói Web Theo Yêu Cầu (Custom Build)**: Flow thu thập yêu cầu nhiều bước (Multi-step form) để phân tích requirement, tự động xuất báo giá sơ bộ.
+- **Gói Dịch Vụ SEO & Content Post**: Gói đăng ký định kỳ (Subscription) bảo trì website, cung cấp bài viết chuẩn SEO hàng tháng cho doanh nghiệp.
+
+#### 8.3 Hệ thống Authentication & Quản trị Nội Bộ (Admin)
+- **Hệ thống Auth (Xác thực)**: Tích hợp bảo mật (NextAuth.js / Supabase Auth) phân quyền người dùng (Super Admin, Content Editor, Sales).
+- **Mở rộng Admin Platform**:
+  - Quản lý thông tin & Profile team member.
+  - Quản lý danh mục các Gói dịch vụ (cập nhật giá, thêm gói mới).
+  - Quản lý Leads & Contacts từ khách hàng đặt gói.
+  - Module quản trị các gói Subscriptions (SEO, Maintainance).
+
+---
+
 ## TỔNG KẾT CÔNG NGHỆ
 
 | Layer | Công nghệ | Lý do |

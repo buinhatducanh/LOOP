@@ -4,6 +4,8 @@ import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { routing } from '@/i18n/routing';
 import JsonLd from '@/components/seo/JsonLd';
+import { SpeedDial } from '@/components/shared/SpeedDial';
+import { TawktoChat } from '@/components/shared/TawktoChat';
 import "../globals.css";
 
 const baseMetadata: Metadata = {
@@ -129,6 +131,8 @@ export default async function RootLayout({
       <body>
         <NextIntlClientProvider messages={messages}>
           {children}
+          <SpeedDial />
+          <TawktoChat />
         </NextIntlClientProvider>
       </body>
     </html>

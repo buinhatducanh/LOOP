@@ -18,6 +18,9 @@ import {
   Code2,
 } from "lucide-react";
 
+import Link from "next/link";
+import { type TeamMember } from "@prisma/client";
+
 const getStats = (tStat: any) => [
   { value: "150+", label: tStat("projects_label"), icon: TrendingUp },
   { value: "98%", label: tStat("satisfaction_label"), icon: Star },
@@ -46,13 +49,6 @@ const getValues = (t: any) => [
     title: t("val4Title"),
     desc: t("val4Desc"),
   },
-];
-
-const team = [
-  { name: "Duc Anh Bui", role: "Founder & CEO", avatar: "DA", specialty: "Strategy & Architecture" },
-  { name: "Minh Tran", role: "CTO", avatar: "MT", specialty: "Full-Stack Development" },
-  { name: "Linh Nguyen", role: "Lead Designer", avatar: "LN", specialty: "UI/UX & Branding" },
-  { name: "Khoa Pham", role: "Senior Developer", avatar: "KP", specialty: "React & Next.js" },
 ];
 
 function GradientText({ children }: { children: React.ReactNode }) {
@@ -85,7 +81,7 @@ function FadeIn({ children, delay = 0 }: { children: React.ReactNode; delay?: nu
   );
 }
 
-export function AboutPage() {
+export function AboutPage({ team = [] }: { team?: TeamMember[] }) {
   const router = useRouter();
   const t = useTranslations("AboutPage");
   const tStats = useTranslations("Stats");
@@ -342,43 +338,45 @@ export function AboutPage() {
             }}
           >
             {team.map((member, i) => (
-              <FadeIn key={member.name} delay={i * 0.1}>
-                <motion.div
-                  whileHover={{ y: -6, borderColor: "#6366F1" }}
-                  style={{
-                    background: "#020617",
-                    border: "1px solid #1F2937",
-                    borderRadius: "16px",
-                    padding: "32px",
-                    textAlign: "center",
-                    transition: "border-color 0.3s",
-                  }}
-                >
-                  <div
+              <FadeIn key={member.id} delay={i * 0.1}>
+                <Link href={`/team/${member.slug}`} style={{ textDecoration: 'none' }}>
+                  <motion.div
+                    whileHover={{ y: -6, borderColor: "#6366F1" }}
                     style={{
-                      width: "72px",
-                      height: "72px",
-                      borderRadius: "50%",
-                      background: "linear-gradient(135deg, #3B82F6, #6366F1)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      margin: "0 auto 16px",
-                      fontSize: "24px",
-                      fontWeight: 800,
-                      color: "#FFFFFF",
+                      background: "#020617",
+                      border: "1px solid #1F2937",
+                      borderRadius: "16px",
+                      padding: "32px",
+                      textAlign: "center",
+                      transition: "border-color 0.3s",
+                      height: "100%"
                     }}
                   >
-                    {member.avatar}
-                  </div>
-                  <h3 style={{ color: "#FFFFFF", fontSize: "18px", fontWeight: 700, marginBottom: "4px" }}>
-                    {member.name}
-                  </h3>
-                  <p style={{ color: "#6366F1", fontSize: "13px", fontWeight: 600, marginBottom: "8px" }}>
-                    {member.role}
-                  </p>
-                  <p style={{ color: "#94A3B8", fontSize: "13px" }}>{member.specialty}</p>
-                </motion.div>
+                    <div
+                      style={{
+                        width: "80px",
+                        height: "80px",
+                        borderRadius: "50%",
+                        margin: "0 auto 16px",
+                        overflow: "hidden",
+                        border: "2px solid rgba(99,102,241,0.3)",
+                      }}
+                    >
+                      <img
+                        src={member.image}
+                        alt={member.name}
+                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                      />
+                    </div>
+                    <h3 style={{ color: "#FFFFFF", fontSize: "18px", fontWeight: 700, marginBottom: "4px" }}>
+                      {member.name}
+                    </h3>
+                    <p style={{ color: "#6366F1", fontSize: "14px", fontWeight: 600, marginBottom: "8px" }}>
+                      {member.role}
+                    </p>
+                    <p style={{ color: "#94A3B8", fontSize: "14px" }}>{member.shortBio}</p>
+                  </motion.div>
+                </Link>
               </FadeIn>
             ))}
           </div>
