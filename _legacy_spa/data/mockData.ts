@@ -1,0 +1,436 @@
+// ─── SERVICES ───────────────────────────────────────────────────────────────
+
+export const services = [
+  {
+    id: "business-website",
+    icon: "Building2",
+    title: "Business Website",
+    shortDescription:
+      "Professional, conversion-optimized websites that establish your brand identity and drive real business results.",
+    longDescription:
+      "A powerful business website is the cornerstone of your digital presence. We design and develop custom, high-performance websites tailored to your industry, audience, and goals. From sleek corporate portals to dynamic company sites, every pixel is crafted to convert visitors into clients.",
+    features: [
+      "Custom responsive design",
+      "SEO-optimized architecture",
+      "CMS integration (WordPress / Strapi)",
+      "Contact & inquiry forms",
+      "Google Analytics & Tag Manager",
+      "Performance optimization (95+ Lighthouse score)",
+      "SSL & security hardening",
+      "12-month post-launch support",
+    ],
+    technologies: ["React", "Next.js", "TypeScript", "Tailwind CSS", "WordPress", "Node.js"],
+    startingPrice: 999,
+    deliveryTime: "2–3 weeks",
+    category: "Web Development",
+  },
+  {
+    id: "branch-website-system",
+    icon: "GitBranch",
+    title: "Branch Website System",
+    shortDescription:
+      "Centralized multi-branch website system with individual branch pages, unified admin control, and brand consistency.",
+    longDescription:
+      "Scale your business across multiple locations with our Branch Website System — a unified platform where your main headquarters site connects seamlessly to individual branch pages. Each branch can have its own content, contact info, team, and SEO while maintaining global brand standards.",
+    features: [
+      "Central admin dashboard",
+      "Unlimited branch subpages",
+      "Per-branch content management",
+      "Location-based SEO",
+      "Unified design system",
+      "Branch-specific contact forms",
+      "Staff directory per branch",
+      "Multi-language support",
+    ],
+    technologies: ["Next.js", "React", "PostgreSQL", "Prisma", "Vercel", "Cloudflare"],
+    startingPrice: 1999,
+    deliveryTime: "4–6 weeks",
+    category: "Enterprise",
+  },
+  {
+    id: "ecommerce-website",
+    icon: "ShoppingCart",
+    title: "E-Commerce Website",
+    shortDescription:
+      "Full-featured online store with payment integration, inventory management, and a seamless shopping experience.",
+    longDescription:
+      "Launch a high-converting e-commerce store that works 24/7 for your business. We build scalable, secure online stores with powerful product management, smart search, multi-payment gateways, and analytics dashboards that give you full control over your sales.",
+    features: [
+      "Custom storefront design",
+      "Product catalog with filters",
+      "Stripe / PayPal integration",
+      "Cart & checkout optimization",
+      "Inventory management system",
+      "Order tracking & notifications",
+      "Discount & coupon engine",
+      "Customer accounts & wishlist",
+    ],
+    technologies: ["Next.js", "Shopify", "Stripe", "PostgreSQL", "Redis", "Cloudinary"],
+    startingPrice: 2499,
+    deliveryTime: "5–8 weeks",
+    category: "E-Commerce",
+  },
+  {
+    id: "landing-page",
+    icon: "Rocket",
+    title: "Landing Page Website",
+    shortDescription:
+      "High-converting, visually striking landing pages built to capture leads and maximize your ad spend ROI.",
+    longDescription:
+      "A great landing page can make or break your marketing campaigns. We craft pixel-perfect, blazing-fast landing pages with compelling copy structure, clear CTAs, and A/B testing ready architecture — designed to convert from the first second.",
+    features: [
+      "Conversion-optimized layout",
+      "Lightning fast load (< 1s)",
+      "Mobile-first design",
+      "Lead capture forms",
+      "A/B testing integration",
+      "HubSpot / Mailchimp connection",
+      "Heatmap & analytics ready",
+      "Multi-variant support",
+    ],
+    technologies: ["React", "Vite", "Tailwind CSS", "Framer Motion", "HubSpot"],
+    startingPrice: 499,
+    deliveryTime: "1–2 weeks",
+    category: "Marketing",
+  },
+  {
+    id: "custom-web-application",
+    icon: "Code2",
+    title: "Custom Web Application",
+    shortDescription:
+      "Bespoke web apps built to automate your workflows, serve your users, and scale with your business.",
+    longDescription:
+      "When off-the-shelf solutions don't cut it, we engineer custom web applications from scratch. From SaaS platforms and internal tools to client portals and booking systems — we architect, design, and develop robust full-stack applications built for performance and scale.",
+    features: [
+      "Full-stack architecture",
+      "Custom database design",
+      "REST & GraphQL APIs",
+      "Authentication & authorization",
+      "Real-time features (WebSockets)",
+      "Admin dashboard",
+      "Third-party API integrations",
+      "CI/CD pipeline & DevOps",
+    ],
+    technologies: ["React", "Node.js", "PostgreSQL", "Redis", "Docker", "AWS", "TypeScript"],
+    startingPrice: 4999,
+    deliveryTime: "8–16 weeks",
+    category: "Application",
+  },
+];
+
+// ─── PROJECTS ────────────────────────────────────────────────────────────────
+
+export const projects = [
+  {
+    id: "luxeshop-ecommerce",
+    title: "LuxeShop E-Commerce",
+    category: "E-Commerce",
+    client: "LuxeShop Inc.",
+    year: "2024",
+    image:
+      "https://images.unsplash.com/photo-1705234384435-e06172b6d2f9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=800&q=80",
+    description:
+      "A premium e-commerce platform for a luxury fashion brand. Built with Next.js and Shopify Hydrogen, it delivers a blazing-fast shopping experience with 3D product previews, smart recommendations, and a one-click checkout.",
+    techStack: ["Next.js", "Shopify", "Stripe", "TypeScript", "Tailwind CSS"],
+    features: [
+      "3D product visualization",
+      "AI-powered product recommendations",
+      "One-click checkout",
+      "Real-time inventory tracking",
+      "Multi-currency support",
+      "Customer loyalty program",
+    ],
+    results: "320% increase in online revenue within 3 months",
+    screenshots: [
+      "https://images.unsplash.com/photo-1705234384435-e06172b6d2f9?w=600&q=80",
+    ],
+    serviceId: "ecommerce-website",
+  },
+  {
+    id: "corptech-business-site",
+    title: "CorpTech Solutions",
+    category: "Business Website",
+    client: "CorpTech Group",
+    year: "2024",
+    image:
+      "https://images.unsplash.com/photo-1583824159840-b85725a711b4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=800&q=80",
+    description:
+      "A comprehensive corporate website for a global IT consultancy with 20+ branch offices. Includes a branch locator, service portfolio, case studies, and an integrated HR portal for job applications.",
+    techStack: ["React", "Next.js", "PostgreSQL", "Node.js", "Prisma"],
+    features: [
+      "Interactive branch locator",
+      "Service portfolio with filterable case studies",
+      "HR portal with job listings",
+      "Multi-language (EN/AR/FR)",
+      "Executive team profiles",
+      "Press & media center",
+    ],
+    results: "180% increase in organic lead generation",
+    screenshots: [
+      "https://images.unsplash.com/photo-1583824159840-b85725a711b4?w=600&q=80",
+    ],
+    serviceId: "business-website",
+  },
+  {
+    id: "dataflow-analytics",
+    title: "DataFlow Analytics Platform",
+    category: "Web Application",
+    client: "DataFlow Technologies",
+    year: "2023",
+    image:
+      "https://images.unsplash.com/photo-1551288049-bebda4e38f71?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=800&q=80",
+    description:
+      "A real-time business intelligence SaaS platform enabling enterprises to visualize KPIs, run custom reports, and collaborate on data-driven decisions. Handles millions of data points with sub-second query performance.",
+    techStack: ["React", "Node.js", "PostgreSQL", "Redis", "Docker", "AWS"],
+    features: [
+      "Real-time data dashboards",
+      "Custom report builder (drag & drop)",
+      "Role-based access control",
+      "API data connectors (50+)",
+      "Scheduled report delivery",
+      "White-label support",
+    ],
+    results: "Scaled to 5,000+ enterprise users in first year",
+    screenshots: [
+      "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&q=80",
+    ],
+    serviceId: "custom-web-application",
+  },
+  {
+    id: "tastybite-food",
+    title: "TastyBite Food Delivery",
+    category: "E-Commerce",
+    client: "TastyBite Restaurants",
+    year: "2024",
+    image:
+      "https://images.unsplash.com/photo-1760888549280-4aef010720bd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=800&q=80",
+    description:
+      "A multi-restaurant food ordering and delivery platform with real-time order tracking, driver management, and a powerful restaurant dashboard. Supports 15 branch locations with individual menus.",
+    techStack: ["React", "Node.js", "Socket.io", "MongoDB", "Stripe", "Google Maps API"],
+    features: [
+      "Real-time order tracking (live map)",
+      "Multi-branch menu management",
+      "Driver dispatch system",
+      "Loyalty points & rewards",
+      "Push notifications",
+      "Revenue analytics dashboard",
+    ],
+    results: "2,500+ daily orders processed across 15 branches",
+    screenshots: [
+      "https://images.unsplash.com/photo-1760888549280-4aef010720bd?w=600&q=80",
+    ],
+    serviceId: "branch-website-system",
+  },
+  {
+    id: "medicare-health",
+    title: "MediCare Plus Portal",
+    category: "Web Application",
+    client: "MediCare Health Group",
+    year: "2023",
+    image:
+      "https://images.unsplash.com/photo-1659353888906-adb3e0041693?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=800&q=80",
+    description:
+      "A HIPAA-compliant patient management and telemedicine portal for a network of 8 medical clinics. Features online appointment booking, video consultations, electronic health records, and prescription management.",
+    techStack: ["React", "Node.js", "PostgreSQL", "WebRTC", "Twilio", "AWS HIPAA"],
+    features: [
+      "Online appointment booking",
+      "Secure video consultations",
+      "Electronic health records (EHR)",
+      "Prescription & lab results",
+      "Insurance billing integration",
+      "Patient mobile-responsive portal",
+    ],
+    results: "40% reduction in no-show appointments, 60% faster patient onboarding",
+    screenshots: [
+      "https://images.unsplash.com/photo-1659353888906-adb3e0041693?w=600&q=80",
+    ],
+    serviceId: "custom-web-application",
+  },
+];
+
+// ─── PRICING PLANS ────────────────────────────────────────────────────────────
+
+export const pricingPlans = [
+  {
+    id: "basic",
+    name: "Basic",
+    price: 499,
+    period: "one-time",
+    tagline: "Perfect for landing pages & startups",
+    features: [
+      "Up to 5 pages",
+      "Mobile responsive design",
+      "Basic SEO setup",
+      "Contact form",
+      "SSL certificate",
+      "1 month free support",
+      "2 revision rounds",
+    ],
+    notIncluded: ["CMS integration", "Custom animations", "E-commerce", "Analytics dashboard"],
+    highlighted: false,
+    cta: "Get Started",
+    color: "#3B82F6",
+  },
+  {
+    id: "standard",
+    name: "Standard",
+    price: 999,
+    period: "one-time",
+    tagline: "Most popular for growing businesses",
+    features: [
+      "Up to 15 pages",
+      "Custom design system",
+      "CMS integration",
+      "Advanced SEO",
+      "Google Analytics",
+      "3 months support",
+      "5 revision rounds",
+      "Performance optimization",
+    ],
+    notIncluded: ["E-commerce", "Custom web app features"],
+    highlighted: true,
+    cta: "Get Started",
+    color: "#6366F1",
+  },
+  {
+    id: "premium",
+    name: "Premium",
+    price: 1999,
+    period: "one-time",
+    tagline: "Full-featured solution for established brands",
+    features: [
+      "Unlimited pages",
+      "E-commerce ready",
+      "Custom animations",
+      "Multi-language support",
+      "Advanced analytics dashboard",
+      "6 months support",
+      "Unlimited revisions",
+      "Priority support",
+      "Performance guarantee (95+ score)",
+    ],
+    notIncluded: [],
+    highlighted: false,
+    cta: "Get Started",
+    color: "#8B5CF6",
+  },
+  {
+    id: "enterprise",
+    name: "Enterprise",
+    price: null,
+    period: "custom",
+    tagline: "Tailored solutions for large organizations",
+    features: [
+      "Custom web application",
+      "Multi-branch system",
+      "Dedicated project manager",
+      "Custom integrations",
+      "SLA agreement",
+      "12 months support",
+      "Team training",
+      "Source code ownership",
+      "White-label option",
+    ],
+    notIncluded: [],
+    highlighted: false,
+    cta: "Contact Us",
+    color: "#3B82F6",
+  },
+];
+
+// ─── TESTIMONIALS ─────────────────────────────────────────────────────────────
+
+export const testimonials = [
+  {
+    id: 1,
+    name: "James Mitchell",
+    role: "CEO",
+    company: "CorpTech Group",
+    avatar: "JM",
+    rating: 5,
+    text: "NexaWeb transformed our digital presence completely. The branch website system they built has unified all 20 of our offices under one cohesive brand while giving each location its own identity. Lead generation is up 180% — truly exceptional work.",
+  },
+  {
+    id: 2,
+    name: "Sarah Al-Rashid",
+    role: "Founder",
+    company: "LuxeShop Inc.",
+    avatar: "SR",
+    rating: 5,
+    text: "Our e-commerce revenue tripled in 3 months after the website launch. The team understood luxury branding perfectly and delivered a shopping experience that our customers absolutely love. Worth every penny.",
+  },
+  {
+    id: 3,
+    name: "Dr. Ahmed Hassan",
+    role: "Managing Director",
+    company: "MediCare Health Group",
+    avatar: "AH",
+    rating: 5,
+    text: "Building a HIPAA-compliant patient portal seemed daunting, but NexaWeb handled every compliance requirement flawlessly. Our patient satisfaction scores improved significantly and admin workload dropped by 40%.",
+  },
+  {
+    id: 4,
+    name: "Emily Chen",
+    role: "VP of Product",
+    company: "DataFlow Technologies",
+    avatar: "EC",
+    rating: 5,
+    text: "We needed a complex SaaS dashboard built fast and right. NexaWeb delivered a scalable, beautiful analytics platform in just 12 weeks. The code quality is outstanding and the team was a pleasure to work with.",
+  },
+];
+
+// ─── ADMIN MOCK DATA ──────────────────────────────────────────────────────────
+
+export const adminStats = {
+  totalProjects: 47,
+  activeProjects: 8,
+  totalClients: 34,
+  totalRevenue: 284500,
+  monthlyRevenue: 42300,
+  pendingMessages: 12,
+  completedProjects: 39,
+  satisfactionRate: 98,
+};
+
+export const adminCustomers = [
+  { id: 1, name: "James Mitchell", email: "j.mitchell@corptech.com", company: "CorpTech Group", service: "Branch Website System", status: "Active", spent: 4200, joinDate: "2024-01-15" },
+  { id: 2, name: "Sarah Al-Rashid", email: "sarah@luxeshop.com", company: "LuxeShop Inc.", service: "E-Commerce Website", status: "Completed", spent: 2800, joinDate: "2024-02-08" },
+  { id: 3, name: "Dr. Ahmed Hassan", email: "a.hassan@medicare.com", company: "MediCare Health Group", service: "Custom Web Application", status: "Active", spent: 9500, joinDate: "2023-11-20" },
+  { id: 4, name: "Emily Chen", email: "e.chen@dataflow.io", company: "DataFlow Technologies", service: "Custom Web Application", status: "Completed", spent: 12000, joinDate: "2023-09-05" },
+  { id: 5, name: "Marco Rossi", email: "m.rossi@tastybite.it", company: "TastyBite Restaurants", service: "Branch Website System", status: "Active", spent: 5600, joinDate: "2024-03-12" },
+  { id: 6, name: "Lisa Thompson", email: "lisa@brightlaunch.co", company: "BrightLaunch Agency", service: "Landing Page", status: "Completed", spent: 800, joinDate: "2024-04-01" },
+  { id: 7, name: "Raj Patel", email: "raj@techventures.in", company: "TechVentures India", service: "Business Website", status: "Pending", spent: 1200, joinDate: "2024-05-18" },
+  { id: 8, name: "Anna Kowalski", email: "anna@fashionhub.pl", company: "FashionHub Poland", service: "E-Commerce Website", status: "Active", spent: 3200, joinDate: "2024-04-22" },
+  { id: 9, name: "David Park", email: "d.park@seoultech.kr", company: "SeoulTech Corp", service: "Business Website", status: "Completed", spent: 1500, joinDate: "2024-01-30" },
+  { id: 10, name: "Fatima Al-Zahrani", email: "fatima@goldenbrand.sa", company: "GoldenBrand KSA", service: "E-Commerce Website", status: "Active", spent: 4100, joinDate: "2024-03-05" },
+];
+
+export const adminMessages = [
+  { id: 1, name: "Hassan Al-Amri", email: "hassan@company.ae", phone: "+971 50 123 4567", service: "Branch Website System", message: "We have 12 branches across UAE and need a unified digital presence. Looking for a comprehensive solution with individual branch pages and a central admin.", date: "2024-05-28", status: "New" },
+  { id: 2, name: "Jennifer Walsh", email: "j.walsh@retailco.com", phone: "+1 415 555 0192", service: "E-Commerce Website", message: "I run a fashion boutique and want to expand online. Need a beautiful store with Shopify integration and Instagram shop connectivity.", date: "2024-05-27", status: "New" },
+  { id: 3, name: "Carlos Mendez", email: "carlos@techstartup.mx", phone: "+52 55 8765 4321", service: "Custom Web Application", message: "Looking for a team to build a B2B marketplace platform for our industry. We have a detailed spec ready. Timeline is 6 months.", date: "2024-05-26", status: "Read" },
+  { id: 4, name: "Sophie Laurent", email: "sophie@agencefr.fr", phone: "+33 6 12 34 56 78", service: "Landing Page", message: "Need 3 high-converting landing pages for our marketing campaigns launching next month. Budget is flexible for quality work.", date: "2024-05-25", status: "Read" },
+  { id: 5, name: "Omar Al-Farsi", email: "omar@investment.om", phone: "+968 9123 4567", service: "Business Website", message: "Investment firm looking for a premium corporate website that reflects our brand values. Must support Arabic and English.", date: "2024-05-24", status: "Replied" },
+  { id: 6, name: "Priya Sharma", email: "priya@healthtech.in", phone: "+91 98765 43210", service: "Custom Web Application", message: "Healthcare startup looking to build a telemedicine platform. Need HIPAA compliance, video calls, and prescription management.", date: "2024-05-23", status: "Replied" },
+  { id: 7, name: "Thomas Gruber", email: "t.gruber@enterprise.de", phone: "+49 89 1234 5678", service: "Branch Website System", message: "We operate 50+ retail locations in DACH region. Need a scalable branch system with German, Austrian and Swiss content.", date: "2024-05-22", status: "Archived" },
+  { id: 8, name: "Yuki Tanaka", email: "yuki@digitalagency.jp", phone: "+81 3-1234-5678", service: "Custom Web Application", message: "Looking for a long-term development partner for ongoing web application projects. We need a reliable agency with React expertise.", date: "2024-05-21", status: "Archived" },
+];
+
+export const adminProjects = [
+  { id: 1, name: "LuxeShop E-Commerce", client: "LuxeShop Inc.", type: "E-Commerce", status: "Completed", progress: 100, budget: 2800, startDate: "2024-02-08", endDate: "2024-04-15", team: ["John D.", "Maria S.", "Alex K."] },
+  { id: 2, name: "CorpTech Branch System", client: "CorpTech Group", type: "Branch Website", status: "Active", progress: 75, budget: 4200, startDate: "2024-03-01", endDate: "2024-06-30", team: ["Sarah T.", "Mike R."] },
+  { id: 3, name: "DataFlow Analytics Platform", client: "DataFlow Technologies", type: "Web Application", status: "Completed", progress: 100, budget: 12000, startDate: "2023-09-05", endDate: "2024-01-20", team: ["John D.", "Lisa P.", "Omar H.", "Emma W."] },
+  { id: 4, name: "TastyBite Food Platform", client: "TastyBite Restaurants", type: "Branch Website", status: "Active", progress: 60, budget: 5600, startDate: "2024-03-12", endDate: "2024-07-15", team: ["Carlos M.", "Nina K."] },
+  { id: 5, name: "MediCare Patient Portal", client: "MediCare Health Group", type: "Web Application", status: "Completed", progress: 100, budget: 9500, startDate: "2023-11-20", endDate: "2024-03-10", team: ["Sarah T.", "Alex K.", "Tom B."] },
+  { id: 6, name: "BrightLaunch Campaign Page", client: "BrightLaunch Agency", type: "Landing Page", status: "Completed", progress: 100, budget: 800, startDate: "2024-04-01", endDate: "2024-04-12", team: ["Maria S."] },
+  { id: 7, name: "TechVentures Corporate Site", client: "TechVentures India", type: "Business Website", status: "In Review", progress: 90, budget: 1200, startDate: "2024-05-18", endDate: "2024-06-10", team: ["John D.", "Emma W."] },
+  { id: 8, name: "FashionHub Online Store", client: "FashionHub Poland", type: "E-Commerce", status: "Active", progress: 35, budget: 3200, startDate: "2024-04-22", endDate: "2024-08-01", team: ["Carlos M.", "Nina K.", "Lisa P."] },
+];
+
+export const adminServicesList = [
+  { id: 1, name: "Business Website", category: "Web Development", startingPrice: 999, projectsCount: 14, status: "Active", deliveryTime: "2–3 weeks" },
+  { id: 2, name: "Branch Website System", category: "Enterprise", startingPrice: 1999, projectsCount: 8, status: "Active", deliveryTime: "4–6 weeks" },
+  { id: 3, name: "E-Commerce Website", category: "E-Commerce", startingPrice: 2499, projectsCount: 11, status: "Active", deliveryTime: "5–8 weeks" },
+  { id: 4, name: "Landing Page Website", category: "Marketing", startingPrice: 499, projectsCount: 19, status: "Active", deliveryTime: "1–2 weeks" },
+  { id: 5, name: "Custom Web Application", category: "Application", startingPrice: 4999, projectsCount: 7, status: "Active", deliveryTime: "8–16 weeks" },
+];
