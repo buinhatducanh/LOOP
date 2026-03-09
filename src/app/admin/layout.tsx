@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
+import "@/app/globals.css";
+import { AdminShell } from "./components/admin-shell";
+import { AdminAuthProvider } from "./components/admin-auth-provider";
 
 export const metadata: Metadata = {
-  title: "Admin Dashboard | LOOP",
+  title: { default: "Admin | LOOP", template: "%s | LOOP Admin" },
   robots: { index: false, follow: false },
 };
 
@@ -11,9 +14,11 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="vi">
-      <body>
-        {children}
+    <html lang="vi" className="dark">
+      <body className="min-h-screen bg-slate-950 text-white antialiased">
+        <AdminAuthProvider>
+          <AdminShell>{children}</AdminShell>
+        </AdminAuthProvider>
       </body>
     </html>
   );
