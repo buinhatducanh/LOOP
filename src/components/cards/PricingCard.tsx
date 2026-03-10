@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { Check, X, Zap } from "lucide-react";
+import { trackCtaClick } from "@/lib/analytics/events";
 
 interface PricingPlan {
   id: string;
@@ -137,7 +138,10 @@ export function PricingCard({ plan }: PricingCardProps) {
 
       {/* CTA */}
       <button
-        onClick={() => router.push("/contact")}
+        onClick={() => {
+          trackCtaClick(`Pricing: ${plan.name}`, '/contact');
+          router.push("/contact");
+        }}
         style={{
           width: "100%",
           background: plan.highlighted ? "linear-gradient(135deg, #3B82F6, #6366F1)" : "transparent",

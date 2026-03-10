@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "@/i18n/routing";
 import { useTransition, useState } from "react";
 import { Globe } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { trackLanguageSwitch } from "@/lib/analytics/events";
 
 export function LanguageSwitcher() {
     const [isOpen, setIsOpen] = useState(false);
@@ -14,6 +15,7 @@ export function LanguageSwitcher() {
     const [isPending, startTransition] = useTransition();
 
     const handleLocaleChange = (newLocale: string) => {
+        trackLanguageSwitch(locale, newLocale);
         startTransition(() => {
             router.replace(pathname, { locale: newLocale });
             router.refresh(); // Refresh to ensure server components update properly

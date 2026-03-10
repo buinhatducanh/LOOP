@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Send, CheckCircle, AlertCircle } from "lucide-react";
+import { trackFormSubmission } from "@/lib/analytics/events";
 
 interface ContactFormProps {
   preselectedService?: string;
@@ -46,6 +47,7 @@ export function ContactForm({ preselectedService = "", compact = false }: Contac
       });
       if (!res.ok) throw new Error("Failed");
       setStatus("success");
+      trackFormSubmission("Contact Form", formData.service);
       setFormData({ name: "", email: "", phone: "", service: "", message: "" });
     } catch {
       setStatus("error");

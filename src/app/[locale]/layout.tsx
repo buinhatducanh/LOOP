@@ -6,6 +6,9 @@ import { routing } from '@/i18n/routing';
 import JsonLd from '@/components/seo/JsonLd';
 import { SpeedDial } from '@/components/shared/SpeedDial';
 import { TawktoChat } from '@/components/shared/TawktoChat';
+import { Analytics } from '@vercel/analytics/react';
+import { SpeedInsights } from '@vercel/speed-insights/next';
+import { GoogleAnalytics } from '@next/third-parties/google';
 import "../globals.css";
 
 const baseMetadata: Metadata = {
@@ -58,6 +61,9 @@ const baseMetadata: Metadata = {
       "max-image-preview": "large",
       "max-snippet": -1,
     },
+  },
+  verification: {
+    google: process.env.NEXT_PUBLIC_GSC_VERIFICATION,
   },
   alternates: {
     canonical: "https://loop.vn",
@@ -134,6 +140,11 @@ export default async function RootLayout({
           <SpeedDial />
           <TawktoChat />
         </NextIntlClientProvider>
+        <Analytics />
+        <SpeedInsights />
+        {process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID && (
+          <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID} />
+        )}
       </body>
     </html>
   );
