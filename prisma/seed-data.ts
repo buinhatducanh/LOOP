@@ -1,20 +1,21 @@
 import { config } from "dotenv";
-config({ path: [".env.local", ".env"] });
+config({ path: ".env.local", override: true });
 
-import { PrismaClient } from "../src/generated/prisma/client.js";
-import { Pool, neonConfig } from "@neondatabase/serverless";
-import { PrismaNeon } from "@prisma/adapter-neon";
-import ws from "ws";
+import { Pool } from "pg";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { PrismaClient } from "../src/generated/prisma/client";
 
-neonConfig.webSocketConstructor = ws;
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) throw new Error("DATABASE_URL is missing");
 
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-const adapter = new PrismaNeon(pool as any);
+const pool = new Pool({ connectionString });
+const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
-    console.log("Seeding database...");
+    console.log("🌱 Seeding database...\n");
 
+    // ─── SERVICES ───────────────────────────────────────────────
     const servicesData = [
         { slug: "business-website", icon: "Building2", title: "Business Website", shortDescription: "Professional, conversion-optimized websites that establish your brand identity and drive real business results.", longDescription: "A powerful business website is the cornerstone of your digital presence. We design and develop custom, high-performance websites tailored to your industry, audience, and goals.", features: ["Custom responsive design", "SEO-optimized architecture", "CMS integration (WordPress / Strapi)", "Contact & inquiry forms", "Google Analytics & Tag Manager", "Performance optimization (95+ Lighthouse score)", "SSL & security hardening", "12-month post-launch support"], technologies: ["React", "Next.js", "TypeScript", "Tailwind CSS", "WordPress", "Node.js"], startingPrice: 999, deliveryTime: "2–3 weeks", category: "Web Development", sortOrder: 1 },
         { slug: "branch-website-system", icon: "GitBranch", title: "Branch Website System", shortDescription: "Centralized multi-branch website system with individual branch pages, unified admin control, and brand consistency.", longDescription: "Scale your business across multiple locations with our Branch Website System — a unified platform where your main headquarters site connects seamlessly to individual branch pages.", features: ["Central admin dashboard", "Unlimited branch subpages", "Per-branch content management", "Location-based SEO", "Unified design system", "Branch-specific contact forms", "Staff directory per branch", "Multi-language support"], technologies: ["Next.js", "React", "PostgreSQL", "Prisma", "Vercel", "Cloudflare"], startingPrice: 1999, deliveryTime: "4–6 weeks", category: "Enterprise", sortOrder: 2 },
@@ -27,9 +28,10 @@ async function main() {
     for (const data of servicesData) {
         const service = await prisma.service.upsert({ where: { slug: data.slug }, update: data, create: data });
         services[data.slug] = service;
-        console.log("  Service:", service.title);
+        console.log("  ✅ Service:", service.title);
     }
 
+    // ─── PROJECTS ───────────────────────────────────────────────
     const projectsData = [
         { slug: "luxeshop-ecommerce", title: "LuxeShop E-Commerce", category: "E-Commerce", client: "LuxeShop Inc.", year: "2024", image: "https://images.unsplash.com/photo-1705234384435-e06172b6d2f9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=800&q=80", description: "A premium e-commerce platform for a luxury fashion brand.", techStack: ["Next.js", "Shopify", "Stripe", "TypeScript", "Tailwind CSS"], features: ["3D product visualization", "AI-powered recommendations", "One-click checkout", "Real-time inventory tracking", "Multi-currency support", "Customer loyalty program"], results: "320% increase in online revenue within 3 months", screenshots: [], serviceSlug: "ecommerce-website", sortOrder: 1 },
         { slug: "corptech-business-site", title: "CorpTech Solutions", category: "Business Website", client: "CorpTech Group", year: "2024", image: "https://images.unsplash.com/photo-1583824159840-b85725a711b4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=800&q=80", description: "A comprehensive corporate website for a global IT consultancy with 20+ branch offices.", techStack: ["React", "Next.js", "PostgreSQL", "Node.js", "Prisma"], features: ["Interactive branch locator", "Service portfolio", "HR portal with job listings", "Multi-language", "Executive team profiles", "Press & media center"], results: "180% increase in organic lead generation", screenshots: [], serviceSlug: "business-website", sortOrder: 2 },
@@ -44,9 +46,10 @@ async function main() {
             update: { ...data, serviceId: services[serviceSlug]?.id ?? null },
             create: { ...data, serviceId: services[serviceSlug]?.id ?? null },
         });
-        console.log("  Project:", project.title);
+        console.log("  ✅ Project:", project.title);
     }
 
+    // ─── PRICING PLANS ──────────────────────────────────────────
     const plansData = [
         { slug: "basic", name: "Basic", price: 499, period: "one-time", tagline: "Perfect for landing pages & startups", features: ["Up to 5 pages", "Mobile responsive design", "Basic SEO setup", "Contact form", "SSL certificate", "1 month free support", "2 revision rounds"], notIncluded: ["CMS integration", "Custom animations", "E-commerce", "Analytics dashboard"], highlighted: false, cta: "Get Started", color: "#3B82F6", sortOrder: 1 },
         { slug: "standard", name: "Standard", price: 999, period: "one-time", tagline: "Most popular for growing businesses", features: ["Up to 15 pages", "Custom design system", "CMS integration", "Advanced SEO", "Google Analytics", "3 months support", "5 revision rounds", "Performance optimization"], notIncluded: ["E-commerce", "Custom web app features"], highlighted: true, cta: "Get Started", color: "#6366F1", sortOrder: 2 },
@@ -56,9 +59,10 @@ async function main() {
 
     for (const data of plansData) {
         const plan = await prisma.pricingPlan.upsert({ where: { slug: data.slug }, update: data, create: data });
-        console.log("  Plan:", plan.name);
+        console.log("  ✅ Plan:", plan.name);
     }
 
+    // ─── TESTIMONIALS ───────────────────────────────────────────
     const testimonialsData = [
         { name: "James Mitchell", role: "CEO", company: "CorpTech Group", avatar: "JM", rating: 5, text: "LOOP transformed our digital presence completely. Lead generation is up 180% — truly exceptional work.", sortOrder: 1 },
         { name: "Sarah Al-Rashid", role: "Founder", company: "LuxeShop Inc.", avatar: "SR", rating: 5, text: "Our e-commerce revenue tripled in 3 months after the website launch. Worth every penny.", sortOrder: 2 },
@@ -68,19 +72,20 @@ async function main() {
 
     for (const data of testimonialsData) {
         await prisma.testimonial.create({ data });
-        console.log("  Testimonial:", data.name);
+        console.log("  ✅ Testimonial:", data.name);
     }
 
+    // ─── ADMIN USER ─────────────────────────────────────────────
     const admin = await prisma.user.upsert({
         where: { email: "admin@loop.vn" },
         update: {},
         create: { email: "admin@loop.vn", name: "Admin LOOP", role: "admin", avatar: "AL" },
     });
-    console.log("  Admin:", admin.email);
+    console.log("  ✅ Admin:", admin.email);
 
-    console.log("\nSeed completed!");
+    console.log("\n🎉 Seed completed!");
 }
 
 main()
-    .then(async () => { await prisma.$disconnect(); })
-    .catch(async (e) => { console.error(e); await prisma.$disconnect(); process.exit(1); });
+    .then(async () => { await prisma.$disconnect(); await pool.end(); })
+    .catch(async (e) => { console.error(e); await prisma.$disconnect(); await pool.end(); process.exit(1); });

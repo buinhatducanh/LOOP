@@ -132,11 +132,11 @@ model User {
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   // Relations
-  userRoles      UserRole[]
-  sessions       Session[]
-  loginHistory   LoginHistory[]
-  auditLogs      AuditLog[]
-  notifications  Notification[]
+  userRoles     UserRole[]
+  sessions      Session[]
+  loginHistory  LoginHistory[]
+  auditLogs     AuditLog[]
+  notifications Notification[]
 
   @@map("users")
 }

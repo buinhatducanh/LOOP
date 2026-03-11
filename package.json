@@ -97,12 +97,15 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@prisma/adapter-pg": "^7.4.2",
     "@tailwindcss/postcss": "4.1.12",
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.10",
+    "@types/pg": "^8.18.0",
     "@types/react": "18.3.18",
     "@types/react-dom": "18.3.5",
     "@types/ws": "^8.18.1",
+    "pg": "^8.20.0",
     "tailwindcss": "4.1.12",
     "tsx": "^4.21.0",
     "typescript": "5.7.3"

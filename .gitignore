@@ -13,11 +13,12 @@ dist-ssr
 *.local
 .next
 
-# Environment variables
+# Environment variables (KHÔNG commit file chứa secret)
 .env
 .env.local
 .env.production.local
 .env.development.local
+# .env.example ĐƯỢC commit lên Git (file mẫu)
 
 # Prisma
 prisma/*.db
