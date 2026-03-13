@@ -92,7 +92,7 @@ export default function Navbar() {
             ))}
           </div>
 
-          {/* Desktop Auth Section */}
+          {/* Desktop Auth Section + Language Switcher */}
           <div className="hidden md:flex items-center space-x-3">
             {isAuthenticated && user ? (
               <div className="relative">
@@ -171,16 +171,19 @@ export default function Navbar() {
                 </Link>
               </>
             )}
+            <LanguageSwitcher />
           </div>
 
-          <LanguageSwitcher />
-
-          <button
-            onClick={() => setIsOpen(!isOpen)}
-            className="md:hidden p-2 text-gray-400 hover:text-white transition-colors"
-          >
-            {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
+          {/* Mobile: Language Switcher + Hamburger */}
+          <div className="flex md:hidden items-center gap-2">
+            <LanguageSwitcher />
+            <button
+              onClick={() => setIsOpen(!isOpen)}
+              className="p-2 text-gray-400 hover:text-white transition-colors"
+            >
+              {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
+          </div>
         </div>
       </div>
 
