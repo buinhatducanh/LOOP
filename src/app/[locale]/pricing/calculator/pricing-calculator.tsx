@@ -57,6 +57,10 @@ export function PricingCalculator() {
     fetch("/api/pricing/calculator")
       .then((r) => r.json())
       .then((data) => {
+        if (!Array.isArray(data)) {
+          console.error("API returned non-array:", data);
+          return;
+        }
         setGroups(data);
         // Auto-select cheapest variant for required features
         const defaults: Record<string, string> = {};
