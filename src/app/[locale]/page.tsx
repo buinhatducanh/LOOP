@@ -41,7 +41,7 @@ export default async function Page() {
       serviceId: (p.service as { slug: string } | null)?.slug ?? "",
     })) : mockProjects;
     testimonials = dbTestimonials.length > 0 ? dbTestimonials.map((t) => ({
-      id: parseInt(t.id) || 0, name: t.name, role: t.role, company: t.company,
+      id: parseInt(t.id) || Math.random(), name: t.name, role: t.role, company: t.company,
       avatar: t.avatar, rating: t.rating, text: t.text,
     })) : mockTestimonials;
   } catch {
