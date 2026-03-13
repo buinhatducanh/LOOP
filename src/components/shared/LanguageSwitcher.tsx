@@ -48,11 +48,11 @@ export function LanguageSwitcher() {
             <button
                 onClick={() => setIsOpen(!isOpen)}
                 disabled={isPending}
-                className="flex items-center gap-1.5 px-3 py-2 text-sm text-gray-300 hover:text-white transition-colors rounded-lg bg-white/5 border border-white/10 hover:bg-white/10"
+                className="flex items-center gap-2 px-3.5 py-2 text-sm text-white transition-all duration-200 rounded-lg bg-gradient-to-r from-purple-500/20 to-cyan-500/20 border border-purple-500/30 hover:border-purple-400/60 hover:from-purple-500/30 hover:to-cyan-500/30 hover:shadow-md hover:shadow-purple-500/10"
                 aria-label="Switch language"
             >
-                <Globe size={16} />
-                <span className="font-medium">{current.flag} {current.code.toUpperCase()}</span>
+                <span className="text-base">{current.flag}</span>
+                <span className="font-semibold tracking-wide">{current.code.toUpperCase()}</span>
             </button>
 
             <AnimatePresence>
