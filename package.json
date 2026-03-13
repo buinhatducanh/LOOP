@@ -10,14 +10,14 @@
     "postinstall": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
-    "db:seed": "npx tsx prisma/seed.mts",
+    "db:seed": "npx tsx prisma/seed.ts",
     "db:studio": "prisma studio",
     "db:generate": "prisma generate",
     "db:reset": "prisma migrate reset",
     "db:seed-rbac": "npx tsx prisma/seed-rbac.mts"
   },
   "prisma": {
-    "seed": "npx tsx prisma/seed.mts"
+    "seed": "npx tsx prisma/seed.ts"
   },
   "dependencies": {
     "@emotion/react": "11.14.0",
@@ -97,7 +97,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@prisma/adapter-pg": "^7.4.2",
+    "@prisma/adapter-pg": "^7.5.0",
     "@tailwindcss/postcss": "4.1.12",
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.10",

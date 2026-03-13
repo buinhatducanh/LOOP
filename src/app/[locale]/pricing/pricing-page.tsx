@@ -4,7 +4,7 @@ import { useRef, useMemo } from "react";
 import { useRouter } from "@/i18n/routing";
 import { useTranslations } from "next-intl";
 import { motion, useInView } from "motion/react";
-import { ArrowRight, DollarSign, HelpCircle, Check } from "lucide-react";
+import { ArrowRight, DollarSign, HelpCircle, Check, Calculator } from "lucide-react";
 import { pricingPlans as mockPlans } from "@/data/mockData";
 import { PricingCard } from "@/components/cards/PricingCard";
 
@@ -152,6 +152,74 @@ export function PricingPage({ plans: pricingPlans = mockPlans }: { plans?: PlanD
             </FadeIn>
           ))}
         </div>
+      </section>
+
+      {/* Custom Calculator CTA */}
+      <section style={{ padding: "40px 24px 0" }}>
+        <FadeIn>
+          <div
+            style={{
+              maxWidth: "900px",
+              margin: "0 auto",
+              background: "linear-gradient(135deg, rgba(59,130,246,0.1), rgba(99,102,241,0.08))",
+              border: "1px solid rgba(99,102,241,0.2)",
+              borderRadius: "16px",
+              padding: "32px",
+              display: "flex",
+              alignItems: "center",
+              gap: "24px",
+              flexWrap: "wrap",
+              justifyContent: "space-between",
+            }}
+          >
+            <div style={{ flex: 1, minWidth: "250px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
+                <div
+                  style={{
+                    width: "36px",
+                    height: "36px",
+                    borderRadius: "10px",
+                    background: "linear-gradient(135deg, #3B82F6, #6366F1)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Calculator size={18} color="#fff" />
+                </div>
+                <h3 style={{ fontSize: "18px", fontWeight: 700 }}>
+                  Cần báo giá theo nhu cầu riêng?
+                </h3>
+              </div>
+              <p style={{ color: "#94A3B8", fontSize: "14px", lineHeight: 1.6 }}>
+                Sử dụng công cụ tính giá tùy chỉnh — chọn từng tính năng bạn cần và nhận báo giá tức thì.
+              </p>
+            </div>
+            <motion.button
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => router.push("/pricing/calculator")}
+              style={{
+                background: "linear-gradient(135deg, #3B82F6, #6366F1)",
+                color: "#fff",
+                border: "none",
+                padding: "12px 28px",
+                borderRadius: "10px",
+                fontSize: "14px",
+                fontWeight: 700,
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "8px",
+                boxShadow: "0 0 20px rgba(99,102,241,0.25)",
+                whiteSpace: "nowrap",
+              }}
+            >
+              <Calculator size={16} />
+              Tùy chỉnh Báo giá <ArrowRight size={14} />
+            </motion.button>
+          </div>
+        </FadeIn>
       </section>
 
       {/* All Plans Include */}

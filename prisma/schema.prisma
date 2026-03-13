@@ -306,3 +306,67 @@ model SiteSetting {
 
   @@map("site_settings")
 }
+
+// ─── PRICING CALCULATOR (BÁO GIÁ ĐỘNG) ─────────────────────────
+
+model FeatureGroup {
+  id        String    @id @default(cuid())
+  groupName String    @map("group_name")
+  slug      String    @unique
+  sortOrder Int       @default(0) @map("sort_order")
+  isActive  Boolean   @default(true) @map("is_active")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  features  Feature[]
+
+  @@map("feature_groups")
+}
+
+model Feature {
+  id          String           @id @default(cuid())
+  groupId     String           @map("group_id")
+  group       FeatureGroup     @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  featureName String           @map("feature_name")
+  description String?
+  logicLevel  String           @default("Medium") @map("logic_level")
+  isRequired  Boolean          @default(false) @map("is_required")
+  sortOrder   Int              @default(0) @map("sort_order")
+  isActive    Boolean          @default(true) @map("is_active")
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+  variants    FeatureVariant[]
+
+  @@map("features")
+}
+
+model FeatureVariant {
+  id            String   @id @default(cuid())
+  featureId     String   @map("feature_id")
+  feature       Feature  @relation(fields: [featureId], references: [id], onDelete: Cascade)
+  variantName   String   @map("variant_name")
+  description   String?
+  price         Int      @default(0)
+  resourceUsage Json?    @map("resource_usage")
+  sortOrder     Int      @default(0) @map("sort_order")
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("feature_variants")
+}
+
+model QuoteRequest {
+  id             String   @id @default(cuid())
+  customerName   String   @map("customer_name")
+  customerEmail  String   @map("customer_email")
+  customerPhone  String?  @map("customer_phone")
+  companyName    String?  @map("company_name")
+  selectedItems  Json     @map("selected_items")
+  totalAmount    Int      @map("total_amount")
+  notes          String?
+  status         String   @default("new")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@map("quote_requests")
+}

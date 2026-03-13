@@ -2,9 +2,16 @@ import { config } from "dotenv";
 config({ path: [".env.local", ".env"] });
 
 import { PrismaClient } from "../src/generated/prisma/client.js";
+import { Pool, neonConfig } from "@neondatabase/serverless";
+import { PrismaNeon } from "@prisma/adapter-neon";
+import ws from "ws";
 import bcrypt from "bcryptjs";
 
-const prisma = new PrismaClient();
+neonConfig.webSocketConstructor = ws;
+
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const adapter = new PrismaNeon(pool as any);
+const prisma = new PrismaClient({ adapter });
 
 const ROLES = [
   {

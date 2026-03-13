@@ -18,6 +18,8 @@ import {
   ClipboardList,
   ChevronLeft,
   ChevronRight,
+  Calculator,
+  FileQuestion,
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/components/ui/utils";
@@ -43,6 +45,8 @@ const navigation: NavEntry[] = [
     items: [
       { name: "Đơn hàng", href: "/admin/orders", icon: ShoppingCart },
       { name: "Gói dịch vụ", href: "/admin/packages", icon: Package },
+      { name: "Báo giá tính năng", href: "/admin/pricing-features", icon: Calculator },
+      { name: "Yêu cầu báo giá", href: "/admin/quote-requests", icon: FileQuestion },
       { name: "Tin nhắn", href: "/admin/messages", icon: MessageSquare },
     ],
   },
