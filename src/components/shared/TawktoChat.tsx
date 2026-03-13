@@ -3,9 +3,8 @@
 import Script from "next/script";
 
 export function TawktoChat() {
-    // Demo property ID. Replace with actual LOOP Tawk.to ID for production
-    const propertyId = "demo_tawk_id";
-    const widgetId = "default";
+    const propertyId = "69b41637063f791c37e4d891";
+    const widgetId = "1jjjndita";
 
     return (
         <Script id="tawk-widget" strategy="lazyOnload">
