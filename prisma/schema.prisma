@@ -370,3 +370,109 @@ model QuoteRequest {
 
   @@map("quote_requests")
 }
+
+// ─── PRICING PACKAGES (ADMIN-MANAGED) ─────────────────────────
+
+model PricingWebPackage {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  nameVi      String   @map("name_vi")
+  tagline     String
+  taglineVi   String   @map("tagline_vi")
+  price       Int
+  currency    String   @default("VND")
+  period      String
+  periodVi    String   @map("period_vi")
+  highlighted Boolean  @default(false)
+  cta         String
+  ctaVi       String   @map("cta_vi")
+  color       String   @default("#3B82F6")
+  pages       String
+  pagesVi     String   @map("pages_vi")
+  sortOrder   Int      @default(0) @map("sort_order")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("pricing_web_packages")
+}
+
+model PricingFeatureCategory {
+  id        String                     @id @default(cuid())
+  slug      String                     @unique
+  name      String
+  nameVi    String                     @map("name_vi")
+  sortOrder Int                        @default(0) @map("sort_order")
+  isActive  Boolean                    @default(true) @map("is_active")
+  features  PricingComparisonFeature[]
+
+  @@map("pricing_feature_categories")
+}
+
+model PricingComparisonFeature {
+  id         String                 @id @default(cuid())
+  categoryId String                 @map("category_id")
+  category   PricingFeatureCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  name       String
+  nameVi     String                 @map("name_vi")
+  tooltip    String?
+  tooltipVi  String?                @map("tooltip_vi")
+  values     Json
+  sortOrder  Int                    @default(0) @map("sort_order")
+  isActive   Boolean                @default(true) @map("is_active")
+
+  @@map("pricing_comparison_features")
+}
+
+model PricingHostingPlan {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  nameVi      String   @map("name_vi")
+  price       Int
+  period      String
+  periodVi    String   @map("period_vi")
+  features    String[]
+  featuresVi  String[] @map("features_vi")
+  highlighted Boolean  @default(false)
+  color       String   @default("#3B82F6")
+  sortOrder   Int      @default(0) @map("sort_order")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("pricing_hosting_plans")
+}
+
+model PricingDomainPrice {
+  id                String  @id @default(cuid())
+  extension         String  @unique
+  registrationPrice Int     @map("registration_price")
+  renewalPrice      Int     @map("renewal_price")
+  period            String
+  periodVi          String  @map("period_vi")
+  note              String?
+  noteVi            String? @map("note_vi")
+  sortOrder         Int     @default(0) @map("sort_order")
+  isActive          Boolean @default(true) @map("is_active")
+
+  @@map("pricing_domain_prices")
+}
+
+model PricingDeploymentItem {
+  id             String  @id @default(cuid())
+  slug           String  @unique
+  title          String
+  titleVi        String  @map("title_vi")
+  description    String
+  descriptionVi  String  @map("description_vi")
+  handedToClient Boolean @default(true) @map("handed_to_client")
+  icon           String
+  note           String?
+  noteVi         String? @map("note_vi")
+  sortOrder      Int     @default(0) @map("sort_order")
+  isActive       Boolean @default(true) @map("is_active")
+
+  @@map("pricing_deployment_items")
+}

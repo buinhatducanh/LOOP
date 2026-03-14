@@ -1,8 +1,18 @@
 import type { Metadata } from "next";
 import JsonLd from "@/components/seo/JsonLd";
 import { PricingPage } from "./pricing-page";
+import { getPricingPackagesData } from "@/lib/db/queries";
+import {
+  webPackages as staticWebPackages,
+  featureCategories as staticFeatureCategories,
+  hostingPlans as staticHostingPlans,
+  domainPrices as staticDomainPrices,
+  deploymentHandoff as staticDeploymentHandoff,
+} from "@/data/pricingPackages";
 
 import { getTranslations } from "next-intl/server";
+
+export const revalidate = 300; // ISR 5 phút
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
@@ -17,6 +27,96 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 
 export default async function Page({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
+
+  // Fetch pricing data from DB, fallback to static data
+  let pricingData;
+  try {
+    const dbData = await getPricingPackagesData();
+    // Use DB data if it has content, otherwise fallback to static
+    pricingData = {
+      webPackages: dbData.webPackages.length > 0
+        ? dbData.webPackages.map((p) => ({
+            id: p.slug,
+            name: p.name,
+            nameVi: p.nameVi,
+            tagline: p.tagline,
+            taglineVi: p.taglineVi,
+            price: p.price,
+            currency: p.currency as "VND",
+            period: p.period,
+            periodVi: p.periodVi,
+            highlighted: p.highlighted,
+            cta: p.cta,
+            ctaVi: p.ctaVi,
+            color: p.color,
+            pages: p.pages,
+            pagesVi: p.pagesVi,
+          }))
+        : staticWebPackages,
+      featureCategories: dbData.featureCategories.length > 0
+        ? dbData.featureCategories.map((c) => ({
+            id: c.slug,
+            name: c.name,
+            nameVi: c.nameVi,
+            features: c.features.map((f) => ({
+              id: f.id,
+              name: f.name,
+              nameVi: f.nameVi,
+              tooltip: f.tooltip ?? undefined,
+              tooltipVi: f.tooltipVi ?? undefined,
+              values: f.values as Record<string, boolean | string>,
+            })),
+          }))
+        : staticFeatureCategories,
+      hostingPlans: dbData.hostingPlans.length > 0
+        ? dbData.hostingPlans.map((h) => ({
+            id: h.slug,
+            name: h.name,
+            nameVi: h.nameVi,
+            price: h.price,
+            period: h.period,
+            periodVi: h.periodVi,
+            features: h.features,
+            featuresVi: h.featuresVi,
+            highlighted: h.highlighted,
+            color: h.color,
+          }))
+        : staticHostingPlans,
+      domainPrices: dbData.domainPrices.length > 0
+        ? dbData.domainPrices.map((d) => ({
+            extension: d.extension,
+            registrationPrice: d.registrationPrice,
+            renewalPrice: d.renewalPrice,
+            period: d.period,
+            periodVi: d.periodVi,
+            note: d.note ?? undefined,
+            noteVi: d.noteVi ?? undefined,
+          }))
+        : staticDomainPrices,
+      deploymentItems: dbData.deploymentItems.length > 0
+        ? dbData.deploymentItems.map((i) => ({
+            id: i.slug,
+            title: i.title,
+            titleVi: i.titleVi,
+            description: i.description,
+            descriptionVi: i.descriptionVi,
+            handedToClient: i.handedToClient,
+            icon: i.icon,
+            note: i.note ?? undefined,
+            noteVi: i.noteVi ?? undefined,
+          }))
+        : staticDeploymentHandoff,
+    };
+  } catch {
+    // Fallback to static data if DB is unavailable
+    pricingData = {
+      webPackages: staticWebPackages,
+      featureCategories: staticFeatureCategories,
+      hostingPlans: staticHostingPlans,
+      domainPrices: staticDomainPrices,
+      deploymentItems: staticDeploymentHandoff,
+    };
+  }
 
   const tFaq = await getTranslations({ locale, namespace: 'PricingPage' });
   const faqs = [
@@ -44,7 +144,14 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
   return (
     <>
       <JsonLd data={faqSchema} />
-      <PricingPage locale={locale} />
+      <PricingPage
+        locale={locale}
+        webPackages={pricingData.webPackages}
+        featureCategories={pricingData.featureCategories}
+        hostingPlans={pricingData.hostingPlans}
+        domainPrices={pricingData.domainPrices}
+        deploymentItems={pricingData.deploymentItems}
+      />
     </>
   );
 }

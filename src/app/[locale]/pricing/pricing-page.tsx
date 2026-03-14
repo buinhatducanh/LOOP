@@ -17,12 +17,12 @@ import { PricingCard } from "@/components/cards/PricingCard";
 import { FeatureComparisonTable } from "@/components/pricing/FeatureComparisonTable";
 import { HostingDomainSection } from "@/components/pricing/HostingDomainSection";
 import { DeploymentHandoffSection } from "@/components/pricing/DeploymentHandoffSection";
-import {
-  webPackages,
-  featureCategories,
-  hostingPlans,
-  domainPrices,
-  deploymentHandoff,
+import type {
+  WebPackage,
+  FeatureCategory,
+  HostingPlan,
+  DomainPrice,
+  DeploymentHandoff,
 } from "@/data/pricingPackages";
 
 function GradientText({ children }: { children: React.ReactNode }) {
@@ -61,7 +61,23 @@ function FadeIn({
   );
 }
 
-export function PricingPage({ locale = "vi" }: { locale?: string }) {
+interface PricingPageProps {
+  locale?: string;
+  webPackages: WebPackage[];
+  featureCategories: FeatureCategory[];
+  hostingPlans: HostingPlan[];
+  domainPrices: DomainPrice[];
+  deploymentItems: DeploymentHandoff[];
+}
+
+export function PricingPage({
+  locale = "vi",
+  webPackages,
+  featureCategories,
+  hostingPlans,
+  domainPrices,
+  deploymentItems,
+}: PricingPageProps) {
   const router = useRouter();
   const t = useTranslations("PricingPage");
   const isVi = locale === "vi";
@@ -450,7 +466,7 @@ export function PricingPage({ locale = "vi" }: { locale?: string }) {
             </div>
           </FadeIn>
           <DeploymentHandoffSection
-            items={deploymentHandoff}
+            items={deploymentItems}
             locale={locale}
           />
         </div>
