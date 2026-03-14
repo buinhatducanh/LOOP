@@ -75,3 +75,36 @@ export async function getTeamMembers() {
 export async function getTeamMemberBySlug(slug: string) {
   return prisma.teamMember.findUnique({ where: { slug } });
 }
+
+export async function getPricingPackagesData() {
+  const [webPackages, featureCategories, hostingPlans, domainPrices, deploymentItems] =
+    await Promise.all([
+      prisma.pricingWebPackage.findMany({
+        where: { isActive: true },
+        orderBy: { sortOrder: "asc" },
+      }),
+      prisma.pricingFeatureCategory.findMany({
+        where: { isActive: true },
+        orderBy: { sortOrder: "asc" },
+        include: {
+          features: {
+            where: { isActive: true },
+            orderBy: { sortOrder: "asc" },
+          },
+        },
+      }),
+      prisma.pricingHostingPlan.findMany({
+        where: { isActive: true },
+        orderBy: { sortOrder: "asc" },
+      }),
+      prisma.pricingDomainPrice.findMany({
+        where: { isActive: true },
+        orderBy: { sortOrder: "asc" },
+      }),
+      prisma.pricingDeploymentItem.findMany({
+        where: { isActive: true },
+        orderBy: { sortOrder: "asc" },
+      }),
+    ]);
+  return { webPackages, featureCategories, hostingPlans, domainPrices, deploymentItems };
+}
