@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { type ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "../../components/data-table";
 import { Plus, Pencil, Trash2, Shield, ShieldCheck } from "lucide-react";
+import { toast } from "sonner";
 
 interface UserData {
   id: string;
@@ -35,6 +36,7 @@ export default function AdminUsersPage() {
       setPagination(data.pagination || { page: 1, limit: 20, total: 0, totalPages: 0 });
     } catch (e) {
       console.error(e);
+      toast.error("Không thể tải danh sách người dùng");
     } finally {
       setLoading(false);
     }
@@ -43,36 +45,64 @@ export default function AdminUsersPage() {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   async function toggleActive(id: string, isActive: boolean) {
-    await fetch(`/api/admin/users/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ isActive: !isActive }),
-    });
-    fetchData(pagination.page, search);
+    try {
+      const res = await fetch(`/api/admin/users/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isActive: !isActive }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        toast.error(data.error || "Không thể cập nhật trạng thái");
+        return;
+      }
+      toast.success(isActive ? "Đã vô hiệu hoá tài khoản" : "Đã kích hoạt tài khoản");
+      fetchData(pagination.page, search);
+    } catch {
+      toast.error("Lỗi kết nối");
+    }
   }
 
   async function deleteUser(id: string) {
     if (!confirm("Xoá người dùng này?")) return;
-    await fetch(`/api/admin/users/${id}`, { method: "DELETE" });
-    fetchData(pagination.page, search);
+    try {
+      const res = await fetch(`/api/admin/users/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const data = await res.json();
+        toast.error(data.error || "Không thể xoá người dùng");
+        return;
+      }
+      toast.success("Đã xoá người dùng");
+      fetchData(pagination.page, search);
+    } catch {
+      toast.error("Lỗi kết nối");
+    }
   }
 
   async function createUser(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
-    const res = await fetch("/api/admin/users", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: fd.get("name"),
-        email: fd.get("email"),
-        password: fd.get("password"),
-        role: fd.get("role"),
-      }),
-    });
-    if (res.ok) {
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: fd.get("name"),
+          email: fd.get("email"),
+          password: fd.get("password"),
+          role: fd.get("role"),
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        toast.error(data.error || "Không thể tạo người dùng");
+        return;
+      }
+      toast.success("Đã tạo người dùng mới");
       setShowCreateModal(false);
       fetchData();
+    } catch {
+      toast.error("Lỗi kết nối");
     }
   }
 

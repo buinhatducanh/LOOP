@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { type ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "../../components/data-table";
 import { Plus, Star, Pencil, Trash2, Eye, EyeOff, X } from "lucide-react";
+import { toast } from "sonner";
 
 interface Testimonial {
   id: string;
@@ -62,7 +63,7 @@ export default function AdminTestimonialsPage() {
       setTestimonials(data.data || []);
       setPagination(data.pagination || { page: 1, limit: 20, total: 0, totalPages: 0 });
     } catch (e) {
-      console.error(e);
+      toast.error("Lỗi kết nối");
     } finally {
       setLoading(false);
     }
@@ -80,13 +81,17 @@ export default function AdminTestimonialsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
-      if (res.ok) {
-        setShowCreate(false);
-        setForm(defaultForm);
-        fetchData(pagination.page, search);
+      if (!res.ok) {
+        const err = await res.json();
+        toast.error(err.error || "Lỗi tạo đánh giá");
+        return;
       }
+      setShowCreate(false);
+      setForm(defaultForm);
+      toast.success("Tạo đánh giá thành công");
+      fetchData(pagination.page, search);
     } catch (e) {
-      console.error(e);
+      toast.error("Lỗi kết nối");
     } finally {
       setSaving(false);
     }
@@ -101,13 +106,17 @@ export default function AdminTestimonialsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
-      if (res.ok) {
-        setEditItem(null);
-        setForm(defaultForm);
-        fetchData(pagination.page, search);
+      if (!res.ok) {
+        const err = await res.json();
+        toast.error(err.error || "Lỗi cập nhật đánh giá");
+        return;
       }
+      setEditItem(null);
+      setForm(defaultForm);
+      toast.success("Cập nhật đánh giá thành công");
+      fetchData(pagination.page, search);
     } catch (e) {
-      console.error(e);
+      toast.error("Lỗi kết nối");
     } finally {
       setSaving(false);
     }
@@ -117,11 +126,15 @@ export default function AdminTestimonialsPage() {
     if (!confirm("Bạn có chắc muốn xóa đánh giá này?")) return;
     try {
       const res = await fetch(`/api/admin/testimonials/${id}`, { method: "DELETE" });
-      if (res.ok) {
-        fetchData(pagination.page, search);
+      if (!res.ok) {
+        const err = await res.json();
+        toast.error(err.error || "Xóa thất bại");
+        return;
       }
+      toast.success("Xóa đánh giá thành công");
+      fetchData(pagination.page, search);
     } catch (e) {
-      console.error(e);
+      toast.error("Lỗi kết nối");
     }
   };
 
@@ -132,11 +145,15 @@ export default function AdminTestimonialsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isActive: !item.isActive }),
       });
-      if (res.ok) {
-        fetchData(pagination.page, search);
+      if (!res.ok) {
+        const err = await res.json();
+        toast.error(err.error || "Cập nhật thất bại");
+        return;
       }
+      toast.success("Cập nhật trạng thái thành công");
+      fetchData(pagination.page, search);
     } catch (e) {
-      console.error(e);
+      toast.error("Lỗi kết nối");
     }
   };
 

@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { type ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "../../components/data-table";
 import { Eye, CheckCircle, Clock, ArrowUpRight, X } from "lucide-react";
+import { toast } from "sonner";
 
 interface QuoteRequest {
   id: string;
@@ -61,7 +62,7 @@ export default function AdminQuoteRequestsPage() {
       setRequests(json.data || []);
       setPagination(json.pagination || { page: 1, limit: 20, total: 0, totalPages: 0 });
     } catch (e) {
-      console.error(e);
+      toast.error("Lỗi kết nối");
     } finally {
       setLoading(false);
     }
@@ -73,17 +74,23 @@ export default function AdminQuoteRequestsPage() {
 
   const updateStatus = async (id: string, status: string) => {
     try {
-      await fetch(`/api/admin/quote-requests/${id}`, {
+      const res = await fetch(`/api/admin/quote-requests/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),
       });
+      if (!res.ok) {
+        const err = await res.json();
+        toast.error(err.error || "Cập nhật thất bại");
+        return;
+      }
+      toast.success("Cập nhật trạng thái thành công");
       fetchData(pagination.page);
       if (detailModal?.id === id) {
         setDetailModal((prev) => prev ? { ...prev, status } : null);
       }
     } catch (e) {
-      console.error(e);
+      toast.error("Lỗi kết nối");
     }
   };
 

@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { type ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "../../components/data-table";
 import { Mail, CheckCircle, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
 interface Message {
   id: string;
@@ -40,7 +41,7 @@ export default function AdminMessagesPage() {
       setMessages(data.data || []);
       setPagination(data.pagination || { page: 1, limit: 20, total: 0, totalPages: 0 });
     } catch (e) {
-      console.error(e);
+      toast.error("Lỗi kết nối");
     } finally {
       setLoading(false);
     }
@@ -49,18 +50,38 @@ export default function AdminMessagesPage() {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   async function updateStatus(id: string, status: string) {
-    await fetch(`/api/admin/messages/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status }),
-    });
-    fetchData(pagination.page, statusFilter);
+    try {
+      const res = await fetch(`/api/admin/messages/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        toast.error(err.error || "Cập nhật thất bại");
+        return;
+      }
+      toast.success("Cập nhật trạng thái thành công");
+      fetchData(pagination.page, statusFilter);
+    } catch (e) {
+      toast.error("Lỗi kết nối");
+    }
   }
 
   async function deleteMessage(id: string) {
     if (!confirm("Xoá tin nhắn này?")) return;
-    await fetch(`/api/admin/messages/${id}`, { method: "DELETE" });
-    fetchData(pagination.page, statusFilter);
+    try {
+      const res = await fetch(`/api/admin/messages/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const err = await res.json();
+        toast.error(err.error || "Xóa thất bại");
+        return;
+      }
+      toast.success("Xóa tin nhắn thành công");
+      fetchData(pagination.page, statusFilter);
+    } catch (e) {
+      toast.error("Lỗi kết nối");
+    }
   }
 
   const columns: ColumnDef<Message, unknown>[] = [

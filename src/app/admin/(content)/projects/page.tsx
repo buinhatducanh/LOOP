@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { type ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "../../components/data-table";
 import { Plus, Pencil, Trash2, Eye, EyeOff, X, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 interface Project {
   id: string;
@@ -99,7 +100,7 @@ export default function AdminProjectsPage() {
       setProjects(data.data || []);
       setPagination(data.pagination || { page: 1, limit: 20, total: 0, totalPages: 0 });
     } catch (e) {
-      console.error(e);
+      toast.error("Lỗi kết nối");
     } finally {
       setLoading(false);
     }
@@ -111,7 +112,7 @@ export default function AdminProjectsPage() {
       const data = await res.json();
       setServices((data.data || []).map((s: { id: string; title: string }) => ({ id: s.id, title: s.title })));
     } catch (e) {
-      console.error(e);
+      toast.error("Lỗi kết nối");
     }
   }, []);
 
@@ -155,13 +156,13 @@ export default function AdminProjectsPage() {
       const res = await fetch(`/api/admin/projects/${project.id}`, { method: "DELETE" });
       if (!res.ok) {
         const err = await res.json();
-        alert(err.error || "Xóa thất bại");
+        toast.error(err.error || "Xóa thất bại");
         return;
       }
+      toast.success("Xóa dự án thành công");
       fetchData(pagination.page, search);
     } catch (e) {
-      console.error(e);
-      alert("Xóa thất bại");
+      toast.error("Lỗi kết nối");
     }
   };
 
@@ -174,13 +175,13 @@ export default function AdminProjectsPage() {
       });
       if (!res.ok) {
         const err = await res.json();
-        alert(err.error || "Cập nhật thất bại");
+        toast.error(err.error || "Cập nhật thất bại");
         return;
       }
+      toast.success("Cập nhật trạng thái thành công");
       fetchData(pagination.page, search);
     } catch (e) {
-      console.error(e);
-      alert("Cập nhật thất bại");
+      toast.error("Lỗi kết nối");
     }
   };
 
@@ -218,15 +219,15 @@ export default function AdminProjectsPage() {
 
       if (!res.ok) {
         const err = await res.json();
-        alert(err.error || "Lưu thất bại");
+        toast.error(err.error || "Lưu thất bại");
         return;
       }
 
       setModalOpen(false);
+      toast.success(editingId ? "Cập nhật dự án thành công" : "Tạo dự án thành công");
       fetchData(pagination.page, search);
     } catch (e) {
-      console.error(e);
-      alert("Lưu thất bại");
+      toast.error("Lỗi kết nối");
     } finally {
       setSaving(false);
     }

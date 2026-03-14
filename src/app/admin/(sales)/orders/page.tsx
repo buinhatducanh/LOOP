@@ -18,6 +18,7 @@ import {
   Search,
   Filter,
 } from "lucide-react";
+import { toast } from "sonner";
 
 // ─── Types ──────────────────────────────────────────────────────
 
@@ -122,42 +123,60 @@ export default function AdminOrdersPage() {
   const handleDelete = async (id: string) => {
     if (!confirm("Bạn có chắc muốn xóa đơn hàng này?")) return;
     try {
-      await fetch(`/api/admin/orders/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/admin/orders/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const data = await res.json();
+        toast.error(data.error || "Không thể xóa đơn hàng");
+        return;
+      }
+      toast.success("Đã xóa đơn hàng");
       fetchOrders(pagination.page);
-    } catch (e) {
-      console.error(e);
+    } catch {
+      toast.error("Lỗi kết nối");
     }
   };
 
   const handleStatusUpdate = async (id: string, status: string) => {
     try {
-      await fetch(`/api/admin/orders/${id}`, {
+      const res = await fetch(`/api/admin/orders/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),
       });
+      if (!res.ok) {
+        const data = await res.json();
+        toast.error(data.error || "Không thể cập nhật trạng thái");
+        return;
+      }
+      toast.success("Đã cập nhật trạng thái đơn hàng");
       fetchOrders(pagination.page);
       if (detailModal?.id === id) {
         setDetailModal((prev) => prev ? { ...prev, status } : null);
       }
-    } catch (e) {
-      console.error(e);
+    } catch {
+      toast.error("Lỗi kết nối");
     }
   };
 
   const handlePaymentUpdate = async (id: string, paymentStatus: string) => {
     try {
-      await fetch(`/api/admin/orders/${id}`, {
+      const res = await fetch(`/api/admin/orders/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ paymentStatus }),
       });
+      if (!res.ok) {
+        const data = await res.json();
+        toast.error(data.error || "Không thể cập nhật thanh toán");
+        return;
+      }
+      toast.success("Đã cập nhật trạng thái thanh toán");
       fetchOrders(pagination.page);
       if (detailModal?.id === id) {
         setDetailModal((prev) => prev ? { ...prev, paymentStatus } : null);
       }
-    } catch (e) {
-      console.error(e);
+    } catch {
+      toast.error("Lỗi kết nối");
     }
   };
 

@@ -4,6 +4,9 @@ import { verifyPassword } from "@/lib/auth/password";
 import { signToken } from "@/lib/auth/jwt";
 import { createAuditLog } from "@/lib/auth/audit";
 
+// Pre-computed hash to use for timing-safe comparison when user doesn't exist
+const DUMMY_HASH = "$2a$12$LJ3m4ys3Rl3hPcyFSevMnuGHvZw7KLEqKl6.s8EWYFONbJdRe0Gu2";
+
 export async function POST(req: NextRequest) {
   try {
     const { email, password } = await req.json();
@@ -22,7 +25,18 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    if (!user || !user.passwordHash) {
+    // Always run password verification to prevent timing attacks
+    const hashToCompare = user?.passwordHash || DUMMY_HASH;
+    const valid = await verifyPassword(password, hashToCompare);
+
+    if (!user || !user.passwordHash || !valid) {
+      if (user) {
+        await createAuditLog({
+          userId: user.id,
+          action: "login_failed",
+          resource: "auth",
+        });
+      }
       return NextResponse.json(
         { error: "Email hoặc mật khẩu không đúng" },
         { status: 401 }
@@ -33,19 +47,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { error: "Tài khoản đã bị vô hiệu hoá" },
         { status: 403 }
-      );
-    }
-
-    const valid = await verifyPassword(password, user.passwordHash);
-    if (!valid) {
-      await createAuditLog({
-        userId: user.id,
-        action: "login_failed",
-        resource: "auth",
-      });
-      return NextResponse.json(
-        { error: "Email hoặc mật khẩu không đúng" },
-        { status: 401 }
       );
     }
 

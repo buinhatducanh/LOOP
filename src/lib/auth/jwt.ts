@@ -1,7 +1,14 @@
 import jwt from "jsonwebtoken";
 
-const SECRET = process.env.AUTH_SECRET || "fallback-dev-secret";
 const EXPIRES_IN = "8h";
+
+function getSecret(): string {
+  const secret = process.env.AUTH_SECRET;
+  if (!secret) {
+    throw new Error("AUTH_SECRET environment variable is required");
+  }
+  return secret;
+}
 
 export interface JWTPayload {
   userId: string;
@@ -11,12 +18,12 @@ export interface JWTPayload {
 }
 
 export function signToken(payload: JWTPayload): string {
-  return jwt.sign(payload, SECRET, { expiresIn: EXPIRES_IN });
+  return jwt.sign(payload, getSecret(), { expiresIn: EXPIRES_IN });
 }
 
 export function verifyToken(token: string): JWTPayload | null {
   try {
-    return jwt.verify(token, SECRET) as JWTPayload;
+    return jwt.verify(token, getSecret()) as JWTPayload;
   } catch {
     return null;
   }
