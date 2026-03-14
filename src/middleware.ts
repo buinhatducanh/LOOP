@@ -19,12 +19,16 @@ export default function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // Protect admin API routes
-  if (pathname.startsWith("/api/admin") && !pathname.includes("/auth/")) {
-    const token = req.cookies.get("auth-token")?.value;
-    if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  // Admin API routes - skip intl middleware
+  if (pathname.startsWith("/api/admin")) {
+    // Protect non-auth API routes
+    if (!pathname.includes("/auth/")) {
+      const token = req.cookies.get("auth-token")?.value;
+      if (!token) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
     }
+    return NextResponse.next();
   }
 
   // Handle i18n routes

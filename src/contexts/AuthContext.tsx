@@ -66,30 +66,70 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    initUsers();
-    const session = localStorage.getItem(SESSION_KEY);
-    if (session) {
-      try {
-        const parsed = JSON.parse(session) as User;
-        setUser(parsed);
-      } catch {
-        localStorage.removeItem(SESSION_KEY);
-      }
-    }
+    // Check for existing session from cookie first
+    fetch("/api/admin/auth/me")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.user) {
+          const sessionUser: User = {
+            id: data.user.id,
+            name: data.user.name || "",
+            email: data.user.email,
+            role: data.user.role === "admin" ? "admin" : "user",
+            avatar: data.user.avatar || "AD",
+            createdAt: new Date().toISOString().split("T")[0],
+          };
+          setUser(sessionUser);
+          localStorage.setItem(SESSION_KEY, JSON.stringify(sessionUser));
+        } else {
+          // Fallback to localStorage session
+          const session = localStorage.getItem(SESSION_KEY);
+          if (session) {
+            try {
+              setUser(JSON.parse(session) as User);
+            } catch {
+              localStorage.removeItem(SESSION_KEY);
+            }
+          }
+        }
+      })
+      .catch(() => {
+        const session = localStorage.getItem(SESSION_KEY);
+        if (session) {
+          try {
+            setUser(JSON.parse(session) as User);
+          } catch {
+            localStorage.removeItem(SESSION_KEY);
+          }
+        }
+      });
   }, []);
 
   const login = async (email: string, password: string) => {
-    const users: StoredUser[] = JSON.parse(localStorage.getItem(USERS_KEY) || "[]");
-    const found = users.find(
-      (u) => u.email.toLowerCase() === email.toLowerCase() && u.password === password
-    );
-    if (!found) {
-      return { success: false, message: "Invalid email or password." };
+    try {
+      const res = await fetch("/api/admin/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        return { success: false, message: data.error || "Email hoặc mật khẩu không đúng." };
+      }
+      const loggedInUser: User = {
+        id: data.user.id,
+        name: data.user.name || "",
+        email: data.user.email,
+        role: data.user.role === "admin" ? "admin" : "user",
+        avatar: data.user.avatar || data.user.name?.split(" ").map((w: string) => w[0]).join("").toUpperCase().slice(0, 2) || "AD",
+        createdAt: new Date().toISOString().split("T")[0],
+      };
+      setUser(loggedInUser);
+      localStorage.setItem(SESSION_KEY, JSON.stringify(loggedInUser));
+      return { success: true, message: "Đăng nhập thành công!" };
+    } catch {
+      return { success: false, message: "Lỗi kết nối. Vui lòng thử lại." };
     }
-    const { password: _pw, ...safeUser } = found;
-    setUser(safeUser);
-    localStorage.setItem(SESSION_KEY, JSON.stringify(safeUser));
-    return { success: true, message: "Logged in successfully!" };
   };
 
   const register = async (name: string, email: string, password: string) => {
@@ -123,6 +163,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     setUser(null);
     localStorage.removeItem(SESSION_KEY);
+    fetch("/api/admin/auth/logout", { method: "POST" }).catch(() => {});
   };
 
   const getAllUsers = (): StoredUser[] => {
