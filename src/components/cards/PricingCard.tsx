@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { Check, X, Zap } from "lucide-react";
 import { trackCtaClick } from "@/lib/analytics/events";
+import { formatVND } from "@/data/pricingPackages";
 
 interface PricingPlan {
   id: string;
@@ -15,6 +16,8 @@ interface PricingPlan {
   highlighted: boolean;
   cta: string;
   color: string;
+  currency?: "USD" | "VND";
+  popularLabel?: string;
 }
 
 interface PricingCardProps {
@@ -23,6 +26,8 @@ interface PricingCardProps {
 
 export function PricingCard({ plan }: PricingCardProps) {
   const router = useRouter();
+  const isVND = plan.currency === "VND";
+  const popularText = plan.popularLabel || "MOST POPULAR";
 
   return (
     <div
@@ -71,7 +76,7 @@ export function PricingCard({ plan }: PricingCardProps) {
             gap: "4px",
             whiteSpace: "nowrap",
           }}>
-            <Zap size={11} /> MOST POPULAR
+            <Zap size={11} /> {popularText}
           </span>
         </div>
       )}
@@ -85,23 +90,40 @@ export function PricingCard({ plan }: PricingCardProps) {
       </div>
 
       {/* Price */}
-      <div style={{ display: "flex", alignItems: "flex-end", gap: "4px" }}>
+      <div style={{ display: "flex", alignItems: "flex-end", gap: "4px", flexWrap: "wrap" }}>
         {plan.price !== null ? (
-          <>
-            <span style={{ color: "#94A3B8", fontSize: "22px", fontWeight: 400, marginBottom: "4px" }}>$</span>
-            <span style={{
-              fontSize: "52px",
-              fontWeight: 800,
-              background: plan.highlighted ? "linear-gradient(135deg, #3B82F6, #6366F1)" : "none",
-              color: plan.highlighted ? "transparent" : "#FFFFFF",
-              WebkitBackgroundClip: plan.highlighted ? "text" : "initial",
-              WebkitTextFillColor: plan.highlighted ? "transparent" : "#FFFFFF",
-              lineHeight: 1,
-            }}>
-              {plan.price.toLocaleString("en-US")}
-            </span>
-            <span style={{ color: "#94A3B8", fontSize: "14px", marginBottom: "8px" }}>/ {plan.period}</span>
-          </>
+          isVND ? (
+            <>
+              <span style={{
+                fontSize: "clamp(28px, 4vw, 40px)",
+                fontWeight: 800,
+                background: plan.highlighted ? "linear-gradient(135deg, #3B82F6, #6366F1)" : "none",
+                color: plan.highlighted ? "transparent" : "#FFFFFF",
+                WebkitBackgroundClip: plan.highlighted ? "text" : "initial",
+                WebkitTextFillColor: plan.highlighted ? "transparent" : "#FFFFFF",
+                lineHeight: 1,
+              }}>
+                {formatVND(plan.price)}
+              </span>
+              <span style={{ color: "#94A3B8", fontSize: "13px", marginBottom: "4px" }}>/ {plan.period}</span>
+            </>
+          ) : (
+            <>
+              <span style={{ color: "#94A3B8", fontSize: "22px", fontWeight: 400, marginBottom: "4px" }}>$</span>
+              <span style={{
+                fontSize: "52px",
+                fontWeight: 800,
+                background: plan.highlighted ? "linear-gradient(135deg, #3B82F6, #6366F1)" : "none",
+                color: plan.highlighted ? "transparent" : "#FFFFFF",
+                WebkitBackgroundClip: plan.highlighted ? "text" : "initial",
+                WebkitTextFillColor: plan.highlighted ? "transparent" : "#FFFFFF",
+                lineHeight: 1,
+              }}>
+                {plan.price.toLocaleString("en-US")}
+              </span>
+              <span style={{ color: "#94A3B8", fontSize: "14px", marginBottom: "8px" }}>/ {plan.period}</span>
+            </>
+          )
         ) : (
           <span style={{ color: "#FFFFFF", fontSize: "36px", fontWeight: 800, lineHeight: 1 }}>Custom</span>
         )}
