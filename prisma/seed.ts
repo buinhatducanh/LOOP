@@ -3,7 +3,7 @@ import { config } from "dotenv";
 config({ path: ".env.local" });
 config({ path: ".env" });
 
-import { PrismaClient } from "../src/generated/prisma/client.ts";
+import { PrismaClient } from "../src/generated/prisma/client";
 import { Pool } from "pg";
 import { PrismaPg } from "@prisma/adapter-pg";
 
