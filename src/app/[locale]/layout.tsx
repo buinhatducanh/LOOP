@@ -4,6 +4,7 @@ import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { routing } from '@/i18n/routing';
 import JsonLd from '@/components/seo/JsonLd';
+import { PublicShell } from '@/components/layout/PublicShell';
 import { SpeedDial } from '@/components/shared/SpeedDial';
 import { TawktoChat } from '@/components/shared/TawktoChat';
 import { Analytics } from '@vercel/analytics/react';
@@ -136,7 +137,9 @@ export default async function RootLayout({
       </head>
       <body>
         <NextIntlClientProvider messages={messages}>
-          {children}
+          <PublicShell>
+            {children}
+          </PublicShell>
           <SpeedDial />
           <TawktoChat />
         </NextIntlClientProvider>

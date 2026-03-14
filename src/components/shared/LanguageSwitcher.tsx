@@ -2,10 +2,13 @@
 
 import { useLocale } from "next-intl";
 import { usePathname, useRouter } from "@/i18n/routing";
-import { useTransition, useState } from "react";
-import { Globe } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
+import { useTransition, useState, useRef, useEffect } from "react";
 import { trackLanguageSwitch } from "@/lib/analytics/events";
+
+const locales = [
+    { code: "vi", label: "Tiếng Việt", flag: "🇻🇳" },
+    { code: "en", label: "English", flag: "🇺🇸" },
+];
 
 export function LanguageSwitcher() {
     const [isOpen, setIsOpen] = useState(false);
@@ -13,50 +16,99 @@ export function LanguageSwitcher() {
     const router = useRouter();
     const pathname = usePathname();
     const [isPending, startTransition] = useTransition();
+    const ref = useRef<HTMLDivElement>(null);
+
+    const current = locales.find((l) => l.code === locale) || locales[0];
+
+    useEffect(() => {
+        function handleClickOutside(e: MouseEvent) {
+            if (ref.current && !ref.current.contains(e.target as Node)) {
+                setIsOpen(false);
+            }
+        }
+        if (isOpen) {
+            document.addEventListener("mousedown", handleClickOutside);
+        }
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, [isOpen]);
 
     const handleLocaleChange = (newLocale: string) => {
         trackLanguageSwitch(locale, newLocale);
         startTransition(() => {
             router.replace(pathname, { locale: newLocale });
-            router.refresh(); // Refresh to ensure server components update properly
+            router.refresh();
         });
         setIsOpen(false);
     };
 
     return (
-        <div className="relative">
+        <div style={{ position: "relative" }} ref={ref}>
             <button
                 onClick={() => setIsOpen(!isOpen)}
                 disabled={isPending}
-                className="flex items-center gap-1.5 px-3 py-2 text-sm text-gray-300 hover:text-white transition-colors rounded-lg bg-white/5 border border-white/10 hover:bg-white/10"
+                style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    padding: "8px 14px",
+                    fontSize: "14px",
+                    color: "#FFFFFF",
+                    background: "linear-gradient(to right, rgba(139,92,246,0.25), rgba(6,182,212,0.25))",
+                    border: "1px solid rgba(139,92,246,0.4)",
+                    borderRadius: "8px",
+                    cursor: "pointer",
+                    transition: "all 0.2s",
+                    fontWeight: 600,
+                    letterSpacing: "0.025em",
+                    opacity: isPending ? 0.7 : 1,
+                }}
+                aria-label="Switch language"
             >
-                <Globe size={16} />
-                <span className="uppercase font-medium">{locale}</span>
+                <span style={{ fontSize: "16px" }}>{current.flag}</span>
+                <span>{current.code.toUpperCase()}</span>
             </button>
 
-            <AnimatePresence>
-                {isOpen && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 8, scale: 0.96 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 8, scale: 0.96 }}
-                        className="absolute right-0 mt-2 w-32 bg-gray-800 rounded-xl border border-white/10 shadow-xl overflow-hidden z-[60] py-1"
-                    >
+            {isOpen && (
+                <div
+                    style={{
+                        position: "absolute",
+                        right: 0,
+                        marginTop: "8px",
+                        width: "160px",
+                        background: "#1F2937",
+                        borderRadius: "12px",
+                        border: "1px solid rgba(255,255,255,0.1)",
+                        boxShadow: "0 20px 25px -5px rgba(0,0,0,0.3)",
+                        overflow: "hidden",
+                        zIndex: 60,
+                        padding: "4px 0",
+                    }}
+                >
+                    {locales.map((l) => (
                         <button
-                            onClick={() => handleLocaleChange('vi')}
-                            className={`w-full text-left px-4 py-2 text-sm transition-colors ${locale === 'vi' ? 'text-white bg-white/10' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+                            key={l.code}
+                            onClick={() => handleLocaleChange(l.code)}
+                            style={{
+                                width: "100%",
+                                textAlign: "left",
+                                padding: "10px 16px",
+                                fontSize: "14px",
+                                color: locale === l.code ? "#FFFFFF" : "#9CA3AF",
+                                background: locale === l.code ? "rgba(255,255,255,0.1)" : "transparent",
+                                border: "none",
+                                cursor: "pointer",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "8px",
+                                transition: "all 0.15s",
+                            }}
                         >
-                            Tiếng Việt
+                            <span>{l.flag}</span>
+                            <span>{l.label}</span>
                         </button>
-                        <button
-                            onClick={() => handleLocaleChange('en')}
-                            className={`w-full text-left px-4 py-2 text-sm transition-colors ${locale === 'en' ? 'text-white bg-white/10' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
-                        >
-                            English
-                        </button>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+                    ))}
+                </div>
+            )}
         </div>
     );
 }
