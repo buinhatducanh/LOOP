@@ -4,19 +4,26 @@ import { useRef, useMemo } from "react";
 import { useRouter } from "@/i18n/routing";
 import { useTranslations } from "next-intl";
 import { motion, useInView } from "motion/react";
-import { ArrowRight, DollarSign, HelpCircle, Check, Calculator } from "lucide-react";
-import { pricingPlans as mockPlans } from "@/data/mockData";
+import {
+  ArrowRight,
+  DollarSign,
+  HelpCircle,
+  Check,
+  Calculator,
+  Layers,
+  Package,
+} from "lucide-react";
 import { PricingCard } from "@/components/cards/PricingCard";
-
-type PlanData = (typeof mockPlans)[number];
-
-const getFaqs = (t: any) => [
-  { q: t("faq1_q"), a: t("faq1_a") },
-  { q: t("faq2_q"), a: t("faq2_a") },
-  { q: t("faq3_q"), a: t("faq3_a") },
-  { q: t("faq4_q"), a: t("faq4_a") },
-  { q: t("faq5_q"), a: t("faq5_a") },
-];
+import { FeatureComparisonTable } from "@/components/pricing/FeatureComparisonTable";
+import { HostingDomainSection } from "@/components/pricing/HostingDomainSection";
+import { DeploymentHandoffSection } from "@/components/pricing/DeploymentHandoffSection";
+import {
+  webPackages,
+  featureCategories,
+  hostingPlans,
+  domainPrices,
+  deploymentHandoff,
+} from "@/data/pricingPackages";
 
 function GradientText({ children }: { children: React.ReactNode }) {
   return (
@@ -33,7 +40,13 @@ function GradientText({ children }: { children: React.ReactNode }) {
   );
 }
 
-function FadeIn({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
+function FadeIn({
+  children,
+  delay = 0,
+}: {
+  children: React.ReactNode;
+  delay?: number;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: "-60px" });
   return (
@@ -48,23 +61,69 @@ function FadeIn({ children, delay = 0 }: { children: React.ReactNode; delay?: nu
   );
 }
 
-export function PricingPage({ plans: pricingPlans = mockPlans }: { plans?: PlanData[] }) {
+export function PricingPage({ locale = "vi" }: { locale?: string }) {
   const router = useRouter();
   const t = useTranslations("PricingPage");
+  const isVi = locale === "vi";
 
-  const faqs = useMemo(() => getFaqs(t), [t]);
-  const features = useMemo(() => [
-    t("feat1"), t("feat2"), t("feat3"), t("feat4"),
-    t("feat5"), t("feat6"), t("feat7"), t("feat8"),
-  ], [t]);
+  const faqs = useMemo(
+    () => [
+      { q: t("faq1_q"), a: t("faq1_a") },
+      { q: t("faq2_q"), a: t("faq2_a") },
+      { q: t("faq3_q"), a: t("faq3_a") },
+      { q: t("faq4_q"), a: t("faq4_a") },
+      { q: t("faq5_q"), a: t("faq5_a") },
+      { q: t("faq6_q"), a: t("faq6_a") },
+    ],
+    [t]
+  );
+
+  const features = useMemo(
+    () => [
+      t("feat1"),
+      t("feat2"),
+      t("feat3"),
+      t("feat4"),
+      t("feat5"),
+      t("feat6"),
+      t("feat7"),
+      t("feat8"),
+    ],
+    [t]
+  );
+
+  // Convert webPackages to PricingCard format
+  const pricingCardPlans = webPackages.map((pkg) => ({
+    id: pkg.id,
+    name: isVi ? pkg.nameVi : pkg.name,
+    price: pkg.price,
+    period: isVi ? pkg.periodVi : pkg.period,
+    tagline: isVi ? pkg.taglineVi : pkg.tagline,
+    features: featureCategories
+      .flatMap((cat) => cat.features)
+      .filter((f) => f.values[pkg.id] === true)
+      .slice(0, 6)
+      .map((f) => (isVi ? f.nameVi : f.name)),
+    notIncluded: featureCategories
+      .flatMap((cat) => cat.features)
+      .filter((f) => f.values[pkg.id] === false)
+      .slice(0, 3)
+      .map((f) => (isVi ? f.nameVi : f.name)),
+    highlighted: pkg.highlighted,
+    cta: isVi ? pkg.ctaVi : pkg.cta,
+    color: pkg.color,
+    currency: "VND" as const,
+    popularLabel: t("popularLabel"),
+  }));
 
   return (
     <div style={{ color: "#FFFFFF", minHeight: "100vh" }}>
-      {/* Header */}
+      {/* Hero */}
       <section
         style={{
           padding: "80px 24px 60px",
-          background: "linear-gradient(to bottom, rgba(59,130,246,0.05), transparent)",
+          background:
+            "linear-gradient(to bottom, rgba(59,130,246,0.05), transparent)",
           borderBottom: "1px solid #1F2937",
           position: "relative",
           overflow: "hidden",
@@ -80,10 +139,18 @@ export function PricingPage({ plans: pricingPlans = mockPlans }: { plans?: PlanD
             transform: "translateX(-50%)",
             width: "800px",
             height: "400px",
-            background: "radial-gradient(ellipse, rgba(99,102,241,0.08) 0%, transparent 70%)",
+            background:
+              "radial-gradient(ellipse, rgba(99,102,241,0.08) 0%, transparent 70%)",
           }}
         />
-        <div style={{ maxWidth: "1280px", margin: "0 auto", textAlign: "center", position: "relative" }}>
+        <div
+          style={{
+            maxWidth: "1280px",
+            margin: "0 auto",
+            textAlign: "center",
+            position: "relative",
+          }}
+        >
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -100,7 +167,13 @@ export function PricingPage({ plans: pricingPlans = mockPlans }: { plans?: PlanD
             }}
           >
             <DollarSign size={14} color="#6366F1" />
-            <span style={{ color: "#94A3B8", fontSize: "13px", fontWeight: 500 }}>
+            <span
+              style={{
+                color: "#94A3B8",
+                fontSize: "13px",
+                fontWeight: 500,
+              }}
+            >
               {t("badge")}
             </span>
           </motion.div>
@@ -115,7 +188,8 @@ export function PricingPage({ plans: pricingPlans = mockPlans }: { plans?: PlanD
               marginBottom: "20px",
             }}
           >
-            {t("heroTitle1")} <GradientText>{t("heroHighlight")}</GradientText>
+            {t("heroTitle1")}{" "}
+            <GradientText>{t("heroHighlight")}</GradientText>
           </motion.h1>
           <motion.p
             initial={{ opacity: 0, y: 16 }}
@@ -134,19 +208,19 @@ export function PricingPage({ plans: pricingPlans = mockPlans }: { plans?: PlanD
         </div>
       </section>
 
-      {/* Pricing Cards */}
+      {/* Package Cards */}
       <section style={{ padding: "80px 24px" }}>
         <div
           style={{
             maxWidth: "1280px",
             margin: "0 auto",
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+            gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
             gap: "24px",
             alignItems: "start",
           }}
         >
-          {pricingPlans.map((plan, i) => (
+          {pricingCardPlans.map((plan, i) => (
             <FadeIn key={plan.id} delay={i * 0.1}>
               <PricingCard plan={plan} />
             </FadeIn>
@@ -154,14 +228,68 @@ export function PricingPage({ plans: pricingPlans = mockPlans }: { plans?: PlanD
         </div>
       </section>
 
+      {/* Feature Comparison Table */}
+      <section
+        style={{
+          padding: "80px 24px",
+          background: "#0F172A",
+          borderTop: "1px solid #1F2937",
+          borderBottom: "1px solid #1F2937",
+        }}
+      >
+        <div style={{ maxWidth: "1280px", margin: "0 auto" }}>
+          <FadeIn>
+            <div style={{ textAlign: "center", marginBottom: "48px" }}>
+              <div
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  marginBottom: "16px",
+                }}
+              >
+                <Layers size={28} color="#6366F1" />
+              </div>
+              <h2
+                style={{
+                  fontSize: "32px",
+                  fontWeight: 800,
+                  letterSpacing: "-1px",
+                  marginBottom: "12px",
+                }}
+              >
+                {t("comparisonTitle")}{" "}
+                <GradientText>{t("comparisonHighlight")}</GradientText>
+              </h2>
+              <p
+                style={{
+                  color: "#94A3B8",
+                  fontSize: "16px",
+                  maxWidth: "500px",
+                  margin: "0 auto",
+                }}
+              >
+                {t("comparisonDesc")}
+              </p>
+            </div>
+          </FadeIn>
+          <FeatureComparisonTable
+            packages={webPackages}
+            categories={featureCategories}
+            locale={locale}
+          />
+        </div>
+      </section>
+
       {/* Custom Calculator CTA */}
-      <section style={{ padding: "40px 24px 0" }}>
+      <section style={{ padding: "60px 24px 0" }}>
         <FadeIn>
           <div
             style={{
               maxWidth: "900px",
               margin: "0 auto",
-              background: "linear-gradient(135deg, rgba(59,130,246,0.1), rgba(99,102,241,0.08))",
+              background:
+                "linear-gradient(135deg, rgba(59,130,246,0.1), rgba(99,102,241,0.08))",
               border: "1px solid rgba(99,102,241,0.2)",
               borderRadius: "16px",
               padding: "32px",
@@ -173,7 +301,14 @@ export function PricingPage({ plans: pricingPlans = mockPlans }: { plans?: PlanD
             }}
           >
             <div style={{ flex: 1, minWidth: "250px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  marginBottom: "10px",
+                }}
+              >
                 <div
                   style={{
                     width: "36px",
@@ -188,11 +323,21 @@ export function PricingPage({ plans: pricingPlans = mockPlans }: { plans?: PlanD
                   <Calculator size={18} color="#fff" />
                 </div>
                 <h3 style={{ fontSize: "18px", fontWeight: 700 }}>
-                  Cần báo giá theo nhu cầu riêng?
+                  {isVi
+                    ? "Cần báo giá theo nhu cầu riêng?"
+                    : "Need a custom quote?"}
                 </h3>
               </div>
-              <p style={{ color: "#94A3B8", fontSize: "14px", lineHeight: 1.6 }}>
-                Sử dụng công cụ tính giá tùy chỉnh — chọn từng tính năng bạn cần và nhận báo giá tức thì.
+              <p
+                style={{
+                  color: "#94A3B8",
+                  fontSize: "14px",
+                  lineHeight: 1.6,
+                }}
+              >
+                {isVi
+                  ? "Sử dụng công cụ tính giá tùy chỉnh — chọn từng tính năng bạn cần và nhận báo giá tức thì."
+                  : "Use our custom pricing tool — select the features you need and get an instant quote."}
               </p>
             </div>
             <motion.button
@@ -216,13 +361,55 @@ export function PricingPage({ plans: pricingPlans = mockPlans }: { plans?: PlanD
               }}
             >
               <Calculator size={16} />
-              Tùy chỉnh Báo giá <ArrowRight size={14} />
+              {isVi ? "Tùy chỉnh Báo giá" : "Custom Quote"}{" "}
+              <ArrowRight size={14} />
             </motion.button>
           </div>
         </FadeIn>
       </section>
 
-      {/* All Plans Include */}
+      {/* Hosting & Domain */}
+      <section
+        style={{
+          padding: "80px 24px",
+          borderTop: "1px solid #1F2937",
+          marginTop: "60px",
+        }}
+      >
+        <div style={{ maxWidth: "1280px", margin: "0 auto" }}>
+          <FadeIn>
+            <div style={{ textAlign: "center", marginBottom: "48px" }}>
+              <h2
+                style={{
+                  fontSize: "32px",
+                  fontWeight: 800,
+                  letterSpacing: "-1px",
+                }}
+              >
+                {t("hostingTitle")}{" "}
+                <GradientText>{t("hostingHighlight")}</GradientText>
+              </h2>
+              <p
+                style={{
+                  color: "#94A3B8",
+                  fontSize: "16px",
+                  maxWidth: "500px",
+                  margin: "12px auto 0",
+                }}
+              >
+                {t("hostingDesc")}
+              </p>
+            </div>
+          </FadeIn>
+          <HostingDomainSection
+            hostingPlans={hostingPlans}
+            domainPrices={domainPrices}
+            locale={locale}
+          />
+        </div>
+      </section>
+
+      {/* Deployment Handoff */}
       <section
         style={{
           padding: "80px 24px",
@@ -231,6 +418,46 @@ export function PricingPage({ plans: pricingPlans = mockPlans }: { plans?: PlanD
           borderBottom: "1px solid #1F2937",
         }}
       >
+        <div style={{ maxWidth: "1280px", margin: "0 auto" }}>
+          <FadeIn>
+            <div style={{ textAlign: "center", marginBottom: "48px" }}>
+              <Package
+                size={32}
+                color="#6366F1"
+                style={{ marginBottom: "16px" }}
+              />
+              <h2
+                style={{
+                  fontSize: "32px",
+                  fontWeight: 800,
+                  letterSpacing: "-1px",
+                  marginBottom: "12px",
+                }}
+              >
+                {t("deploymentTitle")}{" "}
+                <GradientText>{t("deploymentHighlight")}</GradientText>
+              </h2>
+              <p
+                style={{
+                  color: "#94A3B8",
+                  fontSize: "16px",
+                  maxWidth: "500px",
+                  margin: "0 auto",
+                }}
+              >
+                {t("deploymentDesc")}
+              </p>
+            </div>
+          </FadeIn>
+          <DeploymentHandoffSection
+            items={deploymentHandoff}
+            locale={locale}
+          />
+        </div>
+      </section>
+
+      {/* All Plans Include */}
+      <section style={{ padding: "80px 24px" }}>
         <div style={{ maxWidth: "800px", margin: "0 auto" }}>
           <FadeIn>
             <h2
@@ -242,7 +469,8 @@ export function PricingPage({ plans: pricingPlans = mockPlans }: { plans?: PlanD
                 marginBottom: "40px",
               }}
             >
-              {t("featuresTitle1")} <GradientText>{t("featuresHighlight")}</GradientText>
+              {t("featuresTitle1")}{" "}
+              <GradientText>{t("featuresHighlight")}</GradientText>
             </h2>
           </FadeIn>
           <FadeIn delay={0.1}>
@@ -256,7 +484,12 @@ export function PricingPage({ plans: pricingPlans = mockPlans }: { plans?: PlanD
               {features.map((item) => (
                 <div
                   key={item}
-                  style={{ display: "flex", alignItems: "center", gap: "10px", padding: "12px 0" }}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "10px",
+                    padding: "12px 0",
+                  }}
                 >
                   <div
                     style={{
@@ -272,7 +505,9 @@ export function PricingPage({ plans: pricingPlans = mockPlans }: { plans?: PlanD
                   >
                     <Check size={13} color="#22C55E" />
                   </div>
-                  <span style={{ color: "#FFFFFF", fontSize: "15px" }}>{item}</span>
+                  <span style={{ color: "#FFFFFF", fontSize: "15px" }}>
+                    {item}
+                  </span>
                 </div>
               ))}
             </div>
@@ -281,31 +516,67 @@ export function PricingPage({ plans: pricingPlans = mockPlans }: { plans?: PlanD
       </section>
 
       {/* FAQ */}
-      <section style={{ padding: "80px 24px" }}>
+      <section
+        style={{
+          padding: "80px 24px",
+          background: "#0F172A",
+          borderTop: "1px solid #1F2937",
+        }}
+      >
         <div style={{ maxWidth: "800px", margin: "0 auto" }}>
           <FadeIn>
             <div style={{ textAlign: "center", marginBottom: "48px" }}>
-              <HelpCircle size={32} color="#6366F1" style={{ marginBottom: "16px" }} />
-              <h2 style={{ fontSize: "32px", fontWeight: 800, letterSpacing: "-1px" }}>
-                {t("faqTitle1")} <GradientText>{t("faqHighlight")}</GradientText>
+              <HelpCircle
+                size={32}
+                color="#6366F1"
+                style={{ marginBottom: "16px" }}
+              />
+              <h2
+                style={{
+                  fontSize: "32px",
+                  fontWeight: 800,
+                  letterSpacing: "-1px",
+                }}
+              >
+                {t("faqTitle1")}{" "}
+                <GradientText>{t("faqHighlight")}</GradientText>
               </h2>
             </div>
           </FadeIn>
-          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "16px",
+            }}
+          >
             {faqs.map((faq, i) => (
               <FadeIn key={i} delay={i * 0.08}>
                 <div
                   style={{
-                    background: "#0F172A",
+                    background: "rgba(15,23,42,0.5)",
                     border: "1px solid #1F2937",
                     borderRadius: "12px",
                     padding: "24px",
                   }}
                 >
-                  <h3 style={{ color: "#FFFFFF", fontSize: "16px", fontWeight: 700, marginBottom: "10px" }}>
+                  <h3
+                    style={{
+                      color: "#FFFFFF",
+                      fontSize: "16px",
+                      fontWeight: 700,
+                      marginBottom: "10px",
+                    }}
+                  >
                     {faq.q}
                   </h3>
-                  <p style={{ color: "#94A3B8", fontSize: "14px", lineHeight: 1.7 }}>
+                  <p
+                    style={{
+                      color: "#94A3B8",
+                      fontSize: "14px",
+                      lineHeight: 1.7,
+                    }}
+                  >
                     {faq.a}
                   </p>
                 </div>
@@ -319,17 +590,30 @@ export function PricingPage({ plans: pricingPlans = mockPlans }: { plans?: PlanD
       <section
         style={{
           padding: "80px 24px",
-          background: "#0F172A",
           borderTop: "1px solid #1F2937",
           textAlign: "center",
         }}
       >
         <FadeIn>
           <div style={{ maxWidth: "600px", margin: "0 auto" }}>
-            <h2 style={{ fontSize: "32px", fontWeight: 800, letterSpacing: "-1px", marginBottom: "16px" }}>
+            <h2
+              style={{
+                fontSize: "32px",
+                fontWeight: 800,
+                letterSpacing: "-1px",
+                marginBottom: "16px",
+              }}
+            >
               {t("ctaTitle")}
             </h2>
-            <p style={{ color: "#94A3B8", fontSize: "16px", lineHeight: 1.7, marginBottom: "32px" }}>
+            <p
+              style={{
+                color: "#94A3B8",
+                fontSize: "16px",
+                lineHeight: 1.7,
+                marginBottom: "32px",
+              }}
+            >
               {t("ctaDesc")}
             </p>
             <motion.button
