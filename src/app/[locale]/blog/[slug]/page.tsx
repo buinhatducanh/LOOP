@@ -47,7 +47,14 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
             title,
             description,
             images: imageUrl ? [imageUrl] : [],
-        }
+        },
+        alternates: {
+            canonical: `https://loop.vn/${locale}/blog/${slug}`,
+            languages: {
+                'vi': `https://loop.vn/vi/blog/${slug}`,
+                'en': `https://loop.vn/en/blog/${slug}`,
+            },
+        },
     };
 }
 

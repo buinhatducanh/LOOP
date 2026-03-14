@@ -1,0 +1,21 @@
+{
+  "name": "LOOP - Thiet ke Website & Ung dung chuyen nghiep",
+  "short_name": "LOOP",
+  "description": "Cong ty thiet ke website thuong mai, ung dung di dong, phan mem quan ly doanh nghiep.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#3B82F6",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
