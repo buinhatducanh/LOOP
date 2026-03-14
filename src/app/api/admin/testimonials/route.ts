@@ -5,7 +5,7 @@ import { createAuditLog } from "@/lib/auth/audit";
 
 export async function GET(req: NextRequest) {
   try {
-    await requirePermission("team", "read");
+    const session = await requirePermission("testimonials", "read");
     const { searchParams } = new URL(req.url);
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "20");
@@ -15,24 +15,23 @@ export async function GET(req: NextRequest) {
       ? {
           OR: [
             { name: { contains: search, mode: "insensitive" as const } },
-            { slug: { contains: search, mode: "insensitive" as const } },
-            { role: { contains: search, mode: "insensitive" as const } },
+            { company: { contains: search, mode: "insensitive" as const } },
           ],
         }
       : {};
 
-    const [members, total] = await Promise.all([
-      prisma.teamMember.findMany({
+    const [testimonials, total] = await Promise.all([
+      prisma.testimonial.findMany({
         where,
         orderBy: { sortOrder: "asc" },
         skip: (page - 1) * limit,
         take: limit,
       }),
-      prisma.teamMember.count({ where }),
+      prisma.testimonial.count({ where }),
     ]);
 
     return NextResponse.json({
-      data: members,
+      data: testimonials,
       pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
     });
   } catch (error) {
@@ -44,27 +43,20 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await requirePermission("team", "create");
+    const session = await requirePermission("testimonials", "create");
     const data = await req.json();
 
-    if (!data.name || !data.role || !data.slug) {
-      return NextResponse.json(
-        { error: "Tên, vai trò và slug là bắt buộc" },
-        { status: 400 }
-      );
-    }
-
-    const member = await prisma.teamMember.create({ data });
+    const testimonial = await prisma.testimonial.create({ data });
 
     await createAuditLog({
       userId: session.userId,
       action: "create",
-      resource: "team",
-      resourceId: member.id,
+      resource: "testimonials",
+      resourceId: testimonial.id,
       newValues: data,
     });
 
-    return NextResponse.json({ data: member }, { status: 201 });
+    return NextResponse.json({ data: testimonial }, { status: 201 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Server error";
     const status = message === "Unauthorized" ? 401 : message === "Forbidden" ? 403 : 500;
