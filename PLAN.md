@@ -1,89 +1,153 @@
-# PLAN: Landing Page 100% Dynamic Data (Real API / Database)
+# PLAN — Hoàn tất dự án LOOP
 
-## Phân tích hiện trạng
-
-### Đã hoạt động tốt (DB → Server Component → Client)
-| Trang | Data source | SEO | Ghi chú |
-|-------|-----------|-----|---------|
-| `/` (Home) | `getServices()`, `getProjects()`, `getTestimonials()` | Server Component + JsonLd | Fallback mockData khi DB trống |
-| `/about` | `getTeamMembers()` | Server Component + JsonLd | Fallback mockTeamMembers |
-| `/services` | `getServices()` | Server Component + JsonLd + FAQSchema | OK |
-| `/services/[id]` | `getServiceBySlug()` + `generateStaticParams()` | ISG + metadata dynamic | OK |
-| `/portfolio` | `getProjects()` | Server Component | OK |
-| `/portfolio/[id]` | `getProjectBySlug()` + `generateStaticParams()` | ISG + metadata dynamic | OK |
-| `/pricing` | `getPricingPackagesData()` (5 tables) | ISR 5min + FAQSchema | OK |
-| `/pricing/calculator` | API `/api/pricing/calculator` | Static metadata | OK |
-| `/blog` | Sanity CMS (`postsQuery`) | ISR 60s | OK |
-| `/blog/[slug]` | Sanity CMS (`postBySlugQuery`) | ISR 60s + BlogPosting JsonLd | OK |
-| `/contact` | Form → `/api/contact` | Static JsonLd | Form gửi DB qua API |
-
-### Còn HARDCODE cần chuyển sang dynamic
-| Vị trí | Nội dung hardcode | Giải pháp |
-|--------|-------------------|-----------|
-| **Footer** (`Footer.tsx`) | `serviceLinks` (6 links), `socialLinks` (GitHub/Twitter/LinkedIn/Instagram URLs), email/phone/address | Lấy services từ DB + SiteSettings cho social/contact |
-| **Navbar** (`Navbar.tsx`) | `navLinks` (6 links static) | Giữ static (navigation structure ít thay đổi) |
-| **Contact Page** (`contact-page.tsx`) | `contactInfo` array: email, phone, address, working hours | Lấy từ SiteSettings |
-| **Contact Page JsonLd** (`contact/page.tsx`) | telephone, email hardcode trong schema | Lấy từ SiteSettings |
-| **Home Page** (`home-page.tsx`) | `stats` (150+, 98%, 50+, 8+), `whyUs` (4 items) | Stats → SiteSettings, WhyUs giữ i18n (content marketing) |
-| **About Page** (`about-page.tsx`) | `stats` (same as home), `values` (4 items) | Stats → SiteSettings, Values giữ i18n |
-| **Footer CTA/Brand** | Description text, CTA | Dùng i18n (OK - giữ nguyên) |
+> Cập nhật: 2026-03-15
+> Trạng thái tổng quan: ~85% hoàn thành
 
 ---
 
-## Kế hoạch thực hiện
+## I. TÌNH TRẠNG HIỆN TẠI
 
-### Phase 1: SiteSettings Query + Admin Schema Update
+### Đã hoàn thành
+| Module | Chi tiết |
+|--------|----------|
+| **Landing pages** | Home, Services, Pricing, Portfolio, About, Contact — tất cả fetch từ DB, fallback mock |
+| **Blog** | Sanity CMS đầy đủ, ISR 60s, bilingual (vi/en) |
+| **Admin Dashboard** | 14 trang quản trị: Dashboard, Services, Projects, Team, Testimonials, Messages, Orders, Packages, Pricing Features, Quote Requests, Users, Roles, Audit Log, Settings |
+| **Auth** | JWT login, middleware bảo vệ admin routes, RBAC |
+| **SEO** | JsonLd, dynamic metadata, sitemap.xml, robots.txt, OG/Twitter cards |
+| **i18n** | Vietnamese/English với next-intl, ServiceCard + ProjectCard đã có i18n |
+| **Pricing** | 4 gói web, comparison table, hosting/domain, deployment handoff, calculator |
+| **Contact Form** | Validation + submit API + DB storage |
+| **Error Handling** | 404 page, loading states cho mỗi route |
+| **Analytics** | Google Analytics, Vercel Analytics, Vercel Speed Insights, Tawk.to chat |
+| **Footer** | Redesign chuyên nghiệp với highlights bar |
 
-**Bước 1.1** — Tạo server-side query `getSiteSettings()` trong `lib/db/queries.ts`
-- Fetch tất cả SiteSettings từ DB, return dạng `Record<string, string>`
-- Dùng trực tiếp trong Server Components (không qua API — tối ưu hiệu suất)
-
-**Bước 1.2** — Thêm các key mới vào Admin Settings schema (`settings/page.tsx`)
-- Group `stats`: `stat_projects`, `stat_satisfaction`, `stat_team_size`, `stat_years`
-- Group `social`: thêm `twitter_url`, `instagram_url` (đã có facebook, linkedin, github, tiktok)
-- Group `general`: thêm `working_hours`
-
-### Phase 2: Dynamic Footer
-
-**Bước 2.1** — Footer service links → lấy từ DB
-- Chuyển Footer thành nhận props từ Server Component layout
-- `PublicShell` (hoặc layout.tsx) fetch `getServices()` + `getSiteSettings()`
-- Truyền services list + site settings xuống Footer
-- Footer hiển thị top 6 services sorted by `sortOrder`
-
-**Bước 2.2** — Footer social links + contact info → SiteSettings
-- Truyền social URLs (facebook, linkedin, github, twitter, instagram) xuống Footer
-- Truyền contact info (email, phone, address) xuống Footer
-- Fallback hardcode values nếu settings trống
-
-### Phase 3: Dynamic Contact Page
-
-**Bước 3.1** — Contact page server component fetch SiteSettings
-- `contact/page.tsx` (Server Component) → `getSiteSettings()`
-- Pass contactInfo (email, phone, address, hours) xuống `ContactPage`
-- Update JsonLd schema dùng real data thay vì hardcode
-
-**Bước 3.2** — ContactPage component nhận props thay vì hardcode
-- Thêm props interface cho contact info
-- Render từ props, giữ fallback defaults
-
-### Phase 4: Dynamic Stats (Home + About)
-
-**Bước 4.1** — Home page truyền stats từ SiteSettings
-- `page.tsx` fetch `getSiteSettings()` song song với services/projects/testimonials
-- Extract stat values, pass xuống `HomePage`
-
-**Bước 4.2** — About page tương tự
-- `about/page.tsx` fetch `getSiteSettings()` cùng `getTeamMembers()`
-- Pass stats xuống `AboutPage`
-
-**Bước 4.3** — Update client components nhận stats props
-- `HomePage` + `AboutPage`: nhận `stats` optional prop
-- Hiển thị dynamic values thay vì hardcode "150+", "98%"...
+### Còn thiếu / Cần sửa
+| # | Vấn đề | Mức ưu tiên |
+|---|--------|-------------|
+| 1 | Footer dịch vụ vẫn hardcode 6 links giả (web-dev, mobile-apps...) thay vì lấy từ DB services thật | **Cao** |
+| 2 | Seed data cũ trong DB (giá USD, nội dung English) — cần re-seed sau khi đã fix seed.ts | **Cao** |
+| 3 | Trang `/privacy` và `/terms` chưa tồn tại (Footer link tới) | **Cao** |
+| 4 | Home page `stats`, `whyUs` chưa truyền i18n namespace đúng cho WhyUs | **Trung bình** |
+| 5 | Service detail page vẫn hiển thị text English hardcode ("About this Service", "Ready to get started?") | **Trung bình** |
+| 6 | Project detail page text hardcode English ("About this Project", "Key Features", etc.) | **Trung bình** |
+| 7 | OG Image placeholder — chưa có file `/opengraph-image` thật | **Trung bình** |
+| 8 | Thiếu `logo.png` trong `/public` (JsonLd reference) | **Trung bình** |
+| 9 | Register page tồn tại nhưng chưa rõ flow đăng ký (chỉ admin invite?) | **Thấp** |
+| 10 | Chưa có tests (unit, integration, e2e) | **Thấp** |
+| 11 | `_legacy_spa/` vẫn còn — cần dọn dẹp | **Thấp** |
 
 ---
 
-## Tóm tắt kiến trúc SEO & Hiệu suất
+## II. KẾ HOẠCH TRIỂN KHAI
+
+### Phase 1: Sửa lỗi dữ liệu & Footer (Ưu tiên cao)
+
+**1.1 — Footer lấy services từ DB thay vì hardcode**
+- File: `src/app/[locale]/layout.tsx` (dòng 118–128)
+- Hiện tại dùng translated keys giả: `"serviceWeb"`, `"serviceMobile"`...
+- Sửa: Fetch `getServices()` trong layout, map `slug` + `title` thật từ DB
+- Fallback: giữ translated names nếu DB trống
+
+**1.2 — Re-seed database**
+- File: `prisma/seed.ts` (đã fix giá VND + nội dung tiếng Việt)
+- Chạy: `npm run db:seed` để cập nhật DB với data mới
+- Xác minh: kiểm tra giá hiển thị đúng trên frontend
+
+**1.3 — Tạo trang Privacy Policy & Terms of Service**
+- Tạo: `src/app/[locale]/privacy/page.tsx` + `privacy-page.tsx`
+- Tạo: `src/app/[locale]/terms/page.tsx` + `terms-page.tsx`
+- Nội dung: template chuẩn cho dịch vụ web agency, hỗ trợ vi/en
+- SEO: metadata + canonical URL
+
+---
+
+### Phase 2: Hoàn thiện i18n cho detail pages (Ưu tiên trung bình)
+
+**2.1 — Service Detail Page i18n**
+- File: `src/app/[locale]/services/[id]/service-detail-page.tsx`
+- Các text hardcode cần dịch:
+  - "About this Service" / "Về dịch vụ này"
+  - "What's Included" / "Bao gồm"
+  - "Starting from" / "Giá từ"
+  - "Delivery" / "Thời gian"
+  - "Technologies Used" / "Công nghệ sử dụng"
+  - "Ready to get started?" / "Sẵn sàng bắt đầu?"
+  - "Request a Quote" / "Yêu cầu báo giá"
+  - "Related Projects" / "Dự án liên quan"
+- Thêm `useTranslations("ServiceDetailPage")` + keys trong messages
+
+**2.2 — Project Detail Page i18n**
+- File: `src/app/[locale]/portfolio/[id]/project-detail-page.tsx`
+- Các text hardcode:
+  - "About this Project" / "Về dự án này"
+  - "Key Features" / "Tính năng nổi bật"
+  - "Tech Stack"
+  - "Client", "Year", "Results"
+  - "Interested in a similar project?" / "Quan tâm dự án tương tự?"
+  - "Explore our ... service" / "Khám phá dịch vụ..."
+  - "View Service" / "Xem dịch vụ"
+  - "Get a Quote" / "Nhận báo giá"
+- Thêm `useTranslations("ProjectDetailPage")` + keys
+
+**2.3 — Kiểm tra i18n toàn bộ**
+- Duyệt lại tất cả pages ở locale `/en` để đảm bảo không còn Vietnamese hardcode
+- Duyệt lại locale `/vi` để đảm bảo không còn English hardcode
+
+---
+
+### Phase 3: Assets & SEO nâng cao (Ưu tiên trung bình)
+
+**3.1 — Tạo OG Image**
+- Tạo `src/app/opengraph-image.tsx` (Next.js dynamic OG image)
+- Hoặc đặt file static `public/opengraph-image.png` (1200×630)
+- Thiết kế: logo LOOP + tagline + gradient background
+
+**3.2 — Tạo logo.png**
+- Export logo SVG → PNG cho `public/logo.png`
+- Được reference trong JsonLd Organization schema
+
+**3.3 — Verify manifest.json**
+- Kiểm tra `public/manifest.json` có đủ icons, name, theme_color
+- Đảm bảo PWA basics hoạt động
+
+---
+
+### Phase 4: Dọn dẹp & Tối ưu (Ưu tiên thấp)
+
+**4.1 — Xóa `_legacy_spa/`**
+- Thư mục legacy React SPA không còn sử dụng
+- Xóa hoàn toàn để giảm kích thước repo
+
+**4.2 — Review Register flow**
+- Nếu chỉ admin invite → xóa trang `/register` + ẩn link
+- Nếu cần public register → hoàn thiện API endpoint
+
+**4.3 — Mock data cleanup**
+- `src/data/mockData.ts` và `src/data/pricingPackages.ts` hiện chỉ dùng làm fallback
+- Giữ nguyên nhưng thêm comment rõ ràng mục đích sử dụng
+- Đảm bảo mock data đồng bộ với seed data
+
+---
+
+### Phase 5: Testing & Deployment (Ưu tiên thấp)
+
+**5.1 — Cấu hình CI/CD**
+- GitHub Actions: lint → type-check → build
+- Auto deploy qua Vercel (đã có config sẵn)
+
+**5.2 — Lighthouse audit**
+- Chạy Lighthouse trên tất cả trang public
+- Target: Performance 95+, Accessibility 95+, SEO 100
+- Fix bất kỳ issues nào phát hiện
+
+**5.3 — Testing (tùy chọn)**
+- Vitest cho unit tests (utility functions, formatVND, queries)
+- Playwright cho E2E (contact form submission, admin login flow)
+
+---
+
+## III. KIẾN TRÚC DỮ LIỆU
 
 ```
 [Server Component page.tsx]
@@ -95,25 +159,26 @@
   └─ Pass data xuống Client Component (serialized props)
         └─ [Client Component] "use client"
             ├─ Nhận data qua props (đã fetch sẵn server-side)
+            ├─ useTranslations() cho i18n text
             ├─ Animations (framer-motion)
             ├─ Interactive UI
             └─ KHÔNG fetch thêm data → zero client waterfall
 ```
 
-**Đảm bảo:**
-- 100% SSR/SSG → Google crawl được full content
-- Zero client-side data fetching cho landing pages
-- JsonLd structured data từ real database
-- ISR cho pricing (5min), blog (60s)
-- `generateStaticParams` cho service/project detail pages
-- Tất cả nội dung thay đổi được từ Admin panel
-
 ---
 
-## Thứ tự triển khai ước tính
+## IV. THỨ TỰ TRIỂN KHAI
 
-1. **Phase 1** — SiteSettings query + Admin schema update
-2. **Phase 2** — Dynamic Footer
-3. **Phase 3** — Dynamic Contact Page
-4. **Phase 4** — Dynamic Stats (Home + About)
-5. Build & verify SSR output
+| # | Task | Ước tính | Phụ thuộc |
+|---|------|----------|-----------|
+| 1 | Footer lấy services từ DB | — | — |
+| 2 | Re-seed database | — | #1 |
+| 3 | Trang Privacy + Terms | — | — |
+| 4 | Service Detail i18n | — | — |
+| 5 | Project Detail i18n | — | — |
+| 6 | OG Image + logo.png | — | — |
+| 7 | Xóa _legacy_spa | — | — |
+| 8 | Review Register flow | — | — |
+| 9 | CI/CD + Lighthouse | — | #1–#6 |
+
+**Ghi chú:** Task 1, 3, 4, 5, 6 có thể thực hiện song song.

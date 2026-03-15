@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#020617"/>
+      <stop offset="100%" style="stop-color:#0F172A"/>
+    </linearGradient>
+    <linearGradient id="text" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366F1"/>
+      <stop offset="50%" style="stop-color:#8B5CF6"/>
+      <stop offset="100%" style="stop-color:#9333EA"/>
+    </linearGradient>
+    <linearGradient id="line" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:transparent"/>
+      <stop offset="30%" style="stop-color:#6366F1"/>
+      <stop offset="70%" style="stop-color:#9333EA"/>
+      <stop offset="100%" style="stop-color:transparent"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="4" fill="url(#line)"/>
+  <text x="600" y="290" font-family="Inter,system-ui,Arial,sans-serif" font-size="128" font-weight="800" fill="url(#text)" text-anchor="middle" letter-spacing="-2">LOOP</text>
+  <text x="600" y="360" font-family="Inter,system-ui,Arial,sans-serif" font-size="28" font-weight="400" fill="#94A3B8" text-anchor="middle" letter-spacing="3" text-transform="uppercase">PREMIUM WEB DEVELOPMENT AGENCY</text>
+  <g transform="translate(552, 560)">
+    <rect width="48" height="3" rx="2" fill="#6366F1"/>
+    <rect x="56" width="48" height="3" rx="2" fill="#8B5CF6"/>
+    <rect x="112" width="48" height="3" rx="2" fill="#9333EA"/>
+  </g>
+</svg>

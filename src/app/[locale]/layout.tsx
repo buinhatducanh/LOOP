@@ -10,11 +10,16 @@ import { TawktoChat } from '@/components/shared/TawktoChat';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { GoogleAnalytics } from '@next/third-parties/google';
-import { getSiteSettings } from '@/lib/db/queries';
+import { getSiteSettings, getServices } from '@/lib/db/queries';
 import "../globals.css";
 
 const baseMetadata: Metadata = {
   metadataBase: new URL("https://loop.vn"),
+  icons: {
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+    ],
+  },
   title: {
     default: "LOOP - Thiết kế Website & Ứng dụng chuyên nghiệp",
     template: "%s | LOOP",
@@ -40,7 +45,7 @@ const baseMetadata: Metadata = {
       "Công ty LOOP chuyên thiết kế website thương mại, app di động, phần mềm quản lý. Cam kết SEO top Google, hiệu suất 95+.",
     images: [
       {
-        url: "/opengraph-image",
+        url: "/og-image.svg",
         width: 1200,
         height: 630,
         alt: "LOOP - Web Development Agency",
@@ -105,25 +110,16 @@ export default async function RootLayout({
     notFound();
   }
 
-  const tFooter = await getTranslations({ locale, namespace: 'Footer' });
-
-  const [messages, siteSettings] = await Promise.all([
+  const [messages, siteSettings, dbServices] = await Promise.all([
     getMessages(),
     getSiteSettings(),
+    getServices().catch(() => []),
   ]);
 
-  // Always use translated service names for footer to avoid hydration mismatch.
-  // DB services have English-only titles which causes SSR/client inconsistency
-  // when the DB connection is flaky (getServices sometimes succeeds, sometimes fails).
   const footerData = {
-    services: [
-      { slug: "web-development", title: tFooter("serviceWeb") },
-      { slug: "mobile-apps", title: tFooter("serviceMobile") },
-      { slug: "ui-ux-design", title: tFooter("serviceDesign") },
-      { slug: "cloud-solutions", title: tFooter("serviceCloud") },
-      { slug: "ai-ml", title: tFooter("serviceAI") },
-      { slug: "devops", title: tFooter("serviceDevops") },
-    ],
+    services: dbServices.length > 0
+      ? dbServices.map((s) => ({ slug: s.slug, title: s.title }))
+      : [], // No fallback — if DB empty, footer shows no service links
     settings: siteSettings,
   };
 

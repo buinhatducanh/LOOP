@@ -4,7 +4,7 @@ import { useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion, useInView } from "motion/react";
 import Image from "next/image";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Breadcrumbs } from "@/components/shared/Breadcrumbs";
 import Link from "next/link";
 import {
@@ -22,8 +22,6 @@ import {
   MessageSquare,
   TrendingUp,
 } from "lucide-react";
-import { projects as mockProjects } from "@/data/mockData";
-
 const iconMap: Record<string, React.ComponentType<{ size?: number | string; color?: string }>> = {
   Building2, GitBranch, ShoppingCart, Rocket, Code2,
 };
@@ -71,11 +69,11 @@ function FadeIn({ children, delay = 0 }: { children: React.ReactNode; delay?: nu
   );
 }
 
-export function ServiceDetailPage({ service, relatedProjects: propProjects }: { service: Service; relatedProjects?: { id: string; title: string; client: string; image: string; results: string }[] }) {
+export function ServiceDetailPage({ service, relatedProjects = [] }: { service: Service; relatedProjects?: { id: string; title: string; client: string; image: string; results: string }[] }) {
   const router = useRouter();
   const locale = useLocale();
+  const t = useTranslations("ServiceDetailPage");
   const Icon = iconMap[service.icon] || Code2;
-  const relatedProjects = propProjects ?? mockProjects.filter((p) => p.serviceId === service.id);
 
   return (
     <div style={{ color: "#FFFFFF", minHeight: "100vh" }}>
@@ -171,14 +169,14 @@ export function ServiceDetailPage({ service, relatedProjects: propProjects }: { 
           >
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               <DollarSign size={18} color="#3B82F6" />
-              <span style={{ color: "#94A3B8", fontSize: "14px" }}>Starting from</span>
+              <span style={{ color: "#94A3B8", fontSize: "14px" }}>{t("startingFrom")}</span>
               <span style={{ color: "#3B82F6", fontSize: "20px", fontWeight: 700 }}>
                 ${service.startingPrice.toLocaleString("en-US")}
               </span>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               <Clock size={18} color="#6366F1" />
-              <span style={{ color: "#94A3B8", fontSize: "14px" }}>Delivery</span>
+              <span style={{ color: "#94A3B8", fontSize: "14px" }}>{t("delivery")}</span>
               <span style={{ color: "#FFFFFF", fontSize: "16px", fontWeight: 600 }}>
                 {service.deliveryTime}
               </span>
@@ -202,7 +200,7 @@ export function ServiceDetailPage({ service, relatedProjects: propProjects }: { 
           <div>
             <FadeIn>
               <h2 style={{ fontSize: "24px", fontWeight: 800, marginBottom: "16px" }}>
-                About this <GradientText>Service</GradientText>
+                {t("aboutTitle")} <GradientText>{t("aboutHighlight")}</GradientText>
               </h2>
               <p style={{ color: "#94A3B8", fontSize: "16px", lineHeight: 1.8, marginBottom: "40px" }}>
                 {service.longDescription}
@@ -211,7 +209,7 @@ export function ServiceDetailPage({ service, relatedProjects: propProjects }: { 
 
             <FadeIn delay={0.1}>
               <h3 style={{ fontSize: "20px", fontWeight: 700, marginBottom: "20px" }}>
-                What&apos;s <GradientText>Included</GradientText>
+                {t("includedTitle")} <GradientText>{t("includedHighlight")}</GradientText>
               </h3>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
                 {service.features.map((feature) => (
@@ -251,10 +249,10 @@ export function ServiceDetailPage({ service, relatedProjects: propProjects }: { 
                 }}
               >
                 <h3 style={{ fontSize: "20px", fontWeight: 700, marginBottom: "12px" }}>
-                  Ready to get started?
+                  {t("ctaTitle")}
                 </h3>
                 <p style={{ color: "#94A3B8", fontSize: "14px", lineHeight: 1.6, marginBottom: "20px" }}>
-                  Get a free consultation and custom proposal for your project.
+                  {t("ctaDesc")}
                 </p>
                 <motion.button
                   whileHover={{ scale: 1.03 }}
@@ -277,7 +275,7 @@ export function ServiceDetailPage({ service, relatedProjects: propProjects }: { 
                     boxShadow: "0 0 30px rgba(99,102,241,0.3)",
                   }}
                 >
-                  <MessageSquare size={16} /> Request a Quote
+                  <MessageSquare size={16} /> {t("requestQuote")}
                 </motion.button>
               </div>
 
@@ -301,7 +299,7 @@ export function ServiceDetailPage({ service, relatedProjects: propProjects }: { 
                   }}
                 >
                   <Tag size={12} style={{ display: "inline", verticalAlign: "middle", marginRight: "6px" }} />
-                  Technologies Used
+                  {t("techUsed")}
                 </h4>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
                   {service.technologies.map((tech) => (
@@ -346,7 +344,7 @@ export function ServiceDetailPage({ service, relatedProjects: propProjects }: { 
                   marginBottom: "32px",
                 }}
               >
-                Related <GradientText>Projects</GradientText>
+                {t("relatedTitle")} <GradientText>{t("relatedHighlight")}</GradientText>
               </h2>
             </FadeIn>
             <div

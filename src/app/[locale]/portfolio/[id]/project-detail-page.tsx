@@ -6,10 +6,8 @@ import { motion, useInView } from "motion/react";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, ExternalLink, Calendar, Code2, Layers, CheckCircle, Zap, Building2, TrendingUp } from "lucide-react";
 import Image from "next/image";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Breadcrumbs } from "@/components/shared/Breadcrumbs";
-import { services } from "@/data/mockData";
-
 interface Project {
   id: string;
   title: string;
@@ -23,6 +21,11 @@ interface Project {
   results: string;
   screenshots: string[];
   serviceId: string;
+}
+
+interface RelatedService {
+  id: string;
+  title: string;
 }
 
 function GradientText({ children }: { children: React.ReactNode }) {
@@ -55,10 +58,10 @@ function FadeIn({ children, delay = 0 }: { children: React.ReactNode; delay?: nu
   );
 }
 
-export function ProjectDetailPage({ project }: { project: Project }) {
+export function ProjectDetailPage({ project, relatedService }: { project: Project; relatedService?: RelatedService }) {
   const router = useRouter();
   const locale = useLocale();
-  const relatedService = services.find((s) => s.id === project.serviceId);
+  const t = useTranslations("ProjectDetailPage");
 
   return (
     <div style={{ color: "#FFFFFF", minHeight: "100vh" }}>
