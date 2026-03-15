@@ -14,6 +14,8 @@ export async function GET() {
       totalUsers,
       newMessages,
       pendingOrders,
+      totalTemplates,
+      totalAttributes,
       recentOrders,
       recentMessages,
     ] = await Promise.all([
@@ -24,10 +26,15 @@ export async function GET() {
       prisma.user.count(),
       prisma.contactMessage.count({ where: { status: "new" } }),
       prisma.order.count({ where: { status: "pending" } }),
+      prisma.webTemplate.count({ where: { isActive: true } }),
+      prisma.serviceAttribute.count({ where: { isActive: true } }),
       prisma.order.findMany({
         orderBy: { createdAt: "desc" },
         take: 5,
-        include: { package: { select: { title: true } } },
+        include: {
+          package: { select: { title: true } },
+          template: { select: { name: true, nameVi: true } },
+        },
       }),
       prisma.contactMessage.findMany({
         orderBy: { createdAt: "desc" },
@@ -44,6 +51,8 @@ export async function GET() {
         totalUsers,
         newMessages,
         pendingOrders,
+        totalTemplates,
+        totalAttributes,
       },
       recentOrders,
       recentMessages,
