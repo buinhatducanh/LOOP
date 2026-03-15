@@ -10,7 +10,7 @@ import { TawktoChat } from '@/components/shared/TawktoChat';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { GoogleAnalytics } from '@next/third-parties/google';
-import { getServices, getSiteSettings } from '@/lib/db/queries';
+import { getSiteSettings } from '@/lib/db/queries';
 import "../globals.css";
 
 const baseMetadata: Metadata = {
@@ -107,23 +107,23 @@ export default async function RootLayout({
 
   const tFooter = await getTranslations({ locale, namespace: 'Footer' });
 
-  const [messages, footerServices, siteSettings] = await Promise.all([
+  const [messages, siteSettings] = await Promise.all([
     getMessages(),
-    getServices().catch(() => []),
     getSiteSettings(),
   ]);
 
+  // Always use translated service names for footer to avoid hydration mismatch.
+  // DB services have English-only titles which causes SSR/client inconsistency
+  // when the DB connection is flaky (getServices sometimes succeeds, sometimes fails).
   const footerData = {
-    services: footerServices.length > 0
-      ? footerServices.slice(0, 6).map((s) => ({ slug: s.slug, title: s.title }))
-      : [
-          { slug: "web-development", title: tFooter("serviceWeb") },
-          { slug: "mobile-apps", title: tFooter("serviceMobile") },
-          { slug: "ui-ux-design", title: tFooter("serviceDesign") },
-          { slug: "cloud-solutions", title: tFooter("serviceCloud") },
-          { slug: "ai-ml", title: tFooter("serviceAI") },
-          { slug: "devops", title: tFooter("serviceDevops") },
-        ],
+    services: [
+      { slug: "web-development", title: tFooter("serviceWeb") },
+      { slug: "mobile-apps", title: tFooter("serviceMobile") },
+      { slug: "ui-ux-design", title: tFooter("serviceDesign") },
+      { slug: "cloud-solutions", title: tFooter("serviceCloud") },
+      { slug: "ai-ml", title: tFooter("serviceAI") },
+      { slug: "devops", title: tFooter("serviceDevops") },
+    ],
     settings: siteSettings,
   };
 
