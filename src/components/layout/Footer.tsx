@@ -113,64 +113,35 @@ export default function Footer({ data }: { data?: FooterData }) {
       {/* Main Footer */}
       <div className="border-t border-white/5">
         <div className="max-w-7xl mx-auto px-6 lg:px-8 py-16">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-12 lg:gap-8">
-            {/* Brand - wider column */}
-            <div className="lg:col-span-4">
-              <Link href="/" className="inline-flex items-center gap-2.5 group mb-6">
-                <div className="relative">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-                    <Zap className="w-5 h-5 text-white" />
-                  </div>
+          {/* Top: Brand + Navigation Columns */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-8 lg:gap-12">
+            {/* Brand */}
+            <div className="col-span-2 sm:col-span-3 lg:col-span-1">
+              <Link href="/" className="inline-flex items-center gap-2.5 group mb-4">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                  <Zap className="w-5 h-5 text-white" />
                 </div>
                 <span className="text-2xl font-extrabold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
                   LOOP
                 </span>
               </Link>
-              <p className="text-gray-400 text-sm leading-relaxed mb-8 max-w-xs">
+              <p className="text-gray-400 text-sm leading-relaxed max-w-xs">
                 {t("description")}
               </p>
-
-              {/* Contact Info */}
-              <div className="space-y-4">
-                <a
-                  href={`mailto:${email}`}
-                  className="flex items-center gap-3 text-sm text-gray-400 hover:text-white transition-colors group"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-indigo-500/10 transition-colors">
-                    <Mail className="w-4 h-4 text-indigo-400" />
-                  </div>
-                  <span>{email}</span>
-                </a>
-                <a
-                  href={`tel:${phone.replace(/\s/g, "")}`}
-                  className="flex items-center gap-3 text-sm text-gray-400 hover:text-white transition-colors group"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-indigo-500/10 transition-colors">
-                    <Phone className="w-4 h-4 text-indigo-400" />
-                  </div>
-                  <span>{phone}</span>
-                </a>
-                <div className="flex items-center gap-3 text-sm text-gray-400">
-                  <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center">
-                    <MapPin className="w-4 h-4 text-indigo-400" />
-                  </div>
-                  <span>{address}</span>
-                </div>
-              </div>
             </div>
 
             {/* Services */}
-            <div className="lg:col-span-3">
-              <h4 className="text-xs font-bold text-white uppercase tracking-[0.15em] mb-6 flex items-center gap-2">
+            <div>
+              <h4 className="text-xs font-bold text-white uppercase tracking-[0.15em] mb-5 flex items-center gap-2">
                 <span className="w-6 h-px bg-indigo-500" />
                 {t("services")}
               </h4>
-              <ul className="space-y-3">
+              <ul className="space-y-2.5">
                 {(services ?? []).map((svc) => (
                   <li key={svc.slug}>
                     <Link
                       href={`/services#${svc.slug}`}
-                      className="group flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors duration-200"
+                      className="group flex items-center gap-1.5 text-sm text-gray-400 hover:text-white transition-colors duration-200"
                     >
                       <span>{svc.title}</span>
                       <ArrowUpRight className="w-3 h-3 opacity-0 -translate-y-0.5 group-hover:opacity-100 group-hover:translate-y-0 transition-all" />
@@ -181,17 +152,17 @@ export default function Footer({ data }: { data?: FooterData }) {
             </div>
 
             {/* Company */}
-            <div className="lg:col-span-2">
-              <h4 className="text-xs font-bold text-white uppercase tracking-[0.15em] mb-6 flex items-center gap-2">
+            <div>
+              <h4 className="text-xs font-bold text-white uppercase tracking-[0.15em] mb-5 flex items-center gap-2">
                 <span className="w-6 h-px bg-indigo-500" />
                 {t("company")}
               </h4>
-              <ul className="space-y-3">
+              <ul className="space-y-2.5">
                 {companyLinks.map((link) => (
                   <li key={link.path}>
                     <Link
                       href={link.path}
-                      className={`group flex items-center gap-2 text-sm transition-colors duration-200 ${pathname === link.path
+                      className={`group flex items-center gap-1.5 text-sm transition-colors duration-200 ${pathname === link.path
                           ? "text-indigo-400 font-medium"
                           : "text-gray-400 hover:text-white"
                         }`}
@@ -204,16 +175,50 @@ export default function Footer({ data }: { data?: FooterData }) {
               </ul>
             </div>
 
+            {/* Contact */}
+            <div>
+              <h4 className="text-xs font-bold text-white uppercase tracking-[0.15em] mb-5 flex items-center gap-2">
+                <span className="w-6 h-px bg-indigo-500" />
+                {t("contact")}
+              </h4>
+              <div className="space-y-3">
+                <a
+                  href={`mailto:${email}`}
+                  className="flex items-center gap-2.5 text-sm text-gray-400 hover:text-white transition-colors group"
+                >
+                  <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-indigo-500/10 transition-colors flex-shrink-0">
+                    <Mail className="w-3.5 h-3.5 text-indigo-400" />
+                  </div>
+                  <span className="truncate">{email}</span>
+                </a>
+                <a
+                  href={`tel:${phone.replace(/\s/g, "")}`}
+                  className="flex items-center gap-2.5 text-sm text-gray-400 hover:text-white transition-colors group"
+                >
+                  <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-indigo-500/10 transition-colors flex-shrink-0">
+                    <Phone className="w-3.5 h-3.5 text-indigo-400" />
+                  </div>
+                  <span>{phone}</span>
+                </a>
+                <div className="flex items-center gap-2.5 text-sm text-gray-400">
+                  <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0">
+                    <MapPin className="w-3.5 h-3.5 text-indigo-400" />
+                  </div>
+                  <span>{address}</span>
+                </div>
+              </div>
+            </div>
+
             {/* Social */}
-            <div className="lg:col-span-3">
-              <h4 className="text-xs font-bold text-white uppercase tracking-[0.15em] mb-6 flex items-center gap-2">
+            <div>
+              <h4 className="text-xs font-bold text-white uppercase tracking-[0.15em] mb-5 flex items-center gap-2">
                 <span className="w-6 h-px bg-indigo-500" />
                 {t("stayConnected")}
               </h4>
-              <p className="text-sm text-gray-400 mb-6 leading-relaxed">
+              <p className="text-sm text-gray-400 mb-4 leading-relaxed">
                 {t("stayConnectedDesc")}
               </p>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2.5">
                 {socialLinks.map((social) => (
                   <motion.a
                     key={social.label}
@@ -222,7 +227,7 @@ export default function Footer({ data }: { data?: FooterData }) {
                     rel="noopener noreferrer"
                     aria-label={social.label}
                     whileHover={{ y: -2 }}
-                    className="w-10 h-10 rounded-xl bg-white/5 hover:bg-indigo-500/15 border border-white/5 hover:border-indigo-500/30 flex items-center justify-center text-gray-500 hover:text-indigo-400 transition-all duration-200"
+                    className="w-9 h-9 rounded-xl bg-white/5 hover:bg-indigo-500/15 border border-white/5 hover:border-indigo-500/30 flex items-center justify-center text-gray-500 hover:text-indigo-400 transition-all duration-200"
                   >
                     <social.icon className="w-4 h-4" />
                   </motion.a>
