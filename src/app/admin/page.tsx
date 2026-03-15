@@ -15,6 +15,8 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   CreditCard,
+  Layout,
+  Tag,
 } from "lucide-react";
 
 // ─── Types ──────────────────────────────────────────────────────
@@ -27,17 +29,21 @@ interface DashboardStats {
   totalUsers: number;
   newMessages: number;
   pendingOrders: number;
+  totalTemplates: number;
+  totalAttributes: number;
 }
 
 interface RecentOrder {
   id: string;
   orderNumber: string;
+  orderType: string;
   customerName: string;
   customerEmail: string;
   status: string;
   totalAmount: number | null;
   createdAt: string;
-  package: { title: string };
+  package: { title: string } | null;
+  template: { name: string; nameVi: string } | null;
 }
 
 interface RecentMessage {
@@ -159,8 +165,8 @@ export default function AdminDashboardPage() {
   }
 
   const statCards = [
-    { label: "Dịch vụ", value: stats?.totalServices || 0, icon: Globe, color: "from-blue-500 to-blue-600" },
-    { label: "Dự án", value: stats?.totalProjects || 0, icon: FolderKanban, color: "from-indigo-500 to-indigo-600" },
+    { label: "Kho Giao Diện", value: stats?.totalTemplates || 0, icon: Layout, color: "from-cyan-500 to-cyan-600" },
+    { label: "Kho Tính Năng", value: stats?.totalAttributes || 0, icon: Tag, color: "from-teal-500 to-teal-600" },
     { label: "Đơn hàng", value: stats?.totalOrders || 0, icon: ShoppingCart, color: "from-green-500 to-green-600", badge: stats?.pendingOrders ? `${stats.pendingOrders} chờ xử lý` : undefined },
     { label: "Tin nhắn", value: stats?.totalMessages || 0, icon: MessageSquare, color: "from-orange-500 to-orange-600", badge: stats?.newMessages ? `${stats.newMessages} mới` : undefined },
     { label: "Người dùng", value: stats?.totalUsers || 0, icon: Users, color: "from-purple-500 to-purple-600" },
@@ -280,22 +286,34 @@ export default function AdminDashboardPage() {
             {recentOrders.length === 0 ? (
               <div className="px-5 py-8 text-center text-sm text-slate-500">Chưa có đơn hàng nào</div>
             ) : (
-              recentOrders.map((order) => (
-                <div key={order.id} className="flex items-center justify-between px-5 py-3">
-                  <div>
-                    <p className="text-sm font-medium text-white">{order.customerName}</p>
-                    <p className="text-xs text-slate-400">{order.orderNumber} - {order.package.title}</p>
+              recentOrders.map((order) => {
+                const sourceName = order.orderType === "template" && order.template
+                  ? order.template.nameVi
+                  : order.orderType === "custom"
+                    ? "Thiết kế riêng"
+                    : order.package?.title || "—";
+                const typeLabel = order.orderType === "template" ? "Web Gói" : order.orderType === "custom" ? "Custom" : "Gói DV";
+                return (
+                  <div key={order.id} className="flex items-center justify-between px-5 py-3">
+                    <div>
+                      <p className="text-sm font-medium text-white">{order.customerName}</p>
+                      <p className="text-xs text-slate-400">
+                        {order.orderNumber} ·{" "}
+                        <span className="text-slate-500">[{typeLabel}]</span>{" "}
+                        {sourceName}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <span className={`inline-block rounded-full px-2 py-0.5 text-[11px] font-medium ${statusColors[order.status] || "bg-slate-700 text-slate-300"}`}>
+                        {statusLabels[order.status] || order.status}
+                      </span>
+                      {order.totalAmount && (
+                        <p className="mt-0.5 text-xs font-mono text-green-400">{formatShortPrice(order.totalAmount)}</p>
+                      )}
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <span className={`inline-block rounded-full px-2 py-0.5 text-[11px] font-medium ${statusColors[order.status] || "bg-slate-700 text-slate-300"}`}>
-                      {statusLabels[order.status] || order.status}
-                    </span>
-                    {order.totalAmount && (
-                      <p className="mt-0.5 text-xs font-mono text-green-400">{formatShortPrice(order.totalAmount)}</p>
-                    )}
-                  </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>

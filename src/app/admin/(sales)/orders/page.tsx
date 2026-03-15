@@ -14,35 +14,65 @@ import {
   CheckCircle,
   AlertCircle,
   XCircle,
-  CreditCard,
   Search,
-  Filter,
+  Package,
+  Paintbrush,
+  Layout,
+  Tag,
 } from "lucide-react";
 import { toast } from "sonner";
 
 // ─── Types ──────────────────────────────────────────────────────
 
+interface SelectedAttribute {
+  id: string;
+  priceAtOrder: number;
+  attribute: { id: string; name: string; nameVi: string; price: number };
+}
+
 interface Order {
   id: string;
   orderNumber: string;
-  packageId: string;
+  orderType: string; // "package" | "template" | "custom"
+  packageId: string | null;
+  templateId: string | null;
   customerName: string;
   customerEmail: string;
   customerPhone: string | null;
   companyName: string | null;
   requirements: string | null;
+  brandGuidelines: string | null;
   status: string;
   paymentStatus: string;
   totalAmount: number | null;
   createdAt: string;
   updatedAt: string;
-  package: { title: string };
+  package: { title: string } | null;
+  template: { id: string; name: string; nameVi: string; thumbnail: string | null } | null;
+  selectedAttributes: SelectedAttribute[];
 }
 
 interface PackageOption {
   id: string;
   title: string;
   price: number | null;
+}
+
+interface TemplateOption {
+  id: string;
+  name: string;
+  nameVi: string;
+  price: number;
+}
+
+interface AttributeOption {
+  id: string;
+  name: string;
+  nameVi: string;
+  price: number;
+  category: string;
+  categoryVi: string;
+  isRequired: boolean;
 }
 
 // ─── Constants ──────────────────────────────────────────────────
@@ -66,15 +96,33 @@ const paymentStatuses: Record<string, { label: string; color: string }> = {
   refunded: { label: "Đã hoàn tiền", color: "bg-slate-500/20 text-slate-400" },
 };
 
+const orderTypeConfig: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
+  package: { label: "Gói DV", color: "bg-blue-500/20 text-blue-400", icon: <Package size={12} /> },
+  template: { label: "Web Gói", color: "bg-green-500/20 text-green-400", icon: <Layout size={12} /> },
+  custom: { label: "Thiết kế riêng", color: "bg-indigo-500/20 text-indigo-400", icon: <Paintbrush size={12} /> },
+};
+
+// ─── Helper: get display name for order source ──────────────────
+
+function getOrderSourceName(order: Order): string {
+  if (order.orderType === "template" && order.template) return order.template.nameVi;
+  if (order.orderType === "package" && order.package) return order.package.title;
+  if (order.orderType === "custom") return "Thiết kế theo yêu cầu";
+  return "—";
+}
+
 // ─── Main Page ──────────────────────────────────────────────────
 
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [packages, setPackages] = useState<PackageOption[]>([]);
+  const [templates, setTemplates] = useState<TemplateOption[]>([]);
+  const [allAttributes, setAllAttributes] = useState<AttributeOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 0 });
   const [statusFilter, setStatusFilter] = useState("");
   const [paymentFilter, setPaymentFilter] = useState("");
+  const [orderTypeFilter, setOrderTypeFilter] = useState("");
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
 
@@ -89,6 +137,7 @@ export default function AdminOrdersPage() {
       if (search) params.set("search", search);
       if (statusFilter) params.set("status", statusFilter);
       if (paymentFilter) params.set("paymentStatus", paymentFilter);
+      if (orderTypeFilter) params.set("orderType", orderTypeFilter);
 
       const res = await fetch(`/api/admin/orders?${params}`);
       const json = await res.json();
@@ -99,17 +148,25 @@ export default function AdminOrdersPage() {
     } finally {
       setLoading(false);
     }
-  }, [search, statusFilter, paymentFilter]);
+  }, [search, statusFilter, paymentFilter, orderTypeFilter]);
 
-  const fetchPackages = useCallback(async () => {
+  const fetchOptions = useCallback(async () => {
     try {
-      const res = await fetch("/api/admin/packages/web-packages?limit=100");
-      const json = await res.json();
-      setPackages((json.data || []).map((p: PackageOption & { price?: number }) => ({
-        id: p.id,
-        title: p.title,
-        price: p.price || null,
+      const [pkgRes, tplRes, attrRes] = await Promise.all([
+        fetch("/api/admin/packages/web-packages?limit=100"),
+        fetch("/api/admin/web-templates?limit=100"),
+        fetch("/api/admin/service-attributes?limit=200"),
+      ]);
+      const [pkgJson, tplJson, attrJson] = await Promise.all([
+        pkgRes.json(), tplRes.json(), attrRes.json(),
+      ]);
+      setPackages((pkgJson.data || []).map((p: Record<string, unknown>) => ({
+        id: p.id, title: p.title || p.name, price: p.price || null,
       })));
+      setTemplates((tplJson.data || []).map((t: Record<string, unknown>) => ({
+        id: t.id, name: t.name, nameVi: t.nameVi, price: t.price || 0,
+      })));
+      setAllAttributes(attrJson.data || []);
     } catch (e) {
       console.error(e);
     }
@@ -117,8 +174,8 @@ export default function AdminOrdersPage() {
 
   useEffect(() => {
     fetchOrders();
-    fetchPackages();
-  }, [fetchOrders, fetchPackages]);
+    fetchOptions();
+  }, [fetchOrders, fetchOptions]);
 
   const handleDelete = async (id: string) => {
     if (!confirm("Bạn có chắc muốn xóa đơn hàng này?")) return;
@@ -241,6 +298,16 @@ export default function AdminOrdersPage() {
           />
         </div>
         <select
+          value={orderTypeFilter}
+          onChange={(e) => setOrderTypeFilter(e.target.value)}
+          className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-2.5 text-sm text-white outline-none focus:border-blue-500"
+        >
+          <option value="">Tất cả loại đơn</option>
+          {Object.entries(orderTypeConfig).map(([key, cfg]) => (
+            <option key={key} value={key}>{cfg.label}</option>
+          ))}
+        </select>
+        <select
           value={paymentFilter}
           onChange={(e) => setPaymentFilter(e.target.value)}
           className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-2.5 text-sm text-white outline-none focus:border-blue-500"
@@ -250,9 +317,9 @@ export default function AdminOrdersPage() {
             <option key={key} value={key}>{cfg.label}</option>
           ))}
         </select>
-        {(statusFilter || paymentFilter || search) && (
+        {(statusFilter || paymentFilter || search || orderTypeFilter) && (
           <button
-            onClick={() => { setStatusFilter(""); setPaymentFilter(""); setSearch(""); setSearchInput(""); }}
+            onClick={() => { setStatusFilter(""); setPaymentFilter(""); setOrderTypeFilter(""); setSearch(""); setSearchInput(""); }}
             className="flex items-center gap-1.5 rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-400 hover:text-white transition-colors"
           >
             <X size={14} />
@@ -268,8 +335,9 @@ export default function AdminOrdersPage() {
             <thead>
               <tr className="border-b border-slate-800 bg-slate-800/30 text-left text-[11px] uppercase tracking-wider text-slate-500">
                 <th className="px-4 py-3">Mã đơn</th>
+                <th className="px-4 py-3">Loại</th>
                 <th className="px-4 py-3">Khách hàng</th>
-                <th className="px-4 py-3">Gói dịch vụ</th>
+                <th className="px-4 py-3">Dịch vụ / Gói</th>
                 <th className="px-4 py-3">Tổng tiền</th>
                 <th className="px-4 py-3">Trạng thái</th>
                 <th className="px-4 py-3">Thanh toán</th>
@@ -281,7 +349,7 @@ export default function AdminOrdersPage() {
               {loading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <tr key={i} className="border-b border-slate-800/50">
-                    {Array.from({ length: 8 }).map((_, j) => (
+                    {Array.from({ length: 9 }).map((_, j) => (
                       <td key={j} className="px-4 py-3">
                         <div className="h-4 w-24 animate-pulse rounded bg-slate-800" />
                       </td>
@@ -290,7 +358,7 @@ export default function AdminOrdersPage() {
                 ))
               ) : orders.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-12 text-center text-slate-500">
+                  <td colSpan={9} className="px-4 py-12 text-center text-slate-500">
                     <ShoppingCart className="mx-auto mb-2 h-8 w-8 text-slate-600" />
                     Không có đơn hàng nào
                   </td>
@@ -299,6 +367,7 @@ export default function AdminOrdersPage() {
                 orders.map((order) => {
                   const sCfg = orderStatuses[order.status] || orderStatuses.pending;
                   const pCfg = paymentStatuses[order.paymentStatus] || paymentStatuses.unpaid;
+                  const tCfg = orderTypeConfig[order.orderType] || orderTypeConfig.package;
                   return (
                     <tr
                       key={order.id}
@@ -308,10 +377,22 @@ export default function AdminOrdersPage() {
                         <span className="font-mono text-xs text-blue-400">{order.orderNumber}</span>
                       </td>
                       <td className="px-4 py-3">
+                        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${tCfg.color}`}>
+                          {tCfg.icon} {tCfg.label}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
                         <p className="font-medium text-white">{order.customerName}</p>
                         <p className="text-xs text-slate-500">{order.customerEmail}</p>
                       </td>
-                      <td className="px-4 py-3 text-slate-300">{order.package.title}</td>
+                      <td className="px-4 py-3">
+                        <p className="text-slate-300">{getOrderSourceName(order)}</p>
+                        {order.orderType === "custom" && order.selectedAttributes.length > 0 && (
+                          <p className="text-[11px] text-slate-500">
+                            {order.selectedAttributes.length} tính năng
+                          </p>
+                        )}
+                      </td>
                       <td className="px-4 py-3">
                         <span className="font-mono text-green-400">
                           {order.totalAmount ? formatPrice(order.totalAmount) : "—"}
@@ -408,6 +489,8 @@ export default function AdminOrdersPage() {
         <OrderFormModal
           editing={formModal.editing}
           packages={packages}
+          templates={templates}
+          allAttributes={allAttributes}
           onClose={() => setFormModal({ open: false })}
           onSaved={() => fetchOrders(pagination.page)}
         />
@@ -429,13 +512,20 @@ function DetailModal({
   onStatusChange: (id: string, status: string) => void;
   onPaymentChange: (id: string, paymentStatus: string) => void;
 }) {
+  const tCfg = orderTypeConfig[order.orderType] || orderTypeConfig.package;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
       <div className="w-full max-w-lg rounded-xl border border-slate-800 bg-slate-900 p-6 shadow-2xl max-h-[85vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-5">
           <div>
             <h2 className="text-lg font-bold text-white">Chi tiết Đơn hàng</h2>
-            <p className="text-xs font-mono text-blue-400">{order.orderNumber}</p>
+            <div className="flex items-center gap-2 mt-1">
+              <span className="text-xs font-mono text-blue-400">{order.orderNumber}</span>
+              <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${tCfg.color}`}>
+                {tCfg.icon} {tCfg.label}
+              </span>
+            </div>
           </div>
           <button onClick={onClose} className="text-slate-400 hover:text-white">
             <X size={20} />
@@ -462,8 +552,8 @@ function DetailModal({
               <p className="text-white">{order.companyName || "—"}</p>
             </div>
             <div>
-              <p className="text-slate-500">Gói dịch vụ</p>
-              <p className="text-white">{order.package.title}</p>
+              <p className="text-slate-500">Dịch vụ / Gói</p>
+              <p className="text-white">{getOrderSourceName(order)}</p>
             </div>
             <div>
               <p className="text-slate-500">Tổng tiền</p>
@@ -472,6 +562,48 @@ function DetailModal({
               </p>
             </div>
           </div>
+
+          {/* Template thumbnail */}
+          {order.orderType === "template" && order.template?.thumbnail && (
+            <div className="text-sm">
+              <p className="text-slate-500 mb-1">Mẫu giao diện</p>
+              <img
+                src={order.template.thumbnail}
+                alt={order.template.nameVi}
+                className="h-32 w-full rounded-lg border border-slate-700 object-cover"
+              />
+            </div>
+          )}
+
+          {/* Selected attributes (custom orders) */}
+          {order.orderType === "custom" && order.selectedAttributes.length > 0 && (
+            <div className="text-sm">
+              <p className="text-slate-500 mb-2">Tính năng đã chọn ({order.selectedAttributes.length})</p>
+              <div className="space-y-1 rounded-lg bg-slate-800 p-3">
+                {order.selectedAttributes.map((sa) => (
+                  <div key={sa.id} className="flex items-center justify-between text-slate-300">
+                    <span className="flex items-center gap-2">
+                      <Tag size={12} className="text-indigo-400" />
+                      {sa.attribute.nameVi}
+                    </span>
+                    <span className="text-xs font-mono text-green-400">
+                      {sa.priceAtOrder > 0 ? formatPrice(sa.priceAtOrder) : "Miễn phí"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Brand guidelines (custom orders) */}
+          {order.brandGuidelines && (
+            <div className="text-sm">
+              <p className="text-slate-500 mb-1">Yêu cầu nhận diện thương hiệu</p>
+              <p className="rounded-lg bg-slate-800 p-3 text-slate-300 whitespace-pre-wrap">
+                {order.brandGuidelines}
+              </p>
+            </div>
+          )}
 
           {/* Requirements */}
           {order.requirements && (
@@ -539,26 +671,52 @@ function DetailModal({
 function OrderFormModal({
   editing,
   packages,
+  templates,
+  allAttributes,
   onClose,
   onSaved,
 }: {
   editing?: Order;
   packages: PackageOption[];
+  templates: TemplateOption[];
+  allAttributes: AttributeOption[];
   onClose: () => void;
   onSaved: () => void;
 }) {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
-    packageId: editing?.packageId || (packages[0]?.id || ""),
+    orderType: editing?.orderType || "template",
+    packageId: editing?.packageId || "",
+    templateId: editing?.templateId || "",
     customerName: editing?.customerName || "",
     customerEmail: editing?.customerEmail || "",
     customerPhone: editing?.customerPhone || "",
     companyName: editing?.companyName || "",
     requirements: editing?.requirements || "",
+    brandGuidelines: editing?.brandGuidelines || "",
     status: editing?.status || "pending",
     paymentStatus: editing?.paymentStatus || "unpaid",
     totalAmount: editing?.totalAmount?.toString() || "",
+    attributeIds: editing?.selectedAttributes?.map((sa) => sa.attribute.id) || [],
   });
+
+  // Group attributes by category for the checkbox list
+  const groupedAttrs = allAttributes.reduce((acc, attr) => {
+    if (!acc[attr.category]) acc[attr.category] = { categoryVi: attr.categoryVi, items: [] };
+    acc[attr.category].items.push(attr);
+    return acc;
+  }, {} as Record<string, { categoryVi: string; items: AttributeOption[] }>);
+
+  const toggleAttr = (id: string) => {
+    const attr = allAttributes.find((a) => a.id === id);
+    if (attr?.isRequired) return;
+    setForm((f) => ({
+      ...f,
+      attributeIds: f.attributeIds.includes(id)
+        ? f.attributeIds.filter((x) => x !== id)
+        : [...f.attributeIds, id],
+    }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -566,20 +724,44 @@ function OrderFormModal({
     try {
       const url = editing ? `/api/admin/orders/${editing.id}` : "/api/admin/orders";
       const method = editing ? "PUT" : "POST";
+      const payload: Record<string, unknown> = {
+        orderType: form.orderType,
+        customerName: form.customerName,
+        customerEmail: form.customerEmail,
+        customerPhone: form.customerPhone || null,
+        companyName: form.companyName || null,
+        requirements: form.requirements || null,
+        status: form.status,
+        paymentStatus: form.paymentStatus,
+        totalAmount: form.totalAmount ? parseInt(form.totalAmount) : null,
+      };
+
+      if (form.orderType === "package") {
+        payload.packageId = form.packageId;
+        payload.templateId = null;
+      } else if (form.orderType === "template") {
+        payload.templateId = form.templateId;
+        payload.packageId = null;
+      } else {
+        // custom
+        payload.packageId = null;
+        payload.templateId = null;
+        payload.brandGuidelines = form.brandGuidelines || null;
+        payload.attributeIds = form.attributeIds;
+      }
+
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...form,
-          totalAmount: form.totalAmount ? parseInt(form.totalAmount) : null,
-        }),
+        body: JSON.stringify(payload),
       });
-      if (res.ok) {
-        onSaved();
-        onClose();
-      }
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Lỗi");
+      toast.success(editing ? "Đã cập nhật đơn hàng" : "Đã tạo đơn hàng");
+      onSaved();
+      onClose();
     } catch (e) {
-      console.error(e);
+      toast.error(e instanceof Error ? e.message : "Lỗi kết nối");
     } finally {
       setSaving(false);
     }
@@ -587,7 +769,7 @@ function OrderFormModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 backdrop-blur-sm pt-8 pb-8">
-      <div className="w-full max-w-lg rounded-xl border border-slate-800 bg-slate-900 p-6 shadow-2xl">
+      <div className="w-full max-w-2xl rounded-xl border border-slate-800 bg-slate-900 p-6 shadow-2xl">
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-lg font-bold text-white">
             {editing ? "Chỉnh sửa Đơn hàng" : "Tạo Đơn hàng mới"}
@@ -598,8 +780,32 @@ function OrderFormModal({
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="col-span-2">
+          {/* Order Type Selector */}
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-slate-300">
+              Loại đơn hàng <span className="text-red-400">*</span>
+            </label>
+            <div className="flex gap-2">
+              {Object.entries(orderTypeConfig).map(([key, cfg]) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setForm((f) => ({ ...f, orderType: key }))}
+                  className={`flex flex-1 items-center justify-center gap-2 rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors ${
+                    form.orderType === key
+                      ? "border-blue-500 bg-blue-500/10 text-white"
+                      : "border-slate-700 bg-slate-800 text-slate-400 hover:text-white"
+                  }`}
+                >
+                  {cfg.icon} {cfg.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Conditional: Package selector */}
+          {form.orderType === "package" && (
+            <div>
               <label className="mb-1.5 block text-sm font-medium text-slate-300">
                 Gói dịch vụ <span className="text-red-400">*</span>
               </label>
@@ -617,6 +823,95 @@ function OrderFormModal({
                 ))}
               </select>
             </div>
+          )}
+
+          {/* Conditional: Template selector */}
+          {form.orderType === "template" && (
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-slate-300">
+                Mẫu giao diện <span className="text-red-400">*</span>
+              </label>
+              <select
+                value={form.templateId}
+                onChange={(e) => setForm((f) => ({ ...f, templateId: e.target.value }))}
+                required
+                className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2.5 text-sm text-white outline-none focus:border-blue-500"
+              >
+                <option value="">Chọn mẫu...</option>
+                {templates.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.nameVi} ({formatPrice(t.price)})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Conditional: Custom attributes + brand guidelines */}
+          {form.orderType === "custom" && (
+            <>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-slate-300">
+                  Yêu cầu nhận diện thương hiệu
+                </label>
+                <textarea
+                  value={form.brandGuidelines}
+                  onChange={(e) => setForm((f) => ({ ...f, brandGuidelines: e.target.value }))}
+                  rows={2}
+                  className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-blue-500 resize-none"
+                  placeholder="Mô tả bộ nhận diện thương hiệu, màu sắc, phong cách..."
+                />
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-slate-300">
+                  Tính năng ({form.attributeIds.length} đã chọn)
+                </label>
+                <div className="max-h-48 space-y-3 overflow-y-auto rounded-lg border border-slate-700 bg-slate-800/50 p-3">
+                  {Object.entries(groupedAttrs).map(([cat, group]) => (
+                    <div key={cat}>
+                      <p className="mb-1 text-xs font-semibold uppercase text-slate-400">
+                        {group.categoryVi}
+                      </p>
+                      <div className="grid grid-cols-2 gap-1">
+                        {group.items.map((attr) => (
+                          <label
+                            key={attr.id}
+                            className="flex cursor-pointer items-center justify-between gap-2 rounded px-2 py-1 text-sm text-slate-300 hover:bg-slate-700"
+                          >
+                            <span className="flex items-center gap-2">
+                              <input
+                                type="checkbox"
+                                checked={form.attributeIds.includes(attr.id) || attr.isRequired}
+                                onChange={() => toggleAttr(attr.id)}
+                                disabled={attr.isRequired}
+                                className="h-3.5 w-3.5 rounded border-slate-600 bg-slate-700 text-blue-500"
+                              />
+                              {attr.nameVi}
+                              {attr.isRequired && (
+                                <span className="text-[10px] text-amber-400">(bắt buộc)</span>
+                              )}
+                            </span>
+                            <span className="text-[11px] text-green-400">
+                              {attr.price > 0 ? formatPrice(attr.price) : ""}
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                  {allAttributes.length === 0 && (
+                    <p className="text-center text-sm text-slate-500 py-4">
+                      Chưa có tính năng nào trong hệ thống
+                    </p>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Customer info */}
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="mb-1.5 block text-sm font-medium text-slate-300">
                 Tên khách hàng <span className="text-red-400">*</span>
