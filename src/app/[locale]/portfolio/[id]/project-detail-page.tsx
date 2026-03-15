@@ -62,6 +62,7 @@ export function ProjectDetailPage({ project, relatedService }: { project: Projec
   const router = useRouter();
   const locale = useLocale();
   const t = useTranslations("ProjectDetailPage");
+  const bc = useTranslations("Breadcrumbs");
 
   return (
     <div style={{ color: "#FFFFFF", minHeight: "100vh" }}>
@@ -95,8 +96,8 @@ export function ProjectDetailPage({ project, relatedService }: { project: Projec
           <Breadcrumbs
             locale={locale}
             items={[
-              { label: locale === 'vi' ? 'Trang chủ' : 'Home', href: `/${locale}` },
-              { label: locale === 'vi' ? 'Dự án' : 'Portfolio', href: `/${locale}/portfolio` },
+              { label: bc("home"), href: `/${locale}` },
+              { label: bc("portfolio"), href: `/${locale}/portfolio` },
               { label: project.title }
             ]}
           />
@@ -144,21 +145,21 @@ export function ProjectDetailPage({ project, relatedService }: { project: Projec
             <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
               <Building2 size={18} color="#6366F1" />
               <div>
-                <p style={{ color: "#94A3B8", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Client</p>
+                <p style={{ color: "#94A3B8", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.5px" }}>{t("client")}</p>
                 <p style={{ color: "#FFFFFF", fontSize: "15px", fontWeight: 600 }}>{project.client}</p>
               </div>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
               <Calendar size={18} color="#6366F1" />
               <div>
-                <p style={{ color: "#94A3B8", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Year</p>
+                <p style={{ color: "#94A3B8", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.5px" }}>{t("year")}</p>
                 <p style={{ color: "#FFFFFF", fontSize: "15px", fontWeight: 600 }}>{project.year}</p>
               </div>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
               <TrendingUp size={18} color="#22C55E" />
               <div>
-                <p style={{ color: "#94A3B8", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Results</p>
+                <p style={{ color: "#94A3B8", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.5px" }}>{t("results")}</p>
                 <p style={{ color: "#22C55E", fontSize: "15px", fontWeight: 600 }}>{project.results}</p>
               </div>
             </div>
@@ -175,7 +176,7 @@ export function ProjectDetailPage({ project, relatedService }: { project: Projec
             <div>
               <FadeIn>
                 <h2 style={{ fontSize: "24px", fontWeight: 800, marginBottom: "16px" }}>
-                  About this <GradientText>Project</GradientText>
+                  {t("aboutTitle")} <GradientText>{t("aboutHighlight")}</GradientText>
                 </h2>
                 <p style={{ color: "#94A3B8", fontSize: "15px", lineHeight: 1.8 }}>
                   {project.description}
@@ -185,7 +186,7 @@ export function ProjectDetailPage({ project, relatedService }: { project: Projec
               {/* Tech Stack */}
               <FadeIn delay={0.1}>
                 <h3 style={{ fontSize: "18px", fontWeight: 700, marginTop: "36px", marginBottom: "16px" }}>
-                  Tech Stack
+                  {t("techStack")}
                 </h3>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
                   {project.techStack.map((tech) => (
@@ -212,7 +213,7 @@ export function ProjectDetailPage({ project, relatedService }: { project: Projec
             <div>
               <FadeIn delay={0.1}>
                 <h2 style={{ fontSize: "24px", fontWeight: 800, marginBottom: "16px" }}>
-                  Key <GradientText>Features</GradientText>
+                  {t("keyFeatures")} <GradientText>{t("keyFeaturesHighlight")}</GradientText>
                 </h2>
                 <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
                   {project.features.map((feature) => (
@@ -254,10 +255,13 @@ export function ProjectDetailPage({ project, relatedService }: { project: Projec
           <FadeIn>
             <div style={{ maxWidth: "600px", margin: "0 auto" }}>
               <p style={{ color: "#94A3B8", fontSize: "14px", marginBottom: "8px" }}>
-                Interested in a similar project?
+                {t("ctaInterested")}
               </p>
               <h3 style={{ fontSize: "24px", fontWeight: 800, marginBottom: "20px" }}>
-                Explore our <GradientText>{relatedService.title}</GradientText> service
+                {t.rich("ctaExplore", {
+                  service: relatedService.title,
+                  highlight: (chunks) => <GradientText>{chunks}</GradientText>,
+                })}
               </h3>
               <div style={{ display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap" }}>
                 <motion.button
@@ -278,7 +282,7 @@ export function ProjectDetailPage({ project, relatedService }: { project: Projec
                     gap: "8px",
                   }}
                 >
-                  View Service <ArrowRight size={14} />
+                  {t("viewService")} <ArrowRight size={14} />
                 </motion.button>
                 <motion.button
                   whileHover={{ scale: 1.04 }}
@@ -299,7 +303,7 @@ export function ProjectDetailPage({ project, relatedService }: { project: Projec
                     boxShadow: "0 0 30px rgba(99,102,241,0.3)",
                   }}
                 >
-                  Get a Quote <ArrowRight size={14} />
+                  {t("getQuote")} <ArrowRight size={14} />
                 </motion.button>
               </div>
             </div>

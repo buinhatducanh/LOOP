@@ -73,6 +73,7 @@ export function ServiceDetailPage({ service, relatedProjects = [] }: { service: 
   const router = useRouter();
   const locale = useLocale();
   const t = useTranslations("ServiceDetailPage");
+  const bc = useTranslations("Breadcrumbs");
   const Icon = iconMap[service.icon] || Code2;
 
   return (
@@ -104,8 +105,8 @@ export function ServiceDetailPage({ service, relatedProjects = [] }: { service: 
           <Breadcrumbs
             locale={locale}
             items={[
-              { label: locale === 'vi' ? 'Trang chủ' : 'Home', href: `/${locale}` },
-              { label: locale === 'vi' ? 'Dịch vụ' : 'Services', href: `/${locale}/services` },
+              { label: bc("home"), href: `/${locale}` },
+              { label: bc("services"), href: `/${locale}/services` },
               { label: service.title }
             ]}
           />
