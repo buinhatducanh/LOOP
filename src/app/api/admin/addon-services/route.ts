@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "50");
     const search = searchParams.get("search") || "";
-    const category = searchParams.get("category") || "";
+    const type = searchParams.get("type") || "";
 
     const where: Record<string, unknown> = {};
     if (search) {
@@ -21,23 +21,21 @@ export async function GET(req: NextRequest) {
         { slug: { contains: search, mode: "insensitive" } },
       ];
     }
-    if (category) {
-      where.category = category;
+    if (type) {
+      where.type = type;
     }
 
     const [data, total] = await Promise.all([
-      prisma.serviceAttribute.findMany({
+      prisma.addonService.findMany({
         where,
-        orderBy: [{ category: "asc" }, { sortOrder: "asc" }],
+        orderBy: [{ sortOrder: "asc" }],
         skip: (page - 1) * limit,
         take: limit,
         include: {
-          _count: { select: { templateAttributes: true, orderAttributes: true } },
-          parent: { select: { id: true, name: true, nameVi: true } },
-          children: { select: { id: true, name: true, nameVi: true, tier: true } },
+          _count: { select: { rewardTierItems: true, orderRewards: true } },
         },
       }),
-      prisma.serviceAttribute.count({ where }),
+      prisma.addonService.count({ where }),
     ]);
 
     return NextResponse.json({
@@ -56,38 +54,35 @@ export async function POST(req: NextRequest) {
     const session = await requirePermission("services", "create");
     const data = await req.json();
 
-    const attribute = await prisma.serviceAttribute.create({
+    const addonService = await prisma.addonService.create({
       data: {
         slug: data.slug,
         name: data.name,
         nameVi: data.nameVi,
         description: data.description || null,
         descriptionVi: data.descriptionVi || null,
-        category: data.category,
-        categoryVi: data.categoryVi,
         icon: data.icon || null,
+        type: data.type,
         price: Number(data.price) || 0,
-        isRequired: data.isRequired ?? false,
+        billingPeriod: data.billingPeriod || null,
+        metadata: data.metadata ?? undefined,
         sortOrder: Number(data.sortOrder) || 0,
         isActive: data.isActive ?? true,
-        tier: data.tier || "basic",
-        xpPoints: Number(data.xpPoints) || 0,
-        parentId: data.parentId || null,
       },
     });
 
     await createAuditLog({
       userId: session.userId,
       action: "create",
-      resource: "service_attributes",
-      resourceId: attribute.id,
+      resource: "addon_services",
+      resourceId: addonService.id,
       newValues: data,
     });
 
     revalidatePath("/vi/services");
     revalidatePath("/en/services");
 
-    return NextResponse.json({ data: attribute }, { status: 201 });
+    return NextResponse.json({ data: addonService }, { status: 201 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Server error";
     const status = message === "Unauthorized" ? 401 : message === "Forbidden" ? 403 : 500;

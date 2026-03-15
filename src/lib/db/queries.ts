@@ -141,6 +141,80 @@ export async function getDualServicesData() {
   return { templates, attributes };
 }
 
+// ─── Platform Architecture ────────────────────────────────────
+
+export async function getServiceAttributesByTier(tier?: "basic" | "advanced") {
+  return prisma.serviceAttribute.findMany({
+    where: {
+      isActive: true,
+      ...(tier ? { tier } : {}),
+    },
+    include: {
+      parent: { select: { id: true, name: true, nameVi: true } },
+      children: { select: { id: true, name: true, nameVi: true, tier: true } },
+    },
+    orderBy: [{ category: "asc" }, { sortOrder: "asc" }],
+  });
+}
+
+export async function getAddonServices() {
+  return prisma.addonService.findMany({
+    where: { isActive: true },
+    orderBy: { sortOrder: "asc" },
+  });
+}
+
+export async function getRewardTiers() {
+  return prisma.rewardTier.findMany({
+    where: { isActive: true },
+    orderBy: { level: "asc" },
+    include: {
+      items: {
+        include: {
+          addonService: { select: { id: true, name: true, nameVi: true, type: true, price: true } },
+        },
+        orderBy: { sortOrder: "asc" },
+      },
+    },
+  });
+}
+
+export async function getOrderWithDetails(orderId: string) {
+  return prisma.order.findUnique({
+    where: { id: orderId },
+    include: {
+      selectedAttributes: {
+        include: { attribute: true },
+      },
+      orderRewards: {
+        include: { addonService: true },
+      },
+      payments: {
+        orderBy: { createdAt: "desc" },
+      },
+      statusHistory: {
+        orderBy: { createdAt: "desc" },
+      },
+      package: true,
+      template: true,
+    },
+  });
+}
+
+export async function getOrderStatusHistory(orderId: string) {
+  return prisma.orderStatusHistory.findMany({
+    where: { orderId },
+    orderBy: { createdAt: "desc" },
+  });
+}
+
+export async function getPaymentsByOrder(orderId: string) {
+  return prisma.payment.findMany({
+    where: { orderId },
+    orderBy: { createdAt: "desc" },
+  });
+}
+
 export async function getPricingPackagesData() {
   const [webPackages, featureCategories, hostingPlans, domainPrices, deploymentItems] =
     await Promise.all([

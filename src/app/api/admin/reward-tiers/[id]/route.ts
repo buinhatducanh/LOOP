@@ -12,22 +12,22 @@ export async function GET(
     await requirePermission("services", "read");
     const { id } = await params;
 
-    const attribute = await prisma.serviceAttribute.findUnique({
+    const tier = await prisma.rewardTier.findUnique({
       where: { id },
       include: {
-        templateAttributes: {
-          include: { template: { select: { id: true, name: true, nameVi: true } } },
+        items: {
+          include: {
+            addonService: true,
+          },
         },
-        parent: { select: { id: true, name: true, nameVi: true } },
-        children: { select: { id: true, name: true, nameVi: true, tier: true } },
       },
     });
 
-    if (!attribute) {
+    if (!tier) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    return NextResponse.json({ data: attribute });
+    return NextResponse.json({ data: tier });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Server error";
     const status = message === "Unauthorized" ? 401 : message === "Forbidden" ? 403 : 500;
@@ -44,36 +44,27 @@ export async function PUT(
     const { id } = await params;
     const data = await req.json();
 
-    const existing = await prisma.serviceAttribute.findUnique({ where: { id } });
+    const existing = await prisma.rewardTier.findUnique({ where: { id } });
     if (!existing) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    const attribute = await prisma.serviceAttribute.update({
+    const tier = await prisma.rewardTier.update({
       where: { id },
       data: {
-        slug: data.slug,
+        level: Number(data.level),
         name: data.name,
         nameVi: data.nameVi,
         description: data.description ?? null,
-        descriptionVi: data.descriptionVi ?? null,
-        category: data.category,
-        categoryVi: data.categoryVi,
-        icon: data.icon ?? null,
-        price: Number(data.price) || 0,
-        isRequired: data.isRequired ?? false,
-        sortOrder: Number(data.sortOrder) || 0,
+        minXp: Number(data.minXp) || 0,
         isActive: data.isActive ?? true,
-        tier: data.tier || "basic",
-        xpPoints: Number(data.xpPoints) || 0,
-        parentId: data.parentId || null,
       },
     });
 
     await createAuditLog({
       userId: session.userId,
       action: "update",
-      resource: "service_attributes",
+      resource: "reward_tiers",
       resourceId: id,
       oldValues: existing as unknown as Record<string, unknown>,
       newValues: data,
@@ -82,7 +73,7 @@ export async function PUT(
     revalidatePath("/vi/services");
     revalidatePath("/en/services");
 
-    return NextResponse.json({ data: attribute });
+    return NextResponse.json({ data: tier });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Server error";
     const status = message === "Unauthorized" ? 401 : message === "Forbidden" ? 403 : 500;
@@ -98,17 +89,18 @@ export async function DELETE(
     const session = await requirePermission("services", "delete");
     const { id } = await params;
 
-    const existing = await prisma.serviceAttribute.findUnique({ where: { id } });
+    const existing = await prisma.rewardTier.findUnique({ where: { id } });
     if (!existing) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    await prisma.serviceAttribute.delete({ where: { id } });
+    await prisma.rewardTierItem.deleteMany({ where: { rewardTierId: id } });
+    await prisma.rewardTier.delete({ where: { id } });
 
     await createAuditLog({
       userId: session.userId,
       action: "delete",
-      resource: "service_attributes",
+      resource: "reward_tiers",
       resourceId: id,
       oldValues: existing as unknown as Record<string, unknown>,
     });

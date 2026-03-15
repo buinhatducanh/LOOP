@@ -22,6 +22,11 @@ interface ServiceAttribute {
   isRequired: boolean;
   sortOrder: number;
   isActive: boolean;
+  tier: string;
+  xpPoints: number;
+  parentId: string | null;
+  parent: { id: string; name: string; nameVi: string } | null;
+  children: { id: string; name: string; nameVi: string; tier: string }[];
   createdAt: string;
   _count: { templateAttributes: number; orderAttributes: number };
 }
@@ -39,6 +44,9 @@ interface FormData {
   isRequired: boolean;
   sortOrder: number;
   isActive: boolean;
+  tier: string;
+  xpPoints: number;
+  parentId: string;
 }
 
 const emptyForm: FormData = {
@@ -54,6 +62,9 @@ const emptyForm: FormData = {
   isRequired: false,
   sortOrder: 0,
   isActive: true,
+  tier: "basic",
+  xpPoints: 0,
+  parentId: "",
 };
 
 const CATEGORY_OPTIONS = [
@@ -140,6 +151,9 @@ export default function ServiceAttributesPage() {
         isRequired: s.isRequired ?? false,
         sortOrder: s.sortOrder || 0,
         isActive: s.isActive ?? true,
+        tier: s.tier || "basic",
+        xpPoints: s.xpPoints || 0,
+        parentId: s.parentId || "",
       });
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Lỗi tải dữ liệu";
@@ -180,6 +194,8 @@ export default function ServiceAttributesPage() {
           ...formData,
           price: Number(formData.price),
           sortOrder: Number(formData.sortOrder),
+          xpPoints: Number(formData.xpPoints),
+          parentId: formData.parentId || null,
         }),
       });
       const json = await res.json();
@@ -208,6 +224,8 @@ export default function ServiceAttributesPage() {
           ...formData,
           price: Number(formData.price),
           sortOrder: Number(formData.sortOrder),
+          xpPoints: Number(formData.xpPoints),
+          parentId: formData.parentId || null,
         }),
       });
       const json = await res.json();
@@ -285,27 +303,35 @@ export default function ServiceAttributesPage() {
         ),
       },
       {
-        accessorKey: "price",
-        header: "Giá (VNĐ)",
+        accessorKey: "tier",
+        header: "Cấp độ",
         cell: ({ row }) => (
-          <span className="text-green-400">
-            {row.original.price > 0
-              ? row.original.price.toLocaleString("vi-VN") + "đ"
-              : "Miễn phí"}
+          <span
+            className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+              row.original.tier === "advanced"
+                ? "bg-purple-500/20 text-purple-400"
+                : "bg-slate-700 text-slate-300"
+            }`}
+          >
+            {row.original.tier === "advanced" ? "Nâng cao" : "Cơ bản"}
           </span>
         ),
       },
       {
-        accessorKey: "isRequired",
-        header: "Bắt buộc",
-        cell: ({ row }) =>
-          row.original.isRequired ? (
-            <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-xs text-amber-400">
-              Bắt buộc
+        accessorKey: "price",
+        header: "Giá / XP",
+        cell: ({ row }) => (
+          <div>
+            <span className="text-green-400">
+              {row.original.price > 0
+                ? row.original.price.toLocaleString("vi-VN") + "đ"
+                : "Miễn phí"}
             </span>
-          ) : (
-            <span className="text-xs text-slate-500">Tùy chọn</span>
-          ),
+            {row.original.xpPoints > 0 && (
+              <span className="ml-2 text-xs text-amber-400">{row.original.xpPoints} XP</span>
+            )}
+          </div>
+        ),
       },
       {
         id: "usage",
@@ -463,7 +489,19 @@ export default function ServiceAttributesPage() {
         </div>
       </div>
 
+      {/* Tier & XP */}
       <div className="grid grid-cols-3 gap-4">
+        <div>
+          <label className="text-sm font-medium text-slate-300">Cấp độ (Tier)</label>
+          <select
+            value={formData.tier}
+            onChange={(e) => updateField("tier", e.target.value)}
+            className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-white focus:border-blue-500 focus:outline-none"
+          >
+            <option value="basic">Cơ bản (Basic)</option>
+            <option value="advanced">Nâng cao (Advanced)</option>
+          </select>
+        </div>
         <div>
           <label className="text-sm font-medium text-slate-300">Giá (VNĐ)</label>
           <input
@@ -474,6 +512,40 @@ export default function ServiceAttributesPage() {
             className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-white placeholder:text-slate-500 focus:border-blue-500 focus:outline-none"
           />
         </div>
+        <div>
+          <label className="text-sm font-medium text-slate-300">Điểm XP</label>
+          <input
+            type="number"
+            value={formData.xpPoints}
+            onChange={(e) => updateField("xpPoints", e.target.value === "" ? 0 : Number(e.target.value))}
+            placeholder="0"
+            className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-white placeholder:text-slate-500 focus:border-blue-500 focus:outline-none"
+          />
+          <p className="mt-0.5 text-xs text-slate-500">Chỉ dùng cho tier Advanced</p>
+        </div>
+      </div>
+
+      {/* Parent (Mutual Exclusion) */}
+      <div>
+        <label className="text-sm font-medium text-slate-300">Tính năng cha (Mutual Exclusion)</label>
+        <select
+          value={formData.parentId}
+          onChange={(e) => updateField("parentId", e.target.value)}
+          className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-white focus:border-blue-500 focus:outline-none"
+        >
+          <option value="">-- Không có (độc lập) --</option>
+          {data.filter((d) => d.tier === "basic" && d.id !== editingItem?.id).map((d) => (
+            <option key={d.id} value={d.id}>
+              {d.nameVi} ({d.name})
+            </option>
+          ))}
+        </select>
+        <p className="mt-0.5 text-xs text-slate-500">
+          Chọn cha nếu tính năng này thay thế tính năng cơ bản khi khách nâng cấp
+        </p>
+      </div>
+
+      <div className="grid grid-cols-3 gap-4">
         <div>
           <label className="text-sm font-medium text-slate-300">Thứ tự</label>
           <input
@@ -543,15 +615,15 @@ export default function ServiceAttributesPage() {
           </p>
         </div>
         <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4">
-          <div className="text-sm text-slate-400">Bắt buộc</div>
-          <p className="mt-1 text-2xl font-bold text-amber-400">
-            {data.filter((d) => d.isRequired).length}
+          <div className="text-sm text-slate-400">Cơ bản</div>
+          <p className="mt-1 text-2xl font-bold text-slate-300">
+            {data.filter((d) => d.tier === "basic").length}
           </p>
         </div>
         <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4">
-          <div className="text-sm text-slate-400">Danh mục</div>
-          <p className="mt-1 text-2xl font-bold text-blue-400">
-            {new Set(data.map((d) => d.category)).size}
+          <div className="text-sm text-slate-400">Nâng cao</div>
+          <p className="mt-1 text-2xl font-bold text-purple-400">
+            {data.filter((d) => d.tier === "advanced").length}
           </p>
         </div>
       </div>

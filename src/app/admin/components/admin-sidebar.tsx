@@ -22,6 +22,8 @@ import {
   FileQuestion,
   Layout,
   Tag,
+  Gift,
+  Puzzle,
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/components/ui/utils";
