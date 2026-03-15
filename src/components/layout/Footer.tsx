@@ -138,35 +138,16 @@ export default function Footer({ data }: { data?: FooterData }) {
               {t('services')}
             </h4>
             <ul className="space-y-3">
-              {services && services.length > 0
-                ? services.slice(0, 6).map((svc) => (
-                    <li key={svc.slug}>
-                      <Link
-                        href={`/services#${svc.slug}`}
-                        className="text-sm text-gray-400 hover:text-white transition-colors duration-200 hover:translate-x-1 inline-block"
-                      >
-                        {svc.title}
-                      </Link>
-                    </li>
-                  ))
-                : /* Fallback to i18n keys when no DB data */
-                  [
-                    { key: "serviceWeb", path: "/services#web-development" },
-                    { key: "serviceMobile", path: "/services#mobile-apps" },
-                    { key: "serviceDesign", path: "/services#ui-ux-design" },
-                    { key: "serviceCloud", path: "/services#cloud-solutions" },
-                    { key: "serviceAI", path: "/services#ai-ml" },
-                    { key: "serviceDevops", path: "/services#devops" },
-                  ].map((link) => (
-                    <li key={link.path}>
-                      <Link
-                        href={link.path}
-                        className="text-sm text-gray-400 hover:text-white transition-colors duration-200 hover:translate-x-1 inline-block"
-                      >
-                        {t(link.key as any)}
-                      </Link>
-                    </li>
-                  ))}
+              {(services ?? []).map((svc) => (
+                <li key={svc.slug}>
+                  <Link
+                    href={`/services#${svc.slug}`}
+                    className="text-sm text-gray-400 hover:text-white transition-colors duration-200 hover:translate-x-1 inline-block"
+                  >
+                    {svc.title}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 

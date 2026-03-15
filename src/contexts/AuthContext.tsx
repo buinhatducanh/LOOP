@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { usePathname } from "next/navigation";
 
 export interface User {
   id: string;
@@ -23,8 +24,12 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const pathname = usePathname();
 
   useEffect(() => {
+    const needsAuth = pathname.startsWith("/admin") || pathname.includes("/login");
+    if (!needsAuth) return;
+
     fetch("/api/admin/auth/me")
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
@@ -43,7 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .catch(() => {
         // Network error - user stays null (not authenticated)
       });
-  }, []);
+  }, [pathname]);
 
   const login = async (email: string, password: string) => {
     try {

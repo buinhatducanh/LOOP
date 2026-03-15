@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { NextIntlClientProvider } from 'next-intl';
-import { getMessages } from 'next-intl/server';
+import { getMessages, getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { routing } from '@/i18n/routing';
 import JsonLd from '@/components/seo/JsonLd';
@@ -105,6 +105,8 @@ export default async function RootLayout({
     notFound();
   }
 
+  const tFooter = await getTranslations({ locale, namespace: 'Footer' });
+
   const [messages, footerServices, siteSettings] = await Promise.all([
     getMessages(),
     getServices().catch(() => []),
@@ -112,7 +114,16 @@ export default async function RootLayout({
   ]);
 
   const footerData = {
-    services: footerServices.map((s) => ({ slug: s.slug, title: s.title })),
+    services: footerServices.length > 0
+      ? footerServices.slice(0, 6).map((s) => ({ slug: s.slug, title: s.title }))
+      : [
+          { slug: "web-development", title: tFooter("serviceWeb") },
+          { slug: "mobile-apps", title: tFooter("serviceMobile") },
+          { slug: "ui-ux-design", title: tFooter("serviceDesign") },
+          { slug: "cloud-solutions", title: tFooter("serviceCloud") },
+          { slug: "ai-ml", title: tFooter("serviceAI") },
+          { slug: "devops", title: tFooter("serviceDevops") },
+        ],
     settings: siteSettings,
   };
 
@@ -124,11 +135,6 @@ export default async function RootLayout({
         <meta name="theme-color" content="#020617" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          rel="preload"
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
-          as="style"
-        />
         <link
           rel="stylesheet"
           href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
