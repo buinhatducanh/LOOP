@@ -104,7 +104,7 @@ export function ProjectCard({ project }: { project: Project }) {
           whileHover={{ background: "#6366F1", color: "#fff" }}
           whileTap={{ scale: 0.97 }}
           onClick={(e) => { e.stopPropagation(); router.push(`/portfolio/${project.id}`); }}
-          style={{ width: "100%", background: "transparent", color: "#6366F1", border: "1px solid #6366F1", padding: "10px", borderRadius: "8px", fontSize: "13px", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
+          style={{ width: "100%", background: "rgba(0,0,0,0)", color: "#6366F1", border: "1px solid #6366F1", padding: "10px", borderRadius: "8px", fontSize: "13px", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
         >
           {t("viewCaseStudy")} <ExternalLink size={13} />
         </motion.button>
