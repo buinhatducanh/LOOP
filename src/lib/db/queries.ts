@@ -1,5 +1,18 @@
 import { prisma } from "@/lib/prisma";
 
+export async function getSiteSettings(): Promise<Record<string, string>> {
+  try {
+    const settings = await prisma.siteSetting.findMany();
+    const map: Record<string, string> = {};
+    for (const s of settings) {
+      map[s.key] = s.value;
+    }
+    return map;
+  } catch {
+    return {};
+  }
+}
+
 export async function getServices() {
   return prisma.service.findMany({
     where: { isActive: true },

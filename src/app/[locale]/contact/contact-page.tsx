@@ -6,12 +6,27 @@ import { motion, useInView } from "motion/react";
 import { Mail, Phone, MapPin, Clock, MessageSquare } from "lucide-react";
 import { ContactForm } from "@/components/forms/ContactForm";
 
-const contactInfo = [
-  { icon: Mail, label: "Email", value: "hello@loop.vn", href: "mailto:hello@loop.vn" },
-  { icon: Phone, label: "Phone", value: "+84 888 123 456", href: "tel:+84888123456" },
-  { icon: MapPin, label: "Address", value: "Ho Chi Minh City, Vietnam", href: null },
-  { icon: Clock, label: "Working Hours", value: "Mon - Fri, 9:00 AM - 6:00 PM (GMT+7)", href: null },
-];
+interface ContactPageProps {
+  contactInfo?: {
+    email?: string;
+    phone?: string;
+    address?: string;
+    workingHours?: string;
+  };
+}
+
+function buildContactItems(info?: ContactPageProps["contactInfo"]) {
+  const email = info?.email || "hello@loop.vn";
+  const phone = info?.phone || "+84 888 123 456";
+  const address = info?.address || "Ho Chi Minh City, Vietnam";
+  const hours = info?.workingHours || "Mon - Fri, 9:00 AM - 6:00 PM (GMT+7)";
+  return [
+    { icon: Mail, label: "Email", value: email, href: `mailto:${email}` },
+    { icon: Phone, label: "Phone", value: phone, href: `tel:${phone.replace(/\s/g, "")}` },
+    { icon: MapPin, label: "Address", value: address, href: null },
+    { icon: Clock, label: "Working Hours", value: hours, href: null },
+  ];
+}
 
 function GradientText({ children }: { children: React.ReactNode }) {
   return (
@@ -43,9 +58,10 @@ function FadeIn({ children, delay = 0 }: { children: React.ReactNode; delay?: nu
   );
 }
 
-export function ContactPage() {
+export function ContactPage({ contactInfo: contactInfoProp }: ContactPageProps) {
   const searchParams = useSearchParams();
   const preselectedService = searchParams.get("service") || "";
+  const contactInfo = buildContactItems(contactInfoProp);
 
   return (
     <div style={{ color: "#FFFFFF", minHeight: "100vh" }}>

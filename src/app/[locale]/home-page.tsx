@@ -25,17 +25,25 @@ import { ServiceCard } from "@/components/cards/ServiceCard";
 import { ProjectCard } from "@/components/cards/ProjectCard";
 import { HeroCanvas } from "@/components/shared/HeroCanvas";
 
+interface StatsData {
+  projects?: string;
+  satisfaction?: string;
+  teamSize?: string;
+  years?: string;
+}
+
 interface HomePageProps {
   services?: typeof mockServices;
   projects?: typeof mockProjects;
   testimonials?: typeof mockTestimonials;
+  stats?: StatsData;
 }
 
-const getStats = (t: any) => [
-  { value: "150+", label: t('projects_label'), icon: TrendingUp },
-  { value: "98%", label: t('satisfaction_label'), icon: Star },
-  { value: "50+", label: t('team_label'), icon: Users },
-  { value: "8+", label: t('years_label'), icon: Award },
+const getStats = (t: any, data?: StatsData) => [
+  { value: data?.projects || "150+", label: t('projects_label'), icon: TrendingUp },
+  { value: data?.satisfaction || "98%", label: t('satisfaction_label'), icon: Star },
+  { value: data?.teamSize || "50+", label: t('team_label'), icon: Users },
+  { value: data?.years || "8+", label: t('years_label'), icon: Award },
 ];
 
 const getWhyUs = (t: any) => [
@@ -88,13 +96,14 @@ export function HomePage({
   services = mockServices,
   projects = mockProjects,
   testimonials = mockTestimonials,
+  stats: statsData,
 }: HomePageProps) {
   const router = useRouter();
   const t = useTranslations('HomePage');
   const tStats = useTranslations('Stats');
   const tWhy = useTranslations('WhyUs');
 
-  const stats = useMemo(() => getStats(tStats), [tStats]);
+  const stats = useMemo(() => getStats(tStats, statsData), [tStats, statsData]);
   const whyUs = useMemo(() => getWhyUs(tWhy), [tWhy]);
 
   return (

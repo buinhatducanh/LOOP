@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { NextIntlClientProvider } from 'next-intl';
-import { getMessages } from 'next-intl/server';
+import { getMessages, getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { routing } from '@/i18n/routing';
 import JsonLd from '@/components/seo/JsonLd';
@@ -10,6 +10,7 @@ import { TawktoChat } from '@/components/shared/TawktoChat';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { GoogleAnalytics } from '@next/third-parties/google';
+import { getSiteSettings } from '@/lib/db/queries';
 import "../globals.css";
 
 const baseMetadata: Metadata = {
@@ -104,7 +105,27 @@ export default async function RootLayout({
     notFound();
   }
 
-  const messages = await getMessages();
+  const tFooter = await getTranslations({ locale, namespace: 'Footer' });
+
+  const [messages, siteSettings] = await Promise.all([
+    getMessages(),
+    getSiteSettings(),
+  ]);
+
+  // Always use translated service names for footer to avoid hydration mismatch.
+  // DB services have English-only titles which causes SSR/client inconsistency
+  // when the DB connection is flaky (getServices sometimes succeeds, sometimes fails).
+  const footerData = {
+    services: [
+      { slug: "web-development", title: tFooter("serviceWeb") },
+      { slug: "mobile-apps", title: tFooter("serviceMobile") },
+      { slug: "ui-ux-design", title: tFooter("serviceDesign") },
+      { slug: "cloud-solutions", title: tFooter("serviceCloud") },
+      { slug: "ai-ml", title: tFooter("serviceAI") },
+      { slug: "devops", title: tFooter("serviceDevops") },
+    ],
+    settings: siteSettings,
+  };
 
   return (
     <html lang={locale}>
@@ -114,11 +135,6 @@ export default async function RootLayout({
         <meta name="theme-color" content="#020617" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          rel="preload"
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
-          as="style"
-        />
         <link
           rel="stylesheet"
           href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
@@ -151,7 +167,7 @@ export default async function RootLayout({
       </head>
       <body>
         <NextIntlClientProvider messages={messages}>
-          <PublicShell>
+          <PublicShell footerData={footerData}>
             {children}
           </PublicShell>
           <SpeedDial />

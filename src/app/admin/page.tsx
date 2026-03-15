@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import {
   Globe,
   FolderKanban,
@@ -136,7 +137,7 @@ export default function AdminDashboardPage() {
         setRecentMessages(dashData.recentMessages || []);
         setCharts(chartData);
       })
-      .catch(console.error)
+      .catch(() => toast.error("Lỗi kết nối"))
       .finally(() => setLoading(false));
   }, []);
 

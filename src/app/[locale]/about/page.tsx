@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { AboutPage } from "./about-page";
-import { getTeamMembers } from "@/lib/db/queries";
+import { getTeamMembers, getSiteSettings } from "@/lib/db/queries";
 import { mockTeamMembers } from "@/data/mockData";
 import JsonLd from "@/components/seo/JsonLd";
 
@@ -19,6 +19,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 
 export default async function Page() {
   let team;
+  const siteSettings = await getSiteSettings();
   try {
     const dbTeam = await getTeamMembers();
     team = dbTeam.length > 0 ? dbTeam : mockTeamMembers;
@@ -46,7 +47,15 @@ export default async function Page() {
   return (
     <>
       <JsonLd data={teamSchema} />
-      <AboutPage team={team} />
+      <AboutPage
+        team={team}
+        stats={siteSettings.stat_projects ? {
+          projects: siteSettings.stat_projects,
+          satisfaction: siteSettings.stat_satisfaction,
+          teamSize: siteSettings.stat_team_size,
+          years: siteSettings.stat_years,
+        } : undefined}
+      />
     </>
   );
 }

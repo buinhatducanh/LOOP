@@ -28,6 +28,7 @@ const settingSchema: Record<string, SettingGroup> = {
       { key: "contact_email", label: "Email liên hệ", type: "text" },
       { key: "contact_phone", label: "Số điện thoại", type: "text" },
       { key: "contact_address", label: "Địa chỉ", type: "textarea" },
+      { key: "working_hours", label: "Giờ làm việc", type: "text" },
     ],
   },
   seo: {
@@ -48,6 +49,18 @@ const settingSchema: Record<string, SettingGroup> = {
       { key: "linkedin_url", label: "LinkedIn URL", type: "text" },
       { key: "github_url", label: "GitHub URL", type: "text" },
       { key: "tiktok_url", label: "TikTok URL", type: "text" },
+      { key: "twitter_url", label: "Twitter / X URL", type: "text" },
+      { key: "instagram_url", label: "Instagram URL", type: "text" },
+    ],
+  },
+  stats: {
+    title: "Thống kê hiển thị",
+    icon: Settings,
+    fields: [
+      { key: "stat_projects", label: "Số dự án (vd: 150+)", type: "text" },
+      { key: "stat_satisfaction", label: "Tỉ lệ hài lòng (vd: 98%)", type: "text" },
+      { key: "stat_team_size", label: "Quy mô team (vd: 50+)", type: "text" },
+      { key: "stat_years", label: "Số năm kinh nghiệm (vd: 8+)", type: "text" },
     ],
   },
 };

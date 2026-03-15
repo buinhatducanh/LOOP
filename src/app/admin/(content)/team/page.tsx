@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { type ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "../../components/data-table";
 import { Plus, Pencil, Trash2, Eye, EyeOff, X } from "lucide-react";
+import { toast } from "sonner";
 
 interface TeamMember {
   id: string;
@@ -87,7 +88,7 @@ export default function AdminTeamPage() {
       setMembers(data.data || []);
       setPagination(data.pagination || { page: 1, limit: 20, total: 0, totalPages: 0 });
     } catch (e) {
-      console.error(e);
+      toast.error("Lỗi kết nối");
     } finally {
       setLoading(false);
     }
@@ -128,10 +129,14 @@ export default function AdminTeamPage() {
     try {
       const res = await fetch(`/api/admin/team/${member.id}`, { method: "DELETE" });
       if (res.ok) {
+        toast.success("Xóa thành viên thành công");
         fetchData(pagination.page, search);
+      } else {
+        const err = await res.json();
+        toast.error(err.error || "Xóa thất bại");
       }
     } catch (e) {
-      console.error(e);
+      toast.error("Lỗi kết nối");
     }
   };
 
@@ -143,10 +148,14 @@ export default function AdminTeamPage() {
         body: JSON.stringify({ isActive: !member.isActive }),
       });
       if (res.ok) {
+        toast.success("Cập nhật trạng thái thành công");
         fetchData(pagination.page, search);
+      } else {
+        const err = await res.json();
+        toast.error(err.error || "Cập nhật thất bại");
       }
     } catch (e) {
-      console.error(e);
+      toast.error("Lỗi kết nối");
     }
   };
 
@@ -192,14 +201,14 @@ export default function AdminTeamPage() {
 
       if (res.ok) {
         setShowModal(false);
+        toast.success(editingMember ? "Cập nhật thành viên thành công" : "Thêm thành viên thành công");
         fetchData(pagination.page, search);
       } else {
         const err = await res.json();
-        alert(err.error || "Có lỗi xảy ra");
+        toast.error(err.error || "Có lỗi xảy ra");
       }
     } catch (e) {
-      console.error(e);
-      alert("Có lỗi xảy ra");
+      toast.error("Lỗi kết nối");
     } finally {
       setSaving(false);
     }

@@ -16,14 +16,15 @@ import {
   Instagram,
 } from "lucide-react";
 
-const serviceLinks = [
-  { key: "serviceWeb", path: "/services#web-development" },
-  { key: "serviceMobile", path: "/services#mobile-apps" },
-  { key: "serviceDesign", path: "/services#ui-ux-design" },
-  { key: "serviceCloud", path: "/services#cloud-solutions" },
-  { key: "serviceAI", path: "/services#ai-ml" },
-  { key: "serviceDevops", path: "/services#devops" },
-];
+export interface FooterService {
+  slug: string;
+  title: string;
+}
+
+export interface FooterData {
+  services?: FooterService[];
+  settings?: Record<string, string>;
+}
 
 const companyLinks = [
   { key: "about", path: "/about" },
@@ -32,17 +33,31 @@ const companyLinks = [
   { key: "contact", path: "/contact" },
 ];
 
-const socialLinks = [
-  { icon: Github, href: "https://github.com", label: "GitHub" },
-  { icon: Twitter, href: "https://twitter.com", label: "Twitter" },
-  { icon: Linkedin, href: "https://linkedin.com", label: "LinkedIn" },
-  { icon: Instagram, href: "https://instagram.com", label: "Instagram" },
+const defaultSocialLinks = [
+  { icon: Github, key: "github_url", href: "https://github.com", label: "GitHub" },
+  { icon: Twitter, key: "twitter_url", href: "https://twitter.com", label: "Twitter" },
+  { icon: Linkedin, key: "linkedin_url", href: "https://linkedin.com", label: "LinkedIn" },
+  { icon: Instagram, key: "instagram_url", href: "https://instagram.com", label: "Instagram" },
 ];
 
-export default function Footer() {
+export default function Footer({ data }: { data?: FooterData }) {
   const pathname = usePathname();
   const t = useTranslations("Footer");
   const nav = useTranslations("Navigation");
+
+  const settings = data?.settings ?? {};
+  const services = data?.services;
+
+  const email = settings.contact_email || "hello@loop.vn";
+  const phone = settings.contact_phone || "+84 888 123 456";
+  const address = settings.contact_address || "Ho Chi Minh City, Vietnam";
+
+  const socialLinks = defaultSocialLinks
+    .map((s) => ({
+      ...s,
+      href: settings[s.key] || s.href,
+    }))
+    .filter((s) => s.href);
 
   return (
     <footer className="relative bg-gray-950 border-t border-white/5">
@@ -97,22 +112,22 @@ export default function Footer() {
             </p>
             <div className="space-y-3">
               <a
-                href="mailto:hello@loop.vn"
+                href={`mailto:${email}`}
                 className="flex items-center space-x-3 text-sm text-gray-400 hover:text-white transition-colors group"
               >
                 <Mail className="w-4 h-4 text-purple-400 group-hover:text-purple-300" />
-                <span>hello@loop.vn</span>
+                <span>{email}</span>
               </a>
               <a
-                href="tel:+84888123456"
+                href={`tel:${phone.replace(/\s/g, "")}`}
                 className="flex items-center space-x-3 text-sm text-gray-400 hover:text-white transition-colors group"
               >
                 <Phone className="w-4 h-4 text-purple-400 group-hover:text-purple-300" />
-                <span>+84 888 123 456</span>
+                <span>{phone}</span>
               </a>
               <div className="flex items-center space-x-3 text-sm text-gray-400">
                 <MapPin className="w-4 h-4 text-purple-400" />
-                <span>Ho Chi Minh City, Vietnam</span>
+                <span>{address}</span>
               </div>
             </div>
           </div>
@@ -123,13 +138,13 @@ export default function Footer() {
               {t('services')}
             </h4>
             <ul className="space-y-3">
-              {serviceLinks.map((link) => (
-                <li key={link.path}>
+              {(services ?? []).map((svc) => (
+                <li key={svc.slug}>
                   <Link
-                    href={link.path}
+                    href={`/services#${svc.slug}`}
                     className="text-sm text-gray-400 hover:text-white transition-colors duration-200 hover:translate-x-1 inline-block"
                   >
-                    {t(link.key as any)}
+                    {svc.title}
                   </Link>
                 </li>
               ))}

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getServices, getProjects, getTestimonials } from "@/lib/db/queries";
+import { getServices, getProjects, getTestimonials, getSiteSettings } from "@/lib/db/queries";
 import { services as mockServices, projects as mockProjects, testimonials as mockTestimonials } from "@/data/mockData";
 import JsonLd from "@/components/seo/JsonLd";
 import { HomePage } from "./home-page";
@@ -25,6 +25,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 
 export default async function Page() {
   let services, projects, testimonials;
+  const siteSettings = await getSiteSettings();
   try {
     const [dbServices, dbProjects, dbTestimonials] = await Promise.all([
       getServices(), getProjects(), getTestimonials(),
@@ -91,7 +92,17 @@ export default async function Page() {
   return (
     <>
       <JsonLd data={localBusinessSchema} />
-      <HomePage services={services} projects={projects} testimonials={testimonials} />
+      <HomePage
+        services={services}
+        projects={projects}
+        testimonials={testimonials}
+        stats={siteSettings.stat_projects ? {
+          projects: siteSettings.stat_projects,
+          satisfaction: siteSettings.stat_satisfaction,
+          teamSize: siteSettings.stat_team_size,
+          years: siteSettings.stat_years,
+        } : undefined}
+      />
     </>
   );
 }

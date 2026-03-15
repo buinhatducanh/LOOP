@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import { type ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "../../components/data-table";
 import { Plus, Pencil, Trash2, Eye, EyeOff, X, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 interface Service {
   id: string;
@@ -84,7 +85,7 @@ export default function AdminServicesPage() {
       setServices(data.data || []);
       setPagination(data.pagination || { page: 1, limit: 20, total: 0, totalPages: 0 });
     } catch (e) {
-      console.error(e);
+      toast.error("Lỗi kết nối");
     } finally {
       setLoading(false);
     }
@@ -124,7 +125,9 @@ export default function AdminServicesPage() {
         sortOrder: s.sortOrder || 0,
       });
     } catch (e) {
-      setFormError(e instanceof Error ? e.message : "Lỗi tải dữ liệu");
+      const msg = e instanceof Error ? e.message : "Lỗi tải dữ liệu";
+      setFormError(msg);
+      toast.error(msg);
     } finally {
       setEditLoading(false);
     }
@@ -145,9 +148,10 @@ export default function AdminServicesPage() {
         const json = await res.json();
         throw new Error(json.error || "Lỗi cập nhật");
       }
+      toast.success("Cập nhật trạng thái thành công");
       await fetchData(pagination.page, search);
     } catch (e) {
-      console.error(e);
+      toast.error("Lỗi kết nối");
     }
   };
 
@@ -167,9 +171,12 @@ export default function AdminServicesPage() {
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Lỗi tạo dịch vụ");
       setShowCreateModal(false);
+      toast.success("Tạo dịch vụ thành công");
       await fetchData(pagination.page, search);
     } catch (e) {
-      setFormError(e instanceof Error ? e.message : "Lỗi tạo dịch vụ");
+      const msg = e instanceof Error ? e.message : "Lỗi tạo dịch vụ";
+      setFormError(msg);
+      toast.error(msg);
     } finally {
       setSubmitting(false);
     }
@@ -192,9 +199,12 @@ export default function AdminServicesPage() {
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Lỗi cập nhật dịch vụ");
       setEditingService(null);
+      toast.success("Cập nhật dịch vụ thành công");
       await fetchData(pagination.page, search);
     } catch (e) {
-      setFormError(e instanceof Error ? e.message : "Lỗi cập nhật dịch vụ");
+      const msg = e instanceof Error ? e.message : "Lỗi cập nhật dịch vụ";
+      setFormError(msg);
+      toast.error(msg);
     } finally {
       setSubmitting(false);
     }
@@ -212,9 +222,10 @@ export default function AdminServicesPage() {
         throw new Error(json.error || "Lỗi xóa dịch vụ");
       }
       setDeletingService(null);
+      toast.success("Xóa dịch vụ thành công");
       await fetchData(pagination.page, search);
     } catch (e) {
-      console.error(e);
+      toast.error(e instanceof Error ? e.message : "Lỗi kết nối");
     } finally {
       setSubmitting(false);
     }

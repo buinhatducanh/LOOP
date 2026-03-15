@@ -16,7 +16,7 @@ export function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
@@ -26,15 +26,13 @@ export function LoginPage() {
     }
 
     setLoading(true);
-    setTimeout(async () => {
-      const { success, message } = await login(email, password);
-      if (success) {
-        router.push("/admin");
-      } else {
-        setError(message || "Invalid email or password. Try admin@loop.vn / admin123");
-        setLoading(false);
-      }
-    }, 800);
+    const { success, message } = await login(email, password);
+    if (success) {
+      router.push("/admin");
+    } else {
+      setError(message || "Email hoặc mật khẩu không đúng");
+      setLoading(false);
+    }
   };
 
   const inputStyle = (hasError: boolean): React.CSSProperties => ({

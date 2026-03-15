@@ -7,6 +7,20 @@ const intlMiddleware = createMiddleware(routing);
 export default function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
+  // Admin API routes - skip intl middleware
+  if (pathname.startsWith("/api/admin")) {
+    // Allow auth endpoints without token
+    if (pathname.startsWith("/api/admin/auth/")) {
+      return NextResponse.next();
+    }
+    // Protect all other admin API routes
+    const token = req.cookies.get("auth-token")?.value;
+    if (!token) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    return NextResponse.next();
+  }
+
   // Protect admin routes (except login-related)
   if (pathname.startsWith("/admin")) {
     const token = req.cookies.get("auth-token")?.value;
@@ -15,19 +29,7 @@ export default function middleware(req: NextRequest) {
       loginUrl.searchParams.set("redirect", pathname);
       return NextResponse.redirect(loginUrl);
     }
-    // Token exists - let the API/page handle full validation
-    return NextResponse.next();
-  }
-
-  // Admin API routes - skip intl middleware
-  if (pathname.startsWith("/api/admin")) {
-    // Protect non-auth API routes
-    if (!pathname.includes("/auth/")) {
-      const token = req.cookies.get("auth-token")?.value;
-      if (!token) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-      }
-    }
+    // Token exists - let the page handle full validation
     return NextResponse.next();
   }
 
