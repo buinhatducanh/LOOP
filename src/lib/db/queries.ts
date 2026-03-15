@@ -89,6 +89,58 @@ export async function getTeamMemberBySlug(slug: string) {
   return prisma.teamMember.findUnique({ where: { slug } });
 }
 
+// ─── Dual Service Model ─────────────────────────────────────
+
+export async function getWebTemplates() {
+  return prisma.webTemplate.findMany({
+    where: { isActive: true },
+    orderBy: { sortOrder: "asc" },
+    include: {
+      bundledAttributes: {
+        include: {
+          attribute: {
+            select: {
+              id: true,
+              slug: true,
+              name: true,
+              nameVi: true,
+              icon: true,
+              category: true,
+              categoryVi: true,
+            },
+          },
+        },
+      },
+    },
+  });
+}
+
+export async function getWebTemplateBySlug(slug: string) {
+  return prisma.webTemplate.findUnique({
+    where: { slug },
+    include: {
+      bundledAttributes: {
+        include: { attribute: true },
+      },
+    },
+  });
+}
+
+export async function getServiceAttributes() {
+  return prisma.serviceAttribute.findMany({
+    where: { isActive: true },
+    orderBy: [{ category: "asc" }, { sortOrder: "asc" }],
+  });
+}
+
+export async function getDualServicesData() {
+  const [templates, attributes] = await Promise.all([
+    getWebTemplates(),
+    getServiceAttributes(),
+  ]);
+  return { templates, attributes };
+}
+
 export async function getPricingPackagesData() {
   const [webPackages, featureCategories, hostingPlans, domainPrices, deploymentItems] =
     await Promise.all([
