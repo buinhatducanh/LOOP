@@ -21,11 +21,18 @@ import {
 import Link from "next/link";
 import { type TeamMember } from "@/generated/prisma/client";
 
-const getStats = (tStat: any) => [
-  { value: "150+", label: tStat("projects_label"), icon: TrendingUp },
-  { value: "98%", label: tStat("satisfaction_label"), icon: Star },
-  { value: "50+", label: tStat("team_label"), icon: Users },
-  { value: "8+", label: tStat("years_label"), icon: Award },
+interface StatsData {
+  projects?: string;
+  satisfaction?: string;
+  teamSize?: string;
+  years?: string;
+}
+
+const getStats = (tStat: any, data?: StatsData) => [
+  { value: data?.projects || "150+", label: tStat("projects_label"), icon: TrendingUp },
+  { value: data?.satisfaction || "98%", label: tStat("satisfaction_label"), icon: Star },
+  { value: data?.teamSize || "50+", label: tStat("team_label"), icon: Users },
+  { value: data?.years || "8+", label: tStat("years_label"), icon: Award },
 ];
 
 const getValues = (t: any) => [
@@ -81,12 +88,12 @@ function FadeIn({ children, delay = 0 }: { children: React.ReactNode; delay?: nu
   );
 }
 
-export function AboutPage({ team = [] }: { team?: TeamMember[] }) {
+export function AboutPage({ team = [], stats: statsData }: { team?: TeamMember[]; stats?: StatsData }) {
   const router = useRouter();
   const t = useTranslations("AboutPage");
   const tStats = useTranslations("Stats");
 
-  const stats = useMemo(() => getStats(tStats), [tStats]);
+  const stats = useMemo(() => getStats(tStats, statsData), [tStats, statsData]);
   const values = useMemo(() => getValues(t), [t]);
 
   return (

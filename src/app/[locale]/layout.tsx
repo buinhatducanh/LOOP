@@ -10,6 +10,7 @@ import { TawktoChat } from '@/components/shared/TawktoChat';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { GoogleAnalytics } from '@next/third-parties/google';
+import { getServices, getSiteSettings } from '@/lib/db/queries';
 import "../globals.css";
 
 const baseMetadata: Metadata = {
@@ -104,7 +105,16 @@ export default async function RootLayout({
     notFound();
   }
 
-  const messages = await getMessages();
+  const [messages, footerServices, siteSettings] = await Promise.all([
+    getMessages(),
+    getServices().catch(() => []),
+    getSiteSettings(),
+  ]);
+
+  const footerData = {
+    services: footerServices.map((s) => ({ slug: s.slug, title: s.title })),
+    settings: siteSettings,
+  };
 
   return (
     <html lang={locale}>
@@ -151,7 +161,7 @@ export default async function RootLayout({
       </head>
       <body>
         <NextIntlClientProvider messages={messages}>
-          <PublicShell>
+          <PublicShell footerData={footerData}>
             {children}
           </PublicShell>
           <SpeedDial />

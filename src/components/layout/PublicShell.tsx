@@ -1,10 +1,15 @@
 "use client";
 
 import Navbar from "./Navbar";
-import Footer from "./Footer";
+import Footer, { type FooterData } from "./Footer";
 import { AuthProvider } from "@/contexts/AuthContext";
 
-export function PublicShell({ children }: { children: React.ReactNode }) {
+interface PublicShellProps {
+  children: React.ReactNode;
+  footerData?: FooterData;
+}
+
+export function PublicShell({ children, footerData }: PublicShellProps) {
   return (
     <AuthProvider>
       <div
@@ -17,7 +22,7 @@ export function PublicShell({ children }: { children: React.ReactNode }) {
       >
         <Navbar />
         <main style={{ flex: 1, paddingTop: "68px" }}>{children}</main>
-        <Footer />
+        <Footer data={footerData} />
       </div>
     </AuthProvider>
   );
