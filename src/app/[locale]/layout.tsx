@@ -15,6 +15,11 @@ import "../globals.css";
 
 const baseMetadata: Metadata = {
   metadataBase: new URL("https://loop.vn"),
+  icons: {
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+    ],
+  },
   title: {
     default: "LOOP - Thiết kế Website & Ứng dụng chuyên nghiệp",
     template: "%s | LOOP",
@@ -40,7 +45,7 @@ const baseMetadata: Metadata = {
       "Công ty LOOP chuyên thiết kế website thương mại, app di động, phần mềm quản lý. Cam kết SEO top Google, hiệu suất 95+.",
     images: [
       {
-        url: "/opengraph-image",
+        url: "/og-image.svg",
         width: 1200,
         height: 630,
         alt: "LOOP - Web Development Agency",
