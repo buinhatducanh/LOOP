@@ -1,8 +1,11 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Navbar from "./Navbar";
-import Footer, { type FooterData } from "./Footer";
+import { type FooterData } from "./Footer";
 import { AuthProvider } from "@/contexts/AuthContext";
+
+const Footer = dynamic(() => import("./Footer"), { ssr: false });
 
 interface PublicShellProps {
   children: React.ReactNode;
