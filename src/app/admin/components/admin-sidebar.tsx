@@ -50,6 +50,8 @@ const navigation: NavEntry[] = [
       { name: "Đơn hàng", href: "/admin/orders", icon: ShoppingCart },
       { name: "Kho Giao Diện", href: "/admin/web-templates", icon: Layout },
       { name: "Kho Tính Năng", href: "/admin/service-attributes", icon: Tag },
+      { name: "Dịch vụ Rời", href: "/admin/addon-services", icon: Puzzle },
+      { name: "XP & Rewards", href: "/admin/reward-tiers", icon: Gift },
       { name: "Gói dịch vụ", href: "/admin/packages", icon: Package },
       { name: "Báo giá tính năng", href: "/admin/pricing-features", icon: Calculator },
       { name: "Yêu cầu báo giá", href: "/admin/quote-requests", icon: FileQuestion },

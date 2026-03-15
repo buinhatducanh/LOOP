@@ -83,6 +83,137 @@ async function main() {
     });
     console.log("  ✅ Admin:", admin.email);
 
+    // ─── SERVICE ATTRIBUTES (Feature Catalog) ──────────────────
+    const attributesData = [
+        // ── Nhóm Thiết kế ──
+        { slug: "responsive-design", name: "Responsive Design", nameVi: "Thiết kế responsive", category: "design", categoryVi: "Thiết kế & UX", tier: "basic", price: 0, xpPoints: 0, sortOrder: 1 },
+        { slug: "custom-ui-design", name: "Custom UI Design", nameVi: "Thiết kế UI tùy chỉnh", category: "design", categoryVi: "Thiết kế & UX", tier: "advanced", price: 2000000, xpPoints: 50, sortOrder: 2 },
+        { slug: "animation-effects", name: "Animation & Motion Effects", nameVi: "Hiệu ứng chuyển động", category: "design", categoryVi: "Thiết kế & UX", tier: "advanced", price: 1500000, xpPoints: 30, sortOrder: 3 },
+        // ── Nhóm Thương mại điện tử ──
+        { slug: "basic-cart", name: "Basic Shopping Cart", nameVi: "Giỏ hàng cơ bản", category: "ecommerce", categoryVi: "Thương mại điện tử", tier: "basic", price: 0, xpPoints: 0, sortOrder: 10 },
+        { slug: "advanced-cart", name: "Advanced Shopping Cart", nameVi: "Giỏ hàng nâng cao", category: "ecommerce", categoryVi: "Thương mại điện tử", tier: "advanced", price: 1000000, xpPoints: 40, sortOrder: 11 },
+        { slug: "payment-gateway", name: "Payment Gateway Integration", nameVi: "Tích hợp cổng thanh toán", category: "ecommerce", categoryVi: "Thương mại điện tử", tier: "advanced", price: 1500000, xpPoints: 35, sortOrder: 12 },
+        // ── Nhóm Bảo mật ──
+        { slug: "ssl-certificate", name: "SSL Certificate", nameVi: "Chứng chỉ SSL", category: "security", categoryVi: "Bảo mật", tier: "basic", price: 0, xpPoints: 0, sortOrder: 20 },
+        { slug: "advanced-auth", name: "Advanced Authentication", nameVi: "Phân quyền nâng cao", category: "security", categoryVi: "Bảo mật", tier: "advanced", price: 2000000, xpPoints: 70, sortOrder: 21 },
+        // ── Nhóm SEO ──
+        { slug: "basic-seo", name: "Basic SEO Setup", nameVi: "SEO cơ bản", category: "seo", categoryVi: "SEO & Marketing", tier: "basic", price: 0, xpPoints: 0, sortOrder: 30 },
+        { slug: "advanced-seo", name: "Advanced SEO & Analytics", nameVi: "SEO nâng cao & Analytics", category: "seo", categoryVi: "SEO & Marketing", tier: "advanced", price: 1000000, xpPoints: 30, sortOrder: 31 },
+        // ── Nhóm Tích hợp ──
+        { slug: "live-chat", name: "Live Chat Integration", nameVi: "Chat trực tuyến", category: "integration", categoryVi: "Tích hợp", tier: "advanced", price: 500000, xpPoints: 20, sortOrder: 40 },
+        { slug: "crm-integration", name: "CRM Integration", nameVi: "Tích hợp CRM", category: "integration", categoryVi: "Tích hợp", tier: "advanced", price: 2000000, xpPoints: 60, sortOrder: 41 },
+        // ── Nhóm Hiệu năng ──
+        { slug: "basic-hosting", name: "Standard Hosting", nameVi: "Hosting tiêu chuẩn", category: "performance", categoryVi: "Hiệu năng", tier: "basic", price: 0, xpPoints: 0, sortOrder: 50 },
+        { slug: "premium-hosting", name: "Premium Hosting & CDN", nameVi: "Hosting cao cấp & CDN", category: "performance", categoryVi: "Hiệu năng", tier: "advanced", price: 1000000, xpPoints: 25, sortOrder: 51 },
+    ];
+
+    const savedAttributes: Record<string, { id: string }> = {};
+    for (const data of attributesData) {
+        const attr = await prisma.serviceAttribute.upsert({
+            where: { slug: data.slug },
+            update: data,
+            create: { ...data, isActive: true, isRequired: data.tier === "basic" },
+        });
+        savedAttributes[data.slug] = attr;
+        console.log("  ✅ Attribute:", data.nameVi);
+    }
+
+    // Set parent-child relationships (mutual exclusion)
+    const parentChildPairs = [
+        { child: "advanced-cart", parent: "basic-cart" },
+        { child: "advanced-seo", parent: "basic-seo" },
+        { child: "premium-hosting", parent: "basic-hosting" },
+    ];
+    for (const { child, parent } of parentChildPairs) {
+        if (savedAttributes[child] && savedAttributes[parent]) {
+            await prisma.serviceAttribute.update({
+                where: { id: savedAttributes[child].id },
+                data: { parentId: savedAttributes[parent].id },
+            });
+            console.log(`  🔗 Parent-child: ${parent} → ${child}`);
+        }
+    }
+
+    // ─── ADDON SERVICES (Dịch vụ rời) ──────────────────────────
+    const addonsData = [
+        { slug: "seo-writing-30", name: "SEO Article Writing (30/month)", nameVi: "Viết bài SEO (30 bài/tháng)", description: "Monthly SEO content writing service", descriptionVi: "Dịch vụ viết bài chuẩn SEO hàng tháng, 30 bài/tháng", icon: "pen-line", type: "recurring", price: 2000000, billingPeriod: "monthly", metadata: { articlesPerMonth: 30 }, sortOrder: 1 },
+        { slug: "google-maps-setup", name: "Google Maps Setup", nameVi: "Định vị Google Maps", description: "Set up and optimize Google Business Profile", descriptionVi: "Thiết lập và tối ưu hồ sơ Google Business trên Maps", icon: "map-pin", type: "one_time", price: 500000, billingPeriod: null, metadata: null, sortOrder: 2 },
+        { slug: "data-entry-support", name: "Data Entry Support", nameVi: "Hỗ trợ nhập liệu", description: "Product data entry and content upload", descriptionVi: "Nhập liệu sản phẩm, hình ảnh và nội dung lên website", icon: "database", type: "one_time", price: 1000000, billingPeriod: null, metadata: null, sortOrder: 3 },
+        { slug: "monthly-maintenance", name: "Monthly Maintenance", nameVi: "Bảo trì hàng tháng", description: "Ongoing website maintenance and updates", descriptionVi: "Bảo trì website định kỳ: cập nhật, backup, monitoring", icon: "wrench", type: "recurring", price: 500000, billingPeriod: "monthly", metadata: null, sortOrder: 4 },
+        { slug: "marketing-consultation", name: "Marketing Consultation", nameVi: "Tư vấn marketing", description: "One-on-one marketing strategy session", descriptionVi: "Buổi tư vấn chiến lược marketing 1-1 với chuyên gia", icon: "megaphone", type: "one_time", price: 1500000, billingPeriod: null, metadata: null, sortOrder: 5 },
+        { slug: "social-media-setup", name: "Social Media Setup", nameVi: "Thiết lập mạng xã hội", description: "Set up and brand social media profiles", descriptionVi: "Thiết lập và đồng bộ thương hiệu trên mạng xã hội", icon: "share-2", type: "one_time", price: 800000, billingPeriod: null, metadata: null, sortOrder: 6 },
+    ];
+
+    const savedAddons: Record<string, { id: string }> = {};
+    for (const data of addonsData) {
+        const addon = await prisma.addonService.upsert({
+            where: { slug: data.slug },
+            update: data,
+            create: { ...data, isActive: true },
+        });
+        savedAddons[data.slug] = addon;
+        console.log("  ✅ Addon:", data.nameVi);
+    }
+
+    // ─── REWARD TIERS (Mức thưởng theo level) ──────────────────
+    const tiersData = [
+        { level: 2, name: "Advanced Project", nameVi: "Dự án Nâng cao", description: "Rewards for reaching Level 2 (100+ XP)", minXp: 100 },
+        { level: 3, name: "Premium Project", nameVi: "Dự án Premium", description: "Rewards for reaching Level 3 (200+ XP)", minXp: 200 },
+        { level: 4, name: "Enterprise Project", nameVi: "Dự án Doanh nghiệp", description: "Rewards for reaching Level 4 (300+ XP)", minXp: 300 },
+    ];
+
+    const savedTiers: Record<number, { id: string }> = {};
+    for (const data of tiersData) {
+        const tier = await prisma.rewardTier.upsert({
+            where: { level: data.level },
+            update: data,
+            create: { ...data, isActive: true },
+        });
+        savedTiers[data.level] = tier;
+        console.log("  ✅ Tier:", data.nameVi);
+    }
+
+    // ─── REWARD TIER ITEMS (Ưu đãi từng level) ─────────────────
+    const tierItemsData = [
+        // Level 2 rewards
+        { tierLevel: 2, addonSlug: "data-entry-support", quantity: 1, durationMonths: null, description: "Nhập liệu sản phẩm miễn phí", sortOrder: 1 },
+        { tierLevel: 2, addonSlug: "seo-writing-30", quantity: 1, durationMonths: 3, description: "Gói viết bài SEO 30 bài/tháng × 3 tháng", sortOrder: 2 },
+        // Level 3 rewards
+        { tierLevel: 3, addonSlug: "google-maps-setup", quantity: 1, durationMonths: null, description: "Định vị Google Maps miễn phí", sortOrder: 1 },
+        { tierLevel: 3, addonSlug: "monthly-maintenance", quantity: 1, durationMonths: 3, description: "Bảo trì 3 tháng miễn phí", sortOrder: 2 },
+        // Level 4 rewards
+        { tierLevel: 4, addonSlug: "marketing-consultation", quantity: 1, durationMonths: null, description: "Tư vấn marketing 1 buổi miễn phí", sortOrder: 1 },
+        { tierLevel: 4, addonSlug: "seo-writing-30", quantity: 1, durationMonths: 6, description: "Gói viết bài SEO 30 bài/tháng × 6 tháng", sortOrder: 2 },
+        { tierLevel: 4, addonSlug: "social-media-setup", quantity: 1, durationMonths: null, description: "Thiết lập mạng xã hội miễn phí", sortOrder: 3 },
+    ];
+
+    for (const { tierLevel, addonSlug, ...itemData } of tierItemsData) {
+        const tier = savedTiers[tierLevel];
+        const addon = savedAddons[addonSlug];
+        if (tier && addon) {
+            await prisma.rewardTierItem.upsert({
+                where: { rewardTierId_addonServiceId: { rewardTierId: tier.id, addonServiceId: addon.id } },
+                update: { ...itemData },
+                create: { ...itemData, rewardTierId: tier.id, addonServiceId: addon.id },
+            });
+            console.log(`  ✅ Tier ${tierLevel} item: ${addonSlug}`);
+        }
+    }
+
+    // ─── SITE SETTINGS (Platform config) ────────────────────────
+    const settingsData = [
+        { key: "custom_web_base_price", value: "3000000" },
+        { key: "xp_per_level", value: "100" },
+    ];
+    for (const data of settingsData) {
+        await prisma.siteSetting.upsert({
+            where: { key: data.key },
+            update: { value: data.value },
+            create: data,
+        });
+        console.log("  ✅ Setting:", data.key, "=", data.value);
+    }
+
     console.log("\n🎉 Seed completed!");
 }
 
