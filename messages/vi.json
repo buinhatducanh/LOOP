@@ -20,6 +20,9 @@
         "company": "Công ty",
         "stayConnected": "Kết nối",
         "stayConnectedDesc": "Theo dõi chúng tôi trên mạng xã hội để nhận thông tin mới nhất.",
+        "highlightGlobal": "Phục vụ khách hàng tại 30+ quốc gia",
+        "highlightQuality": "Cam kết 95+ điểm Lighthouse",
+        "highlightSupport": "Hỗ trợ kỹ thuật 12 tháng",
         "rights": "© 2025 LOOP. Đã đăng ký bản quyền.",
         "privacyPolicy": "Chính sách bảo mật",
         "termsOfService": "Điều khoản dịch vụ",
@@ -29,6 +32,16 @@
         "serviceCloud": "Giải pháp đám mây",
         "serviceAI": "AI & Học máy",
         "serviceDevops": "DevOps"
+    },
+    "ServiceCard": {
+        "priceFrom": "Giá từ",
+        "deliveryTime": "Thời gian",
+        "viewDetails": "Xem chi tiết",
+        "getQuote": "Nhận báo giá"
+    },
+    "ProjectCard": {
+        "projectBy": "Dự án bởi",
+        "viewCaseStudy": "Xem dự án"
     },
     "HomePage": {
         "badge": "Agency Phát triển Web Cao Cấp",

@@ -20,6 +20,9 @@
         "company": "Company",
         "stayConnected": "Stay Connected",
         "stayConnectedDesc": "Follow us on social media for updates and insights.",
+        "highlightGlobal": "Serving clients in 30+ countries",
+        "highlightQuality": "95+ Lighthouse score guarantee",
+        "highlightSupport": "12-month technical support",
         "rights": "© 2025 LOOP. All rights reserved.",
         "privacyPolicy": "Privacy Policy",
         "termsOfService": "Terms of Service",
@@ -29,6 +32,16 @@
         "serviceCloud": "Cloud Solutions",
         "serviceAI": "AI & ML",
         "serviceDevops": "DevOps"
+    },
+    "ServiceCard": {
+        "priceFrom": "Starting at",
+        "deliveryTime": "Delivery",
+        "viewDetails": "View Details",
+        "getQuote": "Get a Quote"
+    },
+    "ProjectCard": {
+        "projectBy": "Project by",
+        "viewCaseStudy": "View Case Study"
     },
     "HomePage": {
         "badge": "Premium Web Development Agency",

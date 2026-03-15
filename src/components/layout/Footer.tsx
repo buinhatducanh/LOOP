@@ -10,10 +10,14 @@ import {
   Phone,
   MapPin,
   ArrowRight,
+  ArrowUpRight,
   Github,
   Twitter,
   Linkedin,
   Instagram,
+  Globe,
+  Shield,
+  HeadphonesIcon,
 } from "lucide-react";
 
 export interface FooterService {
@@ -60,162 +64,196 @@ export default function Footer({ data }: { data?: FooterData }) {
     .filter((s) => s.href);
 
   return (
-    <footer className="relative bg-gray-950 border-t border-white/5">
-      {/* CTA Banner */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-16">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-purple-600 to-cyan-600 p-8 md:p-12"
-        >
-          <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.3) 1px, transparent 1px)", backgroundSize: "20px 20px" }} />
-          <div className="relative flex flex-col md:flex-row items-center justify-between gap-6">
-            <div>
-              <h3 className="text-2xl md:text-3xl font-bold text-white mb-2">
-                {t('ctaTitle')}
+    <footer className="relative bg-[#030712]">
+      {/* CTA Section */}
+      <div className="relative overflow-hidden border-t border-white/5">
+        <div className="absolute inset-0 bg-gradient-to-r from-indigo-600/10 via-purple-600/5 to-cyan-600/10" />
+        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: "radial-gradient(circle, #fff 1px, transparent 1px)", backgroundSize: "24px 24px" }} />
+        <div className="relative max-w-7xl mx-auto px-6 lg:px-8 py-20">
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
+            <div className="text-center lg:text-left">
+              <h3 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight mb-3">
+                {t("ctaTitle")}
               </h3>
-              <p className="text-white/80 text-lg">
-                {t('ctaDesc')}
+              <p className="text-gray-400 text-lg max-w-lg">
+                {t("ctaDesc")}
               </p>
             </div>
             <Link
               href="/contact"
-              className="flex items-center space-x-2 px-8 py-4 bg-white text-gray-900 rounded-xl font-semibold hover:bg-gray-100 transition-all duration-200 shadow-lg shadow-black/20 group whitespace-nowrap"
+              className="group relative inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-xl font-bold text-base hover:shadow-lg hover:shadow-indigo-500/25 transition-all duration-300 hover:-translate-y-0.5"
             >
-              <span>{t('getInTouch')}</span>
+              <span>{t("getInTouch")}</span>
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Link>
           </div>
-        </motion.div>
+        </div>
       </div>
 
-      {/* Main Footer Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
-          {/* Brand Section */}
-          <div className="lg:col-span-1">
-            <Link href="/" className="flex items-center space-x-2 group mb-6">
-              <div className="relative">
-                <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center">
-                  <Zap className="w-5 h-5 text-white" />
+      {/* Highlights Bar */}
+      <div className="border-t border-white/5 bg-white/[0.02]">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 py-8">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            {[
+              { icon: Globe, text: t("highlightGlobal") },
+              { icon: Shield, text: t("highlightQuality") },
+              { icon: HeadphonesIcon, text: t("highlightSupport") },
+            ].map((item) => (
+              <div key={item.text} className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center flex-shrink-0">
+                  <item.icon className="w-5 h-5 text-indigo-400" />
                 </div>
-                <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-purple-500 to-cyan-500 blur-lg opacity-40 group-hover:opacity-60 transition-opacity" />
+                <span className="text-sm text-gray-300 font-medium">{item.text}</span>
               </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">
-                LOOP
-              </span>
-            </Link>
-            <p className="text-gray-400 text-sm leading-relaxed mb-6">
-              {t('description')}
-            </p>
-            <div className="space-y-3">
-              <a
-                href={`mailto:${email}`}
-                className="flex items-center space-x-3 text-sm text-gray-400 hover:text-white transition-colors group"
-              >
-                <Mail className="w-4 h-4 text-purple-400 group-hover:text-purple-300" />
-                <span>{email}</span>
-              </a>
-              <a
-                href={`tel:${phone.replace(/\s/g, "")}`}
-                className="flex items-center space-x-3 text-sm text-gray-400 hover:text-white transition-colors group"
-              >
-                <Phone className="w-4 h-4 text-purple-400 group-hover:text-purple-300" />
-                <span>{phone}</span>
-              </a>
-              <div className="flex items-center space-x-3 text-sm text-gray-400">
-                <MapPin className="w-4 h-4 text-purple-400" />
-                <span>{address}</span>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Main Footer */}
+      <div className="border-t border-white/5">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 py-16">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-12 lg:gap-8">
+            {/* Brand - wider column */}
+            <div className="lg:col-span-4">
+              <Link href="/" className="inline-flex items-center gap-2.5 group mb-6">
+                <div className="relative">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                    <Zap className="w-5 h-5 text-white" />
+                  </div>
+                </div>
+                <span className="text-2xl font-extrabold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+                  LOOP
+                </span>
+              </Link>
+              <p className="text-gray-400 text-sm leading-relaxed mb-8 max-w-xs">
+                {t("description")}
+              </p>
+
+              {/* Contact Info */}
+              <div className="space-y-4">
+                <a
+                  href={`mailto:${email}`}
+                  className="flex items-center gap-3 text-sm text-gray-400 hover:text-white transition-colors group"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-indigo-500/10 transition-colors">
+                    <Mail className="w-4 h-4 text-indigo-400" />
+                  </div>
+                  <span>{email}</span>
+                </a>
+                <a
+                  href={`tel:${phone.replace(/\s/g, "")}`}
+                  className="flex items-center gap-3 text-sm text-gray-400 hover:text-white transition-colors group"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-indigo-500/10 transition-colors">
+                    <Phone className="w-4 h-4 text-indigo-400" />
+                  </div>
+                  <span>{phone}</span>
+                </a>
+                <div className="flex items-center gap-3 text-sm text-gray-400">
+                  <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center">
+                    <MapPin className="w-4 h-4 text-indigo-400" />
+                  </div>
+                  <span>{address}</span>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Services Links */}
-          <div>
-            <h4 className="text-white font-semibold text-sm uppercase tracking-wider mb-6">
-              {t('services')}
-            </h4>
-            <ul className="space-y-3">
-              {(services ?? []).map((svc) => (
-                <li key={svc.slug}>
-                  <Link
-                    href={`/services#${svc.slug}`}
-                    className="text-sm text-gray-400 hover:text-white transition-colors duration-200 hover:translate-x-1 inline-block"
+            {/* Services */}
+            <div className="lg:col-span-3">
+              <h4 className="text-xs font-bold text-white uppercase tracking-[0.15em] mb-6 flex items-center gap-2">
+                <span className="w-6 h-px bg-indigo-500" />
+                {t("services")}
+              </h4>
+              <ul className="space-y-3">
+                {(services ?? []).map((svc) => (
+                  <li key={svc.slug}>
+                    <Link
+                      href={`/services#${svc.slug}`}
+                      className="group flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors duration-200"
+                    >
+                      <span>{svc.title}</span>
+                      <ArrowUpRight className="w-3 h-3 opacity-0 -translate-y-0.5 group-hover:opacity-100 group-hover:translate-y-0 transition-all" />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Company */}
+            <div className="lg:col-span-2">
+              <h4 className="text-xs font-bold text-white uppercase tracking-[0.15em] mb-6 flex items-center gap-2">
+                <span className="w-6 h-px bg-indigo-500" />
+                {t("company")}
+              </h4>
+              <ul className="space-y-3">
+                {companyLinks.map((link) => (
+                  <li key={link.path}>
+                    <Link
+                      href={link.path}
+                      className={`group flex items-center gap-2 text-sm transition-colors duration-200 ${pathname === link.path
+                          ? "text-indigo-400 font-medium"
+                          : "text-gray-400 hover:text-white"
+                        }`}
+                    >
+                      <span>{nav(link.key as any)}</span>
+                      <ArrowUpRight className="w-3 h-3 opacity-0 -translate-y-0.5 group-hover:opacity-100 group-hover:translate-y-0 transition-all" />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Social */}
+            <div className="lg:col-span-3">
+              <h4 className="text-xs font-bold text-white uppercase tracking-[0.15em] mb-6 flex items-center gap-2">
+                <span className="w-6 h-px bg-indigo-500" />
+                {t("stayConnected")}
+              </h4>
+              <p className="text-sm text-gray-400 mb-6 leading-relaxed">
+                {t("stayConnectedDesc")}
+              </p>
+              <div className="flex items-center gap-3">
+                {socialLinks.map((social) => (
+                  <motion.a
+                    key={social.label}
+                    href={social.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={social.label}
+                    whileHover={{ y: -2 }}
+                    className="w-10 h-10 rounded-xl bg-white/5 hover:bg-indigo-500/15 border border-white/5 hover:border-indigo-500/30 flex items-center justify-center text-gray-500 hover:text-indigo-400 transition-all duration-200"
                   >
-                    {svc.title}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Company Links */}
-          <div>
-            <h4 className="text-white font-semibold text-sm uppercase tracking-wider mb-6">
-              {t('company')}
-            </h4>
-            <ul className="space-y-3">
-              {companyLinks.map((link) => (
-                <li key={link.path}>
-                  <Link
-                    href={link.path}
-                    className={`text-sm transition-colors duration-200 hover:translate-x-1 inline-block ${pathname === link.path
-                        ? "text-purple-400"
-                        : "text-gray-400 hover:text-white"
-                      }`}
-                  >
-                    {nav(link.key as any)}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Newsletter / Social */}
-          <div>
-            <h4 className="text-white font-semibold text-sm uppercase tracking-wider mb-6">
-              {t('stayConnected')}
-            </h4>
-            <p className="text-sm text-gray-400 mb-4">
-              {t('stayConnectedDesc')}
-            </p>
-            <div className="flex items-center space-x-3">
-              {socialLinks.map((social) => (
-                <a
-                  key={social.label}
-                  href={social.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={social.label}
-                  className="w-10 h-10 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-all duration-200"
-                >
-                  <social.icon className="w-4 h-4" />
-                </a>
-              ))}
+                    <social.icon className="w-4 h-4" />
+                  </motion.a>
+                ))}
+              </div>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Bottom Bar */}
-        <div className="mt-12 pt-8 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-sm text-gray-500">
-            {t('rights')}
-          </p>
-          <div className="flex items-center space-x-6">
-            <Link
-              href="/privacy"
-              className="text-sm text-gray-500 hover:text-gray-300 transition-colors"
-            >
-              {t('privacyPolicy')}
-            </Link>
-            <Link
-              href="/terms"
-              className="text-sm text-gray-500 hover:text-gray-300 transition-colors"
-            >
-              {t('termsOfService')}
-            </Link>
+      {/* Bottom Bar */}
+      <div className="border-t border-white/5">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 py-6">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <p className="text-xs text-gray-600">
+              {t("rights")}
+            </p>
+            <div className="flex items-center gap-8">
+              <Link
+                href="/privacy"
+                className="text-xs text-gray-600 hover:text-gray-400 transition-colors"
+              >
+                {t("privacyPolicy")}
+              </Link>
+              <Link
+                href="/terms"
+                className="text-xs text-gray-600 hover:text-gray-400 transition-colors"
+              >
+                {t("termsOfService")}
+              </Link>
+            </div>
           </div>
         </div>
       </div>
