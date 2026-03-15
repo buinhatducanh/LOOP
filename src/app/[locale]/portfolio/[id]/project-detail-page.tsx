@@ -6,7 +6,7 @@ import { motion, useInView } from "motion/react";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, ExternalLink, Calendar, Code2, Layers, CheckCircle, Zap, Building2, TrendingUp } from "lucide-react";
 import Image from "next/image";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Breadcrumbs } from "@/components/shared/Breadcrumbs";
 interface Project {
   id: string;
@@ -61,6 +61,7 @@ function FadeIn({ children, delay = 0 }: { children: React.ReactNode; delay?: nu
 export function ProjectDetailPage({ project, relatedService }: { project: Project; relatedService?: RelatedService }) {
   const router = useRouter();
   const locale = useLocale();
+  const t = useTranslations("ProjectDetailPage");
 
   return (
     <div style={{ color: "#FFFFFF", minHeight: "100vh" }}>

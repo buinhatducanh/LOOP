@@ -1,6 +1,6 @@
 import { ImageResponse } from 'next/og';
 
-export const alt = 'LOOP - Thiet ke Website & Ung dung chuyen nghiep';
+export const alt = 'LOOP - Premium Web Development Agency';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
@@ -9,7 +9,7 @@ export default function OGImage() {
     (
       <div
         style={{
-          background: 'linear-gradient(135deg, #020617 0%, #0F172A 50%, #1E293B 100%)',
+          background: '#020617',
           width: '100%',
           height: '100%',
           display: 'flex',
@@ -18,99 +18,101 @@ export default function OGImage() {
           justifyContent: 'center',
           fontFamily: 'Inter, Arial, sans-serif',
           position: 'relative',
+          overflow: 'hidden',
         }}
       >
-        {/* Decorative gradient orbs */}
+        {/* Subtle gradient overlay */}
         <div
           style={{
             position: 'absolute',
-            top: -100,
-            right: -100,
-            width: 400,
-            height: 400,
-            borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(59,130,246,0.3) 0%, transparent 70%)',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background:
+              'radial-gradient(ellipse 80% 60% at 50% 50%, rgba(99,102,241,0.12) 0%, rgba(147,51,234,0.06) 40%, transparent 70%)',
           }}
         />
+
+        {/* Top decorative line */}
         <div
           style={{
             position: 'absolute',
-            bottom: -100,
-            left: -100,
-            width: 400,
-            height: 400,
-            borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(99,102,241,0.3) 0%, transparent 70%)',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 4,
+            background: 'linear-gradient(90deg, transparent, #6366F1, #9333EA, transparent)',
           }}
         />
 
-        {/* Logo */}
+        {/* LOOP text - large and bold with gradient */}
         <div
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: 80,
-            height: 80,
-            borderRadius: 16,
-            background: 'linear-gradient(135deg, #3B82F6, #6366F1)',
-            marginBottom: 32,
-            fontSize: 48,
-            fontWeight: 700,
-            color: 'white',
-          }}
-        >
-          L
-        </div>
-
-        {/* Title */}
-        <div
-          style={{
-            fontSize: 64,
-            fontWeight: 700,
-            background: 'linear-gradient(135deg, #3B82F6, #6366F1)',
+            fontSize: 128,
+            fontWeight: 800,
+            letterSpacing: '-0.02em',
+            background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #9333EA 100%)',
             backgroundClip: 'text',
             color: 'transparent',
-            marginBottom: 16,
+            lineHeight: 1,
+            marginBottom: 24,
+            display: 'flex',
           }}
         >
           LOOP
         </div>
 
-        {/* Subtitle */}
+        {/* Tagline */}
         <div
           style={{
-            fontSize: 28,
+            fontSize: 32,
+            fontWeight: 400,
             color: '#94A3B8',
-            textAlign: 'center',
-            maxWidth: 800,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase' as const,
+            display: 'flex',
           }}
         >
-          Thiet ke Website & Ung dung chuyen nghiep
+          Premium Web Development Agency
         </div>
 
-        {/* Tags */}
+        {/* Decorative bottom accent */}
         <div
           style={{
+            position: 'absolute',
+            bottom: 48,
             display: 'flex',
-            gap: 16,
-            marginTop: 40,
+            gap: 8,
           }}
         >
-          {['Web Design', 'Mobile App', 'SEO', 'E-commerce'].map((tag) => (
-            <div
-              key={tag}
-              style={{
-                padding: '8px 20px',
-                borderRadius: 24,
-                border: '1px solid rgba(99,102,241,0.4)',
-                color: '#818CF8',
-                fontSize: 18,
-              }}
-            >
-              {tag}
-            </div>
-          ))}
+          <div
+            style={{
+              width: 48,
+              height: 3,
+              borderRadius: 2,
+              background: '#6366F1',
+              display: 'flex',
+            }}
+          />
+          <div
+            style={{
+              width: 48,
+              height: 3,
+              borderRadius: 2,
+              background: '#8B5CF6',
+              display: 'flex',
+            }}
+          />
+          <div
+            style={{
+              width: 48,
+              height: 3,
+              borderRadius: 2,
+              background: '#9333EA',
+              display: 'flex',
+            }}
+          />
         </div>
       </div>
     ),

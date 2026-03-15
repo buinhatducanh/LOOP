@@ -10,7 +10,7 @@ import { TawktoChat } from '@/components/shared/TawktoChat';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { GoogleAnalytics } from '@next/third-parties/google';
-import { getSiteSettings } from '@/lib/db/queries';
+import { getSiteSettings, getServices } from '@/lib/db/queries';
 import "../globals.css";
 
 const baseMetadata: Metadata = {
@@ -105,25 +105,16 @@ export default async function RootLayout({
     notFound();
   }
 
-  const tFooter = await getTranslations({ locale, namespace: 'Footer' });
-
-  const [messages, siteSettings] = await Promise.all([
+  const [messages, siteSettings, dbServices] = await Promise.all([
     getMessages(),
     getSiteSettings(),
+    getServices().catch(() => []),
   ]);
 
-  // Always use translated service names for footer to avoid hydration mismatch.
-  // DB services have English-only titles which causes SSR/client inconsistency
-  // when the DB connection is flaky (getServices sometimes succeeds, sometimes fails).
   const footerData = {
-    services: [
-      { slug: "web-development", title: tFooter("serviceWeb") },
-      { slug: "mobile-apps", title: tFooter("serviceMobile") },
-      { slug: "ui-ux-design", title: tFooter("serviceDesign") },
-      { slug: "cloud-solutions", title: tFooter("serviceCloud") },
-      { slug: "ai-ml", title: tFooter("serviceAI") },
-      { slug: "devops", title: tFooter("serviceDevops") },
-    ],
+    services: dbServices.length > 0
+      ? dbServices.map((s) => ({ slug: s.slug, title: s.title }))
+      : [], // No fallback — if DB empty, footer shows no service links
     settings: siteSettings,
   };
 
