@@ -282,18 +282,25 @@ model ServicePackage {
 model Order {
   id            String         @id @default(cuid())
   orderNumber   String         @unique @map("order_number")
-  packageId     String         @map("package_id")
-  package       ServicePackage @relation(fields: [packageId], references: [id])
+  orderType     String         @default("package") @map("order_type") // "package" | "template" | "custom"
+  packageId     String?        @map("package_id")
+  package       ServicePackage? @relation(fields: [packageId], references: [id])
+  templateId    String?        @map("template_id")
+  template      WebTemplate?   @relation(fields: [templateId], references: [id])
   customerName  String         @map("customer_name")
   customerEmail String         @map("customer_email")
   customerPhone String?        @map("customer_phone")
   companyName   String?        @map("company_name")
   requirements  String?        @db.Text
+  brandGuidelines String?      @map("brand_guidelines") @db.Text // Yêu cầu nhận diện thương hiệu (Custom flow)
   status        String         @default("pending")
   paymentStatus String         @default("unpaid") @map("payment_status")
   totalAmount   Int?           @map("total_amount")
   createdAt     DateTime       @default(now()) @map("created_at")
   updatedAt     DateTime       @updatedAt @map("updated_at")
+
+  // Relations
+  selectedAttributes OrderAttribute[]
 
   @@map("orders")
 }
@@ -305,6 +312,90 @@ model SiteSetting {
   group String @default("general")
 
   @@map("site_settings")
+}
+
+// ─── DUAL SERVICE MODEL ─────────────────────────────────────────
+
+// Kho tính năng mở rộng (Feature Catalog) — admin quản lý
+// Dùng chung cho cả 2 luồng: Web Gói (gắn cứng) & Web Thiết Kế (khách chọn)
+model ServiceAttribute {
+  id          String  @id @default(cuid())
+  slug        String  @unique
+  name        String
+  nameVi      String  @map("name_vi")
+  description String?
+  descriptionVi String? @map("description_vi")
+  category    String  // VD: "performance", "security", "ecommerce", "seo"
+  categoryVi  String  @map("category_vi")
+  icon        String?
+  price       Int     @default(0) // Giá khi khách chọn riêng lẻ (Custom flow)
+  isRequired  Boolean @default(false) @map("is_required") // Bắt buộc cho mọi dự án
+  sortOrder   Int     @default(0) @map("sort_order")
+  isActive    Boolean @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  templateAttributes WebTemplateAttribute[]
+  orderAttributes    OrderAttribute[]
+
+  @@map("service_attributes")
+}
+
+// Kho giao diện (Template Gallery) — Luồng "Web Gói"
+model WebTemplate {
+  id              String  @id @default(cuid())
+  slug            String  @unique
+  name            String
+  nameVi          String  @map("name_vi")
+  description     String?
+  descriptionVi   String? @map("description_vi")
+  category        String  // VD: "landing-page", "ecommerce", "portfolio", "corporate"
+  categoryVi      String  @map("category_vi")
+  thumbnail       String  // URL ảnh thumbnail
+  screenshots     String[] // Ảnh chụp màn hình chi tiết
+  demoUrl         String  @map("demo_url") // Link demo thực tế (Vercel, etc.)
+  price           Int     // Giá trọn gói
+  originalPrice   Int?    @map("original_price") // Giá gốc (nếu muốn hiển thị giảm giá)
+  currency        String  @default("VND")
+  technologies    String[] // VD: ["Next.js", "TailwindCSS", "PostgreSQL"]
+  deliveryTime    String  @map("delivery_time") // VD: "3-5 ngày"
+  highlighted     Boolean @default(false) // Nổi bật
+  sortOrder       Int     @default(0) @map("sort_order")
+  isActive        Boolean @default(true) @map("is_active")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  // Relations — Các tính năng đi kèm (gắn cứng)
+  bundledAttributes WebTemplateAttribute[]
+  orders            Order[]
+
+  @@map("web_templates")
+}
+
+// Bảng nối: Template <-> Attribute (tính năng gắn cứng vào gói)
+model WebTemplateAttribute {
+  id          String @id @default(cuid())
+  templateId  String @map("template_id")
+  template    WebTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  attributeId String @map("attribute_id")
+  attribute   ServiceAttribute @relation(fields: [attributeId], references: [id], onDelete: Cascade)
+
+  @@unique([templateId, attributeId])
+  @@map("web_template_attributes")
+}
+
+// Bảng nối: Order <-> Attribute (tính năng khách chọn riêng - Custom flow)
+model OrderAttribute {
+  id          String @id @default(cuid())
+  orderId     String @map("order_id")
+  order       Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  attributeId String @map("attribute_id")
+  attribute   ServiceAttribute @relation(fields: [attributeId], references: [id], onDelete: Cascade)
+  priceAtOrder Int   @map("price_at_order") // Snapshot giá tại thời điểm đặt hàng
+
+  @@unique([orderId, attributeId])
+  @@map("order_attributes")
 }
 
 // ─── PRICING CALCULATOR (BÁO GIÁ ĐỘNG) ─────────────────────────
