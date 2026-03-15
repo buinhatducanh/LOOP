@@ -27,8 +27,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
   useEffect(() => {
-    const needsAuth = pathname.startsWith("/admin") || pathname.includes("/login");
-    if (!needsAuth) return;
+    const isAdminRoute = pathname.startsWith("/admin");
+    if (!isAdminRoute) return;
 
     fetch("/api/admin/auth/me")
       .then((res) => (res.ok ? res.json() : null))
