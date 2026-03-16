@@ -3,8 +3,9 @@
 import { useEffect, useState, useCallback } from "react";
 import { type ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "../../components/data-table";
-import { Plus, Pencil, Trash2, Eye, EyeOff, X } from "lucide-react";
+import { Plus, Pencil, Trash2, Eye, EyeOff, X, Star } from "lucide-react";
 import { toast } from "sonner";
+import { ImageUploader } from "@/components/ui/image-uploader";
 
 interface TeamMember {
   id: string;
@@ -22,6 +23,18 @@ interface TeamMember {
   sortOrder: number;
   isActive: boolean;
   createdAt: string;
+  // New fields
+  roleLevel: number;
+  roleCategory: string | null;
+  coverImage: string | null;
+  quote: string | null;
+  email: string | null;
+  phone: string | null;
+  skills: string[];
+  experience: string | null;
+  social: Record<string, string> | null;
+  isWorking: boolean;
+  isFeatured: boolean;
 }
 
 interface FormData {
@@ -38,6 +51,17 @@ interface FormData {
   github: string;
   sortOrder: number;
   isActive: boolean;
+  // New fields
+  roleLevel: number;
+  roleCategory: string;
+  coverImage: string;
+  quote: string;
+  email: string;
+  phone: string;
+  skills: string;
+  experience: string;
+  isWorking: boolean;
+  isFeatured: boolean;
 }
 
 const emptyForm: FormData = {
@@ -54,7 +78,35 @@ const emptyForm: FormData = {
   github: "",
   sortOrder: 0,
   isActive: true,
+  // New fields
+  roleLevel: 4,
+  roleCategory: "",
+  coverImage: "",
+  quote: "",
+  email: "",
+  phone: "",
+  skills: "",
+  experience: "",
+  isWorking: true,
+  isFeatured: false,
 };
+
+const roleLevelOptions = [
+  { value: 0, label: "CEO / Founder" },
+  { value: 1, label: "CTO / VP" },
+  { value: 2, label: "Lead / Manager" },
+  { value: 3, label: "Senior" },
+  { value: 4, label: "Member" },
+];
+
+const roleCategoryOptions = [
+  { value: "", label: "-- Chọn --" },
+  { value: "leadership", label: "Leadership" },
+  { value: "management", label: "Management" },
+  { value: "engineering", label: "Engineering" },
+  { value: "design", label: "Design" },
+  { value: "operations", label: "Operations" },
+];
 
 function slugify(text: string): string {
   return text
@@ -120,6 +172,17 @@ export default function AdminTeamPage() {
       github: member.github || "",
       sortOrder: member.sortOrder,
       isActive: member.isActive,
+      // New fields
+      roleLevel: member.roleLevel,
+      roleCategory: member.roleCategory || "",
+      coverImage: member.coverImage || "",
+      quote: member.quote || "",
+      email: member.email || "",
+      phone: member.phone || "",
+      skills: (member.skills || []).join(", "),
+      experience: member.experience || "",
+      isWorking: member.isWorking,
+      isFeatured: member.isFeatured,
     });
     setShowModal(true);
   };
@@ -186,6 +249,20 @@ export default function AdminTeamPage() {
         github: form.github || null,
         sortOrder: form.sortOrder,
         isActive: form.isActive,
+        // New fields
+        roleLevel: form.roleLevel,
+        roleCategory: form.roleCategory || null,
+        coverImage: form.coverImage || null,
+        quote: form.quote || null,
+        email: form.email || null,
+        phone: form.phone || null,
+        skills: form.skills
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean),
+        experience: form.experience || null,
+        isWorking: form.isWorking,
+        isFeatured: form.isFeatured,
       };
 
       const url = editingMember
@@ -234,11 +311,36 @@ export default function AdminTeamPage() {
             {row.original.name.charAt(0)}
           </div>
           <div>
-            <p className="font-medium text-white">{row.original.name}</p>
+            <div className="flex items-center gap-1.5">
+              <p className="font-medium text-white">{row.original.name}</p>
+              {row.original.isFeatured && (
+                <Star size={12} className="fill-yellow-400 text-yellow-400" />
+              )}
+            </div>
             <p className="text-xs text-slate-500">{row.original.role}</p>
           </div>
         </div>
       ),
+    },
+    {
+      accessorKey: "roleLevel",
+      header: "Cấp bậc",
+      cell: ({ row }) => {
+        const level = row.original.roleLevel;
+        const label = roleLevelOptions.find((o) => o.value === level)?.label || "Member";
+        const colors: Record<number, string> = {
+          0: "bg-yellow-500/20 text-yellow-400",
+          1: "bg-purple-500/20 text-purple-400",
+          2: "bg-blue-500/20 text-blue-400",
+          3: "bg-cyan-500/20 text-cyan-400",
+          4: "bg-slate-500/20 text-slate-400",
+        };
+        return (
+          <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${colors[level] || colors[4]}`}>
+            {label}
+          </span>
+        );
+      },
     },
     {
       accessorKey: "slug",
@@ -352,7 +454,7 @@ export default function AdminTeamPage() {
       {/* Create / Edit Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl border border-slate-700 bg-slate-900 p-6">
+          <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-xl border border-slate-700 bg-slate-900 p-6">
             <div className="mb-6 flex items-center justify-between">
               <h2 className="text-lg font-bold text-white">
                 {editingMember ? "Chỉnh sửa thành viên" : "Thêm thành viên mới"}
@@ -394,18 +496,48 @@ export default function AdminTeamPage() {
                 </div>
               </div>
 
-              {/* Role */}
-              <div>
-                <label className="mb-1 block text-sm font-medium text-slate-300">
-                  Vai trò <span className="text-red-400">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={form.role}
-                  onChange={(e) => updateField("role", e.target.value)}
-                  className="h-9 w-full rounded-lg border border-slate-700 bg-slate-800 px-3 text-sm text-white outline-none focus:border-blue-500"
-                  placeholder="Frontend Developer"
-                />
+              {/* Role & Role Level & Role Category */}
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-slate-300">
+                    Vai trò <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={form.role}
+                    onChange={(e) => updateField("role", e.target.value)}
+                    className="h-9 w-full rounded-lg border border-slate-700 bg-slate-800 px-3 text-sm text-white outline-none focus:border-blue-500"
+                    placeholder="Frontend Developer"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-slate-300">
+                    Cấp bậc
+                  </label>
+                  <select
+                    value={form.roleLevel}
+                    onChange={(e) => updateField("roleLevel", parseInt(e.target.value))}
+                    className="h-9 w-full rounded-lg border border-slate-700 bg-slate-800 px-3 text-sm text-white outline-none focus:border-blue-500"
+                  >
+                    {roleLevelOptions.map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-slate-300">
+                    Phân loại
+                  </label>
+                  <select
+                    value={form.roleCategory}
+                    onChange={(e) => updateField("roleCategory", e.target.value)}
+                    className="h-9 w-full rounded-lg border border-slate-700 bg-slate-800 px-3 text-sm text-white outline-none focus:border-blue-500"
+                  >
+                    {roleCategoryOptions.map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               {/* Bio */}
@@ -422,40 +554,80 @@ export default function AdminTeamPage() {
                 />
               </div>
 
-              {/* Short Bio */}
-              <div>
-                <label className="mb-1 block text-sm font-medium text-slate-300">
-                  Tiểu sử ngắn
-                </label>
-                <input
-                  type="text"
-                  value={form.shortBio}
-                  onChange={(e) => updateField("shortBio", e.target.value)}
-                  className="h-9 w-full rounded-lg border border-slate-700 bg-slate-800 px-3 text-sm text-white outline-none focus:border-blue-500"
-                  placeholder="Mô tả ngắn gọn..."
-                />
-              </div>
-
-              {/* Image URL */}
-              <div>
-                <label className="mb-1 block text-sm font-medium text-slate-300">
-                  Ảnh (URL)
-                </label>
-                <input
-                  type="text"
-                  value={form.image}
-                  onChange={(e) => updateField("image", e.target.value)}
-                  className="h-9 w-full rounded-lg border border-slate-700 bg-slate-800 px-3 text-sm text-white outline-none focus:border-blue-500"
-                  placeholder="https://example.com/avatar.jpg"
-                />
-              </div>
-
-              {/* Expertise & Achievements */}
+              {/* Short Bio & Quote */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-slate-300">
-                    Chuyên môn
-                  </label>
+                  <label className="mb-1 block text-sm font-medium text-slate-300">Tiểu sử ngắn</label>
+                  <input
+                    type="text"
+                    value={form.shortBio}
+                    onChange={(e) => updateField("shortBio", e.target.value)}
+                    className="h-9 w-full rounded-lg border border-slate-700 bg-slate-800 px-3 text-sm text-white outline-none focus:border-blue-500"
+                    placeholder="Mô tả ngắn gọn..."
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-slate-300">Câu nói / Slogan</label>
+                  <input
+                    type="text"
+                    value={form.quote}
+                    onChange={(e) => updateField("quote", e.target.value)}
+                    className="h-9 w-full rounded-lg border border-slate-700 bg-slate-800 px-3 text-sm text-white outline-none focus:border-blue-500"
+                    placeholder="&quot;Innovation is the key to success&quot;"
+                  />
+                </div>
+              </div>
+
+              {/* Images */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <ImageUploader
+                    label="Ảnh đại diện"
+                    value={form.image}
+                    onChange={(url) => updateField("image", url)}
+                    folder="loop/team"
+                    aspectRatio="square"
+                  />
+                </div>
+                <div>
+                  <ImageUploader
+                    label="Ảnh bìa"
+                    value={form.coverImage || ""}
+                    onChange={(url) => updateField("coverImage", url)}
+                    folder="loop/team/cover"
+                    aspectRatio="landscape"
+                  />
+                </div>
+              </div>
+
+              {/* Contact */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-slate-300">Email</label>
+                  <input
+                    type="email"
+                    value={form.email}
+                    onChange={(e) => updateField("email", e.target.value)}
+                    className="h-9 w-full rounded-lg border border-slate-700 bg-slate-800 px-3 text-sm text-white outline-none focus:border-blue-500"
+                    placeholder="email@company.com"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-slate-300">Số điện thoại</label>
+                  <input
+                    type="tel"
+                    value={form.phone}
+                    onChange={(e) => updateField("phone", e.target.value)}
+                    className="h-9 w-full rounded-lg border border-slate-700 bg-slate-800 px-3 text-sm text-white outline-none focus:border-blue-500"
+                    placeholder="+84 123 456 789"
+                  />
+                </div>
+              </div>
+
+              {/* Expertise & Skills */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-slate-300">Chuyên môn</label>
                   <input
                     type="text"
                     value={form.expertise}
@@ -466,9 +638,22 @@ export default function AdminTeamPage() {
                   <p className="mt-1 text-xs text-slate-500">Phân cách bằng dấu phẩy</p>
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-slate-300">
-                    Thành tựu
-                  </label>
+                  <label className="mb-1 block text-sm font-medium text-slate-300">Kỹ năng</label>
+                  <input
+                    type="text"
+                    value={form.skills}
+                    onChange={(e) => updateField("skills", e.target.value)}
+                    className="h-9 w-full rounded-lg border border-slate-700 bg-slate-800 px-3 text-sm text-white outline-none focus:border-blue-500"
+                    placeholder="Problem Solving, Teamwork"
+                  />
+                  <p className="mt-1 text-xs text-slate-500">Phân cách bằng dấu phẩy</p>
+                </div>
+              </div>
+
+              {/* Achievements & Experience */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-slate-300">Thành tựu</label>
                   <input
                     type="text"
                     value={form.achievements}
@@ -478,14 +663,22 @@ export default function AdminTeamPage() {
                   />
                   <p className="mt-1 text-xs text-slate-500">Phân cách bằng dấu phẩy</p>
                 </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-slate-300">Kinh nghiệm</label>
+                  <input
+                    type="text"
+                    value={form.experience}
+                    onChange={(e) => updateField("experience", e.target.value)}
+                    className="h-9 w-full rounded-lg border border-slate-700 bg-slate-800 px-3 text-sm text-white outline-none focus:border-blue-500"
+                    placeholder="5+ năm phát triển web"
+                  />
+                </div>
               </div>
 
               {/* Social links */}
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-slate-300">
-                    LinkedIn
-                  </label>
+                  <label className="mb-1 block text-sm font-medium text-slate-300">LinkedIn</label>
                   <input
                     type="text"
                     value={form.linkedin}
@@ -495,9 +688,7 @@ export default function AdminTeamPage() {
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-slate-300">
-                    Twitter
-                  </label>
+                  <label className="mb-1 block text-sm font-medium text-slate-300">Twitter</label>
                   <input
                     type="text"
                     value={form.twitter}
@@ -507,9 +698,7 @@ export default function AdminTeamPage() {
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-slate-300">
-                    GitHub
-                  </label>
+                  <label className="mb-1 block text-sm font-medium text-slate-300">GitHub</label>
                   <input
                     type="text"
                     value={form.github}
@@ -520,12 +709,10 @@ export default function AdminTeamPage() {
                 </div>
               </div>
 
-              {/* Sort Order & Active */}
-              <div className="grid grid-cols-2 gap-4">
+              {/* Sort Order, Active, Working, Featured */}
+              <div className="grid grid-cols-4 gap-4">
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-slate-300">
-                    Thứ tự hiển thị
-                  </label>
+                  <label className="mb-1 block text-sm font-medium text-slate-300">Thứ tự</label>
                   <input
                     type="number"
                     value={form.sortOrder}
@@ -541,7 +728,29 @@ export default function AdminTeamPage() {
                       onChange={(e) => updateField("isActive", e.target.checked)}
                       className="h-4 w-4 rounded border-slate-600 bg-slate-800"
                     />
-                    Hiển thị trên website
+                    Hiển thị
+                  </label>
+                </div>
+                <div className="flex items-end">
+                  <label className="flex items-center gap-2 text-sm text-slate-300">
+                    <input
+                      type="checkbox"
+                      checked={form.isWorking}
+                      onChange={(e) => updateField("isWorking", e.target.checked)}
+                      className="h-4 w-4 rounded border-slate-600 bg-slate-800"
+                    />
+                    Đang làm việc
+                  </label>
+                </div>
+                <div className="flex items-end">
+                  <label className="flex items-center gap-2 text-sm text-slate-300">
+                    <input
+                      type="checkbox"
+                      checked={form.isFeatured}
+                      onChange={(e) => updateField("isFeatured", e.target.checked)}
+                      className="h-4 w-4 rounded border-slate-600 bg-slate-800"
+                    />
+                    ⭐ Nổi bật
                   </label>
                 </div>
               </div>

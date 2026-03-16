@@ -255,6 +255,19 @@ model TeamMember {
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
+  // ── Role Hierarchy & Premium Fields ──
+  roleLevel    Int      @default(4) @map("role_level")    // 0=CEO, 1=CTO/VP, 2=Lead, 3=Senior, 4=Member
+  roleCategory String?  @map("role_category")             // "leadership", "management", "engineering", "design", "operations"
+  coverImage   String?  @map("cover_image")               // Large cover image for detail page
+  quote        String?                                     // Personal quote/slogan
+  email        String?                                     // Public email
+  phone        String?                                     // Phone number
+  skills       String[]                                    // Professional skills
+  experience   String?  @db.Text                           // Work experience description
+  social       Json?                                       // Social links as JSON
+  isWorking    Boolean  @default(true) @map("is_working")  // Currently working
+  isFeatured   Boolean  @default(false) @map("is_featured") // Featured member (displayed larger)
+
   @@map("team_members")
 }
 
@@ -280,28 +293,52 @@ model ServicePackage {
 }
 
 model Order {
-  id            String         @id @default(cuid())
-  orderNumber   String         @unique @map("order_number")
-  orderType     String         @default("package") @map("order_type") // "package" | "template" | "custom"
-  packageId     String?        @map("package_id")
-  package       ServicePackage? @relation(fields: [packageId], references: [id])
-  templateId    String?        @map("template_id")
-  template      WebTemplate?   @relation(fields: [templateId], references: [id])
-  customerName  String         @map("customer_name")
-  customerEmail String         @map("customer_email")
-  customerPhone String?        @map("customer_phone")
-  companyName   String?        @map("company_name")
-  requirements  String?        @db.Text
-  brandGuidelines String?      @map("brand_guidelines") @db.Text // Yêu cầu nhận diện thương hiệu (Custom flow)
-  status        String         @default("pending")
-  paymentStatus String         @default("unpaid") @map("payment_status")
-  totalAmount   Int?           @map("total_amount")
-  createdAt     DateTime       @default(now()) @map("created_at")
-  updatedAt     DateTime       @updatedAt @map("updated_at")
+  id              String         @id @default(cuid())
+  orderNumber     String         @unique @map("order_number")
+  orderType       String         @default("package") @map("order_type") // "package" | "template" | "custom"
+  packageId       String?        @map("package_id")
+  package         ServicePackage? @relation(fields: [packageId], references: [id])
+  templateId      String?        @map("template_id")
+  template        WebTemplate?   @relation(fields: [templateId], references: [id])
+  customerName    String         @map("customer_name")
+  customerEmail   String         @map("customer_email")
+  customerPhone   String?        @map("customer_phone")
+  companyName     String?        @map("company_name")
+  requirements    String?        @db.Text
+  brandGuidelines String?        @map("brand_guidelines") @db.Text
+  status          String         @default("pending")
+  paymentStatus   String         @default("unpaid") @map("payment_status")
+  totalAmount     Int?           @map("total_amount")
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+
+  // ── Pricing (Platform Architecture) ──
+  basePrice              Int?    @map("base_price")              // Giá base tại thời điểm đặt (snapshot)
+  systemCalculatedPrice  Int?    @map("system_calculated_price") // = base + Σ(advanced features)
+  adminOverridePrice     Int?    @map("admin_override_price")    // Giá Admin ghi đè
+  adminPriceNote         String? @map("admin_price_note")        // Lý do điều chỉnh giá
+  finalPrice             Int?    @map("final_price")             // = adminOverridePrice ?? systemCalculatedPrice
+
+  // ── XP & Rewards ──
+  totalXp                Int     @default(0) @map("total_xp")
+  rewardLevel            Int     @default(1) @map("reward_level")
+
+  // ── Payment details ──
+  paymentMethod          String? @map("payment_method")          // "full" | "split_50_50"
+  paidAmount             Int     @default(0) @map("paid_amount")
+
+  // ── Domain ──
+  domainName             String? @map("domain_name")
 
   // Relations
   selectedAttributes OrderAttribute[]
+  orderRewards       OrderReward[]
+  payments           Payment[]
+  statusHistory      OrderStatusHistory[]
 
+  @@index([status, createdAt])
+  @@index([orderType, status])
+  @@index([customerEmail])
   @@map("orders")
 }
 
@@ -319,26 +356,36 @@ model SiteSetting {
 // Kho tính năng mở rộng (Feature Catalog) — admin quản lý
 // Dùng chung cho cả 2 luồng: Web Gói (gắn cứng) & Web Thiết Kế (khách chọn)
 model ServiceAttribute {
-  id          String  @id @default(cuid())
-  slug        String  @unique
-  name        String
-  nameVi      String  @map("name_vi")
-  description String?
+  id            String  @id @default(cuid())
+  slug          String  @unique
+  name          String
+  nameVi        String  @map("name_vi")
+  description   String?
   descriptionVi String? @map("description_vi")
-  category    String  // VD: "performance", "security", "ecommerce", "seo"
-  categoryVi  String  @map("category_vi")
-  icon        String?
-  price       Int     @default(0) // Giá khi khách chọn riêng lẻ (Custom flow)
-  isRequired  Boolean @default(false) @map("is_required") // Bắt buộc cho mọi dự án
-  sortOrder   Int     @default(0) @map("sort_order")
-  isActive    Boolean @default(true) @map("is_active")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  category      String  // VD: "performance", "security", "ecommerce", "seo"
+  categoryVi    String  @map("category_vi")
+  icon          String?
+  price         Int     @default(0) // Giá khi khách chọn riêng lẻ (Custom flow)
+  isRequired    Boolean @default(false) @map("is_required") // Bắt buộc cho mọi dự án
+  sortOrder     Int     @default(0) @map("sort_order")
+  isActive      Boolean @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // ── Tier & XP (Platform Architecture) ──
+  tier          String  @default("basic") // "basic" | "advanced"
+  xpPoints      Int     @default(0) @map("xp_points") // Điểm XP (chỉ advanced > 0)
+  parentId      String? @map("parent_id") // Quan hệ cha-con (mutual exclusion)
+  parent        ServiceAttribute?  @relation("FeatureHierarchy", fields: [parentId], references: [id])
+  children      ServiceAttribute[] @relation("FeatureHierarchy")
 
   // Relations
   templateAttributes WebTemplateAttribute[]
   orderAttributes    OrderAttribute[]
 
+  @@index([tier, isActive])
+  @@index([category, tier])
+  @@index([parentId])
   @@map("service_attributes")
 }
 
@@ -366,10 +413,17 @@ model WebTemplate {
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
 
+  // ── Level system (Platform Architecture) ──
+  level           Int     @default(1) // Cấp độ gói: 1=Cơ bản, 2=Trung cấp, 3=Nâng cao, 4=Premium
+  levelLabel      String? @map("level_label") // "Basic", "Pro", "Enterprise"
+  levelLabelVi    String? @map("level_label_vi") // "Cơ bản", "Chuyên nghiệp", "Doanh nghiệp"
+
   // Relations — Các tính năng đi kèm (gắn cứng)
   bundledAttributes WebTemplateAttribute[]
   orders            Order[]
 
+  @@index([level, isActive])
+  @@index([category, isActive])
   @@map("web_templates")
 }
 
@@ -566,4 +620,114 @@ model PricingDeploymentItem {
   isActive       Boolean @default(true) @map("is_active")
 
   @@map("pricing_deployment_items")
+}
+
+// ─── PLATFORM ARCHITECTURE: NEW ENTITIES ─────────────────────────
+
+// Dịch vụ rời (Add-on Services) — mua độc lập hoặc dùng làm reward
+model AddonService {
+  id            String   @id @default(cuid())
+  slug          String   @unique
+  name          String
+  nameVi        String   @map("name_vi")
+  description   String?
+  descriptionVi String?  @map("description_vi")
+  icon          String?
+  type          String   @default("one_time") // "one_time" | "recurring"
+  price         Int                            // Giá (VND)
+  billingPeriod String?  @map("billing_period") // "monthly" | "quarterly" | "yearly"
+  metadata      Json?                           // Chi tiết bổ sung
+  sortOrder     Int      @default(0) @map("sort_order")
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  rewardTierItems RewardTierItem[]
+  orderRewards    OrderReward[]
+
+  @@map("addon_services")
+}
+
+// Cấu hình reward theo level XP
+model RewardTier {
+  id          String   @id @default(cuid())
+  level       Int      @unique             // Level: 2, 3, 4, ...
+  name        String                       // "Advanced Project"
+  nameVi      String   @map("name_vi")     // "Dự án Nâng cao"
+  description String?
+  minXp       Int      @map("min_xp")      // XP tối thiểu
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  items RewardTierItem[]
+
+  @@map("reward_tiers")
+}
+
+// Chi tiết reward trong mỗi level
+model RewardTierItem {
+  id              String       @id @default(cuid())
+  rewardTierId    String       @map("reward_tier_id")
+  rewardTier      RewardTier   @relation(fields: [rewardTierId], references: [id], onDelete: Cascade)
+  addonServiceId  String       @map("addon_service_id")
+  addonService    AddonService @relation(fields: [addonServiceId], references: [id])
+  quantity        Int          @default(1)
+  durationMonths  Int?         @map("duration_months") // Thời hạn (tháng) cho recurring
+  description     String?
+  sortOrder       Int          @default(0) @map("sort_order")
+
+  @@unique([rewardTierId, addonServiceId])
+  @@map("reward_tier_items")
+}
+
+// Reward đã áp dụng cho đơn hàng cụ thể
+model OrderReward {
+  id              String       @id @default(cuid())
+  orderId         String       @map("order_id")
+  order           Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  addonServiceId  String       @map("addon_service_id")
+  addonService    AddonService @relation(fields: [addonServiceId], references: [id])
+  rewardLevel     Int          @map("reward_level")
+  quantity        Int          @default(1)
+  durationMonths  Int?         @map("duration_months")
+  startDate       DateTime?    @map("start_date")
+  endDate         DateTime?    @map("end_date")
+  status          String       @default("pending") // "pending" | "active" | "expired" | "revoked"
+  createdAt       DateTime     @default(now()) @map("created_at")
+
+  @@index([orderId, status])
+  @@index([status, endDate])
+  @@map("order_rewards")
+}
+
+// Lịch sử thanh toán
+model Payment {
+  id          String    @id @default(cuid())
+  orderId     String    @map("order_id")
+  order       Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  amount      Int                              // Số tiền thanh toán
+  method      String?                          // "bank_transfer" | "cash" | "stripe" | "paypal"
+  note        String?
+  confirmedBy String?   @map("confirmed_by")   // Admin ID xác nhận
+  confirmedAt DateTime? @map("confirmed_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  @@index([orderId, createdAt])
+  @@map("payments")
+}
+
+// Audit trail trạng thái đơn hàng
+model OrderStatusHistory {
+  id         String   @id @default(cuid())
+  orderId    String   @map("order_id")
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  fromStatus String   @map("from_status")
+  toStatus   String   @map("to_status")
+  changedBy  String?  @map("changed_by")  // Admin ID
+  note       String?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([orderId, createdAt])
+  @@map("order_status_history")
 }

@@ -18,6 +18,8 @@ export async function GET(
         templateAttributes: {
           include: { template: { select: { id: true, name: true, nameVi: true } } },
         },
+        parent: { select: { id: true, name: true, nameVi: true } },
+        children: { select: { id: true, name: true, nameVi: true, tier: true } },
       },
     });
 
@@ -62,6 +64,9 @@ export async function PUT(
         isRequired: data.isRequired ?? false,
         sortOrder: Number(data.sortOrder) || 0,
         isActive: data.isActive ?? true,
+        tier: data.tier || "basic",
+        xpPoints: Number(data.xpPoints) || 0,
+        parentId: data.parentId || null,
       },
     });
 

@@ -5,6 +5,7 @@ import { type ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "../../components/data-table";
 import { Plus, Pencil, Trash2, Eye, EyeOff, X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { ImageUploader } from "@/components/ui/image-uploader";
 
 interface Project {
   id: string;
@@ -416,13 +417,12 @@ export default function AdminProjectsPage() {
 
               {/* Image URL */}
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-300">Ảnh đại diện (URL)</label>
-                <input
-                  type="text"
+                <ImageUploader
+                  label="Ảnh đại diện"
                   value={form.image}
-                  onChange={(e) => updateField("image", e.target.value)}
-                  className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
-                  placeholder="https://example.com/image.jpg"
+                  onChange={(url) => updateField("image", url)}
+                  folder="loop/projects"
+                  aspectRatio="landscape"
                 />
               </div>
 

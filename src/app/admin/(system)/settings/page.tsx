@@ -63,6 +63,18 @@ const settingSchema: Record<string, SettingGroup> = {
       { key: "stat_years", label: "Số năm kinh nghiệm (vd: 8+)", type: "text" },
     ],
   },
+  content: {
+    title: "Nội dung trang",
+    icon: Globe,
+    fields: [
+      { key: "tech_stack", label: "Công nghệ sử dụng (phân cách bằng dấu phẩy)", type: "textarea" },
+      { key: "team_page_title", label: "Tiêu đề trang Đội ngũ", type: "text" },
+      { key: "team_page_subtitle", label: "Phụ đề trang Đội ngũ", type: "text" },
+      { key: "company_address", label: "Địa chỉ công ty", type: "textarea" },
+      { key: "company_email", label: "Email công ty", type: "text" },
+      { key: "company_phone", label: "Số điện thoại công ty", type: "text" },
+    ],
+  },
 };
 
 const groupKeys = Object.keys(settingSchema);

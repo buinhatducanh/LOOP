@@ -7,11 +7,20 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Error & Test files
+*.err
+*.txt
+*-error.log
+*_error.log
+*-test.json
+test-*.json
+
 node_modules
 dist
 dist-ssr
 *.local
 .next
+tsconfig.tsbuildinfo
 
 # Environment variables (KHÔNG commit file chứa secret)
 .env

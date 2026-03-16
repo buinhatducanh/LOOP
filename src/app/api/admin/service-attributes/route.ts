@@ -33,6 +33,8 @@ export async function GET(req: NextRequest) {
         take: limit,
         include: {
           _count: { select: { templateAttributes: true, orderAttributes: true } },
+          parent: { select: { id: true, name: true, nameVi: true } },
+          children: { select: { id: true, name: true, nameVi: true, tier: true } },
         },
       }),
       prisma.serviceAttribute.count({ where }),
@@ -68,6 +70,9 @@ export async function POST(req: NextRequest) {
         isRequired: data.isRequired ?? false,
         sortOrder: Number(data.sortOrder) || 0,
         isActive: data.isActive ?? true,
+        tier: data.tier || "basic",
+        xpPoints: Number(data.xpPoints) || 0,
+        parentId: data.parentId || null,
       },
     });
 
