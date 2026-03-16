@@ -1,184 +1,196 @@
-# PLAN — Hoàn tất dự án LOOP
+# Plan: Admin-Configurable Pages & Team Page Nâng Cấp
 
-> Cập nhật: 2026-03-15
-> Trạng thái tổng quan: ~85% hoàn thành
+## Tổng quan
 
----
-
-## I. TÌNH TRẠNG HIỆN TẠI
-
-### Đã hoàn thành
-| Module | Chi tiết |
-|--------|----------|
-| **Landing pages** | Home, Services, Pricing, Portfolio, About, Contact — tất cả fetch từ DB, fallback mock |
-| **Blog** | Sanity CMS đầy đủ, ISR 60s, bilingual (vi/en) |
-| **Admin Dashboard** | 14 trang quản trị: Dashboard, Services, Projects, Team, Testimonials, Messages, Orders, Packages, Pricing Features, Quote Requests, Users, Roles, Audit Log, Settings |
-| **Auth** | JWT login, middleware bảo vệ admin routes, RBAC |
-| **SEO** | JsonLd, dynamic metadata, sitemap.xml, robots.txt, OG/Twitter cards |
-| **i18n** | Vietnamese/English với next-intl, ServiceCard + ProjectCard đã có i18n |
-| **Pricing** | 4 gói web, comparison table, hosting/domain, deployment handoff, calculator |
-| **Contact Form** | Validation + submit API + DB storage |
-| **Error Handling** | 404 page, loading states cho mỗi route |
-| **Analytics** | Google Analytics, Vercel Analytics, Vercel Speed Insights, Tawk.to chat |
-| **Footer** | Redesign chuyên nghiệp với highlights bar |
-
-### Còn thiếu / Cần sửa
-| # | Vấn đề | Mức ưu tiên |
-|---|--------|-------------|
-| 1 | Footer dịch vụ vẫn hardcode 6 links giả (web-dev, mobile-apps...) thay vì lấy từ DB services thật | **Cao** |
-| 2 | Seed data cũ trong DB (giá USD, nội dung English) — cần re-seed sau khi đã fix seed.ts | **Cao** |
-| 3 | Trang `/privacy` và `/terms` chưa tồn tại (Footer link tới) | **Cao** |
-| 4 | Home page `stats`, `whyUs` chưa truyền i18n namespace đúng cho WhyUs | **Trung bình** |
-| 5 | Service detail page vẫn hiển thị text English hardcode ("About this Service", "Ready to get started?") | **Trung bình** |
-| 6 | Project detail page text hardcode English ("About this Project", "Key Features", etc.) | **Trung bình** |
-| 7 | OG Image placeholder — chưa có file `/opengraph-image` thật | **Trung bình** |
-| 8 | Thiếu `logo.png` trong `/public` (JsonLd reference) | **Trung bình** |
-| 9 | Register page tồn tại nhưng chưa rõ flow đăng ký (chỉ admin invite?) | **Thấp** |
-| 10 | Chưa có tests (unit, integration, e2e) | **Thấp** |
-| 11 | `_legacy_spa/` vẫn còn — cần dọn dẹp | **Thấp** |
+Kiểm tra tất cả trang public, đảm bảo nội dung có thể điều chỉnh từ admin. Đặc biệt nâng cấp trang Đội ngũ (Team) với giao diện premium, thể hiện role hierarchy (CEO, CTO, Lead...), hình ảnh lớn, hiệu ứng "siêu khủng".
 
 ---
 
-## II. KẾ HOẠCH TRIỂN KHAI
+## Phase 1: Mở rộng TeamMember model (Schema + Admin)
 
-### Phase 1: Sửa lỗi dữ liệu & Footer (Ưu tiên cao)
+### 1.1 Cập nhật Prisma schema `TeamMember`
+Thêm các field mới để hỗ trợ role hierarchy và giao diện premium:
+- `roleLevel Int @default(0)` — cấp bậc (0=CEO, 1=CTO/VP, 2=Lead, 3=Senior, 4=Member)
+- `roleCategory String?` — phân loại: "leadership", "management", "engineering", "design", "operations"
+- `coverImage String?` — ảnh bìa lớn cho trang chi tiết
+- `quote String?` — câu nói/slogan cá nhân
+- `email String?` — email công khai
+- `phone String?` — số điện thoại (tùy chọn)
+- `skill` - Kỹ năng chuyên môn
+- `experience` - Kinh nghiệm làm việc
+- `achievements` - Doanh nghiệp đã làm việc
+- `social` - Link mạng xã hội
+- `userId` - ID người dùng liên kết với auth để quản trị đăng nhập
+- `isWorking Boolean @default(true)` — đánh dấu thành viên đang làm việc
+- `isFeatured Boolean @default(false)` — đánh dấu thành viên nổi bật (hiển thị lớn hơn)
 
-**1.1 — Footer lấy services từ DB thay vì hardcode**
-- File: `src/app/[locale]/layout.tsx` (dòng 118–128)
-- Hiện tại dùng translated keys giả: `"serviceWeb"`, `"serviceMobile"`...
-- Sửa: Fetch `getServices()` trong layout, map `slug` + `title` thật từ DB
-- Fallback: giữ translated names nếu DB trống
+**File:** `prisma/schema.prisma`
 
-**1.2 — Re-seed database**
-- File: `prisma/seed.ts` (đã fix giá VND + nội dung tiếng Việt)
-- Chạy: `npm run db:seed` để cập nhật DB với data mới
-- Xác minh: kiểm tra giá hiển thị đúng trên frontend
-
-**1.3 — Tạo trang Privacy Policy & Terms of Service**
-- Tạo: `src/app/[locale]/privacy/page.tsx` + `privacy-page.tsx`
-- Tạo: `src/app/[locale]/terms/page.tsx` + `terms-page.tsx`
-- Nội dung: template chuẩn cho dịch vụ web agency, hỗ trợ vi/en
-- SEO: metadata + canonical URL
-
----
-
-### Phase 2: Hoàn thiện i18n cho detail pages (Ưu tiên trung bình)
-
-**2.1 — Service Detail Page i18n**
-- File: `src/app/[locale]/services/[id]/service-detail-page.tsx`
-- Các text hardcode cần dịch:
-  - "About this Service" / "Về dịch vụ này"
-  - "What's Included" / "Bao gồm"
-  - "Starting from" / "Giá từ"
-  - "Delivery" / "Thời gian"
-  - "Technologies Used" / "Công nghệ sử dụng"
-  - "Ready to get started?" / "Sẵn sàng bắt đầu?"
-  - "Request a Quote" / "Yêu cầu báo giá"
-  - "Related Projects" / "Dự án liên quan"
-- Thêm `useTranslations("ServiceDetailPage")` + keys trong messages
-
-**2.2 — Project Detail Page i18n**
-- File: `src/app/[locale]/portfolio/[id]/project-detail-page.tsx`
-- Các text hardcode:
-  - "About this Project" / "Về dự án này"
-  - "Key Features" / "Tính năng nổi bật"
-  - "Tech Stack"
-  - "Client", "Year", "Results"
-  - "Interested in a similar project?" / "Quan tâm dự án tương tự?"
-  - "Explore our ... service" / "Khám phá dịch vụ..."
-  - "View Service" / "Xem dịch vụ"
-  - "Get a Quote" / "Nhận báo giá"
-- Thêm `useTranslations("ProjectDetailPage")` + keys
-
-**2.3 — Kiểm tra i18n toàn bộ**
-- Duyệt lại tất cả pages ở locale `/en` để đảm bảo không còn Vietnamese hardcode
-- Duyệt lại locale `/vi` để đảm bảo không còn English hardcode
-
----
-
-### Phase 3: Assets & SEO nâng cao (Ưu tiên trung bình)
-
-**3.1 — Tạo OG Image**
-- Tạo `src/app/opengraph-image.tsx` (Next.js dynamic OG image)
-- Hoặc đặt file static `public/opengraph-image.png` (1200×630)
-- Thiết kế: logo LOOP + tagline + gradient background
-
-**3.2 — Tạo logo.png**
-- Export logo SVG → PNG cho `public/logo.png`
-- Được reference trong JsonLd Organization schema
-
-**3.3 — Verify manifest.json**
-- Kiểm tra `public/manifest.json` có đủ icons, name, theme_color
-- Đảm bảo PWA basics hoạt động
-
----
-
-### Phase 4: Dọn dẹp & Tối ưu (Ưu tiên thấp)
-
-**4.1 — Xóa `_legacy_spa/`**
-- Thư mục legacy React SPA không còn sử dụng
-- Xóa hoàn toàn để giảm kích thước repo
-
-**4.2 — Review Register flow**
-- Nếu chỉ admin invite → xóa trang `/register` + ẩn link
-- Nếu cần public register → hoàn thiện API endpoint
-
-**4.3 — Mock data cleanup**
-- `src/data/mockData.ts` và `src/data/pricingPackages.ts` hiện chỉ dùng làm fallback
-- Giữ nguyên nhưng thêm comment rõ ràng mục đích sử dụng
-- Đảm bảo mock data đồng bộ với seed data
-
----
-
-### Phase 5: Testing & Deployment (Ưu tiên thấp)
-
-**5.1 — Cấu hình CI/CD**
-- GitHub Actions: lint → type-check → build
-- Auto deploy qua Vercel (đã có config sẵn)
-
-**5.2 — Lighthouse audit**
-- Chạy Lighthouse trên tất cả trang public
-- Target: Performance 95+, Accessibility 95+, SEO 100
-- Fix bất kỳ issues nào phát hiện
-
-**5.3 — Testing (tùy chọn)**
-- Vitest cho unit tests (utility functions, formatVND, queries)
-- Playwright cho E2E (contact form submission, admin login flow)
-
----
-
-## III. KIẾN TRÚC DỮ LIỆU
-
-```
-[Server Component page.tsx]
-  ├─ fetch DB trực tiếp (Prisma) — KHÔNG qua API route
-  ├─ generateMetadata() → dynamic <title>, <meta>
-  ├─ generateStaticParams() → ISG cho detail pages
-  ├─ JsonLd structured data từ real DB data
-  ├─ revalidate / ISR khi cần
-  └─ Pass data xuống Client Component (serialized props)
-        └─ [Client Component] "use client"
-            ├─ Nhận data qua props (đã fetch sẵn server-side)
-            ├─ useTranslations() cho i18n text
-            ├─ Animations (framer-motion)
-            ├─ Interactive UI
-            └─ KHÔNG fetch thêm data → zero client waterfall
+### 1.2 Chạy migration
+```bash
+npx prisma migrate dev --name add-team-role-hierarchy
 ```
 
+### 1.3 Cập nhật Admin Team page
+Thêm các field mới vào form tạo/sửa team member trong `/admin/team`:
+- Dropdown `roleLevel` (CEO/CTO/VP/Lead/Senior/Member)
+- Dropdown `roleCategory` (Leadership/Management/Engineering/Design/Operations)
+- Input `coverImage`, `quote`, `email`, `phone`, `yearsExperience`
+- Toggle `isFeatured`
+
+**File:** `src/app/admin/(content)/team/page.tsx`
+
+### 1.4 Cập nhật API routes
+Sửa GET/POST/PUT endpoints để handle các field mới.
+
+**Files:** `src/app/api/admin/team/route.ts`, `src/app/api/admin/team/[id]/route.ts`
+
 ---
 
-## IV. THỨ TỰ TRIỂN KHAI
+## Phase 2: Trang Public `/team` — Giao diện "Siêu Khủng"
 
-| # | Task | Ước tính | Phụ thuộc |
-|---|------|----------|-----------|
-| 1 | Footer lấy services từ DB | — | — |
-| 2 | Re-seed database | — | #1 |
-| 3 | Trang Privacy + Terms | — | — |
-| 4 | Service Detail i18n | — | — |
-| 5 | Project Detail i18n | — | — |
-| 6 | OG Image + logo.png | — | — |
-| 7 | Xóa _legacy_spa | — | — |
-| 8 | Review Register flow | — | — |
-| 9 | CI/CD + Lighthouse | — | #1–#6 |
+### 2.1 Tạo public API endpoint
+- `GET /api/team` — trả về danh sách team members active, sorted by roleLevel → sortOrder
 
-**Ghi chú:** Task 1, 3, 4, 5, 6 có thể thực hiện song song.
+**File:** `src/app/api/team/route.ts`
+
+### 2.2 Tạo Server page `/team`
+Fetch team data từ DB, fallback mock data.
+
+**File:** `src/app/[locale]/team/page.tsx`
+
+### 2.3 Tạo Team Page component — Thiết kế premium
+
+**File:** `src/app/[locale]/team/team-page.tsx`
+
+**Layout thiết kế:**
+
+#### Section 1: Hero Banner
+- Full-width gradient + particle/glow effects
+- Title "Đội Ngũ Của Chúng Tôi" với animation stagger
+- Subtitle từ translations
+
+#### Section 2: Leadership Spotlight (CEO/CTO/VP — roleLevel 0-1)
+- **Layout đặc biệt cho CEO:** Card siêu lớn, full-width, ảnh bên trái (cover image), thông tin bên phải
+  - Tên + chức danh gradient lớn
+  - Quote/slogan cá nhân với typography đặc biệt
+  - Bio đầy đủ
+  - Social links với hover glow
+  - Expertise tags với shimmer effect
+  - Badge "Founder & CEO" nổi bật
+- **CTO/VP:** Cards lớn 2 cột, cũng nổi bật nhưng nhỏ hơn CEO
+
+#### Section 3: Management & Leads (roleLevel 2)
+- Grid 3 cột, card medium với ảnh tròn, role badge màu sắc, expertise chips
+
+#### Section 4: Team Members (roleLevel 3-4)
+- Grid 4 cột, card nhỏ gọn nhưng vẫn đẹp
+- Hover effect reveal thêm thông tin
+
+#### Hiệu ứng "Siêu khủng":
+- Parallax scrolling cho hero
+- Staggered fade-in animations (Framer Motion)
+- Gradient border glow trên hover
+- Card flip/tilt effect (3D perspective)
+- Shimmer/sparkle trên leadership cards
+- Smooth scroll-triggered animations
+- Glassmorphism cards (backdrop-blur)
+- Animated connection lines giữa leadership hierarchy
+
+### 2.4 Tạo Team Member Detail page `/team/[slug]`
+Trang chi tiết cho từng member khi click.
+
+**File:** `src/app/[locale]/team/[slug]/page.tsx`, `src/app/[locale]/team/[slug]/member-page.tsx`
+
+**Layout:**
+- Cover image full-width với overlay gradient
+- Avatar lớn floating trên cover
+- Thông tin chi tiết: role, bio đầy đủ, expertise với progress bars
+- Achievements showcase
+- Social links
+- Quote block nổi bật
+- "Xem thêm thành viên" grid ở cuối
+
+---
+
+## Phase 3: Kiểm tra & Admin-hóa các trang public khác
+
+### 3.1 Home page (`/`)
+**Hiện tại:** Services, Projects, Testimonials đã lấy từ DB ✅. Stats lấy từ SiteSettings ✅.
+**Cần sửa:**
+- Tech stack hardcoded `["React", "Next.js", ...]` trên about-page → chuyển sang SiteSettings hoặc translation keys
+- Hero section text đã dùng translations ✅
+
+### 3.2 About page (`/about`)
+**Hiện tại:** Team từ DB ✅, Stats từ SiteSettings ✅, Values từ translations ✅
+**Cần sửa:**
+- Tech stack `["React", "Next.js", "TypeScript", ...]` hardcoded tại line 415-418 → lấy từ SiteSettings key `tech_stack` (comma-separated)
+- Link team members tới `/team/[slug]` đã có nhưng page chưa tồn tại → sẽ được tạo ở Phase 2
+
+### 3.3 Pricing page (`/pricing`)
+- Kiểm tra giá cố định vs DB
+- Đảm bảo tên gói, mô tả lấy từ admin (packages/pricing-features)
+
+### 3.4 Services page (`/services`)
+- Đã lấy từ DB ✅
+
+### 3.5 Portfolio page (`/portfolio`)
+- Đã lấy từ DB ✅
+
+### 3.6 Contact page (`/contact`)
+- Kiểm tra thông tin liên hệ (địa chỉ, email, phone) → lấy từ SiteSettings
+
+### 3.7 Terms & Privacy pages
+- Hiện tại là static text → thêm SiteSettings keys hoặc giữ nguyên (ít thay đổi)
+
+---
+
+## Phase 4: Thêm SiteSettings keys mới
+
+Trong admin Settings (`/admin/settings`), thêm:
+- `tech_stack` — danh sách công nghệ (comma-separated)
+- `team_page_title` — tiêu đề trang team
+- `team_page_subtitle` — phụ đề trang team
+- `company_address` — địa chỉ công ty
+- `company_email` — email công ty
+- `company_phone` — số điện thoại
+
+**File:** `src/app/admin/(system)/settings/page.tsx`
+
+---
+
+## Phase 5: Cập nhật mockData
+
+Cập nhật `mockTeamMembers` trong `src/data/mockData.ts` với các field mới (roleLevel, roleCategory, coverImage, quote, isFeatured) để fallback data cũng hiển thị đẹp.
+
+---
+
+## Tóm tắt file cần tạo/sửa
+
+| File | Hành động |
+|---|---|
+| `prisma/schema.prisma` | Sửa — thêm fields TeamMember |
+| `src/app/api/admin/team/route.ts` | Sửa — handle new fields |
+| `src/app/api/admin/team/[id]/route.ts` | Sửa — handle new fields |
+| `src/app/api/team/route.ts` | **Tạo mới** — public API |
+| `src/app/api/team/[slug]/route.ts` | **Tạo mới** — public API detail |
+| `src/app/admin/(content)/team/page.tsx` | Sửa — thêm form fields |
+| `src/app/[locale]/team/page.tsx` | **Tạo mới** — server page |
+| `src/app/[locale]/team/team-page.tsx` | **Tạo mới** — premium UI |
+| `src/app/[locale]/team/[slug]/page.tsx` | **Tạo mới** — member detail server |
+| `src/app/[locale]/team/[slug]/member-page.tsx` | **Tạo mới** — member detail UI |
+| `src/app/[locale]/about/about-page.tsx` | Sửa — dynamic tech stack |
+| `src/app/admin/(system)/settings/page.tsx` | Sửa — thêm setting keys |
+| `src/data/mockData.ts` | Sửa — update mock team data |
+| `src/lib/db/queries.ts` | Sửa — thêm query getTeamMemberBySlug |
+
+---
+
+## Thứ tự thực hiện
+
+1. Phase 1 (Schema + Admin) → migrate DB
+2. Phase 2 (Public team pages) → UI premium
+3. Phase 3 (Audit các trang khác) → fix hardcoded values
+4. Phase 4 (Settings keys) → admin config
+5. Phase 5 (Mock data update)
+6. Commit & Push
