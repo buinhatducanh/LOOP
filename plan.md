@@ -16,7 +16,12 @@ Thêm các field mới để hỗ trợ role hierarchy và giao diện premium:
 - `quote String?` — câu nói/slogan cá nhân
 - `email String?` — email công khai
 - `phone String?` — số điện thoại (tùy chọn)
-- `yearsExperience Int?` — số năm kinh nghiệm
+- `skill` - Kỹ năng chuyên môn
+- `experience` - Kinh nghiệm làm việc
+- `achievements` - Doanh nghiệp đã làm việc
+- `social` - Link mạng xã hội
+- `userId` - ID người dùng liên kết với auth để quản trị đăng nhập
+- `isWorking Boolean @default(true)` — đánh dấu thành viên đang làm việc
 - `isFeatured Boolean @default(false)` — đánh dấu thành viên nổi bật (hiển thị lớn hơn)
 
 **File:** `prisma/schema.prisma`

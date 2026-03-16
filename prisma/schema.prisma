@@ -255,6 +255,19 @@ model TeamMember {
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
+  // ── Role Hierarchy & Premium Fields ──
+  roleLevel    Int      @default(4) @map("role_level")    // 0=CEO, 1=CTO/VP, 2=Lead, 3=Senior, 4=Member
+  roleCategory String?  @map("role_category")             // "leadership", "management", "engineering", "design", "operations"
+  coverImage   String?  @map("cover_image")               // Large cover image for detail page
+  quote        String?                                     // Personal quote/slogan
+  email        String?                                     // Public email
+  phone        String?                                     // Phone number
+  skills       String[]                                    // Professional skills
+  experience   String?  @db.Text                           // Work experience description
+  social       Json?                                       // Social links as JSON
+  isWorking    Boolean  @default(true) @map("is_working")  // Currently working
+  isFeatured   Boolean  @default(false) @map("is_featured") // Featured member (displayed larger)
+
   @@map("team_members")
 }
 

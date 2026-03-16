@@ -81,7 +81,7 @@ export async function getUserByGoogleId(googleId: string) {
 export async function getTeamMembers() {
   return prisma.teamMember.findMany({
     where: { isActive: true },
-    orderBy: { sortOrder: "asc" },
+    orderBy: [{ roleLevel: "asc" }, { sortOrder: "asc" }],
   });
 }
 

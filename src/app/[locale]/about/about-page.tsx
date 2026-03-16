@@ -88,7 +88,14 @@ function FadeIn({ children, delay = 0 }: { children: React.ReactNode; delay?: nu
   );
 }
 
-export function AboutPage({ team = [], stats: statsData }: { team?: TeamMember[]; stats?: StatsData }) {
+const defaultTechStack = [
+  "React", "Next.js", "TypeScript", "Tailwind CSS", "Node.js",
+  "PostgreSQL", "Redis", "Docker", "AWS", "Vercel",
+  "Prisma", "Stripe", "Shopify", "Figma", "Framer Motion",
+];
+
+export function AboutPage({ team = [], stats: statsData, techStack }: { team?: TeamMember[]; stats?: StatsData; techStack?: string[] }) {
+  const techItems = techStack && techStack.length > 0 ? techStack : defaultTechStack;
   const router = useRouter();
   const t = useTranslations("AboutPage");
   const tStats = useTranslations("Stats");
@@ -412,11 +419,7 @@ export function AboutPage({ team = [], stats: statsData }: { team?: TeamMember[]
                 justifyContent: "center",
               }}
             >
-              {[
-                "React", "Next.js", "TypeScript", "Tailwind CSS", "Node.js",
-                "PostgreSQL", "Redis", "Docker", "AWS", "Vercel",
-                "Prisma", "Stripe", "Shopify", "Figma", "Framer Motion",
-              ].map((tech) => (
+              {techItems.map((tech) => (
                 <motion.span
                   key={tech}
                   whileHover={{ background: "#374151", color: "#FFFFFF", scale: 1.05 }}

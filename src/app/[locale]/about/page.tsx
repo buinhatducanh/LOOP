@@ -55,6 +55,7 @@ export default async function Page() {
           teamSize: siteSettings.stat_team_size,
           years: siteSettings.stat_years,
         } : undefined}
+        techStack={siteSettings.tech_stack ? siteSettings.tech_stack.split(",").map(s => s.trim()).filter(Boolean) : undefined}
       />
     </>
   );
