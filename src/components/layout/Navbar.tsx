@@ -10,8 +10,7 @@ import { LanguageSwitcher } from "@/components/shared/LanguageSwitcher";
 const navLinks = [
   { key: "home", path: "/" },
   { key: "services", path: "/services" },
-  { key: "portfolio", path: "/portfolio" },
-  { key: "pricing", path: "/pricing" },
+  { key: "teamList", path: "/team-list" },
   { key: "about", path: "/about" },
   { key: "contact", path: "/contact" },
 ];

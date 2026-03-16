@@ -2,14 +2,16 @@
     "Navigation": {
         "home": "Trang chủ",
         "services": "Dịch vụ",
-        "portfolio": "Dự án",
-        "pricing": "Bảng giá",
+        "team": "Đội ngũ",
+        "teamList": "Đội ngũ",
         "about": "Về chúng tôi",
         "contact": "Liên hệ",
         "login": "Đăng nhập",
         "register": "Đăng ký",
         "getQuote": "Nhận báo giá",
-        "dashboard": "Dashboard"
+        "dashboard": "Dashboard",
+        "pricing": "Bảng giá",
+        "portfolio": "Dự án"
     },
     "Footer": {
         "ctaTitle": "Sẵn sàng bắt đầu dự án?",

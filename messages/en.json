@@ -2,14 +2,16 @@
     "Navigation": {
         "home": "Home",
         "services": "Services",
-        "portfolio": "Portfolio",
-        "pricing": "Pricing",
+        "team": "Team",
+        "teamList": "Team",
         "about": "About Us",
         "contact": "Contact",
         "login": "Login",
         "register": "Register",
         "getQuote": "Get a Quote",
-        "dashboard": "Dashboard"
+        "dashboard": "Dashboard",
+        "pricing": "Pricing",
+        "portfolio": "Portfolio"
     },
     "Footer": {
         "ctaTitle": "Ready to start your project?",

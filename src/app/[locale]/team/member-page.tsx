@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion, useInView } from "motion/react";
 import {
   ArrowLeft,
+  ArrowRight,
   Linkedin,
   Twitter,
   Github,
@@ -400,69 +401,116 @@ export function MemberPage({ member, otherMembers }: MemberPageProps) {
         </section>
       )}
 
-      {/* ── Other Members ── */}
-      {otherMembers.length > 0 && (
-        <section style={{
-          padding: "60px 24px 80px",
-          background: "#0B1120",
-          borderTop: "1px solid #1F2937",
-        }}>
-          <div style={{ maxWidth: 1280, margin: "0 auto" }}>
-            <FadeIn>
-              <div style={{ textAlign: "center", marginBottom: 40 }}>
-                <h2 style={{ fontSize: 24, fontWeight: 800, letterSpacing: -1 }}>
-                  Xem thêm{" "}
-                  <span style={{
-                    background: "linear-gradient(135deg, #3B82F6, #6366F1)",
-                    WebkitBackgroundClip: "text",
-                    WebkitTextFillColor: "transparent",
-                  }}>
-                    thành viên
-                  </span>
-                </h2>
-              </div>
-            </FadeIn>
-
-            <div style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
-              gap: 20,
-            }}>
-              {otherMembers.map((m, i) => (
-                <FadeIn key={m.id} delay={i * 0.1}>
-                  <Link href={`/team/${m.slug}`} style={{ textDecoration: "none" }}>
-                    <motion.div
-                      whileHover={{ y: -4, borderColor: "rgba(99,102,241,0.4)" }}
-                      style={{
-                        background: "#020617",
-                        border: "1px solid #1F2937",
-                        borderRadius: 16,
-                        padding: 24,
-                        textAlign: "center",
-                        transition: "all 0.3s",
-                      }}
-                    >
-                      <div style={{
-                        width: 72,
-                        height: 72,
-                        borderRadius: "50%",
-                        margin: "0 auto 12px",
-                        overflow: "hidden",
-                        border: "2px solid rgba(99,102,241,0.3)",
-                      }}>
-                        <img src={m.image} alt={m.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                      </div>
-                      <h3 style={{ color: "#fff", fontSize: 16, fontWeight: 700, marginBottom: 4 }}>{m.name}</h3>
-                      <p style={{ color: "#6366F1", fontSize: 13, fontWeight: 600, marginBottom: 4 }}>{m.role}</p>
-                      <p style={{ color: "#94A3B8", fontSize: 13 }}>{m.shortBio}</p>
-                    </motion.div>
-                  </Link>
-                </FadeIn>
-              ))}
+      {/* ── Projects Portfolio ── */}
+      <section style={{
+        padding: "60px 24px 80px",
+        background: "#0B1120",
+        borderTop: "1px solid #1F2937",
+      }}>
+        <div style={{ maxWidth: 1280, margin: "0 auto" }}>
+          <FadeIn>
+            <div style={{ textAlign: "center", marginBottom: 40 }}>
+              <h2 style={{ fontSize: 24, fontWeight: 800, letterSpacing: -1 }}>
+                Dự án{" "}
+                <span style={{
+                  background: "linear-gradient(135deg, #3B82F6, #6366F1)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                }}>
+                  đã thực hiện
+                </span>
+              </h2>
+              <p style={{ color: "#94A3B8", marginTop: 8 }}>
+                Các dự án tiêu biểu {member.name} đã tham gia phát triển
+              </p>
             </div>
+          </FadeIn>
+
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
+            gap: 24,
+          }}>
+            {[1, 2, 3].map((i) => (
+              <FadeIn key={i} delay={i * 0.1}>
+                <Link href={`/portfolio/project-${i}`} style={{ textDecoration: "none" }}>
+                  <motion.div
+                    whileHover={{ y: -8, scale: 1.02 }}
+                    style={{
+                      background: "#020617",
+                      border: "1px solid #1F2937",
+                      borderRadius: 20,
+                      overflow: "hidden",
+                      cursor: "pointer",
+                      transition: "all 0.3s",
+                    }}
+                  >
+                    {/* Project Image */}
+                    <div style={{ position: "relative", height: 200, overflow: "hidden" }}>
+                      <div style={{
+                        width: "100%",
+                        height: "100%",
+                        background: `linear-gradient(135deg, rgba(99,102,241,${0.3 + i * 0.2}), rgba(236,72,153,${0.2 + i * 0.1}))`,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}>
+                        <span style={{ fontSize: 48, opacity: 0.5 }}>🚀</span>
+                      </div>
+                      <div style={{
+                        position: "absolute",
+                        inset: 0,
+                        background: "linear-gradient(to top, #020617 0%, transparent 60%)",
+                      }} />
+                    </div>
+                    {/* Project Info */}
+                    <div style={{ padding: 20 }}>
+                      <h3 style={{ color: "#fff", fontSize: 18, fontWeight: 700, marginBottom: 8 }}>
+                        Dự án E-commerce {i + 1}
+                      </h3>
+                      <p style={{ color: "#94A3B8", fontSize: 14, marginBottom: 12, lineHeight: 1.6 }}>
+                        Website thương mại điện tử hiện đại với tính năng giỏ hàng, thanh toán, quản lý đơn hàng
+                      </p>
+                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                        {["Next.js", "React", "PostgreSQL"].slice(0, 2 + i % 2).map((tech) => (
+                          <span key={tech} style={{
+                            padding: "4px 10px",
+                            borderRadius: 6,
+                            fontSize: 12,
+                            color: "#94A3B8",
+                            background: "rgba(51,65,85,0.5)",
+                          }}>
+                            {tech}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </motion.div>
+                </Link>
+              </FadeIn>
+            ))}
           </div>
-        </section>
-      )}
+
+          <div style={{ textAlign: "center", marginTop: 40 }}>
+            <Link
+              href="/portfolio"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "12px 24px",
+                borderRadius: 10,
+                border: "1px solid rgba(99,102,241,0.3)",
+                color: "#94A3B8",
+                textDecoration: "none",
+                transition: "all 0.3s",
+              }}
+            >
+              Xem tất cả dự án <ArrowRight size={16} />
+            </Link>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
