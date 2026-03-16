@@ -3,7 +3,7 @@ config({ path: ".env.local", override: true });
 
 import { Pool } from "pg";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient } from "../src/generated/prisma/client";
+import { PrismaClient, Prisma } from "../src/generated/prisma/client";
 
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) throw new Error("DATABASE_URL is missing");
@@ -137,11 +137,11 @@ async function main() {
     // ─── ADDON SERVICES (Dịch vụ rời) ──────────────────────────
     const addonsData = [
         { slug: "seo-writing-30", name: "SEO Article Writing (30/month)", nameVi: "Viết bài SEO (30 bài/tháng)", description: "Monthly SEO content writing service", descriptionVi: "Dịch vụ viết bài chuẩn SEO hàng tháng, 30 bài/tháng", icon: "pen-line", type: "recurring", price: 2000000, billingPeriod: "monthly", metadata: { articlesPerMonth: 30 }, sortOrder: 1 },
-        { slug: "google-maps-setup", name: "Google Maps Setup", nameVi: "Định vị Google Maps", description: "Set up and optimize Google Business Profile", descriptionVi: "Thiết lập và tối ưu hồ sơ Google Business trên Maps", icon: "map-pin", type: "one_time", price: 500000, billingPeriod: null, metadata: null, sortOrder: 2 },
-        { slug: "data-entry-support", name: "Data Entry Support", nameVi: "Hỗ trợ nhập liệu", description: "Product data entry and content upload", descriptionVi: "Nhập liệu sản phẩm, hình ảnh và nội dung lên website", icon: "database", type: "one_time", price: 1000000, billingPeriod: null, metadata: null, sortOrder: 3 },
-        { slug: "monthly-maintenance", name: "Monthly Maintenance", nameVi: "Bảo trì hàng tháng", description: "Ongoing website maintenance and updates", descriptionVi: "Bảo trì website định kỳ: cập nhật, backup, monitoring", icon: "wrench", type: "recurring", price: 500000, billingPeriod: "monthly", metadata: null, sortOrder: 4 },
-        { slug: "marketing-consultation", name: "Marketing Consultation", nameVi: "Tư vấn marketing", description: "One-on-one marketing strategy session", descriptionVi: "Buổi tư vấn chiến lược marketing 1-1 với chuyên gia", icon: "megaphone", type: "one_time", price: 1500000, billingPeriod: null, metadata: null, sortOrder: 5 },
-        { slug: "social-media-setup", name: "Social Media Setup", nameVi: "Thiết lập mạng xã hội", description: "Set up and brand social media profiles", descriptionVi: "Thiết lập và đồng bộ thương hiệu trên mạng xã hội", icon: "share-2", type: "one_time", price: 800000, billingPeriod: null, metadata: null, sortOrder: 6 },
+        { slug: "google-maps-setup", name: "Google Maps Setup", nameVi: "Định vị Google Maps", description: "Set up and optimize Google Business Profile", descriptionVi: "Thiết lập và tối ưu hồ sơ Google Business trên Maps", icon: "map-pin", type: "one_time", price: 500000, billingPeriod: null, metadata: Prisma.JsonNull, sortOrder: 2 },
+        { slug: "data-entry-support", name: "Data Entry Support", nameVi: "Hỗ trợ nhập liệu", description: "Product data entry and content upload", descriptionVi: "Nhập liệu sản phẩm, hình ảnh và nội dung lên website", icon: "database", type: "one_time", price: 1000000, billingPeriod: null, metadata: Prisma.JsonNull, sortOrder: 3 },
+        { slug: "monthly-maintenance", name: "Monthly Maintenance", nameVi: "Bảo trì hàng tháng", description: "Ongoing website maintenance and updates", descriptionVi: "Bảo trì website định kỳ: cập nhật, backup, monitoring", icon: "wrench", type: "recurring", price: 500000, billingPeriod: "monthly", metadata: Prisma.JsonNull, sortOrder: 4 },
+        { slug: "marketing-consultation", name: "Marketing Consultation", nameVi: "Tư vấn marketing", description: "One-on-one marketing strategy session", descriptionVi: "Buổi tư vấn chiến lược marketing 1-1 với chuyên gia", icon: "megaphone", type: "one_time", price: 1500000, billingPeriod: null, metadata: Prisma.JsonNull, sortOrder: 5 },
+        { slug: "social-media-setup", name: "Social Media Setup", nameVi: "Thiết lập mạng xã hội", description: "Set up and brand social media profiles", descriptionVi: "Thiết lập và đồng bộ thương hiệu trên mạng xã hội", icon: "share-2", type: "one_time", price: 800000, billingPeriod: null, metadata: Prisma.JsonNull, sortOrder: 6 },
     ];
 
     const savedAddons: Record<string, { id: string }> = {};
