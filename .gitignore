@@ -20,6 +20,7 @@ dist
 dist-ssr
 *.local
 .next
+tsconfig.tsbuildinfo
 
 # Environment variables (KHÔNG commit file chứa secret)
 .env
