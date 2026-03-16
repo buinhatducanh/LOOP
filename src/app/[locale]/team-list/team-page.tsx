@@ -66,11 +66,10 @@ function FadeIn({ children, delay = 0, className = "" }: { children: React.React
 
 function SocialLink({ href, icon: Icon }: { href: string; icon: typeof Linkedin }) {
   return (
-    <motion.a
+    <a
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      whileHover={{ scale: 1.15, y: -2 }}
       style={{
         width: 40,
         height: 40,
@@ -82,20 +81,11 @@ function SocialLink({ href, icon: Icon }: { href: string; icon: typeof Linkedin 
         justifyContent: "center",
         color: "#94A3B8",
         transition: "all 0.3s",
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.background = "rgba(99,102,241,0.25)";
-        e.currentTarget.style.color = "#818CF8";
-        e.currentTarget.style.boxShadow = "0 0 20px rgba(99,102,241,0.3)";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.background = "rgba(99,102,241,0.1)";
-        e.currentTarget.style.color = "#94A3B8";
-        e.currentTarget.style.boxShadow = "none";
+        textDecoration: "none",
       }}
     >
       <Icon size={18} />
-    </motion.a>
+    </a>
   );
 }
 
@@ -103,7 +93,7 @@ function SocialLink({ href, icon: Icon }: { href: string; icon: typeof Linkedin 
 function LeaderCard({ member }: { member: TeamMemberData }) {
   return (
     <FadeIn>
-      <Link href={`/team/${member.slug}`} style={{ textDecoration: "none" }}>
+      <Link href={`/team-member/${member.slug}`} style={{ textDecoration: "none" }}>
         <motion.div
           whileHover={{ y: -4 }}
           style={{
@@ -247,7 +237,7 @@ function LeaderCard({ member }: { member: TeamMemberData }) {
 function VPCard({ member, index }: { member: TeamMemberData; index: number }) {
   return (
     <FadeIn delay={index * 0.15}>
-      <Link href={`/team/${member.slug}`} style={{ textDecoration: "none" }}>
+      <Link href={`/team-member/${member.slug}`} style={{ textDecoration: "none" }}>
         <motion.div
           whileHover={{ y: -6, borderColor: "rgba(99,102,241,0.5)" }}
           style={{
@@ -333,54 +323,82 @@ function VPCard({ member, index }: { member: TeamMemberData; index: number }) {
   );
 }
 
-/* ── Lead / Manager Card ── */
+/* ── Lead / Manager Card (Portfolio Style) ── */
 function LeadCard({ member, index }: { member: TeamMemberData; index: number }) {
   return (
     <FadeIn delay={index * 0.1}>
-      <Link href={`/team/${member.slug}`} style={{ textDecoration: "none" }}>
+      <Link href={`/team-member/${member.slug}`} style={{ textDecoration: "none" }}>
         <motion.div
-          whileHover={{ y: -6, borderColor: "rgba(59,130,246,0.5)" }}
+          whileHover={{ y: -8, scale: 1.02 }}
           style={{
             background: "#0F172A",
             border: "1px solid #1F2937",
-            borderRadius: 16,
-            padding: 28,
-            textAlign: "center",
+            borderRadius: 20,
+            overflow: "hidden",
             transition: "all 0.3s",
             height: "100%",
+            cursor: "pointer",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = "rgba(59,130,246,0.4)";
+            e.currentTarget.style.boxShadow = "0 20px 40px rgba(0,0,0,0.3), 0 0 60px rgba(59,130,246,0.1)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = "#1F2937";
+            e.currentTarget.style.boxShadow = "none";
           }}
         >
-          <div style={{
-            width: 80,
-            height: 80,
-            borderRadius: "50%",
-            margin: "0 auto 16px",
-            overflow: "hidden",
-            border: "2px solid rgba(59,130,246,0.3)",
-          }}>
-            <img src={member.image} alt={member.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          {/* Large Image */}
+          <div style={{ position: "relative", height: 220, overflow: "hidden" }}>
+            <img
+              src={member.coverImage || member.image}
+              alt={member.name}
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+              }}
+            />
+            <div style={{
+              position: "absolute",
+              inset: 0,
+              background: "linear-gradient(to top, #0F172A 0%, transparent 60%)",
+            }} />
+            {/* Role Badge */}
+            <div style={{
+              position: "absolute",
+              top: 16,
+              left: 16,
+              padding: "5px 12px",
+              borderRadius: 16,
+              fontSize: 11,
+              fontWeight: 600,
+              background: "rgba(59,130,246,0.8)",
+              color: "#fff",
+            }}>
+              {member.role}
+            </div>
           </div>
-          <h3 style={{ color: "#fff", fontSize: 17, fontWeight: 700, marginBottom: 4 }}>{member.name}</h3>
-          <p style={{ color: "#60A5FA", fontSize: 13, fontWeight: 600, marginBottom: 4 }}>{member.role}</p>
-          <p style={{ color: "#94A3B8", fontSize: 13, marginBottom: 14 }}>{member.shortBio}</p>
 
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 5, justifyContent: "center", marginBottom: 14 }}>
-            {member.expertise.slice(0, 3).map((skill) => (
-              <span key={skill} style={{
-                padding: "3px 10px",
-                borderRadius: 6,
-                fontSize: 11,
-                color: "#94A3B8",
-                background: "rgba(51,65,85,0.4)",
-              }}>
-                {skill}
-              </span>
-            ))}
-          </div>
+          {/* Info */}
+          <div style={{ padding: 20 }}>
+            <h3 style={{ color: "#fff", fontSize: 18, fontWeight: 700, marginBottom: 4 }}>{member.name}</h3>
+            <p style={{ color: "#60A5FA", fontSize: 13, fontWeight: 600, marginBottom: 10 }}>{member.shortBio}</p>
+            <p style={{ color: "#94A3B8", fontSize: 13, marginBottom: 14, lineHeight: 1.5 }}>{member.bio}</p>
 
-          <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
-            {member.linkedin && <SocialLink href={member.linkedin} icon={Linkedin} />}
-            {member.github && <SocialLink href={member.github} icon={Github} />}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 5, justifyContent: "center" }}>
+              {member.expertise.slice(0, 3).map((skill) => (
+                <span key={skill} style={{
+                  padding: "4px 10px",
+                  borderRadius: 6,
+                  fontSize: 11,
+                  color: "#94A3B8",
+                  background: "rgba(51,65,85,0.5)",
+                }}>
+                  {skill}
+                </span>
+              ))}
+            </div>
           </div>
         </motion.div>
       </Link>
@@ -388,36 +406,124 @@ function LeadCard({ member, index }: { member: TeamMemberData; index: number }) 
   );
 }
 
-/* ── Member Card ── */
+/* ── Member Card (Portfolio Style) ── */
 function MemberCard({ member, index }: { member: TeamMemberData; index: number }) {
   return (
     <FadeIn delay={index * 0.08}>
-      <Link href={`/team/${member.slug}`} style={{ textDecoration: "none" }}>
+      <Link href={`/team-member/${member.slug}`} style={{ textDecoration: "none" }}>
         <motion.div
-          whileHover={{ y: -4, borderColor: "rgba(71,85,105,0.5)" }}
+          whileHover={{ y: -8, scale: 1.02 }}
           style={{
-            background: "#020617",
+            background: "#0F172A",
             border: "1px solid #1F2937",
-            borderRadius: 14,
-            padding: 20,
-            textAlign: "center",
+            borderRadius: 20,
+            overflow: "hidden",
             transition: "all 0.3s",
             height: "100%",
+            cursor: "pointer",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = "rgba(99,102,241,0.4)";
+            e.currentTarget.style.boxShadow = "0 20px 40px rgba(0,0,0,0.3), 0 0 60px rgba(99,102,241,0.1)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = "#1F2937";
+            e.currentTarget.style.boxShadow = "none";
           }}
         >
-          <div style={{
-            width: 64,
-            height: 64,
-            borderRadius: "50%",
-            margin: "0 auto 12px",
-            overflow: "hidden",
-            border: "2px solid #1F2937",
-          }}>
-            <img src={member.image} alt={member.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          {/* Large Image */}
+          <div style={{ position: "relative", height: 280, overflow: "hidden" }}>
+            <img
+              src={member.coverImage || member.image}
+              alt={member.name}
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                transition: "transform 0.5s",
+              }}
+            />
+            <div style={{
+              position: "absolute",
+              inset: 0,
+              background: "linear-gradient(to top, #0F172A 0%, transparent 60%)",
+            }} />
+
+            {/* Role Badge */}
+            <div style={{
+              position: "absolute",
+              top: 16,
+              left: 16,
+              padding: "6px 14px",
+              borderRadius: 20,
+              fontSize: 12,
+              fontWeight: 600,
+              background: "rgba(99,102,241,0.8)",
+              color: "#fff",
+              backdropFilter: "blur(8px)",
+            }}>
+              {member.role}
+            </div>
           </div>
-          <h3 style={{ color: "#fff", fontSize: 15, fontWeight: 700, marginBottom: 2 }}>{member.name}</h3>
-          <p style={{ color: "#6366F1", fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{member.role}</p>
-          <p style={{ color: "#94A3B8", fontSize: 12 }}>{member.shortBio}</p>
+
+          {/* Info */}
+          <div style={{ padding: 24 }}>
+            <h3 style={{
+              color: "#fff",
+              fontSize: 20,
+              fontWeight: 700,
+              marginBottom: 4,
+            }}>
+              {member.name}
+            </h3>
+            <p style={{
+              color: "#818CF8",
+              fontSize: 14,
+              fontWeight: 600,
+              marginBottom: 12,
+            }}>
+              {member.shortBio}
+            </p>
+            <p style={{
+              color: "#94A3B8",
+              fontSize: 13,
+              lineHeight: 1.6,
+              marginBottom: 16,
+              display: "-webkit-box",
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: "vertical",
+              overflow: "hidden",
+            }}>
+              {member.bio}
+            </p>
+
+            {/* Skills preview */}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {member.expertise.slice(0, 3).map((skill) => (
+                <span key={skill} style={{
+                  padding: "4px 10px",
+                  borderRadius: 6,
+                  fontSize: 11,
+                  color: "#94A3B8",
+                  background: "rgba(51,65,85,0.5)",
+                  border: "1px solid rgba(71,85,105,0.3)",
+                }}>
+                  {skill}
+                </span>
+              ))}
+              {member.expertise.length > 3 && (
+                <span style={{
+                  padding: "4px 10px",
+                  borderRadius: 6,
+                  fontSize: 11,
+                  color: "#6366F1",
+                  fontWeight: 600,
+                }}>
+                  +{member.expertise.length - 3}
+                </span>
+              )}
+            </div>
+          </div>
         </motion.div>
       </Link>
     </FadeIn>

@@ -136,7 +136,7 @@ export async function getServiceAttributes() {
 export async function getDualServicesData() {
   const [templates, attributes] = await Promise.all([
     getWebTemplates(),
-    getServiceAttributes(),
+    getServiceAttributesByTier(), // Include parent/children for disable logic
   ]);
   return { templates, attributes };
 }

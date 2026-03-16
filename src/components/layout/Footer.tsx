@@ -32,8 +32,7 @@ export interface FooterData {
 
 const companyLinks = [
   { key: "about", path: "/about" },
-  { key: "portfolio", path: "/portfolio" },
-  { key: "pricing", path: "/pricing" },
+  { key: "team", path: "/team-list" },
   { key: "contact", path: "/contact" },
 ];
 

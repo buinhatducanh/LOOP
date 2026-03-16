@@ -5,6 +5,7 @@ import { type ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "../../components/data-table";
 import { Plus, Star, Pencil, Trash2, Eye, EyeOff, X } from "lucide-react";
 import { toast } from "sonner";
+import { ImageUploader } from "@/components/ui/image-uploader";
 
 interface Testimonial {
   id: string;
@@ -342,15 +343,12 @@ export default function AdminTestimonialsPage() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-300">
-                Avatar URL
-              </label>
-              <input
-                type="text"
+              <ImageUploader
+                label="Avatar"
                 value={form.avatar}
-                onChange={(e) => setForm({ ...form, avatar: e.target.value })}
-                className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white placeholder-slate-500 outline-none focus:border-blue-500"
-                placeholder="https://example.com/avatar.jpg"
+                onChange={(url) => setForm({ ...form, avatar: url })}
+                folder="loop/testimonials"
+                aspectRatio="square"
               />
             </div>
           </div>
