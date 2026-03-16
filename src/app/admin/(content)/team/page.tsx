@@ -5,6 +5,7 @@ import { type ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "../../components/data-table";
 import { Plus, Pencil, Trash2, Eye, EyeOff, X, Star } from "lucide-react";
 import { toast } from "sonner";
+import { ImageUploader } from "@/components/ui/image-uploader";
 
 interface TeamMember {
   id: string;
@@ -580,23 +581,21 @@ export default function AdminTeamPage() {
               {/* Images */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-slate-300">Ảnh đại diện (URL)</label>
-                  <input
-                    type="text"
+                  <ImageUploader
+                    label="Ảnh đại diện"
                     value={form.image}
-                    onChange={(e) => updateField("image", e.target.value)}
-                    className="h-9 w-full rounded-lg border border-slate-700 bg-slate-800 px-3 text-sm text-white outline-none focus:border-blue-500"
-                    placeholder="https://example.com/avatar.jpg"
+                    onChange={(url) => updateField("image", url)}
+                    folder="loop/team"
+                    aspectRatio="square"
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-slate-300">Ảnh bìa (URL)</label>
-                  <input
-                    type="text"
-                    value={form.coverImage}
-                    onChange={(e) => updateField("coverImage", e.target.value)}
-                    className="h-9 w-full rounded-lg border border-slate-700 bg-slate-800 px-3 text-sm text-white outline-none focus:border-blue-500"
-                    placeholder="https://example.com/cover.jpg"
+                  <ImageUploader
+                    label="Ảnh bìa"
+                    value={form.coverImage || ""}
+                    onChange={(url) => updateField("coverImage", url)}
+                    folder="loop/team/cover"
+                    aspectRatio="landscape"
                   />
                 </div>
               </div>
