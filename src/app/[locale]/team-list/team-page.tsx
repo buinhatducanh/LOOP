@@ -1,8 +1,9 @@
 "use client";
 
-import { useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import Link from "next/link";
-import { motion, useInView } from "motion/react";
+import { useRouter } from "next/navigation";
+import { motion, useInView, AnimatePresence } from "motion/react";
 import {
   ArrowRight,
   Linkedin,
@@ -14,6 +15,18 @@ import {
   Users,
   Crown,
   Star,
+  Search,
+  Grid3X3,
+  List,
+  X,
+  Filter,
+  ChevronDown,
+  Briefcase,
+  Code2,
+  Palette,
+  Megaphone,
+  Target,
+  Layers,
 } from "lucide-react";
 
 interface TeamMemberData {
@@ -40,14 +53,27 @@ interface TeamMemberData {
   isFeatured: boolean;
 }
 
+interface Expertise {
+  id: string;
+  name: string;
+  nameVi: string;
+  category: string;
+  categoryVi: string;
+  icon: string | null;
+  isActive: boolean;
+  sortOrder: number;
+}
+
 interface TeamPageProps {
   team: TeamMemberData[];
+  expertises?: Expertise[];
   settings?: {
     title?: string;
     subtitle?: string;
   };
 }
 
+// Animation components
 function FadeIn({ children, delay = 0, className = "" }: { children: React.ReactNode; delay?: number; className?: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: "-60px" });
@@ -64,162 +90,170 @@ function FadeIn({ children, delay = 0, className = "" }: { children: React.React
   );
 }
 
-function SocialLink({ href, icon: Icon }: { href: string; icon: typeof Linkedin }) {
+function StaggerContainer({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      style={{
-        width: 40,
-        height: 40,
-        borderRadius: 12,
-        border: "1px solid rgba(99,102,241,0.3)",
-        background: "rgba(99,102,241,0.1)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        color: "#94A3B8",
-        transition: "all 0.3s",
-        textDecoration: "none",
+    <motion.div
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, margin: "-60px" }}
+      variants={{
+        hidden: { opacity: 0 },
+        visible: {
+          opacity: 1,
+          transition: { staggerChildren: 0.08 },
+        },
       }}
+      className={className}
     >
-      <Icon size={18} />
-    </a>
+      {children}
+    </motion.div>
   );
 }
 
-/* ── CEO / Founder Card ── */
-function LeaderCard({ member }: { member: TeamMemberData }) {
+const cardVariants = {
+  hidden: { opacity: 0, y: 30, scale: 0.95 },
+  visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] as const } },
+  exit: { opacity: 0, scale: 0.95, transition: { duration: 0.3 } },
+};
+
+// Social Link Component
+function SocialLink({ href, icon: Icon }: { href: string; icon: typeof Linkedin }) {
+  const isExternal = href.startsWith('http') || href.startsWith('mailto:');
+
+  if (isExternal) {
+    return (
+      <a
+        href={href}
+        target={href.startsWith('mailto:') ? undefined : "_blank"}
+        rel="noopener noreferrer"
+        className="w-10 h-10 rounded-xl border border-indigo-500/30 bg-indigo-500/10 flex items-center justify-center text-slate-400 hover:text-white hover:border-indigo-400 hover:bg-indigo-500/20 transition-all duration-300"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <Icon size={18} />
+      </a>
+    );
+  }
+
   return (
-    <FadeIn>
-      <Link href={`/team-member/${member.slug}`} style={{ textDecoration: "none" }}>
+    <Link
+      href={href}
+      className="w-10 h-10 rounded-xl border border-indigo-500/30 bg-indigo-500/10 flex items-center justify-center text-slate-400 hover:text-white hover:border-indigo-400 hover:bg-indigo-500/20 transition-all duration-300"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <Icon size={18} />
+    </Link>
+  );
+}
+
+// Category icon mapping
+const categoryIcons: Record<string, typeof Code2> = {
+  leadership: Crown,
+  engineering: Code2,
+  design: Palette,
+  marketing: Megaphone,
+  product: Target,
+  default: Layers,
+};
+
+// Filter pills data
+const filterCategories = [
+  { id: "all", label: "Tất cả", icon: Users },
+  { id: "leadership", label: "Leadership", icon: Crown },
+  { id: "engineering", label: "Engineering", icon: Code2 },
+  { id: "design", label: "Design", icon: Palette },
+  { id: "marketing", label: "Marketing", icon: Megaphone },
+  { id: "product", label: "Product", icon: Target },
+];
+
+/* ── CEO / Founder Card (Grid View) ── */
+function LeaderCardGrid({ member }: { member: TeamMemberData }) {
+  const router = useRouter();
+  const isVi = true; // Could pass locale as prop if needed
+
+  return (
+    <motion.div
+      variants={cardVariants}
+      layout
+      className="col-span-full"
+    >
+      <div
+        onClick={() => router.push(`/team/${member.slug}`)}
+        className="cursor-pointer"
+      >
         <motion.div
           whileHover={{ y: -4 }}
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: 0,
-            background: "linear-gradient(135deg, #0F172A 0%, #1E1B4B 100%)",
-            border: "1px solid rgba(99,102,241,0.2)",
-            borderRadius: 24,
-            overflow: "hidden",
-            position: "relative",
-          }}
+          className="relative overflow-hidden rounded-3xl border-2 border-amber-500/50 bg-gradient-to-br from-slate-900 via-slate-900 to-amber-950/30 shadow-2xl shadow-amber-500/10"
         >
-          {/* Glow effect */}
-          <div style={{
-            position: "absolute",
-            top: -1,
-            left: -1,
-            right: -1,
-            bottom: -1,
-            borderRadius: 24,
-            background: "linear-gradient(135deg, rgba(99,102,241,0.3), rgba(236,72,153,0.2), rgba(99,102,241,0.1))",
-            zIndex: 0,
-            opacity: 0.5,
-            filter: "blur(1px)",
-          }} />
-          <div style={{ position: "relative", zIndex: 1, display: "grid", gridTemplateColumns: "1fr 1fr" }}>
-            {/* Image side */}
-            <div style={{ position: "relative", minHeight: 400 }}>
-              <img
-                src={member.coverImage || member.image}
-                alt={member.name}
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "cover",
-                  objectPosition: "center top",
-                }}
-              />
-              <div style={{
-                position: "absolute",
-                inset: 0,
-                background: "linear-gradient(to right, transparent 60%, #0F172A)",
-              }} />
-              {/* Badge */}
-              <div style={{
-                position: "absolute",
-                top: 20,
-                left: 20,
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-                background: "linear-gradient(135deg, #F59E0B, #EF4444)",
-                padding: "6px 14px",
-                borderRadius: 20,
-                fontSize: 12,
-                fontWeight: 700,
-                color: "#fff",
-                boxShadow: "0 4px 15px rgba(245,158,11,0.4)",
-              }}>
-                <Crown size={14} /> {member.role}
-              </div>
+          {/* Animated gradient background */}
+          <div className="absolute inset-0 bg-gradient-to-r from-amber-500/5 via-purple-500/5 to-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+          {/* Special badge for CEO */}
+          <div className="absolute top-4 right-4 z-20">
+            <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white text-sm font-bold shadow-lg shadow-amber-500/40 animate-pulse">
+              <Crown size={16} />
+              CEO / Founder
+            </div>
+          </div>
+
+          <div className="relative grid grid-cols-1 lg:grid-cols-2 gap-0">
+            {/* Image side - larger for CEO */}
+            <div className="relative h-80 lg:h-96 overflow-hidden">
+              {(member.coverImage || member.image) ? (
+                <img
+                  src={member.coverImage || member.image}
+                  alt={member.name}
+                  className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700"
+                />
+              ) : (
+                <div className="w-full h-full bg-slate-800 flex items-center justify-center">
+                  <Users size={64} className="text-slate-600" />
+                </div>
+              )}
+              <div className="absolute inset-0 bg-gradient-to-r from-slate-900 via-slate-900/50 to-transparent lg:bg-gradient-to-t lg:from-slate-900 lg:via-slate-900/30 lg:to-transparent" />
+
+              {/* Experience badge - only show if experience field exists */}
+              {member.experience && (
+                <div className="absolute bottom-4 left-4 flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-sm text-white text-xs font-medium">
+                  <Sparkles size={14} className="text-amber-400" />
+                  {member.experience}
+                </div>
+              )}
             </div>
 
             {/* Info side */}
-            <div style={{ padding: "40px 36px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
-              <motion.h3
-                style={{
-                  fontSize: 36,
-                  fontWeight: 800,
-                  letterSpacing: -1,
-                  background: "linear-gradient(135deg, #FFFFFF, #C7D2FE)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  marginBottom: 8,
-                }}
-              >
+            <div className="p-8 lg:p-12 flex flex-col justify-center">
+              <h3 className="text-3xl lg:text-4xl font-extrabold tracking-tight text-white mb-2 group-hover:text-amber-200 transition-colors">
                 {member.name}
-              </motion.h3>
-              <p style={{ color: "#818CF8", fontSize: 15, fontWeight: 600, marginBottom: 20 }}>
-                {member.shortBio}
-              </p>
+              </h3>
+              <p className="text-amber-400 font-bold text-lg mb-4">{member.shortBio}</p>
 
               {member.quote && (
-                <div style={{
-                  display: "flex",
-                  gap: 12,
-                  padding: "16px 20px",
-                  background: "rgba(99,102,241,0.08)",
-                  borderLeft: "3px solid #6366F1",
-                  borderRadius: "0 12px 12px 0",
-                  marginBottom: 20,
-                }}>
-                  <Quote size={18} color="#6366F1" style={{ flexShrink: 0, marginTop: 2 }} />
-                  <p style={{ color: "#CBD5E1", fontSize: 14, lineHeight: 1.7, fontStyle: "italic" }}>
-                    {member.quote}
+                <div className="flex gap-4 p-5 bg-amber-500/10 border-l-4 border-amber-500 rounded-r-xl mb-6">
+                  <Quote size={24} className="text-amber-400 flex-shrink-0 mt-1" />
+                  <p className="text-slate-200 text-lg leading-relaxed italic">
+                    "{member.quote}"
                   </p>
                 </div>
               )}
 
-              <p style={{ color: "#94A3B8", fontSize: 14, lineHeight: 1.7, marginBottom: 20 }}>
+              <p className="text-slate-400 text-sm leading-relaxed mb-5 line-clamp-3">
                 {member.bio}
               </p>
 
-              {/* Expertise tags */}
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 24 }}>
-                {member.expertise.map((skill) => (
-                  <span
-                    key={skill}
-                    style={{
-                      padding: "5px 14px",
-                      borderRadius: 8,
-                      fontSize: 12,
-                      fontWeight: 500,
-                      color: "#C7D2FE",
-                      background: "rgba(99,102,241,0.15)",
-                      border: "1px solid rgba(99,102,241,0.2)",
-                    }}
-                  >
-                    {skill}
-                  </span>
+              {/* Skills with rating - amber style for CEO */}
+              <div className="flex flex-wrap gap-2 mb-5">
+                {(member.skills || member.expertise?.slice(0, 4) || []).map((skill: any) => (
+                  <div key={skill.name || skill} className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium text-amber-200 bg-amber-500/20 border border-amber-500/30">
+                    {typeof skill === 'string' ? skill : (skill.name || skill.nameVi || skill)}
+                    {typeof skill === 'object' && skill.level && (
+                      <span className="ml-1 text-amber-400">★{skill.level}</span>
+                    )}
+                  </div>
                 ))}
               </div>
 
               {/* Social */}
-              <div style={{ display: "flex", gap: 10 }}>
+              <div className="flex gap-2.5">
                 {member.linkedin && <SocialLink href={member.linkedin} icon={Linkedin} />}
                 {member.twitter && <SocialLink href={member.twitter} icon={Twitter} />}
                 {member.github && <SocialLink href={member.github} icon={Github} />}
@@ -228,580 +262,499 @@ function LeaderCard({ member }: { member: TeamMemberData }) {
             </div>
           </div>
         </motion.div>
-      </Link>
-    </FadeIn>
+      </div>
+    </motion.div>
   );
 }
 
-/* ── CTO / VP Card ── */
-function VPCard({ member, index }: { member: TeamMemberData; index: number }) {
+/* ── CEO / Founder Card (List View) ── */
+function LeaderCardList({ member }: { member: TeamMemberData }) {
+  const router = useRouter();
+
   return (
-    <FadeIn delay={index * 0.15}>
-      <Link href={`/team-member/${member.slug}`} style={{ textDecoration: "none" }}>
+    <motion.div variants={cardVariants} layout>
+      <div
+        onClick={() => router.push(`/team/${member.slug}`)}
+        className="cursor-pointer"
+      >
         <motion.div
-          whileHover={{ y: -6, borderColor: "rgba(99,102,241,0.5)" }}
-          style={{
-            background: "linear-gradient(180deg, #0F172A, #1E1B4B 120%)",
-            border: "1px solid rgba(99,102,241,0.15)",
-            borderRadius: 20,
-            overflow: "hidden",
-            transition: "border-color 0.3s",
-            height: "100%",
-          }}
+          whileHover={{ x: 8 }}
+          className="flex gap-5 p-5 rounded-2xl border border-indigo-500/20 bg-slate-900/50 hover:bg-slate-900 hover:border-indigo-500/40 transition-all duration-300"
         >
-          <div style={{ position: "relative", height: 200 }}>
-            <img
-              src={member.coverImage || member.image}
-              alt={member.name}
-              style={{ width: "100%", height: "100%", objectFit: "cover" }}
-            />
-            <div style={{
-              position: "absolute",
-              inset: 0,
-              background: "linear-gradient(to bottom, transparent 40%, #0F172A)",
-            }} />
-            <div style={{
-              position: "absolute",
-              bottom: -30,
-              left: 24,
-              width: 64,
-              height: 64,
-              borderRadius: "50%",
-              border: "3px solid #1E1B4B",
-              overflow: "hidden",
-            }}>
-              <img src={member.image} alt={member.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-            </div>
-          </div>
-
-          <div style={{ padding: "28px 24px 24px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-              <h3 style={{ color: "#fff", fontSize: 20, fontWeight: 700 }}>{member.name}</h3>
-              {member.isFeatured && <Star size={16} style={{ color: "#F59E0B", fill: "#F59E0B" }} />}
-            </div>
-            <p style={{ color: "#818CF8", fontSize: 14, fontWeight: 600, marginBottom: 4 }}>{member.role}</p>
-            <p style={{ color: "#94A3B8", fontSize: 13, marginBottom: 16 }}>{member.shortBio}</p>
-
-            {member.quote && (
-              <p style={{
-                color: "#CBD5E1",
-                fontSize: 13,
-                fontStyle: "italic",
-                lineHeight: 1.6,
-                marginBottom: 16,
-                paddingLeft: 12,
-                borderLeft: "2px solid rgba(99,102,241,0.3)",
-              }}>
-                &ldquo;{member.quote}&rdquo;
-              </p>
+          <div className="relative w-24 h-24 flex-shrink-0 rounded-xl overflow-hidden">
+            {member.image ? (
+              <img
+                src={member.image}
+                alt={member.name}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full bg-slate-800 flex items-center justify-center">
+                <Users size={32} className="text-slate-600" />
+              </div>
             )}
+            <div className="absolute inset-0 ring-2 ring-indigo-500/30 rounded-xl" />
+          </div>
 
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 16 }}>
-              {member.expertise.slice(0, 4).map((skill) => (
-                <span key={skill} style={{
-                  padding: "4px 10px",
-                  borderRadius: 6,
-                  fontSize: 11,
-                  color: "#94A3B8",
-                  background: "rgba(51,65,85,0.5)",
-                  border: "1px solid rgba(71,85,105,0.3)",
-                }}>
-                  {skill}
-                </span>
-              ))}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <h3 className="text-lg font-bold text-white truncate">{member.name}</h3>
+              <Crown size={14} className="text-amber-500 flex-shrink-0" />
             </div>
+            <p className="text-indigo-400 text-sm font-medium mb-2">{member.role}</p>
+            <p className="text-slate-400 text-sm line-clamp-2">{member.shortBio}</p>
+          </div>
 
-            <div style={{ display: "flex", gap: 8 }}>
-              {member.linkedin && <SocialLink href={member.linkedin} icon={Linkedin} />}
-              {member.twitter && <SocialLink href={member.twitter} icon={Twitter} />}
-              {member.github && <SocialLink href={member.github} icon={Github} />}
-            </div>
+          <div className="hidden sm:flex gap-2 items-center">
+            {member.linkedin && <SocialLink href={member.linkedin} icon={Linkedin} />}
+            {member.email && <SocialLink href={`mailto:${member.email}`} icon={Mail} />}
           </div>
         </motion.div>
-      </Link>
-    </FadeIn>
+      </div>
+    </motion.div>
   );
 }
 
-/* ── Lead / Manager Card (Portfolio Style) ── */
-function LeadCard({ member, index }: { member: TeamMemberData; index: number }) {
+/* ── Team Member Card (Grid View) ── */
+function MemberCardGrid({ member }: { member: TeamMemberData }) {
+  const CategoryIcon = categoryIcons[member.roleCategory || "default"] || Layers;
+  const router = useRouter();
+
   return (
-    <FadeIn delay={index * 0.1}>
-      <Link href={`/team-member/${member.slug}`} style={{ textDecoration: "none" }}>
+    <motion.div variants={cardVariants} layout>
+      <div
+        onClick={() => router.push(`/team/${member.slug}`)}
+        className="cursor-pointer"
+      >
         <motion.div
           whileHover={{ y: -8, scale: 1.02 }}
-          style={{
-            background: "#0F172A",
-            border: "1px solid #1F2937",
-            borderRadius: 20,
-            overflow: "hidden",
-            transition: "all 0.3s",
-            height: "100%",
-            cursor: "pointer",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = "rgba(59,130,246,0.4)";
-            e.currentTarget.style.boxShadow = "0 20px 40px rgba(0,0,0,0.3), 0 0 60px rgba(59,130,246,0.1)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = "#1F2937";
-            e.currentTarget.style.boxShadow = "none";
-          }}
+          className="group relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/80 hover:border-indigo-500/50 hover:shadow-2xl hover:shadow-indigo-500/10 transition-all duration-300 h-full"
         >
-          {/* Large Image */}
-          <div style={{ position: "relative", height: 220, overflow: "hidden" }}>
-            <img
-              src={member.coverImage || member.image}
-              alt={member.name}
-              style={{
-                width: "100%",
-                height: "100%",
-                objectFit: "cover",
-              }}
-            />
-            <div style={{
-              position: "absolute",
-              inset: 0,
-              background: "linear-gradient(to top, #0F172A 0%, transparent 60%)",
-            }} />
-            {/* Role Badge */}
-            <div style={{
-              position: "absolute",
-              top: 16,
-              left: 16,
-              padding: "5px 12px",
-              borderRadius: 16,
-              fontSize: 11,
-              fontWeight: 600,
-              background: "rgba(59,130,246,0.8)",
-              color: "#fff",
-            }}>
-              {member.role}
+          {/* Image container */}
+          <div className="relative h-64 overflow-hidden">
+            {(member.coverImage || member.image) ? (
+              <img
+                src={member.coverImage || member.image}
+                alt={member.name}
+                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+              />
+            ) : (
+              <div className="w-full h-full bg-slate-800 flex items-center justify-center">
+                <Users size={48} className="text-slate-600" />
+              </div>
+            )}
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/20 to-transparent" />
+
+            {/* Top badges */}
+            <div className="absolute top-4 left-4 right-4 flex justify-between items-start">
+              <span className="px-3 py-1 rounded-full bg-indigo-600/90 backdrop-blur-sm text-white text-xs font-semibold">
+                {member.role}
+              </span>
+              {member.isFeatured && (
+                <Star size={18} className="text-amber-400 fill-amber-400 drop-shadow-lg" />
+              )}
+            </div>
+
+            {/* Category icon */}
+            <div className="absolute bottom-4 right-4 w-10 h-10 rounded-xl bg-slate-900/80 backdrop-blur-sm flex items-center justify-center border border-slate-700">
+              <CategoryIcon size={18} className="text-indigo-400" />
             </div>
           </div>
 
-          {/* Info */}
-          <div style={{ padding: 20 }}>
-            <h3 style={{ color: "#fff", fontSize: 18, fontWeight: 700, marginBottom: 4 }}>{member.name}</h3>
-            <p style={{ color: "#60A5FA", fontSize: 13, fontWeight: 600, marginBottom: 10 }}>{member.shortBio}</p>
-            <p style={{ color: "#94A3B8", fontSize: 13, marginBottom: 14, lineHeight: 1.5 }}>{member.bio}</p>
-
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 5, justifyContent: "center" }}>
-              {member.expertise.slice(0, 3).map((skill) => (
-                <span key={skill} style={{
-                  padding: "4px 10px",
-                  borderRadius: 6,
-                  fontSize: 11,
-                  color: "#94A3B8",
-                  background: "rgba(51,65,85,0.5)",
-                }}>
-                  {skill}
-                </span>
-              ))}
-            </div>
-          </div>
-        </motion.div>
-      </Link>
-    </FadeIn>
-  );
-}
-
-/* ── Member Card (Portfolio Style) ── */
-function MemberCard({ member, index }: { member: TeamMemberData; index: number }) {
-  return (
-    <FadeIn delay={index * 0.08}>
-      <Link href={`/team-member/${member.slug}`} style={{ textDecoration: "none" }}>
-        <motion.div
-          whileHover={{ y: -8, scale: 1.02 }}
-          style={{
-            background: "#0F172A",
-            border: "1px solid #1F2937",
-            borderRadius: 20,
-            overflow: "hidden",
-            transition: "all 0.3s",
-            height: "100%",
-            cursor: "pointer",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = "rgba(99,102,241,0.4)";
-            e.currentTarget.style.boxShadow = "0 20px 40px rgba(0,0,0,0.3), 0 0 60px rgba(99,102,241,0.1)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = "#1F2937";
-            e.currentTarget.style.boxShadow = "none";
-          }}
-        >
-          {/* Large Image */}
-          <div style={{ position: "relative", height: 280, overflow: "hidden" }}>
-            <img
-              src={member.coverImage || member.image}
-              alt={member.name}
-              style={{
-                width: "100%",
-                height: "100%",
-                objectFit: "cover",
-                transition: "transform 0.5s",
-              }}
-            />
-            <div style={{
-              position: "absolute",
-              inset: 0,
-              background: "linear-gradient(to top, #0F172A 0%, transparent 60%)",
-            }} />
-
-            {/* Role Badge */}
-            <div style={{
-              position: "absolute",
-              top: 16,
-              left: 16,
-              padding: "6px 14px",
-              borderRadius: 20,
-              fontSize: 12,
-              fontWeight: 600,
-              background: "rgba(99,102,241,0.8)",
-              color: "#fff",
-              backdropFilter: "blur(8px)",
-            }}>
-              {member.role}
-            </div>
-          </div>
-
-          {/* Info */}
-          <div style={{ padding: 24 }}>
-            <h3 style={{
-              color: "#fff",
-              fontSize: 20,
-              fontWeight: 700,
-              marginBottom: 4,
-            }}>
+          {/* Content */}
+          <div className="p-5">
+            <h3 className="text-lg font-bold text-white mb-1 group-hover:text-indigo-200 transition-colors">
               {member.name}
             </h3>
-            <p style={{
-              color: "#818CF8",
-              fontSize: 14,
-              fontWeight: 600,
-              marginBottom: 12,
-            }}>
-              {member.shortBio}
-            </p>
-            <p style={{
-              color: "#94A3B8",
-              fontSize: 13,
-              lineHeight: 1.6,
-              marginBottom: 16,
-              display: "-webkit-box",
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: "vertical",
-              overflow: "hidden",
-            }}>
-              {member.bio}
-            </p>
+            <p className="text-indigo-400 text-sm font-medium mb-3">{member.shortBio}</p>
 
-            {/* Skills preview */}
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-              {member.expertise.slice(0, 3).map((skill) => (
-                <span key={skill} style={{
-                  padding: "4px 10px",
-                  borderRadius: 6,
-                  fontSize: 11,
-                  color: "#94A3B8",
-                  background: "rgba(51,65,85,0.5)",
-                  border: "1px solid rgba(71,85,105,0.3)",
-                }}>
-                  {skill}
-                </span>
-              ))}
-              {member.expertise.length > 3 && (
-                <span style={{
-                  padding: "4px 10px",
-                  borderRadius: 6,
-                  fontSize: 11,
-                  color: "#6366F1",
-                  fontWeight: 600,
-                }}>
-                  +{member.expertise.length - 3}
+            {/* Skills */}
+            <div className="flex flex-wrap gap-1.5 mb-4">
+              {(() => {
+                const skillsList = member.skills || member.expertise || [];
+                return skillsList.slice(0, 3).map((skill: any) => (
+                  <span
+                    key={skill.name || skill}
+                    className="px-2 py-1 rounded-md bg-slate-800 text-slate-400 text-xs flex items-center gap-1"
+                  >
+                    {skill.name || skill}
+                    {skill.level && <span className="text-indigo-400">★{skill.level}</span>}
+                  </span>
+                ));
+              })()}
+              {(member.skills?.length || member.expertise?.length || 0) > 3 && (
+                <span className="px-2 py-1 rounded-md text-xs font-semibold text-indigo-400">
+                  +{((member.skills?.length || member.expertise?.length || 0) - 3}
                 </span>
               )}
             </div>
+
+            {/* Social links */}
+            <div className="flex gap-2 pt-3 border-t border-slate-800">
+              {member.linkedin && <SocialLink href={member.linkedin} icon={Linkedin} />}
+              {member.twitter && <SocialLink href={member.twitter} icon={Twitter} />}
+              {member.github && <SocialLink href={member.github} icon={Github} />}
+              {member.email && <SocialLink href={`mailto:${member.email}`} icon={Mail} />}
+            </div>
           </div>
         </motion.div>
-      </Link>
-    </FadeIn>
+      </div>
+    </motion.div>
+  );
+}
+
+/* ── Team Member Card (List View) ── */
+function MemberCardList({ member }: { member: TeamMemberData }) {
+  const router = useRouter();
+
+  return (
+    <motion.div variants={cardVariants} layout>
+      <div
+        onClick={() => router.push(`/team/${member.slug}`)}
+        className="cursor-pointer"
+      >
+        <motion.div
+          whileHover={{ x: 8, borderColor: "rgba(99,102,241,0.4)" }}
+          className="flex gap-5 p-4 rounded-xl border border-slate-800 bg-slate-900/50 hover:bg-slate-900 hover:border-indigo-500/40 transition-all duration-300"
+        >
+          <div className="relative w-20 h-20 flex-shrink-0 rounded-xl overflow-hidden">
+            {member.image ? (
+              <img
+                src={member.image}
+                alt={member.name}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full bg-slate-800 flex items-center justify-center">
+                <Users size={24} className="text-slate-600" />
+              </div>
+            )}
+            {member.isFeatured && (
+              <div className="absolute -top-1 -right-1 w-5 h-5 bg-amber-500 rounded-full flex items-center justify-center">
+                <Star size={10} className="text-white fill-white" />
+              </div>
+            )}
+          </div>
+
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-0.5">
+              <h3 className="font-bold text-white truncate">{member.name}</h3>
+            </div>
+            <p className="text-indigo-400 text-sm font-medium mb-1">{member.role}</p>
+            <div className="flex flex-wrap gap-1">
+              {((member.skills || member.expertise || []).slice(0, 2).map((skill: any) => (
+                <span key={skill.name || skill} className="px-2 py-0.5 rounded bg-slate-800 text-slate-500 text-xs flex items-center gap-1">
+                  {skill.name || skill}
+                  {skill.level && <span className="text-indigo-400 text-[10px]">★{skill.level}</span>}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className="hidden md:flex gap-2 items-center">
+            {member.linkedin && <SocialLink href={member.linkedin} icon={Linkedin} />}
+            {member.email && <SocialLink href={`mailto:${member.email}`} icon={Mail} />}
+            <ArrowRight size={18} className="text-slate-600 group-hover:text-indigo-400 transition-colors" />
+          </div>
+        </motion.div>
+      </div>
+    </motion.div>
   );
 }
 
 /* ── Main Team Page ── */
-export function TeamPage({ team, settings }: TeamPageProps) {
+export function TeamPage({ team, expertises = [], settings }: TeamPageProps) {
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [activeFilter, setActiveFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
+
+  // Separate leaders from other team members
   const leaders = team.filter((m) => m.roleLevel === 0);
-  const vps = team.filter((m) => m.roleLevel === 1);
-  const leads = team.filter((m) => m.roleLevel === 2);
-  const members = team.filter((m) => m.roleLevel >= 3);
+  const nonLeaders = team.filter((m) => m.roleLevel > 0);
+
+  // Filter team members
+  const filteredMembers = useMemo(() => {
+    let result = nonLeaders;
+
+    // Filter by category
+    if (activeFilter !== "all") {
+      result = result.filter((m) => m.roleCategory === activeFilter);
+    }
+
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(
+        (m) =>
+          m.name.toLowerCase().includes(query) ||
+          m.role.toLowerCase().includes(query) ||
+          m.expertise.some((e) => e.toLowerCase().includes(query)) ||
+          m.skills.some((s) => s.toLowerCase().includes(query))
+      );
+    }
+
+    return result;
+  }, [nonLeaders, activeFilter, searchQuery]);
 
   return (
-    <div style={{ color: "#fff", minHeight: "100vh" }}>
+    <div className="min-h-screen bg-slate-950 text-white">
       {/* ── Hero Section ── */}
-      <section
-        style={{
-          padding: "100px 24px 80px",
-          background: "linear-gradient(180deg, rgba(99,102,241,0.08) 0%, transparent 60%)",
-          position: "relative",
-          overflow: "hidden",
-          borderBottom: "1px solid #1F2937",
-        }}
-      >
-        {/* Animated background orbs */}
-        <motion.div
-          animate={{ scale: [1, 1.3, 1], opacity: [0.3, 0.5, 0.3] }}
-          transition={{ duration: 8, repeat: Infinity }}
-          style={{
-            position: "absolute",
-            top: -100,
-            left: "20%",
-            width: 600,
-            height: 600,
-            borderRadius: "50%",
-            background: "radial-gradient(circle, rgba(99,102,241,0.1) 0%, transparent 70%)",
-          }}
-        />
-        <motion.div
-          animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.4, 0.2] }}
-          transition={{ duration: 10, repeat: Infinity, delay: 2 }}
-          style={{
-            position: "absolute",
-            top: -50,
-            right: "10%",
-            width: 400,
-            height: 400,
-            borderRadius: "50%",
-            background: "radial-gradient(circle, rgba(236,72,153,0.08) 0%, transparent 70%)",
-          }}
-        />
-
-        <div style={{ maxWidth: 1280, margin: "0 auto", textAlign: "center", position: "relative" }}>
+      <section className="relative py-20 lg:py-28 px-4 sm:px-6 overflow-hidden">
+        {/* Animated background */}
+        <div className="absolute inset-0 overflow-hidden">
           <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5 }}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 8,
-              background: "rgba(99,102,241,0.1)",
-              border: "1px solid rgba(99,102,241,0.3)",
-              borderRadius: 40,
-              padding: "6px 16px 6px 10px",
-              marginBottom: 24,
-            }}
-          >
-            <Users size={14} color="#6366F1" />
-            <span style={{ color: "#94A3B8", fontSize: 13, fontWeight: 500 }}>
-              {settings?.subtitle || "Những con người tạo nên sự khác biệt"}
-            </span>
-          </motion.div>
+            animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
+            transition={{ duration: 8, repeat: Infinity }}
+            className="absolute -top-40 left-[20%] w-[600px] h-[600px] rounded-full bg-indigo-500/10 blur-[100px]"
+          />
+          <motion.div
+            animate={{ scale: [1, 1.3, 1], opacity: [0.2, 0.4, 0.2] }}
+            transition={{ duration: 10, repeat: Infinity, delay: 2 }}
+            className="absolute -top-20 right-[10%] w-[400px] h-[400px] rounded-full bg-pink-500/10 blur-[80px]"
+          />
+        </div>
 
-          <motion.h1
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.1 }}
-            style={{
-              fontSize: "clamp(40px, 6vw, 72px)",
-              fontWeight: 800,
-              letterSpacing: -3,
-              lineHeight: 1.1,
-              marginBottom: 24,
-            }}
-          >
-            {settings?.title || "Đội Ngũ"}{" "}
-            <span style={{
-              background: "linear-gradient(135deg, #6366F1, #EC4899)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-            }}>
-              LOOP
-            </span>
-          </motion.h1>
+        <div className="relative max-w-6xl mx-auto text-center">
+          <FadeIn>
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-500/10 border border-indigo-500/30 mb-6">
+              <Users size={16} className="text-indigo-400" />
+              <span className="text-slate-300 text-sm font-medium">
+                {settings?.subtitle || "Những con người tạo nên sự khác biệt"}
+              </span>
+            </div>
+          </FadeIn>
 
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.2 }}
-            style={{
-              color: "#94A3B8",
-              fontSize: 18,
-              lineHeight: 1.7,
-              maxWidth: 600,
-              margin: "0 auto",
-            }}
-          >
-            Chúng tôi là tập thể những chuyên gia đam mê công nghệ, sáng tạo không ngừng để mang đến giải pháp số tốt nhất.
-          </motion.p>
+          <FadeIn delay={0.1}>
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight mb-6">
+              {settings?.title || "Đội Ngũ"}{" "}
+              <span className="bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+                LOOP
+              </span>
+            </h1>
+          </FadeIn>
+
+          <FadeIn delay={0.2}>
+            <p className="text-slate-400 text-lg max-w-2xl mx-auto leading-relaxed">
+              Chúng tôi là tập thể những chuyên gia đam mê công nghệ, sáng tạo không ngừng để mang đến giải pháp số tốt nhất.
+            </p>
+          </FadeIn>
         </div>
       </section>
 
-      {/* ── Leadership Spotlight (CEO) ── */}
-      {leaders.length > 0 && (
-        <section style={{ padding: "80px 24px", borderBottom: "1px solid #1F2937" }}>
-          <div style={{ maxWidth: 1280, margin: "0 auto" }}>
+      {/* ── Controls Bar ── */}
+      <section className="sticky top-16 lg:top-20 z-40 bg-slate-950/80 backdrop-blur-xl border-y border-slate-800/50">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4">
+          <div className="flex flex-col lg:flex-row gap-4 lg:items-center lg:justify-between">
+            {/* Search */}
+            <div className="relative flex-1 max-w-md">
+              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
+              <input
+                type="text"
+                placeholder="Tìm theo tên, kỹ năng..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-11 pr-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500/50 focus:ring-2 focus:ring-indigo-500/20 transition-all"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-slate-800 transition-colors"
+                >
+                  <X size={16} className="text-slate-500" />
+                </button>
+              )}
+            </div>
+
+            <div className="flex items-center gap-3">
+              {/* Filter toggle (mobile) */}
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className="lg:hidden flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 text-sm font-medium"
+              >
+                <Filter size={18} />
+                Lọc
+              </button>
+
+              {/* View toggle */}
+              <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-900 border border-slate-800">
+                <button
+                  onClick={() => setViewMode("grid")}
+                  className={`p-2 rounded-lg transition-all ${
+                    viewMode === "grid"
+                      ? "bg-indigo-600 text-white"
+                      : "text-slate-500 hover:text-white"
+                  }`}
+                >
+                  <Grid3X3 size={18} />
+                </button>
+                <button
+                  onClick={() => setViewMode("list")}
+                  className={`p-2 rounded-lg transition-all ${
+                    viewMode === "list"
+                      ? "bg-indigo-600 text-white"
+                      : "text-slate-500 hover:text-white"
+                  }`}
+                >
+                  <List size={18} />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Filter pills */}
+          <div
+            className={`${
+              showFilters ? "flex" : "hidden"
+            } lg:flex flex-wrap gap-2 mt-4 pt-4 border-t border-slate-800/50`}
+          >
+            {filterCategories.map((cat) => {
+              const Icon = cat.icon;
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => setActiveFilter(cat.id)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                    activeFilter === cat.id
+                      ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/30"
+                      : "bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800"
+                  }`}
+                >
+                  <Icon size={14} />
+                  {cat.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Main Content ── */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 py-12">
+        {/* Leadership Section (Always visible at top) */}
+        {leaders.length > 0 && viewMode === "grid" && (
+          <div className="mb-16">
             <FadeIn>
-              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 48 }}>
-                <div style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 12,
-                  background: "linear-gradient(135deg, #F59E0B, #EF4444)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}>
-                  <Crown size={22} color="#fff" />
+              <div className="flex items-center gap-4 mb-8 p-6 rounded-2xl bg-gradient-to-r from-amber-500/10 via-orange-500/5 to-transparent border border-amber-500/20">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/40">
+                  <Crown size={28} className="text-white" />
                 </div>
                 <div>
-                  <h2 style={{ fontSize: 28, fontWeight: 800, letterSpacing: -1 }}>Leadership</h2>
-                  <p style={{ color: "#94A3B8", fontSize: 14 }}>Người dẫn dắt tầm nhìn LOOP</p>
+                  <h2 className="text-3xl font-bold bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent">Đội Ngũ Lãnh Đạo</h2>
+                  <p className="text-slate-400 text-sm">Những người dẫn dắt tầm nhìn và định hướng phát triển LOOP</p>
                 </div>
               </div>
             </FadeIn>
 
-            {leaders.map((member) => (
-              <LeaderCard key={member.id} member={member} />
-            ))}
+            <StaggerContainer className="grid grid-cols-1 gap-6">
+              {leaders.map((member) => (
+                <LeaderCardGrid key={member.id} member={member} />
+              ))}
+            </StaggerContainer>
           </div>
-        </section>
-      )}
+        )}
 
-      {/* ── CTO / VP ── */}
-      {vps.length > 0 && (
-        <section style={{ padding: "80px 24px", background: "#0B1120", borderBottom: "1px solid #1F2937" }}>
-          <div style={{ maxWidth: 1280, margin: "0 auto" }}>
+        {/* List view leadership */}
+        {leaders.length > 0 && viewMode === "list" && (
+          <div className="mb-12">
             <FadeIn>
-              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 40 }}>
-                <div style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 12,
-                  background: "linear-gradient(135deg, #6366F1, #8B5CF6)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}>
-                  <Sparkles size={22} color="#fff" />
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-500 to-red-500 flex items-center justify-center">
+                  <Crown size={18} className="text-white" />
+                </div>
+                <h2 className="text-xl font-bold">Leadership</h2>
+              </div>
+            </FadeIn>
+
+            <StaggerContainer className="space-y-3">
+              {leaders.map((member) => (
+                <LeaderCardList key={member.id} member={member} />
+              ))}
+            </StaggerContainer>
+          </div>
+        )}
+
+        {/* Team Members Section */}
+        <div>
+          <FadeIn>
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center shadow-lg shadow-indigo-500/30">
+                  <Sparkles size={22} className="text-white" />
                 </div>
                 <div>
-                  <h2 style={{ fontSize: 28, fontWeight: 800, letterSpacing: -1 }}>Executives</h2>
-                  <p style={{ color: "#94A3B8", fontSize: 14 }}>Đội ngũ điều hành cốt lõi</p>
+                  <h2 className="text-2xl font-bold">Thành Viên</h2>
+                  <p className="text-slate-500 text-sm">
+                    {filteredMembers.length} {filteredMembers.length === 1 ? "người" : "thành viên"}
+                    {searchQuery && ` cho "${searchQuery}"`}
+                  </p>
                 </div>
               </div>
-            </FadeIn>
-
-            <div style={{
-              display: "grid",
-              gridTemplateColumns: `repeat(${Math.min(vps.length, 2)}, 1fr)`,
-              gap: 24,
-            }}>
-              {vps.map((member, i) => (
-                <VPCard key={member.id} member={member} index={i} />
-              ))}
             </div>
-          </div>
-        </section>
-      )}
+          </FadeIn>
 
-      {/* ── Management & Leads ── */}
-      {leads.length > 0 && (
-        <section style={{ padding: "80px 24px", borderBottom: "1px solid #1F2937" }}>
-          <div style={{ maxWidth: 1280, margin: "0 auto" }}>
-            <FadeIn>
-              <div style={{ textAlign: "center", marginBottom: 48 }}>
-                <h2 style={{ fontSize: 28, fontWeight: 800, letterSpacing: -1 }}>
-                  Team{" "}
-                  <span style={{
-                    background: "linear-gradient(135deg, #3B82F6, #6366F1)",
-                    WebkitBackgroundClip: "text",
-                    WebkitTextFillColor: "transparent",
-                  }}>
-                    Leads
-                  </span>
-                </h2>
-                <p style={{ color: "#94A3B8", fontSize: 14, marginTop: 8 }}>Các trưởng nhóm dẫn dắt từng mảng</p>
+          {/* No results */}
+          {filteredMembers.length === 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-center py-16"
+            >
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-900 flex items-center justify-center">
+                <Search size={24} className="text-slate-600" />
               </div>
-            </FadeIn>
+              <h3 className="text-lg font-semibold text-white mb-2">Không tìm thấy</h3>
+              <p className="text-slate-500">Thử tìm kiếm với từ khóa khác</p>
+              <button
+                onClick={() => {
+                  setSearchQuery("");
+                  setActiveFilter("all");
+                }}
+                className="mt-4 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-500 transition-colors"
+              >
+                Xóa bộ lọc
+              </button>
+            </motion.div>
+          )}
 
-            <div style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-              gap: 24,
-            }}>
-              {leads.map((member, i) => (
-                <LeadCard key={member.id} member={member} index={i} />
+          {/* Grid View */}
+          {viewMode === "grid" && filteredMembers.length > 0 && (
+            <StaggerContainer className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {filteredMembers.map((member) => (
+                <MemberCardGrid key={member.id} member={member} />
               ))}
-            </div>
-          </div>
-        </section>
-      )}
+            </StaggerContainer>
+          )}
 
-      {/* ── Team Members ── */}
-      {members.length > 0 && (
-        <section style={{ padding: "80px 24px", background: "#0B1120", borderBottom: "1px solid #1F2937" }}>
-          <div style={{ maxWidth: 1280, margin: "0 auto" }}>
-            <FadeIn>
-              <div style={{ textAlign: "center", marginBottom: 48 }}>
-                <h2 style={{ fontSize: 28, fontWeight: 800, letterSpacing: -1 }}>
-                  Thành Viên{" "}
-                  <span style={{
-                    background: "linear-gradient(135deg, #3B82F6, #6366F1)",
-                    WebkitBackgroundClip: "text",
-                    WebkitTextFillColor: "transparent",
-                  }}>
-                    Đội Ngũ
-                  </span>
-                </h2>
-                <p style={{ color: "#94A3B8", fontSize: 14, marginTop: 8 }}>Những chuyên gia tài năng</p>
-              </div>
-            </FadeIn>
-
-            <div style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
-              gap: 20,
-            }}>
-              {members.map((member, i) => (
-                <MemberCard key={member.id} member={member} index={i} />
+          {/* List View */}
+          {viewMode === "list" && filteredMembers.length > 0 && (
+            <StaggerContainer className="grid grid-cols-1 gap-3">
+              {filteredMembers.map((member) => (
+                <MemberCardList key={member.id} member={member} />
               ))}
-            </div>
-          </div>
-        </section>
-      )}
+            </StaggerContainer>
+          )}
+        </div>
+      </section>
 
-      {/* ── CTA ── */}
-      <section style={{ padding: "80px 24px", textAlign: "center" }}>
+      {/* ── CTA Section ── */}
+      <section className="py-20 px-4 sm:px-6 border-t border-slate-800/50">
         <FadeIn>
-          <div style={{ maxWidth: 600, margin: "0 auto" }}>
-            <Users size={40} color="#6366F1" style={{ marginBottom: 20 }} />
-            <h2 style={{ fontSize: 32, fontWeight: 800, letterSpacing: -1, marginBottom: 16 }}>
-              Muốn gia nhập đội ngũ?
-            </h2>
-            <p style={{ color: "#94A3B8", fontSize: 16, lineHeight: 1.7, marginBottom: 32 }}>
+          <div className="max-w-2xl mx-auto text-center">
+            <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center shadow-2xl shadow-indigo-500/30">
+              <Users size={32} className="text-white" />
+            </div>
+            <h2 className="text-3xl font-bold mb-4">Muốn gia nhập đội ngũ?</h2>
+            <p className="text-slate-400 mb-8 leading-relaxed">
               Chúng tôi luôn tìm kiếm những tài năng xuất sắc. Hãy liên hệ nếu bạn muốn tạo ra những sản phẩm tuyệt vời.
             </p>
             <motion.a
               href="/contact"
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.97 }}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 8,
-                background: "linear-gradient(135deg, #3B82F6, #6366F1)",
-                color: "#fff",
-                padding: "14px 32px",
-                borderRadius: 10,
-                fontSize: 15,
-                fontWeight: 700,
-                textDecoration: "none",
-                boxShadow: "0 0 30px rgba(99,102,241,0.3)",
-              }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.98 }}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 transition-all"
             >
-              Liên hệ ngay <ArrowRight size={16} />
+              Liên hệ ngay <ArrowRight size={18} />
             </motion.a>
           </div>
         </FadeIn>

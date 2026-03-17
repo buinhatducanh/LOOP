@@ -28,6 +28,13 @@ interface RelatedService {
   title: string;
 }
 
+interface TeamMemberInfo {
+  id: string;
+  name: string;
+  role: string;
+  image: string;
+}
+
 function GradientText({ children }: { children: React.ReactNode }) {
   return (
     <span
@@ -58,7 +65,7 @@ function FadeIn({ children, delay = 0 }: { children: React.ReactNode; delay?: nu
   );
 }
 
-export function ProjectDetailPage({ project, relatedService }: { project: Project; relatedService?: RelatedService }) {
+export function ProjectDetailPage({ project, relatedService, teamMember }: { project: Project; relatedService?: RelatedService; teamMember?: TeamMemberInfo }) {
   const router = useRouter();
   const locale = useLocale();
   const t = useTranslations("ProjectDetailPage");
@@ -241,6 +248,58 @@ export function ProjectDetailPage({ project, relatedService }: { project: Projec
           </div>
         </div>
       </section>
+
+      {/* Team Member */}
+      {teamMember && (
+        <section
+          style={{
+            padding: "60px 24px",
+            background: "#0F172A",
+            borderTop: "1px solid #1F2937",
+          }}
+        >
+          <FadeIn>
+            <div style={{ maxWidth: "600px", margin: "0 auto", textAlign: "center" }}>
+              <p style={{ color: "#94A3B8", fontSize: "14px", marginBottom: "8px" }}>
+                {t("teamMember") || "Thành viên thực hiện"}
+              </p>
+              <Link href={`/team/${teamMember.id}`}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "16px",
+                    padding: "20px",
+                    background: "rgba(99,102,241,0.05)",
+                    border: "1px solid rgba(99,102,241,0.2)",
+                    borderRadius: "16px",
+                    cursor: "pointer",
+                  }}
+                >
+                  <img
+                    src={teamMember.image}
+                    alt={teamMember.name}
+                    style={{
+                      width: "56px",
+                      height: "56px",
+                      borderRadius: "50%",
+                      objectFit: "cover",
+                    }}
+                  />
+                  <div style={{ textAlign: "left" }}>
+                    <p style={{ color: "#FFFFFF", fontWeight: 600, fontSize: "16px" }}>
+                      {teamMember.name}
+                    </p>
+                    <p style={{ color: "#818CF8", fontSize: "14px" }}>{teamMember.role}</p>
+                  </div>
+                  <ArrowRight size={20} color="#818CF8" />
+                </div>
+              </Link>
+            </div>
+          </FadeIn>
+        </section>
+      )}
 
       {/* Related Service CTA */}
       {relatedService && (

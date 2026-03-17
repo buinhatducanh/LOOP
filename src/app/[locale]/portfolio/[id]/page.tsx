@@ -51,13 +51,26 @@ export default async function Page({ params }: Props) {
       return (
         <ProjectDetailPage
           project={{
-            id: dbProject.slug, title: dbProject.title, category: dbProject.category,
-            client: dbProject.client, year: dbProject.year, image: dbProject.image,
-            description: dbProject.description, techStack: dbProject.techStack,
-            features: dbProject.features, results: dbProject.results,
-            screenshots: dbProject.screenshots, serviceId: serviceSlug,
+            id: dbProject.slug,
+            title: dbProject.title,
+            category: dbProject.category,
+            client: dbProject.client,
+            year: dbProject.year,
+            image: dbProject.image,
+            description: dbProject.description,
+            techStack: dbProject.techStack,
+            features: dbProject.features,
+            results: dbProject.results,
+            screenshots: dbProject.screenshots,
+            serviceId: serviceSlug,
           }}
           relatedService={relatedService}
+          teamMember={dbProject.teamMember ? {
+            id: dbProject.teamMember.slug,
+            name: dbProject.teamMember.name,
+            role: dbProject.teamMember.role,
+            image: dbProject.teamMember.image,
+          } : undefined}
         />
       );
     }

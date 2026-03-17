@@ -11,11 +11,14 @@ cloudinary.config({
 // Require authentication for upload
 export async function POST(req: NextRequest) {
   try {
-    await requireAuth();
+    console.log("Upload request received");
+    const authUser = await requireAuth();
+    console.log("User authenticated:", authUser?.email);
 
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
     const folder = formData.get("folder") as string | null;
+    console.log("Upload folder:", folder);
 
     if (!file) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
@@ -44,6 +47,7 @@ export async function POST(req: NextRequest) {
     const buffer = Buffer.from(bytes);
 
     // Upload to Cloudinary
+    console.log("Uploading to Cloudinary with folder:", folder);
     const uploadResult = await new Promise<any>((resolve, reject) => {
       cloudinary.uploader
         .upload_stream(
@@ -55,6 +59,7 @@ export async function POST(req: NextRequest) {
             ],
           },
           (error, result) => {
+            console.log("Cloudinary result:", error, result);
             if (error) reject(error);
             else resolve(result);
           }
@@ -72,8 +77,9 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     console.error("Upload error:", error);
+    const message = error instanceof Error ? error.message : "Upload failed";
     return NextResponse.json(
-      { error: "Upload failed" },
+      { error: message },
       { status: 500 }
     );
   }

@@ -21,10 +21,24 @@ export default async function Page() {
   try {
     const dbProjects = await getProjects();
     projects = dbProjects.length > 0 ? dbProjects.map((p) => ({
-      id: p.slug, title: p.title, category: p.category, client: p.client, year: p.year,
-      image: p.image, description: p.description, techStack: p.techStack,
-      features: p.features, results: p.results, screenshots: p.screenshots,
+      id: p.slug,
+      title: p.title,
+      category: p.category,
+      client: p.client,
+      year: p.year,
+      image: p.image,
+      description: p.description,
+      techStack: p.techStack,
+      features: p.features,
+      results: p.results,
+      screenshots: p.screenshots,
       serviceId: (p.service as { slug: string } | null)?.slug ?? "",
+      teamMember: p.teamMember ? {
+        id: p.teamMember.slug,
+        name: p.teamMember.name,
+        role: p.teamMember.role,
+        image: p.teamMember.image,
+      } : null,
     })) : mockProjects;
   } catch {
     projects = mockProjects;

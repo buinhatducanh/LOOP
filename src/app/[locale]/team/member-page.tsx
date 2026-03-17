@@ -1,8 +1,8 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
-import { motion, useInView } from "motion/react";
+import { motion, useInView, AnimatePresence } from "motion/react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -16,6 +16,14 @@ import {
   Briefcase,
   Code2,
   Sparkles,
+  ExternalLink,
+  Calendar,
+  Users,
+  Layers,
+  CheckCircle2,
+  Star,
+  Play,
+  X,
 } from "lucide-react";
 
 interface MemberData {
@@ -42,11 +50,28 @@ interface MemberData {
   isFeatured: boolean;
 }
 
+interface ProjectData {
+  id: string;
+  slug: string;
+  title: string;
+  category: string;
+  client: string;
+  year: string;
+  image: string;
+  description: string;
+  techStack: string[];
+  features: string[];
+  results: string;
+  screenshots: string[];
+}
+
 interface MemberPageProps {
   member: MemberData;
+  projects?: ProjectData[];
   otherMembers: MemberData[];
 }
 
+// Animation components
 function FadeIn({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: "-40px" });
@@ -62,6 +87,22 @@ function FadeIn({ children, delay = 0 }: { children: React.ReactNode; delay?: nu
   );
 }
 
+function SlideIn({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const inView = useInView(ref, { once: true, margin: "-40px" });
+  return (
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, x: -20 }}
+      animate={inView ? { opacity: 1, x: 0 } : {}}
+      transition={{ duration: 0.5, delay, ease: [0.22, 1, 0.36, 1] }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+// Social Button Component
 function SocialBtn({ href, icon: Icon, label }: { href: string; icon: typeof Linkedin; label: string }) {
   return (
     <motion.a
@@ -69,448 +110,560 @@ function SocialBtn({ href, icon: Icon, label }: { href: string; icon: typeof Lin
       target="_blank"
       rel="noopener noreferrer"
       whileHover={{ scale: 1.05, y: -2 }}
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 8,
-        padding: "10px 18px",
-        borderRadius: 12,
-        border: "1px solid rgba(99,102,241,0.2)",
-        background: "rgba(99,102,241,0.08)",
-        color: "#94A3B8",
-        fontSize: 14,
-        fontWeight: 500,
-        textDecoration: "none",
-        transition: "all 0.3s",
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.background = "rgba(99,102,241,0.2)";
-        e.currentTarget.style.color = "#C7D2FE";
-        e.currentTarget.style.boxShadow = "0 0 20px rgba(99,102,241,0.2)";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.background = "rgba(99,102,241,0.08)";
-        e.currentTarget.style.color = "#94A3B8";
-        e.currentTarget.style.boxShadow = "none";
-      }}
+      className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-indigo-500/20 bg-indigo-500/10 text-slate-400 hover:text-white hover:bg-indigo-500/20 hover:border-indigo-400 transition-all duration-300"
     >
-      <Icon size={18} /> {label}
+      <Icon size={18} />
+      <span className="text-sm font-medium">{label}</span>
     </motion.a>
   );
 }
 
-export function MemberPage({ member, otherMembers }: MemberPageProps) {
-  const roleBadgeColors: Record<number, string> = {
-    0: "linear-gradient(135deg, #F59E0B, #EF4444)",
-    1: "linear-gradient(135deg, #6366F1, #8B5CF6)",
-    2: "linear-gradient(135deg, #3B82F6, #06B6D4)",
-    3: "linear-gradient(135deg, #10B981, #059669)",
-    4: "linear-gradient(135deg, #64748B, #475569)",
-  };
+// Project Card Component
+function ProjectCard({ project, index }: { project: ProjectData; index: number }) {
+  const [isHovered, setIsHovered] = useState(false);
 
   return (
-    <div style={{ color: "#fff", minHeight: "100vh" }}>
-      {/* ── Cover Image Section ── */}
-      <section style={{ position: "relative", height: 360, overflow: "hidden" }}>
-        <img
-          src={member.coverImage || member.image}
-          alt={member.name}
-          style={{
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            objectPosition: "center",
-            filter: "brightness(0.5)",
-          }}
-        />
-        <div style={{
-          position: "absolute",
-          inset: 0,
-          background: "linear-gradient(to bottom, rgba(2,6,23,0.3) 0%, #020617 100%)",
-        }} />
+    <motion.div
+      initial={{ opacity: 0, y: 30 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.5, delay: index * 0.1 }}
+      className="group relative"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <Link href={`/portfolio/${project.slug}`}>
+        <motion.div
+          whileHover={{ y: -8 }}
+          className="relative overflow-hidden rounded-2xl bg-slate-900 border border-slate-800 hover:border-indigo-500/50 transition-all duration-300"
+        >
+          {/* Project Image */}
+          <div className="relative h-56 overflow-hidden">
+            <img
+              src={project.image}
+              alt={project.title}
+              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/30 to-transparent" />
 
-        {/* Back button */}
+            {/* Category Badge */}
+            <div className="absolute top-4 left-4">
+              <span className="px-3 py-1 rounded-full bg-indigo-600/90 backdrop-blur-sm text-white text-xs font-semibold">
+                {project.category}
+              </span>
+            </div>
+
+            {/* Year */}
+            <div className="absolute top-4 right-4 flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-900/80 backdrop-blur-sm">
+              <Calendar size={12} className="text-slate-400" />
+              <span className="text-xs font-medium text-slate-300">{project.year}</span>
+            </div>
+
+            {/* Play Button Overlay */}
+            <AnimatePresence>
+              {isHovered && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  className="absolute inset-0 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm"
+                >
+                  <div className="w-16 h-16 rounded-full bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-600/50">
+                    <Play size={24} className="text-white ml-1" fill="white" />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Project Info */}
+          <div className="p-5">
+            <h3 className="text-lg font-bold text-white mb-2 group-hover:text-indigo-200 transition-colors">
+              {project.title}
+            </h3>
+            <p className="text-slate-400 text-sm mb-4 line-clamp-2">{project.description}</p>
+
+            {/* Tech Stack */}
+            <div className="flex flex-wrap gap-2">
+              {project.techStack.slice(0, 3).map((tech) => (
+                <span
+                  key={tech}
+                  className="px-2 py-1 rounded-md bg-slate-800 text-slate-400 text-xs"
+                >
+                  {tech}
+                </span>
+              ))}
+              {project.techStack.length > 3 && (
+                <span className="px-2 py-1 rounded-md text-xs font-semibold text-indigo-400">
+                  +{project.techStack.length - 3}
+                </span>
+              )}
+            </div>
+          </div>
+        </motion.div>
+      </Link>
+    </motion.div>
+  );
+}
+
+// Stats Counter Component
+function StatItem({ value, label, delay }: { value: string; label: string; delay: number }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const inView = useInView(ref, { once: true });
+
+  return (
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, y: 20 }}
+      animate={inView ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 0.5, delay }}
+      className="text-center"
+    >
+      <div className="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent mb-1">
+        {value}
+      </div>
+      <div className="text-slate-500 text-sm">{label}</div>
+    </motion.div>
+  );
+}
+
+export function MemberPage({ member, projects = [], otherMembers }: MemberPageProps) {
+  const [selectedProject, setSelectedProject] = useState<ProjectData | null>(null);
+
+  const roleBadgeColors: Record<number, string> = {
+    0: "from-amber-500 to-red-500",
+    1: "from-indigo-500 to-purple-500",
+    2: "from-blue-500 to-cyan-500",
+    3: "from-emerald-500 to-teal-500",
+    4: "from-slate-500 to-slate-600",
+  };
+
+  const memberProjects = projects.length > 0 ? projects : getMockProjects();
+
+  return (
+    <div className="min-h-screen bg-slate-950 text-white">
+      {/* ── Hero Cover Section ── */}
+      <section className="relative h-[50vh] lg:h-[60vh] overflow-hidden">
+        {/* Cover Image */}
+        <div className="absolute inset-0">
+          <img
+            src={member.coverImage || "https://images.unsplash.com/photo-1497366216548-37526070297c?fit=crop&w=1920&h=800"}
+            alt={member.name}
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-slate-950/30 via-slate-950/60 to-slate-950" />
+        </div>
+
+        {/* Animated Background Elements */}
+        <div className="absolute inset-0 overflow-hidden">
+          <motion.div
+            animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.4, 0.2] }}
+            transition={{ duration: 8, repeat: Infinity }}
+            className="absolute -top-20 left-[20%] w-[400px] h-[400px] rounded-full bg-indigo-500/10 blur-[80px]"
+          />
+          <motion.div
+            animate={{ scale: [1, 1.3, 1], opacity: [0.15, 0.3, 0.15] }}
+            transition={{ duration: 10, repeat: Infinity, delay: 2 }}
+            className="absolute -top-10 right-[10%] w-[300px] h-[300px] rounded-full bg-pink-500/10 blur-[60px]"
+          />
+        </div>
+
+        {/* Back Button */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
-          style={{ position: "absolute", top: 24, left: 24 }}
+          className="absolute top-6 left-6 z-10"
         >
           <Link
-            href="/team"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              color: "#94A3B8",
-              fontSize: 14,
-              textDecoration: "none",
-              background: "rgba(15,23,42,0.8)",
-              backdropFilter: "blur(8px)",
-              padding: "8px 16px",
-              borderRadius: 10,
-              border: "1px solid rgba(99,102,241,0.2)",
-            }}
+            href="/team-list"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900/80 backdrop-blur-sm border border-slate-800 text-slate-300 hover:text-white hover:border-indigo-500/50 transition-all"
           >
-            <ArrowLeft size={16} /> Đội ngũ
+            <ArrowLeft size={18} />
+            <span className="text-sm font-medium">Đội ngũ</span>
           </Link>
         </motion.div>
 
-        {/* Avatar floating on cover */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.2 }}
-          style={{
-            position: "absolute",
-            bottom: -50,
-            left: "50%",
-            transform: "translateX(-50%)",
-          }}
-        >
-          <div style={{
-            width: 120,
-            height: 120,
-            borderRadius: "50%",
-            border: "4px solid #020617",
-            overflow: "hidden",
-            boxShadow: "0 0 40px rgba(99,102,241,0.3)",
-          }}>
-            <img
-              src={member.image}
-              alt={member.name}
-              style={{ width: "100%", height: "100%", objectFit: "cover" }}
-            />
+        {/* Member Info Overlay */}
+        <div className="absolute bottom-0 left-0 right-0 p-6 lg:p-12">
+          <div className="max-w-6xl mx-auto">
+            <FadeIn>
+              {/* Role Badge */}
+              <div className="flex items-center gap-3 mb-4">
+                <span className={`px-4 py-1.5 rounded-full bg-gradient-to-r ${roleBadgeColors[member.roleLevel] || roleBadgeColors[4]} text-white text-sm font-bold shadow-lg`}>
+                  {member.role}
+                </span>
+                {member.isFeatured && (
+                  <span className="flex items-center gap-1 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/30 text-amber-400 text-sm font-medium">
+                    <Star size={14} className="fill-amber-400" /> Featured
+                  </span>
+                )}
+              </div>
+            </FadeIn>
+
+            <FadeIn delay={0.1}>
+              <h1 className="text-4xl lg:text-6xl font-extrabold tracking-tight mb-3">
+                {member.name}
+              </h1>
+            </FadeIn>
+
+            <FadeIn delay={0.2}>
+              <p className="text-xl lg:text-2xl text-indigo-300 font-medium mb-6">
+                {member.shortBio}
+              </p>
+            </FadeIn>
+
+            <FadeIn delay={0.3}>
+              <div className="flex flex-wrap gap-3">
+                {member.linkedin && <SocialBtn href={member.linkedin} icon={Linkedin} label="LinkedIn" />}
+                {member.twitter && <SocialBtn href={member.twitter} icon={Twitter} label="Twitter" />}
+                {member.github && <SocialBtn href={member.github} icon={Github} label="GitHub" />}
+                {member.email && <SocialBtn href={`mailto:${member.email}`} icon={Mail} label={member.email} />}
+              </div>
+            </FadeIn>
           </div>
-        </motion.div>
-      </section>
-
-      {/* ── Main Info ── */}
-      <section style={{ padding: "70px 24px 60px", textAlign: "center" }}>
-        <div style={{ maxWidth: 800, margin: "0 auto" }}>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-          >
-            {/* Role badge */}
-            <span style={{
-              display: "inline-block",
-              padding: "5px 14px",
-              borderRadius: 20,
-              fontSize: 12,
-              fontWeight: 700,
-              color: "#fff",
-              background: roleBadgeColors[member.roleLevel] || roleBadgeColors[4],
-              marginBottom: 12,
-            }}>
-              {member.role}
-            </span>
-
-            <h1 style={{
-              fontSize: "clamp(32px, 5vw, 48px)",
-              fontWeight: 800,
-              letterSpacing: -2,
-              marginBottom: 8,
-              background: "linear-gradient(135deg, #fff, #C7D2FE)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-            }}>
-              {member.name}
-            </h1>
-
-            <p style={{ color: "#94A3B8", fontSize: 16, marginBottom: 24 }}>{member.shortBio}</p>
-
-            {/* Social links */}
-            <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
-              {member.linkedin && <SocialBtn href={member.linkedin} icon={Linkedin} label="LinkedIn" />}
-              {member.twitter && <SocialBtn href={member.twitter} icon={Twitter} label="Twitter" />}
-              {member.github && <SocialBtn href={member.github} icon={Github} label="GitHub" />}
-              {member.email && <SocialBtn href={`mailto:${member.email}`} icon={Mail} label={member.email} />}
-              {member.phone && <SocialBtn href={`tel:${member.phone}`} icon={Phone} label={member.phone} />}
-            </div>
-          </motion.div>
         </div>
       </section>
 
-      {/* ── Quote Block ── */}
+      {/* ── Stats Section ── */}
+      <section className="py-12 border-y border-slate-800/50 bg-slate-900/30">
+        <div className="max-w-4xl mx-auto px-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+            <StatItem value="10+" label="Năm kinh nghiệm" delay={0} />
+            <StatItem value={`${memberProjects.length}`} label="Dự án hoàn thành" delay={0.1} />
+            <StatItem value="50+" label="Khách hàng" delay={0.2} />
+            <StatItem value="100%" label="Sự hài lòng" delay={0.3} />
+          </div>
+        </div>
+      </section>
+
+      {/* ── Quote Section ── */}
       {member.quote && (
-        <section style={{ padding: "0 24px 60px" }}>
+        <section className="py-16 px-6">
           <FadeIn>
-            <div style={{
-              maxWidth: 700,
-              margin: "0 auto",
-              padding: "28px 32px",
-              background: "linear-gradient(135deg, rgba(99,102,241,0.08), rgba(236,72,153,0.05))",
-              border: "1px solid rgba(99,102,241,0.15)",
-              borderRadius: 20,
-              display: "flex",
-              gap: 16,
-              alignItems: "flex-start",
-            }}>
-              <Quote size={28} color="#6366F1" style={{ flexShrink: 0, marginTop: 4 }} />
-              <p style={{
-                color: "#E2E8F0",
-                fontSize: 18,
-                lineHeight: 1.8,
-                fontStyle: "italic",
-                fontWeight: 500,
-              }}>
-                {member.quote}
-              </p>
+            <div className="max-w-3xl mx-auto">
+              <div className="relative p-8 lg:p-12 bg-gradient-to-br from-indigo-500/10 via-purple-500/5 to-pink-500/10 rounded-3xl border border-indigo-500/20">
+                <Quote size={48} className="text-indigo-500/30 absolute top-6 left-6" />
+                <blockquote className="relative z-10">
+                  <p className="text-2xl lg:text-3xl font-medium text-white leading-relaxed italic text-center">
+                    &ldquo;{member.quote}&rdquo;
+                  </p>
+                </blockquote>
+              </div>
             </div>
           </FadeIn>
         </section>
       )}
 
-      {/* ── Bio ── */}
-      <section style={{ padding: "0 24px 60px" }}>
-        <FadeIn>
-          <div style={{
-            maxWidth: 800,
-            margin: "0 auto",
-            background: "#0F172A",
-            border: "1px solid #1F2937",
-            borderRadius: 20,
-            padding: 36,
-          }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
-              <Briefcase size={20} color="#6366F1" />
-              <h2 style={{ fontSize: 20, fontWeight: 700 }}>Giới thiệu</h2>
-            </div>
-            <p style={{ color: "#94A3B8", fontSize: 15, lineHeight: 1.8 }}>{member.bio}</p>
-
-            {member.experience && (
-              <>
-                <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 28, marginBottom: 12 }}>
-                  <Code2 size={20} color="#6366F1" />
-                  <h3 style={{ fontSize: 18, fontWeight: 700 }}>Kinh nghiệm</h3>
+      {/* ── About & Experience Section ── */}
+      <section className="py-16 px-6 bg-slate-900/30">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Bio */}
+            <FadeIn>
+              <div className="p-6 lg:p-8 rounded-2xl bg-slate-900 border border-slate-800">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center">
+                    <Briefcase size={20} className="text-white" />
+                  </div>
+                  <h2 className="text-xl font-bold">Về tôi</h2>
                 </div>
-                <p style={{ color: "#94A3B8", fontSize: 15, lineHeight: 1.8 }}>{member.experience}</p>
-              </>
+                <p className="text-slate-400 leading-relaxed">{member.bio}</p>
+              </div>
+            </FadeIn>
+
+            {/* Experience */}
+            {member.experience && (
+              <FadeIn delay={0.1}>
+                <div className="p-6 lg:p-8 rounded-2xl bg-slate-900 border border-slate-800">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-10 h-10 rounded-xl bg-purple-600 flex items-center justify-center">
+                      <Code2 size={20} className="text-white" />
+                    </div>
+                    <h2 className="text-xl font-bold">Kinh nghiệm</h2>
+                  </div>
+                  <p className="text-slate-400 leading-relaxed">{member.experience}</p>
+                </div>
+              </FadeIn>
             )}
           </div>
-        </FadeIn>
+        </div>
       </section>
 
       {/* ── Expertise & Skills ── */}
-      <section style={{ padding: "0 24px 60px" }}>
-        <div style={{ maxWidth: 800, margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
-          {/* Expertise */}
+      <section className="py-16 px-6">
+        <div className="max-w-6xl mx-auto">
           <FadeIn>
-            <div style={{
-              background: "#0F172A",
-              border: "1px solid #1F2937",
-              borderRadius: 20,
-              padding: 28,
-              height: "100%",
-            }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
-                <Sparkles size={20} color="#6366F1" />
-                <h3 style={{ fontSize: 18, fontWeight: 700 }}>Chuyên môn</h3>
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {member.expertise.map((skill) => (
-                  <div key={skill} style={{
-                    padding: "10px 16px",
-                    background: "rgba(99,102,241,0.08)",
-                    border: "1px solid rgba(99,102,241,0.15)",
-                    borderRadius: 10,
-                    color: "#C7D2FE",
-                    fontSize: 14,
-                    fontWeight: 500,
-                  }}>
-                    {skill}
-                  </div>
-                ))}
-              </div>
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-bold mb-3">
+                Chuyên môn & <span className="text-indigo-400">Kỹ năng</span>
+              </h2>
+              <p className="text-slate-500">Những gì tôi mang lại cho dự án</p>
             </div>
           </FadeIn>
 
-          {/* Skills */}
-          <FadeIn delay={0.1}>
-            <div style={{
-              background: "#0F172A",
-              border: "1px solid #1F2937",
-              borderRadius: 20,
-              padding: 28,
-              height: "100%",
-            }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
-                <Code2 size={20} color="#3B82F6" />
-                <h3 style={{ fontSize: 18, fontWeight: 700 }}>Kỹ năng</h3>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Expertise */}
+            <FadeIn>
+              <div className="p-6 lg:p-8 rounded-2xl bg-slate-900 border border-slate-800">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center">
+                    <Sparkles size={24} className="text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold">Chuyên môn</h3>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {member.expertise.map((skill, index) => (
+                    <motion.div
+                      key={skill}
+                      initial={{ opacity: 0, x: -20 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: index * 0.05 }}
+                      className="flex items-center gap-3 p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20"
+                    >
+                      <CheckCircle2 size={18} className="text-indigo-400 flex-shrink-0" />
+                      <span className="text-indigo-200 font-medium text-sm">{skill}</span>
+                    </motion.div>
+                  ))}
+                </div>
               </div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                {(member.skills || []).map((skill) => (
-                  <span key={skill} style={{
-                    padding: "6px 14px",
-                    borderRadius: 8,
-                    fontSize: 13,
-                    color: "#94A3B8",
-                    background: "rgba(51,65,85,0.4)",
-                    border: "1px solid rgba(71,85,105,0.3)",
-                  }}>
-                    {skill}
-                  </span>
-                ))}
+            </FadeIn>
+
+            {/* Skills */}
+            <FadeIn delay={0.1}>
+              <div className="p-6 lg:p-8 rounded-2xl bg-slate-900 border border-slate-800">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
+                    <Layers size={24} className="text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold">Kỹ năng</h3>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {(member.skills || []).map((skill, index) => (
+                    <motion.span
+                      key={skill}
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      whileInView={{ opacity: 1, scale: 1 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: index * 0.03 }}
+                      className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-sm font-medium border border-slate-700 hover:border-indigo-500/50 hover:text-white transition-all cursor-default"
+                    >
+                      {skill}
+                    </motion.span>
+                  ))}
+                </div>
               </div>
+            </FadeIn>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Projects Portfolio ── */}
+      <section className="py-16 px-6 bg-slate-900/30">
+        <div className="max-w-6xl mx-auto">
+          <FadeIn>
+            <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 mb-12">
+              <div>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
+                    <Briefcase size={24} className="text-white" />
+                  </div>
+                  <h2 className="text-3xl font-bold">
+                    Dự án <span className="text-emerald-400">tiêu biểu</span>
+                  </h2>
+                </div>
+                <p className="text-slate-500">Những dự án tôi đã tham gia phát triển</p>
+              </div>
+              <Link
+                href="/portfolio"
+                className="flex items-center gap-2 text-indigo-400 hover:text-indigo-300 transition-colors"
+              >
+                <span className="text-sm font-medium">Xem tất cả dự án</span>
+                <ArrowRight size={16} />
+              </Link>
             </div>
           </FadeIn>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {memberProjects.map((project, index) => (
+              <ProjectCard key={project.id} project={project} index={index} />
+            ))}
+          </div>
+
+          {memberProjects.length === 0 && (
+            <div className="text-center py-12">
+              <p className="text-slate-500">Chưa có dự án nào được hiển thị</p>
+            </div>
+          )}
         </div>
       </section>
 
       {/* ── Achievements ── */}
       {member.achievements.length > 0 && (
-        <section style={{ padding: "0 24px 60px" }}>
-          <FadeIn>
-            <div style={{
-              maxWidth: 800,
-              margin: "0 auto",
-              background: "#0F172A",
-              border: "1px solid #1F2937",
-              borderRadius: 20,
-              padding: 28,
-            }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
-                <Award size={20} color="#F59E0B" />
-                <h3 style={{ fontSize: 18, fontWeight: 700 }}>Thành tựu</h3>
-              </div>
-              <div style={{ display: "grid", gap: 10 }}>
-                {member.achievements.map((achievement) => (
-                  <div key={achievement} style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 12,
-                    padding: "12px 16px",
-                    background: "rgba(245,158,11,0.06)",
-                    border: "1px solid rgba(245,158,11,0.15)",
-                    borderRadius: 10,
-                  }}>
-                    <div style={{
-                      width: 8,
-                      height: 8,
-                      borderRadius: "50%",
-                      background: "linear-gradient(135deg, #F59E0B, #EF4444)",
-                      flexShrink: 0,
-                    }} />
-                    <span style={{ color: "#E2E8F0", fontSize: 14 }}>{achievement}</span>
+        <section className="py-16 px-6">
+          <div className="max-w-4xl mx-auto">
+            <FadeIn>
+              <div className="text-center mb-12">
+                <div className="flex items-center justify-center gap-3 mb-3">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center">
+                    <Award size={24} className="text-white" />
                   </div>
-                ))}
+                  <h2 className="text-3xl font-bold">Thành tựu</h2>
+                </div>
+                <p className="text-slate-500">Những giải thưởng và chứng nhận</p>
               </div>
+            </FadeIn>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {member.achievements.map((achievement, index) => (
+                <motion.div
+                  key={achievement}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.1 }}
+                  className="flex items-center gap-4 p-4 rounded-xl bg-slate-900 border border-slate-800 hover:border-amber-500/30 transition-all"
+                >
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-500/20 to-orange-500/20 flex items-center justify-center flex-shrink-0">
+                    <Award size={20} className="text-amber-400" />
+                  </div>
+                  <span className="text-slate-200 font-medium">{achievement}</span>
+                </motion.div>
+              ))}
             </div>
-          </FadeIn>
+          </div>
         </section>
       )}
 
-      {/* ── Projects Portfolio ── */}
-      <section style={{
-        padding: "60px 24px 80px",
-        background: "#0B1120",
-        borderTop: "1px solid #1F2937",
-      }}>
-        <div style={{ maxWidth: 1280, margin: "0 auto" }}>
-          <FadeIn>
-            <div style={{ textAlign: "center", marginBottom: 40 }}>
-              <h2 style={{ fontSize: 24, fontWeight: 800, letterSpacing: -1 }}>
-                Dự án{" "}
-                <span style={{
-                  background: "linear-gradient(135deg, #3B82F6, #6366F1)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                }}>
-                  đã thực hiện
-                </span>
-              </h2>
-              <p style={{ color: "#94A3B8", marginTop: 8 }}>
-                Các dự án tiêu biểu {member.name} đã tham gia phát triển
-              </p>
+      {/* ── Other Team Members ── */}
+      {otherMembers.length > 0 && (
+        <section className="py-16 px-6 bg-slate-900/30">
+          <div className="max-w-6xl mx-auto">
+            <FadeIn>
+              <div className="text-center mb-12">
+                <div className="flex items-center justify-center gap-3 mb-3">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center">
+                    <Users size={24} className="text-white" />
+                  </div>
+                  <h2 className="text-3xl font-bold">
+                    Đồng nghiệp <span className="text-blue-400">khác</span>
+                  </h2>
+                </div>
+                <p className="text-slate-500">Gặp gỡ các thành viên khác trong đội ngũ</p>
+              </div>
+            </FadeIn>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {otherMembers.slice(0, 4).map((member, index) => (
+                <motion.div
+                  key={member.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.1 }}
+                >
+                  <Link href={`/team/${member.slug}`}>
+                    <motion.div
+                      whileHover={{ y: -4 }}
+                      className="p-4 rounded-xl bg-slate-900 border border-slate-800 hover:border-indigo-500/50 transition-all"
+                    >
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={member.image}
+                          alt={member.name}
+                          className="w-12 h-12 rounded-full object-cover"
+                        />
+                        <div>
+                          <h4 className="font-semibold text-white text-sm">{member.name}</h4>
+                          <p className="text-slate-500 text-xs">{member.role}</p>
+                        </div>
+                      </div>
+                    </motion.div>
+                  </Link>
+                </motion.div>
+              ))}
             </div>
-          </FadeIn>
-
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
-            gap: 24,
-          }}>
-            {[1, 2, 3].map((i) => (
-              <FadeIn key={i} delay={i * 0.1}>
-                <Link href={`/portfolio/project-${i}`} style={{ textDecoration: "none" }}>
-                  <motion.div
-                    whileHover={{ y: -8, scale: 1.02 }}
-                    style={{
-                      background: "#020617",
-                      border: "1px solid #1F2937",
-                      borderRadius: 20,
-                      overflow: "hidden",
-                      cursor: "pointer",
-                      transition: "all 0.3s",
-                    }}
-                  >
-                    {/* Project Image */}
-                    <div style={{ position: "relative", height: 200, overflow: "hidden" }}>
-                      <div style={{
-                        width: "100%",
-                        height: "100%",
-                        background: `linear-gradient(135deg, rgba(99,102,241,${0.3 + i * 0.2}), rgba(236,72,153,${0.2 + i * 0.1}))`,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}>
-                        <span style={{ fontSize: 48, opacity: 0.5 }}>🚀</span>
-                      </div>
-                      <div style={{
-                        position: "absolute",
-                        inset: 0,
-                        background: "linear-gradient(to top, #020617 0%, transparent 60%)",
-                      }} />
-                    </div>
-                    {/* Project Info */}
-                    <div style={{ padding: 20 }}>
-                      <h3 style={{ color: "#fff", fontSize: 18, fontWeight: 700, marginBottom: 8 }}>
-                        Dự án E-commerce {i + 1}
-                      </h3>
-                      <p style={{ color: "#94A3B8", fontSize: 14, marginBottom: 12, lineHeight: 1.6 }}>
-                        Website thương mại điện tử hiện đại với tính năng giỏ hàng, thanh toán, quản lý đơn hàng
-                      </p>
-                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                        {["Next.js", "React", "PostgreSQL"].slice(0, 2 + i % 2).map((tech) => (
-                          <span key={tech} style={{
-                            padding: "4px 10px",
-                            borderRadius: 6,
-                            fontSize: 12,
-                            color: "#94A3B8",
-                            background: "rgba(51,65,85,0.5)",
-                          }}>
-                            {tech}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  </motion.div>
-                </Link>
-              </FadeIn>
-            ))}
           </div>
+        </section>
+      )}
 
-          <div style={{ textAlign: "center", marginTop: 40 }}>
-            <Link
-              href="/portfolio"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 8,
-                padding: "12px 24px",
-                borderRadius: 10,
-                border: "1px solid rgba(99,102,241,0.3)",
-                color: "#94A3B8",
-                textDecoration: "none",
-                transition: "all 0.3s",
-              }}
-            >
-              Xem tất cả dự án <ArrowRight size={16} />
-            </Link>
+      {/* ── CTA Section ── */}
+      <section className="py-20 px-6 border-t border-slate-800/50">
+        <FadeIn>
+          <div className="max-w-2xl mx-auto text-center">
+            <h2 className="text-3xl font-bold mb-4">Muốn hợp tác?</h2>
+            <p className="text-slate-400 mb-8">
+              Hãy liên hệ với chúng tôi để thảo luận về dự án của bạn
+            </p>
+            <div className="flex flex-wrap justify-center gap-4">
+              <motion.a
+                href="/contact"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.98 }}
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold shadow-lg shadow-indigo-600/30"
+              >
+                Liên hệ ngay <ArrowRight size={18} />
+              </motion.a>
+              <motion.a
+                href="/portfolio"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.98 }}
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white font-semibold hover:border-indigo-500/50 transition-all"
+              >
+                Xem portfolio
+              </motion.a>
+            </div>
           </div>
-        </div>
+        </FadeIn>
       </section>
     </div>
   );
+}
+
+// Mock projects for demo
+function getMockProjects(): ProjectData[] {
+  return [
+    {
+      id: "1",
+      slug: "ecommerce-platform",
+      title: "E-commerce Platform",
+      category: "Web App",
+      client: "RetailCorp",
+      year: "2024",
+      image: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?fit=crop&w=800&h=500",
+      description: "Nền tảng thương mại điện tử đa quốc gia với hệ thống thanh toán, quản lý đơn hàng và kho hàng.",
+      techStack: ["Next.js", "React", "Node.js", "PostgreSQL", "Stripe"],
+      features: ["Thanh toán trực tuyến", "Quản lý kho", "Báo cáo analytics"],
+      results: "Tăng 200% doanh số trong 6 tháng đầu",
+      screenshots: [],
+    },
+    {
+      id: "2",
+      slug: "healthcare-app",
+      title: "Healthcare Mobile App",
+      category: "Mobile App",
+      client: "MedTech Vietnam",
+      year: "2024",
+      image: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?fit=crop&w=800&h=500",
+      description: "Ứng dụng y tế kết nối bệnh nhân với bác sĩ, đặt lịch khám và tư vấn trực tuyến.",
+      techStack: ["React Native", "Firebase", "AWS", "TensorFlow"],
+      features: ["Đặt lịch khám", "Tư vấn video", "Nhắc nhở thuốc"],
+      results: "Hơn 100,000 người dùng đăng ký",
+      screenshots: [],
+    },
+    {
+      id: "3",
+      slug: "real-estate-platform",
+      title: "Real Estate Platform",
+      category: "Web Platform",
+      client: "PropertyHub",
+      year: "2023",
+      image: "https://images.unsplash.com/photo-1560518883-ce09059eeffa?fit=crop&w=800&h=500",
+      description: "Nền tảng bất động sản với tính năng tìm kiếm, so sánh và giao dịch trực tuyến.",
+      techStack: ["Next.js", "TypeScript", "Prisma", "PostgreSQL"],
+      features: ["Tìm kiếm thông minh", "VR Tour", "Tính toán khoản vay"],
+      results: "Top 3 nền tảng BĐS tại Việt Nam",
+      screenshots: [],
+    },
+  ];
 }

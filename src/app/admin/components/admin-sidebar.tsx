@@ -24,6 +24,7 @@ import {
   Tag,
   Gift,
   Puzzle,
+  LayoutTemplate,
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/components/ui/utils";
@@ -38,6 +39,7 @@ const navigation: NavEntry[] = [
   {
     group: "Nội dung",
     items: [
+      { name: "Landing Pages", href: "/admin/landing-pages", icon: LayoutTemplate },
       { name: "Dịch vụ", href: "/admin/services", icon: Globe },
       { name: "Dự án", href: "/admin/projects", icon: FolderKanban },
       { name: "Đội ngũ", href: "/admin/team", icon: UsersRound },

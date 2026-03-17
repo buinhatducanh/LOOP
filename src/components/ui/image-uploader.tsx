@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import Image from "next/image";
 import { Upload, X, Image as ImageIcon, Loader2 } from "lucide-react";
 
@@ -28,6 +28,12 @@ export function ImageUploader({
   const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState<string | null>(value || null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Update preview when value changes (e.g., after upload from parent)
+  // Update preview when value changes from parent
+  useEffect(() => {
+    setPreview(value || null);
+  }, [value]);
 
   const aspectRatioClasses = {
     square: "aspect-square",
@@ -109,6 +115,10 @@ export function ImageUploader({
       }
 
       const data = await response.json();
+      console.log("Upload response:", data);
+      if (!data.url) {
+        throw new Error(data.error || "Upload failed - no URL returned");
+      }
       onChange(data.url);
       setPreview(data.url);
     } catch (err) {
@@ -158,6 +168,7 @@ export function ImageUploader({
               src={preview}
               alt="Preview"
               fill
+              sizes="100vw"
               className="object-cover"
             />
             <button

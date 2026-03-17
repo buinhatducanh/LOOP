@@ -184,6 +184,10 @@ model Project {
   serviceId   String?  @map("service_id")
   service     Service? @relation(fields: [serviceId], references: [id])
 
+  // Team member who worked on this project
+  teamMemberId String?     @map("team_member_id")
+  teamMember   TeamMember? @relation(fields: [teamMemberId], references: [id])
+
   @@map("projects")
 }
 
@@ -245,7 +249,6 @@ model TeamMember {
   bio          String   @db.Text
   shortBio     String   @map("short_bio")
   image        String
-  expertise    String[]
   achievements String[]
   linkedin     String?
   twitter      String?
@@ -268,7 +271,49 @@ model TeamMember {
   isWorking    Boolean  @default(true) @map("is_working")  // Currently working
   isFeatured   Boolean  @default(false) @map("is_featured") // Featured member (displayed larger)
 
+  // Portfolio projects relation
+  projects     Project[]
+
+  // Expertise relation - each member can have expertise with rating
+  memberExpertise MemberExpertise[]
+
   @@map("team_members")
+}
+
+// Expertise model - kỹ năng chuyên môn
+model Expertise {
+  id          String   @id @default(cuid())
+  name        String
+  nameVi     String  @map("name_vi")
+  category    String   // VD: "frontend", "backend", "design", "management"
+  categoryVi String  @map("category_vi")
+  icon        String?  // Icon name from lucide-react
+  isActive    Boolean  @default(true) @map("is_active")
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relation to team members
+  memberExpertise MemberExpertise[]
+
+  @@index([category, isActive])
+  @@index([isActive, sortOrder])
+  @@map("expertises")
+}
+
+// Member Expertise junction table - lưu rating cua mỗi thanh viên cho moi expertise
+model MemberExpertise {
+  id          String   @id @default(cuid())
+  memberId    String   @map("member_id")
+  expertiseId String   @map("expertise_id")
+  level       Int      @default(3)  // 1-5 rating (1=beginner, 5=expert)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  member    TeamMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  expertise Expertise   @relation(fields: [expertiseId], references: [id], onDelete: Cascade)
+
+  @@unique([memberId, expertiseId])
+  @@map("member_expertises")
 }
 
 model ServicePackage {
@@ -730,4 +775,43 @@ model OrderStatusHistory {
 
   @@index([orderId, createdAt])
   @@map("order_status_history")
+}
+
+// ─── LANDING PAGE BUILDER ──────────────────────────────────────────
+
+model LandingPage {
+  id           String   @id @default(cuid())
+  slug         String   @unique
+  name         String
+  locale       String   @default("vi")
+  isPublished  Boolean  @default(false) @map("is_published")
+  isDefault    Boolean  @default(false) @map("is_default")
+  seoTitle     String?  @map("seo_title")
+  seoDesc      String?  @map("seo_desc")
+  seoKeywords  String?  @map("seo_keywords")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  sections     LandingSection[]
+
+  @@index([locale, isPublished])
+  @@map("landing_pages")
+}
+
+model LandingSection {
+  id          String   @id @default(cuid())
+  pageId      String   @map("page_id")
+  page        LandingPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  type        String   // "hero", "stats", "services", "portfolio", "features", "testimonials", "cta", "contact", "custom"
+  title       String?
+  subtitle    String?
+  content     Json?    // Section-specific content
+  styles      Json?    // Custom styles
+  sortOrder   Int      @default(0) @map("sort_order")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([pageId, sortOrder])
+  @@map("landing_sections")
 }

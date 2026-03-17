@@ -5,10 +5,22 @@
       "Bash(curl -s http://localhost:3003/vi/team)",
       "Bash(curl -s http://localhost:3002/vi/services)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3002/vi/services)",
-      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3002/vi/team)"
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3002/vi/team)",
+      "Bash(netstat -ano)",
+      "Bash(findstr :3000)",
+      "Bash(curl -s -X POST -F \"file=@D:\\\\LOOP_COMPANY\\\\LOOP\\\\public\\\\favicon.svg\" http://localhost:3000/api/admin/upload)",
+      "Bash(node -e \"const cloudinary = require\\(''cloudinary''\\).v2; cloudinary.config\\({cloud_name: ''dhlmvawmi'', api_key: ''435132722437445'', api_secret: ''M3FLG''}\\); cloudinary.api.ping\\(\\).then\\(r => console.log\\(''OK''\\)\\).catch\\(e => console.log\\(''Error:'', e.message\\)\\)\")",
+      "Bash(cmd //c \"taskkill /PID 2560 /F\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/vi)",
+      "Bash(node -e \"const cloudinary = require\\(''cloudinary''\\).v2; cloudinary.config\\({cloud_name: ''dhlmvawmi'', api_key: ''435132722437445'', api_secret: ''OTlFAZudJg_1xH69hQWPtm6cakY''}\\); cloudinary.api.ping\\(\\).then\\(r => console.log\\(''Cloudinary: OK''\\)\\).catch\\(e => console.log\\(''Cloudinary Error:'', e.message\\)\\)\")",
+      "Bash(findstr \":3000 :3001 :3002 :3003\")",
+      "Bash(findstr LISTENING)",
+      "Bash(cmd //c \"taskkill /PID 19736 /F && taskkill /PID 1268 /F && taskkill /PID 18912 /F && taskkill /PID 21748 /F\")",
+      "Bash(node -e \":*)"
     ],
     "additionalDirectories": [
-      "D:\\LOOP_COMPANY\\LOOP\\src\\app\\[locale]\\team\\[slug]"
+      "D:\\LOOP_COMPANY\\LOOP\\src\\app\\[locale]\\team\\[slug]",
+      "D:\\LOOP_COMPANY\\LOOP\\src\\app\\[locale]\\[[...slug]]_old"
     ]
   }
 }

@@ -37,6 +37,11 @@ interface TeamMember {
   isFeatured: boolean;
 }
 
+interface SelectedExpertise {
+  expertiseId: string;
+  level: number;
+}
+
 interface FormData {
   name: string;
   slug: string;
@@ -62,6 +67,8 @@ interface FormData {
   experience: string;
   isWorking: boolean;
   isFeatured: boolean;
+  // Expertise with rating
+  memberExpertise: SelectedExpertise[];
 }
 
 const emptyForm: FormData = {
@@ -89,6 +96,7 @@ const emptyForm: FormData = {
   experience: "",
   isWorking: true,
   isFeatured: false,
+  memberExpertise: [],
 };
 
 const roleLevelOptions = [
@@ -128,6 +136,17 @@ export default function AdminTeamPage() {
   const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
   const [form, setForm] = useState<FormData>(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [expertises, setExpertises] = useState<{id: string; name: string; nameVi: string; category: string; icon: string | null}[]>([]);
+
+  // Fetch expertises when modal opens
+  useEffect(() => {
+    if (showModal) {
+      fetch("/api/admin/expertises?active=true")
+        .then(r => r.json())
+        .then(data => setExpertises(data.data || []))
+        .catch(console.error);
+    }
+  }, [showModal]);
 
   const fetchData = useCallback(async (page = 1, searchQuery = "") => {
     setLoading(true);
@@ -157,23 +176,24 @@ export default function AdminTeamPage() {
   };
 
   const openEdit = (member: TeamMember) => {
+    // Use member data directly from table - no extra fetch needed
     setEditingMember(member);
     setForm({
-      name: member.name,
-      slug: member.slug,
-      role: member.role,
-      bio: member.bio,
-      shortBio: member.shortBio,
-      image: member.image,
-      expertise: member.expertise.join(", "),
-      achievements: member.achievements.join(", "),
+      name: member.name || "",
+      slug: member.slug || "",
+      role: member.role || "",
+      bio: member.bio || "",
+      shortBio: member.shortBio || "",
+      image: member.image || "",
+      expertise: member.expertise?.join(", ") || "",
+      achievements: member.achievements?.join(", ") || "",
       linkedin: member.linkedin || "",
       twitter: member.twitter || "",
       github: member.github || "",
-      sortOrder: member.sortOrder,
-      isActive: member.isActive,
+      sortOrder: member.sortOrder || 0,
+      isActive: member.isActive ?? true,
       // New fields
-      roleLevel: member.roleLevel,
+      roleLevel: member.roleLevel ?? 4,
       roleCategory: member.roleCategory || "",
       coverImage: member.coverImage || "",
       quote: member.quote || "",
@@ -181,8 +201,8 @@ export default function AdminTeamPage() {
       phone: member.phone || "",
       skills: (member.skills || []).join(", "),
       experience: member.experience || "",
-      isWorking: member.isWorking,
-      isFeatured: member.isFeatured,
+      isWorking: member.isWorking ?? true,
+      isFeatured: member.isFeatured ?? false,
     });
     setShowModal(true);
   };

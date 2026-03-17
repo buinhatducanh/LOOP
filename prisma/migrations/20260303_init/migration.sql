@@ -1,4 +1,3 @@
-[dotenv@17.3.1] injecting env (5) from .env -- tip: ⚙️  enable debug logging with { debug: true }
 -- CreateSchema
 CREATE SCHEMA IF NOT EXISTS "public";
 

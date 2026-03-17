@@ -118,7 +118,6 @@
         "val3Desc": "We stay at the cutting edge of web technologies to give your business a competitive advantage.",
         "val4Title": "Quality & Security",
         "val4Desc": "95+ Lighthouse scores, WCAG accessibility, and security best practices are non-negotiable in every project.",
-        "teamTitle": "Meet the",
         "teamHighlight": "Team",
         "teamSub": "The talented people behind LOOP",
         "techTitle": "Our",
@@ -344,6 +343,8 @@
         "privacyTitle": "Privacy Policy | LOOP",
         "privacyDescription": "LOOP Privacy Policy - How we collect, use, and protect your personal information.",
         "termsTitle": "Terms of Service | LOOP",
-        "termsDescription": "LOOP Terms of Service - Terms governing the use of our website and services."
+        "termsDescription": "LOOP Terms of Service - Terms governing the use of our website and services.",
+        "teamTitle": "Our Team | LOOP",
+        "teamDescription": "Meet the talented team behind LOOP - 50+ experts in web design and app development."
     }
 }

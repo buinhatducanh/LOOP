@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { MemberPage } from "./member-page";
-import { getTeamMemberBySlug, getTeamMembers } from "@/lib/db/queries";
+import { getTeamMemberBySlug, getTeamMembers, getProjects } from "@/lib/db/queries";
 import { mockTeamMembers } from "@/data/teamMockData";
 import { notFound } from "next/navigation";
 
@@ -35,12 +35,17 @@ export default async function Page({
 
   let member;
   let otherMembers: any[] = [];
+  let projects: any[] = [];
 
   try {
     member = await getTeamMemberBySlug(slug);
     if (member) {
       const allMembers = await getTeamMembers();
       otherMembers = allMembers.filter((m) => m.id !== member!.id).slice(0, 4);
+
+      // Get projects for this team member
+      const allProjects = await getProjects();
+      projects = allProjects.filter((p: any) => p.teamMemberId === member!.id);
     }
   } catch {
     member = mockTeamMembers.find((m) => m.slug === slug);
@@ -54,5 +59,5 @@ export default async function Page({
 
   if (!member) notFound();
 
-  return <MemberPage member={member as any} otherMembers={otherMembers as any} />;
+  return <MemberPage member={member as any} projects={projects as any} otherMembers={otherMembers as any} />;
 }

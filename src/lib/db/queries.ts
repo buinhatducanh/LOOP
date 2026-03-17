@@ -30,7 +30,10 @@ export async function getServiceBySlug(slug: string) {
 export async function getProjects() {
   return prisma.project.findMany({
     where: { isPublished: true },
-    include: { service: { select: { slug: true, title: true } } },
+    include: {
+      service: { select: { slug: true, title: true } },
+      teamMember: { select: { id: true, name: true, slug: true, role: true, image: true } },
+    },
     orderBy: { sortOrder: "asc" },
   });
 }
@@ -38,7 +41,10 @@ export async function getProjects() {
 export async function getProjectBySlug(slug: string) {
   return prisma.project.findUnique({
     where: { slug },
-    include: { service: { select: { id: true, slug: true, title: true } } },
+    include: {
+      service: { select: { id: true, slug: true, title: true } },
+      teamMember: { select: { id: true, name: true, slug: true, role: true, image: true } },
+    },
   });
 }
 
@@ -82,11 +88,27 @@ export async function getTeamMembers() {
   return prisma.teamMember.findMany({
     where: { isActive: true },
     orderBy: [{ roleLevel: "asc" }, { sortOrder: "asc" }],
+    include: {
+      memberExpertise: {
+        include: {
+          expertise: true,
+        },
+      },
+    },
   });
 }
 
 export async function getTeamMemberBySlug(slug: string) {
-  return prisma.teamMember.findUnique({ where: { slug } });
+  return prisma.teamMember.findUnique({
+    where: { slug },
+    include: {
+      memberExpertise: {
+        include: {
+          expertise: true,
+        },
+      },
+    },
+  });
 }
 
 // ─── Dual Service Model ─────────────────────────────────────
@@ -161,6 +183,14 @@ export async function getAddonServices() {
   return prisma.addonService.findMany({
     where: { isActive: true },
     orderBy: { sortOrder: "asc" },
+  });
+}
+
+export async function getExpertises(activeOnly = false) {
+  const where = activeOnly ? { isActive: true } : {};
+  return prisma.expertise.findMany({
+    where,
+    orderBy: [{ category: "asc" }, { sortOrder: "asc" }],
   });
 }
 
