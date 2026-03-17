@@ -35,6 +35,7 @@ interface TeamMember {
   social: Record<string, string> | null;
   isWorking: boolean;
   isFeatured: boolean;
+  memberExpertise: SelectedExpertise[];
 }
 
 interface SelectedExpertise {
@@ -203,6 +204,7 @@ export default function AdminTeamPage() {
       experience: member.experience || "",
       isWorking: member.isWorking ?? true,
       isFeatured: member.isFeatured ?? false,
+      memberExpertise: member.memberExpertise || [],
     });
     setShowModal(true);
   };

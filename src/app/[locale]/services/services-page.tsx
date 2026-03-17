@@ -1,8 +1,7 @@
 "use client";
 
-import { useRef, useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "@/i18n/routing";
-import { motion, useInView } from "motion/react";
 import {
   Package,
   Paintbrush,
@@ -82,17 +81,10 @@ interface ServiceAttribute {
 // ─── Helpers ────────────────────────────────────────────────
 
 function FadeIn({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true, margin: "-60px" });
   return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0, y: 32 }}
-      animate={inView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.6, delay, ease: [0.22, 1, 0.36, 1] }}
-    >
+    <div className="animate-fade-in" style={{ animationDelay: `${delay}s` }}>
       {children}
-    </motion.div>
+    </div>
   );
 }
 
@@ -471,12 +463,7 @@ export function ServicesPage({
                             </button>
 
                             {expandedTemplate === tpl.id && (
-                              <motion.div
-                                initial={{ height: 0, opacity: 0 }}
-                                animate={{ height: "auto", opacity: 1 }}
-                                transition={{ duration: 0.2 }}
-                                className="mt-2 space-y-1"
-                              >
+                              <div className="mt-2 space-y-1 animate-slide-down">
                                 {tpl.bundledAttributes.map((ba) => (
                                   <div
                                     key={ba.id}
@@ -486,7 +473,7 @@ export function ServicesPage({
                                     {isVi ? ba.attribute.nameVi : ba.attribute.name}
                                   </div>
                                 ))}
-                              </motion.div>
+                              </div>
                             )}
                           </div>
 

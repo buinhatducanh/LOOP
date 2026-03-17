@@ -194,6 +194,13 @@ html, body {
 }
 .animate-float { animation: float 5s ease-in-out infinite; }
 
+/* Pulse slow animation */
+@keyframes pulseSlow {
+  0%, 100% { transform: translateX(-50%) scale(1); }
+  50% { transform: translateX(-50%) scale(1.2); }
+}
+.animate-pulse-slow { animation: pulseSlow 8s ease-in-out infinite; }
+
 /* Pulse glow */
 @keyframes pulseGlow {
   0%, 100% { box-shadow: 0 0 20px rgba(99,102,241,0.3); }
@@ -210,6 +217,101 @@ html, body {
   background: linear-gradient(90deg, #1F2937 25%, #374151 50%, #1F2937 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
+}
+
+/* Fade in animation */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in {
+  animation: fadeIn 0.6s ease-out forwards;
+  opacity: 0;
+}
+
+/* Scale in animation */
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.8); }
+  to { opacity: 1; transform: scale(1); }
+}
+.animate-scale-in {
+  animation: scaleIn 0.3s ease-out forwards;
+}
+
+/* Service Card hover effects */
+.service-card {
+  transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+.service-card:hover {
+  transform: translateY(-6px);
+  border-color: #3B82F6;
+  box-shadow: 0 24px 60px rgba(59,130,246,0.15);
+}
+.service-card-glow {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.service-card:hover .service-card-glow {
+  opacity: 1;
+}
+.service-card-icon {
+  transition: transform 0.3s ease, scale 0.3s ease;
+}
+.service-card:hover .service-card-icon {
+  transform: rotate(8deg) scale(1.1);
+}
+.service-card-btn-primary {
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+.service-card-btn-primary:hover {
+  transform: scale(1.02);
+}
+.service-card-btn-secondary {
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+.service-card-btn-secondary:hover {
+  transform: scale(1.02);
+  opacity: 0.9;
+}
+
+/* Project Card hover effects */
+.project-card {
+  transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+.project-card:hover {
+  transform: translateY(-6px);
+  border-color: #6366F1;
+  box-shadow: 0 24px 60px rgba(99,102,241,0.15);
+}
+.project-card-image {
+  transition: transform 0.5s ease;
+}
+.project-card:hover .project-card-image {
+  transform: scale(1.08);
+}
+.project-card-overlay {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.project-card:hover .project-card-overlay {
+  opacity: 1;
+}
+.project-card-tech {
+  transition: background 0.2s ease, color 0.2s ease;
+}
+.project-card-tech:hover {
+  background: #374151;
+  color: #fff;
+}
+.project-card-btn {
+  transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+.project-card-btn:hover {
+  background: #6366F1;
+  color: #fff;
+}
+.project-card-btn:active {
+  transform: scale(0.97);
 }
 
 /* Responsive grid utilities */
@@ -269,3 +371,68 @@ html, body {
   transition: opacity 0.3s;
 }
 .gradient-border:hover::before { opacity: 1; }
+
+/* Float animations for hero orbs */
+@keyframes float1 {
+  0%, 100% { transform: translateY(0px); opacity: 0.3; }
+  50% { transform: translateY(-30px); opacity: 0.6; }
+}
+.animate-float-1 { animation: float1 6s ease-in-out infinite; }
+
+@keyframes float2 {
+  0%, 100% { transform: translateY(0px); opacity: 0.2; }
+  50% { transform: translateY(20px); opacity: 0.4; }
+}
+.animate-float-2 { animation: float2 8s ease-in-out infinite; }
+
+/* Pulse animation for badge */
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+}
+.animate-pulse { animation: pulse 2s ease-in-out infinite; }
+
+/* Bounce slow animation for scroll hint */
+@keyframes bounceSlow {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(8px); }
+}
+.animate-bounce-slow { animation: bounceSlow 2s ease-in-out infinite; }
+
+/* Button hover scale */
+.btn-hover-scale {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+.btn-hover-scale:hover {
+  transform: scale(1.04);
+}
+.btn-hover-scale:active {
+  transform: scale(0.97);
+}
+
+/* Icon hover scale */
+.icon-hover-scale > div {
+  transition: transform 0.2s ease;
+}
+.icon-hover-scale:hover > div {
+  transform: scale(1.1) rotate(5deg);
+}
+
+/* Icon hover rotate */
+.icon-hover-rotate {
+  transition: transform 0.2s ease;
+}
+.icon-hover-rotate:hover {
+  transform: rotate(10deg) scale(1.1);
+}
+
+/* Tech item hover */
+.tech-item-hover {
+  transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+}
+.tech-item-hover:hover {
+  background: #374151;
+  color: #FFFFFF;
+  transform: scale(1.05);
+  border-color: #4B5563;
+}

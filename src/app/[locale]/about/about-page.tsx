@@ -1,9 +1,8 @@
 "use client";
 
-import { useRef, useMemo } from "react";
+import { useMemo } from "react";
 import { useRouter } from "@/i18n/routing";
 import { useTranslations } from "next-intl";
-import { motion, useInView } from "motion/react";
 import {
   ArrowRight,
   Users,
@@ -74,17 +73,13 @@ function GradientText({ children }: { children: React.ReactNode }) {
 }
 
 function FadeIn({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true, margin: "-60px" });
   return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0, y: 32 }}
-      animate={inView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.6, delay, ease: [0.22, 1, 0.36, 1] }}
+    <div
+      className="animate-fade-in"
+      style={{ animationDelay: `${delay}s` }}
     >
       {children}
-    </motion.div>
+    </div>
   );
 }
 
@@ -115,9 +110,8 @@ export function AboutPage({ team = [], stats: statsData, techStack }: { team?: T
           overflow: "hidden",
         }}
       >
-        <motion.div
-          animate={{ scale: [1, 1.2, 1] }}
-          transition={{ duration: 8, repeat: Infinity }}
+        <div
+          className="animate-pulse-slow"
           style={{
             position: "absolute",
             top: 0,
@@ -129,10 +123,8 @@ export function AboutPage({ team = [], stats: statsData, techStack }: { team?: T
           }}
         />
         <div style={{ maxWidth: "1280px", margin: "0 auto", textAlign: "center", position: "relative" }}>
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5 }}
+          <div
+            className="animate-fade-in"
             style={{
               display: "inline-flex",
               alignItems: "center",
@@ -148,34 +140,32 @@ export function AboutPage({ team = [], stats: statsData, techStack }: { team?: T
             <span style={{ color: "#94A3B8", fontSize: "13px", fontWeight: 500 }}>
               {t("badge")}
             </span>
-          </motion.div>
-          <motion.h1
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
+          </div>
+          <h1
+            className="animate-fade-in"
             style={{
               fontSize: "clamp(36px, 5vw, 60px)",
               fontWeight: 800,
               letterSpacing: "-2px",
               marginBottom: "20px",
+              animationDelay: "0.1s",
             }}
           >
             {t("heroTitle1")} <GradientText>{t("heroHighlight")}</GradientText>
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
+          </h1>
+          <p
+            className="animate-fade-in"
             style={{
               color: "#94A3B8",
               fontSize: "18px",
               lineHeight: 1.7,
               maxWidth: "640px",
               margin: "0 auto",
+              animationDelay: "0.2s",
             }}
           >
             {t("heroDesc")}
-          </motion.p>
+          </p>
         </div>
       </section>
 
@@ -286,14 +276,14 @@ export function AboutPage({ team = [], stats: statsData, techStack }: { team?: T
           >
             {values.map((value, i) => (
               <FadeIn key={value.title} delay={i * 0.1}>
-                <motion.div
-                  whileHover={{ y: -6, borderColor: "#3B82F6" }}
+                <div
+                  className="card-hover"
                   style={{
                     background: "#0F172A",
                     border: "1px solid #1F2937",
                     borderRadius: "16px",
                     padding: "32px",
-                    transition: "border-color 0.3s",
+                    transition: "border-color 0.3s, transform 0.3s",
                   }}
                 >
                   <div
@@ -317,7 +307,7 @@ export function AboutPage({ team = [], stats: statsData, techStack }: { team?: T
                   <p style={{ color: "#94A3B8", fontSize: "14px", lineHeight: 1.6 }}>
                     {value.desc}
                   </p>
-                </motion.div>
+                </div>
               </FadeIn>
             ))}
           </div>
@@ -354,15 +344,15 @@ export function AboutPage({ team = [], stats: statsData, techStack }: { team?: T
             {team.map((member, i) => (
               <FadeIn key={member.id} delay={i * 0.1}>
                 <Link href={`/team/${member.slug}`} style={{ textDecoration: 'none' }}>
-                  <motion.div
-                    whileHover={{ y: -6, borderColor: "#6366F1" }}
+                  <div
+                    className="card-hover"
                     style={{
                       background: "#020617",
                       border: "1px solid #1F2937",
                       borderRadius: "16px",
                       padding: "32px",
                       textAlign: "center",
-                      transition: "border-color 0.3s",
+                      transition: "border-color 0.3s, transform 0.3s",
                       height: "100%"
                     }}
                   >
@@ -389,7 +379,7 @@ export function AboutPage({ team = [], stats: statsData, techStack }: { team?: T
                       {member.role}
                     </p>
                     <p style={{ color: "#94A3B8", fontSize: "14px" }}>{member.shortBio}</p>
-                  </motion.div>
+                  </div>
                 </Link>
               </FadeIn>
             ))}
@@ -420,9 +410,9 @@ export function AboutPage({ team = [], stats: statsData, techStack }: { team?: T
               }}
             >
               {techItems.map((tech) => (
-                <motion.span
+                <span
                   key={tech}
-                  whileHover={{ background: "#374151", color: "#FFFFFF", scale: 1.05 }}
+                  className="tech-item-hover"
                   style={{
                     background: "#0F172A",
                     color: "#94A3B8",
@@ -432,10 +422,11 @@ export function AboutPage({ team = [], stats: statsData, techStack }: { team?: T
                     fontSize: "14px",
                     fontWeight: 500,
                     cursor: "default",
+                    transition: "background 0.2s, color 0.2s, transform 0.2s",
                   }}
                 >
                   {tech}
-                </motion.span>
+                </span>
               ))}
             </div>
           </FadeIn>
@@ -460,9 +451,8 @@ export function AboutPage({ team = [], stats: statsData, techStack }: { team?: T
             <p style={{ color: "#94A3B8", fontSize: "16px", lineHeight: 1.7, marginBottom: "32px" }}>
               {t("ctaSub")}
             </p>
-            <motion.button
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.97 }}
+            <button
+              className="btn-hover-scale"
               onClick={() => router.push("/contact")}
               style={{
                 background: "linear-gradient(135deg, #3B82F6, #6366F1)",
@@ -477,10 +467,11 @@ export function AboutPage({ team = [], stats: statsData, techStack }: { team?: T
                 alignItems: "center",
                 gap: "8px",
                 boxShadow: "0 0 30px rgba(99,102,241,0.3)",
+                transition: "transform 0.2s",
               }}
             >
               {t("btnContact")} <ArrowRight size={16} />
-            </motion.button>
+            </button>
           </div>
         </FadeIn>
       </section>

@@ -1,7 +1,5 @@
 "use client";
 
-import { useRef } from "react";
-import { motion, useInView } from "motion/react";
 import { Check, X } from "lucide-react";
 import {
   type WebPackage,
@@ -62,17 +60,10 @@ export function FeatureComparisonTable({
   categories,
   locale,
 }: FeatureComparisonTableProps) {
-  const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true, margin: "-60px" });
   const isVi = locale === "vi";
 
   return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0, y: 32 }}
-      animate={inView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-    >
+    <div className="animate-fade-in">
       <div
         style={{
           overflowX: "auto",
@@ -234,6 +225,6 @@ export function FeatureComparisonTable({
           </tbody>
         </table>
       </div>
-    </motion.div>
+    </div>
   );
 }

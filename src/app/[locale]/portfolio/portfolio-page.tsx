@@ -1,7 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { motion, useInView } from "motion/react";
+import { useState } from "react";
 import { Briefcase } from "lucide-react";
 import { projects as mockProjects } from "@/data/mockData";
 import { ProjectCard } from "@/components/cards/ProjectCard";
@@ -24,18 +23,7 @@ function GradientText({ children }: { children: React.ReactNode }) {
 }
 
 function FadeIn({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true, margin: "-60px" });
-  return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0, y: 32 }}
-      animate={inView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.6, delay, ease: [0.22, 1, 0.36, 1] }}
-    >
-      {children}
-    </motion.div>
-  );
+  return <div className="animate-fade-in" style={{ animationDelay: `${delay}s` }}>{children}</div>;
 }
 
 export function PortfolioPage({ projects = mockProjects }: { projects?: ProjectData[] }) {
@@ -58,9 +46,8 @@ export function PortfolioPage({ projects = mockProjects }: { projects?: ProjectD
           overflow: "hidden",
         }}
       >
-        <motion.div
-          animate={{ scale: [1, 1.2, 1] }}
-          transition={{ duration: 8, repeat: Infinity }}
+        <div
+          className="animate-pulse-slow"
           style={{
             position: "absolute",
             top: 0,
@@ -72,10 +59,8 @@ export function PortfolioPage({ projects = mockProjects }: { projects?: ProjectD
           }}
         />
         <div style={{ maxWidth: "1280px", margin: "0 auto", textAlign: "center", position: "relative" }}>
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5 }}
+          <div
+            className="animate-scale-in"
             style={{
               display: "inline-flex",
               alignItems: "center",
@@ -91,11 +76,9 @@ export function PortfolioPage({ projects = mockProjects }: { projects?: ProjectD
             <span style={{ color: "#94A3B8", fontSize: "13px", fontWeight: 500 }}>
               Our Work
             </span>
-          </motion.div>
-          <motion.h1
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
+          </div>
+          <h1
+            className="animate-slide-up"
             style={{
               fontSize: "clamp(36px, 5vw, 60px)",
               fontWeight: 800,
@@ -104,22 +87,21 @@ export function PortfolioPage({ projects = mockProjects }: { projects?: ProjectD
             }}
           >
             Our <GradientText>Portfolio</GradientText>
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
+          </h1>
+          <p
+            className="animate-slide-up"
             style={{
               color: "#94A3B8",
               fontSize: "18px",
               lineHeight: 1.7,
               maxWidth: "580px",
               margin: "0 auto",
+              animationDelay: "0.1s",
             }}
           >
             Explore our latest projects — from e-commerce platforms to enterprise web
             applications. Real results for real businesses.
-          </motion.p>
+          </p>
         </div>
       </section>
 
@@ -127,24 +109,22 @@ export function PortfolioPage({ projects = mockProjects }: { projects?: ProjectD
       <section style={{ padding: "60px 24px 80px" }}>
         <div style={{ maxWidth: "1280px", margin: "0 auto" }}>
           {/* Category Filter */}
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
+          <div
+            className="animate-fade-in"
             style={{
               display: "flex",
               flexWrap: "wrap",
               gap: "10px",
               justifyContent: "center",
               marginBottom: "48px",
+              animationDelay: "0.2s",
             }}
           >
             {categories.map((cat) => (
-              <motion.button
+              <button
                 key={cat}
-                whileHover={{ scale: 1.04 }}
-                whileTap={{ scale: 0.96 }}
                 onClick={() => setActiveFilter(cat)}
+                className="transition-transform hover:scale-104 active:scale-96"
                 style={{
                   background: activeFilter === cat
                     ? "linear-gradient(135deg, #3B82F6, #6366F1)"
@@ -162,9 +142,9 @@ export function PortfolioPage({ projects = mockProjects }: { projects?: ProjectD
                 }}
               >
                 {cat}
-              </motion.button>
+              </button>
             ))}
-          </motion.div>
+          </div>
 
           {/* Projects Grid */}
           <div

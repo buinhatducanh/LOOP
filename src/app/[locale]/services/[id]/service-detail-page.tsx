@@ -1,8 +1,6 @@
 "use client";
 
-import { useRef } from "react";
 import { useRouter } from "next/navigation";
-import { motion, useInView } from "motion/react";
 import Image from "next/image";
 import { useLocale, useTranslations } from "next-intl";
 import { Breadcrumbs } from "@/components/shared/Breadcrumbs";
@@ -55,17 +53,10 @@ function GradientText({ children }: { children: React.ReactNode }) {
 }
 
 function FadeIn({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true, margin: "-60px" });
   return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0, y: 32 }}
-      animate={inView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.6, delay, ease: [0.22, 1, 0.36, 1] }}
-    >
+    <div className="animate-fade-in" style={{ animationDelay: `${delay}s` }}>
       {children}
-    </motion.div>
+    </div>
   );
 }
 
@@ -88,9 +79,8 @@ export function ServiceDetailPage({ service, relatedProjects = [] }: { service: 
           overflow: "hidden",
         }}
       >
-        <motion.div
-          animate={{ scale: [1, 1.2, 1] }}
-          transition={{ duration: 8, repeat: Infinity }}
+        <div
+          className="animate-pulse-slow"
           style={{
             position: "absolute",
             top: 0,
@@ -112,9 +102,8 @@ export function ServiceDetailPage({ service, relatedProjects = [] }: { service: 
           />
 
           <div style={{ display: "flex", alignItems: "flex-start", gap: "20px", marginBottom: "24px" }}>
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
+            <div
+              className="animate-fade-in"
               style={{
                 width: "64px",
                 height: "64px",
@@ -128,7 +117,7 @@ export function ServiceDetailPage({ service, relatedProjects = [] }: { service: 
               }}
             >
               <Icon size={32} color="#6366F1" />
-            </motion.div>
+            </div>
             <div>
               <div
                 style={{
@@ -146,10 +135,8 @@ export function ServiceDetailPage({ service, relatedProjects = [] }: { service: 
               >
                 {service.category}
               </div>
-              <motion.h1
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.1 }}
+              <h1
+                className="animate-fade-in"
                 style={{
                   fontSize: "clamp(32px, 4vw, 52px)",
                   fontWeight: 800,
@@ -157,16 +144,14 @@ export function ServiceDetailPage({ service, relatedProjects = [] }: { service: 
                 }}
               >
                 {service.title}
-              </motion.h1>
+              </h1>
             </div>
           </div>
 
           {/* Price & Delivery */}
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            style={{ display: "flex", gap: "24px", flexWrap: "wrap" }}
+          <div
+            className="animate-fade-in"
+            style={{ display: "flex", gap: "24px", flexWrap: "wrap", animationDelay: "0.2s" }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               <DollarSign size={18} color="#3B82F6" />
@@ -182,7 +167,7 @@ export function ServiceDetailPage({ service, relatedProjects = [] }: { service: 
                 {service.deliveryTime}
               </span>
             </div>
-          </motion.div>
+          </div>
         </div>
       </section>
 
@@ -255,9 +240,7 @@ export function ServiceDetailPage({ service, relatedProjects = [] }: { service: 
                 <p style={{ color: "#94A3B8", fontSize: "14px", lineHeight: 1.6, marginBottom: "20px" }}>
                   {t("ctaDesc")}
                 </p>
-                <motion.button
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.97 }}
+                <button
                   onClick={() => router.push(`/contact?service=${service.id}`)}
                   style={{
                     width: "100%",
@@ -274,10 +257,15 @@ export function ServiceDetailPage({ service, relatedProjects = [] }: { service: 
                     justifyContent: "center",
                     gap: "8px",
                     boxShadow: "0 0 30px rgba(99,102,241,0.3)",
+                    transition: "transform 0.2s",
                   }}
+                  onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.03)"}
+                  onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}
+                  onMouseDown={(e) => e.currentTarget.style.transform = "scale(0.97)"}
+                  onMouseUp={(e) => e.currentTarget.style.transform = "scale(1.03)"}
                 >
                   <MessageSquare size={16} /> {t("requestQuote")}
-                </motion.button>
+                </button>
               </div>
 
               {/* Technologies */}
@@ -357,16 +345,24 @@ export function ServiceDetailPage({ service, relatedProjects = [] }: { service: 
             >
               {relatedProjects.map((project) => (
                 <FadeIn key={project.id} delay={0.1}>
-                  <motion.div
-                    whileHover={{ y: -4, borderColor: "#6366F1" }}
+                  <div
                     onClick={() => router.push(`/portfolio/${project.id}`)}
+                    className="project-card"
                     style={{
                       background: "#020617",
                       border: "1px solid #1F2937",
                       borderRadius: "16px",
                       overflow: "hidden",
                       cursor: "pointer",
-                      transition: "border-color 0.3s",
+                      transition: "border-color 0.3s, transform 0.3s",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = "translateY(-4px)";
+                      e.currentTarget.style.borderColor = "#6366F1";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = "translateY(0)";
+                      e.currentTarget.style.borderColor = "#1F2937";
                     }}
                   >
                     <div style={{ height: "180px", overflow: "hidden", position: "relative" }}>
@@ -398,7 +394,7 @@ export function ServiceDetailPage({ service, relatedProjects = [] }: { service: 
                         <TrendingUp size={13} /> {project.results}
                       </p>
                     </div>
-                  </motion.div>
+                  </div>
                 </FadeIn>
               ))}
             </div>

@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { motion } from "motion/react";
 import { Building2, GitBranch, ShoppingCart, Rocket, Code2, ArrowRight, MessageSquare, type LucideIcon } from "lucide-react";
 import { formatVND } from "@/data/pricingPackages";
 
@@ -26,9 +25,9 @@ export function ServiceCard({ service }: { service: Service }) {
   const Icon = iconMap[service.icon] || Code2;
 
   return (
-    <motion.div
-      whileHover={{ y: -6, borderColor: "#3B82F6", boxShadow: "0 24px 60px rgba(59,130,246,0.15)" }}
+    <div
       onClick={() => router.push(`/services/${service.id}`)}
+      className="service-card"
       style={{
         background: "#0F172A",
         border: "1px solid #1F2937",
@@ -44,9 +43,8 @@ export function ServiceCard({ service }: { service: Service }) {
       }}
     >
       {/* Hover glow bg */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        whileHover={{ opacity: 1 }}
+      <div
+        className="service-card-glow"
         style={{ position: "absolute", top: 0, left: 0, right: 0, height: "2px", background: "linear-gradient(90deg, #3B82F6, #6366F1)" }}
       />
 
@@ -58,12 +56,12 @@ export function ServiceCard({ service }: { service: Service }) {
       </div>
 
       {/* Icon */}
-      <motion.div
-        whileHover={{ rotate: 8, scale: 1.1 }}
+      <div
+        className="service-card-icon"
         style={{ width: "52px", height: "52px", borderRadius: "12px", background: "linear-gradient(135deg, rgba(59,130,246,0.2), rgba(99,102,241,0.2))", border: "1px solid rgba(99,102,241,0.3)", display: "flex", alignItems: "center", justifyContent: "center" }}
       >
         <Icon size={24} color="#6366F1" />
-      </motion.div>
+      </div>
 
       {/* Content */}
       <div>
@@ -85,23 +83,21 @@ export function ServiceCard({ service }: { service: Service }) {
 
       {/* Buttons */}
       <div style={{ display: "flex", gap: "10px" }}>
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.97 }}
+        <button
           onClick={(e) => { e.stopPropagation(); router.push(`/services/${service.id}`); }}
+          className="service-card-btn-primary"
           style={{ flex: 1, background: "rgba(59,130,246,0.1)", color: "#3B82F6", border: "1px solid rgba(59,130,246,0.3)", padding: "10px", borderRadius: "8px", fontSize: "13px", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
         >
           {t("viewDetails")} <ArrowRight size={13} />
-        </motion.button>
-        <motion.button
-          whileHover={{ scale: 1.02, opacity: 0.9 }}
-          whileTap={{ scale: 0.97 }}
+        </button>
+        <button
           onClick={(e) => { e.stopPropagation(); router.push(`/contact?service=${service.id}`); }}
+          className="service-card-btn-secondary"
           style={{ flex: 1, background: "linear-gradient(135deg, #3B82F6, #6366F1)", color: "#fff", border: "none", padding: "10px", borderRadius: "8px", fontSize: "13px", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
         >
           <MessageSquare size={13} /> {t("getQuote")}
-        </motion.button>
+        </button>
       </div>
-    </motion.div>
+    </div>
   );
 }

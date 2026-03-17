@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { motion } from "motion/react";
 import { Zap, Mail, Lock, Eye, EyeOff, ArrowRight, AlertCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -59,11 +58,7 @@ export function LoginPage() {
         color: "#FFFFFF",
       }}
     >
-      <motion.div
-        initial={{ opacity: 0, y: 24 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        style={{
+      <div className="animate-fade-in" style={{
           width: "100%",
           maxWidth: "420px",
         }}
@@ -266,7 +261,7 @@ export function LoginPage() {
             Sign up
           </Link>
         </p>
-      </motion.div>
+      </div>
     </div>
   );
 }

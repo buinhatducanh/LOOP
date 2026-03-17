@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useMemo, useCallback } from "react";
-import { motion, AnimatePresence } from "motion/react";
 import {
   Calculator,
   ChevronDown,
@@ -138,10 +137,8 @@ export function PricingCalculator() {
   if (submitted) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 px-4">
-        <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          className="max-w-md text-center"
+        <div
+          className="max-w-md text-center animate-scale-in"
         >
           <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-green-500/20">
             <Check className="h-10 w-10 text-green-400" />
@@ -159,7 +156,7 @@ export function PricingCalculator() {
             <ArrowLeft size={16} />
             Quay lại trang Bảng giá
           </Link>
-        </motion.div>
+        </div>
       </div>
     );
   }
@@ -178,14 +175,12 @@ export function PricingCalculator() {
           </Link>
           <div className="flex items-center gap-3">
             <span className="text-sm text-slate-400">Tổng ước tính:</span>
-            <motion.span
+            <span
               key={totalPrice}
-              initial={{ y: -10, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              className="text-lg font-bold text-green-400 font-mono"
+              className="text-lg font-bold text-green-400 font-mono animate-fade-in"
             >
               {formatPrice(totalPrice)}
-            </motion.span>
+            </span>
           </div>
         </div>
       </div>
@@ -211,12 +206,10 @@ export function PricingCalculator() {
         {/* Feature Groups */}
         <div className="space-y-8">
           {groups.map((group, groupIndex) => (
-            <motion.div
+            <div
               key={group.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: groupIndex * 0.1 }}
-              className="rounded-2xl border border-slate-800 bg-slate-900/50 backdrop-blur-sm overflow-hidden"
+              className="rounded-2xl border border-slate-800 bg-slate-900/50 backdrop-blur-sm overflow-hidden animate-fade-in"
+              style={{ animationDelay: `${groupIndex * 0.1}s` }}
             >
               {/* Group Header */}
               <div className="flex items-center gap-3 border-b border-slate-800/50 px-6 py-4 bg-gradient-to-r from-slate-800/50 to-transparent">
@@ -240,28 +233,24 @@ export function PricingCalculator() {
                   />
                 ))}
               </div>
-            </motion.div>
+            </div>
           ))}
         </div>
 
         {/* Summary Bar */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="mt-10 rounded-2xl border border-slate-700 bg-gradient-to-r from-slate-900 via-slate-800/80 to-slate-900 p-6"
+        <div
+          className="mt-10 rounded-2xl border border-slate-700 bg-gradient-to-r from-slate-900 via-slate-800/80 to-slate-900 p-6 animate-fade-in"
+          style={{ animationDelay: "0.3s" }}
         >
           <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
             <div>
               <p className="text-sm text-slate-400 mb-1">Tổng chi phí ước tính</p>
-              <motion.p
+              <p
                 key={totalPrice}
-                initial={{ scale: 0.95, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                className="text-3xl font-bold text-green-400 font-mono"
+                className="text-3xl font-bold text-green-400 font-mono animate-fade-in"
               >
                 {formatPrice(totalPrice)}
-              </motion.p>
+              </p>
               {selectedItems.length > 0 && (
                 <p className="mt-1 text-xs text-slate-500">
                   {selectedItems.length} tính năng được chọn
@@ -277,23 +266,21 @@ export function PricingCalculator() {
               Nhận báo giá chi tiết qua Email
             </button>
           </div>
-        </motion.div>
+        </div>
       </div>
 
       {/* Quote Form Modal */}
-      <AnimatePresence>
-        {showQuoteForm && (
-          <QuoteFormModal
-            selectedItems={selectedItems}
-            totalAmount={totalPrice}
-            onClose={() => setShowQuoteForm(false)}
-            onSubmitted={() => {
-              setShowQuoteForm(false);
-              setSubmitted(true);
-            }}
-          />
-        )}
-      </AnimatePresence>
+      {showQuoteForm && (
+        <QuoteFormModal
+          selectedItems={selectedItems}
+          totalAmount={totalPrice}
+          onClose={() => setShowQuoteForm(false)}
+          onSubmitted={() => {
+            setShowQuoteForm(false);
+            setSubmitted(true);
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -364,20 +351,14 @@ function FeatureRow({
 
       {/* Price */}
       <div className="text-right md:w-32">
-        <AnimatePresence mode="wait">
-          <motion.span
-            key={selectedVariant?.price || 0}
-            initial={{ y: -5, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 5, opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className={`text-sm font-mono font-medium ${
-              selectedVariant ? "text-green-400" : "text-slate-600"
-            }`}
-          >
-            {selectedVariant ? formatPrice(selectedVariant.price) : "0 ₫"}
-          </motion.span>
-        </AnimatePresence>
+        <span
+          key={selectedVariant?.price || 0}
+          className={`text-sm font-mono font-medium animate-fade-in ${
+            selectedVariant ? "text-green-400" : "text-slate-600"
+          }`}
+        >
+          {selectedVariant ? formatPrice(selectedVariant.price) : "0 ₫"}
+        </span>
       </div>
 
       {/* Variant tooltip */}
@@ -447,18 +428,12 @@ function QuoteFormModal({
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/70 backdrop-blur-sm pt-12 pb-12 px-4"
+    <div
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/70 backdrop-blur-sm pt-12 pb-12 px-4 animate-fade-in"
       onClick={(e: React.MouseEvent<HTMLDivElement>) => e.target === e.currentTarget && onClose()}
     >
-      <motion.div
-        initial={{ scale: 0.95, y: 20 }}
-        animate={{ scale: 1, y: 0 }}
-        exit={{ scale: 0.95, y: 20 }}
-        className="w-full max-w-lg rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-2xl"
+      <div
+        className="w-full max-w-lg rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-2xl animate-scale-in"
       >
         <h2 className="mb-1 text-xl font-bold text-white">Nhận báo giá chi tiết</h2>
         <p className="mb-6 text-sm text-slate-400">
@@ -572,7 +547,7 @@ function QuoteFormModal({
             </button>
           </div>
         </form>
-      </motion.div>
-    </motion.div>
+      </div>
+    </div>
   );
 }

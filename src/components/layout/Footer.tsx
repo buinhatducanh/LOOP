@@ -3,7 +3,6 @@
 import { Link } from "@/i18n/routing";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { motion } from "motion/react";
 import {
   Zap,
   Mail,
@@ -219,17 +218,16 @@ export default function Footer({ data }: { data?: FooterData }) {
               </p>
               <div className="flex items-center gap-2.5">
                 {socialLinks.map((social) => (
-                  <motion.a
+                  <a
                     key={social.label}
                     href={social.href}
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label={social.label}
-                    whileHover={{ y: -2 }}
-                    className="w-9 h-9 rounded-xl bg-white/5 hover:bg-indigo-500/15 border border-white/5 hover:border-indigo-500/30 flex items-center justify-center text-gray-500 hover:text-indigo-400 transition-all duration-200"
+                    className="w-9 h-9 rounded-xl bg-white/5 hover:bg-indigo-500/15 border border-white/5 hover:border-indigo-500/30 flex items-center justify-center text-gray-500 hover:text-indigo-400 transition-all duration-200 hover:-translate-y-0.5"
                   >
                     <social.icon className="w-4 h-4" />
-                  </motion.a>
+                  </a>
                 ))}
               </div>
             </div>

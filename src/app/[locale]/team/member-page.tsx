@@ -1,8 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { motion, useInView, AnimatePresence } from "motion/react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -73,48 +72,33 @@ interface MemberPageProps {
 
 // Animation components
 function FadeIn({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true, margin: "-40px" });
   return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0, y: 32 }}
-      animate={inView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.6, delay, ease: [0.22, 1, 0.36, 1] }}
-    >
+    <div className="animate-fade-in" style={{ animationDelay: `${delay}s` }}>
       {children}
-    </motion.div>
+    </div>
   );
 }
 
 function SlideIn({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true, margin: "-40px" });
   return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0, x: -20 }}
-      animate={inView ? { opacity: 1, x: 0 } : {}}
-      transition={{ duration: 0.5, delay, ease: [0.22, 1, 0.36, 1] }}
-    >
+    <div className="animate-fade-in" style={{ animationDelay: `${delay}s` }}>
       {children}
-    </motion.div>
+    </div>
   );
 }
 
 // Social Button Component
 function SocialBtn({ href, icon: Icon, label }: { href: string; icon: typeof Linkedin; label: string }) {
   return (
-    <motion.a
+    <a
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      whileHover={{ scale: 1.05, y: -2 }}
-      className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-indigo-500/20 bg-indigo-500/10 text-slate-400 hover:text-white hover:bg-indigo-500/20 hover:border-indigo-400 transition-all duration-300"
+      className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-indigo-500/20 bg-indigo-500/10 text-slate-400 hover:text-white hover:bg-indigo-500/20 hover:border-indigo-400 transition-all duration-300 hover:scale-105 hover:-translate-y-0.5"
     >
       <Icon size={18} />
       <span className="text-sm font-medium">{label}</span>
-    </motion.a>
+    </a>
   );
 }
 
@@ -123,19 +107,15 @@ function ProjectCard({ project, index }: { project: ProjectData; index: number }
   const [isHovered, setIsHovered] = useState(false);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 30 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.5, delay: index * 0.1 }}
-      className="group relative"
+    <div
+      className="group relative animate-fade-in"
+      style={{ animationDelay: `${index * 0.1}s` }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
       <Link href={`/portfolio/${project.slug}`}>
-        <motion.div
-          whileHover={{ y: -8 }}
-          className="relative overflow-hidden rounded-2xl bg-slate-900 border border-slate-800 hover:border-indigo-500/50 transition-all duration-300"
+        <div
+          className="relative overflow-hidden rounded-2xl bg-slate-900 border border-slate-800 hover:border-indigo-500/50 transition-all duration-300 hover:-translate-y-2"
         >
           {/* Project Image */}
           <div className="relative h-56 overflow-hidden">
@@ -160,20 +140,15 @@ function ProjectCard({ project, index }: { project: ProjectData; index: number }
             </div>
 
             {/* Play Button Overlay */}
-            <AnimatePresence>
-              {isHovered && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  className="absolute inset-0 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm"
-                >
-                  <div className="w-16 h-16 rounded-full bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-600/50">
-                    <Play size={24} className="text-white ml-1" fill="white" />
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {isHovered && (
+              <div
+                className="absolute inset-0 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm animate-fade-in"
+              >
+                <div className="w-16 h-16 rounded-full bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-600/50">
+                  <Play size={24} className="text-white ml-1" fill="white" />
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Project Info */}
@@ -200,30 +175,24 @@ function ProjectCard({ project, index }: { project: ProjectData; index: number }
               )}
             </div>
           </div>
-        </motion.div>
+        </div>
       </Link>
-    </motion.div>
+    </div>
   );
 }
 
 // Stats Counter Component
 function StatItem({ value, label, delay }: { value: string; label: string; delay: number }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true });
-
   return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0, y: 20 }}
-      animate={inView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.5, delay }}
-      className="text-center"
+    <div
+      className="text-center animate-fade-in"
+      style={{ animationDelay: `${delay}s` }}
     >
       <div className="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent mb-1">
         {value}
       </div>
       <div className="text-slate-500 text-sm">{label}</div>
-    </motion.div>
+    </div>
   );
 }
 
@@ -256,23 +225,18 @@ export function MemberPage({ member, projects = [], otherMembers }: MemberPagePr
 
         {/* Animated Background Elements */}
         <div className="absolute inset-0 overflow-hidden">
-          <motion.div
-            animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.4, 0.2] }}
-            transition={{ duration: 8, repeat: Infinity }}
-            className="absolute -top-20 left-[20%] w-[400px] h-[400px] rounded-full bg-indigo-500/10 blur-[80px]"
+          <div
+            className="absolute -top-20 left-[20%] w-[400px] h-[400px] rounded-full bg-indigo-500/10 blur-[80px] animate-pulse"
           />
-          <motion.div
-            animate={{ scale: [1, 1.3, 1], opacity: [0.15, 0.3, 0.15] }}
-            transition={{ duration: 10, repeat: Infinity, delay: 2 }}
-            className="absolute -top-10 right-[10%] w-[300px] h-[300px] rounded-full bg-pink-500/10 blur-[60px]"
+          <div
+            className="absolute -top-10 right-[10%] w-[300px] h-[300px] rounded-full bg-pink-500/10 blur-[60px] animate-pulse"
+            style={{ animationDelay: "2s" }}
           />
         </div>
 
         {/* Back Button */}
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="absolute top-6 left-6 z-10"
+        <div
+          className="absolute top-6 left-6 z-10 animate-fade-in"
         >
           <Link
             href="/team-list"
@@ -281,7 +245,7 @@ export function MemberPage({ member, projects = [], otherMembers }: MemberPagePr
             <ArrowLeft size={18} />
             <span className="text-sm font-medium">Đội ngũ</span>
           </Link>
-        </motion.div>
+        </div>
 
         {/* Member Info Overlay */}
         <div className="absolute bottom-0 left-0 right-0 p-6 lg:p-12">
@@ -413,17 +377,14 @@ export function MemberPage({ member, projects = [], otherMembers }: MemberPagePr
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {member.expertise.map((skill, index) => (
-                    <motion.div
+                    <div
                       key={skill}
-                      initial={{ opacity: 0, x: -20 }}
-                      whileInView={{ opacity: 1, x: 0 }}
-                      viewport={{ once: true }}
-                      transition={{ delay: index * 0.05 }}
-                      className="flex items-center gap-3 p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20"
+                      className="flex items-center gap-3 p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20 animate-fade-in"
+                      style={{ animationDelay: `${index * 0.05}s` }}
                     >
                       <CheckCircle2 size={18} className="text-indigo-400 flex-shrink-0" />
                       <span className="text-indigo-200 font-medium text-sm">{skill}</span>
-                    </motion.div>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -440,16 +401,13 @@ export function MemberPage({ member, projects = [], otherMembers }: MemberPagePr
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {(member.skills || []).map((skill, index) => (
-                    <motion.span
+                    <span
                       key={skill}
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      whileInView={{ opacity: 1, scale: 1 }}
-                      viewport={{ once: true }}
-                      transition={{ delay: index * 0.03 }}
-                      className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-sm font-medium border border-slate-700 hover:border-indigo-500/50 hover:text-white transition-all cursor-default"
+                      className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-sm font-medium border border-slate-700 hover:border-indigo-500/50 hover:text-white transition-all cursor-default animate-fade-in"
+                      style={{ animationDelay: `${index * 0.03}s` }}
                     >
                       {skill}
-                    </motion.span>
+                    </span>
                   ))}
                 </div>
               </div>
@@ -516,19 +474,16 @@ export function MemberPage({ member, projects = [], otherMembers }: MemberPagePr
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {member.achievements.map((achievement, index) => (
-                <motion.div
+                <div
                   key={achievement}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.1 }}
-                  className="flex items-center gap-4 p-4 rounded-xl bg-slate-900 border border-slate-800 hover:border-amber-500/30 transition-all"
+                  className="flex items-center gap-4 p-4 rounded-xl bg-slate-900 border border-slate-800 hover:border-amber-500/30 transition-all animate-fade-in"
+                  style={{ animationDelay: `${index * 0.1}s` }}
                 >
                   <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-500/20 to-orange-500/20 flex items-center justify-center flex-shrink-0">
                     <Award size={20} className="text-amber-400" />
                   </div>
                   <span className="text-slate-200 font-medium">{achievement}</span>
-                </motion.div>
+                </div>
               ))}
             </div>
           </div>
@@ -555,17 +510,14 @@ export function MemberPage({ member, projects = [], otherMembers }: MemberPagePr
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {otherMembers.slice(0, 4).map((member, index) => (
-                <motion.div
+                <div
                   key={member.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.1 }}
+                  className="animate-fade-in"
+                  style={{ animationDelay: `${index * 0.1}s` }}
                 >
                   <Link href={`/team/${member.slug}`}>
-                    <motion.div
-                      whileHover={{ y: -4 }}
-                      className="p-4 rounded-xl bg-slate-900 border border-slate-800 hover:border-indigo-500/50 transition-all"
+                    <div
+                      className="p-4 rounded-xl bg-slate-900 border border-slate-800 hover:border-indigo-500/50 transition-all hover:-translate-y-1"
                     >
                       <div className="flex items-center gap-3">
                         <img
@@ -578,9 +530,9 @@ export function MemberPage({ member, projects = [], otherMembers }: MemberPagePr
                           <p className="text-slate-500 text-xs">{member.role}</p>
                         </div>
                       </div>
-                    </motion.div>
+                    </div>
                   </Link>
-                </motion.div>
+                </div>
               ))}
             </div>
           </div>
@@ -596,22 +548,18 @@ export function MemberPage({ member, projects = [], otherMembers }: MemberPagePr
               Hãy liên hệ với chúng tôi để thảo luận về dự án của bạn
             </p>
             <div className="flex flex-wrap justify-center gap-4">
-              <motion.a
+              <a
                 href="/contact"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.98 }}
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold shadow-lg shadow-indigo-600/30"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold shadow-lg shadow-indigo-600/30 hover:scale-105 active:scale-95 transition-transform"
               >
                 Liên hệ ngay <ArrowRight size={18} />
-              </motion.a>
-              <motion.a
+              </a>
+              <a
                 href="/portfolio"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.98 }}
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white font-semibold hover:border-indigo-500/50 transition-all"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white font-semibold hover:border-indigo-500/50 transition-all hover:scale-105 active:scale-95"
               >
                 Xem portfolio
-              </motion.a>
+              </a>
             </div>
           </div>
         </FadeIn>

@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useRef, useMemo } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { motion, useInView, AnimatePresence } from "motion/react";
 import {
   ArrowRight,
   Linkedin,
@@ -20,8 +19,6 @@ import {
   List,
   X,
   Filter,
-  ChevronDown,
-  Briefcase,
   Code2,
   Palette,
   Megaphone,
@@ -73,79 +70,36 @@ interface TeamPageProps {
   };
 }
 
-// Animation components
 function FadeIn({ children, delay = 0, className = "" }: { children: React.ReactNode; delay?: number; className?: string }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true, margin: "-60px" });
   return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0, y: 40 }}
-      animate={inView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.7, delay, ease: [0.22, 1, 0.36, 1] }}
-      className={className}
-    >
+    <div className={`animate-fade-in ${className}`} style={{ animationDelay: `${delay}s` }}>
       {children}
-    </motion.div>
+    </div>
   );
 }
 
 function StaggerContainer({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  return (
-    <motion.div
-      initial="hidden"
-      whileInView="visible"
-      viewport={{ once: true, margin: "-60px" }}
-      variants={{
-        hidden: { opacity: 0 },
-        visible: {
-          opacity: 1,
-          transition: { staggerChildren: 0.08 },
-        },
-      }}
-      className={className}
-    >
-      {children}
-    </motion.div>
-  );
+  return <div className={className}>{children}</div>;
 }
 
-const cardVariants = {
-  hidden: { opacity: 0, y: 30, scale: 0.95 },
-  visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] as const } },
-  exit: { opacity: 0, scale: 0.95, transition: { duration: 0.3 } },
-};
-
-// Social Link Component
 function SocialLink({ href, icon: Icon }: { href: string; icon: typeof Linkedin }) {
   const isExternal = href.startsWith('http') || href.startsWith('mailto:');
 
   if (isExternal) {
     return (
-      <a
-        href={href}
-        target={href.startsWith('mailto:') ? undefined : "_blank"}
-        rel="noopener noreferrer"
-        className="w-10 h-10 rounded-xl border border-indigo-500/30 bg-indigo-500/10 flex items-center justify-center text-slate-400 hover:text-white hover:border-indigo-400 hover:bg-indigo-500/20 transition-all duration-300"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <a href={href} target={href.startsWith('mailto:') ? undefined : "_blank"} rel="noopener noreferrer" className="w-10 h-10 rounded-xl border border-indigo-500/30 bg-indigo-500/10 flex items-center justify-center text-slate-400 hover:text-white hover:border-indigo-400 hover:bg-indigo-500/20 transition-all duration-300" onClick={(e) => e.stopPropagation()}>
         <Icon size={18} />
       </a>
     );
   }
 
   return (
-    <Link
-      href={href}
-      className="w-10 h-10 rounded-xl border border-indigo-500/30 bg-indigo-500/10 flex items-center justify-center text-slate-400 hover:text-white hover:border-indigo-400 hover:bg-indigo-500/20 transition-all duration-300"
-      onClick={(e) => e.stopPropagation()}
-    >
+    <Link href={href} className="w-10 h-10 rounded-xl border border-indigo-500/30 bg-indigo-500/10 flex items-center justify-center text-slate-400 hover:text-white hover:border-indigo-400 hover:bg-indigo-500/20 transition-all duration-300" onClick={(e) => e.stopPropagation()}>
       <Icon size={18} />
     </Link>
   );
 }
 
-// Category icon mapping
 const categoryIcons: Record<string, typeof Code2> = {
   leadership: Crown,
   engineering: Code2,
@@ -155,7 +109,6 @@ const categoryIcons: Record<string, typeof Code2> = {
   default: Layers,
 };
 
-// Filter pills data
 const filterCategories = [
   { id: "all", label: "Tất cả", icon: Users },
   { id: "leadership", label: "Leadership", icon: Crown },
@@ -165,94 +118,50 @@ const filterCategories = [
   { id: "product", label: "Product", icon: Target },
 ];
 
-/* ── CEO / Founder Card (Grid View) ── */
 function LeaderCardGrid({ member }: { member: TeamMemberData }) {
   const router = useRouter();
-  const isVi = true; // Could pass locale as prop if needed
-
   return (
-    <motion.div
-      variants={cardVariants}
-      layout
-      className="col-span-full"
-    >
-      <div
-        onClick={() => router.push(`/team/${member.slug}`)}
-        className="cursor-pointer"
-      >
-        <motion.div
-          whileHover={{ y: -4 }}
-          className="relative overflow-hidden rounded-3xl border-2 border-amber-500/50 bg-gradient-to-br from-slate-900 via-slate-900 to-amber-950/30 shadow-2xl shadow-amber-500/10"
-        >
-          {/* Animated gradient background */}
+    <div className="col-span-full">
+      <div onClick={() => router.push(`/team/${member.slug}`)} className="cursor-pointer">
+        <div className="relative overflow-hidden rounded-3xl border-2 border-amber-500/50 bg-gradient-to-br from-slate-900 via-slate-900 to-amber-950/30 shadow-2xl shadow-amber-500/10">
           <div className="absolute inset-0 bg-gradient-to-r from-amber-500/5 via-purple-500/5 to-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-
-          {/* Special badge for CEO */}
           <div className="absolute top-4 right-4 z-20">
             <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white text-sm font-bold shadow-lg shadow-amber-500/40 animate-pulse">
-              <Crown size={16} />
-              CEO / Founder
+              <Crown size={16} /> CEO / Founder
             </div>
           </div>
-
           <div className="relative grid grid-cols-1 lg:grid-cols-2 gap-0">
-            {/* Image side - larger for CEO */}
             <div className="relative h-80 lg:h-96 overflow-hidden">
               {(member.coverImage || member.image) ? (
-                <img
-                  src={member.coverImage || member.image}
-                  alt={member.name}
-                  className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700"
-                />
+                <img src={member.coverImage || member.image} alt={member.name} className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700" />
               ) : (
-                <div className="w-full h-full bg-slate-800 flex items-center justify-center">
-                  <Users size={64} className="text-slate-600" />
-                </div>
+                <div className="w-full h-full bg-slate-800 flex items-center justify-center"><Users size={64} className="text-slate-600" /></div>
               )}
               <div className="absolute inset-0 bg-gradient-to-r from-slate-900 via-slate-900/50 to-transparent lg:bg-gradient-to-t lg:from-slate-900 lg:via-slate-900/30 lg:to-transparent" />
-
-              {/* Experience badge - only show if experience field exists */}
               {member.experience && (
                 <div className="absolute bottom-4 left-4 flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-sm text-white text-xs font-medium">
-                  <Sparkles size={14} className="text-amber-400" />
-                  {member.experience}
+                  <Sparkles size={14} className="text-amber-400" />{member.experience}
                 </div>
               )}
             </div>
-
-            {/* Info side */}
             <div className="p-8 lg:p-12 flex flex-col justify-center">
-              <h3 className="text-3xl lg:text-4xl font-extrabold tracking-tight text-white mb-2 group-hover:text-amber-200 transition-colors">
-                {member.name}
-              </h3>
+              <h3 className="text-3xl lg:text-4xl font-extrabold tracking-tight text-white mb-2 group-hover:text-amber-200 transition-colors">{member.name}</h3>
               <p className="text-amber-400 font-bold text-lg mb-4">{member.shortBio}</p>
-
               {member.quote && (
                 <div className="flex gap-4 p-5 bg-amber-500/10 border-l-4 border-amber-500 rounded-r-xl mb-6">
                   <Quote size={24} className="text-amber-400 flex-shrink-0 mt-1" />
-                  <p className="text-slate-200 text-lg leading-relaxed italic">
-                    "{member.quote}"
-                  </p>
+                  <p className="text-slate-200 text-lg leading-relaxed italic">"{member.quote}"</p>
                 </div>
               )}
-
-              <p className="text-slate-400 text-sm leading-relaxed mb-5 line-clamp-3">
-                {member.bio}
-              </p>
-
-              {/* Skills with rating - amber style for CEO */}
+              <p className="text-slate-400 text-sm leading-relaxed mb-5 line-clamp-3">{member.bio}</p>
               <div className="flex flex-wrap gap-2 mb-5">
                 {(member.skills || member.expertise?.slice(0, 4) || []).map((skill: any) => (
                   <div key={skill.name || skill} className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium text-amber-200 bg-amber-500/20 border border-amber-500/30">
                     {typeof skill === 'string' ? skill : (skill.name || skill.nameVi || skill)}
-                    {typeof skill === 'object' && skill.level && (
-                      <span className="ml-1 text-amber-400">★{skill.level}</span>
-                    )}
+                    {typeof skill === 'object' && skill.level && <span className="ml-1 text-amber-400">★{skill.level}</span>}
                   </div>
                 ))}
               </div>
-
-              {/* Social */}
               <div className="flex gap-2.5">
                 {member.linkedin && <SocialLink href={member.linkedin} icon={Linkedin} />}
                 {member.twitter && <SocialLink href={member.twitter} icon={Twitter} />}
@@ -261,41 +170,26 @@ function LeaderCardGrid({ member }: { member: TeamMemberData }) {
               </div>
             </div>
           </div>
-        </motion.div>
+        </div>
       </div>
-    </motion.div>
+    </div>
   );
 }
 
-/* ── CEO / Founder Card (List View) ── */
 function LeaderCardList({ member }: { member: TeamMemberData }) {
   const router = useRouter();
-
   return (
-    <motion.div variants={cardVariants} layout>
-      <div
-        onClick={() => router.push(`/team/${member.slug}`)}
-        className="cursor-pointer"
-      >
-        <motion.div
-          whileHover={{ x: 8 }}
-          className="flex gap-5 p-5 rounded-2xl border border-indigo-500/20 bg-slate-900/50 hover:bg-slate-900 hover:border-indigo-500/40 transition-all duration-300"
-        >
+    <div>
+      <div onClick={() => router.push(`/team/${member.slug}`)} className="cursor-pointer">
+        <div className="flex gap-5 p-5 rounded-2xl border border-indigo-500/20 bg-slate-900/50 hover:bg-slate-900 hover:border-indigo-500/40 transition-all duration-300">
           <div className="relative w-24 h-24 flex-shrink-0 rounded-xl overflow-hidden">
             {member.image ? (
-              <img
-                src={member.image}
-                alt={member.name}
-                className="w-full h-full object-cover"
-              />
+              <img src={member.image} alt={member.name} className="w-full h-full object-cover" />
             ) : (
-              <div className="w-full h-full bg-slate-800 flex items-center justify-center">
-                <Users size={32} className="text-slate-600" />
-              </div>
+              <div className="w-full h-full bg-slate-800 flex items-center justify-center"><Users size={32} className="text-slate-600" /></div>
             )}
             <div className="absolute inset-0 ring-2 ring-indigo-500/30 rounded-xl" />
           </div>
-
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <h3 className="text-lg font-bold text-white truncate">{member.name}</h3>
@@ -304,92 +198,59 @@ function LeaderCardList({ member }: { member: TeamMemberData }) {
             <p className="text-indigo-400 text-sm font-medium mb-2">{member.role}</p>
             <p className="text-slate-400 text-sm line-clamp-2">{member.shortBio}</p>
           </div>
-
           <div className="hidden sm:flex gap-2 items-center">
             {member.linkedin && <SocialLink href={member.linkedin} icon={Linkedin} />}
             {member.email && <SocialLink href={`mailto:${member.email}`} icon={Mail} />}
           </div>
-        </motion.div>
+        </div>
       </div>
-    </motion.div>
+    </div>
   );
 }
 
-/* ── Team Member Card (Grid View) ── */
 function MemberCardGrid({ member }: { member: TeamMemberData }) {
   const CategoryIcon = categoryIcons[member.roleCategory || "default"] || Layers;
   const router = useRouter();
-
   return (
-    <motion.div variants={cardVariants} layout>
-      <div
-        onClick={() => router.push(`/team/${member.slug}`)}
-        className="cursor-pointer"
-      >
-        <motion.div
-          whileHover={{ y: -8, scale: 1.02 }}
-          className="group relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/80 hover:border-indigo-500/50 hover:shadow-2xl hover:shadow-indigo-500/10 transition-all duration-300 h-full"
-        >
-          {/* Image container */}
+    <div>
+      <div onClick={() => router.push(`/team/${member.slug}`)} className="cursor-pointer">
+        <div className="group relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/80 hover:border-indigo-500/50 hover:shadow-2xl hover:shadow-indigo-500/10 transition-all duration-300 h-full">
           <div className="relative h-64 overflow-hidden">
             {(member.coverImage || member.image) ? (
-              <img
-                src={member.coverImage || member.image}
-                alt={member.name}
-                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-              />
+              <img src={member.coverImage || member.image} alt={member.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
             ) : (
-              <div className="w-full h-full bg-slate-800 flex items-center justify-center">
-                <Users size={48} className="text-slate-600" />
-              </div>
+              <div className="w-full h-full bg-slate-800 flex items-center justify-center"><Users size={48} className="text-slate-600" /></div>
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/20 to-transparent" />
-
-            {/* Top badges */}
             <div className="absolute top-4 left-4 right-4 flex justify-between items-start">
-              <span className="px-3 py-1 rounded-full bg-indigo-600/90 backdrop-blur-sm text-white text-xs font-semibold">
-                {member.role}
-              </span>
-              {member.isFeatured && (
-                <Star size={18} className="text-amber-400 fill-amber-400 drop-shadow-lg" />
-              )}
+              <span className="px-3 py-1 rounded-full bg-indigo-600/90 backdrop-blur-sm text-white text-xs font-semibold">{member.role}</span>
+              {member.isFeatured && <Star size={18} className="text-amber-400 fill-amber-400 drop-shadow-lg" />}
             </div>
-
-            {/* Category icon */}
             <div className="absolute bottom-4 right-4 w-10 h-10 rounded-xl bg-slate-900/80 backdrop-blur-sm flex items-center justify-center border border-slate-700">
               <CategoryIcon size={18} className="text-indigo-400" />
             </div>
           </div>
-
-          {/* Content */}
           <div className="p-5">
-            <h3 className="text-lg font-bold text-white mb-1 group-hover:text-indigo-200 transition-colors">
-              {member.name}
-            </h3>
+            <h3 className="text-lg font-bold text-white mb-1 group-hover:text-indigo-200 transition-colors">{member.name}</h3>
             <p className="text-indigo-400 text-sm font-medium mb-3">{member.shortBio}</p>
-
-            {/* Skills */}
             <div className="flex flex-wrap gap-1.5 mb-4">
               {(() => {
                 const skillsList = member.skills || member.expertise || [];
                 return skillsList.slice(0, 3).map((skill: any) => (
-                  <span
-                    key={skill.name || skill}
-                    className="px-2 py-1 rounded-md bg-slate-800 text-slate-400 text-xs flex items-center gap-1"
-                  >
+                  <span key={skill.name || skill} className="px-2 py-1 rounded-md bg-slate-800 text-slate-400 text-xs flex items-center gap-1">
                     {skill.name || skill}
                     {skill.level && <span className="text-indigo-400">★{skill.level}</span>}
                   </span>
                 ));
               })()}
-              {(member.skills?.length || member.expertise?.length || 0) > 3 && (
-                <span className="px-2 py-1 rounded-md text-xs font-semibold text-indigo-400">
-                  +{((member.skills?.length || member.expertise?.length || 0) - 3}
-                </span>
-              )}
+              {(() => {
+                const skillsLength = (member.skills?.length || member.expertise?.length || 0);
+                if (skillsLength > 3) {
+                  return <span className="px-2 py-1 rounded-md text-xs font-semibold text-indigo-400">+{skillsLength - 3}</span>;
+                }
+                return null;
+              })()}
             </div>
-
-            {/* Social links */}
             <div className="flex gap-2 pt-3 border-t border-slate-800">
               {member.linkedin && <SocialLink href={member.linkedin} icon={Linkedin} />}
               {member.twitter && <SocialLink href={member.twitter} icon={Twitter} />}
@@ -397,37 +258,23 @@ function MemberCardGrid({ member }: { member: TeamMemberData }) {
               {member.email && <SocialLink href={`mailto:${member.email}`} icon={Mail} />}
             </div>
           </div>
-        </motion.div>
+        </div>
       </div>
-    </motion.div>
+    </div>
   );
 }
 
-/* ── Team Member Card (List View) ── */
 function MemberCardList({ member }: { member: TeamMemberData }) {
   const router = useRouter();
-
   return (
-    <motion.div variants={cardVariants} layout>
-      <div
-        onClick={() => router.push(`/team/${member.slug}`)}
-        className="cursor-pointer"
-      >
-        <motion.div
-          whileHover={{ x: 8, borderColor: "rgba(99,102,241,0.4)" }}
-          className="flex gap-5 p-4 rounded-xl border border-slate-800 bg-slate-900/50 hover:bg-slate-900 hover:border-indigo-500/40 transition-all duration-300"
-        >
+    <div>
+      <div onClick={() => router.push(`/team/${member.slug}`)} className="cursor-pointer">
+        <div className="flex gap-5 p-4 rounded-xl border border-slate-800 bg-slate-900/50 hover:bg-slate-900 hover:border-indigo-500/40 transition-all duration-300">
           <div className="relative w-20 h-20 flex-shrink-0 rounded-xl overflow-hidden">
             {member.image ? (
-              <img
-                src={member.image}
-                alt={member.name}
-                className="w-full h-full object-cover"
-              />
+              <img src={member.image} alt={member.name} className="w-full h-full object-cover" />
             ) : (
-              <div className="w-full h-full bg-slate-800 flex items-center justify-center">
-                <Users size={24} className="text-slate-600" />
-              </div>
+              <div className="w-full h-full bg-slate-800 flex items-center justify-center"><Users size={24} className="text-slate-600" /></div>
             )}
             {member.isFeatured && (
               <div className="absolute -top-1 -right-1 w-5 h-5 bg-amber-500 rounded-full flex items-center justify-center">
@@ -435,14 +282,13 @@ function MemberCardList({ member }: { member: TeamMemberData }) {
               </div>
             )}
           </div>
-
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-0.5">
               <h3 className="font-bold text-white truncate">{member.name}</h3>
             </div>
             <p className="text-indigo-400 text-sm font-medium mb-1">{member.role}</p>
             <div className="flex flex-wrap gap-1">
-              {((member.skills || member.expertise || []).slice(0, 2).map((skill: any) => (
+              {(member.skills || member.expertise || []).slice(0, 2).map((skill: any) => (
                 <span key={skill.name || skill} className="px-2 py-0.5 rounded bg-slate-800 text-slate-500 text-xs flex items-center gap-1">
                   {skill.name || skill}
                   {skill.level && <span className="text-indigo-400 text-[10px]">★{skill.level}</span>}
@@ -450,178 +296,101 @@ function MemberCardList({ member }: { member: TeamMemberData }) {
               ))}
             </div>
           </div>
-
           <div className="hidden md:flex gap-2 items-center">
             {member.linkedin && <SocialLink href={member.linkedin} icon={Linkedin} />}
             {member.email && <SocialLink href={`mailto:${member.email}`} icon={Mail} />}
             <ArrowRight size={18} className="text-slate-600 group-hover:text-indigo-400 transition-colors" />
           </div>
-        </motion.div>
+        </div>
       </div>
-    </motion.div>
+    </div>
   );
 }
 
-/* ── Main Team Page ── */
 export function TeamPage({ team, expertises = [], settings }: TeamPageProps) {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [activeFilter, setActiveFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
 
-  // Separate leaders from other team members
   const leaders = team.filter((m) => m.roleLevel === 0);
   const nonLeaders = team.filter((m) => m.roleLevel > 0);
 
-  // Filter team members
   const filteredMembers = useMemo(() => {
     let result = nonLeaders;
-
-    // Filter by category
     if (activeFilter !== "all") {
       result = result.filter((m) => m.roleCategory === activeFilter);
     }
-
-    // Filter by search query
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      result = result.filter(
-        (m) =>
-          m.name.toLowerCase().includes(query) ||
-          m.role.toLowerCase().includes(query) ||
-          m.expertise.some((e) => e.toLowerCase().includes(query)) ||
-          m.skills.some((s) => s.toLowerCase().includes(query))
+      result = result.filter((m) =>
+        m.name.toLowerCase().includes(query) ||
+        m.role.toLowerCase().includes(query) ||
+        m.expertise.some((e) => e.toLowerCase().includes(query)) ||
+        m.skills.some((s) => s.toLowerCase().includes(query))
       );
     }
-
     return result;
   }, [nonLeaders, activeFilter, searchQuery]);
 
   return (
     <div className="min-h-screen bg-slate-950 text-white">
-      {/* ── Hero Section ── */}
       <section className="relative py-20 lg:py-28 px-4 sm:px-6 overflow-hidden">
-        {/* Animated background */}
         <div className="absolute inset-0 overflow-hidden">
-          <motion.div
-            animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
-            transition={{ duration: 8, repeat: Infinity }}
-            className="absolute -top-40 left-[20%] w-[600px] h-[600px] rounded-full bg-indigo-500/10 blur-[100px]"
-          />
-          <motion.div
-            animate={{ scale: [1, 1.3, 1], opacity: [0.2, 0.4, 0.2] }}
-            transition={{ duration: 10, repeat: Infinity, delay: 2 }}
-            className="absolute -top-20 right-[10%] w-[400px] h-[400px] rounded-full bg-pink-500/10 blur-[80px]"
-          />
+          <div className="absolute -top-40 left-[20%] w-[600px] h-[600px] rounded-full bg-indigo-500/10 blur-[100px] animate-pulse" style={{ animationDuration: '8s' }} />
+          <div className="absolute -top-20 right-[10%] w-[400px] h-[400px] rounded-full bg-pink-500/10 blur-[80px] animate-pulse" style={{ animationDuration: '10s', animationDelay: '2s' }} />
         </div>
-
         <div className="relative max-w-6xl mx-auto text-center">
           <FadeIn>
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-500/10 border border-indigo-500/30 mb-6">
               <Users size={16} className="text-indigo-400" />
-              <span className="text-slate-300 text-sm font-medium">
-                {settings?.subtitle || "Những con người tạo nên sự khác biệt"}
-              </span>
+              <span className="text-slate-300 text-sm font-medium">{settings?.subtitle || "Những con người tạo nên sự khác biệt"}</span>
             </div>
           </FadeIn>
-
           <FadeIn delay={0.1}>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight mb-6">
               {settings?.title || "Đội Ngũ"}{" "}
-              <span className="bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-                LOOP
-              </span>
+              <span className="bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">LOOP</span>
             </h1>
           </FadeIn>
-
           <FadeIn delay={0.2}>
-            <p className="text-slate-400 text-lg max-w-2xl mx-auto leading-relaxed">
-              Chúng tôi là tập thể những chuyên gia đam mê công nghệ, sáng tạo không ngừng để mang đến giải pháp số tốt nhất.
-            </p>
+            <p className="text-slate-400 text-lg max-w-2xl mx-auto leading-relaxed">Chúng tôi là tập thể những chuyên gia đam mê công nghệ, sáng tạo không ngừng để mang đến giải pháp số tốt nhất.</p>
           </FadeIn>
         </div>
       </section>
 
-      {/* ── Controls Bar ── */}
       <section className="sticky top-16 lg:top-20 z-40 bg-slate-950/80 backdrop-blur-xl border-y border-slate-800/50">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4">
           <div className="flex flex-col lg:flex-row gap-4 lg:items-center lg:justify-between">
-            {/* Search */}
             <div className="relative flex-1 max-w-md">
               <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
-              <input
-                type="text"
-                placeholder="Tìm theo tên, kỹ năng..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-11 pr-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500/50 focus:ring-2 focus:ring-indigo-500/20 transition-all"
-              />
+              <input type="text" placeholder="Tìm theo tên, kỹ năng..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-11 pr-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500/50 focus:ring-2 focus:ring-indigo-500/20 transition-all" />
               {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-slate-800 transition-colors"
-                >
+                <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-slate-800 transition-colors">
                   <X size={16} className="text-slate-500" />
                 </button>
               )}
             </div>
-
             <div className="flex items-center gap-3">
-              {/* Filter toggle (mobile) */}
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className="lg:hidden flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 text-sm font-medium"
-              >
-                <Filter size={18} />
-                Lọc
+              <button onClick={() => setShowFilters(!showFilters)} className="lg:hidden flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 text-sm font-medium">
+                <Filter size={18} /> Lọc
               </button>
-
-              {/* View toggle */}
               <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-900 border border-slate-800">
-                <button
-                  onClick={() => setViewMode("grid")}
-                  className={`p-2 rounded-lg transition-all ${
-                    viewMode === "grid"
-                      ? "bg-indigo-600 text-white"
-                      : "text-slate-500 hover:text-white"
-                  }`}
-                >
+                <button onClick={() => setViewMode("grid")} className={`p-2 rounded-lg transition-all ${viewMode === "grid" ? "bg-indigo-600 text-white" : "text-slate-500 hover:text-white"}`}>
                   <Grid3X3 size={18} />
                 </button>
-                <button
-                  onClick={() => setViewMode("list")}
-                  className={`p-2 rounded-lg transition-all ${
-                    viewMode === "list"
-                      ? "bg-indigo-600 text-white"
-                      : "text-slate-500 hover:text-white"
-                  }`}
-                >
+                <button onClick={() => setViewMode("list")} className={`p-2 rounded-lg transition-all ${viewMode === "list" ? "bg-indigo-600 text-white" : "text-slate-500 hover:text-white"}`}>
                   <List size={18} />
                 </button>
               </div>
             </div>
           </div>
-
-          {/* Filter pills */}
-          <div
-            className={`${
-              showFilters ? "flex" : "hidden"
-            } lg:flex flex-wrap gap-2 mt-4 pt-4 border-t border-slate-800/50`}
-          >
+          <div className={`${showFilters ? "flex" : "hidden"} lg:flex flex-wrap gap-2 mt-4 pt-4 border-t border-slate-800/50`}>
             {filterCategories.map((cat) => {
               const Icon = cat.icon;
               return (
-                <button
-                  key={cat.id}
-                  onClick={() => setActiveFilter(cat.id)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                    activeFilter === cat.id
-                      ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/30"
-                      : "bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800"
-                  }`}
-                >
-                  <Icon size={14} />
-                  {cat.label}
+                <button key={cat.id} onClick={() => setActiveFilter(cat.id)} className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${activeFilter === cat.id ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/30" : "bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800"}`}>
+                  <Icon size={14} />{cat.label}
                 </button>
               );
             })}
@@ -629,9 +398,7 @@ export function TeamPage({ team, expertises = [], settings }: TeamPageProps) {
         </div>
       </section>
 
-      {/* ── Main Content ── */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6 py-12">
-        {/* Leadership Section (Always visible at top) */}
         {leaders.length > 0 && viewMode === "grid" && (
           <div className="mb-16">
             <FadeIn>
@@ -645,16 +412,11 @@ export function TeamPage({ team, expertises = [], settings }: TeamPageProps) {
                 </div>
               </div>
             </FadeIn>
-
             <StaggerContainer className="grid grid-cols-1 gap-6">
-              {leaders.map((member) => (
-                <LeaderCardGrid key={member.id} member={member} />
-              ))}
+              {leaders.map((member) => <LeaderCardGrid key={member.id} member={member} />)}
             </StaggerContainer>
           </div>
         )}
-
-        {/* List view leadership */}
         {leaders.length > 0 && viewMode === "list" && (
           <div className="mb-12">
             <FadeIn>
@@ -665,16 +427,11 @@ export function TeamPage({ team, expertises = [], settings }: TeamPageProps) {
                 <h2 className="text-xl font-bold">Leadership</h2>
               </div>
             </FadeIn>
-
             <StaggerContainer className="space-y-3">
-              {leaders.map((member) => (
-                <LeaderCardList key={member.id} member={member} />
-              ))}
+              {leaders.map((member) => <LeaderCardList key={member.id} member={member} />)}
             </StaggerContainer>
           </div>
         )}
-
-        {/* Team Members Section */}
         <div>
           <FadeIn>
             <div className="flex items-center justify-between mb-8">
@@ -684,60 +441,31 @@ export function TeamPage({ team, expertises = [], settings }: TeamPageProps) {
                 </div>
                 <div>
                   <h2 className="text-2xl font-bold">Thành Viên</h2>
-                  <p className="text-slate-500 text-sm">
-                    {filteredMembers.length} {filteredMembers.length === 1 ? "người" : "thành viên"}
-                    {searchQuery && ` cho "${searchQuery}"`}
-                  </p>
+                  <p className="text-slate-500 text-sm">{filteredMembers.length} {filteredMembers.length === 1 ? "người" : "thành viên"}{searchQuery && ` cho "${searchQuery}"`}</p>
                 </div>
               </div>
             </div>
           </FadeIn>
-
-          {/* No results */}
           {filteredMembers.length === 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-center py-16"
-            >
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-900 flex items-center justify-center">
-                <Search size={24} className="text-slate-600" />
-              </div>
+            <div className="text-center py-16">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-900 flex items-center justify-center"><Search size={24} className="text-slate-600" /></div>
               <h3 className="text-lg font-semibold text-white mb-2">Không tìm thấy</h3>
               <p className="text-slate-500">Thử tìm kiếm với từ khóa khác</p>
-              <button
-                onClick={() => {
-                  setSearchQuery("");
-                  setActiveFilter("all");
-                }}
-                className="mt-4 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-500 transition-colors"
-              >
-                Xóa bộ lọc
-              </button>
-            </motion.div>
+              <button onClick={() => { setSearchQuery(""); setActiveFilter("all"); }} className="mt-4 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-500 transition-colors">Xóa bộ lọc</button>
+            </div>
           )}
-
-          {/* Grid View */}
           {viewMode === "grid" && filteredMembers.length > 0 && (
             <StaggerContainer className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {filteredMembers.map((member) => (
-                <MemberCardGrid key={member.id} member={member} />
-              ))}
+              {filteredMembers.map((member) => <MemberCardGrid key={member.id} member={member} />)}
             </StaggerContainer>
           )}
-
-          {/* List View */}
           {viewMode === "list" && filteredMembers.length > 0 && (
             <StaggerContainer className="grid grid-cols-1 gap-3">
-              {filteredMembers.map((member) => (
-                <MemberCardList key={member.id} member={member} />
-              ))}
+              {filteredMembers.map((member) => <MemberCardList key={member.id} member={member} />)}
             </StaggerContainer>
           )}
         </div>
       </section>
-
-      {/* ── CTA Section ── */}
       <section className="py-20 px-4 sm:px-6 border-t border-slate-800/50">
         <FadeIn>
           <div className="max-w-2xl mx-auto text-center">
@@ -745,17 +473,10 @@ export function TeamPage({ team, expertises = [], settings }: TeamPageProps) {
               <Users size={32} className="text-white" />
             </div>
             <h2 className="text-3xl font-bold mb-4">Muốn gia nhập đội ngũ?</h2>
-            <p className="text-slate-400 mb-8 leading-relaxed">
-              Chúng tôi luôn tìm kiếm những tài năng xuất sắc. Hãy liên hệ nếu bạn muốn tạo ra những sản phẩm tuyệt vời.
-            </p>
-            <motion.a
-              href="/contact"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.98 }}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 transition-all"
-            >
+            <p className="text-slate-400 mb-8 leading-relaxed">Chúng tôi luôn tìm kiếm những tài năng xuất sắc. Hãy liên hệ nếu bạn muốn tạo ra những sản phẩm tuyệt vời.</p>
+            <a href="/contact" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 transition-all hover:scale-105">
               Liên hệ ngay <ArrowRight size={18} />
-            </motion.a>
+            </a>
           </div>
         </FadeIn>
       </section>

@@ -3,8 +3,9 @@
 import { useEffect, useState, useCallback } from "react";
 import { type ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "../../components/data-table";
-import { Plus, Pencil, Trash2, X, Star } from "lucide-react";
+import { Plus, Pencil, Trash2, X, Star, Image } from "lucide-react";
 import { toast } from "sonner";
+import { ImageUploader } from "@/components/ui/image-uploader";
 
 interface Expertise {
   id: string;
@@ -13,6 +14,7 @@ interface Expertise {
   category: string;
   categoryVi: string;
   icon: string | null;
+  logo: string | null;
   sortOrder: number;
   isActive: boolean;
   createdAt: string;
@@ -51,6 +53,7 @@ interface FormData {
   category: string;
   categoryVi: string;
   icon: string;
+  logo: string;
   sortOrder: number;
   isActive: boolean;
 }
@@ -61,6 +64,7 @@ const emptyForm: FormData = {
   category: "frontend",
   categoryVi: "Frontend",
   icon: "Code",
+  logo: "",
   sortOrder: 0,
   isActive: true,
 };
@@ -104,6 +108,7 @@ export default function ExpertisesPage() {
       category: item.category,
       categoryVi: item.categoryVi,
       icon: item.icon || "Code",
+      logo: item.logo || "",
       sortOrder: item.sortOrder,
       isActive: item.isActive,
     });
@@ -164,13 +169,24 @@ export default function ExpertisesPage() {
   const columns: ColumnDef<Expertise>[] = [
     {
       accessorKey: "name",
-      header: "Tên (EN)",
+      header: "Skill",
       cell: ({ row }) => (
-        <div className="flex items-center gap-2">
-          <span>{row.original.name}</span>
-          {row.original.icon && (
-            <span className="text-xs bg-slate-700 px-2 py-0.5 rounded">{row.original.icon}</span>
-          )}
+        <div className="flex items-center gap-3">
+          {row.original.logo ? (
+            <img
+              src={row.original.logo}
+              alt={row.original.name}
+              className="w-8 h-8 rounded object-contain bg-white"
+            />
+          ) : row.original.icon ? (
+            <div className="w-8 h-8 rounded bg-slate-700 flex items-center justify-center text-xs font-medium text-white">
+              {row.original.icon.substring(0, 3)}
+            </div>
+          ) : null}
+          <div>
+            <div className="text-white font-medium">{row.original.name}</div>
+            <div className="text-xs text-slate-500">{row.original.nameVi}</div>
+          </div>
         </div>
       ),
     },
@@ -292,7 +308,7 @@ export default function ExpertisesPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm text-slate-400 mb-1">Icon</label>
+                  <label className="block text-sm text-slate-400 mb-1">Icon (fallback)</label>
                   <select
                     value={form.icon}
                     onChange={(e) => updateField("icon", e.target.value)}
@@ -303,6 +319,17 @@ export default function ExpertisesPage() {
                     ))}
                   </select>
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-sm text-slate-400 mb-1">Logo hình ảnh</label>
+                <ImageUploader
+                  value={form.logo}
+                  onChange={(url) => updateField("logo", url)}
+                  folder="loop/expertises"
+                  aspectRatio="square"
+                  placeholder="Upload logo cho skill"
+                />
               </div>
 
               <div>

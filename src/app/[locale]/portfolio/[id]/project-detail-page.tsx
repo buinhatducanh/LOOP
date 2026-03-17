@@ -1,8 +1,6 @@
 "use client";
 
-import { useRef } from "react";
 import { useRouter } from "next/navigation";
-import { motion, useInView } from "motion/react";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, ExternalLink, Calendar, Code2, Layers, CheckCircle, Zap, Building2, TrendingUp } from "lucide-react";
 import Image from "next/image";
@@ -51,18 +49,7 @@ function GradientText({ children }: { children: React.ReactNode }) {
 }
 
 function FadeIn({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true, margin: "-60px" });
-  return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0, y: 32 }}
-      animate={inView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.6, delay, ease: [0.22, 1, 0.36, 1] }}
-    >
-      {children}
-    </motion.div>
-  );
+  return <div className="animate-fade-in" style={{ animationDelay: `${delay}s` }}>{children}</div>;
 }
 
 export function ProjectDetailPage({ project, relatedService, teamMember }: { project: Project; relatedService?: RelatedService; teamMember?: TeamMemberInfo }) {
@@ -323,10 +310,9 @@ export function ProjectDetailPage({ project, relatedService, teamMember }: { pro
                 })}
               </h3>
               <div style={{ display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap" }}>
-                <motion.button
-                  whileHover={{ scale: 1.04 }}
-                  whileTap={{ scale: 0.97 }}
+                <button
                   onClick={() => router.push(`/services/${relatedService.id}`)}
+                  className="transition-transform hover:scale-104 active:scale-97"
                   style={{
                     background: "rgba(59,130,246,0.1)",
                     color: "#3B82F6",
@@ -342,11 +328,10 @@ export function ProjectDetailPage({ project, relatedService, teamMember }: { pro
                   }}
                 >
                   {t("viewService")} <ArrowRight size={14} />
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.04 }}
-                  whileTap={{ scale: 0.97 }}
+                </button>
+                <button
                   onClick={() => router.push(`/contact?service=${relatedService.id}`)}
+                  className="transition-transform hover:scale-104 active:scale-97"
                   style={{
                     background: "linear-gradient(135deg, #3B82F6, #6366F1)",
                     color: "#fff",
@@ -363,7 +348,7 @@ export function ProjectDetailPage({ project, relatedService, teamMember }: { pro
                   }}
                 >
                   {t("getQuote")} <ArrowRight size={14} />
-                </motion.button>
+                </button>
               </div>
             </div>
           </FadeIn>

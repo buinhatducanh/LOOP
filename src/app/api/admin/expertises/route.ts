@@ -41,6 +41,7 @@ export async function POST(req: NextRequest) {
         category: data.category,
         categoryVi: data.categoryVi || categories[data.category] || data.category,
         icon: data.icon || null,
+        logo: data.logo || null,
         sortOrder: data.sortOrder || 0,
         isActive: data.isActive ?? true,
       },

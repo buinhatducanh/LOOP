@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "motion/react";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Zap, Globe, Shield, Award, Star, Mail, Phone, MapPin } from "lucide-react";
@@ -26,30 +25,13 @@ export function HeroSection({ content }: SectionProps) {
         </div>
       )}
       <div className="relative z-10 max-w-7xl mx-auto px-6 py-32 text-center">
-        <motion.h1
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="text-5xl md:text-7xl font-extrabold text-white mb-6"
-        >
+        <h1 className="text-5xl md:text-7xl font-extrabold text-white mb-6 animate-fade-in">
           {content.title || "Chào mừng"}
-        </motion.h1>
-        <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.1 }}
-          className="text-xl text-gray-400 mb-10 max-w-2xl mx-auto"
-        >
+        </h1>
+        <p className="text-xl text-gray-400 mb-10 max-w-2xl mx-auto animate-fade-in" style={{ animationDelay: "0.1s" }}>
           {content.subtitle || "Chúng tôi tạo ra những trải nghiệm số tuyệt vời"}
-        </motion.p>
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.2 }}
-          className="flex flex-col sm:flex-row gap-4 justify-center"
-        >
+        </p>
+        <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in" style={{ animationDelay: "0.2s" }}>
           {content.ctaPrimaryLink && (
             <Link
               href={content.ctaPrimaryLink}
@@ -66,7 +48,7 @@ export function HeroSection({ content }: SectionProps) {
               {content.ctaSecondaryText || "Xem thêm"}
             </Link>
           )}
-        </motion.div>
+        </div>
       </div>
     </section>
   );
@@ -81,19 +63,16 @@ export function StatsSection({ content }: SectionProps) {
       <div className="max-w-7xl mx-auto px-6 py-12">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
           {stats.map((stat: any, index: number) => (
-            <motion.div
+            <div
               key={index}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: index * 0.1 }}
-              className="text-center"
+              className="text-center animate-fade-in"
+              style={{ animationDelay: `${index * 0.1}s` }}
             >
               <div className="text-4xl md:text-5xl font-bold text-white mb-2">
                 {stat.value}
               </div>
               <div className="text-gray-400">{stat.label}</div>
-            </motion.div>
+            </div>
           ))}
         </div>
       </div>
@@ -125,20 +104,17 @@ export function FeaturesSection({ content }: SectionProps) {
           {features.map((feature: any, index: number) => {
             const IconComponent = icons[feature.icon] || Zap;
             return (
-              <motion.div
+              <div
                 key={index}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-                className="p-6 bg-white/5 border border-white/10 rounded-2xl hover:border-indigo-500/30 transition-all"
+                className="p-6 bg-white/5 border border-white/10 rounded-2xl hover:border-indigo-500/30 transition-all animate-fade-in"
+                style={{ animationDelay: `${index * 0.1}s` }}
               >
                 <div className="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center mb-4">
                   <IconComponent className="w-6 h-6 text-indigo-400" />
                 </div>
                 <h3 className="text-xl font-bold text-white mb-2">{feature.title}</h3>
                 <p className="text-gray-400">{feature.desc}</p>
-              </motion.div>
+              </div>
             );
           })}
         </div>

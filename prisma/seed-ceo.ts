@@ -50,7 +50,6 @@ Chính vì vậy, tôi quyết định thành lập LOOP. Đây không chỉ là
         email: "ducanhnhatbui@gmail.com",
         phone: "0378443602",
         linkedin: "https://linkedin.com/in/bui-nhat-duc-anh",
-        expertise: ["Leadership", "Product Strategy", "Enterprise Architecture"],
         achievements: [],
         skills: ["Leadership", "Product Strategy", "Enterprise Architecture", "Cloud Native"],
         roleLevel: 0,

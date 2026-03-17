@@ -43,6 +43,7 @@ export async function PUT(
         category: data.category,
         categoryVi: data.categoryVi,
         icon: data.icon || null,
+        logo: data.logo || null,
         sortOrder: data.sortOrder || 0,
         isActive: data.isActive ?? true,
       },

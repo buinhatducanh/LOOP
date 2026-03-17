@@ -3,7 +3,6 @@
 import { useRef, useMemo } from "react";
 import { useRouter } from "@/i18n/routing";
 import { useTranslations } from "next-intl";
-import { motion, useInView } from "motion/react";
 import {
   ArrowRight,
   CheckCircle,
@@ -77,18 +76,13 @@ function FadeInSection({
   delay?: number;
   className?: string;
 }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true, margin: "-80px" });
   return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0, y: 40 }}
-      animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 40 }}
-      transition={{ duration: 0.65, delay, ease: [0.22, 1, 0.36, 1] }}
-      className={className}
+    <div
+      className={`animate-fade-in ${className || ""}`}
+      style={{ animationDelay: `${delay}s` }}
     >
       {children}
-    </motion.div>
+    </div>
   );
 }
 
@@ -152,9 +146,8 @@ export function HomePage({
         />
 
         {/* Floating animated orbs */}
-        <motion.div
-          animate={{ y: [0, -30, 0], opacity: [0.3, 0.6, 0.3] }}
-          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+        <div
+          className="animate-float-1"
           style={{
             position: "absolute",
             top: "15%",
@@ -166,9 +159,8 @@ export function HomePage({
             zIndex: 1,
           }}
         />
-        <motion.div
-          animate={{ y: [0, 20, 0], opacity: [0.2, 0.4, 0.2] }}
-          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+        <div
+          className="animate-float-2"
           style={{
             position: "absolute",
             top: "30%",
@@ -193,10 +185,8 @@ export function HomePage({
         >
           <div style={{ maxWidth: "820px" }}>
             {/* Badge */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
+            <div
+              className="animate-fade-in"
               style={{
                 display: "inline-flex",
                 alignItems: "center",
@@ -208,9 +198,8 @@ export function HomePage({
                 marginBottom: "32px",
               }}
             >
-              <motion.div
-                animate={{ scale: [1, 1.2, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
+              <div
+                className="animate-pulse"
                 style={{
                   width: "20px",
                   height: "20px",
@@ -222,79 +211,70 @@ export function HomePage({
                 }}
               >
                 <Zap size={11} color="#fff" />
-              </motion.div>
+              </div>
               <span style={{ color: "#94A3B8", fontSize: "13px", fontWeight: 500 }}>
                 {t('badge')}
               </span>
-            </motion.div>
+            </div>
 
-            <motion.h1
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+            <h1
+              className="animate-fade-in"
               style={{
                 fontSize: "clamp(38px, 6vw, 76px)",
                 fontWeight: 800,
                 lineHeight: 1.08,
                 marginBottom: "24px",
                 letterSpacing: "-2px",
+                animationDelay: "0.1s",
               }}
             >
               {t('heroTitle1')}
               <br />
               {t('heroTitle2')} <GradientText>{t('heroHighlight1')}</GradientText> &{" "}
               <GradientText>{t('heroHighlight2')}</GradientText>
-            </motion.h1>
+            </h1>
 
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.35 }}
+            <p
+              className="animate-fade-in"
               style={{
                 color: "#94A3B8",
                 fontSize: "clamp(16px, 2vw, 20px)",
                 lineHeight: 1.7,
                 marginBottom: "40px",
                 maxWidth: "600px",
+                animationDelay: "0.2s",
               }}
             >
               {t('heroDesc')}
-            </motion.p>
+            </p>
 
             {/* Trust badges */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.7, delay: 0.45 }}
-              style={{ display: "flex", flexWrap: "wrap", gap: "20px", marginBottom: "48px" }}
+            <div
+              className="animate-fade-in"
+              style={{ display: "flex", flexWrap: "wrap", gap: "20px", marginBottom: "48px", animationDelay: "0.3s" }}
             >
               {[t('trustProjects'), t('trustSatisfaction'), t('trustResponse')].map(
                 (text, i) => (
-                  <motion.div
+                  <div
                     key={text}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.5 + i * 0.1 }}
-                    style={{ display: "flex", alignItems: "center", gap: "8px" }}
+                    className="animate-fade-in"
+                    style={{ display: "flex", alignItems: "center", gap: "8px", animationDelay: `${0.4 + i * 0.1}s` }}
                   >
                     <CheckCircle size={16} color="#3B82F6" />
                     <span style={{ color: "#94A3B8", fontSize: "14px", fontWeight: 500 }}>
                       {text}
                     </span>
-                  </motion.div>
+                  </div>
                 )
               )}
-            </motion.div>
+            </div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.6 }}
-              style={{ display: "flex", flexWrap: "wrap", gap: "16px" }}
+            <div
+              className="animate-fade-in"
+              style={{ display: "flex", flexWrap: "wrap", gap: "16px", animationDelay: "0.5s" }}
             >
-              <motion.button
-                whileHover={{ scale: 1.04, boxShadow: "0 0 60px rgba(99,102,241,0.6)" }}
-                whileTap={{ scale: 0.97 }}
+              <button
+                className="btn-hover-scale"
                 onClick={() => router.push("/services")}
                 style={{
                   background: "linear-gradient(135deg, #3B82F6, #6366F1)",
@@ -309,17 +289,13 @@ export function HomePage({
                   alignItems: "center",
                   gap: "8px",
                   boxShadow: "0 0 40px rgba(99,102,241,0.4)",
+                  transition: "transform 0.2s, box-shadow 0.2s",
                 }}
               >
                 {t('btnServices')} <ArrowRight size={18} />
-              </motion.button>
-              <motion.button
-                whileHover={{
-                  scale: 1.04,
-                  borderColor: "#3B82F6",
-                  background: "rgba(59,130,246,0.05)",
-                }}
-                whileTap={{ scale: 0.97 }}
+              </button>
+              <button
+                className="btn-hover-scale"
                 onClick={() => router.push("/portfolio")}
                 style={{
                   background: "rgba(0,0,0,0)",
@@ -333,18 +309,18 @@ export function HomePage({
                   display: "flex",
                   alignItems: "center",
                   gap: "8px",
+                  transition: "transform 0.2s, border-color 0.2s, background 0.2s",
                 }}
               >
                 <Play size={16} /> {t('btnPortfolio')}
-              </motion.button>
-            </motion.div>
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Scroll hint */}
-        <motion.div
-          animate={{ y: [0, 8, 0] }}
-          transition={{ duration: 2, repeat: Infinity }}
+        <div
+          className="animate-bounce-slow"
           style={{
             position: "absolute",
             bottom: "32px",
@@ -374,7 +350,7 @@ export function HomePage({
               background: "linear-gradient(to bottom, #4B5563, transparent)",
             }}
           />
-        </motion.div>
+        </div>
       </section>
 
       {/* --- STATS --- */}
@@ -398,8 +374,8 @@ export function HomePage({
           {stats.map(({ value, label, icon: Icon }, i) => (
             <FadeInSection key={label} delay={i * 0.1}>
               <div style={{ textAlign: "center" }}>
-                <motion.div
-                  whileHover={{ scale: 1.1, rotate: 5 }}
+                <div
+                  className="icon-hover-scale"
                   style={{ display: "flex", justifyContent: "center", marginBottom: "12px" }}
                 >
                   <div
@@ -412,11 +388,12 @@ export function HomePage({
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
+                      transition: "transform 0.2s",
                     }}
                   >
                     <Icon size={22} color="#3B82F6" />
                   </div>
-                </motion.div>
+                </div>
                 <div
                   style={{
                     fontSize: "38px",
@@ -497,9 +474,8 @@ export function HomePage({
 
           <FadeInSection>
             <div style={{ textAlign: "center" }}>
-              <motion.button
-                whileHover={{ scale: 1.04, background: "#3B82F6", color: "#fff" }}
-                whileTap={{ scale: 0.97 }}
+              <button
+                className="btn-hover-scale"
                 onClick={() => router.push("/services")}
                 style={{
                   background: "rgba(0,0,0,0)",
@@ -517,7 +493,7 @@ export function HomePage({
                 }}
               >
                 {t('btnAllServices')} <ArrowRight size={16} />
-              </motion.button>
+              </button>
             </div>
           </FadeInSection>
         </div>
@@ -588,9 +564,8 @@ export function HomePage({
 
           <FadeInSection>
             <div style={{ textAlign: "center" }}>
-              <motion.button
-                whileHover={{ scale: 1.04, background: "#6366F1", color: "#fff" }}
-                whileTap={{ scale: 0.97 }}
+              <button
+                className="btn-hover-scale"
                 onClick={() => router.push("/portfolio")}
                 style={{
                   background: "rgba(0,0,0,0)",
@@ -608,7 +583,7 @@ export function HomePage({
                 }}
               >
                 {t('btnAllProjects')} <ArrowRight size={16} />
-              </motion.button>
+              </button>
             </div>
           </FadeInSection>
         </div>
@@ -658,9 +633,8 @@ export function HomePage({
                 >
                   {t('whyDesc')}
                 </p>
-                <motion.button
-                  whileHover={{ scale: 1.04 }}
-                  whileTap={{ scale: 0.97 }}
+                <button
+                  className="btn-hover-scale"
                   onClick={() => router.push("/about")}
                   style={{
                     background: "linear-gradient(135deg, #3B82F6, #6366F1)",
@@ -675,29 +649,30 @@ export function HomePage({
                     alignItems: "center",
                     gap: "8px",
                     boxShadow: "0 0 30px rgba(99,102,241,0.3)",
+                    transition: "transform 0.2s",
                   }}
                 >
                   {t('btnAbout')} <ArrowRight size={16} />
-                </motion.button>
+                </button>
               </div>
             </FadeInSection>
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
               {whyUs.map(({ icon: Icon, title, desc }, i) => (
                 <FadeInSection key={title} delay={i * 0.1}>
-                  <motion.div
-                    whileHover={{ y: -4, borderColor: "#3B82F6" }}
+                  <div
+                    className="card-hover"
                     style={{
                       background: "#0F172A",
                       border: "1px solid #1F2937",
                       borderRadius: "14px",
                       padding: "24px",
                       cursor: "default",
-                      transition: "border-color 0.3s",
+                      transition: "border-color 0.3s, transform 0.3s",
                     }}
                   >
-                    <motion.div
-                      whileHover={{ rotate: 10, scale: 1.1 }}
+                    <div
+                      className="icon-hover-rotate"
                       style={{
                         width: "40px",
                         height: "40px",
@@ -707,10 +682,11 @@ export function HomePage({
                         alignItems: "center",
                         justifyContent: "center",
                         marginBottom: "14px",
+                        transition: "transform 0.2s",
                       }}
                     >
                       <Icon size={20} color="#3B82F6" />
-                    </motion.div>
+                    </div>
                     <h4
                       style={{
                         color: "#FFFFFF",
@@ -722,7 +698,7 @@ export function HomePage({
                       {title}
                     </h4>
                     <p style={{ color: "#94A3B8", fontSize: "13px", lineHeight: 1.6 }}>{desc}</p>
-                  </motion.div>
+                  </div>
                 </FadeInSection>
               ))}
             </div>
@@ -774,29 +750,28 @@ export function HomePage({
           >
             {testimonials.map((t, i) => (
               <FadeInSection key={t.id} delay={i * 0.1}>
-                <motion.div
-                  whileHover={{ y: -6, borderColor: "#6366F1" }}
+                <div
+                  className="card-hover"
                   style={{
                     background: "#020617",
                     border: "1px solid #1F2937",
                     borderRadius: "16px",
                     padding: "28px",
                     height: "100%",
-                    transition: "border-color 0.3s",
+                    transition: "border-color 0.3s, transform 0.3s",
                     cursor: "default",
                   }}
                 >
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "16px" }}>
                     <div style={{ display: "flex", gap: "4px" }}>
                       {Array.from({ length: t.rating }).map((_, idx) => (
-                        <motion.div
+                        <div
                           key={idx}
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          transition={{ delay: 0.1 + idx * 0.05 }}
+                          className="animate-scale-in"
+                          style={{ animationDelay: `${idx * 0.05}s` }}
                         >
                           <Star size={14} color="#F59E0B" fill="#F59E0B" />
-                        </motion.div>
+                        </div>
                       ))}
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: "6px", background: "rgba(255,255,255,0.05)", padding: "4px 8px", borderRadius: "12px" }}>
@@ -854,7 +829,7 @@ export function HomePage({
                       </p>
                     </div>
                   </div>
-                </motion.div>
+                </div>
               </FadeInSection>
             ))}
           </div>
@@ -863,9 +838,8 @@ export function HomePage({
 
       {/* --- FINAL CTA --- */}
       <section style={{ padding: "120px 24px", position: "relative", overflow: "hidden" }}>
-        <motion.div
-          animate={{ scale: [1, 1.1, 1], opacity: [0.4, 0.7, 0.4] }}
-          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+        <div
+          className="animate-pulse-slow"
           style={{
             position: "absolute",
             inset: 0,
@@ -882,11 +856,8 @@ export function HomePage({
           }}
         >
           <FadeInSection>
-            <motion.div
-              initial={{ scale: 0.5, opacity: 0 }}
-              whileInView={{ scale: 1, opacity: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5 }}
+            <div
+              className="animate-scale-in"
               style={{
                 display: "inline-flex",
                 alignItems: "center",
@@ -901,7 +872,7 @@ export function HomePage({
               <span style={{ color: "#6366F1", fontSize: "13px", fontWeight: 600 }}>
                 {t('ctaSub')}
               </span>
-            </motion.div>
+            </div>
             <h2
               style={{
                 fontSize: "clamp(32px, 5vw, 58px)",
@@ -933,9 +904,8 @@ export function HomePage({
                 gap: "16px",
               }}
             >
-              <motion.button
-                whileHover={{ scale: 1.05, boxShadow: "0 0 80px rgba(99,102,241,0.6)" }}
-                whileTap={{ scale: 0.97 }}
+              <button
+                className="btn-hover-scale"
                 onClick={() => router.push("/contact")}
                 style={{
                   background: "linear-gradient(135deg, #3B82F6, #6366F1)",
@@ -950,13 +920,13 @@ export function HomePage({
                   alignItems: "center",
                   gap: "10px",
                   boxShadow: "0 0 60px rgba(99,102,241,0.4)",
+                  transition: "transform 0.2s, box-shadow 0.2s",
                 }}
               >
                 {t('btnStart')} <ArrowRight size={18} />
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.04, borderColor: "#94A3B8", color: "#fff" }}
-                whileTap={{ scale: 0.97 }}
+              </button>
+              <button
+                className="btn-hover-scale"
                 onClick={() => router.push("/pricing")}
                 style={{
                   background: "rgba(0,0,0,0)",
@@ -971,7 +941,7 @@ export function HomePage({
                 }}
               >
                 {t('btnPricing')}
-              </motion.button>
+              </button>
             </div>
           </FadeInSection>
         </div>

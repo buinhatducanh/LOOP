@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { motion } from "motion/react";
 import { Zap, User, Mail, Lock, Eye, EyeOff, ArrowRight, AlertCircle } from "lucide-react";
 
 export function RegisterPage() {
@@ -68,10 +67,8 @@ export function RegisterPage() {
         color: "#FFFFFF",
       }}
     >
-      <motion.div
-        initial={{ opacity: 0, y: 24 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
+      <div
+        className="animate-fade-in"
         style={{ width: "100%", maxWidth: "420px" }}
       >
         {/* Logo */}
@@ -253,7 +250,7 @@ export function RegisterPage() {
             Sign in
           </Link>
         </p>
-      </motion.div>
+      </div>
     </div>
   );
 }

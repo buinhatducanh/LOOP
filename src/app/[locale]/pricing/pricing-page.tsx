@@ -1,9 +1,8 @@
 "use client";
 
-import { useRef, useMemo } from "react";
+import { useMemo } from "react";
 import { useRouter } from "@/i18n/routing";
 import { useTranslations } from "next-intl";
-import { motion, useInView } from "motion/react";
 import {
   ArrowRight,
   DollarSign,
@@ -47,17 +46,10 @@ function FadeIn({
   children: React.ReactNode;
   delay?: number;
 }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true, margin: "-60px" });
   return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0, y: 32 }}
-      animate={inView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.6, delay, ease: [0.22, 1, 0.36, 1] }}
-    >
+    <div className="animate-fade-in" style={{ animationDelay: `${delay}s` }}>
       {children}
-    </motion.div>
+    </div>
   );
 }
 
@@ -145,9 +137,8 @@ export function PricingPage({
           overflow: "hidden",
         }}
       >
-        <motion.div
-          animate={{ scale: [1, 1.2, 1] }}
-          transition={{ duration: 8, repeat: Infinity }}
+        <div
+          className="animate-pulse-slow"
           style={{
             position: "absolute",
             top: 0,
@@ -167,10 +158,8 @@ export function PricingPage({
             position: "relative",
           }}
         >
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5 }}
+          <div
+            className="animate-fade-in"
             style={{
               display: "inline-flex",
               alignItems: "center",
@@ -192,35 +181,33 @@ export function PricingPage({
             >
               {t("badge")}
             </span>
-          </motion.div>
-          <motion.h1
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
+          </div>
+          <h1
+            className="animate-fade-in"
             style={{
               fontSize: "clamp(36px, 5vw, 60px)",
               fontWeight: 800,
               letterSpacing: "-2px",
               marginBottom: "20px",
+              animationDelay: "0.1s",
             }}
           >
             {t("heroTitle1")}{" "}
             <GradientText>{t("heroHighlight")}</GradientText>
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
+          </h1>
+          <p
+            className="animate-fade-in"
             style={{
               color: "#94A3B8",
               fontSize: "18px",
               lineHeight: 1.7,
               maxWidth: "580px",
               margin: "0 auto",
+              animationDelay: "0.2s",
             }}
           >
             {t("heroDesc")}
-          </motion.p>
+          </p>
         </div>
       </section>
 
@@ -356,10 +343,9 @@ export function PricingPage({
                   : "Use our custom pricing tool — select the features you need and get an instant quote."}
               </p>
             </div>
-            <motion.button
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.97 }}
+            <button
               onClick={() => router.push("/pricing/calculator")}
+              className="transition-transform hover:scale-104 active:scale-97"
               style={{
                 background: "linear-gradient(135deg, #3B82F6, #6366F1)",
                 color: "#fff",
@@ -379,7 +365,7 @@ export function PricingPage({
               <Calculator size={16} />
               {isVi ? "Tùy chỉnh Báo giá" : "Custom Quote"}{" "}
               <ArrowRight size={14} />
-            </motion.button>
+            </button>
           </div>
         </FadeIn>
       </section>
@@ -632,10 +618,9 @@ export function PricingPage({
             >
               {t("ctaDesc")}
             </p>
-            <motion.button
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.97 }}
+            <button
               onClick={() => router.push("/contact")}
+              className="transition-transform hover:scale-104 active:scale-97"
               style={{
                 background: "linear-gradient(135deg, #3B82F6, #6366F1)",
                 color: "#fff",
@@ -652,7 +637,7 @@ export function PricingPage({
               }}
             >
               {t("btnContact")} <ArrowRight size={16} />
-            </motion.button>
+            </button>
           </div>
         </FadeIn>
       </section>
