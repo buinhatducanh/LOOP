@@ -27,6 +27,13 @@ export async function GET(req: NextRequest) {
         orderBy: { sortOrder: "asc" },
         skip: (page - 1) * limit,
         take: limit,
+        include: {
+          memberExpertise: {
+            include: {
+              expertise: true,
+            },
+          },
+        },
       }),
       prisma.teamMember.count({ where }),
     ]);
@@ -54,14 +61,30 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const member = await prisma.teamMember.create({ data });
+    // Extract expertise array if present (it's a relation, not a direct field)
+    const { expertise, ...memberData } = data;
+
+    const member = await prisma.teamMember.create({
+      data: memberData,
+    });
+
+    // Create member expertise relations if provided
+    if (expertise && Array.isArray(expertise) && expertise.length > 0) {
+      await prisma.memberExpertise.createMany({
+        data: expertise.map((expId: string) => ({
+          memberId: member.id,
+          expertiseId: expId,
+          level: 3, // Default level
+        })),
+      });
+    }
 
     await createAuditLog({
       userId: session.userId,
       action: "create",
       resource: "team",
       resourceId: member.id,
-      newValues: data,
+      newValues: memberData,
     });
 
     return NextResponse.json({ data: member }, { status: 201 });

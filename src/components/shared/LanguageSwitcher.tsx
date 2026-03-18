@@ -6,8 +6,8 @@ import { useTransition, useState, useRef, useEffect } from "react";
 import { trackLanguageSwitch } from "@/lib/analytics/events";
 
 const locales = [
-    { code: "vi", label: "Tiếng Việt", flag: "🇻🇳" },
-    { code: "en", label: "English", flag: "🇺🇸" },
+    { code: "vi", label: "Tiếng Việt", flag: "🇻🇳", flagUrl: "https://flagcdn.com/w40/vn.png" },
+    { code: "en", label: "English", flag: "🇺🇸", flagUrl: "https://flagcdn.com/w40/us.png" },
 ];
 
 export function LanguageSwitcher() {
@@ -45,27 +45,42 @@ export function LanguageSwitcher() {
         <div style={{ position: "relative" }} ref={ref}>
             <button
                 onClick={() => setIsOpen(!isOpen)}
+                onMouseEnter={() => setIsOpen(true)}
                 disabled={isPending}
                 style={{
                     display: "flex",
                     alignItems: "center",
-                    gap: "8px",
-                    padding: "8px 14px",
+                    gap: "6px",
+                    padding: "6px 10px",
                     fontSize: "14px",
                     color: "#FFFFFF",
-                    background: "linear-gradient(to right, rgba(139,92,246,0.25), rgba(6,182,212,0.25))",
-                    border: "1px solid rgba(139,92,246,0.4)",
+                    background: "transparent",
+                    border: "1px solid rgba(255,255,255,0.1)",
                     borderRadius: "8px",
                     cursor: "pointer",
                     transition: "all 0.2s",
-                    fontWeight: 600,
-                    letterSpacing: "0.025em",
                     opacity: isPending ? 0.7 : 1,
                 }}
-                aria-label="Switch language"
+                aria-label="Select language"
             >
-                <span style={{ fontSize: "16px" }}>{current.flag}</span>
-                <span>{current.code.toUpperCase()}</span>
+                <img
+                    src={current.flagUrl}
+                    alt={current.label}
+                    style={{ width: "20px", height: "15px", borderRadius: "2px", objectFit: "cover" }}
+                />
+                <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    style={{ opacity: 0.6 }}
+                >
+                    <path d="M6 9l6 6 6-6" />
+                </svg>
             </button>
 
             {isOpen && (
@@ -75,10 +90,11 @@ export function LanguageSwitcher() {
                         right: 0,
                         marginTop: "8px",
                         width: "160px",
-                        background: "#1F2937",
-                        borderRadius: "12px",
+                        background: "rgba(17, 24, 39, 0.98)",
+                        backdropFilter: "blur(12px)",
+                        borderRadius: "10px",
                         border: "1px solid rgba(255,255,255,0.1)",
-                        boxShadow: "0 20px 25px -5px rgba(0,0,0,0.3)",
+                        boxShadow: "0 20px 25px -5px rgba(0,0,0,0.4)",
                         overflow: "hidden",
                         zIndex: 60,
                         padding: "4px 0",
@@ -91,19 +107,33 @@ export function LanguageSwitcher() {
                             style={{
                                 width: "100%",
                                 textAlign: "left",
-                                padding: "10px 16px",
+                                padding: "10px 14px",
                                 fontSize: "14px",
                                 color: locale === l.code ? "#FFFFFF" : "#9CA3AF",
-                                background: locale === l.code ? "rgba(255,255,255,0.1)" : "transparent",
+                                background: locale === l.code ? "rgba(139, 92, 246, 0.2)" : "transparent",
                                 border: "none",
                                 cursor: "pointer",
                                 display: "flex",
                                 alignItems: "center",
-                                gap: "8px",
+                                gap: "10px",
                                 transition: "all 0.15s",
                             }}
+                            onMouseEnter={(e) => {
+                                if (locale !== l.code) {
+                                    e.currentTarget.style.background = "rgba(255,255,255,0.05)";
+                                }
+                            }}
+                            onMouseLeave={(e) => {
+                                if (locale !== l.code) {
+                                    e.currentTarget.style.background = "transparent";
+                                }
+                            }}
                         >
-                            <span>{l.flag}</span>
+                            <img
+                                src={l.flagUrl}
+                                alt={l.label}
+                                style={{ width: "22px", height: "16px", borderRadius: "2px", objectFit: "cover" }}
+                            />
                             <span>{l.label}</span>
                         </button>
                     ))}

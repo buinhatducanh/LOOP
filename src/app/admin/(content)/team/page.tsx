@@ -374,23 +374,26 @@ export default function AdminTeamPage() {
     {
       accessorKey: "expertise",
       header: "Chuyên môn",
-      cell: ({ row }) => (
-        <div className="flex flex-wrap gap-1">
-          {row.original.expertise.slice(0, 3).map((e, i) => (
-            <span
-              key={i}
-              className="rounded bg-slate-800 px-1.5 py-0.5 text-[11px] text-slate-400"
-            >
-              {e}
-            </span>
-          ))}
-          {row.original.expertise.length > 3 && (
-            <span className="text-[11px] text-slate-500">
-              +{row.original.expertise.length - 3}
-            </span>
-          )}
-        </div>
-      ),
+      cell: ({ row }) => {
+        const expertise = row.original.expertise || [];
+        return (
+          <div className="flex flex-wrap gap-1">
+            {expertise.slice(0, 3).map((e: any, i: number) => (
+              <span
+                key={i}
+                className="rounded bg-slate-800 px-1.5 py-0.5 text-[11px] text-slate-400"
+              >
+                {typeof e === 'string' ? e : e.name || e.nameVi || ''}
+              </span>
+            ))}
+            {expertise.length > 3 && (
+              <span className="text-[11px] text-slate-500">
+                +{expertise.length - 3}
+              </span>
+            )}
+          </div>
+        );
+      },
     },
     {
       accessorKey: "sortOrder",
@@ -606,7 +609,10 @@ export default function AdminTeamPage() {
                   <ImageUploader
                     label="Ảnh đại diện"
                     value={form.image}
-                    onChange={(url) => updateField("image", url)}
+                    onChange={(url) => {
+                      console.log("Image uploaded:", url);
+                      updateField("image", url);
+                    }}
                     folder="loop/team"
                     aspectRatio="square"
                   />

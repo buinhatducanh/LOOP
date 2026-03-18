@@ -23,6 +23,8 @@ import {
 import { ServiceCard } from "@/components/cards/ServiceCard";
 import { ProjectCard } from "@/components/cards/ProjectCard";
 import { HeroCanvas } from "@/components/shared/HeroCanvas";
+import { HeroBanner } from "@/components/shared/HeroBanner";
+import { TopMenuTrigger } from "@/components/shared/TopMenuTrigger";
 
 interface StatsData {
   projects?: string;
@@ -36,6 +38,8 @@ interface HomePageProps {
   projects?: typeof mockProjects;
   testimonials?: typeof mockTestimonials;
   stats?: StatsData;
+  banners?: string[];
+  heroEnabled?: boolean;
 }
 
 const getStats = (t: any, data?: StatsData) => [
@@ -91,6 +95,8 @@ export function HomePage({
   projects = mockProjects,
   testimonials = mockTestimonials,
   stats: statsData,
+  banners = [],
+  heroEnabled = true,
 }: HomePageProps) {
   const router = useRouter();
   const t = useTranslations('HomePage');
@@ -106,15 +112,21 @@ export function HomePage({
       <section
         style={{
           position: "relative",
-          minHeight: "calc(100vh - 68px)",
+          minHeight: "100vh",
           display: "flex",
           alignItems: "center",
           overflow: "hidden",
           background: "#020617",
         }}
       >
+        {/* Top menu trigger - appears when hovering top edge */}
+        <TopMenuTrigger />
+
         {/* Animated canvas background */}
         <HeroCanvas />
+
+        {/* Banner Slider */}
+        <HeroBanner banners={banners} enabled={heroEnabled} />
 
         {/* Gradient overlays */}
         <div
@@ -318,39 +330,6 @@ export function HomePage({
           </div>
         </div>
 
-        {/* Scroll hint */}
-        <div
-          className="animate-bounce-slow"
-          style={{
-            position: "absolute",
-            bottom: "32px",
-            left: "50%",
-            transform: "translateX(-50%)",
-            zIndex: 3,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: "8px",
-          }}
-        >
-          <span
-            style={{
-              color: "#4B5563",
-              fontSize: "12px",
-              letterSpacing: "2px",
-              textTransform: "uppercase",
-            }}
-          >
-            {t('scroll')}
-          </span>
-          <div
-            style={{
-              width: "1px",
-              height: "40px",
-              background: "linear-gradient(to bottom, #4B5563, transparent)",
-            }}
-          />
-        </div>
       </section>
 
       {/* --- STATS --- */}

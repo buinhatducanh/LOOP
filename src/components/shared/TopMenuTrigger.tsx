@@ -1,26 +1,20 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter, usePathname, Link } from "@/i18n/routing";
 import { useTranslations } from "next-intl";
 import { useLocale } from "next-intl";
-import { Link, useRouter, usePathname } from "@/i18n/routing";
-import { Menu, X, Zap, LogIn } from "lucide-react";
+import { Zap, LogIn } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { LanguageSwitcher } from "@/components/shared/LanguageSwitcher";
 
-interface NavbarProps {
-  hideOnHome?: boolean;
-}
-
-export default function Navbar({ hideOnHome = false }: NavbarProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-  const [atTop, setAtTop] = useState(true);
+export function TopMenuTrigger() {
+  const router = useRouter();
+  const pathname = usePathname();
   const locale = useLocale();
   const t = useTranslations("Navigation");
-  const pathname = usePathname();
-  const router = useRouter();
   const { user, isAuthenticated, logout } = useAuth();
+  const [showMenu, setShowMenu] = useState(false);
 
   // Link from next-intl automatically adds locale, so use paths WITHOUT locale
   const navLinks = [
@@ -31,40 +25,30 @@ export default function Navbar({ hideOnHome = false }: NavbarProps) {
     { key: "contact", path: "/contact" },
   ];
 
-  // Check if on home page
-  const isHomePage = pathname === "/" || pathname === "/vi" || pathname === "/en";
-
   useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 20);
-      setAtTop(window.scrollY < 50);
+    const handleMouseMove = (e: MouseEvent) => {
+      // Show menu when mouse is in top 30% of viewport
+      const threshold = window.innerHeight * 0.3;
+      setShowMenu(e.clientY < threshold);
     };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
   }, []);
-
-  useEffect(() => {
-    setIsOpen(false);
-  }, [pathname]);
-
-  // Hide on home page when at top (for hero banner)
-  const shouldHide = hideOnHome && isHomePage && atTop;
 
   return (
     <nav
       style={{
         position: "fixed",
-        top: shouldHide ? "-100px" : "0",
+        top: showMenu ? "0" : "-100px",
         left: 0,
         right: 0,
         zIndex: 9999,
-        background: (scrolled || shouldHide)
-          ? "rgba(17, 24, 39, 0.95)"
-          : "rgba(17, 24, 39, 0.85)",
+        background: "rgba(17, 24, 39, 0.98)",
         backdropFilter: "blur(12px)",
         WebkitBackdropFilter: "blur(12px)",
         borderBottom: "1px solid rgba(255,255,255,0.1)",
-        transition: "all 0.4s ease",
+        transition: "top 0.3s ease",
       }}
     >
       <div
@@ -186,103 +170,16 @@ export default function Navbar({ hideOnHome = false }: NavbarProps) {
               )}
             </div>
 
-            {/* Language Switcher - always visible */}
+            {/* Language Switcher */}
             <LanguageSwitcher />
-
-            {/* Mobile hamburger */}
-            <button
-              className="mobile-only"
-              onClick={() => setIsOpen(!isOpen)}
-              style={{
-                padding: "8px",
-                color: "#9CA3AF",
-                background: "transparent",
-                border: "none",
-                cursor: "pointer",
-                display: "none",
-              }}
-            >
-              {isOpen ? (
-                <X style={{ width: "24px", height: "24px" }} />
-              ) : (
-                <Menu style={{ width: "24px", height: "24px" }} />
-              )}
-            </button>
           </div>
         </div>
       </div>
-
-      {/* Mobile Menu */}
-      {isOpen && (
-        <div
-          style={{
-            background: "rgba(17, 24, 39, 0.98)",
-            borderTop: "1px solid rgba(255,255,255,0.05)",
-            padding: "16px",
-          }}
-          className="mobile-menu"
-        >
-          {navLinks.map((link) => (
-            <Link
-              key={link.path}
-              href={link.path}
-              style={{
-                display: "block",
-                padding: "12px 16px",
-                fontSize: "14px",
-                fontWeight: 500,
-                borderRadius: "8px",
-                color: pathname === link.path ? "#FFFFFF" : "#9CA3AF",
-                background: pathname === link.path ? "rgba(255,255,255,0.1)" : "transparent",
-                textDecoration: "none",
-                marginBottom: "4px",
-              }}
-            >
-              {t(link.key as any)}
-            </Link>
-          ))}
-          <div style={{ borderTop: "1px solid rgba(255,255,255,0.1)", marginTop: "12px", paddingTop: "12px" }}>
-            {!isAuthenticated && (
-              <>
-                <Link
-                  href="/login"
-                  style={{
-                    display: "block",
-                    padding: "12px 16px",
-                    fontSize: "14px",
-                    color: "#9CA3AF",
-                    textDecoration: "none",
-                  }}
-                >
-                  {t("login")}
-                </Link>
-                <Link
-                  href="/register"
-                  style={{
-                    display: "block",
-                    padding: "12px 16px",
-                    fontSize: "14px",
-                    fontWeight: 500,
-                    color: "#FFFFFF",
-                    background: "linear-gradient(to right, #8B5CF6, #06B6D4)",
-                    borderRadius: "8px",
-                    textDecoration: "none",
-                    textAlign: "center",
-                  }}
-                >
-                  {t("register")}
-                </Link>
-              </>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* Responsive CSS */}
       <style>{`
         @media (max-width: 768px) {
           .desktop-nav { display: none !important; }
-          .mobile-only { display: block !important; }
         }
         @media (min-width: 769px) {
           .mobile-menu { display: none !important; }

@@ -40,20 +40,28 @@ export default async function Page() {
           icon: me.expertise?.icon || null,
         }));
 
+        // Use dbMember.image directly (already has the correct value from database)
+        const image = dbMember.image || (mockMember?.image || "");
+        const coverImage = dbMember.coverImage || (mockMember?.coverImage || "");
+
         if (mockMember) {
           return {
             ...mockMember,
             ...dbMember,
-            image: dbMember.image || mockMember.image,
-            coverImage: dbMember.coverImage || mockMember.coverImage,
+            image,
+            coverImage,
             memberExpertise,
             skills: skillsWithLevel,
+            expertise: skillsWithLevel,
           };
         }
         return {
           ...dbMember,
+          image,
+          coverImage,
           memberExpertise,
           skills: skillsWithLevel,
+          expertise: skillsWithLevel,
         };
       });
     } else {

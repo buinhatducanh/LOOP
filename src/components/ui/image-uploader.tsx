@@ -32,6 +32,7 @@ export function ImageUploader({
   // Update preview when value changes (e.g., after upload from parent)
   // Update preview when value changes from parent
   useEffect(() => {
+    console.log("ImageUploader value changed:", value);
     setPreview(value || null);
   }, [value]);
 

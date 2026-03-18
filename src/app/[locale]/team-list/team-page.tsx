@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import Link from "next/link";
+import { useState, useMemo, useEffect } from "react";
+import { Link } from "@/i18n/routing";
 import { useRouter } from "next/navigation";
 import {
   ArrowRight,
@@ -24,7 +24,9 @@ import {
   Megaphone,
   Target,
   Layers,
+  Phone,
 } from "lucide-react";
+import { useLocale } from "next-intl";
 
 interface TeamMemberData {
   id: string;
@@ -118,6 +120,130 @@ const filterCategories = [
   { id: "product", label: "Product", icon: Target },
 ];
 
+function TeamMemberCard({ member, isCEO = false }: { member: TeamMemberData; isCEO?: boolean }) {
+  const router = useRouter();
+  const locale = useLocale();
+
+  // Check if member is CEO
+  const memberIsCEO = isCEO || member.roleLevel === 0 ||
+    member.role.toLowerCase().includes('ceo') ||
+    member.role.toLowerCase().includes('founder') ||
+    member.role.toLowerCase().includes('giám đốc') ||
+    member.role.toLowerCase().includes('chủ tịch');
+
+  // Helper to show "đang cập nhật" if field is missing
+  const showValue = (value: string | null | undefined, maxLength = 50) => {
+    if (!value || value.trim() === "") return "đang cập nhật";
+    return value.length > maxLength ? value.substring(0, maxLength) + "..." : value;
+  };
+
+  return (
+    <div
+      onClick={() => router.push(`/${locale}/team/${member.slug}`)}
+      className="cursor-pointer group"
+    >
+      <div
+        className={`relative overflow-hidden rounded-xl transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl ${
+          memberIsCEO
+            ? "ring-2 ring-amber-500 shadow-lg shadow-amber-500/20"
+            : "ring-1 ring-slate-700 hover:ring-indigo-500/50"
+        }`}
+        style={{
+          aspectRatio: "3/4",
+        }}
+      >
+        {/* Avatar Image - Use member.image (avatar), not coverImage */}
+        <div className="absolute inset-0">
+          {member.image ? (
+            <img
+              src={member.image}
+              alt={member.name}
+              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+            />
+          ) : (
+            <div className="w-full h-full bg-slate-800 flex items-center justify-center">
+              <Users size={48} className="text-slate-600" />
+            </div>
+          )}
+        </div>
+
+        {/* Gradient Overlay - Dark at bottom for text readability */}
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/50 to-transparent" />
+
+        {/* Avatar Frame/Border Effect */}
+        <div className={`absolute inset-0 ring-1 ${memberIsCEO ? 'ring-amber-500/30' : 'ring-white/5'} rounded-xl`} />
+
+        {/* CEO Badge */}
+        {memberIsCEO && (
+          <div className="absolute top-3 right-3 z-10">
+            <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-amber-500 text-white text-[10px] font-bold shadow-lg">
+              <Crown size={10} />
+            </div>
+          </div>
+        )}
+
+        {/* Name & Role at Bottom */}
+        <div className="absolute bottom-0 left-0 right-0 p-4">
+          <div className={`font-bold text-white text-base leading-tight ${
+            memberIsCEO ? 'text-amber-400' : ''
+          }`}>
+            {showValue(member.name, 20)}
+          </div>
+          <div className="text-slate-400 text-xs mt-1 truncate">
+            {showValue(member.role)}
+          </div>
+
+          {/* CEO: Show additional info - inline below name */}
+          {memberIsCEO && (
+            <div className="mt-2 space-y-1">
+              {/* Short Bio */}
+              <div className="text-slate-300 text-[10px] line-clamp-2">
+                {showValue(member.shortBio || member.bio, 60)}
+              </div>
+              {/* Skills/Expertise - show up to 2 */}
+              {(member.skills?.length > 0 || member.expertise?.length > 0) && (
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {(member.skills || member.expertise || []).slice(0, 2).map((skill: any, idx: number) => (
+                    <span key={idx} className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[9px]">
+                      {typeof skill === 'string' ? skill : (skill.name || skill.nameVi || skill)}
+                    </span>
+                  ))}
+                </div>
+              )}
+              {/* Quote if available */}
+              {member.quote && (
+                <div className="text-slate-400 text-[9px] italic mt-1 line-clamp-1">
+                  "{showValue(member.quote, 40)}"
+                </div>
+              )}
+
+              {/* Contact icons for CEO */}
+              {(member.email || member.linkedin || member.phone) && (
+                <div className="flex gap-1 mt-1">
+                  {member.email && (
+                    <a href={`mailto:${member.email}`} onClick={(e) => e.stopPropagation()} className="p-1 rounded bg-amber-500/20 text-amber-400 hover:bg-amber-500/30">
+                      <Mail size={10} />
+                    </a>
+                  )}
+                  {member.linkedin && (
+                    <a href={member.linkedin} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="p-1 rounded bg-amber-500/20 text-amber-400 hover:bg-amber-500/30">
+                      <Linkedin size={10} />
+                    </a>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Hover Effect Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-indigo-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+      </div>
+    </div>
+  );
+}
+
+// Legacy card components - kept for reference
 function LeaderCardGrid({ member }: { member: TeamMemberData }) {
   const router = useRouter();
   return (
@@ -266,9 +392,10 @@ function MemberCardGrid({ member }: { member: TeamMemberData }) {
 
 function MemberCardList({ member }: { member: TeamMemberData }) {
   const router = useRouter();
+  const locale = useLocale();
   return (
     <div>
-      <div onClick={() => router.push(`/team/${member.slug}`)} className="cursor-pointer">
+      <div onClick={() => router.push(`/${locale}/team/${member.slug}`)} className="cursor-pointer">
         <div className="flex gap-5 p-4 rounded-xl border border-slate-800 bg-slate-900/50 hover:bg-slate-900 hover:border-indigo-500/40 transition-all duration-300">
           <div className="relative w-20 h-20 flex-shrink-0 rounded-xl overflow-hidden">
             {member.image ? (
@@ -312,12 +439,19 @@ export function TeamPage({ team, expertises = [], settings }: TeamPageProps) {
   const [activeFilter, setActiveFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 20; // 4 columns x 5 rows
+  const locale = useLocale();
 
-  const leaders = team.filter((m) => m.roleLevel === 0);
-  const nonLeaders = team.filter((m) => m.roleLevel > 0);
+  // Check if member is CEO/Founder
+  const isCEO = (member: TeamMemberData) => {
+    const roleLower = member.role.toLowerCase();
+    return member.roleLevel === 0 || roleLower.includes('ceo') || roleLower.includes('founder') || roleLower.includes('giám đốc') || roleLower.includes('chủ tịch');
+  };
 
+  // Gộp tất cả và sắp xếp: CEO lên đầu
   const filteredMembers = useMemo(() => {
-    let result = nonLeaders;
+    let result = [...team];
     if (activeFilter !== "all") {
       result = result.filter((m) => m.roleCategory === activeFilter);
     }
@@ -326,12 +460,29 @@ export function TeamPage({ team, expertises = [], settings }: TeamPageProps) {
       result = result.filter((m) =>
         m.name.toLowerCase().includes(query) ||
         m.role.toLowerCase().includes(query) ||
-        m.expertise.some((e) => e.toLowerCase().includes(query)) ||
-        m.skills.some((s) => s.toLowerCase().includes(query))
+        (m.expertise && m.expertise.some((e) => e.toLowerCase().includes(query))) ||
+        (m.skills && m.skills.some((s) => s.toLowerCase().includes(query)))
       );
     }
-    return result;
-  }, [nonLeaders, activeFilter, searchQuery]);
+    // Sắp xếp: CEO lên đầu
+    return result.sort((a, b) => {
+      const aIsCEO = isCEO(a) ? 0 : 1;
+      const bIsCEO = isCEO(b) ? 0 : 1;
+      return aIsCEO - bIsCEO;
+    });
+  }, [team, activeFilter, searchQuery]);
+
+  // Pagination
+  const totalPages = Math.ceil(filteredMembers.length / ITEMS_PER_PAGE);
+  const paginatedMembers = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredMembers.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredMembers, currentPage]);
+
+  // Reset to page 1 when filter/search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeFilter, searchQuery]);
 
   return (
     <div className="min-h-screen bg-slate-950 text-white">
@@ -399,39 +550,6 @@ export function TeamPage({ team, expertises = [], settings }: TeamPageProps) {
       </section>
 
       <section className="max-w-6xl mx-auto px-4 sm:px-6 py-12">
-        {leaders.length > 0 && viewMode === "grid" && (
-          <div className="mb-16">
-            <FadeIn>
-              <div className="flex items-center gap-4 mb-8 p-6 rounded-2xl bg-gradient-to-r from-amber-500/10 via-orange-500/5 to-transparent border border-amber-500/20">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/40">
-                  <Crown size={28} className="text-white" />
-                </div>
-                <div>
-                  <h2 className="text-3xl font-bold bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent">Đội Ngũ Lãnh Đạo</h2>
-                  <p className="text-slate-400 text-sm">Những người dẫn dắt tầm nhìn và định hướng phát triển LOOP</p>
-                </div>
-              </div>
-            </FadeIn>
-            <StaggerContainer className="grid grid-cols-1 gap-6">
-              {leaders.map((member) => <LeaderCardGrid key={member.id} member={member} />)}
-            </StaggerContainer>
-          </div>
-        )}
-        {leaders.length > 0 && viewMode === "list" && (
-          <div className="mb-12">
-            <FadeIn>
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-500 to-red-500 flex items-center justify-center">
-                  <Crown size={18} className="text-white" />
-                </div>
-                <h2 className="text-xl font-bold">Leadership</h2>
-              </div>
-            </FadeIn>
-            <StaggerContainer className="space-y-3">
-              {leaders.map((member) => <LeaderCardList key={member.id} member={member} />)}
-            </StaggerContainer>
-          </div>
-        )}
         <div>
           <FadeIn>
             <div className="flex items-center justify-between mb-8">
@@ -454,15 +572,88 @@ export function TeamPage({ team, expertises = [], settings }: TeamPageProps) {
               <button onClick={() => { setSearchQuery(""); setActiveFilter("all"); }} className="mt-4 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-500 transition-colors">Xóa bộ lọc</button>
             </div>
           )}
+          {/* All Members - 4 columns grid with pagination */}
           {viewMode === "grid" && filteredMembers.length > 0 && (
-            <StaggerContainer className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {filteredMembers.map((member) => <MemberCardGrid key={member.id} member={member} />)}
-            </StaggerContainer>
+            <>
+              <StaggerContainer className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {paginatedMembers.map((member) => <TeamMemberCard key={member.id} member={member} />)}
+              </StaggerContainer>
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex justify-center items-center gap-2 mt-12">
+                  <button
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="px-4 py-2 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    ← Trước
+                  </button>
+                  <div className="flex gap-1">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`w-10 h-10 rounded-lg transition-colors ${
+                          currentPage === page
+                            ? "bg-indigo-600 text-white"
+                            : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    className="px-4 py-2 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    Sau →
+                  </button>
+                </div>
+              )}
+            </>
           )}
           {viewMode === "list" && filteredMembers.length > 0 && (
-            <StaggerContainer className="grid grid-cols-1 gap-3">
-              {filteredMembers.map((member) => <MemberCardList key={member.id} member={member} />)}
-            </StaggerContainer>
+            <>
+              <StaggerContainer className="grid grid-cols-1 gap-3">
+                {paginatedMembers.map((member) => <MemberCardList key={member.id} member={member} />)}
+              </StaggerContainer>
+              {/* Pagination for list view */}
+              {totalPages > 1 && (
+                <div className="flex justify-center items-center gap-2 mt-12">
+                  <button
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="px-4 py-2 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    ← Trước
+                  </button>
+                  <div className="flex gap-1">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`w-10 h-10 rounded-lg transition-colors ${
+                          currentPage === page
+                            ? "bg-indigo-600 text-white"
+                            : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    className="px-4 py-2 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    Sau →
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       </section>

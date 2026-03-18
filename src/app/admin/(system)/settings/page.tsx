@@ -75,9 +75,22 @@ const settingSchema: Record<string, SettingGroup> = {
       { key: "company_phone", label: "Số điện thoại công ty", type: "text" },
     ],
   },
+  hero: {
+    title: "Banner Slider (Hero)",
+    icon: Globe,
+    fields: [
+      { key: "hero_banner_1", label: "Banner 1 (URL ảnh)", type: "text" },
+      { key: "hero_banner_2", label: "Banner 2 (URL ảnh)", type: "text" },
+      { key: "hero_banner_3", label: "Banner 3 (URL ảnh)", type: "text" },
+      { key: "hero_banner_4", label: "Banner 4 (URL ảnh)", type: "text" },
+      { key: "hero_banner_5", label: "Banner 5 (URL ảnh)", type: "text" },
+      { key: "hero_enable", label: "Bật/Tắt Banner Slider (1=bật, 0=tắt)", type: "text" },
+    ],
+  },
 };
 
-const groupKeys = Object.keys(settingSchema);
+const groupKeys = Object.keys(settingSchema).filter(k => k !== 'hero');
+const heroGroupKey = "hero";
 
 export default function AdminSettingsPage() {
   const [loading, setLoading] = useState(true);

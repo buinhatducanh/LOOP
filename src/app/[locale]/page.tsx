@@ -26,6 +26,18 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 export default async function Page() {
   let services, projects, testimonials;
   const siteSettings = await getSiteSettings();
+
+  // Get banner settings
+  const banners = [
+    siteSettings.hero_banner_1,
+    siteSettings.hero_banner_2,
+    siteSettings.hero_banner_3,
+    siteSettings.hero_banner_4,
+    siteSettings.hero_banner_5,
+  ].filter(Boolean);
+
+  const heroEnabled = siteSettings.hero_enable !== "0";
+
   try {
     const [dbServices, dbProjects, dbTestimonials] = await Promise.all([
       getServices(), getProjects(), getTestimonials(),
@@ -102,6 +114,8 @@ export default async function Page() {
           teamSize: siteSettings.stat_team_size,
           years: siteSettings.stat_years,
         } : undefined}
+        banners={banners}
+        heroEnabled={heroEnabled}
       />
     </>
   );

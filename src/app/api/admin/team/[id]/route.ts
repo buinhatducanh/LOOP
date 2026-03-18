@@ -41,7 +41,33 @@ export async function PUT(
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    const member = await prisma.teamMember.update({ where: { id }, data });
+    // Extract expertise array if present (it's a relation, not a direct field)
+    const { expertise, ...memberData } = data;
+
+    // Update member data
+    const member = await prisma.teamMember.update({
+      where: { id },
+      data: memberData,
+    });
+
+    // Update expertise relations if provided
+    if (expertise && Array.isArray(expertise)) {
+      // Delete existing expertise relations
+      await prisma.memberExpertise.deleteMany({
+        where: { memberId: id },
+      });
+
+      // Create new expertise relations
+      if (expertise.length > 0) {
+        await prisma.memberExpertise.createMany({
+          data: expertise.map((expId: string) => ({
+            memberId: id,
+            expertiseId: expId,
+            level: 3, // Default level
+          })),
+        });
+      }
+    }
 
     await createAuditLog({
       userId: session.userId,
@@ -49,7 +75,7 @@ export async function PUT(
       resource: "team",
       resourceId: id,
       oldValues: existing as unknown as Record<string, unknown>,
-      newValues: data,
+      newValues: memberData,
     });
 
     return NextResponse.json({ data: member });

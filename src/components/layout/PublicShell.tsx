@@ -1,9 +1,11 @@
 "use client";
 
+import { usePathname } from "@/i18n/routing";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import { type FooterData } from "./Footer";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { useEffect, useState } from "react";
 
 interface PublicShellProps {
   children: React.ReactNode;
@@ -11,6 +13,13 @@ interface PublicShellProps {
 }
 
 export function PublicShell({ children, footerData }: PublicShellProps) {
+  const pathname = usePathname();
+  const [isHomePage, setIsHomePage] = useState(false);
+
+  useEffect(() => {
+    setIsHomePage(pathname === "/" || pathname === "/vi" || pathname === "/en");
+  }, [pathname]);
+
   return (
     <AuthProvider>
       <div
@@ -21,8 +30,8 @@ export function PublicShell({ children, footerData }: PublicShellProps) {
           flexDirection: "column",
         }}
       >
-        <Navbar />
-        <main style={{ flex: 1, paddingTop: "68px" }}>{children}</main>
+        <Navbar hideOnHome={isHomePage} />
+        <main style={{ flex: 1, paddingTop: isHomePage ? "0px" : "68px" }}>{children}</main>
         <Footer data={footerData} />
       </div>
     </AuthProvider>
