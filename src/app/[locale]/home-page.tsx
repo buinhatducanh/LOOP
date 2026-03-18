@@ -1,7 +1,7 @@
 "use client";
 
-import { useRef, useMemo } from "react";
-import { useRouter } from "@/i18n/routing";
+import { useRef, useMemo, useState } from "react";
+import { useRouter, Link } from "@/i18n/routing";
 import { useTranslations } from "next-intl";
 import {
   ArrowRight,
@@ -14,12 +14,19 @@ import {
   Globe,
   ShieldCheck,
   Play,
+  Crown,
+  Linkedin,
+  Twitter,
+  Github,
+  Mail,
+  ExternalLink,
 } from "lucide-react";
 import {
   services as mockServices,
   projects as mockProjects,
   testimonials as mockTestimonials,
 } from "@/data/mockData";
+import { mockTeamMembers } from "@/data/teamMockData";
 import { ServiceCard } from "@/components/cards/ServiceCard";
 import { ProjectCard } from "@/components/cards/ProjectCard";
 import { HeroCanvas } from "@/components/shared/HeroCanvas";
@@ -33,10 +40,35 @@ interface StatsData {
   years?: string;
 }
 
+interface TeamMemberData {
+  id: string;
+  slug: string;
+  name: string;
+  role: string;
+  bio: string;
+  shortBio: string;
+  image: string;
+  expertise: string[];
+  achievements: string[];
+  linkedin: string | null;
+  twitter: string | null;
+  github: string | null;
+  roleLevel: number;
+  roleCategory: string | null;
+  coverImage: string | null;
+  quote: string | null;
+  email: string | null;
+  phone: string | null;
+  skills: string[];
+  experience: string | null;
+  isFeatured: boolean;
+}
+
 interface HomePageProps {
   services?: typeof mockServices;
   projects?: typeof mockProjects;
   testimonials?: typeof mockTestimonials;
+  team?: TeamMemberData[];
   stats?: StatsData;
   banners?: string[];
   heroEnabled?: boolean;
@@ -94,10 +126,32 @@ export function HomePage({
   services = mockServices,
   projects = mockProjects,
   testimonials = mockTestimonials,
+  team = mockTeamMembers,
   stats: statsData,
   banners = [],
   heroEnabled = true,
 }: HomePageProps) {
+  // Get featured members (CEO + featured + first few)
+  const featuredTeam = useMemo(() => {
+    const sorted = [...team].sort((a, b) => {
+      // CEO first (roleLevel 0), then featured, then by order
+      if (a.roleLevel === 0) return -1;
+      if (b.roleLevel === 0) return 1;
+      if (a.isFeatured && !b.isFeatured) return -1;
+      if (!a.isFeatured && b.isFeatured) return 1;
+      return 0;
+    });
+    return sorted.slice(0, 4);
+  }, [team]);
+
+  // Check if member is CEO
+  const isCEO = (member: TeamMemberData) => {
+    return member.roleLevel === 0 ||
+      member.role.toLowerCase().includes('ceo') ||
+      member.role.toLowerCase().includes('founder') ||
+      member.role.toLowerCase().includes('giám đốc') ||
+      member.role.toLowerCase().includes('chủ tịch');
+  };
   const router = useRouter();
   const t = useTranslations('HomePage');
   const tStats = useTranslations('Stats');
@@ -812,6 +866,157 @@ export function HomePage({
               </FadeInSection>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* --- TEAM SECTION --- */}
+      <section style={{ padding: "120px 24px", position: "relative", overflow: "hidden", background: "#020617" }}>
+        {/* Background Effects */}
+        <div style={{ position: "absolute", inset: 0, overflow: "hidden" }}>
+          <div style={{ position: "absolute", top: "-200px", left: "10%", width: "500px", height: "500px", borderRadius: "100%", background: "rgba(99,102,241,0.08)", filter: "blur(80px)" }} />
+          <div style={{ position: "absolute", top: "-100px", right: "5%", width: "400px", height: "400px", borderRadius: "100%", background: "rgba(236,72,153,0.06)", filter: "blur(60px)" }} />
+        </div>
+
+        <div style={{ maxWidth: "1200px", margin: "0 auto", position: "relative" }}>
+          <FadeInSection>
+            <div style={{ textAlign: "center", marginBottom: "64px" }}>
+              <div style={{ display: "inline-flex", alignItems: "center", gap: "8px", background: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.3)", borderRadius: "40px", padding: "8px 20px", marginBottom: "24px" }}>
+                <Users size={16} style={{ color: "#6366F1" }} />
+                <span style={{ color: "#6366F1", fontSize: "13px", fontWeight: 600 }}>{t('teamSub') || "Đội ngũ của chúng tôi"}</span>
+              </div>
+              <h2 style={{ fontSize: "clamp(32px, 5vw, 48px)", fontWeight: 800, letterSpacing: "-1px", marginBottom: "16px", color: "#FFFFFF" }}>
+                {t('teamTitle') || "Gặp gỡ "}<span style={{ background: "linear-gradient(135deg, #6366F1, #EC4899)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>{t('teamHighlight') || "đội ngũ"}</span> {t('teamTitle2') || "chuyên gia"}
+              </h2>
+              <p style={{ color: "#94A3B8", fontSize: "18px", maxWidth: "600px", margin: "0 auto" }}>
+                {t('teamDesc') || "Những con người tài năng đằng sau mỗi dự án thành công"}
+              </p>
+            </div>
+          </FadeInSection>
+
+          {/* Team Cards Grid */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "24px", marginBottom: "48px" }}>
+            {featuredTeam.map((member, index) => {
+              const memberIsCEO = isCEO(member);
+              return (
+                <FadeInSection key={member.id} delay={index * 0.1}>
+                  <div
+                    onClick={() => router.push(`/team/${member.slug}`)}
+                    style={{ cursor: "pointer", position: "relative", borderRadius: "16px", overflow: "hidden", transition: "transform 0.3s, box-shadow 0.3s" }}
+                    onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-8px)"; e.currentTarget.style.boxShadow = memberIsCEO ? "0 20px 40px rgba(245,158,11,0.2)" : "0 20px 40px rgba(99,102,241,0.2)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}
+                  >
+                    {/* Card Background */}
+                    <div style={{
+                      background: "linear-gradient(180deg, #1E293B 0%, #0F172A 100%)",
+                      border: `1px solid ${memberIsCEO ? "rgba(245,158,11,0.3)" : "rgba(148,163,184,0.1)"}`,
+                      borderRadius: "16px",
+                      overflow: "hidden",
+                    }}>
+                      {/* Image */}
+                      <div style={{ position: "relative", aspectRatio: "3/4", overflow: "hidden" }}>
+                        {member.image ? (
+                          <img src={member.image} alt={member.name} style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.5s" }} />
+                        ) : (
+                          <div style={{ width: "100%", height: "100%", background: "#1E293B", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            <Users size={48} style={{ color: "#475569" }} />
+                          </div>
+                        )}
+                        {/* Gradient Overlay */}
+                        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, transparent 40%, rgba(15,23,42,0.9) 100%)" }} />
+
+                        {/* CEO Badge */}
+                        {memberIsCEO && (
+                          <div style={{ position: "absolute", top: "12px", right: "12px", display: "flex", alignItems: "center", gap: "4px", padding: "4px 10px", borderRadius: "20px", background: "linear-gradient(135deg, #F59E0B, #EF4444)", color: "white", fontSize: "10px", fontWeight: 700 }}>
+                            <Crown size={10} /> CEO
+                          </div>
+                        )}
+
+                        {/* Featured Badge */}
+                        {member.isFeatured && !memberIsCEO && (
+                          <div style={{ position: "absolute", top: "12px", right: "12px", display: "flex", alignItems: "center", padding: "4px 10px", borderRadius: "20px", background: "rgba(99,102,241,0.9)", color: "white", fontSize: "10px", fontWeight: 600 }}>
+                            <Star size={10} style={{ marginRight: "4px" }} /> Featured
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Info */}
+                      <div style={{ padding: "20px", position: "relative" }}>
+                        <h3 style={{ fontSize: "18px", fontWeight: 700, color: memberIsCEO ? "#FBBF24" : "#FFFFFF", marginBottom: "4px" }}>{member.name}</h3>
+                        <p style={{ color: "#6366F1", fontSize: "13px", fontWeight: 500, marginBottom: "12px" }}>{member.role}</p>
+                        <p style={{ color: "#94A3B8", fontSize: "12px", lineHeight: 1.5, marginBottom: "16px", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                          {member.shortBio || member.bio}
+                        </p>
+
+                        {/* Skills */}
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "16px" }}>
+                          {(member.skills || member.expertise || []).slice(0, 3).map((skill: any, idx: number) => (
+                            <span key={idx} style={{ padding: "4px 10px", borderRadius: "6px", background: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.2)", color: "#A5B4FC", fontSize: "11px" }}>
+                              {typeof skill === 'string' ? skill : (skill.name || skill.nameVi || skill)}
+                            </span>
+                          ))}
+                        </div>
+
+                        {/* Social Links */}
+                        <div style={{ display: "flex", gap: "8px", paddingTop: "16px", borderTop: "1px solid rgba(148,163,184,0.1)" }}>
+                          {member.linkedin && (
+                            <a href={member.linkedin} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} style={{ width: "32px", height: "32px", borderRadius: "8px", background: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.2)", display: "flex", alignItems: "center", justifyContent: "center", color: "#94A3B8", transition: "all 0.2s" }}>
+                              <Linkedin size={14} />
+                            </a>
+                          )}
+                          {member.twitter && (
+                            <a href={member.twitter} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} style={{ width: "32px", height: "32px", borderRadius: "8px", background: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.2)", display: "flex", alignItems: "center", justifyContent: "center", color: "#94A3B8", transition: "all 0.2s" }}>
+                              <Twitter size={14} />
+                            </a>
+                          )}
+                          {member.github && (
+                            <a href={member.github} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} style={{ width: "32px", height: "32px", borderRadius: "8px", background: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.2)", display: "flex", alignItems: "center", justifyContent: "center", color: "#94A3B8", transition: "all 0.2s" }}>
+                              <Github size={14} />
+                            </a>
+                          )}
+                          {member.email && (
+                            <a href={`mailto:${member.email}`} onClick={(e) => e.stopPropagation()} style={{ width: "32px", height: "32px", borderRadius: "8px", background: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.2)", display: "flex", alignItems: "center", justifyContent: "center", color: "#94A3B8", transition: "all 0.2s" }}>
+                              <Mail size={14} />
+                            </a>
+                          )}
+                          <div style={{ flex: 1 }} />
+                          <div style={{ display: "flex", alignItems: "center", gap: "4px", color: "#6366F1", fontSize: "12px", fontWeight: 500 }}>
+                            Xem profile <ExternalLink size={12} />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </FadeInSection>
+              );
+            })}
+          </div>
+
+          {/* View All Team Link */}
+          <FadeInSection delay={0.4}>
+            <div style={{ textAlign: "center" }}>
+              <button
+                onClick={() => router.push("/team-list")}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  padding: "14px 32px",
+                  borderRadius: "12px",
+                  background: "transparent",
+                  border: "1px solid #1F2937",
+                  color: "#94A3B8",
+                  fontSize: "15px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  transition: "all 0.2s",
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#6366F1"; e.currentTarget.style.color = "#FFFFFF"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#1F2937"; e.currentTarget.style.color = "#94A3B8"; }}
+              >
+                {t('teamViewAll') || "Xem tất cả thành viên"} <ArrowRight size={16} />
+              </button>
+            </div>
+          </FadeInSection>
         </div>
       </section>
 

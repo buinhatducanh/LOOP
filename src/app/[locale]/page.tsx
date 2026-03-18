@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { getServices, getProjects, getTestimonials, getSiteSettings } from "@/lib/db/queries";
-import { services as mockServices, projects as mockProjects, testimonials as mockTestimonials } from "@/data/mockData";
+import { getServices, getProjects, getTestimonials, getSiteSettings, getTeamMembers } from "@/lib/db/queries";
+import { services as mockServices, projects as mockProjects, testimonials as mockTestimonials, mockTeamMembers } from "@/data/mockData";
 import JsonLd from "@/components/seo/JsonLd";
 import { HomePage } from "./home-page";
 
@@ -24,7 +24,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 }
 
 export default async function Page() {
-  let services, projects, testimonials;
+  let services, projects, testimonials, team;
   const siteSettings = await getSiteSettings();
 
   // Get banner settings
@@ -39,8 +39,8 @@ export default async function Page() {
   const heroEnabled = siteSettings.hero_enable !== "0";
 
   try {
-    const [dbServices, dbProjects, dbTestimonials] = await Promise.all([
-      getServices(), getProjects(), getTestimonials(),
+    const [dbServices, dbProjects, dbTestimonials, dbTeam] = await Promise.all([
+      getServices(), getProjects(), getTestimonials(), getTeamMembers(),
     ]);
     services = dbServices.length > 0 ? dbServices.map((s) => ({
       id: s.slug, icon: s.icon, title: s.title, shortDescription: s.shortDescription,
@@ -57,10 +57,49 @@ export default async function Page() {
       id: i + 1, name: t.name, role: t.role, company: t.company,
       avatar: t.avatar, rating: t.rating, text: t.text,
     })) : mockTestimonials;
+
+    // Transform team members for landing page
+    if (dbTeam.length > 0) {
+      team = dbTeam.map((dbMember: any) => {
+        const mockMember = mockTeamMembers.find(m => m.slug === dbMember.slug);
+        const image = dbMember.image || (mockMember?.image || "");
+        const coverImage = dbMember.coverImage || (mockMember?.coverImage || "");
+
+        if (mockMember) {
+          return {
+            ...mockMember,
+            ...dbMember,
+            image,
+            coverImage,
+          };
+        }
+        return {
+          ...dbMember,
+          image,
+          coverImage,
+          expertise: dbMember.expertise || [],
+          achievements: dbMember.achievements || [],
+          skills: dbMember.skills || [],
+          shortBio: dbMember.shortBio || dbMember.bio?.substring(0, 100) || "",
+          linkedin: dbMember.linkedin || null,
+          twitter: dbMember.twitter || null,
+          github: dbMember.github || null,
+          email: dbMember.email || null,
+          phone: dbMember.phone || null,
+          quote: dbMember.quote || null,
+          roleLevel: dbMember.roleLevel || 4,
+          roleCategory: dbMember.roleCategory || null,
+          isFeatured: dbMember.isFeatured || false,
+        };
+      });
+    } else {
+      team = mockTeamMembers;
+    }
   } catch {
     services = mockServices;
     projects = mockProjects;
     testimonials = mockTestimonials;
+    team = mockTeamMembers;
   }
 
   const localBusinessSchema = {
@@ -108,6 +147,7 @@ export default async function Page() {
         services={services}
         projects={projects}
         testimonials={testimonials}
+        team={team}
         stats={siteSettings.stat_projects ? {
           projects: siteSettings.stat_projects,
           satisfaction: siteSettings.stat_satisfaction,

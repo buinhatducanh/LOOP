@@ -38,6 +38,7 @@ export async function GET(req: NextRequest) {
       prisma.teamMember.count({ where }),
     ]);
 
+    console.log("Team members returned:", JSON.stringify(members.map(m => ({ id: m.id, name: m.name, image: m.image }))));
     return NextResponse.json({
       data: members,
       pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },

@@ -137,6 +137,7 @@ export default function AdminTeamPage() {
   const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
   const [form, setForm] = useState<FormData>(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [expertises, setExpertises] = useState<{id: string; name: string; nameVi: string; category: string; icon: string | null}[]>([]);
 
   // Fetch expertises when modal opens
@@ -178,6 +179,7 @@ export default function AdminTeamPage() {
 
   const openEdit = (member: TeamMember) => {
     // Use member data directly from table - no extra fetch needed
+    console.log("openEdit - member image:", member.image);
     setEditingMember(member);
     setForm({
       name: member.name || "",
@@ -244,12 +246,31 @@ export default function AdminTeamPage() {
     }
   };
 
+  // Helper to wait for upload to complete
+  const waitForUpload = async (): Promise<void> => {
+    if (!isUploadingImage) return;
+    return new Promise((resolve) => {
+      const check = setInterval(() => {
+        if (!isUploadingImage) {
+          clearInterval(check);
+          resolve();
+        }
+      }, 500);
+    });
+  };
+
   const handleSubmit = async () => {
     if (!form.name || !form.role || !form.slug) {
       alert("Vui lòng điền tên, vai trò và slug");
       return;
     }
-    setSaving(true);
+    // Auto-wait for upload if in progress
+    if (isUploadingImage) {
+      setSaving(true);
+      await waitForUpload();
+    } else {
+      setSaving(true);
+    }
     try {
       const payload = {
         name: form.name,
@@ -257,7 +278,7 @@ export default function AdminTeamPage() {
         role: form.role,
         bio: form.bio,
         shortBio: form.shortBio,
-        image: form.image,
+        image: form.image || "",
         expertise: form.expertise
           .split(",")
           .map((s) => s.trim())
@@ -325,13 +346,29 @@ export default function AdminTeamPage() {
 
   const columns: ColumnDef<TeamMember, unknown>[] = [
     {
+      accessorKey: "image",
+      header: "Ảnh",
+      cell: ({ row }) => (
+        <div className="h-10 w-10 rounded-full overflow-hidden bg-slate-800">
+          {row.original.image ? (
+            <img
+              src={row.original.image}
+              alt={row.original.name}
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-purple-500 to-pink-600 text-sm font-bold text-white">
+              {row.original.name.charAt(0)}
+            </div>
+          )}
+        </div>
+      ),
+    },
+    {
       accessorKey: "name",
       header: "Tên",
       cell: ({ row }) => (
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-pink-600 text-sm font-bold text-white">
-            {row.original.name.charAt(0)}
-          </div>
           <div>
             <div className="flex items-center gap-1.5">
               <p className="font-medium text-white">{row.original.name}</p>
@@ -613,6 +650,7 @@ export default function AdminTeamPage() {
                       console.log("Image uploaded:", url);
                       updateField("image", url);
                     }}
+                    onUploadingChange={setIsUploadingImage}
                     folder="loop/team"
                     aspectRatio="square"
                   />

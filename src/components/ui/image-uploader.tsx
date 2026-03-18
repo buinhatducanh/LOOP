@@ -12,6 +12,7 @@ interface ImageUploaderProps {
   placeholder?: string;
   aspectRatio?: "square" | "video" | "portrait" | "landscape";
   maxSize?: number; // in MB
+  onUploadingChange?: (uploading: boolean) => void;
 }
 
 export function ImageUploader({
@@ -22,6 +23,7 @@ export function ImageUploader({
   placeholder = "Drop image here or click to upload",
   aspectRatio = "square",
   maxSize = 10,
+  onUploadingChange,
 }: ImageUploaderProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -91,6 +93,7 @@ export function ImageUploader({
 
     setError(null);
     setIsUploading(true);
+    onUploadingChange?.(true);
 
     // Create preview
     const reader = new FileReader();
@@ -127,6 +130,7 @@ export function ImageUploader({
       setPreview(null);
     } finally {
       setIsUploading(false);
+      onUploadingChange?.(false);
     }
   };
 
@@ -171,6 +175,7 @@ export function ImageUploader({
               fill
               sizes="100vw"
               className="object-cover"
+              unoptimized
             />
             <button
               type="button"

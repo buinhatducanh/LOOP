@@ -215,11 +215,20 @@ export function MemberPage({ member, projects = [], otherMembers }: MemberPagePr
       <section className="relative h-[50vh] lg:h-[60vh] overflow-hidden">
         {/* Cover Image */}
         <div className="absolute inset-0">
-          <img
-            src={member.coverImage || "https://images.unsplash.com/photo-1497366216548-37526070297c?fit=crop&w=1920&h=800"}
-            alt={member.name}
-            className="w-full h-full object-cover"
-          />
+          {member.coverImage ? (
+            <img
+              src={member.coverImage}
+              alt={member.name}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center">
+              <div className="text-center">
+                <Users size={64} className="text-slate-700 mx-auto mb-2" />
+                <p className="text-slate-600 text-sm">(đang cập nhật ảnh bìa)</p>
+              </div>
+            </div>
+          )}
           <div className="absolute inset-0 bg-gradient-to-b from-slate-950/30 via-slate-950/60 to-slate-950" />
         </div>
 
@@ -249,7 +258,30 @@ export function MemberPage({ member, projects = [], otherMembers }: MemberPagePr
 
         {/* Member Info Overlay */}
         <div className="absolute bottom-0 left-0 right-0 p-6 lg:p-12">
-          <div className="max-w-6xl mx-auto">
+          <div className="max-w-6xl mx-auto flex items-end gap-6">
+            {/* Avatar - Hiển thị ảnh đại diện bên dưới bên trái ảnh bìa */}
+            <div className="relative flex-shrink-0 animate-fade-in">
+              <div className="w-24 h-24 lg:w-32 lg:h-32 rounded-full overflow-hidden border-4 border-slate-900 shadow-2xl">
+                {member.image ? (
+                  <img
+                    src={member.image}
+                    alt={member.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-slate-800 flex items-center justify-center">
+                    <div className="text-center">
+                      <Users size={40} className="text-slate-600 mx-auto" />
+                      <p className="text-slate-500 text-[10px]">(đang cập nhật)</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+              {/* Ring effect */}
+              <div className={`absolute -inset-1 rounded-full ${member.roleLevel === 0 ? 'ring-2 ring-amber-500' : 'ring-2 ring-indigo-500'} opacity-50 -z-10`} />
+            </div>
+
+            <div className="flex-1">
             <FadeIn>
               {/* Role Badge */}
               <div className="flex items-center gap-3 mb-4">
@@ -284,18 +316,7 @@ export function MemberPage({ member, projects = [], otherMembers }: MemberPagePr
                 {member.email && <SocialBtn href={`mailto:${member.email}`} icon={Mail} label={member.email} />}
               </div>
             </FadeIn>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Stats Section ── */}
-      <section className="py-12 border-y border-slate-800/50 bg-slate-900/30">
-        <div className="max-w-4xl mx-auto px-6">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
-            <StatItem value="10+" label="Năm kinh nghiệm" delay={0} />
-            <StatItem value={`${memberProjects.length}`} label="Dự án hoàn thành" delay={0.1} />
-            <StatItem value="50+" label="Khách hàng" delay={0.2} />
-            <StatItem value="100%" label="Sự hài lòng" delay={0.3} />
+            </div>
           </div>
         </div>
       </section>
