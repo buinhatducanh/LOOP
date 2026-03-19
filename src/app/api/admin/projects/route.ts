@@ -2,29 +2,24 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
+import {
+  buildQueryFromParams,
+  parsePagination,
+  buildPaginationResponse,
+  PROJECT_FILTER_CONFIG,
+} from "@/lib/api/search-utils";
 
 export async function GET(req: NextRequest) {
   try {
     await requirePermission("projects", "read");
     const { searchParams } = new URL(req.url);
-    const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "20");
-    const search = searchParams.get("search") || "";
-
-    const where = search
-      ? {
-          OR: [
-            { title: { contains: search, mode: "insensitive" as const } },
-            { client: { contains: search, mode: "insensitive" as const } },
-            { category: { contains: search, mode: "insensitive" as const } },
-          ],
-        }
-      : {};
+    const { where, orderBy } = buildQueryFromParams(searchParams, PROJECT_FILTER_CONFIG);
+    const { page, limit } = parsePagination(searchParams);
 
     const [projects, total] = await Promise.all([
       prisma.project.findMany({
         where,
-        orderBy: { sortOrder: "asc" },
+        orderBy,
         skip: (page - 1) * limit,
         take: limit,
         include: { service: { select: { title: true } } },
@@ -34,7 +29,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       data: projects,
-      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+      ...buildPaginationResponse(total, page, limit),
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Server error";

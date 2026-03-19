@@ -46,9 +46,14 @@ export async function POST(req: NextRequest) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // Upload to Cloudinary
+    // Upload to Cloudinary with timeout
     console.log("Uploading to Cloudinary with folder:", folder);
-    const uploadResult = await new Promise<any>((resolve, reject) => {
+
+    const uploadPromise = new Promise<any>((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(new Error("Upload timeout - please try again"));
+      }, 60000); // 60 second timeout
+
       cloudinary.uploader
         .upload_stream(
           {
@@ -59,13 +64,22 @@ export async function POST(req: NextRequest) {
             ],
           },
           (error, result) => {
-            console.log("Cloudinary result:", error, result);
-            if (error) reject(error);
-            else resolve(result);
+            clearTimeout(timeout);
+            console.log("Cloudinary callback:", { error, result });
+            // Always check for error first - even if result exists
+            if (error) {
+              reject(error);
+            } else if (result) {
+              resolve(result);
+            } else {
+              reject(new Error("No result from Cloudinary"));
+            }
           }
         )
         .end(buffer);
     });
+
+    const uploadResult = await uploadPromise;
 
     return NextResponse.json({
       success: true,
@@ -77,7 +91,17 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     console.error("Upload error:", error);
-    const message = error instanceof Error ? error.message : "Upload failed";
+    const err = error as any;
+    let message = "Upload failed";
+
+    if (err.code === 'ECONNRESET') {
+      message = "Kết nối bị gián đoạn. Vui lòng thử lại.";
+    } else if (err.message?.includes('timeout')) {
+      message = "Tải ảnh quá lâu. Vui lòng thử lại.";
+    } else if (err.message) {
+      message = err.message;
+    }
+
     return NextResponse.json(
       { error: message },
       { status: 500 }

@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { Suspense, useEffect, useState, useCallback, useRef } from "react";
 import { type ColumnDef } from "@tanstack/react-table";
-import { DataTable } from "../../components/data-table";
+import { DataTable } from "@/app/[locale]/admin/components/data-table";
+import { FilterBar, type FilterDef } from "@/app/[locale]/admin/components/filter-bar";
 import { Plus, Pencil, Trash2, Shield, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 
@@ -17,19 +18,47 @@ interface UserData {
   userRoles: { role: { name: string; displayName: string } }[];
 }
 
+const userFilters: FilterDef[] = [
+  {
+    key: "isActive",
+    label: "Hoạt động",
+    type: "boolean",
+  },
+  {
+    key: "createdAt",
+    label: "Ngày tạo",
+    type: "date-range",
+  },
+];
+
 export default function AdminUsersPage() {
+  return (
+    <Suspense>
+      <AdminUsersContent />
+    </Suspense>
+  );
+}
+
+function AdminUsersContent() {
   const [users, setUsers] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 0 });
-  const [search, setSearch] = useState("");
+  const [filterValues, setFilterValues] = useState<Record<string, string | string[]>>({});
   const [showCreateModal, setShowCreateModal] = useState(false);
 
-  const fetchData = useCallback(async (page = 1, searchQuery = "") => {
+  // Refs to avoid stale closures
+  const filterValuesRef = useRef(filterValues);
+  useEffect(() => { filterValuesRef.current = filterValues; }, [filterValues]);
+
+  const fetchData = useCallback(async (page = 1) => {
     setLoading(true);
     try {
       const params = new URLSearchParams({ page: String(page), limit: "20" });
-      if (searchQuery) params.set("search", searchQuery);
-
+      for (const [key, val] of Object.entries(filterValuesRef.current)) {
+        if (val && val !== "all" && val !== "__all__") {
+          params.set(key, String(val));
+        }
+      }
       const res = await fetch(`/api/admin/users?${params}`);
       const data = await res.json();
       setUsers(data.data || []);
@@ -40,6 +69,7 @@ export default function AdminUsersPage() {
     } finally {
       setLoading(false);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
@@ -57,7 +87,7 @@ export default function AdminUsersPage() {
         return;
       }
       toast.success(isActive ? "Đã vô hiệu hoá tài khoản" : "Đã kích hoạt tài khoản");
-      fetchData(pagination.page, search);
+      fetchData(pagination.page);
     } catch {
       toast.error("Lỗi kết nối");
     }
@@ -73,7 +103,7 @@ export default function AdminUsersPage() {
         return;
       }
       toast.success("Đã xoá người dùng");
-      fetchData(pagination.page, search);
+      fetchData(pagination.page);
     } catch {
       toast.error("Lỗi kết nối");
     }
@@ -209,14 +239,22 @@ export default function AdminUsersPage() {
         </button>
       </div>
 
+      <FilterBar
+        filters={userFilters}
+        onChange={(vals) => {
+          setFilterValues(vals);
+          fetchData(1);
+        }}
+      />
+
       <DataTable
         data={users}
         columns={columns}
         loading={loading}
         searchPlaceholder="Tìm người dùng..."
         pagination={pagination}
-        onSearch={(s) => { setSearch(s); fetchData(1, s); }}
-        onPageChange={(page) => fetchData(page, search)}
+        onSearch={() => {}}
+        onPageChange={(page) => fetchData(page)}
       />
 
       {/* Create User Modal */}

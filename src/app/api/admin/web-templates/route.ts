@@ -3,32 +3,24 @@ import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
 import { revalidatePath } from "next/cache";
+import {
+  buildQueryFromParams,
+  parsePagination,
+  buildPaginationResponse,
+  WEB_TEMPLATE_FILTER_CONFIG,
+} from "@/lib/api/search-utils";
 
 export async function GET(req: NextRequest) {
   try {
     await requirePermission("services", "read");
     const { searchParams } = new URL(req.url);
-    const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "20");
-    const search = searchParams.get("search") || "";
-    const category = searchParams.get("category") || "";
-
-    const where: Record<string, unknown> = {};
-    if (search) {
-      where.OR = [
-        { name: { contains: search, mode: "insensitive" } },
-        { nameVi: { contains: search, mode: "insensitive" } },
-        { slug: { contains: search, mode: "insensitive" } },
-      ];
-    }
-    if (category) {
-      where.category = category;
-    }
+    const { where, orderBy } = buildQueryFromParams(searchParams, WEB_TEMPLATE_FILTER_CONFIG);
+    const { page, limit } = parsePagination(searchParams);
 
     const [data, total] = await Promise.all([
       prisma.webTemplate.findMany({
         where,
-        orderBy: { sortOrder: "asc" },
+        orderBy,
         skip: (page - 1) * limit,
         take: limit,
         include: {
@@ -45,7 +37,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       data,
-      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+      ...buildPaginationResponse(total, page, limit),
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Server error";

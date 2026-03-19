@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useTranslations } from "next-intl";
 import { useLocale } from "next-intl";
-import { Link, useRouter, usePathname } from "@/i18n/routing";
-import { Menu, X, Zap, LogIn } from "lucide-react";
+import { Link, usePathname } from "@/i18n/routing";
+import { signIn, signOut } from "next-auth/react";
+import { Menu, X, Zap, ChevronDown, Package, Briefcase, Users, FileText } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { LanguageSwitcher } from "@/components/shared/LanguageSwitcher";
+import { NavbarSearch } from "@/components/layout/NavbarSearch";
 
 interface NavbarProps {
   hideOnHome?: boolean;
@@ -16,23 +18,68 @@ export default function Navbar({ hideOnHome = false }: NavbarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [atTop, setAtTop] = useState(true);
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const locale = useLocale();
   const t = useTranslations("Navigation");
   const pathname = usePathname();
-  const router = useRouter();
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated } = useAuth();
 
-  // Link from next-intl automatically adds locale, so use paths WITHOUT locale
-  const navLinks = [
+  // Main nav links
+  const mainLinks = [
     { key: "home", path: "/" },
     { key: "services", path: "/services" },
     { key: "teamList", path: "/team-list" },
+  ];
+
+  // Dropdown links
+  const dropdownLinks = [
+    { key: "portfolio", path: "/portfolio", icon: Package },
+    { key: "pricing", path: "/pricing", icon: Briefcase },
+    { key: "blog", path: "/blog", icon: FileText },
+    { key: "about", path: "/about", icon: Users },
+  ];
+
+  // All nav links for mobile
+  const allNavLinks = [
+    { key: "home", path: "/" },
+    { key: "services", path: "/services" },
+    { key: "teamList", path: "/team-list" },
+    { key: "portfolio", path: "/portfolio" },
+    { key: "pricing", path: "/pricing" },
+    { key: "blog", path: "/blog" },
     { key: "about", path: "/about" },
     { key: "contact", path: "/contact" },
   ];
 
-  // Check if on home page
-  const isHomePage = pathname === "/" || pathname === "/vi" || pathname === "/en";
+  // Global ⌘K / Ctrl+K to focus search input
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        const input = document.querySelector<HTMLInputElement>(".navbar-search-input");
+        if (input) {
+          input.focus();
+          input.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setOpenDropdown(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const isHomePage = pathname === "/" || pathname === "/" + locale;
 
   useEffect(() => {
     const handleScroll = () => {
@@ -47,7 +94,6 @@ export default function Navbar({ hideOnHome = false }: NavbarProps) {
     setIsOpen(false);
   }, [pathname]);
 
-  // Hide on home page when at top (for hero banner)
   const shouldHide = hideOnHome && isHomePage && atTop;
 
   return (
@@ -59,52 +105,78 @@ export default function Navbar({ hideOnHome = false }: NavbarProps) {
         right: 0,
         zIndex: 9999,
         background: (scrolled || shouldHide)
-          ? "rgba(17, 24, 39, 0.95)"
-          : "rgba(17, 24, 39, 0.85)",
-        backdropFilter: "blur(12px)",
-        WebkitBackdropFilter: "blur(12px)",
-        borderBottom: "1px solid rgba(255,255,255,0.1)",
-        transition: "all 0.4s ease",
+          ? "rgba(9, 11, 20, 0.96)"
+          : "rgba(9, 11, 20, 0.88)",
+        backdropFilter: "blur(16px)",
+        WebkitBackdropFilter: "blur(16px)",
+        borderBottom: "1px solid rgba(255,255,255,0.07)",
+        transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
       }}
     >
       <div
         style={{
-          maxWidth: "1280px",
+          maxWidth: "1320px",
           margin: "0 auto",
-          padding: "0 24px",
+          padding: "0 28px",
         }}
       >
+        {/* Top Row */}
         <div
           style={{
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            height: "68px",
+            height: "72px",
+            gap: "20px",
           }}
         >
           {/* Logo */}
-          <Link href="/" style={{ display: "flex", alignItems: "center", gap: "8px", textDecoration: "none" }}>
+          <Link
+            href="/"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+              textDecoration: "none",
+              flexShrink: 0,
+            }}
+          >
             <div
               style={{
-                width: "36px",
-                height: "36px",
-                borderRadius: "8px",
-                background: "linear-gradient(135deg, #8B5CF6, #06B6D4)",
+                width: "38px",
+                height: "38px",
+                borderRadius: "10px",
+                background: "linear-gradient(135deg, #8B5CF6 0%, #06B6D4 100%)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
+                boxShadow: "0 0 20px rgba(139,92,246,0.35), 0 0 8px rgba(6,182,212,0.2)",
+                position: "relative",
+                overflow: "hidden",
               }}
             >
-              <Zap style={{ width: "20px", height: "20px", color: "#FFFFFF" }} />
+              <Zap style={{ width: "20px", height: "20px", color: "#FFFFFF", position: "relative", zIndex: 1 }} />
+              <div
+                style={{
+                  position: "absolute",
+                  top: "-50%",
+                  left: "-50%",
+                  width: "200%",
+                  height: "200%",
+                  background: "linear-gradient(45deg, transparent 40%, rgba(255,255,255,0.15) 50%, transparent 60%)",
+                  animation: "logoShine 3s ease-in-out infinite",
+                }}
+              />
             </div>
             <span
               style={{
-                fontSize: "20px",
-                fontWeight: 700,
-                background: "linear-gradient(to right, #A78BFA, #67E8F9)",
+                fontSize: "22px",
+                fontWeight: 800,
+                background: "linear-gradient(to right, #C4B5FD, #A5F3FC)",
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",
                 backgroundClip: "text",
+                letterSpacing: "-0.02em",
               }}
             >
               LOOP
@@ -112,41 +184,223 @@ export default function Navbar({ hideOnHome = false }: NavbarProps) {
           </Link>
 
           {/* Desktop Navigation Links */}
-          <div className="desktop-nav" style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-            {navLinks.map((link) => (
-              <Link
-                key={link.path}
-                href={link.path}
+          <div
+            className="desktop-nav"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "2px",
+              flexShrink: 0,
+            }}
+          >
+            {mainLinks.map((link) => {
+              const isActive = pathname === link.path;
+              return (
+                <Link
+                  key={link.path}
+                  href={link.path}
+                  style={{
+                    padding: "8px 16px",
+                    fontSize: "14px",
+                    fontWeight: 600,
+                    borderRadius: "10px",
+                    color: isActive ? "#FFFFFF" : "rgba(209,213,219,0.85)",
+                    background: isActive ? "rgba(139,92,246,0.18)" : "transparent",
+                    textDecoration: "none",
+                    transition: "all 0.2s",
+                    position: "relative",
+                    letterSpacing: "0.01em",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isActive) {
+                      (e.currentTarget as HTMLAnchorElement).style.color = "#FFFFFF";
+                      (e.currentTarget as HTMLAnchorElement).style.background = "rgba(255,255,255,0.07)";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isActive) {
+                      (e.currentTarget as HTMLAnchorElement).style.color = "rgba(209,213,219,0.85)";
+                      (e.currentTarget as HTMLAnchorElement).style.background = "transparent";
+                    }
+                  }}
+                >
+                  {t(link.key as any)}
+                  {isActive && (
+                    <span
+                      style={{
+                        position: "absolute",
+                        bottom: "4px",
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                        width: "18px",
+                        height: "2px",
+                        borderRadius: "1px",
+                        background: "linear-gradient(to right, #8B5CF6, #06B6D4)",
+                      }}
+                    />
+                  )}
+                </Link>
+              );
+            })}
+
+            {/* More Dropdown */}
+            <div ref={dropdownRef} style={{ position: "relative" }}>
+              <button
+                onClick={() => setOpenDropdown(openDropdown === "more" ? null : "more")}
                 style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "4px",
                   padding: "8px 16px",
                   fontSize: "14px",
-                  fontWeight: 500,
-                  borderRadius: "8px",
-                  color: pathname === link.path ? "#FFFFFF" : "#9CA3AF",
-                  background: pathname === link.path ? "rgba(255,255,255,0.1)" : "transparent",
-                  textDecoration: "none",
+                  fontWeight: 600,
+                  borderRadius: "10px",
+                  color: "rgba(209,213,219,0.85)",
+                  background: "transparent",
+                  border: "none",
+                  cursor: "pointer",
                   transition: "all 0.2s",
+                  letterSpacing: "0.01em",
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.color = "#FFFFFF";
+                  (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.07)";
+                }}
+                onMouseLeave={(e) => {
+                  if (openDropdown !== "more") {
+                    (e.currentTarget as HTMLButtonElement).style.color = "rgba(209,213,219,0.85)";
+                    (e.currentTarget as HTMLButtonElement).style.background = "transparent";
+                  }
                 }}
               >
-                {t(link.key as any)}
-              </Link>
-            ))}
+                {t("more")}
+                <ChevronDown
+                  size={14}
+                  style={{
+                    transform: openDropdown === "more" ? "rotate(180deg)" : "rotate(0)",
+                    transition: "transform 0.2s",
+                  }}
+                />
+              </button>
+
+              {/* Dropdown Menu */}
+              {openDropdown === "more" && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "100%",
+                    left: "0",
+                    marginTop: "8px",
+                    minWidth: "200px",
+                    background: "rgba(15,17,23,0.98)",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    borderRadius: "16px",
+                    padding: "8px",
+                    boxShadow: "0 20px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(139,92,246,0.1)",
+                    zIndex: 100,
+                    backdropFilter: "blur(20px)",
+                  }}
+                >
+                  {dropdownLinks.map((link) => {
+                    const Icon = link.icon;
+                    const isActive = pathname === link.path;
+                    return (
+                      <Link
+                        key={link.path}
+                        href={link.path}
+                        onClick={() => setOpenDropdown(null)}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "10px",
+                          padding: "10px 14px",
+                          fontSize: "14px",
+                          fontWeight: 500,
+                          borderRadius: "10px",
+                          color: isActive ? "#FFFFFF" : "rgba(209,213,219,0.8)",
+                          background: isActive ? "rgba(139,92,246,0.15)" : "transparent",
+                          textDecoration: "none",
+                          transition: "all 0.15s",
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!isActive) {
+                            (e.currentTarget as HTMLAnchorElement).style.background = "rgba(255,255,255,0.06)";
+                            (e.currentTarget as HTMLAnchorElement).style.color = "#FFFFFF";
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!isActive) {
+                            (e.currentTarget as HTMLAnchorElement).style.background = "transparent";
+                            (e.currentTarget as HTMLAnchorElement).style.color = "rgba(209,213,219,0.8)";
+                          }
+                        }}
+                      >
+                        <Icon size={16} style={{ opacity: 0.8 }} />
+                        {t(link.key as any)}
+                      </Link>
+                    );
+                  })}
+                  <Link
+                    key="contact"
+                    href="/contact"
+                    onClick={() => setOpenDropdown(null)}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "10px",
+                      padding: "10px 14px",
+                      fontSize: "14px",
+                      fontWeight: 500,
+                      borderRadius: "10px",
+                      color: pathname === "/contact" ? "#FFFFFF" : "rgba(209,213,219,0.8)",
+                      background: pathname === "/contact" ? "rgba(139,92,246,0.15)" : "transparent",
+                      textDecoration: "none",
+                      transition: "all 0.15s",
+                      borderTop: "1px solid rgba(255,255,255,0.07)",
+                      marginTop: "4px",
+                      paddingTop: "14px",
+                    }}
+                  >
+                    {t("contact")}
+                  </Link>
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Right Side: Auth + Language */}
-          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          {/* Search Bar (Desktop) */}
+          <div className="desktop-nav" style={{ flex: 1, display: "flex", justifyContent: "center" }}>
+            <NavbarSearch />
+          </div>
+
+          {/* Right Side: Language + Auth */}
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
+            <LanguageSwitcher />
+
             {/* Auth buttons - desktop only */}
             <div className="desktop-nav" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               {isAuthenticated && user ? (
                 <button
-                  onClick={() => { logout(); router.push("/"); }}
+                  onClick={() => { signOut({ callbackUrl: "/" }); }}
                   style={{
                     padding: "8px 16px",
-                    fontSize: "14px",
-                    color: "#D1D5DB",
+                    fontSize: "13px",
+                    fontWeight: 600,
+                    color: "rgba(209,213,219,0.9)",
                     background: "transparent",
-                    border: "none",
+                    border: "1px solid rgba(255,255,255,0.12)",
+                    borderRadius: "10px",
                     cursor: "pointer",
+                    transition: "all 0.2s",
+                    letterSpacing: "0.01em",
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.25)";
+                    (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.05)";
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.12)";
+                    (e.currentTarget as HTMLButtonElement).style.background = "transparent";
                   }}
                 >
                   Sign Out
@@ -156,28 +410,49 @@ export default function Navbar({ hideOnHome = false }: NavbarProps) {
                   <Link
                     href="/login"
                     style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "4px",
                       padding: "8px 16px",
-                      fontSize: "14px",
-                      color: "#D1D5DB",
+                      fontSize: "13px",
+                      fontWeight: 600,
+                      color: "rgba(209,213,219,0.9)",
+                      background: "transparent",
+                      border: "1px solid rgba(255,255,255,0.12)",
+                      borderRadius: "10px",
                       textDecoration: "none",
+                      transition: "all 0.2s",
+                      letterSpacing: "0.01em",
+                    }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLAnchorElement).style.borderColor = "rgba(255,255,255,0.25)";
+                      (e.currentTarget as HTMLAnchorElement).style.background = "rgba(255,255,255,0.05)";
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLAnchorElement).style.borderColor = "rgba(255,255,255,0.12)";
+                      (e.currentTarget as HTMLAnchorElement).style.background = "transparent";
                     }}
                   >
-                    <LogIn style={{ width: "16px", height: "16px" }} />
-                    <span>{t("login")}</span>
+                    {t("login")}
                   </Link>
                   <Link
                     href="/register"
                     style={{
-                      padding: "8px 20px",
-                      fontSize: "14px",
-                      fontWeight: 500,
+                      padding: "8px 18px",
+                      fontSize: "13px",
+                      fontWeight: 700,
                       color: "#FFFFFF",
-                      background: "linear-gradient(to right, #8B5CF6, #06B6D4)",
-                      borderRadius: "8px",
+                      background: "linear-gradient(135deg, #8B5CF6, #06B6D4)",
+                      borderRadius: "10px",
                       textDecoration: "none",
+                      letterSpacing: "0.01em",
+                      boxShadow: "0 0 20px rgba(139,92,246,0.3)",
+                      transition: "all 0.2s",
+                    }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLAnchorElement).style.transform = "translateY(-1px)";
+                      (e.currentTarget as HTMLAnchorElement).style.boxShadow = "0 4px 24px rgba(139,92,246,0.45)";
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLAnchorElement).style.transform = "translateY(0)";
+                      (e.currentTarget as HTMLAnchorElement).style.boxShadow = "0 0 20px rgba(139,92,246,0.3)";
                     }}
                   >
                     {t("register")}
@@ -186,26 +461,26 @@ export default function Navbar({ hideOnHome = false }: NavbarProps) {
               )}
             </div>
 
-            {/* Language Switcher - always visible */}
-            <LanguageSwitcher />
-
             {/* Mobile hamburger */}
             <button
               className="mobile-only"
               onClick={() => setIsOpen(!isOpen)}
               style={{
                 padding: "8px",
-                color: "#9CA3AF",
-                background: "transparent",
-                border: "none",
+                color: "rgba(209,213,219,0.8)",
+                background: "rgba(255,255,255,0.06)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                borderRadius: "10px",
                 cursor: "pointer",
                 display: "none",
+                alignItems: "center",
+                justifyContent: "center",
               }}
             >
               {isOpen ? (
-                <X style={{ width: "24px", height: "24px" }} />
+                <X style={{ width: "20px", height: "20px" }} />
               ) : (
-                <Menu style={{ width: "24px", height: "24px" }} />
+                <Menu style={{ width: "20px", height: "20px" }} />
               )}
             </button>
           </div>
@@ -216,32 +491,45 @@ export default function Navbar({ hideOnHome = false }: NavbarProps) {
       {isOpen && (
         <div
           style={{
-            background: "rgba(17, 24, 39, 0.98)",
-            borderTop: "1px solid rgba(255,255,255,0.05)",
+            background: "rgba(9,11,20,0.98)",
+            borderTop: "1px solid rgba(255,255,255,0.06)",
             padding: "16px",
+            maxHeight: "85vh",
+            overflowY: "auto",
           }}
           className="mobile-menu"
         >
-          {navLinks.map((link) => (
-            <Link
-              key={link.path}
-              href={link.path}
-              style={{
-                display: "block",
-                padding: "12px 16px",
-                fontSize: "14px",
-                fontWeight: 500,
-                borderRadius: "8px",
-                color: pathname === link.path ? "#FFFFFF" : "#9CA3AF",
-                background: pathname === link.path ? "rgba(255,255,255,0.1)" : "transparent",
-                textDecoration: "none",
-                marginBottom: "4px",
-              }}
-            >
-              {t(link.key as any)}
-            </Link>
-          ))}
-          <div style={{ borderTop: "1px solid rgba(255,255,255,0.1)", marginTop: "12px", paddingTop: "12px" }}>
+          {/* Mobile search bar */}
+          <div style={{ marginBottom: "12px", padding: "0 4px" }}>
+            <NavbarSearch />
+          </div>
+
+          <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: "12px" }}>
+            {allNavLinks.map((link) => (
+              <Link
+                key={link.path}
+                href={link.path}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  padding: "12px 16px",
+                  fontSize: "14px",
+                  fontWeight: 600,
+                  borderRadius: "10px",
+                  color: pathname === link.path ? "#FFFFFF" : "rgba(209,213,219,0.8)",
+                  background: pathname === link.path ? "rgba(139,92,246,0.15)" : "transparent",
+                  textDecoration: "none",
+                  marginBottom: "2px",
+                  gap: "10px",
+                  transition: "all 0.15s",
+                }}
+              >
+                {t(link.key as any)}
+              </Link>
+            ))}
+          </div>
+
+          <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", marginTop: "12px", paddingTop: "12px" }}>
             {!isAuthenticated && (
               <>
                 <Link
@@ -250,8 +538,13 @@ export default function Navbar({ hideOnHome = false }: NavbarProps) {
                     display: "block",
                     padding: "12px 16px",
                     fontSize: "14px",
-                    color: "#9CA3AF",
+                    fontWeight: 600,
+                    color: "rgba(209,213,219,0.9)",
                     textDecoration: "none",
+                    borderRadius: "10px",
+                    border: "1px solid rgba(255,255,255,0.12)",
+                    marginBottom: "8px",
+                    textAlign: "center",
                   }}
                 >
                   {t("login")}
@@ -262,12 +555,13 @@ export default function Navbar({ hideOnHome = false }: NavbarProps) {
                     display: "block",
                     padding: "12px 16px",
                     fontSize: "14px",
-                    fontWeight: 500,
+                    fontWeight: 700,
                     color: "#FFFFFF",
-                    background: "linear-gradient(to right, #8B5CF6, #06B6D4)",
-                    borderRadius: "8px",
+                    background: "linear-gradient(135deg, #8B5CF6, #06B6D4)",
+                    borderRadius: "10px",
                     textDecoration: "none",
                     textAlign: "center",
+                    boxShadow: "0 0 16px rgba(139,92,246,0.3)",
                   }}
                 >
                   {t("register")}
@@ -280,13 +574,22 @@ export default function Navbar({ hideOnHome = false }: NavbarProps) {
 
       {/* Responsive CSS */}
       <style>{`
-        @media (max-width: 768px) {
+        @media (max-width: 900px) {
           .desktop-nav { display: none !important; }
-          .mobile-only { display: block !important; }
+          .mobile-only { display: flex !important; }
         }
-        @media (min-width: 769px) {
+        @media (min-width: 901px) {
           .mobile-menu { display: none !important; }
           .mobile-only { display: none !important; }
+        }
+        @keyframes logoShine {
+          0%, 100% { transform: translateX(-100%) rotate(45deg); }
+          50% { transform: translateX(200%) rotate(45deg); }
+        }
+        nav { font-family: 'Inter', system-ui, sans-serif; }
+        a:focus-visible, button:focus-visible {
+          outline: 2px solid rgba(139,92,246,0.7);
+          outline-offset: 2px;
         }
       `}</style>
     </nav>

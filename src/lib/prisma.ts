@@ -10,7 +10,7 @@ export const prisma = globalForPrisma.prisma ?? (() => {
     console.warn("DATABASE_URL is not set yet!");
   }
   const pool = new Pool({ connectionString: connectionString || "" });
-  const adapter = new PrismaPg(pool as any);
+  const adapter = new PrismaPg(pool);
   return new PrismaClient({ adapter });
 })();
 

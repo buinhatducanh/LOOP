@@ -2,29 +2,24 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
+import {
+  buildQueryFromParams,
+  parsePagination,
+  buildPaginationResponse,
+  TEAM_MEMBER_FILTER_CONFIG,
+} from "@/lib/api/search-utils";
 
 export async function GET(req: NextRequest) {
   try {
     await requirePermission("team", "read");
     const { searchParams } = new URL(req.url);
-    const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "20");
-    const search = searchParams.get("search") || "";
-
-    const where = search
-      ? {
-          OR: [
-            { name: { contains: search, mode: "insensitive" as const } },
-            { slug: { contains: search, mode: "insensitive" as const } },
-            { role: { contains: search, mode: "insensitive" as const } },
-          ],
-        }
-      : {};
+    const { where, orderBy } = buildQueryFromParams(searchParams, TEAM_MEMBER_FILTER_CONFIG);
+    const { page, limit } = parsePagination(searchParams);
 
     const [members, total] = await Promise.all([
       prisma.teamMember.findMany({
         where,
-        orderBy: { sortOrder: "asc" },
+        orderBy,
         skip: (page - 1) * limit,
         take: limit,
         include: {
@@ -38,10 +33,9 @@ export async function GET(req: NextRequest) {
       prisma.teamMember.count({ where }),
     ]);
 
-    console.log("Team members returned:", JSON.stringify(members.map(m => ({ id: m.id, name: m.name, image: m.image }))));
     return NextResponse.json({
       data: members,
-      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+      ...buildPaginationResponse(total, page, limit),
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Server error";
@@ -62,20 +56,45 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Extract expertise array if present (it's a relation, not a direct field)
-    const { expertise, ...memberData } = data;
+    // Extract memberExpertise array if present (it's a relation, not a direct field)
+    const { memberExpertise, ...memberData } = data;
+
+    // Convert empty strings to null for optional fields (except required fields)
+    // Also convert date strings (dd/mm/yyyy) to proper ISO format
+    const requiredFields = ['name', 'slug', 'role', 'image'];
+    const dateFields = ['birthDate', 'contractStart'];
+    const cleanedData = Object.fromEntries(
+      Object.entries(memberData).map(([key, value]) => {
+        if (requiredFields.includes(key)) {
+          return [key, value];
+        }
+        if (value === "") return [key, null];
+        // Convert date string to ISO format (supports both dd/mm/yyyy and yyyy-mm-dd)
+        if (dateFields.includes(key) && value && typeof value === 'string') {
+          // Try to parse dd/mm/yyyy format
+          const parts = value.split('/');
+          if (parts.length === 3) {
+            const [day, month, year] = parts;
+            return [key, new Date(`${year}-${month}-${day}T00:00:00.000Z`).toISOString()];
+          }
+          // Try standard ISO format
+          return [key, new Date(value).toISOString()];
+        }
+        return [key, value];
+      })
+    );
 
     const member = await prisma.teamMember.create({
-      data: memberData,
+      data: cleanedData,
     });
 
-    // Create member expertise relations if provided
-    if (expertise && Array.isArray(expertise) && expertise.length > 0) {
+    // Create member expertise relations with level if provided and not empty
+    if (Array.isArray(memberExpertise) && memberExpertise.length > 0) {
       await prisma.memberExpertise.createMany({
-        data: expertise.map((expId: string) => ({
+        data: memberExpertise.map((exp: { expertiseId: string; level: number }) => ({
           memberId: member.id,
-          expertiseId: expId,
-          level: 3, // Default level
+          expertiseId: exp.expertiseId,
+          level: exp.level || 5, // Default to 5 if not provided
         })),
       });
     }
@@ -85,13 +104,14 @@ export async function POST(req: NextRequest) {
       action: "create",
       resource: "team",
       resourceId: member.id,
-      newValues: memberData,
+      newValues: cleanedData,
     });
 
     return NextResponse.json({ data: member }, { status: 201 });
   } catch (error) {
+    console.error("POST /api/admin/team error:", error);
     const message = error instanceof Error ? error.message : "Server error";
     const status = message === "Unauthorized" ? 401 : message === "Forbidden" ? 403 : 500;
-    return NextResponse.json({ error: message }, { status });
+    return NextResponse.json({ error: message, details: String(error) }, { status });
   }
 }

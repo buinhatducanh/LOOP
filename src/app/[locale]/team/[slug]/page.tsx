@@ -29,6 +29,14 @@ function transformMember(dbMember: any) {
     roleLevel: dbMember.roleLevel ?? 4,
     roleCategory: dbMember.roleCategory || null,
     isFeatured: dbMember.isFeatured ?? false,
+    // HR Fields
+    birthDate: dbMember.birthDate || null,
+    address: dbMember.address || null,
+    cccd: dbMember.cccd || null,
+    contractStart: dbMember.contractStart || null,
+    experienceFrom: dbMember.experienceFrom || null,
+    facebook: dbMember.facebook || null,
+    tiktok: dbMember.tiktok || null,
   };
 }
 

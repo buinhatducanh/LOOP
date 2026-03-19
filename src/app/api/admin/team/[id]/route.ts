@@ -41,32 +41,63 @@ export async function PUT(
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    // Extract expertise array if present (it's a relation, not a direct field)
+    // Extract memberExpertise array if present (it's a relation, not a direct field)
     console.log("PUT team - received data:", JSON.stringify(data));
-    const { expertise, ...memberData } = data;
+    const { memberExpertise, ...memberData } = data;
+
+    // Convert empty strings to null for optional fields (except required fields)
+    // Also convert date strings (dd/mm/yyyy) to proper ISO format
+    const requiredFields = ['name', 'slug', 'role'];
+    const dateFields = ['birthDate', 'contractStart'];
+    const cleanedData = Object.fromEntries(
+      Object.entries(memberData).map(([key, value]) => {
+        if (requiredFields.includes(key)) {
+          return [key, value];
+        }
+        if (value === "") return [key, null];
+        // Convert date string to ISO format (supports both dd/mm/yyyy and yyyy-mm-dd)
+        if (dateFields.includes(key) && value && typeof value === 'string') {
+          // Try to parse dd/mm/yyyy format
+          const parts = value.split('/');
+          if (parts.length === 3) {
+            const [day, month, year] = parts;
+            return [key, new Date(`${year}-${month}-${day}T00:00:00.000Z`).toISOString()];
+          }
+          // Try standard ISO format
+          return [key, new Date(value).toISOString()];
+        }
+        return [key, value];
+      })
+    );
 
     // Update member data
-    console.log("Prisma update data:", JSON.stringify(memberData));
-    const member = await prisma.teamMember.update({
-      where: { id },
-      data: memberData,
-    });
-    console.log("Prisma updated member:", JSON.stringify(member));
+    console.log("Prisma update data:", JSON.stringify(cleanedData));
+    let member;
+    try {
+      member = await prisma.teamMember.update({
+        where: { id },
+        data: cleanedData,
+      });
+      console.log("Prisma updated member:", JSON.stringify(member));
+    } catch (prismaError) {
+      console.error("Prisma error:", prismaError);
+      return NextResponse.json({ error: `Prisma error: ${prismaError}` }, { status: 500 });
+    }
 
-    // Update expertise relations if provided
-    if (expertise && Array.isArray(expertise)) {
+    // Update expertise relations if explicitly provided (even if empty array)
+    if (data.hasOwnProperty('memberExpertise')) {
       // Delete existing expertise relations
       await prisma.memberExpertise.deleteMany({
         where: { memberId: id },
       });
 
-      // Create new expertise relations
-      if (expertise.length > 0) {
+      // Create new expertise relations with level (only if not empty)
+      if (Array.isArray(memberExpertise) && memberExpertise.length > 0) {
         await prisma.memberExpertise.createMany({
-          data: expertise.map((expId: string) => ({
+          data: memberExpertise.map((exp: { expertiseId: string; level: number }) => ({
             memberId: id,
-            expertiseId: expId,
-            level: 3, // Default level
+            expertiseId: exp.expertiseId,
+            level: exp.level || 5, // Default to 5 if not provided
           })),
         });
       }
@@ -78,7 +109,7 @@ export async function PUT(
       resource: "team",
       resourceId: id,
       oldValues: existing as unknown as Record<string, unknown>,
-      newValues: memberData,
+      newValues: cleanedData,
     });
 
     return NextResponse.json({ data: member });

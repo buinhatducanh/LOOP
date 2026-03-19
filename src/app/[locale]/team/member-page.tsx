@@ -13,16 +13,17 @@ import {
   Quote,
   Award,
   Briefcase,
-  Code2,
-  Sparkles,
-  ExternalLink,
   Calendar,
   Users,
   Layers,
   CheckCircle2,
-  Star,
-  Play,
-  X,
+  FolderKanban,
+  MapPin,
+  CalendarDays,
+  Facebook,
+  Video,
+  ExternalLink,
+  Sparkles,
 } from "lucide-react";
 
 interface MemberData {
@@ -47,6 +48,11 @@ interface MemberData {
   skills: string[];
   experience: string | null;
   isFeatured: boolean;
+  birthDate?: string | null;
+  address?: string | null;
+  experienceFrom?: number | null;
+  facebook?: string | null;
+  tiktok?: string | null;
 }
 
 interface ProjectData {
@@ -59,9 +65,6 @@ interface ProjectData {
   image: string;
   description: string;
   techStack: string[];
-  features: string[];
-  results: string;
-  screenshots: string[];
 }
 
 interface MemberPageProps {
@@ -70,526 +73,341 @@ interface MemberPageProps {
   otherMembers: MemberData[];
 }
 
-// Animation components
-function FadeIn({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
+// Role Badge với màu đặc biệt
+function RoleBadge({ role, roleLevel }: { role: string; roleLevel: number }) {
+  const roleLower = role.toLowerCase();
+  const isCEO = roleLower.includes("ceo") || roleLower.includes("giám đốc");
+  const isPO = roleLower.includes("po") || roleLower.includes("product owner");
+  const isPM = roleLower.includes("pm") || roleLower.includes("project manager");
+
+  const getRoleStyle = () => {
+    if (isCEO) return "bg-gradient-to-r from-amber-500 to-yellow-600 text-white border-amber-400";
+    if (isPO) return "bg-gradient-to-r from-red-500 to-rose-600 text-white border-red-400";
+    if (isPM) return "bg-gradient-to-r from-violet-500 to-purple-600 text-white border-violet-400";
+    return "bg-gradient-to-r from-indigo-500 to-purple-500 text-white border-indigo-400";
+  };
+
+  const getIcon = () => {
+    if (isCEO) return "👑";
+    if (isPO) return "🎯";
+    if (isPM) return "📊";
+    return "💼";
+  };
+
   return (
-    <div className="animate-fade-in" style={{ animationDelay: `${delay}s` }}>
-      {children}
-    </div>
+    <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold border ${getRoleStyle()}`}>
+      <span>{getIcon()}</span>
+      <span>{role}</span>
+    </span>
   );
 }
 
-function SlideIn({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
-  return (
-    <div className="animate-fade-in" style={{ animationDelay: `${delay}s` }}>
-      {children}
-    </div>
-  );
-}
+// Avatar với khung theo role
+function AvatarFrame({ member }: { member: MemberData }) {
+  const roleLower = member.role.toLowerCase();
+  const isCEO = roleLower.includes("ceo") || roleLower.includes("giám đốc");
+  const isPO = roleLower.includes("po") || roleLower.includes("product owner");
+  const isPM = roleLower.includes("pm") || roleLower.includes("project manager");
 
-// Social Button Component
-function SocialBtn({ href, icon: Icon, label }: { href: string; icon: typeof Linkedin; label: string }) {
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-indigo-500/20 bg-indigo-500/10 text-slate-400 hover:text-white hover:bg-indigo-500/20 hover:border-indigo-400 transition-all duration-300 hover:scale-105 hover:-translate-y-0.5"
-    >
-      <Icon size={18} />
-      <span className="text-sm font-medium">{label}</span>
-    </a>
-  );
-}
-
-// Project Card Component
-function ProjectCard({ project, index }: { project: ProjectData; index: number }) {
-  const [isHovered, setIsHovered] = useState(false);
+  const getRing = () => {
+    if (isCEO) return "ring-4 ring-amber-400 shadow-lg shadow-amber-400/30";
+    if (isPO) return "ring-4 ring-red-500 shadow-lg shadow-red-500/30";
+    if (isPM) return "ring-4 ring-violet-500 shadow-lg shadow-violet-500/30";
+    return "ring-4 ring-indigo-500 shadow-lg shadow-indigo-500/30";
+  };
 
   return (
-    <div
-      className="group relative animate-fade-in"
-      style={{ animationDelay: `${index * 0.1}s` }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      <Link href={`/portfolio/${project.slug}`}>
-        <div
-          className="relative overflow-hidden rounded-2xl bg-slate-900 border border-slate-800 hover:border-indigo-500/50 transition-all duration-300 hover:-translate-y-2"
-        >
-          {/* Project Image */}
-          <div className="relative h-56 overflow-hidden">
-            <img
-              src={project.image}
-              alt={project.title}
-              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/30 to-transparent" />
-
-            {/* Category Badge */}
-            <div className="absolute top-4 left-4">
-              <span className="px-3 py-1 rounded-full bg-indigo-600/90 backdrop-blur-sm text-white text-xs font-semibold">
-                {project.category}
-              </span>
-            </div>
-
-            {/* Year */}
-            <div className="absolute top-4 right-4 flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-900/80 backdrop-blur-sm">
-              <Calendar size={12} className="text-slate-400" />
-              <span className="text-xs font-medium text-slate-300">{project.year}</span>
-            </div>
-
-            {/* Play Button Overlay */}
-            {isHovered && (
-              <div
-                className="absolute inset-0 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm animate-fade-in"
-              >
-                <div className="w-16 h-16 rounded-full bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-600/50">
-                  <Play size={24} className="text-white ml-1" fill="white" />
-                </div>
-              </div>
-            )}
+    <div className="relative">
+      <div className={`w-32 h-32 rounded-full overflow-hidden ${getRing()}`}>
+        {member.image ? (
+          <img src={member.image} alt={member.name} className="w-full h-full object-cover" />
+        ) : (
+          <div className="w-full h-full bg-slate-800 flex items-center justify-center">
+            <Users size={40} className="text-slate-600" />
           </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
-          {/* Project Info */}
-          <div className="p-5">
-            <h3 className="text-lg font-bold text-white mb-2 group-hover:text-indigo-200 transition-colors">
-              {project.title}
-            </h3>
-            <p className="text-slate-400 text-sm mb-4 line-clamp-2">{project.description}</p>
+// Info Item nhỏ gọn
+function InfoItem({ icon: Icon, value }: { icon: typeof Mail; value: string | null | undefined }) {
+  if (!value) return null;
+  return (
+    <div className="flex items-center gap-2 text-slate-400">
+      <Icon size={14} />
+      <span className="text-sm truncate">{value}</span>
+    </div>
+  );
+}
 
-            {/* Tech Stack */}
-            <div className="flex flex-wrap gap-2">
-              {project.techStack.slice(0, 3).map((tech) => (
-                <span
-                  key={tech}
-                  className="px-2 py-1 rounded-md bg-slate-800 text-slate-400 text-xs"
-                >
-                  {tech}
-                </span>
-              ))}
-              {project.techStack.length > 3 && (
-                <span className="px-2 py-1 rounded-md text-xs font-semibold text-indigo-400">
-                  +{project.techStack.length - 3}
-                </span>
-              )}
-            </div>
+// Skill Tag nhỏ
+function SkillTag({ skill }: { skill: string }) {
+  return (
+    <span className="px-2.5 py-1 rounded-md bg-slate-800 border border-slate-700 text-slate-300 text-xs">
+      {skill}
+    </span>
+  );
+}
+
+// Project Card nhỏ gọn
+function ProjectCard({ project }: { project: ProjectData }) {
+  return (
+    <Link href={`/portfolio/${project.slug}`} className="group block">
+      <div className="flex gap-4 p-3 rounded-xl bg-slate-900/50 border border-slate-800 hover:border-indigo-500/50 transition-all">
+        {/* Ảnh nhỏ */}
+        <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
+          <img src={project.image} alt={project.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform" />
+        </div>
+
+        {/* Thông tin */}
+        <div className="flex-1 min-w-0">
+          <h4 className="font-semibold text-white text-sm truncate group-hover:text-indigo-400 transition-colors">
+            {project.title}
+          </h4>
+          <p className="text-slate-500 text-xs mt-0.5">{project.category} • {project.year}</p>
+          <div className="flex gap-1 mt-1.5">
+            {project.techStack.slice(0, 2).map((tech) => (
+              <span key={tech} className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-500">
+                {tech}
+              </span>
+            ))}
           </div>
         </div>
-      </Link>
-    </div>
+      </div>
+    </Link>
   );
 }
 
-// Stats Counter Component
-function StatItem({ value, label, delay }: { value: string; label: string; delay: number }) {
+// Achievement Item nhỏ
+function AchievementItem({ achievement }: { achievement: string }) {
   return (
-    <div
-      className="text-center animate-fade-in"
-      style={{ animationDelay: `${delay}s` }}
-    >
-      <div className="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent mb-1">
-        {value}
-      </div>
-      <div className="text-slate-500 text-sm">{label}</div>
+    <div className="flex items-center gap-2 text-sm">
+      <Award size={14} className="text-amber-400 flex-shrink-0" />
+      <span className="text-slate-300">{achievement}</span>
     </div>
   );
 }
 
 export function MemberPage({ member, projects = [], otherMembers }: MemberPageProps) {
-  const [selectedProject, setSelectedProject] = useState<ProjectData | null>(null);
-
-  const roleBadgeColors: Record<number, string> = {
-    0: "from-amber-500 to-red-500",
-    1: "from-indigo-500 to-purple-500",
-    2: "from-blue-500 to-cyan-500",
-    3: "from-emerald-500 to-teal-500",
-    4: "from-slate-500 to-slate-600",
-  };
+  const roleLower = member.role.toLowerCase();
+  const isSpecialRole = roleLower.includes("ceo") || roleLower.includes("giám đốc") ||
+    roleLower.includes("po") || roleLower.includes("product owner") ||
+    roleLower.includes("pm") || roleLower.includes("project manager");
 
   const memberProjects = projects.length > 0 ? projects : getMockProjects();
 
+  // Format ngày sinh
+  const formatDate = (dateStr?: string | null) => {
+    if (!dateStr) return null;
+    try {
+      return new Date(dateStr).toLocaleDateString("vi-VN", { day: "numeric", month: "numeric", year: "numeric" });
+    } catch {
+      return dateStr;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-white">
-      {/* ── Hero Cover Section ── */}
-      <section className="relative h-[50vh] lg:h-[60vh] overflow-hidden">
-        {/* Cover Image */}
-        <div className="absolute inset-0">
-          {member.coverImage ? (
-            <img
-              src={member.coverImage}
-              alt={member.name}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-full bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center">
-              <div className="text-center">
-                <Users size={64} className="text-slate-700 mx-auto mb-2" />
-                <p className="text-slate-600 text-sm">(đang cập nhật ảnh bìa)</p>
-              </div>
-            </div>
-          )}
-          <div className="absolute inset-0 bg-gradient-to-b from-slate-950/30 via-slate-950/60 to-slate-950" />
-        </div>
-
-        {/* Animated Background Elements */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div
-            className="absolute -top-20 left-[20%] w-[400px] h-[400px] rounded-full bg-indigo-500/10 blur-[80px] animate-pulse"
-          />
-          <div
-            className="absolute -top-10 right-[10%] w-[300px] h-[300px] rounded-full bg-pink-500/10 blur-[60px] animate-pulse"
-            style={{ animationDelay: "2s" }}
-          />
-        </div>
-
-        {/* Back Button */}
-        <div
-          className="absolute top-6 left-6 z-10 animate-fade-in"
-        >
-          <Link
-            href="/team-list"
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900/80 backdrop-blur-sm border border-slate-800 text-slate-300 hover:text-white hover:border-indigo-500/50 transition-all"
-          >
+      {/* Header với back button */}
+      <div className="border-b border-slate-800/50 bg-slate-900/30 backdrop-blur-sm sticky top-0 z-50">
+        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+          <Link href="/team-list" className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors">
             <ArrowLeft size={18} />
             <span className="text-sm font-medium">Đội ngũ</span>
           </Link>
-        </div>
 
-        {/* Member Info Overlay */}
-        <div className="absolute bottom-0 left-0 right-0 p-6 lg:p-12">
-          <div className="max-w-6xl mx-auto flex items-end gap-6">
-            {/* Avatar - Hiển thị ảnh đại diện bên dưới bên trái ảnh bìa */}
-            <div className="relative flex-shrink-0 animate-fade-in">
-              <div className="w-24 h-24 lg:w-32 lg:h-32 rounded-full overflow-hidden border-4 border-slate-900 shadow-2xl">
-                {member.image ? (
-                  <img
-                    src={member.image}
-                    alt={member.name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-slate-800 flex items-center justify-center">
-                    <div className="text-center">
-                      <Users size={40} className="text-slate-600 mx-auto" />
-                      <p className="text-slate-500 text-[10px]">(đang cập nhật)</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-              {/* Ring effect */}
-              <div className={`absolute -inset-1 rounded-full ${member.roleLevel === 0 ? 'ring-2 ring-amber-500' : 'ring-2 ring-indigo-500'} opacity-50 -z-10`} />
-            </div>
-
-            <div className="flex-1">
-            <FadeIn>
-              {/* Role Badge */}
-              <div className="flex items-center gap-3 mb-4">
-                <span className={`px-4 py-1.5 rounded-full bg-gradient-to-r ${roleBadgeColors[member.roleLevel] || roleBadgeColors[4]} text-white text-sm font-bold shadow-lg`}>
-                  {member.role}
-                </span>
-                {member.isFeatured && (
-                  <span className="flex items-center gap-1 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/30 text-amber-400 text-sm font-medium">
-                    <Star size={14} className="fill-amber-400" /> Featured
-                  </span>
-                )}
-              </div>
-            </FadeIn>
-
-            <FadeIn delay={0.1}>
-              <h1 className="text-4xl lg:text-6xl font-extrabold tracking-tight mb-3">
-                {member.name}
-              </h1>
-            </FadeIn>
-
-            <FadeIn delay={0.2}>
-              <p className="text-xl lg:text-2xl text-indigo-300 font-medium mb-6">
-                {member.shortBio}
-              </p>
-            </FadeIn>
-
-            <FadeIn delay={0.3}>
-              <div className="flex flex-wrap gap-3">
-                {member.linkedin && <SocialBtn href={member.linkedin} icon={Linkedin} label="LinkedIn" />}
-                {member.twitter && <SocialBtn href={member.twitter} icon={Twitter} label="Twitter" />}
-                {member.github && <SocialBtn href={member.github} icon={Github} label="GitHub" />}
-                {member.email && <SocialBtn href={`mailto:${member.email}`} icon={Mail} label={member.email} />}
-              </div>
-            </FadeIn>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Quote Section ── */}
-      {member.quote && (
-        <section className="py-16 px-6">
-          <FadeIn>
-            <div className="max-w-3xl mx-auto">
-              <div className="relative p-8 lg:p-12 bg-gradient-to-br from-indigo-500/10 via-purple-500/5 to-pink-500/10 rounded-3xl border border-indigo-500/20">
-                <Quote size={48} className="text-indigo-500/30 absolute top-6 left-6" />
-                <blockquote className="relative z-10">
-                  <p className="text-2xl lg:text-3xl font-medium text-white leading-relaxed italic text-center">
-                    &ldquo;{member.quote}&rdquo;
-                  </p>
-                </blockquote>
-              </div>
-            </div>
-          </FadeIn>
-        </section>
-      )}
-
-      {/* ── About & Experience Section ── */}
-      <section className="py-16 px-6 bg-slate-900/30">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Bio */}
-            <FadeIn>
-              <div className="p-6 lg:p-8 rounded-2xl bg-slate-900 border border-slate-800">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center">
-                    <Briefcase size={20} className="text-white" />
-                  </div>
-                  <h2 className="text-xl font-bold">Về tôi</h2>
-                </div>
-                <p className="text-slate-400 leading-relaxed">{member.bio}</p>
-              </div>
-            </FadeIn>
-
-            {/* Experience */}
-            {member.experience && (
-              <FadeIn delay={0.1}>
-                <div className="p-6 lg:p-8 rounded-2xl bg-slate-900 border border-slate-800">
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="w-10 h-10 rounded-xl bg-purple-600 flex items-center justify-center">
-                      <Code2 size={20} className="text-white" />
-                    </div>
-                    <h2 className="text-xl font-bold">Kinh nghiệm</h2>
-                  </div>
-                  <p className="text-slate-400 leading-relaxed">{member.experience}</p>
-                </div>
-              </FadeIn>
+          {/* Social links nhỏ */}
+          <div className="flex items-center gap-2">
+            {member.linkedin && (
+              <a href={member.linkedin} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition-all">
+                <Linkedin size={16} />
+              </a>
+            )}
+            {member.email && (
+              <a href={`mailto:${member.email}`} className="p-2 rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition-all">
+                <Mail size={16} />
+              </a>
             )}
           </div>
         </div>
-      </section>
+      </div>
 
-      {/* ── Expertise & Skills ── */}
-      <section className="py-16 px-6">
-        <div className="max-w-6xl mx-auto">
-          <FadeIn>
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold mb-3">
-                Chuyên môn & <span className="text-indigo-400">Kỹ năng</span>
-              </h2>
-              <p className="text-slate-500">Những gì tôi mang lại cho dự án</p>
-            </div>
-          </FadeIn>
+      <div className="max-w-6xl mx-auto px-4 py-8">
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Expertise */}
-            <FadeIn>
-              <div className="p-6 lg:p-8 rounded-2xl bg-slate-900 border border-slate-800">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center">
-                    <Sparkles size={24} className="text-white" />
+          {/* LEFT SIDEBAR - Avatar & Info */}
+          <div className="lg:col-span-4">
+            <div className="sticky top-24">
+              {/* Avatar Section */}
+              <div className="text-center mb-6">
+                <AvatarFrame member={member} />
+              </div>
+
+              {/* Contact Info */}
+              <div className="space-y-3 mb-6">
+                <InfoItem icon={Mail} value={member.email} />
+                <InfoItem icon={Phone} value={member.phone} />
+                <InfoItem icon={MapPin} value={member.address} />
+                {member.birthDate && <InfoItem icon={CalendarDays} value={formatDate(member.birthDate)} />}
+                {member.experienceFrom && <InfoItem icon={Briefcase} value={`${member.experienceFrom} năm kinh nghiệm`} />}
+              </div>
+
+              {/* Social Links */}
+              <div className="flex flex-wrap gap-2 mb-6">
+                {member.linkedin && (
+                  <a href={member.linkedin} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-400 hover:text-white hover:border-slate-600 text-xs transition-all">
+                    <Linkedin size={14} /> LinkedIn
+                  </a>
+                )}
+                {member.github && (
+                  <a href={member.github} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-400 hover:text-white hover:border-slate-600 text-xs transition-all">
+                    <Github size={14} /> GitHub
+                  </a>
+                )}
+                {member.facebook && (
+                  <a href={member.facebook} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-400 hover:text-white hover:border-slate-600 text-xs transition-all">
+                    <Facebook size={14} /> Facebook
+                  </a>
+                )}
+              </div>
+
+              {/* Skills */}
+              {(member.skills || []).length > 0 && (
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-300 mb-3">Kỹ năng</h3>
+                  <div className="flex flex-wrap gap-1.5">
+                    {(member.skills || []).map((skill) => (
+                      <SkillTag key={skill} skill={skill} />
+                    ))}
                   </div>
-                  <h3 className="text-xl font-bold">Chuyên môn</h3>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {member.expertise.map((skill, index) => (
-                    <div
-                      key={skill}
-                      className="flex items-center gap-3 p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20 animate-fade-in"
-                      style={{ animationDelay: `${index * 0.05}s` }}
-                    >
-                      <CheckCircle2 size={18} className="text-indigo-400 flex-shrink-0" />
-                      <span className="text-indigo-200 font-medium text-sm">{skill}</span>
-                    </div>
+              )}
+            </div>
+          </div>
+
+          {/* RIGHT MAIN CONTENT */}
+          <div className="lg:col-span-8 space-y-8">
+
+            {/* Header Section */}
+            <div>
+              <RoleBadge role={member.role} roleLevel={member.roleLevel} />
+              <h1 className="text-3xl lg:text-4xl font-bold mt-3">{member.name}</h1>
+              <p className="text-indigo-400 mt-1">{member.shortBio}</p>
+
+              {/* Quote */}
+              {member.quote && (
+                <div className="mt-4 p-4 rounded-xl bg-slate-900/50 border-l-4 border-indigo-500">
+                  <p className="text-slate-300 italic text-sm">"{member.quote}"</p>
+                </div>
+              )}
+            </div>
+
+            {/* Bio - Ngắn gọn */}
+            {member.bio && (
+              <div>
+                <h2 className="text-lg font-semibold mb-2 flex items-center gap-2">
+                  <Briefcase size={18} className="text-indigo-400" />
+                  Giới thiệu
+                </h2>
+                <div className="text-slate-400 text-sm leading-relaxed prose prose-invert prose-sm">
+                  {member.bio.split('\n\n').map((para, i) => (
+                    <p key={i} className="mb-2">{para}</p>
                   ))}
                 </div>
               </div>
-            </FadeIn>
+            )}
 
-            {/* Skills */}
-            <FadeIn delay={0.1}>
-              <div className="p-6 lg:p-8 rounded-2xl bg-slate-900 border border-slate-800">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
-                    <Layers size={24} className="text-white" />
-                  </div>
-                  <h3 className="text-xl font-bold">Kỹ năng</h3>
-                </div>
+            {/* Expertise - Ngắn gọn dạng tag */}
+            {member.expertise.length > 0 && (
+              <div>
+                <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                  <Sparkles size={18} className="text-indigo-400" />
+                  Chuyên môn
+                </h2>
                 <div className="flex flex-wrap gap-2">
-                  {(member.skills || []).map((skill, index) => (
-                    <span
-                      key={skill}
-                      className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-sm font-medium border border-slate-700 hover:border-indigo-500/50 hover:text-white transition-all cursor-default animate-fade-in"
-                      style={{ animationDelay: `${index * 0.03}s` }}
-                    >
+                  {member.expertise.map((skill) => (
+                    <span key={skill} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-sm">
+                      <CheckCircle2 size={14} />
                       {skill}
                     </span>
                   ))}
                 </div>
               </div>
-            </FadeIn>
-          </div>
-        </div>
-      </section>
+            )}
 
-      {/* ── Projects Portfolio ── */}
-      <section className="py-16 px-6 bg-slate-900/30">
-        <div className="max-w-6xl mx-auto">
-          <FadeIn>
-            <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 mb-12">
+            {/* Dự án tiêu biểu - Nhỏ gọn */}
+            {memberProjects.length > 0 && (
               <div>
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
-                    <Briefcase size={24} className="text-white" />
-                  </div>
-                  <h2 className="text-3xl font-bold">
-                    Dự án <span className="text-emerald-400">tiêu biểu</span>
-                  </h2>
+                <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <FolderKanban size={18} className="text-emerald-400" />
+                  Dự án tiêu biểu
+                  <span className="text-slate-500 text-sm font-normal">({memberProjects.length})</span>
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {memberProjects.slice(0, 4).map((project) => (
+                    <ProjectCard key={project.id} project={project} />
+                  ))}
                 </div>
-                <p className="text-slate-500">Những dự án tôi đã tham gia phát triển</p>
+                {memberProjects.length > 4 && (
+                  <Link href="/portfolio" className="inline-flex items-center gap-1 text-sm text-indigo-400 hover:text-indigo-300 mt-3">
+                    Xem thêm dự án <ArrowRight size={14} />
+                  </Link>
+                )}
               </div>
-              <Link
-                href="/portfolio"
-                className="flex items-center gap-2 text-indigo-400 hover:text-indigo-300 transition-colors"
-              >
-                <span className="text-sm font-medium">Xem tất cả dự án</span>
-                <ArrowRight size={16} />
+            )}
+
+            {/* Thành tựu - Nhỏ gọn */}
+            {member.achievements.length > 0 && (
+              <div>
+                <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                  <Award size={18} className="text-amber-400" />
+                  Thành tựu
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {member.achievements.map((achievement) => (
+                    <AchievementItem key={achievement} achievement={achievement} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Other Members - Nhỏ gọn */}
+            {otherMembers.length > 0 && (
+              <div>
+                <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                  <Users size={18} className="text-blue-400" />
+                  Đồng nghiệp
+                </h2>
+                <div className="flex flex-wrap gap-3">
+                  {otherMembers.slice(0, 4).map((m) => (
+                    <Link key={m.id} href={`/team/${m.slug}`} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-900 border border-slate-800 hover:border-slate-700 transition-all">
+                      <img src={m.image} alt={m.name} className="w-8 h-8 rounded-full object-cover" />
+                      <div>
+                        <p className="text-sm font-medium text-white">{m.name}</p>
+                        <p className="text-xs text-slate-500">{m.role}</p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* CTA */}
+            <div className="pt-4 border-t border-slate-800">
+              <Link href="/contact" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 text-white font-medium hover:bg-indigo-500 transition-colors">
+                Liên hệ hợp tác <ArrowRight size={16} />
               </Link>
             </div>
-          </FadeIn>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {memberProjects.map((project, index) => (
-              <ProjectCard key={project.id} project={project} index={index} />
-            ))}
           </div>
-
-          {memberProjects.length === 0 && (
-            <div className="text-center py-12">
-              <p className="text-slate-500">Chưa có dự án nào được hiển thị</p>
-            </div>
-          )}
         </div>
-      </section>
-
-      {/* ── Achievements ── */}
-      {member.achievements.length > 0 && (
-        <section className="py-16 px-6">
-          <div className="max-w-4xl mx-auto">
-            <FadeIn>
-              <div className="text-center mb-12">
-                <div className="flex items-center justify-center gap-3 mb-3">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center">
-                    <Award size={24} className="text-white" />
-                  </div>
-                  <h2 className="text-3xl font-bold">Thành tựu</h2>
-                </div>
-                <p className="text-slate-500">Những giải thưởng và chứng nhận</p>
-              </div>
-            </FadeIn>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {member.achievements.map((achievement, index) => (
-                <div
-                  key={achievement}
-                  className="flex items-center gap-4 p-4 rounded-xl bg-slate-900 border border-slate-800 hover:border-amber-500/30 transition-all animate-fade-in"
-                  style={{ animationDelay: `${index * 0.1}s` }}
-                >
-                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-500/20 to-orange-500/20 flex items-center justify-center flex-shrink-0">
-                    <Award size={20} className="text-amber-400" />
-                  </div>
-                  <span className="text-slate-200 font-medium">{achievement}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* ── Other Team Members ── */}
-      {otherMembers.length > 0 && (
-        <section className="py-16 px-6 bg-slate-900/30">
-          <div className="max-w-6xl mx-auto">
-            <FadeIn>
-              <div className="text-center mb-12">
-                <div className="flex items-center justify-center gap-3 mb-3">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center">
-                    <Users size={24} className="text-white" />
-                  </div>
-                  <h2 className="text-3xl font-bold">
-                    Đồng nghiệp <span className="text-blue-400">khác</span>
-                  </h2>
-                </div>
-                <p className="text-slate-500">Gặp gỡ các thành viên khác trong đội ngũ</p>
-              </div>
-            </FadeIn>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {otherMembers.slice(0, 4).map((member, index) => (
-                <div
-                  key={member.id}
-                  className="animate-fade-in"
-                  style={{ animationDelay: `${index * 0.1}s` }}
-                >
-                  <Link href={`/team/${member.slug}`}>
-                    <div
-                      className="p-4 rounded-xl bg-slate-900 border border-slate-800 hover:border-indigo-500/50 transition-all hover:-translate-y-1"
-                    >
-                      <div className="flex items-center gap-3">
-                        <img
-                          src={member.image}
-                          alt={member.name}
-                          className="w-12 h-12 rounded-full object-cover"
-                        />
-                        <div>
-                          <h4 className="font-semibold text-white text-sm">{member.name}</h4>
-                          <p className="text-slate-500 text-xs">{member.role}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </Link>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* ── CTA Section ── */}
-      <section className="py-20 px-6 border-t border-slate-800/50">
-        <FadeIn>
-          <div className="max-w-2xl mx-auto text-center">
-            <h2 className="text-3xl font-bold mb-4">Muốn hợp tác?</h2>
-            <p className="text-slate-400 mb-8">
-              Hãy liên hệ với chúng tôi để thảo luận về dự án của bạn
-            </p>
-            <div className="flex flex-wrap justify-center gap-4">
-              <a
-                href="/contact"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold shadow-lg shadow-indigo-600/30 hover:scale-105 active:scale-95 transition-transform"
-              >
-                Liên hệ ngay <ArrowRight size={18} />
-              </a>
-              <a
-                href="/portfolio"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white font-semibold hover:border-indigo-500/50 transition-all hover:scale-105 active:scale-95"
-              >
-                Xem portfolio
-              </a>
-            </div>
-          </div>
-        </FadeIn>
-      </section>
+      </div>
     </div>
   );
 }
 
-// Mock projects for demo
 function getMockProjects(): ProjectData[] {
   return [
     {
@@ -599,40 +417,31 @@ function getMockProjects(): ProjectData[] {
       category: "Web App",
       client: "RetailCorp",
       year: "2024",
-      image: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?fit=crop&w=800&h=500",
-      description: "Nền tảng thương mại điện tử đa quốc gia với hệ thống thanh toán, quản lý đơn hàng và kho hàng.",
-      techStack: ["Next.js", "React", "Node.js", "PostgreSQL", "Stripe"],
-      features: ["Thanh toán trực tuyến", "Quản lý kho", "Báo cáo analytics"],
-      results: "Tăng 200% doanh số trong 6 tháng đầu",
-      screenshots: [],
+      image: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?fit=crop&w=200&h=200",
+      description: "Nền tảng thương mại điện tử",
+      techStack: ["Next.js", "React", "Node.js"],
     },
     {
       id: "2",
       slug: "healthcare-app",
-      title: "Healthcare Mobile App",
-      category: "Mobile App",
-      client: "MedTech Vietnam",
+      title: "Healthcare App",
+      category: "Mobile",
+      client: "MedTech",
       year: "2024",
-      image: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?fit=crop&w=800&h=500",
-      description: "Ứng dụng y tế kết nối bệnh nhân với bác sĩ, đặt lịch khám và tư vấn trực tuyến.",
-      techStack: ["React Native", "Firebase", "AWS", "TensorFlow"],
-      features: ["Đặt lịch khám", "Tư vấn video", "Nhắc nhở thuốc"],
-      results: "Hơn 100,000 người dùng đăng ký",
-      screenshots: [],
+      image: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?fit=crop&w=200&h=200",
+      description: "Ứng dụng y tế",
+      techStack: ["React Native", "Firebase"],
     },
     {
       id: "3",
-      slug: "real-estate-platform",
+      slug: "real-estate",
       title: "Real Estate Platform",
       category: "Web Platform",
       client: "PropertyHub",
       year: "2023",
-      image: "https://images.unsplash.com/photo-1560518883-ce09059eeffa?fit=crop&w=800&h=500",
-      description: "Nền tảng bất động sản với tính năng tìm kiếm, so sánh và giao dịch trực tuyến.",
-      techStack: ["Next.js", "TypeScript", "Prisma", "PostgreSQL"],
-      features: ["Tìm kiếm thông minh", "VR Tour", "Tính toán khoản vay"],
-      results: "Top 3 nền tảng BĐS tại Việt Nam",
-      screenshots: [],
+      image: "https://images.unsplash.com/photo-1560518883-ce09059eeffa?fit=crop&w=200&h=200",
+      description: "Nền tảng bất động sản",
+      techStack: ["Next.js", "TypeScript"],
     },
   ];
 }

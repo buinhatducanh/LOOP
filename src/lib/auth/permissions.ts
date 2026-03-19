@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { verifyToken, type JWTPayload } from "./jwt";
 import { cookies } from "next/headers";
+import { getToken } from "next-auth/jwt";
 
 export type PermissionAction = "create" | "read" | "update" | "delete" | "export" | "approve";
 
@@ -14,6 +15,31 @@ export interface SessionUser {
 }
 
 export async function getSession(): Promise<SessionUser | null> {
+  // First try NextAuth session (Google OAuth) using getToken
+  const nextAuthToken = await getToken({ req: { headers: Object.fromEntries(cookies().entries()) } } as any, { secret: process.env.AUTH_SECRET });
+
+  if (nextAuthToken?.sub) {
+    // Get user from database to check isActive and get roles
+    const user = await prisma.user.findUnique({
+      where: { id: nextAuthToken.sub },
+      include: {
+        userRoles: { include: { role: true } },
+      },
+    });
+
+    if (user && user.isActive) {
+      return {
+        userId: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        roles: user.userRoles.map((ur) => ur.role.name),
+        avatar: user.avatar,
+      };
+    }
+  }
+
+  // Fallback to custom JWT session (email/password)
   const cookieStore = await cookies();
   const token = cookieStore.get("auth-token")?.value;
   if (!token) return null;

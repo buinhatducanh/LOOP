@@ -48,6 +48,31 @@ function CellValue({ value }: { value: boolean | string }) {
       </div>
     );
   }
+
+  // String value — detect "Miễn phí" / "Free"
+  const strVal = String(value ?? "").trim();
+  const isFree = /^mi[ễe]n\s*ph[ií]/i.test(strVal);
+
+  if (isFree) {
+    return (
+      <span
+        style={{
+          display: "inline-block",
+          padding: "2px 8px",
+          borderRadius: "9999px",
+          fontSize: "11px",
+          fontWeight: 700,
+          background: "rgba(245,158,11,0.15)",
+          color: "#FCD34D",
+          border: "1px solid rgba(245,158,11,0.25)",
+          letterSpacing: "0.02em",
+        }}
+      >
+        🆓 {strVal}
+      </span>
+    );
+  }
+
   return (
     <span style={{ color: "#E2E8F0", fontSize: "13px", fontWeight: 500 }}>
       {value}

@@ -246,9 +246,9 @@ model TeamMember {
   slug         String   @unique
   name         String
   role         String
-  bio          String   @db.Text
-  shortBio     String   @map("short_bio")
-  image        String
+  bio          String?  @db.Text
+  shortBio     String?  @map("short_bio")
+  image        String?
   achievements String[]
   linkedin     String?
   twitter      String?
@@ -260,7 +260,6 @@ model TeamMember {
 
   // ── Role Hierarchy & Premium Fields ──
   roleLevel    Int      @default(4) @map("role_level")    // 0=CEO, 1=CTO/VP, 2=Lead, 3=Senior, 4=Member
-  roleCategory String?  @map("role_category")             // "leadership", "management", "engineering", "design", "operations"
   coverImage   String?  @map("cover_image")               // Large cover image for detail page
   quote        String?                                     // Personal quote/slogan
   email        String?                                     // Public email
@@ -270,6 +269,15 @@ model TeamMember {
   social       Json?                                       // Social links as JSON
   isWorking    Boolean  @default(true) @map("is_working")  // Currently working
   isFeatured   Boolean  @default(false) @map("is_featured") // Featured member (displayed larger)
+
+  // ── HR Fields ──
+  birthDate     DateTime? @map("birth_date")               // Ngày tháng năm sinh
+  address       String?  @map("address")                   // Địa chỉ thường trú
+  cccd          String?  @map("cccd")                     // Số CCCD
+  contractStart DateTime? @map("contract_start")            // Ngày bắt đầu hợp đồng
+  experienceFrom Int?    @map("experience_from")           // Kinh nghiệm từ (số năm)
+  facebook      String?  @map("facebook")                 // Link Facebook
+  tiktok        String?  @map("tiktok")                   // Link TikTok
 
   // Portfolio projects relation
   projects     Project[]
@@ -307,7 +315,7 @@ model MemberExpertise {
   id          String   @id @default(cuid())
   memberId    String   @map("member_id")
   expertiseId String   @map("expertise_id")
-  level       Int      @default(3)  // 1-5 rating (1=beginner, 5=expert)
+  level       Int      @default(5)  // 1-10 rating (1=beginner, 10=expert)
   createdAt   DateTime @default(now()) @map("created_at")
 
   member    TeamMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
@@ -381,6 +389,7 @@ model Order {
   orderRewards       OrderReward[]
   payments           Payment[]
   statusHistory      OrderStatusHistory[]
+  customerWebsites   CustomerWebsite[]
 
   @@index([status, createdAt])
   @@index([orderType, status])
@@ -395,6 +404,36 @@ model SiteSetting {
   group String @default("general")
 
   @@map("site_settings")
+}
+
+// Home Page Slider - Admin quản lý ảnh slider
+model HomeSlider {
+  id          String   @id @default(cuid())
+  image       String   // URL ảnh slider
+  title       String?  // Tiêu đề (optional)
+  subtitle    String?  // Phụ đề (optional)
+  link        String?  // Link khi click (optional)
+  sortOrder   Int      @default(0) @map("sort_order")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("home_sliders")
+}
+
+// Home Page Video - Video marketing
+model HomeVideo {
+  id          String   @id @default(cuid())
+  videoUrl    String   // URL video (mp4 hoặc YouTube/Vimeo)
+  thumbnail   String?  // Ảnh thumbnail
+  title       String?  // Tiêu đề video
+  description String?  // Mô tả ngắn
+  isActive    Boolean  @default(true) @map("is_active")
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("home_videos")
 }
 
 // ─── DUAL SERVICE MODEL ─────────────────────────────────────────
@@ -815,4 +854,278 @@ model LandingSection {
 
   @@index([pageId, sortOrder])
   @@map("landing_sections")
+}
+
+// ─── CUSTOMER WEBSITE MANAGEMENT ──────────────────────────────────
+
+// Website đã bán cho khách hàng
+model CustomerWebsite {
+  id              String   @id @default(cuid())
+  orderId         String?  @map("order_id")
+  order           Order?   @relation(fields: [orderId], references: [id])
+
+  // Thông tin website
+  domain          String   // Domain của website (VD: example.com)
+  subdomain       String?  @map("subdomain") // Subdomain nếu có
+  name            String   // Tên website
+  description     String?  @db.Text
+
+  // Hosting info
+  hostingProvider String?  @map("hosting_provider") // "vercel", "neon", "custom"
+  hostingUrl      String?  @map("hosting_url")
+
+  // Thông tin khách hàng
+  customerId      String?  @map("customer_id")
+  customerName    String?  @map("customer_name")
+  customerEmail   String?  @map("customer_email")
+  customerPhone   String?  @map("customer_phone")
+
+  // Trạng thái
+  status          String   @default("active") // "active", "inactive", "suspended", "expired"
+  isMonitored      Boolean  @default(true) @map("is_monitored")
+
+  // Timestamps
+  deployedAt      DateTime? @map("deployed_at")
+  expiresAt      DateTime? @map("expires_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  websiteStats    WebsiteStats[]
+  pageViews       WebsitePageView[]
+
+  @@unique([domain])
+  @@index([status])
+  @@index([customerEmail])
+  @@map("customer_websites")
+}
+
+// Thống kê website hàng ngày
+model WebsiteStats {
+  id              String   @id @default(cuid())
+  websiteId       String   @map("website_id")
+  website         CustomerWebsite @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+
+  date            DateTime @db.Date // Ngày thống kê
+  visitors        Int      @default(0) // Số visitors
+  pageViews       Int      @default(0) // Số page views
+  uniqueVisitors  Int      @default(0) // Số visitors unique
+  bounceRate      Float?   @map("bounce_rate") // Tỷ lệ bounce
+  avgSessionDuration Int?  @map("avg_session_duration") // Thời gian session TB (giây)
+
+  // Performance
+  uptime          Float    @default(100) // % uptime trong ngày
+  responseTime    Int?     @map("response_time") // Response time TB (ms)
+  errorRate       Float    @default(0) @map("error_rate") // % lỗi
+
+  // Traffic sources
+  organicSearch   Int      @default(0) @map("organic_search")
+  directTraffic  Int       @default(0) @map("direct_traffic")
+  socialTraffic  Int       @default(0) @map("social_traffic")
+  referralTraffic Int      @default(0) @map("referral_traffic")
+
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  @@unique([websiteId, date])
+  @@index([websiteId, date])
+  @@map("website_stats")
+}
+
+// Chi tiết page views theo trang
+model WebsitePageView {
+  id              String   @id @default(cuid())
+  websiteId       String   @map("website_id")
+  website         CustomerWebsite @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+
+  pageUrl        String   @map("page_url")
+  pageTitle       String?  @map("page_title")
+  views          Int      @default(1)
+  uniqueViews    Int      @default(1)
+  avgTimeOnPage  Float?   @map("avg_time_on_page")
+  exitRate       Float?   @map("exit_rate")
+
+  date            DateTime @db.Date
+
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  @@index([websiteId, date])
+  @@map("website_page_views")
+}
+
+// ─── POINTS & REWARDS SYSTEM ─────────────────────────────────────
+
+// Tài khoản điểm của khách hàng
+model CustomerPoint {
+  id              String   @id @default(cuid())
+  userId          String?  @map("user_id")
+  userEmail       String   @map("user_email")
+  userName        String?  @map("user_name")
+
+  // Points balance
+  balance         Int      @default(0) // Số dư điểm hiện tại
+  totalEarned     Int      @default(0) @map("total_earned") // Tổng điểm đã kiếm được
+  totalSpent     Int      @default(0) @map("total_spent") // Tổng điểm đã tiêu
+
+  // Level system
+  level           Int      @default(1)
+  currentXp       Int      @default(0) @map("current_xp")
+
+  // Streak (chuỗi ngày liên tiếp)
+  loginStreak     Int      @default(0) @map("login_streak")
+  lastLoginDate   DateTime? @map("last_login_date")
+
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  transactions    PointTransaction[]
+  adWatchHistory  AdWatchHistory[]
+
+  @@unique([userEmail])
+  @@index([balance])
+  @@map("customer_points")
+}
+
+// Lịch sử giao dịch điểm
+model PointTransaction {
+  id              String   @id @default(cuid())
+  customerPointId String   @map("customer_point_id")
+  customerPoint   CustomerPoint @relation(fields: [customerPointId], references: [id], onDelete: Cascade)
+
+  type            String   // "earn" | "spend" | "expire" | "refund"
+  amount          Int      // Số điểm (+/-)
+
+  // Nguồn điểm
+  source          String   // "daily_login", "watch_ad", "purchase", "upgrade", "referral", "review"
+  description     String   // Mô tả
+
+  // Liên kết
+  referenceId     String?  @map("reference_id") // Order ID, ad ID, etc.
+  referenceType   String?  @map("reference_type") // "order", "advertisement", etc.
+
+  // Trạng thái
+  status          String   @default("completed") // "pending", "completed", "cancelled"
+
+  expiresAt       DateTime? @map("expires_at") // Điểm có thể hết hạn
+  expiredAt       DateTime? @map("expired_at")
+
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  @@index([customerPointId, createdAt])
+  @@index([type, createdAt])
+  @@map("point_transactions")
+}
+
+// Cấu hình điểm thưởng cho các hoạt động
+model PointActivity {
+  id              String   @id @default(cuid())
+  slug            String   @unique
+
+  name            String
+  nameVi          String   @map("name_vi")
+  description     String?
+  descriptionVi    String?  @map("description_vi")
+
+  // Rewards
+  points          Int      // Số điểm nhận được
+  xpBonus         Int      @default(0) @map("xp_bonus") // Bonus XP
+
+  // Limits
+  dailyLimit      Int?     @map("daily_limit") // Giới hạn/ngày
+  totalLimit      Int?     @map("total_limit") // Tổng giới hạn
+
+  // Conditions
+  minLevel        Int      @default(1) @map("min_level") // Cấp độ tối thiểu
+  requiresPurchase Boolean  @default(false) @map("requires_purchase") // Cần mua hàng
+
+  // Status
+  isActive        Boolean  @default(true) @map("is_active")
+  sortOrder       Int      @default(0) @map("sort_order")
+
+  // For ads
+  adVideoUrl      String?  @map("ad_video_url")
+  adDuration      Int?     @map("ad_duration") // Thời lượng video (giây)
+
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  @@map("point_activities")
+}
+
+// Video quảng cáo để xem kiếm điểm
+model Advertisement {
+  id              String   @id @default(cuid())
+  slug            String   @unique
+
+  title           String
+  titleVi          String   @map("title_vi")
+  description     String?
+  descriptionVi    String?  @map("description_vi")
+
+  // Video
+  videoUrl        String   @map("video_url")
+  thumbnailUrl    String?  @map("thumbnail_url")
+  duration        Int      // Thời lượng (giây)
+
+  // Rewards
+  points          Int      @default(10)
+  xpBonus         Int      @default(0) @map("xp_bonus")
+
+  // Limits
+  dailyLimit      Int      @default(5) @map("daily_limit")
+  watchCooldown   Int      @default(3600) @map("watch_cooldown") // Cooldown giữa 2 lần xem (giây)
+
+  // Status
+  isActive        Boolean  @default(true) @map("is_active")
+  sortOrder       Int      @default(0) @map("sort_order")
+
+  // Target audience
+  minLevel        Int      @default(1) @map("min_level")
+  requiresPurchase Boolean  @default(false) @map("requires_purchase")
+
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  @@map("advertisements")
+}
+
+// Lịch sử xem quảng cáo
+model AdWatchHistory {
+  id              String   @id @default(cuid())
+  customerPointId String   @map("customer_point_id")
+  customerPoint   CustomerPoint @relation(fields: [customerPointId], references: [id], onDelete: Cascade)
+
+  advertisementId String   @map("advertisement_id")
+  adSlug          String   @map("ad_slug")
+
+  watchedAt        DateTime @default(now()) @map("watched_at")
+  pointsEarned    Int      @map("points_earned")
+  xpEarned        Int      @default(0) @map("xp_earned")
+
+  // Completion status
+  completed       Boolean  @default(false) // Đã xem đủ thời lượng chưa
+  watchDuration    Int      @default(0) @map("watch_duration") // Thời gian thực tế đã xem
+
+  ipAddress        String?  @map("ip_address")
+
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  @@index([customerPointId, watchedAt])
+  @@index([advertisementId])
+  @@map("ad_watch_history")
+}
+
+// Login streak rewards configuration
+model DailyReward {
+  id              String   @id @default(cuid())
+  day             Int      // Ngày trong chuỗi (1, 2, 3, ...)
+  points          Int
+  xpBonus         Int      @default(0) @map("xp_bonus")
+
+  isActive        Boolean  @default(true) @map("is_active")
+
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  @@unique([day])
+  @@map("daily_rewards")
 }

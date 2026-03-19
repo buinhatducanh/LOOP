@@ -2,39 +2,24 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
+import {
+  buildQueryFromParams,
+  parsePagination,
+  buildPaginationResponse,
+  ORDER_FILTER_CONFIG,
+} from "@/lib/api/search-utils";
 
 export async function GET(req: NextRequest) {
   try {
     const session = await requirePermission("orders", "read");
     const { searchParams } = new URL(req.url);
-    const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "20");
-    const search = searchParams.get("search") || "";
-    const status = searchParams.get("status") || "";
-    const paymentStatus = searchParams.get("paymentStatus") || "";
-
-    const where: Record<string, unknown> = {};
-
-    if (search) {
-      where.OR = [
-        { customerName: { contains: search, mode: "insensitive" as const } },
-        { customerEmail: { contains: search, mode: "insensitive" as const } },
-        { orderNumber: { contains: search, mode: "insensitive" as const } },
-      ];
-    }
-
-    if (status) {
-      where.status = status;
-    }
-
-    if (paymentStatus) {
-      where.paymentStatus = paymentStatus;
-    }
+    const { where, orderBy } = buildQueryFromParams(searchParams, ORDER_FILTER_CONFIG);
+    const { page, limit } = parsePagination(searchParams);
 
     const [orders, total] = await Promise.all([
       prisma.order.findMany({
         where,
-        orderBy: { createdAt: "desc" },
+        orderBy,
         skip: (page - 1) * limit,
         take: limit,
         include: { package: { select: { title: true } } },
@@ -44,7 +29,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       data: orders,
-      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+      ...buildPaginationResponse(total, page, limit),
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Server error";

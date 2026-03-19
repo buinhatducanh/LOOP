@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { usePathname } from "next/navigation";
+import { useSession, signIn as nextAuthSignIn, signOut as nextAuthSignOut } from "next-auth/react";
 
 export interface User {
   id: string;
@@ -18,6 +19,7 @@ interface AuthContextType {
   isAdmin: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; message: string }>;
   logout: () => void;
+  signIn: (provider?: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -25,15 +27,37 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const pathname = usePathname();
+  const { data: session, status } = useSession();
 
+  // Sync NextAuth session with our User state
+  useEffect(() => {
+    if (session?.user) {
+      const sessionUser: User = {
+        id: session.user.id || "",
+        name: session.user.name || "",
+        email: session.user.email || "",
+        role: (session.user.role as "admin" | "user") || "user",
+        avatar: session.user.image || session.user.name?.split(" ").map((w: string) => w[0]).join("").toUpperCase().slice(0, 2) || "AD",
+        createdAt: new Date().toISOString().split("T")[0],
+      };
+      setUser(sessionUser);
+    } else if (status === "unauthenticated") {
+      setUser(null);
+    }
+  }, [session, status]);
+
+  // Check custom auth for admin routes (fallback for email/password login)
   useEffect(() => {
     const isAdminRoute = pathname.startsWith("/admin");
     if (!isAdminRoute) return;
 
+    // Only check custom auth if not using NextAuth session
+    if (status === "loading") return;
+
     fetch("/api/admin/auth/me")
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        if (data?.user) {
+        if (data?.user && !session) {
           const sessionUser: User = {
             id: data.user.id,
             name: data.user.name || "",
@@ -48,7 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .catch(() => {
         // Network error - user stays null (not authenticated)
       });
-  }, [pathname]);
+  }, [pathname, session, status]);
 
   const login = async (email: string, password: string) => {
     try {
@@ -78,7 +102,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     setUser(null);
+    // Sign out from NextAuth
+    nextAuthSignOut({ callbackUrl: "/" });
+    // Also clear custom auth
     fetch("/api/admin/auth/logout", { method: "POST" }).catch(() => {});
+  };
+
+  const signIn = (provider: string = "google") => {
+    nextAuthSignIn(provider, { callbackUrl: "/admin" });
   };
 
   return (
@@ -89,6 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAdmin: user?.role === "admin",
         login,
         logout,
+        signIn,
       }}
     >
       {children}

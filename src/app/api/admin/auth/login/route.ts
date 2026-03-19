@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { verifyPassword } from "@/lib/auth/password";
 import { signToken } from "@/lib/auth/jwt";
 import { createAuditLog } from "@/lib/auth/audit";
+import { cookies } from "next/headers";
 
 // Pre-computed hash to use for timing-safe comparison when user doesn't exist
 const DUMMY_HASH = "$2a$12$LJ3m4ys3Rl3hPcyFSevMnuGHvZw7KLEqKl6.s8EWYFONbJdRe0Gu2";
@@ -51,6 +52,8 @@ export async function POST(req: NextRequest) {
     }
 
     const roles = user.userRoles.map((ur) => ur.role.name);
+
+    // Create JWT token for custom auth
     const token = signToken({
       userId: user.id,
       email: user.email,
@@ -75,11 +78,22 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // Set auth token cookie
     response.cookies.set("auth-token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       maxAge: 8 * 60 * 60, // 8 hours
+      path: "/",
+    });
+
+    // Also set NextAuth session cookie for consistency
+    // This is handled by NextAuth, but we set a marker cookie
+    response.cookies.set("auth-method", "credentials", {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 8 * 60 * 60,
       path: "/",
     });
 

@@ -11,7 +11,9 @@
         "getQuote": "Get a Quote",
         "dashboard": "Dashboard",
         "pricing": "Pricing",
-        "portfolio": "Portfolio"
+        "portfolio": "Portfolio",
+        "blog": "Blog",
+        "more": "More"
     },
     "Footer": {
         "ctaTitle": "Ready to start your project?",
@@ -79,7 +81,13 @@
         "ctaTitle3": "Digital Presence?",
         "ctaDesc": "Join 150+ businesses who've already chosen LOOP to build their digital future.",
         "btnStart": "Get Started Today",
-        "btnPricing": "View Pricing"
+        "btnPricing": "View Pricing",
+        "teamSub": "Our Team",
+        "teamTitle": "Meet the ",
+        "teamHighlight": "team",
+        "teamTitle2": "of experts",
+        "teamDesc": "The talented people behind every successful project",
+        "teamViewAll": "View all team members"
     },
     "Stats": {
         "projects_label": "Projects Delivered",
@@ -324,6 +332,20 @@
         "title": "Page Not Found",
         "description": "Sorry, the page you are looking for does not exist or has been moved.",
         "backToHome": "Back to Home"
+    },
+    "Search": {
+        "openSearch": "Open search",
+        "placeholder": "Search services, team, projects...",
+        "hint": "Start typing to search",
+        "examples": "Try: \"web design\", \"CEO\", \"John Doe\"",
+        "noResults": "No results found",
+        "tryDifferent": "Try a different keyword",
+        "showingResults": "{{count}} result(s) found",
+        "pressEnter": "Press Enter to see all · ↑↓ to navigate",
+        "services": "Services",
+        "teamMembers": "Team",
+        "projects": "Projects",
+        "clear": "Clear"
     },
     "seo": {
         "homeTitle": "LOOP - Professional Web & App Development",

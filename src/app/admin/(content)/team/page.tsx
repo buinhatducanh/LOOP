@@ -15,17 +15,14 @@ interface TeamMember {
   bio: string;
   shortBio: string;
   image: string;
-  expertise: string[];
   achievements: string[];
   linkedin: string | null;
   twitter: string | null;
   github: string | null;
-  sortOrder: number;
   isActive: boolean;
   createdAt: string;
-  // New fields
+  // Role fields
   roleLevel: number;
-  roleCategory: string | null;
   coverImage: string | null;
   quote: string | null;
   email: string | null;
@@ -36,6 +33,14 @@ interface TeamMember {
   isWorking: boolean;
   isFeatured: boolean;
   memberExpertise: SelectedExpertise[];
+  // HR fields
+  birthDate: string | null;
+  address: string | null;
+  cccd: string | null;
+  contractStart: string | null;
+  experienceFrom: number | null;
+  facebook: string | null;
+  tiktok: string | null;
 }
 
 interface SelectedExpertise {
@@ -50,16 +55,13 @@ interface FormData {
   bio: string;
   shortBio: string;
   image: string;
-  expertise: string;
   achievements: string;
   linkedin: string;
   twitter: string;
   github: string;
-  sortOrder: number;
   isActive: boolean;
-  // New fields
+  // Role fields
   roleLevel: number;
-  roleCategory: string;
   coverImage: string;
   quote: string;
   email: string;
@@ -70,6 +72,14 @@ interface FormData {
   isFeatured: boolean;
   // Expertise with rating
   memberExpertise: SelectedExpertise[];
+  // HR fields
+  birthDate: string;
+  address: string;
+  cccd: string;
+  contractStart: string;
+  experienceFrom: number;
+  facebook: string;
+  tiktok: string;
 }
 
 const emptyForm: FormData = {
@@ -79,16 +89,13 @@ const emptyForm: FormData = {
   bio: "",
   shortBio: "",
   image: "",
-  expertise: "",
   achievements: "",
   linkedin: "",
   twitter: "",
   github: "",
-  sortOrder: 0,
   isActive: true,
-  // New fields
+  // Role fields
   roleLevel: 4,
-  roleCategory: "",
   coverImage: "",
   quote: "",
   email: "",
@@ -98,6 +105,14 @@ const emptyForm: FormData = {
   isWorking: true,
   isFeatured: false,
   memberExpertise: [],
+  // HR fields
+  birthDate: "",
+  address: "",
+  cccd: "",
+  contractStart: "",
+  experienceFrom: 0,
+  facebook: "",
+  tiktok: "",
 };
 
 const roleLevelOptions = [
@@ -108,13 +123,24 @@ const roleLevelOptions = [
   { value: 4, label: "Member" },
 ];
 
-const roleCategoryOptions = [
-  { value: "", label: "-- Chọn --" },
-  { value: "leadership", label: "Leadership" },
-  { value: "management", label: "Management" },
-  { value: "engineering", label: "Engineering" },
-  { value: "design", label: "Design" },
-  { value: "operations", label: "Operations" },
+// Experience years options
+const experienceYearsOptions = [
+  { value: 0, label: "Chưa có kinh nghiệm" },
+  { value: 1, label: "1 năm" },
+  { value: 2, label: "2 năm" },
+  { value: 3, label: "3 năm" },
+  { value: 4, label: "4 năm" },
+  { value: 5, label: "5 năm" },
+  { value: 6, label: "6 năm" },
+  { value: 7, label: "7 năm" },
+  { value: 8, label: "8 năm" },
+  { value: 9, label: "9 năm" },
+  { value: 10, label: "10 năm" },
+  { value: 11, label: "11 năm" },
+  { value: 12, label: "12 năm" },
+  { value: 13, label: "13 năm" },
+  { value: 14, label: "14 năm" },
+  { value: 15, label: "15+ năm" },
 ];
 
 function slugify(text: string): string {
@@ -138,14 +164,19 @@ export default function AdminTeamPage() {
   const [form, setForm] = useState<FormData>(emptyForm);
   const [saving, setSaving] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
-  const [expertises, setExpertises] = useState<{id: string; name: string; nameVi: string; category: string; icon: string | null}[]>([]);
+  const [selectedExpertiseId, setSelectedExpertiseId] = useState("");
+  const [selectedExpertiseLevel, setSelectedExpertiseLevel] = useState(5);
+  const [expertises, setExpertises] = useState<{id: string; name: string; nameVi: string; category: string; categoryVi: string; icon: string | null; isActive: boolean}[]>([]);
 
   // Fetch expertises when modal opens
   useEffect(() => {
     if (showModal) {
       fetch("/api/admin/expertises?active=true")
         .then(r => r.json())
-        .then(data => setExpertises(data.data || []))
+        .then(data => {
+          console.log("Expertises loaded:", data.data);
+          setExpertises(data.data || []);
+        })
         .catch(console.error);
     }
   }, [showModal]);
@@ -174,6 +205,8 @@ export default function AdminTeamPage() {
   const openCreate = () => {
     setEditingMember(null);
     setForm(emptyForm);
+    setSelectedExpertiseId("");
+    setSelectedExpertiseLevel(5);
     setShowModal(true);
   };
 
@@ -188,16 +221,13 @@ export default function AdminTeamPage() {
       bio: member.bio || "",
       shortBio: member.shortBio || "",
       image: member.image || "",
-      expertise: member.expertise?.join(", ") || "",
       achievements: member.achievements?.join(", ") || "",
       linkedin: member.linkedin || "",
       twitter: member.twitter || "",
       github: member.github || "",
-      sortOrder: member.sortOrder || 0,
       isActive: member.isActive ?? true,
-      // New fields
+      // Role fields
       roleLevel: member.roleLevel ?? 4,
-      roleCategory: member.roleCategory || "",
       coverImage: member.coverImage || "",
       quote: member.quote || "",
       email: member.email || "",
@@ -207,6 +237,26 @@ export default function AdminTeamPage() {
       isWorking: member.isWorking ?? true,
       isFeatured: member.isFeatured ?? false,
       memberExpertise: member.memberExpertise || [],
+      // HR fields - convert Date to dd/mm/yyyy format for display
+      birthDate: (member as any).birthDate ? (() => {
+        const date = new Date((member as any).birthDate);
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        return `${day}/${month}/${year}`;
+      })() : "",
+      address: (member as any).address || "",
+      cccd: (member as any).cccd || "",
+      contractStart: (member as any).contractStart ? (() => {
+        const date = new Date((member as any).contractStart);
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        return `${day}/${month}/${year}`;
+      })() : "",
+      experienceFrom: (member as any).experienceFrom || 0,
+      facebook: (member as any).facebook || "",
+      tiktok: (member as any).tiktok || "",
     });
     setShowModal(true);
   };
@@ -279,10 +329,6 @@ export default function AdminTeamPage() {
         bio: form.bio,
         shortBio: form.shortBio,
         image: form.image || "",
-        expertise: form.expertise
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean),
         achievements: form.achievements
           .split(",")
           .map((s) => s.trim())
@@ -290,11 +336,9 @@ export default function AdminTeamPage() {
         linkedin: form.linkedin || null,
         twitter: form.twitter || null,
         github: form.github || null,
-        sortOrder: form.sortOrder,
         isActive: form.isActive,
-        // New fields
+        // Role fields
         roleLevel: form.roleLevel,
-        roleCategory: form.roleCategory || null,
         coverImage: form.coverImage || null,
         quote: form.quote || null,
         email: form.email || null,
@@ -306,6 +350,16 @@ export default function AdminTeamPage() {
         experience: form.experience || null,
         isWorking: form.isWorking,
         isFeatured: form.isFeatured,
+        // Member expertise with proficiency rating
+        memberExpertise: form.memberExpertise,
+        // HR fields
+        birthDate: form.birthDate || null,
+        address: form.address || null,
+        cccd: form.cccd || null,
+        contractStart: form.contractStart || null,
+        experienceFrom: form.experienceFrom || null,
+        facebook: form.facebook || null,
+        tiktok: form.tiktok || null,
       };
 
       const url = editingMember
@@ -409,35 +463,33 @@ export default function AdminTeamPage() {
       ),
     },
     {
-      accessorKey: "expertise",
-      header: "Chuyên môn",
+      accessorKey: "memberExpertise",
+      header: "Kỹ năng",
       cell: ({ row }) => {
-        const expertise = row.original.expertise || [];
+        const memberExpertise = row.original.memberExpertise || [];
         return (
           <div className="flex flex-wrap gap-1">
-            {expertise.slice(0, 3).map((e: any, i: number) => (
+            {memberExpertise.slice(0, 3).map((e: any, i: number) => (
               <span
                 key={i}
-                className="rounded bg-slate-800 px-1.5 py-0.5 text-[11px] text-slate-400"
+                className={`rounded px-1.5 py-0.5 text-[11px] font-medium ${
+                  e.level >= 8 ? 'bg-green-500/20 text-green-400' :
+                  e.level >= 6 ? 'bg-blue-500/20 text-blue-400' :
+                  e.level >= 4 ? 'bg-yellow-500/20 text-yellow-400' :
+                  'bg-slate-500/20 text-slate-400'
+                }`}
               >
-                {typeof e === 'string' ? e : e.name || e.nameVi || ''}
+                {e.expertise?.nameVi || e.expertise?.name || ''} ({e.level}/10)
               </span>
             ))}
-            {expertise.length > 3 && (
+            {memberExpertise.length > 3 && (
               <span className="text-[11px] text-slate-500">
-                +{expertise.length - 3}
+                +{memberExpertise.length - 3}
               </span>
             )}
           </div>
         );
       },
-    },
-    {
-      accessorKey: "sortOrder",
-      header: "Thứ tự",
-      cell: ({ row }) => (
-        <span className="text-slate-400">{row.original.sortOrder}</span>
-      ),
     },
     {
       accessorKey: "isActive",
@@ -558,8 +610,8 @@ export default function AdminTeamPage() {
                 </div>
               </div>
 
-              {/* Role & Role Level & Role Category */}
-              <div className="grid grid-cols-3 gap-4">
+              {/* Role & Role Level */}
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="mb-1 block text-sm font-medium text-slate-300">
                     Vai trò <span className="text-red-400">*</span>
@@ -582,20 +634,6 @@ export default function AdminTeamPage() {
                     className="h-9 w-full rounded-lg border border-slate-700 bg-slate-800 px-3 text-sm text-white outline-none focus:border-blue-500"
                   >
                     {roleLevelOptions.map((opt) => (
-                      <option key={opt.value} value={opt.value}>{opt.label}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-slate-300">
-                    Phân loại
-                  </label>
-                  <select
-                    value={form.roleCategory}
-                    onChange={(e) => updateField("roleCategory", e.target.value)}
-                    className="h-9 w-full rounded-lg border border-slate-700 bg-slate-800 px-3 text-sm text-white outline-none focus:border-blue-500"
-                  >
-                    {roleCategoryOptions.map((opt) => (
                       <option key={opt.value} value={opt.value}>{opt.label}</option>
                     ))}
                   </select>
@@ -666,7 +704,7 @@ export default function AdminTeamPage() {
                 </div>
               </div>
 
-              {/* Contact */}
+              {/* Contact & HR Info */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="mb-1 block text-sm font-medium text-slate-300">Email</label>
@@ -690,30 +728,204 @@ export default function AdminTeamPage() {
                 </div>
               </div>
 
-              {/* Expertise & Skills */}
+              {/* HR Fields - Personal Info */}
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-slate-300">Ngày sinh</label>
+                  <input
+                    type="text"
+                    value={form.birthDate}
+                    onChange={(e) => updateField("birthDate", e.target.value)}
+                    className="h-9 w-full rounded-lg border border-slate-700 bg-slate-800 px-3 text-sm text-white outline-none focus:border-blue-500"
+                    placeholder="dd/mm/yyyy"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-slate-300">CCCD</label>
+                  <input
+                    type="text"
+                    value={form.cccd}
+                    onChange={(e) => updateField("cccd", e.target.value)}
+                    className="h-9 w-full rounded-lg border border-slate-700 bg-slate-800 px-3 text-sm text-white outline-none focus:border-blue-500"
+                    placeholder="012345678901"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-slate-300">Ngày vào công ty</label>
+                  <input
+                    type="text"
+                    value={form.contractStart}
+                    onChange={(e) => updateField("contractStart", e.target.value)}
+                    className="h-9 w-full rounded-lg border border-slate-700 bg-slate-800 px-3 text-sm text-white outline-none focus:border-blue-500"
+                    placeholder="dd/mm/yyyy"
+                  />
+                </div>
+              </div>
+
+              {/* HR Fields - Address & Experience */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-slate-300">Chuyên môn</label>
+                  <label className="mb-1 block text-sm font-medium text-slate-300">Địa chỉ thường trú</label>
                   <input
                     type="text"
-                    value={form.expertise}
-                    onChange={(e) => updateField("expertise", e.target.value)}
+                    value={form.address}
+                    onChange={(e) => updateField("address", e.target.value)}
                     className="h-9 w-full rounded-lg border border-slate-700 bg-slate-800 px-3 text-sm text-white outline-none focus:border-blue-500"
-                    placeholder="React, TypeScript, Node.js"
+                    placeholder="Quận/Huyện, Tỉnh/TP"
                   />
-                  <p className="mt-1 text-xs text-slate-500">Phân cách bằng dấu phẩy</p>
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-slate-300">Kỹ năng</label>
-                  <input
-                    type="text"
-                    value={form.skills}
-                    onChange={(e) => updateField("skills", e.target.value)}
+                  <label className="mb-1 block text-sm font-medium text-slate-300">Kinh nghiệm từ</label>
+                  <select
+                    value={form.experienceFrom}
+                    onChange={(e) => updateField("experienceFrom", parseInt(e.target.value))}
                     className="h-9 w-full rounded-lg border border-slate-700 bg-slate-800 px-3 text-sm text-white outline-none focus:border-blue-500"
-                    placeholder="Problem Solving, Teamwork"
-                  />
-                  <p className="mt-1 text-xs text-slate-500">Phân cách bằng dấu phẩy</p>
+                  >
+                    {experienceYearsOptions.map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
                 </div>
+              </div>
+
+              {/* Expertise Selection with Proficiency Rating */}
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-300">
+                  Trường kỹ năng
+                </label>
+                <div className="rounded-lg border border-slate-700 bg-slate-800 p-4">
+                  {/* Add new expertise */}
+                  <div className="mb-4 flex gap-3">
+                    <div className="flex-1">
+                      <select
+                        className="h-9 w-full rounded-lg border border-slate-600 bg-slate-700 px-3 text-sm text-white outline-none focus:border-blue-500"
+                        value={selectedExpertiseId}
+                        onChange={(e) => setSelectedExpertiseId(e.target.value)}
+                      >
+                        <option value="">-- Chọn kỹ năng --</option>
+                        {expertises.length === 0 && (
+                          <option disabled>Chưa có kỹ năng nào</option>
+                        )}
+                        {expertises
+                          .sort((a, b) => {
+                            const catOrder = ['frontend', 'backend', 'mobile', 'design', 'devops', 'data', 'management', 'marketing', 'other'];
+                            const aIdx = catOrder.indexOf(a.category);
+                            const bIdx = catOrder.indexOf(b.category);
+                            return (aIdx === -1 ? 99 : aIdx) - (bIdx === -1 ? 99 : bIdx);
+                          })
+                          .map((exp) => (
+                            <option key={exp.id} value={exp.id}>
+                              {exp.nameVi || exp.name} ({exp.categoryVi || exp.category})
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+                    <div className="w-32">
+                      <select
+                        className="h-9 w-full rounded-lg border border-slate-600 bg-slate-700 px-3 text-sm text-white outline-none focus:border-blue-500"
+                        value={selectedExpertiseLevel}
+                        onChange={(e) => setSelectedExpertiseLevel(parseInt(e.target.value))}
+                      >
+                        {[...Array(10)].map((_, i) => (
+                          <option key={i + 1} value={i + 1}>
+                            {i + 1}/10
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!selectedExpertiseId) {
+                          toast.error("Vui lòng chọn kỹ năng");
+                          return;
+                        }
+
+                        // Check if already added
+                        if (form.memberExpertise.some(me => me.expertiseId === selectedExpertiseId)) {
+                          toast.error("Kỹ năng này đã được thêm");
+                          return;
+                        }
+
+                        setForm(prev => ({
+                          ...prev,
+                          memberExpertise: [
+                            ...prev.memberExpertise,
+                            { expertiseId: selectedExpertiseId, level: selectedExpertiseLevel }
+                          ]
+                        }));
+
+                        // Reset selection
+                        setSelectedExpertiseId("");
+                        setSelectedExpertiseLevel(5);
+                      }}
+                      className="flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
+                    >
+                      <Plus size={16} /> Thêm
+                    </button>
+                  </div>
+
+                  {/* Selected expertise list */}
+                  {form.memberExpertise.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-xs text-slate-400">Kỹ năng đã chọn:</p>
+                      {form.memberExpertise.map((me, index) => {
+                        const exp = expertises.find(e => e.id === me.expertiseId);
+                        return (
+                          <div
+                            key={me.expertiseId}
+                            className="flex items-center justify-between rounded-lg bg-slate-700 px-3 py-2"
+                          >
+                            <div className="flex items-center gap-3">
+                              <span className="text-sm font-medium text-white">
+                                {exp?.nameVi || exp?.name || me.expertiseId}
+                              </span>
+                              <span className={`rounded px-2 py-0.5 text-xs font-medium ${
+                                me.level >= 8 ? 'bg-green-500/20 text-green-400' :
+                                me.level >= 6 ? 'bg-blue-500/20 text-blue-400' :
+                                me.level >= 4 ? 'bg-yellow-500/20 text-yellow-400' :
+                                'bg-slate-500/20 text-slate-400'
+                              }`}>
+                                {me.level}/10
+                              </span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setForm(prev => ({
+                                  ...prev,
+                                  memberExpertise: prev.memberExpertise.filter((_, i) => i !== index)
+                                }));
+                              }}
+                              className="rounded p-1 text-slate-400 hover:bg-slate-600 hover:text-red-400"
+                            >
+                              <X size={16} />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {form.memberExpertise.length === 0 && (
+                    <p className="text-center text-sm text-slate-500">
+                      Chưa có kỹ năng nào. Hãy chọn kỹ năng từ dropdown trên.
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Skills - simple text input */}
+              <div>
+                <label className="mb-1 block text-sm font-medium text-slate-300">Kỹ năng mềm</label>
+                <input
+                  type="text"
+                  value={form.skills}
+                  onChange={(e) => updateField("skills", e.target.value)}
+                  className="h-9 w-full rounded-lg border border-slate-700 bg-slate-800 px-3 text-sm text-white outline-none focus:border-blue-500"
+                  placeholder="Problem Solving, Teamwork, Communication"
+                />
+                <p className="mt-1 text-xs text-slate-500">Phân cách bằng dấu phẩy</p>
               </div>
 
               {/* Achievements & Experience */}
@@ -742,7 +954,7 @@ export default function AdminTeamPage() {
               </div>
 
               {/* Social links */}
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-5 gap-4">
                 <div>
                   <label className="mb-1 block text-sm font-medium text-slate-300">LinkedIn</label>
                   <input
@@ -751,6 +963,26 @@ export default function AdminTeamPage() {
                     onChange={(e) => updateField("linkedin", e.target.value)}
                     className="h-9 w-full rounded-lg border border-slate-700 bg-slate-800 px-3 text-sm text-white outline-none focus:border-blue-500"
                     placeholder="URL LinkedIn"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-slate-300">Facebook</label>
+                  <input
+                    type="text"
+                    value={form.facebook}
+                    onChange={(e) => updateField("facebook", e.target.value)}
+                    className="h-9 w-full rounded-lg border border-slate-700 bg-slate-800 px-3 text-sm text-white outline-none focus:border-blue-500"
+                    placeholder="URL Facebook"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-slate-300">TikTok</label>
+                  <input
+                    type="text"
+                    value={form.tiktok}
+                    onChange={(e) => updateField("tiktok", e.target.value)}
+                    className="h-9 w-full rounded-lg border border-slate-700 bg-slate-800 px-3 text-sm text-white outline-none focus:border-blue-500"
+                    placeholder="URL TikTok"
                   />
                 </div>
                 <div>
@@ -775,17 +1007,8 @@ export default function AdminTeamPage() {
                 </div>
               </div>
 
-              {/* Sort Order, Active, Working, Featured */}
-              <div className="grid grid-cols-4 gap-4">
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-slate-300">Thứ tự</label>
-                  <input
-                    type="number"
-                    value={form.sortOrder}
-                    onChange={(e) => updateField("sortOrder", parseInt(e.target.value) || 0)}
-                    className="h-9 w-full rounded-lg border border-slate-700 bg-slate-800 px-3 text-sm text-white outline-none focus:border-blue-500"
-                  />
-                </div>
+              {/* Active, Working, Featured */}
+              <div className="grid grid-cols-3 gap-4">
                 <div className="flex items-end">
                   <label className="flex items-center gap-2 text-sm text-slate-300">
                     <input

@@ -208,6 +208,15 @@ html, body {
 }
 .animate-glow { animation: pulseGlow 3s ease-in-out infinite; }
 
+/* Pulse Subtle - for special role badges */
+@keyframes pulseSubtle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.85; }
+}
+.animate-pulse-subtle {
+  animation: pulseSubtle 2.5s ease-in-out infinite;
+}
+
 /* Shimmer */
 @keyframes shimmer {
   0% { background-position: -200% 0; }

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getServices, getProjects, getTestimonials, getSiteSettings, getTeamMembers } from "@/lib/db/queries";
+import { getServices, getProjects, getTestimonials, getSiteSettings, getTeamMembers, getHomeSliders, getHomeVideo } from "@/lib/db/queries";
 import { services as mockServices, projects as mockProjects, testimonials as mockTestimonials, mockTeamMembers } from "@/data/mockData";
 import JsonLd from "@/components/seo/JsonLd";
 import { HomePage } from "./home-page";
@@ -37,6 +37,35 @@ export default async function Page() {
   ].filter(Boolean);
 
   const heroEnabled = siteSettings.hero_enable !== "0";
+
+  // Get sliders and video from database (with fallback)
+  let dbSliders: any[] = [];
+  let dbVideo: any = null;
+
+  try {
+    dbSliders = await getHomeSliders();
+    dbVideo = await getHomeVideo();
+  } catch (e) {
+    // Tables may not exist yet - use fallback
+    console.log("HomeSlider tables not found, using fallback");
+  }
+
+  const sliders = dbSliders.map((s: any) => ({
+    id: s.id,
+    image: s.image,
+    title: s.title,
+    subtitle: s.subtitle,
+    link: s.link,
+    sortOrder: s.sortOrder,
+  }));
+
+  const video = dbVideo ? {
+    id: dbVideo.id,
+    videoUrl: dbVideo.videoUrl,
+    thumbnail: dbVideo.thumbnail,
+    title: dbVideo.title,
+    description: dbVideo.description,
+  } : null;
 
   try {
     const [dbServices, dbProjects, dbTestimonials, dbTeam] = await Promise.all([
@@ -156,6 +185,8 @@ export default async function Page() {
         } : undefined}
         banners={banners}
         heroEnabled={heroEnabled}
+        sliders={sliders}
+        video={video}
       />
     </>
   );

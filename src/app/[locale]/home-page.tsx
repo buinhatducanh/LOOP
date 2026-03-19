@@ -32,6 +32,7 @@ import { ProjectCard } from "@/components/cards/ProjectCard";
 import { HeroCanvas } from "@/components/shared/HeroCanvas";
 import { HeroBanner } from "@/components/shared/HeroBanner";
 import { TopMenuTrigger } from "@/components/shared/TopMenuTrigger";
+import { HomeSliderSection } from "@/components/shared/HomeSliderSection";
 
 interface StatsData {
   projects?: string;
@@ -64,6 +65,23 @@ interface TeamMemberData {
   isFeatured: boolean;
 }
 
+interface SliderData {
+  id: string;
+  image: string;
+  title: string | null;
+  subtitle: string | null;
+  link: string | null;
+  sortOrder: number;
+}
+
+interface VideoData {
+  id: string;
+  videoUrl: string;
+  thumbnail: string | null;
+  title: string | null;
+  description: string | null;
+}
+
 interface HomePageProps {
   services?: typeof mockServices;
   projects?: typeof mockProjects;
@@ -72,6 +90,8 @@ interface HomePageProps {
   stats?: StatsData;
   banners?: string[];
   heroEnabled?: boolean;
+  sliders?: SliderData[];
+  video?: VideoData | null;
 }
 
 const getStats = (t: any, data?: StatsData) => [
@@ -130,6 +150,8 @@ export function HomePage({
   stats: statsData,
   banners = [],
   heroEnabled = true,
+  sliders = [],
+  video = null,
 }: HomePageProps) {
   // Get featured members (CEO + featured + first few)
   const featuredTeam = useMemo(() => {
@@ -162,7 +184,11 @@ export function HomePage({
 
   return (
     <div style={{ color: "#FFFFFF" }}>
-      {/* --- HERO (Animated Canvas Video) --- */}
+      {/* --- HERO SLIDER SECTION --- */}
+      <HomeSliderSection sliders={sliders} video={video} />
+
+      {/* Fallback: If no sliders, show old hero */}
+      {sliders.length === 0 && heroEnabled && (
       <section
         style={{
           position: "relative",
@@ -385,6 +411,7 @@ export function HomePage({
         </div>
 
       </section>
+      )}
 
       {/* --- STATS --- */}
       <section
@@ -446,89 +473,6 @@ export function HomePage({
               </div>
             </FadeInSection>
           ))}
-        </div>
-      </section>
-
-      {/* --- SERVICES PREVIEW --- */}
-      <section style={{ padding: "100px 24px" }}>
-        <div style={{ maxWidth: "1280px", margin: "0 auto" }}>
-          <FadeInSection>
-            <div style={{ textAlign: "center", marginBottom: "64px" }}>
-              <span
-                style={{
-                  color: "#3B82F6",
-                  fontSize: "13px",
-                  fontWeight: 700,
-                  textTransform: "uppercase",
-                  letterSpacing: "2px",
-                }}
-              >
-                {t('servicesSub')}
-              </span>
-              <h2
-                style={{
-                  fontSize: "clamp(30px, 4vw, 48px)",
-                  fontWeight: 800,
-                  marginTop: "12px",
-                  marginBottom: "16px",
-                  letterSpacing: "-1px",
-                }}
-              >
-                {t('servicesTitle')} <GradientText>{t('servicesHighlight')}</GradientText>
-              </h2>
-              <p
-                style={{
-                  color: "#94A3B8",
-                  fontSize: "16px",
-                  maxWidth: "500px",
-                  margin: "0 auto",
-                  lineHeight: 1.7,
-                }}
-              >
-                {t('servicesDesc')}
-              </p>
-            </div>
-          </FadeInSection>
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(290px, 1fr))",
-              gap: "24px",
-              marginBottom: "48px",
-            }}
-          >
-            {services.slice(0, 3).map((service, i) => (
-              <FadeInSection key={service.id} delay={i * 0.1}>
-                <ServiceCard service={service} />
-              </FadeInSection>
-            ))}
-          </div>
-
-          <FadeInSection>
-            <div style={{ textAlign: "center" }}>
-              <button
-                className="btn-hover-scale"
-                onClick={() => router.push("/services")}
-                style={{
-                  background: "rgba(0,0,0,0)",
-                  color: "#3B82F6",
-                  border: "1px solid #3B82F6",
-                  padding: "13px 32px",
-                  borderRadius: "10px",
-                  fontSize: "15px",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "8px",
-                  transition: "all 0.2s",
-                }}
-              >
-                {t('btnAllServices')} <ArrowRight size={16} />
-              </button>
-            </div>
-          </FadeInSection>
         </div>
       </section>
 

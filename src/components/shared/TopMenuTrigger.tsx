@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter, usePathname, Link } from "@/i18n/routing";
 import { useTranslations } from "next-intl";
 import { useLocale } from "next-intl";
-import { Zap, LogIn } from "lucide-react";
+import { Zap, LogIn, ChevronDown, Package, Briefcase, Users, FileText } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { LanguageSwitcher } from "@/components/shared/LanguageSwitcher";
 
@@ -15,25 +15,94 @@ export function TopMenuTrigger() {
   const t = useTranslations("Navigation");
   const { user, isAuthenticated, logout } = useAuth();
   const [showMenu, setShowMenu] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Link from next-intl automatically adds locale, so use paths WITHOUT locale
-  const navLinks = [
+  // Main nav links
+  const mainLinks = [
     { key: "home", path: "/" },
     { key: "services", path: "/services" },
     { key: "teamList", path: "/team-list" },
+  ];
+
+  // Dropdown links
+  const dropdownLinks = [
+    { key: "portfolio", path: "/portfolio", icon: Package },
+    { key: "pricing", path: "/pricing", icon: Briefcase },
+    { key: "blog", path: "/blog", icon: FileText },
+    { key: "about", path: "/about", icon: Users },
+  ];
+
+  // All nav links for mobile
+  const allNavLinks = [
+    { key: "home", path: "/" },
+    { key: "services", path: "/services" },
+    { key: "teamList", path: "/team-list" },
+    { key: "portfolio", path: "/portfolio" },
+    { key: "pricing", path: "/pricing" },
+    { key: "blog", path: "/blog" },
     { key: "about", path: "/about" },
     { key: "contact", path: "/contact" },
   ];
 
+  // Close dropdown when clicking outside
   useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setOpenDropdown(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Show menu when mouse is in top area, hide when scrolled down
+  useEffect(() => {
+    let lastScrollY = window.scrollY;
+    let ticking = false;
+
+    const updateMenuVisibility = () => {
+      const scrollY = window.scrollY;
+      const mouseY = lastMouseY;
+
+      // Show menu if:
+      // 1. At top of page (scrollY < 50) AND mouse in top 30% of viewport
+      // 2. Scrolling up (scrollY < lastScrollY) and near top
+      const isAtTop = scrollY < 50;
+      const isScrollingUp = scrollY < lastScrollY;
+      const isMouseInTopArea = mouseY < window.innerHeight * 0.3;
+
+      if (isAtTop && isMouseInTopArea) {
+        setShowMenu(true);
+      } else if (isScrollingUp && scrollY < 100) {
+        setShowMenu(true);
+      } else if (scrollY > 50) {
+        setShowMenu(false);
+      }
+
+      lastScrollY = scrollY;
+      ticking = false;
+    };
+
+    let lastMouseY = 0;
     const handleMouseMove = (e: MouseEvent) => {
-      // Show menu when mouse is in top 30% of viewport
-      const threshold = window.innerHeight * 0.3;
-      setShowMenu(e.clientY < threshold);
+      lastMouseY = e.clientY;
+    };
+
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(updateMenuVisibility);
+        ticking = true;
+      }
     };
 
     window.addEventListener("mousemove", handleMouseMove);
-    return () => window.removeEventListener("mousemove", handleMouseMove);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("scroll", handleScroll);
+    };
   }, []);
 
   return (
@@ -97,7 +166,7 @@ export function TopMenuTrigger() {
 
           {/* Desktop Navigation Links */}
           <div className="desktop-nav" style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-            {navLinks.map((link) => (
+            {mainLinks.map((link) => (
               <Link
                 key={link.path}
                 href={link.path}
@@ -115,6 +184,105 @@ export function TopMenuTrigger() {
                 {t(link.key as any)}
               </Link>
             ))}
+
+            {/* More Dropdown */}
+            <div ref={dropdownRef} style={{ position: "relative" }}>
+              <button
+                onClick={() => setOpenDropdown(openDropdown === "more" ? null : "more")}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "4px",
+                  padding: "8px 16px",
+                  fontSize: "14px",
+                  fontWeight: 500,
+                  borderRadius: "8px",
+                  color: "#9CA3AF",
+                  background: "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  transition: "all 0.2s",
+                }}
+              >
+                {t("more")}
+                <ChevronDown
+                  size={14}
+                  style={{
+                    transform: openDropdown === "more" ? "rotate(180deg)" : "rotate(0)",
+                    transition: "transform 0.2s",
+                  }}
+                />
+              </button>
+
+              {/* Dropdown Menu */}
+              {openDropdown === "more" && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "100%",
+                    left: "0",
+                    marginTop: "8px",
+                    minWidth: "180px",
+                    background: "rgba(17, 24, 39, 0.98)",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    borderRadius: "12px",
+                    padding: "8px",
+                    boxShadow: "0 10px 40px rgba(0,0,0,0.5)",
+                    zIndex: 100,
+                  }}
+                >
+                  {dropdownLinks.map((link) => {
+                    const Icon = link.icon;
+                    return (
+                      <Link
+                        key={link.path}
+                        href={link.path}
+                        onClick={() => setOpenDropdown(null)}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "10px",
+                          padding: "10px 12px",
+                          fontSize: "14px",
+                          fontWeight: 500,
+                          borderRadius: "8px",
+                          color: pathname === link.path ? "#FFFFFF" : "#9CA3AF",
+                          background: pathname === link.path ? "rgba(255,255,255,0.1)" : "transparent",
+                          textDecoration: "none",
+                          transition: "all 0.2s",
+                        }}
+                      >
+                        <Icon size={16} />
+                        {t(link.key as any)}
+                      </Link>
+                    );
+                  })}
+                  <Link
+                    key="contact"
+                    href="/contact"
+                    onClick={() => setOpenDropdown(null)}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "10px",
+                      padding: "10px 12px",
+                      fontSize: "14px",
+                      fontWeight: 500,
+                      borderRadius: "8px",
+                      color: pathname === "/contact" ? "#FFFFFF" : "#9CA3AF",
+                      background: pathname === "/contact" ? "rgba(255,255,255,0.1)" : "transparent",
+                      textDecoration: "none",
+                      transition: "all 0.2s",
+                      borderTop: "1px solid rgba(255,255,255,0.1)",
+                      marginTop: "4px",
+                      paddingTop: "12px",
+                    }}
+                  >
+                    {t("contact")}
+                  </Link>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Right Side: Auth + Language */}
@@ -123,7 +291,7 @@ export function TopMenuTrigger() {
             <div className="desktop-nav" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               {isAuthenticated && user ? (
                 <button
-                  onClick={() => { logout(); router.push("/"); }}
+                  onClick={() => { signOut({ callbackUrl: "/" }); }}
                   style={{
                     padding: "8px 16px",
                     fontSize: "14px",

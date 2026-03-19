@@ -14,12 +14,14 @@
     "db:studio": "prisma studio",
     "db:generate": "prisma generate",
     "db:reset": "prisma migrate reset",
-    "db:seed-rbac": "npx tsx prisma/seed-rbac.mts"
+    "db:seed-rbac": "npx tsx prisma/seed-rbac.mts",
+    "db:seed-points": "npx dotenv -e .env.local -- tsx prisma/seed-points.ts"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@auth/prisma-adapter": "^2.11.1",
     "@hookform/resolvers": "^5.2.2",
     "@neondatabase/serverless": "^1.0.2",
     "@next/third-parties": "^16.1.6",
@@ -73,6 +75,7 @@
     "jsonwebtoken": "^9.0.3",
     "lucide-react": "0.487.0",
     "next": "15.1.9",
+    "next-auth": "^5.0.0-beta.30",
     "next-cloudinary": "^6.17.5",
     "next-intl": "^4.8.3",
     "next-sanity": "^12.1.1",

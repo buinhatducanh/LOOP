@@ -113,16 +113,17 @@ export function ImageUploader({
         body: formData,
       });
 
+      const data = await response.json();
+      console.log("Upload response:", data);
+
       if (!response.ok) {
-        const data = await response.json();
         throw new Error(data.error || "Upload failed");
       }
 
-      const data = await response.json();
-      console.log("Upload response:", data);
       if (!data.url) {
         throw new Error(data.error || "Upload failed - no URL returned");
       }
+
       onChange(data.url);
       setPreview(data.url);
     } catch (err) {

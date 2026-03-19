@@ -11,7 +11,9 @@
         "getQuote": "Nhận báo giá",
         "dashboard": "Dashboard",
         "pricing": "Bảng giá",
-        "portfolio": "Dự án"
+        "portfolio": "Dự án",
+        "blog": "Tin tức",
+        "more": "Khác"
     },
     "Footer": {
         "ctaTitle": "Sẵn sàng bắt đầu dự án?",
@@ -79,7 +81,13 @@
         "ctaTitle3": "Chuyên Nghiệp?",
         "ctaDesc": "Gia nhập cùng 150+ doanh nghiệp đã chọn LOOP xây dựng tương lai thành công.",
         "btnStart": "Bắt đầu ngay hôm nay",
-        "btnPricing": "Xem bảng giá chi tiết"
+        "btnPricing": "Xem bảng giá chi tiết",
+        "teamSub": "Đội ngũ của chúng tôi",
+        "teamTitle": "Gặp gỡ ",
+        "teamHighlight": "đội ngũ",
+        "teamTitle2": "chuyên gia",
+        "teamDesc": "Những con người tài năng đằng sau mỗi dự án thành công",
+        "teamViewAll": "Xem tất cả thành viên"
     },
     "Stats": {
         "projects_label": "Dự án đã bàn giao",
@@ -324,6 +332,20 @@
         "title": "Không tìm thấy trang",
         "description": "Xin lỗi, trang bạn đang tìm kiếm không tồn tại hoặc đã bị di chuyển.",
         "backToHome": "Trở về trang chủ"
+    },
+    "Search": {
+        "openSearch": "Mở tìm kiếm",
+        "placeholder": "Tìm dịch vụ, nhân sự, dự án...",
+        "hint": "Bắt đầu gõ để tìm kiếm",
+        "examples": "Thử: \"thiết kế website\", \"CEO công ty\", \"Đức Anh\"",
+        "noResults": "Không tìm thấy kết quả phù hợp",
+        "tryDifferent": "Thử từ khóa khác",
+        "showingResults": "{{count}} kết quả",
+        "pressEnter": "Nhấn Enter để xem tất cả · ↑↓ để di chuyển",
+        "services": "Dịch vụ",
+        "teamMembers": "Nhân sự",
+        "projects": "Dự án",
+        "clear": "Xóa"
     },
     "seo": {
         "homeTitle": "LOOP - Thiết kế Website & App chuyên nghiệp",

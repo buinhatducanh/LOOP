@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { useRouter } from "next/navigation";
+import { useSession, signOut as nextAuthSignOut } from "next-auth/react";
 
 interface AdminUser {
   userId: string;
@@ -32,6 +33,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AdminUser | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const { data: session, status } = useSession();
 
   const fetchUser = useCallback(async () => {
     try {
@@ -49,9 +51,27 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // Sync with NextAuth session
   useEffect(() => {
-    fetchUser();
-  }, [fetchUser]);
+    if (status === "loading") return;
+
+    if (session?.user) {
+      // User is signed in via NextAuth (Google)
+      const adminUser: AdminUser = {
+        userId: session.user.id || "",
+        email: session.user.email || "",
+        name: session.user.name || "",
+        role: session.user.role === "admin" ? "admin" : "user",
+        roles: session.user.role === "admin" ? ["admin"] : ["user"],
+        avatar: session.user.image || null,
+      };
+      setUser(adminUser);
+      setLoading(false);
+    } else if (status === "unauthenticated") {
+      // Try custom auth fallback
+      fetchUser();
+    }
+  }, [session, status, fetchUser]);
 
   const login = async (email: string, password: string) => {
     const res = await fetch("/api/admin/auth/login", {
@@ -68,9 +88,13 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
-    await fetch("/api/admin/auth/logout", { method: "POST" });
+    // Sign out from both NextAuth and custom auth
+    await Promise.allSettled([
+      nextAuthSignOut({ redirect: false }),
+      fetch("/api/admin/auth/logout", { method: "POST" }),
+    ]);
     setUser(null);
-    router.push("/vi/login");
+    router.push("/login");
   };
 
   return (

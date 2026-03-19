@@ -277,3 +277,18 @@ export async function getPricingPackagesData() {
     ]);
   return { webPackages, featureCategories, hostingPlans, domainPrices, deploymentItems };
 }
+
+// Home Slider queries
+export async function getHomeSliders() {
+  return prisma.homeSlider.findMany({
+    where: { isActive: true },
+    orderBy: { sortOrder: "asc" },
+  });
+}
+
+export async function getHomeVideo() {
+  return prisma.homeVideo.findFirst({
+    where: { isActive: true },
+    orderBy: { sortOrder: "asc" },
+  });
+}
