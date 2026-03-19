@@ -16,15 +16,11 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="vi" className="dark">
-      <body className="min-h-screen bg-slate-950 text-white antialiased">
-        <SessionProvider>
-          <AdminAuthProvider>
-            <AdminShell>{children}</AdminShell>
-            <AdminToaster />
-          </AdminAuthProvider>
-        </SessionProvider>
-      </body>
-    </html>
+    <SessionProvider>
+      <AdminAuthProvider>
+        <AdminShell>{children}</AdminShell>
+        <AdminToaster />
+      </AdminAuthProvider>
+    </SessionProvider>
   );
 }

@@ -32,7 +32,6 @@ import { ServiceCard } from "@/components/cards/ServiceCard";
 import { ProjectCard } from "@/components/cards/ProjectCard";
 import { HeroCanvas } from "@/components/shared/HeroCanvas";
 import { HeroBanner } from "@/components/shared/HeroBanner";
-import { TopMenuTrigger } from "@/components/shared/TopMenuTrigger";
 import { HomeSliderSection } from "@/components/shared/HomeSliderSection";
 
 interface StatsData {
@@ -194,14 +193,13 @@ export function HomePage({
         style={{
           position: "relative",
           minHeight: "100vh",
+          paddingTop: "72px",
           display: "flex",
           alignItems: "center",
           overflow: "hidden",
           background: "#020617",
         }}
       >
-        {/* Top menu trigger - appears when hovering top edge */}
-        <TopMenuTrigger />
 
         {/* Animated canvas background */}
         <HeroCanvas />

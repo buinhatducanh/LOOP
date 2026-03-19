@@ -78,7 +78,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               ← Quay lại
             </button>
             <button
-              onClick={() => router.push("/admin")}
+              onClick={() => router.push("/vi/admin")}
               className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
             >
               Về Dashboard

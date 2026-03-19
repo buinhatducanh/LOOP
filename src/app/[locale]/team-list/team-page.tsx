@@ -139,7 +139,7 @@ function TeamMemberCard({ member, isCEO = false }: { member: TeamMemberData; isC
 
   return (
     <div
-      onClick={() => router.push(`/${locale}/team/${member.slug}`)}
+      onClick={() => router.push(`/team/${member.slug}`)}
       className="cursor-pointer group"
     >
       <div
@@ -395,7 +395,7 @@ function MemberCardList({ member }: { member: TeamMemberData }) {
   const locale = useLocale();
   return (
     <div>
-      <div onClick={() => router.push(`/${locale}/team/${member.slug}`)} className="cursor-pointer">
+      <div onClick={() => router.push(`/team/${member.slug}`)} className="cursor-pointer">
         <div className="flex gap-5 p-4 rounded-xl border border-slate-800 bg-slate-900/50 hover:bg-slate-900 hover:border-indigo-500/40 transition-all duration-300">
           <div className="relative w-20 h-20 flex-shrink-0 rounded-xl overflow-hidden">
             {member.image ? (

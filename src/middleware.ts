@@ -190,7 +190,7 @@ export default async function middleware(req: NextRequest) {
       loginUrl.searchParams.set("redirect", "/vi/admin");
       return NextResponse.redirect(loginUrl);
     }
-    return NextResponse.redirect("/vi/admin");
+    return NextResponse.redirect(new URL("/vi/admin", req.url));
   }
 
   // ── All other routes: i18n ────────────────────────────────────────────────

@@ -1,14 +1,13 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { usePathname } from "@/i18n/routing";
-import { useSession, signIn as nextAuthSignIn, signOut as nextAuthSignOut } from "next-auth/react";
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
+import { signIn as nextSignIn } from "next-auth/react";
 
 export interface User {
   id: string;
   name: string;
   email: string;
-  role: "admin" | "user";
+  role: "admin" | "super_admin" | "user";
   avatar: string;
   createdAt: string;
 }
@@ -17,64 +16,67 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isAdmin: boolean;
-  login: (email: string, password: string) => Promise<{ success: boolean; message: string }>;
+  login: (email: string, password: string) => Promise<{ success: boolean; role?: "admin" | "user"; message: string }>;
   logout: () => void;
   signIn: (provider?: string) => void;
+  refreshUser: () => Promise<void>;
+}
+
+// Normalise any privileged role to "admin" for display / routing
+function normaliseRole(role: string): "admin" | "user" {
+  return role === "admin" || role === "super_admin" || role === "ceo" ? "admin" : "user";
+}
+
+function normaliseUserRole(role: string): User["role"] {
+  if (role === "admin" || role === "super_admin" || role === "ceo") return "admin";
+  return "user";
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const pathname = usePathname();
-  const { data: session, status } = useSession();
+  // Guard to skip fetchMe after logout and during SSR
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  // Sync NextAuth session with our User state
-  useEffect(() => {
-    if (session?.user) {
-      const sessionUser: User = {
-        id: session.user.id || "",
-        name: session.user.name || "",
-        email: session.user.email || "",
-        role: (session.user.role as "admin" | "user") || "user",
-        avatar: session.user.image || session.user.name?.split(" ").map((w: string) => w[0]).join("").toUpperCase().slice(0, 2) || "AD",
-        createdAt: new Date().toISOString().split("T")[0],
-      };
-      setUser(sessionUser);
-    } else if (status === "unauthenticated") {
-      setUser(null);
-    }
-  }, [session, status]);
+  const fetchMe = useCallback(async () => {
+    if (isLoggingOut) return;
+    // Only fetch if auth-token cookie is present (avoids 401 on public pages)
+    if (!document.cookie.includes("auth-token")) return;
 
-  // Check custom auth for admin routes (fallback for email/password login)
-  useEffect(() => {
-    const isAdminRoute = pathname.startsWith("/admin");
-    if (!isAdminRoute) return;
-
-    // Only check custom auth if not using NextAuth session
-    if (status === "loading") return;
-
-    fetch("/api/admin/auth/me")
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (data?.user && !session) {
-          const sessionUser: User = {
-            id: data.user.id,
+    try {
+      const res = await fetch("/api/admin/auth/me");
+      if (res.status === 401) { setUser(null); return; }
+      if (res.ok) {
+        const data = await res.json();
+        if (data.user) {
+          setUser({
+            id: data.user.id || "",
             name: data.user.name || "",
-            email: data.user.email,
-            role: data.user.role === "admin" ? "admin" : "user",
-            avatar: data.user.avatar || "AD",
+            email: data.user.email || "",
+            role: normaliseUserRole(data.user.role),
+            avatar: data.user.avatar ||
+              (data.user.name || "").split(" ").map((w: string) => w[0]).join("").toUpperCase().slice(0, 2) || "AD",
             createdAt: new Date().toISOString().split("T")[0],
-          };
-          setUser(sessionUser);
+          });
         }
-      })
-      .catch(() => {
-        // Network error - user stays null (not authenticated)
-      });
-  }, [pathname, session, status]);
+      }
+    } catch {
+      // Network/server errors — leave user state unchanged
+    }
+  }, [isLoggingOut]);
 
-  const login = async (email: string, password: string) => {
+  // Hydrate user from cookie on mount (persists login across page reloads)
+  useEffect(() => {
+    fetchMe();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const refreshUser = useCallback(async () => {
+    await fetchMe();
+  }, [fetchMe]);
+
+  const login = useCallback(async (email: string, password: string) => {
     try {
       const res = await fetch("/api/admin/auth/login", {
         method: "POST",
@@ -82,47 +84,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({ email, password }),
       });
       const data = await res.json();
-      if (!res.ok) {
-        return { success: false, message: data.error || "Email hoặc mật khẩu không đúng." };
+      if (!res.ok) return { success: false, message: data.error || "Lỗi server." };
+      if (data.user) {
+        const role = normaliseRole(data.user.role);
+        const u: User = {
+          id: data.user.id || "",
+          name: data.user.name || "",
+          email: data.user.email || "",
+          role: normaliseUserRole(data.user.role),
+          avatar: data.user.avatar || "AD",
+          createdAt: new Date().toISOString().split("T")[0],
+        };
+        setUser(u);
+        return { success: true, role, message: "Đăng nhập thành công!" };
       }
-      const loggedInUser: User = {
-        id: data.user.id,
-        name: data.user.name || "",
-        email: data.user.email,
-        role: data.user.role === "admin" ? "admin" : "user",
-        avatar: data.user.avatar || data.user.name?.split(" ").map((w: string) => w[0]).join("").toUpperCase().slice(0, 2) || "AD",
-        createdAt: new Date().toISOString().split("T")[0],
-      };
-      setUser(loggedInUser);
       return { success: true, message: "Đăng nhập thành công!" };
     } catch {
-      return { success: false, message: "Lỗi kết nối. Vui lòng thử lại." };
+      return { success: false, message: "Lỗi kết nối." };
     }
-  };
+  }, []);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     setUser(null);
-    // Sign out from NextAuth
-    nextAuthSignOut({ callbackUrl: "/" });
-    // Also clear custom auth
-    fetch("/api/admin/auth/logout", { method: "POST" }).catch(() => {});
-  };
+    setIsLoggingOut(true);
+    fetch("/api/admin/auth/logout", { method: "POST" }).finally(() => {
+      window.location.href = "/";
+    });
+  }, []);
 
-  const signIn = (provider: string = "google") => {
-    nextAuthSignIn(provider, { callbackUrl: "/admin" });
-  };
+  const signIn = useCallback((provider = "google") => {
+    nextSignIn(provider, { callbackUrl: "/vi/admin" });
+  }, []);
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        isAuthenticated: !!user,
-        isAdmin: user?.role === "admin",
-        login,
-        logout,
-        signIn,
-      }}
-    >
+    <AuthContext.Provider value={{ user, isAuthenticated: !!user, isAdmin: !!user && user.role === "admin", login, logout, signIn, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

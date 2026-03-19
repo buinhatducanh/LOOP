@@ -1,23 +1,24 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/routing";
 import { useAuth } from "@/contexts/AuthContext";
 import { LayoutDashboard, UserCircle, LogOut, Mail, Shield, Crown } from "lucide-react";
 import { signOut } from "next-auth/react";
 
 export default function AccountPage() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    refreshUser();
+  }, [refreshUser]);
 
   useEffect(() => {
     if (mounted && !user) {
-      router.replace("/vi/login");
+      router.replace("/login");
     }
   }, [mounted, user, router]);
 

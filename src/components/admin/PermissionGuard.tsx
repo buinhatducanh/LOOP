@@ -145,7 +145,7 @@ export function AccessDenied({
             ← Quay lại
           </button>
           <button
-            onClick={() => router.push("/admin")}
+            onClick={() => router.push("/vi/admin")}
             className="rounded-lg bg-slate-900 px-4 py-2 text-sm text-slate-400 hover:text-white transition-colors"
           >
             Về Dashboard

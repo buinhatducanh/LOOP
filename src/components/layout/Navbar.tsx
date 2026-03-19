@@ -17,7 +17,7 @@ interface NavbarProps {
 export default function Navbar({ hideOnHome = false }: NavbarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [atTop, setAtTop] = useState(true);
+  const [hoveringTop, setHoveringTop] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const userDropdownRef = useRef<HTMLDivElement>(null);
@@ -25,6 +25,24 @@ export default function Navbar({ hideOnHome = false }: NavbarProps) {
   const t = useTranslations("Navigation");
   const pathname = usePathname();
   const { user, isAuthenticated } = useAuth();
+
+  // Track mouse Y globally — trigger on top of viewport
+  useEffect(() => {
+    const onMove = (e: MouseEvent) => {
+      setHoveringTop(e.clientY < 80);
+    };
+    window.addEventListener("mousemove", onMove, { passive: true });
+    return () => window.removeEventListener("mousemove", onMove);
+  }, []);
+
+  // Scroll visibility
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   // Main nav links
   const mainLinks = [
@@ -88,7 +106,6 @@ export default function Navbar({ hideOnHome = false }: NavbarProps) {
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 20);
-      setAtTop(window.scrollY < 50);
     };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
@@ -98,23 +115,26 @@ export default function Navbar({ hideOnHome = false }: NavbarProps) {
     setIsOpen(false);
   }, [pathname]);
 
-  const shouldHide = hideOnHome && isHomePage && atTop;
+  // Show navbar when: not at top OR hovering top zone OR scrolled
+  const isVisible = hideOnHome && isHomePage ? !scrolled : true;
 
   return (
     <nav
       style={{
         position: "fixed",
-        top: shouldHide ? "-100px" : "0",
+        top: 0,
         left: 0,
         right: 0,
         zIndex: 9999,
-        background: (scrolled || shouldHide)
+        background: (scrolled || hoveringTop)
           ? "rgba(9, 11, 20, 0.96)"
-          : "rgba(9, 11, 20, 0.88)",
-        backdropFilter: "blur(16px)",
-        WebkitBackdropFilter: "blur(16px)",
+          : "rgba(9, 11, 20, 0.80)",
+        backdropFilter: (scrolled || hoveringTop) ? "blur(20px)" : "blur(8px)",
+        WebkitBackdropFilter: (scrolled || hoveringTop) ? "blur(20px)" : "blur(8px)",
         borderBottom: "1px solid rgba(255,255,255,0.07)",
-        transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
+        opacity: isVisible ? 1 : 0.3,
+        pointerEvents: isVisible ? "auto" : "none",
+        transition: "opacity 0.4s ease, background 0.3s ease, backdrop-filter 0.3s ease",
       }}
     >
       <div

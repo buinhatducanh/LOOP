@@ -9,7 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 export function LoginPage() {
   const router = useRouter();
-  const { login, user } = useAuth();
+  const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -26,17 +26,16 @@ export function LoginPage() {
     }
 
     setLoading(true);
-    const { success, message } = await login(email, password);
-    if (success) {
-      // Role-based redirect after login
-      if (user?.role === "admin") {
+    const result = await login(email, password);
+    setLoading(false);
+    if (result.success) {
+      if (result.role === "admin") {
         router.push("/vi/admin");
       } else {
-        router.push("/vi/account");
+        router.push("/account");
       }
     } else {
-      setError(message || "Email hoặc mật khẩu không đúng");
-      setLoading(false);
+      setError(result.message || "Email hoặc mật khẩu không đúng.");
     }
   };
 

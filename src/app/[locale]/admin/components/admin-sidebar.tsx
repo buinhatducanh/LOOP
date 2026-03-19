@@ -135,7 +135,7 @@ export function AdminSidebar() {
       {/* Logo */}
       <div className="flex h-16 items-center justify-between border-b border-slate-800 px-4">
         {!collapsed && (
-          <Link href="/admin" className="flex items-center gap-2">
+          <Link href="/vi/admin" className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 text-sm font-bold text-white">
               L
             </div>
