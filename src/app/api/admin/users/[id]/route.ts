@@ -21,9 +21,12 @@ export async function GET(
         avatar: true,
         role: true,
         isActive: true,
+        accountType: true,
+        teamMemberId: true,
         createdAt: true,
         updatedAt: true,
         userRoles: { include: { role: true } },
+        teamMember: { select: { id: true, name: true, role: true, image: true } },
       },
     });
 
@@ -60,6 +63,25 @@ export async function PUT(
     if (body.avatar !== undefined) updateData.avatar = body.avatar;
     if (body.isActive !== undefined) updateData.isActive = body.isActive;
     if (body.password) updateData.passwordHash = await hashPassword(body.password);
+    if (body.accountType) updateData.accountType = body.accountType;
+    if (body.teamMemberId !== undefined) updateData.teamMemberId = body.teamMemberId || null;
+
+    // Validate teamMemberId if provided
+    if (body.teamMemberId) {
+      const member = await prisma.teamMember.findUnique({ where: { id: body.teamMemberId } });
+      if (!member) {
+        return NextResponse.json({ error: "Team member không tồn tại" }, { status: 400 });
+      }
+      const alreadyLinked = await prisma.user.findFirst({
+        where: { teamMemberId: body.teamMemberId, id: { not: id } },
+      });
+      if (alreadyLinked) {
+        return NextResponse.json(
+          { error: "Nhân sự này đã được gán tài khoản khác" },
+          { status: 409 }
+        );
+      }
+    }
 
     const user = await prisma.user.update({
       where: { id },
@@ -71,8 +93,11 @@ export async function PUT(
         avatar: true,
         role: true,
         isActive: true,
+        accountType: true,
+        teamMemberId: true,
         createdAt: true,
         updatedAt: true,
+        teamMember: { select: { id: true, name: true, role: true, image: true } },
       },
     });
 

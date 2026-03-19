@@ -30,9 +30,12 @@ export async function GET(req: NextRequest) {
           avatar: true,
           role: true,
           isActive: true,
+          accountType: true,
+          teamMemberId: true,
           createdAt: true,
           updatedAt: true,
           userRoles: { include: { role: { select: { name: true, displayName: true } } } },
+          teamMember: { select: { id: true, name: true, role: true, image: true } },
         },
       }),
       prisma.user.count({ where }),
@@ -52,7 +55,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const session = await requirePermission("users", "create");
-    const { name, email, password, role, roleIds } = await req.json();
+    const { name, email, password, role, roleIds, teamMemberId, accountType } = await req.json();
 
     if (!name || !email || !password) {
       return NextResponse.json(
@@ -69,6 +72,24 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Validate teamMemberId if provided
+    if (teamMemberId) {
+      const member = await prisma.teamMember.findUnique({ where: { id: teamMemberId } });
+      if (!member) {
+        return NextResponse.json({ error: "Team member không tồn tại" }, { status: 400 });
+      }
+      // Check if already linked to another user
+      const alreadyLinked = await prisma.user.findFirst({
+        where: { teamMemberId, id: { not: existing?.id } },
+      });
+      if (alreadyLinked) {
+        return NextResponse.json(
+          { error: "Nhân sự này đã được gán tài khoản khác" },
+          { status: 409 }
+        );
+      }
+    }
+
     const passwordHash = await hashPassword(password);
 
     const user = await prisma.user.create({
@@ -77,12 +98,15 @@ export async function POST(req: NextRequest) {
         email,
         passwordHash,
         role: role || "user",
+        accountType: accountType || "customer",
+        teamMemberId: teamMemberId || null,
         userRoles: roleIds?.length
           ? { create: roleIds.map((roleId: string) => ({ roleId })) }
           : undefined,
       },
       include: {
         userRoles: { include: { role: { select: { name: true, displayName: true } } } },
+        teamMember: { select: { id: true, name: true, role: true, image: true } },
       },
     });
 

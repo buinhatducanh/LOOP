@@ -14,6 +14,8 @@ model Role {
   name        String       @unique
   displayName String       @map("display_name")
   description String?
+  /** Colour for UI badges, e.g. "red", "indigo", "amber" */
+  color       String       @default("slate") @map("color")
   level       Int          @default(0)
   isSystem    Boolean      @default(false) @map("is_system")
   permissions Permission[]
@@ -21,18 +23,23 @@ model Role {
   createdAt   DateTime     @default(now()) @map("created_at")
   updatedAt   DateTime     @updatedAt @map("updated_at")
 
+  @@index([level])
   @@map("roles")
 }
 
 model Permission {
-  id       String @id @default(cuid())
-  resource String
-  action   String
-  scope    String @default("all")
-  roleId   String @map("role_id")
-  role     Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  id          String  @id @default(cuid())
+  resource    String
+  action      String
+  /** "all" | "own" | comma-separated IDs */
+  scope       String  @default("all")
+  description String?
+  roleId      String  @map("role_id")
+  role        Role    @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   @@unique([roleId, resource, action])
+  @@index([resource])
+  @@index([roleId, action])
   @@map("permissions")
 }
 
@@ -42,11 +49,14 @@ model UserRole {
   user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   roleId     String    @map("role_id")
   role       Role      @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  assignedBy String?   @map("assigned_by")
-  expiresAt  DateTime? @map("expires_at")
+  assignedBy String?   @map("assigned_by")  // Admin user ID who assigned this role
+  expiresAt  DateTime? @map("expires_at")  // Optional expiration
+  isActive   Boolean   @default(true) @map("is_active")
   createdAt  DateTime  @default(now()) @map("created_at")
 
   @@unique([userId, roleId])
+  @@index([userId])
+  @@index([roleId])
   @@map("user_roles")
 }
 
@@ -128,8 +138,13 @@ model User {
   role         String   @default("user")
   googleId     String?  @unique @map("google_id")
   isActive     Boolean  @default(true) @map("is_active")
+  accountType  String   @default("customer") @map("account_type") // "staff" | "customer"
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Linked team member profile (for staff accounts)
+  teamMemberId String?     @unique @map("team_member_id")
+  teamMember  TeamMember?  @relation(fields: [teamMemberId], references: [id], onDelete: SetNull)
 
   // Relations
   userRoles     UserRole[]
@@ -284,6 +299,9 @@ model TeamMember {
 
   // Expertise relation - each member can have expertise with rating
   memberExpertise MemberExpertise[]
+
+  // Linked staff user account
+  user        User?
 
   @@map("team_members")
 }

@@ -13,9 +13,7 @@
     "db:seed": "npx tsx prisma/seed.ts",
     "db:studio": "prisma studio",
     "db:generate": "prisma generate",
-    "db:reset": "prisma migrate reset",
-    "db:seed-rbac": "npx tsx prisma/seed-rbac.mts",
-    "db:seed-points": "npx dotenv -e .env.local -- tsx prisma/seed-points.ts"
+    "db:reset": "prisma migrate reset"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"

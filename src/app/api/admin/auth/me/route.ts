@@ -3,26 +3,25 @@ import { getSession } from "@/lib/auth/permissions";
 import { getToken } from "next-auth/jwt";
 
 export async function GET() {
-  // First check NextAuth session (Google login)
-  const token = await getToken({ req: { headers: { cookie: "" } } } as any, { secret: process.env.AUTH_SECRET });
+  try {
+    // First check NextAuth session (Google login)
+    const token = await getToken(
+      { req: { headers: { cookie: "" } } } as Parameters<typeof getToken>[0],
+      { secret: process.env.AUTH_SECRET }
+    );
 
-  if (token?.sub) {
-    return NextResponse.json({
-      user: {
-        userId: token.sub,
-        email: token.email,
-        name: token.name,
-        role: token.role || "user",
-        roles: token.role === "admin" ? ["admin"] : ["user"],
-        avatar: token.picture,
-      },
-    });
-  }
+    if (token?.sub) {
+      const session = await getSession();
+      return NextResponse.json({ user: session });
+    }
 
-  // Fallback to custom session (email/password login)
-  const session = await getSession();
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    // Fallback to custom session (email/password login)
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    return NextResponse.json({ user: session });
+  } catch {
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
-  return NextResponse.json({ user: session });
 }

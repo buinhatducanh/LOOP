@@ -1,55 +1,57 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { signIn } from "next-auth/react";
-import { useAdminAuth } from "./admin-auth-provider";
+import { useAdminAuth } from "@/app/[locale]/admin/components/admin-auth-provider";
 import { AdminSidebar } from "./admin-sidebar";
 import { AdminTopbar } from "./admin-topbar";
+import { ROLE_LEVEL, NAV_PERMISSIONS, getRoleDisplayName } from "@/lib/auth/roles";
 
-export function AdminShell({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAdminAuth();
+// ─── Access Block Component ─────────────────────────────────────────────────────
+
+function RoleAccessDenied({
+  requiredLevel,
+  userRole,
+}: {
+  requiredLevel: number;
+  userRole: string;
+}) {
   const router = useRouter();
-  const [isChecking, setIsChecking] = useState(true);
-
-  // Check auth on mount
-  useEffect(() => {
-    if (!loading) {
-      setIsChecking(false);
-    }
-  }, [loading, user]);
-
-  if (isChecking || loading) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-slate-950">
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-10 w-10 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
-          <p className="text-sm text-slate-400">Đang tải...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-slate-950">
-        <div className="w-full max-w-md rounded-xl border border-slate-800 bg-slate-900 p-8">
-          <AdminLoginForm />
-        </div>
-      </div>
-    );
-  }
+  const requiredLabel = getRoleDisplayNameByLevel(requiredLevel);
+  const userLabel = getRoleDisplayName(userRole);
 
   return (
-    <div className="flex min-h-screen">
-      <AdminSidebar />
-      <div className="ml-64 flex flex-1 flex-col">
-        <AdminTopbar />
-        <main className="flex-1 p-6">{children}</main>
+    <div className="flex min-h-screen items-center justify-center bg-slate-950">
+      <div className="w-full max-w-md rounded-2xl border border-red-500/20 bg-red-500/5 p-8 text-center">
+        <div className="mb-4 text-5xl">🔒</div>
+        <h2 className="mb-2 text-xl font-bold text-white">Truy cập bị từ chối</h2>
+        <p className="mb-1 text-sm text-slate-400">
+          Bạn đang đăng nhập với vai trò <span className="font-medium text-slate-200">{userLabel}</span>
+        </p>
+        <p className="mb-6 text-sm text-slate-400">
+          Trang này yêu cầu quyền từ <span className="font-medium text-slate-200">{requiredLabel}</span> trở lên.
+        </p>
+        <div className="flex flex-col gap-2">
+          <button
+            onClick={() => router.back()}
+            className="w-full rounded-lg bg-slate-800 px-4 py-2.5 text-sm font-medium text-slate-300 hover:bg-slate-700 transition-colors"
+          >
+            ← Quay lại
+          </button>
+          <button
+            onClick={() => router.push("/admin")}
+            className="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-500 transition-colors"
+          >
+            Về Dashboard
+          </button>
+        </div>
       </div>
     </div>
   );
 }
+
+// ─── Auth Block Component ────────────────────────────────────────────────────────
 
 function AdminLoginForm() {
   const { login } = useAdminAuth();
@@ -95,7 +97,6 @@ function AdminLoginForm() {
         </div>
       )}
 
-      {/* Google Login Button */}
       <button
         type="button"
         onClick={handleGoogleLogin}
@@ -115,10 +116,9 @@ function AdminLoginForm() {
         Đăng nhập với Google
       </button>
 
-      {/* Divider */}
       <div className="relative mb-4">
         <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-slate-700"></div>
+          <div className="w-full border-t border-slate-700" />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
           <span className="bg-slate-900 px-2 text-slate-500">Hoặc</span>
@@ -156,4 +156,93 @@ function AdminLoginForm() {
       </div>
     </form>
   );
+}
+
+// ─── Main Shell ─────────────────────────────────────────────────────────────────
+
+export function AdminShell({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAdminAuth();
+  const router = useRouter();
+  const pathname = usePathname();
+  const [isChecking, setIsChecking] = useState(true);
+
+  // ── Step 1: Wait for hydration ─────────────────────────────────────────────
+  useEffect(() => {
+    if (!loading) {
+      setIsChecking(false);
+    }
+  }, [loading]);
+
+  // ── Step 2: Loading spinner ────────────────────────────────────────────────
+  if (isChecking || loading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-slate-950">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-10 w-10 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
+          <p className="text-sm text-slate-400">Đang tải...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Step 3: Not logged in → login form ────────────────────────────────────
+  if (!user) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-slate-950">
+        <div className="w-full max-w-md rounded-xl border border-slate-800 bg-slate-900 p-8">
+          <AdminLoginForm />
+        </div>
+      </div>
+    );
+  }
+
+  // ── Step 4: Check role-level access for this page ─────────────────────────
+  const userLevel = ROLE_LEVEL[user.role] ?? 99;
+
+  // Determine required level from NAV_PERMISSIONS (or default to admin=1)
+  const navConfig = NAV_PERMISSIONS[pathname];
+  const requiredLevel = navConfig?.minRoleLevel ?? 1;
+
+  if (userLevel > requiredLevel) {
+    return <RoleAccessDenied requiredLevel={requiredLevel} userRole={user.role} />;
+  }
+
+  // ── Step 5: Authenticated + authorized → render admin layout ─────────────
+  return (
+    <div className="flex min-h-screen">
+      <AdminSidebar />
+      <div className="ml-64 flex flex-1 flex-col">
+        <AdminTopbar />
+        <main className="flex-1 p-6">{children}</main>
+      </div>
+    </div>
+  );
+}
+
+// ─── Helpers ───────────────────────────────────────────────────────────────────
+
+function getRoleDisplayName(role: string): string {
+  const labels: Record<string, string> = {
+    ceo: "CEO / Founder",
+    super_admin: "Quản trị tối cao",
+    admin: "Quản trị viên",
+    project_manager: "Trưởng nhóm / PM",
+    media: "Media / Marketing",
+    qa: "QA / Tester",
+    member: "Thành viên",
+  };
+  return labels[role] ?? role;
+}
+
+function getRoleDisplayNameByLevel(level: number): string {
+  const labels: Record<number, string> = {
+    [-1]: "CEO / Founder",
+    0: "Quản trị tối cao",
+    1: "Quản trị viên",
+    2: "Trưởng nhóm / PM",
+    3: "Media / Marketing",
+    4: "QA / Tester",
+    5: "Thành viên",
+  };
+  return labels[level] ?? `Cấp ${level}`;
 }

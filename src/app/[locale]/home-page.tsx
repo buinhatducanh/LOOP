@@ -1,7 +1,8 @@
 "use client";
 
 import { useRef, useMemo, useState } from "react";
-import { useRouter, Link } from "@/i18n/routing";
+import { Link } from "@/i18n/routing";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
   ArrowRight,
@@ -153,17 +154,17 @@ export function HomePage({
   sliders = [],
   video = null,
 }: HomePageProps) {
-  // Get featured members (CEO + featured + first few)
+  // Leadership members: roleLevel 0-2, fallback to mock if DB returns empty
   const featuredTeam = useMemo(() => {
-    const sorted = [...team].sort((a, b) => {
-      // CEO first (roleLevel 0), then featured, then by order
-      if (a.roleLevel === 0) return -1;
-      if (b.roleLevel === 0) return 1;
-      if (a.isFeatured && !b.isFeatured) return -1;
-      if (!a.isFeatured && b.isFeatured) return 1;
-      return 0;
-    });
-    return sorted.slice(0, 4);
+    const leadership = [...team].filter((m) => (m.roleLevel ?? 4) <= 2);
+    const sorted = leadership.sort((a, b) => (a.roleLevel ?? 4) - (b.roleLevel ?? 4));
+    const result = sorted.slice(0, 4);
+    // Fallback: if filtered result is empty, use mock leadership members
+    if (result.length === 0) {
+      const mockLeadership = mockTeamMembers.filter((m) => (m.roleLevel ?? 4) <= 2);
+      return mockLeadership.slice(0, 4);
+    }
+    return result;
   }, [team]);
 
   // Check if member is CEO
@@ -838,95 +839,47 @@ export function HomePage({
           </FadeInSection>
 
           {/* Team Cards Grid */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "24px", marginBottom: "48px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "20px", maxWidth: "960px", margin: "0 auto 48px" }}>
             {featuredTeam.map((member, index) => {
               const memberIsCEO = isCEO(member);
+              const isPM = member.roleLevel === 1;
+              const isLead = member.roleLevel === 2;
               return (
                 <FadeInSection key={member.id} delay={index * 0.1}>
                   <div
                     onClick={() => router.push(`/team/${member.slug}`)}
-                    style={{ cursor: "pointer", position: "relative", borderRadius: "16px", overflow: "hidden", transition: "transform 0.3s, box-shadow 0.3s" }}
-                    onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-8px)"; e.currentTarget.style.boxShadow = memberIsCEO ? "0 20px 40px rgba(245,158,11,0.2)" : "0 20px 40px rgba(99,102,241,0.2)"; }}
+                    style={{ cursor: "pointer", borderRadius: "16px", overflow: "hidden", transition: "transform 0.3s, box-shadow 0.3s" }}
+                    onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-6px)"; e.currentTarget.style.boxShadow = memberIsCEO ? "0 16px 32px rgba(245,158,11,0.25)" : "0 16px 32px rgba(99,102,241,0.2)"; }}
                     onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}
                   >
-                    {/* Card Background */}
                     <div style={{
                       background: "linear-gradient(180deg, #1E293B 0%, #0F172A 100%)",
                       border: `1px solid ${memberIsCEO ? "rgba(245,158,11,0.3)" : "rgba(148,163,184,0.1)"}`,
                       borderRadius: "16px",
                       overflow: "hidden",
                     }}>
-                      {/* Image */}
-                      <div style={{ position: "relative", aspectRatio: "3/4", overflow: "hidden" }}>
+                      {/* Image — square */}
+                      <div style={{ position: "relative", aspectRatio: "1/1", overflow: "hidden" }}>
                         {member.image ? (
                           <img src={member.image} alt={member.name} style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.5s" }} />
                         ) : (
                           <div style={{ width: "100%", height: "100%", background: "#1E293B", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                            <Users size={48} style={{ color: "#475569" }} />
+                            <Users size={40} style={{ color: "#475569" }} />
                           </div>
                         )}
-                        {/* Gradient Overlay */}
-                        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, transparent 40%, rgba(15,23,42,0.9) 100%)" }} />
+                        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, transparent 50%, rgba(15,23,42,0.9) 100%)" }} />
 
-                        {/* CEO Badge */}
-                        {memberIsCEO && (
-                          <div style={{ position: "absolute", top: "12px", right: "12px", display: "flex", alignItems: "center", gap: "4px", padding: "4px 10px", borderRadius: "20px", background: "linear-gradient(135deg, #F59E0B, #EF4444)", color: "white", fontSize: "10px", fontWeight: 700 }}>
-                            <Crown size={10} /> CEO
-                          </div>
-                        )}
-
-                        {/* Featured Badge */}
-                        {member.isFeatured && !memberIsCEO && (
-                          <div style={{ position: "absolute", top: "12px", right: "12px", display: "flex", alignItems: "center", padding: "4px 10px", borderRadius: "20px", background: "rgba(99,102,241,0.9)", color: "white", fontSize: "10px", fontWeight: 600 }}>
-                            <Star size={10} style={{ marginRight: "4px" }} /> Featured
-                          </div>
-                        )}
+                        {/* Role badge — bottom left */}
+                        <div style={{ position: "absolute", bottom: "10px", left: "10px", display: "flex", alignItems: "center", gap: "4px", padding: "3px 8px", borderRadius: "20px", background: memberIsCEO ? "linear-gradient(135deg, #F59E0B, #EF4444)" : "rgba(99,102,241,0.85)", color: "white", fontSize: "10px", fontWeight: 700 }}>
+                          {memberIsCEO && <Crown size={10} />}
+                          {memberIsCEO ? "CEO" : isPM ? "PM" : isLead ? "Lead" : ""}
+                        </div>
                       </div>
 
                       {/* Info */}
-                      <div style={{ padding: "20px", position: "relative" }}>
-                        <h3 style={{ fontSize: "18px", fontWeight: 700, color: memberIsCEO ? "#FBBF24" : "#FFFFFF", marginBottom: "4px" }}>{member.name}</h3>
-                        <p style={{ color: "#6366F1", fontSize: "13px", fontWeight: 500, marginBottom: "12px" }}>{member.role}</p>
-                        <p style={{ color: "#94A3B8", fontSize: "12px", lineHeight: 1.5, marginBottom: "16px", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
-                          {member.shortBio || member.bio}
-                        </p>
-
-                        {/* Skills */}
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "16px" }}>
-                          {(member.skills || member.expertise || []).slice(0, 3).map((skill: any, idx: number) => (
-                            <span key={idx} style={{ padding: "4px 10px", borderRadius: "6px", background: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.2)", color: "#A5B4FC", fontSize: "11px" }}>
-                              {typeof skill === 'string' ? skill : (skill.name || skill.nameVi || skill)}
-                            </span>
-                          ))}
-                        </div>
-
-                        {/* Social Links */}
-                        <div style={{ display: "flex", gap: "8px", paddingTop: "16px", borderTop: "1px solid rgba(148,163,184,0.1)" }}>
-                          {member.linkedin && (
-                            <a href={member.linkedin} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} style={{ width: "32px", height: "32px", borderRadius: "8px", background: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.2)", display: "flex", alignItems: "center", justifyContent: "center", color: "#94A3B8", transition: "all 0.2s" }}>
-                              <Linkedin size={14} />
-                            </a>
-                          )}
-                          {member.twitter && (
-                            <a href={member.twitter} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} style={{ width: "32px", height: "32px", borderRadius: "8px", background: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.2)", display: "flex", alignItems: "center", justifyContent: "center", color: "#94A3B8", transition: "all 0.2s" }}>
-                              <Twitter size={14} />
-                            </a>
-                          )}
-                          {member.github && (
-                            <a href={member.github} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} style={{ width: "32px", height: "32px", borderRadius: "8px", background: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.2)", display: "flex", alignItems: "center", justifyContent: "center", color: "#94A3B8", transition: "all 0.2s" }}>
-                              <Github size={14} />
-                            </a>
-                          )}
-                          {member.email && (
-                            <a href={`mailto:${member.email}`} onClick={(e) => e.stopPropagation()} style={{ width: "32px", height: "32px", borderRadius: "8px", background: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.2)", display: "flex", alignItems: "center", justifyContent: "center", color: "#94A3B8", transition: "all 0.2s" }}>
-                              <Mail size={14} />
-                            </a>
-                          )}
-                          <div style={{ flex: 1 }} />
-                          <div style={{ display: "flex", alignItems: "center", gap: "4px", color: "#6366F1", fontSize: "12px", fontWeight: 500 }}>
-                            Xem profile <ExternalLink size={12} />
-                          </div>
-                        </div>
+                      <div style={{ padding: "14px 16px" }}>
+                        <h3 style={{ fontSize: "15px", fontWeight: 700, color: memberIsCEO ? "#FBBF24" : "#FFFFFF", marginBottom: "2px" }}>{member.name}</h3>
+                        <p style={{ color: "#94A3B8", fontSize: "12px" }}>{member.role}</p>
                       </div>
                     </div>
                   </div>

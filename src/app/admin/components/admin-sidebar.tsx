@@ -10,7 +10,6 @@ import {
   Users,
   ShieldCheck,
   Settings,
-  FileText,
   Star,
   UsersRound,
   Package,
@@ -27,58 +26,151 @@ import {
   LayoutTemplate,
   Wrench,
   Image,
-  Video,
+  Website,
+  Coins,
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/components/ui/utils";
+import { useAdminAuth } from "@/app/[locale]/admin/components/admin-auth-provider";
+import { NAV_PERMISSIONS, ROLE_LEVEL } from "@/lib/auth/roles";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type NavItem = { name: string; href: string; icon: any };
-type NavGroup = { group: string; items: NavItem[] };
+// ─── Icon map (avoids importing lucide icons dynamically) ─────────────────────
+
+const ICON_MAP: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
+  LayoutDashboard,
+  Globe,
+  FolderKanban,
+  MessageSquare,
+  Users,
+  ShieldCheck,
+  Settings,
+  Star,
+  UsersRound,
+  Package,
+  ShoppingCart,
+  ClipboardList,
+  Calculator,
+  FileQuestion,
+  Layout,
+  Tag,
+  Gift,
+  Puzzle,
+  LayoutTemplate,
+  Wrench,
+  Image,
+  Website,
+  Coins,
+};
+
+// ─── Types ─────────────────────────────────────────────────────────────────────
+
+type NavItem = {
+  name: { vi: string; en: string };
+  href: string;
+  icon: string;
+};
+
+type NavGroup = {
+  group: { vi: string; en: string };
+  items: NavItem[];
+};
+
 type NavEntry = NavItem | NavGroup;
 
+// ─── Static nav definition (all possible items) ────────────────────────────────
+
 const navigation: NavEntry[] = [
-  { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
   {
-    group: "Nội dung",
+    group: { vi: "Nội dung", en: "Content" },
     items: [
-      { name: "Trang chủ (Slider)", href: "/admin/home-sliders", icon: Image },
-      { name: "Landing Pages", href: "/admin/landing-pages", icon: LayoutTemplate },
-      { name: "Dịch vụ", href: "/admin/services", icon: Globe },
-      { name: "Dự án", href: "/admin/projects", icon: FolderKanban },
-      { name: "Đội ngũ", href: "/admin/team", icon: UsersRound },
-      { name: "Kỹ năng", href: "/admin/expertises", icon: Wrench },
-      { name: "Đánh giá", href: "/admin/testimonials", icon: Star },
+      { name: { vi: "Trang chủ (Slider)", en: "Home Sliders" }, href: "/admin/home-sliders", icon: "Image" },
+      { name: { vi: "Landing Pages", en: "Landing Pages" }, href: "/admin/landing-pages", icon: "LayoutTemplate" },
+      { name: { vi: "Dịch vụ", en: "Services" }, href: "/admin/services", icon: "Globe" },
+      { name: { vi: "Dự án", en: "Projects" }, href: "/admin/projects", icon: "FolderKanban" },
+      { name: { vi: "Đội ngũ", en: "Team" }, href: "/admin/team", icon: "UsersRound" },
+      { name: { vi: "Kỹ năng", en: "Expertises" }, href: "/admin/expertises", icon: "Wrench" },
+      { name: { vi: "Đánh giá", en: "Testimonials" }, href: "/admin/testimonials", icon: "Star" },
     ],
   },
   {
-    group: "Kinh doanh",
+    group: { vi: "Kinh doanh", en: "Sales" },
     items: [
-      { name: "Đơn hàng", href: "/admin/orders", icon: ShoppingCart },
-      { name: "Kho Giao Diện", href: "/admin/web-templates", icon: Layout },
-      { name: "Kho Tính Năng", href: "/admin/service-attributes", icon: Tag },
-      { name: "Dịch vụ Rời", href: "/admin/addon-services", icon: Puzzle },
-      { name: "XP & Rewards", href: "/admin/reward-tiers", icon: Gift },
-      { name: "Gói dịch vụ", href: "/admin/packages", icon: Package },
-      { name: "Báo giá tính năng", href: "/admin/pricing-features", icon: Calculator },
-      { name: "Yêu cầu báo giá", href: "/admin/quote-requests", icon: FileQuestion },
-      { name: "Tin nhắn", href: "/admin/messages", icon: MessageSquare },
+      { name: { vi: "Đơn hàng", en: "Orders" }, href: "/admin/orders", icon: "ShoppingCart" },
+      { name: { vi: "Kho Giao Diện", en: "Web Templates" }, href: "/admin/web-templates", icon: "Layout" },
+      { name: { vi: "Kho Tính Năng", en: "Service Attributes" }, href: "/admin/service-attributes", icon: "Tag" },
+      { name: { vi: "Dịch vụ Rời", en: "Addon Services" }, href: "/admin/addon-services", icon: "Puzzle" },
+      { name: { vi: "XP & Rewards", en: "XP & Rewards" }, href: "/admin/reward-tiers", icon: "Gift" },
+      { name: { vi: "Gói dịch vụ", en: "Service Packages" }, href: "/admin/packages", icon: "Package" },
+      { name: { vi: "Báo giá tính năng", en: "Pricing Features" }, href: "/admin/pricing-features", icon: "Calculator" },
+      { name: { vi: "Yêu cầu báo giá", en: "Quote Requests" }, href: "/admin/quote-requests", icon: "FileQuestion" },
+      { name: { vi: "Tin nhắn", en: "Messages" }, href: "/admin/messages", icon: "MessageSquare" },
     ],
   },
   {
-    group: "Hệ thống",
+    group: { vi: "Hệ thống", en: "System" },
     items: [
-      { name: "Người dùng", href: "/admin/users", icon: Users },
-      { name: "Phân quyền", href: "/admin/roles", icon: ShieldCheck },
-      { name: "Nhật ký", href: "/admin/audit-log", icon: ClipboardList },
-      { name: "Cài đặt", href: "/admin/settings", icon: Settings },
+      { name: { vi: "Người dùng", en: "Users" }, href: "/admin/users", icon: "Users" },
+      { name: { vi: "Phân quyền", en: "Roles" }, href: "/admin/roles", icon: "ShieldCheck" },
+      { name: { vi: "Nhật ký", en: "Audit Log" }, href: "/admin/audit-log", icon: "ClipboardList" },
+      { name: { vi: "Cài đặt", en: "Settings" }, href: "/admin/settings", icon: "Settings" },
+      { name: { vi: "Websites", en: "Websites" }, href: "/admin/websites", icon: "Website" },
+      { name: { vi: "Điểm thưởng", en: "Points" }, href: "/admin/points", icon: "Coins" },
     ],
   },
 ];
 
+// ─── Permission check helper ──────────────────────────────────────────────────
+
+/**
+ * Check if user can see a nav item based on NAV_PERMISSIONS config.
+ * Super admin (level=0) sees everything.
+ * Others check minRoleLevel.
+ */
+function canSeeNavItem(userRole: string, href: string): boolean {
+  const roleLevel = ROLE_LEVEL[userRole] ?? 99;
+
+  // CEO (-1) and super_admin (0): see everything
+  if (roleLevel <= 0) return true;
+
+  const config = NAV_PERMISSIONS[href];
+  if (!config) return true; // Unknown item: show (auth will block later)
+
+  // Check minRoleLevel
+  if (config.minRoleLevel !== undefined && roleLevel <= config.minRoleLevel) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Get the icon component for a nav item
+ */
+function getIcon(iconName: string) {
+  return ICON_MAP[iconName] ?? LayoutDashboard;
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
+
 export function AdminSidebar() {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+  const { user } = useAdminAuth();
+
+  // Filter nav items based on user role
+  const visibleNavigation = navigation.map((entry) => {
+    if (!("group" in entry)) {
+      // Single item (Dashboard)
+      const show = user ? canSeeNavItem(user.role, entry.href) : false;
+      return show ? entry : null;
+    }
+
+    const filteredItems = entry.items.filter((item) =>
+      user ? canSeeNavItem(user.role, item.href) : false
+    );
+
+    return filteredItems.length > 0 ? { ...entry, items: filteredItems } : null;
+  }).filter(Boolean) as NavEntry[];
 
   return (
     <aside
@@ -100,66 +192,62 @@ export function AdminSidebar() {
             </span>
           </Link>
         )}
+        {collapsed && (
+          <Link href="/admin" className="mx-auto">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 text-sm font-bold text-white">
+              L
+            </div>
+          </Link>
+        )}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white"
+          className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
+          title={collapsed ? "Mở rộng" : "Thu gọn"}
         >
           {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
         </button>
       </div>
 
       {/* Navigation */}
-      <nav className="h-[calc(100vh-4rem)] overflow-y-auto px-3 py-4">
-        {navigation.map((item, i) => {
-          if ("href" in item && "name" in item && !("group" in item)) {
-            const navItem = item as NavItem;
-            const isActive = pathname === navItem.href;
-            return (
-              <Link
-                key={navItem.href}
-                href={navItem.href}
-                className={cn(
-                  "mb-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                  isActive
-                    ? "bg-blue-600/20 text-blue-400"
-                    : "text-slate-400 hover:bg-slate-800/50 hover:text-white"
-                )}
-                title={collapsed ? navItem.name : undefined}
-              >
-                <navItem.icon size={20} className="shrink-0" />
-                {!collapsed && <span>{navItem.name}</span>}
-              </Link>
-            );
-          }
+      <nav className="h-[calc(100vh-4rem)] overflow-y-auto px-3 py-4 scrollbar-thin scrollbar-thumb-slate-800">
+        {/* Dashboard always visible */}
+        {user && canSeeNavItem(user.role, "/admin") && (
+          <NavLink
+            href="/admin"
+            icon={<LayoutDashboard size={20} className="shrink-0" />}
+            active={pathname === "/admin"}
+            collapsed={collapsed}
+          >
+            {viEn("Dashboard", "Dashboard")}
+          </NavLink>
+        )}
 
-          const groupItem = item as NavGroup;
+        {visibleNavigation.map((entry, i) => {
+          if (!("group" in entry)) return null;
+
           return (
-            <div key={groupItem.group} className={cn(i > 0 && "mt-6")}>
+            <div key={entry.group.vi} className={cn(i >= 0 && "mt-6")}>
               {!collapsed && (
                 <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-                  {groupItem.group}
+                  {viEn(entry.group.vi, entry.group.en)}
                 </p>
               )}
               {collapsed && <div className="my-2 border-t border-slate-800" />}
-              {groupItem.items.map((subItem) => {
+              {entry.items.map((item) => {
                 const isActive =
-                  pathname === subItem.href ||
-                  (subItem.href !== "/admin" && pathname.startsWith(subItem.href));
+                  pathname === item.href ||
+                  (item.href !== "/admin" && pathname.startsWith(item.href));
+
                 return (
-                  <Link
-                    key={subItem.href}
-                    href={subItem.href}
-                    className={cn(
-                      "mb-0.5 flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                      isActive
-                        ? "bg-blue-600/20 text-blue-400"
-                        : "text-slate-400 hover:bg-slate-800/50 hover:text-white"
-                    )}
-                    title={collapsed ? subItem.name : undefined}
+                  <NavLink
+                    key={item.href}
+                    href={item.href}
+                    icon={<IconComponent name={item.icon} size={18} className="shrink-0" />}
+                    active={isActive}
+                    collapsed={collapsed}
                   >
-                    <subItem.icon size={18} className="shrink-0" />
-                    {!collapsed && <span>{subItem.name}</span>}
-                  </Link>
+                    {viEn(item.name.vi, item.name.en)}
+                  </NavLink>
                 );
               })}
             </div>
@@ -168,4 +256,59 @@ export function AdminSidebar() {
       </nav>
     </aside>
   );
+}
+
+// ─── NavLink sub-component ─────────────────────────────────────────────────────
+
+function NavLink({
+  href,
+  icon,
+  active,
+  collapsed,
+  children,
+}: {
+  href: string;
+  icon: React.ReactNode;
+  active: boolean;
+  collapsed: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <Link
+      href={href}
+      className={cn(
+        "mb-0.5 flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+        active
+          ? "bg-blue-600/20 text-blue-400"
+          : "text-slate-400 hover:bg-slate-800/50 hover:text-white"
+      )}
+      title={collapsed ? String(children) : undefined}
+    >
+      {icon}
+      {!collapsed && <span>{children}</span>}
+    </Link>
+  );
+}
+
+// ─── Icon component ─────────────────────────────────────────────────────────────
+
+function IconComponent({
+  name,
+  size,
+  className,
+}: {
+  name: string;
+  size?: number;
+  className?: string;
+}) {
+  const Icon = ICON_MAP[name];
+  if (!Icon) return null;
+  return <Icon size={size ?? 18} className={className} />;
+}
+
+// ─── Locale helper ─────────────────────────────────────────────────────────────
+
+function viEn(vi: string, _en: string): string {
+  // Default to Vietnamese for admin panel
+  return vi;
 }

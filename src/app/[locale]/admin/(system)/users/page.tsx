@@ -13,8 +13,11 @@ interface UserData {
   avatar: string | null;
   role: string;
   isActive: boolean;
+  accountType: string;
+  teamMemberId: string | null;
   createdAt: string;
   userRoles: { role: { name: string; displayName: string } }[];
+  teamMember: { id: string; name: string; role: string; image: string | null } | null;
 }
 
 export default function AdminUsersPage() {
@@ -197,8 +200,8 @@ export default function AdminUsersPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Quản lý Người dùng</h1>
-          <p className="text-sm text-slate-400">Quản lý tài khoản và phân quyền</p>
+          <h1 className="text-2xl font-bold text-white">Quản lý Tài Khoản</h1>
+          <p className="text-sm text-slate-400">Quản lý tài khoản nhân viên & khách hàng</p>
         </div>
         <button
           onClick={() => setShowCreateModal(true)}

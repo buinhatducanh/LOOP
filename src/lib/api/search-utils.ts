@@ -175,6 +175,9 @@ export const USER_FILTER_CONFIG: EntityFilterConfig = {
     { field: "email", operator: "contains" },
   ],
   boolFields: ["isActive"],
+  enumFields: {
+    accountType: ["staff", "customer"],
+  },
   dateFields: ["createdAt"],
   defaultSort: { field: "createdAt", dir: "desc" },
 };

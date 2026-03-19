@@ -93,32 +93,27 @@ export default async function Page() {
         const mockMember = mockTeamMembers.find(m => m.slug === dbMember.slug);
         const image = dbMember.image || (mockMember?.image || "");
         const coverImage = dbMember.coverImage || (mockMember?.coverImage || "");
+        // Prefer dbMember.roleLevel, fallback to mockMember, then default to 4
+        const roleLevel = dbMember.roleLevel ?? mockMember?.roleLevel ?? 4;
 
-        if (mockMember) {
-          return {
-            ...mockMember,
-            ...dbMember,
-            image,
-            coverImage,
-          };
-        }
         return {
+          ...(mockMember || {}),
           ...dbMember,
           image,
           coverImage,
-          expertise: dbMember.expertise || [],
-          achievements: dbMember.achievements || [],
-          skills: dbMember.skills || [],
-          shortBio: dbMember.shortBio || dbMember.bio?.substring(0, 100) || "",
-          linkedin: dbMember.linkedin || null,
-          twitter: dbMember.twitter || null,
-          github: dbMember.github || null,
-          email: dbMember.email || null,
-          phone: dbMember.phone || null,
-          quote: dbMember.quote || null,
-          roleLevel: dbMember.roleLevel || 4,
-          roleCategory: dbMember.roleCategory || null,
-          isFeatured: dbMember.isFeatured || false,
+          roleLevel,
+          expertise: dbMember.expertise || mockMember?.expertise || [],
+          achievements: dbMember.achievements || mockMember?.achievements || [],
+          skills: dbMember.skills || mockMember?.skills || [],
+          shortBio: dbMember.shortBio || dbMember.bio?.substring(0, 100) || mockMember?.shortBio || "",
+          linkedin: dbMember.linkedin || mockMember?.linkedin || null,
+          twitter: dbMember.twitter || mockMember?.twitter || null,
+          github: dbMember.github || mockMember?.github || null,
+          email: dbMember.email || mockMember?.email || null,
+          phone: dbMember.phone || mockMember?.phone || null,
+          quote: dbMember.quote || mockMember?.quote || null,
+          roleCategory: dbMember.roleCategory || mockMember?.roleCategory || null,
+          isFeatured: dbMember.isFeatured ?? mockMember?.isFeatured ?? false,
         };
       });
     } else {

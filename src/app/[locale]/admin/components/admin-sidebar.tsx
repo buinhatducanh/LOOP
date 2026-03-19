@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 import {
   LayoutDashboard,
   Globe,
@@ -26,21 +27,28 @@ import {
   Puzzle,
   LayoutTemplate,
   Wrench,
-  Image,
+  Monitor,
   Video,
   Coins,
-  Monitor,
+  Lock,
+  Image,
 } from "lucide-react";
-import { useState } from "react";
+import { useAdminAuth } from "@/app/[locale]/admin/components/admin-auth-provider";
+import { NAV_PERMISSIONS, ROLE_LEVEL } from "@/lib/auth/roles";
 import { cn } from "@/components/ui/utils";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type NavItem = { name: string; href: string; icon: any };
+type NavItem = {
+  name: string;
+  href: string;
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+};
 type NavGroup = { group: string; items: NavItem[] };
 type NavEntry = NavItem | NavGroup;
 
 const navigation: NavEntry[] = [
+  // Standalone items
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
+  // Nội dung
   {
     group: "Nội dung",
     items: [
@@ -51,8 +59,10 @@ const navigation: NavEntry[] = [
       { name: "Đội ngũ", href: "/admin/team", icon: UsersRound },
       { name: "Kỹ năng", href: "/admin/expertises", icon: Wrench },
       { name: "Đánh giá", href: "/admin/testimonials", icon: Star },
+      { name: "Tin nhắn", href: "/admin/messages", icon: MessageSquare },
     ],
   },
+  // Kinh doanh
   {
     group: "Kinh doanh",
     items: [
@@ -64,13 +74,13 @@ const navigation: NavEntry[] = [
       { name: "Gói dịch vụ", href: "/admin/packages", icon: Package },
       { name: "Báo giá tính năng", href: "/admin/pricing-features", icon: Calculator },
       { name: "Yêu cầu báo giá", href: "/admin/quote-requests", icon: FileQuestion },
-      { name: "Tin nhắn", href: "/admin/messages", icon: MessageSquare },
     ],
   },
+  // Hệ thống
   {
     group: "Hệ thống",
     items: [
-      { name: "Người dùng", href: "/admin/users", icon: Users },
+      { name: "Tài Khoản NV", href: "/admin/staff-users", icon: Users },
       { name: "Phân quyền", href: "/admin/roles", icon: ShieldCheck },
       { name: "Điểm thưởng", href: "/admin/points", icon: Coins },
       { name: "Website KH", href: "/admin/websites", icon: Monitor },
@@ -80,9 +90,36 @@ const navigation: NavEntry[] = [
   },
 ];
 
+// ─── Filter nav items by role ──────────────────────────────────────────────────────
+
+function canAccessNav(userRoleLevel: number, href: string): boolean {
+  const cfg = NAV_PERMISSIONS[href];
+  if (!cfg) return true; // no restriction defined → allow
+  if (cfg.minRoleLevel !== undefined && userRoleLevel > cfg.minRoleLevel) return false;
+  return true;
+}
+
+// ─── Sidebar ────────────────────────────────────────────────────────────────
+
 export function AdminSidebar() {
+  const { user } = useAdminAuth();
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+
+  const userLevel = user ? ROLE_LEVEL[user.role] ?? 99 : 99;
+
+  // Filter nav items
+  const filteredNav = navigation.map((entry) => {
+    if ("href" in entry) {
+      // Standalone nav item
+      if (!canAccessNav(userLevel, entry.href)) return null;
+      return entry;
+    }
+    // Group
+    const visibleItems = entry.items.filter((item) => canAccessNav(userLevel, item.href));
+    if (visibleItems.length === 0) return null;
+    return { ...entry, items: visibleItems };
+  }).filter(Boolean) as NavEntry[];
 
   return (
     <aside
@@ -106,17 +143,31 @@ export function AdminSidebar() {
         )}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white"
+          className={cn(
+            "rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors",
+            collapsed && "mx-auto"
+          )}
         >
           {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
         </button>
       </div>
 
+      {/* Role badge */}
+      {!collapsed && user && (
+        <div className="border-b border-slate-800 px-4 py-2">
+          <div className="flex items-center gap-2 rounded-lg bg-slate-900 px-3 py-2">
+            <Lock size={12} className="text-slate-500 shrink-0" />
+            <span className="text-xs text-slate-400 truncate">{user.role || "member"}</span>
+          </div>
+        </div>
+      )}
+
       {/* Navigation */}
-      <nav className="h-[calc(100vh-4rem)] overflow-y-auto px-3 py-4">
-        {navigation.map((item, i) => {
-          if ("href" in item && "name" in item && !("group" in item)) {
-            const navItem = item as NavItem;
+      <nav className="h-[calc(100vh-8rem)] overflow-y-auto px-3 py-3">
+        {filteredNav.map((item, i) => {
+          // Standalone nav item (Dashboard)
+          if ("href" in item) {
+            const navItem = item;
             const isActive = pathname === navItem.href;
             return (
               <Link
@@ -136,15 +187,16 @@ export function AdminSidebar() {
             );
           }
 
+          // Group
           const groupItem = item as NavGroup;
           return (
-            <div key={groupItem.group} className={cn(i > 0 && "mt-6")}>
+            <div key={groupItem.group} className={cn(i > 0 && "mt-5")}>
               {!collapsed && (
                 <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
                   {groupItem.group}
                 </p>
               )}
-              {collapsed && <div className="my-2 border-t border-slate-800" />}
+              {collapsed && <div className="mb-2 border-t border-slate-800 pt-4" />}
               {groupItem.items.map((subItem) => {
                 const isActive =
                   pathname === subItem.href ||

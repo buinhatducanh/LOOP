@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname } from "@/i18n/routing";
 import { useSession, signIn as nextAuthSignIn, signOut as nextAuthSignOut } from "next-auth/react";
 
 export interface User {
