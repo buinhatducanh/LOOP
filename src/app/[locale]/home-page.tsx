@@ -2,7 +2,7 @@
 
 import { useRef, useMemo, useState } from "react";
 import { Link } from "@/i18n/routing";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/routing";
 import { useTranslations } from "next-intl";
 import {
   ArrowRight,

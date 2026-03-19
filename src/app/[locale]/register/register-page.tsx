@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/routing";
 import { Link } from "@/i18n/routing";
 import { signIn } from "next-auth/react";
 import { Zap, User, Mail, Lock, Eye, EyeOff, ArrowRight, AlertCircle } from "lucide-react";

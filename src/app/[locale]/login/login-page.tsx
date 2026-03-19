@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/routing";
 import { Link } from "@/i18n/routing";
 import { signIn } from "next-auth/react";
 import { Zap, Mail, Lock, Eye, EyeOff, ArrowRight, AlertCircle } from "lucide-react";
@@ -9,7 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 export function LoginPage() {
   const router = useRouter();
-  const { login } = useAuth();
+  const { login, user } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -28,7 +28,12 @@ export function LoginPage() {
     setLoading(true);
     const { success, message } = await login(email, password);
     if (success) {
-      router.push("/vi/admin");
+      // Role-based redirect after login
+      if (user?.role === "admin") {
+        router.push("/vi/admin");
+      } else {
+        router.push("/vi/account");
+      }
     } else {
       setError(message || "Email hoặc mật khẩu không đúng");
       setLoading(false);

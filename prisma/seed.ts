@@ -1,22 +1,26 @@
 /**
  * Unified Seed Script
- * Run: npx dotenv -e .env.local -- npx tsx prisma/seed.ts
+ * Run: npx tsx prisma/seed.ts
  */
-import "dotenv/config";
+import { config } from "dotenv";
+import { resolve } from "path";
+
+// Load .env.local explicitly (next.js style)
+config({ path: resolve(process.cwd(), ".env.local") });
+
 import { PrismaClient } from "@/generated/prisma/client";
-import { Pool } from "pg";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { hashPassword } from "@/lib/auth/password";
 
-const prisma = (() => {
-  const connectionString = process.env.DATABASE_URL;
-  if (!connectionString) {
-    console.warn("DATABASE_URL is not set yet!");
-  }
-  const pool = new Pool({ connectionString: connectionString || "" });
-  const adapter = new PrismaPg(pool as any);
-  return new PrismaClient({ adapter });
-})();
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) {
+  console.error("❌ DATABASE_URL not found in .env.local");
+  process.exit(1);
+}
+
+const prisma = new PrismaClient({
+  adapter: new PrismaPg({ connectionString }),
+});
 
 // ══════════════════════════════════════════════════════════════════
 // 1. RBAC — Roles & Permissions
@@ -438,6 +442,213 @@ async function seedExpertises() {
 }
 
 // ══════════════════════════════════════════════════════════════════
+// 8. Addon Services
+// ══════════════════════════════════════════════════════════════════
+
+async function seedAddonServices() {
+  console.log("\n[AddonServices] Seeding...");
+
+  const addons = [
+    { slug: "seo-optimization", name: "SEO Optimization", nameVi: "Tối ưu SEO", description: "Complete SEO setup including meta tags, sitemap, schema markup and content optimization", descriptionVi: "Thiết lập SEO toàn diện bao gồm meta tags, sitemap, schema markup và tối ưu nội dung", type: "one_time", price: 1500000 },
+    { slug: "google-analytics", name: "Google Analytics Setup", nameVi: "Cài đặt Google Analytics", description: "Full Google Analytics 4 setup with conversion tracking and custom events", descriptionVi: "Thiết lập Google Analytics 4 đầy đủ với theo dõi chuyển đổi và sự kiện tùy chỉnh", type: "one_time", price: 800000 },
+    { slug: "maintenance-monthly", name: "Monthly Maintenance", nameVi: "Bảo trì hàng tháng", description: "Monthly website maintenance including updates, backups and security monitoring", descriptionVi: "Bảo trì website hàng tháng bao gồm cập nhật, sao lưu và giám sát bảo mật", type: "recurring", price: 500000, billingPeriod: "monthly" },
+    { slug: "ssl-premium", name: "Premium SSL Certificate", nameVi: "Chứng chỉ SSL Premium", description: "Premium SSL with warranty and priority support", descriptionVi: "SSL cao cấp kèm bảo hiểm và hỗ trợ ưu tiên", type: "one_time", price: 2000000 },
+    { slug: "speed-optimization", name: "Speed Optimization", nameVi: "Tối ưu tốc độ", description: "Performance optimization achieving 95+ Lighthouse score", descriptionVi: "Tối ưu hiệu suất đạt điểm Lighthouse 95+", type: "one_time", price: 1000000 },
+    { slug: "backup-weekly", name: "Weekly Backup Service", nameVi: "Dịch vụ Backup Hàng Tuần", description: "Automated weekly backups with 30-day retention", descriptionVi: "Sao lưu tự động hàng tuần với lưu trữ 30 ngày", type: "recurring", price: 300000, billingPeriod: "monthly" },
+    { slug: "training-session", name: "Admin Training Session", nameVi: "Buổi Đào Tạo Quản Trị", description: "2-hour hands-on training for content management", descriptionVi: "Buổi đào tạo thực hành quản trị nội dung 2 giờ", type: "one_time", price: 600000 },
+    { slug: "custom-domain-email", name: "Custom Domain Email", nameVi: "Email Tên Miền Riêng", description: "5 custom email accounts with your domain (name@yourcompany.com)", descriptionVi: "5 tài khoản email tùy chỉnh với tên miền riêng", type: "recurring", price: 200000, billingPeriod: "monthly" },
+  ];
+
+  for (const addon of addons) {
+    await prisma.addonService.upsert({
+      where: { slug: addon.slug },
+      update: addon,
+      create: addon,
+    });
+  }
+  console.log(`  ✓ ${addons.length} addon services`);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// 9. Reward Tiers
+// ══════════════════════════════════════════════════════════════════
+
+async function seedRewardTiers() {
+  console.log("\n[RewardTiers] Seeding...");
+
+  // Get addon services for tier items
+  const maintenance = await prisma.addonService.findUnique({ where: { slug: "maintenance-monthly" } });
+  const seo = await prisma.addonService.findUnique({ where: { slug: "seo-optimization" } });
+  const training = await prisma.addonService.findUnique({ where: { slug: "training-session" } });
+  const backup = await prisma.addonService.findUnique({ where: { slug: "backup-weekly" } });
+
+  const tiers = [
+    {
+      level: 2,
+      name: "Bronze Member",
+      nameVi: "Thành viên Đồng",
+      description: "Entry-level reward tier for new customers",
+      minXp: 100,
+      items: [
+        { addonServiceId: backup?.id, quantity: 1, durationMonths: 1 },
+      ],
+    },
+    {
+      level: 3,
+      name: "Silver Member",
+      nameVi: "Thành viên Bạc",
+      description: "Mid-tier rewards for active customers",
+      minXp: 500,
+      items: [
+        { addonServiceId: backup?.id, quantity: 1, durationMonths: 3 },
+        { addonServiceId: training?.id, quantity: 1, durationMonths: null },
+      ],
+    },
+    {
+      level: 4,
+      name: "Gold Member",
+      nameVi: "Thành viên Vàng",
+      description: "Premium rewards for loyal customers",
+      minXp: 1000,
+      items: [
+        { addonServiceId: maintenance?.id, quantity: 1, durationMonths: 3 },
+        { addonServiceId: seo?.id, quantity: 1, durationMonths: null },
+        { addonServiceId: backup?.id, quantity: 1, durationMonths: 6 },
+      ],
+    },
+    {
+      level: 5,
+      name: "Platinum Member",
+      nameVi: "Thành viên Bạch Kim",
+      description: "Top-tier rewards for VIP customers",
+      minXp: 3000,
+      items: [
+        { addonServiceId: maintenance?.id, quantity: 1, durationMonths: 12 },
+        { addonServiceId: seo?.id, quantity: 1, durationMonths: null },
+        { addonServiceId: training?.id, quantity: 2, durationMonths: null },
+        { addonServiceId: backup?.id, quantity: 1, durationMonths: 12 },
+      ],
+    },
+  ];
+
+  for (const tier of tiers) {
+    const { items, ...tierData } = tier;
+    const created = await prisma.rewardTier.upsert({
+      where: { level: tier.level },
+      update: tierData,
+      create: tierData,
+    });
+
+    for (const item of items) {
+      if (item.addonServiceId) {
+        await prisma.rewardTierItem.upsert({
+          where: { rewardTierId_addonServiceId: { rewardTierId: created.id, addonServiceId: item.addonServiceId } },
+          update: { quantity: item.quantity, durationMonths: item.durationMonths },
+          create: { rewardTierId: created.id, addonServiceId: item.addonServiceId, quantity: item.quantity, durationMonths: item.durationMonths },
+        });
+      }
+    }
+  }
+  console.log(`  ✓ ${tiers.length} reward tiers`);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// 10. Landing Page & Content Seeds
+// ══════════════════════════════════════════════════════════════════
+
+async function seedContent() {
+  console.log("\n[Content] Seeding landing page & home slider...");
+
+  // Default Home Slider
+  const sliderExists = await prisma.homeSlider.findFirst();
+  if (!sliderExists) {
+    await prisma.homeSlider.create({
+      data: {
+        image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1920&q=80",
+        title: "Thiết kế Website Chuyên Nghiệp",
+        subtitle: "Biến ý tưởng của bạn thành hiện thực số",
+        sortOrder: 0,
+        isActive: true,
+      },
+    });
+    console.log("  ✓ Home slider created");
+  } else {
+    console.log("  ✓ Home slider already exists");
+  }
+
+  // Default Home Video
+  const videoExists = await prisma.homeVideo.findFirst();
+  if (!videoExists) {
+    await prisma.homeVideo.create({
+      data: {
+        videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        thumbnail: "https://images.unsplash.com/photo-1551434678-e076c223a692?w=1280&q=80",
+        title: "Giới thiệu LOOP",
+        description: "Khám phá cách LOOP giúp doanh nghiệp của bạn phát triển trong kỷ nguyên số",
+        isActive: true,
+        sortOrder: 0,
+      },
+    });
+    console.log("  ✓ Home video created");
+  } else {
+    console.log("  ✓ Home video already exists");
+  }
+
+  // Default Landing Page
+  const landingExists = await prisma.landingPage.findUnique({ where: { slug: "default" } });
+  if (!landingExists) {
+    const page = await prisma.landingPage.create({
+      data: {
+        slug: "default",
+        name: "Trang chủ mặc định",
+        locale: "vi",
+        isPublished: true,
+        isDefault: true,
+        seoTitle: "LOOP - Thiết kế Website & Ứng dụng chuyên nghiệp",
+        seoDesc: "Công ty thiết kế website thương mại, ứng dụng di động, phần mềm quản lý doanh nghiệp. Tối ưu SEO, hiệu suất cao.",
+      },
+    });
+
+    // Hero section
+    await prisma.landingSection.create({
+      data: {
+        pageId: page.id,
+        type: "hero",
+        title: "Xây dựng Website Vượt Trội",
+        subtitle: "Giải pháp số toàn diện cho doanh nghiệp của bạn",
+        sortOrder: 0,
+        isActive: true,
+      },
+    });
+    console.log("  ✓ Default landing page created");
+  } else {
+    console.log("  ✓ Default landing page already exists");
+  }
+
+  // Site Settings
+  const settings = [
+    { key: "hero_banner_1", value: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1920&q=80", group: "hero" },
+    { key: "hero_enable", value: "1", group: "hero" },
+    { key: "stat_projects", value: "150+", group: "stats" },
+    { key: "stat_satisfaction", value: "98%", group: "stats" },
+    { key: "stat_team_size", value: "50+", group: "stats" },
+    { key: "stat_years", value: "8+", group: "stats" },
+    { key: "company_name", value: "LOOP", group: "general" },
+    { key: "company_email", value: "contact@loop.vn", group: "general" },
+    { key: "company_phone", value: "0378443602", group: "general" },
+    { key: "company_address", value: "Ho Chi Minh City, Vietnam", group: "general" },
+  ];
+
+  for (const setting of settings) {
+    const existing = await prisma.siteSetting.findUnique({ where: { key: setting.key } });
+    if (!existing) {
+      await prisma.siteSetting.create({ data: setting });
+    }
+  }
+  console.log(`  ✓ ${settings.length} site settings`);
+}
+
+// ══════════════════════════════════════════════════════════════════
 // MAIN
 // ══════════════════════════════════════════════════════════════════
 
@@ -454,6 +665,9 @@ async function main() {
     await seedPricing();
     await seedPointsSystem();
     await seedExpertises();
+    await seedAddonServices();
+    await seedRewardTiers();
+    await seedContent();
 
     console.log("\n" + "=".repeat(50));
     console.log("✅ All seeds completed successfully!");

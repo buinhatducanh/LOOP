@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { useLocale } from "next-intl";
 import { Link, usePathname } from "@/i18n/routing";
 import { signIn, signOut } from "next-auth/react";
-import { Menu, X, Zap, ChevronDown, Package, Briefcase, Users, FileText } from "lucide-react";
+import { Menu, X, Zap, ChevronDown, Package, Briefcase, Users, FileText, Settings, LayoutDashboard, LogOut, UserCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { LanguageSwitcher } from "@/components/shared/LanguageSwitcher";
 import { NavbarSearch } from "@/components/layout/NavbarSearch";
@@ -20,6 +20,7 @@ export default function Navbar({ hideOnHome = false }: NavbarProps) {
   const [atTop, setAtTop] = useState(true);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const userDropdownRef = useRef<HTMLDivElement>(null);
   const locale = useLocale();
   const t = useTranslations("Navigation");
   const pathname = usePathname();
@@ -72,12 +73,15 @@ export default function Navbar({ hideOnHome = false }: NavbarProps) {
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setOpenDropdown(null);
+        if (openDropdown === "more") setOpenDropdown(null);
+      }
+      if (userDropdownRef.current && !userDropdownRef.current.contains(event.target as Node)) {
+        if (openDropdown === "user") setOpenDropdown(null);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  }, [openDropdown]);
 
   const isHomePage = pathname === "/" || pathname === "/" + locale;
 
@@ -380,31 +384,214 @@ export default function Navbar({ hideOnHome = false }: NavbarProps) {
             {/* Auth buttons - desktop only */}
             <div className="desktop-nav" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               {isAuthenticated && user ? (
-                <button
-                  onClick={() => { signOut({ callbackUrl: "/" }); }}
-                  style={{
-                    padding: "8px 16px",
-                    fontSize: "13px",
-                    fontWeight: 600,
-                    color: "rgba(209,213,219,0.9)",
-                    background: "transparent",
-                    border: "1px solid rgba(255,255,255,0.12)",
-                    borderRadius: "10px",
-                    cursor: "pointer",
-                    transition: "all 0.2s",
-                    letterSpacing: "0.01em",
-                  }}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.25)";
-                    (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.05)";
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.12)";
-                    (e.currentTarget as HTMLButtonElement).style.background = "transparent";
-                  }}
-                >
-                  Sign Out
-                </button>
+                /* User Menu Dropdown */
+                <div ref={userDropdownRef} style={{ position: "relative" }}>
+                  <button
+                    onClick={() => setOpenDropdown(openDropdown === "user" ? null : "user")}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      padding: "6px 12px 6px 6px",
+                      background: "rgba(255,255,255,0.06)",
+                      border: "1px solid rgba(255,255,255,0.12)",
+                      borderRadius: "10px",
+                      cursor: "pointer",
+                      transition: "all 0.2s",
+                    }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.25)";
+                      (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.09)";
+                    }}
+                    onMouseLeave={(e) => {
+                      if (openDropdown !== "user") {
+                        (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.12)";
+                        (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.06)";
+                      }
+                    }}
+                  >
+                    {/* Avatar */}
+                    <div
+                      style={{
+                        width: "28px",
+                        height: "28px",
+                        borderRadius: "8px",
+                        background: "linear-gradient(135deg, #8B5CF6, #06B6D4)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: "11px",
+                        fontWeight: 700,
+                        color: "#FFFFFF",
+                        flexShrink: 0,
+                      }}
+                    >
+                      {user.avatar?.slice(0, 2).toUpperCase()}
+                    </div>
+                    {/* Name */}
+                    <span
+                      style={{
+                        fontSize: "13px",
+                        fontWeight: 600,
+                        color: "rgba(209,213,219,0.9)",
+                        maxWidth: "120px",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {user.name}
+                    </span>
+                    <ChevronDown
+                      size={12}
+                      style={{
+                        color: "rgba(209,213,219,0.6)",
+                        transform: openDropdown === "user" ? "rotate(180deg)" : "rotate(0)",
+                        transition: "transform 0.2s",
+                      }}
+                    />
+                  </button>
+
+                  {/* User Dropdown Menu */}
+                  {openDropdown === "user" && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: "calc(100% + 8px)",
+                        right: "0",
+                        minWidth: "220px",
+                        background: "rgba(15,17,23,0.98)",
+                        border: "1px solid rgba(255,255,255,0.1)",
+                        borderRadius: "16px",
+                        padding: "8px",
+                        boxShadow: "0 20px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(139,92,246,0.1)",
+                        zIndex: 200,
+                        backdropFilter: "blur(20px)",
+                      }}
+                      onClick={() => setOpenDropdown(null)}
+                    >
+                      {/* User info header */}
+                      <div
+                        style={{
+                          padding: "10px 14px 12px",
+                          borderBottom: "1px solid rgba(255,255,255,0.07)",
+                          marginBottom: "4px",
+                        }}
+                      >
+                        <div style={{ fontSize: "13px", fontWeight: 600, color: "#FFFFFF" }}>
+                          {user.name}
+                        </div>
+                        <div style={{ fontSize: "12px", color: "rgba(209,213,219,0.5)", marginTop: "2px" }}>
+                          {user.email}
+                        </div>
+                        <div
+                          style={{
+                            display: "inline-block",
+                            marginTop: "6px",
+                            padding: "2px 8px",
+                            borderRadius: "6px",
+                            fontSize: "11px",
+                            fontWeight: 600,
+                            background: user.role === "admin"
+                              ? "rgba(139,92,246,0.2)"
+                              : "rgba(59,130,246,0.2)",
+                            color: user.role === "admin" ? "#A78BFA" : "#60A5FA",
+                          }}
+                        >
+                          {user.role === "admin" ? "Administrator" : "Customer"}
+                        </div>
+                      </div>
+
+                      {/* Admin Dashboard — only for non-customer roles */}
+                      {user.role === "admin" && (
+                        <Link
+                          href="/admin"
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "10px",
+                            padding: "10px 14px",
+                            fontSize: "13px",
+                            fontWeight: 600,
+                            color: "#FFFFFF",
+                            background: "linear-gradient(135deg, rgba(139,92,246,0.15), rgba(6,182,212,0.15))",
+                            borderRadius: "10px",
+                            textDecoration: "none",
+                            transition: "all 0.15s",
+                            marginBottom: "2px",
+                          }}
+                          onMouseEnter={(e) => {
+                            (e.currentTarget as HTMLAnchorElement).style.background = "linear-gradient(135deg, rgba(139,92,246,0.25), rgba(6,182,212,0.25))";
+                          }}
+                          onMouseLeave={(e) => {
+                            (e.currentTarget as HTMLAnchorElement).style.background = "linear-gradient(135deg, rgba(139,92,246,0.15), rgba(6,182,212,0.15))";
+                          }}
+                        >
+                          <LayoutDashboard size={15} style={{ opacity: 0.9 }} />
+                          Admin Dashboard
+                        </Link>
+                      )}
+
+                      {/* Account Settings */}
+                      <Link
+                        href="/account"
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "10px",
+                          padding: "9px 14px",
+                          fontSize: "13px",
+                          fontWeight: 500,
+                          color: "rgba(209,213,219,0.8)",
+                          textDecoration: "none",
+                          transition: "all 0.15s",
+                          borderRadius: "10px",
+                        }}
+                        onMouseEnter={(e) => {
+                          (e.currentTarget as HTMLAnchorElement).style.background = "rgba(255,255,255,0.06)";
+                          (e.currentTarget as HTMLAnchorElement).style.color = "#FFFFFF";
+                        }}
+                        onMouseLeave={(e) => {
+                          (e.currentTarget as HTMLAnchorElement).style.background = "transparent";
+                          (e.currentTarget as HTMLAnchorElement).style.color = "rgba(209,213,219,0.8)";
+                        }}
+                      >
+                        <UserCircle size={15} style={{ opacity: 0.8 }} />
+                        Tài khoản
+                      </Link>
+
+                      {/* Sign Out */}
+                      <button
+                        onClick={() => { signOut({ callbackUrl: "/" }); }}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "10px",
+                          padding: "9px 14px",
+                          fontSize: "13px",
+                          fontWeight: 500,
+                          color: "#F87171",
+                          background: "transparent",
+                          border: "none",
+                          width: "100%",
+                          textAlign: "left",
+                          cursor: "pointer",
+                          transition: "all 0.15s",
+                          borderRadius: "10px",
+                        }}
+                        onMouseEnter={(e) => {
+                          (e.currentTarget as HTMLButtonElement).style.background = "rgba(248,113,113,0.1)";
+                        }}
+                        onMouseLeave={(e) => {
+                          (e.currentTarget as HTMLButtonElement).style.background = "transparent";
+                        }}
+                      >
+                        <LogOut size={15} style={{ opacity: 0.8 }} />
+                        Đăng xuất
+                      </button>
+                    </div>
+                  )}
+                </div>
               ) : (
                 <>
                   <Link
@@ -530,7 +717,80 @@ export default function Navbar({ hideOnHome = false }: NavbarProps) {
           </div>
 
           <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", marginTop: "12px", paddingTop: "12px" }}>
-            {!isAuthenticated && (
+            {isAuthenticated && user ? (
+              <>
+                {/* User info */}
+                <div style={{ padding: "12px 16px", marginBottom: "8px" }}>
+                  <div style={{ fontSize: "14px", fontWeight: 600, color: "#FFFFFF" }}>{user.name}</div>
+                  <div style={{ fontSize: "12px", color: "rgba(209,213,219,0.5)", marginTop: "2px" }}>{user.email}</div>
+                </div>
+
+                {/* Admin Dashboard — only for non-customer */}
+                {user.role === "admin" && (
+                  <Link
+                    href="/admin"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "10px",
+                      padding: "12px 16px",
+                      fontSize: "14px",
+                      fontWeight: 600,
+                      color: "#FFFFFF",
+                      background: "linear-gradient(135deg, rgba(139,92,246,0.2), rgba(6,182,212,0.2))",
+                      borderRadius: "10px",
+                      textDecoration: "none",
+                      marginBottom: "6px",
+                    }}
+                  >
+                    <LayoutDashboard size={16} />
+                    Admin Dashboard
+                  </Link>
+                )}
+
+                <Link
+                  href="/account"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "10px",
+                    padding: "12px 16px",
+                    fontSize: "14px",
+                    fontWeight: 600,
+                    color: "rgba(209,213,219,0.9)",
+                    textDecoration: "none",
+                    borderRadius: "10px",
+                    border: "1px solid rgba(255,255,255,0.12)",
+                    marginBottom: "8px",
+                  }}
+                >
+                  <UserCircle size={16} />
+                  Tài khoản
+                </Link>
+
+                <button
+                  onClick={() => { signOut({ callbackUrl: "/" }); }}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "10px",
+                    padding: "12px 16px",
+                    fontSize: "14px",
+                    fontWeight: 600,
+                    color: "#F87171",
+                    background: "transparent",
+                    border: "1px solid rgba(248,113,113,0.2)",
+                    borderRadius: "10px",
+                    cursor: "pointer",
+                    width: "100%",
+                    textAlign: "left",
+                  }}
+                >
+                  <LogOut size={16} />
+                  Đăng xuất
+                </button>
+              </>
+            ) : (
               <>
                 <Link
                   href="/login"

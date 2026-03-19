@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/routing";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, ExternalLink, Calendar, Code2, Layers, CheckCircle, Zap, Building2, TrendingUp } from "lucide-react";
 import Image from "next/image";

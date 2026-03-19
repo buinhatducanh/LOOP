@@ -32,6 +32,7 @@ import {
   Coins,
   Lock,
   Image,
+  Server,
 } from "lucide-react";
 import { useAdminAuth } from "@/app/[locale]/admin/components/admin-auth-provider";
 import { NAV_PERMISSIONS, ROLE_LEVEL } from "@/lib/auth/roles";
@@ -72,6 +73,9 @@ const navigation: NavEntry[] = [
       { name: "Dịch vụ Rời", href: "/admin/addon-services", icon: Puzzle },
       { name: "XP & Rewards", href: "/admin/reward-tiers", icon: Gift },
       { name: "Gói dịch vụ", href: "/admin/packages", icon: Package },
+      { name: "Hosting Plans", href: "/admin/hosting-plans", icon: Server },
+      { name: "Domain Prices", href: "/admin/domain-prices", icon: Globe },
+      { name: "Deployment Items", href: "/admin/deployment-items", icon: FileText },
       { name: "Báo giá tính năng", href: "/admin/pricing-features", icon: Calculator },
       { name: "Yêu cầu báo giá", href: "/admin/quote-requests", icon: FileQuestion },
     ],
