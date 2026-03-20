@@ -1,421 +1,178 @@
-# LOOP - Architecture Analysis Plan
-## Phân tích kiến trúc & Kế hoạch cải thiện toàn diện
+# LOOP - MVP 2: Vercel Production Deployment Plan
 
-> ✅ **Trạng thái hoàn thành:** Phase 1–4 + Phase 4b (internal linking, AI endpoint, 50 DB indexes) + Phase 4c (10 quality fixes) + Phase 4d (Sanity CMS improvements) + Phase 5 (content strategy, AI optimizer, advanced analytics, JSON validation, glossary, RSS i18n, entity signals) (2026-03-21)
-> ✅ **Tests:** 42/42 original unit tests + 28 new JSON-LD/Phase5 tests = **70 tests total**
-> ✅ **CI/CD:** GitHub Actions pipeline với lint → test → build
-
-> **Tech Stack hiện tại:** Next.js 15 (App Router) + Prisma 7 + Neon PostgreSQL + Sanity CMS + Cloudinary + TailwindCSS 4 + next-intl (vi/en) + NextAuth v5
-> **Deploy:** Vercel (inferred) | **DB:** Neon Serverless PostgreSQL
+> **Trạng thái:** MVP 1 hoàn thành (Phase 1–5). MVP 2 tập trung deploy production lên Vercel.
+> **Tech Stack:** Next.js 15 (App Router) + Prisma 7 + Neon PostgreSQL + Sanity CMS + Cloudinary + TailwindCSS 4 + next-intl (vi/en) + NextAuth v5
+> **Target:** Deploy production tại `https://loop-eight-delta.vercel.app` (sau đó custom domain `loop.vn`)
 
 ---
 
-## I. PERFORMANCE & TỐC ĐỘ (Speed Optimization)
+## I. TỔNG KẾT MVP 1 (ĐÃ HOÀN THÀNH)
 
-### 1.1 Vấn đề hiện tại
-| Vấn đề | Mức độ | Chi tiết | Trạng thái |
-|--------|--------|----------|-----------|
-| **Font loading chặn render** | 🔴 Critical | Google Fonts load qua `<link>` trong `<head>` → render-blocking | ✅ Đã fix |
-| **Không có ISR/SSG cho trang tĩnh** | 🔴 Critical | Các trang services, portfolio, team, pricing đều fetch DB mỗi request | ✅ Đã fix |
-| **RSS feed `force-dynamic`** | 🟡 Medium | `feed.xml/route.ts` dùng `force-dynamic` → mỗi request đều fetch Sanity | ✅ Đã fix (`revalidate=300`) |
-| **Bundle size chưa tối ưu** | 🟡 Medium | 30+ Radix UI packages + Recharts + Framer Motion + Sanity → bundle lớn | ✅ Đã fix (Tawkto + SpeedDial lazy) |
-| **Thiếu Suspense boundaries** | 🟡 Medium | Chỉ có 5 `loading.tsx` | ✅ Đã fix (thêm 3 file) |
-| **Database query không cache** | 🔴 Critical | `queries.ts` gọi Prisma trực tiếp không dùng React `cache()` | ✅ Đã fix (`getCached*`) |
-| **Connection pool nhỏ** | 🟡 Medium | `max: 5` connections cho Neon pooler | ✅ Đã document monitoring |
-
-### 1.2 Hành động đã làm
-1. ✅ **Chuyển sang `next/font/google`** → `Inter` self-hosted, `--font-inter` CSS variable
-2. ✅ **Thêm ISR** → `revalidate=3600` layout, `revalidate=300` homepage, services, portfolio, team, RSS
-3. ✅ **React `cache()`** → 10 cached query functions trong `queries.ts`
-4. ✅ **Dynamic import** → TawktoChat + SpeedDial lazy-loaded với `next/dynamic`
-5. ✅ **Thêm `loading.tsx`** → blog, team-list, contact (3 file mới)
-6. ✅ **`error.tsx`** → locale root + blog error boundaries
-7. ✅ **Health check** → `/api/health` với DB + Sanity + latency checks
+Tất cả Phase 1–5 đã hoàn thành, bao gồm:
+- Performance (ISR, next/font, React cache, dynamic imports)
+- Architecture (service layer, edge utils, error boundaries)
+- Scalability (Redis/Upstash, rate limiting, Inngest jobs, Docker, API v1)
+- Database (soft delete, 50 indexes, JSON validation, Prisma middleware)
+- Backup & DR (backup scripts, cron, rollback, staging guide)
+- SEO/GEO (17 JSON-LD schemas, dynamic OG, RSS i18n, glossary, content strategy)
+- Testing (70 unit tests, CI/CD pipeline)
 
 ---
 
-## II. FLOW & KIẾN TRÚC CODE (Architecture Flow)
+## II. MVP 2 — VERCEL DEPLOYMENT CHECKLIST
 
-### 2.1 Vấn đề — Trạng thái
-| Vấn đề | Mức độ | Chi tiết | Trạng thái |
-|--------|--------|----------|-----------|
-| **Dual data source (DB + mockData)** | 🔴 Critical | `sitemap.ts` fallback mockData | ✅ Đã fix (sitemap.ts bỏ mockData) |
-| **Không có service layer** | 🔴 Critical | Business logic trong API routes | ✅ Đã fix (`src/lib/services/`) |
-| **Auth check trùng lặp** | 🟡 Medium | Middleware + API route đều check | ✅ Đã cải thiện |
-| **Middleware quá phức tạp** | 🟡 Medium | ~220 dòng | ✅ Đã tách (`edge.ts`) |
-| **Không có error boundaries** | 🟡 Medium | Thiếu `error.tsx` | ✅ Đã fix (2 file) |
-| **Type definitions rải rác** | 🟢 Low | API routes chưa type | ✅ Đã cải thiện (service layer types) |
+### 2.1 Config Fixes (Cần sửa code)
 
-### 2.2 Hành động đã làm
-1. ✅ **Service Layer** (`src/lib/services/`) — contact + search services
-2. ✅ **Edge utilities** (`src/lib/auth/edge.ts`) — tách JWT, role extraction
-3. ✅ **sitemap mockData fallback loại bỏ** — dùng DB error handling
-4. ✅ **`error.tsx`** cho locale root + blog
-5. ✅ **API routes clean handlers** dùng service layer
-6. ✅ **Health check endpoint** — `/api/health` với DB + Sanity checks
+| # | Task | Mức độ | Chi tiết | Trạng thái |
+|---|------|--------|----------|------------|
+| 1 | **Bỏ `output: "standalone"` trong `next.config.ts`** | 🔴 Critical | `standalone` dành cho Docker self-hosted. Vercel tự handle bundling, để `standalone` sẽ gây conflict với Vercel's build system | ⬜ Chưa làm |
+| 2 | **Fix `NEXT_PUBLIC_SANITY_DATASET`** | 🔴 Critical | Hiện tại = `"s2tnlf7b"` (trùng project ID). Phải là `"production"` hoặc dataset name thật trên Sanity | ⬜ Chưa làm |
+| 3 | **Prisma: chuyển sang `@neondatabase/serverless` adapter** | 🟡 Medium | Hiện dùng `pg` Pool (`@prisma/adapter-pg`) — hoạt động nhưng chưa tối ưu cho Vercel serverless. Nên dùng `@prisma/adapter-neon` + `@neondatabase/serverless` để hỗ trợ Edge Runtime & connection pooling tốt hơn | ⬜ Chưa làm |
+| 4 | **Đảm bảo `postinstall` script chạy `prisma generate`** | 🟢 Done | Đã có `"postinstall": "prisma generate"` trong `package.json` | ✅ Đã có |
 
----
+### 2.2 Environment Variables (Cấu hình trên Vercel Dashboard)
 
-## III. KHẢ NĂNG MỞ RỘNG (Scalability)
+> **Vào Vercel Dashboard → Project Settings → Environment Variables**
+> Set cho environments: **Production**, **Preview**, **Development**
 
-### 3.1 Vấn đề — Trạng thái
-| Vấn đề | Mức độ | Trạng thái |
-|--------|--------|-----------|
-| **Không có caching layer** | 🔴 Critical | ✅ Đã fix (Upstash + `cacheFetch()`) |
-| **Không có rate limiting** | 🔴 Critical | ✅ Đã fix (Upstash Ratelimit) |
-| **Không có queue system** | 🟡 Medium | ✅ Đã fix (Inngest) |
-| **Không có Docker** | 🟡 Medium | ✅ Đã fix (Dockerfile + compose) |
-| **CI/CD thiếu test** | 🔴 Critical | ✅ Đã fix (Vitest 42 tests) |
-| **Không có health check** | 🟢 Low | ✅ Đã fix (`/api/health`) |
-| **API versioning** | 🟡 Medium | ✅ Đã fix (`/api/v1/`) |
-| **WebSocket (ws) unused** | 🟡 Medium | ✅ Đã remove khỏi package.json |
-| **Analytics pipeline** | 🟡 Medium | ✅ `/api/analytics/track` + typed helpers (`src/lib/analytics/events.ts`) |
-| **Author blog pages** | 🟢 Low | ✅ `/blog/author/[slug]` — Server Component + Sanity GROQ + postsByAuthorQuery |
-| **Category blog pages** | 🟢 Low | ✅ `/blog/category/[slug]` — redirect → listing |
-| **ws package unused** | 🟢 Low | ✅ Đã remove khỏi package.json |
-| **Zod validation** | 🟡 Medium | ✅ `quote/route.ts`, `order/route.ts` có Zod. `contact.service` dùng manual (đủ dùng). Có thể thêm `/api/analytics/track` Zod validation |
-| **RSS feed i18n** | 🟢 Low | ✅ Đã fix (`src/app/[locale]/feed.xml/route.ts` — locale-aware feed, vi/en bilingual) |
-| **Heading hierarchy** | 🟢 Low | ✅ Đúng trên tất cả pages chính |
-| **Rate limiter memory leak** | 🔴 Critical | ✅ Đã fix (cleanup() được gọi mỗi 100 requests) |
-| **Crontab hardcoded paths** | 🔴 Critical | ✅ Đã fix (dùng $HOME + MAILTO directive) |
+| # | Variable | Giá trị | Env | Trạng thái |
+|---|----------|---------|-----|------------|
+| 1 | `DATABASE_URL` | `postgresql://neondb_owner:...@ep-green-forest-a4mmwl8d-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require` | Prod + Preview | ⬜ |
+| 2 | `AUTH_SECRET` | Generate mới: `openssl rand -base64 32` (⚠️ ROTATE — đã bị lộ) | Prod + Preview | ⬜ |
+| 3 | `NEXTAUTH_URL` | `https://loop-eight-delta.vercel.app` (sau đó đổi sang custom domain) | Prod | ⬜ |
+| 4 | `NEXT_PUBLIC_SITE_URL` | `https://loop-eight-delta.vercel.app` | Prod + Preview | ⬜ |
+| 5 | `NEXT_PUBLIC_SANITY_PROJECT_ID` | `s2tnlf7b` | All | ⬜ |
+| 6 | `NEXT_PUBLIC_SANITY_DATASET` | `production` (⚠️ FIX — hiện sai = `s2tnlf7b`) | All | ⬜ |
+| 7 | `NEXT_PUBLIC_SANITY_API_VERSION` | `2024-03-08` | All | ⬜ |
+| 8 | `GOOGLE_CLIENT_ID` | `118593594611-...apps.googleusercontent.com` (⚠️ cập nhật redirect URI trên Google Console cho domain Vercel) | Prod | ⬜ |
+| 9 | `GOOGLE_CLIENT_SECRET` | `GOCSPX-...` (⚠️ ROTATE — đã bị lộ) | Prod | ⬜ |
+| 10 | `NEXT_PUBLIC_GA_ID` | `G-2RQS7SRGBZ` | Prod | ⬜ |
+| 11 | `NEXT_PUBLIC_GA_MEASUREMENT_ID` | `G-2RQS7SRGBZ` | Prod | ⬜ |
+| 12 | `NEXT_PUBLIC_GSC_VERIFICATION` | `mHqrzglKeulqCaYJHGNfyD-...` | Prod | ⬜ |
+| 13 | `NEXT_PUBLIC_TAWKTO_PROPERTY_ID` | `69b41637063f791c37e4d891` | Prod | ⬜ |
+| 14 | `NEXT_PUBLIC_TAWKTO_WIDGET_ID` | `1jjjndita` | Prod | ⬜ |
+| 15 | `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` | `dhlmvawmi` | All | ⬜ |
+| 16 | `CLOUDINARY_API_KEY` | `435132722437445` | Prod | ⬜ |
+| 17 | `CLOUDINARY_API_SECRET` | (⚠️ ROTATE — đã bị lộ) | Prod | ⬜ |
+| 18 | `UPSTASH_REDIS_REST_URL` | `https://happy-mosquito-79034.upstash.io` | Prod + Preview | ⬜ |
+| 19 | `UPSTASH_REDIS_REST_TOKEN` | (⚠️ ROTATE — đã bị lộ) | Prod + Preview | ⬜ |
+| 20 | `INNGEST_EVENT_KEY` | (⚠️ ROTATE — đã bị lộ) | Prod | ⬜ |
+| 21 | `INNGEST_SIGNING_KEY` | (⚠️ ROTATE — đã bị lộ) | Prod | ⬜ |
+| 22 | `SENTRY_DSN` | `https://8e80e3d32db9...@...sentry.io/...` | Prod + Preview | ⬜ |
+| 23 | `RESEND_API_KEY` | (⚠️ ROTATE — đã bị lộ) | Prod | ⬜ |
 
-### 3.2 Hành động đã làm
-1. ✅ **Redis/Upstash** + `cacheFetch()` helper với graceful fallback
-2. ✅ **Rate limiting** — 4 tiers: contact (10/min), search (30/min), auth (20/min), public (100/min)
-3. ✅ **Inngest jobs** — email confirmation, admin notification, order, audit prune, cache warming
-4. ✅ **Docker** — multi-stage Dockerfile + docker-compose.yml
-5. ✅ **Tests** — 42 unit tests: contact, search, rate-limit, JSON-LD
-6. ✅ **Health check** — `/api/health` với DB + Sanity latency
-7. ✅ **API v1** — 7 endpoints với `X-API-Version` headers + CDN cache
+### 2.3 Credential Rotation (⚠️ BẮT BUỘC — secrets đã bị lộ trong chat)
 
----
+| # | Credential | Nơi rotate | Trạng thái |
+|---|-----------|-----------|------------|
+| 1 | `AUTH_SECRET` | `openssl rand -base64 32` → cập nhật Vercel + .env.local | ⬜ |
+| 2 | `GOOGLE_CLIENT_SECRET` | Google Cloud Console → APIs & Services → Credentials → Tạo secret mới | ⬜ |
+| 3 | `CLOUDINARY_API_SECRET` | Cloudinary Console → Settings → API Keys → Regenerate | ⬜ |
+| 4 | `UPSTASH_REDIS_REST_TOKEN` | Upstash Console → Database → REST API → Reset Token | ⬜ |
+| 5 | `INNGEST_EVENT_KEY` | Inngest Dashboard → Settings → API Keys → Regenerate | ⬜ |
+| 6 | `INNGEST_SIGNING_KEY` | Inngest Dashboard → Settings → API Keys → Regenerate | ⬜ |
+| 7 | `RESEND_API_KEY` | Resend.com → API Keys → Revoke + Create new | ⬜ |
+| 8 | `DATABASE_URL` (password) | Neon Console → Connection Details → Reset password | ⬜ |
 
-## IV. DỮ LIỆU & DATABASE (Data Architecture)
+### 2.4 Google OAuth — Cập nhật Redirect URI
 
-### 4.1 Vấn đề — Trạng thái
-| Vấn đề | Mức độ | Trạng thái |
-|--------|--------|-----------|
-| **Credential trong .env.example** | 🔴 Critical | ✅ Đã fix (placeholder template) |
-| **Schema quá lớn** | 🟡 Medium | ⚠️ Chưa fix (cần tách modules) |
-| **Dual CMS (Prisma + Sanity)** | 🟡 Medium | ✅ Đã fix (decision: keep Sanity cho blog, developer viết blog) |
-| **Sanity ISR conflict (useCdn=true)** | 🔴 Critical | ✅ Đã fix (`useCdn: false`, ISR cache conflict resolved) |
-| **Blog post schema thiếu alt/excerpt** | 🟡 Medium | ✅ Đã fix (alt + excerpt + excerptVi + ordering + caption fields) |
-| **Author schema thiếu shortBio/role** | 🟡 Medium | ✅ Đã fix (shortBio, shortBioVi, role, linkedin, twitter) |
-| **Category schema không bilingual** | 🟢 Low | ✅ Đã fix (titleVi, description, descriptionVi, seoTitle, seoTitleVi) |
-| **Sanity backup script fragile** | 🟡 Medium | ✅ Đã fix (local sanity binary, NDJSON verify, compression, MAILTO) |
-| **GROQ queries chưa đủ fields** | 🟡 Medium | ✅ Đã fix (new queries: authorsQuery, categoriesQuery, postSlugsQuery, postsByCategoryQuery) |
-| **fetchBlog() trong /api/ai placeholder** | 🟡 Medium | ✅ Đã fix (wire Sanity GROQ dynamic import) |
-| **Thiếu soft delete** | 🟡 Medium | ✅ Đã fix (`deletedAt` + 9 tables, CONCURRENTLY indexes) |
-| **Thiếu database indexes** | 🟡 Medium | ✅ Đã fix (2 migrations: 20 + 30 indexes, full query audit) |
-| **JSON columns không validate** | 🟡 Medium | ⚠️ Chưa fix |
+> Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client ID
 
-### 4.2 Hành động cần làm
-1. ⚠️ **Rotate credentials** — `.env.local` chứa real secrets (đã kiểm tra: KHÔNG tracked git). Cần rotate trong production. Script: `scripts/rotate-credentials.sh`
-2. ✅ **Soft delete pattern** — `deletedAt TIMESTAMPTZ` + `WHERE deleted_at IS NULL` partial indexes
-3. ✅ **Database indexes** — 50 indexes total (20 initial + 30 missing from query audit)
-4. ⚠️ **CMS strategy** — quyết định: keep Sanity cho blog (developer viết blog)
-5. ⚠️ **JSON validation** — Zod + custom Prisma middleware
-6. ⚠️ **Prisma schema modules** — multi-schema approach (chỉ khi tách admin deployment)
-7. ✅ **ws package** — đã remove khỏi package.json
+| # | Redirect URI | Trạng thái |
+|---|-------------|------------|
+| 1 | `https://loop-eight-delta.vercel.app/api/auth/callback/google` | ⬜ Thêm mới |
+| 2 | `http://localhost:3000/api/auth/callback/google` | ✅ Đã có (dev) |
+| 3 | `https://loop.vn/api/auth/callback/google` | ⬜ Thêm khi có custom domain |
 
-### 4.3 Credential Security
-| Credential | Trạng thái | Hành động |
-|-----------|-----------|-----------|
-| `AUTH_SECRET` | 🔴 Real — cần rotate | Chạy `scripts/rotate-credentials.sh` |
-| `DATABASE_URL` | 🔴 Real — Neon connection string | Rotate password trên Neon dashboard |
-| `GOOGLE_CLIENT_SECRET` | 🔴 Real — cần rotate | Console.cloud.google.com → Credentials |
-| `CLOUDINARY_API_SECRET` | 🔴 Real — cần rotate | Cloudinary console → API Keys |
-| `SENTRY_DSN` | ⚠️ Placeholder — cần real key | sentry.io → Project Settings |
-| `UPSTASH_REDIS_*` | ⚠️ Placeholder — chưa tạo | console.upstash.com |
-| `INNGEST_*` | ⚠️ Placeholder — chưa tạo | inngest.com dashboard |
-| `RESEND_API_KEY` | ⚠️ Placeholder — chưa tạo | resend.com API Keys |
-| `.env/.env.local` tracked git? | ✅ KHÔNG tracked | `.gitignore` đúng |
-| `.env.example` placeholder | ✅ Đúng | Đã cập nhật đầy đủ vars |
-8. ✅ **Rate limiter memory leak** — `cleanup()` được gọi mỗi 100 requests
-9. ✅ **Crontab hardcoded paths** — dùng `$HOME` + absolute path + `MAILTO` directive
+### 2.5 Vercel Project Setup
 
----
+| # | Task | Chi tiết | Trạng thái |
+|---|------|----------|------------|
+| 1 | **Import repo vào Vercel** | Vercel Dashboard → New Project → Import Git Repository | ⬜ |
+| 2 | **Framework preset: Next.js** | Auto-detect, không cần config thêm | ⬜ |
+| 3 | **Node.js version: 20** | Settings → General → Node.js Version = 20.x | ⬜ |
+| 4 | **Build command** | `npm run build` (default) | ⬜ |
+| 5 | **Root directory** | `.` (default) | ⬜ |
+| 6 | **Set all env vars** | Xem mục 2.2 ở trên | ⬜ |
+| 7 | **Deploy & verify** | Trigger deploy, kiểm tra build logs | ⬜ |
 
-## V. BACKUP & DISASTER RECOVERY
+### 2.6 Post-Deploy Verification
 
-### 5.1 Vấn đề — Trạng thái
-| Vấn đề | Mức độ | Trạng thái |
-|--------|--------|-----------|
-| **Không có backup strategy** | 🔴 Critical | ✅ Đã fix (scripts đầy đủ) |
-| **Không có migration rollback plan** | 🔴 Critical | ✅ Đã fix (`scripts/migrations/rollback.sh`) |
-| **Media files không backup** | 🟡 Medium | ✅ Đã fix (`backup-cloudinary.sh`) |
-| **Sanity content không backup** | 🟡 Medium | ✅ Đã fix (`backup-sanity.sh`) |
-| **Không có staging environment** | 🔴 Critical | ✅ Đã fix (`STAGING.md`) |
-| **Thiếu monitoring** | 🔴 Critical | ✅ Đã fix (`Sentry` + monitoring dashboard) |
+| # | Check | URL / Command | Trạng thái |
+|---|-------|--------------|------------|
+| 1 | **Homepage loads** | `https://loop-eight-delta.vercel.app` | ⬜ |
+| 2 | **Blog loads (Sanity)** | `/blog` + `/blog/[slug]` | ⬜ |
+| 3 | **Auth flow (Google OAuth)** | Login → callback → session | ⬜ |
+| 4 | **Contact form** | Submit → DB + rate limiting works | ⬜ |
+| 5 | **Health check** | `/api/health` → DB + Sanity OK | ⬜ |
+| 6 | **API v1** | `/api/v1/services` → JSON response | ⬜ |
+| 7 | **i18n routing** | `/vi` + `/en` switching | ⬜ |
+| 8 | **Images (Cloudinary)** | Portfolio/team images load | ⬜ |
+| 9 | **Analytics** | GA + Vercel Analytics firing | ⬜ |
+| 10 | **Tawk.to chat** | Widget appears | ⬜ |
+| 11 | **Sitemap** | `/sitemap.xml` → valid XML | ⬜ |
+| 12 | **RSS** | `/vi/feed.xml` + `/en/feed.xml` | ⬜ |
+| 13 | **OG images** | `/api/og?title=Test` | ⬜ |
+| 14 | **Sentry** | Trigger error → appears in Sentry dashboard | ⬜ |
+| 15 | **Lighthouse score** | Target: Performance 90+, SEO 95+ | ⬜ |
 
-### 5.2 Hành động đã làm
-1. ✅ **Backup scripts** — `backup-db.sh`, `restore-db.sh`, `backup-sanity.sh`, `backup-cloudinary.sh`
-2. ✅ **Cron schedule** — `scripts/crontab` (daily DB, 6h Sanity, weekly Cloudinary)
-3. ✅ **Rollback script** — `scripts/migrations/rollback.sh` + PITR guide
-4. ✅ **Staging setup** — `STAGING.md` (Neon branch + Vercel Preview + branch protection)
-5. ✅ **Sentry** — `src/lib/sentry.ts`
-6. ✅ **Monitoring dashboard** — `/admin/system/monitoring`
+### 2.7 Custom Domain (Sau khi verify OK)
+
+| # | Task | Chi tiết | Trạng thái |
+|---|------|----------|------------|
+| 1 | **Thêm domain `loop.vn`** | Vercel → Settings → Domains → Add | ⬜ |
+| 2 | **DNS records** | Trỏ A/CNAME theo hướng dẫn Vercel | ⬜ |
+| 3 | **SSL certificate** | Vercel tự cấp (Let's Encrypt) | ⬜ |
+| 4 | **Update `NEXTAUTH_URL`** | Đổi sang `https://loop.vn` | ⬜ |
+| 5 | **Update `NEXT_PUBLIC_SITE_URL`** | Đổi sang `https://loop.vn` | ⬜ |
+| 6 | **Update Google OAuth redirect URI** | Thêm `https://loop.vn/api/auth/callback/google` | ⬜ |
+| 7 | **Update GA property** | Thêm domain `loop.vn` vào GA4 Data Stream | ⬜ |
+| 8 | **Verify Google Search Console** | Thêm property `loop.vn` + submit sitemap | ⬜ |
 
 ---
 
-## VI. SEO (Search Engine Optimization)
+## III. VẤN ĐỀ CÒN TỒN ĐỌNG TỪ MVP 1
 
-### 6.1 Đã có (tốt)
-- ✅ Sitemap.xml dynamic với i18n alternates + blog + team + `updatedAt` timestamps
-- ✅ robots.txt proper configuration
-- ✅ OpenGraph + Twitter Card meta tags
-- ✅ JSON-LD (Organization + WebSite schema) — typed builders trong `src/lib/json-ld.ts`
-- ✅ Canonical URLs + hreflang
-- ✅ RSS Feed (`/feed.xml`) với `revalidate=300`
-- ✅ Security headers (X-Frame-Options, CSP-related)
-- ✅ Google Search Console verification setup
-- ✅ Image optimization config (AVIF/WebP)
-- ✅ **Dynamic OG Images** — `/api/og` với gradient dark theme + localized subtitles
-- ✅ **JSON-LD 8 schemas** — Service, CreativeWork, Person, Article, FAQ, BreadcrumbList, Product/Offer, LocalBusiness
-
-### 6.2 Vấn đề — Trạng thái
-| Vấn đề | Mức độ | Trạng thái |
-|--------|--------|-----------|
-| **JSON-LD cho từng page type** | 🟡 Medium | ✅ Đã fix (typed builders) |
-| **Dynamic OG images** | 🟡 Medium | ✅ Đã fix (`/api/og`) |
-| **Breadcrumb navigation** | 🟡 Medium | ✅ Đã fix (BreadcrumbList schema) |
-| **Blog JSON-LD (Article schema)** | 🔴 Critical | ✅ Đã fix (Article + BreadcrumbList) |
-| **FAQ schema** | 🟡 Medium | ✅ Đã fix (Pricing page) |
-| **Sitemap blog + team** | 🔴 Critical | ✅ Đã fix |
-| **lastModified thực tế** | 🟢 Low | ✅ Đã fix |
-| **Internal linking** | 🟡 Medium | ✅ Đã fix (RelatedContent widget, relevance-scored cross-links) |
-| **Meta description dynamic** | 🟡 Medium | ⚠️ Chưa fix |
+| # | Vấn đề | Mức độ | Ghi chú |
+|---|--------|--------|---------|
+| 1 | **Meta description dynamic** | 🟡 Medium | Chưa implement cho tất cả pages |
+| 2 | **JSON columns validation** | 🟡 Medium | Có Zod schemas nhưng middleware chưa kích hoạt production |
+| 3 | **Prisma schema modules** | 🟢 Low | Chưa cần tách ở scale hiện tại (xem `PRISMA_MODULES.md`) |
+| 4 | **Test coverage ~15%** | 🟡 Medium | 70 tests, target >70% |
+| 5 | **Multi-tenant** | 🟢 Low | Chưa cần ở scale hiện tại |
 
 ---
 
-## VII. GEO (Generative Engine Optimization)
+## IV. PRIORITY ORDER (Thứ tự thực hiện)
 
-### 7.1 Vấn đề — Trạng thái
-| Vấn đề | Mức độ | Trạng thái |
-|--------|--------|-----------|
-| **Semantic HTML + heading hierarchy** | 🔴 Critical | ✅ Đã audit (heading hierarchy đúng trên tất cả content pages: home, about, services, blog, contact, portfolio) |
-| **FAQ structured data** | 🟡 Medium | ✅ Đã fix (`FAQPage` schema) |
-| **Entity signals** | 🟡 Medium | ✅ Đã fix (HowTo, VideoObject, Review, AggregateRating, QAPage, Event, LocalBusiness schemas — `src/lib/json-ld.ts`) |
-| **Knowledge base / glossary** | 🟡 Medium | ✅ Đã fix (`src/app/[locale]/glossary/page.tsx` — 32 terms, 7 categories, vi/en bilingual, TechArticle JSON-LD, sitemap, i18n nav) |
-| **Author authority signals** | 🟡 Medium | ✅ Đã cải thiện (Article schema) |
-| **AI API endpoint** | 🟢 Low | ✅ Đã fix (`/api/ai` — services, projects, team, blog, pricing, sitemap) |
-| **Long-form content strategy** | 🟡 Medium | ✅ Đã fix (`CONTENT.md` — editorial calendar Q2-Q4 2026, content pillars, quality checklist, distribution plan, 12-month roadmap) |
-| **Phase 5: AI content optimization** | 🟡 Medium | ✅ Đã fix (`src/lib/ai/content-optimizer.ts` — analyzeContent, generateMetaDescription, suggestInternalLinks, generateFaqFromContent, generateSeoHeadings với Anthropic + heuristic fallback) |
-| **Phase 5: Advanced analytics pipeline** | 🟡 Medium | ✅ Đã fix (`src/lib/analytics/server.ts` + `aggregations.ts` — storeEvent, getAnalytics, getPageAnalytics, getConversionFunnel, getRealTimeStats, buildDashboardSummary, fetchDailyStats, fetchGeoStats, fetchDeviceStats, fetchConversionRate) |
-| **JSON columns validation** | 🟡 Medium | ✅ Đã fix (`src/lib/db/json-validators.ts` — 10 Zod schemas; `src/lib/db/json-middleware.ts` — write+read middleware; `src/lib/db/errors.ts` — Result type + JsonValidationError) |
-| **Prisma schema modules plan** | 🟡 Medium | ✅ Đã fix (`PRISMA_MODULES.md` — decision: don't split yet, trigger conditions, migration path) |
+### Step 1: Code fixes (trước khi deploy)
+1. ⬜ Bỏ `output: "standalone"` trong `next.config.ts`
+2. ⬜ Fix `NEXT_PUBLIC_SANITY_DATASET` trong `.env.local` (nếu dùng local)
+3. ⬜ (Optional) Chuyển Prisma adapter sang `@neondatabase/serverless`
 
-### 7.2 Hành động đã làm
-1. ✅ **JSON-LD builders** — 17 typed schemas (8 existing + 9 new: HowTo, VideoObject, Review, AggregateRating, QAPage, Event, LocalBusiness + enhanced Product)
-2. ✅ **FAQPage schema** — Pricing page sử dụng typed `buildFaqJsonLd()`
-3. ✅ **Blog Article schema** — `buildBlogPostJsonLd` + BreadcrumbList + Author
-4. ✅ **Structured data API** — `/api/v1/` endpoints với typed JSON responses
-5. ✅ **RSS Feed i18n** — `src/app/[locale]/feed.xml/route.ts` (bilingual, vi/en)
-6. ✅ **Glossary page** — 32 terms, 7 categories, TechArticle JSON-LD, bilingual vi/en
-7. ✅ **Content Strategy** — `CONTENT.md` (Q2-Q4 2026 editorial calendar, quality checklist, distribution)
-8. ✅ **AI Content Optimizer** — `src/lib/ai/content-optimizer.ts` (Claude SDK + fallback)
-9. ✅ **Advanced Analytics** — `src/lib/analytics/server.ts` + `aggregations.ts`
-10. ✅ **JSON Validation** — 10 Zod schemas + Prisma middleware
+### Step 2: Vercel Setup
+4. ⬜ Import repo → Vercel
+5. ⬜ Cấu hình tất cả env vars (23 vars)
+6. ⬜ Set Node.js 20
 
----
+### Step 3: Credential Rotation
+7. ⬜ Rotate tất cả 8 secrets đã bị lộ
+8. ⬜ Cập nhật secrets mới vào Vercel + .env.local
 
-## VIII. ĐỘ ƯU TIÊN TỔNG THỂ (Priority Roadmap)
+### Step 4: Google OAuth
+9. ⬜ Thêm Vercel URL vào Authorized redirect URIs
 
-### ✅ Phase 1 - Urgent (Tuần 1-2) 🔴 — HOÀN THÀNH
-- ✅ Rotate credentials trong `.env.example` (placeholder template với comments)
-- ✅ Chuyển Google Fonts → `next/font/google` (Inter, zero layout shift)
-- ✅ Thêm ISR cho public pages (`revalidate=3600/300`) + React `cache()` cho queries
-- ✅ Thêm rate limiting cho API (Upstash Ratelimit + in-memory fallback)
-- ✅ Setup Sentry error tracking (`src/lib/sentry.ts`, `@sentry/nextjs`)
-- ✅ Fix sitemap (thêm blog + team, sửa `lastModified` = `updatedAt` DB)
+### Step 5: Deploy & Verify
+10. ⬜ Trigger first deploy
+11. ⬜ Chạy 15 post-deploy checks
+12. ⬜ Lighthouse audit
 
-### ✅ Phase 2 - Important (Tuần 3-4) 🟡 — HOÀN THÀNH
-- ✅ Service layer refactor (`src/lib/services/contact.service.ts`, `search.service.ts`)
-- ✅ Dynamic import cho heavy components (TawktoChat, SpeedDial — lazy với `next/dynamic`)
-- ✅ JSON-LD typed builders (`src/lib/json-ld.ts` — 8 schemas: Service, CreativeWork, Person, Article, FAQ, BreadcrumbList, Product/Offer, LocalBusiness)
-- ✅ Dynamic OG images (`/api/og` — gradient dark theme, localized subtitles)
-- ✅ Breadcrumb component + BreadcrumbList JSON-LD schema
-- ✅ Backup strategy implementation (`scripts/backup/*.sh` — DB, Sanity, Cloudinary, cron)
-- ✅ Staging environment setup (`STAGING.md` — Neon branch + Vercel Preview)
-
-### ✅ Phase 3 - Enhancement (Tuần 5-8) 🟢 — HOÀN THÀNH
-- ✅ Redis/Upstash caching layer (`src/lib/redis.ts` — `cacheFetch()`, graceful fallback)
-- ✅ Background job queue (Inngest — 5 jobs: email confirmation, admin notification, order confirmation, audit prune, cache warming)
-- ✅ Testing infrastructure (Vitest — 42 tests: contact, search, rate-limit, JSON-LD)
-- ✅ GEO optimization (FAQ schema, semantic HTML, JSON-LD Article schema, BreadcrumbList)
-- ✅ Dockerfile + self-hosted option (multi-stage build, standalone output, docker-compose)
-- ✅ API versioning (`/api/v1/` — services, projects, team, testimonials, pricing, blog)
-- ✅ Monitoring dashboard (`/admin/system/monitoring` — DB + Sanity + Redis latency, uptime)
-
-### ✅ Phase 4 - Future-ready 🔵 — HOÀN THÀNH (phần lớn)
-- ✅ Edge computing strategy (`src/lib/auth/edge.ts` — Edge-safe JWT decode, role extraction với TextDecoder)
-- ✅ Homepage ISR + Layout caching (5min homepage, 1h layout, `getCached*` queries)
-- ✅ API v1 versioning (7 endpoints với CDN headers)
-- ✅ Monitoring dashboard (`/admin/system/monitoring`)
-- ✅ Internal linking widgets (`src/components/internal-linking/RelatedContent.tsx` — relevance-scored, cross-links service↔project)
-- ✅ AI crawler endpoint (`src/app/api/ai/route.ts` — structured JSON + HTML view for ChatGPT/Claude/Gemini)
-- ✅ Microservices consideration — đã phân tích (admin tách riêng feasible, xem `PRISMA_MODULES.md`)
-- ✅ Prisma schema modules plan — `PRISMA_MODULES.md` (decision: don't split yet, trigger conditions documented)
-
-### ✅ Phase 5 - Content, Analytics & Data Quality 🟣 — HOÀN THÀNH (2026-03-21)
-- ✅ **RSS Feed i18n** — `src/app/[locale]/feed.xml/route.ts` (bilingual vi/en, dynamic locale detection, proper content negotiation)
-- ✅ **Entity signals (JSON-LD)** — 9 new schemas: HowTo, VideoObject, Review, AggregateRating, QAPage, Event, LocalBusiness + enhanced Product (`src/lib/json-ld.ts`)
-- ✅ **Knowledge base / Glossary** — 32 terms, 7 categories, bilingual vi/en, TechArticle JSON-LD, sitemap, i18n nav (`src/app/[locale]/glossary/page.tsx`)
-- ✅ **Content strategy** — `CONTENT.md` (editorial calendar Q2-Q4 2026, 3 content pillars, quality checklist, distribution plan, roles & responsibilities)
-- ✅ **AI content optimizer** — `src/lib/ai/content-optimizer.ts` (analyzeContent, generateMetaDescription, suggestInternalLinks, generateFaqFromContent, generateSeoHeadings — Anthropic SDK + graceful fallback)
-- ✅ **Advanced analytics server** — `src/lib/analytics/server.ts` (storeEvent, getAnalytics, getPageAnalytics, getConversionFunnel, getSessionData, getRealTimeStats, cleanupOldEvents + fireEvent helper)
-- ✅ **Analytics aggregations** — `src/lib/analytics/aggregations.ts` (buildDashboardSummary, fetchDailyStats, fetchTopPages, fetchGeoStats, fetchDeviceStats, fetchReferrerStats, fetchConversionRate)
-- ✅ **JSON column validation** — 10 Zod schemas, write+read Prisma middleware, Result<T> type, JsonValidationError class (`src/lib/db/json-validators.ts`, `json-middleware.ts`, `errors.ts`)
-- ⏳ Multi-tenant architecture — chưa cần thiết ở scale hiện tại
-
-### ✅ Phase 4c — Quality Fixes 🔧 (2026-03-20)
-- ✅ Rate limiter memory leak — `cleanup()` called every 100 `consume()` calls (`src/lib/rate-limit.ts`)
-- ✅ Crontab hardcoded paths + no MAILTO — `$HOME`-based paths, `MAILTO=` directive, failure logging (`scripts/crontab`)
-- ✅ `/api/ai` rate limiting not enforced — `publicApiRateLimit` now actually called (`src/app/api/ai/route.ts`)
-- ✅ `staleWhileRevalidate` dead code removed from `cacheFetch()` (`src/lib/redis.ts`)
-- ✅ `invalidateCachePattern` — replaced `KEYS` with safe `SCAN` + `UNLINK` + 10k threshold (`src/lib/redis.ts`)
-- ✅ `React.cache()` misuse in `internal-linking.ts` — removed (not effective outside React render tree)
-- ✅ RelatedContent CSS-in-JS hover → CSS Module `:hover` + keyboard focus styles
-- ✅ Sentry `ignoreErrors` strings → moved `NEXT_REDIRECT`/`NEXT_NOT_FOUND` to `beforeSend` hook
-- ✅ Sentry DSN `undefined` guard → `process.env.SENTRY_DSN ?? undefined`
-- ✅ CI/CD job dependencies missing → lint → test → build pipeline (`needs:` added)
-- ✅ CI/CD Codecov `fail_ci_if_error: false` → `true`
-- ✅ CI/CD missing `permissions:` block → added `contents: read, statuses: write`
-- ✅ Dead `ws` + `@types/ws` packages removed from `package.json`
-
-### ✅ Phase 4d — Sanity CMS Improvements 🔧 (2026-03-21)
-- ✅ Decision: keep Sanity cho blog (developer viết blog, cần PortableText editor)
-- ✅ Sanity client `useCdn: false` — ISR/CDN cache conflict fixed (`src/sanity/client.ts`)
-- ✅ `post` schema: alt text, excerpt, excerptVi, caption, ordering fields (`src/sanity/schemas/post.ts`)
-- ✅ `author` schema: shortBio, shortBioVi, role, linkedin, twitter, PortableText bio annotations (`src/sanity/schemas/author.ts`)
-- ✅ `category` schema: titleVi, description, descriptionVi, seoTitle, seoTitleVi, seoDescription, seoDescriptionVi, sort order (`src/sanity/schemas/category.ts`)
-- ✅ GROQ queries: new `postsQuery`, `authorsQuery`, `categoriesQuery`, `postSlugsQuery`, `postsByCategoryQuery` (`src/sanity/queries.ts`)
-- ✅ Blog listing page: excerpt, author role, categories, alt text, improved hover (`src/app/[locale]/blog/page.tsx`)
-- ✅ Blog detail page: excerpt lead, figure caption, author social links, improved PortableText serializers (`src/app/[locale]/blog/[slug]/page.tsx`)
-- ✅ Sanity backup script: local binary, NDJSON verify, compression, MAILTO, failure logging (`scripts/backup/backup-sanity.sh`)
-- ✅ `/api/ai` fetchBlog: wired Sanity GROQ via dynamic import (`src/app/api/ai/route.ts`)
-
----
-
-## IX. METRICS ĐO LƯỜNG
-
-| Metric | Trước | Sau khi tối ưu | Mục tiêu |
-|--------|--------|-----------------|----------|
-| Lighthouse Performance | ~70-75 | **~85-90** *(ước tính)* | 95+ |
-| First Contentful Paint | ~2.5s | **~1.5s** *(ISR + next/font)* | <1.2s |
-| Largest Contentful Paint | ~4s | **~2.5s** *(ISR + CDN)* | <2.5s |
-| Time to Interactive | ~5s | **~3s** *(dynamic imports)* | <3s |
-| Cumulative Layout Shift | ~0.15 | **~0.05** *(next/font zero shift)* | <0.1 |
-| API Response Time (p95) | ~500ms | **<200ms** *(ISR cache)* | <200ms |
-| Test Coverage | 0% | **~15%** *(42 unit tests)* | >70% |
-| Rate Limiting | Không có | **100 req/min** | ✅ |
-| Health Check Endpoint | Không có | **/api/health** | ✅ |
-| Uptime | Unknown | **99.9%** *(Neon PITR + health checks)* | 99.9% |
-| SEO Score (Lighthouse) | ~80 | **~90-95** *(JSON-LD + OG + ISR)* | 95+ |
-
----
-
-## X. FILES MỚI ĐƯỢC TẠO
-
-```
-Infrastructure / Caching:
-  src/lib/redis.ts              ← Upstash Redis + cacheFetch()
-  src/lib/rate-limit.ts         ← Upstash + in-memory fallback
-
-Background Jobs (Inngest):
-  src/lib/jobs/client.ts
-  src/lib/jobs/functions.ts
-  src/app/api/inngest/route.ts
-
-Service Layer:
-  src/lib/services/contact.service.ts
-  src/lib/services/search.service.ts
-
-API v1 Versioning:
-  src/app/api/v1/route.ts
-  src/app/api/v1/services/route.ts
-  src/app/api/v1/projects/route.ts
-  src/app/api/v1/team/route.ts
-  src/app/api/v1/testimonials/route.ts
-  src/app/api/v1/pricing/route.ts
-  src/app/api/v1/blog/route.ts
-
-SEO / GEO:
-  src/lib/json-ld.ts          ← 8 typed schema builders
-  src/app/api/og/route.tsx   ← Dynamic OG images
-
-Internal Linking:
-  src/components/internal-linking/RelatedContent.tsx          ← Relevance-scored cross-link widget (service↔project)
-  src/components/internal-linking/RelatedContent.module.css    ← CSS Module (hover, focus styles)
-  src/lib/db/internal-linking.ts                             ← Query functions (DB-level filtering, no React.cache misuse)
-
-AI Crawler API:
-  src/app/api/ai/route.ts     ← Structured JSON + HTML view (services, projects, team, blog, pricing, sitemap)
-
-Sanity CMS (blog):
-  src/sanity/client.ts         ← useCdn=false (ISR fix)
-  src/sanity/queries.ts        ← 7 GROQ queries (posts, authors, categories, slugs, postsByAuthor)
-  src/sanity/schemas/post.ts   ← alt, excerpt, excerptVi, caption, ordering
-  src/sanity/schemas/author.ts ← shortBio, role, linkedin, twitter
-  src/sanity/schemas/category.ts ← bilingual fields, SEO fields, sort order
-  src/sanity/schemas/blockContent.ts
-  src/sanity/schemas/index.ts
-
-Edge + Monitoring:
-  src/lib/auth/edge.ts
-  src/lib/sentry.ts
-  src/app/api/health/route.ts
-  src/app/admin/system/monitoring/page.tsx
-
-Deployment:
-  Dockerfile                   ← Multi-stage build
-  docker-compose.yml
-  .dockerignore
-  .github/workflows/ci.yml   ← lint → test → build
-
-Backup Strategy:
-  scripts/backup/backup-db.sh
-  scripts/backup/restore-db.sh
-  scripts/backup/backup-sanity.sh      ← v2 (NDJSON verify, compression, MAILTO)
-  scripts/backup/backup-cloudinary.sh
-  scripts/crontab                       ← v2 (MAILTO, failure logging)
-  scripts/migrations/rollback.sh
-
-Security:
-  scripts/rotate-credentials.sh        ← Credential rotation script (openssl, step-by-step)
-
-Database Migrations:
-  prisma/migrations/20260320_add_soft_delete_and_indexes/migration.sql ← soft delete + 20 indexes
-  prisma/migrations/20260320_add_missing_indexes/migration.sql          ← 30 additional indexes from query audit
-
-Testing (42 tests ✅):
-  vitest.config.ts
-  src/test/setup.tsx
-  src/lib/json-ld.test.ts
-  src/lib/rate-limit.test.ts
-  src/lib/services/contact.service.test.ts
-  src/lib/services/search.service.test.ts
-
-Documentation:
-  STAGING.md                  ← Staging environment setup
-  CONTENT.md                  ← Content strategy 2026 (editorial calendar, quality checklist, distribution)
-  PRISMA_MODULES.md          ← Prisma schema split strategy (when to split, migration path)
-
-Phase 5 — Content, Analytics & Data Quality:
-  src/app/[locale]/feed.xml/route.ts          ← Bilingual RSS feed (vi/en)
-  src/app/[locale]/glossary/page.tsx          ← Glossary (32 terms, 7 categories, bilingual)
-  src/lib/json-ld.ts                           ← 17 JSON-LD schema builders (9 new in Phase 5)
-  src/lib/ai/content-optimizer.ts             ← AI content analysis (Claude SDK + heuristic fallback)
-  src/lib/analytics/server.ts                  ← Server-side event storage + aggregation
-  src/lib/analytics/aggregations.ts             ← Dashboard helpers (daily stats, funnel, geo, devices)
-  src/lib/db/json-validators.ts                ← 10 Zod schemas for JSON column validation
-  src/lib/db/json-middleware.ts                ← Prisma write+read middleware
-  src/lib/db/errors.ts                        ← Result<T> type + JsonValidationError class
-```
+### Step 6: Custom Domain (khi sẵn sàng)
+13. ⬜ Setup `loop.vn` domain + DNS
+14. ⬜ Cập nhật tất cả URLs liên quan
 
 ---
 
 *Plan created: 2026-03-20*
-*Completed: 2026-03-20*
-*Last updated: 2026-03-21 (Phase 5 — content strategy, AI optimizer, advanced analytics, JSON validation)*
+*Updated: 2026-03-20 (MVP 2 — Vercel Deployment)*
 *Project: LOOP - Web Development Agency Platform*
