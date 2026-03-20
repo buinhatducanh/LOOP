@@ -6,12 +6,34 @@
  *
  * For full server-side auth (role lookups, session DB checks), use
  * the Node.js-only functions in src/lib/auth/permissions.ts instead.
+ *
+ * ⚠️  SECURITY NOTE on JWT verification:
+ *     decodeJwtPayload() only decodes the token payload without signature verification.
+ *     It is used here ONLY for routing decisions in Edge Middleware (best-effort guard).
+ *     All actual auth decisions (login, token minting, sensitive operations) MUST
+ *     use server-side jwt.verify() with full signature validation.
  */
 
 import { NextRequest } from "next/server";
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
 
+/**
+ * Role level hierarchy (lower = more privileged).
+ *
+ *   -1 = CEO          (top-level access)
+ *    0 = super_admin
+ *    1 = admin
+ *    2 = project_manager
+ *    3 = media
+ *    4 = qa
+ *    5 = member       (any authenticated staff)
+ *   99 = unauthenticated (fallback)
+ *
+ * Route requirements use this scale: a user can access routes
+ * where userLevel <= requiredLevel (i.e. more-privileged users
+ * can access less-privileged routes).
+ */
 export const ROLE_LEVEL: Record<string, number> = {
   ceo: -1,
   super_admin: 0,
@@ -64,7 +86,7 @@ export const PUBLIC_PATHS = [
 
 export const PUBLIC_PREFIXES = ["/login", "/register"] as const;
 
-// ─── Cookie Keys ────────────────────────────────────────────────────────────────
+// ─── Cookie Keys ───────────────────────────────────────────────────────────────
 
 export const COOKIES = {
   AUTH_TOKEN: "auth-token",
@@ -83,7 +105,7 @@ export const COOKIES = {
  *     For verifying tokens, use the Node.js `jwt.verify()` in API routes.
  *
  * This works in Edge Runtime because it uses the native TextDecoder API
- * instead of Node's `Buffer`.
+ * instead of Node's Buffer.
  */
 export function decodeJwtPayload(token: string): Record<string, unknown> | null {
   try {
@@ -161,6 +183,11 @@ export function isPublicPath(pathname: string): boolean {
 
 /**
  * Get the minimum role level required for a given admin path.
+ * Higher level value = less privileged.
+ *
+ *   0-4  → specific roles (super_admin, admin, project_manager, media, qa)
+ *   5    → any authenticated member
+ *   99   → no valid token
  */
 export function getRequiredLevel(pathname: string): number {
   // Exact match first
@@ -179,6 +206,16 @@ export function getRequiredLevel(pathname: string): number {
 /**
  * Full Edge-compatible auth check for admin routes.
  * Returns { allowed: true } or { allowed: false, reason: string }
+ *
+ * Role check logic:
+ *   - Routes at levels 0-4: require a specific privileged role.
+ *     userLevel must be <= requiredLevel (e.g. admin(1) can access level-2 routes).
+ *   - Routes at level 5: require only that the user is authenticated (any staff role).
+ *     Role-level check is skipped since all staff are level-5 or lower.
+ *   - Routes at level 99 (no token): always denied.
+ *
+ * ⚠️  Edge role checks are best-effort. Every API route that performs sensitive
+ *     operations MUST re-verify the token with full server-side jwt.verify().
  */
 export function checkAdminAccess(req: NextRequest, pathname: string): {
   allowed: boolean;
@@ -189,14 +226,25 @@ export function checkAdminAccess(req: NextRequest, pathname: string): {
     return { allowed: true };
   }
 
-  const { authenticated, method } = getAuthStatus(req);
+  const { authenticated } = getAuthStatus(req);
 
   if (!authenticated) {
     return { allowed: false, reason: "unauthenticated" };
   }
 
-  // For routes requiring a specific role level
   const requiredLevel = getRequiredLevel(pathname);
+
+  /*
+   * Routes with requiredLevel >= 5: any authenticated user qualifies.
+   * We skip the role check here because ROLE_LEVEL values for actual roles
+   * are all <= 5, so all real users can access level-5 routes regardless.
+   * (getRequiredLevel returns 5 as the default for unlisted paths, meaning
+   * "any staff member" — not a restricted role.)
+   *
+   * Routes with requiredLevel < 5: enforce role hierarchy.
+   * A user can access the route if their level is <= the required level
+   * (i.e. more-privileged users can access less-privileged routes).
+   */
   if (requiredLevel < 5) {
     const userLevel = getUserRoleLevel(req);
     if (userLevel > requiredLevel) {

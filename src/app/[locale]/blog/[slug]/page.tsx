@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { PortableText } from '@portabletext/react';
-import { ArrowLeft, Clock, Calendar, User, Tag } from 'lucide-react';
+import { ArrowLeft, Calendar, Tag } from 'lucide-react';
 import Image from 'next/image';
 import { Breadcrumbs } from "@/components/shared/Breadcrumbs";
 import JsonLd from "@/components/seo/JsonLd";
@@ -11,27 +11,200 @@ import { client } from '@/sanity/client';
 import { postBySlugQuery, postsQuery } from '@/sanity/queries';
 import { urlForImage } from '@/sanity/image';
 
-// Thêm tính năng generateStaticParams tương lai nếu cần SSG toàn bộ blog thay vì ISR
-// export async function generateStaticParams() { ... }
-
 export const revalidate = 60;
 
-export async function generateMetadata({ params }: { params: Promise<{ locale: string, slug: string }> }): Promise<Metadata> {
+// ─── Types ───────────────────────────────────────────────────────────────────
+
+interface PostAuthorImage {
+    asset: { _id: string; url: string };
+    alt?: string;
+}
+
+interface PostCategory {
+    _id: string;
+    title: string;
+    titleVi?: string;
+    slug: { current: string };
+    description?: string;
+    descriptionVi?: string;
+}
+
+interface Post {
+    _id: string;
+    title: string;
+    titleVi?: string;
+    slug: { current: string };
+    body?: unknown[];
+    bodyVi?: unknown[];
+    mainImage?: {
+        asset: { _id: string; url: string };
+        alt?: string;
+        caption?: string;
+        hotspot?: { x: number; y: number; height: number; width: number };
+    };
+    publishedAt?: string;
+    excerpt?: string;
+    excerptVi?: string;
+    authorName?: string;
+    authorRole?: string;
+    authorImage?: PostAuthorImage;
+    authorBio?: unknown[];
+    authorBioVi?: unknown[];
+    authorShortBio?: string;
+    authorShortBioVi?: string;
+    authorLinkedin?: string;
+    authorTwitter?: string;
+    categories?: PostCategory[];
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+/** Extract plain text from Portable Text body for SEO meta descriptions */
+function extractPlainText(body: unknown[] | undefined): string {
+    if (!body) return '';
+    return body
+        .filter((b: unknown) => {
+            const block = b as { _type?: string };
+            return block._type === 'block';
+        })
+        .flatMap((b: unknown) => {
+            const block = b as { children?: Array<{ text?: string }> };
+            return (block.children ?? []).map((c) => c.text ?? '');
+        })
+        .join(' ')
+        .trim()
+        .substring(0, 300);
+}
+
+// ─── Portable Text serializers (dark theme) ──────────────────────────────────
+
+const portableTextComponents = {
+    types: {
+        image: ({ value }: { value: { asset?: { _ref?: string }; alt?: string; caption?: string } }) => {
+            if (!value?.asset?._ref) return null;
+            return (
+                <figure style={{ margin: '40px 0', borderRadius: '16px', overflow: 'hidden' }}>
+                    <img
+                        src={urlForImage(value).width(1200).auto('format').url()}
+                        alt={value.alt ?? ''}
+                        loading="lazy"
+                        style={{ width: '100%', height: 'auto', display: 'block' }}
+                    />
+                    {value.caption && (
+                        <figcaption style={{
+                            textAlign: 'center',
+                            color: '#94A3B8',
+                            fontSize: '14px',
+                            marginTop: '8px',
+                            fontStyle: 'italic',
+                        }}>
+                            {value.caption}
+                        </figcaption>
+                    )}
+                </figure>
+            );
+        },
+    },
+    block: {
+        h1: ({ children }: { children?: React.ReactNode }) => (
+            <h1 style={{ fontSize: '36px', fontWeight: 800, marginTop: '48px', marginBottom: '24px', color: '#FFFFFF', letterSpacing: '-0.5px' }}>
+                {children}
+            </h1>
+        ),
+        h2: ({ children }: { children?: React.ReactNode }) => (
+            <h2 style={{ fontSize: '28px', fontWeight: 700, marginTop: '40px', marginBottom: '20px', color: '#FFFFFF' }}>
+                {children}
+            </h2>
+        ),
+        h3: ({ children }: { children?: React.ReactNode }) => (
+            <h3 style={{ fontSize: '22px', fontWeight: 600, marginTop: '32px', marginBottom: '16px', color: '#FFFFFF' }}>
+                {children}
+            </h3>
+        ),
+        normal: ({ children }: { children?: React.ReactNode }) => (
+            <p style={{ fontSize: '18px', lineHeight: 1.8, marginBottom: '24px', color: '#CBD5E1' }}>
+                {children}
+            </p>
+        ),
+        blockquote: ({ children }: { children?: React.ReactNode }) => (
+            <blockquote style={{
+                borderLeft: '4px solid #3B82F6',
+                paddingLeft: '20px',
+                marginLeft: 0,
+                marginBottom: '24px',
+                fontStyle: 'italic',
+                color: '#94A3B8',
+                fontSize: '20px',
+                background: 'rgba(59,130,246,0.05)',
+                padding: '24px',
+                borderRadius: '0 12px 12px 0',
+            }}>
+                {children}
+            </blockquote>
+        ),
+    },
+    marks: {
+        link: ({ value, children }: { value?: { href?: string }; children?: React.ReactNode }) => {
+            const href = value?.href ?? '';
+            const isExternal = href.startsWith('http');
+            return (
+                <a
+                    href={href}
+                    target={isExternal ? '_blank' : undefined}
+                    rel={isExternal ? 'noopener noreferrer noindex' : 'noindex nofollow'}
+                    style={{ color: '#3B82F6', textDecoration: 'underline', textDecorationColor: 'rgba(59,130,246,0.5)' }}
+                >
+                    {children}
+                </a>
+            );
+        },
+        strong: ({ children }: { children?: React.ReactNode }) => (
+            <strong style={{ color: '#FFFFFF', fontWeight: 700 }}>{children}</strong>
+        ),
+    },
+    list: {
+        bullet: ({ children }: { children?: React.ReactNode }) => (
+            <ul style={{ marginLeft: '24px', marginBottom: '24px', color: '#CBD5E1', fontSize: '18px', lineHeight: 1.8, listStyleType: 'disc' }}>
+                {children}
+            </ul>
+        ),
+        number: ({ children }: { children?: React.ReactNode }) => (
+            <ol style={{ marginLeft: '24px', marginBottom: '24px', color: '#CBD5E1', fontSize: '18px', lineHeight: 1.8 }}>
+                {children}
+            </ol>
+        ),
+    },
+    listItem: {
+        bullet: ({ children }: { children?: React.ReactNode }) => (
+            <li style={{ marginBottom: '8px' }}>{children}</li>
+        ),
+        number: ({ children }: { children?: React.ReactNode }) => (
+            <li style={{ marginBottom: '8px' }}>{children}</li>
+        ),
+    },
+};
+
+// ─── Metadata ─────────────────────────────────────────────────────────────────
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string; slug: string }> }): Promise<Metadata> {
     const { locale, slug } = await params;
     const isVn = locale === 'vi';
-    const post = await client.fetch(postBySlugQuery, { slug });
+    const post = await client.fetch<Post>(postBySlugQuery, { slug });
 
-    if (!post) {
-        return {};
-    }
+    if (!post) return {};
 
     const title = isVn ? (post.titleVi || post.title) : post.title;
-    let description = '';
-    if (post.bodyVi || post.body) {
-        const body = isVn ? (post.bodyVi || post.body) : post.body;
-        description = body.filter((b: any) => b._type === 'block' && b.children).map((b: any) => b.children.map((c: any) => c.text).join('')).join('\n').substring(0, 160) + '...';
-    }
-    const imageUrl = post.mainImage ? urlForImage(post.mainImage).width(1200).url() : undefined;
+
+    // Priority: excerpt field > extracted from body
+    const rawExcerpt = (isVn ? post.excerptVi : post.excerpt) ?? extractPlainText(isVn ? post.bodyVi : post.body);
+    const description = rawExcerpt
+        ? rawExcerpt.substring(0, 160) + (rawExcerpt.length > 160 ? '…' : '')
+        : undefined;
+
+    const imageUrl = post.mainImage
+        ? urlForImage(post.mainImage).width(1200).auto('format').url()
+        : undefined;
+    const imageAlt = post.mainImage?.alt ?? title ?? undefined;
 
     return {
         title,
@@ -41,8 +214,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
             description,
             type: 'article',
             publishedTime: post.publishedAt,
-            authors: [post.authorName || 'LOOP'],
-            images: imageUrl ? [{ url: imageUrl }] : [],
+            authors: [post.authorName ?? 'LOOP Team'],
+            images: imageUrl ? [{ url: imageUrl, alt: imageAlt }] : [],
         },
         twitter: {
             card: 'summary_large_image',
@@ -60,145 +233,204 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     };
 }
 
-export default async function BlogPostPage({ params }: { params: Promise<{ locale: string, slug: string }> }) {
+// ─── Page component ───────────────────────────────────────────────────────────
+
+export default async function BlogPostPage({ params }: { params: Promise<{ locale: string; slug: string }> }) {
     const { locale, slug } = await params;
     const isVn = locale === 'vi';
 
-    const post = await client.fetch(postBySlugQuery, { slug });
-
-    if (!post) {
-        notFound();
-    }
+    const post = await client.fetch<Post>(postBySlugQuery, { slug });
+    if (!post) notFound();
 
     const title = isVn ? (post.titleVi || post.title) : post.title;
     const body = isVn ? (post.bodyVi || post.body) : post.body;
-    const dateStr = post.publishedAt ? new Date(post.publishedAt).toLocaleDateString(locale, { year: 'numeric', month: 'long', day: 'numeric' }) : '';
+    const shortBio = isVn ? post.authorShortBioVi : post.authorShortBio;
+    const dateStr = post.publishedAt
+        ? new Date(post.publishedAt).toLocaleDateString(locale, { year: 'numeric', month: 'long', day: 'numeric' })
+        : '';
 
-    let plainTextDescription = '';
-    if (body) {
-        plainTextDescription = body.filter((b: any) => b._type === 'block' && b.children).map((b: any) => b.children.map((c: any) => c.text).join('')).join('\n').substring(0, 160) + '...';
-    }
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://loop.vn';
+    const imageUrl = post.mainImage
+        ? urlForImage(post.mainImage).width(1200).auto('format').url()
+        : undefined;
+    const imageAlt = post.mainImage?.alt ?? title ?? 'Blog post';
+
+    // SEO description from excerpt or body
+    const seoDescription = (isVn ? post.excerptVi : post.excerpt)
+        ?? extractPlainText(body).substring(0, 160);
+
+    // JSON-LD
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://loop.vn';
     const jsonLd = buildBlogPostJsonLd({
         title,
-        description: plainTextDescription,
-        image: post.mainImage ? urlForImage(post.mainImage).width(1200).url() : undefined,
-        authorName: post.authorName || (isVn ? 'Đội ngũ LOOP' : 'LOOP Team'),
+        description: seoDescription,
+        image: imageUrl,
+        authorName: post.authorName ?? (isVn ? 'Đội ngũ LOOP' : 'LOOP Team'),
         publishedAt: post.publishedAt,
         slug,
     });
     const breadcrumbJsonLd = buildBreadcrumbJsonLd([
         { name: isVn ? 'Trang chủ' : 'Home', url: `/${locale}` },
-        { name: isVn ? 'Blog' : 'Blog', url: `/${locale}/blog` },
+        { name: 'Blog', url: `/${locale}/blog` },
         { name: title },
     ]);
-
-    // Custom serializers for PortableText to match the site's dark theme
-    const portableTextComponents = {
-        types: {
-            image: ({ value }: any) => {
-                if (!value?.asset?._ref) { return null; }
-                return (
-                    <div style={{ margin: '40px 0', borderRadius: '16px', overflow: 'hidden' }}>
-                        <img
-                            src={urlForImage(value).width(1200).url()}
-                            alt={value.alt || ' '}
-                            style={{ width: '100%', height: 'auto', display: 'block' }}
-                        />
-                    </div>
-                );
-            },
-        },
-        block: {
-            h1: ({ children }: any) => <h1 style={{ fontSize: '36px', fontWeight: 800, marginTop: '48px', marginBottom: '24px', color: '#FFFFFF' }}>{children}</h1>,
-            h2: ({ children }: any) => <h2 style={{ fontSize: '28px', fontWeight: 700, marginTop: '40px', marginBottom: '20px', color: '#FFFFFF' }}>{children}</h2>,
-            h3: ({ children }: any) => <h3 style={{ fontSize: '24px', fontWeight: 600, marginTop: '32px', marginBottom: '16px', color: '#FFFFFF' }}>{children}</h3>,
-            normal: ({ children }: any) => <p style={{ fontSize: '18px', lineHeight: 1.8, marginBottom: '24px', color: '#cbd5e1' }}>{children}</p>,
-            blockquote: ({ children }: any) => (
-                <blockquote style={{ borderLeft: '4px solid #3B82F6', paddingLeft: '20px', marginLeft: 0, fontStyle: 'italic', color: '#94A3B8', fontSize: '20px', background: 'rgba(59,130,246,0.05)', padding: '24px' }}>
-                    {children}
-                </blockquote>
-            ),
-        },
-        marks: {
-            link: ({ value, children }: any) => {
-                const target = (value?.href || '').startsWith('http') ? '_blank' : undefined;
-                return (
-                    <a href={value?.href} target={target} rel={target === '_blank' ? 'noindex nofollow' : ''} style={{ color: '#3B82F6', textDecoration: 'underline' }}>
-                        {children}
-                    </a>
-                );
-            },
-            strong: ({ children }: any) => <strong style={{ color: '#FFFFFF', fontWeight: 700 }}>{children}</strong>,
-        },
-        list: {
-            bullet: ({ children }: any) => <ul style={{ marginLeft: '24px', marginBottom: '24px', color: '#cbd5e1', fontSize: '18px', lineHeight: 1.8 }}>{children}</ul>,
-            number: ({ children }: any) => <ol style={{ marginLeft: '24px', marginBottom: '24px', color: '#cbd5e1', fontSize: '18px', lineHeight: 1.8 }}>{children}</ol>,
-        },
-        listItem: {
-            bullet: ({ children }: any) => <li style={{ marginBottom: '8px' }}>{children}</li>,
-            number: ({ children }: any) => <li style={{ marginBottom: '8px' }}>{children}</li>,
-        },
-    };
 
     return (
         <>
             <JsonLd data={jsonLd} />
             <JsonLd data={breadcrumbJsonLd} />
-            <div style={{ maxWidth: "800px", margin: "0 auto" }}>
-                <Breadcrumbs
-                    locale={locale}
-                    items={[
-                        { label: isVn ? 'Trang chủ' : 'Home', href: `/${locale}` },
-                        { label: 'Blog', href: `/${locale}/blog` },
-                        { label: title || 'Bài viết' }
-                    ]}
-                />
 
-                {/* Post Header */}
-                <header style={{ marginBottom: "48px" }}>
-                    <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", marginBottom: "20px" }}>
-                        {post.categories?.map((cat: string) => (
-                            <span key={cat} style={{ background: "rgba(59,130,246,0.1)", color: "#3B82F6", padding: "6px 14px", borderRadius: "20px", fontSize: "13px", fontWeight: 600 }}>
-                                {cat}
-                            </span>
-                        ))}
-                    </div>
+            <div style={{ maxWidth: "800px", margin: "0 auto", padding: "0 24px" }}>
 
-                    <h1 style={{ fontSize: "clamp(36px, 5vw, 64px)", fontWeight: 800, lineHeight: 1.2, marginBottom: "24px", letterSpacing: "-1px" }}>
+                {/* Breadcrumbs */}
+                <div style={{ paddingTop: "80px", marginBottom: "32px" }}>
+                    <Breadcrumbs
+                        locale={locale}
+                        items={[
+                            { label: isVn ? 'Trang chủ' : 'Home', href: `/${locale}` },
+                            { label: 'Blog', href: `/${locale}/blog` },
+                            { label: title || 'Bài viết' },
+                        ]}
+                    />
+                </div>
+
+                {/* Back link */}
+                <Link
+                    href={`/${locale}/blog`}
+                    style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        color: '#6366F1',
+                        fontSize: '14px',
+                        fontWeight: 600,
+                        textDecoration: 'none',
+                        marginBottom: '24px',
+                        transition: 'color 0.2s',
+                    }}
+                >
+                    <ArrowLeft size={14} />
+                    {isVn ? 'Tất cả bài viết' : 'All posts'}
+                </Link>
+
+                {/* Post header */}
+                <header style={{ marginBottom: "40px" }}>
+
+                    {/* Categories */}
+                    {post.categories && post.categories.length > 0 && (
+                        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "16px" }}>
+                            {post.categories.map((cat) => (
+                                <span key={cat._id} style={{
+                                    background: "rgba(59,130,246,0.1)",
+                                    color: "#3B82F6",
+                                    padding: "6px 14px",
+                                    borderRadius: "20px",
+                                    fontSize: "13px",
+                                    fontWeight: 600,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "6px",
+                                }}>
+                                    <Tag size={12} />
+                                    {isVn ? (cat.titleVi || cat.title) : cat.title}
+                                </span>
+                            ))}
+                        </div>
+                    )}
+
+                    <h1 style={{
+                        fontSize: "clamp(32px, 5vw, 56px)",
+                        fontWeight: 800,
+                        lineHeight: 1.2,
+                        marginBottom: "20px",
+                        letterSpacing: "-1px",
+                        color: "#FFFFFF",
+                    }}>
                         {title}
                     </h1>
 
-                    <div style={{ display: "flex", alignItems: "center", gap: "24px", color: "#94A3B8", fontSize: "15px", flexWrap: "wrap", borderBottom: "1px solid #1F2937", paddingBottom: "32px" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                            <User size={18} /> <span>{post.authorName || (isVn ? 'Đội ngũ LOOP' : 'LOOP Team')}</span>
+                    {/* Author + meta */}
+                    <div style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "16px",
+                        color: "#94A3B8",
+                        fontSize: "15px",
+                        flexWrap: "wrap",
+                    }}>
+                        {post.authorImage?.asset?.url && (
+                            <Image
+                                src={urlForImage(post.authorImage).width(40).height(40).auto('format').url()}
+                                alt={post.authorImage.alt ?? post.authorName ?? 'Author'}
+                                width={40}
+                                height={40}
+                                style={{ borderRadius: '50%', objectFit: 'cover' }}
+                            />
+                        )}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                            <span style={{ color: '#E2E8F0', fontWeight: 600, fontSize: '15px' }}>
+                                {post.authorName ?? (isVn ? 'Đội ngũ LOOP' : 'LOOP Team')}
+                            </span>
+                            {post.authorRole && (
+                                <span style={{ color: '#6366F1', fontSize: '13px' }}>
+                                    {post.authorRole}
+                                </span>
+                            )}
                         </div>
                         {dateStr && (
-                            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                                <Calendar size={18} /> <span>{dateStr}</span>
+                            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                                <Calendar size={14} />
+                                <span>{dateStr}</span>
                             </div>
                         )}
-                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                            <Clock size={18} /> <span>{isVn ? "5 phút đọc" : "5 min read"}</span>
-                        </div>
                     </div>
                 </header>
 
-                {/* Featured Image */}
-                {post.mainImage && (
-                    <div style={{ margin: "0 0 48px", borderRadius: "20px", overflow: "hidden", height: "450px", background: "#1E293B", position: "relative" }}>
+                {/* Featured image */}
+                {imageUrl && (
+                    <figure style={{ margin: "0 0 48px", borderRadius: "20px", overflow: "hidden", height: "450px", position: "relative", background: "#1E293B" }}>
                         <Image
-                            src={urlForImage(post.mainImage).width(1200).url()}
-                            alt={`${title || 'Hero'} - Bài viết LOOP`}
+                            src={imageUrl}
+                            alt={imageAlt}
                             fill
                             priority
-                            sizes="(max-width: 1200px) 100vw, 1200px"
+                            sizes="(max-width: 1200px) 100vw, 800px"
                             style={{ objectFit: "cover" }}
                         />
-                    </div>
+                        {post.mainImage?.caption && (
+                            <figcaption style={{
+                                position: 'absolute',
+                                bottom: 0,
+                                left: 0,
+                                right: 0,
+                                padding: '12px 16px',
+                                background: 'rgba(0,0,0,0.6)',
+                                color: '#94A3B8',
+                                fontSize: '13px',
+                                textAlign: 'center',
+                                fontStyle: 'italic',
+                            }}>
+                                {post.mainImage.caption}
+                            </figcaption>
+                        )}
+                    </figure>
                 )}
 
-                {/* Post Content with PortableText */}
+                {/* Excerpt / lead */}
+                {(post.excerpt || post.excerptVi) && (
+                    <p style={{
+                        fontSize: '20px',
+                        lineHeight: 1.7,
+                        color: '#E2E8F0',
+                        fontWeight: 400,
+                        borderLeft: '3px solid #3B82F6',
+                        paddingLeft: '20px',
+                        marginBottom: '40px',
+                    }}>
+                        {isVn ? (post.excerptVi || post.excerpt) : (post.excerpt || post.excerptVi)}
+                    </p>
+                )}
+
+                {/* Post content */}
                 <div style={{ fontSize: "18px", color: "#E2E8F0" }}>
                     {body ? (
                         <PortableText value={body} components={portableTextComponents} />
@@ -209,27 +441,74 @@ export default async function BlogPostPage({ params }: { params: Promise<{ local
                     )}
                 </div>
 
-                {/* Author Bio Section */}
-                {post.authorName && (
-                    <div style={{ marginTop: "80px", padding: "32px", background: "#0F172A", border: "1px solid #1F2937", borderRadius: "16px", display: "flex", gap: "24px", alignItems: "center", flexWrap: "wrap" }}>
-                        {post.authorImage && (
-                            <div style={{ width: "80px", height: "80px", borderRadius: "50%", overflow: "hidden", flexShrink: 0, position: "relative" }}>
-                                <Image src={urlForImage(post.authorImage).width(200).url()} alt={post.authorName || 'Author'} fill sizes="80px" style={{ objectFit: "cover" }} />
-                            </div>
+                {/* Author bio section */}
+                {(post.authorName || post.authorImage) && (
+                    <div style={{
+                        marginTop: "80px",
+                        padding: "32px",
+                        background: "#0F172A",
+                        border: "1px solid #1F2937",
+                        borderRadius: "16px",
+                        display: "flex",
+                        gap: "24px",
+                        alignItems: "flex-start",
+                        flexWrap: "wrap",
+                    }}>
+                        {post.authorImage?.asset?.url && (
+                            <Image
+                                src={urlForImage(post.authorImage).width(96).height(96).auto('format').url()}
+                                alt={post.authorImage.alt ?? post.authorName ?? 'Author'}
+                                width={96}
+                                height={96}
+                                style={{ borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
+                            />
                         )}
-                        <div>
-                            <h3 style={{ fontSize: "20px", fontWeight: 700, marginBottom: "8px" }}>{post.authorName}</h3>
-                            <div style={{ color: "#94A3B8", fontSize: "15px", lineHeight: 1.6 }}>
-                                {post.authorBio ? (
-                                    <PortableText value={isVn && post.authorBioVi ? post.authorBioVi : post.authorBio} />
-                                ) : (
-                                    <p>{isVn ? "Tác giả của bài viết này." : "Author of this article."}</p>
+                        <div style={{ flex: 1, minWidth: "200px" }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px', flexWrap: 'wrap' }}>
+                                <h3 style={{ fontSize: "20px", fontWeight: 700, color: "#FFFFFF", margin: 0 }}>
+                                    {post.authorName ?? (isVn ? 'Đội ngũ LOOP' : 'LOOP Team')}
+                                </h3>
+                                {post.authorRole && (
+                                    <span style={{ color: '#6366F1', fontSize: '14px' }}>
+                                        {post.authorRole}
+                                    </span>
+                                )}
+                                {/* Social links */}
+                                {(post.authorLinkedin || post.authorTwitter) && (
+                                    <div style={{ display: 'flex', gap: '8px', marginLeft: 'auto' }}>
+                                        {post.authorLinkedin && (
+                                            <a href={post.authorLinkedin} target="_blank" rel="noopener noreferrer"
+                                                style={{ color: '#0A66C2', fontSize: '14px', fontWeight: 600, textDecoration: 'none' }}>
+                                                LinkedIn
+                                            </a>
+                                        )}
+                                        {post.authorTwitter && (
+                                            <a href={post.authorTwitter} target="_blank" rel="noopener noreferrer"
+                                                style={{ color: '#1DA1F2', fontSize: '14px', fontWeight: 600, textDecoration: 'none' }}>
+                                                Twitter/X
+                                            </a>
+                                        )}
+                                    </div>
                                 )}
                             </div>
+                            {shortBio ? (
+                                <p style={{ color: "#94A3B8", fontSize: "15px", lineHeight: 1.6, margin: 0 }}>
+                                    {shortBio}
+                                </p>
+                            ) : (post.authorBio || post.authorBioVi) ? (
+                                <div style={{ color: "#94A3B8", fontSize: "15px", lineHeight: 1.6 }}>
+                                    <PortableText
+                                        value={isVn && post.authorBioVi ? post.authorBioVi : post.authorBio}
+                                        components={portableTextComponents}
+                                    />
+                                </div>
+                            ) : null}
                         </div>
                     </div>
                 )}
 
+                {/* Bottom padding */}
+                <div style={{ height: '80px' }} />
             </div>
         </>
     );

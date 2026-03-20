@@ -1,7 +1,7 @@
 # LOOP - Architecture Analysis Plan
 ## Phân tích kiến trúc & Kế hoạch cải thiện toàn diện
 
-> ✅ **Trạng thái hoàn thành:** Phase 1–4 + Phase 4b extensions (internal linking, AI endpoint, 50 DB indexes) đã hoàn thành (2026-03-20)
+> ✅ **Trạng thái hoàn thành:** Phase 1–4 + Phase 4b (internal linking, AI endpoint, 50 DB indexes) + Phase 4c (10 quality fixes) + Phase 4d (Sanity CMS improvements) (2026-03-21)
 > ✅ **Tests:** 42/42 unit tests passing
 > ✅ **CI/CD:** GitHub Actions pipeline với lint → test → build
 
@@ -68,7 +68,16 @@
 | **CI/CD thiếu test** | 🔴 Critical | ✅ Đã fix (Vitest 42 tests) |
 | **Không có health check** | 🟢 Low | ✅ Đã fix (`/api/health`) |
 | **API versioning** | 🟡 Medium | ✅ Đã fix (`/api/v1/`) |
-| **WebSocket (ws) unused** | 🟡 Medium | ⚠️ Cần evaluate |
+| **WebSocket (ws) unused** | 🟡 Medium | ✅ Đã remove khỏi package.json |
+| **Analytics pipeline** | 🟡 Medium | ✅ `/api/analytics/track` + typed helpers (`src/lib/analytics/events.ts`) |
+| **Author blog pages** | 🟢 Low | ✅ `/blog/author/[slug]` — Server Component + Sanity GROQ + postsByAuthorQuery |
+| **Category blog pages** | 🟢 Low | ✅ `/blog/category/[slug]` — redirect → listing |
+| **ws package unused** | 🟢 Low | ✅ Đã remove khỏi package.json |
+| **Zod validation** | 🟡 Medium | ✅ `quote/route.ts`, `order/route.ts` có Zod. `contact.service` dùng manual (đủ dùng). Có thể thêm `/api/analytics/track` Zod validation |
+| **RSS feed i18n** | 🟢 Low | ⚠️ Chưa fix (feed.xml hardcoded `language: 'vi'`) |
+| **Heading hierarchy** | 🟢 Low | ✅ Đúng trên tất cả pages chính |
+| **Rate limiter memory leak** | 🔴 Critical | ✅ Đã fix (cleanup() được gọi mỗi 100 requests) |
+| **Crontab hardcoded paths** | 🔴 Critical | ✅ Đã fix (dùng $HOME + MAILTO directive) |
 
 ### 3.2 Hành động đã làm
 1. ✅ **Redis/Upstash** + `cacheFetch()` helper với graceful fallback
@@ -88,18 +97,42 @@
 |--------|--------|-----------|
 | **Credential trong .env.example** | 🔴 Critical | ✅ Đã fix (placeholder template) |
 | **Schema quá lớn** | 🟡 Medium | ⚠️ Chưa fix (cần tách modules) |
-| **Dual CMS (Prisma + Sanity)** | 🟡 Medium | ⚠️ Chưa fix (cần decision) |
+| **Dual CMS (Prisma + Sanity)** | 🟡 Medium | ✅ Đã fix (decision: keep Sanity cho blog, developer viết blog) |
+| **Sanity ISR conflict (useCdn=true)** | 🔴 Critical | ✅ Đã fix (`useCdn: false`, ISR cache conflict resolved) |
+| **Blog post schema thiếu alt/excerpt** | 🟡 Medium | ✅ Đã fix (alt + excerpt + excerptVi + ordering + caption fields) |
+| **Author schema thiếu shortBio/role** | 🟡 Medium | ✅ Đã fix (shortBio, shortBioVi, role, linkedin, twitter) |
+| **Category schema không bilingual** | 🟢 Low | ✅ Đã fix (titleVi, description, descriptionVi, seoTitle, seoTitleVi) |
+| **Sanity backup script fragile** | 🟡 Medium | ✅ Đã fix (local sanity binary, NDJSON verify, compression, MAILTO) |
+| **GROQ queries chưa đủ fields** | 🟡 Medium | ✅ Đã fix (new queries: authorsQuery, categoriesQuery, postSlugsQuery, postsByCategoryQuery) |
+| **fetchBlog() trong /api/ai placeholder** | 🟡 Medium | ✅ Đã fix (wire Sanity GROQ dynamic import) |
 | **Thiếu soft delete** | 🟡 Medium | ✅ Đã fix (`deletedAt` + 9 tables, CONCURRENTLY indexes) |
 | **Thiếu database indexes** | 🟡 Medium | ✅ Đã fix (2 migrations: 20 + 30 indexes, full query audit) |
 | **JSON columns không validate** | 🟡 Medium | ⚠️ Chưa fix |
 
 ### 4.2 Hành động cần làm
-1. ⚠️ **Rotate credentials** — đã fix `.env.example`, cần rotate production secrets
+1. ⚠️ **Rotate credentials** — `.env.local` chứa real secrets (đã kiểm tra: KHÔNG tracked git). Cần rotate trong production. Script: `scripts/rotate-credentials.sh`
 2. ✅ **Soft delete pattern** — `deletedAt TIMESTAMPTZ` + `WHERE deleted_at IS NULL` partial indexes
 3. ✅ **Database indexes** — 50 indexes total (20 initial + 30 missing from query audit)
-4. ⚠️ **CMS strategy** — quyết định: migrate blog → Prisma hoặc commit Sanity
+4. ⚠️ **CMS strategy** — quyết định: keep Sanity cho blog (developer viết blog)
 5. ⚠️ **JSON validation** — Zod + custom Prisma middleware
-6. ⚠️ **Prisma schema modules** — multi-schema approach
+6. ⚠️ **Prisma schema modules** — multi-schema approach (chỉ khi tách admin deployment)
+7. ✅ **ws package** — đã remove khỏi package.json
+
+### 4.3 Credential Security
+| Credential | Trạng thái | Hành động |
+|-----------|-----------|-----------|
+| `AUTH_SECRET` | 🔴 Real — cần rotate | Chạy `scripts/rotate-credentials.sh` |
+| `DATABASE_URL` | 🔴 Real — Neon connection string | Rotate password trên Neon dashboard |
+| `GOOGLE_CLIENT_SECRET` | 🔴 Real — cần rotate | Console.cloud.google.com → Credentials |
+| `CLOUDINARY_API_SECRET` | 🔴 Real — cần rotate | Cloudinary console → API Keys |
+| `SENTRY_DSN` | ⚠️ Placeholder — cần real key | sentry.io → Project Settings |
+| `UPSTASH_REDIS_*` | ⚠️ Placeholder — chưa tạo | console.upstash.com |
+| `INNGEST_*` | ⚠️ Placeholder — chưa tạo | inngest.com dashboard |
+| `RESEND_API_KEY` | ⚠️ Placeholder — chưa tạo | resend.com API Keys |
+| `.env/.env.local` tracked git? | ✅ KHÔNG tracked | `.gitignore` đúng |
+| `.env.example` placeholder | ✅ Đúng | Đã cập nhật đầy đủ vars |
+8. ✅ **Rate limiter memory leak** — `cleanup()` được gọi mỗi 100 requests
+9. ✅ **Crontab hardcoded paths** — dùng `$HOME` + absolute path + `MAILTO` directive
 
 ---
 
@@ -212,9 +245,36 @@
 - ✅ Internal linking widgets (`src/components/internal-linking/RelatedContent.tsx` — relevance-scored, cross-links service↔project)
 - ✅ AI crawler endpoint (`src/app/api/ai/route.ts` — structured JSON + HTML view for ChatGPT/Claude/Gemini)
 - 🔄 Microservices consideration — đã phân tích (admin tách riêng feasible)
-- ⏳ AI-powered content optimization — cần thêm content strategy
-- ⏳ Advanced analytics pipeline — cần thêm event tracking
+- ⏳ AI-powered content optimization — cần thêm content strategy (Phase 5)
+- ⏳ Advanced analytics pipeline — cần thêm event tracking (Phase 5)
 - ⏳ Multi-tenant architecture — chưa cần thiết ở scale hiện tại
+
+### ✅ Phase 4c — Quality Fixes 🔧 (2026-03-20)
+- ✅ Rate limiter memory leak — `cleanup()` called every 100 `consume()` calls (`src/lib/rate-limit.ts`)
+- ✅ Crontab hardcoded paths + no MAILTO — `$HOME`-based paths, `MAILTO=` directive, failure logging (`scripts/crontab`)
+- ✅ `/api/ai` rate limiting not enforced — `publicApiRateLimit` now actually called (`src/app/api/ai/route.ts`)
+- ✅ `staleWhileRevalidate` dead code removed from `cacheFetch()` (`src/lib/redis.ts`)
+- ✅ `invalidateCachePattern` — replaced `KEYS` with safe `SCAN` + `UNLINK` + 10k threshold (`src/lib/redis.ts`)
+- ✅ `React.cache()` misuse in `internal-linking.ts` — removed (not effective outside React render tree)
+- ✅ RelatedContent CSS-in-JS hover → CSS Module `:hover` + keyboard focus styles
+- ✅ Sentry `ignoreErrors` strings → moved `NEXT_REDIRECT`/`NEXT_NOT_FOUND` to `beforeSend` hook
+- ✅ Sentry DSN `undefined` guard → `process.env.SENTRY_DSN ?? undefined`
+- ✅ CI/CD job dependencies missing → lint → test → build pipeline (`needs:` added)
+- ✅ CI/CD Codecov `fail_ci_if_error: false` → `true`
+- ✅ CI/CD missing `permissions:` block → added `contents: read, statuses: write`
+- ✅ Dead `ws` + `@types/ws` packages removed from `package.json`
+
+### ✅ Phase 4d — Sanity CMS Improvements 🔧 (2026-03-21)
+- ✅ Decision: keep Sanity cho blog (developer viết blog, cần PortableText editor)
+- ✅ Sanity client `useCdn: false` — ISR/CDN cache conflict fixed (`src/sanity/client.ts`)
+- ✅ `post` schema: alt text, excerpt, excerptVi, caption, ordering fields (`src/sanity/schemas/post.ts`)
+- ✅ `author` schema: shortBio, shortBioVi, role, linkedin, twitter, PortableText bio annotations (`src/sanity/schemas/author.ts`)
+- ✅ `category` schema: titleVi, description, descriptionVi, seoTitle, seoTitleVi, seoDescription, seoDescriptionVi, sort order (`src/sanity/schemas/category.ts`)
+- ✅ GROQ queries: new `postsQuery`, `authorsQuery`, `categoriesQuery`, `postSlugsQuery`, `postsByCategoryQuery` (`src/sanity/queries.ts`)
+- ✅ Blog listing page: excerpt, author role, categories, alt text, improved hover (`src/app/[locale]/blog/page.tsx`)
+- ✅ Blog detail page: excerpt lead, figure caption, author social links, improved PortableText serializers (`src/app/[locale]/blog/[slug]/page.tsx`)
+- ✅ Sanity backup script: local binary, NDJSON verify, compression, MAILTO, failure logging (`scripts/backup/backup-sanity.sh`)
+- ✅ `/api/ai` fetchBlog: wired Sanity GROQ via dynamic import (`src/app/api/ai/route.ts`)
 
 ---
 
@@ -266,11 +326,21 @@ SEO / GEO:
   src/app/api/og/route.tsx   ← Dynamic OG images
 
 Internal Linking:
-  src/components/internal-linking/RelatedContent.tsx ← Relevance-scored cross-link widget (service↔project)
-  src/lib/db/internal-linking.ts                    ← Query functions: getRelatedProjectsForService, getRelatedServicesForProject
+  src/components/internal-linking/RelatedContent.tsx          ← Relevance-scored cross-link widget (service↔project)
+  src/components/internal-linking/RelatedContent.module.css    ← CSS Module (hover, focus styles)
+  src/lib/db/internal-linking.ts                             ← Query functions (DB-level filtering, no React.cache misuse)
 
 AI Crawler API:
   src/app/api/ai/route.ts     ← Structured JSON + HTML view (services, projects, team, blog, pricing, sitemap)
+
+Sanity CMS (blog):
+  src/sanity/client.ts         ← useCdn=false (ISR fix)
+  src/sanity/queries.ts        ← 7 GROQ queries (posts, authors, categories, slugs, postsByAuthor)
+  src/sanity/schemas/post.ts   ← alt, excerpt, excerptVi, caption, ordering
+  src/sanity/schemas/author.ts ← shortBio, role, linkedin, twitter
+  src/sanity/schemas/category.ts ← bilingual fields, SEO fields, sort order
+  src/sanity/schemas/blockContent.ts
+  src/sanity/schemas/index.ts
 
 Edge + Monitoring:
   src/lib/auth/edge.ts
@@ -287,10 +357,13 @@ Deployment:
 Backup Strategy:
   scripts/backup/backup-db.sh
   scripts/backup/restore-db.sh
-  scripts/backup/backup-sanity.sh
+  scripts/backup/backup-sanity.sh      ← v2 (NDJSON verify, compression, MAILTO)
   scripts/backup/backup-cloudinary.sh
-  scripts/crontab
+  scripts/crontab                       ← v2 (MAILTO, failure logging)
   scripts/migrations/rollback.sh
+
+Security:
+  scripts/rotate-credentials.sh        ← Credential rotation script (openssl, step-by-step)
 
 Database Migrations:
   prisma/migrations/20260320_add_soft_delete_and_indexes/migration.sql ← soft delete + 20 indexes

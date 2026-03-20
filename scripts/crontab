@@ -9,26 +9,38 @@
 # │ │ │ │ │
 # ───┬──┬──┬──┬───────────────────────────────────────────────────────────────
 #
-# Database backup — daily at 02:00 UTC (09:00 Vietnam time)
-0 2 * * * cd /path/to/loop-website && ./scripts/backup/backup-db.sh >> logs/backup.log 2>&1
+# Alert on failures — replace with your actual email or monitoring endpoint
+MAILTO=alerts@loop.vn
 
-# Sanity CMS backup — every 6 hours
-0 */6 * * * cd /path/to/loop-website && ./scripts/backup/backup-sanity.sh >> logs/sanity-backup.log 2>&1
+# ─── Database backup — daily at 02:00 UTC (09:00 Vietnam time) ─────────────
+# Resolve project path from HOME so it works across different systems
+# Requires: backup-db.sh (scripts/backup/)
+0 2 * * * /bin/bash -l -c 'cd "$HOME/loop-website" 2>/dev/null || cd /opt/loop-website 2>/dev/null; SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"; mkdir -p "$SCRIPT_DIR/../logs"; "$SCRIPT_DIR/scripts/backup/backup-db.sh" >> "$SCRIPT_DIR/../logs/backup.log" 2>&1'
 
-# Cloudinary media backup — weekly on Sunday at 03:00 UTC
-0 3 * * 0 cd /path/to/loop-website && ./scripts/backup/backup-cloudinary.sh >> logs/cloudinary-backup.log 2>&1
+# ─── Sanity CMS backup — every 6 hours ─────────────────────────────────────
+# Sanity exports content to a local file; logs to logs/sanity-backup.log
+0 */6 * * * /bin/bash -l -c 'SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"; mkdir -p "$SCRIPT_DIR/../logs"; "$SCRIPT_DIR/scripts/backup/backup-sanity.sh" >> "$SCRIPT_DIR/../logs/sanity-backup.log" 2>&1 || echo "FAILED at $(date)" >> "$SCRIPT_DIR/../logs/sanity-backup.log"'
 
-# Prune old audit logs — already handled by Inngest cron (src/lib/jobs/functions.ts)
+# ─── Cloudinary media manifest export — weekly on Sunday at 03:00 UTC ────────
+# Cloudinary stores media durably by default; this script exports a manifest
+# for audit/compliance purposes only.
+0 3 * * 0 /bin/bash -l -c 'SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"; mkdir -p "$SCRIPT_DIR/../logs"; "$SCRIPT_DIR/scripts/backup/backup-cloudinary.sh" >> "$SCRIPT_DIR/../logs/cloudinary-backup.log" 2>&1 || echo "FAILED at $(date)" >> "$SCRIPT_DIR/../logs/cloudinary-backup.log"'
+
+# ─── Audit log pruning — handled by Inngest cron (src/lib/jobs/functions.ts) ─
 # No server-side cron needed for this.
 
-# ─── Setup ───────────────────────────────────────────────────────────────────────
+# ─── Setup ───────────────────────────────────────────────────────────────────
 # 1. Make scripts executable:
 #      chmod +x scripts/backup/*.sh
 #
-# 2. Install crontab:
+# 2. Set MAILTO to your alert email:
+#      Replace alerts@loop.vn above with your actual address.
+#
+# 3. Ensure the project is cloned at $HOME/loop-website or /opt/loop-website.
+#     Adjust the cd path in each cron line if your setup differs.
+#
+# 4. Install crontab (the $ cd line handles paths automatically):
 #      crontab scripts/crontab
 #
-# 3. Create log directory:
-#      mkdir -p logs
-#
-# 4. For Vercel deployment, use Inngest cron instead (see src/lib/jobs/functions.ts)
+# 5. For Vercel / container deployments: use Inngest cron instead.
+#     See src/lib/jobs/functions.ts for Inngest job configuration.

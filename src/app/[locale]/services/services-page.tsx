@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "@/i18n/routing";
 import {
   Package,
@@ -22,6 +22,13 @@ import {
   Send,
 } from "lucide-react";
 import { toast } from "sonner";
+import {
+  trackServiceViewed,
+  trackCtaClick,
+  trackDemoClicked,
+  trackQuoteRequest,
+  getOrCreateSessionId,
+} from "@/lib/analytics/events";
 
 // ─── Types ──────────────────────────────────────────────────
 
@@ -156,6 +163,11 @@ export function ServicesPage({
 }) {
   const router = useRouter();
   const isVi = locale === "vi";
+
+  // Analytics — fire once on mount
+  useEffect(() => {
+    trackServiceViewed("services", isVi ? "Dịch Vụ Website" : "Web Services", { locale });
+  }, []);
   const [activeTab, setActiveTab] = useState<"template" | "custom">("template");
   const [selectedAttributes, setSelectedAttributes] = useState<string[]>([]);
   const [expandedTemplate, setExpandedTemplate] = useState<string | null>(null);
@@ -234,6 +246,14 @@ export function ServicesPage({
       return;
     }
 
+    // Track quote request before sending
+    trackQuoteRequest(
+      activeTab === "template" ? "template-custom" : "custom-build",
+      selectedFeatureList.length,
+      customTotal,
+      { locale }
+    );
+
     setOrderSubmitting(true);
     try {
       const res = await fetch("/api/services/order", {
@@ -298,7 +318,7 @@ export function ServicesPage({
           <FadeIn delay={0.15}>
             <div className="mx-auto mt-10 flex max-w-md rounded-xl border border-slate-800 bg-slate-900/80 p-1">
               <button
-                onClick={() => setActiveTab("template")}
+                onClick={() => { setActiveTab("template"); trackCtaClick("tab-template", "/services#templates", { locale }); }}
                 className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold transition-all ${
                   activeTab === "template"
                     ? "bg-blue-600 text-white shadow-lg shadow-blue-600/25"
@@ -309,7 +329,7 @@ export function ServicesPage({
                 {isVi ? "Web Gói" : "Template"}
               </button>
               <button
-                onClick={() => setActiveTab("custom")}
+                onClick={() => { setActiveTab("custom"); trackCtaClick("tab-custom", "/services#custom", { locale }); }}
                 className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold transition-all ${
                   activeTab === "custom"
                     ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/25"
@@ -388,6 +408,7 @@ export function ServicesPage({
                             href={tpl.demoUrl}
                             target="_blank"
                             rel="noopener noreferrer"
+                            onClick={() => { trackDemoClicked(tpl.slug, { locale }); trackCtaClick(`template-demo-${tpl.slug}`, tpl.demoUrl, { locale }); }}
                             className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 transition-opacity group-hover:opacity-100"
                           >
                             <span className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white">
@@ -490,9 +511,9 @@ export function ServicesPage({
                             </a>
                             <button
                               onClick={() => {
-                                // For template: set the template as selected and open order form
                                 setSelectedAttributes([]);
                                 setActiveTab("custom");
+                                trackCtaClick(`template-select-${tpl.slug}`, `/${locale}/services#custom`, { locale });
                                 toast.info(isVi ? "Vui lòng chọn tính năng và gửi yêu cầu" : "Please select features and submit request");
                               }}
                               className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-blue-600 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
@@ -691,6 +712,7 @@ export function ServicesPage({
                             toast.warning(isVi ? "Vui lòng chọn ít nhất 1 tính năng" : "Please select at least 1 feature");
                             return;
                           }
+                          trackCtaClick("pricing-calculator-request", `/${locale}/services#custom`, { locale });
                           setShowOrderForm(true);
                         }}
                         className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 py-3 text-sm font-semibold text-white transition-colors hover:bg-indigo-700"

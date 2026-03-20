@@ -73,8 +73,6 @@ export interface CacheOptions {
   key: string;
   /** Time-to-live in seconds (default: 5 minutes) */
   ttl?: number;
-  /** Whether to return stale data while revalidating (default: true) */
-  staleWhileRevalidate?: boolean;
 }
 
 /**
@@ -93,7 +91,7 @@ export async function cacheFetch<T>(
   options: CacheOptions,
   fetcher: () => Promise<T>
 ): Promise<T> {
-  const { key, ttl = 300, staleWhileRevalidate = true } = options;
+  const { key, ttl = 300 } = options;
 
   // No Redis — bypass cache entirely
   if (!redis) {
@@ -141,16 +139,40 @@ export async function invalidateCache(...keys: string[]): Promise<void> {
  * Invalidate all keys matching a prefix pattern.
  * Useful for sweeping stale data after major updates.
  *
- * Note: KEYS/DEL pattern scan — safe for small-to-medium keyspaces.
- * For large keyspaces use SSCAN + UNLINK in production.
+ * ⚠️  SAFETY: Uses SCAN (not KEYS) to iterate in batches to avoid
+ *     blocking the Redis event loop on large keyspaces.
+ *     Keys are deleted asynchronously with UNLINK.
+ *     Threshold guard: aborts if >10,000 keys match to prevent
+ *     accidental mass eviction in production.
  */
 export async function invalidateCachePattern(prefix: string): Promise<void> {
   if (!redis) return;
+
+  const MAX_KEYS = 10_000;
+  let cursor = 0;
+  let totalFound = 0;
+
   try {
-    const keys = await redis.keys(prefix);
-    if (keys.length > 0) {
-      await redis.del(...keys);
-    }
+    do {
+      // SCAN returns [nextCursor, keys[]]
+      const [nextCursor, keys] = await redis.scan(cursor, {
+        match: `${prefix}*`,
+        count: 100, // process 100 keys per iteration
+      });
+      cursor = Number(nextCursor);
+
+      if (keys.length > 0) {
+        totalFound += keys.length;
+        if (totalFound > MAX_KEYS) {
+          console.warn(
+            `[Cache] Pattern "${prefix}" matched ${totalFound} keys (>${MAX_KEYS} threshold). Aborting.`
+          );
+          return;
+        }
+        // UNLINK is async — non-blocking key deletion
+        await redis.unlink(...(keys as string[]));
+      }
+    } while (cursor !== 0);
   } catch (err) {
     console.warn(`[Cache] Failed to invalidate pattern "${prefix}":`, err);
   }

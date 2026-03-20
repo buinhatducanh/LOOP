@@ -1,10 +1,10 @@
 # ─── LOOP Website — GitHub Actions CI ────────────────────────────────────────────
 # Runs on every push and pull request to main/develop branches.
 #
-# Jobs:
+# Jobs (sequential via needs):
 #   1. lint       — ESLint + TypeScript type check
-#   2. test       — Vitest unit tests with coverage
-#   3. build      — Next.js production build
+#   2. test       — Vitest unit tests with coverage  (depends on lint passing)
+#   3. build      — Next.js production build       (depends on test passing)
 #
 # Secrets needed (in GitHub repo Settings → Secrets):
 #   DATABASE_URL, AUTH_SECRET, NEXT_PUBLIC_SANITY_PROJECT_ID, etc.
@@ -17,15 +17,23 @@ on:
   pull_request:
     branches: [main, develop]
 
+# Cancel in-progress runs on the same branch/ref
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+
+# Minimal permissions — read-only where possible
+permissions:
+  contents: read
+  statuses: write   # needed to report CI status on PRs
 
 jobs:
   lint:
     name: Lint & Type Check
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout
@@ -55,6 +63,10 @@ jobs:
     name: Unit Tests
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # Test job runs only after lint passes
+    needs: lint
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout
@@ -74,9 +86,10 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
-      - name: Run tests
+      - name: Run tests with coverage
         run: npm run test:coverage
         env:
+          # Disable external services in CI so tests run without real credentials
           UPSTASH_REDIS_REST_URL: ""
           UPSTASH_REDIS_REST_TOKEN: ""
           INNGEST_SIGNING_KEY: ""
@@ -84,16 +97,20 @@ jobs:
           SENTRY_DSN: ""
 
       - name: Upload coverage to Codecov
-        if: always()
         uses: codecov/codecov-action@v4
         with:
           files: ./coverage/lcov.info
-          fail_ci_if_error: false
+          # Fail the CI if Codecov upload itself fails (network, token, etc.)
+          fail_ci_if_error: true
 
   build:
     name: Production Build
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # Build runs only after tests pass
+    needs: test
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout

@@ -16,6 +16,26 @@ import {
   publicApiRateLimit,
 } from "@/lib/redis";
 
+// ─── IP extraction utility ─────────────────────────────────────────────────────
+
+/**
+ * Extract client IP from request headers.
+ *
+ * In Vercel, x-forwarded-for is set by the reverse proxy.
+ * In other deployments, falls back to x-real-ip.
+ * Returns "127.0.0.1" as last resort.
+ *
+ * ⚠️  x-forwarded-for can be spoofed by clients in untrusted proxy setups.
+ *     Only trust it when behind Cloudflare/Vercel or a known reverse proxy.
+ */
+export function extractClientIp(req: NextRequest): string {
+  return (
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    req.headers.get("x-real-ip") ??
+    "127.0.0.1"
+  );
+}
+
 // ─── In-memory fallback (dev / no-Redis) ─────────────────────────────────────
 
 interface RateLimitEntry {
@@ -26,41 +46,48 @@ interface RateLimitEntry {
 interface RateLimitConfig {
   limit: number;
   window: number;
-  refillRate?: number;
 }
 
-/** Sliding-window in-memory rate limiter — do NOT use in production multi-instance deployments */
+/**
+ * Sliding-window in-memory rate limiter.
+ *
+ * ⚠️  LIMITATION: Do NOT use in production multi-instance deployments.
+ *     The in-memory store is per-process and will not share state
+ *     across multiple serverless invocations or containers.
+ *
+ * Memory safety: cleanup runs every 100 consume() calls to prevent
+ * unbounded Map growth in long-running processes.
+ */
 export class RateLimiter {
   private store = new Map<string, RateLimitEntry>();
   private config: RateLimitConfig;
+  private consumeCount = 0;
 
   constructor(config: RateLimitConfig) {
     this.config = config;
   }
 
-  private getKey(request: Request): string {
-    const forwarded =
-      request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-      request.headers.get("x-real-ip") ??
-      "unknown";
-    return forwarded;
-  }
-
-  consume(request: Request): { allowed: boolean; remaining: number; reset: number } {
-    const key = this.getKey(request);
+  consume(ip: string): { allowed: boolean; remaining: number; reset: number } {
     const now = Date.now();
-    const { limit, window, refillRate = 1 } = this.config;
+    const { limit, window } = this.config;
 
-    let entry = this.store.get(key);
+    // Periodic cleanup every 100 requests to prevent unbounded memory growth
+    this.consumeCount++;
+    if (this.consumeCount % 100 === 0) {
+      this.cleanup(window);
+    }
+
+    let entry = this.store.get(ip);
 
     if (!entry) {
       entry = { tokens: limit - 1, lastRefill: now };
-      this.store.set(key, entry);
+      this.store.set(ip, entry);
       return { allowed: true, remaining: limit - 1, reset: now + window };
     }
 
     const elapsed = now - entry.lastRefill;
-    const tokensToAdd = Math.floor((elapsed / window) * refillRate * limit);
+    // Refill tokens based on elapsed time (refillRate = 1 token per window)
+    const tokensToAdd = Math.floor((elapsed / window) * limit);
 
     if (tokensToAdd > 0) {
       entry.tokens = Math.min(limit, entry.tokens + tokensToAdd);
@@ -75,6 +102,10 @@ export class RateLimiter {
     return { allowed: false, remaining: 0, reset: entry.lastRefill + window };
   }
 
+  /**
+   * Remove entries older than maxAgeMs.
+   * Called automatically every 100 consume() calls.
+   */
   cleanup(maxAgeMs = 5 * 60_000) {
     const cutoff = Date.now() - maxAgeMs;
     for (const [key, entry] of this.store.entries()) {
@@ -105,23 +136,18 @@ function getRateLimiter(key: RateLimiterKey) {
  *
  * Usage:
  *   const result = await applyRateLimit(req, "contact");
- *   if (!result.response) return; // allowed
- *   return result.response;       // denied
+ *   if (!result.allowed) return result.response; // denied
+ *   // continue with handler...
  */
 export async function applyRateLimit(
   req: NextRequest,
   limiterKey: RateLimiterKey
 ): Promise<{ allowed: boolean; response?: NextResponse }> {
   const limiter = getRateLimiter(limiterKey);
-
-  // Extract IP from Vercel / standard headers
-  const forwarded =
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    req.headers.get("x-real-ip") ??
-    "127.0.0.1";
+  const ip = extractClientIp(req);
 
   try {
-    const { success, remaining, reset } = await limiter.limit(forwarded);
+    const { success, remaining, reset } = await limiter.limit(ip);
 
     if (success) {
       return { allowed: true };

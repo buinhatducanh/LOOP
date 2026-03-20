@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo, useCallback } from "react";
+import { trackQuoteRequest, getOrCreateSessionId } from "@/lib/analytics/events";
 import {
   Calculator,
   ChevronDown,
@@ -418,6 +419,11 @@ function QuoteFormModal({
         const data = await res.json();
         throw new Error(data.error || "Đã có lỗi xảy ra");
       }
+
+      // Track successful quote request
+      trackQuoteRequest("custom-calculator", selectedItems.length, totalAmount, {
+        sessionId: getOrCreateSessionId(),
+      });
 
       onSubmitted();
     } catch (err) {

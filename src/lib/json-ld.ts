@@ -5,6 +5,11 @@
  * reference schemas: https://developers.google.com/search/docs/appearance/structured-data
  *
  * Usage: <JsonLd data={buildServiceJsonLd(props)} />
+ *
+ * Bilingual note:
+ *   Description fields use the site default locale (vi).
+ *   For truly bilingual sites, consider passing a `locale` param
+ *   and returning locale-specific descriptions from SiteSettings.
  */
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://loop.vn";
@@ -23,8 +28,7 @@ type JsonLdType =
   | "Product"
   | "Offer"
   | "FAQPage"
-  | "LocalBusiness"
-  | "ContactPage";
+  | "LocalBusiness";
 
 interface BaseJsonLd {
   "@context": JsonLdContext;
@@ -57,7 +61,10 @@ export function buildOrganizationJsonLd(): OrganizationJsonLd {
     name: "LOOP",
     url: SITE_URL,
     logo: `${SITE_URL}/logo.png`,
-    description: "Công ty thiết kế website và ứng dụng chuyên nghiệp tại Việt Nam",
+    // Description should come from SiteSettings in a fully i18n setup.
+    // Until that is wired, keep a concise default — crawlers will use it
+    // as a fallback when no page-specific description is available.
+    description: "LOOP — Professional website and web application design agency based in Vietnam.",
     foundingDate: "2016",
     numberOfEmployees: { "@type": "QuantitativeValue", value: 50 },
     sameAs: [
@@ -71,7 +78,7 @@ export function buildOrganizationJsonLd(): OrganizationJsonLd {
 
 // ─── WebSite (root) ───────────────────────────────────────────────────────────
 
-export function buildWebSiteJsonLd(): BaseJsonLd & {
+export interface WebSiteJsonLd extends BaseJsonLd {
   "@type": "WebSite";
   name: string;
   url: string;
@@ -80,7 +87,9 @@ export function buildWebSiteJsonLd(): BaseJsonLd & {
     target: { "@type": "EntryPoint"; urlTemplate: string };
     "query-input": string;
   };
-} {
+}
+
+export function buildWebSiteJsonLd(): WebSiteJsonLd {
   return {
     "@context": "https://schema.org",
     "@type": "WebSite",
@@ -304,15 +313,19 @@ export function buildBreadcrumbJsonLd(
 
 // ─── Product / Offer (Pricing) ───────────────────────────────────────────────
 
+export interface ProductJsonLd extends BaseJsonLd {
+  "@type": "Product";
+  name: string;
+  description?: string;
+  offers: { "@type": "Offer"; price: string; priceCurrency: string; availability: string };
+}
+
 export function buildProductJsonLd(opts: {
   name: string;
   description?: string;
   price: string;
   priceCurrency?: string;
-}): BaseJsonLd & {
-  "@type": "Product";
-  offers: { "@type": "Offer"; price: string; priceCurrency: string; availability: string };
-} {
+}): ProductJsonLd {
   return {
     "@context": "https://schema.org",
     "@type": "Product",
