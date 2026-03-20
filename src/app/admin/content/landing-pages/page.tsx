@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { type ColumnDef } from "@tanstack/react-table";
-import { DataTable } from "../../components/data-table";
+import { DataTable } from "../../../../components/data-table";
 import { Plus, Pencil, Trash2, Eye, EyeOff, X, Loader2, Layout, Globe } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";

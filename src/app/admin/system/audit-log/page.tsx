@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { type ColumnDef } from "@tanstack/react-table";
-import { DataTable } from "../../components/data-table";
+import { DataTable } from "../../../../components/data-table";
 
 interface AuditEntry {
   id: string;

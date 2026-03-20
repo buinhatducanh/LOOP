@@ -46,50 +46,51 @@ type NavGroup = { group: string; items: NavItem[] };
 type NavEntry = NavItem | NavGroup;
 
 // NOTE: All paths use /admin/* — no locale prefix for admin routes
+// Routes match the actual folder structure under src/app/admin/
 const navigation: NavEntry[] = [
   // Standalone items
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
-  // Nội dung
+  // Nội dung  → src/app/admin/content/{section}/page.tsx
   {
     group: "Nội dung",
     items: [
-      { name: "Trang chủ (Slider)", href: "/admin/home-sliders", icon: Image },
-      { name: "Landing Pages", href: "/admin/landing-pages", icon: LayoutTemplate },
-      { name: "Dịch vụ", href: "/admin/services", icon: Globe },
-      { name: "Dự án", href: "/admin/projects", icon: FolderKanban },
-      { name: "Đội ngũ", href: "/admin/team", icon: UsersRound },
-      { name: "Kỹ năng", href: "/admin/expertises", icon: Wrench },
-      { name: "Đánh giá", href: "/admin/testimonials", icon: Star },
-      { name: "Tin nhắn", href: "/admin/messages", icon: MessageSquare },
+      { name: "Trang chủ (Slider)", href: "/admin/content/home-sliders", icon: Image },
+      { name: "Landing Pages", href: "/admin/content/landing-pages", icon: LayoutTemplate },
+      { name: "Dịch vụ", href: "/admin/content/services", icon: Globe },
+      { name: "Dự án", href: "/admin/content/projects", icon: FolderKanban },
+      { name: "Đội ngũ", href: "/admin/content/team", icon: UsersRound },
+      { name: "Kỹ năng", href: "/admin/content/expertises", icon: Wrench },
+      { name: "Đánh giá", href: "/admin/content/testimonials", icon: Star },
+      { name: "Tin nhắn", href: "/admin/content/messages", icon: MessageSquare },
     ],
   },
-  // Kinh doanh
+  // Kinh doanh  → src/app/admin/sales/{section}/page.tsx
   {
     group: "Kinh doanh",
     items: [
-      { name: "Đơn hàng", href: "/admin/orders", icon: ShoppingCart },
-      { name: "Kho Giao Diện", href: "/admin/web-templates", icon: Layout },
-      { name: "Kho Tính Năng", href: "/admin/service-attributes", icon: Tag },
-      { name: "Dịch vụ Rời", href: "/admin/addon-services", icon: Puzzle },
-      { name: "XP & Rewards", href: "/admin/reward-tiers", icon: Gift },
-      { name: "Gói dịch vụ", href: "/admin/packages", icon: Package },
-      { name: "Hosting Plans", href: "/admin/hosting-plans", icon: Server },
-      { name: "Domain Prices", href: "/admin/domain-prices", icon: Globe },
-      { name: "Deployment Items", href: "/admin/deployment-items", icon: FileText },
-      { name: "Báo giá tính năng", href: "/admin/pricing-features", icon: Calculator },
-      { name: "Yêu cầu báo giá", href: "/admin/quote-requests", icon: FileQuestion },
+      { name: "Đơn hàng", href: "/admin/sales/orders", icon: ShoppingCart },
+      { name: "Kho Giao Diện", href: "/admin/sales/web-templates", icon: Layout },
+      { name: "Kho Tính Năng", href: "/admin/sales/service-attributes", icon: Tag },
+      { name: "Dịch vụ Rời", href: "/admin/sales/addon-services", icon: Puzzle },
+      { name: "XP & Rewards", href: "/admin/sales/reward-tiers", icon: Gift },
+      { name: "Gói dịch vụ", href: "/admin/sales/packages", icon: Package },
+      { name: "Hosting Plans", href: "/admin/sales/hosting-plans", icon: Server },
+      { name: "Domain Prices", href: "/admin/sales/domain-prices", icon: Globe },
+      { name: "Deployment Items", href: "/admin/sales/deployment-items", icon: FileText },
+      { name: "Báo giá tính năng", href: "/admin/sales/pricing-features", icon: Calculator },
+      { name: "Yêu cầu báo giá", href: "/admin/sales/quote-requests", icon: FileQuestion },
     ],
   },
-  // Hệ thống
+  // Hệ thống  → src/app/admin/system/{section}/page.tsx
   {
     group: "Hệ thống",
     items: [
-      { name: "Tài Khoản NV", href: "/admin/staff-users", icon: Users },
-      { name: "Phân quyền", href: "/admin/roles", icon: ShieldCheck },
-      { name: "Điểm thưởng", href: "/admin/points", icon: Coins },
-      { name: "Website KH", href: "/admin/websites", icon: Monitor },
-      { name: "Nhật ký", href: "/admin/audit-log", icon: ClipboardList },
-      { name: "Cài đặt", href: "/admin/settings", icon: Settings },
+      { name: "Tài Khoản NV", href: "/admin/system/staff-users", icon: Users },
+      { name: "Phân quyền", href: "/admin/system/roles", icon: ShieldCheck },
+      { name: "Điểm thưởng", href: "/admin/system/points", icon: Coins },
+      { name: "Website KH", href: "/admin/system/websites", icon: Monitor },
+      { name: "Nhật ký", href: "/admin/system/audit-log", icon: ClipboardList },
+      { name: "Cài đặt", href: "/admin/system/settings", icon: Settings },
     ],
   },
 ];
@@ -97,11 +98,16 @@ const navigation: NavEntry[] = [
 // ─── Filter nav items by role ──────────────────────────────────────────────────────
 
 function canAccessNav(userRoleLevel: number, href: string): boolean {
-  // Admin routes: only super_admin/admin/ceo can access
   if (href === "/admin") return true; // all staff
-  const adminOnlyRoutes = ["/users", "/roles", "/audit-log", "/settings"];
-  if (adminOnlyRoutes.some((r) => href === `/admin${r}`)) {
-    return userRoleLevel <= 1; // admin or higher
+  // Admin-only routes (roleLevel <= 1)
+  const adminOnlyRoutes = [
+    "/admin/system/staff-users",
+    "/admin/system/roles",
+    "/admin/system/audit-log",
+    "/admin/system/settings",
+  ];
+  if (adminOnlyRoutes.includes(href)) {
+    return userRoleLevel <= 1;
   }
   return true;
 }

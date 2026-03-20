@@ -2,8 +2,8 @@
 
 import { Suspense, useEffect, useState, useCallback, useRef } from "react";
 import { type ColumnDef } from "@tanstack/react-table";
-import { DataTable } from "../../components/data-table";
-import { FilterBar, type FilterDef } from "../components/filter-bar";
+import { DataTable } from "../../../../components/data-table";
+import { FilterBar, type FilterDef } from "../../../components/filter-bar";
 import { Eye, CheckCircle, Clock, ArrowUpRight, X } from "lucide-react";
 import { toast } from "sonner";
 

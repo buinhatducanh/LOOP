@@ -229,7 +229,7 @@ export default function LandingPageEditor({ params }: { params: Promise<{ id: st
     return (
       <div className="p-6 text-center">
         <p className="text-slate-400">Page not found</p>
-        <Link href="/admin/landing-pages" className="text-blue-400 hover:underline mt-2 inline-block">
+        <Link href="/admin/content/landing-pages" className="text-blue-400 hover:underline mt-2 inline-block">
           Back to list
         </Link>
       </div>
@@ -243,7 +243,7 @@ export default function LandingPageEditor({ params }: { params: Promise<{ id: st
         <div className="flex items-center justify-between px-6 py-4">
           <div className="flex items-center gap-4">
             <Link
-              href="/admin/landing-pages"
+              href="/admin/content/landing-pages"
               className="p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />

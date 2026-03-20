@@ -272,7 +272,7 @@ export default function AdminDashboardPage() {
         <div className="rounded-xl border border-slate-800 bg-slate-900/50">
           <div className="flex items-center justify-between border-b border-slate-800 px-5 py-4">
             <h2 className="font-semibold text-white">Đơn hàng gần đây</h2>
-            <a href="/admin/orders" className="flex items-center gap-1 text-sm text-blue-400 hover:underline">
+            <a href="/admin/sales/orders" className="flex items-center gap-1 text-sm text-blue-400 hover:underline">
               Xem tất cả <ArrowUpRight size={14} />
             </a>
           </div>
@@ -304,7 +304,7 @@ export default function AdminDashboardPage() {
         <div className="rounded-xl border border-slate-800 bg-slate-900/50">
           <div className="flex items-center justify-between border-b border-slate-800 px-5 py-4">
             <h2 className="font-semibold text-white">Tin nhắn gần đây</h2>
-            <a href="/admin/messages" className="flex items-center gap-1 text-sm text-blue-400 hover:underline">
+            <a href="/admin/content/messages" className="flex items-center gap-1 text-sm text-blue-400 hover:underline">
               Xem tất cả <ArrowUpRight size={14} />
             </a>
           </div>
