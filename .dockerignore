@@ -1,0 +1,61 @@
+# ─── LOOP Website — .dockerignore ───────────────────────────────────────────────
+# Files excluded from the Docker build context (faster builds, smaller images)
+
+# Dependencies
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Build outputs
+.next
+out
+dist
+build
+
+# Environment files (NEVER include these in the image)
+.env
+.env.local
+.env.*.local
+!.env.example   # Only the template is allowed
+
+# Development files
+.git
+.gitignore
+*.md
+!README.md
+.check-admin.ts
+
+# Editor / IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test coverage
+coverage
+.nyc_output
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Logs
+logs
+*.log
+
+# Messages (temporary files)
+messages/
+
+# Vercel
+.vercel
+.now
+
+# Temp files
+*.tmp
+*.temp
+.cache

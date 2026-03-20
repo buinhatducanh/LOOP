@@ -1,0 +1,56 @@
+# ─── LOOP Website — Docker Compose ─────────────────────────────────────────────
+# Development & self-hosted production setup
+#
+# Quick start:
+#   cp .env.example .env.local   # fill in your values
+#   docker compose up --build    # starts the app on :3000
+#
+# Production:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: loop-website
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    env_file:
+      - .env.local
+    environment:
+      # Override any env vars here if not using .env.local
+      - NODE_ENV=production
+      - NEXT_TELEMETRY_DISABLED=1
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          # Prevent the container from using more than 1GB RAM
+          memory: 1G
+
+  # Optional: Redis (only needed when UPSTASH_REDIS_REST_URL is not set)
+  # Uncomment to enable local Redis for rate limiting / caching
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: loop-redis
+  #   restart: unless-stopped
+  #   ports:
+  #     - "6379:6379"
+  #   volumes:
+  #     - redis_data:/data
+  #   command: redis-server --appendonly yes
+  #   healthcheck:
+  #     test: ["CMD", "redis-cli", "ping"]
+  #     interval: 30s
+  #     timeout: 5s
+  #     retries: 3
+
+# volumes:
+#   redis_data:

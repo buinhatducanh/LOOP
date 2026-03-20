@@ -3,6 +3,8 @@ import { MemberPage } from "../member-page";
 import { getTeamMemberBySlug, getTeamMembers, getProjects } from "@/lib/db/queries";
 import { notFound } from "next/navigation";
 
+export const revalidate = 3600; // ISR — revalidate every hour
+
 // Placeholder for missing data
 const PENDING = "(đang cập nhật)";
 

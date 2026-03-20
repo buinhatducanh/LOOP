@@ -3,7 +3,8 @@ import { client } from '@/sanity/client';
 import { postsQuery } from '@/sanity/queries';
 import { urlForImage } from '@/sanity/image';
 
-export const dynamic = 'force-dynamic';
+// ISR — revalidate every 5 minutes (blog posts don't change every second)
+export const revalidate = 300;
 
 export async function GET() {
     const posts = await client.fetch(postsQuery);

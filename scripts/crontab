@@ -1,0 +1,34 @@
+# ─── LOOP Website — Cron Schedule ─────────────────────────────────────────────
+# Add to crontab:  crontab -e
+#
+# ┌───────────── minute (0 - 59)
+# │ ┌───────────── hour (0 - 23)
+# │ │ ┌───────────── day of month (1 - 31)
+# │ │ │ ┌───────────── month (1 - 12)
+# │ │ │ │ ┌───────────── day of week (0 - 6) (Sunday = 0)
+# │ │ │ │ │
+# ───┬──┬──┬──┬───────────────────────────────────────────────────────────────
+#
+# Database backup — daily at 02:00 UTC (09:00 Vietnam time)
+0 2 * * * cd /path/to/loop-website && ./scripts/backup/backup-db.sh >> logs/backup.log 2>&1
+
+# Sanity CMS backup — every 6 hours
+0 */6 * * * cd /path/to/loop-website && ./scripts/backup/backup-sanity.sh >> logs/sanity-backup.log 2>&1
+
+# Cloudinary media backup — weekly on Sunday at 03:00 UTC
+0 3 * * 0 cd /path/to/loop-website && ./scripts/backup/backup-cloudinary.sh >> logs/cloudinary-backup.log 2>&1
+
+# Prune old audit logs — already handled by Inngest cron (src/lib/jobs/functions.ts)
+# No server-side cron needed for this.
+
+# ─── Setup ───────────────────────────────────────────────────────────────────────
+# 1. Make scripts executable:
+#      chmod +x scripts/backup/*.sh
+#
+# 2. Install crontab:
+#      crontab scripts/crontab
+#
+# 3. Create log directory:
+#      mkdir -p logs
+#
+# 4. For Vercel deployment, use Inngest cron instead (see src/lib/jobs/functions.ts)

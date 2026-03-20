@@ -1,6 +1,11 @@
 import { prisma } from "@/lib/prisma";
+import { cache } from "react";
 
-export async function getSiteSettings(): Promise<Record<string, string>> {
+// ─── Cached versions — React cache() deduplicates calls within a render tree ──
+// Use these in Server Components for public pages. They prevent redundant DB hits
+// when the same query is called multiple times (e.g. in layout + page).
+
+export const getCachedSiteSettings = cache(async (): Promise<Record<string, string>> => {
   try {
     const settings = await prisma.siteSetting.findMany();
     const map: Record<string, string> = {};
@@ -11,23 +16,23 @@ export async function getSiteSettings(): Promise<Record<string, string>> {
   } catch {
     return {};
   }
-}
+});
 
-export async function getServices() {
+export const getCachedServices = cache(async () => {
   return prisma.service.findMany({
     where: { isActive: true },
     orderBy: { sortOrder: "asc" },
   });
-}
+});
 
-export async function getServiceBySlug(slug: string) {
+export const getCachedServiceBySlug = cache(async (slug: string) => {
   return prisma.service.findUnique({
     where: { slug },
     include: { projects: { where: { isPublished: true }, orderBy: { sortOrder: "asc" } } },
   });
-}
+});
 
-export async function getProjects() {
+export const getCachedProjects = cache(async () => {
   return prisma.project.findMany({
     where: { isPublished: true },
     include: {
@@ -36,9 +41,9 @@ export async function getProjects() {
     },
     orderBy: { sortOrder: "asc" },
   });
-}
+});
 
-export async function getProjectBySlug(slug: string) {
+export const getCachedProjectBySlug = cache(async (slug: string) => {
   return prisma.project.findUnique({
     where: { slug },
     include: {
@@ -46,6 +51,72 @@ export async function getProjectBySlug(slug: string) {
       teamMember: { select: { id: true, name: true, slug: true, role: true, image: true } },
     },
   });
+});
+
+export const getCachedTestimonials = cache(async () => {
+  return prisma.testimonial.findMany({
+    where: { isActive: true },
+    orderBy: { sortOrder: "asc" },
+  });
+});
+
+export const getCachedTeamMembers = cache(async () => {
+  return prisma.teamMember.findMany({
+    where: { isActive: true },
+    orderBy: [{ roleLevel: "asc" }, { sortOrder: "asc" }],
+    include: {
+      memberExpertise: {
+        include: { expertise: true },
+      },
+    },
+  });
+});
+
+export const getCachedTeamMemberBySlug = cache(async (slug: string) => {
+  return prisma.teamMember.findUnique({
+    where: { slug },
+    include: {
+      memberExpertise: {
+        include: { expertise: true },
+      },
+    },
+  });
+});
+
+export const getCachedHomeSliders = cache(async () => {
+  return prisma.homeSlider.findMany({
+    where: { isActive: true },
+    orderBy: { sortOrder: "asc" },
+  });
+});
+
+export const getCachedHomeVideo = cache(async () => {
+  return prisma.homeVideo.findFirst({
+    where: { isActive: true },
+    orderBy: { sortOrder: "asc" },
+  });
+});
+
+// ─── Legacy named exports (backward compat) ───────────────────────────────────
+
+export async function getSiteSettings(): Promise<Record<string, string>> {
+  return getCachedSiteSettings();
+}
+
+export async function getServices() {
+  return getCachedServices();
+}
+
+export async function getServiceBySlug(slug: string) {
+  return getCachedServiceBySlug(slug);
+}
+
+export async function getProjects() {
+  return getCachedProjects();
+}
+
+export async function getProjectBySlug(slug: string) {
+  return getCachedProjectBySlug(slug);
 }
 
 export async function getPricingPlans() {
@@ -56,10 +127,7 @@ export async function getPricingPlans() {
 }
 
 export async function getTestimonials() {
-  return prisma.testimonial.findMany({
-    where: { isActive: true },
-    orderBy: { sortOrder: "asc" },
-  });
+  return getCachedTestimonials();
 }
 
 export async function createContactMessage(data: {
@@ -85,33 +153,14 @@ export async function getUserByGoogleId(googleId: string) {
 }
 
 export async function getTeamMembers() {
-  return prisma.teamMember.findMany({
-    where: { isActive: true },
-    orderBy: [{ roleLevel: "asc" }, { sortOrder: "asc" }],
-    include: {
-      memberExpertise: {
-        include: {
-          expertise: true,
-        },
-      },
-    },
-  });
+  return getCachedTeamMembers();
 }
 
 export async function getTeamMemberBySlug(slug: string) {
-  return prisma.teamMember.findUnique({
-    where: { slug },
-    include: {
-      memberExpertise: {
-        include: {
-          expertise: true,
-        },
-      },
-    },
-  });
+  return getCachedTeamMemberBySlug(slug);
 }
 
-// ─── Dual Service Model ─────────────────────────────────────
+// ─── Dual Service Model ───────────────────────────────────────────────────────
 
 export async function getWebTemplates() {
   return prisma.webTemplate.findMany({
@@ -158,12 +207,12 @@ export async function getServiceAttributes() {
 export async function getDualServicesData() {
   const [templates, attributes] = await Promise.all([
     getWebTemplates(),
-    getServiceAttributesByTier(), // Include parent/children for disable logic
+    getServiceAttributes(),
   ]);
   return { templates, attributes };
 }
 
-// ─── Platform Architecture ────────────────────────────────────
+// ─── Platform Architecture ─────────────────────────────────────────────────────
 
 export async function getServiceAttributesByTier(tier?: "basic" | "advanced") {
   return prisma.serviceAttribute.findMany({
@@ -278,17 +327,10 @@ export async function getPricingPackagesData() {
   return { webPackages, featureCategories, hostingPlans, domainPrices, deploymentItems };
 }
 
-// Home Slider queries
 export async function getHomeSliders() {
-  return prisma.homeSlider.findMany({
-    where: { isActive: true },
-    orderBy: { sortOrder: "asc" },
-  });
+  return getCachedHomeSliders();
 }
 
 export async function getHomeVideo() {
-  return prisma.homeVideo.findFirst({
-    where: { isActive: true },
-    orderBy: { sortOrder: "asc" },
-  });
+  return getCachedHomeVideo();
 }

@@ -5,6 +5,8 @@ import { PortableText } from '@portabletext/react';
 import { ArrowLeft, Clock, Calendar, User, Tag } from 'lucide-react';
 import Image from 'next/image';
 import { Breadcrumbs } from "@/components/shared/Breadcrumbs";
+import JsonLd from "@/components/seo/JsonLd";
+import { buildBlogPostJsonLd, buildBreadcrumbJsonLd } from "@/lib/json-ld";
 import { client } from '@/sanity/client';
 import { postBySlugQuery, postsQuery } from '@/sanity/queries';
 import { urlForImage } from '@/sanity/image';
@@ -77,27 +79,19 @@ export default async function BlogPostPage({ params }: { params: Promise<{ local
         plainTextDescription = body.filter((b: any) => b._type === 'block' && b.children).map((b: any) => b.children.map((c: any) => c.text).join('')).join('\n').substring(0, 160) + '...';
     }
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://loop.vn';
-    const jsonLd = {
-        '@context': 'https://schema.org',
-        '@type': 'BlogPosting',
-        headline: title,
+    const jsonLd = buildBlogPostJsonLd({
+        title,
         description: plainTextDescription,
-        image: post.mainImage ? [urlForImage(post.mainImage).width(1200).url()] : [],
-        datePublished: post.publishedAt,
-        dateModified: post.publishedAt,
-        author: [{
-            '@type': 'Person',
-            name: post.authorName || (isVn ? 'Đội ngũ LOOP' : 'LOOP Team'),
-        }],
-        publisher: {
-            '@type': 'Organization',
-            name: 'LOOP',
-            logo: {
-                '@type': 'ImageObject',
-                url: `${siteUrl}/logo.png`,
-            },
-        },
-    };
+        image: post.mainImage ? urlForImage(post.mainImage).width(1200).url() : undefined,
+        authorName: post.authorName || (isVn ? 'Đội ngũ LOOP' : 'LOOP Team'),
+        publishedAt: post.publishedAt,
+        slug,
+    });
+    const breadcrumbJsonLd = buildBreadcrumbJsonLd([
+        { name: isVn ? 'Trang chủ' : 'Home', url: `/${locale}` },
+        { name: isVn ? 'Blog' : 'Blog', url: `/${locale}/blog` },
+        { name: title },
+    ]);
 
     // Custom serializers for PortableText to match the site's dark theme
     const portableTextComponents = {
@@ -148,11 +142,9 @@ export default async function BlogPostPage({ params }: { params: Promise<{ local
     };
 
     return (
-        <article style={{ color: "#FFFFFF", minHeight: "100vh", padding: "40px 24px 80px" }}>
-            <script
-                type="application/ld+json"
-                dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-            />
+        <>
+            <JsonLd data={jsonLd} />
+            <JsonLd data={breadcrumbJsonLd} />
             <div style={{ maxWidth: "800px", margin: "0 auto" }}>
                 <Breadcrumbs
                     locale={locale}
@@ -239,6 +231,6 @@ export default async function BlogPostPage({ params }: { params: Promise<{ local
                 )}
 
             </div>
-        </article>
+        </>
     );
 }

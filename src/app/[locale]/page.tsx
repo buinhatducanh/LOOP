@@ -1,10 +1,14 @@
 import type { Metadata } from "next";
-import { getServices, getProjects, getTestimonials, getSiteSettings, getTeamMembers, getHomeSliders, getHomeVideo } from "@/lib/db/queries";
+import { getCachedSiteSettings, getCachedServices, getCachedProjects, getCachedTestimonials, getCachedTeamMembers, getCachedHomeSliders, getCachedHomeVideo } from "@/lib/db/queries";
 import { services as mockServices, projects as mockProjects, testimonials as mockTestimonials, mockTeamMembers } from "@/data/mockData";
 import JsonLd from "@/components/seo/JsonLd";
 import { HomePage } from "./home-page";
 
 import { getTranslations } from "next-intl/server";
+
+// ISR — revalidate every 5 minutes
+// This is the most-visited page; caching dramatically reduces DB load and TTFB.
+export const revalidate = 300;
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
@@ -25,7 +29,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 
 export default async function Page() {
   let services, projects, testimonials, team;
-  const siteSettings = await getSiteSettings();
+  const siteSettings = await getCachedSiteSettings();
 
   // Get banner settings
   const banners = [
@@ -43,8 +47,8 @@ export default async function Page() {
   let dbVideo: any = null;
 
   try {
-    dbSliders = await getHomeSliders();
-    dbVideo = await getHomeVideo();
+    dbSliders = await getCachedHomeSliders();
+    dbVideo = await getCachedHomeVideo();
   } catch (e) {
     // Tables may not exist yet - use fallback
     console.log("HomeSlider tables not found, using fallback");
@@ -69,7 +73,7 @@ export default async function Page() {
 
   try {
     const [dbServices, dbProjects, dbTestimonials, dbTeam] = await Promise.all([
-      getServices(), getProjects(), getTestimonials(), getTeamMembers(),
+      getCachedServices(), getCachedProjects(), getCachedTestimonials(), getCachedTeamMembers(),
     ]);
     services = dbServices.length > 0 ? dbServices.map((s) => ({
       id: s.slug, icon: s.icon, title: s.title, shortDescription: s.shortDescription,

@@ -4,6 +4,15 @@ import './globals.css';
 import JsonLd from '@/components/seo/JsonLd';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
+import { Inter } from 'next/font/google';
+import { buildOrganizationJsonLd, buildWebSiteJsonLd } from '@/lib/json-ld';
+
+const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-inter',
+  weight: ['400', '500', '600', '700'],
+});
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
@@ -32,7 +41,14 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
       siteName: "LOOP",
       title: "LOOP - Thiết kế Website & Ứng dụng chuyên nghiệp",
       description: "Công ty LOOP chuyên thiết kế website thương mại, app di động, phần mềm quản lý. Cam kết SEO top Google, hiệu suất 95+.",
-      images: [{ url: "/og-image.svg", width: 1200, height: 630, alt: "LOOP - Web Development Agency" }],
+      images: [
+        {
+          url: "/api/og?title=LOOP&description=Công+ty+thiết+kế+website+và+ứng+dụng+chuyên+nghiệp&type=website",
+          width: 1200,
+          height: 630,
+          alt: "LOOP - Web Development Agency",
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
@@ -59,38 +75,15 @@ export default async function RootLayout({ children, params }: { children: React
   const messages = await getMessages();
 
   return (
-    <html lang={locale}>
+    <html lang={locale} className={inter.variable}>
       <head>
         <link rel="manifest" href="/manifest.json" />
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <link rel="shortcut icon" href="/favicon.svg" />
         <link rel="apple-touch-icon" href="/icon-192.svg" />
         <meta name="theme-color" content="#020617" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
-        <JsonLd data={{
-          "@context": "https://schema.org",
-          "@type": "Organization",
-          name: "LOOP",
-          url: "https://loop.vn",
-          logo: "https://loop.vn/logo.png",
-          description: "Công ty thiết kế website và ứng dụng chuyên nghiệp",
-          foundingDate: "2016",
-          numberOfEmployees: { "@type": "QuantitativeValue", value: 50 },
-          sameAs: ["https://facebook.com/loop.vn", "https://linkedin.com/company/loop-vn"],
-        }} />
-        <JsonLd data={{
-          "@context": "https://schema.org",
-          "@type": "WebSite",
-          name: "LOOP",
-          url: "https://loop.vn",
-          potentialAction: {
-            "@type": "SearchAction",
-            target: "https://loop.vn/search?q={search_term_string}",
-            "query-input": "required name=search_term_string",
-          },
-        }} />
+        <JsonLd data={buildOrganizationJsonLd()} />
+        <JsonLd data={buildWebSiteJsonLd()} />
       </head>
       <body>
         <NextIntlClientProvider messages={messages}>

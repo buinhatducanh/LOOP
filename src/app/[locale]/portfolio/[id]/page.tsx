@@ -1,8 +1,12 @@
 import type { Metadata } from "next";
 import { getProjects, getProjectBySlug, getServiceBySlug } from "@/lib/db/queries";
+import { getRelatedServicesForProject } from "@/lib/db/internal-linking";
 import { projects as mockProjects, services as mockServices } from "@/data/mockData";
 import { ProjectDetailPage } from "./project-detail-page";
+import { RelatedContent } from "@/components/internal-linking/RelatedContent";
 import { notFound } from "next/navigation";
+
+export const revalidate = 3600; // ISR — revalidate every hour
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -48,30 +52,42 @@ export default async function Page({ params }: Props) {
         const svc = await getServiceBySlug(serviceSlug);
         if (svc) relatedService = { id: svc.slug, title: svc.title };
       }
+      const relatedItems = await getRelatedServicesForProject(dbProject.id);
       return (
-        <ProjectDetailPage
-          project={{
-            id: dbProject.slug,
-            title: dbProject.title,
-            category: dbProject.category,
-            client: dbProject.client,
-            year: dbProject.year,
-            image: dbProject.image,
-            description: dbProject.description,
-            techStack: dbProject.techStack,
-            features: dbProject.features,
-            results: dbProject.results,
-            screenshots: dbProject.screenshots,
-            serviceId: serviceSlug,
-          }}
-          relatedService={relatedService}
-          teamMember={dbProject.teamMember ? {
-            id: dbProject.teamMember.slug,
-            name: dbProject.teamMember.name,
-            role: dbProject.teamMember.role,
-            image: dbProject.teamMember.image,
-          } : undefined}
-        />
+        <>
+          <ProjectDetailPage
+            project={{
+              id: dbProject.slug,
+              title: dbProject.title,
+              category: dbProject.category,
+              client: dbProject.client,
+              year: dbProject.year,
+              image: dbProject.image,
+              description: dbProject.description,
+              techStack: dbProject.techStack,
+              features: dbProject.features,
+              results: dbProject.results,
+              screenshots: dbProject.screenshots,
+              serviceId: serviceSlug,
+            }}
+            relatedService={relatedService}
+            teamMember={dbProject.teamMember ? {
+              id: dbProject.teamMember.slug,
+              name: dbProject.teamMember.name,
+              role: dbProject.teamMember.role,
+              image: dbProject.teamMember.image,
+            } : undefined}
+          />
+          <RelatedContent
+            variant="project-detail"
+            currentId={dbProject.id}
+            currentSlug={dbProject.slug}
+            currentCategory={dbProject.category}
+            currentServiceId={dbProject.serviceId}
+            currentTechStack={dbProject.techStack}
+            relatedItems={relatedItems}
+          />
+        </>
       );
     }
   } catch {}

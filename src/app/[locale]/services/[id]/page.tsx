@@ -1,8 +1,12 @@
 import type { Metadata } from "next";
 import { getServices, getServiceBySlug } from "@/lib/db/queries";
+import { getRelatedProjectsForService } from "@/lib/db/internal-linking";
 import { services as mockServices } from "@/data/mockData";
 import { ServiceDetailPage } from "./service-detail-page";
+import { RelatedContent } from "@/components/internal-linking/RelatedContent";
 import { notFound } from "next/navigation";
+
+export const revalidate = 3600; // ISR — revalidate every hour
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -42,19 +46,26 @@ export default async function Page({ params }: Props) {
   try {
     const dbService = await getServiceBySlug(id);
     if (dbService) {
+      const relatedItems = await getRelatedProjectsForService(dbService.id);
       return (
-        <ServiceDetailPage
-          service={{
-            id: dbService.slug, icon: dbService.icon, title: dbService.title,
-            shortDescription: dbService.shortDescription, longDescription: dbService.longDescription,
-            features: dbService.features, technologies: dbService.technologies,
-            startingPrice: dbService.startingPrice, deliveryTime: dbService.deliveryTime,
-            category: dbService.category,
-          }}
-          relatedProjects={dbService.projects.map((p) => ({
-            id: p.slug, title: p.title, client: p.client, image: p.image, results: p.results,
-          }))}
-        />
+        <>
+          <ServiceDetailPage
+            service={{
+              id: dbService.slug, icon: dbService.icon, title: dbService.title,
+              shortDescription: dbService.shortDescription, longDescription: dbService.longDescription,
+              features: dbService.features, technologies: dbService.technologies,
+              startingPrice: dbService.startingPrice, deliveryTime: dbService.deliveryTime,
+              category: dbService.category,
+            }}
+          />
+          <RelatedContent
+            variant="service-detail"
+            currentId={dbService.id}
+            currentSlug={dbService.slug}
+            currentCategory={dbService.category}
+            relatedItems={relatedItems}
+          />
+        </>
       );
     }
   } catch {}
