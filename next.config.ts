@@ -4,9 +4,9 @@ import createNextIntlPlugin from 'next-intl/plugin';
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
 const nextConfig: NextConfig = {
-  // Standalone output enables Docker self-hosted deployment.
-  // The Dockerfile copies only the required files (no node_modules in final image).
-  output: "standalone",
+  // NOTE: "standalone" output removed for Vercel deployment.
+  // Vercel handles its own build system and doesn't need standalone output.
+  // For Docker self-hosted, re-enable "standalone" and use the Dockerfile.
 
   transpilePackages: ["framer-motion"],
   images: {

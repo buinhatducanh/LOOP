@@ -1,38 +1,27 @@
 import { PrismaClient } from "@/generated/prisma/client";
-import { Pool } from "pg";
-import { PrismaPg } from "@prisma/adapter-pg";
+import { PrismaNeon } from "@prisma/adapter-neon";
+import { neon } from "@neondatabase/serverless";
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined };
 
 export const prisma = globalForPrisma.prisma ?? (() => {
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) {
-    console.warn("DATABASE_URL is not set yet!");
+    console.warn("DATABASE_URL is not set — Prisma will throw on first query.");
   }
 
-  // Neon serverless: connection pooler at the edge
-  // pool_max_conns defaults to NUMCPUS (up to 9) — keep it modest for serverless
-  const pool = new Pool({
-    connectionString: connectionString || "",
-    max: 5,                    // Max connections per instance (was unlimited → can exhaust pooler)
-    idleTimeoutMillis: 30_000, // Close idle connections after 30s (Neon closes after 10min)
-    connectionTimeoutMillis: 10_000, // Fail fast if can't connect within 10s
-  });
+  // Neon serverless uses WebSockets via @neondatabase/serverless.
+  // This adapter is optimized for Vercel serverless (Edge + Node runtimes).
+  // No connection pool management needed — Neon handles it at the pooler level.
+  const sql = neon(connectionString || "");
+  const adapter = new PrismaNeon(sql);
 
-  // Log connection events in development
-  if (process.env.NODE_ENV !== "production") {
-    pool.on("connect", () => {
-      // console.debug("[prisma] new pool connection");
-    });
-    pool.on("error", (err) => {
-      console.error("[prisma] pool error:", err.message);
-    });
-  }
-
-  const adapter = new PrismaPg(pool);
   return new PrismaClient({ adapter });
 })();
 
+// In development, share a single PrismaClient instance across hot reloads.
+// In production (Vercel), each serverless invocation gets its own instance,
+// so global caching is not needed (and is ignored).
 if (process.env.NODE_ENV !== "production") {
   globalForPrisma.prisma = prisma;
 }
