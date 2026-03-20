@@ -18,7 +18,7 @@ import {
   Search,
 } from "lucide-react";
 import { toast } from "sonner";
-import { FilterBar, type FilterDef } from "../components/filter-bar";
+import { FilterBar, type FilterDef } from "../../components/filter-bar";
 
 // ─── Types ──────────────────────────────────────────────────────
 
