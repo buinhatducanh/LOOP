@@ -83,7 +83,7 @@ export async function GET(
       ? ((post.title as string) || (post.titleVi as string) || '')
       : ((post.titleVi as string) || (post.title as string) || '');
 
-    const slug = post.slug?.current as string | undefined;
+    const slug = (post.slug as { current?: string } | undefined)?.current;
     if (!slug || !title) return;
 
     feed.addItem({

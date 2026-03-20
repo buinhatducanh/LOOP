@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/navigation";
+import Link from "next/link";
 import { Plus, X, GripVertical, Trash2, Pencil, Eye, EyeOff, Loader2, ArrowLeft, Save } from "lucide-react";
 import { toast } from "sonner";
 import { ImageUploader } from "@/components/ui/image-uploader";
