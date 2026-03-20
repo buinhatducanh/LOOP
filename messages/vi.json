@@ -13,6 +13,7 @@
         "pricing": "Bảng giá",
         "portfolio": "Dự án",
         "blog": "Tin tức",
+        "glossary": "Từ điển",
         "more": "Khác"
     },
     "Footer": {
@@ -362,6 +363,8 @@
         "aboutDescription": "LOOP - Đội ngũ 50+ chuyên gia, 8+ năm kinh nghiệm thiết kế website và ứng dụng cho doanh nghiệp.",
         "blogTitle": "Blog công nghệ | LOOP",
         "blogDescription": "Chia sẻ kiến thức thiết kế web, SEO, marketing online, xu hướng công nghệ mới nhất.",
+        "glossaryTitle": "Từ điển Thuật ngữ Web | LOOP",
+        "glossaryDescription": "Hơn 30 thuật ngữ web development được giải thích ngắn gọn, dễ hiểu. Từ SEO đến Docker — tất cả trong một trang.",
         "privacyTitle": "Chính sách Bảo mật | LOOP",
         "privacyDescription": "Chính sách bảo mật của LOOP - Cách chúng tôi thu thập, sử dụng và bảo vệ thông tin cá nhân của bạn.",
         "termsTitle": "Điều khoản Dịch vụ | LOOP",

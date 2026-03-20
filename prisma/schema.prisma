@@ -1147,3 +1147,32 @@ model DailyReward {
   @@unique([day])
   @@map("daily_rewards")
 }
+
+// ─── Server Analytics Events ──────────────────────────────────────────────
+// Stores raw analytics events for business intelligence dashboards.
+// Created by: src/lib/analytics/server.ts
+// NOTE: This table is optional — analytics still work via AuditLog if this model is not migrated.
+model ServerAnalyticsEvent {
+  id         String   @id @default(cuid())
+  event      String
+  properties Json     @default("{}")
+  sessionId  String?  @map("session_id")
+  visitorId  String?  @map("visitor_id")
+  userId     String?  @map("user_id")
+  locale     String?
+  page       String?
+  referrer   String?
+  userAgent  String?  @map("user_agent")
+  ip         String?
+  country    String?
+  city       String?
+  device     String?  // desktop, mobile, tablet
+  browser    String?
+  os         String?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([event])
+  @@index([createdAt])
+  @@index([sessionId])
+  @@map("server_analytics_events")
+}

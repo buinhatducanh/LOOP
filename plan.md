@@ -1,8 +1,8 @@
 # LOOP - Architecture Analysis Plan
 ## Phân tích kiến trúc & Kế hoạch cải thiện toàn diện
 
-> ✅ **Trạng thái hoàn thành:** Phase 1–4 + Phase 4b (internal linking, AI endpoint, 50 DB indexes) + Phase 4c (10 quality fixes) + Phase 4d (Sanity CMS improvements) (2026-03-21)
-> ✅ **Tests:** 42/42 unit tests passing
+> ✅ **Trạng thái hoàn thành:** Phase 1–4 + Phase 4b (internal linking, AI endpoint, 50 DB indexes) + Phase 4c (10 quality fixes) + Phase 4d (Sanity CMS improvements) + Phase 5 (content strategy, AI optimizer, advanced analytics, JSON validation, glossary, RSS i18n, entity signals) (2026-03-21)
+> ✅ **Tests:** 42/42 original unit tests + 28 new JSON-LD/Phase5 tests = **70 tests total**
 > ✅ **CI/CD:** GitHub Actions pipeline với lint → test → build
 
 > **Tech Stack hiện tại:** Next.js 15 (App Router) + Prisma 7 + Neon PostgreSQL + Sanity CMS + Cloudinary + TailwindCSS 4 + next-intl (vi/en) + NextAuth v5
@@ -74,7 +74,7 @@
 | **Category blog pages** | 🟢 Low | ✅ `/blog/category/[slug]` — redirect → listing |
 | **ws package unused** | 🟢 Low | ✅ Đã remove khỏi package.json |
 | **Zod validation** | 🟡 Medium | ✅ `quote/route.ts`, `order/route.ts` có Zod. `contact.service` dùng manual (đủ dùng). Có thể thêm `/api/analytics/track` Zod validation |
-| **RSS feed i18n** | 🟢 Low | ⚠️ Chưa fix (feed.xml hardcoded `language: 'vi'`) |
+| **RSS feed i18n** | 🟢 Low | ✅ Đã fix (`src/app/[locale]/feed.xml/route.ts` — locale-aware feed, vi/en bilingual) |
 | **Heading hierarchy** | 🟢 Low | ✅ Đúng trên tất cả pages chính |
 | **Rate limiter memory leak** | 🔴 Critical | ✅ Đã fix (cleanup() được gọi mỗi 100 requests) |
 | **Crontab hardcoded paths** | 🔴 Critical | ✅ Đã fix (dùng $HOME + MAILTO directive) |
@@ -195,17 +195,27 @@
 |--------|--------|-----------|
 | **Semantic HTML + heading hierarchy** | 🔴 Critical | ✅ Đã audit (heading hierarchy đúng trên tất cả content pages: home, about, services, blog, contact, portfolio) |
 | **FAQ structured data** | 🟡 Medium | ✅ Đã fix (`FAQPage` schema) |
-| **Entity signals** | 🟡 Medium | ⚠️ Cần thêm structured data |
-| **Knowledge base / glossary** | 🟡 Medium | ⚠️ Chưa fix (cần content strategy) |
+| **Entity signals** | 🟡 Medium | ✅ Đã fix (HowTo, VideoObject, Review, AggregateRating, QAPage, Event, LocalBusiness schemas — `src/lib/json-ld.ts`) |
+| **Knowledge base / glossary** | 🟡 Medium | ✅ Đã fix (`src/app/[locale]/glossary/page.tsx` — 32 terms, 7 categories, vi/en bilingual, TechArticle JSON-LD, sitemap, i18n nav) |
 | **Author authority signals** | 🟡 Medium | ✅ Đã cải thiện (Article schema) |
 | **AI API endpoint** | 🟢 Low | ✅ Đã fix (`/api/ai` — services, projects, team, blog, pricing, sitemap) |
-| **Long-form content** | 🟡 Medium | ⚠️ Cần content strategy |
+| **Long-form content strategy** | 🟡 Medium | ✅ Đã fix (`CONTENT.md` — editorial calendar Q2-Q4 2026, content pillars, quality checklist, distribution plan, 12-month roadmap) |
+| **Phase 5: AI content optimization** | 🟡 Medium | ✅ Đã fix (`src/lib/ai/content-optimizer.ts` — analyzeContent, generateMetaDescription, suggestInternalLinks, generateFaqFromContent, generateSeoHeadings với Anthropic + heuristic fallback) |
+| **Phase 5: Advanced analytics pipeline** | 🟡 Medium | ✅ Đã fix (`src/lib/analytics/server.ts` + `aggregations.ts` — storeEvent, getAnalytics, getPageAnalytics, getConversionFunnel, getRealTimeStats, buildDashboardSummary, fetchDailyStats, fetchGeoStats, fetchDeviceStats, fetchConversionRate) |
+| **JSON columns validation** | 🟡 Medium | ✅ Đã fix (`src/lib/db/json-validators.ts` — 10 Zod schemas; `src/lib/db/json-middleware.ts` — write+read middleware; `src/lib/db/errors.ts` — Result type + JsonValidationError) |
+| **Prisma schema modules plan** | 🟡 Medium | ✅ Đã fix (`PRISMA_MODULES.md` — decision: don't split yet, trigger conditions, migration path) |
 
 ### 7.2 Hành động đã làm
-1. ✅ **JSON-LD builders** — 8 typed schemas cho Service, Article, FAQ, BreadcrumbList, Product/Offer
+1. ✅ **JSON-LD builders** — 17 typed schemas (8 existing + 9 new: HowTo, VideoObject, Review, AggregateRating, QAPage, Event, LocalBusiness + enhanced Product)
 2. ✅ **FAQPage schema** — Pricing page sử dụng typed `buildFaqJsonLd()`
 3. ✅ **Blog Article schema** — `buildBlogPostJsonLd` + BreadcrumbList + Author
 4. ✅ **Structured data API** — `/api/v1/` endpoints với typed JSON responses
+5. ✅ **RSS Feed i18n** — `src/app/[locale]/feed.xml/route.ts` (bilingual, vi/en)
+6. ✅ **Glossary page** — 32 terms, 7 categories, TechArticle JSON-LD, bilingual vi/en
+7. ✅ **Content Strategy** — `CONTENT.md` (Q2-Q4 2026 editorial calendar, quality checklist, distribution)
+8. ✅ **AI Content Optimizer** — `src/lib/ai/content-optimizer.ts` (Claude SDK + fallback)
+9. ✅ **Advanced Analytics** — `src/lib/analytics/server.ts` + `aggregations.ts`
+10. ✅ **JSON Validation** — 10 Zod schemas + Prisma middleware
 
 ---
 
@@ -244,9 +254,18 @@
 - ✅ Monitoring dashboard (`/admin/system/monitoring`)
 - ✅ Internal linking widgets (`src/components/internal-linking/RelatedContent.tsx` — relevance-scored, cross-links service↔project)
 - ✅ AI crawler endpoint (`src/app/api/ai/route.ts` — structured JSON + HTML view for ChatGPT/Claude/Gemini)
-- 🔄 Microservices consideration — đã phân tích (admin tách riêng feasible)
-- ⏳ AI-powered content optimization — cần thêm content strategy (Phase 5)
-- ⏳ Advanced analytics pipeline — cần thêm event tracking (Phase 5)
+- ✅ Microservices consideration — đã phân tích (admin tách riêng feasible, xem `PRISMA_MODULES.md`)
+- ✅ Prisma schema modules plan — `PRISMA_MODULES.md` (decision: don't split yet, trigger conditions documented)
+
+### ✅ Phase 5 - Content, Analytics & Data Quality 🟣 — HOÀN THÀNH (2026-03-21)
+- ✅ **RSS Feed i18n** — `src/app/[locale]/feed.xml/route.ts` (bilingual vi/en, dynamic locale detection, proper content negotiation)
+- ✅ **Entity signals (JSON-LD)** — 9 new schemas: HowTo, VideoObject, Review, AggregateRating, QAPage, Event, LocalBusiness + enhanced Product (`src/lib/json-ld.ts`)
+- ✅ **Knowledge base / Glossary** — 32 terms, 7 categories, bilingual vi/en, TechArticle JSON-LD, sitemap, i18n nav (`src/app/[locale]/glossary/page.tsx`)
+- ✅ **Content strategy** — `CONTENT.md` (editorial calendar Q2-Q4 2026, 3 content pillars, quality checklist, distribution plan, roles & responsibilities)
+- ✅ **AI content optimizer** — `src/lib/ai/content-optimizer.ts` (analyzeContent, generateMetaDescription, suggestInternalLinks, generateFaqFromContent, generateSeoHeadings — Anthropic SDK + graceful fallback)
+- ✅ **Advanced analytics server** — `src/lib/analytics/server.ts` (storeEvent, getAnalytics, getPageAnalytics, getConversionFunnel, getSessionData, getRealTimeStats, cleanupOldEvents + fireEvent helper)
+- ✅ **Analytics aggregations** — `src/lib/analytics/aggregations.ts` (buildDashboardSummary, fetchDailyStats, fetchTopPages, fetchGeoStats, fetchDeviceStats, fetchReferrerStats, fetchConversionRate)
+- ✅ **JSON column validation** — 10 Zod schemas, write+read Prisma middleware, Result<T> type, JsonValidationError class (`src/lib/db/json-validators.ts`, `json-middleware.ts`, `errors.ts`)
 - ⏳ Multi-tenant architecture — chưa cần thiết ở scale hiện tại
 
 ### ✅ Phase 4c — Quality Fixes 🔧 (2026-03-20)
@@ -379,10 +398,24 @@ Testing (42 tests ✅):
 
 Documentation:
   STAGING.md                  ← Staging environment setup
+  CONTENT.md                  ← Content strategy 2026 (editorial calendar, quality checklist, distribution)
+  PRISMA_MODULES.md          ← Prisma schema split strategy (when to split, migration path)
+
+Phase 5 — Content, Analytics & Data Quality:
+  src/app/[locale]/feed.xml/route.ts          ← Bilingual RSS feed (vi/en)
+  src/app/[locale]/glossary/page.tsx          ← Glossary (32 terms, 7 categories, bilingual)
+  src/lib/json-ld.ts                           ← 17 JSON-LD schema builders (9 new in Phase 5)
+  src/lib/ai/content-optimizer.ts             ← AI content analysis (Claude SDK + heuristic fallback)
+  src/lib/analytics/server.ts                  ← Server-side event storage + aggregation
+  src/lib/analytics/aggregations.ts             ← Dashboard helpers (daily stats, funnel, geo, devices)
+  src/lib/db/json-validators.ts                ← 10 Zod schemas for JSON column validation
+  src/lib/db/json-middleware.ts                ← Prisma write+read middleware
+  src/lib/db/errors.ts                        ← Result<T> type + JsonValidationError class
 ```
 
 ---
 
 *Plan created: 2026-03-20*
 *Completed: 2026-03-20*
+*Last updated: 2026-03-21 (Phase 5 — content strategy, AI optimizer, advanced analytics, JSON validation)*
 *Project: LOOP - Web Development Agency Platform*
