@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { usePathname } from "@/i18n/routing";
 import { Phone, MessageCircle, MessageSquareText, Plus } from "lucide-react";
 
-const ADMIN_PREFIXES = ["/admin", "/vi/admin", "/en/admin"];
+const ADMIN_PREFIXES = ["/admin"];
 
 function isAdminRoute(pathname: string): boolean {
   return ADMIN_PREFIXES.some((p) => pathname.startsWith(p));

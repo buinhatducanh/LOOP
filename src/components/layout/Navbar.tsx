@@ -524,8 +524,8 @@ export default function Navbar({ hideOnHome = false }: NavbarProps) {
 
                       {/* Admin Dashboard — only for non-customer roles */}
                       {user.role === "admin" && (
-                        <Link
-                          href={`/${locale}/admin`}
+                        <a
+                          href="/admin"
                           style={{
                             display: "flex",
                             alignItems: "center",
@@ -549,7 +549,7 @@ export default function Navbar({ hideOnHome = false }: NavbarProps) {
                         >
                           <LayoutDashboard size={15} style={{ opacity: 0.9 }} />
                           Admin Dashboard
-                        </Link>
+                        </a>
                       )}
 
                       {/* Account Settings */}
@@ -747,8 +747,8 @@ export default function Navbar({ hideOnHome = false }: NavbarProps) {
 
                 {/* Admin Dashboard — only for non-customer */}
                 {user.role === "admin" && (
-                  <Link
-                    href={`/${locale}/admin`}
+                  <a
+                    href="/admin"
                     style={{
                       display: "flex",
                       alignItems: "center",
@@ -765,7 +765,7 @@ export default function Navbar({ hideOnHome = false }: NavbarProps) {
                   >
                     <LayoutDashboard size={16} />
                     Admin Dashboard
-                  </Link>
+                  </a>
                 )}
 
                 <Link

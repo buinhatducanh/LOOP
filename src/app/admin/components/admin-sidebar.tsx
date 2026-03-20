@@ -108,7 +108,7 @@ function canAccessNav(userRoleLevel: number, href: string): boolean {
 
 // ─── Sidebar ───────────────────────────────────────────────────────────────
 
-export function AdminSidebar() {
+export function AdminSidebar({ onCollapse }: { onCollapse?: (collapsed: boolean) => void }) {
   const { user } = useAdminAuth();
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
@@ -128,29 +128,85 @@ export function AdminSidebar() {
   return (
     <aside
       className={cn(
-        "fixed left-0 top-0 z-40 h-screen border-r border-slate-800 bg-slate-950 transition-all duration-300",
+        "fixed left-0 top-0 z-40 h-screen transition-all duration-300",
         collapsed ? "w-16" : "w-64"
       )}
+      style={{
+        background: "rgba(9,11,20,0.98)",
+        borderRight: "1px solid rgba(255,255,255,0.07)",
+      }}
     >
       {/* Logo */}
-      <div className="flex h-16 items-center justify-between border-b border-slate-800 px-4">
+      <div
+        className="flex h-16 items-center justify-between px-4"
+        style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}
+      >
         {!collapsed && (
-          <Link href="/admin" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 text-sm font-bold text-white">
-              L
+          <Link href="/admin" className="flex items-center gap-2" style={{ textDecoration: "none" }}>
+            <div
+              style={{
+                width: "32px",
+                height: "32px",
+                borderRadius: "8px",
+                background: "linear-gradient(135deg, #8B5CF6 0%, #06B6D4 100%)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                boxShadow: "0 0 14px rgba(139,92,246,0.35)",
+              }}
+            >
+              <span style={{ fontSize: "13px", fontWeight: 800, color: "#FFFFFF" }}>L</span>
             </div>
-            <span className="text-lg font-bold text-white">LOOP</span>
-            <span className="rounded bg-blue-500/20 px-1.5 py-0.5 text-[10px] font-medium text-blue-400">
+            <span
+              style={{
+                fontSize: "18px",
+                fontWeight: 800,
+                background: "linear-gradient(to right, #C4B5FD, #A5F3FC)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+                letterSpacing: "-0.02em",
+              }}
+            >
+              LOOP
+            </span>
+            <span
+              style={{
+                fontSize: "10px",
+                fontWeight: 600,
+                color: "#A78BFA",
+                background: "rgba(139,92,246,0.15)",
+                padding: "2px 6px",
+                borderRadius: "4px",
+                letterSpacing: "0.02em",
+              }}
+            >
               Admin
             </span>
           </Link>
         )}
         <button
-          onClick={() => setCollapsed(!collapsed)}
+          onClick={() => {
+            const next = !collapsed;
+            setCollapsed(next);
+            onCollapse?.(next);
+          }}
           className={cn(
-            "rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors",
+            "rounded-lg p-1.5 transition-colors",
             collapsed && "mx-auto"
           )}
+          style={{
+            color: "rgba(209,213,219,0.6)",
+            background: "transparent",
+          }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.color = "#FFFFFF";
+            (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.07)";
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.color = "rgba(209,213,219,0.6)";
+            (e.currentTarget as HTMLButtonElement).style.background = "transparent";
+          }}
         >
           {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
         </button>
@@ -158,10 +214,15 @@ export function AdminSidebar() {
 
       {/* Role badge */}
       {!collapsed && user && (
-        <div className="border-b border-slate-800 px-4 py-2">
-          <div className="flex items-center gap-2 rounded-lg bg-slate-900 px-3 py-2">
-            <Lock size={12} className="text-slate-500 shrink-0" />
-            <span className="truncate text-xs text-slate-400">{user.role || "member"}</span>
+        <div className="px-4 py-2" style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+          <div
+            className="flex items-center gap-2 rounded-lg px-3 py-2"
+            style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+          >
+            <Lock size={12} className="shrink-0" style={{ color: "rgba(209,213,219,0.4)" }} />
+            <span className="truncate text-xs" style={{ color: "rgba(209,213,219,0.5)" }}>
+              {user.role || "member"}
+            </span>
           </div>
         </div>
       )}
@@ -176,16 +237,41 @@ export function AdminSidebar() {
               <Link
                 key={navItem.href}
                 href={navItem.href}
-                className={cn(
-                  "mb-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                  isActive
-                    ? "bg-blue-600/20 text-blue-400"
-                    : "text-slate-400 hover:bg-slate-800/50 hover:text-white"
-                )}
+                className="mb-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all"
+                style={{
+                  color: isActive ? "#FFFFFF" : "rgba(209,213,219,0.7)",
+                  background: isActive ? "rgba(139,92,246,0.15)" : "transparent",
+                  textDecoration: "none",
+                  position: "relative",
+                }}
                 title={collapsed ? navItem.name : undefined}
+                onMouseEnter={(e) => {
+                  if (!isActive) {
+                    (e.currentTarget as HTMLAnchorElement).style.color = "#FFFFFF";
+                    (e.currentTarget as HTMLAnchorElement).style.background = "rgba(255,255,255,0.06)";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isActive) {
+                    (e.currentTarget as HTMLAnchorElement).style.color = "rgba(209,213,219,0.7)";
+                    (e.currentTarget as HTMLAnchorElement).style.background = "transparent";
+                  }
+                }}
               >
-                <navItem.icon size={20} className="shrink-0" />
+                <navItem.icon size={20} className="shrink-0" style={{ opacity: isActive ? 1 : 0.7 }} />
                 {!collapsed && <span>{navItem.name}</span>}
+                {isActive && (
+                  <span
+                    style={{
+                      position: "absolute",
+                      right: "8px",
+                      width: "5px",
+                      height: "5px",
+                      borderRadius: "50%",
+                      background: "linear-gradient(to right, #8B5CF6, #06B6D4)",
+                    }}
+                  />
+                )}
               </Link>
             );
           }
@@ -194,11 +280,14 @@ export function AdminSidebar() {
           return (
             <div key={groupItem.group} className={cn(i > 0 && "mt-5")}>
               {!collapsed && (
-                <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                <p
+                  className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider"
+                  style={{ color: "rgba(209,213,219,0.35)" }}
+                >
                   {groupItem.group}
                 </p>
               )}
-              {collapsed && <div className="mb-2 border-t border-slate-800 pt-4" />}
+              {collapsed && <div className="mb-2 border-t pt-4" style={{ borderColor: "rgba(255,255,255,0.07)" }} />}
               {groupItem.items.map((subItem) => {
                 const isActive =
                   pathname === subItem.href ||
@@ -207,16 +296,41 @@ export function AdminSidebar() {
                   <Link
                     key={subItem.href}
                     href={subItem.href}
-                    className={cn(
-                      "mb-0.5 flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                      isActive
-                        ? "bg-blue-600/20 text-blue-400"
-                        : "text-slate-400 hover:bg-slate-800/50 hover:text-white"
-                    )}
+                    className="mb-0.5 flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all"
+                    style={{
+                      color: isActive ? "#FFFFFF" : "rgba(209,213,219,0.7)",
+                      background: isActive ? "rgba(139,92,246,0.15)" : "transparent",
+                      textDecoration: "none",
+                      position: "relative",
+                    }}
                     title={collapsed ? subItem.name : undefined}
+                    onMouseEnter={(e) => {
+                      if (!isActive) {
+                        (e.currentTarget as HTMLAnchorElement).style.color = "#FFFFFF";
+                        (e.currentTarget as HTMLAnchorElement).style.background = "rgba(255,255,255,0.06)";
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isActive) {
+                        (e.currentTarget as HTMLAnchorElement).style.color = "rgba(209,213,219,0.7)";
+                        (e.currentTarget as HTMLAnchorElement).style.background = "transparent";
+                      }
+                    }}
                   >
-                    <subItem.icon size={18} className="shrink-0" />
+                    <subItem.icon size={18} className="shrink-0" style={{ opacity: isActive ? 1 : 0.7 }} />
                     {!collapsed && <span>{subItem.name}</span>}
+                    {isActive && (
+                      <span
+                        style={{
+                          position: "absolute",
+                          right: "8px",
+                          width: "5px",
+                          height: "5px",
+                          borderRadius: "50%",
+                          background: "linear-gradient(to right, #8B5CF6, #06B6D4)",
+                        }}
+                      />
+                    )}
                   </Link>
                 );
               })}

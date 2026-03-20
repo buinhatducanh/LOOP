@@ -110,7 +110,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signIn = useCallback((provider = "google") => {
-    nextSignIn(provider, { callbackUrl: "/vi/admin" });
+    nextSignIn(provider, { callbackUrl: "/admin" });
   }, []);
 
   return (

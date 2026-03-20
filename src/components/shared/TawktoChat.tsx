@@ -6,7 +6,7 @@ import { usePathname } from "@/i18n/routing";
 const PROPERTY_ID = "69b41637063f791c37e4d891";
 const WIDGET_ID = "1jjjndita";
 
-const ADMIN_PREFIXES = ["/admin", "/vi/admin", "/en/admin"];
+const ADMIN_PREFIXES = ["/admin"];
 
 function isAdminRoute(pathname: string | null): boolean {
   if (!pathname) return false;

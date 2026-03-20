@@ -153,7 +153,7 @@ export default function AccountPage() {
               Quick Actions
             </div>
             <a
-              href="/vi/admin"
+              href="/admin"
               style={{
                 display: "inline-flex",
                 alignItems: "center",
