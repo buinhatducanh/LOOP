@@ -41,9 +41,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchMe = useCallback(async () => {
     if (isLoggingOut) return;
-    // Only fetch if auth-token cookie is present (avoids 401 on public pages)
-    if (!document.cookie.includes("auth-token")) return;
-
     try {
       const res = await fetch("/api/admin/auth/me");
       if (res.status === 401) { setUser(null); return; }

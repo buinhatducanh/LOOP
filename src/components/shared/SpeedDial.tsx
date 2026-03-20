@@ -1,10 +1,33 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { usePathname } from "@/i18n/routing";
 import { Phone, MessageCircle, MessageSquareText, Plus } from "lucide-react";
 
+const ADMIN_PREFIXES = ["/admin", "/vi/admin", "/en/admin"];
+
+function isAdminRoute(pathname: string): boolean {
+  return ADMIN_PREFIXES.some((p) => pathname.startsWith(p));
+}
+
+/**
+ * Speed dial contact buttons — only shown to public visitors.
+ * Hidden on admin routes.
+ */
 export function SpeedDial() {
+    const pathname = usePathname();
+    const [mounted, setMounted] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
+
+    useEffect(() => {
+      setMounted(true);
+      if (isAdminRoute(pathname)) {
+        setIsOpen(false);
+      }
+    }, [pathname]);
+
+    // Don't render on admin pages or during SSR
+    if (!mounted || isAdminRoute(pathname)) return null;
 
     const toggleOpen = () => setIsOpen(!isOpen);
 

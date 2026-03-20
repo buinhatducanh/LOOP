@@ -30,7 +30,7 @@ export function LoginPage() {
     setLoading(false);
     if (result.success) {
       if (result.role === "admin") {
-        router.push("/vi/admin");
+        window.location.href = "/admin";
       } else {
         router.push("/account");
       }

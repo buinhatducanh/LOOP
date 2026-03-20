@@ -525,7 +525,7 @@ export default function Navbar({ hideOnHome = false }: NavbarProps) {
                       {/* Admin Dashboard — only for non-customer roles */}
                       {user.role === "admin" && (
                         <Link
-                          href="/admin"
+                          href={`/${locale}/admin`}
                           style={{
                             display: "flex",
                             alignItems: "center",
@@ -748,7 +748,7 @@ export default function Navbar({ hideOnHome = false }: NavbarProps) {
                 {/* Admin Dashboard — only for non-customer */}
                 {user.role === "admin" && (
                   <Link
-                    href="/admin"
+                    href={`/${locale}/admin`}
                     style={{
                       display: "flex",
                       alignItems: "center",

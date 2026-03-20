@@ -8,7 +8,23 @@ import { cookies } from "next/headers";
 // Pre-computed hash to use for timing-safe comparison when user doesn't exist
 const DUMMY_HASH = "$2a$12$LJ3m4ys3Rl3hPcyFSevMnuGHvZw7KLEqKl6.s8EWYFONbJdRe0Gu2";
 
+function isDbUnavailableError(err: unknown): boolean {
+  if (err instanceof Error) {
+    const msg = err.message;
+    return (
+      msg.includes("Can't reach database") ||
+      msg.includes("Connection terminated") ||
+      msg.includes("timeout") ||
+      msg.includes("P1001") ||
+      msg.includes("P2024")
+    );
+  }
+  return false;
+}
+
 export async function POST(req: NextRequest) {
+  let user: Awaited<ReturnType<typeof prisma.user.findUnique>> | null = null;
+
   try {
     const { email, password } = await req.json();
 
@@ -19,7 +35,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const user = await prisma.user.findUnique({
+    user = await prisma.user.findUnique({
       where: { email },
       include: {
         userRoles: { include: { role: true } },
@@ -87,8 +103,7 @@ export async function POST(req: NextRequest) {
       path: "/",
     });
 
-    // Also set NextAuth session cookie for consistency
-    // This is handled by NextAuth, but we set a marker cookie
+    // Marker cookie to identify credentials auth (used by getSession to skip NextAuth path)
     response.cookies.set("auth-method", "credentials", {
       httpOnly: false,
       secure: process.env.NODE_ENV === "production",
@@ -98,7 +113,15 @@ export async function POST(req: NextRequest) {
     });
 
     return response;
-  } catch {
+  } catch (err) {
+    console.error("[/api/admin/auth/login]", err);
+    // If DB is down, tell the user — don't confuse them with wrong password error
+    if (isDbUnavailableError(err)) {
+      return NextResponse.json(
+        { error: "Không thể kết nối máy chủ. Vui lòng thử lại sau." },
+        { status: 503 }
+      );
+    }
     return NextResponse.json(
       { error: "Lỗi hệ thống" },
       { status: 500 }

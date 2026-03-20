@@ -49,30 +49,33 @@ export interface SessionUser {
 // ─── Session ──────────────────────────────────────────────────────────────────
 
 export async function getSession(): Promise<SessionUser | null> {
-  const reqHeaders = await headers();
+  const cookieStore = await cookies();
+  const authMethod = cookieStore.get("auth-method")?.value;
 
-  // Try NextAuth JWT first (Google OAuth)
-  const nextAuthToken = await getToken(
-    { req: { headers: reqHeaders } } as Parameters<typeof getToken>[0],
-    { secret: process.env.AUTH_SECRET }
-  );
+  // ── Credentials login: use custom JWT only (skip NextAuth entirely) ──
+  if (authMethod === "credentials") {
+    const token = cookieStore.get("auth-token")?.value;
+    if (!token) return null;
 
-  if (nextAuthToken?.sub) {
-    const user = await prisma.user.findUnique({
-      where: { id: nextAuthToken.sub },
-      include: {
-        userRoles: {
-          include: { role: { include: { permissions: true } } },
-          where: {
-            isActive: true,
-            OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+    const payload = verifyToken(token);
+    if (!payload) return null;
+
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id: payload.userId, isActive: true },
+        include: {
+          userRoles: {
+            include: { role: { include: { permissions: true } } },
+            where: {
+              isActive: true,
+              OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+            },
           },
         },
-      },
-    });
+      });
 
-    if (user && user.isActive) {
-      // Collect all permissions from all active roles
+      if (!user) return null;
+
       const permissions = user.userRoles.flatMap((ur) =>
         ur.role.permissions.map((p) => ({
           resource: p.resource,
@@ -92,51 +95,72 @@ export async function getSession(): Promise<SessionUser | null> {
         teamMemberId: user.teamMemberId,
         permissions,
       };
+    } catch {
+      // DB unavailable — return minimal session from JWT payload (graceful degradation)
+      if (payload.userId) {
+        return {
+          userId: payload.userId,
+          email: payload.email ?? "",
+          name: "",
+          role: payload.role ?? "user",
+          roles: payload.roles ?? [],
+          avatar: null,
+          accountType: "staff" as const,
+          teamMemberId: null,
+          permissions: [],
+        };
+      }
+      return null;
     }
   }
 
-  // Fallback: custom JWT (email/password)
-  const cookieStore = await cookies();
-  const token = cookieStore.get("auth-token")?.value;
-  if (!token) return null;
-
-  const payload = verifyToken(token);
-  if (!payload) return null;
-
-  const user = await prisma.user.findUnique({
-    where: { id: payload.userId, isActive: true },
-    include: {
-      userRoles: {
-        include: { role: { include: { permissions: true } } },
-        where: {
-          isActive: true,
-          OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
-        },
-      },
-    },
-  });
-
-  if (!user) return null;
-
-  const permissions = user.userRoles.flatMap((ur) =>
-    ur.role.permissions.map((p) => ({
-      resource: p.resource,
-      action: p.action,
-      scope: p.scope,
-    }))
+  // ── Google OAuth (NextAuth) ───────────────────────────────────────────
+  const reqHeaders = await headers();
+  const nextAuthToken = await getToken(
+    { req: { headers: reqHeaders } } as Parameters<typeof getToken>[0],
+    { secret: process.env.AUTH_SECRET }
   );
 
-  return {
-    userId: user.id,
-    email: user.email,
-    name: user.name,
-    role: user.role,
-    roles: user.userRoles.map((ur) => ur.role.name),
-    avatar: user.avatar,
-    accountType: (user.accountType as "staff" | "customer") || "customer",
-    teamMemberId: user.teamMemberId,
-    permissions,
-  };
+  if (!nextAuthToken?.sub) return null;
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: nextAuthToken.sub },
+      include: {
+        userRoles: {
+          include: { role: { include: { permissions: true } } },
+          where: {
+            isActive: true,
+            OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+          },
+        },
+      },
+    });
+
+    if (!user || !user.isActive) return null;
+
+    const permissions = user.userRoles.flatMap((ur) =>
+      ur.role.permissions.map((p) => ({
+        resource: p.resource,
+        action: p.action,
+        scope: p.scope,
+      }))
+    );
+
+    return {
+      userId: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      roles: user.userRoles.map((ur) => ur.role.name),
+      avatar: user.avatar,
+      accountType: (user.accountType as "staff" | "customer") || "customer",
+      teamMemberId: user.teamMemberId,
+      permissions,
+    };
+  } catch {
+    return null;
+  }
 }
 
 export async function requireAuth(): Promise<SessionUser> {
