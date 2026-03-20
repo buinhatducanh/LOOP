@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { type ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "../../../../components/data-table";
-import { FilterBar, type FilterDef } from "../../../components/filter-bar";
+import { FilterBar, type FilterDef } from "../../components/filter-bar";
 import { Plus, Pencil, Trash2, X, Star, Image } from "lucide-react";
 import { toast } from "sonner";
 import { ImageUploader } from "@/components/ui/image-uploader";
