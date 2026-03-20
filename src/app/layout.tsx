@@ -3,7 +3,7 @@ import { ReactNode } from 'react';
 import './globals.css';
 import JsonLd from '@/components/seo/JsonLd';
 import { NextIntlClientProvider } from 'next-intl';
-import { getMessages } from 'next-intl/server';
+import { getMessages, getLocale } from 'next-intl/server';
 import { Inter } from 'next/font/google';
 import { buildOrganizationJsonLd, buildWebSiteJsonLd } from '@/lib/json-ld';
 
@@ -70,8 +70,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   };
 }
 
-export default async function RootLayout({ children, params }: { children: ReactNode; params: Promise<{ locale: string }> }) {
-  const { locale } = await params;
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  const locale = await getLocale();
   const messages = await getMessages();
 
   return (
@@ -86,10 +86,11 @@ export default async function RootLayout({ children, params }: { children: React
         <JsonLd data={buildWebSiteJsonLd()} />
       </head>
       <body>
-        <NextIntlClientProvider messages={messages}>
+        <NextIntlClientProvider locale={locale} messages={messages}>
           {children}
         </NextIntlClientProvider>
       </body>
     </html>
   );
 }
+

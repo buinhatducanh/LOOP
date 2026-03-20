@@ -138,7 +138,7 @@ export function CanRead({
   fallback?: React.ReactNode;
 }) {
   return (
-    <PermissionGuard permissions={[{ resource, actions: ["read"] } fallback={fallback}>
+    <PermissionGuard permissions={[{ resource, actions: ["read"] }]} fallback={fallback}>
       {children}
     </PermissionGuard>
   );
@@ -154,7 +154,7 @@ export function CanCreate({
   fallback?: React.ReactNode;
 }) {
   return (
-    <PermissionGuard permissions={[{ resource, actions: ["create"] } fallback={fallback}>
+    <PermissionGuard permissions={[{ resource, actions: ["create"] }]} fallback={fallback}>
       {children}
     </PermissionGuard>
   );
@@ -170,7 +170,7 @@ export function CanUpdate({
   fallback?: React.ReactNode;
 }) {
   return (
-    <PermissionGuard permissions={[{ resource, actions: ["update"] } fallback={fallback}>
+    <PermissionGuard permissions={[{ resource, actions: ["update"] }]} fallback={fallback}>
       {children}
     </PermissionGuard>
   );
@@ -186,7 +186,7 @@ export function CanDelete({
   fallback?: React.ReactNode;
 }) {
   return (
-    <PermissionGuard permissions={[{ resource, actions: ["delete"] } fallback={fallback}>
+    <PermissionGuard permissions={[{ resource, actions: ["delete"] }]} fallback={fallback}>
       {children}
     </PermissionGuard>
   );

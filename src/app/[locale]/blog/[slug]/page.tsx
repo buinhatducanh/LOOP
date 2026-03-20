@@ -433,7 +433,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ local
                 {/* Post content */}
                 <div style={{ fontSize: "18px", color: "#E2E8F0" }}>
                     {body ? (
-                        <PortableText value={body} components={portableTextComponents} />
+                        <PortableText value={body as any} components={portableTextComponents as any} />
                     ) : (
                         <p style={{ fontStyle: "italic", color: "#94A3B8" }}>
                             {isVn ? "Nội dung đang được cập nhật..." : "Content is being updated..."}
@@ -498,8 +498,8 @@ export default async function BlogPostPage({ params }: { params: Promise<{ local
                             ) : (post.authorBio || post.authorBioVi) ? (
                                 <div style={{ color: "#94A3B8", fontSize: "15px", lineHeight: 1.6 }}>
                                     <PortableText
-                                        value={isVn && post.authorBioVi ? post.authorBioVi : post.authorBio}
-                                        components={portableTextComponents}
+                                        value={(isVn && post.authorBioVi ? post.authorBioVi : post.authorBio) as any}
+                                        components={portableTextComponents as any}
                                     />
                                 </div>
                             ) : null}

@@ -111,7 +111,7 @@ export function RelatedServicesWidget({
               <div className="flex items-center gap-3 text-xs text-slate-500 mt-4 pt-4 border-t border-slate-800">
                 {service.startingPrice && (
                   <span>
-                    <span className="text-slate-400">{t.starting}: {service.startingPrice.toLocaleString("VND")}
+                    <span className="text-slate-400">{t.starting}: {service.startingPrice.toLocaleString("VND")}</span>
                   </span>
                 )}
                 {service.deliveryTime && (

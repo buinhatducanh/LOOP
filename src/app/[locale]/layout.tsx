@@ -16,14 +16,12 @@ export const revalidate = 3600;
 
 // Lazy-load third-party chat widget — only loads after page is interactive
 const TawktoChat = dynamic(
-  () => import('@/components/shared/TawktoChat').then((m) => ({ default: m.TawktoChat })),
-  { ssr: false }
+  () => import('@/components/shared/TawktoChat').then((m) => ({ default: m.TawktoChat }))
 );
 
 // Lazy-load speed dial — reduces initial bundle
 const SpeedDial = dynamic(
-  () => import('@/components/shared/SpeedDial').then((m) => ({ default: m.SpeedDial })),
-  { ssr: false }
+  () => import('@/components/shared/SpeedDial').then((m) => ({ default: m.SpeedDial }))
 );
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {

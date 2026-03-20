@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import Link from "@/i18n/routing/Link";
+import { Link } from "@/i18n/routing";
 
 export default function BlogErrorPage({
   error,

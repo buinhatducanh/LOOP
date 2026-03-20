@@ -18,7 +18,6 @@ import {
 } from "lucide-react";
 
 import Link from "next/link";
-import { type TeamMember } from "@/generated/prisma/client";
 
 interface StatsData {
   projects?: string;
@@ -89,7 +88,7 @@ const defaultTechStack = [
   "Prisma", "Stripe", "Shopify", "Figma", "Framer Motion",
 ];
 
-export function AboutPage({ team = [], stats: statsData, techStack }: { team?: TeamMember[]; stats?: StatsData; techStack?: string[] }) {
+export function AboutPage({ team = [], stats: statsData, techStack }: { team?: any[]; stats?: StatsData; techStack?: string[] }) {
   const techItems = techStack && techStack.length > 0 ? techStack : defaultTechStack;
   const router = useRouter();
   const t = useTranslations("AboutPage");
@@ -367,7 +366,7 @@ export function AboutPage({ team = [], stats: statsData, techStack }: { team?: T
                       }}
                     >
                       <img
-                        src={member.image}
+                        src={member.image || undefined}
                         alt={member.name}
                         style={{ width: "100%", height: "100%", objectFit: "cover" }}
                       />

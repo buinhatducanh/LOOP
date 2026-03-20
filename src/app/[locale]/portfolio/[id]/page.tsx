@@ -75,7 +75,7 @@ export default async function Page({ params }: Props) {
               id: dbProject.teamMember.slug,
               name: dbProject.teamMember.name,
               role: dbProject.teamMember.role,
-              image: dbProject.teamMember.image,
+              image: dbProject.teamMember.image || "",
             } : undefined}
           />
           <RelatedContent

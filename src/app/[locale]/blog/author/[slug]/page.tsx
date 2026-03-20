@@ -122,8 +122,8 @@ export default async function AuthorPage({
   const name = author.name;
   const role = author.role ?? "";
   const bio = isVi
-    ? (author.bioVi ?? author.shortBioVi ?? author.shortBio)
-    : (author.bio ?? author.shortBio ?? author.shortBioVi);
+    ? (author.shortBioVi ?? author.shortBio)
+    : (author.shortBio ?? author.shortBioVi);
   const authorImageUrl = author.image
     ? urlForImage(author.image)?.width(256).height(256).url()
     : null;

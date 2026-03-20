@@ -3,10 +3,7 @@ import JsonLd from "@/components/seo/JsonLd";
 import { PricingPage } from "./pricing-page";
 import { getPricingPackagesData } from "@/lib/db/queries";
 import { getTranslations } from "next-intl/server";
-import { getPricingPackagesData } from "@/lib/db/queries";
-import type { Metadata } from "next";
-import JsonLd from "@/components/seo/JsonLd";
-import { PricingPage } from "./pricing-page";
+
 
 export const revalidate = 300; // ISR 5 phút
 

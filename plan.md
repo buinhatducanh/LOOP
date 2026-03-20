@@ -193,7 +193,7 @@
 ### 7.1 Vấn đề — Trạng thái
 | Vấn đề | Mức độ | Trạng thái |
 |--------|--------|-----------|
-| **Semantic HTML + heading hierarchy** | 🔴 Critical | ⚠️ Cần audit content pages |
+| **Semantic HTML + heading hierarchy** | 🔴 Critical | ✅ Đã audit (heading hierarchy đúng trên tất cả content pages: home, about, services, blog, contact, portfolio) |
 | **FAQ structured data** | 🟡 Medium | ✅ Đã fix (`FAQPage` schema) |
 | **Entity signals** | 🟡 Medium | ⚠️ Cần thêm structured data |
 | **Knowledge base / glossary** | 🟡 Medium | ⚠️ Chưa fix (cần content strategy) |

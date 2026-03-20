@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { useRouter } from "@/i18n/routing";
 import { Link } from "@/i18n/routing";
 import { signIn } from "next-auth/react";
@@ -129,7 +129,7 @@ export function RegisterPage() {
           {/* Google Sign Up */}
           <button
             type="button"
-            onClick={() => signIn("google", { callbackUrl: `${window.location.origin}/admin" })}
+            onClick={() => signIn("google", { callbackUrl: `${window.location.origin}/admin` })}
             style={{
               width: "100%",
               background: "#FFFFFF",
