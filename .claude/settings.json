@@ -22,7 +22,10 @@
       "Bash(cp \"D:/LOOP_COMPANY/LOOP/src/app/[locale]/admin/components/admin-sidebar.tsx\" \"D:/LOOP COMPANY/LOOP/src/app/admin/components/admin-sidebar.tsx\")",
       "Bash(cp \"D:/LOOP_COMPANY/LOOP/src/app/[locale]/admin/components/admin-sidebar.tsx\" \"D:/LOOP_COMPANY/LOOP/src/app/admin/components/admin-sidebar.tsx\")",
       "Bash(cp \"D:/LOOP-COMPANY/LOOP/src/app/[locale]/admin/components/admin-sidebar.tsx\" \"D:/LOOP-COMPANY/LOOP/src/app/admin/components/admin-sidebar.tsx\")",
-      "Bash(powershell -NoProfile -ExecutionPolicy Bypass -Command \"Remove-Item -Recurse -Force ''D:\\\\LOOP_COMPANY\\\\LOOP\\\\.next'' -ErrorAction SilentlyContinue; Write-Host ''Cache cleared''\")"
+      "Bash(powershell -NoProfile -ExecutionPolicy Bypass -Command \"Remove-Item -Recurse -Force ''D:\\\\LOOP_COMPANY\\\\LOOP\\\\.next'' -ErrorAction SilentlyContinue; Write-Host ''Cache cleared''\")",
+      "Bash(node -e \"require\\(''dotenv/config''\\); console.log\\(''DATABASE_URL:'', process.env.DATABASE_URL ? ''SET \\('' + process.env.DATABASE_URL.split\\(''@''\\)[1] + ''\\)'' : ''UNDEFINED''\\)\")",
+      "Bash(node -e \"require\\(''dotenv/config''\\); console.log\\(''CWD:'', process.cwd\\(\\)\\); console.log\\(''DATABASE_URL:'', process.env.DATABASE_URL ? ''SET \\('' + process.env.DATABASE_URL.split\\(''@''\\)[1] + ''\\)'' : ''UNDEFINED''\\)\")",
+      "Bash(node -e \"require\\(''dotenv''\\).config\\({ path: [''D:/LOOP_COMPANY/LOOP/.env.local'', ''D:/LOOP_COMPANY/LOOP/.env''] }\\); console.log\\(''DATABASE_URL:'', process.env.DATABASE_URL ? ''SET \\('' + process.env.DATABASE_URL.split\\(''@''\\)[1] + ''\\)'' : ''UNDEFINED''\\)\")"
     ],
     "additionalDirectories": [
       "D:\\LOOP_COMPANY\\LOOP\\src\\app\\[locale]\\team\\[slug]",

@@ -125,7 +125,7 @@ export function LoginPage() {
           {/* Google Sign In */}
           <button
             type="button"
-            onClick={() => signIn("google", { callbackUrl: `${window.location.origin}/admin` })}
+            onClick={() => signIn("google", { callbackUrl: `${window.location.origin}/vi` })}
             style={{
               width: "100%",
               background: "#FFFFFF",

@@ -1,6 +1,6 @@
 import { PrismaClient } from "@/generated/prisma/client";
-import { PrismaNeon } from "@prisma/adapter-neon";
-import { neon } from "@neondatabase/serverless";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { Pool } from "pg";
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined };
 
@@ -15,9 +15,10 @@ function createPrismaClient(): PrismaClient {
       "and restart the dev server: npm run dev"
     );
   }
-  const sql = neon(connectionString);
+  // Use pg Pool — standard driver, no timing issues with env vars
+  const pool = new Pool({ connectionString });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const adapter = new PrismaNeon(sql as any);
+  const adapter = new PrismaPg(pool as any);
   return new PrismaClient({ adapter });
 }
 
