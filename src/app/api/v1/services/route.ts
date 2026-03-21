@@ -8,11 +8,10 @@
  * Stability: Stable — breaking changes will be released as v2
  */
 
+export const dynamic = "force-dynamic";
+
 import { NextResponse } from "next/server";
 import { getCachedServices } from "@/lib/db/queries";
-
-// CDN cache — 5 minutes, stale-while-revalidate 1 hour
-export const revalidate = 300;
 
 export async function GET() {
   try {
@@ -25,7 +24,6 @@ export async function GET() {
         meta: {
           count: services.length,
           cached: true,
-          // Use Vary header so CDN respects locale-specific responses
         },
       },
       {

@@ -7,6 +7,8 @@
  * Version: v1 (stable)
  */
 
+export const dynamic = "force-dynamic";
+
 import { NextResponse } from "next/server";
 import { getCachedProjects } from "@/lib/db/queries";
 
