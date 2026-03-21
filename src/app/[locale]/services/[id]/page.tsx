@@ -22,22 +22,62 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://loop.vn";
   try {
     const service = await getServiceBySlug(id);
     if (service) {
+      const ogImage = `${siteUrl}/api/og?title=${encodeURIComponent(service.title)}&description=${encodeURIComponent(service.longDescription ?? "")}&type=service&locale=vi`;
       return {
         title: `${service.title} - Dịch vụ | LOOP`,
         description: service.longDescription,
-        alternates: { canonical: `https://loop.vn/services/${service.slug}` },
+        alternates: { canonical: `https://loop.vn/vi/services/${service.slug}` },
+        openGraph: {
+          title: `${service.title} - Dịch vụ | LOOP`,
+          description: service.longDescription ?? "",
+          url: `${siteUrl}/vi/services/${service.slug}`,
+          siteName: "LOOP",
+          locale: "vi_VN",
+          type: "website",
+          images: [
+            {
+              url: ogImage,
+              width: 1200,
+              height: 630,
+              alt: service.title,
+            },
+          ],
+        },
+        twitter: {
+          card: "summary_large_image",
+          title: `${service.title} - Dịch vụ | LOOP`,
+          description: service.longDescription ?? "",
+          images: [ogImage],
+        },
       };
     }
   } catch {}
   const mock = mockServices.find((s) => s.id === id);
   if (!mock) return {};
+  const ogImage = `${siteUrl}/api/og?title=${encodeURIComponent(mock.title)}&description=${encodeURIComponent(mock.longDescription ?? "")}&type=service&locale=vi`;
   return {
     title: `${mock.title} - Dịch vụ | LOOP`,
     description: mock.longDescription,
-    alternates: { canonical: `https://loop.vn/services/${mock.id}` },
+    alternates: { canonical: `https://loop.vn/vi/services/${mock.id}` },
+    openGraph: {
+      title: `${mock.title} - Dịch vụ | LOOP`,
+      description: mock.longDescription ?? "",
+      url: `${siteUrl}/vi/services/${mock.id}`,
+      siteName: "LOOP",
+      locale: "vi_VN",
+      type: "website",
+      images: [{ url: ogImage, width: 1200, height: 630, alt: mock.title }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${mock.title} - Dịch vụ | LOOP`,
+      description: mock.longDescription ?? "",
+      images: [ogImage],
+    },
   };
 }
 

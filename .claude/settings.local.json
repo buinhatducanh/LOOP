@@ -12,7 +12,8 @@
       "Bash(timeout /t 8 /nobreak)",
       "Bash(curl:*)",
       "Bash(taskkill:*)",
-      "Bash(wmic process:*)"
+      "Bash(wmic process:*)",
+      "Bash(node -e \":*)"
     ],
     "additionalDirectories": [
       "D:\\LOOP_COMPANY\\LOOP\\src\\app\\api\\admin\\expertises"
