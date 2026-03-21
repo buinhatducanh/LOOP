@@ -17,8 +17,8 @@
 
 import { prisma } from "@/lib/prisma";
 import { verifyToken } from "./jwt";
-import { cookies, headers } from "next/headers";
-import { getToken } from "next-auth/jwt";
+import { cookies } from "next/headers";
+import { auth } from "@/auth";
 import { ROLE_LEVEL, type NavPermission } from "./roles";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -115,16 +115,12 @@ export async function getSession(): Promise<SessionUser | null> {
   }
 
   // ── Google OAuth (NextAuth) ───────────────────────────────────────────
-  const reqHeaders = await headers();
-  const nextAuthToken = await getToken(
-    { req: { headers: reqHeaders } } as Parameters<typeof getToken>[0]
-  );
-
-  if (!nextAuthToken?.sub) return null;
+  const session = await auth();
+  if (!session?.user?.id) return null;
 
   try {
     const user = await prisma.user.findUnique({
-      where: { id: nextAuthToken.sub as string },
+      where: { id: session.user.id },
       include: {
         userRoles: {
           include: { role: { include: { permissions: true } } },

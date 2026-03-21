@@ -166,7 +166,7 @@ export default async function middleware(req: NextRequest) {
     }
 
     if (!isAuthenticated(req)) {
-      const loginUrl = new URL("/login", req.url);
+      const loginUrl = new URL("/vi/login", req.url);
       loginUrl.searchParams.set("redirect", pathname);
       return NextResponse.redirect(loginUrl);
     }
@@ -190,7 +190,7 @@ export default async function middleware(req: NextRequest) {
       // Strip locale prefix to get the real admin path
       const realPath = pathname.replace(`/${locale}`, "") || "/admin";
       if (!isAuthenticated(req)) {
-        const loginUrl = new URL("/login", req.url);
+        const loginUrl = new URL("/vi/login", req.url);
         loginUrl.searchParams.set("redirect", realPath);
         return NextResponse.redirect(loginUrl);
       }

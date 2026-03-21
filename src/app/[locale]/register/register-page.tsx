@@ -34,7 +34,7 @@ export function RegisterPage() {
     setErrors({});
     setLoading(true);
     setTimeout(() => {
-      router.push("/login");
+      router.push({ pathname: "/login" });
     }, 1200);
   };
 
@@ -284,7 +284,7 @@ export function RegisterPage() {
         {/* Footer */}
         <p style={{ textAlign: "center", color: "#94A3B8", fontSize: "14px", marginTop: "24px" }}>
           Already have an account?{" "}
-          <Link href="/login" style={{ color: "#3B82F6", textDecoration: "none", fontWeight: 600 }}>
+          <Link href={{ pathname: "/login" }} style={{ color: "#3B82F6", textDecoration: "none", fontWeight: 600 }}>
             Sign in
           </Link>
         </p>

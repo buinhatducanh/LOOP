@@ -67,8 +67,8 @@ export default async function LocaleLayout({
   // NextIntlClientProvider lives in src/app/layout.tsx (root) for synchronous availability
   return (
     <>
-      <Analytics />
-      <SpeedInsights />
+      {process.env.VERCEL_URL && <Analytics />}
+      {process.env.VERCEL_URL && <SpeedInsights />}
       <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID ?? ""} />
       <PublicShell footerData={footerData}>
         {children}

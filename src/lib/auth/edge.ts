@@ -84,7 +84,7 @@ export const PUBLIC_PATHS = [
   "/api/v1/",
 ] as const;
 
-export const PUBLIC_PREFIXES = ["/login", "/register"] as const;
+export const PUBLIC_PREFIXES = ["/vi/login", "/vi/register", "/en/login", "/en/register"] as const;
 
 // ─── Cookie Keys ───────────────────────────────────────────────────────────────
 

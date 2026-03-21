@@ -104,7 +104,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
       fetch("/api/admin/auth/logout", { method: "POST" }),
     ]);
     setUser(null);
-    window.location.href = "/login";
+    window.location.href = "/vi/login";
   }, []);
 
   const refreshUser = useCallback(async () => {

@@ -18,7 +18,7 @@ export default function AccountPage() {
 
   useEffect(() => {
     if (mounted && !user) {
-      router.replace("/login");
+      router.replace({ pathname: "/login" });
     }
   }, [mounted, user, router]);
 

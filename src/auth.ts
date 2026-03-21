@@ -2,7 +2,22 @@ import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import { prisma } from "@/lib/prisma";
 
+// Validate critical env vars before NextAuth boots
+function isBlank(v: string | undefined) {
+  return !v || v.trim() === "";
+}
+const missing: string[] = [];
+if (isBlank(process.env.AUTH_SECRET)) missing.push("AUTH_SECRET");
+if (isBlank(process.env.DATABASE_URL)) missing.push("DATABASE_URL");
+if (missing.length) {
+  throw new Error(
+    `[auth.ts] Missing required env vars: ${missing.join(", ")}\n` +
+    `Make sure .env.local exists in the project root and restart: npm run dev`
+  );
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  secret: process.env.AUTH_SECRET,
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -119,6 +134,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
   pages: {
-    signIn: "/login",
+    signIn: "/vi/login",
   },
 });
