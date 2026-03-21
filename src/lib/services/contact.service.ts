@@ -28,7 +28,7 @@ export interface ContactSubmissionResult {
 
 export function validateContactInput(data: unknown): ContactFormInput {
   if (!data || typeof data !== "object") {
-    throw new ZodError([{ code: "custom", message: "Request body must be an object" }]);
+    throw new ZodError([{ code: "custom", path: [], message: "Request body must be an object" }]);
   }
 
   const { name, email, message, phone, service } = data as Record<string, unknown>;

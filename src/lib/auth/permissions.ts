@@ -117,15 +117,14 @@ export async function getSession(): Promise<SessionUser | null> {
   // ── Google OAuth (NextAuth) ───────────────────────────────────────────
   const reqHeaders = await headers();
   const nextAuthToken = await getToken(
-    { req: { headers: reqHeaders } } as Parameters<typeof getToken>[0],
-    { secret: process.env.AUTH_SECRET }
+    { req: { headers: reqHeaders } } as Parameters<typeof getToken>[0]
   );
 
   if (!nextAuthToken?.sub) return null;
 
   try {
     const user = await prisma.user.findUnique({
-      where: { id: nextAuthToken.sub },
+      where: { id: nextAuthToken.sub as string },
       include: {
         userRoles: {
           include: { role: { include: { permissions: true } } },

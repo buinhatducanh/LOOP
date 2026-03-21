@@ -409,7 +409,7 @@ function AddonServicesContent() {
       },
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [pagination.page, search],
+    [pagination.page],
   );
 
   // ─── Form Fields ──────────────────────────────────────────────

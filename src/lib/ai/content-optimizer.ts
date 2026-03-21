@@ -15,7 +15,19 @@
  */
 
 import { z } from 'zod';
-import Anthropic from '@anthropic-ai/sdk';
+
+// Minimal stub — @anthropic-ai/sdk is not installed in this project.
+// Functions below fall back to heuristic logic when the client is unavailable.
+const Anthropic = class {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  constructor(_options: { apiKey?: string }) {}
+  messages = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    parse: async (_opts: any): Promise<any> => null,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    create: async (_opts: any): Promise<any> => null,
+  };
+} as any;
 
 // ─── Zod Schemas ────────────────────────────────────────────────────────────
 

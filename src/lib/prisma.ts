@@ -14,7 +14,9 @@ export const prisma = globalForPrisma.prisma ?? (() => {
   // This adapter is optimized for Vercel serverless (Edge + Node runtimes).
   // No connection pool management needed — Neon handles it at the pooler level.
   const sql = neon(connectionString || "");
-  const adapter = new PrismaNeon(sql);
+  // @prisma/adapter-neon expects a Pool-like object; neon() returns NeonQueryFunction
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const adapter = new PrismaNeon(sql as any);
 
   return new PrismaClient({ adapter });
 })();

@@ -32,6 +32,7 @@ import {
   Coins,
   Lock,
   Image,
+  type LucideIcon,
 } from "lucide-react";
 import { useAdminAuth } from "./admin-auth-provider";
 import { ROLE_LEVEL } from "@/lib/auth/roles";
@@ -40,7 +41,7 @@ import { cn } from "@/components/ui/utils";
 type NavItem = {
   name: string;
   href: string;
-  icon: React.ComponentType<{ size?: number; className?: string }>;
+  icon: LucideIcon;
 };
 type NavGroup = { group: string; items: NavItem[] };
 type NavEntry = NavItem | NavGroup;

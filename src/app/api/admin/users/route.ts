@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import type { UserModel } from "@/generated/prisma/models/User";
 import { requirePermission } from "@/lib/auth/permissions";
 import { hashPassword } from "@/lib/auth/password";
 import { createAuditLog } from "@/lib/auth/audit";
@@ -64,7 +65,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const existing = await prisma.user.findUnique({ where: { email } });
+    const existing: UserModel | null = await prisma.user.findUnique({ where: { email: email as string } });
+    const existingId = existing?.id;
     if (existing) {
       return NextResponse.json(
         { error: "Email đã tồn tại" },
@@ -74,13 +76,16 @@ export async function POST(req: NextRequest) {
 
     // Validate teamMemberId if provided
     if (teamMemberId) {
-      const member = await prisma.teamMember.findUnique({ where: { id: teamMemberId } });
+      const member = await prisma.teamMember.findUnique({ where: { id: teamMemberId as string } });
       if (!member) {
         return NextResponse.json({ error: "Team member không tồn tại" }, { status: 400 });
       }
-      // Check if already linked to another user
+      // Check if already linked to another user (exclude self if editing)
       const alreadyLinked = await prisma.user.findFirst({
-        where: { teamMemberId, id: { not: existing?.id } },
+        where: {
+          teamMemberId: teamMemberId as string,
+          ...(existingId != null ? { id: { not: existingId } } : {}),
+        },
       });
       if (alreadyLinked) {
         return NextResponse.json(

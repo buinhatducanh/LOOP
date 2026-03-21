@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import type { UserGetPayload } from "@/generated/prisma/models/User";
 import { verifyPassword } from "@/lib/auth/password";
 import { signToken } from "@/lib/auth/jwt";
 import { createAuditLog } from "@/lib/auth/audit";
@@ -23,7 +24,7 @@ function isDbUnavailableError(err: unknown): boolean {
 }
 
 export async function POST(req: NextRequest) {
-  let user: Awaited<ReturnType<typeof prisma.user.findUnique>> | null = null;
+  let user: UserGetPayload<{ include: { userRoles: { include: { role: true } } } }> | null = null;
 
   try {
     const { email, password } = await req.json();

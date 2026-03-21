@@ -5,6 +5,7 @@ import {
   Zap, Globe, Shield, Award, Star, Mail, Phone, MapPin,
   ArrowRight, CheckCircle, ChevronRight, Quote,
   Layers, Cog, BarChart2, Code, Palette, Rocket, Users,
+  type LucideIcon,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -18,7 +19,7 @@ interface SectionProps {
 
 // ─── Icon Map ─────────────────────────────────────────────────────────────────
 
-const ICON_MAP: Record<string, React.ComponentType<{ className?: string; size?: number }>> = {
+const ICON_MAP: Record<string, LucideIcon> = {
   Zap, Globe, Shield, Award, Star, Mail, Phone, MapPin,
   Layers, Cog, BarChart2, Code, Palette, Rocket, Users,
 };

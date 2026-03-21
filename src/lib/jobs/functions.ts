@@ -18,8 +18,7 @@ import type { ContactSubmittedPayload, OrderCreatedPayload } from "./client";
  * Retry policy: 3 attempts with exponential backoff
  */
 export const sendContactConfirmation = inngest.createFunction(
-  { id: "send-contact-confirmation", name: "Send Contact Confirmation" },
-  { event: EVENTS.CONTACT_SUBMITTED },
+  { id: "send-contact-confirmation", name: "Send Contact Confirmation", triggers: [{ event: EVENTS.CONTACT_SUBMITTED }] },
   async ({ event }) => {
     const payload = event.data as ContactSubmittedPayload;
 
@@ -48,8 +47,7 @@ export const sendContactConfirmation = inngest.createFunction(
  * Sends to configured admin emails from site settings.
  */
 export const notifyAdminsOfContact = inngest.createFunction(
-  { id: "notify-admins-contact", name: "Notify Admins — New Contact" },
-  { event: EVENTS.CONTACT_SUBMITTED },
+  { id: "notify-admins-contact", name: "Notify Admins — New Contact", triggers: [{ event: EVENTS.CONTACT_SUBMITTED }] },
   async ({ event }) => {
     const payload = event.data as ContactSubmittedPayload;
 
@@ -71,8 +69,7 @@ export const notifyAdminsOfContact = inngest.createFunction(
  * Triggered by: order/created event
  */
 export const sendOrderConfirmation = inngest.createFunction(
-  { id: "send-order-confirmation", name: "Send Order Confirmation" },
-  { event: EVENTS.ORDER_CREATED },
+  { id: "send-order-confirmation", name: "Send Order Confirmation", triggers: [{ event: EVENTS.ORDER_CREATED }] },
   async ({ event }) => {
     const payload = event.data as OrderCreatedPayload;
 
@@ -106,15 +103,14 @@ export const pruneOldAuditLogs = inngest.createFunction(
   {
     id: "prune-old-audit-logs",
     name: "Prune Old Audit Logs",
-    rateLimit: { limit: 1, period: "1h" }, // Run at most once per hour
+    rateLimit: { limit: 1, period: "1h" },
+    triggers: [{ cron: "0 2 * * 0" }],
   },
-  { cron: "0 2 * * 0" }, // Every Sunday at 02:00 UTC
   async ({ step }) => {
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - 90); // 90-day retention
 
     const deleted = await step.run("delete-old-audit-logs", async () => {
-      const { Prisma } = await import("@prisma/client");
       // Lazy import to avoid loading Prisma in every worker boot
       const { prisma } = await import("@/lib/prisma");
 
@@ -143,8 +139,8 @@ export const warmCache = inngest.createFunction(
   {
     id: "warm-cache",
     name: "Warm ISR Cache",
+    triggers: [{ cron: "0 6,12 * * *" }],
   },
-  { cron: "0 6,12 * * *" }, // 06:00 and 12:00 UTC
   async ({ step }) => {
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://loop.vn";
 

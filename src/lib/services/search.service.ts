@@ -162,7 +162,7 @@ export async function globalSearch(
       description: s.shortDescription ?? "",
       icon: s.icon,
       category: categoryMap[s.category] ?? s.category,
-      price: s.startingPrice,
+      price: String(s.startingPrice),
       deliveryTime: s.deliveryTime,
       href: `/services/${s.slug}`,
     })),

@@ -2,8 +2,11 @@
 // Prisma Middleware — Automatic JSON Field Validation on Write & Read
 // =============================================================================
 
-import { Prisma } from '@prisma/client';
-import { Middleware } from '@prisma/client';
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type MiddlewareParams = { model?: string; action: string; args?: any };
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Middleware = (params: MiddlewareParams, next: (params: MiddlewareParams) => Promise<any>) => Promise<any>;
+
 import {
   validateTeamMemberSocial,
   validateSelectedItems,
@@ -28,10 +31,8 @@ const REQUIRED_JSON_FIELDS: Record<string, string[]> = {
 };
 
 /** All optional JSON fields mapped by model */
-const OPTIONAL_JSON_VALIDATORS: Record<
-  string,
-  (data: unknown) => ReturnType<typeof validateTeamMemberSocial>
-> = {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const OPTIONAL_JSON_VALIDATORS: Record<string, (data: unknown) => any> = {
   TeamMember: (data) => validateTeamMemberSocial(data),
   FeatureVariant: (data) => validateResourceUsage(data),
   LandingSection: (data) => validateSectionContent(data),
@@ -103,8 +104,8 @@ function unwrapSet(value: unknown): unknown {
  */
 export function createJsonValidationMiddleware(): Middleware {
   return async function jsonValidationMiddleware(
-    params: Prisma.MiddlewareParams,
-    next: (params: Prisma.MiddlewareParams) => Promise<unknown>,
+    params: MiddlewareParams,
+    next: (params: MiddlewareParams) => Promise<unknown>,
   ): Promise<unknown> {
     // Only intercept write operations
     if (!['create', 'update', 'updateMany', 'upsert'].includes(params.action)) {
@@ -298,8 +299,8 @@ export function createReadValidationMiddleware(
 
   /** Performs the actual read operation and post-processes the result */
   async function validateReadResult(
-    params: Prisma.MiddlewareParams,
-    next: (params: Prisma.MiddlewareParams) => Promise<unknown>,
+    params: MiddlewareParams,
+    next: (params: MiddlewareParams) => Promise<unknown>,
   ): Promise<unknown> {
     const result = await next(params);
 

@@ -44,6 +44,7 @@
  */
 
 import { prisma } from "@/lib/prisma";
+import type { InputJsonValue } from "@/generated/prisma/internal/prismaNamespace";
 
 /* ─── Types ──────────────────────────────────────────────────────────────── */
 
@@ -83,13 +84,13 @@ export interface AnalyticsOverview {
   uniqueSessions: number;
   uniqueVisitors: number;
   bounceRate: number;
-  topEvents: Array<{ event: string; count: bigint }>;
-  eventsByDay: Array<{ date: string; count: bigint }>;
-  eventsByLocale: Array<{ locale: string; count: bigint }>;
-  topPages: Array<{ page: string; count: bigint }>;
-  topDevices: Array<{ device: string; count: bigint }>;
-  topCountries: Array<{ country: string; count: bigint }>;
-  topBrowsers: Array<{ browser: string; count: bigint }>;
+  topEvents: Array<{ event: string; count: number }>;
+  eventsByDay: Array<{ date: string; count: number }>;
+  eventsByLocale: Array<{ locale: string; count: number }>;
+  topPages: Array<{ page: string; count: number }>;
+  topDevices: Array<{ device: string; count: number }>;
+  topCountries: Array<{ country: string; count: number }>;
+  topBrowsers: Array<{ browser: string; count: number }>;
 }
 
 export interface PageAnalytics {
@@ -98,9 +99,9 @@ export interface PageAnalytics {
   uniqueSessions: number;
   uniqueVisitors: number;
   bounceRate: number;
-  eventsByDay: Array<{ date: string; count: bigint }>;
-  topReferrers: Array<{ referrer: string; count: bigint }>;
-  topLocales: Array<{ locale: string; count: bigint }>;
+  eventsByDay: Array<{ date: string; count: number }>;
+  topReferrers: Array<{ referrer: string; count: number }>;
+  topLocales: Array<{ locale: string; count: number }>;
 }
 
 export interface FunnelStep {
@@ -145,7 +146,7 @@ export async function storeEvent(
     await prisma.serverAnalyticsEvent.create({
       data: {
         event,
-        properties: properties as Record<string, unknown>,
+        properties: properties as InputJsonValue,
         sessionId: context.sessionId ?? null,
         visitorId: context.visitorId ?? null,
         userId: context.userId ?? null,
@@ -210,11 +211,13 @@ export async function getAnalytics(
     const where = buildWhereClause({ ...options, startDate, endDate });
 
     // Run all queries in parallel for speed.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const w = where as any;
     const [totalResult, uniqueSessionsResult, uniqueVisitorsResult,
       topEventsResult, eventsByDayResult, eventsByLocaleResult,
       topPagesResult, topDevicesResult, topCountriesResult,
       topBrowsersResult, bounceRateResult] = await Promise.all([
-      prisma.serverAnalyticsEvent.count({ where }),
+      prisma.serverAnalyticsEvent.count({ where: w }),
       prisma.serverAnalyticsEvent
         .groupBy({ by: ["sessionId"], where: { sessionId: { not: null } } })
         .then((rows) => rows.filter((r) => r.sessionId !== null).length),
@@ -224,46 +227,46 @@ export async function getAnalytics(
       prisma.serverAnalyticsEvent.groupBy({
         by: ["event"],
         _count: { event: true },
-        where,
+        where: w,
         orderBy: { _count: { event: "desc" } },
         take: 10,
       }),
-      queryEventsByDay(startDate, endDate, where),
+      queryEventsByDay(startDate, endDate, w),
       prisma.serverAnalyticsEvent.groupBy({
         by: ["locale"],
         _count: { event: true },
-        where: { ...where, locale: { not: null } },
+        where: { ...w, locale: { not: null } },
         orderBy: { _count: { event: "desc" } },
         take: 20,
       }),
       prisma.serverAnalyticsEvent.groupBy({
         by: ["page"],
         _count: { event: true },
-        where: { ...where, page: { not: null } },
+        where: { ...w, page: { not: null } },
         orderBy: { _count: { event: "desc" } },
         take: 10,
       }),
       prisma.serverAnalyticsEvent.groupBy({
         by: ["device"],
         _count: { event: true },
-        where: { ...where, device: { not: null } },
+        where: { ...w, device: { not: null } },
         orderBy: { _count: { event: "desc" } },
       }),
       prisma.serverAnalyticsEvent.groupBy({
         by: ["country"],
         _count: { event: true },
-        where: { ...where, country: { not: null } },
+        where: { ...w, country: { not: null } },
         orderBy: { _count: { event: "desc" } },
         take: 15,
       }),
       prisma.serverAnalyticsEvent.groupBy({
         by: ["browser"],
         _count: { event: true },
-        where: { ...where, browser: { not: null } },
+        where: { ...w, browser: { not: null } },
         orderBy: { _count: { event: "desc" } },
         take: 10,
       }),
-      calculateBounceRate(where),
+      calculateBounceRate(w),
     ]);
 
     return {
@@ -273,28 +276,31 @@ export async function getAnalytics(
       bounceRate: bounceRateResult,
       topEvents: topEventsResult.map((r) => ({
         event: r.event,
-        count: r._count.event,
+        count: Number(r._count.event),
       })),
-      eventsByDay: eventsByDayResult,
+      eventsByDay: eventsByDayResult.map((r) => ({
+        date: r.date,
+        count: r.count,
+      })),
       eventsByLocale: eventsByLocaleResult.map((r) => ({
         locale: r.locale ?? "unknown",
-        count: r._count.event,
+        count: Number(r._count.event),
       })),
       topPages: topPagesResult.map((r) => ({
         page: r.page ?? "unknown",
-        count: r._count.event,
+        count: Number(r._count.event),
       })),
       topDevices: topDevicesResult.map((r) => ({
         device: r.device ?? "unknown",
-        count: r._count.event,
+        count: Number(r._count.event),
       })),
       topCountries: topCountriesResult.map((r) => ({
         country: r.country ?? "unknown",
-        count: r._count.event,
+        count: Number(r._count.event),
       })),
       topBrowsers: topBrowsersResult.map((r) => ({
         browser: r.browser ?? "unknown",
-        count: r._count.event,
+        count: Number(r._count.event),
       })),
     };
   } catch (err) {
@@ -323,6 +329,8 @@ export async function getPageAnalytics(
       page: pagePath,
       createdAt: { gte: startDate, lte: endDate },
     };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const w = where as any;
 
     const [
       totalViews,
@@ -333,29 +341,29 @@ export async function getPageAnalytics(
       topLocalesResult,
       bounceRate,
     ] = await Promise.all([
-      prisma.serverAnalyticsEvent.count({ where }),
+      prisma.serverAnalyticsEvent.count({ where: w }),
       prisma.serverAnalyticsEvent
-        .groupBy({ by: ["sessionId"], where: { ...where, sessionId: { not: null } } })
+        .groupBy({ by: ["sessionId"], where: { ...w, sessionId: { not: null } } })
         .then((rows) => rows.filter((r) => r.sessionId !== null).length),
       prisma.serverAnalyticsEvent
-        .groupBy({ by: ["visitorId"], where: { ...where, visitorId: { not: null } } })
+        .groupBy({ by: ["visitorId"], where: { ...w, visitorId: { not: null } } })
         .then((rows) => rows.filter((r) => r.visitorId !== null).length),
-      queryEventsByDay(startDate, endDate, where),
+      queryEventsByDay(startDate, endDate, w),
       prisma.serverAnalyticsEvent.groupBy({
         by: ["referrer"],
         _count: { event: true },
-        where: { ...where, referrer: { not: null } },
+        where: { ...w, referrer: { not: null } },
         orderBy: { _count: { event: "desc" } },
         take: 10,
       }),
       prisma.serverAnalyticsEvent.groupBy({
         by: ["locale"],
         _count: { event: true },
-        where: { ...where, locale: { not: null } },
+        where: { ...w, locale: { not: null } },
         orderBy: { _count: { event: "desc" } },
         take: 10,
       }),
-      calculateBounceRate(where),
+      calculateBounceRate(w),
     ]);
 
     return {
@@ -364,14 +372,17 @@ export async function getPageAnalytics(
       uniqueSessions: uniqueSessionsResult,
       uniqueVisitors: uniqueVisitorsResult,
       bounceRate,
-      eventsByDay: eventsByDayResult,
+      eventsByDay: eventsByDayResult.map((r) => ({
+        date: r.date,
+        count: r.count,
+      })),
       topReferrers: topReferrersResult.map((r) => ({
         referrer: r.referrer ?? "direct",
-        count: r._count.event,
+        count: Number(r._count.event),
       })),
       topLocales: topLocalesResult.map((r) => ({
         locale: r.locale ?? "unknown",
-        count: r._count.event,
+        count: Number(r._count.event),
       })),
     };
   } catch (err) {
@@ -498,7 +509,7 @@ export async function getSessionData(
   createdAt: Date;
 }>> {
   try {
-    return await prisma.serverAnalyticsEvent.findMany({
+    return (await prisma.serverAnalyticsEvent.findMany({
       where: { sessionId },
       orderBy: { createdAt: "asc" },
       take: limit,
@@ -511,7 +522,15 @@ export async function getSessionData(
         device: true,
         createdAt: true,
       },
-    });
+    })) as Array<{
+      id: string;
+      event: string;
+      properties: Record<string, unknown>;
+      page: string | null;
+      locale: string | null;
+      device: string | null;
+      createdAt: Date;
+    }>;
   } catch (err) {
     console.error("[analytics/getSessionData]", err);
     return [];
@@ -575,7 +594,7 @@ export async function getRealTimeStats(): Promise<RealTimeStats> {
       activeSessions: activeSessionResult,
       topEventsNow: topEventsNowResult.map((r) => ({
         event: r.event,
-        count: r._count.event,
+        count: Number(r._count.event),
       })),
     };
   } catch (err) {
@@ -610,12 +629,16 @@ export async function cleanupOldEvents(
     const BATCH_SIZE = 5000;
 
     while (true) {
-      const result = await prisma.serverAnalyticsEvent.deleteMany({
-        where: { createdAt: { lt: cutoff } },
-        take: BATCH_SIZE,
-      });
-      totalDeleted += result.count;
-      if (result.count < BATCH_SIZE) break;
+      const result = await prisma.$executeRaw`
+        DELETE FROM server_analytics_events
+        WHERE id IN (
+          SELECT id FROM server_analytics_events
+          WHERE created_at < ${cutoff}
+          LIMIT ${BATCH_SIZE}
+        )
+      `;
+      totalDeleted += result;
+      if (result < BATCH_SIZE) break;
     }
 
     return { deleted: totalDeleted };
@@ -627,9 +650,20 @@ export async function cleanupOldEvents(
 
 /* ─── Internal helpers ──────────────────────────────────────────────────── */
 
-type EventWhereInput = Parameters<
-  typeof prisma.serverAnalyticsEvent.count
->[0]["where"];
+type EventWhereInput = {
+  event?: string | { equals?: string; in?: string[]; not?: string };
+  sessionId?: string | { not?: string | null };
+  visitorId?: string | { not?: string | null };
+  page?: string | { not?: string | null; contains?: string };
+  locale?: string | { not?: string | null };
+  device?: string | { not?: string | null };
+  referrer?: string | { not?: string | null };
+  country?: string | { not?: string | null };
+  browser?: string | { not?: string | null };
+  createdAt?: { gte?: Date; lte?: Date; lt?: Date; gt?: Date };
+  AND?: EventWhereInput | EventWhereInput[];
+  OR?: EventWhereInput | EventWhereInput[];
+};
 
 function buildWhereClause(
   options: GetAnalyticsOptions & { startDate: Date; endDate: Date }
@@ -646,7 +680,7 @@ function buildWhereClause(
   }
 
   if (options.locale) where.locale = options.locale;
-  if (options.pagePrefix) where.page = { startsWith: options.pagePrefix };
+  if (options.pagePrefix) where.page = { contains: options.pagePrefix };
 
   return where;
 }
@@ -655,13 +689,13 @@ async function queryEventsByDay(
   startDate: Date,
   endDate: Date,
   where: EventWhereInput
-): Promise<Array<{ date: string; count: bigint }>> {
+): Promise<Array<{ date: string; count: number }>> {
   try {
     // Use raw SQL for efficient date truncation — avoids loading all rows into JS.
-    const rows = await prisma.$queryRaw<Array<{ date: string; count: bigint }>>`
+    const rows = await prisma.$queryRaw<Array<{ date: string; count: number }>>`
       SELECT
         DATE(created_at AT TIME ZONE 'UTC') AS date,
-        COUNT(*)::bigint AS count
+        COUNT(*)::int AS count
       FROM server_analytics_events
       WHERE created_at >= ${startDate}
         AND created_at <= ${endDate}
@@ -675,15 +709,15 @@ async function queryEventsByDay(
     const rows = await prisma.serverAnalyticsEvent.groupBy({
       by: ["createdAt"],
       _count: { event: true },
-      where,
+      where: where as any,
       orderBy: { createdAt: "asc" },
     });
 
     // Group by calendar date in UTC.
-    const byDate = new Map<string, bigint>();
+    const byDate = new Map<string, number>();
     for (const row of rows) {
       const dateStr = row.createdAt.toISOString().slice(0, 10);
-      byDate.set(dateStr, (byDate.get(dateStr) ?? 0n) + BigInt(row._count.event));
+      byDate.set(dateStr, (byDate.get(dateStr) ?? 0) + Number(row._count.event));
     }
 
     return Array.from(byDate.entries())
@@ -699,7 +733,7 @@ async function calculateBounceRate(where: EventWhereInput): Promise<number> {
     const sessions = await prisma.serverAnalyticsEvent.groupBy({
       by: ["sessionId"],
       _count: { event: true },
-      where: { ...where, sessionId: { not: null } },
+      where: { ...(where as any), sessionId: { not: null } },
     });
 
     const totalSessions = sessions.filter((s) => s.sessionId !== null).length;
@@ -733,13 +767,12 @@ function whereClauseToSql(
       conditions.push(`event IN (${list})`);
     }
   }
-  if (where.locale) {
+  if (typeof where.locale === "string") {
     conditions.push(`locale = '${where.locale.replace(/'/g, "''")}'`);
   }
-  if (where.page && typeof where.page === "object" && "startsWith" in where.page) {
-    conditions.push(
-      `page LIKE '${(where.page.startsWith as string).replace(/'/g, "''")}%'`
-    );
+  if (typeof where.page === "object" && where.page !== null && "contains" in where.page) {
+    const val = (where.page as { contains: string }).contains;
+    conditions.push(`page LIKE '${val.replace(/'/g, "''")}%'`);
   }
   return conditions.length > 0 ? ` AND ${conditions.join(" AND ")}` : "";
 }

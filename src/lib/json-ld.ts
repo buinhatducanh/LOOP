@@ -32,7 +32,7 @@ type JsonLdType =
 
 interface BaseJsonLd {
   "@context": JsonLdContext;
-  "@type": JsonLdType;
+  "@type": string;
 }
 
 // ─── Organization (root) ─────────────────────────────────────────────────────

@@ -29,7 +29,7 @@ export const ResourceUsageSchema = z
     storage: z.number().nonnegative().optional(),
     bandwidth: z.number().nonnegative().optional(),
     apiCalls: z.number().int().nonnegative().optional(),
-    custom: z.record(z.unknown()).optional(),
+    custom: z.record(z.string(), z.unknown()).optional(),
   })
   .strict();
 
@@ -53,6 +53,7 @@ export const SelectedItemsSchema = z
 /** PricingComparisonFeature.values — arbitrary key/value comparison data */
 export const FeatureValuesSchema: z.ZodType<Record<string, string | boolean | number | null>> = z
   .record(
+    z.string(),
     z.union([z.string(), z.boolean(), z.number(), z.null()]),
   )
   .default({});
@@ -105,12 +106,12 @@ export const NotificationDataSchema = z
     icon: z.string().optional(),
     actionLabel: z.string().optional(),
     actionUrl: z.string().optional(),
-    metadata: z.record(z.unknown()).optional(),
+    metadata: z.record(z.string(), z.unknown()).optional(),
   })
   .passthrough(); // Allow extra fields beyond the known ones
 
 /** AuditLog.oldValues / AuditLog.newValues — fully flexible audit payload */
-export const AuditValueSchema = z.record(z.unknown()).passthrough();
+export const AuditValueSchema = z.record(z.string(), z.unknown());
 
 /** AddonService.metadata — version, tags, requirements, dependencies */
 export const AddonServiceMetadataSchema = z
@@ -118,7 +119,7 @@ export const AddonServiceMetadataSchema = z
     version: z.string().optional(),
     tags: z.array(z.string()).optional(),
     requirements: z.array(z.string()).optional(),
-    dependencies: z.record(z.string()).optional(),
+    dependencies: z.record(z.string(), z.string()).optional(),
   })
   .passthrough(); // Allow extra fields
 

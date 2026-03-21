@@ -16,15 +16,15 @@ export async function GET(
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    // Get related members (same category, excluding current)
+    // Get related members (same role level, excluding current)
     const relatedMembers = await prisma.teamMember.findMany({
       where: {
         isActive: true,
         id: { not: member.id },
-        roleCategory: member.roleCategory,
+        roleLevel: member.roleLevel,
       },
       take: 4,
-      orderBy: [{ roleLevel: "asc" }, { sortOrder: "asc" }],
+      orderBy: [{ sortOrder: "asc" }],
     });
 
     return NextResponse.json({

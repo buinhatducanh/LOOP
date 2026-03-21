@@ -112,7 +112,7 @@ function AdminTestimonialsContent() {
       setShowCreate(false);
       setForm(defaultForm);
       toast.success("Tạo đánh giá thành công");
-      fetchData(pagination.page, search);
+      fetchData(pagination.page);
     } catch (e) {
       toast.error("Lỗi kết nối");
     } finally {
@@ -137,7 +137,7 @@ function AdminTestimonialsContent() {
       setEditItem(null);
       setForm(defaultForm);
       toast.success("Cập nhật đánh giá thành công");
-      fetchData(pagination.page, search);
+      fetchData(pagination.page);
     } catch (e) {
       toast.error("Lỗi kết nối");
     } finally {
@@ -155,7 +155,7 @@ function AdminTestimonialsContent() {
         return;
       }
       toast.success("Xóa đánh giá thành công");
-      fetchData(pagination.page, search);
+      fetchData(pagination.page);
     } catch (e) {
       toast.error("Lỗi kết nối");
     }
@@ -174,7 +174,7 @@ function AdminTestimonialsContent() {
         return;
       }
       toast.success("Cập nhật trạng thái thành công");
-      fetchData(pagination.page, search);
+      fetchData(pagination.page);
     } catch (e) {
       toast.error("Lỗi kết nối");
     }

@@ -192,7 +192,6 @@ export async function fetchTopPages(limit = 10): Promise<TopPage[]> {
     const rows = await prisma.serverAnalyticsEvent.groupBy({
       by: ["page"],
       _count: { event: true },
-      _countSessions: { event: true },
       where: {
         page: { not: null },
         event: "page_view",

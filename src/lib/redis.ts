@@ -36,7 +36,7 @@ export const redis =
 
 /** 100 requests per minute per IP — public API routes */
 export const publicApiRateLimit = new Ratelimit({
-  redis,
+  redis: redis!,
   limiter: Ratelimit.slidingWindow(100, "1 m"),
   analytics: true,
   prefix: "rl:public",
@@ -44,7 +44,7 @@ export const publicApiRateLimit = new Ratelimit({
 
 /** 20 requests per minute per IP — auth routes */
 export const authRateLimit = new Ratelimit({
-  redis,
+  redis: redis!,
   limiter: Ratelimit.slidingWindow(20, "1 m"),
   analytics: true,
   prefix: "rl:auth",
@@ -52,7 +52,7 @@ export const authRateLimit = new Ratelimit({
 
 /** 10 requests per minute per IP — contact form */
 export const contactRateLimit = new Ratelimit({
-  redis,
+  redis: redis!,
   limiter: Ratelimit.slidingWindow(10, "1 m"),
   analytics: true,
   prefix: "rl:contact",
@@ -60,7 +60,7 @@ export const contactRateLimit = new Ratelimit({
 
 /** 30 requests per minute per IP — search */
 export const searchRateLimit = new Ratelimit({
-  redis,
+  redis: redis!,
   limiter: Ratelimit.slidingWindow(30, "1 m"),
   analytics: true,
   prefix: "rl:search",

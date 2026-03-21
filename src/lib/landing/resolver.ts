@@ -23,7 +23,7 @@ export async function resolveSectionContent(section: LandingSection): Promise<La
       where: { id: { in: content.serviceIds }, isActive: true },
       select: {
         id: true, slug: true, title: true, shortDescription: true,
-        icon: true, color: true, category: true, startingPrice: true, deliveryTime: true,
+        icon: true, category: true, startingPrice: true, deliveryTime: true,
       },
     });
     // Preserve order from serviceIds

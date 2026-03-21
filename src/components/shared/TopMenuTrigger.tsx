@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { useLocale } from "next-intl";
 import { Zap, LogIn, ChevronDown, Package, Briefcase, Users, FileText } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { signOut } from "next-auth/react";
 import { LanguageSwitcher } from "@/components/shared/LanguageSwitcher";
 
 export function TopMenuTrigger() {

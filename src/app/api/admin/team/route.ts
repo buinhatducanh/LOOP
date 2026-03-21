@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import type { TeamMemberCreateInput } from "@/generated/prisma/models/TeamMember";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
 import {
@@ -85,7 +86,7 @@ export async function POST(req: NextRequest) {
     );
 
     const member = await prisma.teamMember.create({
-      data: cleanedData,
+      data: cleanedData as TeamMemberCreateInput,
     });
 
     // Create member expertise relations with level if provided and not empty
