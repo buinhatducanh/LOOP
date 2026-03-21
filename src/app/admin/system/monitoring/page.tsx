@@ -9,6 +9,8 @@
  * Accessible only to admin/system-level roles (level ≤ 1).
  */
 
+export const dynamic = "force-dynamic";
+
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { client } from "@/sanity/client";
