@@ -145,6 +145,7 @@ export function TopMenuTrigger() {
               <Link
                 key={link.path}
                 href={link.path}
+                className={`topmenu-link${pathname === link.path ? " active" : ""}`}
                 style={{
                   padding: "8px 16px",
                   fontSize: "14px",
@@ -164,6 +165,7 @@ export function TopMenuTrigger() {
             <div ref={dropdownRef} style={{ position: "relative" }}>
               <button
                 onClick={() => setOpenDropdown(openDropdown === "more" ? null : "more")}
+                className="topmenu-more-btn"
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -175,7 +177,6 @@ export function TopMenuTrigger() {
                   color: "#9CA3AF",
                   background: "transparent",
                   border: "none",
-                  cursor: "pointer",
                   transition: "all 0.2s",
                 }}
               >
@@ -213,6 +214,7 @@ export function TopMenuTrigger() {
                         key={link.path}
                         href={link.path}
                         onClick={() => setOpenDropdown(null)}
+                        className="topmenu-dropdown-item"
                         style={{
                           display: "flex",
                           alignItems: "center",
@@ -236,6 +238,7 @@ export function TopMenuTrigger() {
                     key="contact"
                     href="/contact"
                     onClick={() => setOpenDropdown(null)}
+                    className="topmenu-dropdown-contact"
                     style={{
                       display: "flex",
                       alignItems: "center",
@@ -267,13 +270,13 @@ export function TopMenuTrigger() {
               {user ? (
                 <button
                   onClick={logout}
+                  className="topmenu-signout-btn"
                   style={{
                     padding: "8px 16px",
                     fontSize: "14px",
                     color: "#D1D5DB",
                     background: "transparent",
                     border: "none",
-                    cursor: "pointer",
                   }}
                 >
                   Sign Out
@@ -282,6 +285,7 @@ export function TopMenuTrigger() {
                 <>
                   <Link
                     href="/login"
+                    className="topmenu-login-btn"
                     style={{
                       display: "flex",
                       alignItems: "center",
@@ -297,6 +301,7 @@ export function TopMenuTrigger() {
                   </Link>
                   <Link
                     href="/register"
+                    className="topmenu-register-btn"
                     style={{
                       padding: "8px 20px",
                       fontSize: "14px",
@@ -327,6 +332,59 @@ export function TopMenuTrigger() {
         @media (min-width: 769px) {
           .mobile-menu { display: none !important; }
           .mobile-only { display: none !important; }
+        }
+
+        /* === TopMenuTrigger Hover Effects === */
+        .topmenu-link:hover {
+          color: #FFFFFF !important;
+          background: rgba(255,255,255,0.08) !important;
+        }
+        .topmenu-link.active:hover {
+          background: rgba(255,255,255,0.1) !important;
+        }
+
+        .topmenu-more-btn:hover {
+          color: #FFFFFF !important;
+          background: rgba(255,255,255,0.08) !important;
+        }
+
+        .topmenu-dropdown-item:hover {
+          color: #FFFFFF !important;
+          background: rgba(255,255,255,0.06) !important;
+        }
+
+        .topmenu-dropdown-contact:hover {
+          color: #FFFFFF !important;
+          background: rgba(255,255,255,0.06) !important;
+        }
+
+        .topmenu-login-btn:hover {
+          color: #FFFFFF !important;
+          background: rgba(255,255,255,0.05) !important;
+          border-radius: 8px;
+        }
+
+        .topmenu-register-btn:hover {
+          opacity: 0.9;
+          transform: translateY(-1px);
+          box-shadow: 0 4px 20px rgba(139,92,246,0.4);
+        }
+
+        .topmenu-signout-btn:hover {
+          color: #F87171 !important;
+          background: rgba(248,113,113,0.1);
+          border-radius: 8px;
+        }
+
+        /* Ensure cursor pointer on all interactive elements */
+        .topmenu-link,
+        .topmenu-more-btn,
+        .topmenu-dropdown-item,
+        .topmenu-dropdown-contact,
+        .topmenu-login-btn,
+        .topmenu-register-btn,
+        .topmenu-signout-btn {
+          cursor: pointer;
         }
       `}</style>
     </nav>

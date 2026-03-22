@@ -18,8 +18,8 @@
 import { prisma } from "@/lib/prisma";
 import { verifyToken } from "./jwt";
 import { cookies } from "next/headers";
-import { auth } from "@/auth";
 import { ROLE_LEVEL, type NavPermission } from "./roles";
+import { auth } from "@/auth";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -42,6 +42,8 @@ export interface SessionUser {
   avatar: string | null;
   accountType: "staff" | "customer";
   teamMemberId: string | null;
+  /** Role level (CEO=-1, super_admin=0, admin=1, pm=2, media=3, qa=4, member=5) */
+  roleLevel: number;
   /** Cached permission list for the active role */
   permissions?: UserPermission[];
 }
@@ -93,6 +95,7 @@ export async function getSession(): Promise<SessionUser | null> {
         avatar: user.avatar,
         accountType: (user.accountType as "staff" | "customer") || "customer",
         teamMemberId: user.teamMemberId,
+        roleLevel: ROLE_LEVEL[user.role] ?? 99,
         permissions,
       };
     } catch {
@@ -107,6 +110,7 @@ export async function getSession(): Promise<SessionUser | null> {
           avatar: null,
           accountType: "staff" as const,
           teamMemberId: null,
+          roleLevel: ROLE_LEVEL[payload.role ?? "user"] ?? 99,
           permissions: [],
         };
       }
@@ -151,6 +155,7 @@ export async function getSession(): Promise<SessionUser | null> {
       avatar: user.avatar,
       accountType: (user.accountType as "staff" | "customer") || "customer",
       teamMemberId: user.teamMemberId,
+      roleLevel: ROLE_LEVEL[user.role] ?? 99,
       permissions,
     };
   } catch {

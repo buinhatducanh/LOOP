@@ -173,6 +173,7 @@ export default function Navbar({ hideOnHome = false }: NavbarProps) {
                 <Link
                   key={link.path}
                   href={link.path}
+                  className={`navbar-nav-link${isActive ? " active" : ""}`}
                   style={{
                     padding: "8px 16px",
                     fontSize: "14px",
@@ -184,18 +185,6 @@ export default function Navbar({ hideOnHome = false }: NavbarProps) {
                     transition: "all 0.2s",
                     position: "relative",
                     letterSpacing: "0.01em",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isActive) {
-                      (e.currentTarget as HTMLAnchorElement).style.color = "#FFFFFF";
-                      (e.currentTarget as HTMLAnchorElement).style.background = "rgba(255,255,255,0.07)";
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isActive) {
-                      (e.currentTarget as HTMLAnchorElement).style.color = "rgba(209,213,219,0.85)";
-                      (e.currentTarget as HTMLAnchorElement).style.background = "transparent";
-                    }
                   }}
                 >
                   {t(link.key as any)}
@@ -221,6 +210,7 @@ export default function Navbar({ hideOnHome = false }: NavbarProps) {
             <div ref={dropdownRef} style={{ position: "relative" }}>
               <button
                 onClick={() => setOpenDropdown(openDropdown === "more" ? null : "more")}
+                className="navbar-more-btn"
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -232,19 +222,8 @@ export default function Navbar({ hideOnHome = false }: NavbarProps) {
                   color: "rgba(209,213,219,0.85)",
                   background: "transparent",
                   border: "none",
-                  cursor: "pointer",
                   transition: "all 0.2s",
                   letterSpacing: "0.01em",
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLButtonElement).style.color = "#FFFFFF";
-                  (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.07)";
-                }}
-                onMouseLeave={(e) => {
-                  if (openDropdown !== "more") {
-                    (e.currentTarget as HTMLButtonElement).style.color = "rgba(209,213,219,0.85)";
-                    (e.currentTarget as HTMLButtonElement).style.background = "transparent";
-                  }
                 }}
               >
                 {t("more")}
@@ -283,6 +262,7 @@ export default function Navbar({ hideOnHome = false }: NavbarProps) {
                         key={link.path}
                         href={link.path}
                         onClick={() => setOpenDropdown(null)}
+                        className="navbar-dropdown-item"
                         style={{
                           display: "flex",
                           alignItems: "center",
@@ -296,18 +276,6 @@ export default function Navbar({ hideOnHome = false }: NavbarProps) {
                           textDecoration: "none",
                           transition: "all 0.15s",
                         }}
-                        onMouseEnter={(e) => {
-                          if (!isActive) {
-                            (e.currentTarget as HTMLAnchorElement).style.background = "rgba(255,255,255,0.06)";
-                            (e.currentTarget as HTMLAnchorElement).style.color = "#FFFFFF";
-                          }
-                        }}
-                        onMouseLeave={(e) => {
-                          if (!isActive) {
-                            (e.currentTarget as HTMLAnchorElement).style.background = "transparent";
-                            (e.currentTarget as HTMLAnchorElement).style.color = "rgba(209,213,219,0.8)";
-                          }
-                        }}
                       >
                         <Icon size={16} style={{ opacity: 0.8 }} />
                         {t(link.key as any)}
@@ -318,6 +286,7 @@ export default function Navbar({ hideOnHome = false }: NavbarProps) {
                     key="contact"
                     href="/contact"
                     onClick={() => setOpenDropdown(null)}
+                    className="navbar-dropdown-contact"
                     style={{
                       display: "flex",
                       alignItems: "center",
@@ -358,6 +327,7 @@ export default function Navbar({ hideOnHome = false }: NavbarProps) {
                 <div ref={userDropdownRef} style={{ position: "relative" }}>
                   <button
                     onClick={() => setOpenDropdown(openDropdown === "user" ? null : "user")}
+                    className="navbar-user-btn"
                     style={{
                       display: "flex",
                       alignItems: "center",
@@ -366,18 +336,7 @@ export default function Navbar({ hideOnHome = false }: NavbarProps) {
                       background: "rgba(255,255,255,0.06)",
                       border: "1px solid rgba(255,255,255,0.12)",
                       borderRadius: "10px",
-                      cursor: "pointer",
                       transition: "all 0.2s",
-                    }}
-                    onMouseEnter={(e) => {
-                      (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.25)";
-                      (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.09)";
-                    }}
-                    onMouseLeave={(e) => {
-                      if (openDropdown !== "user") {
-                        (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.12)";
-                        (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.06)";
-                      }
                     }}
                   >
                     {/* Avatar */}
@@ -476,6 +435,7 @@ export default function Navbar({ hideOnHome = false }: NavbarProps) {
                       {user.roleLevel <= 1 && (
                         <a
                           href="/admin"
+                          className="navbar-admin-link"
                           style={{
                             display: "flex",
                             alignItems: "center",
@@ -490,12 +450,6 @@ export default function Navbar({ hideOnHome = false }: NavbarProps) {
                             transition: "all 0.15s",
                             marginBottom: "2px",
                           }}
-                          onMouseEnter={(e) => {
-                            (e.currentTarget as HTMLAnchorElement).style.background = "linear-gradient(135deg, rgba(139,92,246,0.25), rgba(6,182,212,0.25))";
-                          }}
-                          onMouseLeave={(e) => {
-                            (e.currentTarget as HTMLAnchorElement).style.background = "linear-gradient(135deg, rgba(139,92,246,0.15), rgba(6,182,212,0.15))";
-                          }}
                         >
                           <LayoutDashboard size={15} style={{ opacity: 0.9 }} />
                           Admin Dashboard
@@ -505,6 +459,7 @@ export default function Navbar({ hideOnHome = false }: NavbarProps) {
                       {/* Account Settings */}
                       <Link
                         href="/account"
+                        className="navbar-account-link"
                         style={{
                           display: "flex",
                           alignItems: "center",
@@ -517,14 +472,6 @@ export default function Navbar({ hideOnHome = false }: NavbarProps) {
                           transition: "all 0.15s",
                           borderRadius: "10px",
                         }}
-                        onMouseEnter={(e) => {
-                          (e.currentTarget as HTMLAnchorElement).style.background = "rgba(255,255,255,0.06)";
-                          (e.currentTarget as HTMLAnchorElement).style.color = "#FFFFFF";
-                        }}
-                        onMouseLeave={(e) => {
-                          (e.currentTarget as HTMLAnchorElement).style.background = "transparent";
-                          (e.currentTarget as HTMLAnchorElement).style.color = "rgba(209,213,219,0.8)";
-                        }}
                       >
                         <UserCircle size={15} style={{ opacity: 0.8 }} />
                         Tài khoản
@@ -533,6 +480,7 @@ export default function Navbar({ hideOnHome = false }: NavbarProps) {
                       {/* Sign Out */}
                       <button
                         onClick={logout}
+                        className="navbar-logout-btn"
                         style={{
                           display: "flex",
                           alignItems: "center",
@@ -545,15 +493,8 @@ export default function Navbar({ hideOnHome = false }: NavbarProps) {
                           border: "none",
                           width: "100%",
                           textAlign: "left",
-                          cursor: "pointer",
                           transition: "all 0.15s",
                           borderRadius: "10px",
-                        }}
-                        onMouseEnter={(e) => {
-                          (e.currentTarget as HTMLButtonElement).style.background = "rgba(248,113,113,0.1)";
-                        }}
-                        onMouseLeave={(e) => {
-                          (e.currentTarget as HTMLButtonElement).style.background = "transparent";
                         }}
                       >
                         <LogOut size={15} style={{ opacity: 0.8 }} />
@@ -566,6 +507,7 @@ export default function Navbar({ hideOnHome = false }: NavbarProps) {
                 <>
                   <Link
                     href="/login"
+                    className="navbar-login-btn"
                     style={{
                       padding: "8px 16px",
                       fontSize: "13px",
@@ -578,19 +520,12 @@ export default function Navbar({ hideOnHome = false }: NavbarProps) {
                       transition: "all 0.2s",
                       letterSpacing: "0.01em",
                     }}
-                    onMouseEnter={(e) => {
-                      (e.currentTarget as HTMLAnchorElement).style.borderColor = "rgba(255,255,255,0.25)";
-                      (e.currentTarget as HTMLAnchorElement).style.background = "rgba(255,255,255,0.05)";
-                    }}
-                    onMouseLeave={(e) => {
-                      (e.currentTarget as HTMLAnchorElement).style.borderColor = "rgba(255,255,255,0.12)";
-                      (e.currentTarget as HTMLAnchorElement).style.background = "transparent";
-                    }}
                   >
                     {t("login")}
                   </Link>
                   <Link
                     href="/register"
+                    className="navbar-register-btn"
                     style={{
                       padding: "8px 18px",
                       fontSize: "13px",
@@ -602,14 +537,6 @@ export default function Navbar({ hideOnHome = false }: NavbarProps) {
                       letterSpacing: "0.01em",
                       boxShadow: "0 0 20px rgba(139,92,246,0.3)",
                       transition: "all 0.2s",
-                    }}
-                    onMouseEnter={(e) => {
-                      (e.currentTarget as HTMLAnchorElement).style.transform = "translateY(-1px)";
-                      (e.currentTarget as HTMLAnchorElement).style.boxShadow = "0 4px 24px rgba(139,92,246,0.45)";
-                    }}
-                    onMouseLeave={(e) => {
-                      (e.currentTarget as HTMLAnchorElement).style.transform = "translateY(0)";
-                      (e.currentTarget as HTMLAnchorElement).style.boxShadow = "0 0 20px rgba(139,92,246,0.3)";
                     }}
                   >
                     {t("register")}
@@ -820,6 +747,82 @@ export default function Navbar({ hideOnHome = false }: NavbarProps) {
         a:focus-visible, button:focus-visible {
           outline: 2px solid rgba(139,92,246,0.7);
           outline-offset: 2px;
+        }
+
+        /* === Navbar Hover Effects === */
+
+        /* Main nav links hover */
+        .navbar-nav-link:hover {
+          color: #FFFFFF !important;
+          background: rgba(255,255,255,0.07) !important;
+        }
+        .navbar-nav-link.active:hover {
+          background: rgba(139,92,246,0.18) !important;
+        }
+
+        /* More dropdown button hover */
+        .navbar-more-btn:hover {
+          color: #FFFFFF !important;
+          background: rgba(255,255,255,0.07) !important;
+        }
+
+        /* Auth buttons hover */
+        .navbar-login-btn:hover {
+          border-color: rgba(255,255,255,0.25) !important;
+          background: rgba(255,255,255,0.05) !important;
+          color: #FFFFFF !important;
+        }
+        .navbar-register-btn:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 4px 24px rgba(139,92,246,0.45);
+        }
+
+        /* User avatar button hover */
+        .navbar-user-btn:hover {
+          border-color: rgba(255,255,255,0.25) !important;
+          background: rgba(255,255,255,0.09) !important;
+        }
+
+        /* Dropdown item hover */
+        .navbar-dropdown-item:hover {
+          background: rgba(255,255,255,0.06) !important;
+          color: #FFFFFF !important;
+        }
+
+        /* Dropdown contact link */
+        .navbar-dropdown-contact:hover {
+          background: rgba(255,255,255,0.06) !important;
+          color: #FFFFFF !important;
+        }
+
+        /* Account settings in user dropdown */
+        .navbar-account-link:hover {
+          background: rgba(255,255,255,0.06) !important;
+          color: #FFFFFF !important;
+        }
+
+        /* Logout button hover */
+        .navbar-logout-btn:hover {
+          background: rgba(248,113,113,0.1) !important;
+        }
+
+        /* Admin dashboard link hover */
+        .navbar-admin-link:hover {
+          background: linear-gradient(135deg, rgba(139,92,246,0.25), rgba(6,182,212,0.25)) !important;
+        }
+
+        /* Ensure cursor is pointer on all interactive elements */
+        .navbar-nav-link,
+        .navbar-more-btn,
+        .navbar-login-btn,
+        .navbar-register-btn,
+        .navbar-user-btn,
+        .navbar-dropdown-item,
+        .navbar-dropdown-contact,
+        .navbar-account-link,
+        .navbar-logout-btn,
+        .navbar-admin-link {
+          cursor: pointer;
         }
       `}</style>
     </nav>

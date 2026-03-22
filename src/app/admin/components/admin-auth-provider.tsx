@@ -95,8 +95,14 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
     });
     const data = await res.json();
     if (!res.ok) return { error: data.error || "Đăng nhập thất bại" };
-    const level = ROLE_LEVEL[data.user?.role] ?? 99;
-    setUser({ ...data.user, roleLevel: level, permissions: data.user.permissions ?? [] });
+    // Use roleLevel and permissions directly from the login response
+    const level = data.user?.roleLevel ?? ROLE_LEVEL[data.user?.role] ?? 99;
+    setUser({
+      ...data.user,
+      userId: data.user.id ?? data.user.userId,
+      roleLevel: level,
+      permissions: data.user.permissions ?? [],
+    });
     return {};
   }, []);
 

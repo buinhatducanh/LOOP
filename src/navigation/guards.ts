@@ -63,9 +63,11 @@ function userHasPermission(
 
 /**
  * Check if user is super_admin (bypasses all permission checks).
+ * Uses roleLevel <= 0 (CEO = -1, super_admin = 0) instead of string comparison
+ * to avoid mismatches if the DB stores the role name differently (e.g. "super-admin").
  */
 function isSuperAdmin(user: AuthUser): boolean {
-  return user.role === "ceo" || user.role === "super_admin";
+  return user.roleLevel <= 0;
 }
 
 // ─── Client-side guard helpers ────────────────────────────────────────────────
@@ -138,6 +140,8 @@ export function canAccessAdminPath(
  */
 export function canSeeNavItem(user: AuthUser | null, path: string): boolean {
   if (!user) return false;
+
+  // Super admin (ceo / super_admin) — bypasses all permission checks
   if (isSuperAdmin(user)) return true;
 
   const navConfig: NavPermission | undefined = (NAV_PERMISSIONS as Record<string, NavPermission>)[path];
@@ -145,6 +149,12 @@ export function canSeeNavItem(user: AuthUser | null, path: string): boolean {
 
   // Role level check
   if (user.roleLevel > (navConfig.minRoleLevel ?? 0)) return false;
+
+  // If no permissions are loaded yet (e.g. right after login before fetchMe),
+  // fall back to role level only — avoid blank sidebar for super_admin/admin
+  if (!user.permissions || user.permissions.length === 0) {
+    return true; // role level already passed above
+  }
 
   // Permission check
   if (navConfig.permissions && navConfig.permissions.length > 0) {

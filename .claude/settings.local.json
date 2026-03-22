@@ -33,7 +33,8 @@
       "Read(//app/src/app/[locale]/account/**)",
       "Read(//app/src/app/admin/**)",
       "Read(//app/src/app/api/admin/auth/logout/**)",
-      "Bash(python -c \":*)"
+      "Bash(python -c \":*)",
+      "Bash(findstr /i \"layout header\")"
     ],
     "additionalDirectories": [
       "D:\\LOOP_COMPANY\\LOOP\\src\\app\\api\\admin\\expertises"

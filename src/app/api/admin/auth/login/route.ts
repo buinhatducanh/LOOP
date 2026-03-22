@@ -5,6 +5,7 @@ import { verifyPassword } from "@/lib/auth/password";
 import { signToken } from "@/lib/auth/jwt";
 import { createAuditLog } from "@/lib/auth/audit";
 import { cookies } from "next/headers";
+import { ROLE_LEVEL } from "@/lib/auth/roles";
 
 // Pre-computed hash to use for timing-safe comparison when user doesn't exist
 const DUMMY_HASH = "$2a$12$LJ3m4ys3Rl3hPcyFSevMnuGHvZw7KLEqKl6.s8EWYFONbJdRe0Gu2";
@@ -39,7 +40,7 @@ export async function POST(req: NextRequest) {
     user = await prisma.user.findUnique({
       where: { email },
       include: {
-        userRoles: { include: { role: true } },
+        userRoles: { include: { role: { include: { permissions: true } } } },
       },
     });
 
@@ -70,6 +71,23 @@ export async function POST(req: NextRequest) {
 
     const roles = user.userRoles.map((ur) => ur.role.name);
 
+    // Build granular permissions from role-permission join table
+    const permissions = user.userRoles.flatMap((ur) =>
+      ur.role.permissions.map((p) => ({
+        resource: p.resource,
+        action: p.action,
+        scope: p.scope ?? "global",
+      }))
+    );
+
+    // Derive roleLevel from the junction table (UserRole → Role),
+    // NOT from User.role (which is a denormalized default field).
+    // Use the MOST PRIVILEGED role level (lowest number) among all assigned roles.
+    const roleLevel = user.userRoles.reduce(
+      (min, ur) => Math.min(min, ur.role.level ?? 99),
+      99
+    );
+
     // Create JWT token for custom auth
     const token = signToken({
       userId: user.id,
@@ -86,12 +104,14 @@ export async function POST(req: NextRequest) {
 
     const response = NextResponse.json({
       user: {
-        id: user.id,
+        userId: user.id,
         email: user.email,
         name: user.name,
         avatar: user.avatar,
         role: user.role,
         roles,
+        permissions,
+        roleLevel,
       },
     });
 
