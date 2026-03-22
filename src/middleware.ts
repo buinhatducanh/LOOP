@@ -37,6 +37,9 @@ const PATH_ROLE_REQUIREMENTS: Record<string, number> = {
   "/admin/sales/addon-services": 2,
   "/admin/sales/reward-tiers": 2,
   "/admin/sales/packages": 2,
+  "/admin/sales/hosting-plans": 2,
+  "/admin/sales/domain-prices": 2,
+  "/admin/sales/deployment-items": 2,
   "/admin/sales/pricing-features": 2,
   "/admin/sales/quote-requests": 3,
   // System  → src/app/admin/system/{name}/page.tsx
@@ -104,6 +107,18 @@ const intlMiddleware = createMiddleware(routing);
 
 export default async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
+
+  // ── Strip locale prefix from ALL admin routes BEFORE intlMiddleware ──
+  // next-intl with localePrefix:'always' would otherwise redirect /admin → /vi/admin,
+  // creating a loop: /admin ↔ /vi/admin. Catch these first and redirect to the
+  // canonical no-locale admin URL.
+  for (const locale of routing.locales) {
+    const adminWithLocale = `/${locale}/admin`;
+    if (pathname === adminWithLocale || pathname.startsWith(adminWithLocale + "/")) {
+      const suffix = pathname.slice(adminWithLocale.length);
+      return NextResponse.redirect(new URL(`/admin${suffix}`, req.url), 308);
+    }
+  }
 
   // ── Admin API routes ─────────────────────────────────────────────────
   if (pathname.startsWith("/api/admin")) {
@@ -179,32 +194,6 @@ export default async function middleware(req: NextRequest) {
       }
     }
     return NextResponse.next();
-  }
-
-  // ── Admin routes WITH locale prefix (e.g. /vi/admin, /en/admin) ────
-  // intlMiddleware may pass these through; catch them here first
-  for (const locale of routing.locales) {
-    const adminPath = `/${locale}/admin`;
-    const adminRoot = `/${locale}/admin/`;
-    if (pathname === adminPath || pathname.startsWith(adminRoot)) {
-      // Strip locale prefix to get the real admin path
-      const realPath = pathname.replace(`/${locale}`, "") || "/admin";
-      if (!isAuthenticated(req)) {
-        const loginUrl = new URL("/vi/login", req.url);
-        loginUrl.searchParams.set("redirect", realPath);
-        return NextResponse.redirect(loginUrl);
-      }
-      const requiredLevel = getRequiredLevel(realPath);
-      if (requiredLevel < 5) {
-        const userLevel = await getUserRoleLevel(req);
-        if (userLevel > requiredLevel) {
-          const deniedUrl = new URL("/admin/access-denied", req.url);
-          return NextResponse.redirect(deniedUrl);
-        }
-      }
-      // Redirect to the canonical no-locale admin URL
-      return NextResponse.redirect(new URL(realPath, req.url));
-    }
   }
 
   // ── All other routes: i18n ────────────────────────────────────────

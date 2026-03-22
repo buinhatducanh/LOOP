@@ -15,7 +15,10 @@
       "Bash(wmic process:*)",
       "Bash(node -e \":*)",
       "Bash(rm -rf .next)",
-      "Bash(mkdir -p src/app/admin/content/team src/app/admin/sales/orders src/app/admin/system/users)"
+      "Bash(mkdir -p src/app/admin/content/team src/app/admin/sales/orders src/app/admin/system/users)",
+      "Read(//c/Users/NGuyenPhuThien/Desktop/BTL/btl-20251-nhom4/src/**)",
+      "Read(//c/Users/NGuyenPhuThien/Desktop/BTL/btl-20251-nhom4/src/app/admin/**)",
+      "Read(//c/Users/NGuyenPhuThien/Desktop/BTL/btl-20251-nhom4/src/app/admin/components/**)"
     ],
     "additionalDirectories": [
       "D:\\LOOP_COMPANY\\LOOP\\src\\app\\api\\admin\\expertises"

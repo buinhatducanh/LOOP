@@ -11,31 +11,33 @@
  *   3. API routes  — blocks resource+action level access
  *   4. UI          — hides/show nav items and action buttons
  *
- * Permission resources map to admin routes:
+ * Permission resources map to admin routes (grouped paths):
  *   dashboard        → /admin
- *   home-sliders     → /admin/home-sliders
- *   landing-pages    → /admin/landing-pages
- *   services         → /admin/services
- *   projects         → /admin/projects
- *   team             → /admin/team
- *   expertises       → /admin/expertises
- *   testimonials     → /admin/testimonials
- *   messages         → /admin/messages
- *   orders           → /admin/orders
- *   web-templates    → /admin/web-templates
- *   service-attrs    → /admin/service-attributes
- *   addon-services   → /admin/addon-services
- *   reward-tiers     → /admin/reward-tiers
- *   packages         → /admin/packages
- *   pricing-features → /admin/pricing-features
- *   quote-requests   → /admin/quote-requests
- *   users            → /admin/users
- *   roles            → /admin/roles
- *   audit-log        → /admin/audit-log
- *   settings         → /admin/settings
- *   websites         → /admin/websites
- *   points           → /admin/points
- *   content          → aggregate for content-only roles (home-sliders + landing-pages + services + projects + team + expertises + testimonials)
+ *   home-sliders     → /admin/content/home-sliders
+ *   landing-pages    → /admin/content/landing-pages
+ *   services         → /admin/content/services
+ *   projects         → /admin/content/projects
+ *   team             → /admin/content/team
+ *   expertises       → /admin/content/expertises
+ *   testimonials     → /admin/content/testimonials
+ *   messages         → /admin/content/messages
+ *   orders           → /admin/sales/orders
+ *   web-templates    → /admin/sales/web-templates
+ *   service-attrs    → /admin/sales/service-attributes
+ *   addon-services   → /admin/sales/addon-services
+ *   reward-tiers     → /admin/sales/reward-tiers
+ *   packages         → /admin/sales/packages
+ *   hosting-plans    → /admin/sales/hosting-plans
+ *   domain-prices    → /admin/sales/domain-prices
+ *   deployment-items  → /admin/sales/deployment-items
+ *   pricing-features → /admin/sales/pricing-features
+ *   quote-requests   → /admin/sales/quote-requests
+ *   users            → /admin/system/staff-users
+ *   roles            → /admin/system/roles
+ *   audit-log        → /admin/system/audit-log
+ *   settings         → /admin/system/settings
+ *   websites         → /admin/system/websites
+ *   points           → /admin/system/points
  */
 
 // ─── Role Definitions ──────────────────────────────────────────────────────────
@@ -109,137 +111,155 @@ export const NAV_PERMISSIONS: Record<string, NavPermission> = {
   },
 
   // ── Nội dung ────────────────────────────────────────────────────────────────
-  "/admin/home-sliders": {
+  "/admin/content/home-sliders": {
     label: { vi: "Trang chủ (Slider)", en: "Home Sliders" },
     minRoleLevel: 2,
     permissions: [{ resource: "home-sliders", actions: ["read", "create", "update", "delete"] }],
     icon: "Image",
   },
-  "/admin/landing-pages": {
+  "/admin/content/landing-pages": {
     label: { vi: "Landing Pages", en: "Landing Pages" },
     minRoleLevel: 2,
     permissions: [{ resource: "landing-pages", actions: ["read", "create", "update", "delete"] }],
     icon: "LayoutTemplate",
   },
-  "/admin/services": {
+  "/admin/content/services": {
     label: { vi: "Dịch vụ", en: "Services" },
     minRoleLevel: 2,
     permissions: [{ resource: "services", actions: ["read", "create", "update", "delete"] }],
     icon: "Globe",
   },
-  "/admin/projects": {
+  "/admin/content/projects": {
     label: { vi: "Dự án", en: "Projects" },
     minRoleLevel: 3,
     permissions: [{ resource: "projects", actions: ["read", "create", "update", "delete"] }],
     icon: "FolderKanban",
   },
-  "/admin/team": {
+  "/admin/content/team": {
     label: { vi: "Đội ngũ", en: "Team" },
     minRoleLevel: 1,
     permissions: [{ resource: "team", actions: ["read", "create", "update", "delete"] }],
     icon: "UsersRound",
   },
-  "/admin/expertises": {
+  "/admin/content/expertises": {
     label: { vi: "Kỹ năng", en: "Expertises" },
     minRoleLevel: 2,
     permissions: [{ resource: "expertises", actions: ["read", "create", "update", "delete"] }],
     icon: "Wrench",
   },
-  "/admin/testimonials": {
+  "/admin/content/testimonials": {
     label: { vi: "Đánh giá", en: "Testimonials" },
     minRoleLevel: 3,
     permissions: [{ resource: "testimonials", actions: ["read", "create", "update", "delete"] }],
     icon: "Star",
   },
-
-  // ── Kinh doanh ─────────────────────────────────────────────────────────────
-  "/admin/orders": {
-    label: { vi: "Đơn hàng", en: "Orders" },
-    minRoleLevel: 3,
-    permissions: [{ resource: "orders", actions: ["read", "update", "approve"] }],
-    icon: "ShoppingCart",
-  },
-  "/admin/web-templates": {
-    label: { vi: "Kho Giao Diện", en: "Web Templates" },
-    minRoleLevel: 2,
-    permissions: [{ resource: "web-templates", actions: ["read", "create", "update", "delete"] }],
-    icon: "Layout",
-  },
-  "/admin/service-attributes": {
-    label: { vi: "Kho Tính Năng", en: "Service Attributes" },
-    minRoleLevel: 2,
-    permissions: [{ resource: "service-attributes", actions: ["read", "create", "update", "delete"] }],
-    icon: "Tag",
-  },
-  "/admin/addon-services": {
-    label: { vi: "Dịch vụ Rời", en: "Addon Services" },
-    minRoleLevel: 2,
-    permissions: [{ resource: "addon-services", actions: ["read", "create", "update", "delete"] }],
-    icon: "Puzzle",
-  },
-  "/admin/reward-tiers": {
-    label: { vi: "XP & Rewards", en: "XP & Rewards" },
-    minRoleLevel: 2,
-    permissions: [{ resource: "reward-tiers", actions: ["read", "create", "update", "delete"] }],
-    icon: "Gift",
-  },
-  "/admin/packages": {
-    label: { vi: "Gói dịch vụ", en: "Service Packages" },
-    minRoleLevel: 2,
-    permissions: [{ resource: "packages", actions: ["read", "create", "update", "delete"] }],
-    icon: "Package",
-  },
-  "/admin/pricing-features": {
-    label: { vi: "Báo giá tính năng", en: "Pricing Features" },
-    minRoleLevel: 2,
-    permissions: [{ resource: "pricing-features", actions: ["read", "create", "update", "delete"] }],
-    icon: "Calculator",
-  },
-  "/admin/quote-requests": {
-    label: { vi: "Yêu cầu báo giá", en: "Quote Requests" },
-    minRoleLevel: 3,
-    permissions: [{ resource: "quote-requests", actions: ["read", "update", "approve"] }],
-    icon: "FileQuestion",
-  },
-  "/admin/messages": {
+  "/admin/content/messages": {
     label: { vi: "Tin nhắn", en: "Messages" },
     minRoleLevel: 4,
     permissions: [{ resource: "messages", actions: ["read", "update", "delete"] }],
     icon: "MessageSquare",
   },
 
+  // ── Kinh doanh ─────────────────────────────────────────────────────────────
+  "/admin/sales/orders": {
+    label: { vi: "Đơn hàng", en: "Orders" },
+    minRoleLevel: 3,
+    permissions: [{ resource: "orders", actions: ["read", "update", "approve"] }],
+    icon: "ShoppingCart",
+  },
+  "/admin/sales/web-templates": {
+    label: { vi: "Kho Giao Diện", en: "Web Templates" },
+    minRoleLevel: 2,
+    permissions: [{ resource: "web-templates", actions: ["read", "create", "update", "delete"] }],
+    icon: "Layout",
+  },
+  "/admin/sales/service-attributes": {
+    label: { vi: "Kho Tính Năng", en: "Service Attributes" },
+    minRoleLevel: 2,
+    permissions: [{ resource: "service-attributes", actions: ["read", "create", "update", "delete"] }],
+    icon: "Tag",
+  },
+  "/admin/sales/addon-services": {
+    label: { vi: "Dịch vụ Rời", en: "Addon Services" },
+    minRoleLevel: 2,
+    permissions: [{ resource: "addon-services", actions: ["read", "create", "update", "delete"] }],
+    icon: "Puzzle",
+  },
+  "/admin/sales/reward-tiers": {
+    label: { vi: "XP & Rewards", en: "XP & Rewards" },
+    minRoleLevel: 2,
+    permissions: [{ resource: "reward-tiers", actions: ["read", "create", "update", "delete"] }],
+    icon: "Gift",
+  },
+  "/admin/sales/packages": {
+    label: { vi: "Gói dịch vụ", en: "Service Packages" },
+    minRoleLevel: 2,
+    permissions: [{ resource: "packages", actions: ["read", "create", "update", "delete"] }],
+    icon: "Package",
+  },
+  "/admin/sales/hosting-plans": {
+    label: { vi: "Hosting Plans", en: "Hosting Plans" },
+    minRoleLevel: 2,
+    permissions: [{ resource: "hosting-plans", actions: ["read", "create", "update", "delete"] }],
+    icon: "Server",
+  },
+  "/admin/sales/domain-prices": {
+    label: { vi: "Domain Prices", en: "Domain Prices" },
+    minRoleLevel: 2,
+    permissions: [{ resource: "domain-prices", actions: ["read", "create", "update", "delete"] }],
+    icon: "Globe",
+  },
+  "/admin/sales/deployment-items": {
+    label: { vi: "Deployment Items", en: "Deployment Items" },
+    minRoleLevel: 2,
+    permissions: [{ resource: "deployment-items", actions: ["read", "create", "update", "delete"] }],
+    icon: "FileText",
+  },
+  "/admin/sales/pricing-features": {
+    label: { vi: "Báo giá tính năng", en: "Pricing Features" },
+    minRoleLevel: 2,
+    permissions: [{ resource: "pricing-features", actions: ["read", "create", "update", "delete"] }],
+    icon: "Calculator",
+  },
+  "/admin/sales/quote-requests": {
+    label: { vi: "Yêu cầu báo giá", en: "Quote Requests" },
+    minRoleLevel: 3,
+    permissions: [{ resource: "quote-requests", actions: ["read", "update", "approve"] }],
+    icon: "FileQuestion",
+  },
+
   // ── Hệ thống ──────────────────────────────────────────────────────────────
-  "/admin/users": {
+  "/admin/system/staff-users": {
     label: { vi: "Người dùng", en: "Users" },
     minRoleLevel: 1,
     permissions: [{ resource: "users", actions: ["read", "create", "update", "delete"] }],
     icon: "Users",
   },
-  "/admin/roles": {
+  "/admin/system/roles": {
     label: { vi: "Phân quyền", en: "Roles" },
     minRoleLevel: 1,
     permissions: [{ resource: "roles", actions: ["read", "create", "update", "delete"] }],
     icon: "ShieldCheck",
   },
-  "/admin/audit-log": {
+  "/admin/system/audit-log": {
     label: { vi: "Nhật ký", en: "Audit Log" },
     minRoleLevel: 1,
     permissions: [{ resource: "audit-log", actions: ["read", "export"] }],
     icon: "ClipboardList",
   },
-  "/admin/settings": {
+  "/admin/system/settings": {
     label: { vi: "Cài đặt", en: "Settings" },
     minRoleLevel: 1,
     permissions: [{ resource: "settings", actions: ["read", "update"] }],
     icon: "Settings",
   },
-  "/admin/websites": {
+  "/admin/system/websites": {
     label: { vi: "Websites", en: "Websites" },
     minRoleLevel: 3,
     permissions: [{ resource: "websites", actions: ["read", "update"] }],
     icon: "Globe",
   },
-  "/admin/points": {
+  "/admin/system/points": {
     label: { vi: "Điểm thưởng", en: "Points" },
     minRoleLevel: 2,
     permissions: [{ resource: "points", actions: ["read", "update"] }],

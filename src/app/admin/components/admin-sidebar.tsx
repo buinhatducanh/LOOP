@@ -35,7 +35,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useAdminAuth } from "./admin-auth-provider";
-import { ROLE_LEVEL } from "@/lib/auth/roles";
+import { canAccessNav } from "@/lib/auth/roles";
 import { cn } from "@/components/ui/utils";
 
 type NavItem = {
@@ -98,36 +98,25 @@ const navigation: NavEntry[] = [
 
 // ─── Filter nav items by role ──────────────────────────────────────────────────────
 
-function canAccessNav(userRoleLevel: number, href: string): boolean {
-  if (href === "/admin") return true; // all staff
-  // Admin-only routes (roleLevel <= 1)
-  const adminOnlyRoutes = [
-    "/admin/system/staff-users",
-    "/admin/system/roles",
-    "/admin/system/audit-log",
-    "/admin/system/settings",
-  ];
-  if (adminOnlyRoutes.includes(href)) {
-    return userRoleLevel <= 1;
-  }
-  return true;
+function useCanAccessNav() {
+  const { user } = useAdminAuth();
+  const userRole = user?.role ?? "";
+  return (href: string) => canAccessNav(userRole, href);
 }
 
 // ─── Sidebar ───────────────────────────────────────────────────────────────
 
 export function AdminSidebar({ onCollapse }: { onCollapse?: (collapsed: boolean) => void }) {
-  const { user } = useAdminAuth();
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
-
-  const userLevel = user ? ROLE_LEVEL[user.role] ?? 99 : 99;
+  const canAccess = useCanAccessNav();
 
   const filteredNav = navigation.map((entry) => {
     if ("href" in entry) {
-      if (!canAccessNav(userLevel, entry.href)) return null;
+      if (!canAccess(entry.href)) return null;
       return entry;
     }
-    const visibleItems = entry.items.filter((item) => canAccessNav(userLevel, item.href));
+    const visibleItems = entry.items.filter((item) => canAccess(item.href));
     if (visibleItems.length === 0) return null;
     return { ...entry, items: visibleItems };
   }).filter(Boolean) as NavEntry[];
