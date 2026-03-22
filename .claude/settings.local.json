@@ -13,7 +13,9 @@
       "Bash(curl:*)",
       "Bash(taskkill:*)",
       "Bash(wmic process:*)",
-      "Bash(node -e \":*)"
+      "Bash(node -e \":*)",
+      "Bash(rm -rf .next)",
+      "Bash(mkdir -p src/app/admin/content/team src/app/admin/sales/orders src/app/admin/system/users)"
     ],
     "additionalDirectories": [
       "D:\\LOOP_COMPANY\\LOOP\\src\\app\\api\\admin\\expertises"
