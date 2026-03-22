@@ -6,6 +6,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getLocale } from 'next-intl/server';
 import { Inter } from 'next/font/google';
 import { buildOrganizationJsonLd, buildWebSiteJsonLd } from '@/lib/json-ld';
+import { AdminAuthProvider } from '@/app/admin/components/admin-auth-provider';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -25,35 +26,35 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
       ],
     },
     title: {
-      default: "LOOP - Thiết kế Website & Ứng dụng chuyên nghiệp",
-      template: "%s | LOOP",
+      default: "LOOPS - Loop Solutions | Thiết kế Website & Ứng dụng chuyên nghiệp",
+      template: "%s | LOOPS",
     },
     description:
-      "LOOP - Công ty thiết kế website thương mại, ứng dụng di động, phần mềm quản lý doanh nghiệp. Tối ưu SEO, hiệu suất cao, hỗ trợ 24/7.",
+      "LOOPS (Loop Solutions) - Công ty thiết kế website thương mại, ứng dụng di động, phần mềm quản lý doanh nghiệp. Tối ưu SEO, hiệu suất cao, hỗ trợ 24/7.",
     keywords: [
       "thiết kế website", "làm website", "website thương mại điện tử",
-      "ứng dụng di động", "phần mềm quản lý", "web development", "LOOP",
+      "ứng dụng di động", "phần mềm quản lý", "web development", "LOOPS", "Loop Solutions",
     ],
     openGraph: {
       type: "website",
       locale: locale === "en" ? "en_US" : "vi_VN",
       alternateLocale: locale === "en" ? "vi_VN" : "en_US",
-      siteName: "LOOP",
-      title: "LOOP - Thiết kế Website & Ứng dụng chuyên nghiệp",
-      description: "Công ty LOOP chuyên thiết kế website thương mại, app di động, phần mềm quản lý. Cam kết SEO top Google, hiệu suất 95+.",
+      siteName: "LOOPS - Loop Solutions",
+      title: "LOOPS - Loop Solutions | Thiết kế Website & Ứng dụng chuyên nghiệp",
+      description: "Loop Solutions chuyên thiết kế website thương mại, app di động, phần mềm quản lý. Cam kết SEO top Google, hiệu suất 95+.",
       images: [
         {
-          url: "/api/og?title=LOOP&description=Công+ty+thiết+kế+website+và+ứng+dụng+chuyên+nghiệp&type=website",
+          url: "/api/og?title=LOOPS+-+Loop+Solutions&description=Công+ty+thiết+kế+website+và+ứng+dụng+chuyên+nghiệp&type=website",
           width: 1200,
           height: 630,
-          alt: "LOOP - Web Development Agency",
+          alt: "LOOPS - Loop Solutions - Web Development Agency",
         },
       ],
     },
     twitter: {
       card: "summary_large_image",
-      title: "LOOP - Thiết kế Website & Ứng dụng chuyên nghiệp",
-      description: "Công ty LOOP chuyên thiết kế website thương mại, app di động, phần mềm quản lý doanh nghiệp.",
+      title: "LOOPS - Loop Solutions | Thiết kế Website & Ứng dụng chuyên nghiệp",
+      description: "Loop Solutions chuyên thiết kế website thương mại, app di động, phần mềm quản lý doanh nghiệp.",
     },
     robots: {
       index: true,
@@ -87,7 +88,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       </head>
       <body>
         <NextIntlClientProvider locale={locale} messages={messages}>
-          {children}
+          <AdminAuthProvider>
+            {children}
+          </AdminAuthProvider>
         </NextIntlClientProvider>
       </body>
     </html>

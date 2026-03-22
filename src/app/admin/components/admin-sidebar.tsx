@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { LogoInline } from "@/components/shared/InfinityLogo";
 import {
   LayoutDashboard,
   Globe,
@@ -35,7 +36,10 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useAdminAuth } from "./admin-auth-provider";
-import { canAccessNav } from "@/lib/auth/roles";
+import { canSeeNavItem } from "@/navigation/guards";
+import { NAV_PERMISSIONS } from "@/lib/auth/roles";
+import type { NavPermission } from "@/lib/auth/roles";
+import { NavLink } from "@/navigation/router";
 import { cn } from "@/components/ui/utils";
 
 type NavItem = {
@@ -46,62 +50,88 @@ type NavItem = {
 type NavGroup = { group: string; items: NavItem[] };
 type NavEntry = NavItem | NavGroup;
 
-// NOTE: All paths use /admin/* — no locale prefix for admin routes
-// Routes match the actual folder structure under src/app/admin/
-const navigation: NavEntry[] = [
-  // Standalone items
-  { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
-  // Nội dung  → src/app/admin/content/{section}/page.tsx
-  {
-    group: "Nội dung",
-    items: [
-      { name: "Trang chủ (Slider)", href: "/admin/content/home-sliders", icon: Image },
-      { name: "Landing Pages", href: "/admin/content/landing-pages", icon: LayoutTemplate },
-      { name: "Dịch vụ", href: "/admin/content/services", icon: Globe },
-      { name: "Dự án", href: "/admin/content/projects", icon: FolderKanban },
-      { name: "Đội ngũ", href: "/admin/content/team", icon: UsersRound },
-      { name: "Kỹ năng", href: "/admin/content/expertises", icon: Wrench },
-      { name: "Đánh giá", href: "/admin/content/testimonials", icon: Star },
-      { name: "Tin nhắn", href: "/admin/content/messages", icon: MessageSquare },
-    ],
-  },
-  // Kinh doanh  → src/app/admin/sales/{section}/page.tsx
-  {
-    group: "Kinh doanh",
-    items: [
-      { name: "Đơn hàng", href: "/admin/sales/orders", icon: ShoppingCart },
-      { name: "Kho Giao Diện", href: "/admin/sales/web-templates", icon: Layout },
-      { name: "Kho Tính Năng", href: "/admin/sales/service-attributes", icon: Tag },
-      { name: "Dịch vụ Rời", href: "/admin/sales/addon-services", icon: Puzzle },
-      { name: "XP & Rewards", href: "/admin/sales/reward-tiers", icon: Gift },
-      { name: "Gói dịch vụ", href: "/admin/sales/packages", icon: Package },
-      { name: "Hosting Plans", href: "/admin/sales/hosting-plans", icon: Server },
-      { name: "Domain Prices", href: "/admin/sales/domain-prices", icon: Globe },
-      { name: "Deployment Items", href: "/admin/sales/deployment-items", icon: FileText },
-      { name: "Báo giá tính năng", href: "/admin/sales/pricing-features", icon: Calculator },
-      { name: "Yêu cầu báo giá", href: "/admin/sales/quote-requests", icon: FileQuestion },
-    ],
-  },
-  // Hệ thống  → src/app/admin/system/{section}/page.tsx
-  {
-    group: "Hệ thống",
-    items: [
-      { name: "Tài Khoản NV", href: "/admin/system/staff-users", icon: Users },
-      { name: "Phân quyền", href: "/admin/system/roles", icon: ShieldCheck },
-      { name: "Điểm thưởng", href: "/admin/system/points", icon: Coins },
-      { name: "Website KH", href: "/admin/system/websites", icon: Monitor },
-      { name: "Nhật ký", href: "/admin/system/audit-log", icon: ClipboardList },
-      { name: "Cài đặt", href: "/admin/system/settings", icon: Settings },
-    ],
-  },
-];
+// Nav group labels
+const GROUP_LABELS: Record<string, string> = {
+  content: "Nội dung",
+  sales: "Kinh doanh",
+  system: "Hệ thống",
+};
 
-// ─── Filter nav items by role ──────────────────────────────────────────────────────
+// Icon registry — maps icon name string to Lucide component
+const ICON_MAP: Record<string, LucideIcon> = {
+  LayoutDashboard,
+  Image,
+  LayoutTemplate,
+  Globe,
+  Wrench,
+  UsersRound,
+  FolderKanban,
+  Star,
+  MessageSquare,
+  ShoppingCart,
+  Layout,
+  Tag,
+  Puzzle,
+  Gift,
+  Package,
+  Server,
+  FileText,
+  Calculator,
+  FileQuestion,
+  Users,
+  ShieldCheck,
+  Coins,
+  Monitor,
+  ClipboardList,
+  Settings,
+  Lock,
+};
 
-function useCanAccessNav() {
+// ─── Build nav data using NAV_PERMISSIONS (single source of truth) ────────────
+
+function useNavData(): NavEntry[] {
   const { user } = useAdminAuth();
-  const userRole = user?.role ?? "";
-  return (href: string) => canAccessNav(userRole, href);
+  if (!user) return [];
+
+  // Filter all nav paths using canSeeNavItem (checks role level + permissions)
+  const navPaths = Object.keys(NAV_PERMISSIONS as Record<string, NavPermission>);
+  const visible = navPaths.filter((path) => canSeeNavItem(user, path));
+
+  const entries: NavEntry[] = [];
+
+  // Dashboard (standalone, always first)
+  if (visible.includes("/admin")) {
+    const dash = NAV_PERMISSIONS["/admin"] as NavPermission;
+    entries.push({
+      name: (dash.label as { vi: string }).vi || "Dashboard",
+      href: "/admin",
+      icon: ICON_MAP[dash.icon ?? "LayoutDashboard"] ?? LayoutDashboard,
+    });
+  }
+
+  // Grouped sections
+  const groups = {
+    content: visible.filter((p) => p.startsWith("/admin/content/")),
+    sales: visible.filter((p) => p.startsWith("/admin/sales/")),
+    system: visible.filter((p) => p.startsWith("/admin/system/")),
+  } as Record<string, string[]>;
+
+  for (const [groupKey, paths] of Object.entries(groups)) {
+    if (paths.length === 0) continue;
+    entries.push({
+      group: GROUP_LABELS[groupKey] ?? groupKey,
+      items: paths.map((path) => {
+        const config = NAV_PERMISSIONS[path] as NavPermission;
+        return {
+          name: (config.label as { vi: string }).vi || path,
+          href: path,
+          icon: ICON_MAP[config.icon ?? "FileText"] ?? FileText,
+        };
+      }),
+    });
+  }
+
+  return entries;
 }
 
 // ─── Sidebar ───────────────────────────────────────────────────────────────
@@ -110,17 +140,7 @@ export function AdminSidebar({ onCollapse }: { onCollapse?: (collapsed: boolean)
   const { user } = useAdminAuth();
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
-  const canAccess = useCanAccessNav();
-
-  const filteredNav = navigation.map((entry) => {
-    if ("href" in entry) {
-      if (!canAccess(entry.href)) return null;
-      return entry;
-    }
-    const visibleItems = entry.items.filter((item) => canAccess(item.href));
-    if (visibleItems.length === 0) return null;
-    return { ...entry, items: visibleItems };
-  }).filter(Boolean) as NavEntry[];
+  const navigation = useNavData();
 
   return (
     <aside
@@ -139,34 +159,8 @@ export function AdminSidebar({ onCollapse }: { onCollapse?: (collapsed: boolean)
         style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}
       >
         {!collapsed && (
-          <Link href="/admin" className="flex items-center gap-2" style={{ textDecoration: "none" }}>
-            <div
-              style={{
-                width: "32px",
-                height: "32px",
-                borderRadius: "8px",
-                background: "linear-gradient(135deg, #8B5CF6 0%, #06B6D4 100%)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                boxShadow: "0 0 14px rgba(139,92,246,0.35)",
-              }}
-            >
-              <span style={{ fontSize: "13px", fontWeight: 800, color: "#FFFFFF" }}>L</span>
-            </div>
-            <span
-              style={{
-                fontSize: "18px",
-                fontWeight: 800,
-                background: "linear-gradient(to right, #C4B5FD, #A5F3FC)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                backgroundClip: "text",
-                letterSpacing: "-0.02em",
-              }}
-            >
-              LOOP
-            </span>
+          <div className="flex items-center gap-2">
+            <LogoInline href="/admin" size="sm" />
             <span
               style={{
                 fontSize: "10px",
@@ -180,7 +174,7 @@ export function AdminSidebar({ onCollapse }: { onCollapse?: (collapsed: boolean)
             >
               Admin
             </span>
-          </Link>
+          </div>
         )}
         <button
           onClick={() => {
@@ -226,7 +220,7 @@ export function AdminSidebar({ onCollapse }: { onCollapse?: (collapsed: boolean)
 
       {/* Navigation */}
       <nav className="h-[calc(100vh-8rem)] overflow-y-auto px-3 py-3">
-        {filteredNav.map((item, i) => {
+        {navigation.map((item, i) => {
           if ("href" in item) {
             const navItem = item;
             const isActive = pathname === navItem.href;

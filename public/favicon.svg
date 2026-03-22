@@ -1,10 +1,175 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
   <defs>
-    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#3B82F6"/>
-      <stop offset="100%" style="stop-color:#6366F1"/>
+    <!-- L ribbon: navy to black gradient -->
+    <linearGradient id="ribbonGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#1e2a4a"/>
+      <stop offset="100%" stop-color="#060a12"/>
     </linearGradient>
+
+    <!-- Infinity outer: dark stroke -->
+    <linearGradient id="infOuter" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a0f1e"/>
+      <stop offset="100%" stop-color="#050810"/>
+    </linearGradient>
+
+    <!-- Infinity inner glow: cyan to indigo -->
+    <linearGradient id="infInner" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#06B6D4"/>
+      <stop offset="50%" stop-color="#8B5CF6"/>
+      <stop offset="100%" stop-color="#6366F1"/>
+    </linearGradient>
+
+    <!-- Highlight for 3D gloss effect -->
+    <linearGradient id="highlight" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#BAE6FD" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#67E8F9" stop-opacity="0.3"/>
+    </linearGradient>
+
+    <!-- Drop shadow -->
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="1" dy="2" stdDeviation="2" flood-color="#000" flood-opacity="0.6"/>
+    </filter>
+
+    <!-- Soft glow filter -->
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="1.5" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Background -->
+    <radialGradient id="bg" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#1a1040"/>
+      <stop offset="100%" stop-color="#0a0d1a"/>
+    </radialGradient>
   </defs>
-  <rect width="32" height="32" rx="6" fill="url(#g)"/>
-  <text x="16" y="23" font-family="Inter,Arial,sans-serif" font-size="18" font-weight="700" fill="white" text-anchor="middle">L</text>
+
+  <!-- Background rounded square -->
+  <rect width="64" height="64" rx="14" fill="url(#bg)"/>
+
+  <!-- ── L Letter ── -->
+  <!-- Vertical stem of L -->
+  <rect x="14" y="14" width="10" height="28" rx="4"
+        fill="url(#ribbonGrad)"
+        filter="url(#shadow)"/>
+  <!-- Highlight on left stem -->
+  <rect x="14" y="14" width="3.5" height="28" rx="2"
+        fill="#2a3f6e" opacity="0.7"/>
+
+  <!-- Horizontal ribbon base of L — thick flowing wave shape -->
+  <!-- Outer dark ribbon -->
+  <path d="M 14 36
+           C 20 36, 26 34, 30 36
+           L 56 36
+           C 56 36, 58 36, 56 34
+           L 30 28
+           C 26 30, 20 28, 14 28 Z"
+        fill="url(#ribbonGrad)"
+        filter="url(#shadow)"/>
+  <!-- Ribbon highlight (top edge glow) -->
+  <path d="M 16 36
+           C 21 36, 27 34.5, 31 36
+           L 55 36
+           L 31 29
+           C 27 31, 21 29.5, 16 28 Z"
+        fill="#1e2f5e" opacity="0.6"/>
+  <!-- Ribbon gloss (top surface shine) -->
+  <path d="M 17 36
+           C 22 35.8, 27 34.5, 31 36
+           L 53 36
+           L 31 35.2
+           C 27 33.8, 22 35.5, 17 36 Z"
+        fill="url(#highlight)" opacity="0.25"/>
+  <!-- Ribbon tip taper (right end sharp upward) -->
+  <path d="M 52 36 L 60 28 L 56 34 Z" fill="#040810"/>
+  <path d="M 53 36 L 59 29 L 56 34 Z" fill="#1e2a4a" opacity="0.5"/>
+
+  <!-- ── Infinity Symbol (3D, layered over L) ── -->
+
+  <!-- Left loop outer (dark) -->
+  <path d="M 34 32
+           C 34 25, 29 20, 23 20
+           C 17 20, 12 25, 12 32
+           C 12 39, 17 44, 23 44
+           C 29 44, 34 39, 34 32"
+        fill="none"
+        stroke="url(#infOuter)"
+        stroke-width="9"
+        stroke-linecap="round"
+        filter="url(#shadow)"/>
+
+  <!-- Left loop inner glow -->
+  <path d="M 34 32
+           C 34 25, 29 20, 23 20
+           C 17 20, 12 25, 12 32
+           C 12 39, 17 44, 23 44
+           C 29 44, 34 39, 34 32"
+        fill="none"
+        stroke="url(#infInner)"
+        stroke-width="4.5"
+        stroke-linecap="round"
+        filter="url(#glow)"/>
+
+  <!-- Left loop highlight (top-left arc, 3D gloss) -->
+  <path d="M 23 20
+           C 17 20, 12 25, 12 32
+           C 12 26, 16.5 21.5, 23 21"
+        fill="none"
+        stroke="#7DD3FC"
+        stroke-width="1.8"
+        stroke-linecap="round"
+        opacity="0.75"/>
+
+  <!-- Center crossover (where loops cross) -->
+  <path d="M 34 32
+           C 34 25, 29 20, 23 20
+           C 17 20, 12 25, 12 32
+           C 12 39, 17 44, 23 44
+           C 29 44, 34 39, 34 32"
+        fill="none"
+        stroke="url(#infOuter)"
+        stroke-width="9"
+        stroke-linecap="round"/>
+
+  <!-- Right loop outer (dark) — goes to the right of the L base -->
+  <path d="M 30 32
+           C 30 25, 35 20, 41 20
+           C 47 20, 52 25, 52 32
+           C 52 39, 47 44, 41 44
+           C 35 44, 30 39, 30 32"
+        fill="none"
+        stroke="url(#infOuter)"
+        stroke-width="9"
+        stroke-linecap="round"/>
+
+  <!-- Right loop inner glow -->
+  <path d="M 30 32
+           C 30 25, 35 20, 41 20
+           C 47 20, 52 25, 52 32
+           C 52 39, 47 44, 41 44
+           C 35 44, 30 39, 30 32"
+        fill="none"
+        stroke="url(#infInner)"
+        stroke-width="4.5"
+        stroke-linecap="round"
+        filter="url(#glow)"/>
+
+  <!-- Right loop highlight (top-right arc, 3D gloss) -->
+  <path d="M 41 20
+           C 47 20, 52 25, 52 32
+           C 52 26, 47.5 21.5, 41 21"
+        fill="none"
+        stroke="#7DD3FC"
+        stroke-width="1.8"
+        stroke-linecap="round"
+        opacity="0.75"/>
+
+  <!-- Subtle shadow where loops overlap the L -->
+  <path d="M 14 36 C 20 36, 26 34, 30 36 L 34 32"
+        fill="none"
+        stroke="#000"
+        stroke-width="1"
+        opacity="0.35"/>
 </svg>

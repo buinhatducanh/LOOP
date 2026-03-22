@@ -4,7 +4,8 @@ import React, { useState } from "react";
 import { useRouter } from "@/i18n/routing";
 import { Link } from "@/i18n/routing";
 import { signIn } from "next-auth/react";
-import { Zap, User, Mail, Lock, Eye, EyeOff, ArrowRight, AlertCircle } from "lucide-react";
+import { User, Mail, Lock, Eye, EyeOff, ArrowRight, AlertCircle } from "lucide-react";
+import { InfinityLogo } from "@/components/shared/InfinityLogo";
 
 export function RegisterPage() {
   const router = useRouter();
@@ -73,42 +74,9 @@ export function RegisterPage() {
         style={{ width: "100%", maxWidth: "420px" }}
       >
         {/* Logo */}
-        <Link
-          href="/"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "10px",
-            textDecoration: "none",
-            justifyContent: "center",
-            marginBottom: "40px",
-          }}
-        >
-          <div
-            style={{
-              width: "40px",
-              height: "40px",
-              borderRadius: "10px",
-              background: "linear-gradient(135deg, #8B5CF6, #06B6D4)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Zap size={22} color="#FFFFFF" />
-          </div>
-          <span
-            style={{
-              fontSize: "24px",
-              fontWeight: 800,
-              background: "linear-gradient(135deg, #8B5CF6, #06B6D4)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-            }}
-          >
-            LOOP
-          </span>
-        </Link>
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: "40px" }}>
+          <InfinityLogo size="lg" showSubtitle />
+        </div>
 
         {/* Card */}
         <div

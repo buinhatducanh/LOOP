@@ -1,26 +1,28 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "@/i18n/routing";
-import { useAuth } from "@/contexts/AuthContext";
-import { LayoutDashboard, UserCircle, LogOut, Mail, Shield, Crown } from "lucide-react";
-import { signOut } from "next-auth/react";
+import { useAdminAuth } from "@/app/admin/components/admin-auth-provider";
+import { LayoutDashboard, LogOut, Mail, Shield, Crown, UserCircle } from "lucide-react";
+import { NavLink } from "@/navigation/router";
+
+// Role display labels
+const ROLE_DISPLAY: Record<string, { label: string; color: string; icon: React.ReactNode; text: string }> = {
+  ceo: { label: "CEO / Founder", color: "rgba(234,179,8,0.2)", text: "#EAB308", icon: <Crown size={12} /> },
+  super_admin: { label: "Super Admin", color: "rgba(239,68,68,0.2)", text: "#EF4444", icon: <Shield size={12} /> },
+  admin: { label: "Administrator", color: "rgba(139,92,246,0.2)", text: "#A78BFA", icon: <Shield size={12} /> },
+  project_manager: { label: "Project Manager", color: "rgba(245,158,11,0.2)", text: "#F59E0B", icon: <UserCircle size={12} /> },
+  media: { label: "Media / Marketing", color: "rgba(236,72,153,0.2)", text: "#EC4899", icon: <UserCircle size={12} /> },
+  qa: { label: "QA / Tester", color: "rgba(34,211,238,0.2)", text: "#22D3EE", icon: <UserCircle size={12} /> },
+  member: { label: "Member", color: "rgba(100,116,139,0.2)", text: "#94A3B8", icon: <UserCircle size={12} /> },
+};
 
 export default function AccountPage() {
-  const { user, refreshUser } = useAuth();
-  const router = useRouter();
+  const { user, logout } = useAdminAuth();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-    refreshUser();
-  }, [refreshUser]);
-
-  useEffect(() => {
-    if (mounted && !user) {
-      router.replace({ pathname: "/login" });
-    }
-  }, [mounted, user, router]);
+  }, []);
 
   if (!mounted || !user) {
     return (
@@ -43,6 +45,8 @@ export default function AccountPage() {
       </div>
     );
   }
+
+  const roleInfo = ROLE_DISPLAY[user.role] ?? ROLE_DISPLAY.member;
 
   return (
     <div style={{
@@ -101,13 +105,11 @@ export default function AccountPage() {
                 borderRadius: "8px",
                 fontSize: "12px",
                 fontWeight: 600,
-                background: user.role === "admin"
-                  ? "rgba(139,92,246,0.2)"
-                  : "rgba(59,130,246,0.2)",
-                color: user.role === "admin" ? "#A78BFA" : "#60A5FA",
+                background: roleInfo.color,
+                color: roleInfo.text,
               }}>
-                {user.role === "admin" ? <Crown size={12} /> : <UserCircle size={12} />}
-                {user.role === "admin" ? "Administrator" : "Customer"}
+                {roleInfo.icon}
+                {roleInfo.label}
               </div>
             </div>
           </div>
@@ -126,54 +128,51 @@ export default function AccountPage() {
                 <Shield size={14} color="#64748B" />
                 <span style={{ fontSize: "12px", color: "#64748B", fontWeight: 600 }}>Role</span>
               </div>
-              <div style={{ fontSize: "14px", color: "#FFFFFF" }}>
-                {user.role === "admin" ? "Administrator" : "Customer"}
-              </div>
+              <div style={{ fontSize: "14px", color: "#FFFFFF" }}>{roleInfo.label}</div>
             </div>
             <div style={{ background: "#020617", border: "1px solid #1F2937", borderRadius: "12px", padding: "16px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
                 <UserCircle size={14} color="#64748B" />
-                <span style={{ fontSize: "12px", color: "#64748B", fontWeight: 600 }}>Thành viên từ</span>
+                <span style={{ fontSize: "12px", color: "#64748B", fontWeight: 600 }}>ID</span>
               </div>
-              <div style={{ fontSize: "14px", color: "#FFFFFF" }}>{user.createdAt || "—"}</div>
+              <div style={{ fontSize: "14px", color: "#FFFFFF" }}>{user.userId.slice(0, 8)}...</div>
             </div>
           </div>
         </div>
 
-        {/* Quick Actions */}
-        {user.role === "admin" && (
-          <div style={{
-            background: "#0F172A",
-            border: "1px solid rgba(139,92,246,0.3)",
-            borderRadius: "20px",
-            padding: "32px",
-            marginBottom: "24px",
-          }}>
-            <div style={{ fontSize: "16px", fontWeight: 700, color: "#FFFFFF", marginBottom: "16px" }}>
-              Quick Actions
-            </div>
-            <a
-              href="/admin"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "10px",
-                padding: "12px 20px",
-                background: "linear-gradient(135deg, rgba(139,92,246,0.2), rgba(6,182,212,0.2))",
-                border: "1px solid rgba(139,92,246,0.3)",
-                borderRadius: "12px",
-                color: "#FFFFFF",
-                fontSize: "14px",
-                fontWeight: 600,
-                textDecoration: "none",
-                transition: "all 0.2s",
-              }}
-            >
-              <LayoutDashboard size={16} />
-              Mở Admin Dashboard
-            </a>
+        {/* Admin Quick Action */}
+        <div style={{
+          background: "#0F172A",
+          border: "1px solid rgba(139,92,246,0.3)",
+          borderRadius: "20px",
+          padding: "32px",
+          marginBottom: "24px",
+        }}>
+          <div style={{ fontSize: "16px", fontWeight: 700, color: "#FFFFFF", marginBottom: "16px" }}>
+            Quick Actions
           </div>
-        )}
+          <NavLink
+            href="/admin"
+            isAdmin
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "10px",
+              padding: "12px 20px",
+              background: "linear-gradient(135deg, rgba(139,92,246,0.2), rgba(6,182,212,0.2))",
+              border: "1px solid rgba(139,92,246,0.3)",
+              borderRadius: "12px",
+              color: "#FFFFFF",
+              fontSize: "14px",
+              fontWeight: 600,
+              textDecoration: "none",
+              transition: "all 0.2s",
+            }}
+          >
+            <LayoutDashboard size={16} />
+            Mở Admin Dashboard
+          </NavLink>
+        </div>
 
         {/* Danger Zone */}
         <div style={{
@@ -189,7 +188,7 @@ export default function AccountPage() {
             Đăng xuất khỏi tài khoản của bạn.
           </p>
           <button
-            onClick={() => signOut({ callbackUrl: "/" })}
+            onClick={logout}
             style={{
               display: "inline-flex",
               alignItems: "center",

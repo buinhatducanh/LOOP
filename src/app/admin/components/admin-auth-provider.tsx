@@ -1,7 +1,8 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
-import { signOut as nextSignOut } from "next-auth/react";
+import { useRouter as useNextRouter } from "next/navigation";
+import { routing } from "@/i18n/routing";
 import { ROLE_LEVEL } from "@/lib/auth/roles";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
@@ -40,6 +41,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AdminUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [hydrated, setHydrated] = useState(false);
+  const router = useNextRouter();
 
   const fetchMe = useCallback(async () => {
     setLoading(true);
@@ -100,12 +102,14 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     await Promise.allSettled([
-      nextSignOut({ redirect: false }),
       fetch("/api/admin/auth/logout", { method: "POST" }),
     ]);
     setUser(null);
-    window.location.href = "/vi/login";
-  }, []);
+    // Detect locale from current URL for locale-aware redirect
+    const locale = window.location.pathname.match(/^\/(vi|en)/)?.[1] ?? routing.defaultLocale;
+    // Use client-side router instead of window.location.href
+    router.push(`/${locale}/login`);
+  }, [router]);
 
   const refreshUser = useCallback(async () => {
     await fetchMe();

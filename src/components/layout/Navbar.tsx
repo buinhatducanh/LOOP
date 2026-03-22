@@ -4,11 +4,11 @@ import { useState, useEffect, useRef } from "react";
 import { useTranslations } from "next-intl";
 import { useLocale } from "next-intl";
 import { Link, usePathname } from "@/i18n/routing";
-import { signIn, signOut } from "next-auth/react";
-import { Menu, X, Zap, ChevronDown, Package, Briefcase, Users, FileText, Settings, LayoutDashboard, LogOut, UserCircle } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
+import { Menu, X, ChevronDown, Package, Briefcase, Users, FileText, Settings, LayoutDashboard, LogOut, UserCircle } from "lucide-react";
+import { useAdminAuth } from "@/app/admin/components/admin-auth-provider";
 import { LanguageSwitcher } from "@/components/shared/LanguageSwitcher";
 import { NavbarSearch } from "@/components/layout/NavbarSearch";
+import { LogoInline } from "@/components/shared/InfinityLogo";
 
 interface NavbarProps {
   hideOnHome?: boolean;
@@ -24,7 +24,7 @@ export default function Navbar({ hideOnHome = false }: NavbarProps) {
   const locale = useLocale();
   const t = useTranslations("Navigation");
   const pathname = usePathname();
-  const { user, isAuthenticated } = useAuth();
+  const { user, loading: authLoading, logout } = useAdminAuth();
 
   // Track mouse Y globally — trigger on top of viewport
   useEffect(() => {
@@ -155,57 +155,7 @@ export default function Navbar({ hideOnHome = false }: NavbarProps) {
           }}
         >
           {/* Logo */}
-          <Link
-            href="/"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "10px",
-              textDecoration: "none",
-              flexShrink: 0,
-            }}
-          >
-            <div
-              style={{
-                width: "38px",
-                height: "38px",
-                borderRadius: "10px",
-                background: "linear-gradient(135deg, #8B5CF6 0%, #06B6D4 100%)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                boxShadow: "0 0 20px rgba(139,92,246,0.35), 0 0 8px rgba(6,182,212,0.2)",
-                position: "relative",
-                overflow: "hidden",
-              }}
-            >
-              <Zap style={{ width: "20px", height: "20px", color: "#FFFFFF", position: "relative", zIndex: 1 }} />
-              <div
-                style={{
-                  position: "absolute",
-                  top: "-50%",
-                  left: "-50%",
-                  width: "200%",
-                  height: "200%",
-                  background: "linear-gradient(45deg, transparent 40%, rgba(255,255,255,0.15) 50%, transparent 60%)",
-                  animation: "logoShine 3s ease-in-out infinite",
-                }}
-              />
-            </div>
-            <span
-              style={{
-                fontSize: "22px",
-                fontWeight: 800,
-                background: "linear-gradient(to right, #C4B5FD, #A5F3FC)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                backgroundClip: "text",
-                letterSpacing: "-0.02em",
-              }}
-            >
-              LOOP
-            </span>
-          </Link>
+          <LogoInline size="md" />
 
           {/* Desktop Navigation Links */}
           <div
@@ -403,7 +353,7 @@ export default function Navbar({ hideOnHome = false }: NavbarProps) {
 
             {/* Auth buttons - desktop only */}
             <div className="desktop-nav" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              {isAuthenticated && user ? (
+              {user ? (
                 /* User Menu Dropdown */
                 <div ref={userDropdownRef} style={{ position: "relative" }}>
                   <button
@@ -512,18 +462,18 @@ export default function Navbar({ hideOnHome = false }: NavbarProps) {
                             borderRadius: "6px",
                             fontSize: "11px",
                             fontWeight: 600,
-                            background: user.role === "admin"
+                            background: user.roleLevel <= 1
                               ? "rgba(139,92,246,0.2)"
                               : "rgba(59,130,246,0.2)",
-                            color: user.role === "admin" ? "#A78BFA" : "#60A5FA",
+                            color: user.roleLevel <= 1 ? "#A78BFA" : "#60A5FA",
                           }}
                         >
-                          {user.role === "admin" ? "Administrator" : "Customer"}
+                          {user.roleLevel <= 1 ? "Administrator" : "Staff"}
                         </div>
                       </div>
 
                       {/* Admin Dashboard — only for non-customer roles */}
-                      {user.role === "admin" && (
+                      {user.roleLevel <= 1 && (
                         <a
                           href="/admin"
                           style={{
@@ -582,7 +532,7 @@ export default function Navbar({ hideOnHome = false }: NavbarProps) {
 
                       {/* Sign Out */}
                       <button
-                        onClick={() => { signOut({ callbackUrl: "/" }); }}
+                        onClick={logout}
                         style={{
                           display: "flex",
                           alignItems: "center",
@@ -737,7 +687,7 @@ export default function Navbar({ hideOnHome = false }: NavbarProps) {
           </div>
 
           <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", marginTop: "12px", paddingTop: "12px" }}>
-            {isAuthenticated && user ? (
+            {user ? (
               <>
                 {/* User info */}
                 <div style={{ padding: "12px 16px", marginBottom: "8px" }}>
@@ -746,7 +696,7 @@ export default function Navbar({ hideOnHome = false }: NavbarProps) {
                 </div>
 
                 {/* Admin Dashboard — only for non-customer */}
-                {user.role === "admin" && (
+                {user.roleLevel <= 1 && (
                   <a
                     href="/admin"
                     style={{
@@ -789,7 +739,7 @@ export default function Navbar({ hideOnHome = false }: NavbarProps) {
                 </Link>
 
                 <button
-                  onClick={() => { signOut({ callbackUrl: "/" }); }}
+                  onClick={logout}
                   style={{
                     display: "flex",
                     alignItems: "center",

@@ -14,8 +14,6 @@ import {
   Loader2,
 } from "lucide-react";
 import { LanguageSwitcher } from "@/components/shared/LanguageSwitcher";
-import { useAuth } from "@/contexts/AuthContext";
-import { signIn, signOut } from "next-auth/react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

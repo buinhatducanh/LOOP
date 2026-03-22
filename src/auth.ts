@@ -17,6 +17,7 @@ if (missing.length) {
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  trustHost: true,
   secret: process.env.AUTH_SECRET,
   providers: [
     GoogleProvider({

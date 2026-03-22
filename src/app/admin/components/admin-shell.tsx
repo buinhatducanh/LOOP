@@ -1,8 +1,9 @@
 "use client";
 
 import { createContext, useState, useEffect, useContext } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter as useNextRouter, usePathname } from "next/navigation";
 import { useAdminAuth } from "./admin-auth-provider";
+import { canAccessAdminPath } from "@/navigation/guards";
 import { AdminSidebar } from "./admin-sidebar";
 import { AdminTopbar } from "./admin-topbar";
 
@@ -22,7 +23,7 @@ export function useSidebarWidth() {
 export function AdminShell({ children }: { children: React.ReactNode }) {
   const { user, loading, login } = useAdminAuth();
   const pathname = usePathname() ?? "/admin";
-  const router = useRouter();
+  const router = useNextRouter();
   const [sidebarWidth, setSidebarWidth] = useState(SIDEBAR_EXPANDED);
 
   // Safety timeout: always show UI after 3s even if /me hangs
@@ -66,10 +67,17 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             boxShadow: "0 25px 60px rgba(0,0,0,0.5)",
           }}
         >
-          <LoginForm login={login} router={router} />
+          <LoginForm login={login} />
         </div>
       </div>
     );
+  }
+
+  // ✅ Logged in — check route access
+  const access = canAccessAdminPath(user, pathname);
+  if (!access.allowed && access.redirectUrl) {
+    router.replace(access.redirectUrl);
+    return null;
   }
 
   // ✅ Logged in + authorized
@@ -95,11 +103,10 @@ import type { AdminAuthContextType } from "./admin-auth-provider";
 
 function LoginForm({
   login,
-  router,
 }: {
   login: AdminAuthContextType["login"];
-  router: ReturnType<typeof useRouter>;
 }) {
+  const adminRouter = useNextRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -115,7 +122,7 @@ function LoginForm({
       setLoading(false);
       return;
     }
-    router.push("/admin");
+    adminRouter.push("/admin");
   }
 
   return (

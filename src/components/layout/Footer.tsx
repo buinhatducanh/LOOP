@@ -4,7 +4,6 @@ import { Link } from "@/i18n/routing";
 import { usePathname } from "@/i18n/routing";
 import { useTranslations } from "next-intl";
 import {
-  Zap,
   Mail,
   Phone,
   MapPin,
@@ -18,6 +17,7 @@ import {
   Shield,
   HeadphonesIcon,
 } from "lucide-react";
+import { LogoInline } from "@/components/shared/InfinityLogo";
 
 export interface FooterService {
   slug: string;
@@ -115,14 +115,9 @@ export default function Footer({ data }: { data?: FooterData }) {
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-8 lg:gap-12">
             {/* Brand */}
             <div className="col-span-2 sm:col-span-3 lg:col-span-1">
-              <Link href="/" className="inline-flex items-center gap-2.5 group mb-4">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-                  <Zap className="w-5 h-5 text-white" />
-                </div>
-                <span className="text-2xl font-extrabold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
-                  LOOP
-                </span>
-              </Link>
+              <div className="mb-4">
+                <LogoInline size="md" />
+              </div>
               <p className="text-gray-400 text-sm leading-relaxed max-w-xs">
                 {t("description")}
               </p>

@@ -4,17 +4,17 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter, usePathname, Link } from "@/i18n/routing";
 import { useTranslations } from "next-intl";
 import { useLocale } from "next-intl";
-import { Zap, LogIn, ChevronDown, Package, Briefcase, Users, FileText } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
-import { signOut } from "next-auth/react";
+import { LogIn, ChevronDown, Package, Briefcase, Users, FileText } from "lucide-react";
+import { useAdminAuth } from "@/app/admin/components/admin-auth-provider";
 import { LanguageSwitcher } from "@/components/shared/LanguageSwitcher";
+import { LogoInline } from "@/components/shared/InfinityLogo";
 
 export function TopMenuTrigger() {
   const router = useRouter();
   const pathname = usePathname();
   const locale = useLocale();
   const t = useTranslations("Navigation");
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, logout } = useAdminAuth();
   const [showMenu, setShowMenu] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -137,33 +137,7 @@ export function TopMenuTrigger() {
           }}
         >
           {/* Logo */}
-          <Link href="/" style={{ display: "flex", alignItems: "center", gap: "8px", textDecoration: "none" }}>
-            <div
-              style={{
-                width: "36px",
-                height: "36px",
-                borderRadius: "8px",
-                background: "linear-gradient(135deg, #8B5CF6, #06B6D4)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Zap style={{ width: "20px", height: "20px", color: "#FFFFFF" }} />
-            </div>
-            <span
-              style={{
-                fontSize: "20px",
-                fontWeight: 700,
-                background: "linear-gradient(to right, #A78BFA, #67E8F9)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                backgroundClip: "text",
-              }}
-            >
-              LOOP
-            </span>
-          </Link>
+          <LogoInline size="md" />
 
           {/* Desktop Navigation Links */}
           <div className="desktop-nav" style={{ display: "flex", alignItems: "center", gap: "4px" }}>
@@ -290,9 +264,9 @@ export function TopMenuTrigger() {
           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
             {/* Auth buttons - desktop only */}
             <div className="desktop-nav" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              {isAuthenticated && user ? (
+              {user ? (
                 <button
-                  onClick={() => { signOut({ callbackUrl: "/" }); }}
+                  onClick={logout}
                   style={{
                     padding: "8px 16px",
                     fontSize: "14px",

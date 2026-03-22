@@ -11,11 +11,11 @@ describe("RateLimiter (in-memory fallback)", () => {
   });
 
   it("allows requests within limit", () => {
-    const mockReq = makeMockRequest("1.2.3.4");
+    const ip = "1.2.3.4";
 
-    const r1 = limiter.consume(mockReq);
-    const r2 = limiter.consume(mockReq);
-    const r3 = limiter.consume(mockReq);
+    const r1 = limiter.consume(ip);
+    const r2 = limiter.consume(ip);
+    const r3 = limiter.consume(ip);
 
     expect(r1.allowed).toBe(true);
     expect(r2.allowed).toBe(true);
@@ -23,77 +23,68 @@ describe("RateLimiter (in-memory fallback)", () => {
   });
 
   it("blocks requests exceeding limit", () => {
-    const mockReq = makeMockRequest("5.6.7.8");
+    const ip = "5.6.7.8";
 
     // Exhaust the limit
-    limiter.consume(mockReq); // 1
-    limiter.consume(mockReq); // 2
-    limiter.consume(mockReq); // 3 — last allowed
+    limiter.consume(ip); // 1
+    limiter.consume(ip); // 2
+    limiter.consume(ip); // 3 — last allowed
 
-    const blocked = limiter.consume(mockReq); // 4 — blocked
+    const blocked = limiter.consume(ip); // 4 — blocked
 
     expect(blocked.allowed).toBe(false);
     expect(blocked.remaining).toBe(0);
   });
 
   it("tracks each IP independently", () => {
-    const req1 = makeMockRequest("10.0.0.1");
-    const req2 = makeMockRequest("10.0.0.2");
+    const ip1 = "10.0.0.1";
+    const ip2 = "10.0.0.2";
 
     // Exhaust IP1's limit
-    limiter.consume(req1);
-    limiter.consume(req1);
-    limiter.consume(req1);
+    limiter.consume(ip1);
+    limiter.consume(ip1);
+    limiter.consume(ip1);
 
     // IP2 should still be allowed
-    const ip2Result = limiter.consume(req2);
+    const ip2Result = limiter.consume(ip2);
 
     expect(ip2Result.allowed).toBe(true);
   });
 
   it("returns remaining token count", () => {
-    const req = makeMockRequest("192.168.1.1");
+    const ip = "192.168.1.1";
 
-    const initial = limiter.consume(req);
+    const initial = limiter.consume(ip);
     expect(initial.remaining).toBe(2);
 
-    const second = limiter.consume(req);
+    const second = limiter.consume(ip);
     expect(second.remaining).toBe(1);
   });
 
   it("returns reset timestamp when blocked", () => {
-    const req = makeMockRequest("172.16.0.1");
+    const ip = "172.16.0.1";
 
-    limiter.consume(req);
-    limiter.consume(req);
-    limiter.consume(req);
-    const blocked = limiter.consume(req);
+    limiter.consume(ip);
+    limiter.consume(ip);
+    limiter.consume(ip);
+    const blocked = limiter.consume(ip);
 
     expect(blocked.allowed).toBe(false);
     expect(blocked.reset).toBeGreaterThan(Date.now());
   });
 
   it("cleanup removes stale entries", () => {
-    const req = makeMockRequest("203.0.113.50");
+    const ip = "203.0.113.50";
 
-    limiter.consume(req);
-    limiter.consume(req);
-    limiter.consume(req);
+    limiter.consume(ip);
+    limiter.consume(ip);
+    limiter.consume(ip);
 
     // Cleanup with stale threshold (entries are fresh, so they stay)
     limiter.cleanup(5 * 60_000);
-    const after = limiter.consume(req);
+    const after = limiter.consume(ip);
 
     // Fresh entry — still works
     expect(after.allowed).toBe(false); // exhausted
   });
 });
-
-// Helper to create a mock Request object with IP headers
-function makeMockRequest(ip: string): Request {
-  return new Request("http://localhost", {
-    headers: {
-      "x-forwarded-for": ip,
-    },
-  });
-}

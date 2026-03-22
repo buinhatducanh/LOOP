@@ -4,8 +4,6 @@ import { usePathname } from "@/i18n/routing";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import { type FooterData } from "./Footer";
-import { AuthProvider } from "@/contexts/AuthContext";
-import { useState } from "react";
 
 interface PublicShellProps {
   children: React.ReactNode;
@@ -31,18 +29,15 @@ export function PublicShell({ children, footerData }: PublicShellProps) {
   // during the hydration window, which would block all interactions.
   if (isAdminRoute(pathname)) {
     return (
-      <AuthProvider>
-        <div style={{ background: "#020617", minHeight: "100vh" }}>
-          {children}
-        </div>
-      </AuthProvider>
+      <div style={{ background: "#020617", minHeight: "100vh" }}>
+        {children}
+      </div>
     );
   }
 
   const isHomePage = pathname === "/" || pathname === "/vi" || pathname === "/en";
 
   return (
-    <AuthProvider>
       <div
         style={{
           background: "#020617",
@@ -55,6 +50,5 @@ export function PublicShell({ children, footerData }: PublicShellProps) {
         <main style={{ flex: 1, paddingTop: isHomePage ? "0px" : "72px" }}>{children}</main>
         <Footer data={footerData} />
       </div>
-    </AuthProvider>
   );
 }

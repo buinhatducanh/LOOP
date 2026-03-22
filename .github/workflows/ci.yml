@@ -1,13 +1,14 @@
-# ─── LOOP Website — GitHub Actions CI ────────────────────────────────────────────
-# Runs on every push and pull request to main/develop branches.
-#
-# Jobs (sequential via needs):
+# ─── LOOP Website — GitHub Actions CI ─────────────────────────────────────────────
+# Jobs (parallel lint + test → build):
 #   1. lint       — ESLint + TypeScript type check
-#   2. test       — Vitest unit tests with coverage  (depends on lint passing)
-#   3. build      — Next.js production build       (depends on test passing)
+#   2. test       — Vitest unit tests with coverage
+#   3. build      — Next.js production build (runs only after lint + test pass)
 #
-# Secrets needed (in GitHub repo Settings → Secrets):
-#   DATABASE_URL, AUTH_SECRET, NEXT_PUBLIC_SANITY_PROJECT_ID, etc.
+# Secrets needed (GitHub repo → Settings → Secrets → Actions):
+#   DATABASE_URL, AUTH_SECRET, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET,
+#   NEXT_PUBLIC_SANITY_*, NEXT_PUBLIC_CLOUDINARY_*, UPSTASH_*, INNGEST_*, SENTRY_DSN,
+#   NEXT_PUBLIC_SITE_URL, NEXT_PUBLIC_GA_MEASUREMENT_ID, NEXT_PUBLIC_TAWKTO_*
+# Optional: CODECOV_TOKEN (for coverage upload — skips if absent)
 
 name: CI
 
@@ -17,24 +18,24 @@ on:
   pull_request:
     branches: [main, develop]
 
-# Cancel in-progress runs on the same branch/ref
+# Cancel in-progress runs on the same branch
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-# Minimal permissions — read-only where possible
 permissions:
   contents: read
-  statuses: write   # needed to report CI status on PRs
+
+# ─── Shared setup (reusable steps) ──────────────────────────────────────────────
+# Cannot use YAML anchors in GitHub Actions, so we define a composite action inline via strategy.matrix
+# or simply duplicate the cheap setup steps (checkout + setup-node + install + prisma generate).
 
 jobs:
-  lint:
+  # ── Job 1: Lint + Type check ──────────────────────────────────────────────────
+  lint-and-typecheck:
     name: Lint & Type Check
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    permissions:
-      contents: read
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -46,7 +47,7 @@ jobs:
           cache: "npm"
 
       - name: Install dependencies
-        run: npm ci --ignore-scripts
+        run: npm ci
 
       - name: Generate Prisma client
         run: npx prisma generate
@@ -59,15 +60,12 @@ jobs:
       - name: TypeScript check
         run: npx tsc --noEmit
 
+  # ── Job 2: Unit tests + coverage ────────────────────────────────────────────
   test:
     name: Unit Tests
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    # Test job runs only after lint passes
-    needs: lint
-    permissions:
-      contents: read
-
+    # Run in parallel with lint (no `needs` = parallel)
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -79,7 +77,7 @@ jobs:
           cache: "npm"
 
       - name: Install dependencies
-        run: npm ci --ignore-scripts
+        run: npm ci
 
       - name: Generate Prisma client
         run: npx prisma generate
@@ -89,7 +87,7 @@ jobs:
       - name: Run tests with coverage
         run: npm run test:coverage
         env:
-          # Disable external services in CI so tests run without real credentials
+          # Disable external services so tests run without real credentials
           UPSTASH_REDIS_REST_URL: ""
           UPSTASH_REDIS_REST_TOKEN: ""
           INNGEST_SIGNING_KEY: ""
@@ -97,21 +95,19 @@ jobs:
           SENTRY_DSN: ""
 
       - name: Upload coverage to Codecov
+        if: env.CODECOV_TOKEN != ''
         uses: codecov/codecov-action@v4
         with:
+          token: ${{ secrets.CODECOV_TOKEN }}
           files: ./coverage/lcov.info
-          # Fail the CI if Codecov upload itself fails (network, token, etc.)
-          fail_ci_if_error: true
+          fail_ci_if_error: false
 
+  # ── Job 3: Production build (runs after lint + test) ───────────────────────
   build:
     name: Production Build
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    # Build runs only after tests pass
-    needs: test
-    permissions:
-      contents: read
-
+    needs: [lint-and-typecheck, test]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -123,7 +119,7 @@ jobs:
           cache: "npm"
 
       - name: Install dependencies
-        run: npm ci --ignore-scripts
+        run: npm ci
 
       - name: Generate Prisma client
         run: npx prisma generate

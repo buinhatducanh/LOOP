@@ -1,16 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "@/i18n/routing";
-import { Link } from "@/i18n/routing";
+import { Link, useRouter } from "@/i18n/routing";
 import { signIn } from "next-auth/react";
-import { Zap, Mail, Lock, Eye, EyeOff, ArrowRight, AlertCircle } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
+import { Mail, Lock, Eye, EyeOff, ArrowRight, AlertCircle } from "lucide-react";
+import { useAdminAuth } from "@/app/admin/components/admin-auth-provider";
 import { useSearchParams } from "next/navigation";
+import { InfinityLogo } from "@/components/shared/InfinityLogo";
 
 export function LoginPage() {
+  const { login: adminLogin } = useAdminAuth();
   const router = useRouter();
-  const { login } = useAuth();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirect") || null;
   const [email, setEmail] = useState("");
@@ -29,18 +29,19 @@ export function LoginPage() {
     }
 
     setLoading(true);
-    const result = await login(email, password);
+    const result = await adminLogin(email, password);
     setLoading(false);
-    if (result.success) {
-      if (result.role === "admin") {
-        // Respect redirect param from middleware, otherwise go to admin dashboard
-        const destination = redirectTo || "/admin";
-        window.location.href = destination;
-      } else {
-        router.push("/account");
-      }
+    if (result.error) {
+      setError(result.error);
     } else {
-      setError(result.message || "Email hoặc mật khẩu không đúng.");
+      // Respect redirect param from middleware, otherwise go to admin dashboard
+      const destination = redirectTo || "/admin";
+      // Use router for client-side navigation (admin paths have no locale prefix)
+      if (destination.startsWith("http")) {
+        window.location.assign(destination);
+      } else {
+        router.push(destination);
+      }
     }
   };
 
@@ -74,42 +75,9 @@ export function LoginPage() {
         }}
       >
         {/* Logo */}
-        <Link
-          href="/"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "10px",
-            textDecoration: "none",
-            justifyContent: "center",
-            marginBottom: "40px",
-          }}
-        >
-          <div
-            style={{
-              width: "40px",
-              height: "40px",
-              borderRadius: "10px",
-              background: "linear-gradient(135deg, #8B5CF6, #06B6D4)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Zap size={22} color="#FFFFFF" />
-          </div>
-          <span
-            style={{
-              fontSize: "24px",
-              fontWeight: 800,
-              background: "linear-gradient(135deg, #8B5CF6, #06B6D4)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-            }}
-          >
-            LOOP
-          </span>
-        </Link>
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: "40px" }}>
+          <InfinityLogo size="lg" showSubtitle />
+        </div>
 
         {/* Card */}
         <div
@@ -130,7 +98,7 @@ export function LoginPage() {
           {/* Google Sign In */}
           <button
             type="button"
-            onClick={() => signIn("google", { callbackUrl: `${window.location.origin}/vi` })}
+            onClick={() => signIn("google", { callbackUrl: `${window.location.origin}` })}
             style={{
               width: "100%",
               background: "#FFFFFF",

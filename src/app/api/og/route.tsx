@@ -13,7 +13,7 @@ const fontStyles = {
 
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
-  const title = searchParams.get("title") ?? "LOOP";
+  const title = searchParams.get("title") ?? "LOOPS - Loop Solutions";
   const description = searchParams.get("description") ?? "Thiết kế Website & Ứng dụng chuyên nghiệp";
   const type = searchParams.get("type") ?? "website";
   const locale = searchParams.get("locale") ?? "vi";
@@ -83,7 +83,7 @@ export async function GET(req: NextRequest) {
                 letterSpacing: "-0.02em",
               }}
             >
-              LOOP
+              LOOPS
             </span>
           </div>
 

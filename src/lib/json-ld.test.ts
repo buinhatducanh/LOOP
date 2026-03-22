@@ -109,7 +109,7 @@ describe("json-ld", () => {
       expect(member.jobTitle).toBe("Frontend Developer");
       expect(member.description).toBe("React expert with 5 years experience");
       expect(member.url).toBe("https://loop.vn/team/nguyen-van-a");
-      expect(member.worksFor["@type"]).toBe("Organization");
+      expect(member.worksFor!["@type"]).toBe("Organization");
     });
   });
 
@@ -128,7 +128,7 @@ describe("json-ld", () => {
       expect(post.author["@type"]).toBe("Person");
       expect(post.author.name).toBe("Jane Doe");
       expect(post.publisher["@type"]).toBe("Organization");
-      expect(post.mainEntityOfPage["@id"]).toBe("https://loop.vn/blog/top-10-web-design-trends-2026");
+      expect(post.mainEntityOfPage!["@id"]).toBe("https://loop.vn/blog/top-10-web-design-trends-2026");
     });
 
     it("handles missing publishedAt", () => {

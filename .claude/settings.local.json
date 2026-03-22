@@ -20,7 +20,20 @@
       "Read(//c/Users/NGuyenPhuThien/Desktop/BTL/btl-20251-nhom4/src/app/admin/**)",
       "Read(//c/Users/NGuyenPhuThien/Desktop/BTL/btl-20251-nhom4/src/app/admin/components/**)",
       "Bash(Remove-Item -Path \"d:\\\\LOOP_COMPANY\\\\LOOP\\\\.next\" -Recurse -Force -ErrorAction SilentlyContinue)",
-      "Bash(Write-Host \"Done\")"
+      "Bash(Write-Host \"Done\")",
+      "Bash(grep '\"\"next-intl\"\"' package.json)",
+      "Bash(python3 -c \":*)",
+      "Bash(for f:*)",
+      "Bash(do echo:*)",
+      "Read(//d/LOOP_COMPANY/LOOP/**)",
+      "Bash(done)",
+      "Read(//app/src/contexts/**)",
+      "Read(//app/src/**)",
+      "Read(//app/src/app/[locale]/login/**)",
+      "Read(//app/src/app/[locale]/account/**)",
+      "Read(//app/src/app/admin/**)",
+      "Read(//app/src/app/api/admin/auth/logout/**)",
+      "Bash(python -c \":*)"
     ],
     "additionalDirectories": [
       "D:\\LOOP_COMPANY\\LOOP\\src\\app\\api\\admin\\expertises"
