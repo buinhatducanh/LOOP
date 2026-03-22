@@ -18,7 +18,9 @@
       "Bash(mkdir -p src/app/admin/content/team src/app/admin/sales/orders src/app/admin/system/users)",
       "Read(//c/Users/NGuyenPhuThien/Desktop/BTL/btl-20251-nhom4/src/**)",
       "Read(//c/Users/NGuyenPhuThien/Desktop/BTL/btl-20251-nhom4/src/app/admin/**)",
-      "Read(//c/Users/NGuyenPhuThien/Desktop/BTL/btl-20251-nhom4/src/app/admin/components/**)"
+      "Read(//c/Users/NGuyenPhuThien/Desktop/BTL/btl-20251-nhom4/src/app/admin/components/**)",
+      "Bash(Remove-Item -Path \"d:\\\\LOOP_COMPANY\\\\LOOP\\\\.next\" -Recurse -Force -ErrorAction SilentlyContinue)",
+      "Bash(Write-Host \"Done\")"
     ],
     "additionalDirectories": [
       "D:\\LOOP_COMPANY\\LOOP\\src\\app\\api\\admin\\expertises"

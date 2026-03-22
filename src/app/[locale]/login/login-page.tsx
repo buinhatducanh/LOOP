@@ -6,10 +6,13 @@ import { Link } from "@/i18n/routing";
 import { signIn } from "next-auth/react";
 import { Zap, Mail, Lock, Eye, EyeOff, ArrowRight, AlertCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSearchParams } from "next/navigation";
 
 export function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirect") || null;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -30,7 +33,9 @@ export function LoginPage() {
     setLoading(false);
     if (result.success) {
       if (result.role === "admin") {
-        window.location.href = "/admin";
+        // Respect redirect param from middleware, otherwise go to admin dashboard
+        const destination = redirectTo || "/admin";
+        window.location.href = destination;
       } else {
         router.push("/account");
       }

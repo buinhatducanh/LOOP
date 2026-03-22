@@ -107,6 +107,7 @@ function useCanAccessNav() {
 // ─── Sidebar ───────────────────────────────────────────────────────────────
 
 export function AdminSidebar({ onCollapse }: { onCollapse?: (collapsed: boolean) => void }) {
+  const { user } = useAdminAuth();
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const canAccess = useCanAccessNav();
