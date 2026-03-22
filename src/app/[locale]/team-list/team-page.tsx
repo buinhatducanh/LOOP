@@ -1,32 +1,14 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
-import { Link } from "@/i18n/routing";
-import { useRouter } from "@/i18n/routing";
-import {
-  ArrowRight,
-  Linkedin,
-  Twitter,
-  Github,
-  Mail,
-  Quote,
-  Sparkles,
-  Users,
-  Crown,
-  Star,
-  Search,
-  Grid3X3,
-  List,
-  X,
-  Filter,
-  Code2,
-  Palette,
-  Megaphone,
-  Target,
-  Layers,
-  Phone,
-} from "lucide-react";
-import { useLocale } from "next-intl";
+import { useState, useMemo, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { Users } from 'lucide-react';
+import { GuildMemberCard } from '@/components/team/GuildMemberCard';
+import { GuildHallOfFame } from '@/components/team/GuildHallOfFame';
+import { GuildRoleFilters, RoleFilter } from '@/components/team/GuildRoleFilters';
+import { GuildSearchSortBar, SortOption } from '@/components/team/GuildSearchSortBar';
+import { GuildHUDPanel } from '@/components/team/GuildHUDPanel';
+import { RANKS, GUILD_ANIMATIONS_CSS } from '@/components/team/teamRanks';
 
 interface TeamMemberData {
   id: string;
@@ -36,20 +18,20 @@ interface TeamMemberData {
   bio: string;
   shortBio: string;
   image: string;
-  expertise: string[];
-  achievements: string[];
-  linkedin: string | null;
-  twitter: string | null;
-  github: string | null;
-  roleLevel: number;
-  roleCategory: string | null;
-  coverImage: string | null;
-  quote: string | null;
-  email: string | null;
-  phone: string | null;
-  skills: string[];
-  experience: string | null;
-  isFeatured: boolean;
+  expertise?: string[];
+  achievements?: string[];
+  linkedin?: string | null;
+  twitter?: string | null;
+  github?: string | null;
+  email?: string | null;
+  roleLevel?: number;
+  roleCategory?: string | null;
+  coverImage?: string | null;
+  quote?: string | null;
+  phone?: string | null;
+  skills?: string[];
+  experience?: string | null;
+  isFeatured?: boolean;
 }
 
 interface Expertise {
@@ -72,605 +54,457 @@ interface TeamPageProps {
   };
 }
 
-function FadeIn({ children, delay = 0, className = "" }: { children: React.ReactNode; delay?: number; className?: string }) {
+// ── Asian background pattern ───────────────────────────────────────────────────
+function AsianBgPattern() {
   return (
-    <div className={`animate-fade-in ${className}`} style={{ animationDelay: `${delay}s` }}>
-      {children}
+    <svg
+      className="absolute inset-0 w-full h-full pointer-events-none"
+      style={{ opacity: 0.025 }}
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <defs>
+        <pattern id="hexGrid" width="40" height="46" patternUnits="userSpaceOnUse">
+          <path d="M20 2 L36 11 L36 29 L20 38 L4 29 L4 11 Z" fill="none" stroke="#3B82F6" strokeWidth="0.8" />
+        </pattern>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#hexGrid)" />
+    </svg>
+  );
+}
+
+// ── Section header ─────────────────────────────────────────────────────────────
+function SectionHeader({ title, subtitle }: { title?: string; subtitle?: string }) {
+  return (
+    <div className="text-center mb-14 relative">
+      {/* Top ornament row */}
+      <div className="flex items-center justify-center gap-3 mb-4">
+        <div style={{ flex: 1, height: 1, background: 'linear-gradient(90deg, transparent, #1F2937)' }} />
+        <div className="flex items-center gap-2">
+          <span style={{ color: '#1F2937', fontSize: 10 }}>◈</span>
+          <span style={{ color: '#3B82F620', fontSize: 8, fontFamily: 'var(--font-jetbrains), JetBrains Mono, monospace', letterSpacing: '0.3em' }}>────</span>
+          <span style={{ color: '#3B82F6', fontSize: 12 }}>✦</span>
+          <span style={{ color: '#3B82F620', fontSize: 8, fontFamily: 'var(--font-jetbrains), JetBrains Mono, monospace', letterSpacing: '0.3em' }}>────</span>
+          <span style={{ color: '#1F2937', fontSize: 10 }}>◈</span>
+        </div>
+        <div style={{ flex: 1, height: 1, background: 'linear-gradient(90deg, #1F2937, transparent)' }} />
+      </div>
+
+      {/* Guild label */}
+      <div className="mb-2" style={{ color: '#3B82F6', fontSize: 11, fontFamily: 'var(--font-jetbrains), JetBrains Mono, monospace', letterSpacing: '0.35em' }}>
+        ◎ OPERATIVE GUILD ◎
+      </div>
+
+      {/* Main title */}
+      <h2 style={{
+        fontFamily: 'var(--font-cinzel), Cinzel, serif',
+        color: '#FFFFFF',
+        fontSize: 32,
+        fontWeight: 900,
+        letterSpacing: '0.08em',
+        lineHeight: 1.1,
+        background: 'linear-gradient(135deg, #FFFFFF, #94A3B8)',
+        WebkitBackgroundClip: 'text',
+        WebkitTextFillColor: 'transparent',
+      }}>
+        {title || 'HALL OF OPERATIVES'}
+      </h2>
+
+      {/* Subtitle */}
+      <p className="mt-3" style={{ color: '#64748B', fontSize: 12, fontFamily: 'var(--font-jetbrains), JetBrains Mono, monospace', letterSpacing: '0.15em' }}>
+        {subtitle || '— SELECT AN OPERATIVE TO INSPECT THE HUD —'}
+      </p>
+
+      {/* Bottom ornament row */}
+      <div className="flex items-center justify-center gap-3 mt-5">
+        <div style={{ flex: 1, maxWidth: 120, height: 1, background: 'linear-gradient(90deg, transparent, #1F2937)' }} />
+        <div className="flex items-center gap-1">
+          {['iron','bronze','silver','gold','platinum','ruby','diamond'].map((r) => (
+            <div
+              key={r}
+              className="w-1.5 h-1.5 rounded-full"
+              style={{
+                background: RANKS[r as keyof typeof RANKS].color,
+                boxShadow: `0 0 4px ${RANKS[r as keyof typeof RANKS].glowColor}`,
+              }}
+            />
+          ))}
+        </div>
+        <div style={{ flex: 1, maxWidth: 120, height: 1, background: 'linear-gradient(90deg, #1F2937, transparent)' }} />
+      </div>
     </div>
   );
 }
 
-function StaggerContainer({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  return <div className={className}>{children}</div>;
-}
-
-function SocialLink({ href, icon: Icon }: { href: string; icon: typeof Linkedin }) {
-  const isExternal = href.startsWith('http') || href.startsWith('mailto:');
-
-  if (isExternal) {
-    return (
-      <a href={href} target={href.startsWith('mailto:') ? undefined : "_blank"} rel="noopener noreferrer" className="w-10 h-10 rounded-xl border border-indigo-500/30 bg-indigo-500/10 flex items-center justify-center text-slate-400 hover:text-white hover:border-indigo-400 hover:bg-indigo-500/20 transition-all duration-300" onClick={(e) => e.stopPropagation()}>
-        <Icon size={18} />
-      </a>
-    );
-  }
-
+// ── Rank legend ───────────────────────────────────────────────────────────────
+function RankLegend() {
+  const rankKeys = ['iron','bronze','silver','gold','platinum','ruby','diamond'] as const;
   return (
-    <Link href={href} className="w-10 h-10 rounded-xl border border-indigo-500/30 bg-indigo-500/10 flex items-center justify-center text-slate-400 hover:text-white hover:border-indigo-400 hover:bg-indigo-500/20 transition-all duration-300" onClick={(e) => e.stopPropagation()}>
-      <Icon size={18} />
-    </Link>
+    <div className="flex items-center justify-center flex-wrap gap-3 mt-12">
+      {rankKeys.map((r) => {
+        const cfg = RANKS[r];
+        return (
+          <div
+            key={r}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-sm"
+            style={{ background: '#0F172A', border: `1px solid ${cfg.color}30` }}
+          >
+            <span style={{ color: cfg.color, fontSize: 10 }}>{cfg.symbol}</span>
+            <span style={{ color: '#64748B', fontSize: 9, fontFamily: 'var(--font-jetbrains), JetBrains Mono, monospace', letterSpacing: '0.1em' }}>
+              {cfg.label}
+            </span>
+            <span style={{ color: '#475569', fontSize: 9, fontFamily: 'var(--font-jetbrains), JetBrains Mono, monospace' }}>
+              Lv {cfg.minLevel}–{cfg.uncapped ? `${cfg.maxLevel}+` : cfg.maxLevel}
+            </span>
+          </div>
+        );
+      })}
+    </div>
   );
 }
 
-const categoryIcons: Record<string, typeof Code2> = {
-  leadership: Crown,
-  engineering: Code2,
-  design: Palette,
-  marketing: Megaphone,
-  product: Target,
-  default: Layers,
-};
+// ── Role category helper ──────────────────────────────────────────────────────
+function getRoleCategory(member: TeamMemberData): RoleFilter {
+  const roleCode = member.roleCategory?.toUpperCase() || member.role?.toUpperCase().replace(/\s+/g, '_').replace(/[^A-Z_]/g, '') || '';
+  const roleLower = member.role?.toLowerCase() || '';
+  const roleLevel = member.roleLevel ?? 3;
 
-const filterCategories = [
-  { id: "all", label: "Tất cả", icon: Users },
-  { id: "leadership", label: "Leadership", icon: Crown },
-  { id: "engineering", label: "Engineering", icon: Code2 },
-  { id: "design", label: "Design", icon: Palette },
-  { id: "marketing", label: "Marketing", icon: Megaphone },
-  { id: "product", label: "Product", icon: Target },
-];
+  if (roleLevel === 0 || /ceo|founder|giám đốc|chủ tịch/i.test(roleLower)) return 'CEO';
+  if (/product manager|pm$/i.test(roleLower)) return 'PM';
+  if (/product owner|po$/i.test(roleLower)) return 'PO';
+  if (/scrum|sc$/i.test(roleLower)) return 'SC';
+  if (/hr|nhân sự|human/i.test(roleLower)) return 'HR';
+  if (/marketing|mkt|sale/i.test(roleLower)) return 'MKT';
+  if (/design|designer|ux|ui/i.test(roleLower)) return 'DESIGNER';
+  if (roleCode === 'DEV' || /developer|dev|engineer|engineering|kỹ thuật/i.test(roleLower)) return 'DEV';
+  return 'DEV'; // default
+}
 
-function TeamMemberCard({ member, isCEO = false }: { member: TeamMemberData; isCEO?: boolean }) {
-  const router = useRouter();
-  const locale = useLocale();
+// ── Main TeamPage ─────────────────────────────────────────────────────────────
+export function TeamPage({ team, expertises = [], settings }: TeamPageProps) {
+  const [selected, setSelected] = useState<TeamMemberData | null>(null);
+  const [roleFilter, setRoleFilter] = useState<RoleFilter>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<SortOption>('level-desc');
 
-  // Check if member is CEO
-  const memberIsCEO = isCEO || member.roleLevel === 0 ||
-    member.role.toLowerCase().includes('ceo') ||
-    member.role.toLowerCase().includes('founder') ||
-    member.role.toLowerCase().includes('giám đốc') ||
-    member.role.toLowerCase().includes('chủ tịch');
+  // Inject guild animation keyframes
+  useEffect(() => {
+    const styleEl = document.createElement('style');
+    styleEl.id = 'guild-animations';
+    styleEl.textContent = GUILD_ANIMATIONS_CSS;
+    document.head.appendChild(styleEl);
+    return () => { styleEl.remove(); };
+  }, []);
 
-  // Helper to show "đang cập nhật" if field is missing
-  const showValue = (value: string | null | undefined, maxLength = 50) => {
-    if (!value || value.trim() === "") return "đang cập nhật";
-    return value.length > maxLength ? value.substring(0, maxLength) + "..." : value;
+  // Sort options order map
+  const RANK_TIER_MAP: Record<string, number> = {
+    diamond: 7, ruby: 6, platinum: 5, gold: 4, silver: 3, bronze: 2, iron: 1,
+  };
+
+  // Filtered + sorted members
+  const filteredMembers = useMemo(() => {
+    let result = [...team];
+
+    // Role filter
+    if (roleFilter !== 'all') {
+      result = result.filter((m) => getRoleCategory(m) === roleFilter);
+    }
+
+    // Search filter
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter((m) =>
+        m.name.toLowerCase().includes(q) ||
+        m.role.toLowerCase().includes(q) ||
+        (m.shortBio && m.shortBio.toLowerCase().includes(q)) ||
+        (m.expertise && m.expertise.some((e) => typeof e === 'string' ? e.toLowerCase().includes(q) : (e as any).name?.toLowerCase().includes(q))) ||
+        (m.skills && m.skills.some((s) => typeof s === 'string' ? s.toLowerCase().includes(q) : (s as any).name?.toLowerCase().includes(q)))
+      );
+    }
+
+    // Sort
+    result = [...result].sort((a, b) => {
+      const aLevel = a.roleLevel ?? 3;
+      const bLevel = b.roleLevel ?? 3;
+      const aIsCEO = aLevel === 0 || /ceo|founder/i.test(a.role || '');
+      const bIsCEO = bLevel === 0 || /ceo|founder/i.test(b.role || '');
+
+      if (sortBy === 'level-desc') {
+        if (aIsCEO !== bIsCEO) return aIsCEO ? -1 : 1;
+        return aLevel - bLevel;
+      }
+      if (sortBy === 'level-asc') {
+        if (aIsCEO !== bIsCEO) return aIsCEO ? -1 : 1;
+        return bLevel - aLevel;
+      }
+      if (sortBy === 'rank-desc') {
+        if (aIsCEO !== bIsCEO) return aIsCEO ? -1 : 1;
+        return aLevel - bLevel;
+      }
+      if (sortBy === 'rank-asc') {
+        if (aIsCEO !== bIsCEO) return aIsCEO ? -1 : 1;
+        return bLevel - aLevel;
+      }
+      return 0;
+    });
+
+    return result;
+  }, [team, roleFilter, searchQuery, sortBy]);
+
+  // Hall of Fame: top 3 by roleLevel (CEO first, then highest levels)
+  const hallOfFameMembers = useMemo(() => {
+    const sorted = [...team].sort((a, b) => (a.roleLevel ?? 3) - (b.roleLevel ?? 3));
+    return sorted.slice(0, 3);
+  }, [team]);
+
+  // Derive level for each member for display
+  const getLevel = (m: TeamMemberData) => {
+    const isCEO = (m.roleLevel ?? 3) === 0 || /ceo|founder/i.test(m.role || '');
+    const isCTO = /cto|technical/i.test(m.role || '');
+    const isLead = (m.roleLevel ?? 3) === 1;
+    const isSenior = (m.roleLevel ?? 3) === 2;
+    if (isCEO) return 118;
+    if (isCTO) return 103;
+    if (isLead) return 68;
+    if (isSenior) return 43;
+    return 24;
+  };
+
+  const handleMemberClick = (member: TeamMemberData) => {
+    setSelected(member);
   };
 
   return (
     <div
-      onClick={() => router.push(`/team/${member.slug}`)}
-      className="cursor-pointer group"
+      className="min-h-screen relative overflow-x-hidden"
+      style={{ background: '#020617', fontFamily: "'Cinzel', 'JetBrains Mono', 'Inter', sans-serif" }}
     >
-      <div
-        className={`relative overflow-hidden rounded-xl transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl ${
-          memberIsCEO
-            ? "ring-2 ring-amber-500 shadow-lg shadow-amber-500/20"
-            : "ring-1 ring-slate-700 hover:ring-indigo-500/50"
-        }`}
-        style={{
-          aspectRatio: "3/4",
-        }}
-      >
-        {/* Avatar Image - Use member.image (avatar), not coverImage */}
-        <div className="absolute inset-0">
-          {member.image ? (
-            <img
-              src={member.image}
-              alt={member.name}
-              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-            />
-          ) : (
-            <div className="w-full h-full bg-slate-800 flex items-center justify-center">
-              <Users size={48} className="text-slate-600" />
-            </div>
-          )}
-        </div>
+      {/* Background decorative blobs */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div
+          className="absolute"
+          style={{
+            top: '-20%',
+            left: '-10%',
+            width: '60%',
+            height: '60%',
+            background: 'radial-gradient(circle, rgba(59,130,246,0.06) 0%, transparent 65%)',
+          }}
+        />
+        <div
+          className="absolute"
+          style={{
+            bottom: '-10%',
+            right: '-10%',
+            width: '50%',
+            height: '50%',
+            background: 'radial-gradient(circle, rgba(99,102,241,0.06) 0%, transparent 65%)',
+          }}
+        />
+        <AsianBgPattern />
+      </div>
 
-        {/* Gradient Overlay - Dark at bottom for text readability */}
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/50 to-transparent" />
+      {/* Content */}
+      <div className="relative z-10 px-4 sm:px-6 lg:px-8 py-16 max-w-6xl mx-auto">
+        {/* Section Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: 'easeOut' }}
+        >
+          <SectionHeader title={settings?.title} subtitle={settings?.subtitle} />
+        </motion.div>
 
-        {/* Avatar Frame/Border Effect */}
-        <div className={`absolute inset-0 ring-1 ${memberIsCEO ? 'ring-amber-500/30' : 'ring-white/5'} rounded-xl`} />
+        {/* Hall of Fame */}
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: 'easeOut', delay: 0.2 }}
+        >
+          <GuildHallOfFame members={hallOfFameMembers} onMemberClick={handleMemberClick} />
+        </motion.div>
 
-        {/* CEO Badge */}
-        {memberIsCEO && (
-          <div className="absolute top-3 right-3 z-10">
-            <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-amber-500 text-white text-[10px] font-bold shadow-lg">
-              <Crown size={10} />
-            </div>
-          </div>
+        {/* Role Filters */}
+        <motion.div
+          className="mb-8"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: 'easeOut', delay: 0.4 }}
+        >
+          <GuildRoleFilters activeFilter={roleFilter} onFilterChange={setRoleFilter} />
+        </motion.div>
+
+        {/* Search/Sort Bar */}
+        <motion.div
+          className="mb-10"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: 'easeOut', delay: 0.5 }}
+        >
+          <GuildSearchSortBar
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            sortBy={sortBy}
+            onSortChange={setSortBy}
+          />
+        </motion.div>
+
+        {/* Results count */}
+        {(roleFilter !== 'all' || searchQuery) && (
+          <motion.div
+            className="text-center mb-6"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            <span style={{ color: '#64748B', fontSize: 11, fontFamily: 'var(--font-jetbrains), JetBrains Mono, monospace', letterSpacing: '0.1em' }}>
+              ◈ {filteredMembers.length} OPERATIVE{filteredMembers.length !== 1 ? 'S' : ''} FOUND ◈
+            </span>
+          </motion.div>
         )}
 
-        {/* Name & Role at Bottom */}
-        <div className="absolute bottom-0 left-0 right-0 p-4">
-          <div className={`font-bold text-white text-base leading-tight ${
-            memberIsCEO ? 'text-amber-400' : ''
-          }`}>
-            {showValue(member.name, 20)}
-          </div>
-          <div className="text-slate-400 text-xs mt-1 truncate">
-            {showValue(member.role)}
-          </div>
+        {/* Member Grid */}
+        {filteredMembers.length > 0 ? (
+          <>
+            {/* Row 1 — up to 4 cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-6">
+              {filteredMembers.slice(0, 4).map((member, idx) => {
+                const level = getLevel(member);
+                const entrance = getEntranceProps(level, 0.6 + idx * 0.08);
+                return (
+                  <motion.div
+                    key={member.id}
+                    initial={entrance.initial}
+                    animate={entrance.animate}
+                    transition={entrance.transition}
+                    style={(entrance as any).style}
+                  >
+                    <GuildMemberCard
+                      member={{ ...member, level }}
+                      onClick={handleMemberClick}
+                    />
+                  </motion.div>
+                );
+              })}
+            </div>
 
-          {/* CEO: Show additional info - inline below name */}
-          {memberIsCEO && (
-            <div className="mt-2 space-y-1">
-              {/* Short Bio */}
-              <div className="text-slate-300 text-[10px] line-clamp-2">
-                {showValue(member.shortBio || member.bio, 60)}
-              </div>
-              {/* Skills/Expertise - show up to 2 */}
-              {(member.skills?.length > 0 || member.expertise?.length > 0) && (
-                <div className="flex flex-wrap gap-1 mt-1">
-                  {(member.skills || member.expertise || []).slice(0, 2).map((skill: any, idx: number) => (
-                    <span key={idx} className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[9px]">
-                      {typeof skill === 'string' ? skill : (skill.name || skill.nameVi || skill)}
-                    </span>
-                  ))}
-                </div>
-              )}
-              {/* Quote if available */}
-              {member.quote && (
-                <div className="text-slate-400 text-[9px] italic mt-1 line-clamp-1">
-                  "{showValue(member.quote, 40)}"
-                </div>
-              )}
-
-              {/* Contact icons for CEO */}
-              {(member.email || member.linkedin || member.phone) && (
-                <div className="flex gap-1 mt-1">
-                  {member.email && (
-                    <a href={`mailto:${member.email}`} onClick={(e) => e.stopPropagation()} className="p-1 rounded bg-amber-500/20 text-amber-400 hover:bg-amber-500/30">
-                      <Mail size={10} />
-                    </a>
-                  )}
-                  {member.linkedin && (
-                    <a href={member.linkedin} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="p-1 rounded bg-amber-500/20 text-amber-400 hover:bg-amber-500/30">
-                      <Linkedin size={10} />
-                    </a>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Hover Effect Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-indigo-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-      </div>
-    </div>
-  );
-}
-
-// Legacy card components - kept for reference
-function LeaderCardGrid({ member }: { member: TeamMemberData }) {
-  const router = useRouter();
-  return (
-    <div className="col-span-full">
-      <div onClick={() => router.push(`/team/${member.slug}`)} className="cursor-pointer">
-        <div className="relative overflow-hidden rounded-3xl border-2 border-amber-500/50 bg-gradient-to-br from-slate-900 via-slate-900 to-amber-950/30 shadow-2xl shadow-amber-500/10">
-          <div className="absolute inset-0 bg-gradient-to-r from-amber-500/5 via-purple-500/5 to-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-          <div className="absolute top-4 right-4 z-20">
-            <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white text-sm font-bold shadow-lg shadow-amber-500/40 animate-pulse">
-              <Crown size={16} /> CEO / Founder
-            </div>
-          </div>
-          <div className="relative grid grid-cols-1 lg:grid-cols-2 gap-0">
-            <div className="relative h-80 lg:h-96 overflow-hidden">
-              {(member.coverImage || member.image) ? (
-                <img src={member.coverImage || member.image} alt={member.name} className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700" />
-              ) : (
-                <div className="w-full h-full bg-slate-800 flex items-center justify-center"><Users size={64} className="text-slate-600" /></div>
-              )}
-              <div className="absolute inset-0 bg-gradient-to-r from-slate-900 via-slate-900/50 to-transparent lg:bg-gradient-to-t lg:from-slate-900 lg:via-slate-900/30 lg:to-transparent" />
-              {member.experience && (
-                <div className="absolute bottom-4 left-4 flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-sm text-white text-xs font-medium">
-                  <Sparkles size={14} className="text-amber-400" />{member.experience}
-                </div>
-              )}
-            </div>
-            <div className="p-8 lg:p-12 flex flex-col justify-center">
-              <h3 className="text-3xl lg:text-4xl font-extrabold tracking-tight text-white mb-2 group-hover:text-amber-200 transition-colors">{member.name}</h3>
-              <p className="text-amber-400 font-bold text-lg mb-4">{member.shortBio}</p>
-              {member.quote && (
-                <div className="flex gap-4 p-5 bg-amber-500/10 border-l-4 border-amber-500 rounded-r-xl mb-6">
-                  <Quote size={24} className="text-amber-400 flex-shrink-0 mt-1" />
-                  <p className="text-slate-200 text-lg leading-relaxed italic">"{member.quote}"</p>
-                </div>
-              )}
-              <p className="text-slate-400 text-sm leading-relaxed mb-5 line-clamp-3">{member.bio}</p>
-              <div className="flex flex-wrap gap-2 mb-5">
-                {(member.skills || member.expertise?.slice(0, 4) || []).map((skill: any) => (
-                  <div key={skill.name || skill} className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium text-amber-200 bg-amber-500/20 border border-amber-500/30">
-                    {typeof skill === 'string' ? skill : (skill.name || skill.nameVi || skill)}
-                    {typeof skill === 'object' && skill.level && <span className="ml-1 text-amber-400">★{skill.level}</span>}
-                  </div>
-                ))}
-              </div>
-              <div className="flex gap-2.5">
-                {member.linkedin && <SocialLink href={member.linkedin} icon={Linkedin} />}
-                {member.twitter && <SocialLink href={member.twitter} icon={Twitter} />}
-                {member.github && <SocialLink href={member.github} icon={Github} />}
-                {member.email && <SocialLink href={`mailto:${member.email}`} icon={Mail} />}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function LeaderCardList({ member }: { member: TeamMemberData }) {
-  const router = useRouter();
-  return (
-    <div>
-      <div onClick={() => router.push(`/team/${member.slug}`)} className="cursor-pointer">
-        <div className="flex gap-5 p-5 rounded-2xl border border-indigo-500/20 bg-slate-900/50 hover:bg-slate-900 hover:border-indigo-500/40 transition-all duration-300">
-          <div className="relative w-24 h-24 flex-shrink-0 rounded-xl overflow-hidden">
-            {member.image ? (
-              <img src={member.image} alt={member.name} className="w-full h-full object-cover" />
-            ) : (
-              <div className="w-full h-full bg-slate-800 flex items-center justify-center"><Users size={32} className="text-slate-600" /></div>
-            )}
-            <div className="absolute inset-0 ring-2 ring-indigo-500/30 rounded-xl" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <h3 className="text-lg font-bold text-white truncate">{member.name}</h3>
-              <Crown size={14} className="text-amber-500 flex-shrink-0" />
-            </div>
-            <p className="text-indigo-400 text-sm font-medium mb-2">{member.role}</p>
-            <p className="text-slate-400 text-sm line-clamp-2">{member.shortBio}</p>
-          </div>
-          <div className="hidden sm:flex gap-2 items-center">
-            {member.linkedin && <SocialLink href={member.linkedin} icon={Linkedin} />}
-            {member.email && <SocialLink href={`mailto:${member.email}`} icon={Mail} />}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function MemberCardGrid({ member }: { member: TeamMemberData }) {
-  const CategoryIcon = categoryIcons[member.roleCategory || "default"] || Layers;
-  const router = useRouter();
-  return (
-    <div>
-      <div onClick={() => router.push(`/team/${member.slug}`)} className="cursor-pointer">
-        <div className="group relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/80 hover:border-indigo-500/50 hover:shadow-2xl hover:shadow-indigo-500/10 transition-all duration-300 h-full">
-          <div className="relative h-64 overflow-hidden">
-            {(member.coverImage || member.image) ? (
-              <img src={member.coverImage || member.image} alt={member.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-            ) : (
-              <div className="w-full h-full bg-slate-800 flex items-center justify-center"><Users size={48} className="text-slate-600" /></div>
-            )}
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/20 to-transparent" />
-            <div className="absolute top-4 left-4 right-4 flex justify-between items-start">
-              <span className="px-3 py-1 rounded-full bg-indigo-600/90 backdrop-blur-sm text-white text-xs font-semibold">{member.role}</span>
-              {member.isFeatured && <Star size={18} className="text-amber-400 fill-amber-400 drop-shadow-lg" />}
-            </div>
-            <div className="absolute bottom-4 right-4 w-10 h-10 rounded-xl bg-slate-900/80 backdrop-blur-sm flex items-center justify-center border border-slate-700">
-              <CategoryIcon size={18} className="text-indigo-400" />
-            </div>
-          </div>
-          <div className="p-5">
-            <h3 className="text-lg font-bold text-white mb-1 group-hover:text-indigo-200 transition-colors">{member.name}</h3>
-            <p className="text-indigo-400 text-sm font-medium mb-3">{member.shortBio}</p>
-            <div className="flex flex-wrap gap-1.5 mb-4">
-              {(() => {
-                const skillsList = member.skills || member.expertise || [];
-                return skillsList.slice(0, 3).map((skill: any) => (
-                  <span key={skill.name || skill} className="px-2 py-1 rounded-md bg-slate-800 text-slate-400 text-xs flex items-center gap-1">
-                    {skill.name || skill}
-                    {skill.level && <span className="text-indigo-400">★{skill.level}</span>}
-                  </span>
-                ));
-              })()}
-              {(() => {
-                const skillsLength = (member.skills?.length || member.expertise?.length || 0);
-                if (skillsLength > 3) {
-                  return <span className="px-2 py-1 rounded-md text-xs font-semibold text-indigo-400">+{skillsLength - 3}</span>;
-                }
-                return null;
-              })()}
-            </div>
-            <div className="flex gap-2 pt-3 border-t border-slate-800">
-              {member.linkedin && <SocialLink href={member.linkedin} icon={Linkedin} />}
-              {member.twitter && <SocialLink href={member.twitter} icon={Twitter} />}
-              {member.github && <SocialLink href={member.github} icon={Github} />}
-              {member.email && <SocialLink href={`mailto:${member.email}`} icon={Mail} />}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function MemberCardList({ member }: { member: TeamMemberData }) {
-  const router = useRouter();
-  const locale = useLocale();
-  return (
-    <div>
-      <div onClick={() => router.push(`/team/${member.slug}`)} className="cursor-pointer">
-        <div className="flex gap-5 p-4 rounded-xl border border-slate-800 bg-slate-900/50 hover:bg-slate-900 hover:border-indigo-500/40 transition-all duration-300">
-          <div className="relative w-20 h-20 flex-shrink-0 rounded-xl overflow-hidden">
-            {member.image ? (
-              <img src={member.image} alt={member.name} className="w-full h-full object-cover" />
-            ) : (
-              <div className="w-full h-full bg-slate-800 flex items-center justify-center"><Users size={24} className="text-slate-600" /></div>
-            )}
-            {member.isFeatured && (
-              <div className="absolute -top-1 -right-1 w-5 h-5 bg-amber-500 rounded-full flex items-center justify-center">
-                <Star size={10} className="text-white fill-white" />
+            {/* Row 2+ — remaining cards */}
+            {filteredMembers.length > 4 && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-6 mt-6">
+                {filteredMembers.slice(4).map((member, idx) => {
+                  const level = getLevel(member);
+                  const entrance = getEntranceProps(level, 0.6 + (idx + 4) * 0.08);
+                  return (
+                    <motion.div
+                      key={member.id}
+                      initial={entrance.initial}
+                      animate={entrance.animate}
+                      transition={entrance.transition}
+                      style={(entrance as any).style}
+                    >
+                      <GuildMemberCard
+                        member={{ ...member, level }}
+                        onClick={handleMemberClick}
+                      />
+                    </motion.div>
+                  );
+                })}
               </div>
             )}
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-0.5">
-              <h3 className="font-bold text-white truncate">{member.name}</h3>
+          </>
+        ) : (
+          // No results state
+          <motion.div
+            className="text-center py-20"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.4 }}
+          >
+            <div className="inline-block px-6 py-4 rounded-lg" style={{ background: '#0F172A', border: '1px solid #1F2937' }}>
+              <div style={{ color: '#475569', fontSize: 32, marginBottom: 8 }}>◎</div>
+              <div style={{ color: '#94A3B8', fontSize: 13, fontFamily: 'var(--font-jetbrains), JetBrains Mono, monospace', letterSpacing: '0.1em' }}>
+                NO OPERATIVES FOUND
+              </div>
+              <div style={{ color: '#475569', fontSize: 10, marginTop: 4 }}>
+                Try adjusting your filters or search query
+              </div>
             </div>
-            <p className="text-indigo-400 text-sm font-medium mb-1">{member.role}</p>
-            <div className="flex flex-wrap gap-1">
-              {(member.skills || member.expertise || []).slice(0, 2).map((skill: any) => (
-                <span key={skill.name || skill} className="px-2 py-0.5 rounded bg-slate-800 text-slate-500 text-xs flex items-center gap-1">
-                  {skill.name || skill}
-                  {skill.level && <span className="text-indigo-400 text-[10px]">★{skill.level}</span>}
-                </span>
-              ))}
-            </div>
-          </div>
-          <div className="hidden md:flex gap-2 items-center">
-            {member.linkedin && <SocialLink href={member.linkedin} icon={Linkedin} />}
-            {member.email && <SocialLink href={`mailto:${member.email}`} icon={Mail} />}
-            <ArrowRight size={18} className="text-slate-600 group-hover:text-indigo-400 transition-colors" />
-          </div>
+          </motion.div>
+        )}
+
+        {/* Rank legend */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.8 }}
+        >
+          <RankLegend />
+        </motion.div>
+
+        {/* Footer ornament */}
+        <div className="flex items-center justify-center gap-3 mt-10">
+          <div style={{ flex: 1, height: 1, background: 'linear-gradient(90deg, transparent, #1F2937)' }} />
+          <span style={{ color: '#1F2937', fontSize: 12 }}>✦</span>
+          <div style={{ flex: 1, height: 1, background: 'linear-gradient(90deg, #1F2937, transparent)' }} />
+        </div>
+        <div className="text-center mt-3" style={{ color: '#1F2937', fontSize: 9, fontFamily: 'var(--font-jetbrains), JetBrains Mono, monospace', letterSpacing: '0.3em' }}>
+          GUILD HALL — SEASON III — 2026
         </div>
       </div>
+
+      {/* HUD Panel */}
+      <GuildHUDPanel member={selected} onClose={() => setSelected(null)} />
     </div>
   );
 }
 
-export function TeamPage({ team, expertises = [], settings }: TeamPageProps) {
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [activeFilter, setActiveFilter] = useState("all");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 20; // 4 columns x 5 rows
-  const locale = useLocale();
-
-  // Check if member is CEO/Founder
-  const isCEO = (member: TeamMemberData) => {
-    const roleLower = member.role.toLowerCase();
-    return member.roleLevel === 0 || roleLower.includes('ceo') || roleLower.includes('founder') || roleLower.includes('giám đốc') || roleLower.includes('chủ tịch');
+// ── Entrance animation helper (inline to avoid circular deps) ───────────────
+function getEntranceProps(level: number, delay: number) {
+  if (level >= 115) {
+    return {
+      initial: { opacity: 0, scale: 1.3, filter: 'blur(18px)' },
+      animate: { opacity: 1, scale: 1, filter: 'blur(0px)' },
+      transition: { duration: 0.85, ease: [0.16, 1, 0.3, 1] as [number, number, number, number], delay },
+    };
+  }
+  if (level >= 95) {
+    return {
+      initial: { opacity: 0, x: 80, scale: 0.82 },
+      animate: { opacity: 1, x: 0, scale: 1 },
+      transition: { type: 'spring' as const, stiffness: 380, damping: 22, delay },
+    };
+  }
+  if (level >= 75) {
+    return {
+      initial: { opacity: 0, rotateX: 68, y: 24 },
+      animate: { opacity: 1, rotateX: 0, y: 0 },
+      transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] as [number, number, number, number], delay },
+      style: { perspective: 900 },
+    };
+  }
+  if (level >= 55) {
+    return {
+      initial: { opacity: 0, scale: 0.72 },
+      animate: { opacity: 1, scale: 1 },
+      transition: { type: 'spring' as const, stiffness: 220, damping: 16, delay },
+    };
+  }
+  if (level >= 35) {
+    return {
+      initial: { opacity: 0, x: -40, scale: 0.94 },
+      animate: { opacity: 1, x: 0, scale: 1 },
+      transition: { duration: 0.55, ease: 'easeOut', delay },
+    };
+  }
+  if (level >= 15) {
+    return {
+      initial: { opacity: 0, y: 55 },
+      animate: { opacity: 1, y: 0 },
+      transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as [number, number, number, number], delay },
+    };
+  }
+  return {
+    initial: { opacity: 0 },
+    animate: { opacity: 1 },
+    transition: { duration: 0.75, ease: 'easeOut', delay },
   };
-
-  // Gộp tất cả và sắp xếp: CEO lên đầu
-  const filteredMembers = useMemo(() => {
-    let result = [...team];
-    if (activeFilter !== "all") {
-      result = result.filter((m) => m.roleCategory === activeFilter);
-    }
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter((m) =>
-        m.name.toLowerCase().includes(query) ||
-        m.role.toLowerCase().includes(query) ||
-        (m.expertise && m.expertise.some((e) => e.toLowerCase().includes(query))) ||
-        (m.skills && m.skills.some((s) => s.toLowerCase().includes(query)))
-      );
-    }
-    // Sắp xếp: CEO lên đầu
-    return result.sort((a, b) => {
-      const aIsCEO = isCEO(a) ? 0 : 1;
-      const bIsCEO = isCEO(b) ? 0 : 1;
-      return aIsCEO - bIsCEO;
-    });
-  }, [team, activeFilter, searchQuery]);
-
-  // Pagination
-  const totalPages = Math.ceil(filteredMembers.length / ITEMS_PER_PAGE);
-  const paginatedMembers = useMemo(() => {
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    return filteredMembers.slice(start, start + ITEMS_PER_PAGE);
-  }, [filteredMembers, currentPage]);
-
-  // Reset to page 1 when filter/search changes
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [activeFilter, searchQuery]);
-
-  return (
-    <div className="min-h-screen bg-slate-950 text-white">
-      <section className="relative py-20 lg:py-28 px-4 sm:px-6 overflow-hidden">
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -top-40 left-[20%] w-[600px] h-[600px] rounded-full bg-indigo-500/10 blur-[100px] animate-pulse" style={{ animationDuration: '8s' }} />
-          <div className="absolute -top-20 right-[10%] w-[400px] h-[400px] rounded-full bg-pink-500/10 blur-[80px] animate-pulse" style={{ animationDuration: '10s', animationDelay: '2s' }} />
-        </div>
-        <div className="relative max-w-6xl mx-auto text-center">
-          <FadeIn>
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-500/10 border border-indigo-500/30 mb-6">
-              <Users size={16} className="text-indigo-400" />
-              <span className="text-slate-300 text-sm font-medium">{settings?.subtitle || "Những con người tạo nên sự khác biệt"}</span>
-            </div>
-          </FadeIn>
-          <FadeIn delay={0.1}>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight mb-6">
-              {settings?.title || "Đội Ngũ"}{" "}
-              <span className="bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">LOOP</span>
-            </h1>
-          </FadeIn>
-          <FadeIn delay={0.2}>
-            <p className="text-slate-400 text-lg max-w-2xl mx-auto leading-relaxed">Chúng tôi là tập thể những chuyên gia đam mê công nghệ, sáng tạo không ngừng để mang đến giải pháp số tốt nhất.</p>
-          </FadeIn>
-        </div>
-      </section>
-
-      <section className="sticky top-16 lg:top-20 z-40 bg-slate-950/80 backdrop-blur-xl border-y border-slate-800/50">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4">
-          <div className="flex flex-col lg:flex-row gap-4 lg:items-center lg:justify-between">
-            <div className="relative flex-1 max-w-md">
-              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
-              <input type="text" placeholder="Tìm theo tên, kỹ năng..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-11 pr-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500/50 focus:ring-2 focus:ring-indigo-500/20 transition-all" />
-              {searchQuery && (
-                <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-slate-800 transition-colors">
-                  <X size={16} className="text-slate-500" />
-                </button>
-              )}
-            </div>
-            <div className="flex items-center gap-3">
-              <button onClick={() => setShowFilters(!showFilters)} className="lg:hidden flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 text-sm font-medium">
-                <Filter size={18} /> Lọc
-              </button>
-              <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-900 border border-slate-800">
-                <button onClick={() => setViewMode("grid")} className={`p-2 rounded-lg transition-all ${viewMode === "grid" ? "bg-indigo-600 text-white" : "text-slate-500 hover:text-white"}`}>
-                  <Grid3X3 size={18} />
-                </button>
-                <button onClick={() => setViewMode("list")} className={`p-2 rounded-lg transition-all ${viewMode === "list" ? "bg-indigo-600 text-white" : "text-slate-500 hover:text-white"}`}>
-                  <List size={18} />
-                </button>
-              </div>
-            </div>
-          </div>
-          <div className={`${showFilters ? "flex" : "hidden"} lg:flex flex-wrap gap-2 mt-4 pt-4 border-t border-slate-800/50`}>
-            {filterCategories.map((cat) => {
-              const Icon = cat.icon;
-              return (
-                <button key={cat.id} onClick={() => setActiveFilter(cat.id)} className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${activeFilter === cat.id ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/30" : "bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800"}`}>
-                  <Icon size={14} />{cat.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 py-12">
-        <div>
-          <FadeIn>
-            <div className="flex items-center justify-between mb-8">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center shadow-lg shadow-indigo-500/30">
-                  <Sparkles size={22} className="text-white" />
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold">Thành Viên</h2>
-                  <p className="text-slate-500 text-sm">{filteredMembers.length} {filteredMembers.length === 1 ? "người" : "thành viên"}{searchQuery && ` cho "${searchQuery}"`}</p>
-                </div>
-              </div>
-            </div>
-          </FadeIn>
-          {filteredMembers.length === 0 && (
-            <div className="text-center py-16">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-900 flex items-center justify-center"><Search size={24} className="text-slate-600" /></div>
-              <h3 className="text-lg font-semibold text-white mb-2">Không tìm thấy</h3>
-              <p className="text-slate-500">Thử tìm kiếm với từ khóa khác</p>
-              <button onClick={() => { setSearchQuery(""); setActiveFilter("all"); }} className="mt-4 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-500 transition-colors">Xóa bộ lọc</button>
-            </div>
-          )}
-          {/* All Members - 4 columns grid with pagination */}
-          {viewMode === "grid" && filteredMembers.length > 0 && (
-            <>
-              <StaggerContainer className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {paginatedMembers.map((member) => <TeamMemberCard key={member.id} member={member} />)}
-              </StaggerContainer>
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex justify-center items-center gap-2 mt-12">
-                  <button
-                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                    disabled={currentPage === 1}
-                    className="px-4 py-2 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    ← Trước
-                  </button>
-                  <div className="flex gap-1">
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                      <button
-                        key={page}
-                        onClick={() => setCurrentPage(page)}
-                        className={`w-10 h-10 rounded-lg transition-colors ${
-                          currentPage === page
-                            ? "bg-indigo-600 text-white"
-                            : "bg-slate-800 text-slate-300 hover:bg-slate-700"
-                        }`}
-                      >
-                        {page}
-                      </button>
-                    ))}
-                  </div>
-                  <button
-                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                    disabled={currentPage === totalPages}
-                    className="px-4 py-2 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    Sau →
-                  </button>
-                </div>
-              )}
-            </>
-          )}
-          {viewMode === "list" && filteredMembers.length > 0 && (
-            <>
-              <StaggerContainer className="grid grid-cols-1 gap-3">
-                {paginatedMembers.map((member) => <MemberCardList key={member.id} member={member} />)}
-              </StaggerContainer>
-              {/* Pagination for list view */}
-              {totalPages > 1 && (
-                <div className="flex justify-center items-center gap-2 mt-12">
-                  <button
-                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                    disabled={currentPage === 1}
-                    className="px-4 py-2 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    ← Trước
-                  </button>
-                  <div className="flex gap-1">
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                      <button
-                        key={page}
-                        onClick={() => setCurrentPage(page)}
-                        className={`w-10 h-10 rounded-lg transition-colors ${
-                          currentPage === page
-                            ? "bg-indigo-600 text-white"
-                            : "bg-slate-800 text-slate-300 hover:bg-slate-700"
-                        }`}
-                      >
-                        {page}
-                      </button>
-                    ))}
-                  </div>
-                  <button
-                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                    disabled={currentPage === totalPages}
-                    className="px-4 py-2 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    Sau →
-                  </button>
-                </div>
-              )}
-            </>
-          )}
-        </div>
-      </section>
-      <section className="py-20 px-4 sm:px-6 border-t border-slate-800/50">
-        <FadeIn>
-          <div className="max-w-2xl mx-auto text-center">
-            <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center shadow-2xl shadow-indigo-500/30">
-              <Users size={32} className="text-white" />
-            </div>
-            <h2 className="text-3xl font-bold mb-4">Muốn gia nhập đội ngũ?</h2>
-            <p className="text-slate-400 mb-8 leading-relaxed">Chúng tôi luôn tìm kiếm những tài năng xuất sắc. Hãy liên hệ nếu bạn muốn tạo ra những sản phẩm tuyệt vời.</p>
-            <a href="/contact" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 transition-all hover:scale-105">
-              Liên hệ ngay <ArrowRight size={18} />
-            </a>
-          </div>
-        </FadeIn>
-      </section>
-    </div>
-  );
 }

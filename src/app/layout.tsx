@@ -5,6 +5,8 @@ import JsonLd from '@/components/seo/JsonLd';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getLocale } from 'next-intl/server';
 import { Inter } from 'next/font/google';
+import { Cinzel } from 'next/font/google';
+import { JetBrains_Mono } from 'next/font/google';
 import { buildOrganizationJsonLd, buildWebSiteJsonLd } from '@/lib/json-ld';
 import { AdminAuthProvider } from '@/app/admin/components/admin-auth-provider';
 
@@ -13,6 +15,20 @@ const inter = Inter({
   display: 'swap',
   variable: '--font-inter',
   weight: ['400', '500', '600', '700'],
+});
+
+const cinzel = Cinzel({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-cinzel',
+  weight: ['400', '700', '900'],
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-jetbrains',
+  weight: ['400', '600', '700'],
 });
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
@@ -76,7 +92,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const messages = await getMessages();
 
   return (
-    <html lang={locale} className={`dark ${inter.variable}`}>
+    <html lang={locale} className={`dark ${inter.variable} ${cinzel.variable} ${jetbrainsMono.variable}`}>
       <head>
         <link rel="manifest" href="/manifest.json" />
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
