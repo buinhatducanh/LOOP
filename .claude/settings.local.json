@@ -34,10 +34,18 @@
       "Read(//app/src/app/admin/**)",
       "Read(//app/src/app/api/admin/auth/logout/**)",
       "Bash(python -c \":*)",
-      "Bash(findstr /i \"layout header\")"
+      "Bash(findstr /i \"layout header\")",
+      "Read(//home/user/repos/nextjs-frontend/**)",
+      "Read(//c/Users/MSI/**)",
+      "Bash(find d:/LOOP_COMPANY/LOOP/src/app/[locale] -type f -name \"*.tsx\")",
+      "Read(//app/**)",
+      "Read(//app/prisma/**)",
+      "Bash(powershell -Command \"Set-Content -Path ''C:\\\\Users\\\\MSI\\\\.claude\\\\plans\\\\precious-kindling-duckling-agent-a68153ec70eacefe1.md'' -Value ''placeholder''\")",
+      "Bash(powershell -Command \"[System.IO.File]::WriteAllText\\(''C:\\\\Users\\\\MSI\\\\.claude\\\\plans\\\\precious-kindling-duckling-agent-a68153ec70eacefe1.md'', ''placeholder - ready to write''\\)\")"
     ],
     "additionalDirectories": [
-      "D:\\LOOP_COMPANY\\LOOP\\src\\app\\api\\admin\\expertises"
+      "D:\\LOOP_COMPANY\\LOOP\\src\\app\\api\\admin\\expertises",
+      "C:\\Users\\MSI\\.claude\\plans"
     ]
   }
 }
