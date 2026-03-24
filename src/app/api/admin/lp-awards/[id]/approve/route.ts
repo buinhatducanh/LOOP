@@ -5,27 +5,35 @@ import { createAuditLog } from "@/lib/auth/audit";
 import { syncRankFields } from "@/lib/rank/xp";
 
 // POST /api/admin/lp-awards/[id]/approve
-// PM approves → credit LP to member → create LpTransaction → update rank
-// PM rejects  → release locked LP → create LpTransaction (expire) → update locked balance
+// action: "approve" → credit LP + rank sync
+// action: "reject"  → release locked LP + rank sync
 
-export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
     const session = await requirePermission("lp-awards", "update");
     const { id } = await params;
-    const { action, reason } = await req.json(); // "approve" | "reject"
+    const { action, reason } = await req.json() as {
+      action: "approve" | "reject";
+      reason?: string;
+    };
+
+    if (action !== "approve" && action !== "reject") {
+      return NextResponse.json(
+        { error: "Invalid action: must be 'approve' or 'reject'" },
+        { status: 400 }
+      );
+    }
 
     const award = await prisma.lpAward.findUnique({ where: { id } });
-    if (!award) return NextResponse.json({ error: "Not found" }, { status: 404 });
-
+    if (!award) return NextResponse.json({ error: "Award not found" }, { status: 404 });
     if (award.status !== "pending") {
       return NextResponse.json({ error: "Award already processed" }, { status: 400 });
     }
 
-    if (action !== "approve" && action !== "reject") {
-      return NextResponse.json({ error: "Invalid action: must be 'approve' or 'reject'" }, { status: 400 });
-    }
-
-    // ── Look up approver's TeamMember.id ────────────────────────────────────
+    // Look up approver's TeamMember.id for the audit trail
     const approver = await prisma.user.findUnique({
       where: { id: session.userId },
       select: { teamMember: { select: { id: true } } },
@@ -33,12 +41,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const approverMemberId = approver?.teamMember?.id ?? null;
     const now = new Date();
 
-    // ── Atomic approval / rejection block ────────────────────────────────────
-    const result = await prisma.$transaction(async (tx) => {
+    // ── Atomic DB writes ─────────────────────────────────────────────────────────
+    await prisma.$transaction(async (tx) => {
       if (action === "reject") {
-        // ── Reject: release locked LP back to zero ────────────────────────────
-        // No LP is awarded; the member's pending locked LP simply decreases.
-        // We record this as an "expire" transaction for audit clarity.
+        // Release locked LP back to pool (no LP awarded on rejection)
         const member = await tx.teamMember.findUnique({
           where: { id: award.memberId },
           select: { lockedLp: true, availableLp: true },
@@ -51,7 +57,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           await tx.lpTransaction.create({
             data: {
               memberId: award.memberId,
-              amount: 0, // no net LP change on rejection
+              amount: 0,
               balanceAfter: member.availableLp,
               type: "expire",
               status: "completed",
@@ -68,28 +74,32 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           });
         }
 
-        const updated = await tx.lpAward.update({
+        await tx.lpAward.update({
           where: { id },
-          data: { status: "rejected", rejectedReason: reason ?? "Rejected by PM", approvedBy: approverMemberId, approvedAt: now },
+          data: {
+            status: "rejected",
+            rejectedReason: reason ?? "Rejected by PM",
+            approvedBy: approverMemberId,
+            approvedAt: now,
+          },
         });
 
-        return { award: updated, type: "rejected" as const };
+        return;
       }
 
-      // ── Approve ────────────────────────────────────────────────────────────
-      // 1. Update LpAward status
-      const updatedAward = await tx.lpAward.update({
+      // ── Approve ──────────────────────────────────────────────────────────
+      // 1. Mark award approved
+      await tx.lpAward.update({
         where: { id },
         data: { status: "approved", approvedBy: approverMemberId, approvedAt: now },
       });
 
-      // 2. Update ProjectMember earnedLp/exp
+      // 2. Update ProjectMember earned LP + EXP
       const pmRecord = await tx.projectMember.findUnique({
         where: {
           projectId_memberId: { projectId: award.projectId, memberId: award.memberId },
         },
       });
-
       if (pmRecord) {
         await tx.projectMember.update({
           where: { id: pmRecord.id },
@@ -100,12 +110,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         });
       }
 
-      // 3. Update TeamMember balances (decrease locked, increase available)
+      // 3. Move LP from locked → available
       const member = await tx.teamMember.findUnique({
         where: { id: award.memberId },
         select: { lockedLp: true, availableLp: true },
       });
-
       if (member) {
         const newLocked = Math.max(0, member.lockedLp - award.lpAmount);
         const newAvailable = member.availableLp + award.lpAmount;
@@ -115,7 +124,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           data: { lockedLp: newLocked, availableLp: newAvailable },
         });
 
-        // 4. Create LpTransaction ledger entry
+        // 4. Ledger entry
         await tx.lpTransaction.create({
           data: {
             memberId: award.memberId,
@@ -131,34 +140,29 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           },
         });
       }
-
-      // 5. Re-rank based on total approved LP
-      const lpAgg = await tx.lpAward.aggregate({
-        where: { memberId: award.memberId, status: "approved" },
-        _sum: { lpAmount: true },
-      });
-      const totalLp = lpAgg._sum.lpAmount ?? 0;
-      const { level, currentXp, maxXp, rank } = syncRankFields(totalLp);
-      await tx.teamMember.update({
-        where: { id: award.memberId },
-        data: { level, currentXp, maxXp, rank },
-      });
-
-      return { award: updatedAward, type: "approved" as const };
     });
+
+    // ── Rank sync (outside the main tx — reads fresh committed state) ────────────
+    // Re-sync on both approve and reject so rank always reflects current totals
+    const rank = await syncRankFields(award.memberId);
 
     await createAuditLog({
       userId: session.userId,
       action,
       resource: "lp-awards",
       resourceId: id,
-      newValues: { lpAmount: award.lpAmount, memberId: award.memberId, action },
+      newValues: { lpAmount: award.lpAmount, memberId: award.memberId, action, reason },
     });
 
-    return NextResponse.json({ data: result.award });
+    return NextResponse.json({
+      data: { awardId: id, action, rank },
+    });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Server error";
-    const status = message === "Unauthorized" ? 401 : message === "Forbidden" ? 403 : 500;
-    return NextResponse.json({ error: message }, { status });
+    const msg = error instanceof Error ? error.message : "Server error";
+    const status =
+      msg === "Unauthorized" ? 401
+        : msg === "Forbidden" ? 403
+        : 500;
+    return NextResponse.json({ error: msg }, { status });
   }
 }

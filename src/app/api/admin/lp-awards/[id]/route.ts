@@ -39,13 +39,35 @@ export async function PATCH(
     const existing = await prisma.lpAward.findUnique({ where: { id } });
     if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
+    // Financial fields (lpAmount, expAmount) can only be set on pending awards.
+    // Once approved/rejected, use the approve/reject endpoint to change status.
+    // This prevents silent balance corruption from mid-edit PATCHes.
+    if (existing.status !== "pending") {
+      if (data.lpAmount !== undefined || data.expAmount !== undefined || data.status !== undefined) {
+        return NextResponse.json(
+          {
+            error:
+              "Cannot modify lpAmount, expAmount, or status on processed awards. " +
+              "Use the approve/reject endpoint.",
+          },
+          { status: 409 }
+        );
+      }
+    }
+
     const updated = await prisma.lpAward.update({
       where: { id },
       data: {
-        lpAmount: data.lpAmount !== undefined ? parseInt(data.lpAmount) : undefined,
-        expAmount: data.expAmount !== undefined ? parseInt(data.expAmount) : undefined,
-        source: data.source ?? undefined,
-        status: data.status ?? undefined,
+        source:
+          existing.status === "pending" ? (data.source ?? undefined) : undefined,
+        lpAmount:
+          existing.status === "pending" && data.lpAmount !== undefined
+            ? parseInt(data.lpAmount)
+            : undefined,
+        expAmount:
+          existing.status === "pending" && data.expAmount !== undefined
+            ? parseInt(data.expAmount)
+            : undefined,
       },
     });
 

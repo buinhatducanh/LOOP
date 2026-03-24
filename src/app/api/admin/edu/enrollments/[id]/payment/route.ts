@@ -66,6 +66,11 @@ export async function POST(
     const studentLpEarned = vndToLp(amount);
     const instructorLp = Math.floor(studentLpEarned * (enrollment.assigneeLpPercent / 100));
 
+    // Capture instructorMemberId before the transaction so we can call
+    // syncRankFields() after the atomic block commits
+    let instructorIdForRankSync: string | null =
+      instructorMember && instructorLp > 0 ? instructorMember.id : null;
+
     // ── Atomic transaction ─────────────────────────────────────────
     const payment = await prisma.$transaction(async (tx) => {
       // 1. EduPayment record
@@ -136,8 +141,10 @@ export async function POST(
         });
       }
 
-      // 4. Instructor LP (TeamMember.availableLp + LpTransaction + rank sync)
+      // 4. Instructor LP (TeamMember.availableLp + LpTransaction)
+      let instructorMemberId: string | null = null;
       if (instructorMember && instructorLp > 0) {
+        instructorMemberId = instructorMember.id;
         const newAvailable = instructorMember.availableLp + instructorLp;
         await tx.teamMember.update({
           where: { id: instructorMember.id },
@@ -157,22 +164,15 @@ export async function POST(
             referenceType: "EduPayment",
           },
         });
-
-        // M19: Sync rank fields after LP credit
-        const lpAgg = await tx.lpAward.aggregate({
-          where: { memberId: instructorMember.id, status: "approved" },
-          _sum: { lpAmount: true },
-        });
-        const totalLp = (lpAgg._sum.lpAmount ?? 0);
-        const { level, currentXp, maxXp, rank } = syncRankFields(totalLp);
-        await tx.teamMember.update({
-          where: { id: instructorMember.id },
-          data: { level, currentXp, maxXp, rank },
-        });
       }
 
       return eduPayment;
     });
+
+    // ── Rank sync (outside tx — reads committed state, writes to TeamMember) ──
+    if (instructorIdForRankSync) {
+      await syncRankFields(instructorIdForRankSync);
+    }
 
     await createAuditLog({
       userId: session.userId,

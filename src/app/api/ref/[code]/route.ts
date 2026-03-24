@@ -124,19 +124,30 @@ export async function POST(
       const order = await prisma.order.findUnique({ where: { id: orderId } });
       if (!order) return NextResponse.json({ error: "Order not found" }, { status: 404 });
 
-      // Update SalesLead referralCodeId if not set
-      if (salesLeadId) {
-        await prisma.salesLead.update({
-          where: { id: salesLeadId },
-          data: { referralCodeId: referralCode.id },
-        }).catch(() => {/* ignore if already set */});
-      }
+      // Update referralCodeId links in atomic tx.
+      // P2002 = unique constraint — referralCodeId already set, safe to ignore.
+      // Other errors (connection, timeout, etc.) must propagate.
+      const ignoreIfAlreadyLinked = (e: unknown) => {
+        const msg = e instanceof Error ? e.message : String(e);
+        if (!msg.includes("P2002") && !msg.includes("Unique constraint")) {
+          throw e;
+        }
+        // referralCodeId already set — LP will still be awarded on payment/completion
+      };
 
-      // Update Order referralCodeId if not set
-      await prisma.order.update({
-        where: { id: orderId },
-        data: { referralCodeId: referralCode.id },
-      }).catch(() => {/* ignore if already set */});
+      await prisma.$transaction(async (tx) => {
+        if (salesLeadId) {
+          await tx.salesLead.update({
+            where: { id: salesLeadId },
+            data: { referralCodeId: referralCode.id },
+          }).catch(ignoreIfAlreadyLinked);
+        }
+
+        await tx.order.update({
+          where: { id: orderId },
+          data: { referralCodeId: referralCode.id },
+        }).catch(ignoreIfAlreadyLinked);
+      });
     }
 
     // Create tracking record

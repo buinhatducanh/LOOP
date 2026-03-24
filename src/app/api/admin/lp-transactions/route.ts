@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createTransaction } from "@/lib/lp/transaction";
 import { createAuditLog } from "@/lib/auth/audit";
-import { syncRankFields } from "@/lib/rank/xp";
+import { computeRankFieldsFromLp } from "@/lib/rank/xp";
 
 // GET /api/admin/lp-transactions
 // List LP transactions with optional filters.
@@ -126,7 +126,7 @@ export async function POST(req: NextRequest) {
         _sum: { lpAmount: true },
       });
       const totalLp = lpAgg._sum.lpAmount ?? 0;
-      const { level, currentXp, maxXp, rank } = syncRankFields(totalLp);
+      const { level, currentXp, maxXp, rank } = computeRankFieldsFromLp(totalLp);
       await tx.teamMember.update({
         where: { id: memberId },
         data: { level, currentXp, maxXp, rank },

@@ -9,7 +9,7 @@ import {
   buildPaginationResponse,
   TEAM_MEMBER_FILTER_CONFIG,
 } from "@/lib/api/search-utils";
-import { syncRankFields } from "@/lib/rank/xp";
+import { computeRankFieldsFromLp } from "@/lib/rank/xp";
 
 export async function GET(req: NextRequest) {
   try {
@@ -50,7 +50,7 @@ export async function GET(req: NextRequest) {
 
     const enriched = members.map((m) => {
       const totalApprovedLp = lpMap.get(m.id) ?? 0;
-      const { level, currentXp, maxXp, rank } = syncRankFields(totalApprovedLp);
+      const { level, currentXp, maxXp, rank } = computeRankFieldsFromLp(totalApprovedLp);
       return {
         ...m,
         // Override level/XP/rank with computed values (reflect real LP)

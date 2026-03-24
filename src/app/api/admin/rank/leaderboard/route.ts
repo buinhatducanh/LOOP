@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
-import { syncRankFields } from "@/lib/rank/xp";
+import { computeRankFieldsFromLp } from "@/lib/rank/xp";
 import { RANKS } from "@/components/team/teamRanks";
 
 // GET /api/admin/rank/leaderboard
@@ -55,7 +55,7 @@ export async function GET(req: NextRequest) {
     // ── Compute rank fields + enrich member data ────────────────────────────
     const enriched = members.map((m) => {
       const totalLp = lpMap.get(m.id) ?? 0;
-      const computed = syncRankFields(totalLp);
+      const computed = computeRankFieldsFromLp(totalLp);
 
       // Use persisted DB fields if present and non-zero (real data),
       // otherwise fall back to computed values.
