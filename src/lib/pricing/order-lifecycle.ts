@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { awardCustomerLpOnPayment } from "@/lib/customer/lp";
 import { awardReferralLpOnPayment, awardReferralLpOnCompletion } from "@/lib/customer/referral";
+import { distributeLpFromOrder } from "@/lib/pricing/quote-to-order";
 
 /**
  * Trạng thái hợp lệ cho đơn hàng Custom
@@ -213,6 +214,11 @@ export async function recordPayment(
         paidAmount: amount,
         paymentId: payment.id,
       });
+    }
+
+    // ── Distribute LP to staff via Quote.lpAllocation (when project members exist) ─
+    if (amount > 0) {
+      await distributeLpFromOrder(orderId, amount);
     }
   });
 

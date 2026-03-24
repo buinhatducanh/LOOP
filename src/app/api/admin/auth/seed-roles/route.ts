@@ -200,6 +200,14 @@ const PERMISSIONS: Array<{ role: string; resource: string; action: string }> = [
   { role: "qa", resource: "orders",        action: "read"  },
   { role: "qa", resource: "orders",        action: "approve" },
 
+  // EDU permissions (PM: CRUD, QA/Member: read-only)
+  { role: "project_manager", resource: "edu", action: "read"  },
+  { role: "project_manager", resource: "edu", action: "create" },
+  { role: "project_manager", resource: "edu", action: "update" },
+  { role: "project_manager", resource: "edu", action: "delete" },
+  { role: "qa",        resource: "edu", action: "read" },
+  { role: "member",    resource: "edu", action: "read" },
+
   // ── Member: Dashboard only (read) ───────────────────────────────────────────
   { role: "member", resource: "dashboard", action: "read" },
 ];

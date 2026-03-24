@@ -411,6 +411,44 @@ export const NAV_PERMISSIONS: Record<string, NavPermission> = {
     permissions: [{ resource: "blog-posts", actions: ["read", "create", "update", "delete"] }],
     icon: "FileText",
   },
+
+  // ── EDU ────────────────────────────────────────────────────────────────
+  "/admin/edu": {
+    label: { vi: "Học vấn", en: "Education" },
+    minRoleLevel: 2,
+    permissions: [{ resource: "edu", actions: ["read"] }],
+    icon: "GraduationCap",
+  },
+  "/admin/edu/instructors": {
+    label: { vi: "Giảng viên", en: "Instructors" },
+    minRoleLevel: 2,
+    permissions: [{ resource: "edu", actions: ["read", "create", "update"] }],
+    icon: "GraduationCap",
+  },
+  "/admin/edu/courses": {
+    label: { vi: "Khóa học", en: "Courses" },
+    minRoleLevel: 2,
+    permissions: [{ resource: "edu", actions: ["read", "create", "update"] }],
+    icon: "BookOpen",
+  },
+  "/admin/edu/enrollments": {
+    label: { vi: "Ghi danh", en: "Enrollments" },
+    minRoleLevel: 2,
+    permissions: [{ resource: "edu", actions: ["read", "create", "update"] }],
+    icon: "Users",
+  },
+  "/admin/edu/attendance": {
+    label: { vi: "Điểm danh", en: "Attendance" },
+    minRoleLevel: 5,
+    permissions: [{ resource: "edu", actions: ["read", "update"] }],
+    icon: "CheckSquare",
+  },
+  "/admin/edu/feedback": {
+    label: { vi: "Phản hồi", en: "Feedback" },
+    minRoleLevel: 2,
+    permissions: [{ resource: "edu", actions: ["read", "update"] }],
+    icon: "MessageCircle",
+  },
 };
 
 // ─── Permission helpers ─────────────────────────────────────────────────────────

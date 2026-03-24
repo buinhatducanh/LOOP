@@ -10,7 +10,8 @@ export async function POST(
   try {
     const session = await requirePermission("orders", "update");
     const { id } = await params;
-    const { selectedFeatureIds, adminOverridePrice } = await req.json();
+    const body = await req.json();
+    const { selectedFeatureIds, infraTierSlug, infraTierId, adminOverridePrice } = body;
 
     if (!selectedFeatureIds || !Array.isArray(selectedFeatureIds)) {
       return NextResponse.json(
@@ -19,14 +20,19 @@ export async function POST(
       );
     }
 
-    const result = await calculateOrderPrice(selectedFeatureIds, adminOverridePrice);
+    const result = await calculateOrderPrice({
+      selectedFeatureIds,
+      infraTierSlug,
+      infraTierId,
+      adminOverridePrice,
+    });
 
     await createAuditLog({
       userId: session.userId,
       action: "update",
       resource: "orders",
       resourceId: id,
-      newValues: { selectedFeatureIds, adminOverridePrice },
+      newValues: { selectedFeatureIds, infraTierSlug, infraTierId, adminOverridePrice },
     });
 
     return NextResponse.json({ data: result });

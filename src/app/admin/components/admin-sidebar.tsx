@@ -48,6 +48,9 @@ import {
   Bug,
   AlertTriangle,
   Figma,
+  GraduationCap,
+  BookOpen,
+  MessageCircle,
   type LucideIcon,
 } from "lucide-react";
 import { useAdminAuth } from "./admin-auth-provider";
@@ -72,6 +75,7 @@ const GROUP_LABELS: Record<string, string> = {
   system: "Hệ thống",
   projects: "Dự án",
   kpis: "KPIs",
+  edu: "Học vấn",
 };
 
 // Icon registry — maps icon name string to Lucide component
@@ -117,6 +121,9 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Bug,
   AlertTriangle,
   Figma,
+  GraduationCap,
+  BookOpen,
+  MessageCircle,
 };
 
 // ─── Build nav data using NAV_PERMISSIONS (single source of truth) ────────────
@@ -141,6 +148,16 @@ function useNavData(): NavEntry[] {
     });
   }
 
+  // EDU dashboard (standalone, between dashboard and projects)
+  if (visible.includes("/admin/edu")) {
+    const edu = NAV_PERMISSIONS["/admin/edu"] as NavPermission;
+    entries.push({
+      name: (edu.label as { vi: string }).vi || "Học vấn",
+      href: "/admin/edu",
+      icon: ICON_MAP[edu.icon ?? "GraduationCap"] ?? GraduationCap,
+    });
+  }
+
   // Projects listing (standalone, before grouped project sub-pages)
   if (visible.includes("/admin/projects")) {
     const proj = NAV_PERMISSIONS["/admin/projects"] as NavPermission;
@@ -158,6 +175,7 @@ function useNavData(): NavEntry[] {
     system: visible.filter((p) => p.startsWith("/admin/system/")),
     projects: visible.filter((p) => p.startsWith("/admin/projects") && p !== "/admin/projects"),
     kpis: visible.filter((p) => p.startsWith("/admin/kpi")),
+    edu: visible.filter((p) => p.startsWith("/admin/edu/")),
   } as Record<string, string[]>;
 
   for (const [groupKey, paths] of Object.entries(groups)) {

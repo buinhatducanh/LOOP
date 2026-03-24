@@ -110,7 +110,7 @@ export const BOX_SHADOW_ANIM: Record<RankKey, string | undefined> = {
   silver:   'guildSilverPulse 2s ease-in-out infinite',
   gold:     'guildGoldGlow 2s ease-in-out infinite',
   platinum: 'guildPlatinumPulse 1.8s ease-in-out infinite',
-  ruby:     'guildHeartbeat 1.1s ease-in-out infinite',
+  ruby:     'guildGlitch 2.4s steps(1) infinite',
   diamond:  'guildDiamondSpectral 3s ease-in-out infinite',
 };
 
@@ -178,6 +178,17 @@ export function getRankFromLevel(level: number): RankKey {
   if (level >= 35)  return 'silver';
   if (level >= 15)  return 'bronze';
   return 'iron';
+}
+
+// ── Quick rank accessors ────────────────────────────────────────────────────
+export function getRankColor(rank: RankKey): string {
+  return RANKS[rank].color;
+}
+export function getRankLabel(rank: RankKey): string {
+  return RANKS[rank].label;
+}
+export function getRankSymbol(rank: RankKey): string {
+  return RANKS[rank].symbol;
 }
 
 // ── Role symbol map ─────────────────────────────────────────────────────────
@@ -252,6 +263,28 @@ export const GUILD_ANIMATIONS_CSS = `
   @keyframes guildDiamondSpectral {
     0%, 100% { box-shadow: 0 0 20px rgba(129,140,248,0.3), 0 0 50px rgba(125,211,252,0.1); }
     50%      { box-shadow: 0 0 45px rgba(129,140,248,0.7), 0 0 90px rgba(125,211,252,0.3), 0 0 120px rgba(255,255,255,0.15); }
+  }
+  @keyframes guildGlitch {
+    0%   { clip-path: inset(0 0 95% 0); transform: translateX(-4px) skewX(-12deg); opacity: 0.85; }
+    10%  { clip-path: inset(30% 0 50% 0); transform: translateX(4px) skewX(8deg); }
+    25%  { clip-path: inset(60% 0 20% 0); transform: translateX(-3px) skewX(-6deg); opacity: 0.9; }
+    40%  { clip-path: inset(80% 0 5% 0); transform: translateX(2px) skewX(4deg); }
+    60%  { clip-path: inset(10% 0 70% 0); transform: translateX(-5px) skewX(-9deg); opacity: 0.8; }
+    80%  { clip-path: inset(45% 0 40% 0); transform: translateX(3px) skewX(6deg); }
+    100% { clip-path: inset(0 0 95% 0); transform: translateX(-4px) skewX(-12deg); opacity: 0; }
+  }
+  @keyframes guildGlitchInner {
+    0%   { clip-path: inset(5% 0 80% 0); transform: translateX(3px) skewX(10deg); opacity: 0.7; }
+    30%  { clip-path: inset(50% 0 25% 0); transform: translateX(-2px) skewX(-5deg); opacity: 0.85; }
+    60%  { clip-path: inset(75% 0 10% 0); transform: translateX(4px) skewX(8deg); opacity: 0.75; }
+    100% { clip-path: inset(5% 0 80% 0); transform: translateX(3px) skewX(10deg); opacity: 0; }
+  }
+  @keyframes auroraShift {
+    0%   { opacity: 0.18; background-position: 0% 50%; }
+    25%  { opacity: 0.45; background-position: 30% 20%; }
+    50%  { opacity: 0.28; background-position: 60% 80%; }
+    75%  { opacity: 0.52; background-position: 80% 40%; }
+    100% { opacity: 0.18; background-position: 0% 50%; }
   }
   @keyframes guildBoostRipple {
     0%   { opacity: 1; transform: scale(0.85); }

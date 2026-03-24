@@ -2,8 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
+import { approveQuoteAndCreateOrder } from "@/lib/pricing/quote-to-order";
 
-// POST /api/admin/quotes/[id]/approve — action: "send" | "approve" | "reject"
+// POST /api/admin/quotes/[id]/approve
+// Actions: "send" | "approve" | "reject"
+// Approve runs the full pricing engine and auto-creates an Order.
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -12,7 +15,10 @@ export async function POST(
     const session = await requirePermission("quotes", "approve");
     const { id } = await params;
     const data = await req.json();
-    const { action } = data as { action: "send" | "approve" | "reject" };
+    const { action, adminOverridePrice } = data as {
+      action: "send" | "approve" | "reject";
+      adminOverridePrice?: number | null;
+    };
 
     const quote = await prisma.quote.findUnique({
       where: { id },
@@ -24,13 +30,13 @@ export async function POST(
             customerEmail: true,
             customerPhone: true,
             companyName: true,
-            area: true,
           },
         },
       },
     });
     if (!quote) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
+    // ── Send quote ────────────────────────────────────────────────────────────
     if (action === "send") {
       const updated = await prisma.quote.update({
         where: { id },
@@ -39,50 +45,48 @@ export async function POST(
       return NextResponse.json({ data: updated });
     }
 
-    if (action === "approve") {
-      // Create an Order from the approved quote
-      const lead = quote.salesLead;
-      const order = await prisma.order.create({
-        data: {
-          orderNumber: `ORD-${Date.now()}`,
-          customerName: lead?.customerName ?? "Unknown",
-          customerEmail: lead?.customerEmail ?? "",
-          customerPhone: lead?.customerPhone ?? null,
-          companyName: lead?.companyName ?? null,
-          totalAmount: quote.totalAmount,
-          status: "pending",
-          paymentStatus: "unpaid",
-          salesLeadId: lead?.id,
-        },
-      });
-
-      const updated = await prisma.quote.update({
-        where: { id },
-        data: {
-          status: "approved",
-          approvedAt: new Date(),
-          signedAt: new Date(),
-          orderId: order.id,
-        },
-      });
-
-      await createAuditLog({
-        userId: session.userId,
-        action: "approve",
-        resource: "quotes",
-        resourceId: id,
-        newValues: { orderId: order.id, totalAmount: quote.totalAmount },
-      });
-
-      return NextResponse.json({ data: updated, order });
-    }
-
+    // ── Reject quote ──────────────────────────────────────────────────────
     if (action === "reject") {
       const updated = await prisma.quote.update({
         where: { id },
         data: { status: "rejected" },
       });
       return NextResponse.json({ data: updated });
+    }
+
+    // ── Approve quote — auto-create Order with pricing ───────────────────
+    if (action === "approve") {
+      const result = await approveQuoteAndCreateOrder(id, adminOverridePrice ?? null);
+
+      if (!result.ok) {
+        return NextResponse.json({ error: result.error }, { status: 400 });
+      }
+
+      await createAuditLog({
+        userId: session.userId,
+        action: "approve",
+        resource: "quotes",
+        resourceId: id,
+        newValues: {
+          orderId: result.orderId,
+          systemPrice: result.systemPrice,
+          finalPrice: result.finalPrice,
+          infraTier: result.infraTier,
+          lpAllocation: result.lpAllocation,
+        },
+      });
+
+      return NextResponse.json({
+        data: {
+          quoteId: id,
+          orderId: result.orderId,
+          orderNumber: result.orderNumber,
+          systemPrice: result.systemPrice,
+          finalPrice: result.finalPrice,
+          infraTier: result.infraTier,
+          lpAllocation: result.lpAllocation,
+        },
+      }, { status: 201 });
     }
 
     return NextResponse.json(

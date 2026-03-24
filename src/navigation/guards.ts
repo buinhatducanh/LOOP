@@ -175,14 +175,14 @@ export function getVisibleNavItems(user: AuthUser | null): {
   byGroup: Record<string, string[]>;
 } {
   if (!user) {
-    return { standalone: [], byGroup: { content: [], sales: [], system: [] } };
+    return { standalone: [], byGroup: { content: [], sales: [], system: [], projects: [], edu: [] } };
   }
 
   const navPaths = Object.keys(NAV_PERMISSIONS as Record<string, NavPermission>);
   const allowed = navPaths.filter((path) => canSeeNavItem(user, path));
 
   // Determine group from path structure
-  const byGroup: Record<string, string[]> = { content: [], sales: [], system: [] };
+  const byGroup: Record<string, string[]> = { content: [], sales: [], system: [], projects: [], edu: [] };
   const standalone: string[] = [];
 
   for (const path of allowed) {
@@ -198,6 +198,10 @@ export function getVisibleNavItems(user: AuthUser | null): {
       byGroup.sales.push(path);
     } else if (path.startsWith("/admin/system/")) {
       byGroup.system.push(path);
+    } else if (path.startsWith("/admin/projects")) {
+      byGroup.projects.push(path);
+    } else if (path.startsWith("/admin/edu/")) {
+      byGroup.edu.push(path);
     }
   }
 

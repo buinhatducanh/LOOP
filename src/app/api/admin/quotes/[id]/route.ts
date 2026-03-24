@@ -13,6 +13,12 @@ const updateSchema = z.object({
     amount: z.number(),
     dueDate: z.string().optional(),
   })).optional(),
+  /** Feature IDs for auto-pricing */
+  selectedFeatureIds: z.array(z.string()).optional(),
+  /** Infrastructure tier slug for auto-pricing */
+  infrastructureTierSlug: z.string().optional().nullable(),
+  /** Infrastructure tier ID for auto-pricing */
+  infrastructureTierId: z.string().optional().nullable(),
   status: z.enum(["draft", "sent", "approved", "rejected", "expired"]).optional(),
   validUntil: z.string().transform(s => new Date(s)).optional().or(z.literal("")),
   sentAt: z.string().transform(s => new Date(s)).optional().or(z.literal("")),
@@ -43,8 +49,11 @@ export async function GET(
             tier: true,
           },
         },
+        infrastructureTier: {
+          select: { id: true, slug: true, name: true, nameVi: true, monthlyCost: true, setupCost: true },
+        },
         order: {
-          select: { id: true, orderNumber: true, status: true, totalAmount: true },
+          select: { id: true, orderNumber: true, status: true, totalAmount: true, finalPrice: true },
         },
       },
     });
@@ -90,6 +99,15 @@ export async function PATCH(
     if (parsed.data.totalAmount !== undefined) updateData.totalAmount = parsed.data.totalAmount;
     if (parsed.data.lpAllocation !== undefined) updateData.lpAllocation = parsed.data.lpAllocation;
     if (parsed.data.milestones !== undefined) updateData.milestones = parsed.data.milestones;
+    if (parsed.data.selectedFeatureIds !== undefined) {
+      updateData.selectedFeatureIds = parsed.data.selectedFeatureIds;
+    }
+    if (parsed.data.infrastructureTierSlug !== undefined) {
+      updateData.infrastructureTierSlug = parsed.data.infrastructureTierSlug ?? null;
+    }
+    if (parsed.data.infrastructureTierId !== undefined) {
+      updateData.infrastructureTierId = parsed.data.infrastructureTierId ?? null;
+    }
     if (parsed.data.status !== undefined) updateData.status = parsed.data.status;
     if (parsed.data.note !== undefined) updateData.note = parsed.data.note || null;
 

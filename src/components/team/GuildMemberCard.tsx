@@ -230,31 +230,6 @@ function CometLine({ color }: { color: string }) {
   );
 }
 
-// ── Electric sparks ──────────────────────────────────────────────────────────
-function ElectricSparks({ color }: { color: string }) {
-  const sparks = [
-    { top: '15%', left: '0', width: '40%', delay: '0s', dur: '0.6s' },
-    { top: '35%', left: '60%', width: '40%', delay: '0.3s', dur: '0.5s' },
-    { top: '55%', left: '10%', width: '30%', delay: '0.5s', dur: '0.7s' },
-    { top: '75%', left: '50%', width: '35%', delay: '0.1s', dur: '0.6s' },
-  ];
-  return (
-    <div className="absolute inset-0 pointer-events-none z-30">
-      {sparks.map((s, i) => (
-        <div
-          key={i}
-          className="absolute"
-          style={{
-            top: s.top, left: s.left, width: s.width, height: 1,
-            backgroundImage: `linear-gradient(90deg, transparent, ${color}cc, transparent)`,
-            animation: `guildElectric ${s.dur} ${s.delay} ease-in-out infinite`,
-          }}
-        />
-      ))}
-    </div>
-  );
-}
-
 // ── Hover stats popup ───────────────────────────────────────────────────────
 function HoverStatsPopup({ member, guild, visible }: { member: GuildMemberData; guild: ReturnType<typeof deriveGuildData>; visible: boolean }) {
   const cfg = RANKS[guild.rank];
@@ -387,7 +362,8 @@ export function GuildMemberCard({ member, onClick }: GuildMemberCardProps) {
 
   const hasParticles = ['platinum', 'ruby', 'diamond'].includes(guild.rank);
   const hasComet = guild.rank === 'gold';
-  const hasSparks = guild.rank === 'ruby';
+  const hasGlitch = guild.rank === 'ruby';
+  const hasAurora = guild.rank === 'diamond';
 
   return (
     <motion.div
@@ -421,7 +397,40 @@ export function GuildMemberCard({ member, onClick }: GuildMemberCardProps) {
         }}
       >
         {hasComet && <CometLine color={cfg.color} />}
-        {hasSparks && <ElectricSparks color={cfg.color} />}
+        {hasGlitch && (
+          <>
+            {/* Glitch layer 1 — red offset */}
+            <div
+              className="absolute inset-0 pointer-events-none z-20 overflow-hidden rounded-[11px]"
+              style={{ animation: 'guildGlitch 2.4s steps(1) infinite' }}
+            >
+              <div
+                className="absolute inset-0"
+                style={{ boxShadow: '2px 0 0 rgba(239,68,68,0.55) inset' }}
+              />
+            </div>
+            {/* Glitch layer 2 — cyan offset */}
+            <div
+              className="absolute inset-0 pointer-events-none z-20 overflow-hidden rounded-[11px]"
+              style={{ animation: 'guildGlitchInner 2.4s steps(1) infinite 0.3s' }}
+            >
+              <div
+                className="absolute inset-0"
+                style={{ boxShadow: '-2px 0 0 rgba(6,182,212,0.5) inset' }}
+              />
+            </div>
+          </>
+        )}
+        {hasAurora && (
+          <div
+            className="absolute inset-0 pointer-events-none z-20 overflow-hidden rounded-[11px]"
+            style={{
+              background: 'linear-gradient(135deg, rgba(129,140,248,0.12), rgba(125,211,252,0.10), rgba(139,92,246,0.08), rgba(255,255,255,0.06))',
+              backgroundSize: '300% 300%',
+              animation: 'auroraShift 5s ease-in-out infinite',
+            }}
+          />
+        )}
         {hasParticles && <Particles rank={guild.rank} />}
 
         {/* Avatar image section */}
