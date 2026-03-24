@@ -50,7 +50,8 @@
       "Bash(type:*)",
       "mcp__ide__executeCode",
       "Bash(python:*)",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "Bash(Get-ChildItem -Path \"D:\\\\LOOP_COMPANY\\\\LOOP\\\\src\\\\app\\\\api\" -Recurse -Filter \"route.ts\" | ForEach-Object { $_.FullName })"
     ],
     "additionalDirectories": [
       "D:\\LOOP_COMPANY\\LOOP\\src\\app\\api\\admin\\expertises",
