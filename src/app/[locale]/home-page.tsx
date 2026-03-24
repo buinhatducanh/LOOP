@@ -21,6 +21,7 @@ import {
   Github,
   Mail,
   ExternalLink,
+  Sparkles,
 } from "lucide-react";
 import {
   services as mockServices,
@@ -472,6 +473,118 @@ export function HomePage({
               </div>
             </FadeInSection>
           ))}
+        </div>
+      </section>
+
+      {/* --- ALL SERVICES --- */}
+      <section style={{ padding: "100px 24px" }}>
+        <div style={{ maxWidth: "1280px", margin: "0 auto" }}>
+          <FadeInSection>
+            <div style={{ textAlign: "center", marginBottom: "64px" }}>
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  background: "rgba(139,92,246,0.1)",
+                  border: "1px solid rgba(139,92,246,0.25)",
+                  borderRadius: "40px",
+                  padding: "5px 14px 5px 10px",
+                  fontSize: "12px",
+                  fontWeight: 600,
+                  color: "#A78BFA",
+                  marginBottom: "16px",
+                  letterSpacing: "0.5px",
+                }}
+              >
+                <Sparkles size={12} />
+                DỊCH VỤ CỦA CHÚNG TÔI
+              </span>
+              <h2 style={{ fontSize: "clamp(32px, 4vw, 48px)", fontWeight: 800, letterSpacing: "-1px", marginBottom: "16px" }}>
+                Giải pháp hoàn chỉnh<br />
+                <span
+                  style={{
+                    background: "linear-gradient(135deg, #3B82F6, #6366F1)",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                  }}
+                >
+                  cho doanh nghiệp của bạn
+                </span>
+              </h2>
+              <p style={{ color: "#94A3B8", fontSize: "16px", maxWidth: "560px", margin: "0 auto", lineHeight: 1.7 }}>
+                Từ website đến ứng dụng — tất cả dịch vụ được xây dựng bởi đội ngũ LOOP, cam kết chất lượng cao nhất.
+              </p>
+            </div>
+          </FadeInSection>
+
+          {/* Services grid */}
+          {services && services.length > 0 ? (
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+                gap: "24px",
+                marginBottom: "48px",
+              }}
+            >
+              {services.map((service, i) => (
+                <FadeInSection key={service.id} delay={i * 0.06}>
+                  <ServiceCard service={service} />
+                </FadeInSection>
+              ))}
+            </div>
+          ) : (
+            <div style={{ textAlign: "center", color: "rgba(209,213,219,0.4)", padding: "48px 0", marginBottom: "48px" }}>
+              Chưa có dịch vụ nào.
+            </div>
+          )}
+
+          {/* CTA */}
+          <FadeInSection delay={0.2}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "16px", flexWrap: "wrap" }}>
+              <Link
+                href="/services"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  padding: "14px 28px",
+                  borderRadius: "12px",
+                  background: "linear-gradient(135deg, #3B82F6, #6366F1)",
+                  color: "#fff",
+                  fontWeight: 700,
+                  fontSize: "14px",
+                  textDecoration: "none",
+                  boxShadow: "0 0 30px rgba(99,102,241,0.3)",
+                  transition: "all 0.2s",
+                }}
+              >
+                Xem tất cả dịch vụ
+                <ArrowRight size={16} />
+              </Link>
+              <Link
+                href="/pricing"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  padding: "14px 28px",
+                  borderRadius: "12px",
+                  background: "transparent",
+                  border: "1px solid rgba(255,255,255,0.15)",
+                  color: "rgba(209,213,219,0.85)",
+                  fontWeight: 600,
+                  fontSize: "14px",
+                  textDecoration: "none",
+                  transition: "all 0.2s",
+                }}
+              >
+                Bảng giá
+                <ArrowRight size={16} />
+              </Link>
+            </div>
+          </FadeInSection>
         </div>
       </section>
 
