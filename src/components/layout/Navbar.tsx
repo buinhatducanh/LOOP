@@ -4,11 +4,24 @@ import { useState, useEffect, useRef } from "react";
 import { useTranslations } from "next-intl";
 import { useLocale } from "next-intl";
 import { Link, usePathname } from "@/i18n/routing";
-import { Menu, X, ChevronDown, Package, Briefcase, Users, FileText, Settings, LayoutDashboard, LogOut, UserCircle } from "lucide-react";
+import {
+  Menu, X, ChevronDown, Package, Briefcase, Users, FileText,
+  Settings, LayoutDashboard, LogOut, UserCircle, ArrowRight, Sparkles,
+} from "lucide-react";
 import { useAdminAuth } from "@/app/admin/components/admin-auth-provider";
 import { LanguageSwitcher } from "@/components/shared/LanguageSwitcher";
 import { NavbarSearch } from "@/components/layout/NavbarSearch";
 import { LogoInline } from "@/components/shared/InfinityLogo";
+
+interface ServiceItem {
+  id: string;
+  slug: string;
+  title: string;
+  category: string | null;
+  icon: string | null;
+  shortDescription: string | null;
+  startingPrice: number | null;
+}
 
 interface NavbarProps {
   hideOnHome?: boolean;
@@ -25,6 +38,18 @@ export default function Navbar({ hideOnHome = false }: NavbarProps) {
   const t = useTranslations("Navigation");
   const pathname = usePathname();
   const { user, loading: authLoading, logout } = useAdminAuth();
+
+  // Services dropdown data
+  const [servicesData, setServicesData] = useState<{ grouped: Record<string, ServiceItem[]> }>({ grouped: {} });
+  const [servicesLoading, setServicesLoading] = useState(false);
+
+  useEffect(() => {
+    setServicesLoading(true);
+    fetch("/api/services")
+      .then(r => r.json())
+      .then(d => { setServicesData(d); setServicesLoading(false); })
+      .catch(() => setServicesLoading(false));
+  }, []);
 
   // Track mouse Y globally — trigger on top of viewport
   useEffect(() => {
@@ -91,7 +116,7 @@ export default function Navbar({ hideOnHome = false }: NavbarProps) {
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        if (openDropdown === "more") setOpenDropdown(null);
+        if (openDropdown === "more" || openDropdown === "services") setOpenDropdown(null);
       }
       if (userDropdownRef.current && !userDropdownRef.current.contains(event.target as Node)) {
         if (openDropdown === "user") setOpenDropdown(null);
@@ -167,44 +192,226 @@ export default function Navbar({ hideOnHome = false }: NavbarProps) {
               flexShrink: 0,
             }}
           >
-            {mainLinks.map((link) => {
-              const isActive = pathname === link.path;
-              return (
-                <Link
-                  key={link.path}
-                  href={link.path}
-                  className={`navbar-nav-link${isActive ? " active" : ""}`}
+            {/* Home */}
+            <Link
+              key="/" href="/"
+              className={`navbar-nav-link${pathname === "/" ? " active" : ""}`}
+              style={{
+                padding: "8px 16px",
+                fontSize: "14px",
+                fontWeight: 600,
+                borderRadius: "10px",
+                color: pathname === "/" ? "#FFFFFF" : "rgba(209,213,219,0.85)",
+                background: pathname === "/" ? "rgba(139,92,246,0.18)" : "transparent",
+                textDecoration: "none",
+                transition: "all 0.2s",
+                position: "relative",
+                letterSpacing: "0.01em",
+              }}
+            >
+              {t("home")}
+              {pathname === "/" && (
+                <span style={{
+                  position: "absolute",
+                  bottom: "4px",
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  width: "18px",
+                  height: "2px",
+                  borderRadius: "1px",
+                  background: "linear-gradient(to right, #8B5CF6, #06B6D4)",
+                }} />
+              )}
+            </Link>
+
+            {/* Services Dropdown — shows all DB services grouped by category */}
+            <div style={{ position: "relative" }}>
+              <button
+                onClick={() => setOpenDropdown(openDropdown === "services" ? null : "services")}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "4px",
+                  padding: "8px 16px",
+                  fontSize: "14px",
+                  fontWeight: 600,
+                  borderRadius: "10px",
+                  color: openDropdown === "services" || pathname.startsWith("/services") ? "#FFFFFF"
+                    : "rgba(209,213,219,0.85)",
+                  background: openDropdown === "services" ? "rgba(139,92,246,0.18)" : "transparent",
+                  border: "none",
+                  transition: "all 0.2s",
+                  cursor: "pointer",
+                  letterSpacing: "0.01em",
+                }}
+              >
+                {t("services")}
+                <ChevronDown size={14}
+                  style={{ transform: openDropdown === "services" ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.2s" }}
+                />
+              </button>
+
+              {/* Services Dropdown Panel */}
+              {openDropdown === "services" && (
+                <div
                   style={{
-                    padding: "8px 16px",
-                    fontSize: "14px",
-                    fontWeight: 600,
-                    borderRadius: "10px",
-                    color: isActive ? "#FFFFFF" : "rgba(209,213,219,0.85)",
-                    background: isActive ? "rgba(139,92,246,0.18)" : "transparent",
-                    textDecoration: "none",
-                    transition: "all 0.2s",
-                    position: "relative",
-                    letterSpacing: "0.01em",
+                    position: "absolute",
+                    top: "calc(100% + 10px)",
+                    left: "-120px",
+                    width: "680px",
+                    background: "rgba(15,17,23,0.98)",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    borderRadius: "20px",
+                    padding: "16px",
+                    boxShadow: "0 20px 60px rgba(0,0,0,0.7), 0 0 0 1px rgba(139,92,246,0.1)",
+                    zIndex: 200,
+                    backdropFilter: "blur(20px)",
                   }}
+                  onClick={() => setOpenDropdown(null)}
                 >
-                  {t(link.key as any)}
-                  {isActive && (
-                    <span
-                      style={{
-                        position: "absolute",
-                        bottom: "4px",
-                        left: "50%",
-                        transform: "translateX(-50%)",
-                        width: "18px",
-                        height: "2px",
-                        borderRadius: "1px",
-                        background: "linear-gradient(to right, #8B5CF6, #06B6D4)",
-                      }}
-                    />
+                  {servicesLoading ? (
+                    <div style={{ padding: "16px", textAlign: "center", color: "rgba(209,213,219,0.4)", fontSize: "13px" }}>
+                      Đang tải...
+                    </div>
+                  ) : Object.keys(servicesData.grouped).length === 0 ? (
+                    <div style={{ padding: "16px", textAlign: "center", color: "rgba(209,213,219,0.4)", fontSize: "13px" }}>
+                      Chưa có dịch vụ nào.
+                    </div>
+                  ) : (
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+                      {Object.entries(servicesData.grouped).map(([category, items]) => (
+                        <div key={category}>
+                          {/* Category header */}
+                          <div style={{
+                            fontSize: "10px",
+                            fontWeight: 700,
+                            textTransform: "uppercase",
+                            letterSpacing: "1.5px",
+                            color: "rgba(139,92,246,0.7)",
+                            padding: "0 8px 6px",
+                            marginBottom: "2px",
+                          }}>
+                            {category}
+                          </div>
+                          {items.map((service) => (
+                            <Link
+                              key={service.id}
+                              href={`/services/${service.slug}`}
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "10px",
+                                padding: "8px 10px",
+                                borderRadius: "10px",
+                                textDecoration: "none",
+                                transition: "all 0.15s",
+                                color: "rgba(209,213,219,0.85)",
+                              }}
+                              onMouseEnter={e => {
+                                (e.currentTarget as HTMLElement).style.background = "rgba(139,92,246,0.1)";
+                                (e.currentTarget as HTMLElement).style.color = "#FFFFFF";
+                              }}
+                              onMouseLeave={e => {
+                                (e.currentTarget as HTMLElement).style.background = "transparent";
+                                (e.currentTarget as HTMLElement).style.color = "rgba(209,213,219,0.85)";
+                              }}
+                            >
+                              {service.icon && (
+                                <span style={{ fontSize: "16px", lineHeight: 1 }}>{service.icon}</span>
+                              )}
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ fontSize: "13px", fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                                  {service.title}
+                                </div>
+                                {service.shortDescription && (
+                                  <div style={{ fontSize: "11px", color: "rgba(209,213,219,0.4)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                                    {service.shortDescription}
+                                  </div>
+                                )}
+                              </div>
+                              {service.startingPrice != null && service.startingPrice > 0 && (
+                                <span style={{ fontSize: "11px", fontWeight: 700, color: "#A78BFA", whiteSpace: "nowrap" }}>
+                                  Từ {new Intl.NumberFormat("vi-VN").format(service.startingPrice)}₫
+                                </span>
+                              )}
+                              <ArrowRight size={12} style={{ opacity: 0.3, flexShrink: 0 }} />
+                            </Link>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
                   )}
-                </Link>
-              );
-            })}
+                  {/* Footer CTA */}
+                  <div style={{
+                    marginTop: "10px",
+                    paddingTop: "10px",
+                    borderTop: "1px solid rgba(255,255,255,0.06)",
+                  }}>
+                    <Link
+                      href="/services"
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "8px",
+                        padding: "10px",
+                        borderRadius: "10px",
+                        background: "rgba(139,92,246,0.12)",
+                        color: "#A78BFA",
+                        fontSize: "13px",
+                        fontWeight: 600,
+                        textDecoration: "none",
+                        transition: "all 0.15s",
+                      }}
+                      onMouseEnter={e => {
+                        (e.currentTarget as HTMLElement).style.background = "rgba(139,92,246,0.22)";
+                        (e.currentTarget as HTMLElement).style.color = "#FFFFFF";
+                      }}
+                      onMouseLeave={e => {
+                        (e.currentTarget as HTMLElement).style.background = "rgba(139,92,246,0.12)";
+                        (e.currentTarget as HTMLElement).style.color = "#A78BFA";
+                      }}
+                    >
+                      <Sparkles size={14} />
+                      Xem tất cả dịch vụ & pricing
+                      <ArrowRight size={12} />
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Team List */}
+            <Link
+              key="/team-list" href="/team-list"
+              className={`navbar-nav-link${pathname === "/team-list" ? " active" : ""}`}
+              style={{
+                padding: "8px 16px",
+                fontSize: "14px",
+                fontWeight: 600,
+                borderRadius: "10px",
+                color: pathname === "/team-list" ? "#FFFFFF" : "rgba(209,213,219,0.85)",
+                background: pathname === "/team-list" ? "rgba(139,92,246,0.18)" : "transparent",
+                textDecoration: "none",
+                transition: "all 0.2s",
+                position: "relative",
+                letterSpacing: "0.01em",
+              }}
+            >
+              {t("teamList")}
+              {pathname === "/team-list" && (
+                <span style={{
+                  position: "absolute",
+                  bottom: "4px",
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  width: "18px",
+                  height: "2px",
+                  borderRadius: "1px",
+                  background: "linear-gradient(to right, #8B5CF6, #06B6D4)",
+                }} />
+              )}
+            </Link>
 
             {/* More Dropdown */}
             <div ref={dropdownRef} style={{ position: "relative" }}>
