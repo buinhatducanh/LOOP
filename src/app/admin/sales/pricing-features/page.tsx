@@ -1,25 +1,56 @@
 "use client";
-
-import { Suspense } from "react";
+import {
+  AdminCrudList,
+  type ColumnDef,
+  type Action,
+  type FormField,
+  type FilterConfig,
+} from "@/components/admin/admin-crud-list";
 
 export default function AdminPricingFeaturesPage() {
-  return (
-    <Suspense>
-      <AdminPricingFeaturesContent />
-    </Suspense>
-  );
-}
+  const columns: ColumnDef<any>[] = [
+    { key: "name", header: "Tên tính năng" },
+    { key: "nameVi", header: "Tên (VI)" },
+    { key: "tooltip", header: "Tooltip" },
+    { key: "tooltipVi", header: "Tooltip (VI)" },
+    { key: "category", header: "Danh mục", cell: ({ value }) => <span className="text-slate-300">{(value as any)?.nameVi ?? (value as any)?.name ?? "—"}</span> },
+    { key: "sortOrder", header: "Thứ tự" },
+    {
+      key: "isActive",
+      header: "Trạng thái",
+      cell: ({ value }) => (
+        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${value ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}`}>
+          {value ? "Đang bật" : "Đã tắt"}
+        </span>
+      ),
+    },
+  ];
 
-function AdminPricingFeaturesContent() {
+  const actions: Action<any>[] = [{ type: "edit" }, { type: "delete" }];
+
+  const formFields: FormField[] = [
+    { key: "categoryId", label: "Danh mục", type: "text" },
+    { key: "name", label: "Tên tính năng", type: "text" },
+    { key: "nameVi", label: "Tên (Tiếng Việt)", type: "text" },
+    { key: "tooltip", label: "Tooltip", type: "text" },
+    { key: "tooltipVi", label: "Tooltip (Tiếng Việt)", type: "text" },
+    { key: "values", label: "Giá trị (JSON)", type: "textarea" },
+    { key: "sortOrder", label: "Thứ tự", type: "number" },
+    { key: "isActive", label: "Kích hoạt", type: "boolean" },
+  ];
+
+  const filters: FilterConfig[] = [
+    { key: "search", label: "Tìm kiếm", type: "search", placeholder: "Tìm theo tên..." },
+  ];
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-white">Báo giá tính năng</h1>
-        <p className="text-sm text-slate-400">Quản lý pricing features</p>
-      </div>
-      <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-8 text-center">
-        <p className="text-slate-400">Đang tải...</p>
-      </div>
-    </div>
+    <AdminCrudList<any>
+      apiPath="/api/admin/packages/comparison-features"
+      entityName="Pricing Features"
+      columns={columns}
+      actions={actions}
+      formFields={formFields}
+      filters={filters}
+    />
   );
 }
