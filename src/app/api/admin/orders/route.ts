@@ -50,7 +50,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const orderNumber = `ORD-${Date.now()}`;
+    // Only allow non-terminal statuses at creation — prevents bypassing payment workflow
+    const ALLOWED_CREATE_STATUSES = ["pending", "quote", "draft"];
+    const requestedStatus = data.status ?? "pending";
+    if (!ALLOWED_CREATE_STATUSES.includes(requestedStatus)) {
+      return NextResponse.json(
+        { error: `Cannot create order with status "${requestedStatus}". Allowed: ${ALLOWED_CREATE_STATUSES.join(", ")}` },
+        { status: 400 }
+      );
+    }
+
+    // Use UUID-based order number to prevent collision under concurrent requests
+    const orderNumber = `ORD-${crypto.randomUUID().replace(/-/g, "").slice(0, 12).toUpperCase()}`;
 
     const order = await prisma.order.create({
       data: {
@@ -61,7 +72,7 @@ export async function POST(req: NextRequest) {
         customerPhone: data.customerPhone || null,
         companyName: data.companyName || null,
         requirements: data.requirements || null,
-        status: data.status || "pending",
+        status: requestedStatus,
         paymentStatus: data.paymentStatus || "unpaid",
         totalAmount: data.totalAmount ? parseInt(data.totalAmount) : null,
       },

@@ -202,7 +202,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Thiếu addonId" }, { status: 400 });
       }
 
-      // Load the AddonService
+      // Load the AddonService (read-only, outside tx — safe)
       const addon = await prisma.addonService.findUnique({
         where: { id: addonId },
         select: {
@@ -232,15 +232,6 @@ export async function POST(req: NextRequest) {
       const qty = Math.max(1, Number(quantity ?? 1));
       const totalCost = addon.lpCost * qty;
 
-      if (customerPoint.balance < totalCost) {
-        return NextResponse.json(
-          {
-            error: `Số dư không đủ: cần ${totalCost} LP, bạn có ${customerPoint.balance} LP`,
-          },
-          { status: 400 }
-        );
-      }
-
       // Determine expiry
       let expiresAt: Date | null = null;
       if (addon.type === "recurring") {
@@ -248,9 +239,20 @@ export async function POST(req: NextRequest) {
         expiresAt.setMonth(expiresAt.getMonth() + qty);
       }
 
-      // Atomic: deduct balance + create PointTransaction
+      // Atomic: re-read balance inside tx to prevent race-condition double-spend
       const updated = await prisma.$transaction(async (tx) => {
-        const newBalance = customerPoint.balance - totalCost;
+        // Re-read balance inside the transaction — prevents TOCTOU race
+        const fresh = await tx.customerPoint.findUnique({
+          where: { id: customerPoint.id },
+          select: { balance: true },
+        });
+        if (!fresh) throw new Error("Customer point account not found");
+
+        if (fresh.balance < totalCost) {
+          throw new Error(`Số dư không đủ: cần ${totalCost} LP, bạn có ${fresh.balance} LP`);
+        }
+
+        const newBalance = fresh.balance - totalCost;
 
         await tx.customerPoint.update({
           where: { id: customerPoint.id },
@@ -286,72 +288,88 @@ export async function POST(req: NextRequest) {
 
     // ── Daily login ─────────────────────────────────────────────────────
     if (action === "daily_login") {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      // All reads and writes inside transaction — prevents concurrent login bonus abuse
+      const result = await prisma.$transaction(async (tx) => {
+        const fresh = await tx.customerPoint.findUnique({
+          where: { id: customerPoint.id },
+          select: { lastLoginDate: true, loginStreak: true, level: true, currentXp: true, balance: true, totalEarned: true },
+        });
+        if (!fresh) throw new Error("Customer point account not found");
 
-      if (customerPoint.lastLoginDate) {
-        const lastLogin = new Date(customerPoint.lastLoginDate);
-        lastLogin.setHours(0, 0, 0, 0);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
 
-        if (lastLogin.getTime() === today.getTime()) {
-          return NextResponse.json({ error: "Đã nhận thưởng đăng nhập hôm nay" }, { status: 400 });
+        if (fresh.lastLoginDate) {
+          const lastLogin = new Date(fresh.lastLoginDate);
+          lastLogin.setHours(0, 0, 0, 0);
+          if (lastLogin.getTime() === today.getTime()) {
+            throw new Error("ALREADY_CLAIMED");
+          }
         }
 
         const yesterday = new Date(today);
         yesterday.setDate(yesterday.getDate() - 1);
-        if (lastLogin.getTime() === yesterday.getTime()) {
-          customerPoint.loginStreak += 1;
+        const lastLogin = fresh.lastLoginDate ? new Date(fresh.lastLoginDate) : null;
+        lastLogin?.setHours(0, 0, 0, 0);
+
+        let newStreak = fresh.loginStreak;
+        if (lastLogin && lastLogin.getTime() === yesterday.getTime()) {
+          newStreak += 1;
         } else {
-          customerPoint.loginStreak = 1;
+          newStreak = 1;
         }
-      } else {
-        customerPoint.loginStreak = 1;
-      }
 
-      const dailyReward = await prisma.dailyReward.findUnique({
-        where: { day: Math.min(customerPoint.loginStreak, 7) },
-      });
+        const dailyReward = await tx.dailyReward.findUnique({
+          where: { day: Math.min(newStreak, 7) },
+        });
 
-      const pointsEarned = dailyReward?.points || 10;
-      const xpEarned = dailyReward?.xpBonus || 1;
-      const xpNeeded = customerPoint.level * 100;
+        const pointsEarned = dailyReward?.points ?? 10;
+        const xpEarned = dailyReward?.xpBonus ?? 1;
+        const xpNeeded = fresh.level * 100;
 
-      customerPoint.balance += pointsEarned;
-      customerPoint.totalEarned += pointsEarned;
-      customerPoint.currentXp += xpEarned;
-      customerPoint.lastLoginDate = new Date();
+        let newLevel = fresh.level;
+        let newCurrentXp = fresh.currentXp + xpEarned;
+        if (newCurrentXp >= xpNeeded) {
+          newLevel += 1;
+          newCurrentXp -= xpNeeded;
+        }
 
-      if (customerPoint.currentXp >= xpNeeded) {
-        customerPoint.level += 1;
-        customerPoint.currentXp -= xpNeeded;
-      }
+        await tx.customerPoint.update({
+          where: { id: customerPoint.id },
+          data: {
+            loginStreak: newStreak,
+            lastLoginDate: today,
+            balance: { increment: pointsEarned },
+            totalEarned: { increment: pointsEarned },
+            level: newLevel,
+            currentXp: newCurrentXp,
+          },
+        });
 
-      await prisma.customerPoint.update({
-        where: { id: customerPoint.id },
-        data: customerPoint,
-      });
+        await tx.pointTransaction.create({
+          data: {
+            customerPointId: customerPoint.id,
+            type: "earn",
+            amount: pointsEarned,
+            source: "daily_login",
+            description: `Điểm thưởng đăng nhập ngày thứ ${newStreak}`,
+            referenceId: null,
+            referenceType: null,
+            status: "completed",
+          },
+        });
 
-      await prisma.pointTransaction.create({
-        data: {
-          customerPointId: customerPoint.id,
-          type: "earn",
-          amount: pointsEarned,
-          source: "daily_login",
-          description: `Điểm thưởng đăng nhập ngày thứ ${customerPoint.loginStreak}`,
-          referenceId: null,
-          referenceType: null,
-          status: "completed",
-        },
+        return { pointsEarned, xpEarned, newBalance: fresh.balance + pointsEarned, loginStreak: newStreak, level: newLevel };
       });
 
       return NextResponse.json({
         success: true,
         action: "daily_login",
-        pointsEarned,
-        xpEarned,
-        newBalance: customerPoint.balance,
-        loginStreak: customerPoint.loginStreak,
-        level: customerPoint.level,
+        pointsEarned: result.pointsEarned,
+        xpEarned: result.xpEarned,
+        newBalance: result.newBalance,
+        loginStreak: result.loginStreak,
+        level: result.level,
       });
     }
 
@@ -361,81 +379,94 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Thiếu ID quảng cáo" }, { status: 400 });
       }
 
+      // Load ad outside tx (read-only)
       const ad = await prisma.advertisement.findUnique({ where: { id: adId } });
       if (!ad) {
         return NextResponse.json({ error: "Quảng cáo không tồn tại" }, { status: 404 });
       }
 
-      const lastWatch = await prisma.adWatchHistory.findFirst({
-        where: { customerPointId: customerPoint.id },
-        orderBy: { watchedAt: "desc" },
-      });
+      // All reads + writes inside transaction — prevents concurrent ad-watch abuse
+      const result = await prisma.$transaction(async (tx) => {
+        // Re-read last watch inside tx for cooldown check
+        const lastWatch = await tx.adWatchHistory.findFirst({
+          where: { customerPointId: customerPoint.id },
+          orderBy: { watchedAt: "desc" },
+        });
 
-      if (lastWatch) {
-        const cooldownEnd = new Date(lastWatch.watchedAt);
-        cooldownEnd.setSeconds(cooldownEnd.getSeconds() + ad.watchCooldown);
-        if (cooldownEnd > new Date()) {
-          return NextResponse.json({
-            error: "Vui lòng chờ",
-            cooldownRemaining: Math.floor((cooldownEnd.getTime() - Date.now()) / 1000),
-          }, { status: 400 });
+        if (lastWatch) {
+          const cooldownEnd = new Date(lastWatch.watchedAt);
+          cooldownEnd.setSeconds(cooldownEnd.getSeconds() + ad.watchCooldown);
+          if (cooldownEnd > new Date()) {
+            throw new Error(`COOLDOWN:${Math.floor((cooldownEnd.getTime() - Date.now()) / 1000)}`);
+          }
         }
-      }
 
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
 
-      const todayWatches = await prisma.adWatchHistory.count({
-        where: { customerPointId: customerPoint.id, watchedAt: { gte: today } },
-      });
+        const todayWatches = await tx.adWatchHistory.count({
+          where: { customerPointId: customerPoint.id, watchedAt: { gte: today } },
+        });
 
-      if (todayWatches >= ad.dailyLimit) {
-        return NextResponse.json({ error: "Đã hết lượt xem hôm nay" }, { status: 400 });
-      }
+        if (todayWatches >= ad.dailyLimit) {
+          throw new Error("LIMIT_REACHED");
+        }
 
-      if (customerPoint.level < ad.minLevel) {
-        return NextResponse.json({
-          error: `Cần đạt cấp ${ad.minLevel} để xem quảng cáo này`,
-        }, { status: 400 });
-      }
+        // Re-read point record inside tx for level check + XP
+        const fresh = await tx.customerPoint.findUnique({
+          where: { id: customerPoint.id },
+          select: { level: true, currentXp: true, balance: true, totalEarned: true },
+        });
+        if (!fresh) throw new Error("Customer point account not found");
 
-      customerPoint.balance += ad.points;
-      customerPoint.totalEarned += ad.points;
-      customerPoint.currentXp += ad.xpBonus;
-      const xpNeeded = customerPoint.level * 100;
-      if (customerPoint.currentXp >= xpNeeded) {
-        customerPoint.level += 1;
-        customerPoint.currentXp -= xpNeeded;
-      }
+        if (fresh.level < ad.minLevel) {
+          throw new Error(`LEVEL_REQUIRED:${ad.minLevel}`);
+        }
 
-      await prisma.customerPoint.update({
-        where: { id: customerPoint.id },
-        data: customerPoint,
-      });
+        const xpNeeded = fresh.level * 100;
+        let newLevel = fresh.level;
+        let newCurrentXp = fresh.currentXp + ad.xpBonus;
+        if (newCurrentXp >= xpNeeded) {
+          newLevel += 1;
+          newCurrentXp -= xpNeeded;
+        }
 
-      await prisma.adWatchHistory.create({
-        data: {
-          customerPointId: customerPoint.id,
-          advertisementId: ad.id,
-          adSlug: ad.slug,
-          pointsEarned: ad.points,
-          xpEarned: ad.xpBonus,
-          completed: true,
-          watchDuration: ad.duration,
-        },
-      });
+        await tx.customerPoint.update({
+          where: { id: customerPoint.id },
+          data: {
+            balance: { increment: ad.points },
+            totalEarned: { increment: ad.points },
+            level: newLevel,
+            currentXp: newCurrentXp,
+          },
+        });
 
-      await prisma.pointTransaction.create({
-        data: {
-          customerPointId: customerPoint.id,
-          type: "earn",
-          amount: ad.points,
-          source: "watch_ad",
-          description: `Xem quảng cáo: ${ad.titleVi}`,
-          referenceId: ad.id,
-          referenceType: "advertisement",
-          status: "completed",
-        },
+        await tx.adWatchHistory.create({
+          data: {
+            customerPointId: customerPoint.id,
+            advertisementId: ad.id,
+            adSlug: ad.slug,
+            pointsEarned: ad.points,
+            xpEarned: ad.xpBonus,
+            completed: true,
+            watchDuration: ad.duration,
+          },
+        });
+
+        await tx.pointTransaction.create({
+          data: {
+            customerPointId: customerPoint.id,
+            type: "earn",
+            amount: ad.points,
+            source: "watch_ad",
+            description: `Xem quảng cáo: ${ad.titleVi}`,
+            referenceId: ad.id,
+            referenceType: "advertisement",
+            status: "completed",
+          },
+        });
+
+        return { newBalance: fresh.balance + ad.points, newLevel, cooldownRemaining: ad.watchCooldown };
       });
 
       return NextResponse.json({
@@ -443,14 +474,36 @@ export async function POST(req: NextRequest) {
         action: "watch_ad",
         pointsEarned: ad.points,
         xpEarned: ad.xpBonus,
-        newBalance: customerPoint.balance,
-        level: customerPoint.level,
-        cooldownRemaining: ad.watchCooldown,
+        newBalance: result.newBalance,
+        level: result.newLevel,
+        cooldownRemaining: result.cooldownRemaining,
       });
     }
 
     return NextResponse.json({ error: "Action không hợp lệ" }, { status: 400 });
   } catch (error) {
+    const msg = error instanceof Error ? error.message : "Lỗi server";
+    // Typed error codes from atomic actions
+    if (msg === "ALREADY_CLAIMED") {
+      return NextResponse.json({ error: "Đã nhận thưởng đăng nhập hôm nay" }, { status: 400 });
+    }
+    if (msg === "LIMIT_REACHED") {
+      return NextResponse.json({ error: "Đã hết lượt xem hôm nay" }, { status: 400 });
+    }
+    if (msg.startsWith("COOLDOWN:")) {
+      return NextResponse.json({
+        error: "Vui lòng chờ",
+        cooldownRemaining: parseInt(msg.split(":")[1]),
+      }, { status: 400 });
+    }
+    if (msg.startsWith("LEVEL_REQUIRED:")) {
+      return NextResponse.json({
+        error: `Cần đạt cấp ${msg.split(":")[1]} để xem quảng cáo này`,
+      }, { status: 400 });
+    }
+    if (msg.startsWith("Số dư không đủ")) {
+      return NextResponse.json({ error: msg }, { status: 400 });
+    }
     console.error("Error processing point action:", error);
     return NextResponse.json({ error: "Lỗi server" }, { status: 500 });
   }

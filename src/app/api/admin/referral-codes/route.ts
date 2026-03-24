@@ -18,7 +18,9 @@ export async function GET(req: NextRequest) {
     const where: Record<string, unknown> = {};
     if (memberId) where.memberId = memberId;
     if (campaign) where.campaign = campaign;
-    if (isActive !== null) where.isActive = isActive === "true";
+    if (isActive === "true") where.isActive = true;
+    // Omit isActive filter when isActive === "false" or null — show all records
+    // Previously this filtered OUT all isActive=false records when isActive param was absent
 
     const [codes, total] = await Promise.all([
       prisma.referralCode.findMany({
@@ -114,35 +116,49 @@ export async function POST(req: NextRequest) {
     });
     if (!member) return NextResponse.json({ error: "Team member not found" }, { status: 404 });
 
-    // Check uniqueness
+    // Advisory uniqueness check — DB unique constraint guards against race conditions
     const existing = await prisma.referralCode.findUnique({ where: { code: normalized } });
     if (existing) {
       return NextResponse.json({ error: `Code "${normalized}" already exists` }, { status: 409 });
     }
 
-    const referralCode = await prisma.referralCode.create({
-      data: {
-        code: normalized,
-        name,
-        memberId,
-        campaign: campaign ?? null,
-        lpRate: lpRate ?? 0.05,
-        minRevenue: minRevenue ?? 0,
-        maxUses: maxUses ?? null,
-        expiresAt: expiresAt ? new Date(expiresAt) : null,
-      },
-      include: { member: { select: { id: true, name: true } } },
-    });
+    let referralCode;
+    try {
+      referralCode = await prisma.referralCode.create({
+        data: {
+          code: normalized,
+          name,
+          memberId,
+          campaign: campaign ?? null,
+          lpRate: lpRate ?? 0.05,
+          minRevenue: minRevenue ?? 0,
+          maxUses: maxUses ?? null,
+          expiresAt: expiresAt ? new Date(expiresAt) : null,
+        },
+        include: { member: { select: { id: true, name: true } } },
+      });
 
-    await createAuditLog({
-      userId: session.userId,
-      action: "create",
-      resource: "referral-codes",
-      resourceId: referralCode.id,
-      newValues: { code: normalized, name, memberId },
-    });
+      await createAuditLog({
+        userId: session.userId,
+        action: "create",
+        resource: "referral-codes",
+        resourceId: referralCode.id,
+        newValues: { code: normalized, name, memberId },
+      });
 
-    return NextResponse.json({ data: referralCode }, { status: 201 });
+      return NextResponse.json({ data: referralCode }, { status: 201 });
+    } catch (error: unknown) {
+      // Handle race-condition duplicate: advisory check passed but DB unique constraint rejected
+      if (
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        (error as { code: string }).code === "P2002"
+      ) {
+        return NextResponse.json({ error: `Code "${normalized}" already exists` }, { status: 409 });
+      }
+      throw error; // Re-throw unknown errors to outer catch
+    }
   } catch (error) {
     const message = error instanceof Error ? error.message : "Server error";
     const status = message === "Unauthorized" ? 401 : message === "Forbidden" ? 403 : 500;

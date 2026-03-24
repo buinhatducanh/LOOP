@@ -34,36 +34,41 @@ export async function POST(
     }
 
     const now = new Date();
-    const updateData: Record<string, unknown> = {};
 
-    if (status) {
-      updateData.status = status;
-      if (status === "done") {
-        updateData.completedAt = now;
-        // Auto-create LP award request when task is done
-        if (task.lp > 0 && task.assigneeId) {
-          const backlog = await prisma.backlog.findUnique({
-            where: { id: task.backlogId },
-            select: { projectId: true },
-          });
-          if (backlog) {
-            await prisma.lpAward.create({
-              data: {
-                taskId: task.id,
-                projectId: backlog.projectId,
-                memberId: task.assigneeId,
-                lpAmount: task.lp,
-                expAmount: task.lp,
-                source: "task_done",
-                status: "pending",
-              },
+    // Atomic: task update and LP award creation must be in the same transaction
+    // to prevent "task marked done but no LP awarded" inconsistency.
+    const updated = await prisma.$transaction(async (tx) => {
+      const updateData: Record<string, unknown> = {};
+
+      if (status) {
+        updateData.status = status;
+        if (status === "done") {
+          updateData.completedAt = now;
+          // Auto-create LP award request when task transitions to done
+          if (task.lp > 0 && task.assigneeId) {
+            const backlog = await tx.backlog.findUnique({
+              where: { id: task.backlogId },
+              select: { projectId: true },
             });
+            if (backlog) {
+              await tx.lpAward.create({
+                data: {
+                  taskId: task.id,
+                  projectId: backlog.projectId,
+                  memberId: task.assigneeId,
+                  lpAmount: task.lp,
+                  expAmount: task.lp,
+                  source: "task_done",
+                  status: "pending",
+                },
+              });
+            }
           }
         }
       }
-    }
 
-    const updated = await prisma.task.update({ where: { id }, data: updateData });
+      return tx.task.update({ where: { id }, data: updateData });
+    });
 
     await createAuditLog({
       userId: session.userId,

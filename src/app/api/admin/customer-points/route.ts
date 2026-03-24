@@ -9,7 +9,7 @@ import { createAuditLog } from "@/lib/auth/audit";
 
 export async function GET(req: NextRequest) {
   try {
-    await requirePermission("orders", "read");
+    await requirePermission("customer-points", "read");
 
     const { searchParams } = new URL(req.url);
     const email = searchParams.get("email");
@@ -73,7 +73,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await requirePermission("orders", "update");
+    const session = await requirePermission("customer-points", "update");
     const { email, amount, description } = await req.json();
 
     if (!email || typeof amount !== "number" || amount === 0) {

@@ -44,7 +44,7 @@ export async function POST(
     // ── Atomic DB writes ─────────────────────────────────────────────────────────
     await prisma.$transaction(async (tx) => {
       if (action === "reject") {
-        // Release locked LP back to pool (no LP awarded on rejection)
+        // Release locked LP back to available balance (no LP awarded on rejection)
         const member = await tx.teamMember.findUnique({
           where: { id: award.memberId },
           select: { lockedLp: true, availableLp: true },
@@ -53,24 +53,27 @@ export async function POST(
         if (member) {
           const releasedAmount = Math.min(award.lpAmount, member.lockedLp);
           const newLocked = member.lockedLp - releasedAmount;
+          // Restore to availableLp so member regains purchasing power
+          const newAvailable = member.availableLp + releasedAmount;
 
+          await tx.teamMember.update({
+            where: { id: award.memberId },
+            data: { lockedLp: newLocked, availableLp: newAvailable },
+          });
+
+          // Ledger entry recording the rejection (zero amount since LP was never credited)
           await tx.lpTransaction.create({
             data: {
               memberId: award.memberId,
               amount: 0,
-              balanceAfter: member.availableLp,
+              balanceAfter: newAvailable,
               type: "expire",
               status: "completed",
-              description: `LP award rejected: ${award.lpAmount} LP returned to pool. Reason: ${reason ?? "Rejected by PM"}`,
+              description: `LP award rejected: ${award.lpAmount} LP returned. Reason: ${reason ?? "Rejected by PM"}`,
               source: award.source,
               referenceId: award.id,
               referenceType: "LpAward",
             },
-          });
-
-          await tx.teamMember.update({
-            where: { id: award.memberId },
-            data: { lockedLp: newLocked },
           });
         }
 

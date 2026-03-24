@@ -11,7 +11,7 @@ import { redeemLp, listRedeemableItems } from "@/lib/lp/redemption";
 
 export async function GET(req: NextRequest) {
   try {
-    await requirePermission("team", "read");
+    await requirePermission("lp-redemptions", "read");
     const { searchParams } = new URL(req.url);
 
     // ── Return redeemable catalog ──────────────────────────────────────────────
@@ -59,7 +59,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await requirePermission("team", "update");
+    const session = await requirePermission("lp-redemptions", "update");
     const { memberId, addonId, quantity } = await req.json();
 
     if (!memberId || !addonId) {

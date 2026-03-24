@@ -185,10 +185,16 @@ export const NAV_PERMISSIONS: Record<string, NavPermission> = {
     permissions: [{ resource: "addon-services", actions: ["read", "create", "update", "delete"] }],
     icon: "Puzzle",
   },
-  "/admin/sales/reward-tiers": {
-    label: { vi: "XP & Rewards", en: "XP & Rewards" },
+  "/admin/sales/customer-points": {
+    label: { vi: "Điểm Khách hàng", en: "Customer Points" },
     minRoleLevel: 2,
-    permissions: [{ resource: "reward-tiers", actions: ["read", "create", "update", "delete"] }],
+    permissions: [{ resource: "customer-points", actions: ["read", "update"] }],
+    icon: "Star",
+  },
+  "/admin/sales/lp-redemptions": {
+    label: { vi: "Đổi LP", en: "LP Redemptions" },
+    minRoleLevel: 2,
+    permissions: [{ resource: "lp-redemptions", actions: ["read", "update"] }],
     icon: "Gift",
   },
   "/admin/sales/packages": {

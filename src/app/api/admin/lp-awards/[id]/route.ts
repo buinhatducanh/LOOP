@@ -95,8 +95,58 @@ export async function DELETE(
   try {
     const session = await requirePermission("lp-awards", "delete");
     const { id } = await params;
-    await prisma.lpAward.delete({ where: { id } });
-    await createAuditLog({ userId: session.userId, action: "delete", resource: "lp-awards", resourceId: id });
+
+    // Load first so we know status before deleting
+    const award = await prisma.lpAward.findUnique({
+      where: { id },
+      select: { status: true, memberId: true, lpAmount: true },
+    });
+    if (!award) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+    // Atomic: reverse LP effects based on award status before deleting
+    await prisma.$transaction(async (tx) => {
+      if (award.status === "pending") {
+        // Pending awards have LP locked — release it back to available
+        const member = await tx.teamMember.findUnique({
+          where: { id: award.memberId },
+          select: { lockedLp: true, availableLp: true },
+        });
+        if (member) {
+          const toRelease = Math.min(award.lpAmount, member.lockedLp);
+          await tx.teamMember.update({
+            where: { id: award.memberId },
+            data: {
+              lockedLp: { decrement: toRelease },
+              availableLp: { increment: toRelease },
+            },
+          });
+        }
+      } else if (award.status === "approved") {
+        // Approved awards have LP moved to available — deduct it back
+        const member = await tx.teamMember.findUnique({
+          where: { id: award.memberId },
+          select: { availableLp: true },
+        });
+        if (member) {
+          await tx.teamMember.update({
+            where: { id: award.memberId },
+            data: { availableLp: { decrement: award.lpAmount } },
+          });
+        }
+      }
+      // "rejected" awards: LP was never credited, nothing to reverse
+
+      await tx.lpAward.delete({ where: { id } });
+    });
+
+    await createAuditLog({
+      userId: session.userId,
+      action: "delete",
+      resource: "lp-awards",
+      resourceId: id,
+      newValues: { status: award.status, lpAmount: award.lpAmount, memberId: award.memberId },
+    });
+
     return NextResponse.json({ success: true });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Server error";
