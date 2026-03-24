@@ -33,6 +33,21 @@ import {
   Coins,
   Lock,
   Image,
+  BarChart3,
+  Layers,
+  CheckSquare,
+  Rocket,
+  Share2,
+  FileCode,
+  FileSignature,
+  CalendarCheck,
+  Activity,
+  FileCheck,
+  Clock,
+  TrendingUp,
+  Bug,
+  AlertTriangle,
+  Figma,
   type LucideIcon,
 } from "lucide-react";
 import { useAdminAuth } from "./admin-auth-provider";
@@ -55,6 +70,8 @@ const GROUP_LABELS: Record<string, string> = {
   content: "Nội dung",
   sales: "Kinh doanh",
   system: "Hệ thống",
+  projects: "Dự án",
+  kpis: "KPIs",
 };
 
 // Icon registry — maps icon name string to Lucide component
@@ -85,6 +102,21 @@ const ICON_MAP: Record<string, LucideIcon> = {
   ClipboardList,
   Settings,
   Lock,
+  BarChart3,
+  Layers,
+  CheckSquare,
+  Rocket,
+  Share2,
+  FileCode,
+  FileSignature,
+  CalendarCheck,
+  Activity,
+  FileCheck,
+  Clock,
+  TrendingUp,
+  Bug,
+  AlertTriangle,
+  Figma,
 };
 
 // ─── Build nav data using NAV_PERMISSIONS (single source of truth) ────────────
@@ -109,11 +141,23 @@ function useNavData(): NavEntry[] {
     });
   }
 
+  // Projects listing (standalone, before grouped project sub-pages)
+  if (visible.includes("/admin/projects")) {
+    const proj = NAV_PERMISSIONS["/admin/projects"] as NavPermission;
+    entries.push({
+      name: (proj.label as { vi: string }).vi || "Dự án",
+      href: "/admin/projects",
+      icon: ICON_MAP[proj.icon ?? "FolderKanban"] ?? FolderKanban,
+    });
+  }
+
   // Grouped sections
   const groups = {
     content: visible.filter((p) => p.startsWith("/admin/content/")),
     sales: visible.filter((p) => p.startsWith("/admin/sales/")),
     system: visible.filter((p) => p.startsWith("/admin/system/")),
+    projects: visible.filter((p) => p.startsWith("/admin/projects") && p !== "/admin/projects"),
+    kpis: visible.filter((p) => p.startsWith("/admin/kpi")),
   } as Record<string, string[]>;
 
   for (const [groupKey, paths] of Object.entries(groups)) {

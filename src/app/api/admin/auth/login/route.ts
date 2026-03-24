@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import type { UserGetPayload } from "@/generated/prisma/models/User";
 import { verifyPassword } from "@/lib/auth/password";
 import { signToken } from "@/lib/auth/jwt";
 import { createAuditLog } from "@/lib/auth/audit";
@@ -25,7 +24,24 @@ function isDbUnavailableError(err: unknown): boolean {
 }
 
 export async function POST(req: NextRequest) {
-  let user: UserGetPayload<{ include: { userRoles: { include: { role: true } } } }> | null = null;
+  type LoginUser = {
+    id: string;
+    email: string;
+    passwordHash: string | null;
+    name: string | null;
+    avatar: string | null;
+    role: string;
+    isActive: boolean;
+    userRoles: {
+      role: {
+        name: string;
+        level: number;
+        permissions: { resource: string; action: string; scope: string }[];
+      };
+    }[];
+  };
+
+  let user: LoginUser | null = null;
 
   try {
     const { email, password } = await req.json();
@@ -39,8 +55,27 @@ export async function POST(req: NextRequest) {
 
     user = await prisma.user.findUnique({
       where: { email },
-      include: {
-        userRoles: { include: { role: { include: { permissions: true } } } },
+      select: {
+        id: true,
+        email: true,
+        passwordHash: true,
+        name: true,
+        avatar: true,
+        role: true,
+        isActive: true,
+        userRoles: {
+          select: {
+            role: {
+              select: {
+                name: true,
+                level: true,
+                permissions: {
+                  select: { resource: true, action: true, scope: true },
+                },
+              },
+            },
+          },
+        },
       },
     });
 

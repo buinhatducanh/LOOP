@@ -303,6 +303,16 @@ model TeamMember {
   // Linked staff user account
   user        User?
 
+  // PM Relations
+  projectMemberships ProjectMember[]
+  bugNotesAuthored   BugNote[]    @relation("BugNoteAuthor")
+  assignedTasks       Task[]       @relation("TaskAssignee")
+  lpAwardsReceived    LpAward[]    @relation("LpAwardMember")
+  lpAwardsApproved    LpAward[]    @relation("LpAwardApprover")
+  blogPostsAuthored   BlogPost[]
+  envFileEdits        EnvFile[]    @relation("EnvFileEditor")
+  dailyStandups       DailyStandup[]
+
   @@map("team_members")
 }
 
@@ -409,6 +419,39 @@ model Order {
   statusHistory      OrderStatusHistory[]
   customerWebsites   CustomerWebsite[]
 
+  // ── Project Management (JIRA-like) ──
+  projectStatus    String?   @map("project_status")          // active | on_hold | completed
+  gitRepoUrl       String?  @map("git_repo_url")
+  gitWebhookSecret String?  @map("git_webhook_secret")
+  totalProjectLp   Int      @default(0) @map("total_project_lp")
+  seoMaxLp        Int      @default(100) @map("seo_max_lp")
+  isActiveProject Boolean  @default(false) @map("is_active_project")
+  startedAt       DateTime? @map("started_at")
+  completedAt     DateTime? @map("completed_at")
+
+  // ── CRM Link ──
+  salesLeadId   String?   @map("sales_lead_id")
+  salesLead     SalesLead? @relation(fields: [salesLeadId], references: [id])
+  quotes        Quote[]
+
+  // PM Relations
+  projectMembers ProjectMember[]
+  epics         Epic[]
+  backlogs      Backlog[]
+  figmaDemos    FigmaDemo[]
+  envFiles      EnvFile[]
+  socialPosts   SocialPost[]
+  deployments   Deployment[]
+  handoverPackages HandoverPackage[]
+  dailyStandups DailyStandup[]
+  blogPosts     BlogPost[]
+  gitCommits    GitCommit[]
+  lpAwards      LpAward[]
+  slaRules      SlaRule[]
+  maintenanceContracts MaintenanceContract[]
+  gscMetrics           GscMetric[]
+  portalTokens         ProjectPortalToken[]
+
   @@index([status, createdAt])
   @@index([orderType, status])
   @@index([customerEmail])
@@ -419,6 +462,7 @@ model SiteSetting {
   id    String @id @default(cuid())
   key   String @unique
   value String
+  type  String @default("string") @map("type")  // "string" | "number" | "boolean" | "json"
   group String @default("general")
 
   @@map("site_settings")
@@ -553,6 +597,69 @@ model OrderAttribute {
 
   @@unique([orderId, attributeId])
   @@map("order_attributes")
+}
+
+// ─── SALES CRM ─────────────────────────────────────────────────────
+
+/// Customer leads tracked through the sales pipeline.
+model SalesLead {
+  id              String    @id @default(cuid())
+  source          String    @default("website")            // facebook | zalo | website | referral | cold_call
+  customerName    String    @map("customer_name")
+  customerEmail   String?   @map("customer_email")
+  customerPhone   String?   @map("customer_phone")
+  companyName     String?   @map("company_name")
+  area            String    @default("can_tho")            // can_tho | an_giang | kien_giang | dong_thap | long_an | tien_giang | vinh_long | ben_tre | tra_vinh
+  tier            String    @default("sme")               // key_account | sme | fb | retail
+  status          String    @default("new")               // new | contacted | qualified | proposal | won | lost
+  note            String?   @db.Text
+  estimatedBudget Int?      @map("estimated_budget")       // VND
+  assignedTo      String?   @map("assigned_to")           // TeamMember.id
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  quotes Quote[]
+  orders Order[]
+
+  @@index([status, area])
+  @@index([assignedTo])
+  @@map("sales_leads")
+}
+
+/// Internal sales quote with LP allocation per team role.
+model Quote {
+  id               String    @id @default(cuid())
+  salesLeadId     String    @map("sales_leads_id")
+  salesLead       SalesLead @relation(fields: [salesLeadId], references: [id])
+  orderId         String?   @map("order_id")
+  order           Order?    @relation(fields: [orderId], references: [id])
+
+  quoteNumber     String    @unique @map("quote_number")
+  title           String
+  totalAmount     Int       @map("total_amount")           // VND
+
+  // LP allocation breakdown (sums to 100%)
+  lpAllocation     Json      @default("{}") @map("lp_allocation") // {sales, design, pm, dev, qa, seo} → percentage
+
+  status          String    @default("draft")             // draft | sent | approved | rejected | expired
+  validUntil      DateTime? @map("valid_until")
+
+  sentAt          DateTime? @map("sent_at")
+  approvedAt      DateTime? @map("approved_at")
+  signedAt        DateTime? @map("signed_at")
+
+  // Milestone-based payment schedule
+  milestones      Json?     @map("milestones")            // [{name, amount, dueDate}]
+
+  note            String?   @db.Text
+
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  @@index([salesLeadId])
+  @@index([orderId])
+  @@index([status])
+  @@map("quotes")
 }
 
 // ─── PRICING CALCULATOR (BÁO GIÁ ĐỘNG) ─────────────────────────
@@ -1175,4 +1282,444 @@ model ServerAnalyticsEvent {
   @@index([createdAt])
   @@index([sessionId])
   @@map("server_analytics_events")
+}
+
+// ─── PROJECT MANAGEMENT (JIRA-like) ─────────────────────────────────────
+
+/// Links a TeamMember to an Order (project) with a project-specific role and LP tracking.
+model ProjectMember {
+  id          String   @id @default(cuid())
+  projectId   String   @map("project_id")           // FK → Order.id
+  memberId    String   @map("member_id")            // FK → TeamMember.id
+  projectRole String   @default("MEMBER") @map("project_role") // PM | DEV | QA | SEO | DESIGN | MEMBER
+  assignedLp  Int      @default(0) @map("assigned_lp")
+  earnedLp    Int      @default(0) @map("earned_lp")
+  exp         Int      @default(0)
+  joinedAt    DateTime @default(now()) @map("joined_at")
+
+  project Order      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  member  TeamMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, memberId])
+  @@index([projectId])
+  @@map("project_members")
+}
+
+/// Groups backlogs within a project. Coloured by PM for visual grouping.
+model Epic {
+  id        String   @id @default(cuid())
+  projectId String   @map("project_id")
+  title     String
+  color     String   @default("#6366F1") // hex colour for sidebar badges
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  project  Order    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  backlogs Backlog[]
+
+  @@index([projectId])
+  @@map("epics")
+}
+
+/// A container of tasks within a project. PM allocates LP budget (totalLp) to it.
+model Backlog {
+  id          String   @id @default(cuid())
+  projectId   String   @map("project_id")           // FK → Order.id
+  epicId      String?  @map("epic_id")             // FK → Epic.id (optional grouping)
+  name        String                                      // Primary name (used by existing API)
+  title       String   @default("")                    // Mirrors name for display flexibility
+  description String?  @db.Text
+  totalLp     Int      @default(0) @map("total_lp")  // LP budget allocated by PM
+  usedLp      Int      @default(0) @map("used_lp")   // LP already assigned to tasks
+  sortOrder   Int      @default(0) @map("sort_order")
+  isActive    Boolean  @default(true) @map("is_active")
+  isDefault   Boolean  @default(false) @map("is_default")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  project Order      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  epic    Epic?      @relation(fields: [epicId], references: [id])
+  tasks   Task[]
+
+  @@index([projectId])
+  @@index([epicId])
+  @@map("backlogs")
+}
+
+/// SLA rules per project — define max hours per priority level.
+model SlaRule {
+  id         String   @id @default(cuid())
+  projectId  String   @map("project_id")  // FK → Order.id
+  priority   String   // low | medium | high | critical
+  maxHours   Int      @map("max_hours")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  project Order @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, priority])
+  @@map("sla_rules")
+}
+
+/// A single work item. Core of the JIRA-like board.
+model Task {
+  id            String    @id @default(cuid())
+  backlogId     String    @map("backlog_id")          // FK → Backlog.id
+  title         String
+  description   String?   @db.Text
+  lp            Int       @default(0)                  // LP value of the task
+  status        String    @default("backlog") @map("status") // backlog | in_progress | in_review | done
+  priority      String    @default("medium") @map("priority") // low | medium | high | critical
+  assigneeId    String?   @map("assignee_id")        // FK → TeamMember.id
+  branchName    String?   @map("branch_name")        // e.g. task-abc123-fix-login
+  mergeCommit   String?   @map("merge_commit")       // commit SHA if merged to main
+  mergedAt      DateTime? @map("merged_at")
+  completedAt   DateTime? @map("completed_at")
+  sortOrder     Int       @default(0) @map("sort_order")
+  isActive      Boolean   @default(true) @map("is_active")
+  violated      Boolean   @default(false) @map("violated")   // SLA breach flag
+  slaDeadline   DateTime? @map("sla_deadline")
+  externalId    String?   @map("external_id")
+  estimatedHours Int?     @map("estimated_hours")
+  createdBy     String?   @map("created_by")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  backlog   Backlog      @relation(fields: [backlogId], references: [id], onDelete: Cascade)
+  assignee  TeamMember?  @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  tags      TaskTag[]
+  bugNotes  BugNote[]
+  commits   GitCommit[]
+  lpAwards  LpAward[]
+  violations TaskViolation[]
+
+  @@index([backlogId])
+  @@index([assigneeId])
+  @@index([status])
+  @@map("tasks")
+}
+
+/// SLA violation record for a task.
+model TaskViolation {
+  id        String   @id @default(cuid())
+  taskId    String   @map("task_id")
+  type      String   @default("sla_breach") @map("type") // sla_breach | deadline_missed
+  revokedLp Int      @default(0) @map("revoked_lp")
+  note      String?  @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@map("task_violations")
+}
+
+/// Labels/tags for filtering tasks.
+model TaskTag {
+  id     String @id @default(cuid())
+  taskId String @map("task_id")  // FK → Task.id
+  name   String
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, name])
+  @@map("task_tags")
+}
+
+/// QA bug reports attached to a task.
+model BugNote {
+  id         String    @id @default(cuid())
+  taskId     String    @map("task_id")          // FK → Task.id
+  authorId   String    @map("author_id")        // FK → TeamMember.id
+  content    String    @db.Text
+  severity   String    @default("medium") @map("severity") // low | medium | high | critical
+  status     String    @default("open") @map("status")     // open | acknowledged | resolved
+  resolvedAt DateTime? @map("resolved_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  task   Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  author TeamMember @relation("BugNoteAuthor", fields: [authorId], references: [id])
+
+  @@index([taskId])
+  @@map("bug_notes")
+}
+
+/// Received from GitHub/GitLab webhooks. Auto-linked to task via branch naming convention.
+model GitCommit {
+  id           String    @id @default(cuid())
+  projectId    String    @map("project_id")      // FK → Order.id
+  taskId       String?   @map("task_id")        // FK → Task.id (nullable, auto-linked via branch)
+  sha          String    @unique
+  message      String    @db.Text
+  authorName   String    @map("author_name")
+  authorEmail  String    @map("author_email")
+  branch       String
+  eventType    String    @default("push") @map("event_type") // push | merge | pull_request
+  mergedToMain Boolean   @default(false) @map("merged_to_main")
+  lpAwarded    Boolean   @default(false) @map("lp_awarded")
+  expAwarded   Boolean   @default(false) @map("exp_awarded")
+  committedAt  DateTime  @map("committed_at")
+  receivedAt   DateTime  @default(now()) @map("received_at")
+
+  project Order  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  task   Task?   @relation(fields: [taskId], references: [id])
+
+  @@index([projectId])
+  @@index([taskId])
+  @@map("git_commits")
+}
+
+/// LP/EXP awards earned by members. Pending → approved by PM/CEO.
+model LpAward {
+  id              String    @id @default(cuid())
+  taskId          String?   @map("task_id")           // FK → Task.id
+  projectId       String    @map("project_id")        // FK → Order.id
+  memberId        String    @map("member_id")         // FK → TeamMember.id
+  lpAmount        Int       @default(0) @map("lp_amount")
+  expAmount       Int       @default(0) @map("exp_amount")
+  source          String    @default("manual") @map("source") // manual | task_done | commit_merge | seo_published
+  status          String    @default("pending") @map("status") // pending | approved | rejected
+  approvedBy      String?   @map("approved_by")       // FK → TeamMember.id
+  approvedAt      DateTime? @map("approved_at")
+  rejectedReason  String?   @map("rejected_reason")   @db.Text
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  task      Task?      @relation(fields: [taskId], references: [id])
+  project   Order      @relation(fields: [projectId], references: [id])
+  member    TeamMember @relation("LpAwardMember", fields: [memberId], references: [id])
+  approver  TeamMember? @relation("LpAwardApprover", fields: [approvedBy], references: [id])
+
+  @@index([projectId, memberId])
+  @@index([taskId])
+  @@map("lp_awards")
+}
+
+/// Figma demo review workflow per project.
+model FigmaDemo {
+  id            String    @id @default(cuid())
+  projectId     String    @map("project_id")                  // FK → Order.id
+  title         String
+  figmaUrl      String    @map("figma_url")
+  versionHash   String?   @map("version_hash")
+  status        String    @default("pending") @map("status")  // pending | approved_by_client | rejected | approved
+  clientEmail   String?   @map("client_email")
+  clientToken   String?   @unique @map("client_token")        // unique token for public review link
+  approvedBy    String?   @map("approved_by")
+  approvedAt    DateTime? @map("approved_at")
+  rejectionNote String?   @map("rejection_note") @db.Text
+  sentAt        DateTime? @map("sent_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  project Order @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([status])
+  @@map("figma_demos")
+}
+
+/// Environment variable files per project/environment.
+model EnvFile {
+  id          String   @id @default(cuid())
+  projectId   String   @map("project_id")                    // FK → Order.id
+  environment String   @map("environment")                   // dev | staging | prod
+  fileKey     String   @map("file_key")                      // e.g. ".env.local"
+  content     String   @db.Text                              // current file content
+  version     Int      @default(1)
+  editedBy    String?  @map("edited_by")                    // FK → TeamMember.id
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  project Order           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  editor TeamMember?      @relation("EnvFileEditor", fields: [editedBy], references: [id])
+  history EnvFileHistory[]
+
+  @@unique([projectId, environment, fileKey])
+  @@index([projectId])
+  @@map("env_files")
+}
+
+/// Version history for EnvFile — created on every edit.
+model EnvFileHistory {
+  id           String   @id @default(cuid())
+  envFileId    String   @map("env_file_id")     // FK → EnvFile.id
+  version      Int
+  content      String   @db.Text
+  diffFromPrev Json?    @map("diff_from_prev") // JSON patch from previous version
+  editedBy     String?  @map("edited_by")       // FK → TeamMember.id
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  envFile EnvFile @relation(fields: [envFileId], references: [id], onDelete: Cascade)
+
+  @@index([envFileId])
+  @@map("env_file_histories")
+}
+
+/// SEO blog posts per project.
+model BlogPost {
+  id           String    @id @default(cuid())
+  projectId    String    @map("project_id")                 // FK → Order.id
+  title        String
+  slug         String
+  content      String?   @db.Text
+  excerpt      String?   @db.Text
+  coverImage   String?   @map("cover_image")
+  seoTitle     String?   @map("seo_title")
+  seoDesc      String?   @map("seo_desc")
+  authorId     String    @map("author_id")                  // FK → TeamMember.id
+  status       String    @default("draft") @map("status")   // draft | published
+  publishedAt  DateTime? @map("published_at")
+  lpEarned     Boolean   @default(false) @map("lp_earned")
+  lpAwardedAt  DateTime? @map("lp_awarded_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  project Order      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  author  TeamMember @relation(fields: [authorId], references: [id])
+
+  @@unique([projectId, slug])
+  @@index([projectId])
+  @@index([authorId])
+  @@map("blog_posts")
+}
+
+/// Client-facing project portal access token.
+model ProjectPortalToken {
+  id        String    @id @default(cuid())
+  projectId String    @map("project_id")              // FK → Order.id
+  token     String    @unique @map("access_token")   // UUID token for portal URL
+  label     String    @default("Client Portal")     // e.g. "Client Portal" or "Internal Review"
+  expiresAt DateTime? @map("expires_at")            // null = never expires
+  isActive  Boolean   @default(true) @map("is_active")
+  createdBy String    @map("created_by")             // TeamMember.id
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  project Order @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([token])
+  @@map("project_portal_tokens")
+}
+
+/// Social media post linked to an order/project.
+model SocialPost {
+  id         String    @id @default(cuid())
+  projectId  String    @map("project_id")             // FK → Order.id (kept as project_id for backward compat)
+  platform   String    @map("platform")             // facebook | tiktok | instagram | zalo
+  content    String?   @db.Text
+  mediaUrls  Json      @default("[]") @map("media_urls")
+  scheduledAt DateTime? @map("scheduled_at")
+  publishedAt DateTime? @map("published_at")
+  status     String    @default("draft") @map("status") // draft | scheduled | published | failed
+  postUrl    String?   @map("post_url")
+  publishedBy String?  @map("published_by")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  project Order @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@map("social_posts")
+}
+
+/// Tracks deployment history per project environment.
+model Deployment {
+  id          String   @id @default(cuid())
+  projectId   String   @map("project_id")               // FK → Order.id (kept as project_id for backward compat)
+  environment String   @map("environment")              // dev | staging | production
+  platform   String   @default("manual") @map("platform") // vercel | aws | gcp | manual
+  deployUrl  String?  @map("deploy_url")
+  deployHookUrl String? @map("deploy_hook_url")        // Vercel/GitHub Actions deploy hook URL
+  commitSha  String?  @map("commit_sha")
+  status     String   @default("pending") @map("status") // pending | running | success | failed
+  deployedAt DateTime? @map("deployed_at")
+  deployedBy String?  @map("deployed_by")
+  gscVerified Boolean @default(false) @map("gsc_verified")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  project Order @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@map("deployments")
+}
+
+/// Google Search Console SEO metrics per project page.
+model GscMetric {
+  id          String   @id @default(cuid())
+  projectId   String   @map("project_id")             // FK → Order.id
+  pageUrl     String   @map("page_url")               // e.g. https://client.com or /page-slug
+  keyword     String   @default("")                 // tracked keyword (empty = page total)
+  impressions Int      @default(0) @map("impressions")
+  clicks      Int      @default(0)
+  ctr         Float    @default(0)                   // click-through rate (0–1)
+  position    Float    @default(0)                   // avg search position
+  dataDate    DateTime @default(now()) @map("data_date") // day of data
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  project Order @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([dataDate])
+  @@map("gsc_metrics")
+}
+
+/// Project handover checklist delivered to client.
+model HandoverPackage {
+  id            String   @id @default(cuid())
+  projectId     String   @map("project_id")               // FK → Order.id (kept as project_id for backward compat)
+  status       String   @default("draft") @map("status")  // draft | pending_review | approved | handed_over
+  handoverDate DateTime? @map("handover_date")
+  items        Json     @default("[]") @map("items")       // Array of { key, label, checked, notes }
+  notes        String?  @db.Text
+  deliveredBy  String?  @map("delivered_by")              // FK → TeamMember.id
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  project Order @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@map("handover_packages")
+}
+
+/// Daily standup report per team member per project.
+model DailyStandup {
+  id           String   @id @default(cuid())
+  projectId    String   @map("project_id")              // FK → Order.id (kept as project_id for backward compat)
+  memberId     String   @map("member_id")              // FK → TeamMember.id
+  date         DateTime @map("date")
+  yesterdayDone String? @map("yesterday_done") @db.Text
+  todayPlan    String? @map("today_plan") @db.Text
+  blockers     String? @db.Text
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  project Order @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  member  TeamMember @relation(fields: [memberId], references: [id])
+
+  @@unique([projectId, memberId, date])
+  @@index([projectId])
+  @@index([memberId])
+  @@map("daily_standups")
+}
+
+/// Maintenance contract per project — renewal tracking + auto-renewal reminders.
+model MaintenanceContract {
+  id                   String    @id @default(cuid())
+  projectId            String    @map("project_id")              // FK → Order.id
+  title                String                                 // e.g. "Bảo trì Website CoffeeShop 2026"
+  price                Int       @map("price")                  // VND per billing period
+  billingCycle         String    @default("monthly")           // monthly | quarterly | yearly
+  startDate            DateTime  @map("start_date")
+  endDate              DateTime  @map("end_date")
+  autoRenew            Boolean   @default(false) @map("auto_renew")
+  status               String    @default("active")             // active | expiring_soon | expired | cancelled
+  renewalReminderSent  Boolean   @default(false) @map("renewal_reminder_sent")
+  note                 String?   @db.Text
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+
+  project Order @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([status])
+  @@index([endDate])
+  @@map("maintenance_contracts")
 }

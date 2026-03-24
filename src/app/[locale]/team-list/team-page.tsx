@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { Users } from 'lucide-react';
 import { GuildMemberCard } from '@/components/team/GuildMemberCard';
 import { GuildHallOfFame } from '@/components/team/GuildHallOfFame';
+import type { HallOfFameMember } from '@/components/team/GuildHallOfFame';
 import { GuildRoleFilters, RoleFilter } from '@/components/team/GuildRoleFilters';
 import { GuildSearchSortBar, SortOption } from '@/components/team/GuildSearchSortBar';
 import { GuildHUDPanel } from '@/components/team/GuildHUDPanel';
@@ -29,10 +30,15 @@ interface TeamMemberData {
   coverImage?: string | null;
   quote?: string | null;
   phone?: string | null;
-  skills?: string[];
+  skills?: string[] | Record<string, number>;
   experience?: string | null;
   isFeatured?: boolean;
 }
+
+type GuildMemberData = TeamMemberData & {
+  level?: number;
+  roleCode?: string;
+};
 
 interface Expertise {
   id: string;
@@ -217,7 +223,7 @@ export function TeamPage({ team, expertises = [], settings }: TeamPageProps) {
         m.role.toLowerCase().includes(q) ||
         (m.shortBio && m.shortBio.toLowerCase().includes(q)) ||
         (m.expertise && m.expertise.some((e) => typeof e === 'string' ? e.toLowerCase().includes(q) : (e as any).name?.toLowerCase().includes(q))) ||
-        (m.skills && m.skills.some((s) => typeof s === 'string' ? s.toLowerCase().includes(q) : (s as any).name?.toLowerCase().includes(q)))
+        (m.skills && Array.isArray(m.skills) && (m.skills as string[]).some((s) => s.toLowerCase().includes(q)))
       );
     }
 
@@ -269,7 +275,7 @@ export function TeamPage({ team, expertises = [], settings }: TeamPageProps) {
     return 24;
   };
 
-  const handleMemberClick = (member: TeamMemberData) => {
+  const handleMemberClick = (member: GuildMemberData) => {
     setSelected(member);
   };
 
@@ -320,7 +326,7 @@ export function TeamPage({ team, expertises = [], settings }: TeamPageProps) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: 'easeOut', delay: 0.2 }}
         >
-          <GuildHallOfFame members={hallOfFameMembers} onMemberClick={handleMemberClick} />
+          <GuildHallOfFame members={hallOfFameMembers} onMemberClick={handleMemberClick as (member: HallOfFameMember) => void} />
         </motion.div>
 
         {/* Role Filters */}

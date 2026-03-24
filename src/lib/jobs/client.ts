@@ -24,8 +24,10 @@
 
 import { Inngest } from "inngest";
 
+// Single Inngest client for the entire application.
+// Uses "loop" as the app ID — all functions register here.
 export const inngest = new Inngest({
-  id: "loop-website",
+  id: "loop",
   eventKey: process.env.INNGEST_EVENT_KEY,
 });
 

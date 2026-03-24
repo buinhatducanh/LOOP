@@ -42,7 +42,6 @@ export async function PUT(
     }
 
     // Extract memberExpertise array if present (it's a relation, not a direct field)
-    console.log("PUT team - received data:", JSON.stringify(data));
     const { memberExpertise, ...memberData } = data;
 
     // Convert empty strings to null for optional fields (except required fields)
@@ -71,14 +70,12 @@ export async function PUT(
     );
 
     // Update member data
-    console.log("Prisma update data:", JSON.stringify(cleanedData));
     let member;
     try {
       member = await prisma.teamMember.update({
         where: { id },
         data: cleanedData,
       });
-      console.log("Prisma updated member:", JSON.stringify(member));
     } catch (prismaError) {
       console.error("Prisma error:", prismaError);
       return NextResponse.json({ error: `Prisma error: ${prismaError}` }, { status: 500 });

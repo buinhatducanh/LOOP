@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { Trophy, Zap, Target } from 'lucide-react';
 import { GuildMemberCard } from './GuildMemberCard';
 
-interface HallOfFameMember {
+export interface HallOfFameMember {
   id: string;
   slug: string;
   name: string;

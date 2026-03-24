@@ -227,6 +227,30 @@ export const NAV_PERMISSIONS: Record<string, NavPermission> = {
     permissions: [{ resource: "quote-requests", actions: ["read", "update", "approve"] }],
     icon: "FileQuestion",
   },
+  "/admin/sales/sales-leads": {
+    label: { vi: "Sales Leads", en: "Sales Leads" },
+    minRoleLevel: 2,
+    permissions: [{ resource: "sales-leads", actions: ["read", "create", "update", "delete"] }],
+    icon: "TrendingUp",
+  },
+  "/admin/sales/quotes": {
+    label: { vi: "Báo giá", en: "Quotes" },
+    minRoleLevel: 2,
+    permissions: [{ resource: "quotes", actions: ["read", "create", "update", "approve"] }],
+    icon: "FileText",
+  },
+  "/admin/maintenance": {
+    label: { vi: "Bảo trì", en: "Maintenance" },
+    minRoleLevel: 2,
+    permissions: [{ resource: "projects", actions: ["read", "update"] }],
+    icon: "Wrench",
+  },
+  "/admin/projects/gsc": {
+    label: { vi: "SEO / GSC", en: "SEO / GSC" },
+    minRoleLevel: 2,
+    permissions: [{ resource: "projects", actions: ["read", "update"] }],
+    icon: "TrendingUp",
+  },
 
   // ── Hệ thống ──────────────────────────────────────────────────────────────
   "/admin/system/staff-users": {
@@ -264,6 +288,128 @@ export const NAV_PERMISSIONS: Record<string, NavPermission> = {
     minRoleLevel: 2,
     permissions: [{ resource: "points", actions: ["read", "update"] }],
     icon: "Star",
+  },
+
+  // ── Dự án (JIRA-like) ──────────────────────────────────────────────
+  "/admin/projects": {
+    label: { vi: "Dự án", en: "Projects" },
+    minRoleLevel: 2,
+    permissions: [{ resource: "projects", actions: ["read", "create", "update"] }],
+    icon: "FolderKanban",
+  },
+  "/admin/projects/[id]": {
+    label: { vi: "Chi tiết dự án", en: "Project Detail" },
+    minRoleLevel: 2,
+    permissions: [{ resource: "projects", actions: ["read", "update"] }],
+    icon: "FolderKanban",
+  },
+  "/admin/projects/[id]/board": {
+    label: { vi: "Bảng Kanban", en: "Board" },
+    minRoleLevel: 2,
+    permissions: [{ resource: "projects", actions: ["read", "update"] }],
+    icon: "LayoutDashboard",
+  },
+  "/admin/projects/[id]/backlogs": {
+    label: { vi: "Backlogs", en: "Backlogs" },
+    minRoleLevel: 2,
+    permissions: [{ resource: "backlogs", actions: ["read", "create", "update"] }],
+    icon: "Layers",
+  },
+  "/admin/projects/[id]/team": {
+    label: { vi: "Thành viên", en: "Team" },
+    minRoleLevel: 2,
+    permissions: [{ resource: "projects", actions: ["read", "update"] }],
+    icon: "UsersRound",
+  },
+  "/admin/projects/[id]/figma": {
+    label: { vi: "Figma Demos", en: "Figma Demos" },
+    minRoleLevel: 2,
+    permissions: [{ resource: "figma-demos", actions: ["read", "create", "update"] }],
+    icon: "Figma",
+  },
+  "/admin/projects/[id]/env": {
+    label: { vi: "Env Files", en: "Env Files" },
+    minRoleLevel: 2,
+    permissions: [{ resource: "env-files", actions: ["read"] }],
+    icon: "Lock",
+  },
+  "/admin/projects/[id]/commits": {
+    label: { vi: "Git Commits", en: "Git Commits" },
+    minRoleLevel: 2,
+    permissions: [{ resource: "git-commits", actions: ["read"] }],
+    icon: "Activity",
+  },
+  "/admin/projects/[id]/lp": {
+    label: { vi: "LP Awards", en: "LP Awards" },
+    minRoleLevel: 2,
+    permissions: [{ resource: "lp-awards", actions: ["read", "approve", "reject"] }],
+    icon: "Coins",
+  },
+  "/admin/projects/[id]/blog": {
+    label: { vi: "Blog Posts", en: "Blog Posts" },
+    minRoleLevel: 3,
+    permissions: [{ resource: "blog-posts", actions: ["read", "create", "update"] }],
+    icon: "FileText",
+  },
+  "/admin/projects/[id]/standups": {
+    label: { vi: "Standups", en: "Standups" },
+    minRoleLevel: 5,
+    permissions: [{ resource: "standups", actions: ["read", "create"] }],
+    icon: "CalendarCheck",
+  },
+  "/admin/projects/[id]/qa": {
+    label: { vi: "QA", en: "QA" },
+    minRoleLevel: 4,
+    permissions: [{ resource: "tasks", actions: ["read"] }],
+    icon: "Bug",
+  },
+  "/admin/projects/[id]/deployments": {
+    label: { vi: "Deployments", en: "Deployments" },
+    minRoleLevel: 2,
+    permissions: [{ resource: "deployments", actions: ["read", "create", "update"] }],
+    icon: "Rocket",
+  },
+  "/admin/projects/[id]/social": {
+    label: { vi: "Social Posts", en: "Social Posts" },
+    minRoleLevel: 3,
+    permissions: [{ resource: "social-posts", actions: ["read", "create", "update"] }],
+    icon: "Share2",
+  },
+  "/admin/projects/[id]/handover": {
+    label: { vi: "Handover", en: "Handover" },
+    minRoleLevel: 2,
+    permissions: [{ resource: "handover", actions: ["read", "create"] }],
+    icon: "FileCheck",
+  },
+  "/admin/my-tasks": {
+    label: { vi: "Công việc của tôi", en: "My Tasks" },
+    minRoleLevel: 5,
+    permissions: [{ resource: "tasks", actions: ["read", "update"] }],
+    icon: "CheckSquare",
+  },
+  "/admin/figma-demos": {
+    label: { vi: "Figma Demos", en: "Figma Demos" },
+    minRoleLevel: 3,
+    permissions: [{ resource: "figma-demos", actions: ["read", "create", "update"] }],
+    icon: "Figma",
+  },
+  "/admin/env-files": {
+    label: { vi: "Env Files", en: "Env Files" },
+    minRoleLevel: 2,
+    permissions: [{ resource: "env-files", actions: ["read"] }],
+    icon: "Lock",
+  },
+  "/admin/lp-awards": {
+    label: { vi: "LP Awards", en: "LP Awards" },
+    minRoleLevel: 2,
+    permissions: [{ resource: "lp-awards", actions: ["read", "create", "approve", "reject"] }],
+    icon: "Coins",
+  },
+  "/admin/blog-posts": {
+    label: { vi: "Blog Posts", en: "Blog Posts" },
+    minRoleLevel: 3,
+    permissions: [{ resource: "blog-posts", actions: ["read", "create", "update", "delete"] }],
+    icon: "FileText",
   },
 };
 

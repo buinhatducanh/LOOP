@@ -41,7 +41,11 @@
       "Read(//app/**)",
       "Read(//app/prisma/**)",
       "Bash(powershell -Command \"Set-Content -Path ''C:\\\\Users\\\\MSI\\\\.claude\\\\plans\\\\precious-kindling-duckling-agent-a68153ec70eacefe1.md'' -Value ''placeholder''\")",
-      "Bash(powershell -Command \"[System.IO.File]::WriteAllText\\(''C:\\\\Users\\\\MSI\\\\.claude\\\\plans\\\\precious-kindling-duckling-agent-a68153ec70eacefe1.md'', ''placeholder - ready to write''\\)\")"
+      "Bash(powershell -Command \"[System.IO.File]::WriteAllText\\(''C:\\\\Users\\\\MSI\\\\.claude\\\\plans\\\\precious-kindling-duckling-agent-a68153ec70eacefe1.md'', ''placeholder - ready to write''\\)\")",
+      "Bash(git:*)",
+      "Bash(node:*)",
+      "Bash(find:*)",
+      "Bash(grep:*)"
     ],
     "additionalDirectories": [
       "D:\\LOOP_COMPANY\\LOOP\\src\\app\\api\\admin\\expertises",
