@@ -303,12 +303,30 @@ model TeamMember {
   // Linked staff user account
   user        User?
 
+  // ── Rank / XP Fields (denormalized for fast reads) ──
+  level      Int      @default(1)  @map("level")
+  currentXp  Int      @default(0)  @map("current_xp")
+  maxXp      Int      @default(100) @map("max_xp")
+  rank       String   @default("iron") @map("rank")
+
+  // ── LP Balance Fields ──────────────────────────────────────────────────────
+  // lockedLp     = SUM(LpAward.lpAmount) WHERE status = "pending"
+  // availableLp  = SUM(LpAward.lpAmount) WHERE status = "approved" — spendable balance
+  // Both denormalized; updated atomically on award create / approve / reject.
+  lockedLp    Int      @default(0)  @map("locked_lp")
+  availableLp Int      @default(0)  @map("available_lp")
+
   // PM Relations
   projectMemberships ProjectMember[]
   bugNotesAuthored   BugNote[]    @relation("BugNoteAuthor")
   assignedTasks       Task[]       @relation("TaskAssignee")
   lpAwardsReceived    LpAward[]    @relation("LpAwardMember")
   lpAwardsApproved    LpAward[]    @relation("LpAwardApprover")
+  lpTransactions      LpTransaction[]
+  lpTransactionsReceived LpTransaction[] @relation("LpTransactionCounterparty")
+  lpTransactionsCreated LpTransaction[]   @relation("LpTransactionCreator")
+  lpRedemptions         LpRedemption[]
+  referralCodes         ReferralCode[]
   blogPostsAuthored   BlogPost[]
   envFileEdits        EnvFile[]    @relation("EnvFileEditor")
   dailyStandups       DailyStandup[]
@@ -452,9 +470,14 @@ model Order {
   gscMetrics           GscMetric[]
   portalTokens         ProjectPortalToken[]
 
+  /** Referral code used to create this order */
+  referralCodeId String? @map("referral_code_id")
+  referralCode    ReferralCode? @relation("ReferralCodeOrders", fields: [referralCodeId], references: [id])
+
   @@index([status, createdAt])
   @@index([orderType, status])
   @@index([customerEmail])
+  @@index([referralCodeId])
   @@map("orders")
 }
 
@@ -599,6 +622,79 @@ model OrderAttribute {
   @@map("order_attributes")
 }
 
+// ─── REFERRAL SYSTEM ───────────────────────────────────────────────────────────
+
+/// A unique referral code assigned to a staff member (referrer).
+/// Codes are created by admins; each member can have multiple active codes per campaign.
+model ReferralCode {
+  id            String    @id @default(cuid())
+  /** Unique human-readable code, e.g. "THANGDEV", "LOOP-AI-2026" */
+  code          String    @unique @map("code")
+  /** Display name, e.g. "Thang Dev - 2026 Campaign" */
+  name          String
+  /** Staff member who earns LP when referrals convert */
+  memberId      String    @map("member_id")   // FK → TeamMember.id
+  /** Optional campaign label, e.g. "2026-Q1", "Summer Promo" */
+  campaign      String?
+  /** VND revenue threshold for this tier. Referrer LP = floor(totalRevenue × tierRate). */
+  minRevenue     Int       @default(0) @map("min_revenue")
+  maxRevenue    Int?      @map("max_revenue") // null = uncapped
+  /** LP reward rate for this tier. Example: 0.10 = 10% of referral revenue in LP for referrer. */
+  lpRate        Float     @default(0.05) @map("lp_rate")
+  /** Number of uses / max uses (null = unlimited). */
+  useCount      Int       @default(0) @map("use_count")
+  maxUses       Int?      @map("max_uses")
+  isActive      Boolean   @default(true) @map("is_active")
+  expiresAt     DateTime? @map("expires_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  member     TeamMember        @relation(fields: [memberId], references: [id])
+  leads      SalesLead[]       @relation("ReferralCodeLeads")
+  orders     Order[]           @relation("ReferralCodeOrders")
+  tracking   ReferralTracking[]
+
+  @@index([memberId])
+  @@index([campaign])
+  @@map("referral_codes")
+}
+
+/// Tracks every click / signup / order attributed to a referral code.
+model ReferralTracking {
+  id              String    @id @default(cuid())
+  referralCodeId  String    @map("referral_code_id") // FK → ReferralCode.id
+  /** Event type: click | signup | lead | order */
+  event           String                              // click | signup | lead | order
+  /** The landing page URL that was visited */
+  landingUrl      String?  @map("landing_url")
+  /** Visitor UTM parameters (stored as JSON) */
+  utmSource       String? @map("utm_source")
+  utmMedium       String? @map("utm_medium")
+  utmCampaign     String? @map("utm_campaign")
+  utmTerm         String? @map("utm_term")
+  utmContent      String? @map("utm_content")
+  /** Visitor IP (hashed for privacy) */
+  ipHash          String? @map("ip_hash")
+  /** Visitor user-agent */
+  userAgent       String? @map("user_agent")
+  /** Attributed SalesLead ID (if event = lead or order) */
+  salesLeadId     String? @map("sales_lead_id")
+  /** Attributed Order ID (if event = order) */
+  orderId         String? @map("order_id")
+  /** Revenue in VND for order events */
+  revenue         Int      @default(0)
+  /** LP awarded to referrer for this conversion */
+  lpAwarded       Int      @default(0) @map("lp_awarded")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  referralCode ReferralCode @relation(fields: [referralCodeId], references: [id])
+
+  @@index([referralCodeId, event])
+  @@index([referralCodeId])
+  @@index([createdAt])
+  @@map("referral_tracking")
+}
+
 // ─── SALES CRM ─────────────────────────────────────────────────────
 
 /// Customer leads tracked through the sales pipeline.
@@ -621,8 +717,13 @@ model SalesLead {
   quotes Quote[]
   orders Order[]
 
+  /** Referral code used to create this lead */
+  referralCodeId String? @map("referral_code_id")
+  referralCode    ReferralCode? @relation("ReferralCodeLeads", fields: [referralCodeId], references: [id])
+
   @@index([status, area])
   @@index([assignedTo])
+  @@index([referralCodeId])
   @@map("sales_leads")
 }
 
@@ -846,6 +947,8 @@ model AddonService {
   type          String   @default("one_time") // "one_time" | "recurring"
   price         Int                            // Giá (VND)
   billingPeriod String?  @map("billing_period") // "monthly" | "quarterly" | "yearly"
+  /** LP cost for staff redemption. Null = not redeemable with LP. */
+  lpCost        Int?     @map("lp_cost")
   metadata      Json?                           // Chi tiết bổ sung
   sortOrder     Int      @default(0) @map("sort_order")
   isActive      Boolean  @default(true) @map("is_active")
@@ -854,6 +957,7 @@ model AddonService {
 
   rewardTierItems RewardTierItem[]
   orderRewards    OrderReward[]
+  redemptions     LpRedemption[]
 
   @@map("addon_services")
 }
@@ -1722,4 +1826,69 @@ model MaintenanceContract {
   @@index([status])
   @@index([endDate])
   @@map("maintenance_contracts")
+}
+
+// ─── LP Redemption ────────────────────────────────────────────────────────────
+
+/// A staff member redeems LP to claim an AddonService reward.
+model LpRedemption {
+  id           String    @id @default(cuid())
+  memberId     String    @map("member_id")     // FK → TeamMember.id
+  addonId     String    @map("addon_id")     // FK → AddonService.id
+  lpCost      Int                              // LP deducted at time of redemption (snapshot; per-unit cost)
+  quantity    Int       @default(1)           // Number of items redeemed
+  /** For recurring items: expiry date; for one-time, null */
+  expiresAt   DateTime? @map("expires_at")
+  status      String    @default("active")     // active | redeemed | expired | cancelled
+  redeemedAt  DateTime? @map("redeemed_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  member   TeamMember   @relation(fields: [memberId], references: [id])
+  addon    AddonService @relation(fields: [addonId], references: [id])
+
+  @@index([memberId])
+  @@index([addonId])
+  @@index([status])
+  @@map("lp_redemptions")
+}
+
+// ─── LP Transaction Ledger ────────────────────────────────────────────────────
+
+/// Immutable ledger entry for every LP movement affecting a staff member.
+/// Sources: award (PM approves LP), transfer (internal transfer), spend (redemption),
+/// adjust (admin manual adjustment), expire (auto-expired LP).
+model LpTransaction {
+  id            String    @id @default(cuid())
+  memberId      String    @map("member_id")          // FK → TeamMember.id
+  /** Amount in absolute LP. Positive = credit, negative = debit. */
+  amount        Int
+  /** Running balance after this transaction (for audit / consistency). */
+  balanceAfter  Int       @default(0)  @map("balance_after")
+  /** Transaction type drives UI label + validation rules. */
+  type          String                                // award | transfer_sent | transfer_received | spend | adjust | expire
+  status        String    @default("completed")       // pending | completed | failed | cancelled
+  /** human-readable description */
+  description   String?
+  source        String    @default("manual")         // Same as LpAward.source (manual|task_done|commit_merge|seo_published|transfer|spend|admin)
+  /** ID of the originating record (LpAward.id, LpTransaction.id for transfer, etc.) */
+  referenceId   String?   @map("reference_id")
+  referenceType String?   @map("reference_type")     // LpAward | LpTransaction | LpRedemption | Order | null
+  /** For transfers: counterparty member */
+  counterpartyId String?   @map("counterparty_id")   // FK → TeamMember.id
+  /** Fee charged on this transaction (e.g. transfer fee) */
+  fee           Int       @default(0)
+  createdBy     String?   @map("created_by")        // FK → TeamMember.id (who made the entry; null = system)
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  member       TeamMember  @relation(fields: [memberId], references: [id])
+  counterparty TeamMember? @relation("LpTransactionCounterparty", fields: [counterpartyId], references: [id])
+  creator      TeamMember? @relation("LpTransactionCreator", fields: [createdBy], references: [id])
+
+  @@index([memberId])
+  @@index([memberId, createdAt])
+  @@index([memberId, type])
+  @@index([referenceId, referenceType])
+  @@index([status])
+  @@map("lp_transactions")
 }

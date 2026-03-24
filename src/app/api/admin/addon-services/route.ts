@@ -57,6 +57,8 @@ export async function POST(req: NextRequest) {
         type: data.type,
         price: Number(data.price) || 0,
         billingPeriod: data.billingPeriod || null,
+        /** LP cost for staff redemption. Null = not redeemable with LP. */
+        lpCost: data.lpCost != null ? Number(data.lpCost) : null,
         metadata: data.metadata ?? undefined,
         sortOrder: Number(data.sortOrder) || 0,
         isActive: data.isActive ?? true,

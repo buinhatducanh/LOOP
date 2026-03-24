@@ -1,4 +1,6 @@
 import { prisma } from "@/lib/prisma";
+import { awardCustomerLpOnPayment } from "@/lib/customer/lp";
+import { awardReferralLpOnPayment, awardReferralLpOnCompletion } from "@/lib/customer/referral";
 
 /**
  * Trạng thái hợp lệ cho đơn hàng Custom
@@ -92,7 +94,7 @@ export function getNextStatuses(
 }
 
 /**
- * Chuyển trạng thái đơn hàng + ghi log lịch sử
+ * Chuyển trạng thái đơn hàng + ghi log lịch sử + award referral LP khi hoàn tất
  */
 export async function transitionOrderStatus(
   orderId: string,
@@ -102,7 +104,7 @@ export async function transitionOrderStatus(
 ): Promise<{ success: boolean; error?: string }> {
   const order = await prisma.order.findUnique({
     where: { id: orderId },
-    select: { status: true, orderType: true },
+    select: { status: true, orderType: true, orderNumber: true, paidAmount: true },
   });
 
   if (!order) {
@@ -116,28 +118,30 @@ export async function transitionOrderStatus(
     };
   }
 
-  // Update trạng thái + ghi history trong transaction
-  await prisma.$transaction([
-    prisma.order.update({
+  const isCompletion = toStatus === "completed" || toStatus === "delivered";
+
+  // Atomic: update status + history
+  await prisma.$transaction(async (tx) => {
+    await tx.order.update({
       where: { id: orderId },
       data: { status: toStatus },
-    }),
-    prisma.orderStatusHistory.create({
-      data: {
-        orderId,
-        fromStatus: order.status,
-        toStatus,
-        changedBy,
-        note,
-      },
-    }),
-  ]);
+    });
+    await tx.orderStatusHistory.create({
+      data: { orderId, fromStatus: order.status, toStatus, changedBy, note },
+    });
+  });
+
+  // ── Award referral LP on order completion ────────────────────────────────────
+  if (isCompletion && order.paidAmount > 0) {
+    // Await non-critically — don't block the status transition response
+    awardReferralLpOnCompletion(orderId, order.orderNumber, order.paidAmount).catch(() => {/* silent */});
+  }
 
   return { success: true };
 }
 
 /**
- * Ghi nhận thanh toán cho đơn hàng
+ * Ghi nhận thanh toán cho đơn hàng + award LP cho khách hàng
  */
 export async function recordPayment(
   orderId: string,
@@ -148,7 +152,10 @@ export async function recordPayment(
 ): Promise<{ success: boolean; error?: string }> {
   const order = await prisma.order.findUnique({
     where: { id: orderId },
-    select: { finalPrice: true, paidAmount: true, totalAmount: true },
+    select: {
+      finalPrice: true, paidAmount: true, totalAmount: true,
+      orderNumber: true, customerEmail: true, customerName: true,
+    },
   });
 
   if (!order) {
@@ -158,7 +165,7 @@ export async function recordPayment(
   const totalExpected = order.finalPrice ?? order.totalAmount ?? 0;
   const newPaidAmount = order.paidAmount + amount;
 
-  // Xác định payment status mới
+  // Determine payment status
   let paymentStatus: string;
   if (newPaidAmount >= totalExpected) {
     paymentStatus = "paid";
@@ -168,8 +175,9 @@ export async function recordPayment(
     paymentStatus = "unpaid";
   }
 
-  await prisma.$transaction([
-    prisma.payment.create({
+  // Atomic: create payment + update order + award customer LP
+  await prisma.$transaction(async (tx) => {
+    const payment = await tx.payment.create({
       data: {
         orderId,
         amount,
@@ -178,15 +186,35 @@ export async function recordPayment(
         confirmedBy,
         confirmedAt: new Date(),
       },
-    }),
-    prisma.order.update({
+    });
+
+    await tx.order.update({
       where: { id: orderId },
-      data: {
-        paidAmount: newPaidAmount,
-        paymentStatus,
-      },
-    }),
-  ]);
+      data: { paidAmount: newPaidAmount, paymentStatus },
+    });
+
+    // ── Award LP to customer (10% of payment, silent failure) ──────────────────
+    if (amount > 0 && order.customerEmail) {
+      await awardCustomerLpOnPayment({
+        orderId,
+        orderNumber: order.orderNumber,
+        customerEmail: order.customerEmail,
+        customerName: order.customerName ?? "",
+        paidAmount: amount,
+        paymentId: payment.id,
+      });
+    }
+
+    // ── Award referral LP to referrer if order came via referral code ───────────
+    if (amount > 0) {
+      await awardReferralLpOnPayment({
+        orderId,
+        orderNumber: order.orderNumber,
+        paidAmount: amount,
+        paymentId: payment.id,
+      });
+    }
+  });
 
   return { success: true };
 }

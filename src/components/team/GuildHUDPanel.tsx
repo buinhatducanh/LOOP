@@ -4,6 +4,16 @@ import { useState, useEffect, useRef, ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Shield, Zap, Trophy, Target, GitBranch } from 'lucide-react';
 import { RANKS, RankKey, getRankFromLevel, ROLE_SYMBOLS } from './teamRanks';
+import { useRank } from '@/hooks/useRank';
+
+// ── Inline XP helpers (same logic as src/lib/rank/xp.ts) ─────────────────────
+const XP_PER_LP = 10;
+function hudXpForLevel(level: number) { return level * 100; }
+function hudLevelFromXp(totalXp: number) {
+  let level = 1, remaining = totalXp;
+  while (hudXpForLevel(level) <= remaining) { remaining -= hudXpForLevel(level); level++; }
+  return { level, currentXp: remaining };
+}
 
 interface HUDMemberData {
   id: string;
@@ -33,6 +43,8 @@ interface HUDMemberData {
   team?: string;
   missions?: number;
   roleCode?: string;
+  /** Real total approved LP — if provided, rank/XP computed from LP data */
+  totalApprovedLp?: number;
 }
 
 // ── Derive guild data for HUD ────────────────────────────────────────────────
@@ -368,8 +380,35 @@ export function GuildHUDPanel({ member, onClose }: HUDPanelProps) {
     if (member) setActiveTab('tech');
   }, [member?.id]);
 
+  // ── Fetch real rank from API when totalApprovedLp is available ──────────────
+  const { data: rankData } = useRank(
+    member && member.totalApprovedLp !== undefined ? member.id : undefined
+  );
+
   const hud = member ? deriveHUDData(member) : null;
-  const cfg = hud ? RANKS[hud.rank] : null;
+
+  // Merge real rank data (from API) with derived HUD data
+  let hudRank = hud?.rank ?? 'iron';
+  let hudLevel = hud?.level ?? 8;
+  let hudCurrentXP = hud?.currentXP ?? 45;
+  let hudMaxXP = hud?.maxXP ?? 100;
+
+  if (rankData) {
+    hudRank = rankData.rank;
+    hudLevel = rankData.level;
+    hudCurrentXP = rankData.currentXp;
+    hudMaxXP = rankData.maxXp;
+  } else if (member?.totalApprovedLp !== undefined && member.totalApprovedLp > 0) {
+    // Compute from LP data client-side (no API call)
+    const totalXp = member.totalApprovedLp * XP_PER_LP;
+    const { level, currentXp } = hudLevelFromXp(totalXp);
+    hudRank = getRankFromLevel(level) as RankKey;
+    hudLevel = level;
+    hudCurrentXP = currentXp;
+    hudMaxXP = hudXpForLevel(level);
+  }
+
+  const cfg = hud ? RANKS[hudRank] : null;
 
   const radarData = hud ? Object.entries(hud.skillsMap).map(([subject, A]) => ({ subject, A: A as number })) : [];
 
@@ -468,23 +507,23 @@ export function GuildHUDPanel({ member, onClose }: HUDPanelProps) {
               <div className="p-3 rounded-lg mb-5" style={{ background: '#111827', border: '1px solid #1F2937' }}>
                 <div className="flex justify-between items-baseline mb-2">
                   <div className="flex items-baseline gap-1.5">
-                    <span style={{ fontFamily: 'var(--font-cinzel), Cinzel, serif', color: cfg.color, fontSize: 22, fontWeight: 700, textShadow: `0 0 12px ${cfg.glowColor}` }}>{hud.level}</span>
+                    <span style={{ fontFamily: 'var(--font-cinzel), Cinzel, serif', color: cfg.color, fontSize: 22, fontWeight: 700, textShadow: `0 0 12px ${cfg.glowColor}` }}>{hudLevel}</span>
                     <span style={{ color: '#475569', fontSize: 10, fontFamily: 'var(--font-jetbrains), JetBrains Mono, monospace' }}>LEVEL</span>
                   </div>
-                  <span style={{ color: '#475569', fontSize: 10, fontFamily: 'var(--font-jetbrains), JetBrains Mono, monospace' }}>{hud.currentXP} / {hud.maxXP} XP</span>
+                  <span style={{ color: '#475569', fontSize: 10, fontFamily: 'var(--font-jetbrains), JetBrains Mono, monospace' }}>{hudCurrentXP} / {hudMaxXP} XP</span>
                 </div>
                 <div className="rounded-full overflow-hidden" style={{ height: 5, background: '#1F2937' }}>
                   <motion.div
                     className="h-full rounded-full"
                     style={{ background: `linear-gradient(90deg, ${cfg.gradientFrom}, ${cfg.gradientTo})`, boxShadow: `0 0 8px ${cfg.glowColor}` }}
                     initial={{ width: 0 }}
-                    animate={{ width: `${Math.round((hud.currentXP / hud.maxXP) * 100)}%` }}
+                    animate={{ width: `${Math.round((hudCurrentXP / hudMaxXP) * 100)}%` }}
                     transition={{ duration: 1, ease: 'easeOut', delay: 0.2 }}
                   />
                 </div>
                 <div className="flex justify-between mt-1.5">
                   <span style={{ color: '#475569', fontSize: 9, fontFamily: 'var(--font-jetbrains), JetBrains Mono, monospace' }}>◈ {hud.missions} MISSIONS</span>
-                  <span style={{ color: cfg.color, fontSize: 9, fontFamily: 'var(--font-jetbrains), JetBrains Mono, monospace' }}>{Math.round((hud.currentXP / hud.maxXP) * 100)}%</span>
+                  <span style={{ color: cfg.color, fontSize: 9, fontFamily: 'var(--font-jetbrains), JetBrains Mono, monospace' }}>{Math.round((hudCurrentXP / hudMaxXP) * 100)}%</span>
                 </div>
               </div>
 
@@ -582,7 +621,7 @@ export function GuildHUDPanel({ member, onClose }: HUDPanelProps) {
                   )}
 
                   {activeTab === 'timeline' && (
-                    <RankChronicle rank={hud.rank} level={hud.level} color={cfg.color} />
+                    <RankChronicle rank={hudRank} level={hudLevel} color={cfg.color} />
                   )}
                 </motion.div>
               </AnimatePresence>

@@ -65,20 +65,48 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "projectId, memberId, and lpAmount are required" }, { status: 400 });
     }
 
-    const award = await prisma.lpAward.create({
-      data: {
-        projectId,
-        taskId: data.taskId ?? null,
-        memberId: data.memberId,
-        lpAmount: parseInt(data.lpAmount),
-        expAmount: parseInt(data.expAmount ?? data.lpAmount),
-        source: data.source ?? "manual",
-        status: data.status ?? "pending",
-      },
-      include: {
-        task: { select: { id: true, title: true } },
-        project: { select: { id: true, orderNumber: true } },
-      },
+    const lpAmount = parseInt(data.lpAmount);
+    if (isNaN(lpAmount) || lpAmount <= 0) {
+      return NextResponse.json({ error: "lpAmount must be a positive integer" }, { status: 400 });
+    }
+
+    const expAmount = parseInt(data.expAmount ?? lpAmount);
+    const isPending = (data.status ?? "pending") === "pending";
+
+    // Atomic: create award + lock LP on member
+    const award = await prisma.$transaction(async (tx) => {
+      const created = await tx.lpAward.create({
+        data: {
+          projectId,
+          taskId: data.taskId ?? null,
+          memberId: data.memberId,
+          lpAmount,
+          expAmount,
+          source: data.source ?? "manual",
+          status: data.status ?? "pending",
+        },
+        include: {
+          task: { select: { id: true, title: true } },
+          project: { select: { id: true, orderNumber: true } },
+        },
+      });
+
+      // Lock LP immediately on creation so members see their pending balance
+      if (isPending) {
+        const member = await tx.teamMember.findUnique({
+          where: { id: data.memberId },
+          select: { lockedLp: true },
+        });
+
+        if (member) {
+          await tx.teamMember.update({
+            where: { id: data.memberId },
+            data: { lockedLp: member.lockedLp + lpAmount },
+          });
+        }
+      }
+
+      return created;
     });
 
     await createAuditLog({

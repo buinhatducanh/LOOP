@@ -45,7 +45,10 @@
       "Bash(git:*)",
       "Bash(node:*)",
       "Bash(find:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(findstr /i \"lp\")",
+      "Bash(type:*)",
+      "mcp__ide__executeCode"
     ],
     "additionalDirectories": [
       "D:\\LOOP_COMPANY\\LOOP\\src\\app\\api\\admin\\expertises",

@@ -6,6 +6,24 @@ import { RANKS, RankKey, BOX_SHADOW_ANIM, ROLE_SYMBOLS } from './teamRanks';
 import { LEDRunner } from './LEDRunner';
 import { Users } from 'lucide-react';
 
+// ── XP formula helpers (inline, no server dependency) ─────────────────────
+const XP_PER_LP = 10;
+function xpForLevel(level: number) { return level * 100; }
+function levelFromXp(totalXp: number) {
+  let level = 1, remaining = totalXp;
+  while (xpForLevel(level) <= remaining) { remaining -= xpForLevel(level); level++; }
+  return { level, currentXp: remaining };
+}
+function getRankFromLevel(level: number) {
+  if (level >= 115) return 'diamond';
+  if (level >= 95)  return 'ruby';
+  if (level >= 75)  return 'platinum';
+  if (level >= 55)  return 'gold';
+  if (level >= 35)  return 'silver';
+  if (level >= 15)  return 'bronze';
+  return 'iron';
+}
+
 // ── Map existing TeamMemberData fields to guild system ──────────────────────
 interface GuildMemberData {
   id: string;
@@ -36,6 +54,8 @@ interface GuildMemberData {
   team?: string;
   missions?: number;
   roleCode?: string;
+  /** Real total approved LP — if provided, rank/XP computed from LP data */
+  totalApprovedLp?: number;
 }
 
 // ── Compute rank + guild stats from existing data ────────────────────────────
@@ -318,7 +338,49 @@ interface GuildMemberCardProps {
 
 export function GuildMemberCard({ member, onClick }: GuildMemberCardProps) {
   const [hovered, setHovered] = useState(false);
-  const guild = deriveGuildData(member);
+
+  // ── Compute rank/XP from real LP data when available ────────────────────
+  let guild: ReturnType<typeof deriveGuildData>;
+
+  if (member.totalApprovedLp !== undefined && member.totalApprovedLp > 0) {
+    const totalXp = member.totalApprovedLp * XP_PER_LP;
+    const { level, currentXp } = levelFromXp(totalXp);
+    const maxXp = xpForLevel(level);
+    const rank = getRankFromLevel(level) as RankKey;
+    const cfg = RANKS[rank];
+
+    // Skills from existing data or fall back to defaults
+    const skills: Record<string, number> = {};
+    if (member.skills && Array.isArray(member.skills)) {
+      member.skills.forEach((s, i) => {
+        const name = typeof s === 'string' ? s : (s as unknown as { name?: string; nameVi?: string }).name || (s as unknown as { name?: string; nameVi?: string }).nameVi || String(s);
+        skills[name] = Math.min(100, 60 + (i * 10) + Math.floor(Math.random() * 20));
+      });
+    }
+    if (member.expertise) {
+      member.expertise.forEach((e, i) => {
+        const name = typeof e === 'string' ? e : (e as unknown as { name?: string; nameVi?: string }).name || (e as unknown as { name?: string; nameVi?: string }).nameVi || String(e);
+        if (!skills[name]) skills[name] = Math.min(100, 50 + (i * 12) + Math.floor(Math.random() * 20));
+      });
+    }
+    if (Object.keys(skills).length === 0) {
+      skills['Code'] = 70; skills['Design'] = 45; skills['Strategy'] = 60;
+      skills['Execution'] = 75; skills['Teamwork'] = 65;
+    }
+
+    guild = {
+      rank,
+      level,
+      currentXP: currentXp,
+      maxXP: maxXp,
+      team: member.team || 'Alpha',
+      missions: member.missions || 12,
+      skills,
+    };
+  } else {
+    guild = deriveGuildData(member);
+  }
+
   const cfg = RANKS[guild.rank];
   const xpPct = Math.round((guild.currentXP / guild.maxXP) * 100);
   const roleSymbol = ROLE_SYMBOLS[member.roleCode || member.roleCategory || 'default'] || ROLE_SYMBOLS.default;

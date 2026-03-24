@@ -9,6 +9,7 @@ import {
   buildPaginationResponse,
   TEAM_MEMBER_FILTER_CONFIG,
 } from "@/lib/api/search-utils";
+import { syncRankFields } from "@/lib/rank/xp";
 
 export async function GET(req: NextRequest) {
   try {
@@ -34,8 +35,38 @@ export async function GET(req: NextRequest) {
       prisma.teamMember.count({ where }),
     ]);
 
+    // ── Aggregate approved LP per member and compute rank fields ───────────
+    const memberIds = members.map((m) => m.id);
+
+    const lpAggregates = await prisma.lpAward.groupBy({
+      by: ["memberId"],
+      where: { memberId: { in: memberIds }, status: "approved" },
+      _sum: { lpAmount: true },
+    });
+
+    const lpMap = new Map<string, number>(
+      lpAggregates.map((a) => [a.memberId, a._sum.lpAmount ?? 0])
+    );
+
+    const enriched = members.map((m) => {
+      const totalApprovedLp = lpMap.get(m.id) ?? 0;
+      const { level, currentXp, maxXp, rank } = syncRankFields(totalApprovedLp);
+      return {
+        ...m,
+        // Override level/XP/rank with computed values (reflect real LP)
+        level,
+        currentXp,
+        maxXp,
+        rank,
+        totalApprovedLp,
+        // LP balances (denormalized on TeamMember)
+        lockedLp: m.lockedLp,
+        availableLp: m.availableLp,
+      };
+    });
+
     return NextResponse.json({
-      data: members,
+      data: enriched,
       ...buildPaginationResponse(total, page, limit),
     });
   } catch (error) {
