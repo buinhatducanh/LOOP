@@ -36,21 +36,35 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    // ── Aggregate total approved LP per member ──────────────────────────────
+    // ── Aggregate LP from BOTH sources per member ─────────────────────────
+    // 1. Approved LpAward records
+    // 2. Completed LpTransaction(type=award) — teaching, referral, lp_allocation, manual
     const memberIds = members.map((m) => m.id);
 
-    const lpAggregates = await prisma.lpAward.groupBy({
-      by: ["memberId"],
-      where: {
-        memberId: { in: memberIds },
-        status: "approved",
-      },
-      _sum: { lpAmount: true },
-    });
+    // ── Dual-source LP aggregation: LpAward(approved) + LpTransaction(type=award, completed) ──
+    const lpMap = new Map<string, number>();
 
-    const lpMap = new Map<string, number>(
-      lpAggregates.map((a) => [a.memberId, a._sum.lpAmount ?? 0])
-    );
+    if (memberIds.length > 0) {
+      const [awardAggs, txAggs] = await Promise.all([
+        prisma.lpAward.groupBy({
+          by: ["memberId"],
+          where: { memberId: { in: memberIds }, status: "approved" },
+          _sum: { lpAmount: true },
+        }),
+        prisma.lpTransaction.groupBy({
+          by: ["memberId"],
+          where: { memberId: { in: memberIds }, type: "award", status: "completed" },
+          _sum: { amount: true },
+        }),
+      ]);
+
+      for (const a of awardAggs) {
+        lpMap.set(a.memberId, (lpMap.get(a.memberId) ?? 0) + (a._sum.lpAmount ?? 0));
+      }
+      for (const t of txAggs) {
+        lpMap.set(t.memberId, (lpMap.get(t.memberId) ?? 0) + (t._sum.amount ?? 0));
+      }
+    }
 
     // ── Compute rank fields + enrich member data ────────────────────────────
     const enriched = members.map((m) => {
