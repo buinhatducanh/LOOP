@@ -4,6 +4,7 @@
 > **Status:** Accepted
 > **Owners:** FE Lead, BE Lead, PO
 > **Related Epic/Module:** i18n Implementation (FE Phase 0)
+> **Last Updated:** 2026-03-27
 
 ---
 
@@ -153,11 +154,55 @@ Sequence unchanged from plan.
 
 ## 6) Validation
 
-- **KPI:** Sitemap có đủ 5 locale entries ✓
-- **KPI:** Hreflang tags present cho mỗi locale ✓
-- **KPI:** Font lazy-load đúng tier (VI/EN < 100KB, JA/KO < 2MB, ZH < 8MB) ✓
-- **KPI:** TTFB VI+EN < 100ms (CDN), JA+KO < 300ms (Edge), ZH < 500ms ✓
+- **KPI:** Sitemap có đủ 5 locale entries ✓ *(Milestone 1, 2, 3 — done)*
+- **KPI:** Hreflang tags present cho mỗi locale ✓ *(Milestone 1 — done)*
+- **KPI:** Font lazy-load đúng tier (VI/EN < 100KB, JA/KO < 2MB, ZH < 8MB) ⏳ *(pending — Milestone 3)*
+- **KPI:** TTFB VI+EN < 100ms (CDN), JA+KO < 300ms (Edge), ZH < 500ms ⏳ *(pending — Milestone 4)*
 - **Review date:** Sau Phase 2 complete (Week 4)
+
+---
+
+## 8) Implementation Status
+
+### ✅ Phase 0 — Foundation (DONE — 2026-03-27)
+
+**Milestone 1 — VI + EN Foundation:**
+- [x] `next-intl` setup với `/vi`, `/en` routing (5 locales total)
+- [x] Edge Middleware locale detection (cookie → Accept-Language → vi)
+- [x] UI strings extraction: `vi.json` (211 keys), `en.json` (211 keys)
+- [x] Middleware: sitemap + hreflang VI + EN
+- [x] `LocaleSwitcher` component for 5 locales
+- [x] `src/i18n/routing.ts`, `request.ts`, `providers.tsx`
+
+**Milestone 2 — CMS Multilingual Foundation:**
+- [x] Prisma i18n fields: `titleEn`, `titleJa`, `titleKo`, `titleZh`, `descriptionEn`, etc. on 7 models
+  - Models: `Service`, `Project`, `TeamMember`, `Expertise`, `Testimonial`, `HomeSlider`, `BlogPost`
+- [x] `BE getLocalizedField()` helper in `src/lib/i18n/localization.ts`
+- [x] All 11 public content APIs support `?lang=vi|en|ja|ko|zh` with auto-fallback to VI
+- [x] Admin CRUD routes accept i18n fields automatically (pass-through to Prisma)
+- [x] Blog posts: `blog-posts/` route (DB-backed) separate from `v1/blog` (Sanity CMS)
+
+**Branch:** `feature/i18n-vi-en` (12 commits ahead of `master`)
+
+### ⏳ Phase 1 — JA + KO Expansion (PENDING)
+
+- [ ] Professional translation of `ja.json`, `ko.json` (AI draft → human review)
+- [ ] CJK font lazy-loading: `Noto Sans JP`, `Noto Sans KR`
+- [ ] JA + KO hreflang + sitemap entries
+- [ ] CJK typography: line-height, font-size adjustments
+
+### ⏳ Phase 2 — ZH + Performance (PENDING)
+
+- [ ] Professional translation of `zh.json` (AI draft acceptable for MVP)
+- [ ] `Noto Sans SC` lazy-load (~8MB)
+- [ ] ZH hreflang + sitemap entries
+- [ ] Performance audit per tier
+
+### ⏳ Phase 3 — Scale + Operations (PENDING)
+
+- [ ] Translation management workflow (Phrase/Lokalise)
+- [ ] Analytics per locale
+- [ ] Production hardening + runbook
 
 ---
 
