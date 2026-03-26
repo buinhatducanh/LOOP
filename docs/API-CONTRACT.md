@@ -51,6 +51,45 @@ All list endpoints accept query params:
 - **Admin endpoints:** 1000 req/min per user
 - **Auth endpoints:** 5 req/min per IP
 
+### Internationalization (i18n)
+
+All public content endpoints accept a `?lang=` query param to return localized content.
+
+Supported locales: `vi` (default), `en`, `ja`, `ko`, `zh`
+
+```bash
+# Locale on list endpoints
+GET /api/v1/services?lang=en
+GET /api/v1/projects?lang=ja
+GET /api/v1/team?lang=ko
+
+# Locale on detail endpoints
+GET /api/services/[slug]?lang=en
+GET /api/projects/[slug]?lang=zh
+GET /api/team/[slug]?lang=vi
+
+# Locale on blog
+GET /api/blog-posts?lang=en
+GET /api/blog-posts/[slug]?lang=en
+
+# Locale on expertises
+GET /api/expertises?lang=en
+```
+
+**Fallback behavior:**
+- If `?lang=` is omitted → defaults to `vi`
+- If a translated field is `null` → falls back to Vietnamese content
+- If `?lang=` value is invalid → falls back to `vi`
+
+**Response metadata:**
+Localized responses include a `_localeUsed` field indicating which locale was applied:
+```json
+{
+  "data": [...],
+  "_localeUsed": "en"
+}
+```
+
 ---
 
 ## Authentication
