@@ -423,6 +423,9 @@
         "minRead": "min read",
         "publishedOn": "Published",
         "noResults": "No blog posts found.",
-        "viewAll": "View All Posts"
+        "viewAll": "View All Posts",
+        "noContent": "Content coming soon.",
+        "backToList": "Back to articles",
+        "relatedTitle": "Related Articles"
     }
 }

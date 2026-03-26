@@ -423,6 +423,9 @@
         "minRead": "分钟阅读",
         "publishedOn": "发布于",
         "noResults": "未找到博客文章。",
-        "viewAll": "查看全部文章"
+        "viewAll": "查看全部文章",
+        "noContent": "内容准备中。",
+        "backToList": "返回列表",
+        "relatedTitle": "相关文章"
     }
 }

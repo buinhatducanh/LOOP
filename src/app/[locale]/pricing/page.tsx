@@ -1,5 +1,6 @@
 /**
  * Pricing Page — LOOP Solutions
+ * Phase 0 i18n: wired to PricingPage namespace
  */
 
 import { notFound } from "next/navigation";
@@ -14,13 +15,176 @@ export default async function PricingPage({ params }: Props) {
   if (!routing.locales.includes(locale as (typeof routing.locales)[number])) notFound();
   setRequestLocale(locale);
 
-  const t = await getTranslations("pricing");
+  const t = await getTranslations("PricingPage");
 
   return (
-    <div style={{ padding: "3rem 2rem", maxWidth: "1200px", margin: "0 auto" }}>
-      <h1 style={{ fontSize: "2.5rem", marginBottom: "0.5rem" }}>{t("title")}</h1>
-      <p style={{ fontSize: "1.25rem", color: "#666", marginBottom: "3rem" }}>{t("subtitle")}</p>
-      <div style={{ color: "#888" }}>[{t("title")}] — {t("calculator.title")}</div>
+    <div style={{ background: "#f8fafc", minHeight: "100vh" }}>
+      {/* Hero */}
+      <section style={{
+        background: "linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%)",
+        color: "white",
+        padding: "5rem 2rem 4rem",
+        textAlign: "center",
+      }}>
+        <div style={{ maxWidth: "700px", margin: "0 auto" }}>
+          <span style={{
+            display: "inline-block",
+            background: "rgba(99,102,241,0.3)",
+            border: "1px solid rgba(99,102,241,0.5)",
+            color: "#a5b4fc",
+            padding: "0.25rem 1rem",
+            borderRadius: "9999px",
+            fontSize: "0.875rem",
+            marginBottom: "1rem",
+          }}>
+            {t("badge")}
+          </span>
+          <h1 style={{ fontSize: "clamp(2rem, 4vw, 3.5rem)", fontWeight: 900, marginBottom: "0.75rem", lineHeight: 1.1 }}>
+            {t("heroTitle1")} <span style={{ color: "#818cf8" }}>{t("heroHighlight")}</span>
+          </h1>
+          <p style={{ fontSize: "1.0625rem", opacity: 0.85, maxWidth: "540px", margin: "0 auto" }}>
+            {t("heroDesc")}
+          </p>
+        </div>
+      </section>
+
+      {/* Pricing Cards */}
+      <section style={{ padding: "4rem 2rem", maxWidth: "1100px", margin: "0 auto" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: "1.5rem", alignItems: "stretch" }}>
+          {/* Starter */}
+          <PricingCard
+            name="Starter"
+            price="$500"
+            period="/ project"
+            desc={t("starterDesc")}
+            features={[t("feat1"), t("feat2"), t("feat3"), t("feat4")]}
+            cta={t("btnContact")}
+            ctaLink={`/${locale}/contact`}
+            highlight={false}
+          />
+          {/* Professional */}
+          <PricingCard
+            name="Professional"
+            price="$1,500"
+            period="/ project"
+            desc={t("comparisonDesc")}
+            features={[t("feat1"), t("feat2"), t("feat3"), t("feat4"), t("feat5"), t("feat6"), t("feat7")]}
+            cta={t("btnContact")}
+            ctaLink={`/${locale}/contact`}
+            highlight={true}
+          />
+          {/* Enterprise */}
+          <PricingCard
+            name="Enterprise"
+            price="Custom"
+            period=""
+            desc={t("deploymentDesc")}
+            features={[t("feat1"), t("feat2"), t("feat3"), t("feat4"), t("feat5"), t("feat6"), t("feat7"), t("feat8")]}
+            cta={t("btnContact")}
+            ctaLink={`/${locale}/contact`}
+            highlight={false}
+          />
+        </div>
+      </section>
+
+      {/* Feature comparison */}
+      <section style={{ padding: "4rem 2rem", background: "white" }}>
+        <div style={{ maxWidth: "800px", margin: "0 auto", textAlign: "center" }}>
+          <h2 style={{ fontSize: "1.75rem", fontWeight: 900, color: "#0f172a", marginBottom: "0.5rem" }}>
+            {t("comparisonTitle")} <span style={{ color: "#6366f1" }}>{t("comparisonHighlight")}</span>
+          </h2>
+          <p style={{ color: "#64748b", marginBottom: "2.5rem" }}>{t("comparisonDesc")}</p>
+          <div style={{ textAlign: "left", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+            {[t("feat1"), t("feat2"), t("feat3"), t("feat4"), t("feat5"), t("feat6"), t("feat7"), t("feat8")].map((f, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.75rem 1rem", background: "#f8fafc", borderRadius: "0.5rem" }}>
+                <span style={{ color: "#10b981", fontSize: "1.25rem" }}>✓</span>
+                <span style={{ color: "#374151", fontSize: "0.9375rem" }}>{f}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Hosting */}
+      <section style={{ padding: "4rem 2rem", background: "#f8fafc" }}>
+        <div style={{ maxWidth: "800px", margin: "0 auto", textAlign: "center" }}>
+          <h2 style={{ fontSize: "1.75rem", fontWeight: 900, color: "#0f172a", marginBottom: "0.5rem" }}>
+            {t("hostingTitle")} <span style={{ color: "#6366f1" }}>{t("hostingHighlight")}</span>
+          </h2>
+          <p style={{ color: "#64748b", marginBottom: "2rem" }}>{t("hostingDesc")}</p>
+          <a href={`/${locale}/contact`} style={{
+            display: "inline-block",
+            padding: "0.875rem 2.5rem",
+            background: "#6366f1",
+            color: "white",
+            borderRadius: "0.5rem",
+            textDecoration: "none",
+            fontWeight: 800,
+          }}>
+            {t("ctaEnterprise")}
+          </a>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function PricingCard({
+  name, price, period, desc, features, cta, ctaLink, highlight,
+}: {
+  name: string;
+  price: string;
+  period: string;
+  desc: string;
+  features: string[];
+  cta: string;
+  ctaLink: string;
+  highlight: boolean;
+}) {
+  return (
+    <div style={{
+      background: highlight ? "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)" : "white",
+      color: highlight ? "white" : "#0f172a",
+      borderRadius: "1.25rem",
+      padding: "2rem",
+      border: highlight ? "none" : "1px solid #e2e8f0",
+      boxShadow: highlight ? "0 20px 40px rgba(99,102,241,0.3)" : "0 1px 3px rgba(0,0,0,0.08)",
+      display: "flex",
+      flexDirection: "column",
+      transform: highlight ? "scale(1.03)" : "none",
+    }}>
+      <h3 style={{ fontSize: "1.125rem", fontWeight: 800, marginBottom: "0.5rem" }}>{name}</h3>
+      <div style={{ marginBottom: "1rem" }}>
+        <span style={{ fontSize: "2.5rem", fontWeight: 900 }}>{price}</span>
+        {period && <span style={{ opacity: 0.7, fontSize: "0.875rem" }}>{period}</span>}
+      </div>
+      <p style={{ fontSize: "0.875rem", opacity: highlight ? 0.9 : 0.7, marginBottom: "1.5rem", lineHeight: 1.5 }}>
+        {desc}
+      </p>
+      <ul style={{ listStyle: "none", padding: 0, margin: "0 0 2rem", flex: 1, display: "flex", flexDirection: "column", gap: "0.625rem" }}>
+        {features.map((f, i) => (
+          <li key={i} style={{ display: "flex", gap: "0.5rem", fontSize: "0.875rem" }}>
+            <span style={{ color: highlight ? "#fde68a" : "#10b981", fontWeight: 700 }}>✓</span>
+            {f}
+          </li>
+        ))}
+      </ul>
+      <a
+        href={ctaLink}
+        style={{
+          display: "block",
+          textAlign: "center",
+          padding: "0.75rem",
+          borderRadius: "0.5rem",
+          textDecoration: "none",
+          fontWeight: 700,
+          fontSize: "0.9375rem",
+          background: highlight ? "white" : "#6366f1",
+          color: highlight ? "#6366f1" : "white",
+        }}
+      >
+        {cta}
+      </a>
     </div>
   );
 }

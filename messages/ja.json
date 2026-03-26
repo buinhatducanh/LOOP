@@ -423,6 +423,9 @@
         "minRead": "分で読了",
         "publishedOn": "公開日",
         "noResults": "ブログ記事が見つかりません。",
-        "viewAll": "すべての記事を見る"
+        "viewAll": "すべての記事を見る",
+        "noContent": "コンテンツは準備中です。",
+        "backToList": "一覧に戻る",
+        "relatedTitle": "関連記事"
     }
 }

@@ -425,6 +425,9 @@
         "minRead": "phút đọc",
         "publishedOn": "Đăng ngày",
         "noResults": "Không tìm thấy bài viết nào.",
-        "viewAll": "Xem tất cả bài viết"
+        "viewAll": "Xem tất cả bài viết",
+        "noContent": "Nội dung đang được cập nhật.",
+        "backToList": "Quay lại danh sách",
+        "relatedTitle": "Bài viết liên quan"
     }
 }
