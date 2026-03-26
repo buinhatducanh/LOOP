@@ -1,26 +1,32 @@
 # LOOP Company Website — Claude Code Context
 
-> **Project:** LOOP Agency Website — API-only Backend (Next.js 15 + Prisma 7 + PostgreSQL/Neon)
-> **Last Updated:** 2026-03-26
+> **Project:** LOOP Agency Website — Next.js 15 + Prisma 7 + PostgreSQL/Neon
+> **Last Updated:** 2026-03-27
 > **Language:** Vietnamese (code comments, docs), English (variable names)
-> **Status:** Frontend removed — API-only app ready for new FE integration
+> **Status:** Phase 0 i18n complete — scaffolding ready, new FE integration pending
 
 ---
 
 ## 🎯 Project Overview
 
-Next.js 15 backend-only application exposing 198 REST API endpoints.
-All frontend pages (public + admin UI) have been removed. The new frontend
-will be a separate repo consuming these APIs.
+Next.js 15 application with backend API (198 endpoints) + scaffolded public pages
+for 5-language i18n (VI/EN/JA/KO/ZH). New frontend will fully integrate these
+APIs via the `?lang=` localization contract.
 
-**Frontend removed (2026-03-26):**
-- `src/app/[locale]/` — public pages deleted
-- `src/app/admin/` — admin CMS pages deleted
-- `src/components/` — all UI components deleted
-- `src/i18n/`, `src/navigation/`, `src/hooks/`, `src/styles/` — deleted
+**Branch:** `feature/i18n-vi-en` (13 commits ahead of `master`)
 
-**Frontend kept:**
-- `src/app/(public)/figma/review/[token]/page.tsx` — client Figma review UI (no deps)
+**i18n infrastructure complete (Phase 0):**
+- `src/app/[locale]/` — scaffolded pages (about, blog, contact, portfolio, pricing, services, team)
+- `src/components/` — SiteHeader, SiteFooter, LocaleSwitcher
+- `src/i18n/` — routing, request config, providers (5 locales)
+- `src/messages/` + `messages/` — `vi.json`, `en.json`, `ja.json`, `ko.json`, `zh.json` (211 keys each)
+- `src/lib/i18n/localization.ts` — `getLocalizedField()`, `getLocalizedArray()`, `mapLocalized*()` helpers
+- All 11 public content APIs support `?lang=vi|en|ja|ko|zh` with VI fallback
+
+**Pending:**
+- New frontend repo to fully wire up the scaffolded pages
+- Professional translation of JA/KO/ZH message files (Phase 1)
+- CJK font lazy-loading (Phase 1)
 
 ---
 
@@ -30,29 +36,41 @@ will be a separate repo consuming these APIs.
 loop-website/
 ├── src/
 │   ├── app/
-│   │   ├── api/                    # API Route Handlers (198 endpoints)
-│   │   │   ├── admin/             # Protected admin API (JWT auth)
-│   │   │   ├── auth/              # NextAuth Google OAuth
-│   │   │   ├── v1/                # Public v1 API contract
-│   │   │   ├── webhooks/          # GitHub, Vercel, Loop webhooks
-│   │   │   └── inngest/           # Background jobs
+│   │   ├── [locale]/              # Locale-prefixed public pages (vi/en/ja/ko/zh)
+│   │   │   ├── about/, blog/, contact/, portfolio/, pricing/, services/, team/
+│   │   │   ├── components/       # SiteHeader, SiteFooter, LocaleSwitcher
+│   │   │   └── layout.tsx        # Locale-aware root layout
+│   │   ├── api/                  # API Route Handlers (198 endpoints)
+│   │   │   ├── admin/            # Protected admin API (JWT auth)
+│   │   │   ├── auth/             # NextAuth Google OAuth
+│   │   │   ├── v1/               # Public v1 API contract (localized)
+│   │   │   ├── webhooks/         # GitHub, Vercel, Loop webhooks
+│   │   │   ├── inngest/          # Background jobs
+│   │   │   ├── services/, projects/, team/, expertises/, blog-posts/  # Public content APIs
+│   │   │   └── ...               # remaining API routes
 │   │   ├── (public)/figma/review/ # Client Figma review page
-│   │   ├── layout.tsx             # Minimal root layout (no i18n)
-│   │   ├── robots.ts              # robots.txt
-│   │   └── sitemap.ts             # sitemap.xml
+│   │   ├── layout.tsx            # Minimal root layout (no i18n)
+│   │   ├── robots.ts             # robots.txt (5 locales)
+│   │   └── sitemap.ts            # sitemap.xml (5 locales + dynamic blog slugs)
 │   ├── lib/
-│   │   ├── auth/                  # JWT, permissions, RBAC, edge auth
-│   │   ├── api/                   # Response helpers, ApiError class
+│   │   ├── auth/                 # JWT, permissions, RBAC, edge auth
+│   │   ├── api/                  # Response helpers, ApiError class
 │   │   ├── db/queries.ts         # Prisma query helpers
+│   │   ├── i18n/localization.ts  # getLocalizedField(), getLocalizedArray(), mapLocalized*()
 │   │   ├── prisma.ts             # DB singleton
-│   │   ├── rank/ranks.ts         # Rank system config (moved from components)
+│   │   ├── rank/ranks.ts         # Rank system config
 │   │   ├── rate-limit.ts         # Upstash Redis rate limiting
-│   │   └── ...                    # services, email, sentry, etc.
-│   └── middleware.ts              # Edge middleware (API-only, no i18n)
-├── prisma/schema.prisma           # 60+ models
-├── docs/                          # 14 API documentation files
-└── PLAN.md                        # Migration/refactor plan
-```
+│   │   └── ...                   # services, email, sentry, etc.
+│   ├── i18n/                     # next-intl config
+│   │   ├── routing.ts            # 5 locales: vi/en/ja/ko/zh
+│   │   ├── request.ts            # Server-side locale + messages
+│   │   └── providers.tsx         # Client NextIntlClientProvider
+│   └── middleware.ts              # Edge middleware (i18n routing + admin auth)
+├── messages/                      # Locale JSON files (root, for request.ts)
+│   ├── vi.json, en.json          # Full translations (211 keys)
+│   └── ja.json, ko.json, zh.json # Phase 1 translation-ready (211 keys each)
+├── prisma/schema.prisma          # 60+ models (7 with i18n fields)
+└── docs/                        # API documentation + ADR
 
 ---
 
@@ -61,14 +79,16 @@ loop-website/
 | Category | Models |
 |----------|--------|
 | Auth & RBAC | `User`, `Role`, `Permission`, `UserRole`, `Session`, `LoginHistory` |
-| Core Content | `Service`, `Project`, `Testimonial`, `ContactMessage`, `PricingPlan`, `HomeSlider`, `HomeVideo` |
-| Team & HR | `TeamMember`, `Expertise`, `MemberExpertise` |
+| Core Content | `Service` ⚡, `Project` ⚡, `Testimonial` ⚡, `ContactMessage`, `PricingPlan`, `HomeSlider` ⚡, `HomeVideo` |
+| Team & HR | `TeamMember` ⚡, `Expertise` ⚡, `MemberExpertise` |
 | Commerce & Sales | `Order`, `OrderAttribute`, `ServiceAttribute`, `Quote`, `QuoteRequest`, `SalesLead`, `AddonService`, `RewardTier`, `OrderReward`, `Payment`, `OrderStatusHistory`, `ServicePackage` |
 | Pricing Calculator | `InfrastructureTier`, `FeatureGroup`, `Feature`, `FeatureVariant`, `PricingWebPackage`, `PricingComparisonFeature`, `PricingHostingPlan`, `PricingDomainPrice`, `PricingDeploymentItem` |
 | Project Management | `Epic`, `Backlog`, `Task`, `TaskTag`, `TaskViolation`, `BugNote`, `Deployment`, `FigmaDemo`, `EnvFile`, `GitCommit`, `GscMetric`, `SocialPost`, `HandoverPackage`, `DailyStandup`, `ProjectMember` |
 | LP & Gamification | `CustomerPoint`, `PointTransaction`, `PointActivity`, `Advertisement`, `ReferralCode`, `ReferralTracking`, `LpAward`, `LpTransfer` |
 | Education (EDU) | `Course`, `Lesson`, `Instructor`, `Enrollment`, `Attendance`, `Feedback`, `StudentProgress`, `EduPayment` |
-| System & Misc | `AuditLog`, `Notification`, `SiteSetting`, `ServerAnalyticsEvent`, `CustomerWebsite`, `WebsiteStats`, `LandingPage`, `LandingSection` |
+| System & Misc | `AuditLog`, `Notification`, `SiteSetting`, `ServerAnalyticsEvent`, `CustomerWebsite`, `WebsiteStats`, `LandingPage`, `LandingSection`, `BlogPost` ⚡ |
+
+⚡ = i18n fields added (`titleEn`, `titleJa`, `titleKo`, `titleZh`, `descriptionEn`, etc.)
 
 ---
 
@@ -88,9 +108,42 @@ ceo(-1) > super_admin(0) > admin(1) > project_manager(2) > media(3) > qa(4) > me
 
 ---
 
+## 🌐 Internationalization (i18n)
+
+### Supported Locales
+`vi` (default) · `en` · `ja` · `ko` · `zh`
+
+### URL Strategy
+Subdirectory: `/vi/...`, `/en/...`, `/ja/...`, `/ko/...`, `/zh/...`
+
+### Backend Localization
+All 11 public content APIs support `?lang=`:
+```bash
+GET /api/v1/services?lang=en
+GET /api/services/[slug]?lang=ja
+GET /api/blog-posts?lang=zh
+```
+
+Key helpers in `@/lib/i18n/localization`:
+- `parseLocaleParam(searchParams)` — extract locale from query, default `vi`
+- `getLocalizedField(record, fieldName, locale)` — get localized field or VI fallback
+- `getLocalizedArray(record, fieldName, locale)` — same for array fields
+- `mapLocalizedService(record, locale)` — map full service record with `_localeUsed`
+- `mapLocalizedProject/TeamMember/BlogPost` — same for other models
+
+### Middleware
+Edge middleware at `src/middleware.ts` handles locale detection:
+1. Cookie `NEXT_LOCALE` → 2. Accept-Language header → 3. Default `vi`
+
+### Frontend Message Files
+- `messages/vi.json`, `messages/en.json` — full translations
+- `messages/ja.json`, `messages/ko.json`, `messages/zh.json` — Phase 1 ready
+
+
+
 ## 📋 Active Plan
 
-See `PLAN.md` for the full roadmap. **Core plan complete.**
+See `docs/ADR-2026-001-i18n-strategy.md` for i18n roadmap (Phase 0 ✅ complete, Phase 1/2/3 pending).
 
 For FE rebuild + integration process, follow:
 - `.claude/rules/fe-master-index.md` — mục lục tổng của toàn bộ bộ tài liệu FE
@@ -140,7 +193,8 @@ For FE rebuild + integration process, follow:
 3. **Error handling:** Always `try/catch` + `handleError()`
 4. **No JSX/React in API routes** — backend is pure TypeScript
 5. **TypeScript strict mode** — no `any`
-6. **API-only app** — no public pages, no admin CMS pages
+6. **i18n:** All public content APIs support `?lang=vi|en|ja|ko|zh`. Default = `vi`. Use `getLocalizedField()` from `@/lib/i18n/localization` for field-level localization.
+7. **API-only app** — public pages scaffolded but not fully wired to BE
 
 ---
 
