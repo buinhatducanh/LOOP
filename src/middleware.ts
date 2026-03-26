@@ -53,9 +53,9 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // ─── 5) Root / with locale prefix → pass through ─────────────────────────
-  // E.g. /vi, /en → pass through to app/layout
-  if (pathname === "/vi" || pathname === "/en") {
+  // ─── 5) Root /{locale} bare paths → pass through ─────────────────────────
+  // E.g. /vi, /en, /ja, /ko, /zh → pass through to app/layout
+  if (LOCALE_PREFIXES.includes(firstSegment) && pathname.split("/").length === 2) {
     return NextResponse.next();
   }
 
