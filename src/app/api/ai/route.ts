@@ -104,7 +104,7 @@ async function fetchTeam() {
       skills: true, experience: true, coverImage: true, quote: true,
       isFeatured: true, isWorking: true,
       memberExpertise: {
-        include: { expertise: { select: { name: true, nameVi: true, category: true } } },
+        include: { expertise: { select: { name: true, category: true, icon: true } } },
       },
       createdAt: true, updatedAt: true,
     },

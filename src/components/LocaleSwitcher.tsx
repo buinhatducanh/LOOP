@@ -39,7 +39,13 @@ export default function LocaleSwitcher() {
             key={loc}
             onClick={() => handleLocaleChange(loc)}
             aria-pressed={isActive}
-            aria-label={`Switch to ${loc === "vi" ? "Tiếng Việt" : "English"}`}
+            aria-label={`Switch to ${
+          loc === "vi" ? "Tiếng Việt" :
+          loc === "en" ? "English" :
+          loc === "ja" ? "日本語" :
+          loc === "ko" ? "한국어" :
+          "中文"
+        }`}
             style={{
               fontWeight: isActive ? "bold" : "normal",
               opacity: isActive ? 1 : 0.7,
@@ -49,7 +55,7 @@ export default function LocaleSwitcher() {
               padding: "0.25rem 0.5rem",
             }}
           >
-            {loc === "vi" ? "VI" : "EN"}
+            {loc === "vi" ? "VI" : loc === "en" ? "EN" : loc === "ja" ? "JA" : loc === "ko" ? "KO" : "ZH"}
           </button>
         );
       })}

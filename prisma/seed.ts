@@ -395,43 +395,41 @@ async function seedExpertises() {
 
   const expertises = [
     // Frontend
-    { name: "React", nameVi: "React", category: "frontend", categoryVi: "Frontend", icon: "Code2", sortOrder: 1 },
-    { name: "Next.js", nameVi: "Next.js", category: "frontend", categoryVi: "Frontend", icon: "Globe", sortOrder: 2 },
-    { name: "Vue.js", nameVi: "Vue.js", category: "frontend", categoryVi: "Frontend", icon: "Layout", sortOrder: 3 },
-    { name: "Tailwind CSS", nameVi: "Tailwind CSS", category: "frontend", categoryVi: "Frontend", icon: "Palette", sortOrder: 4 },
-    { name: "HTML/CSS", nameVi: "HTML/CSS", category: "frontend", categoryVi: "Frontend", icon: "FileCode2", sortOrder: 5 },
-    { name: "TypeScript", nameVi: "TypeScript", category: "frontend", categoryVi: "Frontend", icon: "Braces", sortOrder: 6 },
-    
+    { name: "React", category: "frontend", icon: "Code2", sortOrder: 1 },
+    { name: "Next.js", category: "frontend", icon: "Globe", sortOrder: 2 },
+    { name: "Vue.js", category: "frontend", icon: "Layout", sortOrder: 3 },
+    { name: "Tailwind CSS", category: "frontend", icon: "Palette", sortOrder: 4 },
+    { name: "HTML/CSS", category: "frontend", icon: "FileCode2", sortOrder: 5 },
+    { name: "TypeScript", category: "frontend", icon: "Braces", sortOrder: 6 },
+
     // Backend
-    { name: "Node.js", nameVi: "Node.js", category: "backend", categoryVi: "Backend", icon: "Server", sortOrder: 11 },
-    { name: "NestJS", nameVi: "NestJS", category: "backend", categoryVi: "Backend", icon: "Box", sortOrder: 12 },
-    { name: "Python", nameVi: "Python", category: "backend", categoryVi: "Backend", icon: "Terminal", sortOrder: 13 },
-    { name: "Java", nameVi: "Java", category: "backend", categoryVi: "Backend", icon: "Coffee", sortOrder: 14 },
-    { name: "Go", nameVi: "Go", category: "backend", categoryVi: "Backend", icon: "Zap", sortOrder: 15 },
-    { name: "PostgreSQL", nameVi: "PostgreSQL", category: "backend", categoryVi: "Backend", icon: "Database", sortOrder: 16 },
-    { name: "MongoDB", nameVi: "MongoDB", category: "backend", categoryVi: "Backend", icon: "ServerCrash", sortOrder: 17 },
-    
+    { name: "Node.js", category: "backend", icon: "Server", sortOrder: 11 },
+    { name: "NestJS", category: "backend", icon: "Box", sortOrder: 12 },
+    { name: "Python", category: "backend", icon: "Terminal", sortOrder: 13 },
+    { name: "Java", category: "backend", icon: "Coffee", sortOrder: 14 },
+    { name: "Go", category: "backend", icon: "Zap", sortOrder: 15 },
+    { name: "PostgreSQL", category: "backend", icon: "Database", sortOrder: 16 },
+    { name: "MongoDB", category: "backend", icon: "ServerCrash", sortOrder: 17 },
+
     // DevOps & Tools
-    { name: "Docker", nameVi: "Docker", category: "devops", categoryVi: "DevOps", icon: "Container", sortOrder: 21 },
-    { name: "Kubernetes", nameVi: "Kubernetes", category: "devops", categoryVi: "DevOps", icon: "Network", sortOrder: 22 },
-    { name: "AWS", nameVi: "AWS", category: "devops", categoryVi: "DevOps", icon: "Cloud", sortOrder: 23 },
-    { name: "Git", nameVi: "Git", category: "devops", categoryVi: "DevOps", icon: "GitBranch", sortOrder: 24 },
-    { name: "CI/CD", nameVi: "CI/CD", category: "devops", categoryVi: "DevOps", icon: "Workflow", sortOrder: 25 },
-    
+    { name: "Docker", category: "devops", icon: "Container", sortOrder: 21 },
+    { name: "Kubernetes", category: "devops", icon: "Network", sortOrder: 22 },
+    { name: "AWS", category: "devops", icon: "Cloud", sortOrder: 23 },
+    { name: "Git", category: "devops", icon: "GitBranch", sortOrder: 24 },
+    { name: "CI/CD", category: "devops", icon: "Workflow", sortOrder: 25 },
+
     // Design & Others
-    { name: "UI/UX Design", nameVi: "Thiết kế UI/UX", category: "design", categoryVi: "Thiết kế", icon: "PenTool", sortOrder: 31 },
-    { name: "Figma", nameVi: "Figma", category: "design", categoryVi: "Thiết kế", icon: "Figma", sortOrder: 32 },
-    { name: "Agile/Scrum", nameVi: "Agile/Scrum", category: "management", categoryVi: "Quản lý", icon: "Kanban", sortOrder: 41 },
-    { name: "System Architecture", nameVi: "Kiến trúc hệ thống", category: "architecture", categoryVi: "Kiến trúc", icon: "Component", sortOrder: 42 },
+    { name: "UI/UX Design", category: "design", icon: "PenTool", sortOrder: 31 },
+    { name: "Figma", category: "design", icon: "Figma", sortOrder: 32 },
+    { name: "Agile/Scrum", category: "management", icon: "Kanban", sortOrder: 41 },
+    { name: "System Architecture", category: "architecture", icon: "Component", sortOrder: 42 },
   ];
 
   for (const skill of expertises) {
     await prisma.expertise.create({
       data: {
         name: skill.name,
-        nameVi: skill.nameVi,
         category: skill.category,
-        categoryVi: skill.categoryVi,
         icon: skill.icon,
         isActive: true,
         sortOrder: skill.sortOrder,

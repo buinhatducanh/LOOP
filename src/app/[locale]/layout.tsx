@@ -46,13 +46,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     alternates: {
       canonical: `${baseUrl}/${locale}`,
       languages: Object.fromEntries(
-        (routing.locales as unknown as string[]).map((loc: string) => [loc, `${baseUrl}/${loc}`])
+        (routing.locales).map((loc: string) => [loc, `${baseUrl}/${loc}`])
       ),
     },
     openGraph: {
       siteName: seo.siteName ?? "LOOP Agency",
       locale: locale,
-      alternateLocale: (routing.locales as unknown as string[]).filter((loc: string) => loc !== locale),
+      alternateLocale: (routing.locales).filter((loc: string) => loc !== locale),
       type: "website",
     },
   };
