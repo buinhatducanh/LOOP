@@ -338,7 +338,7 @@
         "openSearch": "打开搜索",
         "placeholder": "搜索服务、团队、项目...",
         "hint": "开始输入以搜索",
-        "examples": "试试："网页设计"、"CEO"、"张三"",
+        "examples": "试试：\u201c网页设计\u201d、\u201cCEO\u201d、\u201c张三\u201d",
         "noResults": "未找到结果",
         "tryDifferent": "尝试不同的关键词",
         "showingResults": "找到{{count}}个结果",
