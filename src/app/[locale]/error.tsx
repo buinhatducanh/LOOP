@@ -6,6 +6,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { useLocale } from "next-intl";
 
 type Props = {
   error: Error & { digest?: string };
@@ -13,13 +14,15 @@ type Props = {
 };
 
 export default function ErrorPage({ error, reset }: Props) {
+  const locale = useLocale() ?? "vi";
+
   useEffect(() => {
     // Log to error monitoring (Sentry, etc.)
     console.error("[locale] segment error:", error);
   }, [error]);
 
   return (
-    <html lang="vi">
+    <html lang={locale}>
       <body style={{ fontFamily: "system-ui, sans-serif", padding: "2rem", textAlign: "center" }}>
         <h1 style={{ fontSize: "2rem", marginBottom: "1rem" }}>Đã xảy ra lỗi</h1>
         <p style={{ color: "#666", marginBottom: "1.5rem" }}>
