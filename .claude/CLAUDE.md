@@ -92,6 +92,43 @@ ceo(-1) > super_admin(0) > admin(1) > project_manager(2) > media(3) > qa(4) > me
 
 See `PLAN.md` for the full roadmap. **Core plan complete.**
 
+For FE rebuild + integration process, follow:
+- `.claude/rules/fe-master-index.md` — mục lục tổng của toàn bộ bộ tài liệu FE
+- `.claude/rules/fe-roadmap.md` — lộ trình theo phase
+- `.claude/rules/fe-delivery-process.md` — quy trình PO → Design → Dev → QA → Release
+- `.claude/rules/fe-architecture-microservices.md` — kiến trúc tích hợp + boundary tách service
+- `.claude/rules/fe-sprint-template.md` — template vận hành sprint tuần
+- `.claude/rules/fe-week-01-plan.md` → `.claude/rules/fe-week-12-plan.md` — bộ kế hoạch thực thi 12 tuần
+- `.claude/rules/fe-i18n-implementation-plan.md` — triển khai i18n 5 ngôn ngữ (VI–EN–JA–KO–ZH) trong 5 tuần
+- `.claude/rules/fe-weekly-status-report.md` — template báo cáo tuần
+- `.claude/rules/fe-risk-register-template.md` — mẫu quản trị rủi ro
+- `.claude/rules/fe-release-checklist.md` — checklist phát hành production
+- `.claude/rules/fe-release-runbook.md` — runbook thao tác release
+- `.claude/rules/fe-kpi-scorecard-template.md` — scorecard KPI vận hành
+- `.claude/rules/fe-capacity-planning-template.md` — template capacity planning
+- `.claude/rules/fe-retrospective-template.md` — template retrospective
+- `.claude/rules/fe-data-contract-checklist.md` — checklist data contract FE/BE
+- `.claude/rules/fe-governance-policy.md` — governance policy (RACI/SLA/escalation/change control)
+- `.claude/rules/fe-change-request-template.md` — mẫu CR quản lý thay đổi scope
+- `.claude/rules/fe-incident-playbook.md` — playbook xử lý sự cố
+- `.claude/rules/fe-communication-plan.md` — kế hoạch giao tiếp liên team
+- `.claude/rules/fe-api-integration-playbook.md` — playbook tích hợp API
+- `.claude/rules/fe-environment-matrix.md` — ma trận môi trường
+- `.claude/rules/fe-feature-flag-policy.md` — chính sách feature flag
+- `.claude/rules/fe-code-review-checklist.md` — checklist review code
+- `.claude/rules/fe-security-review-checklist.md` — checklist security review
+- `.claude/rules/fe-dependency-policy.md` — chính sách dependency
+- `.claude/rules/fe-testing-playbook.md` — playbook testing
+- `.claude/rules/fe-adr-template.md` — mẫu ADR kiến trúc
+- `.claude/rules/fe-handover-checklist.md` — checklist bàn giao
+- `.claude/rules/fe-doc-maintenance-policy.md` — chính sách bảo trì tài liệu
+- `.claude/rules/fe-branching-strategy.md` — chiến lược branch/merge
+- `.claude/rules/fe-backlog-triage-policy.md` — policy backlog triage
+- `.claude/rules/fe-support-playbook.md` — playbook support sau release
+- `.claude/rules/fe-meeting-agendas.md` — mẫu agenda họp vận hành
+- `.claude/rules/fe-onboarding-guide.md` — hướng dẫn onboarding thành viên mới
+- `.claude/rules/fe-master-index.md` là nguồn ưu tiên để điều hướng toàn bộ bộ tài liệu.
+
 ---
 
 ## ⚡ Key Conventions
