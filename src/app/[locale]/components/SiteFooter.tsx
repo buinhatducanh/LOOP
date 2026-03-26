@@ -10,8 +10,8 @@ type Props = {
 };
 
 export default async function SiteFooter({ locale }: Props) {
-  const t = await getTranslations("footer");
-  const tNav = await getTranslations("nav");
+  const t = await getTranslations("Footer");
+  const tNav = await getTranslations("Navigation");
   const year = new Date().getFullYear();
 
   return (
@@ -36,14 +36,14 @@ export default async function SiteFooter({ locale }: Props) {
         <div>
           <h3 style={{ fontSize: "1.25rem", marginBottom: "0.5rem" }}>LOOP</h3>
           <p style={{ color: "#666", fontSize: "0.875rem", lineHeight: 1.6 }}>
-            {t("tagline")}
+            {t("description")}
           </p>
         </div>
 
         {/* Quick Links */}
         <div>
           <h4 style={{ fontSize: "0.875rem", fontWeight: "bold", marginBottom: "0.75rem", textTransform: "uppercase" as const, letterSpacing: "0.05em" }}>
-            {t("quickLinks")}
+            {t("services")}
           </h4>
           <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "0.5rem" }}>
             {[
@@ -84,17 +84,17 @@ export default async function SiteFooter({ locale }: Props) {
         {/* Legal */}
         <div>
           <h4 style={{ fontSize: "0.875rem", fontWeight: "bold", marginBottom: "0.75rem", textTransform: "uppercase" as const, letterSpacing: "0.05em" }}>
-            {t("legal")}
+            Legal
           </h4>
           <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "0.5rem" }}>
             <li>
               <a href={`/${locale}/privacy`} style={{ color: "#666", textDecoration: "none", fontSize: "0.875rem" }}>
-                {t("privacy")}
+                {t("privacyPolicy")}
               </a>
             </li>
             <li>
               <a href={`/${locale}/terms`} style={{ color: "#666", textDecoration: "none", fontSize: "0.875rem" }}>
-                {t("terms")}
+                {t("termsOfService")}
               </a>
             </li>
           </ul>
@@ -113,7 +113,7 @@ export default async function SiteFooter({ locale }: Props) {
           fontSize: "0.875rem",
         }}
       >
-        {t("copyright", { year })}
+        {t("rights", { year })}
       </div>
     </footer>
   );

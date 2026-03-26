@@ -427,5 +427,9 @@
         "noContent": "コンテンツは準備中です。",
         "backToList": "一覧に戻る",
         "relatedTitle": "関連記事"
+    },
+    "localeSwitcher": {
+        "label": "言語を切り替える",
+        "current": "現在の言語"
     }
 }

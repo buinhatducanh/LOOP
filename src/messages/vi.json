@@ -429,5 +429,9 @@
         "noContent": "Nội dung đang được cập nhật.",
         "backToList": "Quay lại danh sách",
         "relatedTitle": "Bài viết liên quan"
+    },
+    "localeSwitcher": {
+        "label": "Chuyển ngôn ngữ",
+        "current": "Ngôn ngữ hiện tại"
     }
 }

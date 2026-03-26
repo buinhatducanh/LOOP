@@ -35,16 +35,16 @@ export default async function NotFound({ params }: Props) {
 
   setRequestLocale(safeLocale);
 
-  const t = await getTranslations("errors.pageNotFound");
+  const t = await getTranslations("NotFound");
 
   return (
     <html lang={safeLocale}>
       <body style={{ fontFamily: "system-ui, sans-serif", padding: "2rem", textAlign: "center" }}>
         <h1 style={{ fontSize: "4rem", marginBottom: "1rem" }}>404</h1>
         <h2>{t("title")}</h2>
-        <p>{t("message")}</p>
+        <p>{t("description")}</p>
         <a href={`/${safeLocale}`} style={{ color: "blue", textDecoration: "underline" }}>
-          {t("backHome")}
+          {t("backToHome")}
         </a>
       </body>
     </html>

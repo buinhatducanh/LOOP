@@ -427,5 +427,9 @@
         "noContent": "内容准备中。",
         "backToList": "返回列表",
         "relatedTitle": "相关文章"
+    },
+    "localeSwitcher": {
+        "label": "切换语言",
+        "current": "当前语言"
     }
 }

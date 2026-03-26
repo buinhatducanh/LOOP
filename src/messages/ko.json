@@ -427,5 +427,9 @@
         "noContent": "콘텐츠 준비 중입니다.",
         "backToList": "목록으로 돌아가기",
         "relatedTitle": "관련 게시물"
+    },
+    "localeSwitcher": {
+        "label": "언어 변경",
+        "current": "현재 언어"
     }
 }

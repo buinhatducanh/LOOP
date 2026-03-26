@@ -427,5 +427,9 @@
         "noContent": "Content coming soon.",
         "backToList": "Back to articles",
         "relatedTitle": "Related Articles"
+    },
+    "localeSwitcher": {
+        "label": "Switch language",
+        "current": "Current language"
     }
 }
