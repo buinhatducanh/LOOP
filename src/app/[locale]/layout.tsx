@@ -5,11 +5,15 @@
  *
  * NOTE: This layout is for FE pages. The backend API-only app
  * does NOT use this layout. API routes remain at /api/* without locale prefix.
+ *
+ * IMPORTANT: Locale is read from next-intl context (getLocale), NOT from params,
+ * because params.locale is undefined during static prerendering.
+ * next-intl provides locale context through NextIntlClientProvider.
  */
 
 import type { Metadata } from "next";
 import { NextIntlClientProvider } from "next-intl";
-import { getMessages, setRequestLocale } from "next-intl/server";
+import { getMessages, setRequestLocale, getLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
 
@@ -18,13 +22,16 @@ type Props = {
   params: Promise<{ locale: string }>;
 };
 
-export function generateStaticParams() {
-  return routing.locales.map((locale) => ({ locale }));
-}
-
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  // Locale from params for metadata generation (params ARE available in generateMetadata)
   const { locale } = await params;
-  const messages = await getMessages();
+
+  let messages;
+  try {
+    messages = await getMessages();
+  } catch {
+    messages = {};
+  }
 
   const seo = (messages as Record<string, Record<string, string>>).seo ?? {};
   const title = seo.defaultTitle ?? "LOOP Agency";
@@ -42,19 +49,20 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     alternates: {
       canonical: `${baseUrl}/${locale}`,
       languages: Object.fromEntries(
-        routing.locales.map((loc: string) => [loc, `${baseUrl}/${loc}`])
+        (routing.locales as unknown as string[]).map((loc: string) => [loc, `${baseUrl}/${loc}`])
       ),
     },
     openGraph: {
       siteName: seo.siteName ?? "LOOP Agency",
       locale: locale,
-      alternateLocale: routing.locales.filter((loc: string) => loc !== locale),
+      alternateLocale: (routing.locales as unknown as string[]).filter((loc: string) => loc !== locale),
       type: "website",
     },
   };
 }
 
 export default async function LocaleLayout({ children, params }: Props) {
+  // Locale from params for validation
   const { locale } = await params;
 
   // Validate locale — show 404 for invalid locales
@@ -65,7 +73,7 @@ export default async function LocaleLayout({ children, params }: Props) {
   // Enable static rendering for this locale
   setRequestLocale(locale);
 
-  // Load messages for the current locale
+  // Load messages — locale resolved from request context (params or cookie)
   const messages = await getMessages();
 
   return (
