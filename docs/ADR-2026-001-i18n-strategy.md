@@ -182,7 +182,22 @@ Sequence unchanged from plan.
 - [x] Admin CRUD routes accept i18n fields automatically (pass-through to Prisma)
 - [x] Blog posts: `blog-posts/` route (DB-backed) separate from `v1/blog` (Sanity CMS)
 
-**Branch:** `feature/i18n-vi-en` (12 commits ahead of `master`)
+**Milestone 3 — Public Pages Wired to DB (DONE — 2026-03-27):**
+- [x] `/[locale]` (home): Hero, Stats, Services, Portfolio, Why Us, Team, Testimonials, CTA — all DB-driven
+- [x] `/[locale]/about`: AboutPage namespace, story, values, CTA
+- [x] `/[locale]/services`: ServicesPage namespace, service list with DB + localized fields
+- [x] `/[locale]/services/[slug]`: ServiceDetailPage namespace, features, tech, related services
+- [x] `/[locale]/portfolio`: PortfolioPage namespace, project cards with DB
+- [x] `/[locale]/portfolio/[slug]`: ProjectDetailPage namespace, screenshots, features, results
+- [x] `/[locale]/blog`: BlogPage namespace, post list with DB
+- [x] `/[locale]/blog/[slug]`: Post detail with author relation, related posts
+- [x] `/[locale]/team`: TeamPage namespace, member cards with DB
+- [x] `/[locale]/contact`: ContactPage namespace, contact form POST /api/contact (client component)
+- [x] `/[locale]/pricing`: PricingPage namespace, pricing cards + comparison table
+- [x] All pages build clean (`✓ Compiled successfully`, 109 static pages)
+- [x] `src/messages/` synced to `messages/` (5 locale files, 211+ keys each)
+
+**Branch:** `feature/i18n-vi-en` (14 commits ahead of `master`)
 
 ### ⏳ Phase 1 — JA + KO Expansion (PENDING)
 
