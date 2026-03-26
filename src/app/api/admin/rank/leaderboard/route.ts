@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { computeRankFieldsFromLp } from "@/lib/rank/xp";
-import { RANKS } from "@/components/team/teamRanks";
+import { RANKS } from "@/lib/rank/ranks";
 
 // GET /api/admin/rank/leaderboard
 // Returns all active team members with real rank data derived from approved LpAwards.

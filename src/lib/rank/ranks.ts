@@ -191,7 +191,7 @@ export function getRankSymbol(rank: RankKey): string {
   return RANKS[rank].symbol;
 }
 
-// ── Role symbol map ─────────────────────────────────────────────────────────
+// ── Role symbol map ──────────────────────────────────────────────────────────
 export const ROLE_SYMBOLS: Record<string, string> = {
   CEO:         '⬢',
   CTO:         '⬢',

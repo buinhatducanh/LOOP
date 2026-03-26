@@ -1,22 +1,26 @@
 # LOOP Company Website — Claude Code Context
 
-> **Project:** LOOP Agency Website (Next.js 15 + Prisma 7 + PostgreSQL/Neon)
+> **Project:** LOOP Agency Website — API-only Backend (Next.js 15 + Prisma 7 + PostgreSQL/Neon)
 > **Last Updated:** 2026-03-26
 > **Language:** Vietnamese (code comments, docs), English (variable names)
+> **Status:** Frontend removed — API-only app ready for new FE integration
 
 ---
 
 ## 🎯 Project Overview
 
-Full-stack Next.js website for LOOP digital agency. Monorepo pattern with:
-- **Frontend:** Next.js 15 App Router, React 18, Tailwind v4, Radix UI, Framer Motion, next-intl (i18n)
-- **Backend:** Next.js Route Handlers, Prisma 7 ORM, PostgreSQL (Neon)
-- **Auth:** Dual — JWT credentials + NextAuth v5 Google OAuth
-- **CMS:** Sanity 5
-- **Jobs:** Inngest (background jobs)
-- **Email:** Resend
-- **CDN:** Cloudinary
-- **Monitoring:** Sentry, Upstash Redis (rate limiting)
+Next.js 15 backend-only application exposing 198 REST API endpoints.
+All frontend pages (public + admin UI) have been removed. The new frontend
+will be a separate repo consuming these APIs.
+
+**Frontend removed (2026-03-26):**
+- `src/app/[locale]/` — public pages deleted
+- `src/app/admin/` — admin CMS pages deleted
+- `src/components/` — all UI components deleted
+- `src/i18n/`, `src/navigation/`, `src/hooks/`, `src/styles/` — deleted
+
+**Frontend kept:**
+- `src/app/(public)/figma/review/[token]/page.tsx` — client Figma review UI (no deps)
 
 ---
 
@@ -26,60 +30,45 @@ Full-stack Next.js website for LOOP digital agency. Monorepo pattern with:
 loop-website/
 ├── src/
 │   ├── app/
-│   │   ├── api/              # API Route Handlers (150+ endpoints)
-│   │   │   ├── admin/        # Protected admin API
-│   │   │   ├── auth/         # NextAuth Google OAuth
-│   │   │   ├── v1/           # Public v1 API contract
-│   │   │   ├── webhooks/     # GitHub, Vercel webhooks
-│   │   │   └── inngest/      # Background jobs
-│   │   ├── [locale]/         # Public pages (vi/en)
-│   │   └── admin/            # Admin/CMS pages
-│   ├── components/
-│   │   ├── ui/               # Base UI (Radix primitives)
-│   │   ├── admin/            # Admin components + AdminCrudList
-│   │   ├── cards/            # PricingCard, ProjectCard, ServiceCard
-│   │   └── shared/           # Navbar, Footer, HeroBanner, etc.
+│   │   ├── api/                    # API Route Handlers (198 endpoints)
+│   │   │   ├── admin/             # Protected admin API (JWT auth)
+│   │   │   ├── auth/              # NextAuth Google OAuth
+│   │   │   ├── v1/                # Public v1 API contract
+│   │   │   ├── webhooks/          # GitHub, Vercel, Loop webhooks
+│   │   │   └── inngest/           # Background jobs
+│   │   ├── (public)/figma/review/ # Client Figma review page
+│   │   ├── layout.tsx             # Minimal root layout (no i18n)
+│   │   ├── robots.ts              # robots.txt
+│   │   └── sitemap.ts             # sitemap.xml
 │   ├── lib/
-│   │   ├── auth/             # JWT, permissions, RBAC
-│   │   ├── api/              # Response helpers (✅ done)
-│   │   └── prisma.ts         # DB singleton
-│   ├── i18n/                 # next-intl config
-│   └── styles/               # CSS (Tailwind, fonts)
-├── prisma/schema.prisma      # 60+ models
-├── docs/                     # API documentation (TODO)
-└── PLAN.md                   # Migration/refresh plan
+│   │   ├── auth/                  # JWT, permissions, RBAC, edge auth
+│   │   ├── api/                   # Response helpers, ApiError class
+│   │   ├── db/queries.ts         # Prisma query helpers
+│   │   ├── prisma.ts             # DB singleton
+│   │   ├── rank/ranks.ts         # Rank system config (moved from components)
+│   │   ├── rate-limit.ts         # Upstash Redis rate limiting
+│   │   └── ...                    # services, email, sentry, etc.
+│   └── middleware.ts              # Edge middleware (API-only, no i18n)
+├── prisma/schema.prisma           # 60+ models
+├── docs/                          # 14 API documentation files
+└── PLAN.md                        # Migration/refactor plan
 ```
 
 ---
 
 ## 🗄️ Database — 60+ Prisma Models
 
-### Auth & RBAC
-- `User`, `Role`, `Permission`, `UserRole`, `Session`, `LoginHistory`
-
-### Core Content
-- `Service`, `Project`, `Testimonial`, `ContactMessage`, `PricingPlan`, `HomeSlider`, `HomeVideo`
-
-### Team & HR
-- `TeamMember`, `Expertise`, `MemberExpertise` (rank, XP, LP, HR data)
-
-### Commerce & Sales
-- `Order`, `OrderAttribute`, `ServiceAttribute`, `Quote`, `QuoteRequest`, `SalesLead`, `AddonService`, `RewardTier`, `OrderReward`, `Payment`, `OrderStatusHistory`, `ServicePackage`
-
-### Pricing Calculator
-- `InfrastructureTier`, `FeatureGroup`, `Feature`, `FeatureVariant`, `PricingWebPackage`, `PricingComparisonFeature`, `PricingHostingPlan`, `PricingDomainPrice`, `PricingDeploymentItem`
-
-### Project Management (JIRA-like)
-- `Epic`, `Backlog`, `Task`, `TaskTag`, `TaskViolation`, `BugNote`, `Deployment`, `FigmaDemo`, `EnvFile`, `GitCommit`, `GscMetric`, `SocialPost`, `HandoverPackage`, `DailyStandup`, `ProjectMember`
-
-### Loyalty Points (LP) & Gamification
-- `CustomerPoint`, `PointTransaction`, `PointActivity`, `Advertisement`, `ReferralCode`, `ReferralTracking`, `LpAward`, `LpTransfer`
-
-### Education (EDU)
-- `Course`, `Lesson`, `Instructor`, `Enrollment`, `Attendance`, `Feedback`, `StudentProgress`, `EduPayment`
-
-### System & Misc
-- `AuditLog`, `Notification`, `SiteSetting`, `ServerAnalyticsEvent`, `CustomerWebsite`, `WebsiteStats`, `LandingPage`, `LandingSection`
+| Category | Models |
+|----------|--------|
+| Auth & RBAC | `User`, `Role`, `Permission`, `UserRole`, `Session`, `LoginHistory` |
+| Core Content | `Service`, `Project`, `Testimonial`, `ContactMessage`, `PricingPlan`, `HomeSlider`, `HomeVideo` |
+| Team & HR | `TeamMember`, `Expertise`, `MemberExpertise` |
+| Commerce & Sales | `Order`, `OrderAttribute`, `ServiceAttribute`, `Quote`, `QuoteRequest`, `SalesLead`, `AddonService`, `RewardTier`, `OrderReward`, `Payment`, `OrderStatusHistory`, `ServicePackage` |
+| Pricing Calculator | `InfrastructureTier`, `FeatureGroup`, `Feature`, `FeatureVariant`, `PricingWebPackage`, `PricingComparisonFeature`, `PricingHostingPlan`, `PricingDomainPrice`, `PricingDeploymentItem` |
+| Project Management | `Epic`, `Backlog`, `Task`, `TaskTag`, `TaskViolation`, `BugNote`, `Deployment`, `FigmaDemo`, `EnvFile`, `GitCommit`, `GscMetric`, `SocialPost`, `HandoverPackage`, `DailyStandup`, `ProjectMember` |
+| LP & Gamification | `CustomerPoint`, `PointTransaction`, `PointActivity`, `Advertisement`, `ReferralCode`, `ReferralTracking`, `LpAward`, `LpTransfer` |
+| Education (EDU) | `Course`, `Lesson`, `Instructor`, `Enrollment`, `Attendance`, `Feedback`, `StudentProgress`, `EduPayment` |
+| System & Misc | `AuditLog`, `Notification`, `SiteSetting`, `ServerAnalyticsEvent`, `CustomerWebsite`, `WebsiteStats`, `LandingPage`, `LandingSection` |
 
 ---
 
@@ -99,29 +88,9 @@ ceo(-1) > super_admin(0) > admin(1) > project_manager(2) > media(3) > qa(4) > me
 
 ---
 
-## 🎨 Design System
-
-### Colors
-- Primary: `hsl(var(--primary))` (configurable via CSS vars)
-- Accent: `#ff7832` (orange)
-- Background: `hsl(var(--background))`
-- Muted: `hsl(var(--muted))`
-
-### Typography
-- Font: system-ui with CSS vars for size/scale
-- Vietnamese diacritics must render correctly
-
-### UI Primitives
-All via Radix UI + Tailwind v4. Components: Button, Dialog, Sheet, Table, Select, Badge, Card, Avatar, etc.
-
----
-
 ## 📋 Active Plan
 
-See `PLAN.md` for the full migration/refactor roadmap. Current status:
-- **✅ Done:** API response helpers, auth helpers, `/auth/me` endpoint
-- **⚠️ Partial:** Error handling consistency, public API response standardization
-- **❌ TODO:** docs/ folder, `errors.ts`, rate limiting, CI/CD, docs tooling
+See `PLAN.md` for the full roadmap. **Core plan complete.**
 
 ---
 
@@ -130,12 +99,11 @@ See `PLAN.md` for the full migration/refactor roadmap. Current status:
 1. **API Responses:** Always use helpers from `@/lib/api`:
    - Success: `ok(data)`, `list(data, pagination)`, `json(payload)`
    - Errors: `badRequest()`, `unauthorized()`, `notFound()`, `handleError(err)`
-2. **Auth:** Always call `requirePermission()` or `requireAuth()` in API routes
+2. **Auth:** Always call `requirePermission()` in admin API routes
 3. **Error handling:** Always `try/catch` + `handleError()`
-4. **No JSX/React in API routes** — backend is pure logic
+4. **No JSX/React in API routes** — backend is pure TypeScript
 5. **TypeScript strict mode** — no `any`
-6. **i18n:** Public pages use `[locale]` routing (vi/en)
-7. **Admin:** No locale prefix, separate `/admin/*` routing
+6. **API-only app** — no public pages, no admin CMS pages
 
 ---
 
@@ -147,7 +115,7 @@ npm run dev          # Start dev server
 npm run build        # Build production
 npx prisma studio    # Open DB GUI
 npm run lint         # ESLint
-npm run type-check   # tsc --noEmit
+npx tsc --noEmit     # Type check
 ```
 
 ---

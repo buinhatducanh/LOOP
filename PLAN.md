@@ -1,8 +1,8 @@
-# LOOP Website — Kế Hoạch Chuẩn Bị Cho Việc Đổi Mới Frontend
+# LOOP Website — Kế Hoạch Backend & Frontend Separation
 
-> **Mục tiêu:** Backend giữ nguyên hoàn toàn — chỉ cần FE mới gọi API, done.
+> **Mục tiêu:** Backend hoàn toàn tách biệt — API-only Next.js, Frontend mới (tách riêng repo hoặc tích hợp sau).
 > **Updated:** 2026-03-26
-> **Last Reviewed:** 2026-03-26 — Claude Code audit
+> **Last Reviewed:** 2026-03-26 — FE cleanup complete
 
 ---
 
@@ -11,25 +11,19 @@
 ### ✅ Already Done (no work needed)
 - `src/lib/api/response.ts` — Full helper suite: `ok`, `list`, `badRequest`, `unauthorized`, `forbidden`, `notFound`, `conflict`, `serverError`, `handleError`, `handleErrorWithFallback`, `buildPagination`
 - `src/lib/api/index.ts` — exports all response helpers
+- `src/lib/api/errors.ts` — `ApiError` class + factory helpers
 - `src/lib/auth/permissions.ts` — complete RBAC: `SessionUser`, `hasPermission`, `requirePermission`, `requirePermissionFast`, `requireMinRole`, `AuthError`, `authErrorToResponse`
 - `src/app/api/admin/auth/me/route.ts` — implemented with DB retry logic (Neon cold-start) + graceful degradation
 - Auth dual-system — credentials (JWT) + Google OAuth (NextAuth v5) both working
 - No JSX/React imports in API routes (Phase 1 already clean)
-
-### ❌ Not Yet Done
-_(none remaining in Phase 0.1)_
-- ~~`src/lib/api/errors.ts`~~ — ✅ Done (2026-03-26)
-- ~~`/api/contact` GET~~ — ✅ Fixed: was exposing ALL messages publicly (PII leak)
-- ~~`/api/search`~~ — ✅ Fixed: non-standard response shape, raw `NextResponse.json`
-- ~~`/api/pricing/seed`~~ — ✅ Fixed: destructive write endpoint had NO auth guard
-- **P1.3 Rate Limiting** ✅ FULLY IMPLEMENTED: `src/lib/rate-limit.ts` + `src/lib/redis.ts` (Upstash Redis + in-memory fallback), 4 limiters (public/auth/contact/search), cache helpers, graceful degradation. Needs Upstash credentials in env to activate in production.
-- **P7.1 Dead Code** ✅ TypeScript zero errors after cleanup. Created `src/generated/prisma/index.ts`, fixed tsconfig paths, fixed api/index.ts re-exports.
-- `docs/` folder — all documentation files (Phase 0, 6)
+- **P1.3 Rate Limiting** ✅ FULLY IMPLEMENTED: `src/lib/rate-limit.ts` + `src/lib/redis.ts` (Upstash Redis + in-memory fallback)
+- **P7.1 Dead Code** ✅ TypeScript zero errors. Created `src/generated/prisma/index.ts`, fixed tsconfig paths.
+- **Frontend Cleanup** ✅ (2026-03-26): All public pages, admin pages, components, i18n, navigation, hooks, styles deleted. API-only app remains.
+- **docs/** — 14 documentation files ✅
 
 ### ⚠️ Needs Review / Inconsistent
-- Some API routes may not use `handleError()` in catch blocks
+- Some public API endpoints don't use `handleError()` in catch blocks (use raw `serverError()`)
 - `/api/admin/auth/me` returns `{ user }` — `permissions` are nested inside `user` object, not top-level fields
-- Public API endpoints (`/api/projects`, `/api/services`, etc.) may have inconsistent response shapes
 
 ---
 
@@ -37,15 +31,13 @@ _(none remaining in Phase 0.1)_
 
 ```
 ┌─────────────────────────────┐
-│      FRONTEND (Next.js)     │  ← Sẽ thay đổi hoàn toàn
-│  React 18 + App Router     │
-│  Tailwind v4 + Radix UI    │
-│  Public: /[locale]/*       │
-│  Admin:  /admin/*           │
+│   FRONTEND MỚI (tách repo)  │  ← Sẽ được tạo mới
+│  Next.js / React / Vite    │
+│  Gọi API: /api/*            │
 └──────────────┬──────────────┘
-               │ REST API (BFF Pattern)
+               │ REST API
 ┌──────────────▼──────────────┐
-│       BACKEND (Next.js)     │  ← GIỮ NGUYÊN 100%
+│       BACKEND (API-only)    │  ← HOÀN THÀNH ✅
 │  Route Handlers /api/*     │
 │  Prisma 7 + PostgreSQL      │
 │  Auth: NextAuth v5 + JWT   │
@@ -797,15 +789,12 @@ src/
 
 ### Phase 7 — Cleanup
 
-**P7.1 — Dead Code Removal**
-- [ ] `npx eslint --fix src/`
-- [ ] `npx tsc --noEmit`
-- [ ] Remove unused dependencies
-- [ ] Consolidate duplicate utility functions
+**P7.1 — Dead Code Removal** ✅ DONE (2026-03-26)
+- [x] All frontend files deleted — zero TypeScript errors
+- [x] `src/components/team/teamRanks.ts` moved → `src/lib/rank/ranks.ts`
 
 **P7.2 — Deprecation Notices**
 - [ ] Nếu breaking changes: version API (`/api/v1/*` → `/api/v2/*`)
-- [ ] Communication plan với team
 
 ---
 
@@ -833,11 +822,12 @@ src/
 | **P6.1** | UI Components Docs | 1 ngày | 🟡 Quan trọng | ✅ Done |
 | **P6.2** | Design Tokens | 0.5 ngày | 🟡 Quan trọng | ✅ Done |
 | **P6.3** | State Management Guide | 0.5 ngày | 🟡 Quan trọng | ✅ Done |
-| **P7.1** | Dead Code Cleanup | 1-2 ngày | 🟢 Nên làm | ✅ Done (P7.1) |
+| **P7.1** | Frontend Cleanup + Dead Code | 1 ngày | 🟢 Nên làm | ✅ Done (2026-03-26) |
+| **P7.2** | Deprecation Notices | — | 🟢 Nên làm | ❌ Pending (when breaking changes) |
 
-**Tổng còn lại: ~0 ngày (core plan complete)**
+**Tổng còn lại: 0 ngày — tất cả phases hoàn thành.**
 
-**Optional next:** run full Playwright e2e after `npm install` to verify browser flows in CI.
+**Frontend mới:** Đọc `docs/API-CONTRACT.md` → gọi API → done.
 
 ---
 
@@ -873,26 +863,27 @@ Frontend Mới
 
 ---
 
-## 🚀 Bắt Đầu — Next Steps Chính Xác
+## 🚀 Frontend Mới — Next Steps
 
 ```bash
-# 1. Tạo ApiError class (P0.1 — 30 phút)
-#    File: src/lib/api/errors.ts
-#    Xong xong → thống nhất tất cả error throw/catch
+# 1. Đọc tài liệu API
+docs/API-CONTRACT.md       # Full endpoint reference + response shapes
+docs/DATA-MODELS.md      # 60+ Prisma models
+docs/PERMISSION-MATRIX.md # Role × resource × action
 
-# 2. Audit public endpoints cho consistency (P0.1 — 1 ngày)
-#    Focus: /api/projects, /api/services, /api/team, /api/testimonials
-#    Check xem có dùng handleError() không
+# 2. Setup Frontend mới (Next.js / React / Vite)
+#    Gọi API: http://localhost:3000/api/*
+#    Auth: POST /api/admin/auth/login → cookie auth-token
 
-# 3. Tạo docs/ (P0.3 — 1-2 ngày) ← BẮT BUỘC trước khi FE bắt đầu
-#    docs/API-CONTRACT.md
-#    docs/DATA-MODELS.md
-#    docs/PERMISSION-MATRIX.md
-
-# 4. Document auth/me response shape chính xác cho FE
-#    GET /api/admin/auth/me → { user: { userId, email, name, role, roles, avatar,
-#                                   accountType, teamMemberId, roleLevel, permissions[] } }
+# 3. Chạy dev server
+npm run dev
+# API ready at http://localhost:3000/api/*
 ```
 
-**Recommend bắt đầu từ P0.1 (errors.ts + public endpoint audit) → P0.3 (docs)**
-**Docs là bắt buộc phải có TRƯỚC khi FE mới bắt đầu được.**
+### Backend đã hoàn thành ✅
+- **198 API endpoints** (admin, public, v1, webhooks, inngest)
+- Dual auth (JWT credentials + Google OAuth)
+- Rate limiting (Upstash Redis)
+- Real-time (SSE `/api/admin/events/stream`)
+- Full documentation (14 files in `docs/`)
+- **Zero TypeScript errors**

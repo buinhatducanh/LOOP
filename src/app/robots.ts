@@ -6,7 +6,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/admin/", "/vi/login", "/vi/register", "/en/login", "/en/register"],
+        disallow: ["/admin/"],
       },
     ],
     sitemap: "https://loop.vn/sitemap.xml",

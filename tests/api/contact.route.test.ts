@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 vi.mock("@/lib/rate-limit", () => ({
   applyRateLimit: vi.fn(),
@@ -23,7 +23,17 @@ describe("POST /api/contact", () => {
     vi.mocked(applyRateLimit).mockResolvedValue({ allowed: true });
     vi.mocked(submitContactForm).mockResolvedValue({
       success: true,
-      data: { id: "msg_1", email: "test@example.com" },
+      data: {
+        id: "msg_1",
+        email: "test@example.com",
+        name: "Test User",
+        phone: null,
+        service: null,
+        message: "Hello LOOP",
+        status: "new",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
     });
 
     const req = new NextRequest("http://localhost:3000/api/contact", {
@@ -54,7 +64,7 @@ describe("POST /api/contact", () => {
 
     vi.mocked(applyRateLimit).mockResolvedValue({
       allowed: false,
-      response: rateLimitedResponse as unknown as Response,
+      response: rateLimitedResponse as unknown as NextResponse,
     });
 
     const req = new NextRequest("http://localhost:3000/api/contact", {

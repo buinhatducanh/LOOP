@@ -1,115 +1,17 @@
-import type { Metadata } from 'next';
-import { ReactNode } from 'react';
-import './globals.css';
-import JsonLd from '@/components/seo/JsonLd';
-import { NextIntlClientProvider } from 'next-intl';
-import { getMessages, getLocale } from 'next-intl/server';
-import { Inter } from 'next/font/google';
-import { Cinzel } from 'next/font/google';
-import { JetBrains_Mono } from 'next/font/google';
-import { buildOrganizationJsonLd, buildWebSiteJsonLd } from '@/lib/json-ld';
-import { AdminAuthProvider } from '@/app/admin/components/admin-auth-provider';
+import type { Metadata } from "next";
+import { ReactNode } from "react";
 
-const inter = Inter({
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-inter',
-  weight: ['400', '500', '600', '700'],
-});
+export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://loop.vn"),
+  title: "LOOP API",
+  description: "LOOP Agency API — Backend-only Next.js application",
+  robots: { index: false, follow: false },
+};
 
-const cinzel = Cinzel({
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-cinzel',
-  weight: ['400', '700', '900'],
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-jetbrains',
-  weight: ['400', '600', '700'],
-});
-
-export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
-  const { locale } = await params;
-  return {
-    metadataBase: new URL("https://loop.vn"),
-    icons: {
-      icon: [
-        { url: "/favicon.svg", type: "image/svg+xml" },
-        { url: "/favicon.ico" },
-      ],
-    },
-    title: {
-      default: "LOOPS - Loop Solutions | Thiết kế Website & Ứng dụng chuyên nghiệp",
-      template: "%s | LOOPS",
-    },
-    description:
-      "LOOPS (Loop Solutions) - Công ty thiết kế website thương mại, ứng dụng di động, phần mềm quản lý doanh nghiệp. Tối ưu SEO, hiệu suất cao, hỗ trợ 24/7.",
-    keywords: [
-      "thiết kế website", "làm website", "website thương mại điện tử",
-      "ứng dụng di động", "phần mềm quản lý", "web development", "LOOPS", "Loop Solutions",
-    ],
-    openGraph: {
-      type: "website",
-      locale: locale === "en" ? "en_US" : "vi_VN",
-      alternateLocale: locale === "en" ? "vi_VN" : "en_US",
-      siteName: "LOOPS - Loop Solutions",
-      title: "LOOPS - Loop Solutions | Thiết kế Website & Ứng dụng chuyên nghiệp",
-      description: "Loop Solutions chuyên thiết kế website thương mại, app di động, phần mềm quản lý. Cam kết SEO top Google, hiệu suất 95+.",
-      images: [
-        {
-          url: "/api/og?title=LOOPS+-+Loop+Solutions&description=Công+ty+thiết+kế+website+và+ứng+dụng+chuyên+nghiệp&type=website",
-          width: 1200,
-          height: 630,
-          alt: "LOOPS - Loop Solutions - Web Development Agency",
-        },
-      ],
-    },
-    twitter: {
-      card: "summary_large_image",
-      title: "LOOPS - Loop Solutions | Thiết kế Website & Ứng dụng chuyên nghiệp",
-      description: "Loop Solutions chuyên thiết kế website thương mại, app di động, phần mềm quản lý doanh nghiệp.",
-    },
-    robots: {
-      index: true,
-      follow: true,
-      googleBot: { index: true, follow: true, "max-video-preview": -1, "max-image-preview": "large", "max-snippet": -1 },
-    },
-    verification: {
-      google: process.env.NEXT_PUBLIC_GSC_VERIFICATION,
-    },
-    alternates: {
-      canonical: `https://loop.vn/${locale}`,
-      languages: { "vi": "https://loop.vn/vi", "en": "https://loop.vn/en", "x-default": "https://loop.vn" },
-    },
-  };
-}
-
-export default async function RootLayout({ children }: { children: ReactNode }) {
-  const locale = await getLocale();
-  const messages = await getMessages();
-
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang={locale} className={`dark ${inter.variable} ${cinzel.variable} ${jetbrainsMono.variable}`}>
-      <head>
-        <link rel="manifest" href="/manifest.json" />
-        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-        <link rel="shortcut icon" href="/favicon.svg" />
-        <link rel="apple-touch-icon" href="/icon-192.svg" />
-        <meta name="theme-color" content="#020617" />
-        <JsonLd data={buildOrganizationJsonLd()} />
-        <JsonLd data={buildWebSiteJsonLd()} />
-      </head>
-      <body>
-        <NextIntlClientProvider locale={locale} messages={messages}>
-          <AdminAuthProvider>
-            {children}
-          </AdminAuthProvider>
-        </NextIntlClientProvider>
-      </body>
+    <html lang="vi">
+      <body>{children}</body>
     </html>
   );
 }
-

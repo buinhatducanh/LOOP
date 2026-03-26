@@ -14,15 +14,15 @@
 
 ## Dev Server Ports
 
-- Production frontend: `http://localhost:3000`
+- Backend/API: `http://localhost:3000`
 - Dev server (backup): `http://localhost:3002`, `http://localhost:3003`
 
 ## Quick Notes
 
 <!-- Add your personal notes here -->
 - User prefers fast mode (`/fast`)
-- Current focus: finishing PLAN.md Phase 0 (P0.1 → P0.3)
-- Next task: create `src/lib/api/errors.ts`
+- Frontend deleted (2026-03-26): API-only app, zero TS errors
+- Next: setup new frontend repo or integrate into this repo
 
 ## Personal Aliases
 
