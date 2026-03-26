@@ -24,7 +24,7 @@ const LOCALE_SUFFIX: Record<Locale | string, string> = {
 // Priority fallback chain: requested → VI (default)
 const FALLBACK_CHAIN: Locale[] = ["vi", "en"];
 
-type LocalizedRecord = Record<string, string | null | undefined>;
+type LocalizedRecord = Record<string, unknown>;
 
 /**
  * Get a localized field value from a record with locale-suffixed fields.
@@ -50,14 +50,14 @@ export function getLocalizedField<T extends LocalizedRecord>(
   const localizedKey = suffix ? `${fieldName}${suffix}` : fieldName;
 
   // Try the requested locale first
-  const localizedValue = record[localizedKey];
+  const localizedValue = record[localizedKey] as string | null | undefined;
   if (localizedValue != null && localizedValue !== "") {
     return localizedValue;
   }
 
   // Fallback to VI (source of truth) if not already VI
   if (locale !== "vi") {
-    const viValue = record[fieldName];
+    const viValue = record[fieldName] as string | null | undefined;
     if (viValue != null && viValue !== "") {
       return viValue;
     }
@@ -82,13 +82,13 @@ export function getLocalizedArray<T extends LocalizedRecord>(
   const suffix = LOCALE_SUFFIX[locale] ?? "";
   const localizedKey = suffix ? `${fieldName}${suffix}` : fieldName;
 
-  const localizedValue = record[localizedKey];
+  const localizedValue = record[localizedKey] as string[] | null | undefined;
   if (Array.isArray(localizedValue) && localizedValue.length > 0) {
     return localizedValue;
   }
 
   if (locale !== "vi") {
-    const viValue = record[fieldName];
+    const viValue = record[fieldName] as string[] | null | undefined;
     if (Array.isArray(viValue) && viValue.length > 0) {
       return viValue;
     }
@@ -116,12 +116,12 @@ export function getAllLocalizedFields<T extends LocalizedRecord>(
   const result: Record<string, string | string[] | null> = { _localeUsed: locale };
 
   for (const fieldName of fieldNames) {
-    const value = record[`${fieldName}${LOCALE_SUFFIX[locale] ?? ""}`];
+    const value = record[`${fieldName}${LOCALE_SUFFIX[locale] ?? ""}`] as string | string[] | null | undefined;
     if (value != null && value !== "") {
       result[fieldName] = value;
     } else if (locale !== "vi") {
       // Fallback to VI
-      const viValue = record[fieldName];
+      const viValue = record[fieldName] as string | string[] | null | undefined;
       result[fieldName] = viValue ?? null;
     } else {
       result[fieldName] = null;
