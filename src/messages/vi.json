@@ -1,0 +1,283 @@
+{
+  "seo": {
+    "defaultTitle": "LOOP — Creative Digital Agency",
+    "defaultDescription": "LOOP là agency sáng tạo số hàng đầu Việt Nam. Thiết kế web, app, branding, và giải pháp số toàn diện.",
+    "siteName": "LOOP Agency",
+    "defaultKeywords": "agency, sáng tạo, thiết kế web, branding, Việt Nam"
+  },
+  "nav": {
+    "home": "Trang chủ",
+    "services": "Dịch vụ",
+    "portfolio": "Portfolio",
+    "about": "Về chúng tôi",
+    "team": "Đội ngũ",
+    "blog": "Blog",
+    "pricing": "Báo giá",
+    "contact": "Liên hệ",
+    "login": "Đăng nhập",
+    "dashboard": "Dashboard",
+    "logout": "Đăng xuất",
+    "menu": "Menu",
+    "close": "Đóng"
+  },
+  "home": {
+    "hero": {
+      "title": "Sáng tạo không giới hạn",
+      "subtitle": "Chúng tôi biến ý tưởng thành trải nghiệm số đáng nhớ",
+      "cta": "Bắt đầu dự án",
+      "ctaSecondary": "Xem Portfolio"
+    },
+    "stats": {
+      "projects": "Dự án hoàn thành",
+      "clients": "Khách hàng",
+      "awards": "Giải thưởng",
+      "years": "Năm kinh nghiệm"
+    },
+    "services": {
+      "title": "Dịch vụ của chúng tôi",
+      "subtitle": "Giải pháp toàn diện cho sự phát triển thương hiệu",
+      "cta": "Tất cả dịch vụ"
+    },
+    "portfolio": {
+      "title": "Portfolio",
+      "subtitle": "Những dự án tiêu biểu",
+      "cta": "Xem thêm"
+    },
+    "cta": {
+      "title": "Sẵn sàng bắt đầu?",
+      "subtitle": "Liên hệ ngay để nhận tư vấn miễn phí từ đội ngũ chuyên gia",
+      "button": "Liên hệ ngay"
+    }
+  },
+  "services": {
+    "title": "Dịch vụ",
+    "subtitle": "Giải pháp số toàn diện",
+    "listTitle": "Danh sách dịch vụ",
+    "detailTitle": "Chi tiết dịch vụ",
+    "cta": "Nhận báo giá",
+    "features": "Tính năng",
+    "process": "Quy trình",
+    "related": "Dịch vụ liên quan",
+    "packages": "Gói dịch vụ"
+  },
+  "portfolio": {
+    "title": "Portfolio",
+    "subtitle": "Dự án tiêu biểu của chúng tôi",
+    "listTitle": "Tất cả dự án",
+    "detailTitle": "Chi tiết dự án",
+    "client": "Khách hàng",
+    "year": "Năm",
+    "services": "Dịch vụ",
+    "visitSite": "Truy cập website",
+    "related": "Dự án liên quan",
+    "filter": {
+      "all": "Tất cả",
+      "web": "Website",
+      "app": "App",
+      "branding": "Branding",
+      "marketing": "Marketing"
+    }
+  },
+  "blog": {
+    "title": "Blog",
+    "subtitle": "Cập nhật xu hướng và kiến thức",
+    "listTitle": "Tất cả bài viết",
+    "detailTitle": "Chi tiết bài viết",
+    "readMore": "Đọc tiếp",
+    "author": "Tác giả",
+    "publishedAt": "Đăng ngày",
+    "category": "Danh mục",
+    "related": "Bài viết liên quan",
+    "share": "Chia sẻ",
+    "backToList": "Quay lại danh sách",
+    "noPosts": "Chưa có bài viết nào"
+  },
+  "team": {
+    "title": "Đội ngũ",
+    "subtitle": "Những con người tạo nên LOOP",
+    "memberSince": "Tham gia từ",
+    "role": "Vai trò",
+    "expertise": "Chuyên môn",
+    "projects": "Dự án",
+    "viewProfile": "Xem hồ sơ"
+  },
+  "about": {
+    "title": "Về chúng tôi",
+    "story": {
+      "title": "Câu chuyện của chúng tôi",
+      "p1": "LOOP được thành lập với khát vọng mang đến những giải pháp sáng tạo xuất sắc cho doanh nghiệp Việt Nam.",
+      "p2": "Chúng tôi tin rằng mỗi dự án đều là một cơ hội để tạo ra giá trị đột phá."
+    },
+    "values": {
+      "title": "Giá trị cốt lõi",
+      "creativity": "Sáng tạo",
+      "creativityDesc": "Không ngừng đổi mới và tìm kiếm những giải pháp độc đáo",
+      "excellence": "Xuất sắc",
+      "excellenceDesc": "Cam kết chất lượng trong từng chi tiết nhỏ nhất",
+      "partnership": "Đồng hành",
+      "partnershipDesc": "Hợp tác chặt chẽ với khách hàng từ ý tưởng đến sản phẩm",
+      "integrity": "Tính chính trực",
+      "integrityDesc": "Minh bạch và đáng tin cậy trong mọi cam kết"
+    },
+    "contact": {
+      "title": "Liên hệ",
+      "address": "Địa chỉ",
+      "phone": "Điện thoại",
+      "email": "Email",
+      "hours": "Giờ làm việc"
+    }
+  },
+  "contact": {
+    "title": "Liên hệ",
+    "subtitle": "Chúng tôi luôn sẵn sàng lắng nghe",
+    "form": {
+      "name": "Họ và tên",
+      "email": "Email",
+      "phone": "Số điện thoại",
+      "company": "Công ty",
+      "service": "Dịch vụ quan tâm",
+      "message": "Nội dung tin nhắn",
+      "submit": "Gửi tin nhắn",
+      "sending": "Đang gửi...",
+      "success": "Tin nhắn đã được gửi thành công! Chúng tôi sẽ liên hệ lại trong thời gian sớm nhất.",
+      "error": "Đã xảy ra lỗi. Vui lòng thử lại sau."
+    },
+    "info": {
+      "title": "Thông tin liên hệ",
+      "address": "Địa chỉ",
+      "phone": "Điện thoại",
+      "email": "Email",
+      "hours": "Giờ làm việc",
+      "hoursValue": "Thứ 2 - Thứ 6: 9:00 - 18:00"
+    },
+    "social": {
+      "title": "Kết nối với chúng tôi"
+    }
+  },
+  "pricing": {
+    "title": "Báo giá",
+    "subtitle": "Giải pháp phù hợp với mọi quy mô",
+    "custom": "Báo giá riêng",
+    "customDesc": "Liên hệ để được tư vấn giải pháp tùy chỉnh cho doanh nghiệp của bạn",
+    "features": "Tính năng bao gồm",
+    "getStarted": "Bắt đầu",
+    "contactSales": "Liên hệ bán hàng",
+    "monthly": "hàng tháng",
+    "yearly": "hàng năm",
+    "popular": "Phổ biến nhất",
+    "calculator": {
+      "title": "Tính giá tự động",
+      "subtitle": "Tùy chỉnh dịch vụ theo nhu cầu của bạn"
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Đăng nhập",
+      "email": "Email",
+      "password": "Mật khẩu",
+      "submit": "Đăng nhập",
+      "forgotPassword": "Quên mật khẩu?",
+      "noAccount": "Chưa có tài khoản?",
+      "signUp": "Đăng ký"
+    },
+    "logout": {
+      "title": "Đăng xuất",
+      "confirm": "Bạn có chắc muốn đăng xuất?",
+      "yes": "Đăng xuất",
+      "no": "Hủy"
+    }
+  },
+  "common": {
+    "loading": "Đang tải...",
+    "error": "Đã xảy ra lỗi",
+    "retry": "Thử lại",
+    "back": "Quay lại",
+    "next": "Tiếp theo",
+    "previous": "Trước",
+    "submit": "Gửi",
+    "cancel": "Hủy",
+    "save": "Lưu",
+    "delete": "Xóa",
+    "edit": "Sửa",
+    "view": "Xem",
+    "search": "Tìm kiếm",
+    "filter": "Lọc",
+    "sort": "Sắp xếp",
+    "download": "Tải về",
+    "upload": "Tải lên",
+    "showMore": "Xem thêm",
+    "showLess": "Thu gọn",
+    "yes": "Có",
+    "no": "Không",
+    "or": "hoặc",
+    "and": "và",
+    "perPage": "Mỗi trang",
+    "page": "Trang",
+    "of": "của",
+    "readMore": "Đọc tiếp",
+    "learnMore": "Tìm hiểu thêm",
+    "getStarted": "Bắt đầu",
+    "contactUs": "Liên hệ",
+    "viewAll": "Xem tất cả",
+    "close": "Đóng",
+    "open": "Mở",
+    "active": "Đang hoạt động",
+    "inactive": "Không hoạt động",
+    "pending": "Đang chờ",
+    "completed": "Hoàn thành",
+    "cancelled": "Đã hủy",
+    "required": "Bắt buộc",
+    "optional": "Tùy chọn",
+    "success": "Thành công",
+    "warning": "Cảnh báo",
+    "info": "Thông tin",
+    "loadingDots": "Đang tải..."
+  },
+  "errors": {
+    "pageNotFound": {
+      "title": "Trang không tìm thấy",
+      "message": "Trang bạn đang tìm kiếm không tồn tại hoặc đã được di chuyển.",
+      "backHome": "Quay về trang chủ"
+    },
+    "serverError": {
+      "title": "Lỗi máy chủ",
+      "message": "Đã xảy ra lỗi phía máy chủ. Vui lòng thử lại sau.",
+      "backHome": "Quay về trang chủ"
+    },
+    "networkError": {
+      "title": "Lỗi kết nối",
+      "message": "Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối internet.",
+      "retry": "Thử lại"
+    },
+    "validation": {
+      "required": "Trường này là bắt buộc",
+      "email": "Email không hợp lệ",
+      "phone": "Số điện thoại không hợp lệ",
+      "minLength": "Tối thiểu {min} ký tự",
+      "maxLength": "Tối đa {max} ký tự",
+      "min": "Giá trị tối thiểu là {min}",
+      "max": "Giá trị tối đa là {max}"
+    },
+    "auth": {
+      "unauthorized": "Vui lòng đăng nhập để tiếp tục",
+      "forbidden": "Bạn không có quyền truy cập trang này",
+      "sessionExpired": "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại."
+    }
+  },
+  "footer": {
+    "tagline": "Sáng tạo không giới hạn",
+    "description": "LOOP là agency sáng tạo số hàng đầu Việt Nam, chuyên cung cấp giải pháp thiết kế web, app, và branding toàn diện.",
+    "quickLinks": "Liên kết nhanh",
+    "services": "Dịch vụ",
+    "company": "Công ty",
+    "legal": "Pháp lý",
+    "privacy": "Chính sách bảo mật",
+    "terms": "Điều khoản sử dụng",
+    "copyright": "© {year} LOOP Agency. Mọi quyền được bảo lưu.",
+    "followUs": "Theo dõi chúng tôi"
+  },
+  "localeSwitcher": {
+    "label": "Ngôn ngữ",
+    "current": "Ngôn ngữ hiện tại"
+  }
+}

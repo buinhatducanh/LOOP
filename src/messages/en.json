@@ -1,0 +1,283 @@
+{
+  "seo": {
+    "defaultTitle": "LOOP — Creative Digital Agency",
+    "defaultDescription": "LOOP is Vietnam's leading creative digital agency. Web design, apps, branding, and comprehensive digital solutions.",
+    "siteName": "LOOP Agency",
+    "defaultKeywords": "agency, creative, web design, branding, Vietnam"
+  },
+  "nav": {
+    "home": "Home",
+    "services": "Services",
+    "portfolio": "Portfolio",
+    "about": "About Us",
+    "team": "Team",
+    "blog": "Blog",
+    "pricing": "Pricing",
+    "contact": "Contact",
+    "login": "Login",
+    "dashboard": "Dashboard",
+    "logout": "Logout",
+    "menu": "Menu",
+    "close": "Close"
+  },
+  "home": {
+    "hero": {
+      "title": "Creativity Without Limits",
+      "subtitle": "We transform ideas into memorable digital experiences",
+      "cta": "Start a Project",
+      "ctaSecondary": "View Portfolio"
+    },
+    "stats": {
+      "projects": "Completed Projects",
+      "clients": "Clients",
+      "awards": "Awards",
+      "years": "Years of Experience"
+    },
+    "services": {
+      "title": "Our Services",
+      "subtitle": "Comprehensive solutions for your brand growth",
+      "cta": "All Services"
+    },
+    "portfolio": {
+      "title": "Portfolio",
+      "subtitle": "Featured Projects",
+      "cta": "View More"
+    },
+    "cta": {
+      "title": "Ready to Start?",
+      "subtitle": "Contact us for a free consultation from our expert team",
+      "button": "Get in Touch"
+    }
+  },
+  "services": {
+    "title": "Services",
+    "subtitle": "Comprehensive Digital Solutions",
+    "listTitle": "Our Services",
+    "detailTitle": "Service Details",
+    "cta": "Get a Quote",
+    "features": "Features",
+    "process": "Process",
+    "related": "Related Services",
+    "packages": "Service Packages"
+  },
+  "portfolio": {
+    "title": "Portfolio",
+    "subtitle": "Our Featured Projects",
+    "listTitle": "All Projects",
+    "detailTitle": "Project Details",
+    "client": "Client",
+    "year": "Year",
+    "services": "Services",
+    "visitSite": "Visit Website",
+    "related": "Related Projects",
+    "filter": {
+      "all": "All",
+      "web": "Website",
+      "app": "App",
+      "branding": "Branding",
+      "marketing": "Marketing"
+    }
+  },
+  "blog": {
+    "title": "Blog",
+    "subtitle": "Trends & Insights",
+    "listTitle": "All Posts",
+    "detailTitle": "Post Details",
+    "readMore": "Read More",
+    "author": "Author",
+    "publishedAt": "Published",
+    "category": "Category",
+    "related": "Related Posts",
+    "share": "Share",
+    "backToList": "Back to list",
+    "noPosts": "No posts yet"
+  },
+  "team": {
+    "title": "Our Team",
+    "subtitle": "The people behind LOOP",
+    "memberSince": "Member since",
+    "role": "Role",
+    "expertise": "Expertise",
+    "projects": "Projects",
+    "viewProfile": "View Profile"
+  },
+  "about": {
+    "title": "About Us",
+    "story": {
+      "title": "Our Story",
+      "p1": "LOOP was founded with the ambition to bring outstanding creative solutions to Vietnamese businesses.",
+      "p2": "We believe every project is an opportunity to create breakthrough value."
+    },
+    "values": {
+      "title": "Core Values",
+      "creativity": "Creativity",
+      "creativityDesc": "Constantly innovating and seeking unique solutions",
+      "excellence": "Excellence",
+      "excellenceDesc": "Committed to quality in every detail",
+      "partnership": "Partnership",
+      "partnershipDesc": "Close collaboration with clients from idea to product",
+      "integrity": "Integrity",
+      "integrityDesc": "Transparency and reliability in every commitment"
+    },
+    "contact": {
+      "title": "Contact",
+      "address": "Address",
+      "phone": "Phone",
+      "email": "Email",
+      "hours": "Working Hours"
+    }
+  },
+  "contact": {
+    "title": "Contact",
+    "subtitle": "We're always ready to listen",
+    "form": {
+      "name": "Full Name",
+      "email": "Email",
+      "phone": "Phone Number",
+      "company": "Company",
+      "service": "Service of Interest",
+      "message": "Your Message",
+      "submit": "Send Message",
+      "sending": "Sending...",
+      "success": "Message sent successfully! We'll get back to you soon.",
+      "error": "An error occurred. Please try again."
+    },
+    "info": {
+      "title": "Contact Information",
+      "address": "Address",
+      "phone": "Phone",
+      "email": "Email",
+      "hours": "Working Hours",
+      "hoursValue": "Mon - Fri: 9:00 - 18:00"
+    },
+    "social": {
+      "title": "Connect With Us"
+    }
+  },
+  "pricing": {
+    "title": "Pricing",
+    "subtitle": "Solutions for Every Scale",
+    "custom": "Custom Quote",
+    "customDesc": "Contact us for a tailored solution for your business",
+    "features": "Included Features",
+    "getStarted": "Get Started",
+    "contactSales": "Contact Sales",
+    "monthly": "per month",
+    "yearly": "per year",
+    "popular": "Most Popular",
+    "calculator": {
+      "title": "Smart Pricing Calculator",
+      "subtitle": "Customize services to your needs"
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Login",
+      "email": "Email",
+      "password": "Password",
+      "submit": "Login",
+      "forgotPassword": "Forgot password?",
+      "noAccount": "Don't have an account?",
+      "signUp": "Sign up"
+    },
+    "logout": {
+      "title": "Logout",
+      "confirm": "Are you sure you want to log out?",
+      "yes": "Logout",
+      "no": "Cancel"
+    }
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "retry": "Retry",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "submit": "Submit",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "view": "View",
+    "search": "Search",
+    "filter": "Filter",
+    "sort": "Sort",
+    "download": "Download",
+    "upload": "Upload",
+    "showMore": "Show more",
+    "showLess": "Show less",
+    "yes": "Yes",
+    "no": "No",
+    "or": "or",
+    "and": "and",
+    "perPage": "Per page",
+    "page": "Page",
+    "of": "of",
+    "readMore": "Read more",
+    "learnMore": "Learn more",
+    "getStarted": "Get started",
+    "contactUs": "Contact us",
+    "viewAll": "View all",
+    "close": "Close",
+    "open": "Open",
+    "active": "Active",
+    "inactive": "Inactive",
+    "pending": "Pending",
+    "completed": "Completed",
+    "cancelled": "Cancelled",
+    "required": "Required",
+    "optional": "Optional",
+    "success": "Success",
+    "warning": "Warning",
+    "info": "Info",
+    "loadingDots": "Loading..."
+  },
+  "errors": {
+    "pageNotFound": {
+      "title": "Page Not Found",
+      "message": "The page you're looking for doesn't exist or has been moved.",
+      "backHome": "Go back home"
+    },
+    "serverError": {
+      "title": "Server Error",
+      "message": "A server error occurred. Please try again later.",
+      "backHome": "Go back home"
+    },
+    "networkError": {
+      "title": "Connection Error",
+      "message": "Unable to connect to the server. Please check your internet connection.",
+      "retry": "Retry"
+    },
+    "validation": {
+      "required": "This field is required",
+      "email": "Invalid email address",
+      "phone": "Invalid phone number",
+      "minLength": "Minimum {min} characters",
+      "maxLength": "Maximum {max} characters",
+      "min": "Minimum value is {min}",
+      "max": "Maximum value is {max}"
+    },
+    "auth": {
+      "unauthorized": "Please log in to continue",
+      "forbidden": "You don't have permission to access this page",
+      "sessionExpired": "Your session has expired. Please log in again."
+    }
+  },
+  "footer": {
+    "tagline": "Creativity Without Limits",
+    "description": "LOOP is Vietnam's leading creative digital agency, specializing in comprehensive web design, app, and branding solutions.",
+    "quickLinks": "Quick Links",
+    "services": "Services",
+    "company": "Company",
+    "legal": "Legal",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service",
+    "copyright": "© {year} LOOP Agency. All rights reserved.",
+    "followUs": "Follow Us"
+  },
+  "localeSwitcher": {
+    "label": "Language",
+    "current": "Current language"
+  }
+}
