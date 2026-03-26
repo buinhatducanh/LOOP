@@ -9,6 +9,7 @@
 
 import { setRequestLocale } from "next-intl/server";
 import { getTranslations, getLocale } from "next-intl/server";
+import { routing } from "@/i18n/routing";
 
 type Props = {
   params: Promise<{ locale: string }>;
@@ -16,11 +17,21 @@ type Props = {
 
 export default async function NotFound({ params }: Props) {
   // Resolve locale: try params first, fallback to getLocale()
-  const resolved = await params.catch(() => null);
-  const locale = resolved?.locale ?? getLocale();
+  let resolved: { locale: string } | null = null;
+  try {
+    resolved = await params;
+  } catch {
+    // ignore
+  }
 
-  // Fallback to VI if locale is invalid
-  const safeLocale = ["vi", "en"].includes(locale) ? locale : "vi";
+  const rawLocale = resolved?.locale ?? getLocale();
+  // Ensure locale is string — fallback to default if invalid
+  const locale: string = typeof rawLocale === "string"
+    ? rawLocale
+    : routing.defaultLocale;
+  const safeLocale = routing.locales.includes(locale as (typeof routing.locales)[number])
+    ? locale
+    : routing.defaultLocale;
 
   setRequestLocale(safeLocale);
 

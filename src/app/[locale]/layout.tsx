@@ -1,21 +1,19 @@
 /**
  * [locale] Root Layout — LOOP Solutions
- * Wraps all locale-prefixed pages with next-intl provider and
- * locale-aware metadata (hreflang, html lang, etc.).
+ * Wraps all locale-prefixed pages with next-intl provider,
+ * shared SiteHeader + SiteFooter, and locale-aware metadata.
  *
  * NOTE: This layout is for FE pages. The backend API-only app
  * does NOT use this layout. API routes remain at /api/* without locale prefix.
- *
- * IMPORTANT: Locale is read from next-intl context (getLocale), NOT from params,
- * because params.locale is undefined during static prerendering.
- * next-intl provides locale context through NextIntlClientProvider.
  */
 
 import type { Metadata } from "next";
 import { NextIntlClientProvider } from "next-intl";
-import { getMessages, setRequestLocale, getLocale } from "next-intl/server";
+import { getMessages, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
+import SiteHeader from "./components/SiteHeader";
+import SiteFooter from "./components/SiteFooter";
 
 type Props = {
   children: React.ReactNode;
@@ -23,7 +21,6 @@ type Props = {
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  // Locale from params for metadata generation (params ARE available in generateMetadata)
   const { locale } = await params;
 
   let messages;
@@ -62,25 +59,25 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function LocaleLayout({ children, params }: Props) {
-  // Locale from params for validation
   const { locale } = await params;
 
-  // Validate locale — show 404 for invalid locales
   if (!routing.locales.includes(locale as (typeof routing.locales)[number])) {
     notFound();
   }
 
-  // Enable static rendering for this locale
   setRequestLocale(locale);
 
-  // Load messages — locale resolved from request context (params or cookie)
   const messages = await getMessages();
 
   return (
     <html lang={locale} suppressHydrationWarning>
-      <body>
+      <body style={{ margin: 0, fontFamily: "system-ui, -apple-system, sans-serif", display: "flex", flexDirection: "column", minHeight: "100vh" }}>
         <NextIntlClientProvider messages={messages}>
-          {children}
+          <SiteHeader locale={locale} />
+          <div style={{ flex: 1 }}>
+            {children}
+          </div>
+          <SiteFooter locale={locale} />
         </NextIntlClientProvider>
       </body>
     </html>
