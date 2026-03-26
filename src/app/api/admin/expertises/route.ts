@@ -41,9 +41,17 @@ export async function POST(req: NextRequest) {
     const expertise = await prisma.expertise.create({
       data: {
         name: data.name,
-        nameVi: data.nameVi || data.name,
         category: data.category,
-        categoryVi: data.categoryVi || categories[data.category] || data.category,
+        // Translations (optional)
+        nameEn: data.nameEn,
+        nameJa: data.nameJa,
+        nameKo: data.nameKo,
+        nameZh: data.nameZh,
+        categoryEn: data.categoryEn,
+        categoryJa: data.categoryJa,
+        categoryKo: data.categoryKo,
+        categoryZh: data.categoryZh,
+        // Non-translatable
         icon: data.icon || null,
         logo: data.logo || null,
         sortOrder: data.sortOrder || 0,
