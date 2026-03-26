@@ -90,6 +90,17 @@
         "teamDesc": "每一个成功项目背后的优秀人才",
         "teamViewAll": "查看全部团队成员"
     },
+    "TeamPage": {
+        "badge": "认识团队",
+        "heroTitle1": "认识",
+        "heroHighlight": "专家团队",
+        "heroTitle2": "",
+        "heroDesc": "每一个成功项目背后的优秀人才",
+        "viewProfile": "查看简介",
+        "skills": "技能",
+        "experience": "经验",
+        "noResults": "未找到团队成员。"
+    },
     "Stats": {
         "projects_label": "已交付项目",
         "satisfaction_label": "客户满意度",
@@ -213,6 +224,17 @@
         "home": "首页",
         "services": "服务",
         "portfolio": "作品集"
+    },
+    "PortfolioPage": {
+        "badge": "我们的作品",
+        "heroTitle1": "精选",
+        "heroHighlight": "项目",
+        "heroDesc": "真实项目，真实成果。了解我们如何通过卓越的数字解决方案帮助企业转型。",
+        "btnAllProjects": "查看全部项目",
+        "filterAll": "全部",
+        "noResults": "该类别未找到项目。",
+        "viewProject": "查看项目",
+        "viewCaseStudy": "查看案例研究"
     },
     "ServiceDetailPage": {
         "startingFrom": "起价",
@@ -369,5 +391,16 @@
         "termsDescription": "LOOP服务条款 - 约束我们网站和服务使用的条款。",
         "teamTitle": "我们的团队 | LOOP",
         "teamDescription": "认识LOOP背后才华横溢的团队——50多位网页设计和应用开发专家。"
+    },
+    "BlogPage": {
+        "badge": "技术见解",
+        "heroTitle1": "来自",
+        "heroHighlight": "博客",
+        "heroDesc": "分享网页设计、SEO、网络营销和最新技术趋势的见解。",
+        "readMore": "阅读更多",
+        "minRead": "分钟阅读",
+        "publishedOn": "发布于",
+        "noResults": "未找到博客文章。",
+        "viewAll": "查看全部文章"
     }
 }

@@ -90,6 +90,17 @@
         "teamDesc": "모든 성공적인 프로젝트 뒤에 있는 재능 있는 사람들",
         "teamViewAll": "전체 팀원 보기"
     },
+    "TeamPage": {
+        "badge": "팀 만나기",
+        "heroTitle1": "전문가 ",
+        "heroHighlight": "팀을",
+        "heroTitle2": " 만나보세요",
+        "heroDesc": "모든 성공적인 프로젝트 뒤에 있는 재능 있는 사람들",
+        "viewProfile": "프로필 보기",
+        "skills": "스킬",
+        "experience": "경력",
+        "noResults": "팀원을 찾을 수 없습니다."
+    },
     "Stats": {
         "projects_label": "완료된 프로젝트",
         "satisfaction_label": "고객 만족도",
@@ -213,6 +224,17 @@
         "home": "홈",
         "services": "서비스",
         "portfolio": "포트폴리오"
+    },
+    "PortfolioPage": {
+        "badge": "저희 작업",
+        "heroTitle1": "주요",
+        "heroHighlight": "프로젝트",
+        "heroDesc": "실제 프로젝트. 실제 결과. 탁월한 디지털 솔루션으로 비즈니스를 어떻게 변화시켰는지 확인하세요.",
+        "btnAllProjects": "모든 프로젝트 보기",
+        "filterAll": "전체",
+        "noResults": "이 카테고리에서 프로젝트를 찾을 수 없습니다.",
+        "viewProject": "프로젝트 보기",
+        "viewCaseStudy": "케이스 스터디 보기"
     },
     "ServiceDetailPage": {
         "startingFrom": "시작가",
@@ -369,5 +391,16 @@
         "termsDescription": "LOOP 이용약관 - 당사 웹사이트 및 서비스 사용을 관리하는 이용약관.",
         "teamTitle": "우리 팀 | LOOP",
         "teamDescription": "LOOP 뒤에 있는 재능 있는 팀을 만나보세요 - 웹 디자인 및 앱 개발 전문가 50명 이상."
+    },
+    "BlogPage": {
+        "badge": "기술 인사이트",
+        "heroTitle1": "",
+        "heroHighlight": "블로그",
+        "heroDesc": "웹 디자인, SEO, 온라인 마케팅 및 최신 기술 트렌드에 대한 인사이트를 공유합니다.",
+        "readMore": "더 읽기",
+        "minRead": "분 소요",
+        "publishedOn": "게시일",
+        "noResults": "블로그 게시물을 찾을 수 없습니다.",
+        "viewAll": "모든 게시물 보기"
     }
 }

@@ -90,6 +90,17 @@
         "teamDesc": "Những con người tài năng đằng sau mỗi dự án thành công",
         "teamViewAll": "Xem tất cả thành viên"
     },
+    "TeamPage": {
+        "badge": "Gặp gỡ đội ngũ",
+        "heroTitle1": "Gặp gỡ đội ngũ ",
+        "heroHighlight": "chuyên gia",
+        "heroTitle2": " của chúng tôi",
+        "heroDesc": "Những con người tài năng đằng sau mỗi dự án thành công",
+        "viewProfile": "Xem hồ sơ",
+        "skills": "Kỹ năng",
+        "experience": "Kinh nghiệm",
+        "noResults": "Không tìm thấy thành viên nào."
+    },
     "Stats": {
         "projects_label": "Dự án đã bàn giao",
         "satisfaction_label": "Khách hàng hài lòng",
@@ -209,10 +220,43 @@
         "faq5_q": "Bạn có thiết kế UI/UX không?",
         "faq5_a": "Có, đội ngũ của chúng tôi bao gồm các chuyên gia UI/UX tạo ra giao diện đẹp mắt và thân thiện cho dự án của bạn."
     },
+    "ContactPage": {
+        "badge": "Liên hệ",
+        "heroTitle1": "Hãy",
+        "heroHighlight": "trò chuyện",
+        "heroDesc": "Chúng tôi rất muốn nghe về dự án của bạn. Liên hệ ngay và chúng tôi sẽ phản hồi trong 24 giờ.",
+        "formName": "Họ và tên",
+        "formEmail": "Địa chỉ email",
+        "formPhone": "Số điện thoại",
+        "formCompany": "Công ty (tùy chọn)",
+        "formMessage": "Kể về dự án của bạn",
+        "formSubmit": "Gửi tin nhắn",
+        "formSending": "Đang gửi...",
+        "formSuccess": "Đã gửi! Chúng tôi sẽ phản hồi trong 24 giờ.",
+        "formError": "Có lỗi xảy ra. Vui lòng thử lại.",
+        "infoTitle": "Thông tin liên hệ",
+        "infoEmail": "Email",
+        "infoPhone": "Điện thoại",
+        "infoAddress": "Địa chỉ",
+        "infoHours": "Giờ làm việc",
+        "infoHoursValue": "Thứ 2 – Thứ 6, 8:00 – 18:00 (ICT)",
+        "required": "Bắt buộc"
+    },
     "Breadcrumbs": {
         "home": "Trang chủ",
         "services": "Dịch vụ",
         "portfolio": "Dự án"
+    },
+    "PortfolioPage": {
+        "badge": "Dự án của chúng tôi",
+        "heroTitle1": "Dự án",
+        "heroHighlight": "nổi bật",
+        "heroDesc": "Dự án thực tế. Kết quả thực tế. Xem cách chúng tôi đã chuyển đổi doanh nghiệp bằng các giải pháp số xuất sắc.",
+        "btnAllProjects": "Xem tất cả dự án",
+        "filterAll": "Tất cả",
+        "noResults": "Không tìm thấy dự án nào trong danh mục này.",
+        "viewProject": "Xem dự án",
+        "viewCaseStudy": "Xem nghiên cứu trường hợp"
     },
     "ServiceDetailPage": {
         "startingFrom": "Giá từ",
@@ -371,5 +415,16 @@
         "termsDescription": "Điều khoản dịch vụ của LOOP - Quy định sử dụng website và dịch vụ phát triển web.",
         "teamTitle": "Đội Ngũ | LOOP",
         "teamDescription": "Gặp gỡ đội ngũ chuyên gia đằng sau LOOP - 50+ chuyên gia thiết kế website và phát triển ứng dụng."
+    },
+    "BlogPage": {
+        "badge": "Kiến thức công nghệ",
+        "heroTitle1": "Tin tức từ",
+        "heroHighlight": "Blog",
+        "heroDesc": "Chia sẻ kiến thức về thiết kế web, SEO, marketing trực tuyến và xu hướng công nghệ mới nhất.",
+        "readMore": "Đọc tiếp",
+        "minRead": "phút đọc",
+        "publishedOn": "Đăng ngày",
+        "noResults": "Không tìm thấy bài viết nào.",
+        "viewAll": "Xem tất cả bài viết"
     }
 }

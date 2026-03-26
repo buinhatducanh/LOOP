@@ -90,6 +90,17 @@
         "teamDesc": "The talented people behind every successful project",
         "teamViewAll": "View all team members"
     },
+    "TeamPage": {
+        "badge": "Meet the Team",
+        "heroTitle1": "Meet the ",
+        "heroHighlight": "team",
+        "heroTitle2": " of experts",
+        "heroDesc": "The talented people behind every successful project",
+        "viewProfile": "View Profile",
+        "skills": "Skills",
+        "experience": "Experience",
+        "noResults": "No team members found."
+    },
     "Stats": {
         "projects_label": "Projects Delivered",
         "satisfaction_label": "Client Satisfaction",
@@ -209,10 +220,43 @@
         "faq5_q": "Can you design the UI/UX as well?",
         "faq5_a": "Yes, our team includes expert UI/UX designers who will create a stunning, user-friendly interface for your project."
     },
+    "ContactPage": {
+        "badge": "Get in Touch",
+        "heroTitle1": "Let's",
+        "heroHighlight": "Talk",
+        "heroDesc": "We'd love to hear about your project. Get in touch and we'll get back to you within 24 hours.",
+        "formName": "Your Name",
+        "formEmail": "Email Address",
+        "formPhone": "Phone Number",
+        "formCompany": "Company (optional)",
+        "formMessage": "Tell us about your project",
+        "formSubmit": "Send Message",
+        "formSending": "Sending...",
+        "formSuccess": "Message sent! We'll get back to you within 24 hours.",
+        "formError": "Something went wrong. Please try again.",
+        "infoTitle": "Contact Information",
+        "infoEmail": "Email",
+        "infoPhone": "Phone",
+        "infoAddress": "Address",
+        "infoHours": "Business Hours",
+        "infoHoursValue": "Mon–Fri, 8:00 AM – 6:00 PM (ICT)",
+        "required": "Required"
+    },
     "Breadcrumbs": {
         "home": "Home",
         "services": "Services",
         "portfolio": "Portfolio"
+    },
+    "PortfolioPage": {
+        "badge": "Our Work",
+        "heroTitle1": "Featured",
+        "heroHighlight": "Projects",
+        "heroDesc": "Real projects. Real results. See how we've transformed businesses with exceptional digital solutions.",
+        "btnAllProjects": "View All Projects",
+        "filterAll": "All",
+        "noResults": "No projects found in this category.",
+        "viewProject": "View Project",
+        "viewCaseStudy": "View Case Study"
     },
     "ServiceDetailPage": {
         "startingFrom": "Starting from",
@@ -369,5 +413,16 @@
         "termsDescription": "LOOP Terms of Service - Terms governing the use of our website and services.",
         "teamTitle": "Our Team | LOOP",
         "teamDescription": "Meet the talented team behind LOOP - 50+ experts in web design and app development."
+    },
+    "BlogPage": {
+        "badge": "Tech Insights",
+        "heroTitle1": "From the",
+        "heroHighlight": "Blog",
+        "heroDesc": "Sharing insights on web design, SEO, online marketing, and the latest tech trends.",
+        "readMore": "Read More",
+        "minRead": "min read",
+        "publishedOn": "Published",
+        "noResults": "No blog posts found.",
+        "viewAll": "View All Posts"
     }
 }

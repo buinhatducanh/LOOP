@@ -90,6 +90,17 @@
         "teamDesc": "すべての成功プロジェクトの背後にある才能ある人々",
         "teamViewAll": "全チームメンバーを表示"
     },
+    "TeamPage": {
+        "badge": "チーム紹介",
+        "heroTitle1": "専門家 ",
+        "heroHighlight": "チームに",
+        "heroTitle2": " 会いましょう",
+        "heroDesc": "すべての成功プロジェクトの背後にある才能ある人々",
+        "viewProfile": "プロフィールを見る",
+        "skills": "スキル",
+        "experience": "経験",
+        "noResults": "チームメンバーが見つかりません。"
+    },
     "Stats": {
         "projects_label": "完了プロジェクト",
         "satisfaction_label": "クライアント満足度",
@@ -213,6 +224,17 @@
         "home": "ホーム",
         "services": "サービス",
         "portfolio": "ポートフォリオ"
+    },
+    "PortfolioPage": {
+        "badge": "私たちの仕事",
+        "heroTitle1": "注目の",
+        "heroHighlight": "プロジェクト",
+        "heroDesc": "実際のプロジェクト。実際の結果。優れたデジタルソリューションでビジネスをどのように変革したかをご覧ください。",
+        "btnAllProjects": "すべてのプロジェクトを見る",
+        "filterAll": "すべて",
+        "noResults": "このカテゴリーのプロジェクトが見つかりません。",
+        "viewProject": "プロジェクトを見る",
+        "viewCaseStudy": "案例を見る"
     },
     "ServiceDetailPage": {
         "startingFrom": "価格",
@@ -369,5 +391,16 @@
         "termsDescription": "LOOP利用規約 - 当社のウェブサイトとサービスの使用を規定する利用規約。",
         "teamTitle": "私たちのチーム | LOOP",
         "teamDescription": "LOOPの裏にいる才能あるチームに会う - ウェブデザインとアプリ開発における50人以上の専門家。"
+    },
+    "BlogPage": {
+        "badge": "技術インサイト",
+        "heroTitle1": "",
+        "heroHighlight": "ブログ",
+        "heroDesc": "ウェブデザイン、SEOオンラインマーケティング、最新の技術トレンドに関するインサイトを共有します。",
+        "readMore": "続きを読む",
+        "minRead": "分で読了",
+        "publishedOn": "公開日",
+        "noResults": "ブログ記事が見つかりません。",
+        "viewAll": "すべての記事を見る"
     }
 }
