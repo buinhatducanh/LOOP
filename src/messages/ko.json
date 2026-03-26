@@ -220,6 +220,28 @@
         "faq5_q": "UI/UX 디자인도 제공하나요?",
         "faq5_a": "네. 팀에는 프로젝트용으로 멋지고 사용자 친화적인 인터페이스를 만들 전문가 UI/UX 디자이너가 포함되어 있습니다."
     },
+    "ContactPage": {
+        "badge": "문의",
+        "heroTitle1": "",
+        "heroHighlight": "문의하기",
+        "heroDesc": "고객님의 프로젝트에 대해 말씀해 주세요. 문의하시면 24시간 이내에 회신드리겠습니다.",
+        "formName": "이름",
+        "formEmail": "이메일 주소",
+        "formPhone": "전화번호",
+        "formCompany": "회사명（선택）",
+        "formMessage": "프로젝트에 대해 말씀해 주세요",
+        "formSubmit": "보내기",
+        "formSending": "전송 중...",
+        "formSuccess": "보내졌습니다! 24시간 이내에 회신드리겠습니다.",
+        "formError": "오류가 발생했습니다. 다시 시도해 주세요.",
+        "infoTitle": "연락처 정보",
+        "infoEmail": "이메일",
+        "infoPhone": "전화",
+        "infoAddress": "주소",
+        "infoHours": "영업 시간",
+        "infoHoursValue": "월~금, 8:00~18:00 (ICT)",
+        "required": "필수"
+    },
     "Breadcrumbs": {
         "home": "홈",
         "services": "서비스",

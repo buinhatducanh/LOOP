@@ -220,6 +220,28 @@
         "faq5_q": "UI/UXもデザインできますか？",
         "faq5_a": "はい。チームには、プロジェクトのために素晴らしいユーザーフレンドリーなインターフェースを作成する専門家UI/UXデザイナーが含まれています。"
     },
+    "ContactPage": {
+        "badge": "お問い合わせ",
+        "heroTitle1": "",
+        "heroHighlight": "お問い合わせ",
+        "heroDesc": "お客様のプロジェクトについてお聞かせください。联系我们から24時間以内にご連絡いたします。",
+        "formName": "お名前",
+        "formEmail": "メールアドレス",
+        "formPhone": "電話番号",
+        "formCompany": "会社名（任意）",
+        "formMessage": "プロジェクトについてお聞かせください",
+        "formSubmit": "送信",
+        "formSending": "送信中...",
+        "formSuccess": "送信されました！24時間以内にご連絡いたします。",
+        "formError": "エラーが発生しました。もう一度お試しください。",
+        "infoTitle": "連絡先情報",
+        "infoEmail": "メール",
+        "infoPhone": "電話",
+        "infoAddress": "住所",
+        "infoHours": "営業時間",
+        "infoHoursValue": "月曜日〜金曜日、8:00〜18:00（ICT）",
+        "required": "必須"
+    },
     "Breadcrumbs": {
         "home": "ホーム",
         "services": "サービス",

@@ -220,6 +220,28 @@
         "faq5_q": "你们也可以设计UI/UX吗？",
         "faq5_a": "是的。我们的团队包括专业的UI/UX设计师，他们将为您的项目创建精美、用户友好的界面。"
     },
+    "ContactPage": {
+        "badge": "联系我们",
+        "heroTitle1": "来",
+        "heroHighlight": "聊聊吧",
+        "heroDesc": "我们很乐意了解您的项目。请联系我们，我们将在24小时内回复。",
+        "formName": "您的姓名",
+        "formEmail": "电子邮件地址",
+        "formPhone": "电话号码",
+        "formCompany": "公司（选填）",
+        "formMessage": "告诉我们您的项目",
+        "formSubmit": "发送消息",
+        "formSending": "发送中...",
+        "formSuccess": "已发送！我们将在24小时内回复。",
+        "formError": "出现错误，请重试。",
+        "infoTitle": "联系方式",
+        "infoEmail": "邮箱",
+        "infoPhone": "电话",
+        "infoAddress": "地址",
+        "infoHours": "营业时间",
+        "infoHoursValue": "周一至周五，8:00 – 18:00（ICT）",
+        "required": "必填"
+    },
     "Breadcrumbs": {
         "home": "首页",
         "services": "服务",

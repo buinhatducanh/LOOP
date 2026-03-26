@@ -220,6 +220,28 @@
         "faq5_q": "Bạn có thiết kế UI/UX không?",
         "faq5_a": "Có, đội ngũ của chúng tôi bao gồm các chuyên gia UI/UX tạo ra giao diện đẹp mắt và thân thiện cho dự án của bạn."
     },
+    "ContactPage": {
+        "badge": "Liên hệ",
+        "heroTitle1": "Hãy",
+        "heroHighlight": "trò chuyện",
+        "heroDesc": "Chúng tôi rất muốn nghe về dự án của bạn. Liên hệ ngay và chúng tôi sẽ phản hồi trong 24 giờ.",
+        "formName": "Họ và tên",
+        "formEmail": "Địa chỉ email",
+        "formPhone": "Số điện thoại",
+        "formCompany": "Công ty (tùy chọn)",
+        "formMessage": "Kể về dự án của bạn",
+        "formSubmit": "Gửi tin nhắn",
+        "formSending": "Đang gửi...",
+        "formSuccess": "Đã gửi! Chúng tôi sẽ phản hồi trong 24 giờ.",
+        "formError": "Có lỗi xảy ra. Vui lòng thử lại.",
+        "infoTitle": "Thông tin liên hệ",
+        "infoEmail": "Email",
+        "infoPhone": "Điện thoại",
+        "infoAddress": "Địa chỉ",
+        "infoHours": "Giờ làm việc",
+        "infoHoursValue": "Thứ 2 – Thứ 6, 8:00 – 18:00 (ICT)",
+        "required": "Bắt buộc"
+    },
     "Breadcrumbs": {
         "home": "Trang chủ",
         "services": "Dịch vụ",

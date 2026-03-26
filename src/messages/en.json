@@ -220,6 +220,28 @@
         "faq5_q": "Can you design the UI/UX as well?",
         "faq5_a": "Yes, our team includes expert UI/UX designers who will create a stunning, user-friendly interface for your project."
     },
+    "ContactPage": {
+        "badge": "Get in Touch",
+        "heroTitle1": "Let's",
+        "heroHighlight": "Talk",
+        "heroDesc": "We'd love to hear about your project. Get in touch and we'll get back to you within 24 hours.",
+        "formName": "Your Name",
+        "formEmail": "Email Address",
+        "formPhone": "Phone Number",
+        "formCompany": "Company (optional)",
+        "formMessage": "Tell us about your project",
+        "formSubmit": "Send Message",
+        "formSending": "Sending...",
+        "formSuccess": "Message sent! We'll get back to you within 24 hours.",
+        "formError": "Something went wrong. Please try again.",
+        "infoTitle": "Contact Information",
+        "infoEmail": "Email",
+        "infoPhone": "Phone",
+        "infoAddress": "Address",
+        "infoHours": "Business Hours",
+        "infoHoursValue": "Mon–Fri, 8:00 AM – 6:00 PM (ICT)",
+        "required": "Required"
+    },
     "Breadcrumbs": {
         "home": "Home",
         "services": "Services",
