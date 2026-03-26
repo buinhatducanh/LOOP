@@ -412,7 +412,13 @@
         "termsTitle": "服务条款 | LOOP",
         "termsDescription": "LOOP服务条款 - 约束我们网站和服务使用的条款。",
         "teamTitle": "我们的团队 | LOOP",
-        "teamDescription": "认识LOOP背后才华横溢的团队——50多位网页设计和应用开发专家。"
+        "teamDescription": "认识LOOP背后才华横溢的团队——50多位网页设计和应用开发专家。",
+        "serviceDetailTitle": "{name} - 服务 | LOOP",
+        "serviceDetailDescription": "LOOP的{name}服务。",
+        "projectDetailTitle": "{name} - 项目 | LOOP",
+        "projectDetailDescription": "LOOP的{name}项目。",
+        "blogDetailTitle": "{name} | LOOP博客",
+        "blogDetailDescription": "{excerpt}"
     },
     "BlogPage": {
         "badge": "技术见解",

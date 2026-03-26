@@ -3,6 +3,7 @@
  * Phase 0 i18n: wired to POST /api/contact
  */
 
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 import { getTranslations } from "next-intl/server";
@@ -10,6 +11,15 @@ import { routing } from "@/i18n/routing";
 import { ContactForm } from "./_components/ContactForm";
 
 type Props = { params: Promise<{ locale: string }> };
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale } = await params;
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://loop.vn";
+  return {
+    title: "Liên hệ - Báo giá dịch vụ web",
+    alternates: { canonical: `${baseUrl}/${locale}/contact` },
+  };
+}
 
 export default async function ContactPage({ params }: Props) {
   const { locale } = await params;

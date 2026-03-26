@@ -3,6 +3,7 @@
  * Phase 0 i18n: wired to DB, ServiceDetailPage namespace
  */
 
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 import { getTranslations } from "next-intl/server";
@@ -11,9 +12,20 @@ import { prisma } from "@/lib/prisma";
 import { parseLocaleParam } from "@/lib/i18n/localization";
 import { mapLocalizedService } from "@/lib/i18n/localization";
 
-type Props = { params: Promise<{ locale: string; slug: string }> };
+type Props = { params: Promise<{ locale: string }> };
 
-export default async function ServiceDetailPage({ params }: Props) {
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale } = await params;
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://loop.vn";
+  return {
+    title: "Dịch vụ thiết kế Website | LOOP",
+    alternates: { canonical: `${baseUrl}/${locale}/services` },
+  };
+}
+
+type DetailProps = { params: Promise<{ locale: string; slug: string }> };
+
+export default async function ServiceDetailPage({ params }: DetailProps) {
   const { locale, slug } = await params;
   if (!routing.locales.includes(locale as (typeof routing.locales)[number])) notFound();
   setRequestLocale(locale);

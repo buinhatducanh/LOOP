@@ -412,7 +412,13 @@
         "termsTitle": "利用規約 | LOOP",
         "termsDescription": "LOOP利用規約 - 当社のウェブサイトとサービスの使用を規定する利用規約。",
         "teamTitle": "私たちのチーム | LOOP",
-        "teamDescription": "LOOPの裏にいる才能あるチームに会う - ウェブデザインとアプリ開発における50人以上の専門家。"
+        "teamDescription": "LOOPの裏にいる才能あるチームに会う - ウェブデザインとアプリ開発における50人以上の専門家。",
+        "serviceDetailTitle": "{name} - サービス | LOOP",
+        "serviceDetailDescription": "LOOPの{name}サービス。",
+        "projectDetailTitle": "{name} - プロジェクト | LOOP",
+        "projectDetailDescription": "LOOPの{name}プロジェクト。",
+        "blogDetailTitle": "{name} | LOOPブログ",
+        "blogDetailDescription": "{excerpt}"
     },
     "BlogPage": {
         "badge": "技術インサイト",

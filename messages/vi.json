@@ -414,7 +414,13 @@
         "termsTitle": "Điều khoản Dịch vụ | LOOP",
         "termsDescription": "Điều khoản dịch vụ của LOOP - Quy định sử dụng website và dịch vụ phát triển web.",
         "teamTitle": "Đội Ngũ | LOOP",
-        "teamDescription": "Gặp gỡ đội ngũ chuyên gia đằng sau LOOP - 50+ chuyên gia thiết kế website và phát triển ứng dụng."
+        "teamDescription": "Gặp gỡ đội ngũ chuyên gia đằng sau LOOP - 50+ chuyên gia thiết kế website và phát triển ứng dụng.",
+        "serviceDetailTitle": "{name} - Dịch vụ | LOOP",
+        "serviceDetailDescription": "Dịch vụ {name} từ LOOP.",
+        "projectDetailTitle": "{name} - Dự án | LOOP",
+        "projectDetailDescription": "Dự án {name} của LOOP.",
+        "blogDetailTitle": "{name} | LOOP Blog",
+        "blogDetailDescription": "{excerpt}"
     },
     "BlogPage": {
         "badge": "Kiến thức công nghệ",

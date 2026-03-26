@@ -13,7 +13,7 @@ type Props = {
 };
 
 export default async function SiteHeader({ locale, activeRoute }: Props) {
-  const t = await getTranslations("nav");
+  const t = await getTranslations("Navigation");
 
   const navLinks = [
     { href: `/${locale}`, label: t("home"), key: "home" },

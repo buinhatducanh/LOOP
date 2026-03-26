@@ -3,12 +3,22 @@
  * Phase 0 i18n: wired to AboutPage namespace
  */
 
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 import { getTranslations } from "next-intl/server";
 import { routing } from "@/i18n/routing";
 
 type Props = { params: Promise<{ locale: string }> };
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale } = await params;
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://loop.vn";
+  return {
+    title: "Về LOOP - Đội ngũ thiết kế và phát triển web cao cấp",
+    alternates: { canonical: `${baseUrl}/${locale}/about` },
+  };
+}
 
 export default async function AboutPage({ params }: Props) {
   const { locale } = await params;

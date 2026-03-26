@@ -3,6 +3,7 @@
  * Phase 0 i18n: wired to DB, ProjectDetailPage namespace
  */
 
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 import { getTranslations } from "next-intl/server";
@@ -12,6 +13,15 @@ import { parseLocaleParam } from "@/lib/i18n/localization";
 import { mapLocalizedProject } from "@/lib/i18n/localization";
 
 type Props = { params: Promise<{ locale: string; slug: string }> };
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale } = await params;
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://loop.vn";
+  return {
+    title: "Dự án đã thực hiện | LOOP",
+    alternates: { canonical: `${baseUrl}/${locale}/portfolio` },
+  };
+}
 
 export default async function PortfolioDetailPage({ params }: Props) {
   const { locale, slug } = await params;

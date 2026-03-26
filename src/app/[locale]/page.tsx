@@ -3,6 +3,8 @@
  * Phase 0 i18n: fully wired to DB for dynamic sections
  */
 
+import type { Metadata } from "next";
+
 import { notFound } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 import { getTranslations } from "next-intl/server";
@@ -14,6 +16,15 @@ import { mapLocalizedProject } from "@/lib/i18n/localization";
 import { mapLocalizedTeamMember } from "@/lib/i18n/localization";
 
 type Props = { params: Promise<{ locale: string }> };
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale } = await params;
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://loop.vn";
+  return {
+    title: { absolute: "LOOP Agency" },
+    alternates: { canonical: `${baseUrl}/${locale}` },
+  };
+}
 
 export default async function LocaleHomePage({ params }: Props) {
   const { locale } = await params;

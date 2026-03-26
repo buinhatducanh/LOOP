@@ -412,7 +412,13 @@
         "termsTitle": "Terms of Service | LOOP",
         "termsDescription": "LOOP Terms of Service - Terms governing the use of our website and services.",
         "teamTitle": "Our Team | LOOP",
-        "teamDescription": "Meet the talented team behind LOOP - 50+ experts in web design and app development."
+        "teamDescription": "Meet the talented team behind LOOP - 50+ experts in web design and app development.",
+        "serviceDetailTitle": "{name} - Services | LOOP",
+        "serviceDetailDescription": "{name} service by LOOP.",
+        "projectDetailTitle": "{name} - Project | LOOP",
+        "projectDetailDescription": "{name} project by LOOP.",
+        "blogDetailTitle": "{name} | LOOP Blog",
+        "blogDetailDescription": "{excerpt}"
     },
     "BlogPage": {
         "badge": "Tech Insights",

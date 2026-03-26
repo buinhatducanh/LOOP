@@ -412,7 +412,13 @@
         "termsTitle": "이용약관 | LOOP",
         "termsDescription": "LOOP 이용약관 - 당사 웹사이트 및 서비스 사용을 관리하는 이용약관.",
         "teamTitle": "우리 팀 | LOOP",
-        "teamDescription": "LOOP 뒤에 있는 재능 있는 팀을 만나보세요 - 웹 디자인 및 앱 개발 전문가 50명 이상."
+        "teamDescription": "LOOP 뒤에 있는 재능 있는 팀을 만나보세요 - 웹 디자인 및 앱 개발 전문가 50명 이상.",
+        "serviceDetailTitle": "{name} - 서비스 | LOOP",
+        "serviceDetailDescription": "LOOP의 {name} 서비스입니다.",
+        "projectDetailTitle": "{name} - 프로젝트 | LOOP",
+        "projectDetailDescription": "LOOP의 {name} 프로젝트입니다.",
+        "blogDetailTitle": "{name} | LOOP 블로그",
+        "blogDetailDescription": "{excerpt}"
     },
     "BlogPage": {
         "badge": "기술 인사이트",
