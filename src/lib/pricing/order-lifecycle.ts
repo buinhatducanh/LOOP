@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
-import { awardCustomerLpOnPayment } from "@/lib/customer/lp";
-import { awardReferralLpOnPayment, awardReferralLpOnCompletion } from "@/lib/customer/referral";
+import { awardCustomerLpOnPayment } from "@/lib/services/customer/lp.service";
+import { awardReferralLpOnPayment, awardReferralLpOnCompletion } from "@/lib/services/customer/referral.service";
 import { distributeLpFromOrder } from "@/lib/pricing/quote-to-order";
 
 /**

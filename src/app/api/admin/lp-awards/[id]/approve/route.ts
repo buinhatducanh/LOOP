@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
 import { syncRankFields } from "@/lib/rank/xp";
+import { handleError } from "@/lib/api";
 
 // POST /api/admin/lp-awards/[id]/approve
 // action: "approve" → credit LP + rank sync
@@ -161,11 +162,6 @@ export async function POST(
       data: { awardId: id, action, rank },
     });
   } catch (error) {
-    const msg = error instanceof Error ? error.message : "Server error";
-    const status =
-      msg === "Unauthorized" ? 401
-        : msg === "Forbidden" ? 403
-        : 500;
-    return NextResponse.json({ error: msg }, { status });
+    return handleError(error);
   }
 }

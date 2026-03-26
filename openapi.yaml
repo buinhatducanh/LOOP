@@ -1,0 +1,403 @@
+openapi: 3.0.3
+info:
+  title: LOOP API
+  version: 1.0.0
+  description: |
+    LOOP Website API contract (public + admin).
+    Response convention:
+      - Success single: { data: T }
+      - Success list: { data: T[], pagination }
+      - Error: { error: string, code?: string }
+servers:
+  - url: https://loop.vn
+    description: Production
+  - url: http://localhost:3000
+    description: Local
+
+tags:
+  - name: Public
+  - name: Auth
+  - name: Admin
+  - name: Webhooks
+
+paths:
+  /api/contact:
+    post:
+      tags: [Public]
+      summary: Submit contact form
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContactInput'
+      responses:
+        '201':
+          description: Contact submitted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessContact'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Rate limited
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/search:
+    get:
+      tags: [Public]
+      summary: Global search
+      parameters:
+        - in: query
+          name: q
+          schema: { type: string }
+          required: true
+        - in: query
+          name: locale
+          schema:
+            type: string
+            enum: [vi, en]
+      responses:
+        '200':
+          description: Search result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessSearch'
+
+  /api/admin/auth/login:
+    post:
+      tags: [Auth]
+      summary: Login with credentials
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string }
+      responses:
+        '200':
+          description: Authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessAuthMe'
+
+  /api/admin/auth/me:
+    get:
+      tags: [Auth]
+      summary: Get current session user
+      responses:
+        '200':
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessAuthMe'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/admin/orders:
+    get:
+      tags: [Admin]
+      summary: List orders
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+      responses:
+        '200':
+          description: Order list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessOrderList'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      tags: [Admin]
+      summary: Create order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderInput'
+      responses:
+        '201':
+          description: Order created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessOrder'
+
+  /api/admin/events/stream:
+    get:
+      tags: [Admin]
+      summary: SSE stream for admin realtime updates
+      responses:
+        '200':
+          description: Server-Sent Events stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/admin/notifications:
+    get:
+      tags: [Admin]
+      summary: List current user's notifications
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+        - in: query
+          name: unread
+          schema: { type: boolean }
+      responses:
+        '200':
+          description: Notification list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessNotificationList'
+
+  /api/webhooks/github/{projectId}:
+    post:
+      tags: [Webhooks]
+      summary: GitHub webhook receiver
+      parameters:
+        - in: path
+          name: projectId
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Received
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  received: { type: boolean }
+
+  /api/webhooks/vercel/{projectId}:
+    post:
+      tags: [Webhooks]
+      summary: Vercel webhook receiver
+      parameters:
+        - in: path
+          name: projectId
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Received
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  received: { type: boolean }
+
+  /api/webhooks/loop:
+    post:
+      tags: [Webhooks]
+      summary: Internal LOOP webhook receiver
+      responses:
+        '200':
+          description: Processed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      received: { type: boolean }
+                      eventId: { type: string }
+                      eventType: { type: string }
+
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+        code:
+          type: string
+          nullable: true
+
+    Pagination:
+      type: object
+      required: [page, limit, total, totalPages]
+      properties:
+        page: { type: integer }
+        limit: { type: integer }
+        total: { type: integer }
+        totalPages: { type: integer }
+
+    ContactInput:
+      type: object
+      required: [name, email, message]
+      properties:
+        name: { type: string }
+        email: { type: string, format: email }
+        phone: { type: string, nullable: true }
+        service: { type: string, nullable: true }
+        message: { type: string }
+
+    Contact:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        email: { type: string }
+        phone: { type: string, nullable: true }
+        message: { type: string }
+
+    SearchResult:
+      type: object
+      properties:
+        services:
+          type: array
+          items: { type: object }
+        team:
+          type: array
+          items: { type: object }
+        projects:
+          type: array
+          items: { type: object }
+        total: { type: integer }
+
+    AuthUser:
+      type: object
+      properties:
+        userId: { type: string }
+        email: { type: string }
+        name: { type: string }
+        role: { type: string }
+        roles:
+          type: array
+          items: { type: string }
+        avatar: { type: string, nullable: true }
+        accountType:
+          type: string
+          enum: [staff, customer]
+        roleLevel: { type: integer }
+        permissions:
+          type: array
+          items:
+            type: object
+            properties:
+              resource: { type: string }
+              action: { type: string }
+              scope: { type: string }
+
+    OrderInput:
+      type: object
+      properties:
+        customerName: { type: string }
+        customerEmail: { type: string }
+        customerPhone: { type: string, nullable: true }
+        requirements: { type: string, nullable: true }
+
+    Order:
+      type: object
+      properties:
+        id: { type: string }
+        orderNumber: { type: string }
+        status: { type: string }
+        totalAmount: { type: integer, nullable: true }
+        customerName: { type: string }
+        customerEmail: { type: string }
+
+    Notification:
+      type: object
+      properties:
+        id: { type: string }
+        type: { type: string }
+        title: { type: string }
+        message: { type: string }
+        isRead: { type: boolean }
+        createdAt: { type: string, format: date-time }
+
+    SuccessContact:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Contact'
+
+    SuccessSearch:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/SearchResult'
+
+    SuccessAuthMe:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/AuthUser'
+
+    SuccessOrder:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Order'
+
+    SuccessOrderList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Order'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+
+    SuccessNotificationList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Notification'
+        pagination:
+          $ref: '#/components/schemas/Pagination'

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { ok, handleError } from "@/lib/api/response";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth/permissions";
 
@@ -120,9 +121,8 @@ export async function DELETE(
       where: { id },
     });
 
-    return NextResponse.json({ success: true });
+    return ok({ success: true });
   } catch (error) {
-    console.error("Error deleting website:", error);
-    return NextResponse.json({ error: "Lỗi server" }, { status: 500 });
+    return handleError(error);
   }
 }

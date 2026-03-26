@@ -1,7 +1,8 @@
+import { handleError } from "@/lib/api/response";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
-import { computeAvailableLp, reconcileBalance } from "@/lib/lp/transaction";
+import { computeAvailableLp, reconcileBalance } from "@/lib/services/gamification/transaction.service";
 
 // GET /api/admin/lp-transactions/[memberId]/balance
 // Returns LP balance snapshot (locked, available, ledger total) for a member.
@@ -93,8 +94,6 @@ export async function GET(
       },
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Server error";
-    const status = message === "Unauthorized" ? 401 : message === "Forbidden" ? 403 : 500;
-    return NextResponse.json({ error: message }, { status });
+    return handleError(error);
   }
 }

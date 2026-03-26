@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { v2 as cloudinary } from "cloudinary";
 import { requireAuth } from "@/lib/auth/permissions";
+import { ok, handleError } from "@/lib/api/response";
 
 cloudinary.config({
   cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
@@ -73,7 +74,7 @@ export async function POST(req: NextRequest) {
     });
 
     const uploadResult = await uploadPromise;
-    return NextResponse.json({
+    return ok({
       success: true,
       url: uploadResult.secure_url,
       publicId: uploadResult.public_id,
@@ -114,9 +115,7 @@ export async function DELETE(req: NextRequest) {
 
     const deleteResult = await cloudinary.uploader.destroy(publicId);
 
-    return NextResponse.json({
-      success: deleteResult.result === "ok",
-    });
+    return ok({ success: deleteResult.result === "ok" });
   } catch (error) {
     console.error("Delete error:", error);
     return NextResponse.json(

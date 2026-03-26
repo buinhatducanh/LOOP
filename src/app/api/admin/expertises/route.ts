@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requirePermission } from "@/lib/auth/permissions";
+import { handleError, ok } from "@/lib/api";
 
 export async function GET(req: NextRequest) {
   try {
+    await requirePermission("expertises", "read");
     const { searchParams } = new URL(req.url);
     const activeOnly = searchParams.get("active") === "true";
     const where = activeOnly ? { isActive: true } : {};
@@ -12,14 +15,15 @@ export async function GET(req: NextRequest) {
       orderBy: [{ category: "asc" }, { sortOrder: "asc" }],
     });
 
-    return NextResponse.json({ data: expertises });
+    return ok(expertises);
   } catch (error) {
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    return handleError(error);
   }
 }
 
 export async function POST(req: NextRequest) {
   try {
+    await requirePermission("expertises", "create");
     const data = await req.json();
 
     const categories: Record<string, string> = {
@@ -49,6 +53,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ data: expertise }, { status: 201 });
   } catch (error) {
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    return handleError(error);
   }
 }

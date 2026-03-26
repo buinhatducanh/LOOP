@@ -1,42 +1,37 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth/permissions";
+import { handleError, ok } from "@/lib/api";
 
-// GET - Lấy danh sách ads
+// GET — List advertisements
 export async function GET() {
   try {
-    const session = await getSession();
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    await getSession();
 
     const ads = await prisma.advertisement.findMany({
       orderBy: { sortOrder: "asc" },
     });
 
-    return NextResponse.json({ data: ads });
+    return ok(ads);
   } catch (error) {
     console.error("Error fetching ads:", error);
-    return NextResponse.json({ error: "Lỗi server" }, { status: 500 });
+    return handleError(error);
   }
 }
 
-// POST - Tạo ad mới
+// POST — Create a new advertisement
 export async function POST(req: NextRequest) {
   try {
-    const session = await getSession();
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    await getSession();
 
     const body = await req.json();
     const ad = await prisma.advertisement.create({
       data: body,
     });
 
-    return NextResponse.json({ data: ad });
+    return ok(ad, 201);
   } catch (error) {
     console.error("Error creating ad:", error);
-    return NextResponse.json({ error: "Lỗi server" }, { status: 500 });
+    return handleError(error);
   }
 }

@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { ok, serverError } from "@/lib/api/response";
 import { prisma } from "@/lib/prisma";
 
 // Public API: Trả về dữ liệu cho trang "Mô hình Cung cấp Dịch vụ Website Kép"
@@ -34,9 +34,9 @@ export async function GET() {
       }),
     ]);
 
-    return NextResponse.json({ templates, attributes });
+    return ok({ templates, attributes });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Server error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error("Failed to fetch dual-services:", error);
+    return serverError();
   }
 }

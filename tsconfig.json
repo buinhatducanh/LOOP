@@ -26,6 +26,9 @@
     "paths": {
       "@/*": [
         "./src/*"
+      ],
+      "@/generated/*": [
+        "./src/generated/*"
       ]
     }
   },
@@ -37,6 +40,8 @@
   ],
   "exclude": [
     "node_modules",
-    "_legacy_spa"
+    "_legacy_spa",
+    "tests/e2e/**",
+    "playwright.config.ts"
   ]
 }

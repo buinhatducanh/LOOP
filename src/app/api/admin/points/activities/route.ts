@@ -1,42 +1,37 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth/permissions";
+import { handleError, ok, badRequest } from "@/lib/api";
 
-// GET - Lấy danh sách activities
+// GET — List point activities
 export async function GET() {
   try {
-    const session = await getSession();
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    await getSession();
 
     const activities = await prisma.pointActivity.findMany({
       orderBy: { sortOrder: "asc" },
     });
 
-    return NextResponse.json({ data: activities });
+    return ok(activities);
   } catch (error) {
     console.error("Error fetching activities:", error);
-    return NextResponse.json({ error: "Lỗi server" }, { status: 500 });
+    return handleError(error);
   }
 }
 
-// POST - Tạo activity mới
+// POST — Create a new point activity
 export async function POST(req: NextRequest) {
   try {
-    const session = await getSession();
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    await getSession();
 
     const body = await req.json();
     const activity = await prisma.pointActivity.create({
       data: body,
     });
 
-    return NextResponse.json({ data: activity });
+    return ok(activity, 201);
   } catch (error) {
     console.error("Error creating activity:", error);
-    return NextResponse.json({ error: "Lỗi server" }, { status: 500 });
+    return handleError(error);
   }
 }

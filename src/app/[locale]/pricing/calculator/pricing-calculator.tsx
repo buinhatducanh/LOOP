@@ -1,559 +1,355 @@
 "use client";
 
-import { useEffect, useState, useMemo, useCallback } from "react";
-import { trackQuoteRequest, getOrCreateSessionId } from "@/lib/analytics/events";
-import {
-  Calculator,
-  ChevronDown,
-  Info,
-  Send,
-  Loader2,
-  Check,
-  ArrowLeft,
-  Sparkles,
-} from "lucide-react";
-import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
-// ─── Types ──────────────────────────────────────────────────────
-
-interface Variant {
+type Tier = {
   id: string;
-  variantName: string;
-  description: string | null;
-  price: number;
-}
-
-interface Feature {
-  id: string;
-  featureName: string;
-  description: string | null;
-  logicLevel: string;
-  isRequired: boolean;
-  variants: Variant[];
-}
-
-interface FeatureGroup {
-  id: string;
-  groupName: string;
   slug: string;
-  sortOrder: number;
-  features: Feature[];
+  name: string;
+  nameVi: string;
+  monthlyCost: number;
+  setupCost: number;
+  description: string | null;
+  descriptionVi: string | null;
+  color: string | null;
+};
+
+type Feature = {
+  id: string;
+  name: string;
+  nameVi: string;
+  category: string;
+  tier: string;
+  price: number;
+  xpPoints: number;
+  parentId: string | null;
+};
+
+type Reward = {
+  addonServiceId: string;
+  addonServiceName: string;
+  addonServiceNameVi: string;
+  rewardLevel: number;
+  quantity: number;
+  durationMonths: number | null;
+  description: string | null;
+};
+
+type PriceResult = {
+  basePrice: number;
+  featureTotal: number;
+  infraCost: number;
+  infraSetupCost: number;
+  systemPrice: number;
+  finalPrice: number;
+  totalXp: number;
+  rewardLevel: number;
+  rewards: Reward[];
+  validatedFeatureIds: string[];
+  infraTier: {
+    id: string;
+    slug: string;
+    name: string;
+    nameVi: string;
+    monthlyCost: number;
+    setupCost: number;
+  } | null;
+};
+
+function vnd(n: number) {
+  return new Intl.NumberFormat("vi-VN").format(n) + " ₫";
 }
 
-const formatPrice = (price: number) =>
-  new Intl.NumberFormat("vi-VN").format(price) + " ₫";
-
-// ─── Main Component ─────────────────────────────────────────────
-
-export function PricingCalculator() {
-  const [groups, setGroups] = useState<FeatureGroup[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selections, setSelections] = useState<Record<string, string>>({});
-  const [showQuoteForm, setShowQuoteForm] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-
-  // Fetch data
-  useEffect(() => {
-    fetch("/api/pricing/calculator")
-      .then((r) => r.json())
-      .then((data) => {
-        if (!Array.isArray(data)) {
-          console.error("API returned non-array:", data);
-          return;
-        }
-        setGroups(data);
-        // Auto-select cheapest variant for required features
-        const defaults: Record<string, string> = {};
-        for (const group of data) {
-          for (const feature of group.features) {
-            if (feature.isRequired && feature.variants.length > 0) {
-              // Variants already sorted by price ASC from API
-              defaults[feature.id] = feature.variants[0].id;
-            }
-          }
-        }
-        setSelections(defaults);
-      })
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, []);
-
-  // Build variant lookup
-  const variantMap = useMemo(() => {
-    const map: Record<string, Variant & { featureName: string }> = {};
-    for (const g of groups) {
-      for (const f of g.features) {
-        for (const v of f.variants) {
-          map[v.id] = { ...v, featureName: f.featureName };
-        }
-      }
-    }
-    return map;
-  }, [groups]);
-
-  // Calculate total
-  const totalPrice = useMemo(() => {
-    return Object.values(selections).reduce((sum, variantId) => {
-      const variant = variantMap[variantId];
-      return sum + (variant?.price || 0);
-    }, 0);
-  }, [selections, variantMap]);
-
-  // Selected items for quote
-  const selectedItems = useMemo(() => {
-    return Object.entries(selections)
-      .filter(([, variantId]) => variantId)
-      .map(([featureId, variantId]) => {
-        const variant = variantMap[variantId];
-        return {
-          featureId,
-          featureName: variant?.featureName || "",
-          variantId,
-          variantName: variant?.variantName || "",
-          price: variant?.price || 0,
-        };
-      })
-      .filter((item) => item.price > 0);
-  }, [selections, variantMap]);
-
-  const handleSelect = useCallback((featureId: string, variantId: string) => {
-    setSelections((prev) => {
-      if (variantId === "") {
-        const next = { ...prev };
-        delete next[featureId];
-        return next;
-      }
-      return { ...prev, [featureId]: variantId };
-    });
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950">
-        <Loader2 className="h-10 w-10 animate-spin text-blue-500" />
-      </div>
-    );
-  }
-
-  if (submitted) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 px-4">
-        <div
-          className="max-w-md text-center animate-scale-in"
-        >
-          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-green-500/20">
-            <Check className="h-10 w-10 text-green-400" />
-          </div>
-          <h2 className="mb-3 text-2xl font-bold text-white">
-            Đã gửi yêu cầu thành công!
-          </h2>
-          <p className="mb-6 text-slate-400">
-            Chúng tôi sẽ liên hệ với bạn trong thời gian sớm nhất để tư vấn chi tiết.
-          </p>
-          <Link
-            href="/pricing"
-            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-3 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
-          >
-            <ArrowLeft size={16} />
-            Quay lại trang Bảng giá
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950">
-      {/* Header */}
-      <div className="border-b border-slate-800/50 bg-slate-950/80 backdrop-blur-lg sticky top-0 z-30">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
-          <Link
-            href="/pricing"
-            className="flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors"
-          >
-            <ArrowLeft size={16} />
-            Bảng giá
-          </Link>
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-slate-400">Tổng ước tính:</span>
-            <span
-              key={totalPrice}
-              className="text-lg font-bold text-green-400 font-mono animate-fade-in"
-            >
-              {formatPrice(totalPrice)}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <div className="mx-auto max-w-5xl px-4 py-12">
-        {/* Title */}
-        <div className="mb-12 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg shadow-blue-500/20">
-            <Calculator className="h-7 w-7 text-white" />
-          </div>
-          <h1 className="mb-3 text-3xl font-bold text-white md:text-4xl">
-            Tùy chỉnh{" "}
-            <span className="bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
-              Báo giá Website
-            </span>
-          </h1>
-          <p className="mx-auto max-w-xl text-slate-400">
-            Chọn các tính năng bạn cần — giá tổng sẽ tự động cập nhật ngay lập tức.
-            Chỉ trả cho những gì bạn thực sự cần.
-          </p>
-        </div>
-
-        {/* Feature Groups */}
-        <div className="space-y-8">
-          {groups.map((group, groupIndex) => (
-            <div
-              key={group.id}
-              className="rounded-2xl border border-slate-800 bg-slate-900/50 backdrop-blur-sm overflow-hidden animate-fade-in"
-              style={{ animationDelay: `${groupIndex * 0.1}s` }}
-            >
-              {/* Group Header */}
-              <div className="flex items-center gap-3 border-b border-slate-800/50 px-6 py-4 bg-gradient-to-r from-slate-800/50 to-transparent">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/20">
-                  <Sparkles size={16} className="text-blue-400" />
-                </div>
-                <h2 className="text-lg font-semibold text-white">{group.groupName}</h2>
-                <span className="rounded-full bg-slate-800 px-2 py-0.5 text-xs text-slate-400">
-                  {group.features.length} tính năng
-                </span>
-              </div>
-
-              {/* Features */}
-              <div className="divide-y divide-slate-800/30">
-                {group.features.map((feature) => (
-                  <FeatureRow
-                    key={feature.id}
-                    feature={feature}
-                    selectedVariantId={selections[feature.id] || ""}
-                    onSelect={handleSelect}
-                  />
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Summary Bar */}
-        <div
-          className="mt-10 rounded-2xl border border-slate-700 bg-gradient-to-r from-slate-900 via-slate-800/80 to-slate-900 p-6 animate-fade-in"
-          style={{ animationDelay: "0.3s" }}
-        >
-          <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-            <div>
-              <p className="text-sm text-slate-400 mb-1">Tổng chi phí ước tính</p>
-              <p
-                key={totalPrice}
-                className="text-3xl font-bold text-green-400 font-mono animate-fade-in"
-              >
-                {formatPrice(totalPrice)}
-              </p>
-              {selectedItems.length > 0 && (
-                <p className="mt-1 text-xs text-slate-500">
-                  {selectedItems.length} tính năng được chọn
-                </p>
-              )}
-            </div>
-            <button
-              onClick={() => setShowQuoteForm(true)}
-              disabled={selectedItems.length === 0}
-              className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 px-8 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition-all hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-            >
-              <Send size={16} />
-              Nhận báo giá chi tiết qua Email
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Quote Form Modal */}
-      {showQuoteForm && (
-        <QuoteFormModal
-          selectedItems={selectedItems}
-          totalAmount={totalPrice}
-          onClose={() => setShowQuoteForm(false)}
-          onSubmitted={() => {
-            setShowQuoteForm(false);
-            setSubmitted(true);
-          }}
-        />
-      )}
-    </div>
-  );
+function toCategoryLabel(cat: string) {
+  const map: Record<string, string> = {
+    feature: "Tính năng",
+    design: "Thiết kế",
+    seo: "SEO",
+    marketing: "Marketing",
+    integration: "Tích hợp",
+    security: "Bảo mật",
+    performance: "Hiệu năng",
+  };
+  return map[cat] ?? cat;
 }
 
-// ─── Feature Row ────────────────────────────────────────────────
+export default function PricingCalculatorPage() {
+  const searchParams = useSearchParams();
 
-function FeatureRow({
-  feature,
-  selectedVariantId,
-  onSelect,
-}: {
-  feature: Feature;
-  selectedVariantId: string;
-  onSelect: (featureId: string, variantId: string) => void;
-}) {
-  const [showTooltip, setShowTooltip] = useState(false);
-  const selectedVariant = feature.variants.find((v) => v.id === selectedVariantId);
-
-  return (
-    <div className="flex flex-col gap-3 px-6 py-4 md:flex-row md:items-center">
-      {/* Feature Name */}
-      <div className="flex items-center gap-2 md:w-1/3">
-        <span className="text-sm font-medium text-slate-200">{feature.featureName}</span>
-        {feature.isRequired && (
-          <span className="rounded bg-purple-500/20 px-1.5 py-0.5 text-[10px] font-medium text-purple-400">
-            Bắt buộc
-          </span>
-        )}
-        {feature.description && (
-          <button
-            className="relative text-slate-500 hover:text-slate-300 transition-colors"
-            onMouseEnter={() => setShowTooltip(true)}
-            onMouseLeave={() => setShowTooltip(false)}
-          >
-            <Info size={14} />
-            {showTooltip && (
-              <div className="absolute bottom-full left-1/2 z-20 mb-2 w-60 -translate-x-1/2 rounded-lg border border-slate-700 bg-slate-800 p-3 text-xs text-slate-300 shadow-xl">
-                {feature.description}
-                <div className="absolute -bottom-1 left-1/2 h-2 w-2 -translate-x-1/2 rotate-45 border-b border-r border-slate-700 bg-slate-800" />
-              </div>
-            )}
-          </button>
-        )}
-      </div>
-
-      {/* Select */}
-      <div className="relative flex-1">
-        <select
-          value={selectedVariantId}
-          onChange={(e) => onSelect(feature.id, e.target.value)}
-          className="w-full appearance-none rounded-lg border border-slate-700 bg-slate-800/80 px-4 py-2.5 pr-10 text-sm text-white outline-none transition-colors focus:border-blue-500 focus:ring-1 focus:ring-blue-500 hover:border-slate-600 cursor-pointer"
-          id={`select-feature-${feature.id}`}
-        >
-          {!feature.isRequired && (
-            <option value="">-- Không chọn --</option>
-          )}
-          {feature.variants.map((variant) => (
-            <option key={variant.id} value={variant.id}>
-              {variant.variantName} — {formatPrice(variant.price)}
-            </option>
-          ))}
-        </select>
-        <ChevronDown
-          size={16}
-          className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
-        />
-      </div>
-
-      {/* Price */}
-      <div className="text-right md:w-32">
-        <span
-          key={selectedVariant?.price || 0}
-          className={`text-sm font-mono font-medium animate-fade-in ${
-            selectedVariant ? "text-green-400" : "text-slate-600"
-          }`}
-        >
-          {selectedVariant ? formatPrice(selectedVariant.price) : "0 ₫"}
-        </span>
-      </div>
-
-      {/* Variant tooltip */}
-      {selectedVariant?.description && (
-        <p className="text-xs text-slate-500 md:hidden">{selectedVariant.description}</p>
-      )}
-    </div>
-  );
-}
-
-// ─── Quote Form Modal ───────────────────────────────────────────
-
-function QuoteFormModal({
-  selectedItems,
-  totalAmount,
-  onClose,
-  onSubmitted,
-}: {
-  selectedItems: Array<{
-    featureId: string;
-    featureName: string;
-    variantId: string;
-    variantName: string;
-    price: number;
-  }>;
-  totalAmount: number;
-  onClose: () => void;
-  onSubmitted: () => void;
-}) {
-  const [saving, setSaving] = useState(false);
+  const [tiers, setTiers] = useState<Tier[]>([]);
+  const [features, setFeatures] = useState<Feature[]>([]);
+  const [infraTierSlug, setInfraTierSlug] = useState("");
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [result, setResult] = useState<PriceResult | null>(null);
+  const [loadingInit, setLoadingInit] = useState(true);
+  const [loadingCalc, setLoadingCalc] = useState(false);
   const [error, setError] = useState("");
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setSaving(true);
+  // Load tiers + features
+  useEffect(() => {
+    Promise.all([
+      fetch("/api/pricing/infrastructure-tiers"),
+      fetch("/api/pricing/features"),
+    ])
+      .then(([tRes, fRes]) => Promise.all([tRes.json(), fRes.json()]))
+      .then(([tiersJson, featJson]) => {
+        const fetchedTiers: Tier[] = tiersJson.data ?? [];
+        const fetchedFeatures: Feature[] = featJson.data ?? [];
+        setTiers(fetchedTiers);
+        setFeatures(fetchedFeatures);
+        // Init from URL params
+        const params = Object.fromEntries(searchParams);
+        if (params.tier) setInfraTierSlug(params.tier);
+        if (params.features) {
+          const ids = params.features.split(",").filter(Boolean);
+          setSelectedIds(ids);
+        }
+      })
+      .catch(() => setError("Không tải được dữ liệu."))
+      .finally(() => setLoadingInit(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function toggle(id: string) {
+    setSelectedIds(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
+  }
+
+  async function handleCalculate() {
+    setLoadingCalc(true);
     setError("");
-
-    const fd = new FormData(e.currentTarget);
-    const payload = {
-      customerName: fd.get("name") as string,
-      customerEmail: fd.get("email") as string,
-      customerPhone: (fd.get("phone") as string) || undefined,
-      companyName: (fd.get("company") as string) || undefined,
-      notes: (fd.get("notes") as string) || undefined,
-      selectedItems,
-      totalAmount,
-    };
-
     try {
-      const res = await fetch("/api/pricing/quote", {
+      const res = await fetch("/api/pricing/calculate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ selectedFeatureIds: selectedIds, infraTierSlug }),
       });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Đã có lỗi xảy ra");
-      }
-
-      // Track successful quote request
-      trackQuoteRequest("custom-calculator", selectedItems.length, totalAmount, {
-        sessionId: getOrCreateSessionId(),
-      });
-
-      onSubmitted();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Đã có lỗi xảy ra");
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Tính giá thất bại");
+      setResult(json.data);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Lỗi khi tính giá");
     } finally {
-      setSaving(false);
+      setLoadingCalc(false);
     }
-  };
+  }
+
+  const selectedTier = tiers.find(t => t.slug === infraTierSlug);
+  const grouped = features.reduce<[string, Feature[]][]>((acc, f) => {
+    const key = f.category || "other";
+    const g = acc.find(([k]) => k === key);
+    if (g) g[1].push(f);
+    else acc.push([key, [f]]);
+    return acc;
+  }, []);
+  const previewAdvanced = selectedIds
+    .map(id => features.find(f => f.id === id))
+    .filter(f => f?.tier === "advanced")
+    .reduce((s, f) => s + (f?.price ?? 0), 0);
+
+  if (loadingInit) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-950">
+        <div className="text-center">
+          <div className="text-5xl mb-4 animate-pulse">⚙️</div>
+          <p className="text-slate-400">Đang tải...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/70 backdrop-blur-sm pt-12 pb-12 px-4 animate-fade-in"
-      onClick={(e: React.MouseEvent<HTMLDivElement>) => e.target === e.currentTarget && onClose()}
-    >
-      <div
-        className="w-full max-w-lg rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-2xl animate-scale-in"
-      >
-        <h2 className="mb-1 text-xl font-bold text-white">Nhận báo giá chi tiết</h2>
-        <p className="mb-6 text-sm text-slate-400">
-          Điền thông tin và chúng tôi sẽ gửi báo giá chi tiết qua email cho bạn.
-        </p>
+    <main className="min-h-screen bg-slate-950 text-white">
+      {/* Sticky header */}
+      <div className="sticky top-0 z-30 border-b border-slate-800 bg-slate-950/80 backdrop-blur px-4 py-4">
+        <div className="max-w-6xl mx-auto flex items-center justify-between">
+          <a href="/pricing" className="text-sm text-slate-400 hover:text-white transition-colors flex items-center gap-2">
+            ← Bảng giá
+          </a>
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-slate-400">Preview:</span>
+            <span className="text-lg font-black text-green-400 font-mono">
+              {vnd(previewAdvanced + (selectedTier ? selectedTier.monthlyCost + selectedTier.setupCost : 0))}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-6xl mx-auto px-4 py-10 space-y-8">
+        {/* Title */}
+        <div className="text-center mb-8">
+          <div className="text-4xl mb-3">💰</div>
+          <h1 className="text-3xl font-black mb-2">Tùy chỉnh Báo giá Website</h1>
+          <p className="text-slate-400 max-w-lg mx-auto text-sm leading-relaxed">
+            Chọn gói hạ tầng + tính năng nâng cao — giá tự động cập nhật ngay.
+            Hệ thống xử lý mutual exclusion ở backend.
+          </p>
+        </div>
 
         {error && (
-          <div className="mb-4 rounded-lg bg-red-500/10 border border-red-500/20 p-3 text-sm text-red-400">
-            {error}
-          </div>
+          <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-5 py-4 text-red-400 text-sm">{error}</div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="col-span-2 sm:col-span-1">
-              <label className="mb-1.5 block text-sm font-medium text-slate-300">
-                Họ tên <span className="text-red-400">*</span>
-              </label>
-              <input
-                name="name"
-                required
-                className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                placeholder="Nguyễn Văn A"
-              />
+        {/* Tier selector */}
+        <section className="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
+          <h2 className="text-lg font-semibold text-slate-300 mb-4">1. Chọn gói hạ tầng</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {tiers.map(t => {
+              const active = infraTierSlug === t.slug;
+              const total = t.monthlyCost + t.setupCost;
+              return (
+                <button
+                  key={t.id}
+                  onClick={() => setInfraTierSlug(t.slug)}
+                  className={`rounded-xl p-5 text-left transition-all border-2 ${
+                    active
+                      ? "border-indigo-500 bg-indigo-500/10"
+                      : "border-slate-700 bg-slate-800/30 hover:border-slate-600"
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-semibold">{t.name}</span>
+                    {active && (
+                      <span className="text-xs bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded-full">
+                        đang chọn
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-sm text-slate-400 mb-1">{t.nameVi}</div>
+                  <div className="text-xs text-slate-500">
+                    Hàng tháng: <span className="text-white font-medium">{vnd(t.monthlyCost)}</span>
+                    {" · "}
+                    Setup: <span className="text-white font-medium">{vnd(t.setupCost)}</span>
+                  </div>
+                  <div className="mt-2 pt-2 border-t border-slate-700/50 text-green-400 font-bold text-sm">
+                    Tổng: {vnd(total)}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* Feature selector */}
+        <section className="rounded-2xl border border-slate-800 bg-slate-900/50 p-6 space-y-6">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-300">2. Tính năng nâng cao (+giá)</h2>
+            <p className="text-xs text-slate-500 mt-1">
+              Checkbox = thêm vào giá. Hệ thống tự loại bỏ tính năng trùng lặp ở backend.
+            </p>
+          </div>
+
+          {grouped.map(([cat, feats]) => (
+            <div key={cat}>
+              <div className="text-xs font-semibold uppercase tracking-widest text-indigo-400 mb-2">
+                {toCategoryLabel(cat)}
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {feats.map(f => {
+                  const checked = selectedIds.includes(f.id);
+                  return (
+                    <label
+                      key={f.id}
+                      className={`flex items-center gap-3 rounded-xl p-4 cursor-pointer border-2 transition-all ${
+                        checked
+                          ? "border-indigo-500 bg-indigo-500/10"
+                          : "border-slate-700 bg-slate-800/30 hover:border-slate-600"
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => toggle(f.id)}
+                        className="accent-indigo-500 w-4 h-4"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium truncate">{f.nameVi}</div>
+                        <div className="text-xs text-slate-400 truncate">{f.name}</div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <div className="text-green-400 font-mono font-bold text-sm">{vnd(f.price)}</div>
+                        {f.xpPoints > 0 && (
+                          <div className="text-purple-400 text-[10px]">+⬡{f.xpPoints} XP</div>
+                        )}
+                        {f.tier === "advanced" && (
+                          <div className="text-emerald-400 text-[10px]">tính vào giá</div>
+                        )}
+                      </div>
+                    </label>
+                  );
+                })}
+              </div>
             </div>
-            <div className="col-span-2 sm:col-span-1">
-              <label className="mb-1.5 block text-sm font-medium text-slate-300">
-                Email <span className="text-red-400">*</span>
-              </label>
-              <input
-                name="email"
-                type="email"
-                required
-                className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                placeholder="email@company.com"
-              />
-            </div>
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-slate-300">Số điện thoại</label>
-              <input
-                name="phone"
-                className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                placeholder="0912 345 678"
-              />
-            </div>
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-slate-300">Công ty</label>
-              <input
-                name="company"
-                className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                placeholder="Tên công ty"
-              />
-            </div>
+          ))}
+        </section>
+
+        {/* Quick preview */}
+        <section className="rounded-2xl border border-slate-700 bg-slate-800/30 p-5 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+          <div>
+            <div className="text-slate-400 mb-1">Tính năng đã chọn</div>
+            <div className="font-bold text-white">{selectedIds.length}</div>
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-slate-300">Ghi chú</label>
-            <textarea
-              name="notes"
-              rows={3}
-              className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 resize-none"
-              placeholder="Yêu cầu đặc biệt, timeline, ngân sách..."
-            />
+            <div className="text-slate-400 mb-1">Giá features nâng cao</div>
+            <div className="font-bold text-green-400 font-mono">{vnd(previewAdvanced)}</div>
           </div>
-
-          {/* Summary */}
-          <div className="rounded-lg border border-slate-800 bg-slate-800/30 p-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-slate-300">Tính năng đã chọn</span>
-              <span className="text-xs text-slate-500">{selectedItems.length} mục</span>
-            </div>
-            <div className="space-y-1.5 mb-3 max-h-32 overflow-y-auto">
-              {selectedItems.map((item) => (
-                <div
-                  key={item.featureId}
-                  className="flex items-center justify-between text-xs"
-                >
-                  <span className="text-slate-400 truncate max-w-[60%]">
-                    {item.featureName}: {item.variantName}
-                  </span>
-                  <span className="text-green-400 font-mono">{formatPrice(item.price)}</span>
-                </div>
-              ))}
-            </div>
-            <div className="flex items-center justify-between border-t border-slate-700 pt-2">
-              <span className="text-sm font-semibold text-white">Tổng cộng</span>
-              <span className="text-lg font-bold text-green-400 font-mono">
-                {formatPrice(totalAmount)}
-              </span>
+          <div>
+            <div className="text-slate-400 mb-1">Tổng ước tính</div>
+            <div className="font-black text-green-400 font-mono text-lg">
+              {vnd(previewAdvanced + (selectedTier ? selectedTier.monthlyCost + selectedTier.setupCost : 0))}
             </div>
           </div>
-
-          <div className="flex justify-end gap-3 pt-2">
+          <div className="flex items-end">
             <button
-              type="button"
-              onClick={onClose}
-              className="rounded-lg border border-slate-700 px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-800 transition-colors"
+              onClick={handleCalculate}
+              disabled={loadingCalc}
+              className="w-full rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-semibold py-3 px-6 transition-colors"
             >
-              Hủy
-            </button>
-            <button
-              type="submit"
-              disabled={saving}
-              className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-600 px-6 py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50 transition-all"
-            >
-              {saving ? (
-                <Loader2 size={16} className="animate-spin" />
-              ) : (
-                <Send size={16} />
-              )}
-              Gửi yêu cầu báo giá
+              {loadingCalc ? "Đang tính..." : "→ Tính giá chính thức"}
             </button>
           </div>
-        </form>
+        </section>
+
+        {/* Official result */}
+        {result && (
+          <section className="rounded-2xl border-2 border-green-500/30 bg-green-500/5 p-8 space-y-3">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">✅</span>
+              <h2 className="text-xl font-black">Kết quả chính thức</h2>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-x-8 gap-y-2 text-sm text-slate-300">
+              <div>Giá base: <b className="text-white font-mono ml-1">{vnd(result.basePrice)}</b></div>
+              <div>Tính năng: <b className="text-white font-mono">{vnd(result.featureTotal)}</b></div>
+              <div>Hạ tầng hàng tháng: <b className="text-white font-mono">{vnd(result.infraCost)}</b></div>
+              <div>Setup: <b className="text-white font-mono">{vnd(result.infraSetupCost)}</b></div>
+              <div>XP bonus: <b className="text-purple-400 ml-1">⬡{result.totalXp}</b></div>
+              <div>Reward Level: <b className="text-yellow-400 ml-1">Lv{result.rewardLevel}</b></div>
+            </div>
+
+            <div className="border-t border-green-500/20 pt-4 mt-2">
+              <div className="text-sm text-slate-400">Hệ thống: <b className="text-white font-mono ml-1">{vnd(result.systemPrice)}</b></div>
+              <div className="text-3xl font-black text-green-400 font-mono pt-2">
+                Giá cuối cùng: {vnd(result.finalPrice)}
+              </div>
+            </div>
+
+            {result.rewards.length > 0 && (
+              <div className="border-t border-green-500/20 pt-4 mt-4 text-sm text-green-300 space-y-1">
+                <div className="font-semibold text-green-400 mb-2">Quà tặng Level:</div>
+                {result.rewards.map(r => (
+                  <div key={r.addonServiceId}>
+                    Lv{r.rewardLevel}: {r.addonServiceNameVi} ×{r.quantity}
+                    {r.durationMonths ? ` (${r.durationMonths} tháng)` : ""}
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
       </div>
-    </div>
+    </main>
   );
 }

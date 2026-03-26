@@ -1,3 +1,4 @@
+import { handleError } from "@/lib/api/response";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
@@ -49,14 +50,15 @@ export async function GET(req: NextRequest) {
     });
     return NextResponse.json({ data });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Server error";
-    const status = message === "Unauthorized" ? 401 : message === "Forbidden" ? 403 : 500;
-    return NextResponse.json({ error: message }, { status });
+    return handleError(error);
   }
 }
 
 export async function POST(req: NextRequest) {
   try {
+    // Auth FIRST — before any body parsing or DB queries
+    const session = await requirePermission("blogs", "create");
+
     const body = await req.json();
 
     // Support projectId or orderId from frontend
@@ -83,8 +85,6 @@ export async function POST(req: NextRequest) {
     if (!authorId) {
       return NextResponse.json({ error: "authorId, authorName, or authorEmail is required" }, { status: 400 });
     }
-
-    const session = await requirePermission("blogs", "create");
     const result = await prisma.blogPost.create({
       data: {
         projectId: parsed.data.projectId,
@@ -110,8 +110,6 @@ export async function POST(req: NextRequest) {
     });
     return NextResponse.json({ data: result }, { status: 201 });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Server error";
-    const status = message === "Unauthorized" ? 401 : message === "Forbidden" ? 403 : 500;
-    return NextResponse.json({ error: message }, { status });
+    return handleError(error);
   }
 }

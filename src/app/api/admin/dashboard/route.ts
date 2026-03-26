@@ -1,3 +1,4 @@
+import { handleError } from "@/lib/api/response";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth/permissions";
@@ -49,8 +50,6 @@ export async function GET() {
       recentMessages,
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Server error";
-    const status = message === "Unauthorized" ? 401 : 500;
-    return NextResponse.json({ error: message }, { status });
+    return handleError(error);
   }
 }

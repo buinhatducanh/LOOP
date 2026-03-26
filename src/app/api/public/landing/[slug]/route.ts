@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+import { ok, notFound, serverError } from "@/lib/api/response";
 import { prisma } from "@/lib/prisma";
+import type { NextRequest } from "next/server";
 
 export async function GET(
   req: NextRequest,
@@ -24,16 +25,10 @@ export async function GET(
       },
     });
 
-    if (!page) {
-      return NextResponse.json(
-        { error: "Landing page not found" },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json({ data: page });
+    if (!page) return notFound("Landing page not found");
+    return ok(page);
   } catch (error) {
     console.error("GET /api/public/landing/[slug] error:", error);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    return serverError();
   }
 }

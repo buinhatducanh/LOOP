@@ -51,7 +51,12 @@
       "mcp__ide__executeCode",
       "Bash(python:*)",
       "Bash(python3:*)",
-      "Bash(Get-ChildItem -Path \"D:\\\\LOOP_COMPANY\\\\LOOP\\\\src\\\\app\\\\api\" -Recurse -Filter \"route.ts\" | ForEach-Object { $_.FullName })"
+      "Bash(Get-ChildItem -Path \"D:\\\\LOOP_COMPANY\\\\LOOP\\\\src\\\\app\\\\api\" -Recurse -Filter \"route.ts\" | ForEach-Object { $_.FullName })",
+      "Bash(BASE=\"D:\\\\LOOP_COMPANY\\\\LOOP\\\\src\\\\lib\" && \\\\\ncp \"$BASE/services/contact.service.ts\" \"$BASE/services/landing/contact.service.ts\" && \\\\\ncp \"$BASE/services/search.service.ts\" \"$BASE/services/content/search.service.ts\" && \\\\\ncp \"$BASE/lp/redemption.ts\" \"$BASE/services/gamification/redemption.service.ts\" && \\\\\ncp \"$BASE/lp/transaction.ts\" \"$BASE/services/gamification/transaction.service.ts\" && \\\\\ncp \"$BASE/lp/transfer.ts\" \"$BASE/services/gamification/transfer.service.ts\" && \\\\\ncp \"$BASE/lp/lp.ts\" \"$BASE/services/gamification/customer-lp.service.ts\" && \\\\\ncp \"$BASE/customer/referral.ts\" \"$BASE/services/customer/referral.service.ts\" && \\\\\ncp \"$BASE/customer/lp.ts\" \"$BASE/services/customer/lp.service.ts\" && \\\\\necho \"done\")",
+      "Bash(cmd /c \"dir D:\\\\LOOP_COMPANY\\\\LOOP\\\\.env* /b 2>nul\")",
+      "Bash(cmd /c \"dir D:\\\\LOOP_COMPANY\\\\LOOP\\\\.env.local /b 2>nul & if exist D:\\\\LOOP_COMPANY\\\\LOOP\\\\.env.example \\(type D:\\\\LOOP_COMPANY\\\\LOOP\\\\.env.example\\) else \\(echo .env.example not found\\)\")",
+      "Bash(cmd /c \"if exist D:\\\\LOOP_COMPANY\\\\LOOP\\\\.env.example \\(type D:\\\\LOOP_COMPANY\\\\LOOP\\\\.env.example\\) else \\(echo NOT_FOUND\\)\")",
+      "Bash(findstr:*)"
     ],
     "additionalDirectories": [
       "D:\\LOOP_COMPANY\\LOOP\\src\\app\\api\\admin\\expertises",

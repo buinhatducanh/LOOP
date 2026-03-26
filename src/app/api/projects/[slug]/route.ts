@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { ok, notFound, serverError } from "@/lib/api/response";
 import { getProjectBySlug } from "@/lib/db/queries";
 
 export async function GET(
@@ -8,10 +8,10 @@ export async function GET(
   try {
     const { slug } = await params;
     const project = await getProjectBySlug(slug);
-    if (!project) return NextResponse.json({ error: "Project not found" }, { status: 404 });
-    return NextResponse.json(project);
+    if (!project) return notFound("Project not found");
+    return ok(project);
   } catch (error) {
     console.error("Failed to fetch project:", error);
-    return NextResponse.json({ error: "Failed to fetch project" }, { status: 500 });
+    return serverError();
   }
 }

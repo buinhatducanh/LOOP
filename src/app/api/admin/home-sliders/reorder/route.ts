@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { ok, handleError } from "@/lib/api/response";
 import { prisma } from "@/lib/prisma";
 
 export async function POST(request: NextRequest) {
@@ -20,9 +21,8 @@ export async function POST(request: NextRequest) {
       )
     );
 
-    return NextResponse.json({ success: true });
-  } catch (e: any) {
-    console.error("Error reordering sliders:", e);
-    return NextResponse.json({ error: "Lỗi sắp xếp", details: e.message }, { status: 500 });
+    return ok({ success: true });
+  } catch (error) {
+    return handleError(error);
   }
 }

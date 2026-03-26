@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { globalSearch } from "@/lib/services/search.service";
+import { globalSearch } from "@/lib/services/content/search.service";
 
 // ─── Mock Prisma ───────────────────────────────────────────────────────────────
 const { mockPrisma } = vi.hoisted(() => ({

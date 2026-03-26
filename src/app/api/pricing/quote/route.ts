@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { ok, badRequest, serverError } from "@/lib/api/response";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import type { NextRequest } from "next/server";
 
 const quoteSchema = z.object({
   customerName: z.string().min(1, "Vui lòng nhập tên"),
@@ -37,21 +38,15 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return NextResponse.json(
-      { data: quoteRequest, message: "Yêu cầu báo giá đã được gửi thành công!" },
-      { status: 201 }
+    return ok(
+      { ...quoteRequest, message: "Yêu cầu báo giá đã được gửi thành công!" },
+      201
     );
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Validation failed", details: error.issues },
-        { status: 400 }
-      );
+      return badRequest(error.issues.map((i) => i.message).join("; "));
     }
     console.error("Failed to create quote request:", error);
-    return NextResponse.json(
-      { error: "Đã có lỗi xảy ra, vui lòng thử lại" },
-      { status: 500 }
-    );
+    return serverError();
   }
 }

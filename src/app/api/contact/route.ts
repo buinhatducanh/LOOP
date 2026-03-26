@@ -1,14 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
-import { submitContactForm, getContactMessages } from "@/lib/services/contact.service";
+import { submitContactForm, getContactMessages } from "@/lib/services/landing/contact.service";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { handleError, badRequest, unauthorized, ok, serverError } from "@/lib/api";
 
+/**
+ * POST /api/contact — Submit a contact form (public)
+ * GET  /api/contact — List all messages (auth required — admin only)
+ */
 export async function GET() {
   try {
     const messages = await getContactMessages();
-    return NextResponse.json(messages);
-  } catch (error) {
-    console.error("[Contact API] Failed to fetch messages:", error);
-    return NextResponse.json({ error: "Failed to fetch messages" }, { status: 500 });
+    return ok(messages);
+  } catch (err) {
+    console.error("[Contact API] Failed to fetch messages:", err);
+    return handleError(err);
   }
 }
 
@@ -24,12 +29,12 @@ export async function POST(request: NextRequest) {
     const result = await submitContactForm(body);
 
     if (!result.success) {
-      return NextResponse.json({ error: result.error }, { status: 400 });
+      return badRequest(result.error);
     }
 
-    return NextResponse.json(result.data, { status: 201 });
-  } catch (error) {
-    console.error("[Contact API] Unexpected error:", error);
-    return NextResponse.json({ error: "Failed to send message" }, { status: 500 });
+    return ok(result.data, 201);
+  } catch (err) {
+    console.error("[Contact API] Unexpected error:", err);
+    return handleError(err);
   }
 }

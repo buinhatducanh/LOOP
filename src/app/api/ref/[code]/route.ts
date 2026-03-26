@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { ok, notFound, serverError, badRequest } from "@/lib/api/response";
 import { createHash } from "crypto";
 
 // GET /api/ref/[code] — Public referral click tracking + redirect
 // Query params: ?utm_source=&utm_medium=&utm_campaign=&utm_term=&utm_content=
-// Also accepts POST for explicit click events with IP/user-agent.
-
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ code: string }> }
@@ -19,17 +18,11 @@ export async function GET(
       select: { id: true, isActive: true, expiresAt: true, name: true },
     });
 
-    if (!referralCode) {
-      return NextResponse.json({ error: "Referral code not found" }, { status: 404 });
-    }
-
-    if (!referralCode.isActive) {
+    if (!referralCode) return notFound("Referral code not found");
+    if (!referralCode.isActive)
       return NextResponse.json({ error: "This referral code is no longer active" }, { status: 410 });
-    }
-
-    if (referralCode.expiresAt && new Date(referralCode.expiresAt) < new Date()) {
+    if (referralCode.expiresAt && new Date(referralCode.expiresAt) < new Date())
       return NextResponse.json({ error: "This referral code has expired" }, { status: 410 });
-    }
 
     const { searchParams } = new URL(req.url);
     const utmSource   = searchParams.get("utm_source")   ?? undefined;
@@ -37,13 +30,14 @@ export async function GET(
     const utmCampaign = searchParams.get("utm_campaign") ?? undefined;
     const utmTerm     = searchParams.get("utm_term")      ?? undefined;
     const utmContent  = searchParams.get("utm_content")  ?? undefined;
-    const ip          = req.headers.get("x-forwarded-for")?.split(",")[0].trim()
-                      ?? req.headers.get("x-real-ip")
-                      ?? "unknown";
-    const userAgent   = req.headers.get("user-agent") ?? undefined;
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0].trim()
+             ?? req.headers.get("x-real-ip") ?? "unknown";
+    const userAgent = req.headers.get("user-agent") ?? undefined;
 
-    // Hash IP for privacy (don't store raw IPs)
-    const ipHash = createHash("sha256").update(`${ip}-${process.env.DATABASE_URL ?? "loop"}`).digest("hex").slice(0, 32);
+    // Hash IP for privacy
+    const ipHash = createHash("sha256")
+      .update(`${ip}-${process.env.DATABASE_URL ?? "loop"}`)
+      .digest("hex").slice(0, 32);
 
     // Record click asynchronously (don't block redirect)
     prisma.referralTracking.create({
@@ -59,20 +53,20 @@ export async function GET(
         ipHash,
         userAgent: userAgent ?? null,
       },
-    }).catch(() => {/* silent — don't block the response */});
+    }).catch(() => {/* silent */});
 
-    // Redirect to main website or a campaign landing page
     const destination = process.env.NEXT_PUBLIC_SITE_URL ?? "https://loop.vn";
     return NextResponse.redirect(new URL(`/?ref=${normalized}`, destination), 302);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Server error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error("Referral tracking error:", error);
+    return serverError();
   }
 }
 
 // POST /api/ref/[code] — Record a conversion event (signup, lead, order)
-// Body: { event: "signup" | "lead" | "order", salesLeadId?, orderId?, revenue? }
-// Used by frontend after a visitor signs up or places an order via the referral link.
+const validEvents = ["signup", "lead", "order"] as const;
+type ReferralEvent = typeof validEvents[number];
+
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ code: string }> }
@@ -82,12 +76,8 @@ export async function POST(
     const normalized = code.toUpperCase();
     const { event, salesLeadId, orderId, revenue } = await req.json();
 
-    const validEvents = ["signup", "lead", "order"];
     if (!event || !validEvents.includes(event)) {
-      return NextResponse.json(
-        { error: `event must be one of: ${validEvents.join(", ")}` },
-        { status: 400 }
-      );
+      return badRequest(`event must be one of: ${validEvents.join(", ")}`);
     }
 
     const referralCode = await prisma.referralCode.findUnique({
@@ -95,44 +85,27 @@ export async function POST(
       select: { id: true, isActive: true, expiresAt: true, useCount: true, maxUses: true, lpRate: true },
     });
 
-    if (!referralCode) {
-      return NextResponse.json({ error: "Referral code not found" }, { status: 404 });
-    }
-
-    if (!referralCode.isActive) {
+    if (!referralCode) return notFound("Referral code not found");
+    if (!referralCode.isActive)
       return NextResponse.json({ error: "This referral code is no longer active" }, { status: 410 });
-    }
-
-    // Check usage limit
-    if (referralCode.maxUses !== null && referralCode.useCount >= referralCode.maxUses) {
+    if (referralCode.maxUses !== null && referralCode.useCount >= referralCode.maxUses)
       return NextResponse.json({ error: "This referral code has reached its usage limit" }, { status: 410 });
-    }
 
     // Validate references
     if (event === "lead" || event === "order") {
-      if (!salesLeadId) {
-        return NextResponse.json({ error: "salesLeadId is required for lead/order events" }, { status: 400 });
-      }
+      if (!salesLeadId) return badRequest("salesLeadId is required for lead/order events");
       const lead = await prisma.salesLead.findUnique({ where: { id: salesLeadId } });
-      if (!lead) return NextResponse.json({ error: "SalesLead not found" }, { status: 404 });
+      if (!lead) return notFound("SalesLead not found");
     }
 
     if (event === "order") {
-      if (!orderId) {
-        return NextResponse.json({ error: "orderId is required for order events" }, { status: 400 });
-      }
+      if (!orderId) return badRequest("orderId is required for order events");
       const order = await prisma.order.findUnique({ where: { id: orderId } });
-      if (!order) return NextResponse.json({ error: "Order not found" }, { status: 404 });
+      if (!order) return notFound("Order not found");
 
-      // Update referralCodeId links in atomic tx.
-      // P2002 = unique constraint — referralCodeId already set, safe to ignore.
-      // Other errors (connection, timeout, etc.) must propagate.
       const ignoreIfAlreadyLinked = (e: unknown) => {
         const msg = e instanceof Error ? e.message : String(e);
-        if (!msg.includes("P2002") && !msg.includes("Unique constraint")) {
-          throw e;
-        }
-        // referralCodeId already set — LP will still be awarded on payment/completion
+        if (!msg.includes("P2002") && !msg.includes("Unique constraint")) throw e;
       };
 
       await prisma.$transaction(async (tx) => {
@@ -142,7 +115,6 @@ export async function POST(
             data: { referralCodeId: referralCode.id },
           }).catch(ignoreIfAlreadyLinked);
         }
-
         await tx.order.update({
           where: { id: orderId },
           data: { referralCodeId: referralCode.id },
@@ -150,10 +122,12 @@ export async function POST(
       });
     }
 
-    // Create tracking record
+    // Record tracking
     const ip = req.headers.get("x-forwarded-for")?.split(",")[0].trim()
-            ?? req.headers.get("x-real-ip") ?? "unknown";
-    const ipHash = createHash("sha256").update(`${ip}-${process.env.DATABASE_URL ?? "loop"}`).digest("hex").slice(0, 32);
+             ?? req.headers.get("x-real-ip") ?? "unknown";
+    const ipHash = createHash("sha256")
+      .update(`${ip}-${process.env.DATABASE_URL ?? "loop"}`)
+      .digest("hex").slice(0, 32);
 
     const tracking = await prisma.referralTracking.create({
       data: {
@@ -167,17 +141,14 @@ export async function POST(
       },
     });
 
-    // Increment use count
     await prisma.referralCode.update({
       where: { id: referralCode.id },
       data: { useCount: { increment: 1 } },
     });
 
-    return NextResponse.json({
-      data: { trackingId: tracking.id, event, success: true },
-    }, { status: 201 });
+    return ok({ trackingId: tracking.id, event, success: true }, 201);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Server error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error("Referral conversion error:", error);
+    return serverError();
   }
 }

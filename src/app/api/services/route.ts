@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { ok, serverError } from "@/lib/api/response";
 import { getServices } from "@/lib/db/queries";
 
 export async function GET() {
@@ -13,13 +13,10 @@ export async function GET() {
       grouped[cat].push(service);
     }
 
-    return NextResponse.json({
-      data: services,
-      grouped,
-      categories: Object.keys(grouped),
-    });
+    // Raw JSON — non-standard shape per API contract conventions
+    return ok({ services, grouped, categories: Object.keys(grouped) });
   } catch (error) {
     console.error("Failed to fetch services:", error);
-    return NextResponse.json({ error: "Failed to fetch services" }, { status: 500 });
+    return serverError();
   }
 }

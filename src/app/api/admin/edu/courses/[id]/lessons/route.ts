@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { handleError } from "@/lib/api/response";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
@@ -17,12 +18,7 @@ export async function GET(
     });
     return NextResponse.json({ data: lessons });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Server error";
-    const status =
-      message === "Unauthorized" ? 401
-        : message === "Forbidden" ? 403
-        : 500;
-    return NextResponse.json({ error: message }, { status });
+    return handleError(error);
   }
 }
 
@@ -66,11 +62,6 @@ export async function POST(
 
     return NextResponse.json({ data: lesson }, { status: 201 });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Server error";
-    const status =
-      message === "Unauthorized" ? 401
-        : message === "Forbidden" ? 403
-        : 500;
-    return NextResponse.json({ error: message }, { status });
+    return handleError(error);
   }
 }

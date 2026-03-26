@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { ok, serverError } from "@/lib/api/response";
 import { prisma } from "@/lib/prisma";
 
 // Public API for pricing calculator feature catalog
@@ -24,9 +24,9 @@ export async function GET() {
       ],
     });
 
-    return NextResponse.json({ data: features });
+    return ok(features);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Server error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error("Failed to fetch pricing features:", error);
+    return serverError();
   }
 }

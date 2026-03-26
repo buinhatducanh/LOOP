@@ -1,3 +1,4 @@
+import { ok, handleError } from "@/lib/api/response";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
@@ -25,9 +26,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     if (!data) return NextResponse.json({ error: "Not found" }, { status: 404 });
     return NextResponse.json({ data });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Server error";
-    const status = message === "Unauthorized" ? 401 : message === "Forbidden" ? 403 : 500;
-    return NextResponse.json({ error: message }, { status });
+    return handleError(error);
   }
 }
 
@@ -42,9 +41,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const data = await prisma.socialPost.update({ where: { id }, data: parsed.data });
     return NextResponse.json({ data });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Server error";
-    const status = message === "Unauthorized" ? 401 : message === "Forbidden" ? 403 : 500;
-    return NextResponse.json({ error: message }, { status });
+    return handleError(error);
   }
 }
 
@@ -53,10 +50,8 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     await requirePermission("projects", "delete");
     const { id } = await params;
     await prisma.socialPost.delete({ where: { id } });
-    return NextResponse.json({ success: true });
+    return ok({ success: true });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Server error";
-    const status = message === "Unauthorized" ? 401 : message === "Forbidden" ? 403 : 500;
-    return NextResponse.json({ error: message }, { status });
+    return handleError(error);
   }
 }

@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { ok, serverError } from "@/lib/api/response";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
@@ -8,8 +8,8 @@ export async function GET() {
       orderBy: [{ roleLevel: "asc" }, { sortOrder: "asc" }],
     });
 
-    return NextResponse.json({ data: members });
+    return ok(members);
   } catch (error) {
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    return serverError();
   }
 }

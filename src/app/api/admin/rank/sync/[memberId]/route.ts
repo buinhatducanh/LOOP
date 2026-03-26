@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
+import { handleError, notFound, ok } from "@/lib/api";
 import { syncRankFields } from "@/lib/rank/xp";
 
 // POST /api/admin/rank/sync/[memberId]
@@ -17,15 +18,11 @@ export async function POST(
       select: { id: true },
     });
     if (!member) {
-      return NextResponse.json({ error: "Team member not found" }, { status: 404 });
+      return notFound("Team member");
     }
     const fields = await syncRankFields(memberId);
-    return NextResponse.json({
-      data: { memberId, ...(fields ?? {}), syncedAt: new Date().toISOString() },
-    });
+    return ok({ memberId, ...(fields ?? {}), syncedAt: new Date().toISOString() });
   } catch (error) {
-    const msg = error instanceof Error ? error.message : "Server error";
-    const status = msg === "Unauthorized" ? 401 : msg === "Forbidden" ? 403 : 500;
-    return NextResponse.json({ error: msg }, { status });
+    return handleError(error);
   }
 }

@@ -1,11 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
+import { ok, notFound, badRequest, serverError } from "@/lib/api/response";
 import { prisma } from "@/lib/prisma";
+import { z } from "zod";
+import type { NextRequest } from "next/server";
 
 // GET /api/public/figma-review/[token]
-// Returns FigmaDemo by clientToken (no auth required)
 export async function GET(
-  req: NextRequest,
+  _req: NextRequest,
   { params }: { params: Promise<{ token: string }> }
 ) {
   try {
@@ -19,33 +19,27 @@ export async function GET(
       },
     });
 
-    if (!demo) {
-      return NextResponse.json({ error: "Not found" }, { status: 404 });
-    }
-
-    return NextResponse.json({
-      data: {
-        id: demo.id,
-        title: demo.title,
-        figmaUrl: demo.figmaUrl,
-        versionHash: demo.versionHash,
-        status: demo.status,
-        rejectionNote: demo.rejectionNote,
-        approvedBy: demo.approvedBy,
-        approvedAt: demo.approvedAt,
-        sentAt: demo.sentAt,
-        createdAt: demo.createdAt,
-        project: demo.project,
-      },
+    if (!demo) return notFound("Not found");
+    return ok({
+      id: demo.id,
+      title: demo.title,
+      figmaUrl: demo.figmaUrl,
+      versionHash: demo.versionHash,
+      status: demo.status,
+      rejectionNote: demo.rejectionNote,
+      approvedBy: demo.approvedBy,
+      approvedAt: demo.approvedAt,
+      sentAt: demo.sentAt,
+      createdAt: demo.createdAt,
+      project: demo.project,
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Server error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error("Figma review GET error:", error);
+    return serverError();
   }
 }
 
 // POST /api/public/figma-review/[token]
-// Client approves or rejects a demo
 const actionSchema = z.object({
   action: z.enum(["approve", "reject"]),
   reason: z.string().optional(),
@@ -59,38 +53,31 @@ export async function POST(
     const { token } = await params;
     const body = await req.json();
     const parsed = actionSchema.safeParse(body);
-    if (!parsed.success) return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+    if (!parsed.success) return badRequest("Invalid request");
 
     const demo = await prisma.figmaDemo.findUnique({
       where: { clientToken: token },
     });
 
-    if (!demo) return NextResponse.json({ error: "Not found" }, { status: 404 });
-    if (demo.status !== "pending") {
-      return NextResponse.json({ error: "Demo already reviewed" }, { status: 400 });
-    }
+    if (!demo) return notFound("Not found");
+    if (demo.status !== "pending")
+      return badRequest("Demo already reviewed");
 
     if (parsed.data.action === "approve") {
       await prisma.figmaDemo.update({
         where: { id: demo.id },
-        data: {
-          status: "approved_by_client",
-          approvedAt: new Date(),
-        },
+        data: { status: "approved_by_client", approvedAt: new Date() },
       });
     } else {
       await prisma.figmaDemo.update({
         where: { id: demo.id },
-        data: {
-          status: "rejected",
-          rejectionNote: parsed.data.reason ?? null,
-        },
+        data: { status: "rejected", rejectionNote: parsed.data.reason ?? null },
       });
     }
 
-    return NextResponse.json({ success: true, action: parsed.data.action });
+    return ok({ success: true, action: parsed.data.action });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Server error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error("Figma review POST error:", error);
+    return serverError();
   }
 }

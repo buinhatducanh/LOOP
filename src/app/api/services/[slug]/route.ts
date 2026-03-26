@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { ok, notFound, serverError } from "@/lib/api/response";
 import { getServiceBySlug } from "@/lib/db/queries";
 
 export async function GET(
@@ -8,10 +8,10 @@ export async function GET(
   try {
     const { slug } = await params;
     const service = await getServiceBySlug(slug);
-    if (!service) return NextResponse.json({ error: "Service not found" }, { status: 404 });
-    return NextResponse.json(service);
+    if (!service) return notFound("Service not found");
+    return ok(service);
   } catch (error) {
     console.error("Failed to fetch service:", error);
-    return NextResponse.json({ error: "Failed to fetch service" }, { status: 500 });
+    return serverError();
   }
 }

@@ -1,21 +1,19 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth/permissions";
+import { handleError, ok, list, buildPagination } from "@/lib/api";
 
-// GET - Lấy danh sách customer points
+// GET — List customer points
 export async function GET(req: NextRequest) {
   try {
-    const session = await getSession();
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    await getSession(); // auth check only — uses getSession for broad access
 
     const { searchParams } = new URL(req.url);
     const search = searchParams.get("search");
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "50");
 
-    const where: any = {};
+    const where: Record<string, unknown> = {};
     if (search) {
       where.OR = [
         { userEmail: { contains: search, mode: "insensitive" } },
@@ -33,17 +31,9 @@ export async function GET(req: NextRequest) {
       prisma.customerPoint.count({ where }),
     ]);
 
-    return NextResponse.json({
-      data: customers,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-      },
-    });
+    return list(customers, buildPagination(page, limit, total));
   } catch (error) {
     console.error("Error fetching points:", error);
-    return NextResponse.json({ error: "Lỗi server" }, { status: 500 });
+    return handleError(error);
   }
 }

@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+import { ok, badRequest, serverError } from "@/lib/api/response";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import type { NextRequest } from "next/server";
 
-// Validation schema
 const orderSchema = z.object({
   customerName: z.string().min(1, "Name is required"),
   customerEmail: z.string().email("Invalid email"),
@@ -22,10 +22,9 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const validated = orderSchema.parse(body);
 
-    // Generate order number
-    const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+    const orderNumber =
+      `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
 
-    // Create order
     const order = await prisma.order.create({
       data: {
         orderNumber,
@@ -49,20 +48,12 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return NextResponse.json({
-      data: order,
-      message: "Order submitted successfully!",
-    }, { status: 201 });
+    return ok({ ...order, message: "Order submitted successfully!" }, 201);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({
-        error: "Validation failed",
-        details: error.issues,
-      }, { status: 400 });
+      return badRequest(`Validation failed: ${error.issues.map((i) => i.message).join("; ")}`);
     }
     console.error("Order creation error:", error);
-    return NextResponse.json({
-      error: "An error occurred",
-    }, { status: 500 });
+    return serverError();
   }
 }

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { ok, handleError } from "@/lib/api/response";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
@@ -27,9 +28,7 @@ export async function PUT(
 
     return NextResponse.json({ data: message });
   } catch (error) {
-    const msg = error instanceof Error ? error.message : "Server error";
-    const status = msg === "Unauthorized" ? 401 : msg === "Forbidden" ? 403 : 500;
-    return NextResponse.json({ error: msg }, { status });
+    return handleError(error);
   }
 }
 
@@ -50,10 +49,8 @@ export async function DELETE(
       resourceId: id,
     });
 
-    return NextResponse.json({ success: true });
+    return ok({ success: true });
   } catch (error) {
-    const msg = error instanceof Error ? error.message : "Server error";
-    const status = msg === "Unauthorized" ? 401 : msg === "Forbidden" ? 403 : 500;
-    return NextResponse.json({ error: msg }, { status });
+    return handleError(error);
   }
 }

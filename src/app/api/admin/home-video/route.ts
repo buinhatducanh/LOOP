@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { ok, handleError } from "@/lib/api/response";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(request: NextRequest) {
@@ -38,9 +39,8 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json({ data: video });
-  } catch (e: any) {
-    console.error("Error creating video:", e);
-    return NextResponse.json({ error: "Lỗi tạo video", details: e.message }, { status: 500 });
+  } catch (error) {
+    return handleError(error);
   }
 }
 
@@ -70,9 +70,8 @@ export async function PUT(request: NextRequest) {
     });
 
     return NextResponse.json({ data: video });
-  } catch (e: any) {
-    console.error("Error updating video:", e);
-    return NextResponse.json({ error: "Lỗi cập nhật video", details: e.message }, { status: 500 });
+  } catch (error) {
+    return handleError(error);
   }
 }
 
@@ -87,9 +86,8 @@ export async function DELETE(request: NextRequest) {
 
     await prisma.homeVideo.delete({ where: { id } });
 
-    return NextResponse.json({ success: true });
-  } catch (e: any) {
-    console.error("Error deleting video:", e);
-    return NextResponse.json({ error: "Lỗi xóa video", details: e.message }, { status: 500 });
+    return ok({ success: true });
+  } catch (error) {
+    return handleError(error);
   }
 }

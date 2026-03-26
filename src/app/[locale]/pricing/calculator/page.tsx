@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { PricingCalculator } from "./pricing-calculator";
+import PricingCalculatorContent from "./pricing-calculator";
 
 export const metadata: Metadata = {
   title: "Tùy chỉnh Báo giá Website | LOOP",
@@ -8,5 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function PricingCalculatorPage() {
-  return <PricingCalculator />;
+  return <PricingCalculatorContent />;
 }

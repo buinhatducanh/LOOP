@@ -1,3 +1,4 @@
+import { handleError } from "@/lib/api/response";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
@@ -7,7 +8,7 @@ import {
   getTransferLimitStatus,
   LP_TRANSFER_FEE,
   LP_TRANSFER_DAILY_LIMIT,
-} from "@/lib/lp/transfer";
+} from "@/lib/services/gamification/transfer.service";
 
 // GET /api/admin/lp-transfers
 // Get transfer history and transfer limit status for the authenticated member.
@@ -64,9 +65,7 @@ export async function GET(req: NextRequest) {
       pagination: { page, limit, total, pages: Math.ceil(total / limit) },
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Server error";
-    const status = message === "Unauthorized" ? 401 : message === "Forbidden" ? 403 : 500;
-    return NextResponse.json({ error: message }, { status });
+    return handleError(error);
   }
 }
 
@@ -142,8 +141,6 @@ export async function POST(req: NextRequest) {
       },
     }, { status: 201 });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Server error";
-    const status = message === "Unauthorized" ? 401 : message === "Forbidden" ? 403 : 500;
-    return NextResponse.json({ error: message }, { status });
+    return handleError(error);
   }
 }

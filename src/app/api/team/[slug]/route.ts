@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { ok, notFound, serverError } from "@/lib/api/response";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(
@@ -12,9 +12,7 @@ export async function GET(
       where: { slug },
     });
 
-    if (!member) {
-      return NextResponse.json({ error: "Not found" }, { status: 404 });
-    }
+    if (!member) return notFound("Team member not found");
 
     // Get related members (same role level, excluding current)
     const relatedMembers = await prisma.teamMember.findMany({
@@ -27,11 +25,9 @@ export async function GET(
       orderBy: [{ sortOrder: "asc" }],
     });
 
-    return NextResponse.json({
-      data: member,
-      related: relatedMembers,
-    });
+    return ok({ ...member, related: relatedMembers });
   } catch (error) {
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    console.error("Failed to fetch team member:", error);
+    return serverError();
   }
 }

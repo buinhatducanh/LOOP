@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { ok, handleError, badRequest } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
+import { requirePermission } from "@/lib/auth/permissions";
 
 export async function GET(request: NextRequest) {
   try {
@@ -7,16 +9,20 @@ export async function GET(request: NextRequest) {
       orderBy: { sortOrder: "asc" },
     });
     return NextResponse.json({ data: sliders });
-  } catch (e: any) {
-    console.error("Error fetching sliders:", e);
-    return NextResponse.json({ error: "Lỗi lấy dữ liệu", details: e.message }, { status: 500 });
+  } catch (error) {
+    return handleError(error);
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
+    await requirePermission("home-sliders", "create");
     const body = await request.json();
     const { image, title, subtitle, link, sortOrder, isActive } = body;
+
+    if (!image || !title) {
+      return badRequest("image and title are required");
+    }
 
     const slider = await prisma.homeSlider.create({
       data: {
@@ -29,17 +35,19 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    return NextResponse.json({ data: slider });
-  } catch (e: any) {
-    console.error("Error creating slider:", e);
-    return NextResponse.json({ error: "Lỗi tạo slider", details: e.message }, { status: 500 });
+    return ok(slider, 201);
+  } catch (error) {
+    return handleError(error);
   }
 }
 
 export async function PUT(request: NextRequest) {
   try {
+    await requirePermission("home-sliders", "update");
     const body = await request.json();
     const { id, image, title, subtitle, link, sortOrder, isActive } = body;
+
+    if (!id) return badRequest("Slider ID is required");
 
     const slider = await prisma.homeSlider.update({
       where: { id },
@@ -53,27 +61,26 @@ export async function PUT(request: NextRequest) {
       },
     });
 
-    return NextResponse.json({ data: slider });
-  } catch (e: any) {
-    console.error("Error updating slider:", e);
-    return NextResponse.json({ error: "Lỗi cập nhật slider", details: e.message }, { status: 500 });
+    return ok(slider);
+  } catch (error) {
+    return handleError(error);
   }
 }
 
 export async function DELETE(request: NextRequest) {
   try {
+    await requirePermission("home-sliders", "delete");
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
 
     if (!id) {
-      return NextResponse.json({ error: "Thiếu ID" }, { status: 400 });
+      return badRequest("Slider ID is required");
     }
 
     await prisma.homeSlider.delete({ where: { id } });
 
-    return NextResponse.json({ success: true });
-  } catch (e: any) {
-    console.error("Error deleting slider:", e);
-    return NextResponse.json({ error: "Lỗi xóa slider", details: e.message }, { status: 500 });
+    return ok({ success: true });
+  } catch (error) {
+    return handleError(error);
   }
 }

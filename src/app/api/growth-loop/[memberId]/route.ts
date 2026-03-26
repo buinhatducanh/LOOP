@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+import { ok, notFound, forbidden, serverError } from "@/lib/api/response";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
-import { listRedeemableItems } from "@/lib/lp/redemption";
+import { listRedeemableItems } from "@/lib/services/gamification/redemption.service";
 
 // GET /api/growth-loop/[memberId]
 // Returns the full "Growth Loop" view for a staff member:
@@ -9,7 +10,6 @@ import { listRedeemableItems } from "@/lib/lp/redemption";
 //   - Recent LP transactions
 //   - Redeemable catalog
 //   - Referral codes + stats + shareable link
-
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ memberId: string }> }
@@ -20,17 +20,12 @@ export async function GET(
     const { searchParams } = new URL(req.url);
     const limit = Math.min(50, parseInt(searchParams.get("limit") ?? "10", 10));
 
-    // Only the member themselves or an admin can view their growth loop
     const isAdmin =
       session.roles.includes("super_admin") ||
       session.roles.includes("admin");
 
-    if (!isAdmin && memberId !== session.teamMemberId) {
-      return NextResponse.json(
-        { error: "You can only view your own growth loop data" },
-        { status: 403 }
-      );
-    }
+    if (!isAdmin && memberId !== session.teamMemberId)
+      return forbidden("You can only view your own growth loop data");
 
     const member = await prisma.teamMember.findUnique({
       where: { id: memberId },
@@ -48,11 +43,8 @@ export async function GET(
       },
     });
 
-    if (!member) {
-      return NextResponse.json({ error: "Member not found" }, { status: 404 });
-    }
+    if (!member) return notFound("Member not found");
 
-    // LP transactions
     const transactions = await prisma.lpTransaction.findMany({
       where: { memberId },
       orderBy: { createdAt: "desc" },
@@ -70,7 +62,6 @@ export async function GET(
       },
     });
 
-    // LP redemption history
     const redemptions = await prisma.lpRedemption.findMany({
       where: { memberId },
       orderBy: { createdAt: "desc" },
@@ -86,10 +77,8 @@ export async function GET(
       },
     });
 
-    // Redeemable catalog
     const redeemableItems = await listRedeemableItems();
 
-    // Referral codes for this member
     const referralCodes = await prisma.referralCode.findMany({
       where: { memberId, isActive: true },
       select: {
@@ -101,17 +90,17 @@ export async function GET(
         useCount: true,
         maxUses: true,
         expiresAt: true,
-        _count: {
-          select: { orders: true, tracking: true },
-        },
+        _count: { select: { orders: true, tracking: true } },
       },
     });
 
-    // Referral stats per code
+    const completedStatuses = ["completed", "contracted", "delivered", "paid_full", "paid"] as string[];
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://loop.vn";
+
     const codesWithStats = await Promise.all(
       referralCodes.map(async (code) => {
         const completedOrders = await prisma.order.findMany({
-          where: { referralCodeId: code.id, status: { in: ["completed", "contracted", "delivered", "paid_full", "paid"] } },
+          where: { referralCodeId: code.id, status: { in: completedStatuses } },
           select: { paidAmount: true },
         });
         const totalRevenue = completedOrders.reduce((s, o) => s + (o.paidAmount ?? 0), 0);
@@ -119,7 +108,10 @@ export async function GET(
           where: { memberId, source: "referral", referenceType: "Order" },
           _sum: { amount: true },
         });
-        const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://loop.vn";
+        const tierLabel =
+          totalRevenue >= 200_000_000 ? "Tier 3 (10%)"
+            : totalRevenue >= 50_000_000 ? "Tier 2 (7%)"
+            : "Tier 1 (5%)";
 
         return {
           ...code,
@@ -129,36 +121,32 @@ export async function GET(
             lpEarned: lpAgg._sum.amount ?? 0,
           },
           shareUrl: `${baseUrl}/ref/${code.code}`,
-          // Tier info for display
-          tierLabel:
-            totalRevenue >= 200_000_000 ? "Tier 3 (10%)"
-              : totalRevenue >= 50_000_000 ? "Tier 2 (7%)"
-              : "Tier 1 (5%)",
+          tierLabel,
         };
       })
     );
 
-    return NextResponse.json({
-      data: {
-        member: {
-          id: member.id,
-          name: member.name,
-          role: member.role,
-          image: member.image ?? null,
-          availableLp: member.availableLp,
-          lockedLp: member.lockedLp,
-          totalLp: member.availableLp + member.lockedLp,
-          rank: { level: member.level, key: member.rank, currentXp: member.currentXp, maxXp: member.maxXp },
-        },
-        transactions,
-        recentRedemptions: redemptions,
-        redeemableCatalog: redeemableItems,
-        referralCodes: codesWithStats,
+    return ok({
+      member: {
+        id: member.id,
+        name: member.name,
+        role: member.role,
+        image: member.image ?? null,
+        availableLp: member.availableLp,
+        lockedLp: member.lockedLp,
+        totalLp: member.availableLp + member.lockedLp,
+        rank: { level: member.level, key: member.rank, currentXp: member.currentXp, maxXp: member.maxXp },
       },
+      transactions,
+      recentRedemptions: redemptions,
+      redeemableCatalog: redeemableItems,
+      referralCodes: codesWithStats,
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Server error";
-    const status = message === "Unauthorized" ? 401 : message === "Forbidden" ? 403 : 500;
-    return NextResponse.json({ error: message }, { status });
+    console.error("Growth loop error:", error);
+    if (error instanceof Error) {
+      if (error.message === "Unauthorized") return forbidden();
+    }
+    return serverError();
   }
 }

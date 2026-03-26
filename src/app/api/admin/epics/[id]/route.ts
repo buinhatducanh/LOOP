@@ -1,3 +1,4 @@
+import { ok, handleError } from "@/lib/api/response";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
@@ -21,9 +22,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     if (!epic) return NextResponse.json({ error: "Not found" }, { status: 404 });
     return NextResponse.json({ data: epic });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Server error";
-    const status = message === "Unauthorized" ? 401 : message === "Forbidden" ? 403 : 500;
-    return NextResponse.json({ error: message }, { status });
+    return handleError(error);
   }
 }
 
@@ -55,9 +54,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     return NextResponse.json({ data: epic });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Server error";
-    const status = message === "Unauthorized" ? 401 : message === "Forbidden" ? 403 : 500;
-    return NextResponse.json({ error: message }, { status });
+    return handleError(error);
   }
 }
 
@@ -67,10 +64,8 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     const { id } = await params;
     await prisma.epic.delete({ where: { id } });
     await createAuditLog({ userId: session.userId, action: "delete", resource: "backlogs", resourceId: id });
-    return NextResponse.json({ success: true });
+    return ok({ success: true });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Server error";
-    const status = message === "Unauthorized" ? 401 : message === "Forbidden" ? 403 : 500;
-    return NextResponse.json({ error: message }, { status });
+    return handleError(error);
   }
 }

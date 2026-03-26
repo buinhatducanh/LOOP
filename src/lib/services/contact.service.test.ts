@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
   validateContactInput,
   submitContactForm,
-} from "@/lib/services/contact.service";
+} from "@/lib/services/landing/contact.service";
 
 // ─── Mock Prisma ───────────────────────────────────────────────────────────────
 // vi.hoisted() ensures the mock factory can reference `mockPrisma` at initialization
