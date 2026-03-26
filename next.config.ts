@@ -1,14 +1,10 @@
 import type { NextConfig } from "next";
-import createNextIntlPlugin from 'next-intl/plugin';
-
-const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
 const nextConfig: NextConfig = {
   // NOTE: "standalone" output removed for Vercel deployment.
   // Vercel handles its own build system and doesn't need standalone output.
   // For Docker self-hosted, re-enable "standalone" and use the Dockerfile.
 
-  transpilePackages: ["framer-motion"],
   images: {
     formats: ['image/avif', 'image/webp'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
@@ -56,4 +52,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withNextIntl(nextConfig);
+export default nextConfig;

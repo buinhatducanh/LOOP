@@ -28,7 +28,7 @@ export async function GET() {
       categories?: string[];
     }>>(postsQuery);
 
-    const formatted = posts.map((post) => ({
+    const formatted = posts.map((post: { _id: string; slug: { current: string }; title: string; titleVi?: string; publishedAt?: string; authorName?: string; categories?: string[] }) => ({
       id: post._id,
       slug: post.slug.current,
       title: post.title,

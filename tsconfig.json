@@ -41,6 +41,7 @@
   "exclude": [
     "node_modules",
     "_legacy_spa",
+    "FE",
     "tests/e2e/**",
     "playwright.config.ts"
   ]
