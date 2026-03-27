@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 
-type TFunc = () => Promise<string>;
-
 interface ContactFormProps {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   t: any;

@@ -96,10 +96,22 @@
         "heroHighlight": "chuyên gia",
         "heroTitle2": " của chúng tôi",
         "heroDesc": "Những con người tài năng đằng sau mỗi dự án thành công",
+        "hallOfFame": "HALL OF FAME — TOP PERFORMERS",
         "viewProfile": "Xem hồ sơ",
         "skills": "Kỹ năng",
         "experience": "Kinh nghiệm",
-        "noResults": "Không tìm thấy thành viên nào."
+        "noResults": "Không tìm thấy thành viên nào.",
+        "filterAll": "Tất cả",
+        "filterFrontend": "Frontend",
+        "filterBackend": "Backend",
+        "filterDesign": "Design",
+        "filterMarketing": "Marketing",
+        "filterQA": "QA",
+        "filterDevOps": "DevOps",
+        "filterPM": "Project Manager",
+        "filterCEO": "CEO",
+        "filterAdmin": "Admin",
+        "searchPlaceholder": "Tìm theo tên, vai trò, kỹ năng..."
     },
     "Stats": {
         "projects_label": "Dự án đã bàn giao",

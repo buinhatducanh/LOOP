@@ -1,0 +1,268 @@
+/**
+ * LOOP Solutions — Figma Dark Theme CSS
+ *
+ * Design system tokens from FIGMA OLD FE ds.ts mapped to CSS custom properties.
+ * Applied via className="dark" on <html> for Figma dark pages.
+ *
+ * Usage:
+ *   import "@/styles/figma-theme.css"  (in layout)
+ *   <html lang="vi" className="dark"> (Figma dark mode)
+ */
+
+/* ── Google Fonts ─────────────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Noto+Serif+JP:wght@400;600;700&display=swap');
+
+/* ── Figma DS token aliases ────────────────────────────────────────────────── */
+:root {
+  --figma-bg: #020617;
+  --figma-bg-card: #0F172A;
+  --figma-bg-card2: #111827;
+  --figma-bg-card3: #0D1526;
+  --figma-border: #1F2937;
+  --figma-border2: #374151;
+  --figma-blue: #3B82F6;
+  --figma-blue-dark: #1D4ED8;
+  --figma-purple: #818CF8;
+  --figma-cyan: #14B8A6;
+  --figma-green: #22C55E;
+  --figma-amber: #F59E0B;
+  --figma-red: #EF4444;
+  --figma-text: #FFFFFF;
+  --figma-text2: #E2E8F0;
+  --figma-text3: #94A3B8;
+  --figma-text4: #64748B;
+  --figma-text5: #475569;
+  --figma-grd-primary: linear-gradient(135deg, #1D4ED8, #818CF8);
+  --figma-grd-blue: linear-gradient(135deg, #1D4ED8, #3B82F6);
+  --figma-grd-purple: linear-gradient(135deg, #818CF8, #7DD3FC);
+  --figma-grd-cyan: linear-gradient(135deg, #14B8A6, #818CF8);
+  --figma-grd-gold: linear-gradient(135deg, #F59E0B, #FDE68A);
+  --figma-grd-hero: linear-gradient(135deg, rgba(29,78,216,0.15), rgba(129,140,248,0.08));
+  --figma-glow-blue: 0 0 20px rgba(59,130,246,0.4);
+  --figma-glow-purple: 0 0 20px rgba(129,140,248,0.4);
+  --figma-glow-cyan: 0 0 20px rgba(20,184,166,0.4);
+  --figma-glow-card: 0 8px 32px rgba(0,0,0,0.4);
+
+  /* Override base tailwind theme for Figma dark */
+  --background: #020617;
+  --foreground: #ffffff;
+  --card: #0F172A;
+  --card-foreground: #ffffff;
+  --popover: #0F172A;
+  --popover-foreground: #ffffff;
+  --primary: #3B82F6;
+  --primary-foreground: #ffffff;
+  --secondary: #1F2937;
+  --secondary-foreground: #E2E8F0;
+  --muted: #1F2937;
+  --muted-foreground: #94A3B8;
+  --accent: #818CF8;
+  --accent-foreground: #ffffff;
+  --destructive: #EF4444;
+  --destructive-foreground: #ffffff;
+  --border: #1F2937;
+  --input: #1F2937;
+  --ring: #3B82F6;
+  --chart-1: #3B82F6;
+  --chart-2: #818CF8;
+  --chart-3: #14B8A6;
+  --chart-4: #F59E0B;
+  --chart-5: #22C55E;
+}
+
+/* ── Figma dark theme base ─────────────────────────────────────────────────── */
+.dark,
+[data-theme="dark"] {
+  font-family: 'Inter', 'Noto Serif JP', sans-serif;
+  background-color: var(--figma-bg);
+  color: var(--figma-text);
+  min-height: 100vh;
+}
+
+/* ── Figma typography helpers ───────────────────────────────────────────────── */
+.figma-heading {
+  font-family: 'Cinzel', serif;
+}
+
+.figma-mono {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ── Figma card style ──────────────────────────────────────────────────────── */
+.figma-card {
+  background-color: var(--figma-bg-card);
+  border: 1px solid var(--figma-border);
+  border-radius: 0.75rem;
+  box-shadow: var(--figma-glow-card);
+}
+
+.figma-card-hover {
+  background-color: var(--figma-bg-card);
+  border: 1px solid var(--figma-border2);
+  border-radius: 0.75rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.figma-card-hover:hover {
+  border-color: var(--figma-blue);
+  box-shadow: var(--figma-glow-blue);
+}
+
+/* ── Figma gradient helpers ─────────────────────────────────────────────────── */
+.figma-grd-primary {
+  background: var(--figma-grd-primary);
+}
+
+.figma-grd-blue {
+  background: var(--figma-grd-blue);
+}
+
+.figma-grd-purple {
+  background: var(--figma-grd-purple);
+}
+
+.figma-grd-cyan {
+  background: var(--figma-grd-cyan);
+}
+
+.figma-grd-gold {
+  background: var(--figma-grd-gold);
+}
+
+/* ── Figma glow button ─────────────────────────────────────────────────────── */
+.figma-btn-primary {
+  background: var(--figma-grd-primary);
+  color: #ffffff;
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s ease, box-shadow 0.2s ease;
+}
+
+.figma-btn-primary:hover {
+  opacity: 0.9;
+  box-shadow: var(--figma-glow-blue);
+}
+
+.figma-btn-outline {
+  background: transparent;
+  color: var(--figma-text2);
+  border: 1px solid var(--figma-border2);
+  border-radius: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.figma-btn-outline:hover {
+  border-color: var(--figma-blue);
+  color: var(--figma-blue);
+  box-shadow: var(--figma-glow-blue);
+}
+
+/* ── Figma input ───────────────────────────────────────────────────────────── */
+.figma-input {
+  background-color: var(--figma-bg-card2);
+  border: 1px solid var(--figma-border);
+  border-radius: 0.5rem;
+  color: var(--figma-text);
+  padding: 0.625rem 0.875rem;
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  width: 100%;
+}
+
+.figma-input:focus {
+  border-color: var(--figma-blue);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.figma-input::placeholder {
+  color: var(--figma-text5);
+}
+
+/* ── Figma badge ──────────────────────────────────────────────────────────── */
+.figma-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.625rem;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* ── Figma gradient text ───────────────────────────────────────────────────── */
+.figma-text-gradient {
+  background: var(--figma-grd-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Figma animated grid background ─────────────────────────────────────────── */
+.figma-grid-bg {
+  position: relative;
+}
+
+.figma-grid-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--figma-border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--figma-border) 1px, transparent 1px);
+  background-size: 60px 60px;
+  opacity: 0.15;
+  pointer-events: none;
+}
+
+/* ── Figma section divider ─────────────────────────────────────────────────── */
+.figma-divider {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--figma-border2) 20%,
+    var(--figma-border2) 80%,
+    transparent 100%
+  );
+  margin: 3rem 0;
+}
+
+/* ── Figma scrollbar ───────────────────────────────────────────────────────── */
+.dark ::-webkit-scrollbar {
+  width: 3px;
+  height: 3px;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: linear-gradient(
+    180deg,
+    rgba(0, 245, 255, 0.55) 0%,
+    rgba(59, 130, 246, 0.55) 50%,
+    rgba(139, 92, 246, 0.55) 100%
+  );
+  border-radius: 9999px;
+  box-shadow: 0 0 6px rgba(0, 245, 255, 0.3), 0 0 12px rgba(59, 130, 246, 0.15);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(
+    180deg,
+    rgba(0, 245, 255, 0.9) 0%,
+    rgba(59, 130, 246, 0.9) 50%,
+    rgba(139, 92, 246, 0.9) 100%
+  );
+  box-shadow: 0 0 10px rgba(0, 245, 255, 0.6), 0 0 20px rgba(59, 130, 246, 0.35);
+}

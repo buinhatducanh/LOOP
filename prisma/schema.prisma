@@ -430,6 +430,7 @@ model TeamMember {
   blogPostsAuthored BlogPost[]
   envFileEdits      EnvFile[]      @relation("EnvFileEditor")
   dailyStandups     DailyStandup[]
+  mediaBookings     MediaBooking[]
 
   @@map("team_members")
 }
@@ -500,6 +501,7 @@ model ServicePackage {
   updatedAt      DateTime @updatedAt @map("updated_at")
 
   orders Order[]
+  mediaBookings MediaBooking[]
 
   @@map("service_packages")
 }
@@ -2364,4 +2366,90 @@ model LpTransaction {
   @@index([referenceId, referenceType])
   @@index([status])
   @@map("lp_transactions")
+}
+
+// ─── Media Booking ─────────────────────────────────────────────────────────────
+
+/**
+ * Tracks media booking lifecycle from customer request to final delivery.
+ * Status flow: pending → confirmed → in_progress → delivered → approved | rejected
+ * - customer requests media service
+ * - admin confirms booking + assigns media staff
+ * - media team delivers assets
+ * - customer reviews + approves or requests revision
+ */
+model MediaBooking {
+  id               String    @id @default(cuid())
+  /** Human-readable booking number, e.g. "MBK-XXXXXXXXXXXX" */
+  bookingNumber    String    @unique @map("booking_number")
+  /** FK → ServicePackage.id (which media package was ordered) */
+  packageId        String?   @map("package_id")
+  package          ServicePackage? @relation(fields: [packageId], references: [id])
+  /** FK → Order.id (links to the parent order if applicable) */
+  orderId          String?   @map("order_id")
+  customerName     String    @map("customer_name")
+  customerEmail    String    @map("customer_email")
+  customerPhone    String?   @map("customer_phone")
+  companyName      String?   @map("company_name")
+  /** Booking type: event | product | corporate | social | custom */
+  bookingType      String    @default("event") @map("booking_type")
+  /** Short title / event name */
+  title            String
+  /** Full brief from customer */
+  requirements     String?   @db.Text @map("requirements")
+  /** Admin notes (internal) */
+  note             String?   @db.Text @map("note")
+  /** Delivery deadline */
+  deadline         DateTime? @map("deadline")
+  /** Booking status */
+  status           String    @default("pending") @map("status")
+  // pending       = awaiting admin confirmation
+  // confirmed     = confirmed, awaiting assets
+  // in_progress   = media team working on it
+  // delivered    = assets sent to customer for review
+  // approved     = customer approved final delivery
+  // rejected     = customer rejected, needs revision
+  // cancelled    = cancelled before delivery
+
+  /** Payment status */
+  paymentStatus    String    @default("unpaid") @map("payment_status")
+  // unpaid | partial | paid | refunded
+
+  /** Agreed price at time of booking */
+  totalAmount      Int?      @map("total_amount")
+  /** Amount paid so far */
+  paidAmount       Int       @default(0) @map("paid_amount")
+
+  /** Media assets delivered — JSON array of Cloudinary URLs */
+  deliveredAssets  Json      @default("[]") @map("delivered_assets")
+  /** Revision notes from customer or internal review */
+  revisionNotes    String?   @db.Text @map("revision_notes")
+
+  /** When assets were delivered to customer */
+  deliveredAt      DateTime? @map("delivered_at")
+  /** When customer approved final delivery */
+  approvedAt       DateTime? @map("approved_at")
+  /** Who approved (admin user id) */
+  approvedBy       String?   @map("approved_by")
+  /** Who rejected (admin user id) */
+  rejectedBy       String?   @map("rejected_by")
+  /** When rejected */
+  rejectedAt       DateTime? @map("rejected_at")
+
+  /** Assigned media team member id */
+  assignedTo       String?   @map("assigned_to")
+  /** FK → TeamMember.id */
+  teamMemberId     String?   @map("team_member_id")
+  teamMember      TeamMember? @relation(fields: [teamMemberId], references: [id])
+
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  // ── Indexes ───────────────────────────────────────────────────────────
+  @@index([status])
+  @@index([status, createdAt])
+  @@index([customerEmail])
+  @@index([teamMemberId])
+  @@index([deadline])
+  @@map("media_bookings")
 }

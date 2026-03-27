@@ -96,10 +96,22 @@
         "heroHighlight": "team",
         "heroTitle2": " of experts",
         "heroDesc": "The talented people behind every successful project",
+        "hallOfFame": "HALL OF FAME — TOP PERFORMERS",
         "viewProfile": "View Profile",
         "skills": "Skills",
         "experience": "Experience",
-        "noResults": "No team members found."
+        "noResults": "No team members found.",
+        "filterAll": "All",
+        "filterFrontend": "Frontend",
+        "filterBackend": "Backend",
+        "filterDesign": "Design",
+        "filterMarketing": "Marketing",
+        "filterQA": "QA",
+        "filterDevOps": "DevOps",
+        "filterPM": "Project Manager",
+        "filterCEO": "CEO",
+        "filterAdmin": "Admin",
+        "searchPlaceholder": "Search by name, role, or skill..."
     },
     "Stats": {
         "projects_label": "Projects Delivered",
