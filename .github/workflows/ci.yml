@@ -53,8 +53,6 @@ jobs:
         run: |
           npx prisma generate
           node -e "const fs=require('fs'),p='src/generated/prisma/index.ts';if(!fs.existsSync(p))fs.writeFileSync(p,'// Re-export for directory import\nexport * from \"./client";\n')"
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
       - name: Run ESLint
         run: npm run lint
@@ -85,8 +83,6 @@ jobs:
         run: |
           npx prisma generate
           node -e "const fs=require('fs'),p='src/generated/prisma/index.ts';if(!fs.existsSync(p))fs.writeFileSync(p,'// Re-export for directory import\nexport * from \"./client";\n')"
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
       - name: Run tests with coverage
         run: npm run test:coverage
@@ -129,8 +125,6 @@ jobs:
         run: |
           npx prisma generate
           node -e "const fs=require('fs'),p='src/generated/prisma/index.ts';if(!fs.existsSync(p))fs.writeFileSync(p,'// Re-export for directory import\nexport * from \"./client";\n')"
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
       - name: Build Next.js app
         run: npm run build
