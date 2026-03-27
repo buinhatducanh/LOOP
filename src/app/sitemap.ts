@@ -1,7 +1,7 @@
 /**
  * Sitemap — LOOP Solutions
  * Locale-aware sitemap for all 5 locales (VI/EN/JA/KO/ZH).
- * Dynamically includes blog post slugs from the database.
+ * Dynamically includes service/portfolio/team/blog slugs from the database.
  */
 
 import type { MetadataRoute } from "next";
@@ -27,6 +27,8 @@ const staticRoutes = [
   { path: "team", priority: 0.6, changeFrequency: "monthly" as const },
   { path: "blog", priority: 0.6, changeFrequency: "weekly" as const },
   { path: "contact", priority: 0.5, changeFrequency: "monthly" as const },
+  { path: "privacy", priority: 0.4, changeFrequency: "monthly" as const },
+  { path: "terms", priority: 0.4, changeFrequency: "monthly" as const },
 ];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -63,6 +65,69 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
   } catch {
     // Non-fatal: sitemap still serves static routes
+  }
+
+  // ─── Dynamic service slugs (all locales) ───────────────────────────────────
+  try {
+    const services = await prisma.service.findMany({
+      where: { isActive: true },
+      select: { slug: true, updatedAt: true },
+    });
+
+    for (const locale of locales) {
+      for (const service of services) {
+        entries.push({
+          url: `${baseUrl}/${locale}/services/${service.slug}`,
+          lastModified: service.updatedAt,
+          changeFrequency: "monthly" as const,
+          priority: 0.8,
+        });
+      }
+    }
+  } catch {
+    // Non-fatal
+  }
+
+  // ─── Dynamic portfolio/project slugs (all locales) ─────────────────────────
+  try {
+    const projects = await prisma.project.findMany({
+      where: { isPublished: true },
+      select: { slug: true, updatedAt: true },
+    });
+
+    for (const locale of locales) {
+      for (const project of projects) {
+        entries.push({
+          url: `${baseUrl}/${locale}/portfolio/${project.slug}`,
+          lastModified: project.updatedAt,
+          changeFrequency: "monthly" as const,
+          priority: 0.7,
+        });
+      }
+    }
+  } catch {
+    // Non-fatal
+  }
+
+  // ─── Dynamic team member slugs (all locales) ───────────────────────────────
+  try {
+    const members = await prisma.teamMember.findMany({
+      where: { isActive: true },
+      select: { slug: true, updatedAt: true },
+    });
+
+    for (const locale of locales) {
+      for (const member of members) {
+        entries.push({
+          url: `${baseUrl}/${locale}/team/${member.slug}`,
+          lastModified: member.updatedAt,
+          changeFrequency: "monthly" as const,
+          priority: 0.5,
+        });
+      }
+    }
+  } catch {
+    // Non-fatal
   }
 
   return entries;
