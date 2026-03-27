@@ -1,7 +1,7 @@
 # FE Master Index — LOOP Solutions
 
 > **Mục đích:** 1 điểm vào duy nhất cho toàn bộ tài liệu roadmap, process, architecture, execution, governance và reporting của FE.
-> **Cập nhật:** 2026-03-27
+> **Cập nhật:** 2026-03-27 (updated with week 13)
 
 ---
 
@@ -35,6 +35,8 @@
 - `./fe-week-10-plan.md` — Tax/invoice/payment consistency
 - `./fe-week-11-plan.md` — Performance optimization sprint
 - `./fe-week-12-plan.md` — Regression + release hardening
+- `./fe-week-13-plan.md` — i18n hardening + API locale coverage + CJK font rollout
+- `./fe-week-13-plan.md` — i18n hardening + API locale coverage + CJK font rollout
 
 ### i18n Expansion Plan (5 tuần bổ sung)
 

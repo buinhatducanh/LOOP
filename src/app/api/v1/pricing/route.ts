@@ -11,6 +11,7 @@ export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
 import { getPricingPlans } from "@/lib/db/queries";
+import { handleError } from "@/lib/api/response";
 
 export const revalidate = 300;
 
@@ -32,10 +33,6 @@ export async function GET() {
       }
     );
   } catch (error) {
-    console.error("[/api/v1/pricing] Failed:", error);
-    return NextResponse.json(
-      { version: "v1", error: "Failed to fetch pricing plans" },
-      { status: 500, headers: { "X-API-Version": "v1" } }
-    );
+    return handleError(error);
   }
 }

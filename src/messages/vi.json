@@ -373,6 +373,11 @@
         "section9Item2": "Điện thoại: +84 888 123 456",
         "section9Item3": "Địa chỉ: TP. Hồ Chí Minh, Việt Nam"
     },
+    "TeamMemberPage": {
+        "teamMember": "Thành viên đội ngũ",
+        "relatedMembers": "Thành viên khác",
+        "backToTeam": "Quay lại đội ngũ"
+    },
     "NotFound": {
         "title": "Không tìm thấy trang",
         "description": "Xin lỗi, trang bạn đang tìm kiếm không tồn tại hoặc đã bị di chuyển.",

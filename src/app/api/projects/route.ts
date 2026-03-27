@@ -1,4 +1,11 @@
-import { NextResponse } from "next/server";
+/**
+ * GET /api/projects
+ *
+ * Returns all published projects.
+ * Supports ?lang=vi|en|ja|ko|zh (default: vi).
+ */
+
+import { ok, handleError } from "@/lib/api/response";
 import { prisma } from "@/lib/prisma";
 import { parseLocaleParam, getLocalizedField, getLocalizedArray } from "@/lib/i18n/localization";
 
@@ -33,9 +40,8 @@ export async function GET(req: Request) {
       _localeUsed: locale,
     }));
 
-    return NextResponse.json({ data: localized });
+    return ok(localized);
   } catch (error) {
-    console.error("[/api/projects] Failed:", error);
-    return NextResponse.json({ error: "Failed to fetch projects" }, { status: 500 });
+    return handleError(error);
   }
 }

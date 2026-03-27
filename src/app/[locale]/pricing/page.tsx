@@ -1,6 +1,7 @@
 /**
  * Pricing Page — LOOP Solutions
- * Phase 0 i18n: wired to PricingPage namespace
+ * Wired to GET /api/v1/pricing (database via Prisma)
+ * Fallback: renders static cards if API unavailable (PricingPlan has no i18n fields — uses i18n translation keys)
  */
 
 import type { Metadata } from "next";
@@ -8,6 +9,7 @@ import { notFound } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 import { getTranslations } from "next-intl/server";
 import { routing } from "@/i18n/routing";
+import { prisma } from "@/lib/prisma";
 
 type Props = { params: Promise<{ locale: string }> };
 
@@ -26,6 +28,31 @@ export default async function PricingPage({ params }: Props) {
   setRequestLocale(locale);
 
   const t = await getTranslations("PricingPage");
+
+  // Fetch pricing plans from DB — PricingPlan has no i18n fields, render with i18n text
+  let plans: Array<{
+    id: string;
+    slug: string;
+    name: string;
+    price: number | null;
+    period: string;
+    tagline: string;
+    features: string[];
+    notIncluded: string[];
+    highlighted: boolean;
+    cta: string;
+    color: string;
+  }> = [];
+
+  try {
+    plans = await prisma.pricingPlan.findMany({
+      where: { isActive: true },
+      orderBy: { sortOrder: "asc" },
+    });
+  } catch {
+    // Fallback to static display if DB unavailable
+    plans = [];
+  }
 
   return (
     <div style={{ background: "#f8fafc", minHeight: "100vh" }}>
@@ -60,41 +87,58 @@ export default async function PricingPage({ params }: Props) {
 
       {/* Pricing Cards */}
       <section style={{ padding: "4rem 2rem", maxWidth: "1100px", margin: "0 auto" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: "1.5rem", alignItems: "stretch" }}>
-          {/* Starter */}
-          <PricingCard
-            name="Starter"
-            price="$500"
-            period="/ project"
-            desc={t("starterDesc")}
-            features={[t("feat1"), t("feat2"), t("feat3"), t("feat4")]}
-            cta={t("btnContact")}
-            ctaLink={`/${locale}/contact`}
-            highlight={false}
-          />
-          {/* Professional */}
-          <PricingCard
-            name="Professional"
-            price="$1,500"
-            period="/ project"
-            desc={t("comparisonDesc")}
-            features={[t("feat1"), t("feat2"), t("feat3"), t("feat4"), t("feat5"), t("feat6"), t("feat7")]}
-            cta={t("btnContact")}
-            ctaLink={`/${locale}/contact`}
-            highlight={true}
-          />
-          {/* Enterprise */}
-          <PricingCard
-            name="Enterprise"
-            price="Custom"
-            period=""
-            desc={t("deploymentDesc")}
-            features={[t("feat1"), t("feat2"), t("feat3"), t("feat4"), t("feat5"), t("feat6"), t("feat7"), t("feat8")]}
-            cta={t("btnContact")}
-            ctaLink={`/${locale}/contact`}
-            highlight={false}
-          />
-        </div>
+        {plans.length === 0 ? (
+          /* Static fallback when DB has no plans */
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: "1.5rem", alignItems: "stretch" }}>
+            <PricingCard
+              name="Starter"
+              price="$500"
+              period="/ project"
+              desc={t("starterDesc")}
+              features={[t("feat1"), t("feat2"), t("feat3"), t("feat4")]}
+              cta={t("btnContact")}
+              ctaLink={`/${locale}/contact`}
+              highlight={false}
+            />
+            <PricingCard
+              name="Professional"
+              price="$1,500"
+              period="/ project"
+              desc={t("comparisonDesc")}
+              features={[t("feat1"), t("feat2"), t("feat3"), t("feat4"), t("feat5"), t("feat6"), t("feat7")]}
+              cta={t("btnContact")}
+              ctaLink={`/${locale}/contact`}
+              highlight={true}
+            />
+            <PricingCard
+              name="Enterprise"
+              price="Custom"
+              period=""
+              desc={t("deploymentDesc")}
+              features={[t("feat1"), t("feat2"), t("feat3"), t("feat4"), t("feat5"), t("feat6"), t("feat7"), t("feat8")]}
+              cta={t("btnContact")}
+              ctaLink={`/${locale}/contact`}
+              highlight={false}
+            />
+          </div>
+        ) : (
+          /* Dynamic cards from DB */
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: "1.5rem", alignItems: "stretch" }}>
+            {plans.map((plan) => (
+              <PricingCard
+                key={plan.id}
+                name={plan.name}
+                price={plan.price != null ? `$${plan.price.toLocaleString()}` : "Custom"}
+                period={plan.period}
+                desc={plan.tagline}
+                features={plan.features}
+                cta={plan.cta || t("btnContact")}
+                ctaLink={`/${locale}/contact`}
+                highlight={plan.highlighted}
+              />
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Feature comparison */}

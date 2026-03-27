@@ -5,7 +5,7 @@
  * Supports ?lang=vi|en|ja|ko|zh (default: vi)
  */
 
-import { NextResponse } from "next/server";
+import { ok, handleError } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 import { parseLocaleParam, getLocalizedField } from "@/lib/i18n/localization";
 
@@ -70,7 +70,7 @@ export async function GET(req: Request) {
       _localeUsed: locale,
     }));
 
-    return NextResponse.json({
+    return ok({
       version: "v1",
       data: localized,
       pagination: {
@@ -82,10 +82,6 @@ export async function GET(req: Request) {
       meta: { locale },
     });
   } catch (error) {
-    console.error("[/api/blog-posts] Failed:", error);
-    return NextResponse.json(
-      { version: "v1", error: "Failed to fetch blog posts" },
-      { status: 500 }
-    );
+    return handleError(error);
   }
 }

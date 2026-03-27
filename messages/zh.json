@@ -86,7 +86,7 @@
         "teamSub": "我们的团队",
         "teamTitle": "认识",
         "teamHighlight": "专家团队",
-        "teamTitle2": "",
+        "teamTitle2": "成员",
         "teamDesc": "每一个成功项目背后的优秀人才",
         "teamViewAll": "查看全部团队成员"
     },
@@ -94,7 +94,7 @@
         "badge": "认识团队",
         "heroTitle1": "认识",
         "heroHighlight": "专家团队",
-        "heroTitle2": "",
+        "heroTitle2": "成员",
         "heroDesc": "每一个成功项目背后的优秀人才",
         "viewProfile": "查看简介",
         "skills": "技能",
@@ -372,6 +372,11 @@
         "section9Item1": "电子邮件：hello@loop.vn",
         "section9Item2": "电话：+84 888 123 456",
         "section9Item3": "地址：越南胡志明市"
+    },
+    "TeamMemberPage": {
+        "teamMember": "团队成员",
+        "relatedMembers": "其他成员",
+        "backToTeam": "返回团队"
     },
     "NotFound": {
         "title": "页面未找到",

@@ -373,6 +373,11 @@
         "section9Item2": "電話：+84 888 123 456",
         "section9Item3": "住所：ベトナムホーチミン市"
     },
+    "TeamMemberPage": {
+        "teamMember": "チームメンバー",
+        "relatedMembers": "その他のメンバー",
+        "backToTeam": "チームに戻る"
+    },
     "NotFound": {
         "title": "ページが見つかりません",
         "description": "お探しのページは存在しないか、移動された可能性があります。",

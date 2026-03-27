@@ -373,6 +373,11 @@
         "section9Item2": "电话：+84 888 123 456",
         "section9Item3": "地址：越南胡志明市"
     },
+    "TeamMemberPage": {
+        "teamMember": "团队成员",
+        "relatedMembers": "其他成员",
+        "backToTeam": "返回团队"
+    },
     "NotFound": {
         "title": "页面未找到",
         "description": "抱歉，您查找的页面不存在或已被移动。",

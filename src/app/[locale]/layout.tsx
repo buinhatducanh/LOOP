@@ -14,6 +14,7 @@ import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
 import SiteHeader from "./components/SiteHeader";
 import SiteFooter from "./components/SiteFooter";
+import { getFontClass } from "@/lib/fonts";
 
 type Props = {
   children: React.ReactNode;
@@ -71,7 +72,10 @@ export default async function LocaleLayout({ children, params }: Props) {
 
   return (
     <html lang={locale} suppressHydrationWarning>
-      <body style={{ margin: 0, fontFamily: "system-ui, -apple-system, sans-serif", display: "flex", flexDirection: "column", minHeight: "100vh" }}>
+      <body
+        style={{ margin: 0, display: "flex", flexDirection: "column", minHeight: "100vh" }}
+        className={getFontClass(locale)}
+      >
         <NextIntlClientProvider messages={messages}>
           <SiteHeader locale={locale} />
           <div style={{ flex: 1 }}>

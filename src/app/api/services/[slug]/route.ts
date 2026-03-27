@@ -1,6 +1,13 @@
-import { NextResponse } from "next/server";
+/**
+ * GET /api/services/[slug]
+ *
+ * Returns a single service by slug.
+ * Supports ?lang=vi|en|ja|ko|zh (default: vi).
+ */
+
+import { ok, notFound, handleError } from "@/lib/api/response";
 import { prisma } from "@/lib/prisma";
-import { parseLocaleParam, getLocalizedField, getLocalizedArray } from "@/lib/i18n/localization";
+import { parseLocaleParam, mapLocalizedService } from "@/lib/i18n/localization";
 
 export async function GET(
   req: Request,
@@ -22,38 +29,15 @@ export async function GET(
       },
     });
 
-    if (!service) {
-      return NextResponse.json(
-        { version: "v1", error: "Service not found" },
-        { status: 404, headers: { "X-API-Version": "v1" } }
-      );
-    }
+    if (!service) return notFound("Service not found");
 
-    return NextResponse.json({
-      version: "v1",
-      data: {
-        id: service.id,
-        slug: service.slug,
-        icon: service.icon,
-        title: getLocalizedField(service, "title", locale),
-        shortDescription: getLocalizedField(service, "shortDescription", locale),
-        longDescription: getLocalizedField(service, "longDescription", locale),
-        features: getLocalizedArray(service, "features", locale),
-        technologies: getLocalizedArray(service, "technologies", locale),
-        startingPrice: service.startingPrice,
-        deliveryTime: service.deliveryTime,
-        category: service.category,
-        isActive: service.isActive,
-        projects: service.projects,
-        _localeUsed: locale,
-      },
-      headers: { "X-API-Version": "v1" },
-    });
+    const result = {
+      ...mapLocalizedService(service, locale),
+      projects: service.projects,
+    };
+
+    return ok(result);
   } catch (error) {
-    console.error("[/api/services/[slug]] Failed:", error);
-    return NextResponse.json(
-      { version: "v1", error: "Failed to fetch service" },
-      { status: 500, headers: { "X-API-Version": "v1" } }
-    );
+    return handleError(error);
   }
 }

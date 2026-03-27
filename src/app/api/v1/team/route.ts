@@ -12,6 +12,7 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { parseLocaleParam, getLocalizedField } from "@/lib/i18n/localization";
+import { handleError } from "@/lib/api/response";
 
 export async function GET(req: Request) {
   try {
@@ -54,10 +55,6 @@ export async function GET(req: Request) {
       { headers: { "X-API-Version": "v1" } }
     );
   } catch (error) {
-    console.error("[/api/v1/team] Failed:", error);
-    return NextResponse.json(
-      { version: "v1", error: "Failed to fetch team members" },
-      { status: 500, headers: { "X-API-Version": "v1" } }
-    );
+    return handleError(error);
   }
 }

@@ -71,9 +71,9 @@ Translation management workflow, analytics per locale, hardening production.
 - [ ] Prisma schema: bổ sung translated fields cho `Service`, `Project`, `BlogPost` (titleEn, titleJa, titleKo, descEn, descJa, descKo, contentEn, contentJa, contentKo, v.v.).
 
 #### P1 (quan trọng)
-- [ ] Admin CMS: translate interface cho Services / Portfolio / Blog (per-field translation).
-- [ ] `getLocalizedField()` helper trong BE — fallback tự động sang Việt khi field chưa translate.
-- [ ] API endpoint list/detail: hỗ trợ `?lang=xx` query param → trả đúng localized content.
+- [x] Admin CMS: translate interface cho Services / Portfolio / Blog / Members (per-field translation) ✅ done (Week 13).
+- [x] `getLocalizedField()` helper trong BE — fallback tự động sang Việt khi field chưa translate ✅ done (Phase 0).
+- [x] API endpoint list/detail: hỗ trợ `?lang=xx` query param → trả đúng localized content ✅ done (Week 13, 14 endpoints).
 
 #### P2 (nếu còn thời gian)
 - [ ] Cải thiện locale switcher với flag icons + language names native.

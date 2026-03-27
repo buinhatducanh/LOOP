@@ -373,6 +373,11 @@
         "section9Item2": "Phone: +84 888 123 456",
         "section9Item3": "Address: Ho Chi Minh City, Vietnam"
     },
+    "TeamMemberPage": {
+        "teamMember": "Team Member",
+        "relatedMembers": "Other Members",
+        "backToTeam": "Back to Team"
+    },
     "NotFound": {
         "title": "Page Not Found",
         "description": "Sorry, the page you are looking for does not exist or has been moved.",

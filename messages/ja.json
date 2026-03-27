@@ -79,14 +79,14 @@
         "ctaTitle1": "あなたの",
         "ctaHighlight": "変革",
         "ctaTitle2": "デジタルプレゼンスへの",
-        "ctaTitle3": "",
+        "ctaTitle3": "第一歩を踏み出しませんか？",
         "ctaDesc": "LOOPを選択してデジタル будущееを構築した150以上の企業に加わりましょう。",
         "btnStart": "今すぐ始める",
         "btnPricing": "料金を見る",
         "teamSub": "私たちのチーム",
-        "teamTitle": "専門家チームに",
-        "teamHighlight": "会う",
-        "teamTitle2": "",
+        "teamTitle": "専門家",
+        "teamHighlight": "チーム",
+        "teamTitle2": "に会いましょう",
         "teamDesc": "すべての成功プロジェクトの背後にある才能ある人々",
         "teamViewAll": "全チームメンバーを表示"
     },
@@ -222,7 +222,7 @@
     },
     "ContactPage": {
         "badge": "お問い合わせ",
-        "heroTitle1": "",
+        "heroTitle1": "さあ、",
         "heroHighlight": "お問い合わせ",
         "heroDesc": "お客様のプロジェクトについてお聞かせください。联系我们から24時間以内にご連絡いたします。",
         "formName": "お名前",
@@ -373,6 +373,11 @@
         "section9Item2": "電話：+84 888 123 456",
         "section9Item3": "住所：ベトナムホーチミン市"
     },
+    "TeamMemberPage": {
+        "teamMember": "チームメンバー",
+        "relatedMembers": "その他のメンバー",
+        "backToTeam": "チームに戻る"
+    },
     "NotFound": {
         "title": "ページが見つかりません",
         "description": "お探しのページは存在しないか、移動された可能性があります。",
@@ -422,7 +427,7 @@
     },
     "BlogPage": {
         "badge": "技術インサイト",
-        "heroTitle1": "",
+        "heroTitle1": "LOOPの",
         "heroHighlight": "ブログ",
         "heroDesc": "ウェブデザイン、SEOオンラインマーケティング、最新の技術トレンドに関するインサイトを共有します。",
         "readMore": "続きを読む",

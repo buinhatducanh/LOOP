@@ -17,6 +17,15 @@ const updateSchema = z.object({
   status: z.enum(["draft", "published", "archived"]).optional(),
   authorId: z.string().optional(),
   publishedAt: z.string().transform(s => new Date(s)).optional().nullable(),
+  // i18n fields
+  titleEn: z.string().optional().nullable(),
+  titleJa: z.string().optional().nullable(),
+  titleKo: z.string().optional().nullable(),
+  titleZh: z.string().optional().nullable(),
+  contentEn: z.string().optional().nullable(),
+  contentJa: z.string().optional().nullable(),
+  contentKo: z.string().optional().nullable(),
+  contentZh: z.string().optional().nullable(),
 });
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {

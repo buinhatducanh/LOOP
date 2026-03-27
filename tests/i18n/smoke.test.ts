@@ -9,10 +9,13 @@ import { describe, it, expect } from "vitest";
 import { routing } from "../../src/i18n/routing";
 
 describe("i18n routing config", () => {
-  it("should have VI and EN locales", () => {
+  it("should have all 5 locales", () => {
     expect(routing.locales).toContain("vi");
     expect(routing.locales).toContain("en");
-    expect(routing.locales.length).toBe(2);
+    expect(routing.locales).toContain("ja");
+    expect(routing.locales).toContain("ko");
+    expect(routing.locales).toContain("zh");
+    expect(routing.locales.length).toBe(5);
   });
 
   it("should have VI as default locale", () => {
@@ -33,8 +36,8 @@ describe("i18n routing config", () => {
 describe("message file structure", () => {
   it("should have matching key namespaces in VI and EN", async () => {
     const [vi, en] = await Promise.all([
-      import("../../src/messages/vi.json"),
-      import("../../src/messages/en.json"),
+      import("../../messages/vi.json"),
+      import("../../messages/en.json"),
     ]);
 
     const viKeys = Object.keys(vi.default).sort();
@@ -44,7 +47,7 @@ describe("message file structure", () => {
   });
 
   it("should have all required namespace keys", async () => {
-    const vi = await import("../../src/messages/vi.json");
+    const vi = await import("../../messages/vi.json");
     const namespaces = Object.keys(vi.default);
 
     const required = ["nav", "home", "services", "portfolio", "blog", "team", "about", "contact", "common", "errors", "footer"];
@@ -54,7 +57,7 @@ describe("message file structure", () => {
   });
 
   it("should have seo, auth, and localeSwitcher namespaces", async () => {
-    const vi = await import("../../src/messages/vi.json");
+    const vi = await import("../../messages/vi.json");
     const namespaces = Object.keys(vi.default);
 
     expect(namespaces).toContain("seo");

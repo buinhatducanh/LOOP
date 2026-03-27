@@ -1,11 +1,11 @@
 /**
  * GET /api/expertises
  *
- * Public expertise list with optional ?lang= param.
- * Supports ?lang=vi|en|ja|ko|zh (default: vi)
+ * Returns all expertises (optionally filtered by active status).
+ * Supports ?lang=vi|en|ja|ko|zh (default: vi).
  */
 
-import { NextResponse } from "next/server";
+import { ok, handleError } from "@/lib/api/response";
 import { prisma } from "@/lib/prisma";
 import { parseLocaleParam, getLocalizedField } from "@/lib/i18n/localization";
 
@@ -29,16 +29,8 @@ export async function GET(req: Request) {
       _localeUsed: locale,
     }));
 
-    return NextResponse.json({
-      version: "v1",
-      data: localized,
-      meta: { count: localized.length, locale },
-    });
+    return ok(localized);
   } catch (error) {
-    console.error("[/api/expertises] Failed:", error);
-    return NextResponse.json(
-      { version: "v1", error: "Failed to fetch expertises" },
-      { status: 500 }
-    );
+    return handleError(error);
   }
 }
