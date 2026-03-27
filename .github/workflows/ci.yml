@@ -28,7 +28,9 @@ permissions:
 
 # ─── Shared setup (reusable steps) ──────────────────────────────────────────────
 # Cannot use YAML anchors in GitHub Actions, so we define a composite action inline via strategy.matrix
-# or simply duplicate the cheap setup steps (checkout + setup-node + install + prisma generate).
+# or simply duplicate the cheap setup steps (checkout + setup-node + install).
+# NOTE: `npm ci` automatically runs `postinstall` which calls `prisma generate`,
+# so no separate Prisma generate step is needed.
 
 jobs:
   # ── Job 1: Lint + Type check ──────────────────────────────────────────────────
@@ -48,11 +50,7 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
-
-      - name: Generate Prisma client
-        run: |
-          npx prisma generate
-          node -e "const fs=require('fs'),p='src/generated/prisma/index.ts';if(!fs.existsSync(p))fs.writeFileSync(p,'// Re-export for directory import\nexport * from \"./client";\n')"
+        # postinstall (prisma generate + index.ts creation) runs automatically via npm ci
 
       - name: Run ESLint
         run: npm run lint
@@ -78,11 +76,6 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
-
-      - name: Generate Prisma client
-        run: |
-          npx prisma generate
-          node -e "const fs=require('fs'),p='src/generated/prisma/index.ts';if(!fs.existsSync(p))fs.writeFileSync(p,'// Re-export for directory import\nexport * from \"./client";\n')"
 
       - name: Run tests with coverage
         run: npm run test:coverage
@@ -120,11 +113,6 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
-
-      - name: Generate Prisma client
-        run: |
-          npx prisma generate
-          node -e "const fs=require('fs'),p='src/generated/prisma/index.ts';if(!fs.existsSync(p))fs.writeFileSync(p,'// Re-export for directory import\nexport * from \"./client";\n')"
 
       - name: Build Next.js app
         run: npm run build
