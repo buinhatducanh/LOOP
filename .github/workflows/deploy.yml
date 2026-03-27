@@ -48,7 +48,7 @@ jobs:
       - name: Generate Prisma client
         run: |
           npx prisma generate
-          node -e "const fs=require('fs'),p='src/generated/prisma/index.ts';if(!fs.existsSync(p))fs.writeFileSync(p,'// Re-export for directory import\nexport * from \"./client";\n')"
+          node -e "const fs=require('fs');const p='src/generated/prisma/index.ts';if(!fs.existsSync(p)){fs.writeFileSync(p,`// Re-export for directory import\nexport * from \"./client\";\n`)}"
 
       - name: Run database migrations (preview)
         run: npx prisma migrate deploy
@@ -121,7 +121,7 @@ jobs:
       - name: Generate Prisma client
         run: |
           npx prisma generate
-          node -e "const fs=require('fs'),p='src/generated/prisma/index.ts';if(!fs.existsSync(p))fs.writeFileSync(p,'// Re-export for directory import\nexport * from \"./client";\n')"
+          node -e "const fs=require('fs');const p='src/generated/prisma/index.ts';if(!fs.existsSync(p)){fs.writeFileSync(p,`// Re-export for directory import\nexport * from \"./client\";\n`)}"
 
       - name: Run database migrations (staging)
         run: npx prisma migrate deploy
@@ -183,7 +183,7 @@ jobs:
       - name: Generate Prisma client
         run: |
           npx prisma generate
-          node -e "const fs=require('fs'),p='src/generated/prisma/index.ts';if(!fs.existsSync(p))fs.writeFileSync(p,'// Re-export for directory import\nexport * from \"./client";\n')"
+          node -e "const fs=require('fs');const p='src/generated/prisma/index.ts';if(!fs.existsSync(p)){fs.writeFileSync(p,`// Re-export for directory import\nexport * from \"./client\";\n`)}"
 
       - name: Run database migrations
         run: npx prisma migrate deploy
