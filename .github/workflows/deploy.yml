@@ -46,7 +46,9 @@ jobs:
         run: npm ci
 
       - name: Generate Prisma client
-        run: npx prisma generate
+        run: |
+          npx prisma generate
+          node -e "const fs=require('fs'),p='src/generated/prisma/index.ts';if(!fs.existsSync(p))fs.writeFileSync(p,'// Re-export for directory import\nexport * from \"./client";\n')"
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
@@ -119,7 +121,9 @@ jobs:
         run: npm ci
 
       - name: Generate Prisma client
-        run: npx prisma generate
+        run: |
+          npx prisma generate
+          node -e "const fs=require('fs'),p='src/generated/prisma/index.ts';if(!fs.existsSync(p))fs.writeFileSync(p,'// Re-export for directory import\nexport * from \"./client";\n')"
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
@@ -181,7 +185,9 @@ jobs:
         run: npm ci
 
       - name: Generate Prisma client
-        run: npx prisma generate
+        run: |
+          npx prisma generate
+          node -e "const fs=require('fs'),p='src/generated/prisma/index.ts';if(!fs.existsSync(p))fs.writeFileSync(p,'// Re-export for directory import\nexport * from \"./client";\n')"
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 

@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "i18n:check": "npx tsx src/i18n/missing-keys.ts",
-    "postinstall": "prisma generate",
+    "postinstall": "prisma generate && node -p \"const fs=require('fs');const p='src/generated/prisma/index.ts';if(!fs.existsSync(p))fs.writeFileSync(p,'// Re-export client for directory import\\nexport * from \\\"./client\\\";\\n')\"",
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
     "db:seed": "npx tsx prisma/seed.ts",
