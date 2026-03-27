@@ -2,7 +2,7 @@
  * GET /api/v1/testimonials
  *
  * Returns all active testimonials for the public website.
- * Cached for 5 minutes.
+ * Supports ?lang=vi|en|ja|ko|zh (default: vi)
  *
  * Version: v1 (stable)
  */
@@ -10,32 +10,40 @@
 export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
-import { getCachedTestimonials } from "@/lib/db/queries";
+import { prisma } from "@/lib/prisma";
+import { parseLocaleParam, getLocalizedField } from "@/lib/i18n/localization";
+import { handleError } from "@/lib/api/response";
 
-export const revalidate = 300;
-
-export async function GET() {
+export async function GET(req: Request) {
   try {
-    const testimonials = await getCachedTestimonials();
+    const { searchParams } = new URL(req.url);
+    const locale = parseLocaleParam(searchParams);
+
+    const testimonials = await prisma.testimonial.findMany({
+      where: { isActive: true },
+      orderBy: { sortOrder: "asc" },
+    });
+
+    const localized = testimonials.map((t) => ({
+      id: t.id,
+      name: t.name,
+      avatar: t.avatar,
+      rating: t.rating,
+      text: getLocalizedField(t, "text", locale),
+      role: getLocalizedField(t, "role", locale),
+      company: getLocalizedField(t, "company", locale),
+      _localeUsed: locale,
+    }));
 
     return NextResponse.json(
       {
         version: "v1",
-        data: testimonials,
-        meta: { count: testimonials.length, cached: true },
+        data: localized,
+        meta: { count: localized.length, locale },
       },
-      {
-        headers: {
-          "Cache-Control": "public, s-maxage=300, stale-while-revalidate=3600",
-          "X-API-Version": "v1",
-        },
-      }
+      { headers: { "X-API-Version": "v1" } }
     );
   } catch (error) {
-    console.error("[/api/v1/testimonials] Failed:", error);
-    return NextResponse.json(
-      { version: "v1", error: "Failed to fetch testimonials" },
-      { status: 500, headers: { "X-API-Version": "v1" } }
-    );
+    return handleError(error);
   }
 }

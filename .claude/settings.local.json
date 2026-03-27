@@ -56,7 +56,12 @@
       "Bash(cmd /c \"dir D:\\\\LOOP_COMPANY\\\\LOOP\\\\.env* /b 2>nul\")",
       "Bash(cmd /c \"dir D:\\\\LOOP_COMPANY\\\\LOOP\\\\.env.local /b 2>nul & if exist D:\\\\LOOP_COMPANY\\\\LOOP\\\\.env.example \\(type D:\\\\LOOP_COMPANY\\\\LOOP\\\\.env.example\\) else \\(echo .env.example not found\\)\")",
       "Bash(cmd /c \"if exist D:\\\\LOOP_COMPANY\\\\LOOP\\\\.env.example \\(type D:\\\\LOOP_COMPANY\\\\LOOP\\\\.env.example\\) else \\(echo NOT_FOUND\\)\")",
-      "Bash(findstr:*)"
+      "Bash(findstr:*)",
+      "Bash(Get-ChildItem -Path \"D:\\\\LOOP_COMPANY\\\\LOOP\\\\FE\" -Force -ErrorAction SilentlyContinue | Format-Table Name, Mode, Length, LastWriteTime)",
+      "Bash(Get-ChildItem -Path \"D:\\\\LOOP_COMPANY\\\\LOOP\\\\assets\" -Force -ErrorAction SilentlyContinue | Format-Table Name, Mode, Length, LastWriteTime)",
+      "Bash(Get-ChildItem -Path \"d:\\\\LOOP_COMPANY\\\\LOOP\\\\FE\" -Force -Recurse -ErrorAction SilentlyContinue | Select-Object FullName, Mode | Format-Table -AutoSize)",
+      "Bash(Get-ChildItem -Path \"d:\\\\LOOP_COMPANY\\\\LOOP\\\\assets\" -Force -Recurse -ErrorAction SilentlyContinue | Select-Object FullName, Mode | Format-Table -AutoSize)",
+      "Bash(del:*)"
     ],
     "additionalDirectories": [
       "D:\\LOOP_COMPANY\\LOOP\\src\\app\\api\\admin\\expertises",

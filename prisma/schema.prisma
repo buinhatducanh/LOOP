@@ -177,9 +177,29 @@ model Service {
   id               String    @id @default(cuid())
   slug             String    @unique
   icon             String
+
+  // ── Primary content (Vietnamese — source of truth) ───────────────────────────
   title            String
   shortDescription String    @map("short_description")
   longDescription  String    @map("long_description")
+
+  // ── Translations ───────────────────────────────────────────────────────────
+  titleEn          String?   @map("title_en")
+  titleJa          String?   @map("title_ja")
+  titleKo          String?   @map("title_ko")
+  titleZh          String?   @map("title_zh")
+
+  shortDescriptionEn String? @map("short_description_en")
+  shortDescriptionJa String? @map("short_description_ja")
+  shortDescriptionKo String? @map("short_description_ko")
+  shortDescriptionZh String? @map("short_description_zh")
+
+  longDescriptionEn  String? @map("long_description_en")
+  longDescriptionJa  String? @map("long_description_ja")
+  longDescriptionKo  String? @map("long_description_ko")
+  longDescriptionZh  String? @map("long_description_zh")
+
+  // ── Non-translatable fields ───────────────────────────────────────────────
   features         String[]
   technologies     String[]
   startingPrice    Int       @map("starting_price")
@@ -197,6 +217,8 @@ model Service {
 model Project {
   id          String   @id @default(cuid())
   slug        String   @unique
+
+  // ── Primary content (Vietnamese) ───────────────────────────────────────────────
   title       String
   category    String
   client      String
@@ -207,6 +229,24 @@ model Project {
   features    String[]
   results     String
   screenshots String[]
+
+  // ── Translations ───────────────────────────────────────────────────────────
+  titleEn          String? @map("title_en")
+  titleJa          String? @map("title_ja")
+  titleKo          String? @map("title_ko")
+  titleZh          String? @map("title_zh")
+
+  descriptionEn    String? @map("description_en")
+  descriptionJa    String? @map("description_ja")
+  descriptionKo    String? @map("description_ko")
+  descriptionZh    String? @map("description_zh")
+
+  resultsEn        String? @map("results_en")
+  resultsJa        String? @map("results_ja")
+  resultsKo        String? @map("results_ko")
+  resultsZh        String? @map("results_zh")
+
+  // ── Non-translatable fields ───────────────────────────────────────────────
   isPublished Boolean  @default(true) @map("is_published")
   sortOrder   Int      @default(0) @map("sort_order")
   createdAt   DateTime @default(now()) @map("created_at")
@@ -249,6 +289,24 @@ model Testimonial {
   avatar    String
   rating    Int      @default(5)
   text      String
+
+  // ── Translations ───────────────────────────────────────────────────────────
+  textEn   String? @map("text_en")
+  textJa   String? @map("text_ja")
+  textKo   String? @map("text_ko")
+  textZh   String? @map("text_zh")
+
+  roleEn   String? @map("role_en")
+  roleJa   String? @map("role_ja")
+  roleKo   String? @map("role_ko")
+  roleZh   String? @map("role_zh")
+
+  companyEn String? @map("company_en")
+  companyJa String? @map("company_ja")
+  companyKo String? @map("company_ko")
+  companyZh String? @map("company_zh")
+
+  // ── Non-translatable fields ───────────────────────────────────────────────
   isActive  Boolean  @default(true) @map("is_active")
   sortOrder Int      @default(0) @map("sort_order")
   createdAt DateTime @default(now()) @map("created_at")
@@ -299,6 +357,27 @@ model TeamMember {
   social     Json? // Social links as JSON
   isWorking  Boolean  @default(true) @map("is_working") // Currently working
   isFeatured Boolean  @default(false) @map("is_featured") // Featured member (displayed larger)
+
+  // ── Translations (VI source, EN/JA/KO/ZH optional) ──────────────────────────────
+  nameEn     String?  @map("name_en")
+  nameJa     String?  @map("name_ja")
+  nameKo     String?  @map("name_ko")
+  nameZh     String?  @map("name_zh")
+
+  roleEn     String?  @map("role_en")
+  roleJa     String?  @map("role_ja")
+  roleKo     String?  @map("role_ko")
+  roleZh     String?  @map("role_zh")
+
+  bioEn      String?  @map("bio_en") @db.Text
+  bioJa      String?  @map("bio_ja") @db.Text
+  bioKo      String?  @map("bio_ko") @db.Text
+  bioZh      String?  @map("bio_zh") @db.Text
+
+  shortBioEn String?  @map("short_bio_en")
+  shortBioJa String?  @map("short_bio_ja")
+  shortBioKo String?  @map("short_bio_ko")
+  shortBioZh String?  @map("short_bio_zh")
 
   // ── HR Fields ──
   birthDate      DateTime? @map("birth_date") // Ngày tháng năm sinh
@@ -358,10 +437,22 @@ model TeamMember {
 // Expertise model - kỹ năng chuyên môn
 model Expertise {
   id         String   @id @default(cuid())
-  name       String
-  nameVi     String   @map("name_vi")
+  // ── Primary content (Vietnamese) ───────────────────────────────────────────────
+  name       String   // VI: name
   category   String // VD: "frontend", "backend", "design", "management"
-  categoryVi String   @map("category_vi")
+
+  // ── Translations ───────────────────────────────────────────────────────────
+  nameEn     String?  @map("name_en")
+  nameJa     String?  @map("name_ja")
+  nameKo     String?  @map("name_ko")
+  nameZh     String?  @map("name_zh")
+
+  categoryEn String?  @map("category_en")
+  categoryJa String?  @map("category_ja")
+  categoryKo String?  @map("category_ko")
+  categoryZh String?  @map("category_zh")
+
+  // ── Non-translatable fields ───────────────────────────────────────────────
   icon       String? // Icon name from lucide-react
   logo       String? // Image URL for skill logo
   isActive   Boolean  @default(true) @map("is_active")
@@ -572,8 +663,23 @@ model SiteSetting {
 model HomeSlider {
   id        String   @id @default(cuid())
   image     String // URL ảnh slider
+
+  // ── Primary content (Vietnamese) ───────────────────────────────────────────────
   title     String? // Tiêu đề (optional)
   subtitle  String? // Phụ đề (optional)
+
+  // ── Translations ───────────────────────────────────────────────────────────
+  titleEn   String? @map("title_en")
+  titleJa   String? @map("title_ja")
+  titleKo   String? @map("title_ko")
+  titleZh   String? @map("title_zh")
+
+  subtitleEn String? @map("subtitle_en")
+  subtitleJa String? @map("subtitle_ja")
+  subtitleKo String? @map("subtitle_ko")
+  subtitleZh String? @map("subtitle_zh")
+
+  // ── Non-translatable fields ───────────────────────────────────────────────
   link      String? // Link khi click (optional)
   sortOrder Int      @default(0) @map("sort_order")
   isActive  Boolean  @default(true) @map("is_active")
@@ -1793,11 +1899,42 @@ model BlogPost {
   projectId   String    @map("project_id") // FK → Order.id
   title       String
   slug        String
+
+  // ── Primary content (Vietnamese) ───────────────────────────────────────────────
   content     String?   @db.Text
   excerpt     String?   @db.Text
+
+  // ── Translations ───────────────────────────────────────────────────────────
+  titleEn     String?   @map("title_en")
+  titleJa     String?   @map("title_ja")
+  titleKo     String?   @map("title_ko")
+  titleZh     String?   @map("title_zh")
+
+  contentEn   String?   @map("content_en") @db.Text
+  contentJa   String?   @map("content_ja") @db.Text
+  contentKo   String?   @map("content_ko") @db.Text
+  contentZh   String?   @map("content_zh") @db.Text
+
+  excerptEn   String?   @map("excerpt_en") @db.Text
+  excerptJa   String?   @map("excerpt_ja") @db.Text
+  excerptKo   String?   @map("excerpt_ko") @db.Text
+  excerptZh   String?   @map("excerpt_zh") @db.Text
+
+  // SEO translations
+  seoTitleEn  String?   @map("seo_title_en")
+  seoTitleJa  String?   @map("seo_title_ja")
+  seoTitleKo  String?   @map("seo_title_ko")
+  seoTitleZh  String?   @map("seo_title_zh")
+
+  seoDescEn   String?   @map("seo_desc_en")
+  seoDescJa   String?   @map("seo_desc_ja")
+  seoDescKo   String?   @map("seo_desc_ko")
+  seoDescZh   String?   @map("seo_desc_zh")
+
+  // ── Non-translatable fields ───────────────────────────────────────────────
   coverImage  String?   @map("cover_image")
-  seoTitle    String?   @map("seo_title")
-  seoDesc     String?   @map("seo_desc")
+  seoTitle    String?   @map("seo_title") // VI fallback
+  seoDesc     String?   @map("seo_desc")  // VI fallback
   authorId    String    @map("author_id") // FK → TeamMember.id
   status      String    @default("draft") @map("status") // draft | published
   publishedAt DateTime? @map("published_at")

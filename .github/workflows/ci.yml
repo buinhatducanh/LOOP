@@ -14,9 +14,9 @@ name: CI
 
 on:
   push:
-    branches: [main, develop]
+    branches: [master, develop]
   pull_request:
-    branches: [main, develop]
+    branches: [master, develop]
 
 # Cancel in-progress runs on the same branch
 concurrency:
@@ -28,7 +28,9 @@ permissions:
 
 # ─── Shared setup (reusable steps) ──────────────────────────────────────────────
 # Cannot use YAML anchors in GitHub Actions, so we define a composite action inline via strategy.matrix
-# or simply duplicate the cheap setup steps (checkout + setup-node + install + prisma generate).
+# or simply duplicate the cheap setup steps (checkout + setup-node + install).
+# NOTE: `npm ci` automatically runs `postinstall` which calls `prisma generate`,
+# so no separate Prisma generate step is needed.
 
 jobs:
   # ── Job 1: Lint + Type check ──────────────────────────────────────────────────
@@ -48,11 +50,7 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
-
-      - name: Generate Prisma client
-        run: npx prisma generate
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        # postinstall (prisma generate + index.ts creation) runs automatically via npm ci
 
       - name: Run ESLint
         run: npm run lint
@@ -78,11 +76,6 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
-
-      - name: Generate Prisma client
-        run: npx prisma generate
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
       - name: Run tests with coverage
         run: npm run test:coverage
@@ -120,11 +113,6 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
-
-      - name: Generate Prisma client
-        run: npx prisma generate
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
       - name: Build Next.js app
         run: npm run build

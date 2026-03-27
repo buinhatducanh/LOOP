@@ -1,5 +1,11 @@
+/**
+ * Root Layout — LOOP Solutions
+ *
+ * API-only app: minimal layout with no i18n.
+ * The [locale] layout in app/[locale]/ handles FE pages with i18n.
+ * Admin routes use their own minimal layout.
+ */
 import type { Metadata } from "next";
-import { ReactNode } from "react";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://loop.vn"),
@@ -8,10 +14,8 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
-  return (
-    <html lang="vi">
-      <body>{children}</body>
-    </html>
-  );
+// Root layout for API-only routes.
+// FE pages use app/[locale]/layout.tsx which has NextIntlClientProvider.
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return children;
 }

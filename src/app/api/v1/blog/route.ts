@@ -12,6 +12,7 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { client } from "@/sanity/client";
 import { postsQuery } from "@/sanity/queries";
+import { handleError } from "@/lib/api/response";
 
 export const revalidate = 300;
 
@@ -53,10 +54,6 @@ export async function GET() {
       }
     );
   } catch (error) {
-    console.error("[/api/v1/blog] Failed:", error);
-    return NextResponse.json(
-      { version: "v1", error: "Failed to fetch blog posts" },
-      { status: 500, headers: { "X-API-Version": "v1" } }
-    );
+    return handleError(error);
   }
 }
