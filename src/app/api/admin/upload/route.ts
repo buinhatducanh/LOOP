@@ -83,22 +83,7 @@ export async function POST(req: NextRequest) {
       format: uploadResult.format,
     });
   } catch (error) {
-    console.error("Upload error:", error);
-    const err = error as any;
-    let message = "Upload failed";
-
-    if (err.code === 'ECONNRESET') {
-      message = "Kết nối bị gián đoạn. Vui lòng thử lại.";
-    } else if (err.message?.includes('timeout')) {
-      message = "Tải ảnh quá lâu. Vui lòng thử lại.";
-    } else if (err.message) {
-      message = err.message;
-    }
-
-    return NextResponse.json(
-      { error: message },
-      { status: 500 }
-    );
+    return handleError(error);
   }
 }
 
@@ -117,10 +102,6 @@ export async function DELETE(req: NextRequest) {
 
     return ok({ success: deleteResult.result === "ok" });
   } catch (error) {
-    console.error("Delete error:", error);
-    return NextResponse.json(
-      { error: "Delete failed" },
-      { status: 500 }
-    );
+    return handleError(error);
   }
 }
