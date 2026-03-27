@@ -11,7 +11,7 @@ import {
   Sparkles, Target, Award, Heart, Play, X
 } from 'lucide-react';
 import { DS, GRD } from '../components/layout/ds';
-import logoImg from 'figma:asset/3de9c8bfb537946e3dd01b9dbae9004d9c921471.png';
+import logoImg from '@/assets/3de9c8bfb537946e3dd01b9dbae9004d9c921471.png';
 
 // ── hex → rgba helper ────────────────────────────────────────────────────
 function hexRgba(hex: string, alpha: number): string {

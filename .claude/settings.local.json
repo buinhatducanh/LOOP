@@ -121,7 +121,8 @@
       "Bash(powershell -NoProfile -Command \"Get-ChildItem 'D:/LOOP_COMPANY/LOOP/src/lib' -File | Select-Object -ExpandProperty Name\")",
       "Bash(powershell -NoProfile -Command \"Get-ChildItem -Path 'D:/LOOP_COMPANY/LOOP/src/app/[locale]' -Recurse -Depth 2 | Where-Object { $_.FullName -like '*team*' } | Select-Object FullName\")",
       "Bash(powershell -NoProfile -Command \"Get-ChildItem -Path 'D:/LOOP_COMPANY/LOOP/src/app/[locale]' -Directory -Recurse | Select-Object FullName\")",
-      "Bash(cmd.exe /c \"dir /s /b D:\\\\LOOP_COMPANY\\\\LOOP\\\\src\\\\app\\\\[locale] 2>nul | findstr team\")"
+      "Bash(cmd.exe /c \"dir /s /b D:\\\\LOOP_COMPANY\\\\LOOP\\\\src\\\\app\\\\[locale] 2>nul | findstr team\")",
+      "Read(//d/LOOP_COMPANY/**)"
     ],
     "additionalDirectories": [
       "D:\\LOOP_COMPANY\\LOOP\\src\\app\\api\\admin\\expertises",
