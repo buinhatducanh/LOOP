@@ -58,8 +58,8 @@ export function canEdit(role: UserRole): boolean {
   return role === 'admin' || role === 'manager';
 }
 
-// ── Preset users for demo ─────────────────���──────────────────────────────
-const DEMO_USERS: Record<string, AuthUser> = {
+// ── Preset users for demo ──────────────────────────────────────────────
+export const DEMO_USERS: Record<string, AuthUser> = {
   admin: {
     id: 'u-admin', name: 'Akira Sato', shortName: 'Akira', email: 'akira@loop.vn',
     avatar: 'https://images.unsplash.com/photo-1557862921-37829c790f19?auto=format&fit=crop&w=80&h=80&crop=faces',
@@ -170,16 +170,23 @@ const INIT_EVENTS: CompanyEvent[] = [
   },
 ];
 
+// ── Demo mode flag ─────────────────────────────────────────────────────
+// Set VITE_DEMO_MODE=true in .env to use DEMO_USERS instead of real BE.
+// Useful when BE is offline or for quick demos.
+const DEMO_MODE = (import.meta.env.VITE_DEMO_MODE as string) === 'true';
+
 // ── Daily check-in streak ────────────────────────────────────────────────
 interface AuthStore {
   user: AuthUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  isInitialized: boolean; // true after first session check
 
   // Auth actions
-  login: (preset: string) => void;
+  login: (email: string, password: string) => Promise<void>;
   loginAs: (user: AuthUser) => void;
-  logout: () => void;
+  logout: () => Promise<void>;
+  initAuth: () => Promise<void>; // restore session on app load
   setLoading: (v: boolean) => void;
 
   // Quest/Event data
@@ -208,31 +215,98 @@ interface AuthStore {
 }
 
 export const useAuthStore = create<AuthStore>((set, get) => ({
-  user: DEMO_USERS.admin, // Default logged in as admin for demo
-  isAuthenticated: true,
+  user: null,
+  isAuthenticated: false,
   isLoading: false,
+  isInitialized: false,
 
   quests: INIT_QUESTS,
   events: INIT_EVENTS,
-  dailyStreak: 12,
+  dailyStreak: 0,
   lastCheckIn: null,
 
-  login: (preset) => {
+  /**
+   * initAuth — call on app mount to restore session.
+   * If DEMO_MODE, use demo admin. Otherwise, try to call /me endpoint.
+   */
+  initAuth: async () => {
+    if (get().isInitialized) return;
+
+    if (DEMO_MODE) {
+      set({ user: DEMO_USERS.admin, isAuthenticated: true, isInitialized: true });
+      return;
+    }
+
+    try {
+      const { authService } = await import('../../api/auth.service');
+      const user = await authService.me();
+      set({ user, isAuthenticated: true, isInitialized: true });
+    } catch {
+      // Session invalid or BE offline — not authenticated
+      set({ user: null, isAuthenticated: false, isInitialized: true });
+    }
+  },
+
+  /**
+   * login — real API call via authService.
+   * Falls back to DEMO_USERS if DEMO_MODE or BE unreachable.
+   */
+  login: async (email: string, password: string) => {
     set({ isLoading: true });
-    setTimeout(() => {
+
+    if (DEMO_MODE) {
+      // Demo mode: match by preset key or fall back to client
+      const preset = Object.entries(DEMO_USERS).find(
+        ([, u]) => u.email === email
+      )?.[0] ?? 'client';
       const user = DEMO_USERS[preset] ?? DEMO_USERS.client;
+      await new Promise(r => setTimeout(r, 600)); // simulate latency
       set({ user, isAuthenticated: true, isLoading: false });
-    }, 800);
+      return;
+    }
+
+    try {
+      const { authService } = await import('../../api/auth.service');
+      const user = await authService.login(email, password);
+      set({ user, isAuthenticated: true, isLoading: false });
+    } catch (err) {
+      set({ isLoading: false });
+      throw err; // Let AuthPage handle the error
+    }
   },
 
+  /**
+   * loginAs — demo mode only (role switcher in Navbar).
+   * Does NOT call BE.
+   */
   loginAs: (user) => {
-    set({ isLoading: true });
-    setTimeout(() => set({ user, isAuthenticated: true, isLoading: false }), 800);
+    set({ user, isAuthenticated: true });
   },
 
-  logout: () => {
+  /**
+   * logout — call BE then clear local state.
+   */
+  logout: async () => {
     set({ isLoading: true });
-    setTimeout(() => set({ user: null, isAuthenticated: false, isLoading: false }), 500);
+
+    if (!DEMO_MODE) {
+      try {
+        const { authService } = await import('../../api/auth.service');
+        await authService.logout();
+      } catch {
+        // Ignore logout errors — clear state regardless
+      }
+    }
+
+    set({
+      user: null,
+      isAuthenticated: false,
+      isLoading: false,
+      quests: INIT_QUESTS,
+      events: INIT_EVENTS,
+      dailyStreak: 0,
+      lastCheckIn: null,
+    });
   },
 
   setLoading: (v) => set({ isLoading: v }),

@@ -9,7 +9,9 @@
 
 1. `./fe-roadmap.md` ⭐
    - **FE-First Roadmap** — thiết kế từ FE mock folder, kết nối BE thật theo luồng nghiệp vụ.
-   - 7 phases: F0 (Infrastructure) → F1 (Public) → F2 (Booking/Orders) → F3 (Team/Effects) → F4 (Academy) → F5 (Customer Portal) → F6 (Admin) → F7 (Realtime/Polish)
+   - 8 phases: F0 (Infrastructure) → F1 (Public) → F2 (Booking/Orders) → F3 (Team/Effects) → F4 (Academy) → F5 (Customer Portal) → F6 (Admin) → F7 (Realtime/Polish) → F8 (Scale Hardening)
+   - Có **Phase Status Tracker** (single source of truth) để cập nhật trạng thái tuần.
+   - Có **Phase Status Tracker** (single source of truth) để cập nhật trạng thái tuần.
 
 2. `./fe-delivery-process.md`
    - Quy trình PO -> Design -> Dev -> QA -> Release.
@@ -36,12 +38,14 @@
 | F5 | Tuần F5 | Customer Portal + LP Economy | Dashboard 100% from BE, LP redeem hoạt động |
 | F6 | Tuần F6 | Admin 23 tabs full integration | RBAC enforced, all tabs wired |
 | F7 | Tuần F7 | Real-time + Quest/Events + Polish | Go-live |
+| F8 | Tuần F8 | Scale Hardening (cache/async/SLO) | Ops scale gates active, SLO baseline stable |
+| F8 | Tuần F8 | Scale Hardening (cache/async/SLO) | Ops scale gates active, SLO baseline stable |
 
 ---
 
 ## C) Legacy Weekly Plans (Context)
 
-> Các file bên dưới giữ lại làm tài liệu tham khảo. Plan hiện tại dùng FE-First approach (Phase F0–F7).
+> Các file bên dưới giữ lại làm tài liệu tham khảo. Plan hiện tại dùng FE-First approach (Phase F0–F8).
 
 - `./fe-week-01-plan.md` → tương đương **Phase F0 + F1**
 - `./fe-week-02-plan.md` → tương đương **Phase F2**
@@ -56,6 +60,8 @@
 - `./fe-week-11-plan.md` → tương đương **Phase F7 (Performance)**
 - `./fe-week-12-plan.md` → tương đương **Phase F7 (Regression)**
 - `./fe-week-13-plan.md` → **đã hoàn thành** (i18n infrastructure + CMS tabs)
+- `./fe-week-F8-plan.md` → **mới** (scale hardening operations)
+- `./fe-week-F8-plan.md` → **mới** (scale hardening operations)
 
 ---
 
@@ -100,6 +106,10 @@
 - `./fe-retrospective-template.md` — Template retrospective
 - `./fe-data-contract-checklist.md` — Checklist xác minh data contract FE<->BE
 - `./fe-change-request-template.md` — Mẫu Change Request
+- `./fe-production-go-live-plan.md` — Kế hoạch hoàn thiện và go-live production end-to-end
+- `./fe-scale-operating-runbook.md` — Runbook vận hành khi tăng tải (SLO/queue/cache/release gates)
+- `./fe-phase-status-log.md` — Audit trail thay đổi trạng thái phase theo tuần
+- `./fe-phase-status-log.md` — Audit trail thay đổi trạng thái phase theo tuần
 
 ---
 
@@ -129,6 +139,7 @@
 - Lint + type-check + build pass
 - Test scenario theo user flow chính
 - Không để mock leak vào production flow
+- Scale gate cho feature P0/P1: retry + cache + async + monitoring
 - Changelog ngắn + known issues cuối tuần
 
 ---
@@ -150,6 +161,12 @@ cd d:/LOOP_COMPANY/LOOP/FE && npx eslint src/
 
 # FE type check
 cd d:/LOOP_COMPANY/LOOP/FE && npx tsc --noEmit
+
+# Phase status update (roadmap + status log)
+cd d:/LOOP_COMPANY/LOOP && npm run phase:update -- --phase F2 --status in_progress --by "FE Lead" --reason "..."
+
+# Phase status update (roadmap + status log)
+cd d:/LOOP_COMPANY/LOOP && npm run phase:update -- --phase F2 --status in_progress --by "FE Lead" --reason "..."
 ```
 
 ---

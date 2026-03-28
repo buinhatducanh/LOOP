@@ -34,6 +34,35 @@
 
 ---
 
+## 2.1 Phase Status Tracker (Single Source of Truth)
+
+> Cập nhật tracker này vào cuối mỗi tuần để toàn team nhìn cùng một trạng thái roadmap.
+
+| Phase | Status | Owner | Planned Window | Actual Window | Notes |
+|---|---|---|---|---|---|
+| F0 Infrastructure | in_progress | FE Lead | Tuần F0 |  | Auth + API client đã khởi động |
+| F1 Public Pages | pending | FE Team | Tuần F1 |  | |
+| F2 Booking/Orders | pending | FE+BE | Tuần F2 |  | |
+| F3 Team/Effects | pending | FE+BE | Tuần F3 |  | |
+| F4 Academy | pending | FE+BE | Tuần F4 |  | |
+| F5 Customer Portal | pending | FE+BE | Tuần F5 |  | |
+| F6 Admin 23 tabs | pending | FE+BE | Tuần F6 |  | |
+| F7 Realtime/Polish | pending | FE+BE | Tuần F7 |  | |
+| F8 Scale Hardening | pending | FE+BE+DevOps | Tuần F8 |  | |
+
+### Quy tắc cập nhật tracker (mỗi tuần)
+
+- Chỉ dùng 4 trạng thái: `pending | in_progress | blocked | completed`.
+- Mỗi phase phải có đúng 1 owner chịu trách nhiệm cập nhật.
+- Nếu phase bị `blocked` > 2 ngày: bắt buộc mở risk record + escalation.
+- Mọi thay đổi status phải đồng bộ vào:
+  - `fe-phase-status-log.md` (append log entry)
+  - `fe-weekly-status-report.md`
+  - `fe-risk-register-template.md`
+  - `fe-master-index.md` (nếu có đổi sequence/priority)
+
+---
+
 ## 3. Luồng nghiệp vụ LOOP (Business Flow)
 
 ```
@@ -343,6 +372,33 @@ Mục tiêu: 23 admin tabs 100% wired to BE APIs.
 - AnalyticsTab: charts từ BE API
 - Performance audit + bundle optimization
 - Regression test + go-live
+
+---
+
+### Phase F8 — Scale Hardening (Operations)
+**Tuần F8**
+
+Mục tiêu: chuẩn hóa vận hành scale để hệ thống tăng tải vẫn ổn định.
+
+**P0:**
+- [ ] Bật scale-readiness gate cho tất cả feature P0/P1 (retry + cache + async + monitoring)
+- [ ] Chuẩn hóa cache policy cho public list + dashboard endpoints
+- [ ] Chuẩn hóa async jobs cho tác vụ nặng (analytics/report/media/notification fanout)
+- [ ] Thiết lập SLO baseline: p95, error rate, queue backlog
+- [ ] Thiết lập release monitoring checklist 0-24h sau deploy
+
+**P1:**
+- [ ] Dashboard vận hành: latency/error/queue snapshots theo domain
+- [ ] Tài liệu incident quick play cho auth/order/queue backlog
+- [ ] Capacity planning theo số liệu thực tế (không estimate cảm tính)
+
+**P2:**
+- [ ] Tạo kế hoạch tách service theo strangler pattern cho domain có bottleneck rõ
+
+**Exit criteria:**
+- Scale runbook active
+- SLO baseline stable 2 tuần liên tiếp
+- Release không có blocker incident do performance/regression
 
 ---
 

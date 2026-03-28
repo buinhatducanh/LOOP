@@ -2,12 +2,9 @@ name: Deploy
 
 on:
   push:
-    branches:
-      - develop
-      - master
-  pull_request:
-    branches:
-      - master
+    branches: [develop]
+    tags:
+      - 'v*'
   workflow_dispatch:
 
 concurrency:
@@ -16,89 +13,14 @@ concurrency:
 
 permissions:
   contents: read
-  pull-requests: write
-  statuses: write
 
 jobs:
-  deploy-preview:
-    name: Deploy PR Preview
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    environment:
-      name: preview
-      url: ${{ steps.deploy.outputs.preview-url }}
-    concurrency:
-      group: deploy-${{ github.ref }}
-      cancel-in-progress: true
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: "npm"
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run database migrations (preview)
-        run: npx prisma migrate deploy
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-
-      - name: Build app
-        run: npm run build
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
-          NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
-          NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
-          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
-          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
-          NEXT_PUBLIC_SANITY_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_SANITY_PROJECT_ID }}
-          NEXT_PUBLIC_SANITY_DATASET: ${{ secrets.NEXT_PUBLIC_SANITY_DATASET }}
-          NEXT_PUBLIC_SANITY_API_VERSION: ${{ secrets.NEXT_PUBLIC_SANITY_API_VERSION }}
-          NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: ${{ secrets.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME }}
-          CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
-          CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
-          UPSTASH_REDIS_REST_URL: ${{ secrets.UPSTASH_REDIS_REST_URL }}
-          UPSTASH_REDIS_REST_TOKEN: ${{ secrets.UPSTASH_REDIS_REST_TOKEN }}
-
-      - name: Deploy to Vercel (preview)
-        id: deploy
-        run: |
-          npx vercel@latest pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
-          npx vercel@latest build --token=${{ secrets.VERCEL_TOKEN }}
-          DEPLOY_OUTPUT=$(npx vercel@latest deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
-          echo "preview-url=$DEPLOY_OUTPUT" >> $GITHUB_OUTPUT
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-
-      - name: Comment PR with preview URL
-        uses: actions/github-script@v7
-        with:
-          script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: '## Preview Deploy\n\nPR Preview URL: ${{ steps.deploy.outputs.preview-url }}'
-            })
-
   deploy-staging:
     name: Deploy Staging
     if: github.ref == 'refs/heads/develop'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-    environment:
-      name: staging
-      url: ${{ steps.deploy.outputs.preview-url }}
-
+    timeout-minutes: 20
+    environment: preview
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -106,24 +28,24 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
-          cache: "npm"
+          node-version: '20'
+          cache: npm
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Run database migrations (staging)
+      - name: Run DB migrations (staging)
         run: npx prisma migrate deploy
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
 
-      - name: Build app
+      - name: Build app (staging)
         run: npm run build
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
           AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
-          NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
-          NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
+          NEXTAUTH_URL: ${{ secrets.STAGING_NEXTAUTH_URL }}
+          NEXT_PUBLIC_SITE_URL: ${{ secrets.STAGING_SITE_URL }}
           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
           NEXT_PUBLIC_SANITY_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_SANITY_PROJECT_ID }}
@@ -140,21 +62,25 @@ jobs:
         run: |
           npx vercel@latest pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
           npx vercel@latest build --token=${{ secrets.VERCEL_TOKEN }}
-          DEPLOY_OUTPUT=$(npx vercel@latest deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
-          echo "preview-url=$DEPLOY_OUTPUT" >> $GITHUB_OUTPUT
+          URL=$(npx vercel@latest deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
+          echo "url=$URL" >> $GITHUB_OUTPUT
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
+      - name: Smoke check staging health
+        run: |
+          curl -f "${{ steps.deploy.outputs.url }}/api/health"
+          echo "Staging smoke passed"
+
   deploy-production:
     name: Deploy Production
-    if: github.ref == 'refs/heads/master'
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     environment:
       name: production
       url: https://loops.vn
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -162,24 +88,24 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
-          cache: "npm"
+          node-version: '20'
+          cache: npm
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Run database migrations
+      - name: Run DB migrations (production)
         run: npx prisma migrate deploy
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
 
-      - name: Build app
+      - name: Build app (production)
         run: npm run build
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
           AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
-          NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
-          NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
+          NEXTAUTH_URL: ${{ secrets.PROD_NEXTAUTH_URL }}
+          NEXT_PUBLIC_SITE_URL: ${{ secrets.PROD_SITE_URL }}
           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
           NEXT_PUBLIC_SANITY_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_SANITY_PROJECT_ID }}
@@ -199,3 +125,8 @@ jobs:
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Smoke check production health
+        run: |
+          curl -f "${{ secrets.PROD_SITE_URL }}/api/health"
+          echo "Production smoke passed"

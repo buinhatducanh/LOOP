@@ -1,7 +1,7 @@
 # FE Risk Register Template — LOOP Solutions
 
-> **Mục tiêu:** Theo dõi rủi ro tập trung cho FE/BE integration, vận hành sprint, release và scale.
-> **Cập nhật:** 2026-03-26
+> **Mục tiêu:** Theo dõi rủi ro tập trung cho FE/BE integration, release và scale.
+> **Cập nhật:** 2026-03-28
 
 ---
 
@@ -9,7 +9,7 @@
 
 - Mỗi rủi ro = 1 dòng trong Risk Register.
 - Update tối thiểu 2 lần/tuần: đầu tuần (planning) và cuối tuần (review).
-- Mọi rủi ro mức **High impact** hoặc **High probability** phải có mitigation owner + ETA rõ ràng.
+- Mọi rủi ro mức **High impact** hoặc **High probability** phải có mitigation owner + ETA rõ.
 
 ---
 
@@ -36,11 +36,11 @@
 
 ## 3) Risk Register (template table)
 
-| ID | Category | Risk Description | Impact (1-3) | Probability (1-3) | Score | Level | Owner | Mitigation Plan | Contingency Plan | ETA | Status |
-|----|----------|------------------|--------------|-------------------|-------|-------|-------|------------------|------------------|-----|--------|
-| R-001 | API Contract | Endpoint detail trả slug/id không nhất quán giữa module | 2 | 3 | 6 | High | FE Lead | Tạo adapter mapping và chốt contract version | Fallback query theo cả slug/id | dd/mm | Open |
-| R-002 | Auth | Session cookie behavior khác giữa local/staging | 3 | 2 | 6 | High | BE Lead | Kiểm tra SameSite/Secure/Domain theo env | Tạm dùng debug endpoint session | dd/mm | Open |
-| R-003 | Performance | Dashboard query nặng gây chậm order flow | 3 | 2 | 6 | High | Backend Architect | Tách analytics query async + cache | Giảm scope widget realtime | dd/mm | Open |
+| ID | Category | Risk Description | Impact | Probability | Score | Level | Owner | Mitigation Plan | Contingency Plan | ETA | Status | SLO/KPI affected |
+|----|----------|------------------|--------|-------------|-------|-------|-------|------------------|------------------|-----|--------|------------------|
+| R-001 | API Contract | Endpoint detail trả slug/id không nhất quán | 2 | 3 | 6 | High | FE Lead | Adapter mapping + chốt contract version | Fallback query slug/id | dd/mm | Open | Contract mismatch count |
+| R-002 | Auth | Session cookie behavior khác local/staging | 3 | 2 | 6 | High | BE Lead | Verify SameSite/Secure/Domain theo env | Debug endpoint session | dd/mm | Open | Login success rate |
+| R-003 | Performance | Dashboard query nặng làm chậm order flow | 3 | 2 | 6 | High | BE Lead | Tách query async + cache | Giảm scope widget nóng | dd/mm | Open | P95 order latency |
 
 ---
 
@@ -55,6 +55,9 @@
 - **QA/Regression**
 - **Timeline/Resource**
 - **Dependency (team/third-party)**
+- **Observability gap (mới)**
+- **Async/Queue risk (mới)**
+- **Cache invalidation risk (mới)**
 
 ---
 
@@ -74,6 +77,7 @@
 - [ ] Mitigation tuần này có đạt tiến độ không?
 - [ ] Có rủi ro nào cần escalate cho PO/Leadership không?
 - [ ] Có rủi ro nào có thể đóng không?
+- [ ] Rủi ro có impact lên SLO/KPI nào đã được gắn chưa?
 
 ---
 
@@ -84,6 +88,7 @@ Escalate ngay nếu thuộc một trong các điều kiện:
 - Đe dọa deadline release gần nhất.
 - Có khả năng gây downtime/mất dữ liệu/lỗ hổng bảo mật.
 - Phụ thuộc external team chưa có cam kết thời gian.
+- Queue backlog tăng kéo dài hoặc error rate vượt ngưỡng.
 
 ---
 
