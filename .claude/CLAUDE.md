@@ -1,127 +1,402 @@
-# LOOP Company Website — Claude Code Context
+# LOOP Solutions — Claude Code Context
 
-> Project: LOOP Agency Website — Next.js 15 + Prisma 7 + PostgreSQL/Neon
-> Last Updated: 2026-03-27
-> Language: Vietnamese (code comments, docs), English (variable names)
-> Status: Phase 0 i18n complete — public pages wired to DB (Phase 0 ✅, Phase 1-3 pending)
-
----
-
-## Project Overview
-
-Next.js 15 application with backend API (200 route files, 357+ HTTP methods) + fully wired public pages for 5-language i18n (VI/EN/JA/KO/ZH). All 13 public pages read from the database via Prisma + mapLocalized*() helpers — not just scaffolded.
-
-Branch: feature/i18n-vi-en (14 commits ahead of master)
-
-i18n infrastructure complete (Phase 0):
-- src/app/[locale]/ — 13 pages wired to DB: home, about, blog, blog/[slug], contact, portfolio, portfolio/[slug], pricing, services, services/[slug], team, + _templates
-- src/components/ — SiteHeader, SiteFooter, LocaleSwitcher
-- src/i18n/ — routing, request config, providers (5 locales)
-- src/messages/ + messages/ — vi.json, en.json, ja.json, ko.json, zh.json (211 keys each)
-- src/lib/i18n/localization.ts — getLocalizedField(), getLocalizedArray(), mapLocalized*() helpers
-- 7 v1 public APIs support ?lang=vi|en|ja|ko|zh with VI fallback: /api/v1/services, /api/v1/projects, /api/v1/blog, /api/v1/team, /api/v1/testimonials, /api/v1/pricing, /api/blog-posts
-  (Note: /api/services and /api/team are non-v1 routes without ?lang= — low priority)
-
-Pending (Phase 1-3):
-- CJK font lazy-loading: Noto Sans JP, KR, SC ✅ done in Week 13
-- Admin CMS translate tabs: ServicesTab/PortfolioTab/BlogTab/MembersTab ✅ done
-- Team member seed data (`memberData.ts`) now includes i18n fields for all records (name/role/bio EN/JA/KO/ZH)
-- Admin tabs wired to real BE APIs ✅: ServicesTab → PUT /api/admin/services/[id]; PortfolioTab → PUT/POST/DELETE /api/admin/projects/[id]; BlogTab → PATCH/DELETE /api/admin/blog-posts/[id]; MembersTab → PUT/DELETE /api/admin/team/[id]
-- API clients: `src/app/api/servicesAdminApi.ts`, `src/app/api/projectsAdminApi.ts`, `src/app/api/blogAdminApi.ts`, `src/app/api/teamAdminApi.ts`, `src/app/api/adminClient.ts`
-- Professional translation of JA/KO/ZH message files (Phase 1-2)
-- Translation management setup (Phrase/Lokalise, Phase 3)
-- I18N-RUNBOOK.md operations documentation (Phase 3)
+> Project: LOOP Solutions Agency Platform — FE (Vite/React) + BE (Next.js 15 API)
+> Last Updated: 2026-03-28
+> Language: Vietnamese (code comments, docs), English (variable names, function names)
+> Status: Phase 0 pending — FE mock UI hoàn chỉnh, chưa kết nối BE
 
 ---
 
-## Database 60+ Prisma Models
+## Tổng quan dự án
 
-Category | Models
----|---
-Auth & RBAC | User, Role, Permission, UserRole, Session, LoginHistory
-Core Content | Service ⚡, Project ⚡, Testimonial ⚡, ContactMessage, PricingPlan, HomeSlider ⚡, HomeVideo
-Team & HR | TeamMember ⚡, Expertise ⚡, MemberExpertise
-Commerce & Sales | Order, OrderAttribute, ServiceAttribute, Quote, QuoteRequest, SalesLead, AddonService, RewardTier, OrderReward, Payment, OrderStatusHistory, ServicePackage
-Pricing Calculator | InfrastructureTier, FeatureGroup, Feature, FeatureVariant, PricingWebPackage, PricingComparisonFeature, PricingHostingPlan, PricingDomainPrice, PricingDeploymentItem
-Project Management | Epic, Backlog, Task, TaskTag, TaskViolation, BugNote, Deployment, FigmaDemo, EnvFile, GitCommit, GscMetric, SocialPost, HandoverPackage, DailyStandup, ProjectMember
-LP & Gamification | CustomerPoint, PointTransaction, PointActivity, Advertisement, ReferralCode, ReferralTracking, LpAward, LpTransfer
-Education (EDU) | Course, Lesson, Instructor, Enrollment, Attendance, Feedback, StudentProgress, EduPayment
-System & Misc | AuditLog, Notification, SiteSetting, ServerAnalyticsEvent, CustomerWebsite, WebsiteStats, LandingPage, LandingSection, BlogPost ⚡
+### Hai codebase song song
 
-⚡ = i18n fields added (titleEn, titleJa, titleKo, titleZh, descriptionEn, etc.)
-7 i18n models: Service, Project, Testimonial, HomeSlider, TeamMember, Expertise, BlogPost
+| | FE Mock | BE API |
+|---|---|---|
+| **Thư mục** | `d:/LOOP_COMPANY/LOOP/FE/` | `d:/LOOP_COMPANY/LOOP/` |
+| **Framework** | Vite + React 18 + Tailwind v4 | Next.js 15 + Prisma 7 + PostgreSQL/Neon |
+| **Port dev** | `5173` / `5174` | `3000` |
+| **Trạng thái** | Mock UI hoàn chỉnh, 0 BE connection | 200 route files, 357+ HTTP methods |
+| **Phong cách** | Gaming/Cyberpunk dark theme | Professional agency website |
+| **i18n** | Hard-coded VI/EN | 5 ngôn ngữ (VI/EN/JA/KO/ZH) |
 
----
-
-## Authentication
-
-Dual Auth System:
-1. Credentials (JWT) — POST /api/admin/auth/login, HttpOnly cookie auth-token
-2. Google OAuth — NextAuth v5, provider GoogleProvider
-
-Role Hierarchy:
-ceo(-1) > super_admin(0) > admin(1) > project_manager(2) > media(3) > qa(4) > member(5)
-
-Auth Endpoint:
-GET /api/admin/auth/me → { user: { userId, email, name, role, roles, avatar, accountType, teamMemberId, roleLevel, permissions[] } }
+### Mục tiêu hiện tại
+Kết nối FE mock với BE thật theo nghiệp vụ LOOP — giữ nguyên 100% giao diện FE, thay mock data bằng API thật từ BE.
 
 ---
 
-## Internationalization (i18n)
+## Kiến trúc hệ thống LOOP
 
-Supported Locales: vi (default) · en · ja · ko · zh
-URL Strategy: Subdirectory /vi/..., /en/..., /ja/..., /ko/..., /zh/...
+### Luồng người dùng (User Flow)
 
-Backend Localization:
-7 v1 public content APIs support ?lang=:
-  GET /api/v1/services?lang=en
-  GET /api/v1/projects?lang=ja
-  GET /api/v1/team?lang=ko
-  GET /api/blog-posts?lang=zh
+```
+Khách hàng tiềm năng
+    ├── /               → LandingPage (hero, dịch vụ, portfolio, testimonial)
+    ├── /dich-vu        → ServicesPage (4 dịch vụ: Web, App/SaaS, Dashboard, SEO)
+    │   └── /dich-vu/:id → ServiceDetailPage
+    ├── /du-an          → PortfolioPage (6 dự án hoàn thành)
+    │   └── /du-an/:id  → ProjectDetailPage (challenge/solution/result + metrics)
+    ├── /doi-ngu        → Home.tsx (27 thành viên, rank Iron→Diamond, HUD overlay)
+    │   └── /member/:id → MemberDetailPage
+    ├── /hoc-vien       → AcademyPage (7 khóa học)
+    │   └── /hoc-vien/:id → CourseDetailPage (Video Gate 35%, Code Exercise, Certificate)
+    ├── /blog           → BlogPage
+    │   └── /blog/:id   → BlogDetailPage
+    ├── /lien-he        → ContactPage (form liên hệ)
+    ├── /dat-lich       → BookingWizardPage (8 bước báo giá)
+    └── /dang-nhap      → AuthPage
 
-Key helpers in @/lib/i18n/localization:
-- parseLocaleParam(searchParams) — extract locale from query, default vi
-- getLocalizedField(record, fieldName, locale) — get localized field or VI fallback
-- getLocalizedArray(record, fieldName, locale) — same for array fields
-- mapLocalizedService/Project/TeamMember/BlogPost(record, locale) — map full record with _localeUsed
+Khách hàng đã đặt hàng
+    └── /khach-hang     → CustomerDashboard (8 tabs: tổng quan, dự án, khóa học, hóa đơn, ví LP, giới thiệu, hỗ trợ, cài đặt)
 
-Middleware:
-Edge middleware at src/middleware.ts handles locale detection:
-1. Cookie NEXT_LOCALE → 2. Accept-Language header → 3. Default vi
+Nhân viên LOOP
+    └── /admin          → AdminDashboard (23 tabs theo phòng ban)
 
-Frontend Message Files:
-- messages/vi.json, messages/en.json — full translations (211 keys)
-- messages/ja.json, messages/ko.json, messages/zh.json — Phase 1 translation-ready
-
----
-
-## Key Conventions
-
-1. API Responses: Always use helpers from @/lib/api. NEVER return raw NextResponse.json() directly.
-   - Success: ok(data), list(data, pagination), json(payload)
-   - Errors: badRequest(), unauthorized(), notFound(), handleError(err)
-2. Auth: Always call requirePermission() in admin API routes
-3. Error handling: Always try/catch + handleError() — never swallow errors silently
-4. No JSX/React in API routes — backend is pure TypeScript
-5. TypeScript strict mode — no any
-6. i18n: v1 public APIs support ?lang=vi|en|ja|ko|zh. Default = vi. Use getLocalizedField() from @/lib/i18n/localization for field-level localization.
-7. API-only app — public pages wired to DB via Prisma, NOT scaffolded
+Onboarding (lần đầu)
+    └── /               → OnboardingPage (5-slide intro, localStorage skip tracking)
+```
 
 ---
 
-## Available Tools Commands
+## Hệ thống nghiệp vụ LOOP
 
-npm run dev          Start dev server
-npm run build        Build production
-npx prisma studio    Open DB GUI
-npm run lint         ESLint
-npx tsc --noEmit     Type check
+### 1. LP Economy (Điểm thưởng nội bộ)
+
+**Kiếm LP:**
+- Hoàn thành task/quest nội bộ (nhân viên)
+- Hoàn thành khóa học (học viên)
+- Mua dịch vụ (khách hàng nhận LP reward)
+- Giới thiệu bạn bè (referral)
+
+**Dùng LP:**
+- Giảm giá dịch vụ: tối đa 20%, rate `1,000 LP = 500,000 VNĐ`
+- Mua khóa học (toàn phần hoặc LP+VNĐ)
+- Đổi thưởng nội bộ
+
+**Rank System (nhân viên):**
+| Rank | Màu | Level | Hiệu ứng |
+|---|---|---|---|
+| Iron | #9CA3AF | 1–14 | Particle Glow |
+| Bronze | #CD7F32 | 15–34 | Border Gradient |
+| Silver | #C0C0C0 | 35–54 | Silver Shimmer |
+| Gold | #FFD700 | 55–74 | Gold Aura + Neon Pulse (Lv.60+) |
+| Platinum | #E5E4E2 | 75–84 | Platinum Trail + Matrix Rain (Lv.80+) |
+| Ruby | #E0115F | 85–94 | Ruby Fire Particles |
+| Diamond | #7DD3FC | 95+ | Diamond Holographic + Cosmic Badge (Lv.100+) |
+
+**Admin Effects Tab:**
+- Global toggle bật/tắt toàn bộ hiệu ứng
+- CRUD hiệu ứng: name, description, type, rarity, unlock conditions
+- 3 views: danh sách, theo rank, theo thành viên
+
+### 2. Order Lifecycle
+
+```
+pending_payment → paid → in_progress → demo_ready → client_review → done
+```
+- **Wizard 8 bước:** Chọn dịch vụ → Gói (×1/×2.2/×3.8) → Tính năng → Nhân sự → Lịch hẹn → Extras → Review → Thanh toán (VNĐ + LP)
+- **Admin Orders Tab:** CRUD, gán PM, send demo (masked URL), chat với khách, advance status
+- **Customer Dashboard:** Theo dõi order, xem demo qua DemoViewer, chat với PM
+
+### 3. Academy Flow
+
+- **Free trial:** Xem trước miễn phí (FreeTrialModal)
+- **Enrollment:** VNĐ / LP+VNĐ / LP toàn phần (PaymentModal)
+- **CoursePlayer:**
+  - Video Gate: phải xem ≥35% mới mở bài tiếp
+  - Code Exercise: editor + output trực tiếp
+  - Comments: bình luận mỗi bài
+  - Certificate khi hoàn thành 100% + LP reward
+
+### 4. Quest & Event System
+
+**13 Quests theo frequency:**
+- Daily: Điểm danh, gửi tin nhắn, xem blog
+- Weekly: Hoàn thành 3 task, viết blog, hoàn thành 1 khóa
+- Monthly: Đánh giá 360°, giới thiệu 1 KH
+- One-time: First Blood, Streak Master 30 ngày
+- Client: Đặt dịch vụ đầu tiên, đánh giá
+
+**3 Events:**
+- Spring Festival 2026 (seasonal, active)
+- Hackathon Internal Q1 (competition, active)
+- LOOP Anniversary (celebration, inactive)
+
+---
+
+## Thiết kế hệ thống FE
+
+### Tech Stack
+- **React 18 + TypeScript** (strict, no `any`)
+- **Vite 6** (build tool)
+- **Tailwind CSS v4** (utility-first, CSS variables for design tokens)
+- **Motion** (Framer Motion) — longhand properties only (backgroundColor, borderColor)
+- **Zustand** (global state: loopStore + authStore)
+- **React Router v7** (Data Router)
+
+### Design System (`src/app/components/layout/ds.ts`)
+```
+DS: bg=#020617, bgCard=#0F172A, blue=#3B82F6, purple=#818CF8, text3=#94A3B8
+Fonts: Cinzel (heading), Inter (body), JetBrains Mono (code)
+```
+
+### Quy tắc CSS quan trọng
+- ✅ Dùng `rgba()` thay vì Tailwind opacity classes: `rgba(59,130,246,0.15)`
+- ✅ Longhand properties trong motion: `backgroundColor`, `borderColor`
+- ❌ Không dùng shorthand: `background`, `border` trong `whileHover/animate/initial`
+- ❌ Không dùng Recharts/D3 — chỉ dùng Pure SVG cho charts
+- ✅ `DemoViewer.tsx` — KHÔNG CHỈNH SỬA (file đã edit thủ công)
+
+---
+
+## Cấu trúc thư mục FE
+
+```
+FE/src/
+├── app/
+│   ├── App.tsx                     # Entry: RouterProvider + OnboardingPage overlay
+│   ├── routes.ts                   # 21 routes (public + auth + dashboards)
+│   ├── Home.tsx                    # Team page (/doi-ngu) — MemberCard grid, HUD, HallOfFame
+│   ├── MemberDetailPage.tsx         # Member detail (/member/:id)
+│   ├── LOOP_OPERATIONS_DOC.tsx     # Full system documentation (JSdoc comment)
+│   ├── pages/
+│   │   ├── LandingPage.tsx         # Public home (/)
+│   │   ├── ServicesPage.tsx        # Services list
+│   │   ├── ServiceDetailPage.tsx   # Service detail
+│   │   ├── PortfolioPage.tsx       # Portfolio list
+│   │   ├── ProjectDetailPage.tsx   # Project detail
+│   │   ├── BlogPage.tsx            # Blog list
+│   │   ├── BlogDetailPage.tsx      # Blog detail
+│   │   ├── AcademyPage.tsx         # Academy list
+│   │   ├── CourseDetailPage.tsx    # Course player (Video Gate, Code Exercise, Certificate)
+│   │   ├── BookingWizardPage.tsx   # 8-step pricing wizard
+│   │   ├── MediaBookingPage.tsx   # Media booking
+│   │   ├── ContactPage.tsx         # Contact form
+│   │   ├── AuthPage.tsx            # Login/Register
+│   │   ├── AdminDashboard.tsx     # Admin portal (23 tabs)
+│   │   ├── CustomerDashboard.tsx   # Customer portal (8 tabs)
+│   │   ├── StaffPortal.tsx         # Staff portal
+│   │   ├── LeaderboardPage.tsx    # LP leaderboard
+│   │   ├── CompanyProcessPage.tsx # Company process
+│   │   └── OnboardingPage.tsx     # 5-slide onboarding (localStorage skip)
+│   ├── components/
+│   │   ├── admin/                  # 21 admin tab components
+│   │   │   ├── OverviewTab (inline in AdminDashboard)
+│   │   │   ├── OrdersTab.tsx       # Order pipeline + chat + send demo
+│   │   │   ├── MembersTab.tsx      # CRUD 27 members + rank/LP + translate tab
+│   │   │   ├── ServicesTab.tsx      # Service CRUD + demo links
+│   │   │   ├── PortfolioTab.tsx    # Portfolio CRUD + demo links
+│   │   │   ├── AcademyTab.tsx      # Courses + students + videos tabs
+│   │   │   ├── BlogTab.tsx          # Blog CRUD
+│   │   │   ├── EffectsTab.tsx       # Rank effects CRUD + global toggle
+│   │   │   ├── LPManagementTab.tsx  # LP distribution + transactions
+│   │   │   ├── QuestEventsTab.tsx  # Quests + Events CRUD
+│   │   │   ├── QuotationTab.tsx    # Wizard 8-step config
+│   │   │   ├── RevenueTab.tsx      # Revenue charts
+│   │   │   ├── ClientsTab.tsx       # CRM
+│   │   │   ├── KanbanBoard.tsx     # Task kanban
+│   │   │   ├── ProjectsCompletedTab.tsx
+│   │   │   ├── WebPackagesTab.tsx
+│   │   │   ├── IncomeTaxTab.tsx
+│   │   │   ├── AdminLeaderboardTab.tsx
+│   │   │   ├── AnalyticsTab.tsx
+│   │   │   ├── NotificationCenter.tsx
+│   │   │   └── DepartmentsTab.tsx
+│   │   ├── customer/
+│   │   │   ├── EffectsInventoryTab.tsx  # Customer equips effects
+│   │   │   └── QuestsTab.tsx           # Customer quests list
+│   │   ├── team/
+│   │   │   ├── memberData.ts         # 27 members + RANKS config
+│   │   │   ├── MemberCard.tsx        # Card với rank effects (particles, glow, aura...)
+│   │   │   ├── HUDPanel.tsx           # HUD overlay (radar chart, stats, missions)
+│   │   │   ├── HallOfFame.tsx        # MVP/BugSlayer/TopPerformer showcase
+│   │   │   ├── RoleFilters.tsx        # 9 role filter buttons
+│   │   │   └── SearchSortBar.tsx      # Search + sort dropdown
+│   │   ├── layout/
+│   │   │   ├── ds.ts              # Design tokens (DS, GRD, NAV_LINKS)
+│   │   │   ├── Navbar.tsx          # Navbar (auth state, user menu, search)
+│   │   │   ├── Footer.tsx           # Footer + CTA
+│   │   │   └── PublicLayout.tsx    # Navbar + Outlet + Footer
+│   │   ├── figma/
+│   │   │   └── ImageWithFallback.tsx
+│   │   └── ui/                    # 45 Radix UI components (shadcn-style)
+│   ├── store/
+│   │   ├── loopStore.ts            # Zustand: orders, services, portfolio, effects, notifs
+│   │   └── authStore.ts            # Zustand: auth, quests, events, dailyStreak
+│   └── hooks/
+│       └── useRealtimeNotifications.ts  # Simulated live notifications (setInterval)
+├── styles/
+│   ├── index.css                  # @import fonts + tailwind + theme
+│   ├── fonts.css                  # Google Fonts: Cinzel, Inter, JetBrains Mono, Noto Serif JP
+│   ├── tailwind.css              # Tailwind v4 config + CSS variables
+│   └── theme.css                 # Scrollbar zen styles
+└── assets/
+    └── 3de9c8bfb537946e3dd01b9dbae9004d9c921471.png  # Logo image
+```
+
+---
+
+## BE API hiện có (từ Next.js)
+
+### Public APIs (v1)
+- `GET /api/v1/services?lang=` → Service list
+- `GET /api/v1/projects?lang=` → Project list
+- `GET /api/v1/team?lang=` → TeamMember list
+- `GET /api/v1/testimonials?lang=`
+- `GET /api/v1/pricing?lang=`
+- `GET /api/v1/blog?lang=` → BlogPost list
+
+### Admin APIs (key)
+- `GET/POST /api/admin/services` → Service CRUD
+- `GET/POST /api/admin/projects` → Project CRUD
+- `GET/POST /api/admin/team` → TeamMember CRUD
+- `GET/POST /api/admin/orders` → Order CRUD
+- `GET/POST /api/admin/blog-posts` → BlogPost CRUD
+- `GET/POST /api/admin/edu/courses` → Course CRUD
+- `GET/POST /api/admin/edu/enrollments` → Enrollment CRUD
+- `GET/POST /api/admin/lp-awards` → LP awards
+- `GET/POST /api/admin/lp-transactions` → LP transactions
+- `GET/POST /api/admin/lp-redemptions` → LP redemptions
+- `GET/POST /api/admin/figma-demos` → Demo links
+- `GET/POST /api/admin/quote` → Pricing wizard
+- `GET /api/admin/dashboard` → KPI overview
+- `GET /api/admin/dashboard/charts` → Analytics charts
+
+### Auth
+- `POST /api/admin/auth/login` → JWT login
+- `GET /api/admin/auth/me` → Current user
+- `POST /api/admin/auth/logout` → Logout
+
+---
+
+## BE Prisma Models (key)
+
+| Model | Mục đích FE |
+|---|---|
+| Service | ServicesPage, ServiceDetailPage |
+| Project | PortfolioPage, ProjectDetailPage |
+| TeamMember | Home.tsx (27 members), MemberDetailPage |
+| Expertise | Team member specialties |
+| BlogPost | BlogPage, BlogDetailPage |
+| Testimonial | LandingPage testimonials |
+| HomeSlider | LandingPage hero sliders |
+| HomeVideo | LandingPage video section |
+| PricingPlan | BookingWizardPage (pricing config) |
+| Order | CustomerDashboard, OrdersTab, Order lifecycle |
+| OrderStatusHistory | OrderTab tracking |
+| FigmaDemo | DemoViewer masked URLs |
+| Quote | BookingWizardPage submit |
+| QuoteRequest | Wizard 8-step |
+| Payment | CustomerDashboard invoices |
+| ServicePackage | Wizard step 2 (packages) |
+| Feature | Wizard step 3 (add-on features) |
+| AddonService | Wizard step 6 |
+| InfrastructureTier | Wizard pricing |
+| FeatureGroup | Wizard pricing |
+| FeatureVariant | Wizard pricing |
+| CustomerPoint | LP balance |
+| PointTransaction | LP history |
+| PointActivity | LP activity log |
+| LpAward | LP awards (admin) |
+| LpTransfer | LP transfers |
+| Course | AcademyPage, CourseDetailPage |
+| Lesson | CoursePlayer |
+| Instructor | AcademyPage |
+| Enrollment | Academy enrollment + progress |
+| StudentProgress | Video Gate 35% tracking |
+| Attendance | Course attendance |
+| Feedback | Course feedback |
+| EduPayment | Academy payment |
+| Notification | AdminNotifications, ClientNotifications |
+| SalesLead | ClientsTab CRM |
+| Task | KanbanBoard |
+| Epic | KanbanBoard epics |
+| Backlog | KanbanBoard backlogs |
+| BlogPost | Blog content |
+
+**⚠️ MISSING in BE (cần tạo):**
+- `RankEffect` model — hiệu ứng theo rank (effectsTab)
+- `MemberEffectOverride` — override hiệu ứng theo member
+- `Quest` / `CompanyEvent` models — quest + event system
+- `QuestParticipant` — ai tham gia event nào
+
+---
+
+## Admin RBAC (từ authStore.ts)
+
+### Role Hierarchy
+`admin > manager > staff > client > guest`
+
+### Department Tabs
+| Department | Tabs |
+|---|---|
+| engineering | overview, orders, projects, members, notification_center |
+| design | overview, orders, projects, portfolio, members, notification_center |
+| media | overview, media, orders, projects, members, notification_center |
+| marketing | overview, blog, academy, clients, services, notification_center |
+| sales | overview, orders, clients, quotation, services, revenue, notification_center |
+| finance | overview, revenue, lp, lp_manage, income_tax, web_packages, orders, notification_center |
+| hr | overview, members, departments, notification_center |
+| management | overview, orders, members, departments, projects, revenue, clients, notification_center, quests_events |
+| admin | **TẤT CẢ 23 tabs** |
+
+### 23 Admin Tabs
+`overview | orders | members | departments | projects | services | media | quotation | portfolio | projects_completed | academy | blog | revenue | clients | lp | lp_manage | income_tax | web_packages | effects | notification_center | settings | quests_events | leaderboard_admin | analytics`
+
+---
+
+## Phase Roadmap (FE-first)
+
+### Phase F0 — Infrastructure (Foundation)
+Thiết lập hạ tầng kết nối FE → BE, auth, routing.
+
+### Phase F1 — Public Pages
+Landing, Services, Portfolio, Blog, Contact — kết nối public APIs.
+
+### Phase F2 — Booking Wizard + Orders
+Wizard 8 bước + Order lifecycle.
+
+### Phase F3 — Team + Effects
+27 members + Rank effects system.
+
+### Phase F4 — Academy
+Courses + Enrollment + Video Gate.
+
+### Phase F5 — Customer Portal
+Customer dashboard + LP wallet + quests.
+
+### Phase F6 — Admin CMS
+23 admin tabs — 100% wired to BE APIs.
+
+---
+
+## Development Workflow
+
+```bash
+# Start BE (port 3000)
+cd d:/LOOP_COMPANY/LOOP && npm run dev
+
+# Start FE (port 5173/5174)
+cd d:/LOOP_COMPANY/LOOP/FE && npm run dev
+
+# Quality gates
+npm run lint    # FE: cd FE && npx eslint src/
+npx tsc --noEmit  # BE type check
+```
 
 ---
 
 ## Communication Style
 
-- Vietnamese for project docs, comments, and user communication
-- English for code, variable names, function names
-- Be concise, practical, and action-oriented
-- Always show clear next steps after completing a task
+- Vietnamese cho docs, comments, giao tiếp người dùng
+- English cho code, variable names, function names
+- Ngắn gọn, thực tế, có action
+
+---
+
+## Available Slash Commands
+
+- `/audit` — API Consistency Audit
+- `/docs` — Documentation Helper
+- `/plan` — Check LOOP Plan Progress
+- `/review` — Code Review
