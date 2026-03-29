@@ -35,7 +35,6 @@ export function Counter({ value, duration = 1.5, delay = 0, formatter }: Counter
     });
 
     return () => controls.stop();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value, duration, delay]);
 
   const val = Math.round(displayValue);
