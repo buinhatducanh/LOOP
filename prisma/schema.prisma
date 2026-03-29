@@ -1878,6 +1878,8 @@ model Lesson {
   feedbacks       Feedback[]
   course          Course            @relation(fields: [courseId], references: [id], onDelete: Cascade)
   progresses      StudentProgress[]
+  exercises       LessonExercise[]
+  comments        LessonComment[]
 
   @@index([courseId, orderIndex])
   @@map("lessons")
@@ -1968,6 +1970,44 @@ model Feedback {
   @@index([lessonId])
   @@index([rating])
   @@map("feedbacks")
+}
+
+/// Student lesson code exercise submissions.
+model LessonExercise {
+  id          String   @id @default(cuid())
+  lessonId    String   @map("lesson_id")
+  userId      String?  @map("user_id")
+  memberId    String?  @map("member_id")
+  code        String
+  language    String   @default("javascript")
+  output      String?
+  passed      Boolean  @default(false)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  lesson      Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@index([lessonId])
+  @@index([userId])
+  @@index([memberId])
+  @@map("lesson_exercises")
+}
+
+/// Lesson comment from a student.
+model LessonComment {
+  id        String   @id @default(cuid())
+  lessonId  String   @map("lesson_id")
+  userId    String?  @map("user_id")
+  memberId  String?  @map("member_id")
+  content   String
+  likes     Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  lesson    Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@index([lessonId])
+  @@index([userId])
+  @@index([memberId])
+  @@map("lesson_comments")
 }
 
 /// Student lesson completion progression.

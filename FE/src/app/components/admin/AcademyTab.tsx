@@ -334,7 +334,32 @@ export function AcademyTab() {
     ));
   };
 
-  const handleSave = (updated: Course) => {
+  const handleSave = async (updated: Course) => {
+    try {
+      if (updated.id && typeof updated.id === 'number') {
+        // Update existing course via BE API
+        await academyService.updateCourse(String(updated.id), {
+          title: updated.title,
+          titleVi: updated.title,
+          price: updated.price,
+          lpReward: updated.lpReward,
+          status: updated.status,
+        });
+      } else {
+        // Create new course via BE API
+        await academyService.createCourse({
+          title: updated.title,
+          titleVi: updated.title,
+          price: updated.price,
+          lpReward: updated.lpReward,
+          status: updated.status,
+          instructorId: 'instr-1', // TODO: wire instructor selector
+        });
+      }
+    } catch {
+      // API unavailable — still save locally
+    }
+    // Update local state regardless
     setCourses(prev => {
       const exists = prev.find(c => c.id === updated.id);
       return exists ? prev.map(c => c.id === updated.id ? updated : c) : [updated, ...prev];
@@ -342,7 +367,12 @@ export function AcademyTab() {
     setModal(null);
   };
 
-  const handleDelete = (id: number) => {
+  const handleDelete = async (id: number) => {
+    try {
+      await academyService.deleteCourse(String(id));
+    } catch {
+      // API unavailable — still delete locally
+    }
     setCourses(prev => prev.filter(c => c.id !== id));
     setDeleteId(null);
   };

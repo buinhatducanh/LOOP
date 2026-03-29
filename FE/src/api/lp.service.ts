@@ -147,4 +147,64 @@ export const lpService = {
       return null;
     }
   },
+
+  /**
+   * GET /api/points
+   * Customer-facing: LP balance, transactions, redeem catalog, ads, daily rewards.
+   * Reads session from HttpOnly cookie (set by auth flow).
+   */
+  getCustomerPoints: async (): Promise<{
+    balance: number;
+    totalEarned: number;
+    totalSpent: number;
+    level: number;
+    currentXp: number;
+    loginStreak: number;
+    lastLoginDate: string | null;
+    transactions: LPTransaction[];
+    redeemable: Array<{
+      id: string;
+      slug: string;
+      name: string;
+      nameVi: string;
+      description: string;
+      icon: string;
+      type: string;
+      lpCost: number;
+    }>;
+    ads: Array<{
+      id: string;
+      slug: string;
+      titleVi: string;
+      points: number;
+      watchCooldown: number;
+      dailyLimit: number;
+    }>;
+    todayAdWatches: number;
+    cooldownRemaining: number;
+  } | null> => {
+    try {
+      const res = await api.get<{
+        data: {
+          points: {
+            balance: number;
+            totalEarned: number;
+            totalSpent: number;
+            level: number;
+            currentXp: number;
+            loginStreak: number;
+            lastLoginDate: string | null;
+            transactions: LPTransaction[];
+          };
+          redeemable: Array<{ id: string; slug: string; name: string; nameVi: string; description: string; icon: string; type: string; lpCost: number }>;
+          ads: Array<{ id: string; slug: string; titleVi: string; points: number; watchCooldown: number; dailyLimit: number }>;
+          todayAdWatches: number;
+          cooldownRemaining: number;
+        };
+      }>('/points');
+      return res.data.points ? { ...res.data.points, ...{ redeemable: res.data.redeemable, ads: res.data.ads, todayAdWatches: res.data.todayAdWatches, cooldownRemaining: res.data.cooldownRemaining } } : null;
+    } catch {
+      return null;
+    }
+  },
 };

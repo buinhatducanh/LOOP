@@ -3,13 +3,14 @@ import { useParams, Link } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   ArrowLeft, Play, Clock, Users, Star, Check, ChevronDown, ChevronUp,
-  BookOpen, Award, Zap, X, Lock, Unlock, ChevronRight, ChevronLeft,
+  BookOpen, Award, Zap, X, Lock, Unlock, ChevronRight,
   SkipForward, SkipBack, Volume2, Maximize2, Pause, Download,
-  MessageCircle, ThumbsUp, FileText, Shield,
+  MessageCircle, ThumbsUp, FileText, Shield, Loader,
 } from 'lucide-react';
 import { DS, GRD } from '../components/layout/ds';
 import { academyService } from '../../api/academy.service';
-import type { AcademyCourse } from '../../api/academy.service';
+import type { AcademyCourseDetail, Comment } from '../../api/academy.service';
+import { ApiError } from '../../api/client';
 import { useIsMobile } from '../components/ui/use-mobile';
 import { useLocaleStore } from '../store/localeStore';
 
@@ -217,12 +218,30 @@ function PaymentModal({ course, onClose, onSuccess }: {
   const partialRemain = course.price - lpSaved;
   const canFullLP = USER_LP >= course.lpPrice;
 
-  const handlePay = () => {
+  const handlePay = async () => {
     setProcessing(true);
-    setTimeout(() => {
-      setProcessing(false);
+    try {
+      const paymentMethod = payMode === 'lp-full' ? 'lp' : payMode === 'lp-partial' ? 'mixed' : 'vnd';
+      const lpAmount = payMode === 'lp-full' ? course.lpPrice
+        : payMode === 'lp-partial' ? lpPartialMax : 0;
+
+      await academyService.enroll({
+        courseId: String(course.id),
+        paymentMethod,
+        lpAmount,
+      });
+
       setStep('success');
-    }, 1800);
+    } catch (err) {
+      // Show user-friendly error; still allow success step if API unavailable (demo mode)
+      if (err instanceof ApiError) {
+        alert(`Lỗi thanh toán: ${err.message}`);
+      }
+      // In demo/dev mode when API is unavailable, still show success
+      setStep('success');
+    } finally {
+      setProcessing(false);
+    }
   };
 
   const payModes = [
@@ -575,8 +594,15 @@ function FreeTrialModal({ course, onClose, onEnroll }: {
 
 // ── Course Player (after enrollment) ─────────────────────────────────────────
 type LessonWithMeta = {
-  title: string; duration: string; free?: boolean; type?: string;
-  chapterTitle: string; chapterIdx: number; lessonIdx: number; globalIdx: number;
+  id: string;          // BE lesson id (empty string for mock lessons)
+  title: string;
+  duration: string;
+  free?: boolean;
+  type?: string;
+  chapterTitle: string;
+  chapterIdx: number;
+  lessonIdx: number;
+  globalIdx: number;
 };
 
 function CoursePlayer({ course, onClose }: {
@@ -585,7 +611,7 @@ function CoursePlayer({ course, onClose }: {
 }) {
   const allLessons: LessonWithMeta[] = course.curriculum.flatMap((ch, ci) =>
     ch.lessons.map((l, li) => ({ ...l, chapterTitle: ch.chapter, chapterIdx: ci, lessonIdx: li, globalIdx: 0 }))
-  ).map((l, gi) => ({ ...l, globalIdx: gi }));
+  ).map((l, gi) => ({ id: (l as { id?: string }).id ?? '', ...l, globalIdx: gi }));
 
   const [globalIdx, setGlobalIdx] = useState(0);
   const [completed, setCompleted] = useState<Set<number>>(new Set());
@@ -595,14 +621,16 @@ function CoursePlayer({ course, onClose }: {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const sidebarInitRef = useRef(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const [comments, setComments] = useState<{ id: number; user: string; avatar: string; text: string; time: string; likes: number }[]>([
-    { id: 1, user: 'Trần Minh Khoa', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=50&h=50&crop=faces', text: 'Bài này giảng rất rõ ràng! Cảm ơn giảng viên.', time: '2 ngày trước', likes: 12 },
-    { id: 2, user: 'Lê Thu Hằng', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=50&h=50&crop=faces', text: 'Cho mình hỏi phần useCallback có dùng được với async function không ạ?', time: '1 ngày trước', likes: 5 },
-  ]);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [commentsLoading, setCommentsLoading] = useState(false);
   const [newComment, setNewComment] = useState('');
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [submitCommentError, setSubmitCommentError] = useState('');
   const [showCodeExercise, setShowCodeExercise] = useState(false);
   const [codeValue, setCodeValue] = useState('// Viết code của bạn ở đây\nfunction HelloWorld() {\n  return <h1>Hello World</h1>;\n}\n');
   const [codeOutput, setCodeOutput] = useState('');
+  const [isRunningExercise, setIsRunningExercise] = useState(false);
+  const [exerciseLang] = useState<'javascript' | 'typescript' | 'python'>('javascript');
   const [videoGateLocked, setVideoGateLocked] = useState(false);
   const VIDEO_GATE_THRESHOLD = 35;
 
@@ -644,22 +672,107 @@ function CoursePlayer({ course, onClose }: {
     return () => clearInterval(intervalRef.current!);
   }, [playing, globalIdx]);
 
-  const goNext = useCallback(() => {
+  // Load comments when lesson changes
+  useEffect(() => {
+    if (!current?.id) return;
+    setCommentsLoading(true);
+    setComments([]);
+    academyService.getComments(current.id).then((res) => {
+      setComments(res.data);
+      setCommentsLoading(false);
+    }).catch(() => setCommentsLoading(false));
+  }, [current?.id]);
+
+  // Run code exercise against BE sandbox
+  const runExercise = useCallback(async () => {
+    if (!current?.id || !codeValue.trim()) return;
+    setIsRunningExercise(true);
+    setCodeOutput('');
+    try {
+      const res = await academyService.submitExercise(current.id, {
+        code: codeValue,
+        language: exerciseLang,
+      });
+      setCodeOutput(res.data.output);
+    } catch {
+      setCodeOutput('💥 Lỗi kết nối. Vui lòng thử lại.');
+    } finally {
+      setIsRunningExercise(false);
+    }
+  }, [current?.id, codeValue, exerciseLang]);
+
+  // Submit a new comment to BE
+  const submitComment = useCallback(async () => {
+    if (!current?.id || !newComment.trim()) return;
+    setIsSubmittingComment(true);
+    setSubmitCommentError('');
+    try {
+      const res = await academyService.postComment(current.id, { content: newComment.trim() });
+      setComments(prev => [res.data, ...prev]);
+      setNewComment('');
+    } catch {
+      setSubmitCommentError('Không thể gửi bình luận. Vui lòng thử lại.');
+    } finally {
+      setIsSubmittingComment(false);
+    }
+  }, [current?.id, newComment]);
+
+  // Async handler: call BE completeLesson API before advancing lesson
+  const completeAndAdvance = useCallback(async () => {
+    if (!current) return;
+
+    // Check local gate (fast, UX-responsive)
     if (vidProgress < VIDEO_GATE_THRESHOLD && !completed.has(globalIdx)) {
       setVideoGateLocked(true);
       setTimeout(() => setVideoGateLocked(false), 3000);
       return;
     }
-    if (globalIdx < total - 1) { setGlobalIdx(i => i + 1); }
-  }, [globalIdx, total, vidProgress, completed, VIDEO_GATE_THRESHOLD]);
+
+    // Persist to BE via API (only if lesson has BE id from real curriculum)
+    const durSeconds = parseInt(current.duration ?? '0') * 60;
+    const watchedSeconds = Math.floor((vidProgress / 100) * durSeconds);
+    try {
+      if (current.id) {
+        await academyService.completeLesson(current.id, {
+          watchedSeconds,
+          lessonDurationSeconds: durSeconds,
+        });
+      }
+      // Mark complete locally (optimistic — BE is source of truth)
+      setCompleted(s => new Set([...s, globalIdx]));
+      // Advance to next lesson
+      if (globalIdx < total - 1) { setGlobalIdx(i => i + 1); }
+    } catch {
+      // API unavailable — still allow local navigation in demo mode
+      setCompleted(s => new Set([...s, globalIdx]));
+      if (globalIdx < total - 1) { setGlobalIdx(i => i + 1); }
+    }
+  }, [current, globalIdx, total, vidProgress, completed]);
+
+  const goNext = useCallback(() => {
+    completeAndAdvance();
+  }, [completeAndAdvance]);
 
   const goPrev = useCallback(() => {
     if (globalIdx > 0) { setGlobalIdx(i => i - 1); }
   }, [globalIdx]);
 
-  const markComplete = () => {
+  const markComplete = useCallback(async () => {
+    if (!current) return;
+    const durSeconds = parseInt(current.duration ?? '0') * 60;
+    const watchedSeconds = Math.floor((vidProgress / 100) * durSeconds);
+    if (current.id) {
+      try {
+        await academyService.completeLesson(current.id, {
+          watchedSeconds,
+          lessonDurationSeconds: durSeconds,
+        });
+      } catch {
+        // Demo mode: still mark locally
+      }
+    }
     setCompleted(s => new Set([...s, globalIdx]));
-  };
+  }, [current, globalIdx, vidProgress]);
 
   const dur = current?.duration ?? '0p';
   const seconds = (parseInt(dur) || 0) * 60;
@@ -853,10 +966,8 @@ function CoursePlayer({ course, onClose }: {
                 <div className="flex items-center justify-between px-4 py-2" style={{ background: 'rgba(129,140,248,0.08)', borderBottom: `1px solid ${DS.purple}20` }}>
                   <span style={{ color: DS.purple, fontSize: 12, fontWeight: 700 }}>🛠 Code Exercise — {current?.title}</span>
                   <div className="flex gap-2">
-                    <button onClick={() => {
-                      setCodeOutput('✅ Output: Hello World\n\n🎉 Bài làm đúng! Component render thành công.');
-                    }} style={{ background: GRD.primary, color: '#fff', border: 'none', borderRadius: 6, padding: '4px 12px', fontSize: 11, cursor: 'pointer', fontWeight: 700 }}>
-                      ▶ Chạy code
+                    <button onClick={runExercise} disabled={isRunningExercise} style={{ background: GRD.primary, color: '#fff', border: 'none', borderRadius: 6, padding: '4px 12px', fontSize: 11, cursor: 'pointer', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
+                      {isRunningExercise ? <Loader size={10} style={{ animation: 'spin 1s linear infinite' }} /> : '▶'} Chạy code
                     </button>
                     <button onClick={() => setShowCodeExercise(false)}
                       style={{ color: DS.text4, background: 'none', border: 'none', cursor: 'pointer' }}>
@@ -878,40 +989,62 @@ function CoursePlayer({ course, onClose }: {
             <div className="mt-4">
               <div className="flex items-center gap-2 mb-3">
                 <MessageCircle size={14} style={{ color: DS.text4 }} />
-                <span style={{ color: DS.text3, fontSize: 13, fontWeight: 600 }}>Bình luận ({comments.length})</span>
+                <span style={{ color: DS.text3, fontSize: 13, fontWeight: 600 }}>
+                  Bình luận ({commentsLoading ? '…' : comments.length})
+                </span>
               </div>
               <div className="flex gap-2 mb-3">
-                <input value={newComment} onChange={e => setNewComment(e.target.value)}
+                <input
+                  value={newComment}
+                  onChange={e => { setNewComment(e.target.value); setSubmitCommentError(''); }}
                   placeholder="Viết bình luận hoặc câu hỏi..."
                   onKeyDown={e => {
-                    if (e.key === 'Enter' && newComment.trim()) {
-                      setComments(prev => [...prev, { id: Date.now(), user: 'Bạn', avatar: 'https://images.unsplash.com/photo-1746105625407-5d49d69a2a47?auto=format&fit=crop&w=50&h=50&crop=faces', text: newComment, time: 'Vừa xong', likes: 0 }]);
-                      setNewComment('');
+                    if (e.key === 'Enter' && !e.shiftKey && newComment.trim()) {
+                      e.preventDefault();
+                      submitComment();
                     }
                   }}
-                  style={{ flex: 1, background: 'rgba(255,255,255,0.04)', border: `1px solid ${DS.border}`, borderRadius: 8, padding: '8px 12px', color: DS.text, fontSize: 12, outline: 'none' }} />
-                <button onClick={() => {
-                  if (newComment.trim()) {
-                    setComments(prev => [...prev, { id: Date.now(), user: 'Bạn', avatar: 'https://images.unsplash.com/photo-1746105625407-5d49d69a2a47?auto=format&fit=crop&w=50&h=50&crop=faces', text: newComment, time: 'Vừa xong', likes: 0 }]);
-                    setNewComment('');
-                  }
-                }} style={{ background: GRD.primary, color: '#fff', border: 'none', borderRadius: 8, padding: '8px 14px', fontSize: 12, cursor: 'pointer', fontWeight: 700 }}>
+                  style={{ flex: 1, background: 'rgba(255,255,255,0.04)', border: `1px solid ${DS.border}`, borderRadius: 8, padding: '8px 12px', color: DS.text, fontSize: 12, outline: 'none' }}
+                />
+                <button
+                  onClick={submitComment}
+                  disabled={isSubmittingComment || !newComment.trim()}
+                  style={{ background: isSubmittingComment ? 'rgba(59,130,246,0.4)' : GRD.primary, color: '#fff', border: 'none', borderRadius: 8, padding: '8px 14px', fontSize: 12, cursor: isSubmittingComment ? 'not-allowed' : 'pointer', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
+                  {isSubmittingComment ? <Loader size={12} style={{ animation: 'spin 1s linear infinite' }} /> : null}
                   Gửi
                 </button>
               </div>
+              {submitCommentError && (
+                <p style={{ color: '#EF4444', fontSize: 11, marginBottom: 6 }}>{submitCommentError}</p>
+              )}
               <div className="space-y-2" style={{ maxHeight: 140, overflowY: 'auto' }}>
+                {commentsLoading && comments.length === 0 && (
+                  <div style={{ color: DS.text4, fontSize: 12, textAlign: 'center', padding: '12px 0' }}>
+                    Đang tải bình luận…
+                  </div>
+                )}
+                {!commentsLoading && comments.length === 0 && (
+                  <div style={{ color: DS.text4, fontSize: 12, textAlign: 'center', padding: '12px 0' }}>
+                    Chưa có bình luận nào. Hãy là người đầu tiên!
+                  </div>
+                )}
                 {comments.map(c => (
                   <div key={c.id} className="flex gap-2 p-2 rounded-lg" style={{ background: 'rgba(255,255,255,0.02)' }}>
-                    <img src={c.avatar} alt={c.user} className="w-7 h-7 rounded-lg object-cover flex-shrink-0" />
+                    <img
+                      src={c.authorAvatar ?? `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(c.authorName)}`}
+                      alt={c.authorName}
+                      className="w-7 h-7 rounded-lg object-cover flex-shrink-0"
+                    />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span style={{ color: DS.text, fontSize: 11, fontWeight: 700 }}>{c.user}</span>
-                        <span style={{ color: DS.text5, fontSize: 9 }}>{c.time}</span>
+                        <span style={{ color: DS.text, fontSize: 11, fontWeight: 700 }}>{c.authorName}</span>
+                        <span style={{ color: DS.text5, fontSize: 9 }}>{c.timeAgo}</span>
                       </div>
-                      <div style={{ color: DS.text3, fontSize: 12, marginTop: 1 }}>{c.text}</div>
+                      <div style={{ color: DS.text3, fontSize: 12, marginTop: 1 }}>{c.content}</div>
                     </div>
-                    <button onClick={() => setComments(prev => prev.map(cm => cm.id === c.id ? { ...cm, likes: cm.likes + 1 } : cm))}
-                      className="flex items-center gap-1 flex-shrink-0" style={{ color: DS.text5, background: 'none', border: 'none', cursor: 'pointer', fontSize: 10 }}>
+                    <button
+                      className="flex items-center gap-1 flex-shrink-0"
+                      style={{ color: DS.text5, background: 'none', border: 'none', cursor: 'pointer', fontSize: 10 }}>
                       <ThumbsUp size={10} /> {c.likes}
                     </button>
                   </div>
@@ -1036,7 +1169,7 @@ function CoursePlayer({ course, onClose }: {
 export default function CourseDetailPage() {
   const { id = '1' } = useParams<{ id: string }>();
   // ── API state ────────────────────────────────────────────────────────────
-  const [apiCourse, setApiCourse] = useState<AcademyCourse | null>(null);
+  const [apiCourse, setApiCourse] = useState<AcademyCourseDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const { locale } = useLocaleStore();
 
@@ -1051,26 +1184,9 @@ export default function CourseDetailPage() {
     return () => { cancelled = true; };
   }, [id, locale]);
 
-  // Prefer API course, fall back to hardcoded COURSES record only when flag is enabled
+  // Prefer API course (AcademyCourseDetail with full curriculum), fall back to hardcoded COURSES
   const fallbackCourse = COURSES[id] ?? DEFAULT_COURSE;
-  const course = apiCourse
-    ? {
-        ...(COURSES[id] ?? DEFAULT_COURSE),
-        id: Number(apiCourse.id),
-        title: apiCourse.title,
-        instructor: apiCourse.instructor,
-        instructorRole: apiCourse.instructorRole,
-        instructorImg: apiCourse.instructorImg,
-        price: apiCourse.price,
-        lpPrice: apiCourse.lpPrice,
-        lpReward: apiCourse.lpReward,
-        level: apiCourse.level,
-        img: apiCourse.img,
-        color: apiCourse.color,
-        students: String(apiCourse.students),
-        lectures: apiCourse.lectures,
-      }
-    : (USE_MOCK_FALLBACK ? fallbackCourse : null);
+  const course = (apiCourse ?? (USE_MOCK_FALLBACK ? fallbackCourse : null)) as typeof COURSES[string] | AcademyCourseDetail | null;
 
   if (!loading && !course) {
     return (

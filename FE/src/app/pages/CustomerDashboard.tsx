@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
 import {
@@ -22,6 +22,12 @@ import { EffectsInventoryTab } from '../components/customer/EffectsInventoryTab'
 import { QuestsTab } from '../components/customer/QuestsTab';
 import { ChatWidget } from '../components/ui/ChatWidget';
 import { useIsMobile } from '../components/ui/use-mobile';
+import { lpService } from '../../api/lp.service';
+import { academyService, StudentEnrollment } from '../../api/academy.service';
+import { ordersService, Order } from '../../api/orders.service';
+import { referralService, ReferralInfo } from '../../api/referral.service';
+import { settingsService } from '../../api/settings.service';
+import { supportService, SupportTicket } from '../../api/support.service';
 
 // ── Build dynamic customer profile from AuthStore ─────────────────────────
 function useCustomerProfile() {
@@ -358,11 +364,59 @@ function ClientNotifBell({ onSelect }: { onSelect: (s: string) => void }) {
 function HomeTab({ onSelect }: { onSelect: (s: string) => void }) {
   const CUSTOMER = useCustomerProfile();
   const GLD = RANKS[CUSTOMER.rank] ?? RANKS['gold'];
-  const PROJECTS = [
-    { id: 'p1', name: 'Website Công ty TechViet', type: 'Web Development', status: 'doing', progress: 65, pm: 'Yuna Park', pmImg: members[3].img, deadline: '28/03/2026', budget: '85M VNĐ', tags: ['React', 'TailwindCSS', 'Node.js'] },
-    { id: 'p2', name: 'App Mobile TechViet v2', type: 'Mobile App', status: 'review', progress: 90, pm: 'Shin Watanabe', pmImg: members[4].img, deadline: '01/04/2026', budget: '120M VNĐ', tags: ['React Native', 'AWS'] },
-    { id: 'p3', name: 'SEO & Content Q2/2026', type: 'Marketing', status: 'todo', progress: 10, pm: 'Mei Lin', pmImg: members[1].img, deadline: '30/06/2026', budget: '45M VNĐ', tags: ['SEO', 'Content', 'Analytics'] },
-  ];
+  const { user } = useAuthStore();
+
+  const [clientOrders, setClientOrders] = useState<Order[]>([]);
+  const [homeLoading, setHomeLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!user?.email) { setHomeLoading(false); return; }
+    ordersService.getOrders({ customerEmail: user.email, limit: 20 })
+      .then(({ orders: fetched }) => {
+        if (cancelled) return;
+        const mapped = fetched.map((o) => ({
+          id: o.id, clientId: 2, clientName: o.customerName,
+          clientCompany: o.companyName ?? 'Khách hàng LOOP',
+          clientAvatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=80&h=80&crop=faces',
+          type: 'service' as const, serviceType: 'thiet-ke-web' as const,
+          serviceTitle: o.packageTitle || 'Dịch vụ LOOP',
+          title: o.packageTitle || "Đơn hàng " + o.orderNumber,
+          budget: o.totalAmount ?? 0, lpUsed: o.lpUsed, lpReward: o.lpReward,
+          status: (o.status as Order['status']) ?? 'pending_payment',
+          progress: o.status === 'done' ? 100 : o.status === 'demo_ready' ? 85 : o.status === 'in_progress' ? 55 : o.status === 'paid' ? 20 : 0,
+          createdAt: new Date(o.createdAt).toLocaleDateString('vi-VN'),
+          updatedAt: new Date(o.updatedAt).toLocaleDateString('vi-VN'),
+          invoiceId: o.orderNumber, assignedPM: null, tags: [], messages: [],
+          demoUrl: o.demoUrl, maskedUrl: o.maskedUrl,
+        }));
+        setClientOrders(mapped);
+      })
+      .finally(() => { if (!cancelled) setHomeLoading(false); });
+    return () => { cancelled = true; };
+  }, [user?.email]);
+
+  const HOME_PROJECTS = clientOrders.length > 0
+    ? clientOrders.slice(0, 3).map((o) => ({
+        id: o.id, name: o.packageTitle || o.title,
+        type: 'Web Development',
+        status: o.status === 'done' ? 'done' : o.status === 'in_progress' ? 'doing' : o.status === 'demo_ready' ? 'review' : 'todo',
+        progress: o.progress,
+        pm: members[3], pmImg: members[3].img,
+        deadline: o.updatedAt,
+        budget: o.totalAmount ? (o.totalAmount / 1_000_000).toFixed(0) + "M VNĐ" : 'N/A',
+        tags: o.tags,
+      }))
+    : [
+        { id: 'p1', name: 'Website Công ty TechViet', type: 'Web Development', status: 'doing', progress: 65, pm: members[3], pmImg: members[3].img, deadline: '28/03/2026', budget: '85M VNĐ', tags: ['React', 'TailwindCSS', 'Node.js'] },
+        { id: 'p2', name: 'App Mobile TechViet v2', type: 'Mobile App', status: 'review', progress: 90, pm: members[4], pmImg: members[4].img, deadline: '01/04/2026', budget: '120M VNĐ', tags: ['React Native', 'AWS'] },
+        { id: 'p3', name: 'SEO & Content Q2/2026', type: 'Marketing', status: 'todo', progress: 10, pm: members[1], pmImg: members[1].img, deadline: '30/06/2026', budget: '45M VNĐ', tags: ['SEO', 'Content', 'Analytics'] },
+      ];
+
+  const homeActiveCount = HOME_PROJECTS.filter(p => p.status === 'doing' || p.status === 'review').length;
+  const lpEarnedTotal = clientOrders.length > 0
+    ? clientOrders.reduce((s, o) => s + (o.lpReward ?? 0), 0)
+    : CUSTOMER.lpEarned;
 
   const STATUS_CFG = {
     todo:   { label: 'Chờ thực hiện', color: DS.text4,  bg: 'rgba(100,116,139,0.12)', border: 'rgba(100,116,139,0.25)', dot: DS.text4 },
@@ -379,7 +433,7 @@ function HomeTab({ onSelect }: { onSelect: (s: string) => void }) {
     { icon: <Star size={13} />,         color: GLD.color, text: 'Đạt Gold Level 12 · Milestone thành công', lp: '+800', time: '1 tuần trước' },
   ];
 
-  const pmOf = (name: string) => members.find(m => m.name.includes(name.split(' ')[0]));
+  // pmOf removed
 
   return (
     <div className="space-y-5">
@@ -440,8 +494,8 @@ function HomeTab({ onSelect }: { onSelect: (s: string) => void }) {
         {/* Quick stats col */}
         <div className="space-y-3">
           {[
-            { label: 'Dự án đang chạy', value: '3', sub: '1 sắp deadline', color: DS.blue, icon: <FolderKanban size={16} /> },
-            { label: 'LP tổng tích lũy', value: fmtLP(CUSTOMER.lpEarned), sub: `Đã dùng ${fmtLP(CUSTOMER.lpSpent)}`, color: GLD.color, icon: <Zap size={16} /> },
+            { label: 'Dự án đang chạy', value: homeLoading ? '...' : String(homeActiveCount), sub: '1 sắp deadline', color: DS.blue, icon: <FolderKanban size={16} /> },
+            { label: 'LP tổng tích lũy', value: homeLoading ? '...' : fmtLP(lpEarnedTotal), sub: 'Đã dùng ' + fmtLP(CUSTOMER.lpSpent), color: GLD.color, icon: <Zap size={16} /> },
             { label: 'Khách giới thiệu', value: '3', sub: '4,500 LP earned', color: DS.purple, icon: <Users size={16} /> },
           ].map(s => (
             <motion.div key={s.label} className="rounded-2xl p-4" style={{ background: DS.bgCard, border: `1px solid ${DS.border}` }}
@@ -469,7 +523,7 @@ function HomeTab({ onSelect }: { onSelect: (s: string) => void }) {
           </button>
         </div>
         <div className="p-4 space-y-3">
-          {PROJECTS.map((p) => {
+          {HOME_PROJECTS.map((p) => {
             const sc = STATUS_CFG[p.status as keyof typeof STATUS_CFG];
             return (
               <motion.div key={p.id} className="p-4 rounded-xl" style={{ background: DS.bgCard2, border: `1px solid ${DS.border}` }}
@@ -488,10 +542,10 @@ function HomeTab({ onSelect }: { onSelect: (s: string) => void }) {
                   </div>
                   <div className="text-right flex-shrink-0">
                     <div className="flex items-center gap-1.5 justify-end mb-1">
-                      <div className="w-6 h-6 rounded-lg overflow-hidden" style={{ border: `1px solid ${RANKS[members.find(m => m.name.includes(p.pm.split(' ')[0]))?.rank ?? 'iron'].color}50` }}>
-                        <img src={p.pmImg} alt={p.pm} className="w-full h-full object-cover" />
+                      <div className="w-6 h-6 rounded-lg overflow-hidden" style={{ border: `1px solid ${RANKS[p.pm.rank].color}50` }}>
+                        <img src={p.pmImg} alt={p.pm.name} className="w-full h-full object-cover" />
                       </div>
-                      <span style={{ color: DS.text4, fontSize: 11 }}>{p.pm}</span>
+                      <span style={{ color: DS.text4, fontSize: 11 }}>{p.pm.name}</span>
                     </div>
                     <div style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono }}>⏰ {p.deadline}</div>
                   </div>
@@ -953,14 +1007,74 @@ function ProjectsTab() {
 // ── INVOICES TAB ─────────────────────────────────────────
 // ═══════════════════════════════════════════════════════════
 function InvoicesTab() {
-  const INVOICES = [
-    { id: 'INV-2601', project: 'Website Công ty TechViet', amount: 85_000_000, paid: 85_000_000, status: 'paid', date: '15/03/2026', due: '15/03/2026', lp: 850 },
-    { id: 'INV-2589', project: 'App Mobile TechViet v2 (Đợt 1)', amount: 60_000_000, paid: 60_000_000, status: 'paid', date: '01/02/2026', due: '01/02/2026', lp: 600 },
-    { id: 'INV-2598', project: 'App Mobile TechViet v2 (Đợt 2)', amount: 60_000_000, paid: 0, status: 'pending', date: '20/03/2026', due: '01/04/2026', lp: 600 },
-    { id: 'INV-2612', project: 'SEO & Content Q2/2026', amount: 22_500_000, paid: 0, status: 'upcoming', date: '—', due: '01/05/2026', lp: 225 },
-    { id: 'INV-2540', project: 'Brand Identity 2025', amount: 35_000_000, paid: 35_000_000, status: 'paid', date: '10/10/2025', due: '10/10/2025', lp: 350 },
-    { id: 'INV-2531', project: 'Landing Page Campaign', amount: 15_000_000, paid: 15_000_000, status: 'paid', date: '01/08/2025', due: '01/08/2025', lp: 150 },
-  ];
+  const { user } = useAuthStore();
+  const [invoices, setInvoices] = useState<Order[]>([]);
+  const [invoicesLoading, setInvoicesLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!user?.email) {
+      setInvoicesLoading(false);
+      return;
+    }
+    ordersService.getOrders({ customerEmail: user.email, limit: 50 })
+      .then(({ orders: fetched }) => {
+        if (cancelled) return;
+        // Map orders → invoices; only orders with invoice data
+        const mapped = fetched
+          .filter(o => o.totalAmount != null)
+          .map(o => ({
+            id: o.orderNumber,
+            clientId: 2,
+            clientName: o.customerName,
+            clientCompany: o.companyName ?? 'Khách hàng LOOP',
+            clientAvatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=80&h=80&crop=faces',
+            type: 'service' as const,
+            serviceType: 'thiet-ke-web' as const,
+            serviceTitle: o.packageTitle || 'Dịch vụ LOOP',
+            title: o.packageTitle || `Đơn hàng ${o.orderNumber}`,
+            budget: o.totalAmount ?? 0,
+            lpUsed: o.lpUsed,
+            lpReward: o.lpReward,
+            status: (o.status as Order['status']) ?? 'pending_payment',
+            progress: 0,
+            createdAt: new Date(o.createdAt).toLocaleDateString('vi-VN'),
+            updatedAt: new Date(o.updatedAt).toLocaleDateString('vi-VN'),
+            invoiceId: o.orderNumber,
+            assignedPM: null,
+            tags: [],
+            messages: [],
+            demoUrl: null,
+            maskedUrl: null,
+          }));
+        setInvoices(mapped);
+      })
+      .finally(() => { if (!cancelled) setInvoicesLoading(false); });
+    return () => { cancelled = true; };
+  }, [user?.email]);
+
+  const INVOICES = invoices.length > 0
+    ? invoices.map(o => ({
+        id: o.invoiceId ?? o.orderNumber,
+        project: o.packageTitle || o.title,
+        amount: o.totalAmount ?? o.budget,
+        paid: o.status === 'done' ? (o.totalAmount ?? o.budget) : 0,
+        status: o.status === 'done' ? 'paid'
+          : o.paymentStatus === 'paid' ? 'paid'
+          : o.status === 'pending_payment' ? 'pending'
+          : 'upcoming',
+        date: o.createdAt,
+        due: o.updatedAt,
+        lp: o.lpReward,
+      }))
+    : [
+        { id: 'INV-2601', project: 'Website Công ty TechViet', amount: 85_000_000, paid: 85_000_000, status: 'paid', date: '15/03/2026', due: '15/03/2026', lp: 850 },
+        { id: 'INV-2589', project: 'App Mobile TechViet v2 (Đợt 1)', amount: 60_000_000, paid: 60_000_000, status: 'paid', date: '01/02/2026', due: '01/02/2026', lp: 600 },
+        { id: 'INV-2598', project: 'App Mobile TechViet v2 (Đợt 2)', amount: 60_000_000, paid: 0, status: 'pending', date: '20/03/2026', due: '01/04/2026', lp: 600 },
+        { id: 'INV-2612', project: 'SEO & Content Q2/2026', amount: 22_500_000, paid: 0, status: 'upcoming', date: '—', due: '01/05/2026', lp: 225 },
+        { id: 'INV-2540', project: 'Brand Identity 2025', amount: 35_000_000, paid: 35_000_000, status: 'paid', date: '10/10/2025', due: '10/10/2025', lp: 350 },
+        { id: 'INV-2531', project: 'Landing Page Campaign', amount: 15_000_000, paid: 15_000_000, status: 'paid', date: '01/08/2025', due: '01/08/2025', lp: 150 },
+      ];
 
   const STATUS_CFG: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
     paid:     { label: 'Đã thanh toán', color: DS.green,  icon: <CheckCircle2 size={12} /> },
@@ -978,9 +1092,9 @@ function InvoicesTab() {
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4">
         {[
-          { label: 'Đã thanh toán', value: fmtVND(totalPaid) + ' VNĐ', sub: `${INVOICES.filter(i => i.status === 'paid').length} hóa đơn`, color: DS.green, icon: <CheckCircle2 size={16} /> },
-          { label: 'Đang chờ thanh toán', value: fmtVND(totalPending) + ' VNĐ', sub: `${INVOICES.filter(i => i.status === 'pending').length} hóa đơn`, color: DS.amber, icon: <Clock size={16} /> },
-          { label: 'LP Tích lũy từ HĐ', value: fmtLP(totalLP) + ' LP', sub: 'Từ tất cả hóa đơn', color: GLD.color, icon: <Zap size={16} /> },
+          { label: 'Đã thanh toán', value: invoicesLoading ? '...' : fmtVND(totalPaid) + ' VNĐ', sub: invoicesLoading ? '...' : `${INVOICES.filter(i => i.status === 'paid').length} hóa đơn`, color: DS.green, icon: <CheckCircle2 size={16} /> },
+          { label: 'Đang chờ thanh toán', value: invoicesLoading ? '...' : fmtVND(totalPending) + ' VNĐ', sub: invoicesLoading ? '...' : `${INVOICES.filter(i => i.status === 'pending').length} hóa đơn`, color: DS.amber, icon: <Clock size={16} /> },
+          { label: 'LP Tích lũy từ HĐ', value: invoicesLoading ? '...' : fmtLP(totalLP) + ' LP', sub: 'Từ tất cả hóa đơn', color: GLD.color, icon: <Zap size={16} /> },
         ].map(s => (
           <div key={s.label} className="rounded-2xl p-5" style={{ background: DS.bgCard, border: `1px solid ${DS.border}` }}>
             <div className="flex items-center gap-2 mb-3">
@@ -1050,16 +1164,67 @@ function LPWalletTab() {
   const RATE = 500; // 1000 LP = 500K VNĐ discount
   const discount = Math.round((lpInput / 1000) * RATE * 1000);
 
-  const TXS = [
-    { label: 'Hoàn thành dự án Website · Phase 2', type: 'earn', amount: 500, date: '16/03/2026', ref: 'INV-2601' },
-    { label: 'Thanh toán hóa đơn đúng hạn', type: 'earn', amount: 200, date: '12/03/2026', ref: 'INV-2589' },
-    { label: 'Quy đổi LP giảm giá · INV-2580', type: 'spend', amount: -800, date: '10/03/2026', ref: 'INV-2580' },
-    { label: 'Referral bonus · StartupX JSC', type: 'earn', amount: 1500, date: '08/03/2026', ref: 'REF-089' },
-    { label: 'Bonus hoàn thành trước deadline', type: 'earn', amount: 300, date: '05/03/2026', ref: 'INV-2545' },
-    { label: 'Quy đổi LP tặng quà', type: 'spend', amount: -200, date: '03/03/2026', ref: 'GIFT-003' },
-    { label: 'Milestone bonus · App v2 Phase 1', type: 'earn', amount: 600, date: '20/02/2026', ref: 'INV-2589' },
-    { label: 'Loyalty bonus tháng 2', type: 'earn', amount: 500, date: '01/02/2026', ref: 'SYS-AUTO' },
-  ];
+  // LP data from BE (fallback to profile data when offline)
+  const [lpData, setLpData] = useState<{
+    balance: number;
+    totalEarned: number;
+    totalSpent: number;
+    level: number;
+    currentXp: number;
+    transactions: { id: string; type: string; amount: number; source: string; description: string; createdAt: string }[];
+  } | null>(null);
+  const [lpLoading, setLpLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    lpService.getCustomerPoints()
+      .then(data => {
+        if (cancelled) return;
+        if (data) {
+          setLpData({
+            balance: data.balance,
+            totalEarned: data.totalEarned,
+            totalSpent: data.totalSpent,
+            level: data.level,
+            currentXp: data.currentXp,
+            transactions: data.transactions.map(t => ({
+              id: t.id,
+              type: t.source === 'manual' ? 'spend' : 'earn',
+              amount: t.amount,
+              source: t.source,
+              description: t.note || t.source,
+              createdAt: t.createdAt,
+            })),
+          });
+        }
+      })
+      .finally(() => { if (!cancelled) setLpLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  // Use BE data if available, otherwise fall back to profile
+  const balance = lpData?.balance ?? CUSTOMER.lpBalance;
+  const totalEarned = lpData?.totalEarned ?? CUSTOMER.lpEarned;
+  const totalSpent = lpData?.totalSpent ?? CUSTOMER.lpSpent;
+  const level = lpData?.level ?? CUSTOMER.level;
+  const TXS = lpData?.transactions.length
+    ? lpData.transactions.map(t => ({
+        label: t.description || (t.type === 'earn' ? `Nhận LP (${t.source})` : `Sử dụng LP (${t.source})`),
+        type: t.type as 'earn' | 'spend',
+        amount: t.amount,
+        date: new Date(t.createdAt).toLocaleDateString('vi-VN'),
+        ref: t.source.toUpperCase(),
+      }))
+    : [
+        { label: 'Hoàn thành dự án Website · Phase 2', type: 'earn' as const, amount: 500, date: '16/03/2026', ref: 'INV-2601' },
+        { label: 'Thanh toán hóa đơn đúng hạn', type: 'earn' as const, amount: 200, date: '12/03/2026', ref: 'INV-2589' },
+        { label: 'Quy đổi LP giảm giá · INV-2580', type: 'spend' as const, amount: -800, date: '10/03/2026', ref: 'INV-2580' },
+        { label: 'Referral bonus · StartupX JSC', type: 'earn' as const, amount: 1500, date: '08/03/2026', ref: 'REF-089' },
+        { label: 'Bonus hoàn thành trước deadline', type: 'earn' as const, amount: 300, date: '05/03/2026', ref: 'INV-2545' },
+        { label: 'Quy đổi LP tặng quà', type: 'spend' as const, amount: -200, date: '03/03/2026', ref: 'GIFT-003' },
+        { label: 'Milestone bonus · App v2 Phase 1', type: 'earn' as const, amount: 600, date: '20/02/2026', ref: 'INV-2589' },
+        { label: 'Loyalty bonus tháng 2', type: 'earn' as const, amount: 500, date: '01/02/2026', ref: 'SYS-AUTO' },
+      ];
 
   return (
     <div className="space-y-5 max-w-4xl">
@@ -1069,9 +1234,12 @@ function LPWalletTab() {
         <div className="relative z-10">
           <div style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono, letterSpacing: '0.2em', marginBottom: 6 }}>◈ LOOP POINTS · SỐ DƯ HIỆN TẠI</div>
           <div style={{ color: GLD.color, fontFamily: DS.heading, fontSize: 52, fontWeight: 900, textShadow: `0 0 30px ${GLD.glowColor}`, lineHeight: 1, marginBottom: 4 }}>
-            {fmtLP(CUSTOMER.lpBalance)}
+            {lpLoading ? '...' : fmtLP(balance)}
           </div>
-          <div style={{ color: DS.text4, fontSize: 12, fontFamily: DS.mono }}>LOOP POINTS ≈ {fmtVND(Math.round((CUSTOMER.lpBalance / 1000) * RATE * 1000))} VNĐ giảm giá tối đa</div>
+          {!lpLoading && lpData && (
+            <div style={{ color: GLD.color, fontSize: 11, fontFamily: DS.mono, marginBottom: 4 }}>Level {level} · {lpData.currentXp} XP</div>
+          )}
+          <div style={{ color: DS.text4, fontSize: 12, fontFamily: DS.mono }}>LOOP POINTS ≈ {fmtVND(Math.round((balance / 1000) * RATE * 1000))} VNĐ giảm giá tối đa</div>
           <div className="flex gap-3 mt-5">
             <button style={{ padding: '10px 24px', background: GRD.gold, color: '#0a0a0a', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>Dùng LP giảm giá</button>
             <button style={{ padding: '10px 24px', background: `${GLD.color}12`, border: `1px solid ${GLD.color}35`, borderRadius: 10, color: GLD.color, fontSize: 13, cursor: 'pointer' }}>Xem ưu đãi LP</button>
@@ -1082,9 +1250,9 @@ function LPWalletTab() {
       {/* Stats row */}
       <div className="grid grid-cols-3 gap-4">
         {[
-          { label: 'Tổng tích lũy', val: fmtLP(CUSTOMER.lpEarned), color: DS.green },
-          { label: 'Đã sử dụng', val: fmtLP(CUSTOMER.lpSpent), color: DS.amber },
-          { label: 'Số dư hiện tại', val: fmtLP(CUSTOMER.lpBalance), color: GLD.color },
+          { label: 'Tổng tích lũy', val: lpLoading ? '...' : fmtLP(totalEarned), color: DS.green },
+          { label: 'Đã sử dụng', val: lpLoading ? '...' : fmtLP(totalSpent), color: DS.amber },
+          { label: 'Số dư hiện tại', val: lpLoading ? '...' : fmtLP(balance), color: GLD.color },
         ].map(s => (
           <div key={s.label} className="rounded-xl p-4 text-center" style={{ background: DS.bgCard, border: `1px solid ${DS.border}` }}>
             <div style={{ color: s.color, fontFamily: DS.heading, fontSize: 20, fontWeight: 700 }}>{s.val}</div>
@@ -1099,9 +1267,9 @@ function LPWalletTab() {
           <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.15em', marginBottom: 14 }}>── MÁY TÍNH LP → VNĐ</div>
           <div>
             <label style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, display: 'block', marginBottom: 6 }}>NHẬP SỐ LP MUỐN QUY ĐỔI</label>
-            <input type="number" value={lpInput} onChange={e => setLpInput(Math.max(0, Math.min(CUSTOMER.lpBalance, Number(e.target.value))))}
+            <input type="number" value={lpInput} onChange={e => setLpInput(Math.max(0, Math.min(balance, Number(e.target.value))))}
               style={{ width: '100%', background: DS.bgCard2, border: `1px solid ${DS.border}`, borderRadius: 10, padding: '10px 14px', color: GLD.color, fontSize: 16, fontFamily: DS.mono, fontWeight: 700, outline: 'none', boxSizing: 'border-box' }} />
-            <input type="range" min={0} max={CUSTOMER.lpBalance} value={lpInput} onChange={e => setLpInput(Number(e.target.value))}
+            <input type="range" min={0} max={balance} value={lpInput} onChange={e => setLpInput(Number(e.target.value))}
               style={{ width: '100%', marginTop: 8, accentColor: GLD.color }} />
           </div>
           <div className="mt-4 p-4 rounded-xl space-y-2.5" style={{ background: DS.bgCard2, border: `1px solid ${DS.border}` }}>
@@ -1163,10 +1331,24 @@ function ReferralTab() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const REFS = [
-    { name: 'StartupX JSC', date: '08/03/2026', project: 'Web App SaaS', amount: '90M VNĐ', lp: 4500, status: 'paid' },
-    { name: 'GreenFood VN', date: '15/01/2026', project: 'E-commerce', amount: '65M VNĐ', lp: 3250, status: 'paid' },
-    { name: 'MediSoft Co.', date: '28/02/2026', project: 'Mobile App', amount: '110M VNĐ', lp: 0, status: 'pending' },
+  const [referralInfo, setReferralInfo] = useState<ReferralInfo | null>(null);
+  const [referralLoading, setReferralLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    referralService.getReferralInfo(CUSTOMER.referralCode)
+      .then(info => {
+        if (cancelled) return;
+        setReferralInfo(info);
+      })
+      .finally(() => { if (!cancelled) setReferralLoading(false); });
+    return () => { cancelled = true; };
+  }, [CUSTOMER.referralCode]);
+
+  const REFS = referralInfo?.referredCompanies ?? [
+    { name: 'StartupX JSC', date: '08/03/2026', project: 'Web App SaaS', amount: '90M VNĐ', lp: 4500, status: 'paid' as const },
+    { name: 'GreenFood VN', date: '15/01/2026', project: 'E-commerce', amount: '65M VNĐ', lp: 3250, status: 'paid' as const },
+    { name: 'MediSoft Co.', date: '28/02/2026', project: 'Mobile App', amount: '110M VNĐ', lp: 0, status: 'pending' as const },
   ];
 
   const totalRefLP = REFS.reduce((s, r) => s + r.lp, 0);
@@ -1206,9 +1388,9 @@ function ReferralTab() {
       {/* Stats row */}
       <div className="grid grid-cols-3 gap-4">
         {[
-          { label: 'Đã giới thiệu', value: String(REFS.length), sub: 'khách hàng', color: DS.purple },
-          { label: 'LP đã nhận', value: fmtLP(totalRefLP), sub: 'Loop Points', color: GLD.color },
-          { label: 'Đang chờ', value: fmtLP(REFS.filter(r => r.status === 'pending').length * 5500), sub: 'LP pending', color: DS.amber },
+          { label: 'Đã giới thiệu', value: referralLoading ? '...' : String(referralInfo?.totalReferred ?? REFS.length), sub: 'khách hàng', color: DS.purple },
+          { label: 'LP đã nhận', value: referralLoading ? '...' : fmtLP(totalRefLP), sub: 'Loop Points', color: GLD.color },
+          { label: 'Đang chờ', value: referralLoading ? '...' : fmtLP(REFS.filter(r => r.status === 'pending').length * 5500), sub: 'LP pending', color: DS.amber },
         ].map(s => (
           <div key={s.label} className="rounded-2xl p-5 text-center" style={{ background: DS.bgCard, border: `1px solid ${DS.border}` }}>
             <div style={{ color: s.color, fontFamily: DS.heading, fontSize: 24, fontWeight: 700 }}>{s.value}</div>
@@ -1231,10 +1413,10 @@ function ReferralTab() {
             </div>
             <div className="flex-1 min-w-0">
               <div style={{ color: DS.text2, fontSize: 13, fontWeight: 700 }}>{ref.name}</div>
-              <div style={{ color: DS.text5, fontSize: 11 }}>{ref.project} · {ref.amount} · {ref.date}</div>
+              <div style={{ color: DS.text5, fontSize: 11 }}>{ref.project} · {typeof ref.amount === 'number' ? `${(ref.amount / 1_000_000).toFixed(0)}M VNĐ` : ref.amount} · {ref.date}</div>
             </div>
             <div className="text-right">
-              {ref.lp > 0
+              {(ref.lp > 0)
                 ? <div style={{ color: DS.green, fontSize: 13, fontFamily: DS.mono, fontWeight: 700 }}>+{fmtLP(ref.lp)} LP</div>
                 : <div style={{ color: DS.amber, fontSize: 12, fontFamily: DS.mono }}>Đang chờ xác nhận</div>}
               <div style={{ color: ref.status === 'paid' ? DS.green : DS.amber, fontSize: 10, fontFamily: DS.mono, marginTop: 2 }}>
@@ -1280,12 +1462,45 @@ function SupportTab() {
   const [msg, setMsg] = useState('');
   const [priority, setPriority] = useState<'low' | 'medium' | 'high'>('medium');
   const [submitted, setSubmitted] = useState(false);
+  const [tickets, setTickets] = useState<SupportTicket[]>([]);
+  const [ticketsLoading, setTicketsLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
 
-  const TICKETS = [
-    { id: 'TKT-2401', title: 'Yêu cầu chỉnh sửa thiết kế banner header', status: 'open', priority: 'medium', pm: members[3], date: '20/03/2026', reply: 'Đã tiếp nhận, PM sẽ liên hệ trong 24h.' },
-    { id: 'TKT-2389', title: 'Hỏi về tiến độ App Mobile v2', status: 'resolved', priority: 'low', pm: members[4], date: '15/03/2026', reply: 'App đang trong giai đoạn QA. Dự kiến xong 25/03.' },
-    { id: 'TKT-2374', title: 'Báo lỗi form liên hệ trên website', status: 'resolved', priority: 'high', pm: members[2], date: '08/03/2026', reply: 'Đã fix bug và deploy. Kiểm tra lại.' },
+  useEffect(() => {
+    let cancelled = false;
+    supportService.getTickets()
+      .then(t => { if (!cancelled) setTickets(t); })
+      .finally(() => { if (!cancelled) setTicketsLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  const handleSubmit = async () => {
+    if (!subject.trim()) return;
+    setSubmitting(true);
+    await supportService.createTicket({ title: subject, priority, message: msg });
+    const newTicket: SupportTicket = {
+      id: `TKT-${Date.now()}`,
+      title: subject,
+      status: 'open',
+      priority,
+      pm: null,
+      date: new Date().toLocaleDateString('vi-VN'),
+      reply: null,
+    };
+    setTickets(prev => [newTicket, ...prev]);
+    setSubmitted(true);
+    setSubject('');
+    setMsg('');
+    setSubmitting(false);
+  };
+
+  const FALLBACK_TICKETS: SupportTicket[] = [
+    { id: 'TKT-2401', title: 'Yêu cầu chỉnh sửa thiết kế banner header', status: 'open', priority: 'medium', pm: { name: members[3].name, img: members[3].img, rank: members[3].rank }, date: '20/03/2026', reply: 'Đã tiếp nhận, PM sẽ liên hệ trong 24h.' },
+    { id: 'TKT-2389', title: 'Hỏi về tiến độ App Mobile v2', status: 'resolved', priority: 'low', pm: { name: members[4].name, img: members[4].img, rank: members[4].rank }, date: '15/03/2026', reply: 'App đang trong giai đoạn QA. Dự kiến xong 25/03.' },
+    { id: 'TKT-2374', title: 'Báo lỗi form liên hệ trên website', status: 'resolved', priority: 'high', pm: { name: members[2].name, img: members[2].img, rank: members[2].rank }, date: '08/03/2026', reply: 'Đã fix bug và deploy. Kiểm tra lại.' },
   ];
+
+  const DISPLAY_TICKETS = ticketsLoading ? FALLBACK_TICKETS : tickets.length > 0 ? tickets : FALLBACK_TICKETS;
 
   const PRIO_CFG: Record<string, { label: string; color: string }> = {
     low: { label: 'Thấp', color: DS.text4 },
@@ -1302,7 +1517,7 @@ function SupportTab() {
     <div className="space-y-5 max-w-4xl">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.18em' }}>── HỖ TRỢ KHÁCH HÀNG ({TICKETS.filter(t => t.status === 'open').length} đang mở)</div>
+        <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.18em' }}>── HỖ TRỢ KHÁCH HÀNG ({DISPLAY_TICKETS.filter(t => t.status === 'open').length} đang mở)</div>
         <button onClick={() => { setShowNew(true); setSubmitted(false); }} style={{ background: GRD.primary, color: '#fff', border: 'none', borderRadius: 10, padding: '8px 16px', cursor: 'pointer', fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
           <Plus size={14} /> Tạo ticket mới
         </button>
@@ -1349,8 +1564,8 @@ function SupportTab() {
                   </div>
                   <div className="flex gap-3">
                     <button onClick={() => setShowNew(false)} style={{ padding: '9px 20px', background: DS.bgCard2, border: `1px solid ${DS.border}`, borderRadius: 10, color: DS.text3, cursor: 'pointer', fontSize: 13 }}>Hủy</button>
-                    <button onClick={() => subject && setSubmitted(true)} style={{ flex: 1, background: GRD.primary, color: '#fff', border: 'none', borderRadius: 10, padding: '9px', cursor: 'pointer', fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                      <Send size={14} /> Gửi ticket
+                    <button onClick={handleSubmit} disabled={submitting || !subject.trim()} style={{ flex: 1, background: submitting ? `${DS.blue}60` : GRD.primary, color: '#fff', border: 'none', borderRadius: 10, padding: '9px', cursor: submitting ? 'not-allowed' : 'pointer', fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                      {submitting ? '...' : <><Send size={14} /> Gửi ticket</>}
                     </button>
                   </div>
                 </div>
@@ -1362,7 +1577,7 @@ function SupportTab() {
 
       {/* Ticket list */}
       <div className="space-y-3">
-        {TICKETS.map((t, i) => {
+        {DISPLAY_TICKETS.map((t, i) => {
           const sc = STATUS_CFG[t.status];
           const pc = PRIO_CFG[t.priority];
           return (
@@ -1371,9 +1586,15 @@ function SupportTab() {
               whileHover={{ borderColor: `${sc.color}30` }}>
               <div className="flex items-start justify-between gap-4 mb-3">
                 <div className="flex items-start gap-3 flex-1 min-w-0">
-                  <div className="w-9 h-9 rounded-xl overflow-hidden flex-shrink-0" style={{ border: `1.5px solid ${RANKS[t.pm.rank].color}60` }}>
-                    <img src={t.pm.img} alt={t.pm.name} className="w-full h-full object-cover" />
-                  </div>
+                  {t.pm ? (
+                    <div className="w-9 h-9 rounded-xl overflow-hidden flex-shrink-0" style={{ border: `1.5px solid ${RANKS[t.pm.rank as keyof typeof RANKS ?? 'iron'].color}60` }}>
+                      <img src={t.pm.img} alt={t.pm.name} className="w-full h-full object-cover" />
+                    </div>
+                  ) : (
+                    <div className="w-9 h-9 rounded-xl flex-shrink-0 flex items-center justify-center" style={{ background: `${DS.text5}20`, border: `1px solid ${DS.border}` }}>
+                      <Users size={14} style={{ color: DS.text5 }} />
+                    </div>
+                  )}
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap mb-1">
                       <span style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono }}>{t.id}</span>
@@ -1382,7 +1603,7 @@ function SupportTab() {
                       </span>
                     </div>
                     <div style={{ color: DS.text2, fontSize: 13, fontWeight: 700 }}>{t.title}</div>
-                    <div style={{ color: DS.text5, fontSize: 11, marginTop: 2 }}>PM: {t.pm.name} · {t.date}</div>
+                    <div style={{ color: DS.text5, fontSize: 11, marginTop: 2 }}>{t.pm ? `PM: ${t.pm.name}` : 'Chưa có PM'} · {t.date}</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full flex-shrink-0" style={{ background: `${sc.color}12`, border: `1px solid ${sc.color}30` }}>
@@ -1393,7 +1614,10 @@ function SupportTab() {
               {t.reply && (
                 <div className="flex items-start gap-2 mt-3 p-3 rounded-xl" style={{ background: DS.bgCard2, border: `1px solid ${DS.border}` }}>
                   <MessageSquare size={12} style={{ color: DS.text5, marginTop: 1, flexShrink: 0 }} />
-                  <span style={{ color: DS.text4, fontSize: 12, lineHeight: 1.5 }}><span style={{ color: RANKS[t.pm.rank].color }}>PM {t.pm.name.split(' ').pop()}:</span> {t.reply}</span>
+                  <span style={{ color: DS.text4, fontSize: 12, lineHeight: 1.5 }}>
+                    {t.pm ? <span style={{ color: RANKS[t.pm.rank as keyof typeof RANKS ?? 'iron'].color }}>PM {t.pm.name.split(' ').pop()}: </span> : null}
+                    {t.reply}
+                  </span>
                 </div>
               )}
             </motion.div>
@@ -1431,29 +1655,77 @@ function SupportTab() {
 // ── COURSES TAB ───────────────────────────────────────────
 // ═══════════════════════════════════════════════════════════
 function CoursesTab() {
+  const { locale } = useLocaleStore();
   const fmtVND2 = (n: number) =>
     new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(n);
 
-  const MY_COURSES = [
-    {
-      id: 1, title: 'React & Next.js 14 Từ Zero Đến Hero', instructor: 'Akira Sato',
-      progress: 68, totalLessons: 48, completedLessons: 33, status: 'in-progress',
-      img: 'https://images.unsplash.com/photo-1634836023845-eddbfe9937da?auto=format&fit=crop&w=300&q=80',
-      color: DS.blue, cat: 'Frontend', lpReward: 200, enrolledDate: '01/03/2026',
-      nextLesson: 'Route Groups, Layouts và Loading UI', duration: '32h', timeLeft: '~10h còn lại', certificate: false,
-    },
-    {
-      id: 2, title: 'UI/UX Design System với Figma & Tailwind', instructor: 'Mei Lin',
-      progress: 100, totalLessons: 32, completedLessons: 32, status: 'completed',
-      img: 'https://images.unsplash.com/photo-1590965918603-0dce981d13b8?auto=format&fit=crop&w=300&q=80',
-      color: DS.purple, cat: 'Design', lpReward: 150, enrolledDate: '10/01/2026',
-      nextLesson: '', duration: '18h', timeLeft: 'Hoàn thành!', certificate: true,
-    },
-  ];
+  // Enrolled courses from BE (fallback to local mock when offline)
+  const [enrollments, setEnrollments] = useState<StudentEnrollment[]>([]);
+  const [coursesLoading, setCoursesLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    academyService.getMyEnrollments()
+      .then(data => { if (!cancelled) setEnrollments(data); })
+      .finally(() => { if (!cancelled) setCoursesLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  // Map BE enrollment → UI course shape
+  const COURSE_COLORS: Record<string, string> = {
+    'Frontend': DS.blue,
+    'Backend': DS.cyan,
+    'Design': DS.purple,
+    'Marketing': DS.amber,
+    'DevOps': DS.green,
+    'default': DS.purple,
+  };
+
+  const toUICourse = (e: StudentEnrollment, _idx: number) => {
+    const courseColor = COURSE_COLORS[e.course.type] ?? COURSE_COLORS[e.course.level] ?? COURSE_COLORS.default;
+    const title = locale === 'vi' ? e.course.titleVi || e.course.title : e.course.title;
+    return {
+      id: e.id,
+      title,
+      instructor: e.course.instructor?.name ?? 'LOOP Instructor',
+      progress: e.progress.progressPercent,
+      totalLessons: e.course.durationWeeks * 4,
+      completedLessons: e.progress.completedLessons.length,
+      status: e.progress.courseComplete ? 'completed' as const : 'in-progress' as const,
+      img: e.course.coverImage ?? `https://images.unsplash.com/photo-1634836023845-eddbfe9937da?auto=format&fit=crop&w=300&q=80`,
+      color: courseColor,
+      cat: e.course.type,
+      lpReward: e.course.lpReward,
+      enrolledDate: new Date(e.enrolledAt).toLocaleDateString('vi-VN'),
+      nextLesson: e.progress.nextLesson?.title ?? '',
+      duration: `${e.course.durationWeeks * 4}h`,
+      timeLeft: e.progress.courseComplete ? 'Hoàn thành!' : '~10h còn lại',
+      certificate: e.progress.courseComplete,
+    };
+  };
+
+  const MY_COURSES = enrollments.length > 0
+    ? enrollments.map(toUICourse)
+    : [
+        {
+          id: 'fallback-1', title: 'React & Next.js 14 Từ Zero Đến Hero', instructor: 'Akira Sato',
+          progress: 68, totalLessons: 48, completedLessons: 33, status: 'in-progress' as const,
+          img: 'https://images.unsplash.com/photo-1634836023845-eddbfe9937da?auto=format&fit=crop&w=300&q=80',
+          color: DS.blue, cat: 'Frontend', lpReward: 200, enrolledDate: '01/03/2026',
+          nextLesson: 'Route Groups, Layouts và Loading UI', duration: '32h', timeLeft: '~10h còn lại', certificate: false,
+        },
+        {
+          id: 'fallback-2', title: 'UI/UX Design System với Figma & Tailwind', instructor: 'Mei Lin',
+          progress: 100, totalLessons: 32, completedLessons: 32, status: 'completed' as const,
+          img: 'https://images.unsplash.com/photo-1590965918603-0dce981d13b8?auto=format&fit=crop&w=300&q=80',
+          color: DS.purple, cat: 'Design', lpReward: 150, enrolledDate: '10/01/2026',
+          nextLesson: '', duration: '18h', timeLeft: 'Hoàn thành!', certificate: true,
+        },
+      ];
 
   const RECOMMENDED = [
-    { id: 3, title: 'Node.js API & PostgreSQL: Production-Ready', instructor: 'Ryo Hashimoto', price: 2_500_000, lpReward: 250, img: 'https://images.unsplash.com/photo-1771012788703-d310cdf189bb?auto=format&fit=crop&w=300&q=80', color: DS.cyan, cat: 'Backend', rating: 4.9 },
-    { id: 5, title: 'SEO & Content Marketing cho SaaS B2B', instructor: 'Yuna Park', price: 1_200_000, lpReward: 120, img: 'https://images.unsplash.com/photo-1517309561013-16f6e4020305?auto=format&fit=crop&w=300&q=80', color: DS.amber, cat: 'Marketing', rating: 4.8 },
+    { id: 'rec-1', title: 'Node.js API & PostgreSQL: Production-Ready', instructor: 'Ryo Hashimoto', price: 2_500_000, lpReward: 250, img: 'https://images.unsplash.com/photo-1771012788703-d310cdf189bb?auto=format&fit=crop&w=300&q=80', color: DS.cyan, cat: 'Backend', rating: 4.9 },
+    { id: 'rec-2', title: 'SEO & Content Marketing cho SaaS B2B', instructor: 'Yuna Park', price: 1_200_000, lpReward: 120, img: 'https://images.unsplash.com/photo-1517309561013-16f6e4020305?auto=format&fit=crop&w=300&q=80', color: DS.amber, cat: 'Marketing', rating: 4.8 },
   ];
 
   const inProgress = MY_COURSES.filter(c => c.status === 'in-progress');
@@ -1465,10 +1737,10 @@ function CoursesTab() {
       {/* Stats */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
         {[
-          { label: 'Đang học', value: String(inProgress.length), sub: 'Khóa học', color: DS.blue, icon: <Play size={16} /> },
-          { label: 'Đã hoàn thành', value: String(completed.length), sub: 'Khóa học', color: DS.green, icon: <CheckCircle2 size={16} /> },
-          { label: 'LP đã nhận', value: totalLPEarned.toLocaleString('vi-VN'), sub: 'Từ khóa học', color: DS.purple, icon: <Zap size={16} /> },
-          { label: 'Chứng chỉ', value: String(completed.filter(c => c.certificate).length), sub: 'Đã cấp', color: DS.amber, icon: <Award size={16} /> },
+          { label: 'Đang học', value: coursesLoading ? '...' : String(inProgress.length), sub: 'Khóa học', color: DS.blue, icon: <Play size={16} /> },
+          { label: 'Đã hoàn thành', value: coursesLoading ? '...' : String(completed.length), sub: 'Khóa học', color: DS.green, icon: <CheckCircle2 size={16} /> },
+          { label: 'LP đã nhận', value: coursesLoading ? '...' : totalLPEarned.toLocaleString('vi-VN'), sub: 'Từ khóa học', color: DS.purple, icon: <Zap size={16} /> },
+          { label: 'Chứng chỉ', value: coursesLoading ? '...' : String(completed.filter(c => c.certificate).length), sub: 'Đã cấp', color: DS.amber, icon: <Award size={16} /> },
         ].map(s => (
           <div key={s.label} className="p-4 rounded-2xl" style={{ background: DS.bgCard, border: `1px solid ${DS.border}` }}>
             <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-3" style={{ background: `${s.color}15`, border: `1px solid ${s.color}25` }}>
@@ -1729,7 +2001,12 @@ function SettingsTab() {
       </div>
 
       {/* Save */}
-      <button onClick={() => { setSaved(true); setTimeout(() => setSaved(false), 2000); }}
+      <button onClick={async () => {
+        setSaved(false);
+        await settingsService.updateProfile({ name, email, phone, company });
+        setSaved(true);
+        setTimeout(() => setSaved(false), 3000);
+      }}
         style={{ background: GRD.primary, color: '#fff', border: 'none', borderRadius: 12, padding: '12px 28px', cursor: 'pointer', fontSize: 14, fontWeight: 700, boxShadow: '0 0 20px rgba(129,140,248,0.35)', display: 'flex', alignItems: 'center', gap: 8 }}>
         {saved ? <><Check size={16} /> Đã lưu!</> : 'Lưu thay đổi'}
       </button>

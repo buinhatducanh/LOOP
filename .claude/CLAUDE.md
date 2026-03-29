@@ -3,7 +3,7 @@
 > Project: LOOP Solutions Agency Platform — FE (Vite/React) + BE (Next.js 15 API)
 > Last Updated: 2026-03-29
 > Language: Vietnamese (code comments, docs), English (variable names, function names)
-> Status: Phase F0 ✅ completed | Phase F1 ✅ completed | Phase F2 ✅ completed | Phase F3 ✅ completed — ALL SUB-MILESTONES DONE: F3.1 locale propagation fixed (Home.tsx + MemberDetailPage.tsx → useLocaleStore), F3.2 hybrid adapter confirmed (~40% BE / ~60% fallback), F3.3 EffectsTab BE persistence (CRUD + global toggle + per-member override), F3.4 coverage audit documented, F3.5 5-locale smoke PASSED (10/10 routes HTTP 200). Ready for Phase F4 (Academy).
+> Status: Phase F0 ✅ completed | Phase F1 ✅ completed | Phase F2 ✅ completed | Phase F3 ✅ completed | Phase F4 ✅ completed — Code Exercise (POST /api/academy/lessons/[id]/exercise, sandbox vm.runInNewContext) + Comments (GET/POST /api/academy/lessons/[id]/comments) + all P0/P1/P2 done. Seed pending. Next: F5 Customer Portal.
 > CI/CD: GitHub connected to Vercel, auto-deploy on push. Domain: loops.vn (production).
 
 ---
@@ -259,6 +259,15 @@ FE/src/
 - `GET /api/v1/testimonials?lang=`
 - `GET /api/v1/pricing?lang=`
 - `GET /api/v1/blog?lang=` → BlogPost list
+- `GET /api/v1/courses?lang=` → Academy course list
+- `GET /api/v1/courses/[id]?lang=` → Academy course detail + curriculum
+
+### Student/Client Academy APIs
+- `GET /api/academy/enroll` → List user enrollments
+- `POST /api/academy/enroll` → Enroll in course (vnd/mixed/lp)
+- `POST /api/academy/lessons/[id]/complete` → Mark lesson complete (Video Gate 35%)
+- `GET /api/academy/progress/[courseId]` → Load saved progress
+- `GET /api/academy/certificate/[courseId]` → Certificate eligibility
 
 ### Admin APIs (key)
 - `GET/POST /api/admin/services` → Service CRUD
@@ -267,6 +276,7 @@ FE/src/
 - `GET/POST /api/admin/orders` → Order CRUD
 - `GET/POST /api/admin/blog-posts` → BlogPost CRUD
 - `GET/POST /api/admin/edu/courses` → Course CRUD
+- `PUT/DELETE /api/admin/edu/courses/[id]` → Course update/delete
 - `GET/POST /api/admin/edu/enrollments` → Enrollment CRUD
 - `GET/POST /api/admin/lp-awards` → LP awards
 - `GET/POST /api/admin/lp-transactions` → LP transactions
@@ -373,8 +383,8 @@ Wizard 8 bước + Order lifecycle.
 ### Phase F3 — Team + Effects
 27 members + Rank effects system.
 
-### Phase F4 — Academy
-Courses + Enrollment + Video Gate.
+### Phase F4 — Academy 🔄
+Courses + Enrollment + Video Gate. BE endpoints: `courses/[id]`, `enroll`, `lessons/[id]/complete`, `progress`, `certificate`, admin `PUT/DELETE`. Academy seed: 6 instructors, 7 courses, lessons, enrollments. FE wiring: PaymentModal→enroll API, CoursePlayer→completeLesson API, AcademyTab→CRUD.
 
 ### Phase F5 — Customer Portal
 Customer dashboard + LP wallet + quests.

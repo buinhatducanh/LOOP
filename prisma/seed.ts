@@ -647,7 +647,507 @@ async function seedContent() {
 }
 
 // ══════════════════════════════════════════════════════════════════
-// MAIN
+// 11. Academy — Instructors, Courses, Lessons, Enrollments
+// ══════════════════════════════════════════════════════════════════
+
+async function seedAcademy() {
+  console.log("\n[Academy] Seeding instructors, courses, lessons, enrollments...");
+
+  // ── Instructors ────────────────────────────────────────────────────────
+  // Upsert from team members first
+  const instructors = [
+    {
+      name: "Akira Sato",
+      slug: "akira-sato",
+      bio: "10+ năm kinh nghiệm xây dựng sản phẩm SaaS. Từng là Senior Engineer tại các công ty công nghệ Nhật Bản và Việt Nam. Mentor cho 4,100+ học viên. Chuyên gia về React ecosystem và system design.",
+      specialties: ["React", "Next.js", "TypeScript", "System Design"],
+      rating: 4.9,
+      totalStudents: 4100,
+    },
+    {
+      name: "Mei Lin",
+      slug: "mei-lin",
+      bio: "8 năm thiết kế UI/UX cho startup và enterprise. Từng làm việc tại Singapore và HCM. Mentor cho 1,800+ học viên về Design Systems.",
+      specialties: ["Figma", "UI/UX", "Design Systems", "Tailwind CSS"],
+      rating: 4.8,
+      totalStudents: 1800,
+    },
+    {
+      name: "Ryo Hashimoto",
+      slug: "ryo-hashimoto",
+      bio: "12 năm backend engineering. Architect cho các hệ thống xử lý hàng triệu request/ngày. Chuyên gia PostgreSQL và microservices.",
+      specialties: ["Node.js", "PostgreSQL", "Docker", "AWS", "Go"],
+      rating: 4.9,
+      totalStudents: 1880,
+    },
+    {
+      name: "Shin Watanabe",
+      slug: "shin-watanabe",
+      bio: "DevOps architect với 8 năm kinh nghiệm triển khai Kubernetes cho startup Việt Nam và Nhật Bản. Chuyên gia CI/CD và cloud infrastructure.",
+      specialties: ["Kubernetes", "Docker", "CI/CD", "AWS", "GCP"],
+      rating: 4.7,
+      totalStudents: 890,
+    },
+    {
+      name: "Yuna Park",
+      slug: "yuna-park",
+      bio: "7 năm kinh nghiệm SEO và content marketing. Đã giúp 500+ website Việt Nam tăng trưởng organic traffic 300%. Chuyên gia SaaS B2B marketing.",
+      specialties: ["SEO", "Content Marketing", "Growth", "Copywriting"],
+      rating: 4.8,
+      totalStudents: 3100,
+    },
+    {
+      name: "Rin Nakamura",
+      slug: "rin-nakamura",
+      bio: "Systems programmer chuyên Rust và Go. 6 năm viết high-performance code cho fintech và blockchain. Tác giả của nhiều open-source libraries.",
+      specialties: ["Rust", "Go", "Performance", "Fintech"],
+      rating: 5.0,
+      totalStudents: 680,
+    },
+  ];
+
+  const createdInstructors: Record<string, string> = {};
+  for (const inst of instructors) {
+    const existing = await prisma.instructor.findFirst({ where: { name: inst.name } });
+    if (existing) {
+      await prisma.instructor.update({
+        where: { id: existing.id },
+        data: {
+          bio: inst.bio,
+          specialties: inst.specialties,
+          rating: inst.rating,
+          totalStudents: inst.totalStudents,
+          isActive: true,
+        },
+      });
+      createdInstructors[inst.name] = existing.id;
+    } else {
+      const created = await prisma.instructor.create({
+        data: {
+          name: inst.name,
+          bio: inst.bio,
+          specialties: inst.specialties,
+          rating: inst.rating,
+          totalStudents: inst.totalStudents,
+          isActive: true,
+        },
+      });
+      createdInstructors[inst.name] = created.id;
+    }
+  }
+  console.log(`  ✓ ${instructors.length} instructors`);
+
+  // ── Courses ────────────────────────────────────────────────────────────
+  const courses = [
+    {
+      id: "course-react-nextjs",
+      title: "React & Next.js 14 From Zero To Hero",
+      titleVi: "React & Next.js 14 Từ Zero Đến Hero",
+      desc: "Khóa học toàn diện nhất về React 18 và Next.js 14 tại Việt Nam. Từ nền tảng đến production-ready app. Bao gồm Server Components, Streaming, Caching, TypeScript, Tailwind và deployment trên Vercel.",
+      descVi: "Khóa học toàn diện nhất về React 18 và Next.js 14 tại Việt Nam. Từ nền tảng đến production-ready app. Bao gồm Server Components, Streaming, Caching, TypeScript, Tailwind và deployment trên Vercel.",
+      price: 2_000_000,
+      lpReward: 200,
+      durationWeeks: 8,
+      maxStudents: 100,
+      status: "published",
+      instructorName: "Akira Sato",
+      lessons: [
+        { title: "Giới thiệu React 18 và Concurrent Mode", duration: 45 },
+        { title: "JSX, Components và Props", duration: 38 },
+        { title: "State, Events và Lifecycle", duration: 52 },
+        { title: "Hooks nâng cao: useCallback, useMemo, useRef", duration: 60 },
+        { title: "Custom hooks và patterns", duration: 48 },
+        { title: "Quiz: React Fundamentals", duration: 15, type: "quiz" },
+        { title: "Giới thiệu Next.js 14 và App Router", duration: 40 },
+        { title: "Server Components vs Client Components", duration: 55 },
+        { title: "Data fetching và caching strategies", duration: 65 },
+        { title: "Route Groups, Layouts và Loading UI", duration: 50 },
+        { title: "Error handling và Suspense", duration: 40 },
+        { title: "TypeScript với React — Basics đến Generics", duration: 72 },
+        { title: "Zustand — Global state đơn giản", duration: 45 },
+        { title: "React Query & SWR cho data fetching", duration: 58 },
+        { title: "Quiz: State Management Patterns", duration: 15, type: "quiz" },
+        { title: "Performance optimization và Lighthouse", duration: 62 },
+        { title: "Testing với Vitest và React Testing Library", duration: 55 },
+        { title: "CI/CD với GitHub Actions và Vercel", duration: 40 },
+        { title: "Final Project: SaaS Landing Page", duration: 90, type: "project" },
+      ],
+    },
+    {
+      id: "course-figma-tailwind",
+      title: "UI/UX Design System with Figma & Tailwind",
+      titleVi: "UI/UX Design System với Figma & Tailwind",
+      desc: "Học thiết kế UI/UX chuyên nghiệp với Figma và triển khai design system bằng Tailwind CSS. Phù hợp cả designer lẫn developer muốn làm đẹp UI.",
+      descVi: "Học thiết kế UI/UX chuyên nghiệp với Figma và triển khai design system bằng Tailwind CSS. Phù hợp cả designer lẫn developer muốn làm đẹp UI.",
+      price: 1_500_000,
+      lpReward: 150,
+      durationWeeks: 5,
+      maxStudents: 80,
+      status: "published",
+      instructorName: "Mei Lin",
+      lessons: [
+        { title: "Figma interface và workflow cơ bản", duration: 30 },
+        { title: "Components, Variants và Slots", duration: 45 },
+        { title: "Auto Layout nâng cao", duration: 40 },
+        { title: "Quiz: Figma Basics", duration: 15, type: "quiz" },
+        { title: "Color system và typography scale", duration: 38 },
+        { title: "Component library từ A đến Z", duration: 60 },
+        { title: "Design tokens và variables", duration: 42 },
+        { title: "Responsive & mobile-first design", duration: 40 },
+        { title: "Tailwind CSS cơ bản và config", duration: 35 },
+        { title: "Translate Figma to Tailwind", duration: 50 },
+        { title: "Custom design system với Tailwind", duration: 48 },
+        { title: "Final Project: Landing Page Design", duration: 60, type: "project" },
+      ],
+    },
+    {
+      id: "course-nodejs-postgres",
+      title: "Node.js API & PostgreSQL: Production-Ready",
+      titleVi: "Node.js API & PostgreSQL: Production-Ready",
+      desc: "Xây dựng REST API production-ready với Node.js, TypeScript và PostgreSQL. Bao gồm authentication, caching, testing và deployment với Docker trên AWS.",
+      descVi: "Xây dựng REST API production-ready với Node.js, TypeScript và PostgreSQL. Bao gồm authentication, caching, testing và deployment với Docker trên AWS.",
+      price: 2_500_000,
+      lpReward: 250,
+      durationWeeks: 7,
+      maxStudents: 60,
+      status: "published",
+      instructorName: "Ryo Hashimoto",
+      lessons: [
+        { title: "Node.js event loop và async programming", duration: 55 },
+        { title: "Express.js architecture và middleware", duration: 48 },
+        { title: "TypeScript cho Node.js", duration: 60 },
+        { title: "PostgreSQL nâng cao: indexing và explain", duration: 70 },
+        { title: "Prisma ORM và database migrations", duration: 55 },
+        { title: "Redis caching patterns", duration: 45 },
+        { title: "JWT, OAuth2 và refresh token strategy", duration: 65 },
+        { title: "API testing với Jest và Supertest", duration: 58 },
+        { title: "Docker và CI/CD pipeline", duration: 52 },
+        { title: "Final Project: Production API", duration: 90, type: "project" },
+      ],
+    },
+    {
+      id: "course-kubernetes-devops",
+      title: "Kubernetes & DevOps for Vietnamese Startup",
+      titleVi: "Kubernetes & DevOps cho Startup Việt Nam",
+      desc: "Từ container cơ bản đến Kubernetes orchestration cho startup Việt Nam. CI/CD pipeline, monitoring, và cloud-native architecture.",
+      descVi: "Từ container cơ bản đến Kubernetes orchestration cho startup Việt Nam. CI/CD pipeline, monitoring, và cloud-native architecture.",
+      price: 3_000_000,
+      lpReward: 300,
+      durationWeeks: 6,
+      maxStudents: 40,
+      status: "published",
+      instructorName: "Shin Watanabe",
+      lessons: [
+        { title: "Docker fundamentals và container basics", duration: 50 },
+        { title: "Docker Compose cho development environment", duration: 45 },
+        { title: "Kubernetes core concepts: Pods, Services, Deployments", duration: 70 },
+        { title: "ConfigMaps, Secrets và persistent storage", duration: 55 },
+        { title: "Ingress, Networking và Service Mesh basics", duration: 60 },
+        { title: "CI/CD với GitHub Actions và ArgoCD", duration: 65 },
+        { title: "Helm charts và GitOps workflow", duration: 50 },
+        { title: "Monitoring với Prometheus và Grafana", duration: 55 },
+        { title: "Logging với ELK Stack", duration: 45 },
+        { title: "Final Project: Deploy production-ready app", duration: 90, type: "project" },
+      ],
+    },
+    {
+      id: "course-seo-marketing",
+      title: "SEO & Content Marketing for SaaS B2B",
+      titleVi: "SEO & Content Marketing cho SaaS B2B",
+      desc: "Chiến lược SEO và content marketing hiệu quả cho SaaS B2B. Từ keyword research đến link building và conversion optimization.",
+      descVi: "Chiến lược SEO và content marketing hiệu quả cho SaaS B2B. Từ keyword research đến link building và conversion optimization.",
+      price: 1_200_000,
+      lpReward: 120,
+      durationWeeks: 4,
+      maxStudents: 120,
+      status: "published",
+      instructorName: "Yuna Park",
+      lessons: [
+        { title: "SEO fundamentals và search engine basics", duration: 35 },
+        { title: "Keyword research với Ahrefs và SEMrush", duration: 50 },
+        { title: "On-page SEO: meta tags, heading structure, content", duration: 45 },
+        { title: "Technical SEO: Core Web Vitals, sitemap, robots", duration: 40 },
+        { title: "Content strategy cho SaaS B2B", duration: 55 },
+        { title: "Link building và authority building", duration: 45 },
+        { title: "Quiz: SEO Fundamentals", duration: 15, type: "quiz" },
+        { title: "Analytics và performance tracking", duration: 40 },
+        { title: "Conversion optimization và CRO basics", duration: 50 },
+        { title: "Final Project: SaaS SEO Audit & Plan", duration: 60, type: "project" },
+      ],
+    },
+    {
+      id: "course-rust-go",
+      title: "High-Performance Rust & Go for Backend",
+      titleVi: "High-Performance Rust & Go cho Backend",
+      desc: "Khóa học hiệu năng cao với Rust và Go cho backend. Memory management, concurrency patterns, và systems programming cho web developers.",
+      descVi: "Khóa học hiệu năng cao với Rust và Go cho backend. Memory management, concurrency patterns, và systems programming cho web developers.",
+      price: 4_500_000,
+      lpReward: 450,
+      durationWeeks: 10,
+      maxStudents: 30,
+      status: "published",
+      instructorName: "Rin Nakamura",
+      lessons: [
+        { title: "Go basics: syntax, types, và concurrency model", duration: 60 },
+        { title: "Goroutines, channels và concurrent patterns", duration: 75 },
+        { title: "Go standard library và web frameworks", duration: 55 },
+        { title: "Rust ownership, borrowing và lifetimes", duration: 80 },
+        { title: "Rust concurrency với async/await", duration: 70 },
+        { title: "Performance profiling Go vs Rust", duration: 60 },
+        { title: "Building REST API với Go Fiber", duration: 65 },
+        { title: "Building REST API với Rust Axum", duration: 65 },
+        { title: "Database drivers và ORMs", duration: 50 },
+        { title: "Final Project: High-performance microservice", duration: 90, type: "project" },
+      ],
+    },
+    {
+      id: "course-python-ml",
+      title: "Python ML & AI for Web Developers",
+      titleVi: "Python ML & AI cho Web Developer",
+      desc: "Machine Learning và AI integration cho web developers. Từ Python basics đến deploying ML models với FastAPI và cloud services.",
+      descVi: "Machine Learning và AI integration cho web developers. Từ Python basics đến deploying ML models với FastAPI và cloud services.",
+      price: 3_500_000,
+      lpReward: 350,
+      durationWeeks: 7,
+      maxStudents: 50,
+      status: "draft",
+      instructorName: "Ryo Hashimoto",
+      lessons: [
+        { title: "Python fundamentals cho web developers", duration: 50 },
+        { title: "NumPy và Pandas basics", duration: 60 },
+        { title: "Scikit-learn: classification và regression", duration: 75 },
+        { title: "Deep learning với PyTorch basics", duration: 80 },
+        { title: "Building AI agents với LangChain", duration: 70 },
+        { title: "Deploy ML models với FastAPI", duration: 65 },
+        { title: "Final Project: AI-powered feature", duration: 90, type: "project" },
+      ],
+    },
+  ];
+
+  const createdCourses: Record<string, string> = {};
+  for (const course of courses) {
+    const instructorId = createdInstructors[course.instructorName];
+    const existing = await prisma.course.findUnique({ where: { id: course.id } });
+    const data = {
+      title: course.title,
+      titleVi: course.titleVi,
+      description: course.desc,
+      descriptionVi: course.descVi,
+      type: "group",
+      instructorId,
+      price: course.price,
+      lpReward: course.lpReward,
+      maxStudents: course.maxStudents,
+      durationWeeks: course.durationWeeks,
+      status: course.status,
+    };
+    if (existing) {
+      await prisma.course.update({ where: { id: existing.id }, data });
+      createdCourses[course.id] = existing.id;
+    } else {
+      const created = await prisma.course.create({ data: { id: course.id, ...data } });
+      createdCourses[course.id] = created.id;
+    }
+  }
+  console.log(`  ✓ ${courses.length} courses`);
+
+  // ── Lessons ──────────────────────────────────────────────────────────────
+  let lessonCount = 0;
+  for (const course of courses) {
+    const courseId = createdCourses[course.id];
+    for (let i = 0; i < course.lessons.length; i++) {
+      const lesson = course.lessons[i];
+      const orderIndex = (i + 1) * 10; // 10, 20, 30... for chapter grouping
+      const lessonId = `${courseId}-lesson-${orderIndex}`;
+      const existing = await prisma.lesson.findUnique({ where: { id: lessonId } });
+      if (existing) {
+        await prisma.lesson.update({
+          where: { id: lessonId },
+          data: {
+            title: lesson.title,
+            titleVi: lesson.title,
+            durationMinutes: lesson.duration,
+            orderIndex,
+            isPublished: course.status === "published",
+            content: lesson.type === "quiz"
+              ? "Quiz section — questions auto-generated"
+              : lesson.type === "project"
+              ? "Project assignment — instructions in course materials"
+              : null,
+          },
+        });
+      } else {
+        await prisma.lesson.create({
+          data: {
+            id: lessonId,
+            courseId,
+            title: lesson.title,
+            titleVi: lesson.title,
+            durationMinutes: lesson.duration,
+            orderIndex,
+            isPublished: course.status === "published",
+            content: lesson.type === "quiz"
+              ? "Quiz section — questions auto-generated"
+              : lesson.type === "project"
+              ? "Project assignment — instructions in course materials"
+              : null,
+          },
+        });
+      }
+      lessonCount++;
+    }
+  }
+  console.log(`  ✓ ${lessonCount} lessons`);
+
+  // ── Enrollments & Student Progress ─────────────────────────────────────
+  // Find admin user
+  const adminUser = await prisma.user.findUnique({ where: { email: "admin@loop.vn" } });
+  // Find CEO member
+  const ceoMember = await prisma.teamMember.findUnique({ where: { slug: "bui-nhat-duc-anh" } });
+
+  const students = [
+    { name: "Trần Minh Khoa", email: "tranminhkhoa@example.com", courseId: "course-react-nextjs", progress: 0.85, lessonsDone: 18, totalLessons: 19, completed: false },
+    { name: "Lê Thu Hằng", email: "lethuhang@example.com", courseId: "course-react-nextjs", progress: 1.0, lessonsDone: 19, totalLessons: 19, completed: true },
+    { name: "Phạm Văn Đức", email: "phamvanduc@example.com", courseId: "course-react-nextjs", progress: 0.42, lessonsDone: 8, totalLessons: 19, completed: false },
+    { name: "Nguyễn Thị Lan", email: "nguyenthilan@example.com", courseId: "course-figma-tailwind", progress: 1.0, lessonsDone: 12, totalLessons: 12, completed: true },
+    { name: "Hoàng Văn Nam", email: "hoangvannam@example.com", courseId: "course-figma-tailwind", progress: 0.65, lessonsDone: 8, totalLessons: 12, completed: false },
+    { name: "Vũ Thanh Tùng", email: "vuthanhtung@example.com", courseId: "course-nodejs-postgres", progress: 0.30, lessonsDone: 3, totalLessons: 10, completed: false },
+    { name: "Đỗ Thị Mai", email: "dothimai@example.com", courseId: "course-nodejs-postgres", progress: 0.12, lessonsDone: 1, totalLessons: 10, completed: false },
+    { name: "Lý Quốc Bảo", email: "lyquocbao@example.com", courseId: "course-kubernetes-devops", progress: 0.75, lessonsDone: 8, totalLessons: 10, completed: false },
+    { name: "Ngô Hải Yến", email: "ngohaiyen@example.com", courseId: "course-seo-marketing", progress: 0.55, lessonsDone: 5, totalLessons: 10, completed: false },
+    { name: "Trương Đình Phong", email: "truongdinhphong@example.com", courseId: "course-react-nextjs", progress: 0.08, lessonsDone: 2, totalLessons: 19, completed: false },
+  ];
+
+  let enrollmentCount = 0;
+  for (const student of students) {
+    const courseId = createdCourses[student.courseId];
+    // Upsert user
+    const pwHash = await hashPassword("student123");
+    let user = await prisma.user.findUnique({ where: { email: student.email } });
+    if (!user && adminUser) {
+      user = await prisma.user.create({
+        data: {
+          email: student.email,
+          name: student.name,
+          passwordHash: pwHash,
+          role: "viewer",
+          isActive: true,
+        },
+      });
+    }
+
+    if (!user) continue;
+
+    // Upsert enrollment
+    const existingEnrollment = await prisma.enrollment.findFirst({
+      where: { courseId, userId: user.id },
+    });
+
+    if (existingEnrollment) {
+      await prisma.enrollment.update({
+        where: { id: existingEnrollment.id },
+        data: {
+          status: student.completed ? "completed" : "active",
+          progressPercent: Math.round(student.progress * 100),
+        },
+      });
+    } else {
+      await prisma.enrollment.create({
+        data: {
+          courseId,
+          userId: user.id,
+          paidAmount: 0, // seed = free enrollments for demo
+          status: student.completed ? "completed" : "active",
+          progressPercent: Math.round(student.progress * 100),
+        },
+      });
+    }
+
+    // Get enrollment to add progress
+    const enrollment = await prisma.enrollment.findFirst({
+      where: { courseId, userId: user.id },
+    });
+    if (enrollment) {
+      // Add completed lessons progress
+      const course = courses.find((c) => c.id === student.courseId);
+      if (course) {
+        const safeLessonsDone = Math.min(student.lessonsDone, student.totalLessons);
+        for (let i = 0; i < safeLessonsDone; i++) {
+          const lessonId = `${courseId}-lesson-${(i + 1) * 10}`;
+          await prisma.studentProgress.upsert({
+            where: {
+              enrollmentId_lessonId: { enrollmentId: enrollment.id, lessonId },
+            },
+            create: {
+              enrollmentId: enrollment.id,
+              lessonId,
+              completedAt: new Date(Date.now() - (student.lessonsDone - i) * 3 * 24 * 60 * 60 * 1000),
+            },
+            update: {},
+          });
+        }
+      }
+      enrollmentCount++;
+    }
+  }
+
+  // Enroll admin user in all courses
+  if (adminUser) {
+    for (const course of courses) {
+      const courseId = createdCourses[course.id];
+      const existing = await prisma.enrollment.findFirst({
+        where: { courseId, userId: adminUser.id },
+      });
+      if (!existing) {
+        await prisma.enrollment.create({
+          data: {
+            courseId,
+            userId: adminUser.id,
+            paidAmount: 0,
+            status: "active",
+            progressPercent: 0,
+          },
+        });
+      }
+    }
+  }
+
+  // Enroll CEO member in React course
+  if (ceoMember) {
+    const courseId = createdCourses["course-react-nextjs"];
+    const existing = await prisma.enrollment.findFirst({
+      where: { courseId, memberId: ceoMember.id },
+    });
+    if (!existing) {
+      await prisma.enrollment.create({
+        data: {
+          courseId,
+          memberId: ceoMember.id,
+          paidAmount: 0,
+          status: "completed",
+          progressPercent: 100,
+        },
+      });
+      const enrollment = await prisma.enrollment.findFirst({
+        where: { courseId, memberId: ceoMember.id },
+      });
+      if (enrollment) {
+        const course = courses.find((c) => c.id === "course-react-nextjs")!;
+        for (let i = 0; i < course.lessons.length; i++) {
+          const lessonId = `${courseId}-lesson-${(i + 1) * 10}`;
+          await prisma.studentProgress.upsert({
+            where: { enrollmentId_lessonId: { enrollmentId: enrollment.id, lessonId } },
+            create: { enrollmentId: enrollment.id, lessonId, completedAt: new Date() },
+            update: {},
+          });
+        }
+      }
+    }
+  }
+
+  console.log(`  ✓ ${enrollmentCount} student enrollments with progress`);
+  console.log("  ✓ Academy seed complete");
+}
 // ══════════════════════════════════════════════════════════════════
 
 async function main() {
@@ -666,6 +1166,7 @@ async function main() {
     await seedAddonServices();
     await seedRewardTiers();
     await seedContent();
+    await seedAcademy();
 
     console.log("\n" + "=".repeat(50));
     console.log("✅ All seeds completed successfully!");

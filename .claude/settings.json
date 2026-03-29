@@ -53,7 +53,22 @@
       "Bash(node -e \"require\\(''''@playwright/test''''\\)\")",
       "Bash(where playwright:*)",
       "Bash(pnpm add:*)",
-      "Bash(head -20 grep -r \"rank-effect\\\\|rank_effect\\\\|RankEffect\" d:/LOOP_COMPANY/LOOP/src/app/api --include=*.ts -l)"
+      "Bash(head -20 grep -r \"rank-effect\\\\|rank_effect\\\\|RankEffect\" d:/LOOP_COMPANY/LOOP/src/app/api --include=*.ts -l)",
+      "Bash(mkdir -p \"d:/LOOP_COMPANY/LOOP/src/app/api/academy/lessons/[id]/complete\")",
+      "Bash(mkdir -p \"d:/LOOP_COMPANY/LOOP/src/app/api/academy/progress/[courseId]\")",
+      "Bash(mkdir -p \"d:/LOOP_COMPANY/LOOP/src/app/api/academy/certificate/[courseId]\")",
+      "Bash(mkdir -p \"d:/LOOP_COMPANY/LOOP/src/app/api/academy/lessons/[id]/exercise\")",
+      "Bash(mkdir -p \"d:/LOOP_COMPANY/LOOP/src/app/api/academy/lessons/[id]/comments\")",
+      "Bash(npx tsx -e \":*)",
+      "Bash(node -e \":*)",
+      "Bash(node --no-warnings -e \":*)",
+      "Read(//d/LOOP_COMPANY/LOOP __NEW_LINE_120bfb85b5f18c8a__ ADMIN=cmn0a8hpr000fk0jxpjta5yn5 LESSON=course-react-nextjs-lesson-10 __NEW_LINE_120bfb85b5f18c8a__ echo === Full E2E Academy Smoke === echo  __NEW_LINE_120bfb85b5f18c8a__ echo --- 1. GET enrollments \\(admin has all courses\\) --- curl -s http:/localhost:3000/api/academy/**)",
+      "Read(//d/LOOP_COMPANY/LOOP/http:/localhost:3000/api/academy/lessons/$LESSON/**)",
+      "Read(//d/LOOP_COMPANY/LOOP ADMIN=cmn0a8hpr000fk0jxpjta5yn5 echo --- Admin enrollments \\(all 7 courses\\) --- curl -s http:/localhost:3000/api/academy/**)",
+      "Read(//d/LOOP_COMPANY/LOOP/http:/localhost:3000/api/academy/certificate/**)",
+      "Read(//d d:/LOOP_COMPANY/LOOP/FE/src/app/**)",
+      "Bash(sed -n '1025,1028p' CustomerDashboard.tsx)",
+      "Bash(python3 -c \":*)"
     ],
     "additionalDirectories": [
       "D:\\LOOP_COMPANY\\LOOP\\src\\app\\[locale]\\team\\[slug]",
