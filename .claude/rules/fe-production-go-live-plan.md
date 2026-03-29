@@ -1,7 +1,7 @@
 # FE Production Go-Live Plan — LOOP Solutions
 
 > **Mục tiêu:** Kế hoạch hoàn thiện và phát hành production an toàn cho FE-first roadmap LOOP.
-> **Cập nhật:** 2026-03-28
+> **Cập nhật:** 2026-03-29
 
 ---
 
@@ -14,6 +14,21 @@
 - Customer portal (orders/invoices/lp)
 - Admin core operations (orders/members/services/portfolio)
 
+**Hạ tầng:** Vercel · `loops.vn` · GitHub connected · Auto-deploy on push
+
+---
+
+## 1b) Environment & Deploy
+
+| Trigger | Môi trường | URL |
+|---|---|---|
+| Push `develop` | Preview | Vercel auto-assign subdomain |
+| Push `main` | Production | `https://loops.vn` |
+| PR opened/updated | Preview (temp) | Vercel auto-assign |
+| `git tag v*` | Production | `https://loops.vn` |
+
+> Vercel tự nhận webhook từ GitHub — **không cần `deploy.yml`**. Chỉ cần `.github/workflows/ci.yml` để chạy lint/typecheck trước merge.
+
 Không áp dụng cho:
 - thử nghiệm UX nhỏ không ảnh hưởng business flow
 - module chưa nằm trong scope release freeze
@@ -22,15 +37,15 @@ Không áp dụng cho:
 
 ## 2) Go-Live phases
 
-## G0 — Pre-Go-Live Foundation (3–5 ngày)
+## G0 — Pre-Go-Live Foundation (đã xong)
 
-- [ ] Chốt environment matrix (local/staging/prod)
-- [ ] Chốt secrets/env injection qua CI/CD
-- [ ] CI gates chạy ổn định (lint/type-check/build/tests)
-- [ ] Docker images tối ưu + security scan pass
-- [ ] Rollback owner + rollback playbook đã xác nhận
+- [x] Vercel GitHub Integration kết nối ✅
+- [x] CI pipeline chạy lint/typecheck/build ✅
+- [x] Environment Variables trong Vercel Dashboard
+- [ ] Rollback plan (Vercel: revert trong dashboard hoặc `vercel rollback`)
+- [ ] Smoke check sau deploy
 
-**Exit criteria G0:** staging deploy thành công >= 3 lần liên tiếp.
+**Exit criteria G0:** preview deploy thành công từ `develop`, CI green.
 
 ---
 
@@ -96,16 +111,18 @@ Tất cả điều kiện dưới đây phải đạt:
 
 ## 4) CI/CD requirements
 
-## CI (PR)
-- [ ] Changed-files aware pipeline (FE-only / BE-only / full)
-- [ ] Quality gates bắt buộc
-- [ ] Test gates theo risk scope
-- [ ] Container scan (nếu build image)
+## CI (PR + push) — `.github/workflows/ci.yml`
+- [x] Changed-files aware pipeline (FE-only / BE-only / full) ✅
+- [x] Quality gates: lint + typecheck + test + build ✅
+- [x] Path filter: chỉ chạy job khi có file changed trong scope
 
-## CD (Staging)
-- [ ] Auto deploy sau merge branch release candidate
-- [ ] Auto smoke checks
-- [ ] Notify #release-room
+## CD (Vercel GitHub Integration)
+- [x] Auto deploy on push — không cần `deploy.yml` ✅
+- [ ] Env vars đầy đủ trong Vercel Dashboard → Settings → Environment Variables
+- [ ] Smoke check sau deploy (health endpoint)
+- [ ] Notify #release-room khi deploy xong
+
+> **Env vars cần thiết (Vercel Dashboard):** `DATABASE_URL`, `AUTH_SECRET`, `NEXTAUTH_URL`, `NEXT_PUBLIC_SITE_URL`. Các biến khác (Google, Cloudinary, Sentry...) thêm nếu có.
 
 ## CD (Production)
 - [ ] Trigger theo tag release

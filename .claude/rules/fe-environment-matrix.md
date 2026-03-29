@@ -1,25 +1,25 @@
 # FE Environment Matrix — LOOP Solutions
 
 > **Mục tiêu:** Chuẩn hóa môi trường dev/staging/prod cho FE integration với BE.
-> **Cập nhật:** 2026-03-26
+> **Cập nhật:** 2026-03-29
 
 ---
 
 ## 1) Environment definitions
 
 - **Local (dev):** môi trường lập trình cá nhân.
-- **Staging:** môi trường kiểm thử trước production.
-- **Production:** môi trường người dùng thật.
+- **Preview (staging):** môi trường kiểm thử trước production — auto-deploy qua Vercel GitHub integration.
+- **Production:** môi trường người dùng thật tại `loops.vn`.
 
 ---
 
-## 2) Endpoint matrix (template)
+## 2) Endpoint matrix (thực tế)
 
-| Environment | FE URL | API Base URL | Auth Provider | Notes |
-|-------------|--------|--------------|---------------|-------|
-| local | http://localhost:5173 hoặc FE local | http://localhost:3000 | Local JWT/OAuth test | Dùng cho development |
-| staging | <staging-fe-url> | <staging-api-url> | Staging auth config | Dùng cho QA/UAT |
-| production | <prod-fe-url> | <prod-api-url> | Production auth config | Dùng cho end users |
+| Environment | URL | Deploy trigger | Database |
+|-------------|-----|---------------|----------|
+| local | `http://localhost:3000` (BE) · `http://localhost:5173` (FE) | Manual `npm run dev` | Neon local / Docker |
+| preview | Vercel auto-assign (random subdomain) | Push `develop` branch | Neon staging |
+| production | `https://loops.vn` | Push `main` branch · Git tag `v*` | Neon production |
 
 ---
 

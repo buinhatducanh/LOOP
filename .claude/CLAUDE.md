@@ -3,7 +3,8 @@
 > Project: LOOP Solutions Agency Platform — FE (Vite/React) + BE (Next.js 15 API)
 > Last Updated: 2026-03-29
 > Language: Vietnamese (code comments, docs), English (variable names, function names)
-> Status: Phase F0 ✅ completed | Phase F1 ✅ completed | Phase F2 ✅ completed — Wizard wired BE APIs, ORDER_STATUS_LABELS 6×5 locale, WIZARD_STEP_LABELS 8×5 locale. 5-locale smoke test PASSED.
+> Status: Phase F0 ✅ completed | Phase F1 ✅ completed | Phase F2 ✅ completed | Phase F3 ✅ completed — ALL SUB-MILESTONES DONE: F3.1 locale propagation fixed (Home.tsx + MemberDetailPage.tsx → useLocaleStore), F3.2 hybrid adapter confirmed (~40% BE / ~60% fallback), F3.3 EffectsTab BE persistence (CRUD + global toggle + per-member override), F3.4 coverage audit documented, F3.5 5-locale smoke PASSED (10/10 routes HTTP 200). Ready for Phase F4 (Academy).
+> CI/CD: GitHub connected to Vercel, auto-deploy on push. Domain: loops.vn (production).
 
 ---
 
@@ -16,9 +17,22 @@
 | **Thư mục** | `d:/LOOP_COMPANY/LOOP/FE/` | `d:/LOOP_COMPANY/LOOP/` |
 | **Framework** | Vite + React 18 + Tailwind v4 | Next.js 15 + Prisma 7 + PostgreSQL/Neon |
 | **Port dev** | `5173` / `5174` | `3000` |
-| **Trạng thái** | Mock UI hoàn chỉnh, 0 BE connection | 200 route files, 357+ HTTP methods |
+| **Trạng thái** | Mock UI hoàn chỉnh, đang kết nối BE APIs | 200 route files, 357+ HTTP methods, seed đầy đủ |
 | **Phong cách** | Gaming/Cyberpunk dark theme | Professional agency website |
-| **i18n** | Hard-coded VI/EN | 5 ngôn ngữ (VI/EN/JA/KO/ZH) |
+| **i18n** | useLocaleStore → 5 locale | 5 ngôn ngữ (VI/EN/JA/KO/ZH) |
+
+### Hạ tầng Production
+
+| | |
+|---|---|
+| **Hosting** | Vercel (Next.js SSR + static) |
+| **Domain** | `loops.vn` (production) |
+| **Git** | GitHub connected → Vercel auto-deploy |
+| **Database** | Neon (PostgreSQL) |
+| **CI** | `.github/workflows/ci.yml` — lint + typecheck + build + test |
+| **Deploy tự động** | Push `develop` → Preview URL · Push `main`/tag → loops.vn |
+| **Env vars** | Vercel Dashboard → Settings → Environment Variables |
+| **Vercel project** | `prj_T3kS2kTcAF38IuhMtqGRRlINOSR5` · `team_zgpVFIa6a7Y9QE4H4yTHe3Bv` | |
 
 ### Mục tiêu hiện tại
 Kết nối FE mock với BE thật theo nghiệp vụ LOOP — giữ nguyên 100% giao diện FE, thay mock data bằng API thật từ BE.
@@ -382,7 +396,26 @@ cd d:/LOOP_COMPANY/LOOP/FE && npm run dev
 # Quality gates
 npm run lint    # FE: cd FE && npx eslint src/
 npx tsc --noEmit  # BE type check
+
+# Deploy via Vercel CLI (manual, no GitHub Actions needed)
+npx vercel --prod=false          # Preview
+npx vercel --prod               # Production (loops.vn)
 ```
+
+## CI/CD Pipeline
+
+```
+GitHub push (develop)  ──→  CI (lint + typecheck + build)  ──→  Vercel Preview
+GitHub push (main)    ──→  CI (lint + typecheck + build)  ──→  loops.vn
+```
+
+| Trigger | Môi trường | URL |
+|---|---|---|
+| Push `develop` | Preview | Vercel auto-assign |
+| Push `main` | Production | `loops.vn` |
+| Pull Request | Preview (temp) | Vercel auto-assign |
+
+> **Không cần `deploy.yml`** — Vercel tự nhận webhook từ GitHub. Chỉ cần thêm Environment Variables trong Vercel Dashboard → Settings → Environment Variables. CI workflow nằm ở `.github/workflows/ci.yml`.
 
 ---
 

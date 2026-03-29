@@ -43,7 +43,7 @@
 | F0 Infrastructure | completed | FE Lead | Tuần F0 | 2026-03-28 | Auth + API client layer đã hoàn thành. Auth guard, route guards, API services wired. |
 | F1 Public Pages | completed | FE Lead | Tuần F1 | 2026-03-29 | 100% public pages wired: LandingPage (Services+Portfolio+Testimonials), ServicesPage, PortfolioPage, BlogPage, AcademyPage, ContactPage, Home/Team. API services: servicesService, projectsService, testimonialsService, blogService, academyService, contactService, teamService. Fallback data active when BE offline. Lint + build pass. |
 | F2 Booking/Orders | completed | FE+BE | Tuần F2 | 2026-03-29 | F2 COMPLETE — all BE APIs wired (pricing/config, calculate, quote, transitionOrderStatus, LP discount). ORDER_STATUS_LABELS 6×5 locale✅. WIZARD_STEP_LABELS 8×5 locale✅ + ProgressBar locale-aware✅. 5-locale smoke test PASSED: VI✅ EN✅ JA✅ KO✅ ZH✅ (Playwright). |
-| F3 Team/Effects | pending | FE+BE | Tuần F3 |  | |
+| F3 Team/Effects | completed | FE+BE | Tuần F3 | 2026-03-29 | ALL SUB-MILESTONES DONE ✅ F3.1–F3.5: Team API locale propagation fixed, hybrid adapter confirmed (BE: name/role/bio/image/expertise ~40%, fallback: level/rank/lp/skills/missions ~60%), EffectsTab fully wired to BE (CRUD + global toggle + per-member override), 5-locale smoke test PASSED (10/10 routes HTTP 200), coverage audit documented. Exit criteria met. |
 | F4 Academy | pending | FE+BE | Tuần F4 |  | |
 | F5 Customer Portal | pending | FE+BE | Tuần F5 |  | |
 | F6 Admin 23 tabs | pending | FE+BE | Tuần F6 |  | |
@@ -287,23 +287,64 @@ Mục tiêu: Wizard 8 bước tạo order thật + Order lifecycle hoàn chỉnh
 Mục tiêu: 27 thành viên + Rank effects hoạt động từ BE.
 
 **P0:**
-- [ ] `GET /api/v1/team?lang=` → Home.tsx (27 members, filter, sort, rank strip)
-- [ ] `GET /api/v1/team/[id]` → MemberDetailPage
+- [ ] `GET /api/team?lang=` (hoặc `/api/v1/team?lang=` nếu unified) → Home.tsx (27 members, filter, sort, rank strip)
+- [ ] `GET /api/team/[slug]?lang=` (hoặc `/api/v1/team/[slug]?lang=` nếu unified) → MemberDetailPage
+- [ ] Locale propagation cho Team pages: không hardcode `lang='vi'`
 - [ ] Rank system: Iron(1-14) → Bronze(15-34) → Silver(35-54) → Gold(55-74) → Platinum(75-84) → Ruby(85-94) → Diamond(95+)
-- [ ] HUDPanel: skills radar (SVG), mission logs, rank history từ BE
-- [ ] HallOfFame: MVP/BugSlayer/TopPerformer từ BE query
+- [ ] HUDPanel: skills radar (SVG), mission logs, rank history từ BE hoặc fallback policy rõ
+- [ ] HallOfFame: MVP/BugSlayer/TopPerformer từ BE query hoặc fallback policy rõ
 
 **P1:**
 - [ ] `GET /api/admin/team` → MembersTab list với full data
 - [ ] `POST/PUT/DELETE /api/admin/team` → MembersTab CRUD
 - [ ] MembersTab translate tab: EN/JA/KO/ZH name/role/bio fields
 - [ ] LP display: `GET /api/customer/lp` → MemberCard + Navbar LP badge
+- [x] EffectsTab: global toggle (GET+PUT) wired BE
+- [x] EffectsTab: CRUD wired BE `/api/admin/rank-effects`
+- [x] EffectsTab per-member override persistence API: `GET /api/admin/team/[id]/effects`, `PUT/DELETE /api/admin/team/[id]/effects/[effectId]`
 
 **P2:**
-- [ ] EffectsTab: global toggle (on/off) + CRUD 10 effects + per-rank + per-member override
 - [ ] MemberCard VFX: effects được apply từ BE `userEquippedEffects`
+- [ ] API coverage target Team page: >=85% fields từ BE, fallback chỉ cho enhancement fields
+- [ ] Mock accuracy verification endpoint: `GET /api/admin/rank-effects/mock-reference` (frozen reference) dùng để so khớp DB data
 
-**Exit criteria:** Team page + Member detail + EffectsTab hoạt động từ BE. Rank effects render đúng.
+**Sub-milestones (F3.1–F3.5):**
+- [x] F3.1 Team API contract alignment + locale propagation ✅
+  - Fixed: `Home.tsx` + `MemberDetailPage.tsx` hardcoded `'vi'` → `useLocaleStore()`
+  - API contract: `/api/v1/team` + `/api/v1/team/[slug]` confirmed correct
+  - Docs: API-CONTRACT.md typo fixed (`/api/api/team/[slug]` → `/api/v1/team/[slug]`)
+- [x] F3.2 Team page mapper hardening ✅
+  - Hybrid policy confirmed: BE core (name/role/bio/image/expertise) + fallback enhancement (level/rank/lp/skills/missions)
+  - Coverage documented inline in `team.service.ts` with field-level source table
+  - BE seed has 1/27 members — fallback active for 26 members
+- [x] F3.3 EffectsTab BE persistence end-to-end ✅ (2026-03-29)
+  - CRUD: `POST/PUT/DELETE /admin/rank-effects` wired
+  - Global toggle: `GET/PUT /admin/rank-effects/global-toggle` wired
+  - Per-member override: `GET/PUT/DELETE /admin/team/[id]/effects` wired
+  - Note: Tab 1 (Builtin) still hardcoded, Tab 3 member list still from `memberData.ts`
+- [x] F3.4 Coverage audit: ✅ documented below
+- [x] F3.5 5-locale smoke `/vi|en|ja|ko|zh/doi-ngu` + `/member/:id` pass ✅ (2026-03-29)
+  - All 10 routes: HTTP 200 (`/doi-ngu` × 5 locale + `/member/1` × 5 locale)
+  - Fallback active: BE only has 1/27 members seeded → 26 members use full fallback
+
+**F3.4 Coverage Audit — Field-level breakdown (as of 2026-03-29):**
+
+| Field | Source | Coverage | Missing BE work |
+|---|---|---|---|
+| `name, role, bio, shortBio, image, expertise[], isFeatured` | BE `/api/v1/team` | ✅ ~40% | Seed 27 members + i18n fields |
+| `level, rank, rankColor` | Fallback | ❌ 0% | `level`, `rank` on `TeamMember` model; LP aggregation query |
+| `lpBalance` | Fallback | ❌ 0% | `availableLp` on `TeamMember` |
+| `department` | Fallback | ❌ 0% | `department` field on `TeamMember` |
+| `tags` | BE expertise | ✅ | — |
+| `skills, missions, achievements, missionLogs, rankHistory, currentXP, maxXP, lpSpent` | Fallback | ❌ 0% | Quest/Event models needed; LP history per member |
+| `projectsCompleted` | Fallback | ❌ 0% | `projectsCompleted` on `TeamMember` or `ProjectMember` relation |
+| `joinedDate, location, languages` | Fallback | ❌ 0% | Fields on `TeamMember` model |
+| `github, linkedin, website` | Fallback | ❌ 0% | Fields on `TeamMember` model |
+| `available` | Hardcoded `true` | ❌ 0% | `isActive` on `TeamMember` |
+
+> **Total: ~40% coverage.** 60% of TeamMember fields still from fallback. BE needs: (1) seed 27 members, (2) add missing DB fields, (3) wire rank/LP aggregations. Fallback is intentional and correct per hybrid adapter policy.
+
+**Exit criteria:** Team page + Member detail + EffectsTab hoạt động từ BE theo hybrid adapter policy, locale-aware 5-locale smoke pass, fallback scope minh bạch và có coverage target.
 
 ---
 

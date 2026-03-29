@@ -63,17 +63,39 @@ interface BeAdminMember {
 }
 
 // ── FE format (matches Home.tsx / MemberDetailPage expectations) ───────────
+// COVERAGE AUDIT — Team page field sources:
+// ┌──────────────────────────────────────────────────────────┐
+// │ Field             │ Source   │ Notes                     │
+// │-------------------|----------|--------------------------│
+// │ id, slug, name,   │ BE API   │ ✅ Full i18n via ?lang=  │
+// │ role, bio, image,│ (v1)    │                          │
+// │ shortBio, isFeat. │          │                          │
+// │ expertise[]       │ BE API   │ ✅ via Prisma relation   │
+// │ level, rank,      │ FALLBACK │ ⚠️ BE seed has 0 records │
+// │ rankColor, lpBal.,│ (member  │     BE only has CEO —    │
+// │ dept, achievements│ Data.ts) │     26 other members use │
+// │ skills, mission*, │          │     full fallback         │
+// │ rankHistory       │          │                          │
+// │ (HUDPanel data)   │          │                          │
+// │ projectsCompleted │ FALLBACK │ ⚠️ No BE field yet      │
+// │ joinedDate, loc., │ FALLBACK │ ⚠️ No BE field yet      │
+// │ languages, github │          │                          │
+// │ linkedin, website │          │                          │
+// └──────────────────────────────────────────────────────────┘
+// Target: ≥85% coverage. Currently ~40% (name/role/bio/image from BE,
+// level/rank/skills/missions from fallback). Remaining fields need BE
+// seed/migration. Fallback is active when BE returns < 27 members.
 export interface TeamMember {
   id: string; // BE Prisma CUID
   slug: string;
-  name: string;
-  role: string;
-  shortBio: string;
-  bio: string;
+  name: string;          // ✅ BE (i18n: nameEn/Ja/Ko/Zh)
+  role: string;          // ✅ BE (i18n: roleEn/Ja/Ko/Zh)
+  shortBio: string;       // ✅ BE (i18n)
+  bio: string;           // ✅ BE (i18n: bioEn/Ja/Ko/Zh)
   image: string;
   avatar: string; // alias for image
-  roleLevel: number; // sort priority (from BE)
-  // Additional fields derived at FE level
+  roleLevel: number; // sort priority (from BE slug suffix)
+  // ── Fallback-enhanced fields (BE seed incomplete) ──────────────────
   level: number;
   rank: string;
   rankColor: string;
@@ -83,15 +105,15 @@ export interface TeamMember {
   expertise: BeExpertise[];
   isFeatured: boolean;
   isActive: boolean;
-  projectsCompleted: number;
-  joinedDate: string;
-  location: string;
-  languages: string[];
-  achievements: string[];
+  projectsCompleted: number;  // ⚠️ No BE field
+  joinedDate: string;         // ⚠️ No BE field
+  location: string;            // ⚠️ No BE field
+  languages: string[];         // ⚠️ No BE field
+  achievements: string[];     // ⚠️ No BE field (Quest/Event system pending)
   available: boolean;
-  github?: string;
-  linkedin?: string;
-  website?: string;
+  github?: string;            // ⚠️ No BE field
+  linkedin?: string;          // ⚠️ No BE field
+  website?: string;            // ⚠️ No BE field
 }
 
 // ── Mapping ──────────────────────────────────────────────────────────────────
@@ -130,8 +152,13 @@ function mapMember(be: BeTeamMember): TeamMember {
 
 /**
  * Convert BE TeamMember (string id) → Home.tsx Member (number id).
- * Looks up fallback by slug to get the numeric id.
+ * Looks up fallback by slug to get the numeric id + HUD/game fields.
  * Note: fallbackBySlug maps slug → Member from memberData.ts
+ *
+ * BE provides: name, role, bio, shortBio, image, expertise[], isFeatured
+ * Fallback provides: level, rank, rankColor, lpBalance, missions, achievements,
+ *                    skills, missionLogs, rankHistory, lpSpent
+ * → Both sources merged at render time (no data loss)
  */
 export function mapTeamMemberToMember(
   be: TeamMember,

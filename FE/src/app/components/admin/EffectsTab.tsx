@@ -28,6 +28,10 @@ import {
 } from '../team/MemberCard';
 import { LEDRunner } from '../team/LEDRunner';
 import { effectsService } from '../../../api/effects.service';
+import { teamService } from '../../../api/team.service';
+import { teamEffectsService } from '../../../api/team-effects.service';
+import { teamService } from '../../../api/team.service';
+import { teamEffectsService } from '../../../api/team-effects.service';
 
 // ── Shared configs ──────────────────────────────────────────────────────────
 
@@ -674,7 +678,61 @@ function AddonEffectsTab() {
 function MemberEffectsModal({ memberId, onClose }: { memberId: number; onClose: () => void }) {
   const m = members.find(x => x.id === memberId)!;
   const rc = RANKS[m.rank];
-  const { effects, memberEffectOverrides, updateMemberOverride } = useLoopStore();
+  const { effects, memberEffectOverrides, updateMemberOverride, setMemberOverridesForMember } = useLoopStore();
+  const [remoteMemberId, setRemoteMemberId] = useState<string | null>(null);
+  const [syncLoading, setSyncLoading] = useState(false);
+  const [syncError, setSyncError] = useState<string>('');
+
+  useEffect(() => {
+    let cancelled = false;
+    setSyncLoading(true);
+    setSyncError('');
+
+    teamService.getAdminMembers({ limit: 200, search: m.name })
+      .then(({ members: adminMembers }) => {
+        if (cancelled) return;
+        const match = adminMembers.find(am => am.name.trim().toLowerCase() === m.name.trim().toLowerCase());
+        if (!match) {
+          setSyncError('Không map được member BE theo tên. Đang dùng local override fallback.');
+          return;
+        }
+
+        setRemoteMemberId(match.id);
+        return teamEffectsService.getMemberEffects(match.id).then((res) => {
+          if (cancelled) return;
+          const mapped = res.overrides.map(o => ({
+            memberId: m.id,
+            effectId: o.effectId,
+            visible: o.visible,
+            selectedByMember: o.selectedByMember,
+          }));
+          setMemberOverridesForMember(m.id, mapped);
+        });
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setSyncError('Không tải được override từ BE. Đang dùng local override fallback.');
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setSyncLoading(false);
+      });
+
+    return () => { cancelled = true; };
+  }, [m.id, m.name, setMemberOverridesForMember]);
+
+  const persistOverride = async (effectId: string, nextVisible: boolean, selectedByMember: boolean): Promise<boolean> => {
+    if (!remoteMemberId) return false;
+    try {
+      await teamEffectsService.upsertMemberEffectOverride(remoteMemberId, effectId, {
+        visible: nextVisible,
+        selectedByMember,
+      });
+      return true;
+    } catch {
+      return false;
+    }
+  };
 
   // Built-in effects this member has based on rank
   const builtinForMember = BUILTIN_EFFECTS.filter(e => e.ranksActive.includes(m.rank));
@@ -699,13 +757,31 @@ function MemberEffectsModal({ memberId, onClose }: { memberId: number; onClose: 
     return ov ? ov.visible : true; // default: visible
   };
 
-  const toggle = (effectId: string) => {
+  const toggle = async (effectId: string) => {
     const ov = getOverride(effectId);
+    const nextVisible = ov ? !ov.visible : false;
+    const selectedByMember = ov ? ov.selectedByMember : true;
+
+    // optimistic local update
     updateMemberOverride({
-      memberId: m.id, effectId,
-      visible: ov ? !ov.visible : false,
-      selectedByMember: ov ? ov.selectedByMember : true,
+      memberId: m.id,
+      effectId,
+      visible: nextVisible,
+      selectedByMember,
     });
+
+    // persist to BE when mapping exists
+    const ok = await persistOverride(effectId, nextVisible, selectedByMember);
+    if (!ok && remoteMemberId) {
+      // rollback when BE call fails
+      updateMemberOverride({
+        memberId: m.id,
+        effectId,
+        visible: ov ? ov.visible : true,
+        selectedByMember,
+      });
+      setSyncError('Lưu override thất bại. Đã rollback trạng thái.');
+    }
   };
 
   return (
@@ -735,6 +811,18 @@ function MemberEffectsModal({ memberId, onClose }: { memberId: number; onClose: 
 
         {/* Body */}
         <div className="overflow-y-auto scrollbar-zen" style={{ maxHeight: 'calc(90vh - 88px)' }}>
+          {(syncLoading || syncError || remoteMemberId) && (
+            <div className="mx-5 mt-4 p-3 rounded-xl" style={{
+              background: syncError ? 'rgba(239,68,68,0.08)' : 'rgba(59,130,246,0.08)',
+              border: syncError ? '1px solid rgba(239,68,68,0.25)' : '1px solid rgba(59,130,246,0.25)',
+            }}>
+              <div style={{ color: syncError ? DS.red : DS.blue, fontSize: 11, fontFamily: DS.mono }}>
+                {syncLoading && 'SYNC BE OVERRIDES...'}
+                {!syncLoading && syncError && syncError}
+                {!syncLoading && !syncError && remoteMemberId && `SYNCED WITH BE MEMBER ID: ${remoteMemberId}`}
+              </div>
+            </div>
+          )}
           <div className="grid grid-cols-1 xl:grid-cols-5 gap-0">
 
             {/* Left: MemberCard live preview */}

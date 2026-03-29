@@ -352,6 +352,7 @@ model TeamMember {
   lpTransactions         LpTransaction[]
   mediaBookings          MediaBooking[]
   memberExpertise        MemberExpertise[]
+  effectOverrides        MemberEffectOverride[] @relation("MemberEffectOverrides")
   projectMemberships     ProjectMember[]
   projects               Project[]
   referralCodes          ReferralCode[]
@@ -2123,24 +2124,45 @@ model MediaBooking {
 
 // ── Rank Effects System ────────────────────────────────────────────────────────
 model RankEffect {
-  id          String    @id @default(cuid())
-  name        String
-  description String
+  id              String                 @id @default(cuid())
+  name            String
+  description     String
   /// * Effect type: particle | glow | border | aura | trail | shimmer | fire | holographic
-  type        String
+  type            String
   /// * Rarity: common | rare | epic | legendary
-  rarity      String
-  icon        String
-  color       String
+  rarity          String
+  icon            String
+  color           String
   /// * Minimum rank to unlock: iron | bronze | silver | gold | platinum | ruby | diamond
-  minRank     String    @map("min_rank")
-  minLevel    Int       @map("min_level")
-  maxLevel    Int?      @map("max_level")
-  isEnabled   Boolean   @default(true) @map("is_enabled")
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
+  minRank         String                 @map("min_rank")
+  minLevel        Int                    @map("min_level")
+  maxLevel        Int?                   @map("max_level")
+  isEnabled       Boolean                @default(true) @map("is_enabled")
+  createdAt       DateTime               @default(now()) @map("created_at")
+  updatedAt       DateTime               @updatedAt @map("updated_at")
+  memberOverrides MemberEffectOverride[] @relation("RankEffectOverrides")
 
   @@map("rank_effects")
+}
+
+model MemberEffectOverride {
+  id               String     @id @default(cuid())
+  memberId         String     @map("member_id")
+  effectId         String     @map("effect_id")
+  visible          Boolean    @default(true)
+  selectedByMember Boolean    @default(true) @map("selected_by_member")
+  priority         Int        @default(0)
+  createdAt        DateTime   @default(now()) @map("created_at")
+  updatedAt        DateTime   @updatedAt @map("updated_at")
+
+  member           TeamMember @relation("MemberEffectOverrides", fields: [memberId], references: [id], onDelete: Cascade)
+  effect           RankEffect @relation("RankEffectOverrides", fields: [effectId], references: [id], onDelete: Cascade)
+
+  @@unique([memberId, effectId])
+  @@index([memberId])
+  @@index([effectId])
+  @@index([visible])
+  @@map("member_effect_overrides")
 }
 
 // ── Quests ─────────────────────────────────────────────────────────────────────

@@ -35,8 +35,8 @@ Chỉ dùng 4 trạng thái:
 | 2026-03-29 | F2 | F2 Booking/Orders | pending | in_progress | FE Lead | F2 i18n mandate added: GET /api/pricing/config must support ?lang= (vi/en/ja/ko/zh), ORDER_STATUS_LABELS map 6x5 locale, 5-locale QA mandatory. | medium | 2026-04-04 | FE Lead | fe-roadmap.md, fe-week-02-plan.md |
 | 2026-03-29 | F2 | F2 Booking/Orders | in_progress | in_progress | FE Lead | Verified: pricing/config BE✅, bookingService.getPricingConfig✅, submitQuote BE✅, transitionOrderStatus BE✅, calcLpDiscount✅, ORDER_STATUS_LABELS✅ (localeStore.ts). Fixed: BookingWizardPage useEffect locale dependency (locale→[locale]). Added legacy path redirect (routes.tsx). Home.tsx HeroSection/RankStrip props fix. Known issue: wizard header hardcoded VI labels. | low | N/A | N/A | fe-roadmap.md |
 | 2026-03-29 | F2 | F2 Booking/Orders | in_progress | completed | FE Lead | F2 COMPLETE. Item #1: WIZARD_STEP_LABELS 8×5 locale added to localeStore.ts. ProgressBar updated to accept stepLabels prop driven by WIZARD_STEP_LABELS[locale]. Build✅ lint✅. Item #2: 5-locale smoke test PASSED via Playwright — VI✅ EN✅ JA✅ KO✅ ZH✅ (ProgressBar step labels render correctly per locale). F2 closed. | low | N/A | N/A | fe-roadmap.md |
-
----
+| 2026-03-29 | F3 | F3 Team/Effects | pending | in_progress | FE Lead | F3 started: hybrid strategy (BE core + fallback), EffectsTab BE persistence slice delivered. | medium | N/A | FE+BE Lead | fe-roadmap.md, EffectsTab.tsx |
+| 2026-03-29 | F3 | F3 Team/Effects | in_progress | completed | FE Lead | ALL SUB-MILESTONES DONE ✅ F3.1: Home.tsx+MemberDetailPage 'vi'→useLocaleStore(), API-CONTRACT typo fixed; F3.2: hybrid confirmed (BE~40%, fallback~60%), coverage documented inline; F3.3: EffectsTab BE CRUD+global-toggle+per-member override wired; F3.4: coverage audit table in fe-roadmap.md; F3.5: 5-locale smoke PASSED (10/10 routes HTTP 200). Exit criteria met. | low | N/A | N/A | fe-roadmap.md |
 
 ## 4) Mẫu entry nhanh
 
