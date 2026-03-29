@@ -88,7 +88,7 @@ function Badge({ label, color = DS.blue }: { label: string; color?: string }) {
 
 // ── HERO SECTION ─────────────────────────────────────────────────────────────
 
-function HeroSection() {
+function HeroSection({ locale }: { locale: string }) {
   const [activeMetric, setActiveMetric] = useState(0);
   const metrics = [
     { label: "Dự án hoàn thành", value: "120+", color: DS.blue },
@@ -689,7 +689,7 @@ function StatsSection({ projectCount = 120 }: { projectCount?: number }) {
 
 // ── LP SYSTEM SECTION ─────────────────────────────────────────────────────────
 
-function LPSystemSection() {
+function LPSystemSection({ locale }: { locale: string }) {
   const rankFlow = [
     { rank: "IRON", color: "#9CA3AF", symbol: "⬡", desc: "Khởi đầu" },
     { rank: "BRONZE", color: "#CD7F32", symbol: "◈", desc: "+350 LP" },
@@ -756,7 +756,7 @@ function LPSystemSection() {
             </div>
 
             <Link
-              href="/khach-hang"
+              href={`/${locale}/khach-hang`}
               style={{
                 background: GRD.primary,
                 color: "#fff",
@@ -874,7 +874,7 @@ function LPSystemSection() {
 
 // ── CTA SECTION ────────────────────────────────────────────────────────────────
 
-function CTASection() {
+function CTASection({ locale }: { locale: string }) {
   return (
     <section
       style={{
@@ -917,7 +917,7 @@ function CTASection() {
         </p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem", justifyContent: "center" }}>
           <Link
-            href="/dat-lich"
+            href={`/${locale}/dat-lich`}
             style={{
               background: GRD.primary,
               color: "#fff",
@@ -973,12 +973,12 @@ export default function HomePage({ params }: PageProps) {
 
   return (
     <main style={{ background: DS.bg, color: DS.text, minHeight: "100vh" }}>
-      <HeroSection />
+      <HeroSection locale={locale} />
       <MarqueeSection />
       <StatsSection />
       <ServicesSection locale={locale} />
-      <LPSystemSection />
-      <CTASection />
+      <LPSystemSection locale={locale} />
+      <CTASection locale={locale} />
     </main>
   );
 }

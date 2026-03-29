@@ -320,7 +320,7 @@ function ServicesSectionInner({ locale }: { locale: string }) {
 
         <div style={{ textAlign: "center", marginTop: "2.5rem" }}>
           <Link
-            href="/dat-lich"
+            href={`/${locale}/dat-lich`}
             style={{
               display: "inline-flex",
               alignItems: "center",
