@@ -45,6 +45,8 @@ import { useRealtimeNotifications } from '../hooks/useRealtimeNotifications';
 import { AdminLeaderboardTab } from '../components/admin/AdminLeaderboardTab';
 import { useApi } from '../../hooks/useApi';
 import { revenueService } from '../../api/revenue.service';
+import { lpService } from '../../api/lp.service';
+import { notificationsService } from '../../api/notifications.service';
 
 const fmtLP = (n: number) => n >= 1_000_000 ? `${(n / 1_000_000).toFixed(2)}M` : n >= 1_000 ? `${(n / 1_000).toFixed(1)}K` : String(n);
 
@@ -587,86 +589,154 @@ function OverviewTab() {
 
 // ── LP FINANCE TAB ─────────────────────────────────────────────────────────
 function LPFinanceTab() {
-  const transactions = [
-    { user: 'Akira Sato', type: 'earn', detail: 'Platform Architecture Overhaul', amount: 80000, date: '16/03', rank: 'diamond' },
-    { user: 'Rin Nakamura', type: 'earn', detail: 'Distributed Cache System', amount: 20000, date: '13/03', rank: 'ruby' },
-    { user: 'Shin Watanabe', type: 'spend', detail: 'Đổi LP → Thưởng tháng 3', amount: -15000, date: '12/03', rank: 'platinum' },
-    { user: 'Yuna Park', type: 'earn', detail: 'E-commerce Platform v3', amount: 3000, date: '14/03', rank: 'gold' },
-    { user: 'Ryo Hashimoto', type: 'earn', detail: 'Cache Layer Migration', amount: 900, date: '05/03', rank: 'silver' },
-    { user: 'Mei Lin', type: 'spend', detail: 'Giảm giá hóa đơn khách hàng', amount: -500, date: '08/03', rank: 'bronze' },
-  ];
+  // Real API — LP awards + member balances from BE
+  const { data: awards, loading: awardsLoading } = useApi(() => lpService.getAwards(), []);
+  const { data: customers, loading: customersLoading } = useApi(() => lpService.getCustomerPoints(), []);
+
+  const isLoading = awardsLoading || customersLoading;
+
+  // LP stats from BE summary
+  const totalIssued = customers?.summary?.totalPointsIssued ?? 0;
+  const totalSpent = customers?.summary?.totalPointsSpent ?? 0;
+  const circulating = totalIssued - totalSpent;
+
   const lpStats = [
-    { label: 'LP Tổng phát hành', value: fmtLP(3_200_000), color: DS.blue, sub: 'All time' },
-    { label: 'LP Đang lưu thông', value: fmtLP(members.reduce((s, m) => s + m.lpBalance, 0)), color: DS.cyan, sub: 'Season III' },
-    { label: 'LP Đã đổi', value: fmtLP(820_000), color: DS.green, sub: 'Mùa này' },
+    { label: 'LP Tổng phát hành', value: fmtLP(totalIssued), color: DS.blue, sub: 'All time' },
+    { label: 'LP Đang lưu thông', value: fmtLP(circulating), color: DS.cyan, sub: 'Season III' },
+    { label: 'LP Đã đổi', value: fmtLP(totalSpent), color: DS.green, sub: 'Mùa này' },
     { label: 'Rate: 1,000 LP', value: '500K VNĐ', color: DS.amber, sub: 'Giảm giá tối đa 20%' },
   ];
+
+  // Top LP holders from customer points (or fall back to seed members)
+  const topHolders = customersLoading
+    ? [...members].sort((a, b) => b.lpBalance - a.lpBalance)
+    : (customers?.points ?? []).sort((a, b) => b.balance - a.balance).slice(0, members.length)
+        .map(p => ({
+          id: p.userId,
+          name: p.userName,
+          lpBalance: p.balance,
+          img: members.find(m => m.name === p.userName)?.img ?? `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(p.userName)}`,
+          rank: members.find(m => m.name === p.userName)?.rank ?? 'iron',
+        }));
+
+  const maxLP = topHolders.length > 0 ? Math.max(...topHolders.map((m: any) => m.lpBalance)) : 1;
+
+  // Recent award transactions from BE
+  const recentAwards = awardsLoading
+    ? []
+    : (awards ?? []).slice(0, 8).map(a => ({
+        user: a.memberName,
+        type: 'earn' as const,
+        detail: a.reason,
+        amount: a.amount,
+        date: new Date(a.createdAt).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' }),
+        rank: members.find(m => m.name === a.memberName)?.rank ?? 'iron',
+      }));
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
         {lpStats.map((s) => (
           <div key={s.label} className="p-5 rounded-2xl" style={{ background: DS.bgCard, border: `1px solid ${DS.border}` }}>
-            <div style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: '0.12em', marginBottom: 8 }}>{s.label}</div>
-            <div style={{ color: s.color, fontFamily: DS.heading, fontSize: 22, fontWeight: 700, textShadow: `0 0 12px ${s.color}50` }}>{s.value}</div>
-            <div style={{ color: DS.text5, fontSize: 11, fontFamily: DS.mono, marginTop: 4 }}>{s.sub}</div>
+            {isLoading ? (
+              <div className="animate-pulse space-y-2">
+                <div className="h-3 rounded" style={{ background: DS.border, width: '70%' }} />
+                <div className="h-6 rounded" style={{ background: DS.border, width: '50%' }} />
+              </div>
+            ) : (
+              <>
+                <div style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: '0.12em', marginBottom: 8 }}>{s.label}</div>
+                <div style={{ color: s.color, fontFamily: DS.heading, fontSize: 22, fontWeight: 700, textShadow: `0 0 12px ${s.color}50` }}>{s.value}</div>
+                <div style={{ color: DS.text5, fontSize: 11, fontFamily: DS.mono, marginTop: 4 }}>{s.sub}</div>
+              </>
+            )}
           </div>
         ))}
       </div>
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
         <div className="rounded-2xl p-5" style={{ background: DS.bgCard, border: `1px solid ${DS.border}` }}>
           <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.15em', marginBottom: 16 }}>── LP THEO THÀNH VIÊN</div>
-          <div className="space-y-3">
-            {[...members].sort((a, b) => b.lpBalance - a.lpBalance).map((m) => {
-              const rc = RANKS[m.rank];
-              const maxLP = Math.max(...members.map(mm => mm.lpBalance));
-              return (
-                <div key={m.id} className="flex items-center gap-3">
-                  <div className="w-7 h-7 rounded-lg overflow-hidden flex-shrink-0" style={{ border: `1px solid ${rc.color}60` }}>
-                    <img src={m.img} alt={m.name} className="w-full h-full object-cover" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-1">
-                      <span style={{ color: DS.text2, fontSize: 12, fontWeight: 600 }}>{m.name}</span>
-                      <span style={{ color: rc.color, fontSize: 11, fontFamily: DS.mono, fontWeight: 700 }}>{fmtLP(m.lpBalance)}</span>
-                    </div>
-                    <div className="rounded-full overflow-hidden" style={{ height: 3, background: DS.border }}>
-                      <motion.div
-                        style={{ height: '100%', borderRadius: 2, background: `linear-gradient(90deg, ${rc.gradientFrom}, ${rc.gradientTo})` }}
-                        initial={{ width: '0%' }}
-                        animate={{ width: `${(m.lpBalance / maxLP) * 100}%` }}
-                        transition={{ duration: 1.4, ease: 'easeOut' }}
-                      />
-                    </div>
+          {customersLoading ? (
+            <div className="space-y-3">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="flex items-center gap-3 animate-pulse">
+                  <div className="w-7 h-7 rounded-lg" style={{ background: DS.border }} />
+                  <div className="flex-1 space-y-1.5">
+                    <div className="h-3 rounded" style={{ background: DS.border, width: '60%' }} />
+                    <div className="h-2 rounded" style={{ background: DS.border }} />
                   </div>
                 </div>
-              );
-            })}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {topHolders.map((m: any) => {
+                const rc = RANKS[m.rank as keyof typeof RANKS] ?? RANKS.iron;
+                return (
+                  <div key={m.id} className="flex items-center gap-3">
+                    <div className="w-7 h-7 rounded-lg overflow-hidden flex-shrink-0" style={{ border: `1px solid ${rc.color}60` }}>
+                      <img src={m.img} alt={m.name} className="w-full h-full object-cover" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <span style={{ color: DS.text2, fontSize: 12, fontWeight: 600 }}>{m.name}</span>
+                        <span style={{ color: rc.color, fontSize: 11, fontFamily: DS.mono, fontWeight: 700 }}>{fmtLP(m.lpBalance)}</span>
+                      </div>
+                      <div className="rounded-full overflow-hidden" style={{ height: 3, background: DS.border }}>
+                        <motion.div
+                          style={{ height: '100%', borderRadius: 2, background: `linear-gradient(90deg, ${rc.gradientFrom}, ${rc.gradientTo})` }}
+                          initial={{ width: '0%' }}
+                          animate={{ width: `${Math.max((m.lpBalance / maxLP) * 100, 1)}%` }}
+                          transition={{ duration: 1.4, ease: 'easeOut' }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
         <div className="rounded-2xl p-5" style={{ background: DS.bgCard, border: `1px solid ${DS.border}` }}>
           <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.15em', marginBottom: 16 }}>── GIAO DỊCH GẦN ĐÂY</div>
-          <div className="space-y-2">
-            {transactions.map((tx, i) => {
-              const rc = RANKS[tx.rank as keyof typeof RANKS];
-              const m = members.find(mm => mm.name.includes(tx.user.split(' ')[0]));
-              return (
-                <div key={i} className="flex items-center gap-3 p-3 rounded-xl" style={{ background: DS.bgCard2, border: `1px solid ${DS.border}` }}>
-                  <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: tx.type === 'earn' ? DS.green : DS.red }} />
-                  {m && <div className="w-7 h-7 rounded-lg overflow-hidden flex-shrink-0" style={{ border: `1px solid ${rc.color}60` }}><img src={m.img} alt={m.name} className="w-full h-full object-cover" /></div>}
-                  <div className="flex-1 min-w-0">
-                    <div style={{ color: rc.color, fontSize: 11, fontWeight: 700 }}>{tx.user}</div>
-                    <div style={{ color: DS.text4, fontSize: 11, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tx.detail}</div>
-                  </div>
-                  <div className="text-right flex-shrink-0">
-                    <div style={{ color: tx.type === 'earn' ? DS.green : DS.red, fontSize: 12, fontFamily: DS.mono, fontWeight: 700 }}>
-                      {tx.type === 'earn' ? '+' : ''}{fmtLP(Math.abs(tx.amount))} LP
-                    </div>
-                    <div style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono }}>{tx.date}</div>
+          {awardsLoading ? (
+            <div className="space-y-2">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="flex items-center gap-3 p-3 rounded-xl animate-pulse" style={{ background: DS.bgCard2 }}>
+                  <div className="w-1.5 h-1.5 rounded-full" style={{ background: DS.border }} />
+                  <div className="flex-1 space-y-1">
+                    <div className="h-3 rounded" style={{ background: DS.border, width: '50%' }} />
+                    <div className="h-2.5 rounded" style={{ background: DS.border, width: '80%' }} />
                   </div>
                 </div>
-              );
-            })}
-          </div>
+              ))}
+            </div>
+          ) : recentAwards.length === 0 ? (
+            <div style={{ color: DS.text5, fontSize: 13, textAlign: 'center', padding: '24px 0' }}>Chưa có giao dịch LP nào</div>
+          ) : (
+            <div className="space-y-2">
+              {recentAwards.map((tx, i) => {
+                const rc = RANKS[tx.rank as keyof typeof RANKS] ?? RANKS.iron;
+                const m = members.find(mm => mm.name.includes(tx.user.split(' ')[0]));
+                return (
+                  <div key={i} className="flex items-center gap-3 p-3 rounded-xl" style={{ background: DS.bgCard2, border: `1px solid ${DS.border}` }}>
+                    <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: tx.type === 'earn' ? DS.green : DS.red }} />
+                    {m && <div className="w-7 h-7 rounded-lg overflow-hidden flex-shrink-0" style={{ border: `1px solid ${rc.color}60` }}><img src={m.img} alt={m.name} className="w-full h-full object-cover" /></div>}
+                    <div className="flex-1 min-w-0">
+                      <div style={{ color: rc.color, fontSize: 11, fontWeight: 700 }}>{tx.user}</div>
+                      <div style={{ color: DS.text4, fontSize: 11, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tx.detail}</div>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <div style={{ color: tx.type === 'earn' ? DS.green : DS.red, fontSize: 12, fontFamily: DS.mono, fontWeight: 700 }}>
+                        {tx.type === 'earn' ? '+' : ''}{fmtLP(Math.abs(tx.amount))} LP
+                      </div>
+                      <div style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono }}>{tx.date}</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
           <button className="w-full mt-4 py-2.5 rounded-xl" style={{ background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)', color: DS.blue, fontSize: 12, fontFamily: DS.mono, cursor: 'pointer' }}>
             PHÂN PHỐI LP MỚI +
           </button>
@@ -678,8 +748,45 @@ function LPFinanceTab() {
 
 // ── NOTIFICATIONS TAB ──────────────────────────────────────────────────────
 function NotificationsTab() {
+  // Real API — notifications from BE, falls back to store
+  const { data: notifData, loading, error, refetch } = useApi(
+    () => notificationsService.getNotifications({ page: 1, limit: 50 }),
+    [],
+  );
+  const apiNotifications = notifData?.data ?? [];
+
   const { adminNotifications, markAdminNotifRead, markAllAdminNotifsRead, deleteAdminNotif } = useLoopStore();
-  const unread = adminNotifications.filter(n => !n.read).length;
+
+  // Prefer BE data, fall back to store
+  const notifications = apiNotifications.length > 0 ? apiNotifications : adminNotifications;
+  const unread = notifications.filter(n => !n.read).length;
+
+  const handleMarkRead = async (id: string) => {
+    // Mark in store optimistically
+    markAdminNotifRead(id);
+    // Sync to BE
+    try {
+      await notificationsService.markRead(id);
+    } catch {
+      // Store already updated — BE sync failed, no user-visible error needed
+    }
+  };
+
+  const handleMarkAllRead = async () => {
+    markAllAdminNotifsRead();
+    // Sync unread items to BE in parallel
+    const unreadIds = notifications.filter(n => !n.read).map(n => n.id);
+    await Promise.allSettled(unreadIds.map(id => notificationsService.markRead(id).catch(() => null)));
+  };
+
+  const handleDelete = async (id: string) => {
+    deleteAdminNotif(id);
+    try {
+      await notificationsService.deleteNotification(id);
+    } catch {
+      // Store already updated
+    }
+  };
 
   const typeIconMap: Record<string, React.ReactNode> = {
     new_order: <Plus size={14} />,
@@ -691,38 +798,76 @@ function NotificationsTab() {
     system: <BarChart3 size={14} />,
   };
 
+  if (loading) {
+    return (
+      <div className="max-w-3xl space-y-4">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="flex items-start gap-4 p-4 rounded-2xl animate-pulse" style={{ background: DS.bgCard, border: `1px solid ${DS.border}` }}>
+            <div className="w-9 h-9 rounded-xl flex-shrink-0" style={{ background: DS.border }} />
+            <div className="flex-1 space-y-2">
+              <div className="h-3 rounded" style={{ background: DS.border, width: '60%' }} />
+              <div className="h-2 rounded" style={{ background: DS.border, width: '90%' }} />
+              <div className="h-2 rounded" style={{ background: DS.border, width: '40%' }} />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (error && notifications.length === 0) {
+    return (
+      <div className="max-w-3xl flex flex-col items-center justify-center py-16 gap-4" style={{ color: DS.text4 }}>
+        <AlertCircle size={32} style={{ color: DS.red }} />
+        <div style={{ fontSize: 14 }}>Không tải được thông báo</div>
+        <button onClick={refetch} style={{ color: DS.blue, background: 'none', border: 'none', cursor: 'pointer', fontSize: 12 }}>
+          Thử lại
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-3xl space-y-4">
       <div className="flex items-center justify-between">
-        <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.18em' }}>── THÔNG BÁO HỆ THỐNG ({unread} chưa đọc)</div>
-        <button onClick={markAllAdminNotifsRead} style={{ color: DS.blue, background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, fontFamily: DS.mono }}>
+        <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.18em' }}>
+          ── THÔNG BÁO HỆ THỐNG{unread > 0 ? ` (${unread} chưa đọc)` : ''}
+          {apiNotifications.length > 0 && <span style={{ color: DS.green, marginLeft: 6 }}>· Live</span>}
+        </div>
+        <button onClick={handleMarkAllRead} style={{ color: DS.blue, background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, fontFamily: DS.mono }}>
           Đánh dấu tất cả đã đọc
         </button>
       </div>
-      {adminNotifications.map((n, i) => (
-        <motion.div key={n.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.04 }}
-          className="flex items-start gap-4 p-4 rounded-2xl cursor-pointer"
-          style={{ background: n.read ? DS.bgCard : `${n.color}08`, border: `1px solid ${n.read ? DS.border : n.color + '30'}` }}
-          whileHover={{ borderColor: `${n.color}50`, backgroundColor: `${n.color}06` }}
-          onClick={() => markAdminNotifRead(n.id)}>
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${n.color}15`, border: `1px solid ${n.color}30` }}>
-            <span style={{ color: n.color }}>{typeIconMap[n.type] ?? <Clock size={14} />}</span>
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <span style={{ color: n.read ? DS.text2 : DS.text, fontSize: 13, fontWeight: n.read ? 500 : 700 }}>{n.title}</span>
-              {!n.read && <motion.div className="w-2 h-2 rounded-full flex-shrink-0"
-                style={{ background: n.color, boxShadow: `0 0 4px ${n.color}` }}
-                animate={{ scale: [1, 1.3, 1] }} transition={{ duration: 1.5, repeat: Infinity }} />}
+      {notifications.length === 0 ? (
+        <div style={{ color: DS.text5, fontSize: 13, textAlign: 'center', padding: '32px 0' }}>
+          Không có thông báo nào
+        </div>
+      ) : (
+        notifications.map((n, i) => (
+          <motion.div key={n.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.04 }}
+            className="flex items-start gap-4 p-4 rounded-2xl cursor-pointer"
+            style={{ background: n.read ? DS.bgCard : `${n.color}08`, border: `1px solid ${n.read ? DS.border : n.color + '30'}` }}
+            whileHover={{ borderColor: `${n.color}50`, backgroundColor: `${n.color}06` }}
+            onClick={() => void handleMarkRead(n.id)}>
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${n.color}15`, border: `1px solid ${n.color}30` }}>
+              <span style={{ color: n.color }}>{typeIconMap[n.type] ?? <Clock size={14} />}</span>
             </div>
-            <p style={{ color: DS.text4, fontSize: 12, lineHeight: 1.6 }}>{n.body}</p>
-            <div style={{ color: DS.text5, fontSize: 11, fontFamily: DS.mono, marginTop: 6 }}>{n.time}</div>
-          </div>
-          <button onClick={e => { e.stopPropagation(); deleteAdminNotif(n.id); }} style={{ color: DS.text5, background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0 }}>
-            <X size={14} />
-          </button>
-        </motion.div>
-      ))}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <span style={{ color: n.read ? DS.text2 : DS.text, fontSize: 13, fontWeight: n.read ? 500 : 700 }}>{n.title}</span>
+                {!n.read && <motion.div className="w-2 h-2 rounded-full flex-shrink-0"
+                  style={{ background: n.color, boxShadow: `0 0 4px ${n.color}` }}
+                  animate={{ scale: [1, 1.3, 1] }} transition={{ duration: 1.5, repeat: Infinity }} />}
+              </div>
+              <p style={{ color: DS.text4, fontSize: 12, lineHeight: 1.6 }}>{n.body}</p>
+              <div style={{ color: DS.text5, fontSize: 11, fontFamily: DS.mono, marginTop: 6 }}>{n.time}</div>
+            </div>
+            <button onClick={e => { e.stopPropagation(); void handleDelete(n.id); }} style={{ color: DS.text5, background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0 }}>
+              <X size={14} />
+            </button>
+          </motion.div>
+        ))
+      )}
     </div>
   );
 }

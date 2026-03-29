@@ -68,7 +68,8 @@
       "Read(//d/LOOP_COMPANY/LOOP/http:/localhost:3000/api/academy/certificate/**)",
       "Read(//d d:/LOOP_COMPANY/LOOP/FE/src/app/**)",
       "Bash(sed -n '1025,1028p' CustomerDashboard.tsx)",
-      "Bash(python3 -c \":*)"
+      "Bash(python3 -c \":*)",
+      "Bash(dir /b \"d:\\\\LOOP_COMPANY\\\\LOOP\\\\FE\\\\src\\\\hooks\"\" 2>nul && echo \"---\" && dir /b \"d:LOOP_COMPANYLOOPFEsrcapiuseRealtime* \")"
     ],
     "additionalDirectories": [
       "D:\\LOOP_COMPANY\\LOOP\\src\\app\\[locale]\\team\\[slug]",
