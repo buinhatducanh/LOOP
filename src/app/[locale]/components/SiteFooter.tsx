@@ -7,6 +7,7 @@
  */
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { DS, GRD } from "@/lib/design-tokens";
 import { Mail, Phone, MapPin, Zap, Rocket, Globe, Shield, BookOpen } from "lucide-react";
 
@@ -57,9 +58,12 @@ function FooterColumn({ col }: { col: FooterCol }) {
 }
 
 export default function SiteFooter({ locale = "vi" }: { locale?: string }) {
+  const t = useTranslations("Footer");
+  const tNav = useTranslations("Navigation");
+
   const cols: FooterCol[] = [
     {
-      title: "Dịch vụ",
+      title: t("services"),
       icon: <Globe size={14} />,
       links: [
         { label: "Thiết kế Website", href: `/${locale}/services` },
@@ -70,7 +74,7 @@ export default function SiteFooter({ locale = "vi" }: { locale?: string }) {
       ],
     },
     {
-      title: "Tài nguyên",
+      title: t("stayConnected"),
       icon: <BookOpen size={14} />,
       links: [
         { label: "Học viện LOOP", href: `/${locale}/academy` },
@@ -81,14 +85,14 @@ export default function SiteFooter({ locale = "vi" }: { locale?: string }) {
       ],
     },
     {
-      title: "Công ty",
+      title: t("company"),
       icon: <Shield size={14} />,
       links: [
         { label: "Về chúng tôi", href: `/${locale}` },
-        { label: "Đội ngũ", href: `/${locale}/team` },
+        { label: tNav("team"), href: `/${locale}/team` },
         { label: "Tuyển dụng", href: `/${locale}/contact` },
         { label: "Quy trình công ty", href: `/${locale}/about` },
-        { label: "Liên hệ", href: `/${locale}/contact` },
+        { label: tNav("contact"), href: `/${locale}/contact` },
       ],
     },
   ];
@@ -131,7 +135,7 @@ export default function SiteFooter({ locale = "vi" }: { locale?: string }) {
                 letterSpacing: "0.18em",
               }}
             >
-              BẮT ĐẦU HÀNH TRÌNH
+              {t("highlightGlobal")}
             </span>
           </div>
 
@@ -148,12 +152,11 @@ export default function SiteFooter({ locale = "vi" }: { locale?: string }) {
               marginBottom: "0.75rem",
             }}
           >
-            SẴN SÀNG NÂNG CẤP DIGITAL?
+            {t("ctaTitle")}
           </h2>
 
           <p style={{ color: DS.text3, fontSize: "0.9375rem", marginBottom: "2rem", lineHeight: 1.7 }}>
-            Tư vấn miễn phí 30 phút. Nhận ngay{" "}
-            <strong style={{ color: DS.blue }}>500 LP</strong> điểm thưởng khi đăng ký hôm nay.
+            {t("ctaDesc")}
           </p>
 
           <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem", justifyContent: "center" }}>
@@ -174,7 +177,7 @@ export default function SiteFooter({ locale = "vi" }: { locale?: string }) {
               }}
             >
               <Rocket size={16} />
-              Bắt đầu ngay
+              {t("getInTouch")}
             </Link>
             <Link
               href={`/${locale}/contact`}
@@ -193,7 +196,7 @@ export default function SiteFooter({ locale = "vi" }: { locale?: string }) {
               }}
             >
               <Mail size={16} />
-              Liên hệ
+              {tNav("contact")}
             </Link>
           </div>
         </div>
@@ -255,7 +258,7 @@ export default function SiteFooter({ locale = "vi" }: { locale?: string }) {
               </div>
             </Link>
             <p style={{ color: DS.text4, fontSize: "0.8125rem", lineHeight: 1.7, maxWidth: 220 }}>
-              Hệ điều hành số cho Agency đỉnh cao. Từ thiết kế đến triển khai.
+              {t("description")}
             </p>
           </div>
 
@@ -317,13 +320,17 @@ export default function SiteFooter({ locale = "vi" }: { locale?: string }) {
           }}
         >
           <p style={{ color: DS.text4, fontSize: "0.75rem", margin: 0 }}>
-            © {new Date().getFullYear()} LOOP Solutions. All rights reserved.
+            {t("rights")}
           </p>
           <div style={{ display: "flex", gap: "1.5rem" }}>
-            {["Privacy Policy", "Terms of Service", "Cookie Policy"].map((item) => (
+            {[
+              { label: t("privacyPolicy"), href: `/${locale}/privacy` },
+              { label: t("termsOfService"), href: `/${locale}/terms` },
+              { label: "Cookie Policy", href: `/${locale}` },
+            ].map((item) => (
               <Link
-                key={item}
-                href={`/${locale}`}
+                key={item.label}
+                href={item.href}
                 style={{
                   color: DS.text4,
                   fontSize: "0.75rem",
@@ -333,7 +340,7 @@ export default function SiteFooter({ locale = "vi" }: { locale?: string }) {
                 onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = DS.text3; }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = DS.text4; }}
               >
-                {item}
+                {item.label}
               </Link>
             ))}
           </div>

@@ -21,6 +21,7 @@ import {
   Menu, X, LogIn, Zap, LogOut,
   ChevronDown, Globe, Rocket, Check,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { DS, GRD } from "@/lib/design-tokens";
 import { useAuthStore } from "@/app/store/authStore";
 import { routing } from "@/i18n/routing";
@@ -45,17 +46,18 @@ const ROLE_LABELS: Record<string, { label: string; color: string }> = {
   client: { label: "KHÁCH HÀNG", color: DS.blue },
 };
 
-function getNavLinks(locale: string) {
+function useNavLinks(locale: string) {
+  const t = useTranslations("Navigation");
   return [
-    { label: "Trang chủ", href: `/${locale}` },
-    { label: "Dịch vụ", href: `/${locale}/services` },
+    { label: t("home"), href: `/${locale}` },
+    { label: t("services"), href: `/${locale}/services` },
     { label: "Media", href: `/${locale}/media` },
-    { label: "Dự án", href: `/${locale}/portfolio` },
-    { label: "Đội ngũ", href: `/${locale}/team` },
+    { label: t("portfolio"), href: `/${locale}/portfolio` },
+    { label: t("team"), href: `/${locale}/team` },
     { label: "Học viện", href: `/${locale}/academy` },
-    { label: "Blog", href: `/${locale}/blog` },
-    { label: "Bảng giá", href: `/${locale}/pricing` },
-    { label: "Liên hệ", href: `/${locale}/contact` },
+    { label: t("blog"), href: `/${locale}/blog` },
+    { label: t("pricing"), href: `/${locale}/pricing` },
+    { label: t("contact"), href: `/${locale}/contact` },
   ];
 }
 
@@ -221,7 +223,7 @@ export default function SiteHeader({ locale }: { locale: string }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
-  const navLinks = getNavLinks(locale);
+  const navLinks = useNavLinks(locale);
 
   // Close user menu on outside click
   useEffect(() => {

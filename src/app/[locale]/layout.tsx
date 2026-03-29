@@ -15,6 +15,7 @@ import { routing } from "@/i18n/routing";
 import SiteHeader from "./components/SiteHeader";
 import SiteFooter from "./components/SiteFooter";
 import { getFontClass } from "@/lib/fonts";
+import { buildOrganizationJsonLd, buildWebSiteJsonLd } from "@/lib/json-ld";
 import "@/styles/figma-theme.css";
 
 type Props = {
@@ -37,9 +38,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const description = seo.defaultDescription ?? "LOOP Solutions platform with server-first architecture, AI-driven workflows, and edge-ready delivery.";
   const brandMetaTitle = seo.brandMetaTitle ?? "Server-first + AI-driven + Edge-ready";
   const brandMetaDescription = seo.brandMetaDescription ?? "Server-first architecture, AI-driven execution, edge-ready delivery for scalable digital products.";
-  const ogImage = seo.ogImage ?? "/og-cover.jpg";
-
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://loop.vn";
+  const ogImage = `/api/og?title=${encodeURIComponent(brandMetaTitle)}&description=${encodeURIComponent(brandMetaDescription)}&locale=${locale}`;
 
   return {
     metadataBase: new URL(baseUrl),
@@ -48,6 +48,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       template: `%s | ${title}`,
     },
     description,
+    keywords: seo.keywords ?? [
+      "thiết kế website", "web app", "SaaS", "dashboard", "SEO",
+      "website design", "web application", "agency Vietnam",
+    ],
+    authors: [{ name: "LOOP Solutions" }],
+    creator: "LOOP Solutions",
+    publisher: "LOOP Solutions",
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: { index: true, follow: true, "max-image-preview": "large" },
+    },
     alternates: {
       canonical: `${baseUrl}/${locale}`,
       languages: Object.fromEntries(
@@ -77,6 +89,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description: brandMetaDescription,
       images: [ogImage],
     },
+    // ── Geo tags ────────────────────────────────────────────────────────────
+    other: {
+      "geo.region": "VN",
+      "geo.placename": "Ho Chi Minh City",
+      "ICBM": "10.7769, 106.7009",
+    },
   };
 }
 
@@ -90,14 +108,30 @@ export default async function LocaleLayout({ children, params }: Props) {
   setRequestLocale(locale);
 
   const messages = await getMessages();
+  const organizationJsonLd = buildOrganizationJsonLd();
+  const websiteJsonLd = buildWebSiteJsonLd();
 
   return (
     // "dark" class activates Figma dark theme CSS variables from figma-theme.css
     <html lang={locale} suppressHydrationWarning className="dark">
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+        <link rel="apple-touch-icon" href="/icon-192.svg" />
+        <meta name="msapplication-TileColor" content="#020617" />
+        <meta name="msapplication-config" content="/browserconfig.xml" />
+      </head>
       <body
         style={{ margin: 0, display: "flex", flexDirection: "column", minHeight: "100vh" }}
         className={`dark ${getFontClass(locale)}`}
       >
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+        />
         <NextIntlClientProvider messages={messages}>
           <SiteHeader locale={locale} />
           <div style={{ flex: 1 }}>

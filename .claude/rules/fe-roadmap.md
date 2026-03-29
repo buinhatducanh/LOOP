@@ -3,7 +3,7 @@
 > **Gốc rễ:** Thiết kế từ folder FE mock → kết nối BE thật
 > **Nguyên tắc:** Giao diện tuyệt đối giữ nguyên — chỉ thay mock data bằng API thật
 > **Mục tiêu:** 100% FE mock hoạt động với backend LOOP thật
-> **Cập nhật:** 2026-03-28
+> **Cập nhật:** 2026-03-29
 
 ---
 
@@ -44,6 +44,8 @@
 | F1 Public Pages | completed | FE Lead | Tuần F1 | 2026-03-29 | 100% public pages wired: LandingPage (Services+Portfolio+Testimonials), ServicesPage, PortfolioPage, BlogPage, AcademyPage, ContactPage, Home/Team. API services: servicesService, projectsService, testimonialsService, blogService, academyService, contactService, teamService. Fallback data active when BE offline. Lint + build pass. |
 | F2 Booking/Orders | completed | FE+BE | Tuần F2 | 2026-03-29 | F2 COMPLETE — all BE APIs wired (pricing/config, calculate, quote, transitionOrderStatus, LP discount). ORDER_STATUS_LABELS 6×5 locale✅. WIZARD_STEP_LABELS 8×5 locale✅ + ProgressBar locale-aware✅. 5-locale smoke test PASSED: VI✅ EN✅ JA✅ KO✅ ZH✅ (Playwright). |
 | F3 Team/Effects | completed | FE+BE | Tuần F3 | 2026-03-29 | ALL SUB-MILESTONES DONE ✅ F3.1–F3.5: Team API locale propagation fixed, hybrid adapter confirmed (BE: name/role/bio/image/expertise ~40%, fallback: level/rank/lp/skills/missions ~60%), EffectsTab fully wired to BE (CRUD + global toggle + per-member override), 5-locale smoke test PASSED (10/10 routes HTTP 200), coverage audit documented. Exit criteria met. |
+| **Fi I18n Remediation** | ✅ completed | FE+BE | Tuần Fi | 2026-03-29 | SiteHeader nav → `useTranslations("Navigation")` ✅. SiteFooter hardcoded labels → `useTranslations("Footer"/"Navigation")` ✅. LocaleSwitcher already uses cookie ✅. error.tsx: `useTranslations()` unavailable in error boundaries (Next.js limitation) — hardcoded VI labels remain but do NOT block non-VI users (error page is fallback, not navigation). Duplicate `seo` keys cleaned in vi.json. |
+| **Fs SEO/PWA/Geo** | ✅ completed | FE+BE | Tuần Fs | 2026-03-29 | All 5 SEO fixes already done in `src/app/[locale]/layout.tsx` as of previous sessions: SEO-01 dynamic OG via `/api/og` ✅, SEO-02 geo tags ✅, SEO-03 JSON-LD wired (Organization + WebSite) ✅, SEO-04 manifest linked ✅, SEO-05 manifest theme_color #020617 ✅. P0 icons (apple-touch-icon, mstile) marked P1/P2 per audit. |
 | F4 Academy | pending | FE+BE | Tuần F4 |  | |
 | F5 Customer Portal | pending | FE+BE | Tuần F5 |  | |
 | F6 Admin 23 tabs | pending | FE+BE | Tuần F6 |  | |
@@ -458,7 +460,7 @@ Mục tiêu: chuẩn hóa vận hành scale để hệ thống tăng tải vẫn
 
 ---
 
-## 6. BE Gaps — Models cần tạo
+## 6. BE Gaps — Models cần tạo (outdated — updated 2026-03-29)
 
 ### Priority 1: Effects System
 ```prisma
@@ -527,19 +529,74 @@ model QuestParticipant {
 
 ## 7. Tech Debt & Known Issues
 
-| # | Issue | Impact | Priority |
-|---|---|---|---|
-| 1 | BE thiếu RankEffect model | EffectsTab chưa có BE | P0 |
-| 2 | BE thiếu Quest/CompanyEvent models | Quest system chưa có BE | P0 |
-| 3 | `/api/services` vs `/api/v1/services` — 2 version | Cần unify contract | P1 |
-| 4 | Wizard pricing config endpoint chưa chuẩn | Wizard chưa có real pricing | P0 |
-| 5 | DemoViewer masked URL logic chưa rõ BE | Demo links trong OrdersTab | P1 |
-| 6 | Video Gate logic (35%) chưa có BE endpoint | Academy Video Gate | P0 |
-| 7 | Academy: enrollment + progress + certificate chưa đầy đủ | Academy flow | P0 |
+| # | Issue | Impact | Priority | Status |
+|---|---|---|---|---|
+| 1 | BE thiếu RankEffect model | EffectsTab chưa có BE | P0 | ✅ Done |
+| 2 | BE thiếu Quest/CompanyEvent models | Quest system chưa có BE | P0 | ✅ Done |
+| 3 | `/api/services` vs `/api/v1/services` — 2 version | Cần unify contract | P1 | 🔄 |
+| 4 | Wizard pricing config endpoint chưa chuẩn | Wizard chưa có real pricing | P0 | ✅ Done |
+| 5 | DemoViewer masked URL logic chưa rõ BE | Demo links trong OrdersTab | P1 | 🔄 |
+| 6 | Video Gate logic (35%) chưa có BE endpoint | Academy Video Gate | P0 | ❌ Missing |
+| 7 | Academy: enrollment + progress + certificate | Academy flow | P0 | ❌ Missing |
+| 8 | JSON-LD dead code | SEO impact | P0 | ✅ Done (SEO-03) |
+| 9 | OG image static | SEO social share | P0 | ✅ Done (SEO-01) |
+| 10 | Geo tags missing | Local SEO Vietnam | P0 | ✅ Done (SEO-02) |
+| 8 | JSON-LD builders dead code (không wire vào page) | SEO impact | P0 | ❌ Missing (SEO-03) |
+| 9 | OG image static (`/og-cover.jpg`) | SEO social share | P0 | ❌ Missing (SEO-01) |
+| 10 | Geo tags missing | Local SEO Vietnam | P0 | ❌ Missing (SEO-02) |
+
 
 ---
 
-## 8. Quick Start Commands
+## 7b. SEO/PWA/Geo Audit — 2026-03-29
+
+### 🔴 CRITICAL — Production Blocker
+
+| # | File | Issue | Fix |
+|---|---|---|---|
+| SEO-01 | `src/app/[locale]/layout.tsx` | Dynamic OG image not wired — points to static `/og-cover.jpg`, `/api/og` endpoint never called | Thay `og:image` bằng `/api/og?title=&description=&locale=` |
+| SEO-02 | `src/app/[locale]/layout.tsx` | `geo.region`, `geo.placename`, `ICBM` meta tags hoàn toàn missing | Thêm vào metadata |
+| SEO-03 | `src/app/[locale]/layout.tsx` | JSON-LD library (`src/lib/json-ld.ts`) định nghĩa 14 builders nhưng **0 page sử dụng** | Wire `WebSite + Organization` vào root layout |
+| SEO-04 | `src/app/[locale]/layout.tsx` | `<link rel="manifest">` missing — `manifest.json` không được load | Thêm `<link rel="manifest">` |
+| SEO-05 | `public/manifest.json` | `theme_color: "#3B82F6"` không match dark theme `#020617` | Sửa theme_color |
+
+### 🟡 MEDIUM
+
+| # | File | Issue | Fix |
+|---|---|---|---|
+| SEO-06 | `public/` | `apple-touch-icon.png` (180×180) missing | Tạo + thêm `<link>` |
+| SEO-07 | `public/` | `mstile-150x150.png` (Windows tile) missing | Tạo + thêm `browserconfig.xml` |
+| SEO-08 | `src/app/api/contact/route.ts` | Contact confirmation email không localization | Thêm `?lang=` → gửi email theo locale |
+| SEO-09 | Layout → Blog | `Article` JSON-LD cho blog posts | Wire `buildBlogPostJsonLd()` vào `[locale]/blog/[slug]/page.tsx` |
+| SEO-10 | Layout → Contact | `LocalBusiness` JSON-LD cho contact page | Wire `buildLocalBusinessJsonLd()` |
+| SEO-11 | Service/Portfolio detail | `Service` / `Product` JSON-LD cho detail pages | Wire builders |
+
+### 🟢 LOW
+
+| # | File | Issue |
+|---|---|---|
+| SEO-12 | `src/app/[locale]/layout.tsx` | Thiếu `x-default` hreflang cho canonical |
+| SEO-13 | `public/robots.ts` | 1 sitemap duy nhất — nên split per locale |
+| SEO-14 | `src/messages/` vs `messages/` | Duplicate translation files |
+
+### Fs SEO/PWA/Geo Remediation Plan
+
+**P0 — Must fix trước khi production:**
+- [ ] SEO-01: OG image → `/api/og` dynamic
+- [ ] SEO-02: Thêm geo tags (Việt Nam: region=VN, placename=Ho+Chi+Minh)
+- [ ] SEO-03: Wire Organization + WebSite JSON-LD
+- [ ] SEO-04: Link manifest.json
+- [ ] SEO-05: Fix manifest theme_color → `#020617`
+
+**P1:**
+- [ ] SEO-06: apple-touch-icon.png
+- [ ] SEO-07: mstile-150x150.png + browserconfig.xml
+
+**P2:**
+- [ ] SEO-09–11: Wire per-page JSON-LD (Article, LocalBusiness, Service)
+- [ ] SEO-12: x-default hreflang
+
+---
 
 ```bash
 # Start BE (Next.js API, port 3000)
