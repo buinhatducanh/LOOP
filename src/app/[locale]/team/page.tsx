@@ -78,13 +78,6 @@ export default async function TeamPage({ params }: Props) {
         maxXp: true,
         availableLp: true,
         lockedLp: true,
-        team: true,
-        roleCode: true,
-        specialty: true,
-        missions: true,
-        challenge: true,
-        solution: true,
-        result: true,
       },
       orderBy: [{ isFeatured: "desc" }, { name: "asc" }],
     });
