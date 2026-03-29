@@ -1,43 +1,52 @@
-# ─── LOOP Website — GitHub Actions CI ─────────────────────────────────────────────
-# Jobs (parallel lint + test → build):
-#   1. lint       — ESLint + TypeScript type check
-#   2. test       — Vitest unit tests with coverage
-#   3. build      — Next.js production build (runs only after lint + test pass)
-#
-# Secrets needed (GitHub repo → Settings → Secrets → Actions):
-#   DATABASE_URL, AUTH_SECRET, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET,
-#   NEXT_PUBLIC_SANITY_*, NEXT_PUBLIC_CLOUDINARY_*, UPSTASH_*, INNGEST_*, SENTRY_DSN,
-#   NEXT_PUBLIC_SITE_URL, NEXT_PUBLIC_GA_MEASUREMENT_ID, NEXT_PUBLIC_TAWKTO_*
-# Optional: CODECOV_TOKEN (for coverage upload — skips if absent)
-
 name: CI
 
 on:
-  push:
-    branches: [master, develop]
   pull_request:
     branches: [master, develop]
+  push:
+    branches: [master, develop]
 
-# Cancel in-progress runs on the same branch
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
   contents: read
 
-# ─── Shared setup (reusable steps) ──────────────────────────────────────────────
-# Cannot use YAML anchors in GitHub Actions, so we define a composite action inline via strategy.matrix
-# or simply duplicate the cheap setup steps (checkout + setup-node + install).
-# NOTE: `npm ci` automatically runs `postinstall` which calls `prisma generate`,
-# so no separate Prisma generate step is needed.
-
 jobs:
-  # ── Job 1: Lint + Type check ──────────────────────────────────────────────────
-  lint-and-typecheck:
-    name: Lint & Type Check
+  changes:
+    name: Detect changed paths
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    outputs:
+      be: ${{ steps.filter.outputs.be }}
+      fe: ${{ steps.filter.outputs.fe }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Filter paths
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            be:
+              - 'src/**'
+              - 'prisma/**'
+              - 'package.json'
+              - 'package-lock.json'
+              - 'next.config.ts'
+              - 'tsconfig.json'
+              - 'tests/**'
+              - '.github/workflows/**'
+            fe:
+              - 'FE/**'
+
+  be-lint-typecheck:
+    name: BE Lint & Type Check
+    needs: changes
+    if: needs.changes.outputs.be == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -45,12 +54,11 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
-          cache: "npm"
+          node-version: '20'
+          cache: npm
 
       - name: Install dependencies
         run: npm ci
-        # postinstall (prisma generate + index.ts creation) runs automatically via npm ci
 
       - name: Run ESLint
         run: npm run lint
@@ -58,12 +66,12 @@ jobs:
       - name: TypeScript check
         run: npx tsc --noEmit
 
-  # ── Job 2: Unit tests + coverage ────────────────────────────────────────────
-  test:
-    name: Unit Tests
+  be-test:
+    name: BE Unit Tests
+    needs: changes
+    if: needs.changes.outputs.be == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-    # Run in parallel with lint (no `needs` = parallel)
+    timeout-minutes: 12
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -71,36 +79,27 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
-          cache: "npm"
+          node-version: '20'
+          cache: npm
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Run tests with coverage
-        run: npm run test:coverage
+      - name: Run tests
+        run: npm run test:run
         env:
-          # Disable external services so tests run without real credentials
-          UPSTASH_REDIS_REST_URL: ""
-          UPSTASH_REDIS_REST_TOKEN: ""
-          INNGEST_SIGNING_KEY: ""
-          INNGEST_EVENT_KEY: ""
-          SENTRY_DSN: ""
+          UPSTASH_REDIS_REST_URL: ''
+          UPSTASH_REDIS_REST_TOKEN: ''
+          INNGEST_SIGNING_KEY: ''
+          INNGEST_EVENT_KEY: ''
+          SENTRY_DSN: ''
 
-      - name: Upload coverage to Codecov
-        if: env.CODECOV_TOKEN != ''
-        uses: codecov/codecov-action@v4
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./coverage/lcov.info
-          fail_ci_if_error: false
-
-  # ── Job 3: Production build (runs after lint + test) ───────────────────────
-  build:
-    name: Production Build
+  be-build:
+    name: BE Production Build
+    needs: [changes, be-lint-typecheck, be-test]
+    if: needs.changes.outputs.be == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    needs: [lint-and-typecheck, test]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -108,8 +107,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
-          cache: "npm"
+          node-version: '20'
+          cache: npm
 
       - name: Install dependencies
         run: npm ci
@@ -117,22 +116,72 @@ jobs:
       - name: Build Next.js app
         run: npm run build
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
-          NEXT_PUBLIC_SANITY_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_SANITY_PROJECT_ID }}
-          NEXT_PUBLIC_SANITY_DATASET: ${{ secrets.NEXT_PUBLIC_SANITY_DATASET }}
-          NEXT_PUBLIC_SANITY_API_VERSION: ${{ secrets.NEXT_PUBLIC_SANITY_API_VERSION }}
-          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
-          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
-          NEXT_PUBLIC_GA_MEASUREMENT_ID: ${{ secrets.NEXT_PUBLIC_GA_MEASUREMENT_ID }}
-          NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
-          NEXT_PUBLIC_TAWKTO_PROPERTY_ID: ${{ secrets.NEXT_PUBLIC_TAWKTO_PROPERTY_ID }}
-          NEXT_PUBLIC_TAWKTO_WIDGET_ID: ${{ secrets.NEXT_PUBLIC_TAWKTO_WIDGET_ID }}
-          NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: ${{ secrets.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME }}
-          CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
-          CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
-          UPSTASH_REDIS_REST_URL: ${{ secrets.UPSTASH_REDIS_REST_URL }}
-          UPSTASH_REDIS_REST_TOKEN: ${{ secrets.UPSTASH_REDIS_REST_TOKEN }}
-          INNGEST_SIGNING_KEY: ${{ secrets.INNGEST_SIGNING_KEY }}
-          INNGEST_EVENT_KEY: ${{ secrets.INNGEST_EVENT_KEY }}
-          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/loop_ci
+          AUTH_SECRET: ci_dummy_secret_please_override
+          NEXTAUTH_URL: http://localhost:3000
+          NEXT_PUBLIC_SITE_URL: http://localhost:3000
+          NEXT_PUBLIC_SANITY_PROJECT_ID: dummy
+          NEXT_PUBLIC_SANITY_DATASET: production
+          NEXT_PUBLIC_SANITY_API_VERSION: 2024-01-01
+          GOOGLE_CLIENT_ID: dummy
+          GOOGLE_CLIENT_SECRET: dummy
+          NEXT_PUBLIC_GA_MEASUREMENT_ID: G-XXXXXXX
+          NEXT_PUBLIC_TAWKTO_PROPERTY_ID: dummy
+          NEXT_PUBLIC_TAWKTO_WIDGET_ID: dummy
+          NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: dummy
+          CLOUDINARY_API_KEY: dummy
+          CLOUDINARY_API_SECRET: dummy
+          UPSTASH_REDIS_REST_URL: ''
+          UPSTASH_REDIS_REST_TOKEN: ''
+          INNGEST_SIGNING_KEY: ''
+          INNGEST_EVENT_KEY: ''
+          SENTRY_DSN: ''
+
+  fe-build:
+    name: FE Build (Vite)
+    needs: changes
+    if: needs.changes.outputs.fe == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    defaults:
+      run:
+        working-directory: FE
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: FE/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build FE app
+        run: npm run build
+
+  ci-summary:
+    name: CI Summary
+    needs: [changes, be-lint-typecheck, be-test, be-build, fe-build]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Report
+        run: |
+          echo "Changed BE: ${{ needs.changes.outputs.be }}"
+          echo "Changed FE: ${{ needs.changes.outputs.fe }}"
+          echo "BE lint/typecheck: ${{ needs.be-lint-typecheck.result || 'skipped' }}"
+          echo "BE test: ${{ needs.be-test.result || 'skipped' }}"
+          echo "BE build: ${{ needs.be-build.result || 'skipped' }}"
+          echo "FE build: ${{ needs.fe-build.result || 'skipped' }}"
+
+      - name: Fail if any required job failed
+        run: |
+          if [ "${{ needs.be-lint-typecheck.result }}" = "failure" ] || [ "${{ needs.be-test.result }}" = "failure" ] || [ "${{ needs.be-build.result }}" = "failure" ] || [ "${{ needs.fe-build.result }}" = "failure" ]; then
+            echo "CI failed"
+            exit 1
+          fi
+          echo "CI passed"

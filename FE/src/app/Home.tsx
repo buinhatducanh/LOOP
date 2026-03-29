@@ -3,12 +3,14 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Link } from 'react-router';
 import { MemberCard, GUILD_ANIMATIONS_CSS, getRankEntranceProps } from './components/team/MemberCard';
 import { HUDPanel } from './components/team/HUDPanel';
-import { members, Member, RANKS, RankKey } from './components/team/memberData';
+import { members as fallbackMembers, Member, RANKS, RankKey } from './components/team/memberData';
 import { HallOfFame } from './components/team/HallOfFame';
 import { RoleFilters, RoleFilter } from './components/team/RoleFilters';
 import { SearchSortBar, SortOption } from './components/team/SearchSortBar';
 import { GRD, DS } from './components/layout/ds';
+import { teamService, mapTeamMemberToMember } from '../api/team.service';
 import { Shield, Users, Zap, Trophy, ChevronRight, ArrowRight } from 'lucide-react';
+import { useLocaleStore } from './store/localeStore';
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 function fmtLP(n: number): string {
@@ -32,7 +34,7 @@ const HexPattern = memo(function HexPattern() {
 });
 
 // ── Hero Section ──────────────────────────────────────────────────────────
-const HeroSection = memo(function HeroSection() {
+const HeroSection = memo(function HeroSection({ members }: { members: Member[] }) {
   const totalLP   = members.reduce((s, m) => s + m.lpEarned, 0);
   const totalMissions = members.reduce((s, m) => s + m.missions, 0);
   const totalAchievements = members.reduce((s, m) => s + m.achievements.length, 0);
@@ -118,7 +120,7 @@ const HeroSection = memo(function HeroSection() {
 // ── Rank Distribution Strip ───────────────────────────────────────────────
 type RankFilter = RankKey | 'all';
 
-const RankStrip = memo(function RankStrip({ active, onChange }: { active: RankFilter; onChange: (r: RankFilter) => void }) {
+const RankStrip = memo(function RankStrip({ members, active, onChange }: { members: Member[]; active: RankFilter; onChange: (r: RankFilter) => void }) {
   const rankKeys: RankKey[] = ['iron', 'bronze', 'silver', 'gold', 'platinum', 'ruby', 'diamond'];
   const countPerRank = rankKeys.reduce((acc, r) => ({ ...acc, [r]: members.filter(m => m.rank === r).length }), {} as Record<RankKey, number>);
   const lpPerRank = rankKeys.reduce((acc, r) => ({ ...acc, [r]: members.filter(m => m.rank === r).reduce((s, m) => s + m.lpEarned, 0) }), {} as Record<RankKey, number>);
@@ -258,6 +260,43 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy]         = useState<SortOption>('level-desc');
 
+  // API-loaded members — falls back to hardcoded data when offline
+  const [apiMembers, setApiMembers] = useState<Member[]>([]);
+  const [membersLoading, setMembersLoading] = useState(true);
+
+  // i18n: read current locale from global store
+  const { locale } = useLocaleStore();
+
+  useEffect(() => {
+    let cancelled = false;
+    setMembersLoading(true);
+    teamService.getMembers(locale)
+      .then(({ members: fetched }) => {
+        if (!cancelled && fetched.length > 0) {
+          // Build lookup by slug (lowercase, hyphenated) → fallback Member
+          const fallbackBySlug: Record<string, { id: number; missions: number; achievements: string[]; skills: Record<string, number>; missionLogs: unknown[]; rankHistory: unknown[]; currentXP: number; maxXP: number; lpSpent: number }> = {};
+          fallbackMembers.forEach(m => {
+            const slug = m.name.toLowerCase().replace(/\s+/g, '-');
+            fallbackBySlug[slug] = m;
+          });
+          const merged = fetched
+            .map(beMember => {
+              // Match BE slug to fallback by name-derived slug
+              const fb = fallbackBySlug[beMember.slug] ?? fallbackBySlug[beMember.name.toLowerCase().replace(/\s+/g, '-')];
+              return mapTeamMemberToMember(beMember, { [beMember.slug]: fb ?? { id: 0, missions: 0, achievements: [], skills: {}, missionLogs: [], rankHistory: [], currentXP: 0, maxXP: 0, lpSpent: 0 } });
+            })
+            .filter((m): m is Member => !!m);
+          if (!cancelled) setApiMembers(merged);
+        }
+      })
+      .catch(() => { /* keep using fallback */ })
+      .finally(() => { if (!cancelled) setMembersLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  // Use API members when loaded, fall back to hardcoded data
+  const members: Member[] = apiMembers.length > 0 ? apiMembers : fallbackMembers;
+
   // Inject guild CSS animations
   useEffect(() => {
     const el = document.createElement('style');
@@ -300,7 +339,6 @@ export default function Home() {
       if (sortBy === 'team') return a.team.localeCompare(b.team);
       return 0;
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roleFilter, rankFilter, searchQuery, sortBy]);
 
   const isFiltered = roleFilter !== 'all' || rankFilter !== 'all' || !!searchQuery;
@@ -323,7 +361,7 @@ export default function Home() {
       {/* Main content — pt-0 since PublicLayout Navbar is sticky */}
       <div className="relative z-10">
         {/* ── Hero ── */}
-        <HeroSection />
+        <HeroSection members={members} />
 
         <div className="max-w-7xl mx-auto px-6 pb-24">
 
@@ -336,7 +374,7 @@ export default function Home() {
           {/* ── Rank Distribution ── */}
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5 }}>
             <SectionDivider label="MA TRẬN PHÂN BỔ RANK" />
-            <RankStrip active={rankFilter} onChange={setRankFilter} />
+            <RankStrip members={members} active={rankFilter} onChange={setRankFilter} />
           </motion.div>
 
           {/* ── Controls ── */}

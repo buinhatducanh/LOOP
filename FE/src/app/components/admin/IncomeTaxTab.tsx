@@ -3,7 +3,7 @@
  * Dùng cho mục đích khai thuế, báo cáo nội bộ
  * Tuân thủ biểu thuế TNCN Việt Nam (lũy tiến 7 bậc)
  */
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   FileText, DollarSign, TrendingUp, User, Download,
@@ -12,7 +12,8 @@ import {
   CheckCircle2, AlertTriangle, Users, Shield,
 } from 'lucide-react';
 import { DS, GRD } from '../layout/ds';
-import { members, RANKS, type RankKey } from '../team/memberData';
+import { members as seedMembers, RANKS, type RankKey } from '../team/memberData';
+import { teamService } from '../../../api/team.service';
 
 // ── Vietnamese PIT (Thuế TNCN) brackets 2026 ──────────────────────────────
 
@@ -99,9 +100,20 @@ function calcPIT(taxableIncome: number): { tax: number; brackets: { label: strin
   return { tax: totalTax, brackets };
 }
 
+// ── Member shape for tax calc ──────────────────────────────────────────────
+interface TaxMember {
+  id: string;
+  name: string;
+  role: string;
+  rank: RankKey;
+  level: number;
+  missions: number;
+  img: string;
+}
+
 // ── Generate sample income data ────────────────────────────────────────────
 
-function genMonthlyIncome(m: typeof members[0], month: number, year: number): MonthlyIncome {
+function genMonthlyIncome(m: TaxMember, month: number, year: number): MonthlyIncome {
   const base = SALARY_VND[m.rank];
   const isJan = month === 1;
   const isTetMonth = month === 1;
@@ -136,7 +148,7 @@ const MONTHS_VI = ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', '
 // ── Tax calculation panel ─────────────────────────────────────────────────
 
 function TaxCalcPanel({ member, year, dependants }: {
-  member: typeof members[0];
+  member: TaxMember;
   year: number;
   dependants: number;
 }) {
@@ -335,16 +347,61 @@ function TaxCalcPanel({ member, year, dependants }: {
 // ── Main ──────────────────────────────────────────────────────────────────
 
 export function IncomeTaxTab() {
-  const [selectedMemberId, setSelectedMemberId] = useState<number>(7);
+  const [beMembers, setBeMembers] = useState<Array<{ id: string; name: string; role: string; rank: string; level: number; missions: number; img: string }>>([]);
+  const [membersLoading, setMembersLoading] = useState(false);
+  const [membersError, setMembersError] = useState('');
+  const [selectedMemberId, setSelectedMemberId] = useState<string>('__loading__');
   const [selectedYear, setSelectedYear] = useState(2026);
   const [dependants, setDependants] = useState(0);
   const [search, setSearch] = useState('');
 
-  const selectedMember = members.find(m => m.id === selectedMemberId) ?? members[0];
+  // Fetch members from BE on mount
+  useEffect(() => {
+    let cancelled = false;
+    setMembersLoading(true);
+    teamService.getAdminMembers({ limit: 100 })
+      .then(({ members }) => {
+        if (cancelled) return;
+        const mapped = members.map(m => ({
+          id: m.id,
+          name: m.name,
+          role: m.role,
+          rank: m.rank as RankKey,
+          level: m.level,
+          missions: (m as { missions?: number }).missions ?? 0,
+          img: m.image,
+        }));
+        setBeMembers(mapped);
+        if (!selectedMemberId && mapped.length > 0) {
+          setSelectedMemberId(mapped[0].id);
+        }
+      })
+      .catch(() => { if (!cancelled) setMembersError('Không tải được danh sách nhân viên'); })
+      .finally(() => { if (!cancelled) setMembersLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  // Build display list: BE data takes priority, seed as fallback
+  const displayMembers = useMemo(() => {
+    if (beMembers.length > 0) return beMembers;
+    return seedMembers.map(m => ({
+      id: String(m.id),
+      name: m.name,
+      role: m.role,
+      rank: m.rank as RankKey,
+      level: m.level,
+      missions: m.missions,
+      img: m.img,
+    }));
+  }, [beMembers]);
+
+  const selectedMember = displayMembers.find(m => m.id === selectedMemberId) ?? displayMembers[0] ?? {
+    id: 'fallback', name: '—', role: '—', rank: 'iron' as RankKey, level: 1, missions: 0, img: '',
+  };
   const rc = RANKS[selectedMember.rank];
   const baseSalaryVND = SALARY_VND[selectedMember.rank];
 
-  const filteredMembers = members.filter(m =>
+  const filteredMembers = displayMembers.filter(m =>
     m.name.toLowerCase().includes(search.toLowerCase()) ||
     m.role.toLowerCase().includes(search.toLowerCase())
   );
@@ -387,8 +444,8 @@ export function IncomeTaxTab() {
       {/* Stats overview */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
         {[
-          { label: 'Tổng nhân sự', value: members.length, sub: 'trong hệ thống', color: DS.blue, icon: <Users size={18} /> },
-          { label: 'Quỹ lương ước tính', value: fmtVND(members.reduce((s, m) => s + SALARY_VND[m.rank] * 12, 0)), sub: `năm ${selectedYear}`, color: DS.green, icon: <DollarSign size={18} /> },
+          { label: 'Tổng nhân sự', value: displayMembers.length, sub: 'trong hệ thống', color: DS.blue, icon: <Users size={18} /> },
+          { label: 'Quỹ lương ước tính', value: fmtVND(displayMembers.reduce((s, m) => s + SALARY_VND[m.rank] * 12, 0)), sub: `năm ${selectedYear}`, color: DS.green, icon: <DollarSign size={18} /> },
           { label: 'Mức giảm trừ cá nhân', value: '132M', sub: '11M/tháng × 12', color: DS.amber, icon: <Shield size={18} /> },
           { label: 'Biểu thuế hiện hành', value: '7 bậc', sub: '5% → 35%', color: DS.purple, icon: <BarChart3 size={18} /> },
         ].map(s => (
@@ -418,7 +475,12 @@ export function IncomeTaxTab() {
 
           {/* Members */}
           <div className="space-y-1.5 overflow-y-auto" style={{ maxHeight: 560 }}>
-            {filteredMembers.map(m => {
+            {membersLoading ? (
+            <div className="p-4 text-center" style={{ color: DS.text5, fontSize: 12 }}>Đang tải...</div>
+          ) : membersError ? (
+            <div className="p-4 text-center" style={{ color: DS.red, fontSize: 12 }}>{membersError}</div>
+          ) : (
+            filteredMembers.map(m => {
               const mr = RANKS[m.rank];
               const isSelected = m.id === selectedMemberId;
               return (
@@ -436,7 +498,8 @@ export function IncomeTaxTab() {
                   {isSelected && <ChevronRight size={12} style={{ color: mr.color }} />}
                 </motion.div>
               );
-            })}
+            })
+          )}
           </div>
         </div>
 

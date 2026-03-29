@@ -1,11 +1,12 @@
 import { handleError } from "@/lib/api/response";
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth/permissions";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    await requireAuth();
+    await requireAuth(req);
 
     const [
       totalServices,

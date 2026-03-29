@@ -1,4 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
+import { revenueService } from '../../../api/revenue.service';
+import type { DashboardCharts } from '../../../api/revenue.service';
 import { TrendingUp, ArrowUpRight, ArrowDownRight, DollarSign, Zap, FolderKanban, Download } from 'lucide-react';
 import { DS, GRD } from '../layout/ds';
 
@@ -288,8 +290,32 @@ function MetricCard({ label, value, sub, color, icon, trend, trendUp }: {
 
 // ── Main Component ────────────────────────────────────────────────────────
 export function RevenueTab() {
+  // ── API state ──────────────────────────────────────────────────────────────
+  const [apiCharts, setApiCharts] = useState<DashboardCharts | null>(null);
+  const [chartsLoading, setChartsLoading] = useState(true);
+  const [chartsError, setChartsError] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    setChartsLoading(true);
+    setChartsError('');
+    revenueService.getCharts()
+      .then(data => { if (!cancelled) setApiCharts(data); })
+      .catch(() => { if (!cancelled) setChartsError('Không tải được dữ liệu'); })
+      .finally(() => { if (!cancelled) setChartsLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  // Build revenue array from API or fall back to mock
+  const MONTHLY_REVENUE_API = apiCharts?.monthlyTrend?.map(m => ({
+    month: m.month,
+    revenue: m.revenue,
+    profit: Math.round(m.revenue * 0.67),
+  })) ?? null;
+
   const [period, setPeriod] = useState<'3m' | '6m' | '12m'>('12m');
-  const periods = { '3m': MONTHLY_REVENUE.slice(-3), '6m': MONTHLY_REVENUE.slice(-6), '12m': MONTHLY_REVENUE };
+  const baseData = MONTHLY_REVENUE_API ?? MONTHLY_REVENUE;
+  const periods = { '3m': baseData.slice(-3), '6m': baseData.slice(-6), '12m': baseData };
   const data = periods[period];
   const totalRevenue = data.reduce((s, d) => s + d.revenue, 0);
   const totalProfit = data.reduce((s, d) => s + d.profit, 0);

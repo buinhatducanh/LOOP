@@ -3,16 +3,21 @@
  * Tương ứng 1-1 với ServicesPage/WEB_PACKAGES
  * Quản lý: loại web, giá, thời gian dùng thử, tính năng, trạng thái active
  */
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
-  Plus, Edit3, Save, X, Eye, EyeOff, Trash2, Search,
-  ToggleLeft, ToggleRight, Globe, Clock, Zap, Star,
-  ChevronDown, ChevronUp, BarChart3, TrendingUp, CheckCircle2,
-  ArrowUpDown, Package, DollarSign, CalendarClock,
+  Plus, Edit3, Save, X, Search,
+  ToggleLeft, ToggleRight,
+  ChevronDown, ChevronUp, CheckCircle2,
+  ArrowUpDown, Package, DollarSign, CalendarClock, Loader2, AlertCircle,
 } from 'lucide-react';
 import { DS, GRD } from '../layout/ds';
 import { WEB_PACKAGES, type WebPackage } from '../../pages/ServicesPage';
+import { webPackagesService } from '../../../api/web-packages.service';
+
+// ── Chart constants ────────────────────────────────────────────────────────────
+const BAR_W = 36;
+const CHART_H = 96;
 
 // ── Editable package state ─────────────────────────────────────────────────────
 
@@ -21,9 +26,10 @@ interface AdminPackage extends WebPackage {
   orderCount: number;
   trialRequests: number;
   revenue: number;
+  beId?: string; // BE PricingWebPackage CUID for update/delete
 }
 
-const INIT_ADMIN_PACKAGES: AdminPackage[] = WEB_PACKAGES.map((p, i) => ({
+const FALLBACK_PACKAGES: AdminPackage[] = WEB_PACKAGES.map((p, i) => ({
   ...p,
   active: true,
   orderCount: [8, 14, 6, 11, 3, 7, 2, 5, 9, 4][i] ?? 0,
@@ -189,10 +195,11 @@ function EditModal({ pkg, onClose, onSave }: {
 
 // ── Feature Row (expandable) ───────────────────────────────────────────────────
 
-function PackageRow({ pkg, onEdit, onToggle }: {
+function PackageRow({ pkg, onEdit, onToggle, onDelete }: {
   pkg: AdminPackage;
   onEdit: () => void;
   onToggle: () => void;
+  onDelete: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
 
@@ -247,6 +254,13 @@ function PackageRow({ pkg, onEdit, onToggle }: {
             style={{ background: `${pkg.color}12`, border: `1px solid ${pkg.color}30`, color: pkg.color, cursor: 'pointer', fontSize: 11, fontFamily: DS.mono }}>
             <Edit3 size={12} /> Sửa
           </button>
+          {pkg.beId && (
+            <button onClick={onDelete}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg"
+              style={{ background: `${DS.red}10`, border: `1px solid ${DS.red}30`, color: DS.red, cursor: 'pointer', fontSize: 11, fontFamily: DS.mono }}>
+              <X size={12} /> Xóa
+            </button>
+          )}
           <button onClick={() => setExpanded(v => !v)}
             style={{ background: 'none', border: 'none', cursor: 'pointer', color: DS.text5, padding: 4 }}>
             {expanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
@@ -439,12 +453,65 @@ function AddPackageModal({ onClose, onAdd }: { onClose: () => void; onAdd: (pkg:
 // ── Main Tab ───────────────────────────────────────────────────────────────────
 
 export function WebPackagesTab() {
-  const [packages, setPackages] = useState<AdminPackage[]>(INIT_ADMIN_PACKAGES);
+  // ── BE state ──────────────────────────────────────────────────────
+  const [packages, setPackages] = useState<AdminPackage[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+
   const [editPkg, setEditPkg] = useState<AdminPackage | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [search, setSearch] = useState('');
   const [filterActive, setFilterActive] = useState<'all' | 'active' | 'inactive'>('all');
   const [sortBy, setSortBy] = useState<'revenue' | 'orders' | 'price' | 'trial'>('revenue');
+
+  // ── Fetch BE packages ────────────────────────────────────────────
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setLoadError('');
+    webPackagesService.getPackages()
+      .then(be => {
+        if (cancelled) return;
+        // Map BE → AdminPackage (keep mock stats, real name/price/color)
+        const mapped: AdminPackage[] = be.map((p) => {
+          const fallback = FALLBACK_PACKAGES.find(fp => fp.id === p.id);
+          return {
+            ...(fallback ?? { ...p, id: p.id, industry: p.name ?? p.id }),
+            active: p.isActive ?? true,
+            // Keep mock stats since BE doesn't have them
+            orderCount: fallback?.orderCount ?? 0,
+            trialRequests: fallback?.trialRequests ?? 0,
+            revenue: fallback?.revenue ?? 0,
+            beId: p.id,
+          };
+        });
+        // Fill in missing with fallback packages
+        const merged = [...mapped];
+        FALLBACK_PACKAGES.forEach(fp => {
+          if (!merged.some(p => p.id === fp.id)) {
+            merged.push(fp);
+          }
+        });
+        setPackages(merged);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setLoadError('Không tải được danh sách gói web');
+        setPackages(FALLBACK_PACKAGES);
+      })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  // ── Loading / Error overlay ──────────────────────────────────────
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 gap-4">
+        <Loader2 size={36} className="animate-spin" style={{ color: DS.purple }} />
+        <span style={{ color: DS.text4, fontFamily: DS.mono, fontSize: 12 }}>Đang tải gói web...</span>
+      </div>
+    );
+  }
 
   const filtered = useMemo(() => {
     let list = packages;
@@ -467,17 +534,86 @@ export function WebPackagesTab() {
   const totalTrials = packages.reduce((s, p) => s + p.trialRequests, 0);
   const activeCount = packages.filter(p => p.active).length;
 
-  const toggle = (id: string) => setPackages(prev => prev.map(p => p.id === id ? { ...p, active: !p.active } : p));
-  const update = (id: string, data: Partial<AdminPackage>) => setPackages(prev => prev.map(p => p.id === id ? { ...p, ...data } : p));
-  const addPkg = (pkg: AdminPackage) => setPackages(prev => [...prev, pkg]);
+  const toggle = (id: string) => {
+    const pkg = packages.find(p => p.id === id);
+    if (!pkg) return;
+    // Optimistic update
+    setPackages(prev => prev.map(p => p.id === id ? { ...p, active: !p.active } : p));
+    // Sync to BE
+    if (pkg.beId) {
+      webPackagesService.updatePackage(pkg.beId, { isActive: !pkg.active }).catch(() => {
+        // Revert
+        setPackages(prev => prev.map(p => p.id === id ? { ...p, active: !p.active } : p));
+      });
+    }
+  };
+
+  const update = (id: string, data: Partial<AdminPackage>) => {
+    const pkg = packages.find(p => p.id === id);
+    if (!pkg) return;
+    // Optimistic update
+    setPackages(prev => prev.map(p => p.id === id ? { ...p, ...data } : p));
+    setEditPkg(null);
+    // Sync to BE (only if already persisted — new packages have no beId yet)
+    if (pkg.beId) {
+      webPackagesService.updatePackage(pkg.beId, {
+        name: data.industry ?? pkg.industry,
+        nameVi: data.industry ?? pkg.industry,
+        price: data.fullPrice,
+        color: data.color,
+        highlighted: data.popular,
+      }).catch(() => {/* revert not needed — local state already updated */});
+    }
+  };
+
+  const addPkg = (pkg: AdminPackage) => {
+    // Optimistic
+    setPackages(prev => [...prev, pkg]);
+    setShowAdd(false);
+    // Sync to BE
+    webPackagesService.createPackage({
+      slug: pkg.id,
+      name: pkg.industry,
+      nameVi: pkg.industry,
+      price: pkg.fullPrice,
+      color: pkg.color,
+      highlighted: pkg.popular,
+      isActive: pkg.active,
+    }).then(created => {
+      // Update with BE ID for future updates
+      setPackages(prev => prev.map(p => p.id === pkg.id ? { ...p, beId: created.id } : p));
+    }).catch(() => {/* already added optimistically */});
+  };
+
+  const deletePkg = (id: string) => {
+    const pkg = packages.find(p => p.id === id);
+    if (!pkg) return;
+    // Optimistic delete
+    setPackages(prev => prev.filter(p => p.id !== id));
+    // Sync to BE
+    if (pkg.beId) {
+      webPackagesService.deletePackage(pkg.beId).catch(() => {
+        // Revert
+        setPackages(prev => [...prev, pkg]);
+      });
+    }
+  };
 
   // SVG mini bar chart for revenue distribution
   const maxRevenue = Math.max(...packages.map(p => p.revenue), 1);
-  const BAR_W = 24;
-  const CHART_H = 48;
 
   return (
     <div className="space-y-6">
+      {/* Error banner */}
+      {loadError && (
+        <div className="flex items-center gap-3 p-3 rounded-xl"
+          style={{ background: `${DS.red}12`, border: `1px solid ${DS.red}30` }}>
+          <AlertCircle size={14} style={{ color: DS.red }} />
+          <span style={{ color: DS.red, fontSize: 12, fontFamily: DS.mono }}>{loadError}</span>
+          <button onClick={() => setLoadError('')} style={{ marginLeft: 'auto', background: 'none', border: 'none', color: DS.red, cursor: 'pointer' }}><X size={12} /></button>
+        </div>
+      )}
+
       {/* KPI overview */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
         {[
@@ -596,7 +732,7 @@ export function WebPackagesTab() {
             <motion.div key={pkg.id}
               initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }} transition={{ delay: i * 0.04 }}>
-              <PackageRow pkg={pkg} onEdit={() => setEditPkg(pkg)} onToggle={() => toggle(pkg.id)} />
+              <PackageRow pkg={pkg} onEdit={() => setEditPkg(pkg)} onToggle={() => toggle(pkg.id)} onDelete={() => deletePkg(pkg.id)} />
             </motion.div>
           ))}
         </AnimatePresence>

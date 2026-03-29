@@ -3,17 +3,18 @@
  * Filter by category/department/priority/assignee · Search · Bulk actions · Pagination
  * Handles 1000+ notifications with virtual-scroll-like pagination
  */
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Search, Filter, X, Check, Bell, Trash2, Archive, Eye, EyeOff,
   ChevronDown, ChevronLeft, ChevronRight, AlertTriangle, Clock,
   Zap, DollarSign, Users, Camera, MessageSquare, BarChart3,
   CheckCircle2, Plus, ShoppingCart, Star, Building2, Settings,
-  ArrowUpRight, Volume2, VolumeX,
+  ArrowUpRight, Volume2, VolumeX, RefreshCw,
 } from 'lucide-react';
 import { DS, GRD } from '../layout/ds';
 import { useLoopStore, type AdminNotification } from '../../store/loopStore';
+import { notificationsService } from '../../../api/notifications.service';
 
 const rgba = (hex: string, a: number) => {
   const h = hex.replace('#', '');
@@ -77,9 +78,24 @@ const PAGE_SIZE = 20;
 export function NotificationCenter() {
   const {
     adminNotifications, markAdminNotifRead, markAllAdminNotifsRead,
-    deleteAdminNotif, archiveAdminNotif,
+    deleteAdminNotif, archiveAdminNotif, setAdminNotifications,
     bulkDeleteAdminNotifs, bulkReadAdminNotifs, bulkArchiveAdminNotifs,
   } = useLoopStore();
+
+  // ── API state ──────────────────────────────────────────────────────
+  const [notifsLoading, setNotifsLoading] = useState(false);
+  const [notifsError, setNotifsError] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    setNotifsLoading(true);
+    setNotifsError('');
+    notificationsService.getNotifications({ limit: 200 })
+      .then(({ data }) => { if (!cancelled) setAdminNotifications(data as AdminNotification[]); })
+      .catch(() => { if (!cancelled) setNotifsError('Không tải được thông báo'); })
+      .finally(() => { if (!cancelled) setNotifsLoading(false); });
+    return () => { cancelled = true; };
+  }, [setAdminNotifications]);
 
   // ── State ───────────────────────────────────────────────────────────
   const [search, setSearch] = useState('');
@@ -154,9 +170,23 @@ export function NotificationCenter() {
   };
   const clearSelection = () => setSelectedIds(new Set());
 
-  const handleBulkRead = () => { bulkReadAdminNotifs([...selectedIds]); clearSelection(); };
+  const handleBulkRead = () => {
+    bulkReadAdminNotifs([...selectedIds]);
+    selectedIds.forEach(id => notificationsService.markRead(id).catch(() => {}));
+    clearSelection();
+  };
   const handleBulkArchive = () => { bulkArchiveAdminNotifs([...selectedIds]); clearSelection(); };
-  const handleBulkDelete = () => { bulkDeleteAdminNotifs([...selectedIds]); clearSelection(); };
+
+  const handleMarkAllRead = () => {
+    markAllAdminNotifsRead();
+    adminNotifications.filter(n => !n.read).forEach(n => notificationsService.markRead(n.id).catch(() => {}));
+  };
+
+  const handleBulkDelete = () => {
+    bulkDeleteAdminNotifs([...selectedIds]);
+    selectedIds.forEach(id => notificationsService.deleteNotification(id).catch(() => {}));
+    clearSelection();
+  };
 
   return (
     <div className="space-y-4">
@@ -177,7 +207,7 @@ export function NotificationCenter() {
             style={{ background: showArchived ? rgba(DS.purple, 0.1) : rgba('#FFFFFF', 0.03), border: `1px solid ${showArchived ? rgba(DS.purple, 0.3) : DS.border}`, color: showArchived ? DS.purple : DS.text4, cursor: 'pointer', fontSize: 11 }}>
             <Archive size={12} /> {showArchived ? 'Xem lưu trữ' : 'Hộp chính'}
           </button>
-          <button onClick={markAllAdminNotifsRead}
+          <button onClick={handleMarkAllRead}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg"
             style={{ background: rgba(DS.blue, 0.08), border: `1px solid ${rgba(DS.blue, 0.2)}`, color: DS.blue, cursor: 'pointer', fontSize: 11 }}>
             <Eye size={12} /> Đọc hết
@@ -415,14 +445,14 @@ export function NotificationCenter() {
 
                 {/* Actions */}
                 <div className="flex items-center gap-1 flex-shrink-0">
-                  <button onClick={e => { e.stopPropagation(); archiveAdminNotif(n.id); }}
+                  <button onClick={e => { e.stopPropagation(); archiveAdminNotif(n.id); notificationsService.markRead(n.id).catch(() => {}); }}
                     title="Lưu trữ"
                     style={{ width: 28, height: 28, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: 'none', cursor: 'pointer', color: DS.text5 }}
                     onMouseEnter={e => { e.currentTarget.style.background = rgba(DS.purple, 0.1); e.currentTarget.style.color = DS.purple; }}
                     onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = DS.text5; }}>
                     <Archive size={12} />
                   </button>
-                  <button onClick={e => { e.stopPropagation(); deleteAdminNotif(n.id); }}
+                  <button onClick={e => { e.stopPropagation(); deleteAdminNotif(n.id); notificationsService.deleteNotification(n.id).catch(() => {}); }}
                     title="Xóa"
                     style={{ width: 28, height: 28, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: 'none', cursor: 'pointer', color: DS.text5 }}
                     onMouseEnter={e => { e.currentTarget.style.background = rgba(DS.red, 0.1); e.currentTarget.style.color = DS.red; }}

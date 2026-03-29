@@ -1,7 +1,7 @@
 # FE Release Checklist — LOOP Solutions
 
-> **Mục tiêu:** Checklist phát hành chuẩn để giảm lỗi production và tăng tính nhất quán release.
-> **Cập nhật:** 2026-03-26
+> **Mục tiêu:** Checklist phát hành chuẩn để giảm lỗi production, tăng độ ổn định và sẵn sàng scale.
+> **Cập nhật:** 2026-03-28
 
 ---
 
@@ -86,7 +86,18 @@
 
 ---
 
-## 8) Security gates
+## 8) Scale-readiness gates (mới)
+
+Cho các thay đổi P0/P1 hoặc module read-heavy:
+- [ ] Retry policy đã xác nhận (client/server)
+- [ ] Cache strategy đã xác nhận (TTL + invalidation scope)
+- [ ] Async jobs cho tác vụ nặng đã bật/đã kiểm chứng
+- [ ] Idempotency/race-condition checks cho mutation quan trọng
+- [ ] Không block core order flow bởi analytics/media jobs
+
+---
+
+## 9) Security gates
 
 - [ ] Permission checks đúng cho endpoint admin
 - [ ] Không lộ dữ liệu nhạy cảm trong response/log
@@ -95,7 +106,7 @@
 
 ---
 
-## 9) QA sign-off
+## 10) QA sign-off
 
 - [ ] Smoke test pass
 - [ ] Regression scope pass
@@ -105,7 +116,7 @@
 
 ---
 
-## 10) Release execution steps
+## 11) Release execution steps
 
 1. [ ] Merge branch theo quy trình
 2. [ ] Deploy lên staging
@@ -116,17 +127,18 @@
 
 ---
 
-## 11) Monitoring sau release (0-24h)
+## 12) Monitoring sau release (0-24h)
 
 - [ ] Theo dõi error rate
 - [ ] Theo dõi auth failures
 - [ ] Theo dõi API latency P95
+- [ ] Theo dõi queue backlog/retry/fail rate (nếu có jobs)
 - [ ] Theo dõi notification/realtime health (nếu có)
 - [ ] Theo dõi báo cáo user issue từ support
 
 ---
 
-## 12) Rollback checklist
+## 13) Rollback checklist
 
 - [ ] Xác nhận điều kiện rollback (trigger)
 - [ ] Thực hiện rollback đúng owner
@@ -136,7 +148,7 @@
 
 ---
 
-## 13) Release closeout
+## 14) Release closeout
 
 - [ ] Changelog final
 - [ ] Cập nhật docs/rules liên quan

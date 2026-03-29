@@ -12,7 +12,7 @@ cloudinary.config({
 // Require authentication for upload
 export async function POST(req: NextRequest) {
   try {
-    const authUser = await requireAuth();
+    const authUser = await requireAuth(req);
 
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
@@ -83,28 +83,13 @@ export async function POST(req: NextRequest) {
       format: uploadResult.format,
     });
   } catch (error) {
-    console.error("Upload error:", error);
-    const err = error as any;
-    let message = "Upload failed";
-
-    if (err.code === 'ECONNRESET') {
-      message = "Kết nối bị gián đoạn. Vui lòng thử lại.";
-    } else if (err.message?.includes('timeout')) {
-      message = "Tải ảnh quá lâu. Vui lòng thử lại.";
-    } else if (err.message) {
-      message = err.message;
-    }
-
-    return NextResponse.json(
-      { error: message },
-      { status: 500 }
-    );
+    return handleError(error);
   }
 }
 
 export async function DELETE(req: NextRequest) {
   try {
-    await requireAuth();
+    await requireAuth(req);
 
     const { searchParams } = new URL(req.url);
     const publicId = searchParams.get("publicId");
@@ -117,10 +102,6 @@ export async function DELETE(req: NextRequest) {
 
     return ok({ success: deleteResult.result === "ok" });
   } catch (error) {
-    console.error("Delete error:", error);
-    return NextResponse.json(
-      { error: "Delete failed" },
-      { status: 500 }
-    );
+    return handleError(error);
   }
 }

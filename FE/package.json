@@ -5,7 +5,10 @@
   "type": "module",
   "scripts": {
     "build": "vite build",
-    "dev": "vite"
+    "dev": "vite",
+    "preview": "vite preview",
+    "lint": "eslint src/ --max-warnings 230",
+    "type-check": "tsc --noEmit --skipLibCheck"
   },
   "dependencies": {
     "@emotion/react": "11.14.0",
@@ -68,8 +71,13 @@
     "zustand": "^5.0.12"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.0",
     "@tailwindcss/vite": "4.1.12",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
     "@vitejs/plugin-react": "4.7.0",
+    "eslint": "^9.39.0",
+    "playwright": "^1.58.2",
     "tailwindcss": "4.1.12",
     "vite": "6.3.5"
   },

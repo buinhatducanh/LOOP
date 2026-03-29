@@ -1,25 +1,29 @@
-import { RevenueTab } from '../components/admin/RevenueTab';
-import { ClientsTab } from '../components/admin/ClientsTab';
-import { MembersTab } from '../components/admin/MembersTab';
-import { AcademyTab } from '../components/admin/AcademyTab';
-import { BlogTab } from '../components/admin/BlogTab';
-import { ServicesTab } from '../components/admin/ServicesTab';
-import { PortfolioTab } from '../components/admin/PortfolioTab';
-import { OrdersTab } from '../components/admin/OrdersTab';
-import { QuotationTab } from '../components/admin/QuotationTab';
-import { EffectsTab } from '../components/admin/EffectsTab';
-import { ProjectsCompletedTab } from '../components/admin/ProjectsCompletedTab';
-import { KanbanHub } from '../components/admin/KanbanHub';
-import { DepartmentTab } from '../components/admin/DepartmentTab';
-import { LPManagementTab } from '../components/admin/LPManagementTab';
-import { IncomeTaxTab } from '../components/admin/IncomeTaxTab';
-import { WebPackagesTab } from '../components/admin/WebPackagesTab';
-import { MediaTab } from '../components/admin/MediaTab';
-import { NotificationCenter } from '../components/admin/NotificationCenter';
-import { QuestEventsTab } from '../components/admin/QuestEventsTab';
-import { AnalyticsTab } from '../components/admin/AnalyticsTab';
-import { ChatWidget } from '../components/ui/ChatWidget';
-import { LoadingScreen } from '../components/ui/LoadingScreen';
+// All 21 tab components are lazy-loaded to split the 598 KB AdminDashboard chunk.
+// Each tab only loads its JS when the user first clicks its sidebar item.
+import { lazy } from 'react';
+
+const RevenueTab           = lazy(() => import('../components/admin/RevenueTab'));
+const ClientsTab           = lazy(() => import('../components/admin/ClientsTab'));
+const MembersTab           = lazy(() => import('../components/admin/MembersTab'));
+const AcademyTab           = lazy(() => import('../components/admin/AcademyTab'));
+const BlogTab              = lazy(() => import('../components/admin/BlogTab'));
+const ServicesTab          = lazy(() => import('../components/admin/ServicesTab'));
+const PortfolioTab         = lazy(() => import('../components/admin/PortfolioTab'));
+const OrdersTab            = lazy(() => import('../components/admin/OrdersTab'));
+const QuotationTab        = lazy(() => import('../components/admin/QuotationTab'));
+const EffectsTab           = lazy(() => import('../components/admin/EffectsTab'));
+const ProjectsCompletedTab = lazy(() => import('../components/admin/ProjectsCompletedTab'));
+const KanbanHub            = lazy(() => import('../components/admin/KanbanHub'));
+const DepartmentTab        = lazy(() => import('../components/admin/DepartmentTab'));
+const LPManagementTab      = lazy(() => import('../components/admin/LPManagementTab'));
+const IncomeTaxTab         = lazy(() => import('../components/admin/IncomeTaxTab'));
+const WebPackagesTab       = lazy(() => import('../components/admin/WebPackagesTab'));
+const MediaTab             = lazy(() => import('../components/admin/MediaTab'));
+const NotificationCenter   = lazy(() => import('../components/admin/NotificationCenter'));
+const QuestEventsTab       = lazy(() => import('../components/admin/QuestEventsTab'));
+const AnalyticsTab         = lazy(() => import('../components/admin/AnalyticsTab'));
+const ChatWidget           = lazy(() => import('../components/ui/ChatWidget'));
+const LoadingScreen        = lazy(() => import('../components/ui/LoadingScreen'));
 import { useAuthStore, canAccessTab, type AdminTab } from '../store/authStore';
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router';
@@ -39,6 +43,8 @@ import { useLoopStore } from '../store/loopStore';
 import { useIsMobile } from '../components/ui/use-mobile';
 import { useRealtimeNotifications } from '../hooks/useRealtimeNotifications';
 import { AdminLeaderboardTab } from '../components/admin/AdminLeaderboardTab';
+import { useApi } from '../../hooks/useApi';
+import { revenueService } from '../../api/revenue.service';
 
 const fmtLP = (n: number) => n >= 1_000_000 ? `${(n / 1_000_000).toFixed(2)}M` : n >= 1_000 ? `${(n / 1_000).toFixed(1)}K` : String(n);
 
@@ -428,14 +434,34 @@ function StatCard({ label, value, sub, color, icon, trend, trendUp }: {
 // ── OVERVIEW TAB ──────────────────────────────────────────────────────────
 function OverviewTab() {
   const { orders } = useLoopStore();
-  const totalRevenue = orders.filter(o => o.status !== 'pending_payment' && o.status !== 'cancelled').reduce((s, o) => s + o.budget, 0);
-  const activeCount = orders.filter(o => o.status === 'in_progress' || o.status === 'demo_ready').length;
-  const newPaid = orders.filter(o => o.status === 'paid').length;
+
+  // Real API data — falls back to store orders when BE is unavailable
+  const { data: dashboard, loading: dashLoading } = useApi(
+    () => revenueService.getDashboard(),
+    [],
+  );
+
+  const apiStats = dashboard?.stats;
+  const apiRecentOrders = dashboard?.recentOrders ?? [];
+
+  const totalRevenue = apiStats
+    ? apiRecentOrders
+        .filter((o) => o.status !== 'pending_payment')
+        .reduce((s, o) => s + o.totalAmount, 0)
+    : orders.filter((o) => o.status !== 'pending_payment' && o.status !== 'cancelled').reduce((s, o) => s + o.budget, 0);
+
+  const activeCount = apiStats
+    ? apiRecentOrders.filter((o) => o.status === 'in_progress' || o.status === 'demo_ready').length
+    : orders.filter((o) => o.status === 'in_progress' || o.status === 'demo_ready').length;
+
+  const newPaid = apiStats
+    ? apiRecentOrders.filter((o) => o.status === 'paid').length
+    : orders.filter((o) => o.status === 'paid').length;
 
   const kpis = [
-    { label: 'Doanh thu Q1/2026', value: `${(totalRevenue / 1_000_000).toFixed(0)}M`, sub: '↑ 28% so Q4/2025 (VNĐ)', color: DS.blue, icon: <DollarSign size={18} />, trend: '+28%', trendUp: true },
-    { label: 'Đơn hàng đang làm', value: String(activeCount), sub: `${newPaid} đơn mới cần phân công`, color: DS.purple, icon: <ShoppingCart size={18} />, trend: `+${newPaid}`, trendUp: true },
-    { label: 'Thành viên tích cực', value: '27', sub: 'Season III · Full team', color: DS.cyan, icon: <Users size={18} />, trend: '100%', trendUp: true },
+    { label: 'Doanh thu Q1/2026', value: `${(totalRevenue / 1_000_000).toFixed(0)}M`, sub: dashLoading ? '...' : '↑ 28% so Q4/2025 (VNĐ)', color: DS.blue, icon: <DollarSign size={18} />, trend: '+28%', trendUp: true },
+    { label: 'Đơn hàng đang làm', value: String(activeCount), sub: dashLoading ? '...' : `${newPaid} đơn mới cần phân công`, color: DS.purple, icon: <ShoppingCart size={18} />, trend: `+${newPaid}`, trendUp: true },
+    { label: 'Thành viên tích cực', value: String(apiStats?.totalUsers ?? 27), sub: 'Season III · Full team', color: DS.cyan, icon: <Users size={18} />, trend: '100%', trendUp: true },
     { label: 'LP phát hành T3', value: '35.2K', sub: 'Điểm thưởng nội bộ', color: DS.amber, icon: <Zap size={18} />, trend: '+22%', trendUp: true },
   ];
 
@@ -447,11 +473,23 @@ function OverviewTab() {
     { user: 'Nguyễn Minh Tuấn', action: 'booking dịch vụ', detail: 'VNRetail Platform v3 · 175M VNĐ', time: '4 giờ trước', rank: 'gold', type: 'booking' },
   ];
 
-  const projects = orders.filter(o => ['in_progress','demo_ready','client_review'].includes(o.status)).slice(0, 5).map(o => ({
-    name: o.title, client: o.clientCompany, progress: o.progress,
-    status: o.progress >= 90 ? 'ahead' : o.progress < 30 ? 'at-risk' : 'on-track',
-    pm: o.assignedPM ?? '—', deadline: o.deadline ?? '—',
-  }));
+  // Use real API orders when available, fall back to store orders
+  const displayOrders = apiRecentOrders.length > 0
+    ? apiRecentOrders.map(o => ({
+        name: o.package?.title ?? o.orderNumber ?? o.id,
+        client: o.customerName,
+        progress: 50,
+        status: o.status === 'done' ? 'ahead'
+          : o.status === 'in_progress' || o.status === 'demo_ready' || o.status === 'client_review' ? 'on-track'
+          : 'at-risk',
+        pm: '—',
+        deadline: '—',
+      }))
+    : orders.filter(o => ['in_progress','demo_ready','client_review'].includes(o.status)).slice(0, 5).map(o => ({
+      name: o.title, client: o.clientCompany, progress: o.progress,
+      status: o.progress >= 90 ? 'ahead' : o.progress < 30 ? 'at-risk' : 'on-track',
+      pm: o.assignedPM ?? '—', deadline: o.deadline ?? '—',
+    }));
 
   const statusCfg: Record<string, { label: string; color: string }> = {
     'on-track': { label: 'Đúng tiến độ', color: DS.green },
@@ -482,7 +520,7 @@ function OverviewTab() {
             </button>
           </div>
           <div className="space-y-3">
-            {projects.map((p) => {
+            {displayOrders.map((p) => {
               const sc = statusCfg[p.status];
               const pm = members.find(m => m.name.includes(p.pm.split(' ')[0]));
               return (

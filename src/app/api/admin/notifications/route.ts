@@ -9,7 +9,7 @@ import { handleError, list, buildPagination } from "@/lib/api";
  */
 export async function GET(req: NextRequest) {
   try {
-    const session = await requireAuth();
+    const session = await requireAuth(req);
 
     const { searchParams } = new URL(req.url);
     const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10));

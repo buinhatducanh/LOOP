@@ -1,103 +1,135 @@
 # FE Delivery Process — LOOP Solutions
 
-> **Mục tiêu:** Chuẩn hóa quy trình làm việc PO -> Design -> Dev -> QA -> Release cho FE mới.
-> **Cập nhật:** 2026-03-26
+> **Mục tiêu:** Chuẩn hóa quy trình PO -> Design -> Dev -> QA -> Release theo FE-first, contract-first, scale-ready.
+> **Cập nhật:** 2026-03-29
 
 ---
 
 ## 1) Quy trình chuẩn end-to-end
 
 1. **Business Clarification (PO)**
-   - Chốt user flow, business rules, acceptance criteria.
+   - Chốt user flow, business rules, AC.
    - Ưu tiên theo impact: doanh thu -> vận hành -> trải nghiệm.
 
 2. **Design Sync**
-   - Mapping asset/design -> component -> page.
-   - Chốt responsive behavior theo breakpoint.
-   - Chốt trạng thái UI bắt buộc: loading/empty/error/success.
+   - Mapping design -> component -> page.
+   - Chốt responsive behavior.
+   - Chốt đủ state: loading/empty/error/success.
 
 3. **API Contract Check**
-   - Đối chiếu endpoint/request/response/status code trước khi code FE.
-   - Nếu thiếu endpoint, tạo backlog BE trước khi FE tích hợp.
+   - Chốt endpoint/request/response/status code trước khi code FE.
+   - Thiếu endpoint → tạo backlog BE trước khi FE wiring.
 
 4. **Implementation (FE + BE)**
-   - FE triển khai theo module ưu tiên.
+   - FE giữ nguyên UI, thay data source theo roadmap phase.
    - BE bổ sung endpoint/business rule còn thiếu.
-   - Không merge nếu chưa bám đúng contract.
+   - Không merge nếu chưa bám contract.
+   - **i18n bắt buộc:** public/customer-facing routes phải theo chuẩn `/:locale/...` (`vi|en|ja|ko|zh`).
+   - **i18n API bắt buộc:** mọi endpoint content/pricing/public phải nhận `?lang=` hoặc trả đủ multilingual fields + fallback `vi` khi thiếu bản dịch.
+   - **i18n bắt buộc:** public/customer-facing routes phải theo chuẩn `/:locale/...` (`vi|en|ja|ko|zh`).
+   - **i18n API bắt buộc:** mọi endpoint content/pricing/public phải nhận `?lang=` hoặc trả đủ multilingual fields + fallback `vi` khi thiếu bản dịch.
 
 5. **QA Scenario Test**
-   - Test theo hành trình user (E2E flow), không chỉ test component rời rạc.
-   - Ưu tiên test các flow: auth, order lifecycle, wizard, LP, academy.
+   - Test theo journey (không test rời rạc).
+   - Priority flows: auth, order lifecycle, wizard, LP, academy.
 
 6. **Performance & Security Gate**
-   - Lint + type-check + test pass.
-   - Check permission/auth guard.
-   - Check query/pagination/index để tránh bottleneck.
+   - lint/type-check/test pass.
+   - auth/permission guard đúng.
+   - query/index/pagination hợp lý.
 
 7. **Release & Observe**
-   - Deploy staging -> UAT -> production.
-   - Theo dõi logs/metrics/error rate sau phát hành.
+   - staging -> UAT -> production.
+   - theo dõi metrics/error rate sau phát hành.
 
 ---
 
 ## 2) Working agreement theo vai trò
 
 ## PO
-- Định nghĩa scope/priority và acceptance criteria rõ ràng.
+- Chốt scope/priority/AC rõ ràng.
 - Chốt dependency FE/BE trước sprint.
 
 ## Design
-- Cung cấp đầy đủ assets/spec/tokens.
-- Đảm bảo tính nhất quán desktop/mobile.
+- Cung cấp assets/spec/tokens đầy đủ.
+- Đảm bảo consistency desktop/mobile.
 
 ## FE
-- Tích hợp API thật, không để mock leak vào production.
-- Tuân thủ response conventions + state handling chuẩn.
+- Tích hợp API thật, không để mock leak production.
+- Tuân thủ response conventions + UI states.
+- Chỉ thay data source, giữ nguyên giao diện FE thiết kế.
 
 ## BE
-- Tuân thủ `@/lib/api` helpers + error conventions.
-- Đảm bảo permission, validation, pagination, status code đúng.
+- Tuân thủ response helpers + error conventions.
+- Đảm bảo auth/permission/validation/pagination đúng.
 
 ## QA
-- Viết test case theo hành trình nghiệp vụ.
-- Regression checklist trước mỗi release.
+- Viết test case theo business journey.
+- Regression checklist trước release.
 
 ---
 
 ## 3) Checklist bắt buộc trước merge
 
-- [ ] Có API contract rõ ràng cho feature
-- [ ] FE dùng API thật (không mock cục bộ)
-- [ ] Loading/empty/error/success states đầy đủ
-- [ ] Permission/auth flow đúng vai trò
+- [ ] API contract rõ ràng
+- [ ] FE dùng API thật (hoặc fallback policy rõ)
+- [ ] Loading/empty/error/success states đủ
+- [ ] Auth/permission flow đúng vai trò
+- [ ] **Locale URL chuẩn:** public route dùng `/:locale/...`, không dùng route phẳng cho user-facing pages
+- [ ] **Locale propagation chuẩn:** locale từ URL được sync vào store và truyền xuống API layer
+- [ ] **API i18n chuẩn:** call phải gửi `?lang={locale}` cho content/pricing/public endpoints
+- [ ] **Fallback i18n chuẩn:** thiếu bản dịch locale phải fallback `vi`, không để undefined/null lộ ra UI
 - [ ] Lint + type-check pass
 - [ ] Test trọng yếu pass
-- [ ] Không ảnh hưởng tiêu cực đến hiệu năng chính
+- [ ] Không làm xấu đi hiệu năng chính
+- [ ] **i18n sanity pass:** `/vi|en|ja|ko|zh` cho các flow chính (ít nhất Landing + Services + Booking) pass smoke trước merge
+
+### 3.1) i18n guardrails (hard rule)
+
+- Không merge task customer/public nếu:
+  - route không có locale prefix `/:locale`
+  - chưa truyền `lang` theo locale vào API
+  - chưa có fallback `vi` rõ ràng
+  - chưa pass 5-locale sanity smoke
+- Khi review code mới, mặc định reviewer phải check 4 mục trên (không coi i18n là nice-to-have).
 
 ---
 
-## 4) Definition of Done (DoD)
+## 4) Scale-readiness checklist (mới)
 
-Một module chỉ hoàn thành khi:
-- [ ] Đúng nghiệp vụ theo acceptance criteria
+Cho feature P0/P1:
+- [ ] Retry policy (client/server) rõ ràng
+- [ ] Cache strategy rõ với endpoint read-heavy
+- [ ] Async job strategy rõ cho tác vụ nặng
+- [ ] Metrics theo dõi sau release được định nghĩa
+- [ ] Rollback/fallback path có thể thực thi
+
+---
+
+## 5) Definition of Done (DoD)
+
+Module chỉ hoàn thành khi:
+- [ ] đúng AC
 - [ ] API integration hoàn tất
-- [ ] Error handling + validation đầy đủ
-- [ ] Có test phù hợp mức độ rủi ro
-- [ ] Có thể triển khai mà không block module khác
+- [ ] error handling + validation đầy đủ
+- [ ] test phù hợp mức rủi ro
+- [ ] docs liên quan cập nhật
+- [ ] có kế hoạch monitor sau release
 
 ---
 
-## 5) Gợi ý triển khai sprint
+## 6) Gợi ý triển khai sprint (FE-first)
 
-- Sprint planning: chốt scope theo vertical slice (public -> order -> admin).
-- Daily sync: chốt blocker FE/BE nhanh trong ngày.
-- Mid-sprint review: demo flow chính, không demo UI rời rạc.
-- Sprint review: demo end-to-end + KPI kỹ thuật.
+- Planning: chốt vertical slice theo phase roadmap (F0→F7)
+- Daily sync: chốt blocker FE/BE trong ngày
+- Mid-sprint review: demo end-to-end flow chính
+- Sprint review: demo + KPI kỹ thuật + rủi ro mở
 
 ---
 
-## 6) Liên kết
+## 7) Liên kết
 - `.claude/rules/fe-roadmap.md`
 - `.claude/rules/fe-architecture-microservices.md`
+- `.claude/rules/fe-governance-policy.md`
+- `.claude/rules/fe-release-checklist.md`
 - `docs/API-CONTRACT.md`
-- `.claude/rules/testing.md`

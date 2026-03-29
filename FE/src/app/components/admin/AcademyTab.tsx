@@ -1,12 +1,35 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Plus, Search, Edit3, Trash2, Eye, BookOpen, Users, Star,
   ChevronDown, X, Check, Clock, TrendingUp, Award, Zap,
   ToggleLeft, ToggleRight, Upload,
-  Play, BarChart3, FileText, MessageCircle, UserCheck, AlertCircle,
+  Play, BarChart3, FileText, MessageCircle, UserCheck, AlertCircle, Loader2,
 } from 'lucide-react';
 import { DS, GRD } from '../layout/ds';
+import { academyService } from '../../../api/academy.service';
+
+// ── StudentProgress bridge type (BE → FE) ──────────────────────────────────────
+// Maps BE enrollment response to the local StudentProgress shape
+function mapEnrollmentToStudent(be: Record<string, unknown>): StudentProgress {
+  return {
+    id: Number(be.id ?? 0),
+    name: String(be.studentName ?? be.userName ?? 'Học viên'),
+    avatar: String(be.avatarUrl ?? `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(String(be.studentName ?? 'HV'))}`),
+    courseId: Number(be.courseId ?? 0),
+    courseTitle: String(be.courseTitle ?? '—'),
+    enrolledAt: be.enrolledAt ? new Date(String(be.enrolledAt)).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—',
+    progress: Number(be.progress ?? 0),
+    lessonsCompleted: Number(be.lessonsCompleted ?? 0),
+    totalLessons: Number(be.totalLessons ?? 0),
+    lastActive: be.lastActiveAt ? new Date(String(be.lastActiveAt)).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—',
+    totalWatchTime: String(be.totalWatchTime ?? '0h 0p'),
+    quizAvg: Number(be.quizAvg ?? 0),
+    status: (['active', 'completed', 'inactive', 'dropped'].includes(String(be.status ?? '')) ? be.status : 'active') as StudentProgress['status'],
+    lpEarned: Number(be.lpEarned ?? 0),
+    certificateIssued: Boolean(be.certificateIssued ?? false),
+  };
+}
 
 const fmtVND = (n: number) =>
   new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(n);
@@ -246,6 +269,41 @@ function CourseModal({ course, onClose, onSave }: {
 
 // ── MAIN ──────────────────────────────────────────────────────────────────
 export function AcademyTab() {
+  // ── API state ──────────────────────────────────────────────────────────────
+  const [apiCourses, setApiCourses] = useState<Course[]>([]);
+  const [coursesLoading, setCoursesLoading] = useState(true);
+  const [coursesError, setCoursesError] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    setCoursesLoading(true);
+    setCoursesError('');
+    academyService.getAdminCourses({ limit: 50 })
+      .then(({ courses: fetched }) => { if (!cancelled) setApiCourses(fetched as unknown as Course[]); })
+      .catch(() => { if (!cancelled) setCoursesError('Không tải được danh sách khóa học'); })
+      .finally(() => { if (!cancelled) setCoursesLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  // ── Fetch students from BE ────────────────────────────────────────────
+  useEffect(() => {
+    let cancelled = false;
+    setStudentsLoading(true);
+    academyService.getAdminEnrollments({ limit: 200 })
+      .then(({ enrollments }) => {
+        if (cancelled) return;
+        if (Array.isArray(enrollments) && enrollments.length > 0) {
+          setStudents(enrollments.map(e => mapEnrollmentToStudent(e as Record<string, unknown>)));
+        }
+        // else: keep MOCK_STUDENTS as fallback
+      })
+      .catch(() => { /* keep MOCK_STUDENTS */ })
+      .finally(() => { if (!cancelled) setStudentsLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  const displayCourses = coursesLoading && coursesError === '' ? INITIAL_COURSES : apiCourses.length > 0 ? apiCourses : INITIAL_COURSES;
+
   const [courses, setCourses] = useState<Course[]>(INITIAL_COURSES);
   const [search, setSearch] = useState('');
   const [filterCat, setFilterCat] = useState('Tất cả');
@@ -253,7 +311,8 @@ export function AcademyTab() {
   const [modal, setModal] = useState<null | 'new' | Course>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [activeView, setActiveView] = useState<'courses' | 'students' | 'videos'>('courses');
-  const [students] = useState(MOCK_STUDENTS);
+  const [students, setStudents] = useState<StudentProgress[]>(MOCK_STUDENTS);
+  const [studentsLoading, setStudentsLoading] = useState(false);
   const [studentSearch, setStudentSearch] = useState('');
   const [studentCourseFilter, setStudentCourseFilter] = useState('Tất cả');
   const [studentStatusFilter, setStudentStatusFilter] = useState('Tất cả');
@@ -262,7 +321,7 @@ export function AcademyTab() {
   const cats = ['Tất cả', 'Frontend', 'Backend', 'Design', 'DevOps', 'Marketing', 'AI/ML'];
   const statuses = ['Tất cả', 'published', 'draft', 'archived'];
 
-  const filtered = courses.filter(c =>
+  const filtered = displayCourses.filter(c =>
     (filterCat === 'Tất cả' || c.cat === filterCat) &&
     (filterStatus === 'Tất cả' || c.status === filterStatus) &&
     (c.title.toLowerCase().includes(search.toLowerCase()) || c.instructor.toLowerCase().includes(search.toLowerCase()))
@@ -337,6 +396,12 @@ export function AcademyTab() {
       {/* Students View */}
       {activeView === 'students' && (
         <div className="space-y-4">
+          {studentsLoading && (
+            <div className="flex items-center gap-3 p-4 rounded-xl" style={{ background: DS.bgCard, border: `1px solid ${DS.border}` }}>
+              <Loader2 size={16} className="animate-spin" style={{ color: DS.purple }} />
+              <span style={{ color: DS.text4, fontSize: 12 }}>Đang tải danh sách học viên...</span>
+            </div>
+          )}
           {/* Student stats */}
           <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
             {[

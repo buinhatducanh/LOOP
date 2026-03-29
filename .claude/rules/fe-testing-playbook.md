@@ -1,7 +1,7 @@
 # FE Testing Playbook — LOOP Solutions
 
-> **Mục tiêu:** Chuẩn hóa chiến lược test FE theo mức độ rủi ro nghiệp vụ.
-> **Cập nhật:** 2026-03-26
+> **Mục tiêu:** Chuẩn hóa chiến lược test FE theo rủi ro nghiệp vụ và scale-readiness.
+> **Cập nhật:** 2026-03-28
 
 ---
 
@@ -11,6 +11,7 @@
 - **Integration:** kiểm tra module + API contract interactions.
 - **E2E:** kiểm tra hành trình user quan trọng end-to-end.
 - **Regression:** chạy theo checklist trước release.
+- **Resilience (mới):** kiểm tra retry/fallback/cache invalidation.
 
 ---
 
@@ -39,6 +40,7 @@
 - **Steps:**
 - **Expected result:**
 - **Negative/edge checks:**
+- **Observability checks (nếu có):**
 
 ---
 
@@ -62,7 +64,18 @@
 
 ---
 
-## 6) Quality gates
+## 6) Scale-resilience test pack (mới)
+
+- [ ] Retry behavior đúng khi API timeout/5xx
+- [ ] Fallback behavior đúng khi endpoint down tạm thời
+- [ ] Cache invalidation đúng scope sau mutation
+- [ ] Không double-submit khi network chậm
+- [ ] Reconnect behavior cho realtime channel (nếu có)
+- [ ] Queue-backed feature không block UX critical path
+
+---
+
+## 7) Quality gates
 
 - Lint pass
 - Type-check pass
@@ -72,10 +85,11 @@
 
 ---
 
-## 7) Test evidence
+## 8) Test evidence
 
 Mỗi release cần lưu:
 - Build/test logs
 - Danh sách scenario đã chạy
 - Bug list đã đóng/chấp nhận
 - QA sign-off record
+- Kết quả resilience checks (nếu scope có)

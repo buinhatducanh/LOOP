@@ -3,17 +3,20 @@
  * Primary: Gói Web Doanh Nghiệp (industry-specific ready-to-use websites, 3-5 day trial)
  * Secondary: Dịch vụ Tùy chỉnh · Bảng giá
  */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
 import {
-  Check, Globe, Code2, BarChart3, Search, ChevronRight, ArrowRight,
-  Zap, MousePointer, ShoppingCart, X, Rocket, Palette, TrendingUp,
-  Shield, Clock, Star, Play, Eye, Sparkles, LayoutGrid, List,
-  CalendarClock, BadgeCheck, Flame, ChevronDown, ChevronUp,
-  Phone, BookOpen,
+  Check, Globe, Code2, BarChart3, ChevronRight, ArrowRight,
+  Zap, ShoppingCart, X, TrendingUp,
+  Play, Eye, Sparkles, LayoutGrid, List,
+  CalendarClock, ChevronDown, ChevronUp,
+  Phone, Loader2,
 } from 'lucide-react';
 import { DS, GRD } from '../components/layout/ds';
+import { servicesService } from '../../api/services.service';
+import type { Service } from '../../store/loopStore';
+import { useLocaleStore } from '../store/localeStore';
 
 // ── hex → rgba() helper (Motion requires rgba, not 8-digit hex) ───────────────
 function hexRgba(hex: string, alpha: number): string {
@@ -573,12 +576,72 @@ function PackageCard({ pkg, layout, onClick }: { pkg: WebPackage; layout: 'grid'
 const PAGE_TABS = ['Gói Web Doanh Nghiệp', 'Dịch vụ Tùy chỉnh', 'Bảng giá'] as const;
 type PageTab = typeof PAGE_TABS[number];
 
+// ── Fallback for Dịch vụ Tùy chỉnh tab ──────────────────────────────────────
+const FALLBACK_CUSTOM_SERVICES: Array<{
+  id: string; icon: JSX.Element; title: string; desc: string;
+  features: string[]; priceFrom: number; priceTo: number;
+  color: string; image: string; tags: string[];
+}> = [
+  { id: 'thiet-ke-web', icon: <Globe size={28} />, title: 'Thiết kế & Phát triển Website', desc: 'Website cao cấp, tối ưu tốc độ và trải nghiệm người dùng. Mỗi dự án thiết kế riêng theo thương hiệu, đảm bảo Core Web Vitals ≥ 90 và chuyển đổi tối đa.', features: ['Thiết kế UI/UX độc đáo', 'Responsive 100% thiết bị', 'Core Web Vitals ≥ 90', 'SEO on-page tích hợp', 'Bàn giao source code', 'Bảo hành 6 tháng'], priceFrom: 15_000_000, priceTo: 200_000_000, color: DS.blue, image: 'https://images.unsplash.com/photo-1590965918603-0dce981d13b8?auto=format&fit=crop&w=600&q=80', tags: ['React', 'Next.js', 'TypeScript', 'Tailwind CSS'] },
+  { id: 'phat-trien-app', icon: <Code2 size={28} />, title: 'Phát triển App & Nền tảng SaaS', desc: 'Từ MVP đến enterprise. Ứng dụng mobile, web app và SaaS với kiến trúc scalable, sẵn sàng cho hàng triệu người dùng.', features: ['Phân tích & thiết kế kiến trúc', 'React Native / Flutter', 'API & Microservices', 'Database design', 'CI/CD pipeline', 'SLA 99.9% uptime'], priceFrom: 80_000_000, priceTo: 1_000_000_000, color: DS.purple, image: 'https://images.unsplash.com/photo-1596843720750-7de9329da5d7?auto=format&fit=crop&w=600&q=80', tags: ['React Native', 'Node.js', 'PostgreSQL', 'AWS'] },
+  { id: 'dashboard', icon: <BarChart3 size={28} />, title: 'Dashboard & Data Analytics', desc: 'Biến dữ liệu thành insight. Real-time dashboard, báo cáo tự động và data visualization.', features: ['Dashboard real-time', 'Data visualization', 'Báo cáo tự động', 'Tích hợp nguồn dữ liệu', 'Alert & notification', 'Export PDF/Excel'], priceFrom: 25_000_000, priceTo: 300_000_000, color: DS.cyan, image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=600&q=80', tags: ['React', 'D3.js', 'Python', 'BigQuery'] },
+  { id: 'seo', icon: <TrendingUp size={28} />, title: 'SEO & Digital Marketing', desc: 'Tăng trưởng organic bền vững. Technical SEO audit, content strategy và Google Ads management.', features: ['Audit SEO kỹ thuật', 'Content strategy', 'On-page optimization', 'Link building', 'Google Ads management', 'Monthly reporting'], priceFrom: 8_000_000, priceTo: 50_000_000, color: DS.green, image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=600&q=80', tags: ['SEMrush', 'Ahrefs', 'Google Analytics 4'] },
+];
+
 export default function ServicesPage() {
   const [activeTab, setActiveTab] = useState<PageTab>('Gói Web Doanh Nghiệp');
   const [category, setCategory] = useState<Category>('tất cả');
   const [layout, setLayout] = useState<'grid' | 'list'>('grid');
   const [selectedPkg, setSelectedPkg] = useState<WebPackage | null>(null);
   const [sortBy, setSortBy] = useState<'popular' | 'price-asc' | 'price-desc'>('popular');
+
+  // ── Dịch vụ Tùy chỉnh API ───────────────────────────────────────────────
+  const [customServices, setCustomServices] = useState(FALLBACK_CUSTOM_SERVICES);
+  const [loadingCustom, setLoadingCustom] = useState(false);
+  const [customError, setCustomError] = useState(false);
+
+  const { locale } = useLocaleStore();
+
+  useEffect(() => {
+    if (activeTab !== 'Dịch vụ Tùy chỉnh') return;
+    let cancelled = false;
+    setLoadingCustom(true);
+    setCustomError(false);
+
+    servicesService.getServices(locale)
+      .then(res => {
+        if (cancelled) return;
+        // Map BE services → FE display cards
+        const mapped = res.services.slice(0, 4).map((svc: Service, i: number) => {
+          const colors = [DS.blue, DS.purple, DS.cyan, DS.green];
+          const imgs = [
+            'https://images.unsplash.com/photo-1590965918603-0dce981d13b8?auto=format&fit=crop&w=600&q=80',
+            'https://images.unsplash.com/photo-1596843720750-7de9329da5d7?auto=format&fit=crop&w=600&q=80',
+            'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=600&q=80',
+            'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=600&q=80',
+          ];
+          const icons = [<Globe size={28} />, <Code2 size={28} />, <BarChart3 size={28} />, <TrendingUp size={28} />];
+          const tags = [['React', 'Next.js', 'TypeScript', 'Tailwind CSS'], ['React Native', 'Node.js', 'PostgreSQL', 'AWS'], ['React', 'D3.js', 'Python', 'BigQuery'], ['SEMrush', 'Ahrefs', 'Google Analytics 4']];
+          return {
+            id: svc.id,
+            icon: icons[i % icons.length],
+            title: svc.title,
+            desc: svc.subtitle,
+            features: (svc as { features?: string[] }).features ?? ['Thiết kế UI/UX độc đáo', 'Responsive 100% thiết bị', 'SEO on-page tích hợp', 'Bảo hành 6 tháng'],
+            priceFrom: svc.startPrice,
+            priceTo: svc.endPrice,
+            color: colors[i % colors.length],
+            image: imgs[i % imgs.length],
+            tags: tags[i % tags.length],
+          };
+        });
+        setCustomServices(mapped);
+      })
+      .catch(() => { if (!cancelled) setCustomError(true); })
+      .finally(() => { if (!cancelled) setLoadingCustom(false); });
+
+    return () => { cancelled = true; };
+  }, [activeTab, locale]);
 
   const filtered = WEB_PACKAGES
     .filter(p => category === 'tất cả' || p.category === category)
@@ -588,8 +651,7 @@ export default function ServicesPage() {
       return b.fullPrice - a.fullPrice;
     });
 
-  const popularCount = WEB_PACKAGES.filter(p => p.popular).length;
-
+  
   return (
     <div style={{ background: DS.bg, fontFamily: DS.body, paddingTop: 64, minHeight: '100vh' }}>
 
@@ -743,12 +805,23 @@ export default function ServicesPage() {
           <motion.section key="custom" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="py-10 px-6">
             <div className="max-w-6xl mx-auto space-y-10">
-              {[
-                { id: 'thiet-ke-web', icon: <Globe size={28} />, title: 'Thiết kế & Phát triển Website', desc: 'Website cao cấp, tối ưu tốc độ và trải nghiệm người dùng. Mỗi dự án thiết kế riêng theo thương hiệu, đảm bảo Core Web Vitals ≥ 90 và chuyển đổi tối đa.', features: ['Thiết kế UI/UX độc đáo', 'Responsive 100% thiết bị', 'Core Web Vitals ≥ 90', 'SEO on-page tích hợp', 'Bàn giao source code', 'Bảo hành 6 tháng'], priceFrom: 15_000_000, priceTo: 200_000_000, color: DS.blue, image: 'https://images.unsplash.com/photo-1590965918603-0dce981d13b8?auto=format&fit=crop&w=600&q=80', tags: ['React', 'Next.js', 'TypeScript', 'Tailwind CSS'] },
-                { id: 'phat-trien-app', icon: <Code2 size={28} />, title: 'Phát triển App & Nền tảng SaaS', desc: 'Từ MVP đến enterprise. Ứng dụng mobile, web app và SaaS với kiến trúc scalable, sẵn sàng cho hàng triệu người dùng.', features: ['Phân tích & thiết kế kiến trúc', 'React Native / Flutter', 'API & Microservices', 'Database design', 'CI/CD pipeline', 'SLA 99.9% uptime'], priceFrom: 80_000_000, priceTo: 1_000_000_000, color: DS.purple, image: 'https://images.unsplash.com/photo-1596843720750-7de9329da5d7?auto=format&fit=crop&w=600&q=80', tags: ['React Native', 'Node.js', 'PostgreSQL', 'AWS'] },
-                { id: 'dashboard', icon: <BarChart3 size={28} />, title: 'Dashboard & Data Analytics', desc: 'Biến dữ liệu thành insight. Real-time dashboard, báo cáo tự động và data visualization.', features: ['Dashboard real-time', 'Data visualization', 'Báo cáo tự động', 'Tích hợp nguồn dữ liệu', 'Alert & notification', 'Export PDF/Excel'], priceFrom: 25_000_000, priceTo: 300_000_000, color: DS.cyan, image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=600&q=80', tags: ['React', 'D3.js', 'Python', 'BigQuery'] },
-                { id: 'seo', icon: <TrendingUp size={28} />, title: 'SEO & Digital Marketing', desc: 'Tăng trưởng organic bền vững. Technical SEO audit, content strategy và Google Ads management.', features: ['Audit SEO kỹ thuật', 'Content strategy', 'On-page optimization', 'Link building', 'Google Ads management', 'Monthly reporting'], priceFrom: 8_000_000, priceTo: 50_000_000, color: DS.green, image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=600&q=80', tags: ['SEMrush', 'Ahrefs', 'Google Analytics 4'] },
-              ].map((svc, i) => (
+              {/* Loading */}
+              {loadingCustom && (
+                <div className="flex flex-col items-center justify-center py-20 gap-3">
+                  <Loader2 size={32} style={{ color: DS.blue, animation: 'spin 1s linear infinite' }} />
+                  <span style={{ color: DS.text4, fontSize: 13, fontFamily: DS.mono }}>Đang tải dịch vụ...</span>
+                </div>
+              )}
+              {/* Error banner */}
+              {customError && (
+                <div className="text-center py-6 rounded-2xl" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
+                  <span style={{ color: DS.red, fontSize: 12, fontFamily: DS.mono }}>
+                    Đang hiển thị dữ liệu mẫu — API không khả dụng
+                  </span>
+                </div>
+              )}
+              {/* Services */}
+              {!loadingCustom && customServices.map((svc, i) => (
                 <motion.div key={svc.id}
                   className="grid grid-cols-1 lg:grid-cols-2 gap-0 items-stretch rounded-3xl overflow-hidden"
                   style={{ background: DS.bgCard, border: `1px solid ${DS.border}` }}

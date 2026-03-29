@@ -2,15 +2,16 @@
  * MediaTab — Admin panel for managing Media bookings
  * Book Chụp · Book Quay · Làm Content
  */
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Camera, Video, FileText, Search, Filter, Check, X, Clock,
   Calendar, MapPin, Users, Star, Eye, ChevronDown, ArrowUpRight,
-  Zap, AlertCircle, CheckCircle2, Play, Pause, Trash2, Edit3,
+  Zap, AlertCircle, CheckCircle2, Play, Pause, Trash2, Edit3, Loader2,
 } from 'lucide-react';
 import { DS, GRD } from '../layout/ds';
 import { useLoopStore, type AdminNotification } from '../../store/loopStore';
+import { mediaBookingsService, type MediaBooking as BeBooking } from '../../../api/media-bookings.service';
 
 const fmtVND = (n: number) =>
   new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(n);
@@ -20,10 +21,10 @@ const rgba = (hex: string, a: number) => {
   return `rgba(${parseInt(h.slice(0, 2), 16)},${parseInt(h.slice(2, 4), 16)},${parseInt(h.slice(4, 6), 16)},${a})`;
 };
 
-// ── Mock media bookings ──────────────────────────────────────────────────
+// ── Mock fallback (used when BE is offline) ──────────────────────────────────
 type MediaStatus = 'pending' | 'confirmed' | 'in_progress' | 'delivered' | 'completed' | 'cancelled';
 
-interface MediaBooking {
+interface LocalMediaBooking {
   id: string;
   type: 'photo' | 'video' | 'content';
   clientName: string;
@@ -43,7 +44,7 @@ interface MediaBooking {
   createdAt: string;
 }
 
-const MOCK_BOOKINGS: MediaBooking[] = [
+const FALLBACK_BOOKINGS: LocalMediaBooking[] = [
   {
     id: 'MDA-8821', type: 'photo', clientName: 'Trần Minh Hùng', clientCompany: 'CafeHouse VN',
     clientAvatar: 'https://images.unsplash.com/photo-1557862921-37829c790f19?auto=format&fit=crop&w=80&h=80&crop=faces',
@@ -102,12 +103,29 @@ const STATUS_CFG: Record<MediaStatus, { label: string; color: string; icon: Reac
 };
 
 export function MediaTab() {
-  const [bookings, setBookings] = useState(MOCK_BOOKINGS);
+  const [bookings, setBookings] = useState<LocalMediaBooking[]>(FALLBACK_BOOKINGS);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [selected, setSelected] = useState<string | null>(null);
   const { addAdminNotification } = useLoopStore();
+
+  // ── Fetch bookings from BE ──────────────────────────────────────────
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setLoadError('');
+    mediaBookingsService.getBookings({ limit: 100 })
+      .then(({ bookings: be }) => {
+        if (cancelled) return;
+        setBookings(be as unknown as LocalMediaBooking[]);
+      })
+      .catch(() => { if (!cancelled) setLoadError('Không tải được danh sách media bookings'); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
 
   const filtered = useMemo(() => {
     return bookings.filter(b => {
@@ -130,8 +148,15 @@ export function MediaTab() {
   }, [bookings]);
 
   const updateStatus = (id: string, status: MediaStatus) => {
+    // Optimistic update
     setBookings(prev => prev.map(b => b.id === id ? { ...b, status } : b));
     const booking = bookings.find(b => b.id === id);
+    // Sync to BE
+    mediaBookingsService.transitionBooking(id, status).catch(() => {
+      // Revert on error
+      setBookings(prev => prev.map(b => b.id === id ? { ...b, status: booking?.status ?? 'pending' } : b));
+    });
+    // Notification
     if (booking) {
       const notif: AdminNotification = {
         id: `an_media_${Date.now()}`,
@@ -174,6 +199,15 @@ export function MediaTab() {
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">
+        {loading && (
+          <div className="flex items-center gap-1.5 px-2" style={{ color: DS.text5 }}>
+            <Loader2 size={12} className="animate-spin" />
+            <span style={{ fontSize: 10, fontFamily: DS.mono }}>Đang tải...</span>
+          </div>
+        )}
+        {loadError && (
+          <span style={{ fontSize: 10, color: DS.red, fontFamily: DS.mono }}>{loadError}</span>
+        )}
         <div className="flex items-center gap-2 px-3 py-2 rounded-xl flex-1 min-w-[200px]" style={{ background: DS.bgCard, border: `1px solid ${DS.border}` }}>
           <Search size={14} style={{ color: DS.text4 }} />
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Tìm theo tên, công ty, mã booking..."

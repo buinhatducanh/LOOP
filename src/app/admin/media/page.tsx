@@ -1,0 +1,932 @@
+"use client";
+
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { motion, AnimatePresence } from "motion/react";
+import { qk } from "@/lib/query/provider";
+import { adminApi } from "@/lib/api/client";
+import { DS, GRD } from "@/lib/design-tokens";
+import {
+  X, Camera, CheckCircle2, Eye, ChevronRight, Search,
+  RefreshCw, Trash2, Plus, ChevronLeft, Upload, FileText,
+} from "lucide-react";
+
+// ─── Status config ─────────────────────────────────────────────────────────────
+
+const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
+  pending:       { label: "Chờ xác nhận", color: "#F59E0B", bg: "rgba(245,158,11,0.1)" },
+  confirmed:     { label: "Đã xác nhận", color: "#3B82F6", bg: "rgba(59,130,246,0.1)" },
+  in_progress:   { label: "Đang thực hiện", color: "#818CF8", bg: "rgba(129,140,248,0.1)" },
+  delivered:     { label: "Đã bàn giao", color: "#A78BFA", bg: "rgba(167,139,250,0.1)" },
+  approved:      { label: "Đã duyệt", color: "#22C55E", bg: "rgba(34,197,94,0.1)" },
+  rejected:      { label: "Từ chối", color: "#EF4444", bg: "rgba(239,68,68,0.1)" },
+  cancelled:     { label: "Đã hủy", color: "#6B7280", bg: "rgba(107,114,128,0.1)" },
+};
+
+const ALL_STATUSES = Object.keys(STATUS_CONFIG);
+
+const PAYMENT_CONFIG: Record<string, { label: string; color: string }> = {
+  unpaid:   { label: "Chưa thanh toán", color: "#F59E0B" },
+  partial:  { label: "Thanh toán một phần", color: "#3B82F6" },
+  paid:     { label: "Đã thanh toán", color: "#22C55E" },
+  refunded:  { label: "Đã hoàn tiền", color: "#6B7280" },
+};
+
+const BOOKING_TYPE_OPTIONS = [
+  { value: "event", label: "Sự kiện" },
+  { value: "product", label: "Sản phẩm" },
+  { value: "corporate", label: "Doanh nghiệp" },
+  { value: "social", label: "Mạng xã hội" },
+  { value: "custom", label: "Tùy chỉnh" },
+];
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+type MediaBooking = {
+  id: string;
+  bookingNumber: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone?: string;
+  companyName?: string;
+  bookingType: string;
+  title: string;
+  requirements?: string;
+  note?: string;
+  deadline?: string;
+  status: string;
+  paymentStatus: string;
+  totalAmount?: number;
+  paidAmount: number;
+  deliveredAssets: string[];
+  revisionNotes?: string;
+  deliveredAt?: string;
+  approvedAt?: string;
+  rejectedAt?: string;
+  teamMember?: { id: string; name: string };
+  package?: { title: string };
+  createdAt: string;
+  updatedAt: string;
+};
+
+type BookingFormData = {
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  companyName: string;
+  bookingType: string;
+  title: string;
+  requirements: string;
+  note: string;
+  deadline: string;
+  totalAmount: string;
+  teamMemberId: string;
+};
+
+// ─── Row component ─────────────────────────────────────────────────────────────
+
+function BookingRow({
+  booking,
+  onTransition,
+  onDetail,
+  onDelete,
+}: {
+  booking: MediaBooking;
+  onTransition: (id: string, toStatus: string) => void;
+  onDetail: (b: MediaBooking) => void;
+  onDelete: (id: string) => void;
+}) {
+  const cfg = STATUS_CONFIG[booking.status] ?? { label: booking.status, color: DS.text4, bg: "transparent" };
+  const payCfg = PAYMENT_CONFIG[booking.paymentStatus] ?? { label: booking.paymentStatus, color: DS.text4 };
+
+  const fmt = (n?: number) =>
+    n != null
+      ? new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(n)
+      : "—";
+
+  const VALID_NEXT: Record<string, string[]> = {
+    pending:     ["confirmed", "cancelled"],
+    confirmed:   ["in_progress", "cancelled"],
+    in_progress: ["delivered", "cancelled"],
+    delivered:   ["approved", "rejected"],
+    approved:    [],
+    rejected:    ["in_progress"],
+    cancelled:   [],
+  };
+  const nextOptions = VALID_NEXT[booking.status] ?? [];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      style={{
+        background: DS.bgCard,
+        border: `1px solid ${DS.border}`,
+        borderRadius: 12,
+        padding: "14px 16px",
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
+        transition: "border-color 0.2s",
+      }}
+    >
+      {/* Status dot */}
+      <div style={{
+        width: 8, height: 8, borderRadius: "50%", background: cfg.color,
+        flexShrink: 0, boxShadow: `0 0 6px ${cfg.color}`,
+      }} />
+
+      {/* Info */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
+          <p style={{
+            color: DS.text, fontWeight: 600, fontSize: 14,
+            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+          }}>
+            {booking.title}
+          </p>
+          {booking.teamMember && (
+            <span style={{
+              fontSize: 10, padding: "1px 6px", borderRadius: 99,
+              background: "rgba(139,92,246,0.1)", color: "#8B5CF6",
+              fontFamily: DS.mono, fontWeight: 600,
+            }}>
+              {booking.teamMember.name}
+            </span>
+          )}
+        </div>
+        <p style={{ color: DS.text4, fontSize: 12, fontFamily: DS.mono, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {booking.bookingNumber} · {booking.customerName} · {booking.customerEmail}
+        </p>
+      </div>
+
+      {/* Booking type badge */}
+      <div style={{
+        flexShrink: 0, padding: "3px 8px", borderRadius: 99,
+        background: DS.bg, border: `1px solid ${DS.border}`,
+        fontSize: 11, color: DS.text4, fontFamily: DS.mono,
+      }}>
+        {BOOKING_TYPE_OPTIONS.find((t) => t.value === booking.bookingType)?.label ?? booking.bookingType}
+      </div>
+
+      {/* Amount */}
+      <div style={{ textAlign: "right", flexShrink: 0 }}>
+        <p style={{ color: DS.text, fontWeight: 700, fontSize: 14 }}>{fmt(booking.totalAmount)}</p>
+        <span style={{ color: payCfg.color, fontSize: 11, fontFamily: DS.mono, fontWeight: 600 }}>{payCfg.label}</span>
+      </div>
+
+      {/* Actions */}
+      <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+        {nextOptions.slice(0, 1).map((ns) => (
+          <button
+            key={ns}
+            onClick={() => onTransition(booking.id, ns)}
+            title={`Chuyển → ${STATUS_CONFIG[ns]?.label}`}
+            style={{
+              background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.3)",
+              borderRadius: 8, padding: "5px 10px", cursor: "pointer", color: DS.green,
+              display: "flex", alignItems: "center", fontSize: 11, fontFamily: DS.mono,
+            }}
+          >
+            <ChevronRight size={12} />
+          </button>
+        ))}
+        <button
+          onClick={() => onDetail(booking)}
+          title="Chi tiết"
+          style={{
+            background: "rgba(59,130,246,0.1)", border: "1px solid rgba(59,130,246,0.3)",
+            borderRadius: 8, padding: "5px 10px", cursor: "pointer", color: DS.blue,
+            display: "flex", alignItems: "center",
+          }}
+        >
+          <Eye size={13} />
+        </button>
+        {(booking.status === "pending" || booking.status === "cancelled") && (
+          <button
+            onClick={() => onDelete(booking.id)}
+            title="Xóa"
+            style={{
+              background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)",
+              borderRadius: 8, padding: "5px 10px", cursor: "pointer", color: "#EF4444",
+              display: "flex", alignItems: "center",
+            }}
+          >
+            <Trash2 size={13} />
+          </button>
+        )}
+      </div>
+    </motion.div>
+  );
+}
+
+// ─── Detail Modal ──────────────────────────────────────────────────────────────
+
+function DetailModal({
+  booking,
+  onClose,
+  onTransition,
+  onEdit,
+}: {
+  booking: MediaBooking | null;
+  onClose: () => void;
+  onTransition: (id: string, toStatus: string, note?: string) => void;
+  onEdit: (b: MediaBooking) => void;
+}) {
+  if (!booking) return null;
+
+  const cfg = STATUS_CONFIG[booking.status] ?? { label: booking.status, color: DS.text4, bg: "transparent" };
+  const payCfg = PAYMENT_CONFIG[booking.paymentStatus] ?? { label: booking.paymentStatus, color: DS.text4 };
+  const fmt = (n?: number) =>
+    n != null
+      ? new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(n)
+      : "—";
+
+  const VALID_NEXT = {
+    pending: ["confirmed", "cancelled"],
+    confirmed: ["in_progress", "cancelled"],
+    in_progress: ["delivered", "cancelled"],
+    delivered: ["approved", "rejected"],
+    approved: [],
+    rejected: ["in_progress"],
+    cancelled: [],
+  }[booking.status] ?? [];
+
+  const detailFields = [
+    { label: "Mã booking", value: booking.bookingNumber, mono: true },
+    { label: "Khách hàng", value: booking.customerName },
+    { label: "Email", value: booking.customerEmail, mono: true },
+    { label: "SĐT", value: booking.customerPhone ?? "—" },
+    { label: "Công ty", value: booking.companyName ?? "—" },
+    { label: "Loại", value: BOOKING_TYPE_OPTIONS.find((t) => t.value === booking.bookingType)?.label ?? booking.bookingType },
+    { label: "Gói dịch vụ", value: booking.package?.title ?? "—" },
+    { label: "Tổng tiền", value: fmt(booking.totalAmount), bold: true },
+    { label: "Đã thanh toán", value: fmt(booking.paidAmount) },
+    { label: "Deadline", value: booking.deadline ? new Date(booking.deadline).toLocaleDateString("vi-VN") : "—" },
+    { label: "NV phụ trách", value: booking.teamMember?.name ?? "—" },
+    { label: "Tạo lúc", value: new Date(booking.createdAt).toLocaleString("vi-VN") },
+  ];
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        key="overlay"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+        style={{
+          position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)",
+          backdropFilter: "blur(8px)", zIndex: 50,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          padding: 16,
+        }}
+      >
+        <motion.div
+          key="modal"
+          initial={{ opacity: 0, scale: 0.95, y: 10 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.95 }}
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            background: DS.bgCard, border: `1px solid ${DS.border}`,
+            borderRadius: 16, padding: 24, width: "100%", maxWidth: 580,
+            maxHeight: "90vh", overflowY: "auto",
+          }}
+        >
+          {/* Header */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
+            <div>
+              <h3 style={{ color: DS.text, fontWeight: 700, fontSize: 18, marginBottom: 4 }}>{booking.title}</h3>
+              <p style={{ color: DS.text4, fontSize: 12, fontFamily: DS.mono }}>{booking.bookingNumber}</p>
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button
+                onClick={() => { onClose(); onEdit(booking); }}
+                style={{
+                  padding: "6px 12px", borderRadius: 8, cursor: "pointer",
+                  background: "rgba(59,130,246,0.1)", border: "1px solid rgba(59,130,246,0.3)",
+                  color: DS.blue, fontSize: 12, fontWeight: 600,
+                }}
+              >
+                Sửa
+              </button>
+              <button onClick={onClose} style={{ background: "none", border: "none", color: DS.text4, cursor: "pointer" }}>
+                <X size={18} />
+              </button>
+            </div>
+          </div>
+
+          {/* Status badge */}
+          <div style={{
+            display: "inline-flex", alignItems: "center", gap: 6,
+            padding: "4px 12px", borderRadius: 99, background: cfg.bg,
+            marginBottom: 16,
+          }}>
+            <div style={{ width: 8, height: 8, borderRadius: "50%", background: cfg.color }} />
+            <span style={{ color: cfg.color, fontSize: 12, fontWeight: 600 }}>{cfg.label}</span>
+          </div>
+
+          {/* Info grid */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16 }}>
+            {detailFields.map((f) => (
+              <div key={f.label} style={{
+                background: DS.bg, border: `1px solid ${DS.border}`,
+                borderRadius: 10, padding: "10px 14px",
+              }}>
+                <p style={{
+                  color: DS.text4, fontSize: 10, fontFamily: DS.mono,
+                  letterSpacing: "0.1em", marginBottom: 4,
+                }}>
+                  {f.label.toUpperCase()}
+                </p>
+                <p style={{
+                  color: f.bold ? DS.blue : DS.text, fontWeight: f.bold ? 700 : 600,
+                  fontSize: 13, fontFamily: f.mono ? DS.mono : DS.body,
+                  wordBreak: "break-word",
+                }}>
+                  {f.value}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          {/* Requirements */}
+          {booking.requirements && (
+            <div style={{ marginBottom: 16 }}>
+              <p style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.1em", marginBottom: 6 }}>YÊU CẦU</p>
+              <div style={{ background: DS.bg, border: `1px solid ${DS.border}`, borderRadius: 10, padding: 12 }}>
+                <p style={{ color: DS.text3, fontSize: 13, lineHeight: 1.6 }}>{booking.requirements}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Admin note */}
+          {booking.note && (
+            <div style={{ marginBottom: 16 }}>
+              <p style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.1em", marginBottom: 6 }}>GHI CHÚ</p>
+              <div style={{ background: DS.bg, border: `1px solid ${DS.border}`, borderRadius: 10, padding: 12 }}>
+                <p style={{ color: DS.text3, fontSize: 13, lineHeight: 1.6 }}>{booking.note}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Delivered assets */}
+          {booking.deliveredAssets && Array.isArray(booking.deliveredAssets) && booking.deliveredAssets.length > 0 && (
+            <div style={{ marginBottom: 16 }}>
+              <p style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.1em", marginBottom: 6 }}>TÀI LIỆU ĐÃ BÀN GIAO ({booking.deliveredAssets.length})</p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {(booking.deliveredAssets as string[]).map((url, i) => (
+                  <a
+                    key={i}
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      padding: "6px 12px", borderRadius: 8,
+                      background: "rgba(139,92,246,0.1)",
+                      border: "1px solid rgba(139,92,246,0.3)",
+                      color: "#8B5CF6", fontSize: 12, fontFamily: DS.mono,
+                      display: "flex", alignItems: "center", gap: 4,
+                      textDecoration: "none",
+                    }}
+                  >
+                    <FileText size={12} />
+                    File {i + 1}
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Status transition buttons */}
+          {VALID_NEXT.length > 0 && (
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
+              {VALID_NEXT.map((ns) => (
+                <button
+                  key={ns}
+                  onClick={() => { onTransition(booking.id, ns); }}
+                  style={{
+                    flex: 1, padding: "8px 12px", borderRadius: 10, cursor: "pointer",
+                    background: STATUS_CONFIG[ns]?.bg,
+                    border: `1px solid ${STATUS_CONFIG[ns]?.color}40`,
+                    color: STATUS_CONFIG[ns]?.color, fontSize: 12, fontWeight: 700,
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
+                  }}
+                >
+                  <CheckCircle2 size={13} />
+                  {STATUS_CONFIG[ns]?.label}
+                </button>
+              ))}
+            </div>
+          )}
+
+          <button
+            onClick={onClose}
+            style={{
+              width: "100%", padding: "10px", background: DS.bg,
+              color: DS.text3, border: `1px solid ${DS.border}`,
+              borderRadius: 10, fontWeight: 600, cursor: "pointer", fontSize: 13,
+            }}
+          >
+            Đóng
+          </button>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+// ─── Create / Edit Modal ───────────────────────────────────────────────────────
+
+function BookingFormModal({
+  booking,
+  onClose,
+  onSuccess,
+}: {
+  booking?: MediaBooking | null;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const isEdit = !!booking;
+
+  const [form, setForm] = useState<BookingFormData>({
+    customerName: booking?.customerName ?? "",
+    customerEmail: booking?.customerEmail ?? "",
+    customerPhone: booking?.customerPhone ?? "",
+    companyName: booking?.companyName ?? "",
+    bookingType: booking?.bookingType ?? "event",
+    title: booking?.title ?? "",
+    requirements: booking?.requirements ?? "",
+    note: booking?.note ?? "",
+    deadline: booking?.deadline ?? "",
+    totalAmount: booking?.totalAmount?.toString() ?? "",
+    teamMemberId: booking?.teamMember?.id ?? "",
+  });
+
+  const [deliveredAssets, setDeliveredAssets] = useState<string[]>(
+    Array.isArray(booking?.deliveredAssets) ? (booking.deliveredAssets as string[]) : []
+  );
+  const [assetUrl, setAssetUrl] = useState("");
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const qc = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: async () => {
+      const payload = {
+        ...form,
+        totalAmount: form.totalAmount ? parseInt(form.totalAmount, 10) : null,
+        teamMemberId: form.teamMemberId || null,
+        deliveredAssets: deliveredAssets,
+      };
+      if (isEdit && booking) {
+        return adminApi.put(`/api/admin/media-bookings/${booking.id}`, payload);
+      }
+      return adminApi.post("/api/admin/media-bookings", payload);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin", "media-bookings"] });
+      onSuccess();
+    },
+    onError: (err: unknown) => {
+      const msg = err instanceof Error ? err.message : "Đã xảy ra lỗi";
+      setError(msg);
+      setSaving(false);
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.customerName.trim() || !form.customerEmail.trim()) {
+      setError("Tên và email khách hàng là bắt buộc");
+      return;
+    }
+    setSaving(true);
+    mutation.mutate();
+  };
+
+  const addAsset = () => {
+    if (assetUrl.trim() && !deliveredAssets.includes(assetUrl.trim())) {
+      setDeliveredAssets((prev) => [...prev, assetUrl.trim()]);
+      setAssetUrl("");
+    }
+  };
+
+  const removeAsset = (url: string) => {
+    setDeliveredAssets((prev) => prev.filter((a) => a !== url));
+  };
+
+  const fieldStyle = {
+    width: "100%", background: DS.bg, border: `1px solid ${DS.border}`,
+    borderRadius: 10, padding: "10px 14px", color: DS.text, fontSize: 13,
+    outline: "none", fontFamily: DS.body, boxSizing: "border-box" as const,
+  };
+  const labelStyle = {
+    display: "block", color: DS.text4, fontSize: 11,
+    fontFamily: DS.mono, letterSpacing: "0.08em", marginBottom: 6,
+  };
+  const groupStyle = { marginBottom: 14 };
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        key="overlay"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+        style={{
+          position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)",
+          backdropFilter: "blur(8px)", zIndex: 60,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          padding: 16,
+        }}
+      >
+        <motion.div
+          key="modal"
+          initial={{ opacity: 0, scale: 0.95, y: 10 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.95 }}
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            background: DS.bgCard, border: `1px solid ${DS.border}`,
+            borderRadius: 16, padding: 24, width: "100%", maxWidth: 600,
+            maxHeight: "90vh", overflowY: "auto",
+          }}
+        >
+          {/* Header */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <Camera size={20} style={{ color: DS.blue }} />
+              <h3 style={{ color: DS.text, fontWeight: 700, fontSize: 17 }}>
+                {isEdit ? "Sửa Booking" : "Tạo Booking Mới"}
+              </h3>
+            </div>
+            <button onClick={onClose} style={{ background: "none", border: "none", color: DS.text4, cursor: "pointer" }}>
+              <X size={18} />
+            </button>
+          </div>
+
+          <form onSubmit={handleSubmit}>
+            {/* Customer info */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, ...groupStyle }}>
+              <div>
+                <label style={labelStyle}>TÊN KHÁCH HÀNG *</label>
+                <input style={fieldStyle} value={form.customerName}
+                  onChange={(e) => setForm((f) => ({ ...f, customerName: e.target.value }))} />
+              </div>
+              <div>
+                <label style={labelStyle}>EMAIL *</label>
+                <input style={fieldStyle} type="email" value={form.customerEmail}
+                  onChange={(e) => setForm((f) => ({ ...f, customerEmail: e.target.value }))} />
+              </div>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, ...groupStyle }}>
+              <div>
+                <label style={labelStyle}>SỐ ĐIỆN THOẠI</label>
+                <input style={fieldStyle} value={form.customerPhone}
+                  onChange={(e) => setForm((f) => ({ ...f, customerPhone: e.target.value }))} />
+              </div>
+              <div>
+                <label style={labelStyle}>CÔNG TY</label>
+                <input style={fieldStyle} value={form.companyName}
+                  onChange={(e) => setForm((f) => ({ ...f, companyName: e.target.value }))} />
+              </div>
+            </div>
+
+            {/* Booking type + title */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 12, ...groupStyle }}>
+              <div>
+                <label style={labelStyle}>LOẠI BOOKING</label>
+                <select style={fieldStyle} value={form.bookingType}
+                  onChange={(e) => setForm((f) => ({ ...f, bookingType: e.target.value }))}>
+                  {BOOKING_TYPE_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label style={labelStyle}>TÊN / TIÊU ĐỀ *</label>
+                <input style={fieldStyle} value={form.title}
+                  placeholder="VD: Chụp ảnh sản phẩm tháng 4"
+                  onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} />
+              </div>
+            </div>
+
+            {/* Deadline + amount */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, ...groupStyle }}>
+              <div>
+                <label style={labelStyle}>DEADLINE</label>
+                <input type="date" style={fieldStyle} value={form.deadline}
+                  onChange={(e) => setForm((f) => ({ ...f, deadline: e.target.value }))} />
+              </div>
+              <div>
+                <label style={labelStyle}>TỔNG TIỀN (VND)</label>
+                <input style={fieldStyle} type="number" placeholder="VD: 5000000"
+                  value={form.totalAmount}
+                  onChange={(e) => setForm((f) => ({ ...f, totalAmount: e.target.value }))} />
+              </div>
+            </div>
+
+            {/* Requirements */}
+            <div style={groupStyle}>
+              <label style={labelStyle}>YÊU CẦU / BRIEF</label>
+              <textarea style={{ ...fieldStyle, minHeight: 80, resize: "vertical" }}
+                value={form.requirements}
+                placeholder="Mô tả chi tiết yêu cầu media..."
+                onChange={(e) => setForm((f) => ({ ...f, requirements: e.target.value }))} />
+            </div>
+
+            {/* Admin note */}
+            <div style={groupStyle}>
+              <label style={labelStyle}>GHI CHÚ (NỘI BỘ)</label>
+              <textarea style={{ ...fieldStyle, minHeight: 60, resize: "vertical" }}
+                value={form.note}
+                placeholder="Ghi chú cho team media..."
+                onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))} />
+            </div>
+
+            {/* Delivered assets (edit only) */}
+            {isEdit && (
+              <div style={groupStyle}>
+                <label style={labelStyle}>TÀI LIỆU ĐÃ BÀN GIAO</label>
+                <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+                  <input
+                    style={{ ...fieldStyle, flex: 1 }}
+                    placeholder="URL tài liệu (Cloudinary, Google Drive...)"
+                    value={assetUrl}
+                    onChange={(e) => setAssetUrl(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addAsset())}
+                  />
+                  <button type="button" onClick={addAsset}
+                    style={{ padding: "10px 14px", background: GRD.primary, color: "#fff", border: "none", borderRadius: 10, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
+                    <Upload size={13} /> Thêm
+                  </button>
+                </div>
+                {deliveredAssets.length > 0 && (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    {deliveredAssets.map((url) => (
+                      <div key={url} style={{
+                        display: "flex", alignItems: "center", gap: 4, padding: "4px 10px",
+                        borderRadius: 8, background: "rgba(139,92,246,0.1)",
+                        border: "1px solid rgba(139,92,246,0.3)",
+                      }}>
+                        <a href={url} target="_blank" rel="noopener noreferrer"
+                          style={{ color: "#8B5CF6", fontSize: 12, fontFamily: DS.mono, textDecoration: "none", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {url.split("/").pop() ?? url}
+                        </a>
+                        <button type="button" onClick={() => removeAsset(url)}
+                          style={{ background: "none", border: "none", color: "#EF4444", cursor: "pointer", padding: 0, display: "flex" }}>
+                          <X size={11} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Error */}
+            {error && (
+              <div style={{ padding: "10px 14px", background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 10, marginBottom: 14, color: "#EF4444", fontSize: 13 }}>
+                {error}
+              </div>
+            )}
+
+            {/* Actions */}
+            <div style={{ display: "flex", gap: 10 }}>
+              <button type="button" onClick={onClose}
+                style={{ flex: 1, padding: "11px", background: DS.bg, color: DS.text3, border: `1px solid ${DS.border}`, borderRadius: 10, fontWeight: 600, cursor: "pointer", fontSize: 13 }}>
+                Hủy
+              </button>
+              <button type="submit" disabled={saving}
+                style={{
+                  flex: 2, padding: "11px", background: saving ? `${DS.blue}80` : GRD.primary,
+                  color: "#fff", border: "none", borderRadius: 10, fontWeight: 700,
+                  cursor: saving ? "not-allowed" : "pointer", fontSize: 13,
+                }}>
+                {saving ? "Đang lưu..." : isEdit ? "Lưu thay đổi" : "Tạo Booking"}
+              </button>
+            </div>
+          </form>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+// ─── Main page ─────────────────────────────────────────────────────────────────
+
+export default function MediaBookingsPage() {
+  const qc = useQueryClient();
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [selectedBooking, setSelectedBooking] = useState<MediaBooking | null>(null);
+  const [showCreate, setShowCreate] = useState(false);
+  const [editBooking, setEditBooking] = useState<MediaBooking | null>(null);
+
+  const { data, isLoading, isFetching } = useQuery({
+    queryKey: ["admin", "media-bookings", { page, limit: 20, search, status: statusFilter }],
+    queryFn: async () => {
+      const res = await adminApi.get<{
+        data: MediaBooking[];
+        pagination: { page: number; limit: number; total: number; totalPages: number };
+      }>("/api/admin/media-bookings", {
+        params: { page, limit: 20, ...(search ? { search } : {}), ...(statusFilter ? { status: statusFilter } : {}) },
+      });
+      return res;
+    },
+  });
+
+  const bookings = data?.data ?? [];
+  const pagination = data?.pagination;
+  const totalPages = pagination?.totalPages ?? 1;
+
+  const transitionMutation = useMutation({
+    mutationFn: async ({ id, toStatus }: { id: string; toStatus: string }) => {
+      return adminApi.post(`/api/admin/media-bookings/${id}/transition`, { toStatus });
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "media-bookings"] }),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => adminApi.delete(`/api/admin/media-bookings/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "media-bookings"] }),
+  });
+
+  return (
+    <div>
+      {/* Header */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+        <div>
+          <h2 style={{ fontFamily: DS.heading, fontSize: 20, fontWeight: 800, color: DS.text, marginBottom: 2 }}>
+            Quản lý Media Booking
+          </h2>
+          <p style={{ color: DS.text4, fontSize: 12, fontFamily: DS.mono }}>
+            {pagination?.total ?? 0} booking
+          </p>
+        </div>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button
+            onClick={() => qc.invalidateQueries({ queryKey: ["admin", "media-bookings"] })}
+            style={{
+              display: "flex", alignItems: "center", gap: 6, padding: "8px 14px",
+              background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 10,
+              color: DS.text3, cursor: "pointer", fontSize: 12, fontFamily: DS.mono,
+            }}
+          >
+            <RefreshCw size={13} className={isFetching ? "animate-spin" : ""} /> Làm mới
+          </button>
+          <button
+            onClick={() => setShowCreate(true)}
+            style={{
+              display: "flex", alignItems: "center", gap: 6, padding: "8px 16px",
+              background: GRD.primary, border: "none", borderRadius: 10,
+              color: "#fff", cursor: "pointer", fontSize: 12, fontWeight: 700,
+            }}
+          >
+            <Plus size={14} /> Tạo Booking
+          </button>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+        <div style={{ position: "relative", flex: 1, minWidth: 200 }}>
+          <Search size={14} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: DS.text4 }} />
+          <input
+            type="text"
+            placeholder="Tìm theo tên, email, mã booking..."
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            style={{
+              width: "100%", background: DS.bgCard, border: `1px solid ${DS.border}`,
+              borderRadius: 10, padding: "8px 12px 8px 36px", color: DS.text, fontSize: 13,
+              outline: "none", boxSizing: "border-box", fontFamily: DS.body,
+            }}
+          />
+        </div>
+        <select
+          value={statusFilter}
+          onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+          style={{
+            background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 10,
+            padding: "8px 12px", color: DS.text3, fontSize: 13, outline: "none",
+            cursor: "pointer", fontFamily: DS.mono,
+          }}
+        >
+          <option value="">Tất cả trạng thái</option>
+          {ALL_STATUSES.map((s) => (
+            <option key={s} value={s}>{STATUS_CONFIG[s].label}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Status chips */}
+      <div style={{ display: "flex", gap: 6, marginBottom: 16, flexWrap: "wrap" }}>
+        {ALL_STATUSES.map((s) => {
+          const cfg = STATUS_CONFIG[s];
+          const count = bookings.filter((b) => b.status === s).length;
+          return (
+            <button
+              key={s}
+              onClick={() => setStatusFilter(statusFilter === s ? "" : s)}
+              style={{
+                padding: "4px 10px", borderRadius: 99, cursor: "pointer", fontSize: 11,
+                fontFamily: DS.mono, fontWeight: 600,
+                background: statusFilter === s ? cfg.bg : DS.bg,
+                border: `1px solid ${statusFilter === s ? cfg.color + "60" : DS.border}`,
+                color: statusFilter === s ? cfg.color : DS.text4,
+              }}
+            >
+              {cfg.label} {count > 0 && <span>({count})</span>}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Loading */}
+      {isLoading ? (
+        <div style={{ display: "flex", justifyContent: "center", padding: 60 }}>
+          <div style={{ width: 32, height: 32, border: `3px solid ${DS.border}`, borderTopColor: DS.blue, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+        </div>
+      ) : bookings.length === 0 ? (
+        <div style={{ textAlign: "center", padding: "60px 0", color: DS.text4 }}>
+          <Camera size={40} style={{ margin: "0 auto 12px", opacity: 0.4 }} />
+          <p style={{ fontSize: 14, fontWeight: 600 }}>Chưa có booking nào</p>
+          <p style={{ fontSize: 12, marginTop: 4 }}>Tạo booking đầu tiên để bắt đầu</p>
+        </div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {bookings.map((b) => (
+            <BookingRow
+              key={b.id}
+              booking={b}
+              onTransition={(id, toStatus) => transitionMutation.mutate({ id, toStatus })}
+              onDetail={setSelectedBooking}
+              onDelete={(id) => {
+                if (confirm("Xóa booking này? Hành động này không thể hoàn tác.")) {
+                  deleteMutation.mutate(id);
+                }
+              }}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 12, marginTop: 24 }}>
+          <button
+            disabled={page <= 1}
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            style={{
+              width: 36, height: 36, borderRadius: 10, cursor: page <= 1 ? "not-allowed" : "pointer",
+              background: DS.bgCard, border: `1px solid ${DS.border}`,
+              color: page <= 1 ? DS.text4 : DS.text3, opacity: page <= 1 ? 0.4 : 1,
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}
+          >
+            <ChevronLeft size={16} />
+          </button>
+          <span style={{ color: DS.text4, fontSize: 13, fontFamily: DS.mono }}>
+            {page} / {totalPages}
+          </span>
+          <button
+            disabled={page >= totalPages}
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            style={{
+              width: 36, height: 36, borderRadius: 10, cursor: page >= totalPages ? "not-allowed" : "pointer",
+              background: DS.bgCard, border: `1px solid ${DS.border}`,
+              color: page >= totalPages ? DS.text4 : DS.text3, opacity: page >= totalPages ? 0.4 : 1,
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}
+          >
+            <ChevronRight size={16} />
+          </button>
+        </div>
+      )}
+
+      {/* Detail Modal */}
+      <DetailModal
+        booking={selectedBooking}
+        onClose={() => setSelectedBooking(null)}
+        onTransition={(id, toStatus) => transitionMutation.mutate({ id, toStatus })}
+        onEdit={(b) => { setSelectedBooking(null); setEditBooking(b); }}
+      />
+
+      {/* Create/Edit Modal */}
+      {(showCreate || editBooking) && (
+        <BookingFormModal
+          booking={editBooking}
+          onClose={() => { setShowCreate(false); setEditBooking(null); }}
+          onSuccess={() => { setShowCreate(false); setEditBooking(null); }}
+        />
+      )}
+    </div>
+  );
+}

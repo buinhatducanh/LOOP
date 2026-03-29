@@ -10,18 +10,32 @@
  * Member list: search · rank filter · sort · pagination (12/page)
  * Assign modal: rank filter · select-all · bulk ops
  */
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Users, Crown, ChevronRight, ChevronDown, ChevronUp, X, Save,
   Megaphone, Monitor, Film, Building2,
   BarChart3, UserPlus, Search,
-  Plus, Layers, ArrowUpDown, CheckSquare, Square,
+  Plus, Layers, ArrowUpDown, CheckSquare, Square, Loader2, AlertCircle,
 } from 'lucide-react';
 import { DS, GRD } from '../layout/ds';
-import { members, RANKS, type RankKey } from '../team/memberData';
+import { members as seedMembers, RANKS, type RankKey } from '../team/memberData';
+import { teamService } from '../../../api/team.service';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
+
+// Bridge member type: BE uses CUID strings, seed uses numbers
+type MemberId = string | number;
+
+interface BridgeMember {
+  id: MemberId;
+  name: string;
+  role: string;
+  rank: RankKey;
+  level: number;
+  lpBalance: number;
+  img: string;
+}
 
 interface DeptConfig {
   id: string;
@@ -31,8 +45,8 @@ interface DeptConfig {
   color: string;
   description: string;
   mission: string;
-  headId: number;
-  memberIds: number[];
+  headId: MemberId;
+  memberIds: MemberId[];
   kpi: { label: string; value: string; color: string }[];
 }
 
@@ -93,47 +107,15 @@ const RANK_ORDER: Record<RankKey, number> = {
 
 const RANK_KEYS: RankKey[] = ['diamond', 'ruby', 'platinum', 'gold', 'silver', 'bronze', 'iron'];
 
-// ── Mini avatar ───────────────────────────────────────────────────────────────
-
-function MiniAvatar({ id, size = 32, tooltip = true }: { id: number; size?: number; tooltip?: boolean }) {
-  const m = members.find(x => x.id === id);
-  const [showTip, setShowTip] = useState(false);
-  if (!m) return null;
-  const rc = RANKS[m.rank];
-  return (
-    <div className="relative" onMouseEnter={() => setShowTip(true)} onMouseLeave={() => setShowTip(false)}>
-      <div style={{
-        width: size, height: size, borderRadius: '50%', overflow: 'hidden',
-        border: `2px solid ${rc.color}70`,
-        boxShadow: `0 0 6px ${rc.glowColor}`,
-        flexShrink: 0,
-      }}>
-        <img src={m.img} alt={m.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-      </div>
-      {tooltip && showTip && (
-        <div style={{
-          position: 'absolute', bottom: size + 4, left: '50%', transform: 'translateX(-50%)',
-          background: DS.bgCard, border: `1px solid ${rc.color}40`, borderRadius: 8,
-          padding: '5px 10px', whiteSpace: 'nowrap', zIndex: 99,
-          boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
-        }}>
-          <div style={{ color: DS.text, fontSize: 11, fontWeight: 700 }}>{m.name}</div>
-          <div style={{ color: rc.color, fontSize: 9, fontFamily: DS.mono }}>{rc.symbol} {rc.label} Lv.{m.level}</div>
-        </div>
-      )}
-    </div>
-  );
-}
-
 // ── Avatar Stack (for groups) ─────────────────────────────────────────────────
 
-function AvatarStack({ ids, max = 5, size = 28 }: { ids: number[]; max?: number; size?: number }) {
+function AvatarStack({ ids, max = 5, size = 28 }: { ids: MemberId[]; max?: number; size?: number }) {
   const shown = ids.slice(0, max);
   const rest = ids.length - shown.length;
   return (
     <div className="flex items-center" style={{ gap: 0 }}>
       {shown.map((id, i) => {
-        const m = members.find(x => x.id === id);
+        const m = seedMembers.find(x => String(x.id) === String(id));
         if (!m) return null;
         const rc = RANKS[m.rank];
         return (
@@ -166,20 +148,20 @@ function AvatarStack({ ids, max = 5, size = 28 }: { ids: number[]; max?: number;
 
 // ── Org Chart — adapts to team size ───────────────────────────────────────────
 
-function OrgChart({ dept }: { dept: DeptConfig }) {
+function OrgChart({ dept, members }: { dept: DeptConfig; members: BridgeMember[] }) {
   const { color, headId, memberIds } = dept;
-  const head = members.find(m => m.id === headId);
+  const head = members.find(m => String(m.id) === String(headId));
   const headRc = head ? RANKS[head.rank] : null;
-  const subMembers = memberIds
-    .filter(id => id !== headId)
-    .map(id => members.find(m => m.id === id))
-    .filter(Boolean) as typeof members;
+  const subMembers: BridgeMember[] = memberIds
+    .filter(id => String(id) !== String(headId))
+    .map(id => members.find(m => String(m.id) === String(id)))
+    .filter(Boolean) as BridgeMember[];
 
   const count = subMembers.length;
 
   // Group sub-members by role category
   const roleGroups = useMemo(() => {
-    const groups: Record<string, typeof members> = {};
+    const groups: Record<string, BridgeMember[]> = {};
     subMembers.forEach(m => {
       const cat = m.role.includes('Dev') || m.role.includes('DevOps') || m.role.includes('QA') ? 'Dev'
         : m.role.includes('Design') || m.role.includes('UI') ? 'Design'
@@ -329,7 +311,7 @@ function OrgChart({ dept }: { dept: DeptConfig }) {
   );
 }
 
-function SquadGroup({ label, color, members: gMembers }: { label: string; color: string; members: typeof members }) {
+function SquadGroup({ label, color, members: gMembers }: { label: string; color: string; members: BridgeMember[] }) {
   const [open, setOpen] = useState(true);
   return (
     <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${DS.border}` }}>
@@ -374,17 +356,17 @@ function SquadGroup({ label, color, members: gMembers }: { label: string; color:
 
 const PAGE_SIZE = 12;
 
-function MemberList({ dept }: { dept: DeptConfig }) {
+function MemberList({ dept, members }: { dept: DeptConfig; members: BridgeMember[] }) {
   const [search, setSearch] = useState('');
   const [rankFilter, setRankFilter] = useState<RankKey | 'all'>('all');
   const [sort, setSort] = useState<SortKey>('level');
   const [page, setPage] = useState(1);
 
-  const deptMembers = useMemo(() =>
+  const deptMembers = useMemo<BridgeMember[]>(() =>
     dept.memberIds
-      .map(id => members.find(m => m.id === id))
-      .filter(Boolean) as typeof members,
-    [dept.memberIds]
+      .map(id => members.find(m => String(m.id) === String(id)))
+      .filter(Boolean) as BridgeMember[],
+    [dept.memberIds, members]
   );
 
   const filtered = useMemo(() => {
@@ -567,18 +549,19 @@ function MemberList({ dept }: { dept: DeptConfig }) {
 // ── Assign Modal — scalable, rank-filtered ────────────────────────────────────
 
 function AssignModal({
-  dept, onClose, onSave,
+  dept, members, onClose, onSave,
 }: {
   dept: DeptConfig;
+  members: BridgeMember[];
   onClose: () => void;
-  onSave: (ids: number[], headId: number) => void;
+  onSave: (ids: MemberId[], headId: MemberId) => void;
 }) {
-  const [selectedIds, setSelectedIds] = useState<number[]>(dept.memberIds);
-  const [headId, setHeadId] = useState(dept.headId);
+  const [selectedIds, setSelectedIds] = useState<MemberId[]>(dept.memberIds);
+  const [headId, setHeadId] = useState<MemberId>(dept.headId);
   const [search, setSearch] = useState('');
   const [rankFilter, setRankFilter] = useState<RankKey | 'all'>('all');
 
-  const toggleId = (id: number) => {
+  const toggleId = (id: MemberId) => {
     setSelectedIds(prev => {
       const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id];
       // Head must be in selected
@@ -644,10 +627,10 @@ function AssignModal({
             <select value={headId} onChange={e => setHeadId(Number(e.target.value))}
               style={{ width: '100%', background: DS.bgCard2, border: `1px solid ${dept.color}40`, borderRadius: 10, padding: '9px 12px', color: DS.text, fontSize: 13, outline: 'none' }}>
               {selectedIds.map(id => {
-                const m = members.find(x => x.id === id);
+                const m = members.find(x => String(x.id) === String(id));
                 if (!m) return null;
                 const rc = RANKS[m.rank];
-                return <option key={id} value={id}>{rc.symbol} {m.name} — {m.role} (Lv.{m.level})</option>;
+                return <option key={String(id)} value={String(id)}>{rc.symbol} {m.name} — {m.role} (Lv.{m.level})</option>;
               })}
             </select>
           </div>
@@ -677,7 +660,7 @@ function AssignModal({
               {RANK_KEYS.filter(r => rankCounts[r]).map(r => {
                 const rc = RANKS[r];
                 const active = rankFilter === r;
-                const selCount = selectedIds.filter(id => members.find(m => m.id === id)?.rank === r).length;
+                const selCount = selectedIds.filter(id => members.find(m => String(m.id) === String(id))?.rank === r).length;
                 return (
                   <button key={r} onClick={() => setRankFilter(active ? 'all' : r)}
                     style={{ padding: '2px 9px', borderRadius: 20, fontSize: 9, fontFamily: DS.mono, cursor: 'pointer', border: `1px solid ${active ? rc.color : DS.border}`, background: active ? `${rc.color}15` : 'none', color: active ? rc.color : DS.text5 }}>
@@ -750,12 +733,12 @@ function AssignModal({
 
 // ── Dept Detail ───────────────────────────────────────────────────────────────
 
-function DeptDetail({ dept, onAssign }: { dept: DeptConfig; onAssign: () => void }) {
-  const head = members.find(m => m.id === dept.headId);
+function DeptDetail({ dept, members, onAssign }: { dept: DeptConfig; members: BridgeMember[]; onAssign: () => void }) {
+  const head = members.find(m => String(m.id) === String(dept.headId));
   const headRank = head ? RANKS[head.rank] : null;
-  const deptMembers = dept.memberIds.map(id => members.find(m => m.id === id)).filter(Boolean) as typeof members;
+  const deptMembers = dept.memberIds.map(id => members.find(m => String(m.id) === String(id))).filter(Boolean) as BridgeMember[];
   const avgLevel = deptMembers.length > 0 ? Math.round(deptMembers.reduce((s, m) => s + m.level, 0) / deptMembers.length) : 0;
-  const totalLP = deptMembers.reduce((s, m) => s + m.lpEarned, 0);
+  const totalLP = deptMembers.reduce((s, m) => s + m.lpBalance, 0);
   const DeptIcon = dept.icon;
 
   // Rank distribution
@@ -819,7 +802,7 @@ function DeptDetail({ dept, onAssign }: { dept: DeptConfig; onAssign: () => void
               </span>
             </div>
           </div>
-          <OrgChart dept={dept} />
+          <OrgChart dept={dept} members={members} />
         </div>
 
         {/* Stats sidebar */}
@@ -840,12 +823,12 @@ function DeptDetail({ dept, onAssign }: { dept: DeptConfig; onAssign: () => void
               </div>
               <div className="flex gap-3 mt-3 pt-3" style={{ borderTop: `1px solid ${DS.border}` }}>
                 <div className="flex-1 text-center">
-                  <div style={{ color: DS.amber, fontFamily: DS.heading, fontSize: 16, fontWeight: 700 }}>{head.missions}</div>
-                  <div style={{ color: DS.text5, fontSize: 9 }}>Missions</div>
+                  <div style={{ color: DS.amber, fontFamily: DS.heading, fontSize: 16, fontWeight: 700 }}>{head.level}</div>
+                  <div style={{ color: DS.text5, fontSize: 9 }}>Cấp độ</div>
                 </div>
                 <div className="flex-1 text-center">
-                  <div style={{ color: DS.green, fontFamily: DS.heading, fontSize: 16, fontWeight: 700 }}>{(head.lpEarned / 1000).toFixed(0)}K</div>
-                  <div style={{ color: DS.text5, fontSize: 9 }}>LP Earned</div>
+                  <div style={{ color: DS.green, fontFamily: DS.heading, fontSize: 16, fontWeight: 700 }}>{(head.lpBalance / 1000).toFixed(0)}K</div>
+                  <div style={{ color: DS.text5, fontSize: 9 }}>LP Balance</div>
                 </div>
               </div>
             </div>
@@ -892,7 +875,7 @@ function DeptDetail({ dept, onAssign }: { dept: DeptConfig; onAssign: () => void
       </div>
 
       {/* Member list — paginated */}
-      <MemberList dept={dept} />
+      <MemberList dept={dept} members={members} />
     </motion.div>
   );
 }
@@ -903,6 +886,43 @@ export function DepartmentTab() {
   const [depts, setDepts] = useState<DeptConfig[]>(INIT_DEPTS);
   const [selectedId, setSelectedId] = useState('it');
   const [assignDept, setAssignDept] = useState<DeptConfig | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState('');
+
+  // Bridge members state: BE data takes priority, seed as fallback
+  const [members, setMembers] = useState<BridgeMember[]>(
+    seedMembers.map(m => ({ id: m.id, name: m.name, role: m.role, rank: m.rank, level: m.level, lpBalance: m.lpBalance, img: m.img }))
+  );
+
+  // ── Fetch BE members ────────────────────────────────────────────────
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setLoadError('');
+    teamService.getAdminMembers({ limit: 200 })
+      .then(({ members: be }) => {
+        if (cancelled) return;
+        if (!be.length) return;
+        const beMap = new Map<string, BridgeMember>();
+        be.forEach(m => beMap.set(m.id, {
+          id: m.id,
+          name: m.name,
+          role: m.role ?? 'Thành viên',
+          rank: (m.rank ?? 'iron') as RankKey,
+          level: m.level,
+          lpBalance: m.lpBalance,
+          img: m.image ?? `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(m.name)}`,
+        }));
+        // Merge: start from seed, overlay BE data where available
+        setMembers(prev => prev.map(sm => {
+          const beM = beMap.get(String(sm.id));
+          return beM ?? sm;
+        }));
+      })
+      .catch(() => { if (!cancelled) setLoadError('Không tải được danh sách thành viên'); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
 
   const selected = depts.find(d => d.id === selectedId)!;
   const totalMembers = [...new Set(depts.flatMap(d => d.memberIds))].length;
@@ -919,15 +939,28 @@ export function DepartmentTab() {
           { label: 'Trưởng phòng', value: depts.length, color: DS.purple, icon: <Crown size={18} /> },
         ].map(s => (
           <div key={s.label} className="p-4 rounded-2xl" style={{ background: DS.bgCard, border: `1px solid ${DS.border}` }}>
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3"
-              style={{ background: `${s.color}15`, border: `1px solid ${s.color}25` }}>
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3" style={{ background: `${s.color}15`, border: `1px solid ${s.color}25` }}>
               <span style={{ color: s.color }}>{s.icon}</span>
             </div>
-            <div style={{ color: s.color, fontFamily: DS.heading, fontSize: 22, fontWeight: 700 }}>{s.value}</div>
+            <div style={{ color: s.color, fontFamily: DS.mono, fontSize: 20, fontWeight: 700 }}>{s.value}</div>
             <div style={{ color: DS.text3, fontSize: 12, marginTop: 3 }}>{s.label}</div>
           </div>
         ))}
       </div>
+
+      {/* Loading / Error */}
+      {loading && (
+        <div className="flex items-center gap-3 p-4 rounded-xl" style={{ background: DS.bgCard, border: `1px solid ${DS.border}` }}>
+          <Loader2 size={18} className="animate-spin" style={{ color: DS.purple }} />
+          <span style={{ color: DS.text4, fontSize: 12 }}>Đang tải dữ liệu thành viên...</span>
+        </div>
+      )}
+      {loadError && !loading && (
+        <div className="flex items-center gap-3 p-4 rounded-xl" style={{ background: `${DS.red}10`, border: `1px solid ${DS.red}30` }}>
+          <AlertCircle size={14} style={{ color: DS.red }} />
+          <span style={{ color: DS.red, fontSize: 12 }}>{loadError}</span>
+        </div>
+      )}
 
       {/* Dept selector + detail */}
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-5" style={{ alignItems: 'start' }}>
@@ -944,7 +977,7 @@ export function DepartmentTab() {
           {depts.map(d => {
             const DIcon = d.icon;
             const isSelected = selectedId === d.id;
-            const head = members.find(m => m.id === d.headId);
+            const head = members.find(m => String(m.id) === String(d.headId));
             const headRank = head ? RANKS[head.rank] : null;
             return (
               <motion.div key={d.id} onClick={() => setSelectedId(d.id)}
@@ -985,7 +1018,7 @@ export function DepartmentTab() {
         {/* Right: detail */}
         <div className="xl:col-span-3">
           <AnimatePresence mode="wait">
-            <DeptDetail key={selectedId} dept={selected} onAssign={() => setAssignDept(selected)} />
+            <DeptDetail key={selectedId} dept={selected} members={members} onAssign={() => setAssignDept(selected)} />
           </AnimatePresence>
         </div>
       </div>
@@ -995,6 +1028,7 @@ export function DepartmentTab() {
         {assignDept && (
           <AssignModal
             dept={assignDept}
+            members={members}
             onClose={() => setAssignDept(null)}
             onSave={(ids, headId) => {
               setDepts(prev => prev.map(d => d.id === assignDept.id ? { ...d, memberIds: ids, headId } : d));

@@ -58,8 +58,8 @@ export function canEdit(role: UserRole): boolean {
   return role === 'admin' || role === 'manager';
 }
 
-// ── Preset users for demo ─────────────────���──────────────────────────────
-const DEMO_USERS: Record<string, AuthUser> = {
+// ── Preset users for demo ──────────────────────────────────────────────
+export const DEMO_USERS: Record<string, AuthUser> = {
   admin: {
     id: 'u-admin', name: 'Akira Sato', shortName: 'Akira', email: 'akira@loop.vn',
     avatar: 'https://images.unsplash.com/photo-1557862921-37829c790f19?auto=format&fit=crop&w=80&h=80&crop=faces',
@@ -170,17 +170,25 @@ const INIT_EVENTS: CompanyEvent[] = [
   },
 ];
 
+// ── Demo mode flag ─────────────────────────────────────────────────────
+// Set VITE_DEMO_MODE=true in .env to use DEMO_USERS instead of real BE.
+// Useful when BE is offline or for quick demos.
+const DEMO_MODE = (import.meta.env.VITE_DEMO_MODE as string) === 'true';
+
 // ── Daily check-in streak ────────────────────────────────────────────────
 interface AuthStore {
   user: AuthUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  isInitialized: boolean; // true after first session check
 
   // Auth actions
-  login: (preset: string) => void;
+  login: (email: string, password: string) => Promise<AuthUser>;
   loginAs: (user: AuthUser) => void;
-  logout: () => void;
+  logout: () => Promise<void>;
+  initAuth: () => Promise<void>; // restore session on app load
   setLoading: (v: boolean) => void;
+  updateUserLpBalance: (balance: number, rank?: string, rankColor?: string) => void;
 
   // Quest/Event data
   quests: Quest[];
@@ -195,11 +203,13 @@ interface AuthStore {
   addQuest: (quest: Quest) => void;
   updateQuest: (id: string, data: Partial<Quest>) => void;
   deleteQuest: (id: string) => void;
+  setQuests: (quests: Quest[]) => void;
 
   // Event actions
   addEvent: (event: CompanyEvent) => void;
   updateEvent: (id: string, data: Partial<CompanyEvent>) => void;
   deleteEvent: (id: string) => void;
+  setEvents: (events: CompanyEvent[]) => void;
   joinEvent: (id: string) => void;
 
   // Helpers
@@ -208,34 +218,108 @@ interface AuthStore {
 }
 
 export const useAuthStore = create<AuthStore>((set, get) => ({
-  user: DEMO_USERS.admin, // Default logged in as admin for demo
-  isAuthenticated: true,
+  user: null,
+  isAuthenticated: false,
   isLoading: false,
+  isInitialized: false,
 
   quests: INIT_QUESTS,
   events: INIT_EVENTS,
-  dailyStreak: 12,
+  dailyStreak: 0,
   lastCheckIn: null,
 
-  login: (preset) => {
+  /**
+   * initAuth — call on app mount to restore session.
+   * If DEMO_MODE, use demo admin. Otherwise, try to call /me endpoint.
+   */
+  initAuth: async () => {
+    if (get().isInitialized) return;
+
+    if (DEMO_MODE) {
+      set({ user: DEMO_USERS.admin, isAuthenticated: true, isInitialized: true });
+      return;
+    }
+
+    try {
+      const { authService } = await import('../../api/auth.service');
+      const user = await authService.me();
+      set({ user, isAuthenticated: true, isInitialized: true });
+    } catch {
+      // Session invalid or BE offline — not authenticated
+      set({ user: null, isAuthenticated: false, isInitialized: true });
+    }
+  },
+
+  /**
+   * login — real API call via authService.
+   * Falls back to DEMO_USERS if DEMO_MODE or BE unreachable.
+   */
+  login: async (email: string, password: string) => {
     set({ isLoading: true });
-    setTimeout(() => {
+
+    if (DEMO_MODE) {
+      // Demo mode: match by preset key or fall back to client
+      const preset = Object.entries(DEMO_USERS).find(
+        ([, u]) => u.email === email
+      )?.[0] ?? 'client';
       const user = DEMO_USERS[preset] ?? DEMO_USERS.client;
+      await new Promise(r => setTimeout(r, 600)); // simulate latency
       set({ user, isAuthenticated: true, isLoading: false });
-    }, 800);
+      return user;
+    }
+
+    try {
+      const { authService } = await import('../../api/auth.service');
+      const user = await authService.login(email, password);
+      set({ user, isAuthenticated: true, isLoading: false });
+      return user;
+    } catch (err) {
+      set({ isLoading: false });
+      throw err; // Let AuthPage handle the error
+    }
   },
 
+  /**
+   * loginAs — demo mode only (role switcher in Navbar).
+   * Does NOT call BE.
+   */
   loginAs: (user) => {
-    set({ isLoading: true });
-    setTimeout(() => set({ user, isAuthenticated: true, isLoading: false }), 800);
+    set({ user, isAuthenticated: true });
   },
 
-  logout: () => {
+  /**
+   * logout — call BE then clear local state.
+   */
+  logout: async () => {
     set({ isLoading: true });
-    setTimeout(() => set({ user: null, isAuthenticated: false, isLoading: false }), 500);
+
+    if (!DEMO_MODE) {
+      try {
+        const { authService } = await import('../../api/auth.service');
+        await authService.logout();
+      } catch {
+        // Ignore logout errors — clear state regardless
+      }
+    }
+
+    set({
+      user: null,
+      isAuthenticated: false,
+      isLoading: false,
+      quests: INIT_QUESTS,
+      events: INIT_EVENTS,
+      dailyStreak: 0,
+      lastCheckIn: null,
+    });
   },
 
   setLoading: (v) => set({ isLoading: v }),
+
+  updateUserLpBalance: (balance, rank, rankColor) => {
+    const { user } = get();
+    if (!user) return;
+    set({ user: { ...user, lpBalance: balance, rank: rank ?? user.rank, rankColor: rankColor ?? user.rankColor } });
+  },
 
   checkIn: () => {
     const today = new Date().toDateString();
@@ -264,10 +348,12 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   addQuest: (quest) => set(s => ({ quests: [quest, ...s.quests] })),
   updateQuest: (id, data) => set(s => ({ quests: s.quests.map(q => q.id === id ? { ...q, ...data } : q) })),
   deleteQuest: (id) => set(s => ({ quests: s.quests.filter(q => q.id !== id) })),
+  setQuests: (quests) => set({ quests }),
 
   addEvent: (event) => set(s => ({ events: [event, ...s.events] })),
   updateEvent: (id, data) => set(s => ({ events: s.events.map(e => e.id === id ? { ...e, ...data } : e) })),
   deleteEvent: (id) => set(s => ({ events: s.events.filter(e => e.id !== id) })),
+  setEvents: (events) => set({ events }),
   joinEvent: (id) => set(s => ({ events: s.events.map(e => e.id === id ? { ...e, participants: Math.min(e.participants + 1, e.maxParticipants) } : e) })),
 
   getQuestsForRole: (role) => get().quests.filter(q => q.forRoles.includes(role)),

@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Search, Plus, X, Mail, Phone, Building2, Globe, Zap, FolderKanban, Star, ChevronRight, Edit3, Trash2 } from 'lucide-react';
 import { DS, GRD } from '../layout/ds';
+import { revenueService } from '../../../api/revenue.service';
 
 const fmtVND = (n: number) =>
   new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 }).format(n);
@@ -166,13 +167,51 @@ function ClientModal({ client, onClose, onSave, onDelete }: {
 
 // ── Main Clients Tab ───────────────────────────────────────────────────────
 export function ClientsTab() {
+  const [apiClients, setApiClients] = useState<Client[]>([]);
+  const [clientsLoading, setClientsLoading] = useState(true);
+  const [clientsError, setClientsError] = useState('');
   const [clients, setClients] = useState<Client[]>(INITIAL_CLIENTS);
   const [selected, setSelected] = useState<Client | null>(null);
   const [searchQ, setSearchQ] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [rankFilter, setRankFilter] = useState<string>('all');
 
-  const filtered = clients.filter(c => {
+  useEffect(() => {
+    let cancelled = false;
+    setClientsLoading(true);
+    setClientsError('');
+    revenueService.getSalesLeads({ limit: 50 })
+      .then(({ leads }) => {
+        if (!cancelled) {
+          const mapped: Client[] = leads.map(l => ({
+            id: Number(l.id),
+            name: l.name,
+            company: l.company,
+            email: l.email,
+            phone: l.phone,
+            industry: l.industry,
+            website: l.website,
+            status: (l.status ?? 'prospect') as Client['status'],
+            totalSpend: l.totalSpent,
+            projects: l.projectCount,
+            lpBalance: l.lpBalance,
+            rank: (l.rank ?? 'standard') as Client['rank'],
+            joinDate: l.createdAt ? new Date(l.createdAt).toLocaleDateString('vi-VN') : '',
+            avatar: 'https://api.dicebear.com/7.x/initials/svg?seed=' + l.name.replace(/s/g, '+'),
+            note: l.note ?? '',
+          }));
+          setApiClients(mapped);
+        }
+      })
+      .catch(() => { if (!cancelled) setClientsError('Không tải được danh sách khách hàng'); })
+      .finally(() => { if (!cancelled) setClientsLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  // Use API clients when loaded, fall back to mock
+  const displayClients = clientsLoading && clientsError === '' ? clients : apiClients.length > 0 ? apiClients : clients;
+
+  const filtered = displayClients.filter(c => {
     const matchSearch = c.name.toLowerCase().includes(searchQ.toLowerCase()) ||
       c.company.toLowerCase().includes(searchQ.toLowerCase()) ||
       c.email.toLowerCase().includes(searchQ.toLowerCase());
@@ -181,9 +220,9 @@ export function ClientsTab() {
     return matchSearch && matchStatus && matchRank;
   });
 
-  const totalRevenue = clients.reduce((s, c) => s + c.totalSpend, 0);
-  const activeCount = clients.filter(c => c.status === 'active').length;
-  const prospectCount = clients.filter(c => c.status === 'prospect').length;
+  const totalRevenue = displayClients.reduce((s, c) => s + c.totalSpend, 0);
+  const activeCount = displayClients.filter(c => c.status === 'active').length;
+  const prospectCount = displayClients.filter(c => c.status === 'prospect').length;
 
   return (
     <div className="space-y-5">

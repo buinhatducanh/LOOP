@@ -1,16 +1,33 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Mail, Phone, MapPin, Send, Check, ChevronDown, Clock } from 'lucide-react';
+import { Mail, Phone, MapPin, Send, Check, Clock } from 'lucide-react';
 import { DS, GRD } from '../components/layout/ds';
+import { contactService } from '../../api/contact.service';
 
 export default function ContactPage() {
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [service, setService] = useState('');
   const [budget, setBudget] = useState('');
   const [msg, setMsg] = useState('');
+
+  const handleSubmit = async () => {
+    if (!name.trim() || !email.trim() || !msg.trim()) return;
+    setSubmitting(true);
+    setSubmitError('');
+    try {
+      await contactService.submit({ name: name.trim(), email: email.trim(), phone: phone.trim() || undefined, service: service.trim() || undefined, budget: budget.trim() || undefined, message: msg.trim() });
+      setSubmitted(true);
+    } catch {
+      setSubmitError('Gửi không thành công. Vui lòng thử lại.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const inputStyle = {
     width: '100%',
@@ -151,11 +168,15 @@ export default function ContactPage() {
                   </div>
 
                   <button
-                    onClick={() => setSubmitted(true)}
-                    style={{ width: '100%', background: GRD.primary, color: '#fff', border: 'none', borderRadius: 12, padding: '14px', fontSize: 15, fontWeight: 700, cursor: 'pointer', boxShadow: '0 0 24px rgba(20,184,166,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+                    onClick={handleSubmit}
+                    disabled={submitting}
+                    style={{ width: '100%', background: submitting ? `${DS.cyan}80` : GRD.primary, color: '#fff', border: 'none', borderRadius: 12, padding: '14px', fontSize: 15, fontWeight: 700, cursor: submitting ? 'not-allowed' : 'pointer', boxShadow: '0 0 24px rgba(20,184,166,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
                   >
-                    <Send size={16} /> Gửi yêu cầu tư vấn
+                    <Send size={16} /> {submitting ? 'ĐANG GỬI...' : 'Gửi yêu cầu tư vấn'}
                   </button>
+                  {submitError && (
+                    <div style={{ color: DS.red, fontSize: 12, textAlign: 'center', marginTop: 8 }}>{submitError}</div>
+                  )}
                   <div style={{ color: DS.text5, fontSize: 11, textAlign: 'center', marginTop: 12, fontFamily: DS.mono }}>
                     Phản hồi trong vòng 2 giờ làm việc · Miễn phí hoàn toàn
                   </div>

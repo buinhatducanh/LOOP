@@ -1,6 +1,7 @@
 /**
  * Team Page — LOOP Solutions
  * Public page at /[locale]/team
+ * Full guild UI: Hall of Fame, rank LED effects, XP bars, LP system.
  */
 
 import { notFound } from "next/navigation";
@@ -9,6 +10,7 @@ import { getTranslations } from "next-intl/server";
 import { routing } from "@/i18n/routing";
 import { prisma } from "@/lib/prisma";
 import { parseLocaleParam, mapLocalizedTeamMember } from "@/lib/i18n/localization";
+import { TeamGuildClient } from "@/components/landing/guild/TeamGuildClient";
 import type { Metadata } from "next";
 
 type Props = { params: Promise<{ locale: string }> };
@@ -16,9 +18,31 @@ type Props = { params: Promise<{ locale: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations("seo");
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://loop.vn";
+  const title = t("teamTitle");
+  const description = t("teamDescription");
+  const brandMetaTitle = t("brandMetaTitle");
+  const brandMetaDescription = t("brandMetaDescription");
+  const ogImage = t("ogImage");
+  const canonical = `${baseUrl}/${locale}/team`;
+
   return {
-    title: t("teamTitle"),
-    description: t("teamDescription"),
+    title,
+    description,
+    alternates: { canonical },
+    openGraph: {
+      type: "website",
+      title: `${title} — ${brandMetaTitle}`,
+      description: brandMetaDescription || description,
+      url: canonical,
+      images: [{ url: ogImage || "/og-cover.jpg", width: 1200, height: 630, alt: "LOOP Solutions" }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${title} — ${brandMetaTitle}`,
+      description: brandMetaDescription || description,
+      images: [ogImage || "/og-cover.jpg"],
+    },
   };
 }
 
@@ -30,86 +54,54 @@ export default async function TeamPage({ params }: Props) {
   }
   setRequestLocale(locale);
 
-  const t = await getTranslations("TeamPage");
   const resolvedLocale = parseLocaleParam(new URLSearchParams({ lang: locale }));
 
-  let members: unknown[] = [];
+  let members: Record<string, unknown>[] = [];
 
   try {
-    const raw = await prisma.teamMember.findMany({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const raw: any[] = await prisma.teamMember.findMany({
       where: { isActive: true },
       select: {
-        id: true, slug: true, name: true, image: true, role: true,
-        shortBio: true, isFeatured: true,
+        id: true,
+        slug: true,
+        name: true,
+        role: true,
+        bio: true,
+        shortBio: true,
+        image: true,
+        achievements: true,
+        isFeatured: true,
+        rank: true,
+        level: true,
+        currentXp: true,
+        maxXp: true,
+        availableLp: true,
+        lockedLp: true,
+        team: true,
+        roleCode: true,
+        specialty: true,
+        missions: true,
+        challenge: true,
+        solution: true,
+        result: true,
       },
       orderBy: [{ isFeatured: "desc" }, { name: "asc" }],
     });
-    members = raw.map((m) => mapLocalizedTeamMember(m, resolvedLocale));
+    members = (raw as Record<string, unknown>[]).map((m) => mapLocalizedTeamMember(m, resolvedLocale));
   } catch {
     members = [];
   }
 
-  return (
-    <div style={{ padding: "3rem 2rem", maxWidth: "1200px", margin: "0 auto" }}>
-      {/* Hero */}
-      <div style={{ marginBottom: "3rem", textAlign: "center" }}>
-        <p style={{ fontSize: "0.875rem", color: "#3B82F6", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.5rem" }}>
-          {t("badge")}
-        </p>
-        <h1 style={{ fontSize: "2.5rem", fontWeight: 700, marginBottom: "0.5rem" }}>
-          {t("heroTitle1")}
-          <span style={{ color: "#3B82F6" }}>{t("heroHighlight")}</span>
-          {t("heroTitle2")}
-        </h1>
-        <p style={{ fontSize: "1.125rem", color: "#6B7280", maxWidth: "640px", margin: "0 auto" }}>
-          {t("heroDesc")}
-        </p>
-      </div>
+  // Hero content via i18n (server-side)
+  const tTeam = await getTranslations("TeamPage");
+  const hero = {
+    badge:          tTeam("badge"),
+    heroTitle1:     tTeam("heroTitle1"),
+    heroHighlight:  tTeam("heroHighlight"),
+    heroTitle2:     tTeam("heroTitle2"),
+    heroDesc:       tTeam("heroDesc"),
+  };
 
-      {/* Team Grid */}
-      {members.length === 0 ? (
-        <p style={{ color: "#9CA3AF", textAlign: "center", padding: "3rem" }}>
-          {t("noResults")}
-        </p>
-      ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: "1.5rem" }}>
-          {members.map((member) => {
-            const m = member as Record<string, unknown>;
-            return (
-              <a
-                key={m.id as string}
-                href={`/${locale}/team/${m.slug}`}
-                style={{ display: "block", textDecoration: "none", color: "inherit", borderRadius: "12px", overflow: "hidden", border: "1px solid #E5E7EB", transition: "box-shadow 0.2s" }}
-              >
-                {/* Avatar */}
-                <div style={{ height: "240px", background: "#EFF6FF", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  {m.image ? (
-                    <img src={m.image as string} alt={m.name as string} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                  ) : (
-                    <div style={{ fontSize: "4rem", color: "#3B82F6", opacity: 0.4 }}>
-                      {String(m.name).charAt(0)}
-                    </div>
-                  )}
-                </div>
-                {/* Info */}
-                <div style={{ padding: "1.25rem" }}>
-                  <h2 style={{ fontSize: "1rem", fontWeight: 700, marginBottom: "0.25rem" }}>
-                    {m.name as string}
-                  </h2>
-                  <p style={{ fontSize: "0.875rem", color: "#3B82F6", fontWeight: 500, marginBottom: "0.5rem" }}>
-                    {m.role as string}
-                  </p>
-                  {!!m.shortBio && typeof m.shortBio === "string" && (
-                    <p style={{ fontSize: "0.8125rem", color: "#6B7280", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
-                      {m.shortBio}
-                    </p>
-                  )}
-                </div>
-              </a>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
+  return <TeamGuildClient locale={locale} members={members} hero={hero} />;
 }

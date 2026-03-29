@@ -3,8 +3,41 @@ import { Link } from 'react-router';
 import { useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
 import { Eye, EyeOff, ArrowRight, Check, ChevronRight, Shield, Users, Zap } from 'lucide-react';
+import { useAuthStore, DEMO_USERS, type AuthUser } from '../store/authStore';
+import { ApiError } from '../../api/client';
 import { DS, GRD } from '../components/layout/ds';
-import { useAuthStore } from '../store/authStore';
+
+function getLoginErrorMessage(error: unknown): string {
+  if (error instanceof ApiError) {
+    switch (error.code) {
+      case 'UNAUTHORIZED':
+        return 'Email hoặc mật khẩu không đúng';
+      case 'FORBIDDEN':
+        return 'Tài khoản của bạn không có quyền truy cập';
+      case 'TIMEOUT':
+        return 'Kết nối quá chậm. Vui lòng thử lại';
+      case 'MAX_RETRIES':
+        return 'Máy chủ đang bận. Vui lòng thử lại sau ít phút';
+      default:
+        if (error.status === 503) {
+          return 'Máy chủ tạm thời không khả dụng. Vui lòng thử lại sau';
+        }
+        return error.message || 'Đăng nhập thất bại';
+    }
+  }
+
+  if (error instanceof Error) {
+    return error.message || 'Đăng nhập thất bại';
+  }
+
+  return 'Đăng nhập thất bại';
+}
+
+function navigatePathByRole(role: AuthUser['role']): '/admin' | '/khach-hang' | '/nhan-vien' {
+  if (role === 'admin' || role === 'manager') return '/admin';
+  if (role === 'client') return '/khach-hang';
+  return '/nhan-vien';
+}
 
 type AuthMode = 'login' | 'register' | 'otp' | 'onboarding';
 
@@ -69,7 +102,13 @@ function AuthBg() {
 }
 
 // ── Login form ────────────────────────────────────────────────────────────
-function LoginFormWithNav({ onSwitch, onSuccess }: { onSwitch: (m: AuthMode) => void; onSuccess: () => void }) {
+function LoginFormWithNav({
+  onSwitch,
+  onSuccess,
+}: {
+  onSwitch: (m: AuthMode) => void;
+  onSuccess: (email: string, password: string) => void;
+}) {
   const [email, setEmail] = useState('');
   const [pass, setPass] = useState('');
 
@@ -87,7 +126,7 @@ function LoginFormWithNav({ onSwitch, onSuccess }: { onSwitch: (m: AuthMode) => 
         <button style={{ color: DS.blue, background: 'none', border: 'none', fontSize: 12, cursor: 'pointer' }}>Quên mật khẩu?</button>
       </div>
       <button
-        onClick={onSuccess}
+        onClick={() => onSuccess(email, pass)}
         style={{ width: '100%', background: GRD.primary, color: '#fff', border: 'none', borderRadius: 12, padding: '13px', fontSize: 14, fontWeight: 700, cursor: 'pointer', boxShadow: '0 0 20px rgba(129,140,248,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
       >
         Đăng nhập <ArrowRight size={16} />
@@ -372,16 +411,43 @@ function SidePanel() {
 export default function AuthPage() {
   const [mode, setMode] = useState<AuthMode>('login');
   const [selectedRole, setSelectedRole] = useState<string>('client');
-  const { login, isLoading } = useAuthStore();
+  const [loginError, setLoginError] = useState<string>('');
+  const { login, loginAs, isLoading } = useAuthStore();
   const nav = useNavigate();
 
-  const handleLoginSuccess = (role: string) => {
-    login(role);
-    setTimeout(() => {
-      if (role === 'admin') nav('/admin');
-      else if (role === 'client') nav('/khach-hang');
-      else nav('/nhan-vien');
-    }, 900);
+  // Navigate after successful auth based on role
+  const navigateByRole = (role: AuthUser['role']) => {
+    nav(navigatePathByRole(role));
+  };
+
+  // Demo role shortcut: uses DEMO_USERS without calling BE
+  const handleDemoLogin = async (roleKey: string) => {
+    setLoginError('');
+    try {
+      const user = await login('demo@loop.vn', 'demo');
+      navigateByRole(user.role);
+    } catch {
+      // DEMO_MODE fallback: use loginAs directly
+      const user = DEMO_USERS[roleKey] ?? DEMO_USERS.client;
+      loginAs(user);
+      navigateByRole(user.role);
+    }
+  };
+
+  // Real login with email + password
+  const handleRealLogin = async (email: string, password: string) => {
+    if (!email || !password) {
+      setLoginError('Vui lòng nhập email và mật khẩu');
+      return;
+    }
+    setLoginError('');
+    try {
+      await login(email, password);
+      navigateByRole('admin'); // Default to admin after real login
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Đăng nhập thất bại';
+      setLoginError(msg);
+    }
   };
 
   // ── Demo role shortcuts ──
@@ -427,12 +493,24 @@ export default function AuthPage() {
                     </button>
                   ))}
                 </div>
-                <motion.button onClick={() => handleLoginSuccess(selectedRole)}
+                <motion.button
+                  onClick={() => handleDemoLogin(selectedRole)}
                   className="w-full mt-3 py-2.5 rounded-xl flex items-center justify-center gap-2"
                   style={{ background: GRD.primary, color: '#fff', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700, boxShadow: '0 0 16px rgba(129,140,248,0.35)' }}
                   whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}>
                   {isLoading ? '⏳ Đang đăng nhập...' : <><Zap size={13} /> Đăng nhập Demo ngay</>}
                 </motion.button>
+              </motion.div>
+            )}
+
+            {/* Error message */}
+            {loginError && (
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-4 p-3 rounded-xl flex items-center gap-2"
+                style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#FCA5A5', fontSize: 13 }}>
+                <span>⚠️</span> {loginError}
               </motion.div>
             )}
 
@@ -445,13 +523,17 @@ export default function AuthPage() {
               }}>
               <AnimatePresence mode="wait">
                 {mode === 'login' && (
-                  <LoginFormWithNav key="login" onSwitch={setMode} onSuccess={() => setMode('otp')} />
+                  <LoginFormWithNav
+                    key="login"
+                    onSwitch={setMode}
+                    onSuccess={handleRealLogin}
+                  />
                 )}
                 {mode === 'register' && <RegisterForm key="register" onSwitch={setMode} />}
                 {mode === 'otp' && (
-                  <OTPFormWithNav key="otp" onSwitch={setMode} onVerify={() => handleLoginSuccess(selectedRole)} />
+                  <OTPFormWithNav key="otp" onSwitch={setMode} onVerify={() => handleDemoLogin(selectedRole)} />
                 )}
-                {mode === 'onboarding' && <OnboardingFlow key="onboarding" onDone={() => handleLoginSuccess('client')} />}
+                {mode === 'onboarding' && <OnboardingFlow key="onboarding" onDone={() => handleDemoLogin('client')} />}
               </AnimatePresence>
             </div>
           </div>

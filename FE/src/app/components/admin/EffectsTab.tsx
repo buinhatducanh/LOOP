@@ -7,7 +7,7 @@
  *  3. Theo thành viên     — modal "Quản lý" hoạt động thật
  *  4. Hướng dẫn thêm mới — kiến trúc 4 lớp + code guide
  */
-import { useState, type ReactNode } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Sparkles, Eye, EyeOff, Plus, Edit3, Trash2, X, Save,
@@ -27,6 +27,11 @@ import {
   BOX_SHADOW_ANIM, MemberCard,
 } from '../team/MemberCard';
 import { LEDRunner } from '../team/LEDRunner';
+import { effectsService } from '../../../api/effects.service';
+import { teamService } from '../../../api/team.service';
+import { teamEffectsService } from '../../../api/team-effects.service';
+import { teamService } from '../../../api/team.service';
+import { teamEffectsService } from '../../../api/team-effects.service';
 
 // ── Shared configs ──────────────────────────────────────────────────────────
 
@@ -441,13 +446,13 @@ function EffectEditModal({ effect, onClose, onSave }: {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, display: 'block', marginBottom: 5 }}>LOẠI</label>
-              <select value={draft.type} onChange={e => setDraft({ ...draft, type: e.target.value as any })} style={inputStyle}>
+              <select value={draft.type} onChange={e => setDraft({ ...draft, type: e.target.value as RankEffect['type'] })} style={inputStyle}>
                 {Object.entries(TYPE_CFG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
               </select>
             </div>
             <div>
               <label style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, display: 'block', marginBottom: 5 }}>ĐỘ HIẾM</label>
-              <select value={draft.rarity} onChange={e => setDraft({ ...draft, rarity: e.target.value as any })} style={inputStyle}>
+              <select value={draft.rarity} onChange={e => setDraft({ ...draft, rarity: e.target.value as RankEffect['rarity'] })} style={inputStyle}>
                 {Object.entries(RARITY_CFG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
               </select>
             </div>
@@ -500,15 +505,57 @@ function EffectEditModal({ effect, onClose, onSave }: {
 // ── Tab 2: Addon Effects (loopStore) ─────────────────────────────────────────
 
 function AddonEffectsTab() {
-  const { effects, toggleEffectEnabled, addEffect, updateEffect, deleteEffect } = useLoopStore();
+  const { effects, toggleEffectEnabled, addEffect, updateEffect, deleteEffect, syncEffects } = useLoopStore();
   const [editingEffect, setEditingEffect] = useState<RankEffect | null>(null);
-  const [previewEffect, setPreviewEffect] = useState<RankEffect | null>(effects[0] ?? null);
+  const [previewEffect, setPreviewEffect] = useState<RankEffect | null>(null);
+
+  // Fetch from BE on mount
+  useEffect(() => {
+    let cancelled = false;
+    effectsService.getEffects({ limit: 100 })
+      .then(({ effects: fetched }) => {
+        if (!cancelled) syncEffects(fetched);
+      });
+    return () => { cancelled = true; };
+  }, [syncEffects]);
+
+  // Sync preview once effects load
+  useEffect(() => {
+    if (previewEffect === null && effects.length > 0) {
+      setPreviewEffect(effects[0]);
+    }
+  }, [effects, previewEffect]);
 
   const handleSave = (e: RankEffect) => {
-    if (effects.find(ef => ef.id === e.id)) updateEffect(e.id, e);
-    else addEffect(e);
-    setEditingEffect(null);
-    setPreviewEffect(e);
+    const isNew = e.id.startsWith('new');
+    const payload = { ...e, id: isNew ? '' : e.id };
+
+    if (isNew) {
+      effectsService.createEffect(payload).then(created => {
+        addEffect(created);
+        setEditingEffect(null);
+        setPreviewEffect(created);
+      }).catch(() => {});
+    } else {
+      effectsService.updateEffect(e.id, e).then(updated => {
+        updateEffect(e.id, updated);
+        setEditingEffect(null);
+        setPreviewEffect(updated);
+      }).catch(() => {});
+    }
+  };
+
+  const handleToggle = (eff: RankEffect) => {
+    toggleEffectEnabled(eff.id);
+    effectsService.updateEffect(eff.id, { ...eff, enabled: !eff.enabled }).catch(() => {
+      toggleEffectEnabled(eff.id); // rollback
+    });
+  };
+
+  const handleDelete = (eff: RankEffect) => {
+    deleteEffect(eff.id);
+    effectsService.deleteEffect(eff.id).catch(() => {});
+    if (previewEffect?.id === eff.id) setPreviewEffect(effects.find(e2 => e2.id !== eff.id) ?? null);
   };
 
   return (
@@ -546,7 +593,7 @@ function AddonEffectsTab() {
                   </div>
                 </div>
                 <div className="flex items-center gap-1.5 flex-shrink-0">
-                  <button onClick={e => { e.stopPropagation(); toggleEffectEnabled(eff.id); }}
+                  <button onClick={e => { e.stopPropagation(); handleToggle(eff); }}
                     style={{ color: eff.enabled ? DS.green : DS.text5, background: 'none', border: `1px solid ${DS.border}`, borderRadius: 6, padding: '4px 8px', cursor: 'pointer', fontSize: 10, display: 'flex', alignItems: 'center', gap: 3 }}>
                     {eff.enabled ? <><ToggleRight size={13} /> Bật</> : <><ToggleLeft size={13} /> Tắt</>}
                   </button>
@@ -554,7 +601,7 @@ function AddonEffectsTab() {
                     style={{ color: DS.blue, background: `${DS.blue}12`, border: `1px solid ${DS.blue}25`, borderRadius: 6, padding: '4px 7px', cursor: 'pointer' }}>
                     <Edit3 size={11} />
                   </button>
-                  <button onClick={e => { e.stopPropagation(); deleteEffect(eff.id); if (previewEffect?.id === eff.id) setPreviewEffect(null); }}
+                  <button onClick={e => { e.stopPropagation(); handleDelete(eff); }}
                     style={{ color: DS.red, background: `${DS.red}10`, border: `1px solid ${DS.red}20`, borderRadius: 6, padding: '4px 7px', cursor: 'pointer' }}>
                     <Trash2 size={11} />
                   </button>
@@ -631,7 +678,61 @@ function AddonEffectsTab() {
 function MemberEffectsModal({ memberId, onClose }: { memberId: number; onClose: () => void }) {
   const m = members.find(x => x.id === memberId)!;
   const rc = RANKS[m.rank];
-  const { effects, memberEffectOverrides, updateMemberOverride } = useLoopStore();
+  const { effects, memberEffectOverrides, updateMemberOverride, setMemberOverridesForMember } = useLoopStore();
+  const [remoteMemberId, setRemoteMemberId] = useState<string | null>(null);
+  const [syncLoading, setSyncLoading] = useState(false);
+  const [syncError, setSyncError] = useState<string>('');
+
+  useEffect(() => {
+    let cancelled = false;
+    setSyncLoading(true);
+    setSyncError('');
+
+    teamService.getAdminMembers({ limit: 200, search: m.name })
+      .then(({ members: adminMembers }) => {
+        if (cancelled) return;
+        const match = adminMembers.find(am => am.name.trim().toLowerCase() === m.name.trim().toLowerCase());
+        if (!match) {
+          setSyncError('Không map được member BE theo tên. Đang dùng local override fallback.');
+          return;
+        }
+
+        setRemoteMemberId(match.id);
+        return teamEffectsService.getMemberEffects(match.id).then((res) => {
+          if (cancelled) return;
+          const mapped = res.overrides.map(o => ({
+            memberId: m.id,
+            effectId: o.effectId,
+            visible: o.visible,
+            selectedByMember: o.selectedByMember,
+          }));
+          setMemberOverridesForMember(m.id, mapped);
+        });
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setSyncError('Không tải được override từ BE. Đang dùng local override fallback.');
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setSyncLoading(false);
+      });
+
+    return () => { cancelled = true; };
+  }, [m.id, m.name, setMemberOverridesForMember]);
+
+  const persistOverride = async (effectId: string, nextVisible: boolean, selectedByMember: boolean): Promise<boolean> => {
+    if (!remoteMemberId) return false;
+    try {
+      await teamEffectsService.upsertMemberEffectOverride(remoteMemberId, effectId, {
+        visible: nextVisible,
+        selectedByMember,
+      });
+      return true;
+    } catch {
+      return false;
+    }
+  };
 
   // Built-in effects this member has based on rank
   const builtinForMember = BUILTIN_EFFECTS.filter(e => e.ranksActive.includes(m.rank));
@@ -656,13 +757,31 @@ function MemberEffectsModal({ memberId, onClose }: { memberId: number; onClose: 
     return ov ? ov.visible : true; // default: visible
   };
 
-  const toggle = (effectId: string) => {
+  const toggle = async (effectId: string) => {
     const ov = getOverride(effectId);
+    const nextVisible = ov ? !ov.visible : false;
+    const selectedByMember = ov ? ov.selectedByMember : true;
+
+    // optimistic local update
     updateMemberOverride({
-      memberId: m.id, effectId,
-      visible: ov ? !ov.visible : false,
-      selectedByMember: ov ? ov.selectedByMember : true,
+      memberId: m.id,
+      effectId,
+      visible: nextVisible,
+      selectedByMember,
     });
+
+    // persist to BE when mapping exists
+    const ok = await persistOverride(effectId, nextVisible, selectedByMember);
+    if (!ok && remoteMemberId) {
+      // rollback when BE call fails
+      updateMemberOverride({
+        memberId: m.id,
+        effectId,
+        visible: ov ? ov.visible : true,
+        selectedByMember,
+      });
+      setSyncError('Lưu override thất bại. Đã rollback trạng thái.');
+    }
   };
 
   return (
@@ -692,6 +811,18 @@ function MemberEffectsModal({ memberId, onClose }: { memberId: number; onClose: 
 
         {/* Body */}
         <div className="overflow-y-auto scrollbar-zen" style={{ maxHeight: 'calc(90vh - 88px)' }}>
+          {(syncLoading || syncError || remoteMemberId) && (
+            <div className="mx-5 mt-4 p-3 rounded-xl" style={{
+              background: syncError ? 'rgba(239,68,68,0.08)' : 'rgba(59,130,246,0.08)',
+              border: syncError ? '1px solid rgba(239,68,68,0.25)' : '1px solid rgba(59,130,246,0.25)',
+            }}>
+              <div style={{ color: syncError ? DS.red : DS.blue, fontSize: 11, fontFamily: DS.mono }}>
+                {syncLoading && 'SYNC BE OVERRIDES...'}
+                {!syncLoading && syncError && syncError}
+                {!syncLoading && !syncError && remoteMemberId && `SYNCED WITH BE MEMBER ID: ${remoteMemberId}`}
+              </div>
+            </div>
+          )}
           <div className="grid grid-cols-1 xl:grid-cols-5 gap-0">
 
             {/* Left: MemberCard live preview */}
@@ -1033,8 +1164,23 @@ function AddGuideTab() {
 // ── MAIN ────────────────────────────────────────────────────────────────────
 
 export function EffectsTab() {
-  const { effects, globalEffectsEnabled, memberEffectOverrides, setGlobalEffectsEnabled } = useLoopStore();
+  const { effects, globalEffectsEnabled, memberEffectOverrides, setGlobalEffectsEnabled, syncEffects } = useLoopStore();
   const [activeTab, setActiveTab] = useState<'builtin' | 'addon' | 'members' | 'guide'>('builtin');
+  const [toggleLoading, setToggleLoading] = useState(false);
+
+  // Load effects + global toggle from BE on mount
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([
+      effectsService.getEffects({ limit: 100 }),
+      effectsService.getGlobalToggle(),
+    ]).then(([{ effects: fetched }, toggle]) => {
+      if (cancelled) return;
+      syncEffects(fetched);
+      setGlobalEffectsEnabled(toggle.isEnabled);
+    }).catch(() => { /* keep fallback */ });
+    return () => { cancelled = true; };
+  }, [syncEffects, setGlobalEffectsEnabled]);
 
   const enabledCount = effects.filter(e => e.enabled).length;
   const stats = [
@@ -1072,8 +1218,14 @@ export function EffectsTab() {
             </div>
           </div>
         </div>
-        <button onClick={() => setGlobalEffectsEnabled(!globalEffectsEnabled)}
-          className="w-14 h-7 rounded-full relative" style={{ background: globalEffectsEnabled ? DS.green : DS.border, border: 'none', cursor: 'pointer', flexShrink: 0 }}>
+        <button onClick={() => {
+          const next = !globalEffectsEnabled;
+          setGlobalEffectsEnabled(next);
+          setToggleLoading(true);
+          effectsService.globalToggle(next).catch(() => setGlobalEffectsEnabled(!next)).finally(() => setToggleLoading(false));
+        }}
+          disabled={toggleLoading}
+          className="w-14 h-7 rounded-full relative" style={{ background: toggleLoading ? DS.border : globalEffectsEnabled ? DS.green : DS.border, border: 'none', cursor: toggleLoading ? 'not-allowed' : 'pointer', flexShrink: 0, opacity: toggleLoading ? 0.7 : 1 }}>
           <div className="absolute top-0.5 w-6 h-6 rounded-full" style={{ background: '#fff', left: globalEffectsEnabled ? 'calc(100% - 26px)' : 2, transition: 'left 0.2s', boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }} />
         </button>
       </div>

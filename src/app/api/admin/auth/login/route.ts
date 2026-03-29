@@ -148,6 +148,10 @@ export async function POST(req: NextRequest) {
         permissions,
         roleLevel,
       },
+      // Return token in body so FE can store it in localStorage.
+      // HttpOnly cookie is set separately for server-side session validation.
+      // FE uses localStorage token for client-side auth checks + API calls.
+      token,
     });
 
     // Set auth token cookie

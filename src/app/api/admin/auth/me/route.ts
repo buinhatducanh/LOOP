@@ -1,33 +1,34 @@
-import { NextResponse } from "next/server";
-import { getSession } from "@/lib/auth/permissions";
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { getSession, getSessionFromBearer } from "@/lib/auth/permissions";
 
 /**
  * GET /api/admin/auth/me
  * Returns the current authenticated admin user.
  *
+ * Session source (in priority order):
+ *  1. Authorization: Bearer <token> — FE API client sends JWT from localStorage
+ *  2. HttpOnly auth-token cookie — server-side session (SSR, curl)
+ *
  * Performance notes:
- * - Credentials login: reads `auth-method=credentials` cookie → uses custom JWT
- *   path only (no NextAuth path attempt) → 1 DB call instead of 2.
  * - Neon cold-start: retries once after 500ms if connection fails.
  * - DB unavailable: returns 401 (graceful degradation, client clears session).
  */
-async function getSessionWithRetry(attempts = 2): Promise<ReturnType<typeof getSession>> {
-  for (let i = 0; i < attempts; i++) {
+
+async function getSessionWithRetry(): Promise<ReturnType<typeof getSession> | null> {
+  for (let i = 0; i < 2; i++) {
     try {
       return await getSession();
     } catch (err: unknown) {
-      const isConnectionError =
-        err instanceof Error &&
-        (err.message.includes("Can't reach database") ||
-          err.message.includes("Connection terminated") ||
-          err.message.includes("timeout") ||
-          err.message.includes("P1001") ||
-          err.message.includes("P2024"));
+      const msg = err instanceof Error ? err.message : String(err);
+      const isConnErr =
+        msg.includes("Can't reach database") ||
+        msg.includes("Connection terminated") ||
+        msg.includes("timeout") ||
+        msg.includes("P1001") ||
+        msg.includes("P2024");
 
-      if (i < attempts - 1 && isConnectionError) {
-        // Neon cold-start / pool exhausted — retry after 500ms
-        await new Promise((r) => setTimeout(r, 500));
+      if (i < 1 && isConnErr) {
+        await new Promise<void>((r) => setTimeout(r, 500));
         continue;
       }
       throw err;
@@ -38,6 +39,19 @@ async function getSessionWithRetry(attempts = 2): Promise<ReturnType<typeof getS
 
 export async function GET(req: NextRequest) {
   try {
+    // Priority 1: Authorization header (FE sends Bearer token from localStorage)
+    const bearer = req.headers.get("Authorization");
+    if (bearer?.startsWith("Bearer ")) {
+      const token = bearer.slice(7);
+      const session = await getSessionFromBearer(token);
+      if (session) {
+        return NextResponse.json({ user: session });
+      }
+      // Bearer token invalid — 401 (do not fall through to cookie path)
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Priority 2: Cookie-based session (server-side SSR)
     const session = await getSessionWithRetry();
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

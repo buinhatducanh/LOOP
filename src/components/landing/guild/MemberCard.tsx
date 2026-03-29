@@ -1,0 +1,464 @@
+"use client";
+
+/**
+ * MemberCard — Guild-styled team member card
+ *
+ * Full gaming/guild aesthetic with:
+ * - LED running border animation (LEDRunner)
+ * - Rank-specific effects (gold comet, ruby sparks, platinum/ruby particles, diamond prismatic)
+ * - XP bar, LP balance, hover glow
+ * - Corner decorations
+ */
+import { useState, CSSProperties } from "react";
+import { motion } from "motion/react";
+import Link from "next/link";
+import { RANKS, normalizeRank, formatLP, calcXpPct, BOX_SHADOW_ANIM, ROLE_SYMBOLS, type RankKey } from "./guildMemberData";
+import { LEDRunner } from "./LEDRunner";
+import { Counter } from "./Counter";
+
+type MemberRecord = Record<string, unknown>;
+
+function CornerDeco({ color, opacity = 1 }: { color: string; opacity?: number }) {
+  const s: CSSProperties = { borderColor: color, opacity, transition: "opacity 0.25s ease" };
+  return (
+    <>
+      <div className="absolute top-0 left-0 w-4 h-4 border-t-[1.5px] border-l-[1.5px] pointer-events-none" style={{ ...s, zIndex: 15 }} />
+      <div className="absolute top-0 right-0 w-4 h-4 border-t-[1.5px] border-r-[1.5px] pointer-events-none" style={{ ...s, zIndex: 15 }} />
+      <div className="absolute bottom-0 left-0 w-4 h-4 border-b-[1.5px] border-l-[1.5px] pointer-events-none" style={{ ...s, zIndex: 15 }} />
+      <div className="absolute bottom-0 right-0 w-4 h-4 border-b-[1.5px] border-r-[1.5px] pointer-events-none" style={{ ...s, zIndex: 15 }} />
+    </>
+  );
+}
+
+function RankBadge({ rank }: { rank: RankKey }) {
+  const cfg = RANKS[rank];
+  return (
+    <div
+      className="flex items-center gap-1 px-2 py-0.5 rounded-sm"
+      style={{
+        backgroundImage: `linear-gradient(135deg, ${cfg.gradientFrom}22, ${cfg.gradientTo}22)`,
+        border: `1px solid ${cfg.color}55`,
+      }}
+    >
+      <span style={{ color: cfg.color, fontSize: 10 }}>{cfg.symbol}</span>
+      <span
+        style={{
+          color: cfg.color,
+          fontSize: 9,
+          letterSpacing: "0.15em",
+          fontFamily: "'JetBrains Mono', monospace",
+          fontWeight: 600,
+        }}
+      >
+        {cfg.label}
+      </span>
+    </div>
+  );
+}
+
+// ── Floating particles (platinum / ruby / diamond) ────────────────────────
+const PARTICLES: Record<string, Array<{ left: string; delay: string; duration: string; size: number }>> = {
+  platinum: [
+    { left: "12%", delay: "0s", duration: "3.2s", size: 2 },
+    { left: "28%", delay: "0.7s", duration: "2.6s", size: 1.5 },
+    { left: "47%", delay: "1.4s", duration: "3.8s", size: 2 },
+    { left: "66%", delay: "0.4s", duration: "2.9s", size: 1.5 },
+    { left: "83%", delay: "1.1s", duration: "3.4s", size: 2 },
+  ],
+  ruby: [
+    { left: "8%", delay: "0s", duration: "1.8s", size: 2 },
+    { left: "22%", delay: "0.3s", duration: "2.1s", size: 1.5 },
+    { left: "40%", delay: "0.6s", duration: "1.6s", size: 2 },
+    { left: "57%", delay: "0.9s", duration: "2.3s", size: 1.5 },
+    { left: "74%", delay: "0.2s", duration: "1.9s", size: 2 },
+    { left: "90%", delay: "0.5s", duration: "2.0s", size: 1.5 },
+  ],
+};
+
+const DIAMOND_PARTICLES_LIST = [
+  { left: "5%", delay: "0s", dur: "5.0s", size: 2.5, color: "#818CF8" },
+  { left: "16%", delay: "1.3s", dur: "4.2s", size: 1.5, color: "#7DD3FC" },
+  { left: "28%", delay: "0.5s", dur: "5.8s", size: 2.0, color: "#F0ABFC" },
+  { left: "42%", delay: "2.1s", dur: "4.5s", size: 1.5, color: "#FFFFFF" },
+  { left: "55%", delay: "0.9s", dur: "5.2s", size: 2.5, color: "#818CF8" },
+  { left: "68%", delay: "1.7s", dur: "3.8s", size: 1.5, color: "#7DD3FC" },
+  { left: "80%", delay: "0.3s", dur: "4.8s", size: 2.0, color: "#F0ABFC" },
+  { left: "93%", delay: "2.4s", dur: "5.5s", size: 1.5, color: "#FFFFFF" },
+];
+
+function Particles({ rank }: { rank: RankKey }) {
+  const list = PARTICLES[rank] || [];
+  const color = RANKS[rank].particleColor;
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden z-30">
+      {list.map((p, i) => (
+        <div
+          key={i}
+          className="absolute bottom-0 rounded-full"
+          style={{
+            left: p.left,
+            width: p.size,
+            height: p.size,
+            backgroundColor: color,
+            boxShadow: `0 0 6px 1px ${color}`,
+            animation: `guildFloatParticle ${p.duration} ${p.delay} ease-out infinite`,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+function DiamondParticles() {
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden z-30">
+      {DIAMOND_PARTICLES_LIST.map((p, i) => (
+        <div
+          key={i}
+          className="absolute bottom-0 rounded-full"
+          style={{
+            left: p.left,
+            width: p.size,
+            height: p.size,
+            backgroundColor: p.color,
+            boxShadow: `0 0 8px 2px ${p.color}`,
+            animation: `guildFloatParticle ${p.dur} ${p.delay} ease-out infinite`,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+// ── Gold comet line ──────────────────────────────────────────────────────
+function CometLine({ color }: { color: string }) {
+  return (
+    <div className="absolute top-0 left-0 right-0 overflow-hidden pointer-events-none z-30" style={{ height: 2 }}>
+      <div
+        className="absolute top-0 h-full"
+        style={{
+          width: "60%",
+          backgroundImage: `linear-gradient(90deg, transparent, ${color}cc, transparent)`,
+          animation: "guildCometSweep 3.5s linear infinite",
+        }}
+      />
+    </div>
+  );
+}
+
+// ── Ruby electric sparks ───────────────────────────────────────────────
+function ElectricSparks({ color }: { color: string }) {
+  const sparks = [
+    { top: "15%", left: "0", width: "40%", delay: "0s", dur: "0.6s" },
+    { top: "35%", left: "60%", width: "40%", delay: "0.3s", dur: "0.5s" },
+    { top: "55%", left: "10%", width: "30%", delay: "0.5s", dur: "0.7s" },
+    { top: "75%", left: "50%", width: "35%", delay: "0.1s", dur: "0.6s" },
+  ];
+  return (
+    <div className="absolute inset-0 pointer-events-none z-30">
+      {sparks.map((s, i) => (
+        <div
+          key={i}
+          className="absolute"
+          style={{
+            top: s.top,
+            left: s.left,
+            width: s.width,
+            height: 1,
+            backgroundImage: `linear-gradient(90deg, transparent, ${color}cc, transparent)`,
+            animation: `guildElectric ${s.dur} ${s.delay} ease-in-out infinite`,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+// ── Diamond prismatic beams ─────────────────────────────────────────────
+const PRISM_BEAMS = [
+  { top: "10%", delay: "0s", dur: "5.5s", color: "#818CF8", rot: "16deg" },
+  { top: "35%", delay: "1.8s", dur: "4.8s", color: "#7DD3FC", rot: "-20deg" },
+  { top: "60%", delay: "3.4s", dur: "6.0s", color: "#F0ABFC", rot: "24deg" },
+  { top: "82%", delay: "0.9s", dur: "5.2s", color: "#FFFFFF", rot: "-14deg" },
+];
+
+function DiamondPrism() {
+  return (
+    <div className="absolute inset-0 pointer-events-none z-5 overflow-hidden">
+      {PRISM_BEAMS.map((b, i) => (
+        <div
+          key={i}
+          className="absolute"
+          style={{
+            top: b.top,
+            left: "-40%",
+            width: "180%",
+            height: "1px",
+            backgroundImage: `linear-gradient(90deg, transparent 0%, ${b.color}55 35%, ${b.color}90 50%, ${b.color}55 65%, transparent 100%)`,
+            transform: `rotate(${b.rot})`,
+            animation: `guildDiamondBeam ${b.dur} ${b.delay} ease-in-out infinite`,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+interface MemberCardProps {
+  member: MemberRecord;
+  index: number;
+  locale: string;
+}
+
+export function MemberCard({ member, index, locale }: MemberCardProps) {
+  const [hovered, setHovered] = useState(false);
+
+  const rankKey = normalizeRank(member.rank as string | undefined);
+  const cfg = RANKS[rankKey];
+
+  const name = (member.name as string) ?? "Unknown";
+  const slug = (member.slug as string) ?? String(member.id ?? index);
+  const role = (member.role as string) ?? "";
+  const roleCode = (member.roleCode as string) ?? "BOW";
+  const team = (member.team as string) ?? "Alpha";
+  const image = (member.image as string) ?? "";
+  const level = (member.level as number) ?? 1;
+  const lpBalance = (member.availableLp as number) ?? 0;
+  const currentXp = (member.currentXp as number) ?? 0;
+  const maxXp = (member.maxXp as number) ?? 100;
+  const xpPct = calcXpPct(currentXp, maxXp);
+
+  const hasParticles = ["platinum", "ruby"].includes(rankKey);
+  const hasComet = rankKey === "gold";
+  const hasSparks = rankKey === "ruby";
+  const hasDiamondFX = rankKey === "diamond";
+
+  const cardStyle: CSSProperties = {
+    backgroundColor: "#0F172A",
+    border: `1px solid ${cfg.color}40`,
+    borderRadius: 12,
+    animation: BOX_SHADOW_ANIM[rankKey],
+    cursor: "pointer",
+    position: "relative",
+    overflow: "hidden",
+  };
+
+  return (
+    <motion.div
+      style={{ borderRadius: 12, position: "relative", willChange: "transform" }}
+      whileHover={{ y: -10, scale: 1.03 }}
+      transition={{ duration: 0.32, ease: "easeOut" }}
+      onHoverStart={() => setHovered(true)}
+      onHoverEnd={() => setHovered(false)}
+    >
+      {/* ── Ambient glow ring ─────────────────────────────── */}
+      <div
+        className="absolute inset-0 rounded-xl pointer-events-none"
+        style={{
+          boxShadow: `0 0 ${hovered ? 45 : 22}px ${cfg.glowColor}`,
+          opacity: hovered ? 1 : 0.55,
+          borderRadius: 12,
+          transition: "box-shadow 0.3s ease, opacity 0.3s ease",
+        }}
+      />
+
+      {/* ── Card (overflow:hidden clips VFX) ─────────────── */}
+      <Link href={`/${locale}/team/${slug}`} style={{ textDecoration: "none", color: "inherit", display: "block" }}>
+        <div style={cardStyle}>
+          {hasComet && <CometLine color={cfg.color} />}
+          {hasSparks && <ElectricSparks color={cfg.color} />}
+          {hasParticles && <Particles rank={rankKey} />}
+          {hasDiamondFX && <DiamondParticles />}
+          {hasDiamondFX && <DiamondPrism />}
+
+          {/* Avatar section */}
+          <div className="relative" style={{ paddingBottom: "110%" }}>
+            {image ? (
+              <img
+                src={image}
+                alt={name}
+                className="absolute inset-0 w-full h-full object-cover"
+                style={{ borderRadius: "10px 10px 0 0" }}
+              />
+            ) : (
+              <div
+                className="absolute inset-0 flex items-center justify-center"
+                style={{ background: "#111827", borderRadius: "10px 10px 0 0" }}
+              >
+                <span style={{ color: "#374151", fontSize: "3rem", fontWeight: 900 }}>
+                  {name.charAt(0).toUpperCase()}
+                </span>
+              </div>
+            )}
+
+            {/* Bottom gradient fade */}
+            <div
+              className="absolute inset-0"
+              style={{
+                backgroundImage: "linear-gradient(to top, #0F172A 0%, #0F172A55 35%, transparent 62%)",
+                borderRadius: "10px 10px 0 0",
+              }}
+            />
+
+            {/* Rank badge — top right */}
+            <div className="absolute top-2.5 right-2.5 z-20">
+              <RankBadge rank={rankKey} />
+            </div>
+
+            {/* Team tag — top left */}
+            <div
+              className="absolute top-2.5 left-2.5 z-20 px-2 py-0.5 rounded-sm"
+              style={{
+                backgroundColor: "rgba(2,6,23,0.72)",
+                border: "1px solid #1F2937",
+              }}
+            >
+              <span style={{ color: "#64748B", fontSize: 9, letterSpacing: "0.12em", fontFamily: "'JetBrains Mono', monospace" }}>
+                ⬡ {team}
+              </span>
+            </div>
+
+            {/* Level — bottom over image */}
+            <div className="absolute bottom-3 left-3 z-20 flex items-baseline gap-1">
+              <span
+                style={{
+                  fontFamily: "'Cinzel', serif",
+                  color: cfg.color,
+                  fontSize: 20,
+                  fontWeight: 700,
+                  lineHeight: 1,
+                  textShadow: `0 0 14px ${cfg.glowColor}`,
+                }}
+              >
+                <Counter value={level} duration={1.2} delay={0.1} />
+              </span>
+              <span style={{ color: "#64748B", fontSize: 9, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.1em", marginBottom: 2 }}>
+                LVL
+              </span>
+            </div>
+
+            {/* LED boost indicator */}
+            {hovered && (
+              <div
+                className="absolute bottom-3 right-3 z-20 flex items-center gap-1 px-1.5 py-0.5 rounded-sm"
+                style={{
+                  backgroundColor: `${cfg.color}20`,
+                  border: `1px solid ${cfg.color}60`,
+                  animation: "guildHeartbeat 0.5s ease-in-out infinite",
+                }}
+              >
+                <span style={{ color: cfg.color, fontSize: 8, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.1em" }}>
+                  ⚡ BOOST
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Info panel */}
+          <div className="px-3 pt-2 pb-3">
+            {/* Name */}
+            <div
+              style={{
+                color: "#FFFFFF",
+                fontFamily: "'Cinzel', serif",
+                fontSize: 13,
+                fontWeight: 600,
+                letterSpacing: "0.04em",
+                lineHeight: 1.3,
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+            >
+              {name}
+            </div>
+
+            {/* Role */}
+            <div
+              className="mt-0.5"
+              style={{ color: "#64748B", fontSize: 10, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.08em" }}
+            >
+              {ROLE_SYMBOLS[roleCode] ?? "◎"} {role}
+            </div>
+
+            {/* XP bar */}
+            <div className="mt-2.5">
+              <div className="flex justify-between mb-1" style={{ color: "#475569", fontSize: 9, fontFamily: "'JetBrains Mono', monospace" }}>
+                <span style={{ color: cfg.color }}>
+                  XP <Counter value={xpPct} duration={1.2} delay={0.2} />%
+                </span>
+                <span>
+                  {currentXp}/{maxXp}
+                </span>
+              </div>
+              <div className="rounded-full overflow-hidden" style={{ height: 3, backgroundColor: "#1F2937" }}>
+                <div
+                  className="h-full rounded-full"
+                  style={{
+                    width: `${xpPct}%`,
+                    backgroundImage: `linear-gradient(90deg, ${cfg.gradientFrom}, ${cfg.gradientTo})`,
+                    boxShadow: `0 0 6px ${cfg.glowColor}`,
+                    transition: "width 0.6s ease",
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* LP Balance */}
+            <div
+              className="flex items-center justify-between mt-2.5 px-2 py-1.5 rounded-sm"
+              style={{
+                background: `${cfg.color}0a`,
+                border: `1px solid ${cfg.color}20`,
+              }}
+            >
+              <div className="flex items-center gap-1">
+                <span style={{ color: cfg.color, fontSize: 8 }}>◈</span>
+                <span style={{ color: "#475569", fontSize: 8, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.06em" }}>
+                  LP BALANCE
+                </span>
+              </div>
+              <span
+                style={{
+                  color: cfg.color,
+                  fontSize: 11,
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontWeight: 700,
+                  letterSpacing: "0.04em",
+                  textShadow: `0 0 8px ${cfg.glowColor}`,
+                }}
+              >
+                {formatLP(lpBalance)}
+              </span>
+            </div>
+
+            {/* VIEW OPERATIVE button */}
+            <div
+              className="w-full mt-3 py-1.5 rounded-sm text-center"
+              style={{
+                backgroundImage: hovered ? `linear-gradient(135deg, ${cfg.gradientFrom}35, ${cfg.gradientTo}35)` : `linear-gradient(135deg, ${cfg.gradientFrom}15, ${cfg.gradientTo}15)`,
+                backgroundColor: "transparent",
+                border: `1px solid ${hovered ? cfg.color + "70" : cfg.color + "30"}`,
+                color: hovered ? cfg.color : "#64748B",
+                fontSize: 9,
+                fontFamily: "'JetBrains Mono', monospace",
+                letterSpacing: "0.15em",
+                fontWeight: 600,
+                cursor: "pointer",
+                transition: "all 0.25s ease",
+              }}
+            >
+              VIEW OPERATIVE
+            </div>
+          </div>
+        </div>
+
+        {/* ── LED Runner — outside overflow:hidden ─────────── */}
+        <LEDRunner member={{ id: (member.id as string | number) ?? index, rank: rankKey, level }} />
+      </Link>
+
+      {/* ── Corner decorations ──────────────────────────────── */}
+      <CornerDeco color={cfg.color} opacity={hovered ? 1 : 0.5} />
+    </motion.div>
+  );
+}

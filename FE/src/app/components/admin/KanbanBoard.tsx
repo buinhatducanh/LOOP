@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { DS, GRD } from '../layout/ds';
 import { members, RANKS } from '../team/memberData';
+import { tasksService } from '../../../api/tasks.service';
 
 const ITEM_TYPE = 'TASK';
 
@@ -906,12 +907,12 @@ function KanbanColumn({
         style={{ maxHeight: 600, overflowX: 'hidden', minWidth: 0 }}
       >
         <AnimatePresence>
-          {tasks.map(task => (
+          {filtered.map(task => (
             <TaskCard key={task.id} task={task} colColor={col.color} onEdit={onEdit} />
           ))}
         </AnimatePresence>
 
-        {tasks.length === 0 && (
+        {filtered.length === 0 && (
           <div
             className="flex flex-col items-center justify-center py-8"
             style={{ border: `1px dashed ${DS.border}`, borderRadius: 10, opacity: 0.5, cursor: 'pointer' }}
@@ -928,48 +929,96 @@ function KanbanColumn({
 
 // ── Main Kanban Board ─────────────────────────────────────────────────────
 export function KanbanBoard({
+  projectId,
   projectTitle,
   projectColor,
   onBack,
   initialTasks: propTasks,
 }: {
+  projectId?: string;
   projectTitle?: string;
   projectColor?: string;
   onBack?: () => void;
   initialTasks?: Task[];
 } = {}) {
+  // ── API state ────────────────────────────────────────────────────────
+  const [apiTasks, setApiTasks] = useState<Task[]>([]);
+  const [tasksLoading, setTasksLoading] = useState(true);
+  const [tasksError, setTasksError] = useState('');
+
+  useEffect(() => {
+    if (!projectId) { setTasksLoading(false); return; }
+    let cancelled = false;
+    setTasksLoading(true);
+    setTasksError('');
+    tasksService.getTasks({ projectId, limit: 100 })
+      .then(({ tasks: fetched }) => { if (!cancelled) setApiTasks(fetched as unknown as Task[]); })
+      .catch(() => { if (!cancelled) setTasksError('Không tải được tasks'); })
+      .finally(() => { if (!cancelled) setTasksLoading(false); });
+    return () => { cancelled = true; };
+  }, [projectId]);
+
   const [tasks, setTasks] = useState<Task[]>(propTasks ?? INITIAL_TASKS);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [addingToCol, setAddingToCol] = useState<string | null>(null);
   const [filterPriority, setFilterPriority] = useState<Priority | 'all'>('all');
   const [searchQ, setSearchQ] = useState('');
 
+  // Use API tasks when loaded, fall back to prop/mock
+  const displayTasks = tasksLoading && tasksError === ''
+    ? (propTasks ?? INITIAL_TASKS)
+    : apiTasks.length > 0 ? apiTasks : (propTasks ?? INITIAL_TASKS);
+
   const moveTask = useCallback((taskId: string, fromColId: string, toColId: string) => {
+    // Optimistic update
     setTasks(prev => prev.map(t => t.id === taskId ? { ...t, colId: toColId } : t));
+    setApiTasks(prev => prev.map(t => t.id === taskId ? { ...t, colId: toColId } : t));
+    // Sync to BE
+    tasksService.updateTask(taskId, { status: toColId }).catch(() => {/* silently revert on error */});
   }, []);
 
   const handleSave = (updated: Task) => {
     setTasks(prev => prev.map(t => t.id === updated.id ? updated : t));
+    setApiTasks(prev => prev.map(t => t.id === updated.id ? updated : t));
+    tasksService.updateTask(updated.id, {
+      title: updated.title,
+      description: updated.description,
+      priority: updated.priority,
+      lp: updated.lp,
+      dueDate: updated.dueDate || undefined,
+    }).catch(() => {/* silently revert on error */});
   };
 
   const handleDelete = (id: string) => {
     setTasks(prev => prev.filter(t => t.id !== id));
+    setApiTasks(prev => prev.filter(t => t.id !== id));
+    tasksService.deleteTask(id).catch(() => {});
   };
 
   const handleAdd = (newTask: Task) => {
     setTasks(prev => [...prev, newTask]);
+    setApiTasks(prev => [...prev, newTask]);
+    if (projectId) {
+      tasksService.createTask({
+        backlogId: projectId,
+        title: newTask.title,
+        description: newTask.description,
+        priority: newTask.priority,
+        lp: newTask.lp,
+      }).catch(() => {});
+    }
   };
 
-  const filtered = tasks.filter(t =>
+  const filtered = displayTasks.filter(t =>
     (filterPriority === 'all' || t.priority === filterPriority) &&
     t.title.toLowerCase().includes(searchQ.toLowerCase())
   );
 
   const getColTasks = (colId: string) => filtered.filter(t => t.colId === colId);
 
-  const totalTasks = tasks.length;
-  const doneTasks = tasks.filter(t => t.colId === 'done').length;
-  const urgentTasks = tasks.filter(t => t.priority === 'urgent' && t.colId !== 'done').length;
+  const totalTasks = displayTasks.length;
+  const doneTasks = displayTasks.filter(t => t.colId === 'done').length;
+  const urgentTasks = displayTasks.filter(t => t.priority === 'urgent' && t.colId !== 'done').length;
 
   return (
     <DndProvider backend={HTML5Backend}>

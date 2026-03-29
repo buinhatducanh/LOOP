@@ -20,7 +20,8 @@
     "test:coverage": "vitest run --coverage",
     "e2e": "playwright test",
     "e2e:headed": "playwright test --headed",
-    "e2e:ui": "playwright test --ui"
+    "e2e:ui": "playwright test --ui",
+    "phase:update": "npx tsx scripts/update-phase-status.ts"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"
@@ -35,6 +36,7 @@
     "@sanity/image-url": "^2.0.3",
     "@sentry/nextjs": "^10.45.0",
     "@tailwindcss/vite": "^4.2.2",
+    "@tanstack/react-query": "^5.56.2",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.37.0",
     "bcryptjs": "^3.0.3",
@@ -43,10 +45,13 @@
     "dotenv": "^17.3.1",
     "inngest": "^4.0.2",
     "jsonwebtoken": "^9.0.3",
+    "lucide-react": "^1.7.0",
+    "motion": "^11.11.17",
     "next": "15.1.9",
     "next-auth": "^5.0.0-beta.30",
     "next-intl": "^3.26.0",
     "next-sanity": "^12.1.1",
+    "next-themes": "^0.4.4",
     "pg": "^8.20.0",
     "prisma": "^7.4.2",
     "react": "18.3.1",
@@ -54,7 +59,8 @@
     "react-router": "^7.13.2",
     "resend": "^6.9.4",
     "tw-animate-css": "^1.4.0",
-    "zod": "^4.3.6"
+    "zod": "^4.3.6",
+    "zustand": "^5.0.3"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.5",

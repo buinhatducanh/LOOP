@@ -182,8 +182,9 @@ GET  /api/projects/[slug]   Get project by slug
 GET  /api/team             List all team members
      ?locale=vi&page=1&limit=20
 
-GET  /api/api/team/[slug]  Get team member by slug
-     Response: { "data": TeamMember }
+GET  /api/v1/team/[slug]   Get team member by slug (v1 stable)
+     ?lang=vi|en|ja|ko|zh
+     Response: { "data": TeamMember, "meta": { "locale": string } }
 ```
 
 #### Testimonials

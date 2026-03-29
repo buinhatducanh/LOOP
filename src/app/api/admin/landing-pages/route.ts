@@ -7,7 +7,7 @@ import { createAuditLog } from "@/lib/auth/audit";
 // GET - List all landing pages
 export async function GET(req: NextRequest) {
   try {
-    await requireAuth();
+    await requireAuth(req);
     const { searchParams } = new URL(req.url);
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "20");
@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
 // POST - Create new landing page
 export async function POST(req: NextRequest) {
   try {
-    const session = await requireAuth();
+    const session = await requireAuth(req);
     const data = await req.json();
 
     // Check if slug already exists

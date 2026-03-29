@@ -1,8 +1,19 @@
 import { Link } from 'react-router';
 import { DS, GRD } from './ds';
+import { useLocaleStore } from '../../store/localeStore';
 import { Mail, Phone, MapPin, Send, Zap, Globe, Shield, BookOpen, Settings } from 'lucide-react';
 
 export function Footer() {
+  const { locale } = useLocaleStore();
+
+  const withLocale = (href: string) => {
+    if (href.startsWith('/admin') || href.startsWith('/khach-hang') || href.startsWith('/nhan-vien') || href.startsWith('/dang-')) {
+      return href;
+    }
+    if (href === '/') return `/${locale}`;
+    return `/${locale}${href}`;
+  };
+
   const cols = [
     {
       title: 'Dịch vụ',
@@ -77,7 +88,7 @@ export function Footer() {
           </p>
           <div className="flex items-center justify-center gap-4 flex-wrap">
             <Link
-              to="/dat-lich"
+              to={withLocale('/dat-lich')}
               style={{
                 background: GRD.primary,
                 color: '#fff',
@@ -92,7 +103,7 @@ export function Footer() {
               Đặt lịch tư vấn →
             </Link>
             <Link
-              to="/du-an"
+              to={withLocale('/du-an')}
               style={{
                 color: DS.text3,
                 fontSize: 14,
@@ -193,7 +204,7 @@ export function Footer() {
                 {col.links.map((link) => (
                   <Link
                     key={link.label}
-                    to={link.href}
+                    to={withLocale(link.href)}
                     style={{ display: 'block', color: DS.text4, fontSize: 13, textDecoration: 'none', transition: 'color 0.2s' }}
                     onMouseEnter={(e) => { e.currentTarget.style.color = DS.text; }}
                     onMouseLeave={(e) => { e.currentTarget.style.color = DS.text4; }}

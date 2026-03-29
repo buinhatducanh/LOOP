@@ -112,7 +112,6 @@ export const LEDRunner = memo(function LEDRunner({
   // Memoize neons so buildNeons isn't called every render
   const neons = useMemo(
     () => buildNeons(member.rank, member.level, member.id),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [member.rank, member.level, member.id]
   );
 

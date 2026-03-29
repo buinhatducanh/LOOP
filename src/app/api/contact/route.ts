@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { submitContactForm, getContactMessages } from "@/lib/services/landing/contact.service";
 import { applyRateLimit } from "@/lib/rate-limit";
-import { handleError, badRequest, unauthorized, ok, serverError } from "@/lib/api";
+import { handleError, badRequest, ok } from "@/lib/api";
 
 /**
  * POST /api/contact — Submit a contact form (public)

@@ -51,6 +51,11 @@ export async function GET() {
         description: "Blog posts from Sanity CMS",
         cache: "5 minutes",
       },
+      courses: {
+        GET: `${baseUrl}/api/v1/courses`,
+        description: "Published Academy courses with instructors",
+        cache: "5 minutes",
+      },
     },
     rateLimits: {
       public: "100 requests/minute per IP",

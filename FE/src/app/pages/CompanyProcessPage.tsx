@@ -1,6 +1,6 @@
 /**
  * CompanyProcessPage — Trang "Quy trình công ty" LOOP Solutions
- * Tài liệu nội bộ tổng hợp toàn bộ nghiệp vụ, luồng logic và cấu trúc hệ thống
+ * Tài liệu nội bộ chuẩn hóa nghiệp vụ theo FE-first roadmap (UI giữ nguyên, data source kết nối BE dần theo phase)
  * Route: /quy-trinh
  */
 import { useState } from 'react';
@@ -253,6 +253,14 @@ export default function CompanyProcessPage() {
             <div style={{ color: DS.text4, fontSize: 12, lineHeight: 1.8 }}>
               <strong style={{ color: DS.text2 }}>Nguyên tắc cốt lõi:</strong> Bất kỳ tính năng nào dành cho user (khách hàng/nhân viên) đều phải có phần quản lý tương ứng ở admin. Mọi dữ liệu được đồng bộ qua Zustand global store — không sử dụng state cục bộ cho dữ liệu nghiệp vụ. Hệ thống phân tách rõ ràng hai loại tiền tệ: <Tag label="VNĐ · Tiền thật" color={DS.green} /> và <Tag label="LP · Điểm nội bộ" color={DS.purple} />.
             </div>
+
+            <div style={{ color: DS.text4, fontSize: 12, lineHeight: 1.8, marginTop: 10 }}>
+              <strong style={{ color: DS.text2 }}>Nguyên tắc triển khai FE-first:</strong> Giữ nguyên 100% UI/UX, animation và bố cục FE đã thiết kế; chỉ thay data source theo lộ trình phase: F0 (Auth + API client) → F1 (Public pages) → F2 (Booking/Orders) → F3 (Team/Effects) → F4 (Academy) → F5 (Customer portal) → F6 (Admin 23 tabs) → F7 (Realtime + polish).
+            </div>
+
+            <div style={{ color: DS.text4, fontSize: 12, lineHeight: 1.8, marginTop: 10 }}>
+              <strong style={{ color: DS.text2 }}>Nguyên tắc vận hành để scale:</strong> Feature mới bắt buộc đi kèm retry policy, cache strategy cho endpoint read-heavy, async xử lý tác vụ nặng và metric theo dõi sau release (latency/error/queue backlog).
+            </div>
           </Section>
 
           {/* ── 01 Kiến trúc ── */}
@@ -265,11 +273,9 @@ Frontend:     React 18 + TypeScript
 Routing:      react-router v7 (Data Mode / createBrowserRouter)
 State:        Zustand (global store — 2 stores: authStore + loopStore)
 Styling:      Tailwind CSS v4 + inline style (rgba() thay cho opacity class)
-Animation:    motion/react (Framer Motion v11+)
-              ⚠ CHỈ dùng scale/opacity/x/y trong Motion props
-              ⚠ KHÔNG dùng backgroundColor/borderColor/boxShadow trong
-                whileHover/animate/initial (gây lỗi NaN)
-              ✅ Thay bằng CSS transition-all + onHoverStart/onHoverEnd
+Animation:    motion/react (Framer Motion)
+              ✅ Dùng longhand properties khi animate màu: backgroundColor, borderColor
+              ❌ Không dùng shorthand: background, border trong whileHover/animate/initial
 Icons:        lucide-react
 Charts:       100% pure-SVG (không dùng recharts/d3)
 Images:       Unsplash + figma:asset scheme
@@ -278,7 +284,7 @@ Fonts:        Cinzel (heading) · JetBrains Mono · Inter · Noto Serif JP`} />
             <div style={{ color: DS.text3, fontSize: 12, marginBottom: 8 }}>Cấu trúc thư mục:</div>
             <CodeBlock code={`src/app/
 ├── App.tsx                    # Entry point, RouterProvider
-├── routes.ts                  # createBrowserRouter config
+├── routes.tsx                 # createBrowserRouter config + auth guards
 ├── Home.tsx                   # Trang đội ngũ (/doi-ngu)
 ├── MemberDetailPage.tsx       # Chi tiết thành viên (/member/:id)
 │
@@ -348,15 +354,21 @@ Fonts:        Cinzel (heading) · JetBrains Mono · Inter · Noto Serif JP`} />
           {/* ── 03 Data Models ── */}
           <Section id="data_models" icon={<Database size={16} />} title="03 · Mô hình dữ liệu" badge="Interfaces & Types">
             <div style={{ color: DS.text3, fontSize: 12, lineHeight: 1.7, marginBottom: 12 }}>
-              Tất cả types được định nghĩa trong 2 store files và <code style={{ color: DS.cyan, fontFamily: DS.mono }}>memberData.ts</code>. Không có backend thật — mọi thứ là in-memory Zustand state khởi tạo từ dữ liệu INIT_*.
+              Tất cả types được định nghĩa trong 2 store files và <code style={{ color: DS.cyan, fontFamily: DS.mono }}>memberData.ts</code>. Theo lộ trình FE-first, dữ liệu nghiệp vụ đang chuyển dần từ INIT_* (mock fallback) sang API thật theo phase F0→F7.
             </div>
-            <CodeBlock code={`// ── authStore.ts ─────────────────────────────────────────────
+            <CodeBlock code={`// ── authStore.ts + auth.service.ts ─────────────────────────────────
 interface AuthUser {
   id: string; name: string; shortName: string; email: string;
   avatar: string; role: UserRole; department?: string;
   rank?: string; rankColor?: string; lpBalance: number; level: number;
 }
 type UserRole = 'admin' | 'manager' | 'staff' | 'client' | 'guest'
+
+// F0 auth flow:
+// login(email,password) → POST /api/admin/auth/login
+// initAuth()            → GET /api/admin/auth/me
+// logout()              → POST /api/admin/auth/logout
+// DEMO_USERS chỉ là fallback khi VITE_DEMO_MODE=true hoặc BE lỗi tạm thời
 
 interface Quest {
   id: string; title: string; description: string;
@@ -685,7 +697,7 @@ checkIn() // Daily streak:
           {/* ── 11 Notification Flow ── */}
           <Section id="notification_flow" icon={<Bell size={16} />} title="11 · Notification Flow" badge="Real-time simulation · Admin + Client channels">
             <div style={{ color: DS.text3, fontSize: 12, lineHeight: 1.7, marginBottom: 12 }}>
-              Hệ thống notification 2 kênh độc lập: AdminNotification và ClientNotification, đều được lưu trong loopStore. Real-time simulation dùng setInterval inject thông báo mới định kỳ.
+              Hệ thống notification 2 kênh độc lập: AdminNotification và ClientNotification, đều được lưu trong loopStore. Hiện tại đang có realtime simulation bằng setInterval; phase F7 sẽ nâng cấp sang SSE/WebSocket.
             </div>
             <CodeBlock code={`// Tạo notification tự động:
 updateOrderStatus()    → AdminNotification (type: system)
@@ -812,7 +824,7 @@ Each rank segment = (count/total) * circumference`} />
               {[
                 {
                   title: '⚠ Motion Props — QUAN TRỌNG',
-                  content: 'KHÔNG ĐƯỢC dùng backgroundColor, borderColor, boxShadow trong whileHover/animate/initial của Motion vì gây lỗi NaN. Chỉ dùng: scale, opacity, x, y. Thay thế: CSS transition-all kết hợp onHoverStart/onHoverEnd.',
+                  content: 'Dùng longhand properties khi animate màu với Motion: backgroundColor, borderColor. Không dùng shorthand background/border trong whileHover/animate/initial. Các transform (scale, opacity, x, y) vẫn ưu tiên cho hover micro-interactions.',
                   color: DS.red,
                 },
                 {
@@ -847,7 +859,7 @@ Each rank segment = (count/total) * circumference`} />
                 },
                 {
                   title: 'Protected files — KHÔNG chỉnh sửa',
-                  content: '/src/app/components/ui/DemoViewer.tsx và /src/app/components/layout/AdvancedSearch.tsx. Đây là components được bảo vệ, không được sửa đổi thủ công.',
+                  content: '/src/app/components/ui/DemoViewer.tsx là file đã được chỉnh thủ công và cần giữ nguyên. Các file khác chỉ chỉnh khi có yêu cầu nghiệp vụ rõ ràng và follow code review checklist.',
                   color: DS.red,
                 },
               ].map(rule => (

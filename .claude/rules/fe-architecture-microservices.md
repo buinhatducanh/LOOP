@@ -1,120 +1,135 @@
-# FE Architecture & Microservices Boundary — LOOP Solutions
+# FE Architecture & Scale Boundary — LOOP Solutions
 
-> **Mục tiêu:** Chuẩn hóa kiến trúc tích hợp FE với BE hiện tại và định hướng tách microservice cho scale.
-> **Cập nhật:** 2026-03-26
-
----
-
-## 1) Kiến trúc mục tiêu
-
-## FE layer
-- FE tiêu thụ API theo contract thống nhất.
-- Server-state tách khỏi UI-state (cache/revalidate, retry, pagination).
-- Shared design tokens và component conventions đồng nhất web/mobile.
-
-## Core API layer (hiện tại)
-- Auth/RBAC
-- Orders/Services/Portfolio/Blog
-- Academy nền tảng
-- CRM và các module admin cơ bản
-
-## Specialized services (tách khi tải tăng)
-1. **Pricing/Tax Engine**
-   - Pricing wizard 8 bước
-   - Rule engine cho multiplier/extras/tax
-2. **LP Service**
-   - LP reward/redeem/transfer
-   - Leaderboard + quest/event
-3. **Analytics Service**
-   - KPI dashboard, funnel, revenue reports
-   - Batch/report jobs
-4. **Media Service**
-   - Media booking
-   - Upload/process/delivery assets
+> **Mục tiêu:** Chuẩn hóa kiến trúc FE↔BE để scale bền vững, không tách microservice quá sớm, nhưng sẵn sàng tách theo domain khi cần.
+> **Cập nhật:** 2026-03-28
 
 ---
 
-## 2) Vì sao tách service
+## 1) Target architecture (hiện tại → tương lai)
 
-- Tránh logic nặng (analytics/tax/media processing) ảnh hưởng order flow chính.
-- Cho phép scale độc lập theo tải từng nghiệp vụ.
-- Giảm va chạm release giữa các team.
-- Dễ chuẩn hóa SLA theo domain.
+## Giai đoạn hiện tại: Modular Monolith (khuyến nghị giữ)
+- FE: Vite + React tiêu thụ API contract thống nhất.
+- BE: Next.js API route theo domain module (auth/orders/academy/lp/notifications/analytics/media).
+- DB: PostgreSQL/Neon + Prisma.
+- Cache/Queue: thêm dần theo nhu cầu (Redis + job runner).
+
+## Giai đoạn tương lai: Domain Services (chỉ tách khi có tín hiệu)
+- Pricing/Tax service
+- LP service
+- Analytics service
+- Media service
 
 ---
 
-## 3) Boundary đề xuất
+## 2) Kiến trúc vận hành bắt buộc (baseline)
 
-## Core API giữ lại
-- Auth/permission/session
-- CRUD chính: orders/services/projects/blog
-- Các endpoint đồng bộ trực tiếp với trải nghiệm người dùng cốt lõi
+1. **Contract-first:** FE chỉ tích hợp endpoint đã chốt request/response/status.
+2. **Single API client:** mọi call FE đi qua shared API layer.
+3. **Server-state tách UI-state:** cache/invalidation/retry độc lập với UI.
+4. **Async-first cho tác vụ nặng:** report, media process, notification fanout không block request online.
+5. **Observability-first:** log/metrics/traces là điều kiện bắt buộc để scale.
 
-## Pricing/Tax service
-- `/pricing/*`, `/quote/*`, `/tax/*`
-- Tách rule theo version để dễ điều chỉnh theo pháp lý
+---
 
-## LP service
-- `/lp/*`, `/leaderboard/*`, `/quest/*`, `/event/*`
-- Đảm bảo transaction integrity cho điểm thưởng
+## 3) Domain boundary (monolith nội bộ)
 
-## Analytics service
-- `/analytics/*`, `/reports/*`
-- Chạy read-heavy, async jobs, không block request online
+## Core domains (giữ trong monolith)
+- Auth/RBAC/session
+- Orders/services/projects/blog
+- Academy cơ bản
+- Admin CMS CRUD
 
-## Media service
-- `/media-booking/*`, `/media-assets/*`
-- Tối ưu pipeline upload/process/delivery
+## Heavy domains (ưu tiên tách async trước, tách service sau)
+- Pricing/tax rules
+- LP rewards/redeem/leaderboard/quests
+- Analytics/reporting
+- Media booking/upload/process/delivery
 
 ---
 
 ## 4) Performance & resource strategy
 
 ## FE
-- Chỉ lấy dữ liệu cần thiết theo trang.
 - Pagination bắt buộc cho list lớn.
-- Lazy load chart/editor/media preview.
-- Caching hợp lý để giảm request lặp.
+- Lazy-load module nặng (charts/editor/media preview).
+- Chỉ fetch dữ liệu cần cho màn hình hiện tại.
+- Invalidate cache theo scope module, không invalidate toàn cục.
 
 ## BE
-- Prisma query dùng select rõ ràng.
-- Index cho trường filter/sort phổ biến.
-- Tác vụ nặng dùng background jobs.
-- Service analytics/media tách runtime khi cần.
+- Prisma query dùng `select/include` tối thiểu.
+- Bắt buộc index cho filter/sort phổ biến.
+- Background jobs cho xử lý nặng.
+- Read-heavy endpoint có cache TTL rõ ràng.
 
 ---
 
-## 5) Mobile readiness requirements
+## 5) Cache strategy (scale readiness)
 
-- Chuẩn response shape thống nhất (`data`, `pagination`, `error`).
-- Chuẩn error codes để app xử lý UX ổn định.
-- Auth flow có chiến lược refresh token rõ ràng.
-- Notification/event schema dùng chung web + mobile.
-- Hạn chế response dư để tiết kiệm băng thông mobile.
-
----
-
-## 6) Chỉ số kiến trúc cần theo dõi
-
-- P95 latency theo từng domain endpoint.
-- Error rate theo service.
-- Throughput order flow vs analytics load.
-- DB query time + slow query counts.
-- Queue backlog cho jobs nặng.
+- Public list APIs: cache ngắn (TTL 30-120s).
+- Detail pages: cache theo id/slug.
+- Dashboard KPI: cache ngắn + manual refresh.
+- Invalidate theo domain event (ví dụ update service → invalidate services list/detail).
+- Không cache dữ liệu nhạy cảm auth/session theo kiểu public cache.
 
 ---
 
-## 7) Quy tắc migration lên microservice
+## 6) Async job strategy
 
-1. Tách theo domain có ranh giới nghiệp vụ rõ.
-2. Giữ API contract backward-compatible trong giai đoạn chuyển tiếp.
-3. Chuyển dần theo strangler pattern (route-by-route).
-4. Đo hiệu năng trước/sau khi tách để xác minh hiệu quả.
+Tác vụ bắt buộc chạy nền:
+- Analytics aggregation
+- Revenue/report export
+- Notification fanout đa kênh
+- Media processing/transcoding
+- LP batch sync/award jobs
+
+Yêu cầu bắt buộc:
+- idempotency key
+- retry policy + dead-letter handling
+- job metrics: queue depth, retry count, fail rate
 
 ---
 
-## 8) Liên kết
+## 7) SLO/metrics phải theo dõi
+
+- P95 latency theo domain endpoint
+- Error rate theo endpoint/group
+- DB query p95 + slow query count
+- Queue backlog + time-to-drain
+- Throughput order flow vs analytics/media load
+
+Ngưỡng gợi ý:
+- Public API p95 < 300ms (cached path)
+- Admin CRUD p95 < 500ms
+- Error rate < 1%
+
+---
+
+## 8) Khi nào được tách microservice
+
+Chỉ tách khi thỏa ít nhất 2 điều kiện:
+1. Domain có tải cao độc lập và ảnh hưởng core flow.
+2. Chu kỳ release domain đó gây nghẽn team khác.
+3. Cần SLA khác biệt so với core API.
+4. Queue/backlog domain đó tăng kéo dài.
+
+Ưu tiên thứ tự tách:
+1) Pricing/Tax → 2) LP → 3) Analytics → 4) Media
+
+---
+
+## 9) Migration rules (strangler pattern)
+
+1. Route-by-route, không big-bang rewrite.
+2. Giữ backward-compatible contract trong giai đoạn chuyển tiếp.
+3. Dùng adapter ở FE khi cần tạm thời, có expiry plan.
+4. Đo trước/sau migration bằng cùng KPI.
+
+---
+
+## 10) Liên kết
 - `.claude/rules/fe-roadmap.md`
 - `.claude/rules/fe-delivery-process.md`
+- `.claude/rules/fe-governance-policy.md`
+- `.claude/rules/fe-scale-operating-runbook.md`
 - `docs/API-CONTRACT.md`
 - `docs/DB-PERFORMANCE.md`

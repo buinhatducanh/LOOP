@@ -1,15 +1,20 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Check, ArrowRight, Globe, Code2, BarChart3, Target, Monitor, ArrowLeft } from 'lucide-react';
 import { DS, GRD } from '../components/layout/ds';
 import { useParams, Link } from 'react-router';
 import { DemoViewer } from '../components/ui/DemoViewer';
+import { servicesService } from '../../api/services.service';
+import type { Service } from '../../store/loopStore';
+import { useLocaleStore } from '../store/localeStore';
 
 const fmtVND = (n: number) =>
   new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(n);
 
-const SERVICES_DATA: Record<string, {
+const USE_MOCK_FALLBACK = (import.meta.env.VITE_USE_MOCK_FALLBACK as string) !== 'false';
+
+const FALLBACK_SERVICES: Record<string, {
   id: string; icon: ReactNode; color: string;
   title: string; subtitle: string; desc: string;
   startPrice: number; endPrice: number; perMonth?: boolean;
@@ -152,9 +157,57 @@ const SLUG_MAP: Record<string, string> = {
 
 export default function ServiceDetailPage() {
   const { id = '' } = useParams<{ id: string }>();
-  const slug = SLUG_MAP[id] ?? Object.keys(SERVICES_DATA)[0];
-  const svc = SERVICES_DATA[slug] ?? Object.values(SERVICES_DATA)[0];
+  const slug = SLUG_MAP[id] ?? Object.keys(FALLBACK_SERVICES)[0];
+
+  // API state
+  const [apiSvc, setApiSvc] = useState<Service | null>(null);
+  const [loading, setLoading] = useState(true);
+  const { locale } = useLocaleStore();
+
+  useEffect(() => {
+    if (!slug) { setLoading(false); return; }
+    let cancelled = false;
+    setLoading(true);
+    servicesService.getServiceBySlug(slug, locale)
+      .then(s => { if (!cancelled) setApiSvc(s); })
+      .catch(() => { if (!cancelled) setApiSvc(null); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [slug, locale]);
+
+  const fallbackSvc = FALLBACK_SERVICES[slug] ?? Object.values(FALLBACK_SERVICES)[0];
+  const svc = apiSvc ?? (USE_MOCK_FALLBACK ? fallbackSvc : null);
   const [showDemo, setShowDemo] = useState(false);
+
+  if (!loading && !svc) {
+    return (
+      <div style={{ background: DS.bg, minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, paddingTop: 64 }}>
+        <div style={{ color: DS.text5, fontSize: 64, fontFamily: DS.mono }}>503</div>
+        <div style={{ color: DS.text3, fontSize: 18 }}>Không tải được dữ liệu dịch vụ</div>
+        <div style={{ color: DS.text4, fontSize: 13, textAlign: 'center', maxWidth: 420 }}>
+          API hiện không khả dụng và chế độ fallback đã tắt.
+          Vui lòng thử lại sau hoặc bật VITE_USE_MOCK_FALLBACK=true trong môi trường dev.
+        </div>
+        <Link to="/dich-vu" style={{ color: DS.blue, fontFamily: DS.mono, fontSize: 13, textDecoration: 'none' }}>
+          ← Quay lại danh sách dịch vụ
+        </Link>
+      </div>
+    );
+  }
+
+  if (!svc) return null;
+
+  if (loading) {
+    return (
+      <div style={{ background: DS.bg, fontFamily: DS.body, paddingTop: 64 }}>
+        <div className="max-w-5xl mx-auto px-6 py-20">
+          <div style={{ height: 80, width: '60%', background: DS.bgCard, borderRadius: 8, marginBottom: 24 }} />
+          <div style={{ height: 16, width: '100%', background: DS.bgCard, borderRadius: 4, marginBottom: 12 }} />
+          <div style={{ height: 16, width: '70%', background: DS.bgCard, borderRadius: 4 }} />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ background: DS.bg, fontFamily: DS.body, paddingTop: 64 }}>

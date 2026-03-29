@@ -8,12 +8,17 @@ import {
   MessageCircle, ThumbsUp, FileText, Shield,
 } from 'lucide-react';
 import { DS, GRD } from '../components/layout/ds';
+import { academyService } from '../../api/academy.service';
+import type { AcademyCourse } from '../../api/academy.service';
 import { useIsMobile } from '../components/ui/use-mobile';
+import { useLocaleStore } from '../store/localeStore';
 
 const fmtVND = (n: number) =>
   new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(n);
 
 // ── Course data ───────────────────────────────────────────────────────────────
+const USE_MOCK_FALLBACK = (import.meta.env.VITE_USE_MOCK_FALLBACK as string) !== 'false';
+
 const COURSES: Record<string, {
   id: number; title: string; instructor: string; instructorRole: string;
   instructorBio: string; instructorImg: string;
@@ -1030,7 +1035,60 @@ function CoursePlayer({ course, onClose }: {
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function CourseDetailPage() {
   const { id = '1' } = useParams<{ id: string }>();
-  const course = COURSES[id] ?? DEFAULT_COURSE;
+  // ── API state ────────────────────────────────────────────────────────────
+  const [apiCourse, setApiCourse] = useState<AcademyCourse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const { locale } = useLocaleStore();
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setApiCourse(null);
+    academyService.getCourseById(id, locale)
+      .then(c => { if (!cancelled) setApiCourse(c); })
+      .catch(() => { if (!cancelled) setApiCourse(null); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [id, locale]);
+
+  // Prefer API course, fall back to hardcoded COURSES record only when flag is enabled
+  const fallbackCourse = COURSES[id] ?? DEFAULT_COURSE;
+  const course = apiCourse
+    ? {
+        ...(COURSES[id] ?? DEFAULT_COURSE),
+        id: Number(apiCourse.id),
+        title: apiCourse.title,
+        instructor: apiCourse.instructor,
+        instructorRole: apiCourse.instructorRole,
+        instructorImg: apiCourse.instructorImg,
+        price: apiCourse.price,
+        lpPrice: apiCourse.lpPrice,
+        lpReward: apiCourse.lpReward,
+        level: apiCourse.level,
+        img: apiCourse.img,
+        color: apiCourse.color,
+        students: String(apiCourse.students),
+        lectures: apiCourse.lectures,
+      }
+    : (USE_MOCK_FALLBACK ? fallbackCourse : null);
+
+  if (!loading && !course) {
+    return (
+      <div style={{ background: DS.bg, minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, paddingTop: 64 }}>
+        <div style={{ color: DS.text5, fontSize: 64, fontFamily: DS.mono }}>503</div>
+        <div style={{ color: DS.text3, fontSize: 18 }}>Không tải được dữ liệu khóa học</div>
+        <div style={{ color: DS.text4, fontSize: 13, textAlign: 'center', maxWidth: 420 }}>
+          API hiện không khả dụng và chế độ fallback đã tắt.
+          Vui lòng thử lại sau hoặc bật VITE_USE_MOCK_FALLBACK=true trong môi trường dev.
+        </div>
+        <Link to="/hoc-vien" style={{ color: DS.blue, fontFamily: DS.mono, fontSize: 13, textDecoration: 'none' }}>
+          ← Quay lại Academy
+        </Link>
+      </div>
+    );
+  }
+
+  if (!course) return null;
 
   const [openChapter, setOpenChapter] = useState<number | null>(0);
   const [showPayment, setShowPayment] = useState(false);

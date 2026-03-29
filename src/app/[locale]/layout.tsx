@@ -15,6 +15,7 @@ import { routing } from "@/i18n/routing";
 import SiteHeader from "./components/SiteHeader";
 import SiteFooter from "./components/SiteFooter";
 import { getFontClass } from "@/lib/fonts";
+import "@/styles/figma-theme.css";
 
 type Props = {
   children: React.ReactNode;
@@ -32,8 +33,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   const seo = (messages as Record<string, Record<string, string>>).seo ?? {};
-  const title = seo.defaultTitle ?? "LOOP Agency";
-  const description = seo.defaultDescription ?? "";
+  const title = seo.defaultTitle ?? "LOOP Solutions — Server-first + AI-driven + Edge-ready";
+  const description = seo.defaultDescription ?? "LOOP Solutions platform with server-first architecture, AI-driven workflows, and edge-ready delivery.";
+  const brandMetaTitle = seo.brandMetaTitle ?? "Server-first + AI-driven + Edge-ready";
+  const brandMetaDescription = seo.brandMetaDescription ?? "Server-first architecture, AI-driven execution, edge-ready delivery for scalable digital products.";
+  const ogImage = seo.ogImage ?? "/og-cover.jpg";
 
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://loop.vn";
 
@@ -51,10 +55,27 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       ),
     },
     openGraph: {
-      siteName: seo.siteName ?? "LOOP Agency",
+      siteName: seo.siteName ?? "LOOP Solutions",
+      title: `${title} — ${brandMetaTitle}`,
+      description: brandMetaDescription,
+      url: `${baseUrl}/${locale}`,
+      images: [
+        {
+          url: ogImage,
+          width: 1200,
+          height: 630,
+          alt: "LOOP Solutions",
+        },
+      ],
       locale: locale,
       alternateLocale: (routing.locales).filter((loc: string) => loc !== locale),
       type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${title} — ${brandMetaTitle}`,
+      description: brandMetaDescription,
+      images: [ogImage],
     },
   };
 }
@@ -71,10 +92,11 @@ export default async function LocaleLayout({ children, params }: Props) {
   const messages = await getMessages();
 
   return (
-    <html lang={locale} suppressHydrationWarning>
+    // "dark" class activates Figma dark theme CSS variables from figma-theme.css
+    <html lang={locale} suppressHydrationWarning className="dark">
       <body
         style={{ margin: 0, display: "flex", flexDirection: "column", minHeight: "100vh" }}
-        className={getFontClass(locale)}
+        className={`dark ${getFontClass(locale)}`}
       >
         <NextIntlClientProvider messages={messages}>
           <SiteHeader locale={locale} />
