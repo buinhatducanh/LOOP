@@ -3,8 +3,10 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth/permissions";
+import { orderLogger } from "@/lib/logger";
 
 export async function GET(req: NextRequest) {
+  const start = Date.now();
   try {
     await requireAuth(req);
 
@@ -37,6 +39,12 @@ export async function GET(req: NextRequest) {
       }),
     ]);
 
+    orderLogger.withSLO("GET /api/admin/dashboard success", {
+      endpoint: "/api/admin/dashboard",
+      method: "GET",
+      statusCode: 200,
+      latencyMs: Date.now() - start,
+    });
     return NextResponse.json({
       stats: {
         totalServices,
@@ -51,6 +59,13 @@ export async function GET(req: NextRequest) {
       recentMessages,
     });
   } catch (error) {
+    orderLogger.withSLO("GET /api/admin/dashboard failed", {
+      endpoint: "/api/admin/dashboard",
+      method: "GET",
+      statusCode: 500,
+      latencyMs: Date.now() - start,
+      error: error instanceof Error ? error.message : String(error),
+    });
     return handleError(error);
   }
 }

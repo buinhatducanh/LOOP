@@ -113,14 +113,21 @@ export const lpService = {
   /**
    * POST /api/admin/lp-awards
    * Award LP to a member.
+   * Sends memberId as string (CUID) — BE accepts both CUID and numeric string.
    */
   awardLp: async (data: {
-    memberId: number;
+    memberId: number | string;
     amount: number;
     source: LPSource;
     reason: string;
   }): Promise<LpAward> => {
-    const res = await api.post<{ data: LpAward }>('/admin/lp-awards', data);
+    const payload = {
+      memberId: String(data.memberId),
+      lpAmount: data.amount,
+      source: data.source,
+      reason: data.reason,
+    };
+    const res = await api.post<{ data: LpAward }>('/admin/lp-awards', payload);
     return res.data;
   },
 

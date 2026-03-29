@@ -1148,6 +1148,111 @@ async function seedAcademy() {
   console.log(`  ✓ ${enrollmentCount} student enrollments with progress`);
   console.log("  ✓ Academy seed complete");
 }
+
+// ══════════════════════════════════════════════════════════════════
+// Quest & Company Event seed
+// ══════════════════════════════════════════════════════════════════
+
+async function seedQuests() {
+  const quests = [
+    // Daily
+    { title: "Điểm danh hàng ngày", description: "Đăng nhập và check-in mỗi ngày để nhận thưởng LP", lpReward: 5, xpReward: 2, frequency: "daily", category: "engagement", icon: "CheckCircle", color: "#22C55E", target: 1, forRoles: ["staff", "manager", "admin"] },
+    { title: "Gửi tin nhắn", description: "Gửi ít nhất 1 tin nhắn trong ngày", lpReward: 3, xpReward: 1, frequency: "daily", category: "social", icon: "MessageSquare", color: "#3B82F6", target: 1, forRoles: ["staff", "manager", "admin"] },
+    { title: "Xem blog", description: "Đọc ít nhất 1 bài blog trong ngày", lpReward: 2, xpReward: 1, frequency: "daily", category: "engagement", icon: "BookOpen", color: "#8B5CF6", target: 1, forRoles: ["staff", "manager", "admin", "client"] },
+    // Weekly
+    { title: "Hoàn thành 3 tasks", description: "Hoàn thành ít nhất 3 tasks trong tuần", lpReward: 50, xpReward: 20, frequency: "weekly", category: "project", icon: "CheckSquare", color: "#06B6D4", target: 3, forRoles: ["staff", "manager"] },
+    { title: "Viết blog", description: "Viết ít nhất 1 bài blog trong tuần", lpReward: 80, xpReward: 30, frequency: "weekly", category: "learning", icon: "PenTool", color: "#F59E0B", target: 1, forRoles: ["staff", "manager"] },
+    { title: "Hoàn thành 1 khóa học", description: "Hoàn thành ít nhất 1 khóa học trong tuần", lpReward: 100, xpReward: 40, frequency: "weekly", category: "learning", icon: "GraduationCap", color: "#E0115F", target: 1, forRoles: ["staff", "manager", "admin"] },
+    // Monthly
+    { title: "Đánh giá 360°", description: "Hoàn thành đánh giá hiệu suất hàng tháng", lpReward: 200, xpReward: 80, frequency: "monthly", category: "achievement", icon: "Star", color: "#FFD700", target: 1, forRoles: ["staff", "manager", "admin"] },
+    { title: "Giới thiệu 1 KH mới", description: "Giới thiệu ít nhất 1 khách hàng tiềm năng trong tháng", lpReward: 500, xpReward: 100, frequency: "monthly", category: "achievement", icon: "Users", color: "#818CF8", target: 1, forRoles: ["staff", "manager", "admin"] },
+    // One-time
+    { title: "First Blood", description: "Hoàn thành quest đầu tiên của bạn", lpReward: 20, xpReward: 10, frequency: "one_time", category: "achievement", icon: "Zap", color: "#EF4444", target: 1, forRoles: ["staff", "manager", "admin"] },
+    { title: "Streak Master 30 ngày", description: "Điểm danh liên tục 30 ngày", lpReward: 1000, xpReward: 300, frequency: "one_time", category: "achievement", icon: "Flame", color: "#F97316", target: 30, forRoles: ["staff", "manager", "admin"] },
+    // Client
+    { title: "Đặt dịch vụ đầu tiên", description: "Hoàn tất đơn hàng dịch vụ đầu tiên", lpReward: 200, xpReward: 0, frequency: "client", category: "achievement", icon: "ShoppingCart", color: "#3B82F6", target: 1, forRoles: ["client"] },
+    { title: "Đánh giá 5 sao", description: "Để lại đánh giá 5 sao cho dịch vụ đã sử dụng", lpReward: 100, xpReward: 0, frequency: "client", category: "achievement", icon: "Star", color: "#FFD700", target: 1, forRoles: ["client"] },
+  ];
+
+  let count = 0;
+  for (const q of quests) {
+    await prisma.quest.upsert({
+      where: { id: q.title.toLowerCase().replace(/\s+/g, "-").slice(0, 50) },
+      update: { lpReward: q.lpReward, xpReward: q.xpReward, isActive: true },
+      create: {
+        id: q.title.toLowerCase().replace(/\s+/g, "-").slice(0, 50),
+        title: q.title,
+        description: q.description,
+        lpReward: q.lpReward,
+        xpReward: q.xpReward,
+        frequency: q.frequency,
+        category: q.category,
+        icon: q.icon,
+        color: q.color,
+        target: q.target,
+        forRoles: q.forRoles,
+        sortOrder: quests.indexOf(q),
+      },
+    });
+    count++;
+  }
+  console.log(`  ✓ ${count} quests seeded`);
+}
+
+async function seedCompanyEvents() {
+  const now = new Date();
+  const year = now.getFullYear();
+
+  const events = [
+    {
+      id: "spring-festival-2026",
+      title: "Spring Festival 2026",
+      description: "Tết Nguyên Đán 2026 — Thưởng LP bonus cho team events và social activities",
+      type: "seasonal",
+      startDate: new Date(`${year}-01-20T00:00:00.000Z`),
+      endDate: new Date(`${year}-02-15T23:59:59.000Z`),
+      lpBonus: 500,
+      color: "#EF4444",
+      icon: "Calendar",
+      isActive: true,
+    },
+    {
+      id: "hackathon-q1-2026",
+      title: "Hackathon Internal Q1",
+      description: "Cuộc thi nội bộ 48 giờ — Xây dựng tính năng mới cho LOOP Platform",
+      type: "competition",
+      startDate: new Date(`${year}-03-15T09:00:00.000Z`),
+      endDate: new Date(`${year}-03-17T17:00:00.000Z`),
+      lpBonus: 2000,
+      color: "#818CF8",
+      icon: "Code",
+      isActive: true,
+    },
+    {
+      id: "loop-anniversary",
+      title: "LOOP Anniversary",
+      description: "Kỷ niệm thành lập công ty — Tri ân thành viên và khách hàng",
+      type: "celebration",
+      startDate: new Date(`${year}-06-01T00:00:00.000Z`),
+      endDate: new Date(`${year}-06-07T23:59:59.000Z`),
+      lpBonus: 1000,
+      color: "#FFD700",
+      icon: "Award",
+      isActive: false,
+    },
+  ];
+
+  let count = 0;
+  for (const e of events) {
+    await prisma.companyEvent.upsert({
+      where: { id: e.id },
+      update: { title: e.title, lpBonus: e.lpBonus, isActive: e.isActive },
+      create: e,
+    });
+    count++;
+  }
+  console.log(`  ✓ ${count} company events seeded`);
+}
 // ══════════════════════════════════════════════════════════════════
 
 async function main() {
@@ -1167,6 +1272,8 @@ async function main() {
     await seedRewardTiers();
     await seedContent();
     await seedAcademy();
+    await seedQuests();
+    await seedCompanyEvents();
 
     console.log("\n" + "=".repeat(50));
     console.log("✅ All seeds completed successfully!");

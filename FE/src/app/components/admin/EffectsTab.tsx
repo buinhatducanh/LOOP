@@ -30,8 +30,6 @@ import { LEDRunner } from '../team/LEDRunner';
 import { effectsService } from '../../../api/effects.service';
 import { teamService } from '../../../api/team.service';
 import { teamEffectsService } from '../../../api/team-effects.service';
-import { teamService } from '../../../api/team.service';
-import { teamEffectsService } from '../../../api/team-effects.service';
 
 // ── Shared configs ──────────────────────────────────────────────────────────
 

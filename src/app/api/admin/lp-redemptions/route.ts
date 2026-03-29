@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
 import { redeemLp, listRedeemableItems } from "@/lib/services/gamification/redemption.service";
+import { lpLogger } from "@/lib/logger";
+import { withIdempotency } from "@/lib/idempotency";
 
 // GET /api/admin/lp-redemptions
 // Query params:
@@ -11,6 +13,7 @@ import { redeemLp, listRedeemableItems } from "@/lib/services/gamification/redem
 //   ?memberId=&page=&limit=  → redemption history (admin view)
 
 export async function GET(req: NextRequest) {
+  const start = Date.now();
   try {
     await requirePermission("lp-redemptions", "read");
     const { searchParams } = new URL(req.url);
@@ -18,6 +21,12 @@ export async function GET(req: NextRequest) {
     // ── Return redeemable catalog ──────────────────────────────────────────────
     if (searchParams.get("items") === "1") {
       const items = await listRedeemableItems();
+      lpLogger.withSLO("GET /api/admin/lp-redemptions/items success", {
+        endpoint: "/api/admin/lp-redemptions",
+        method: "GET",
+        statusCode: 200,
+        latencyMs: Date.now() - start,
+      });
       return NextResponse.json({ data: items });
     }
 
@@ -43,11 +52,24 @@ export async function GET(req: NextRequest) {
       prisma.lpRedemption.count({ where }),
     ]);
 
+    lpLogger.withSLO("GET /api/admin/lp-redemptions success", {
+      endpoint: "/api/admin/lp-redemptions",
+      method: "GET",
+      statusCode: 200,
+      latencyMs: Date.now() - start,
+    });
     return NextResponse.json({
       data: redemptions,
       pagination: { page, limit, total, pages: Math.ceil(total / limit) },
     });
   } catch (error) {
+    lpLogger.withSLO("GET /api/admin/lp-redemptions failed", {
+      endpoint: "/api/admin/lp-redemptions",
+      method: "GET",
+      statusCode: 500,
+      latencyMs: Date.now() - start,
+      error: error instanceof Error ? error.message : String(error),
+    });
     return handleError(error);
   }
 }
@@ -56,61 +78,77 @@ export async function GET(req: NextRequest) {
 // Redeem LP for an AddonService.
 // Body: { memberId, addonId, quantity? }
 
-export async function POST(req: NextRequest) {
-  try {
-    const session = await requirePermission("lp-redemptions", "update");
-    const { memberId, addonId, quantity } = await req.json();
+export const POST = withIdempotency(
+  "create_lp_redemption",
+  async (req: NextRequest) => {
+    try {
+      const session = await requirePermission("lp-redemptions", "update");
+      const { memberId, addonId, quantity } = await req.json();
 
-    if (!memberId || !addonId) {
-      return NextResponse.json(
-        { error: "memberId and addonId are required" },
-        { status: 400 }
-      );
-    }
+      if (!memberId || !addonId) {
+        return NextResponse.json(
+          { error: "memberId and addonId are required" },
+          { status: 400 }
+        );
+      }
 
-    // Only the member themselves or an admin can redeem
-    const isAdmin =
-      session.roles.includes("super_admin") ||
-      session.roles.includes("admin");
+      // Only the member themselves or an admin can redeem
+      const isAdmin =
+        session.roles.includes("super_admin") ||
+        session.roles.includes("admin");
 
-    if (!isAdmin && memberId !== session.teamMemberId) {
-      return NextResponse.json(
-        { error: "You can only redeem LP for yourself" },
-        { status: 403 }
-      );
-    }
+      if (!isAdmin && memberId !== session.teamMemberId) {
+        return NextResponse.json(
+          { error: "You can only redeem LP for yourself" },
+          { status: 403 }
+        );
+      }
 
-    const result = await redeemLp({
-      memberId,
-      addonId,
-      quantity: quantity ?? 1,
-      createdBy: session.teamMemberId ?? session.userId,
-    });
+      const result = await redeemLp({
+        memberId,
+        addonId,
+        quantity: quantity ?? 1,
+        createdBy: session.teamMemberId ?? session.userId,
+      });
 
-    if (!result.ok) {
-      const status = result.error?.includes("Insufficient") ? 400
-        : result.error?.includes("not found") ? 404
-        : 400;
-      return NextResponse.json({ error: result.error }, { status });
-    }
+      if (!result.ok) {
+        const status = result.error?.includes("Insufficient") ? 400
+          : result.error?.includes("not found") ? 404
+          : 400;
+        return NextResponse.json({ error: result.error }, { status });
+      }
 
-    await createAuditLog({
-      userId: session.userId,
-      action: "redeem",
-      resource: "lp-redemptions",
-      resourceId: result.redemption?.id ?? "unknown",
-      newValues: { memberId, addonId, lpCost: result.lpCost, totalCost: result.totalCost },
-    });
+      await createAuditLog({
+        userId: session.userId,
+        action: "redeem",
+        resource: "lp-redemptions",
+        resourceId: result.redemption?.id ?? "unknown",
+        newValues: { memberId, addonId, lpCost: result.lpCost, totalCost: result.totalCost },
+      });
 
-    return NextResponse.json({
-      data: {
-        redemption: result.redemption,
+      lpLogger.info("LP redemption created", {
+        redemptionId: result.redemption?.id,
+        memberId,
+        addonId,
         lpCost: result.lpCost,
-        totalCost: result.totalCost,
         newBalance: result.newBalance,
-      },
-    }, { status: 201 });
-  } catch (error) {
-    return handleError(error);
+        createdBy: session.userId,
+      });
+
+      return NextResponse.json({
+        data: {
+          redemption: result.redemption,
+          lpCost: result.lpCost,
+          totalCost: result.totalCost,
+          newBalance: result.newBalance,
+        },
+      }, { status: 201 });
+    } catch (error) {
+      lpLogger.withSLO("POST /api/admin/lp-redemptions failed", {
+        endpoint: "/api/admin/lp-redemptions",
+        statusCode: 500,
+      });
+      return handleError(error);
+    }
   }
-}
+);

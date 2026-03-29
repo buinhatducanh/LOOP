@@ -2253,6 +2253,79 @@ model CompanyEvent {
   @@map("company_events")
 }
 
+// ── Inngest Job Run (DLQ observability) ──────────────────────────────────────
+// Tracks every Inngest job execution for ops visibility and dead-letter monitoring.
+// Mirrors Inngest run lifecycle: pending → running → succeeded │ failed │ dead
+model InngestJob {
+  id           String    @id @default(cuid())
+  runId       String    @unique @map("run_id")   // Inngest run ID (e.g. "01J9X…")
+  functionId  String    @map("function_id")       // Inngest function ID (e.g. "contact-confirmation-job")
+  functionName String   @map("function_name")     // Human-readable name (e.g. "Contact Confirmation")
+  eventName   String    @map("event_name")        // Triggering event or cron expression
+  /// Status: pending | running | succeeded | failed | dead
+  status      String    @default("pending")
+  attemptCount Int      @default(0) @map("attempt_count")
+  maxAttempts Int       @default(3) @map("max_attempts")
+  /// Raw error from last attempt
+  errorMessage String?  @map("error_message")
+  errorStack  String?  @map("error_stack")
+  /// JSON: the original event/schedule payload
+  payload     Json?     @map("payload")
+  /// JSON: the function return value (on success)
+  result      Json?     @map("result")
+  /// Timestamps
+  queuedAt    DateTime  @default(now()) @map("queued_at")
+  startedAt   DateTime? @map("started_at")
+  completedAt DateTime? @map("completed_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@index([status, createdAt])
+  @@index([functionId, status])
+  @@index([runId])
+  @@map("inngest_jobs")
+}
+
+// ── Idempotency Keys (BE deduplication) ─────────────────────────────────────
+// Stores idempotency keys sent by FE client.ts to prevent duplicate mutations.
+// Each endpoint that performs a non-idempotent write must support Idempotency-Key.
+//
+// Usage: Extract key from `Idempotency-Key` header → check existence → execute or return cached.
+// TTL: 24 hours (auto-expire via DB-side cleanup job).
+//
+// Endpoints wired:
+//   POST /api/services/order          → operation: "create_order"
+//   POST /api/admin/orders           → operation: "create_order_admin"
+//   POST /api/academy/enroll         → operation: "create_enrollment"
+//   POST /api/admin/lp-awards        → operation: "create_lp_award"
+//   POST /api/admin/lp-redemptions   → operation: "create_lp_redemption"
+//
+// @see src/lib/idempotency.ts for deduplication logic
+model IdempotencyKey {
+  id          String   @id @default(cuid())
+  /// The raw Idempotency-Key header value (UUID)
+  key         String   @unique @map("key")
+  /// Logical operation type — e.g. "create_order", "create_enrollment"
+  operation   String   @map("operation")
+  /// User/member who initiated this request
+  userId     String?  @map("user_id")
+  memberId   String?  @map("member_id")
+  /// HTTP status code of the cached response
+  statusCode  Int      @map("status_code")
+  /// Serialized response body to replay on duplicate
+  responseBody Json    @map("response_body")
+  /// When this key becomes stale and can be purged
+  expiresAt  DateTime @map("expires_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@index([key])
+  @@index([expiresAt])   // For TTL cleanup queries
+  @@index([operation, userId])
+  @@index([operation, memberId])
+  @@map("idempotency_keys")
+}
+
 // ── Quest Participants (join table) ───────────────────────────────────────────
 model QuestParticipant {
   id          String       @id @default(cuid())

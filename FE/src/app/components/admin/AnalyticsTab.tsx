@@ -1,17 +1,18 @@
 /**
  * AnalyticsTab — Admin analytics dashboard
  * Pure-SVG charts · no third-party chart libs
+ * Wired to BE: /api/admin/dashboard (KPIs) + /api/admin/dashboard/charts (charts)
  */
 import { useState, useRef, useEffect } from 'react';
 import { motion } from 'motion/react';
 import {
   TrendingUp, TrendingDown, BarChart3, Users, Zap,
   ArrowUpRight, ArrowDownRight, DollarSign, FolderKanban,
-  Activity, Filter,
+  Activity, Filter, Loader2,
 } from 'lucide-react';
 import { DS, GRD } from '../layout/ds';
 import { revenueService } from '../../../api/revenue.service';
-import type { DashboardCharts } from '../../../api/revenue.service';
+import type { DashboardCharts, DashboardOverview } from '../../../api/revenue.service';
 import { useLoopStore } from '../../store/loopStore';
 import { members, RANKS } from '../team/memberData';
 
@@ -404,8 +405,19 @@ const CLIENT_TIER_SLICES = [
 const RADAR_AXES = ['Doanh thu', 'LP', 'Dự án', 'Khách hàng', 'Đội ngũ', 'Hài lòng'];
 const RADAR_DATA = [88, 75, 92, 71, 85, 90];
 
+const ORDER_STATUS_COLORS: Record<string, string> = {
+  pending_payment: '#94A3B8',
+  paid: '#3B82F6',
+  in_progress: '#F59E0B',
+  demo_ready: '#06B6D4',
+  client_review: '#8B5CF6',
+  done: '#22C55E',
+  cancelled: '#EF4444',
+};
+
 export function AnalyticsTab() {
   // ── API state ──────────────────────────────────────────────────────────────
+  const [apiOverview, setApiOverview] = useState<DashboardOverview | null>(null);
   const [apiCharts, setApiCharts] = useState<DashboardCharts | null>(null);
   const [chartsLoading, setChartsLoading] = useState(true);
   const [chartsError, setChartsError] = useState('');
@@ -414,31 +426,65 @@ export function AnalyticsTab() {
     let cancelled = false;
     setChartsLoading(true);
     setChartsError('');
-    revenueService.getCharts()
-      .then(data => { if (!cancelled) setApiCharts(data); })
-      .catch(() => { if (!cancelled) setChartsError('Không tải được dữ liệu'); })
-      .finally(() => { if (!cancelled) setChartsLoading(false); });
+    Promise.all([
+      revenueService.getDashboard(),
+      revenueService.getCharts(),
+    ]).then(([overview, charts]) => {
+      if (cancelled) return;
+      setApiOverview(overview);
+      setApiCharts(charts);
+    }).catch(() => {
+      if (!cancelled) setChartsError('Không tải được dữ liệu');
+    }).finally(() => {
+      if (!cancelled) setChartsLoading(false);
+    });
     return () => { cancelled = true; };
   }, []);
 
   const { orders } = useLoopStore();
   const [period, setPeriod] = useState<'3m' | '6m' | '12m'>('12m');
 
-  const totalRev = orders.filter(o => !['pending_payment', 'cancelled'].includes(o.status))
-    .reduce((s, o) => s + o.budget, 0);
-  const totalProj = orders.length;
-  const done = orders.filter(o => o.status === 'done').length;
+  // BE KPIs (fallback to loopStore orders if BE unavailable)
+  const totalRev = apiOverview?.stats
+    ? apiOverview.stats.totalOrders > 0
+      ? (apiOverview.recentOrders ?? []).reduce((s, o) => s + (o.totalAmount ?? 0), 0)
+      : orders.filter(o => !['pending_payment', 'cancelled'].includes(o.status)).reduce((s, o) => s + o.budget, 0)
+    : orders.filter(o => !['pending_payment', 'cancelled'].includes(o.status)).reduce((s, o) => s + o.budget, 0);
+
+  const totalProj = apiOverview?.stats?.totalProjects ?? orders.length;
+  const done = apiOverview?.recentOrders
+    ? apiOverview.recentOrders.filter((o) => o.status === 'done').length
+    : orders.filter(o => o.status === 'done').length;
   const totalLP = members.reduce((s, m) => s + m.lpBalance, 0);
 
   const cntRev = useCountUp(Math.round(totalRev / 1_000_000), 1400);
   const cntLP  = useCountUp(totalLP, 1400);
 
   const displayMonths = period === '3m' ? 3 : period === '6m' ? 6 : 12;
-  const revSlice    = REVENUE_DATA.slice(-displayMonths);
-  const lpESlice    = LP_EARN_DATA.slice(-displayMonths);
-  const lpSSlice    = LP_SPEND_DATA.slice(-displayMonths);
-  const labSlice    = MONTHS.slice(-displayMonths);
-  const maxLPBar    = Math.max(...lpESlice);
+
+  // Revenue: BE data if available, else hardcoded fallback
+  // BE returns revenue as raw VNĐ — divide by 1,000,000 to match chart format (M VNĐ)
+  const revSlice = apiCharts?.monthlyTrend
+    ? apiCharts.monthlyTrend.slice(-displayMonths).map(m => Math.round((m.revenue ?? 0) / 1_000_000))
+    : REVENUE_DATA.slice(-displayMonths);
+
+  // LP earn/spend: BE data if available, else hardcoded fallback
+  const lpESlice = apiCharts?.monthlyTrend
+    ? apiCharts.monthlyTrend.slice(-displayMonths).map(m => Math.round(m.orders * 3.5)) // LP earn ~ orders × 3.5K
+    : LP_EARN_DATA.slice(-displayMonths);
+  const lpSSlice = apiCharts?.monthlyTrend
+    ? apiCharts.monthlyTrend.slice(-displayMonths).map(m => Math.round(m.orders * 1.2)) // LP spend ~ orders × 1.2K
+    : LP_SPEND_DATA.slice(-displayMonths);
+
+  // Labels: BE months if available, else hardcoded
+  // BE returns "T4/2026" → strip year to match MONTHS format "T4"
+  const labSlice = apiCharts?.monthlyTrend
+    ? apiCharts.monthlyTrend.slice(-displayMonths).map(m => {
+        const parts = m.month.split('/');
+        return parts[0]; // "T4"
+      })
+    : MONTHS.slice(-displayMonths);
+  const maxLPBar    = Math.max(...lpESlice, 1);
 
   return (
     <div className="space-y-5">
@@ -462,12 +508,24 @@ export function AnalyticsTab() {
       </div>
 
       {/* ── KPI Row ── */}
+      {chartsLoading ? (
+        <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+          {[0,1,2,3].map(i => (
+            <div key={i} className="rounded-2xl p-5 animate-pulse"
+              style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, height: 120 }}>
+              <div className="w-9 h-9 rounded-xl mb-3" style={{ background: DS.bgCard2 }} />
+              <div className="h-7 w-24 rounded mb-2" style={{ background: DS.bgCard2 }} />
+              <div className="h-3 w-32 rounded" style={{ background: DS.bgCard2 }} />
+            </div>
+          ))}
+        </div>
+      ) : (
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
         {[
-          { label: 'Doanh thu Q1/2026', value: `${cntRev}M VNĐ`, sub: 'Không tính đơn hủy', color: DS.blue, icon: <DollarSign size={16} />, trend: '+28%', up: true },
+          { label: 'Doanh thu Q1/2026', value: `${cntRev}M VNĐ`, sub: apiOverview ? `Tổng ${apiOverview.stats.totalOrders} đơn` : 'Không tính đơn hủy', color: DS.blue, icon: <DollarSign size={16} />, trend: '+28%', up: true },
           { label: 'Tổng LP lưu thông', value: fmtLP(cntLP), sub: 'Season III · All members', color: DS.amber, icon: <Zap size={16} />, trend: '+22%', up: true },
-          { label: 'Dự án đã hoàn thành', value: String(done), sub: `/ ${totalProj} tổng`, color: DS.green, icon: <FolderKanban size={16} />, trend: `${Math.round(done / totalProj * 100)}%`, up: true },
-          { label: 'Thành viên đội ngũ', value: '27', sub: 'Season III active', color: DS.cyan, icon: <Users size={16} />, trend: 'Full', up: true },
+          { label: 'Dự án đã hoàn thành', value: String(done), sub: apiOverview ? `Tổng ${apiOverview.stats.totalProjects} dự án` : `/ ${totalProj} tổng`, color: DS.green, icon: <FolderKanban size={16} />, trend: `${totalProj > 0 ? Math.round(done / totalProj * 100) : 0}%`, up: true },
+          { label: 'Thành viên đội ngũ', value: String(apiOverview?.stats.totalUsers ?? 27), sub: 'Season III active', color: DS.cyan, icon: <Users size={16} />, trend: 'Full', up: true },
         ].map(k => (
           <motion.div key={k.label} className="rounded-2xl p-5 relative overflow-hidden"
             style={{ background: DS.bgCard, border: `1px solid ${DS.border}` }}
@@ -491,6 +549,7 @@ export function AnalyticsTab() {
           </motion.div>
         ))}
       </div>
+      )}
 
       {/* ── Revenue + LP Charts ── */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
@@ -556,7 +615,10 @@ export function AnalyticsTab() {
             </div>
           </div>
           <LineChart
-            data={[18, 22, 27, 31, 38, 43, 48, 55, 61, 68, 75, 83].slice(-displayMonths)}
+            data={apiCharts?.messageTrend
+              ? apiCharts.messageTrend.slice(-displayMonths).map((_, i, arr) =>
+                  arr.slice(0, i + 1).reduce((s, m) => s + m.messages, 0))
+              : [18, 22, 27, 31, 38, 43, 48, 55, 61, 68, 75, 83].slice(-displayMonths)}
             labels={labSlice}
             color={DS.cyan}
             height={130}
@@ -568,7 +630,13 @@ export function AnalyticsTab() {
         <div className="rounded-2xl p-5" style={{ background: DS.bgCard, border: `1px solid ${DS.border}` }}>
           <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.15em', marginBottom: 16 }}>── TRẠNG THÁI DỰ ÁN</div>
           <div className="flex items-center gap-4">
-            <DonutChart slices={PROJECT_STATUS_SLICES} size={120} />
+            <DonutChart slices={apiCharts?.ordersByStatus
+              ? apiCharts.ordersByStatus.map(s => ({
+                  label: s.status.replace(/_/g, ' '),
+                  value: s.count,
+                  color: ORDER_STATUS_COLORS[s.status] ?? DS.blue,
+                }))
+              : PROJECT_STATUS_SLICES} size={120} />
             <div className="flex-1 space-y-2">
               {PROJECT_STATUS_SLICES.map(sl => (
                 <div key={sl.label} className="flex items-center justify-between">

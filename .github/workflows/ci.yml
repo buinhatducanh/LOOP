@@ -94,9 +94,31 @@ jobs:
           INNGEST_EVENT_KEY: ''
           SENTRY_DSN: ''
 
+  be-scale-gate:
+    name: BE Scale Gates
+    needs: [changes, be-lint-typecheck]
+    if: needs.changes.outputs.be == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Scale Gates
+        run: npx tsx scripts/run-scale-gates.ts
+
   be-build:
     name: BE Production Build
-    needs: [changes, be-lint-typecheck, be-test]
+    needs: [changes, be-lint-typecheck, be-test, be-scale-gate]
     if: needs.changes.outputs.be == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -165,7 +187,7 @@ jobs:
 
   ci-summary:
     name: CI Summary
-    needs: [changes, be-lint-typecheck, be-test, be-build, fe-build]
+    needs: [changes, be-lint-typecheck, be-test, be-scale-gate, be-build, fe-build]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -174,13 +196,14 @@ jobs:
           echo "Changed BE: ${{ needs.changes.outputs.be }}"
           echo "Changed FE: ${{ needs.changes.outputs.fe }}"
           echo "BE lint/typecheck: ${{ needs.be-lint-typecheck.result || 'skipped' }}"
+          echo "BE scale gates: ${{ needs.be-scale-gate.result || 'skipped' }}"
           echo "BE test: ${{ needs.be-test.result || 'skipped' }}"
           echo "BE build: ${{ needs.be-build.result || 'skipped' }}"
           echo "FE build: ${{ needs.fe-build.result || 'skipped' }}"
 
       - name: Fail if any required job failed
         run: |
-          if [ "${{ needs.be-lint-typecheck.result }}" = "failure" ] || [ "${{ needs.be-test.result }}" = "failure" ] || [ "${{ needs.be-build.result }}" = "failure" ] || [ "${{ needs.fe-build.result }}" = "failure" ]; then
+          if [ "${{ needs.be-lint-typecheck.result }}" = "failure" ] || [ "${{ needs.be-scale-gate.result }}" = "failure" ] || [ "${{ needs.be-test.result }}" = "failure" ] || [ "${{ needs.be-build.result }}" = "failure" ] || [ "${{ needs.fe-build.result }}" = "failure" ]; then
             echo "CI failed"
             exit 1
           fi

@@ -21,6 +21,8 @@ import {
 import { DS, GRD } from '../layout/ds';
 import { members as seedMembers, RANKS, type RankKey } from '../team/memberData';
 import { teamService } from '../../../api/team.service';
+import { departmentsService, type DepartmentMember } from '../../../api/departments.service';
+import { useApi } from '../../../hooks/useApi';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 

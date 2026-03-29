@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession, getSessionFromBearer } from "@/lib/auth/permissions";
+import { authLogger } from "@/lib/logger";
 
 /**
  * GET /api/admin/auth/me
@@ -38,6 +39,7 @@ async function getSessionWithRetry(): Promise<ReturnType<typeof getSession> | nu
 }
 
 export async function GET(req: NextRequest) {
+  const start = Date.now();
   try {
     // Priority 1: Authorization header (FE sends Bearer token from localStorage)
     const bearer = req.headers.get("Authorization");
@@ -45,20 +47,50 @@ export async function GET(req: NextRequest) {
       const token = bearer.slice(7);
       const session = await getSessionFromBearer(token);
       if (session) {
+        authLogger.withSLO("GET /api/admin/auth/me success", {
+          endpoint: "/api/admin/auth/me",
+          method: "GET",
+          statusCode: 200,
+          latencyMs: Date.now() - start,
+        });
         return NextResponse.json({ user: session });
       }
       // Bearer token invalid — 401 (do not fall through to cookie path)
+      authLogger.withSLO("GET /api/admin/auth/me unauthorized", {
+        endpoint: "/api/admin/auth/me",
+        method: "GET",
+        statusCode: 401,
+        latencyMs: Date.now() - start,
+      });
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // Priority 2: Cookie-based session (server-side SSR)
     const session = await getSessionWithRetry();
     if (!session) {
+      authLogger.withSLO("GET /api/admin/auth/me no session", {
+        endpoint: "/api/admin/auth/me",
+        method: "GET",
+        statusCode: 401,
+        latencyMs: Date.now() - start,
+      });
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    authLogger.withSLO("GET /api/admin/auth/me success", {
+      endpoint: "/api/admin/auth/me",
+      method: "GET",
+      statusCode: 200,
+      latencyMs: Date.now() - start,
+    });
     return NextResponse.json({ user: session });
   } catch (err) {
-    console.error("[/api/admin/auth/me]", err);
+    authLogger.withSLO("GET /api/admin/auth/me failed", {
+      endpoint: "/api/admin/auth/me",
+      method: "GET",
+      statusCode: 401,
+      latencyMs: Date.now() - start,
+      error: err instanceof Error ? err.message : String(err),
+    });
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 }

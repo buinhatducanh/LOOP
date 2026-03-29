@@ -10,11 +10,12 @@ import {
   ChevronDown, ChevronLeft, ChevronRight, AlertTriangle, Clock,
   Zap, DollarSign, Users, Camera, MessageSquare, BarChart3,
   CheckCircle2, Plus, ShoppingCart, Star, Building2, Settings,
-  ArrowUpRight, Volume2, VolumeX, RefreshCw,
+  ArrowUpRight, Volume2, VolumeX, RefreshCw, Wifi, WifiOff,
 } from 'lucide-react';
 import { DS, GRD } from '../layout/ds';
 import { useLoopStore, type AdminNotification } from '../../store/loopStore';
 import { notificationsService } from '../../../api/notifications.service';
+import { useRealtimeNotifications } from '../../../hooks/useRealtimeNotifications';
 
 const rgba = (hex: string, a: number) => {
   const h = hex.replace('#', '');
@@ -144,6 +145,10 @@ export function NotificationCenter() {
   const unreadCount = adminNotifications.filter(n => !n.read && !n.archived).length;
   const urgentCount = adminNotifications.filter(n => !n.read && n.priority === 'urgent' && !n.archived).length;
 
+  // ── SSE realtime ────────────────────────────────────────────────────
+  const { connected: sseConnected, error: sseError, eventCount: sseEventCount } =
+    useRealtimeNotifications({ autoConnect: true });
+
   // ── Stats by category ──────────────────────────────────────────────
   const catCounts = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -198,10 +203,35 @@ export function NotificationCenter() {
             <div style={{ color: DS.text4, fontSize: 12 }}>
               {unreadCount} chưa đọc · {adminNotifications.filter(n => !n.archived).length} tổng
               {urgentCount > 0 && <span style={{ color: DS.red, fontWeight: 700 }}> · {urgentCount} khẩn cấp</span>}
+              {sseEventCount > 0 && (
+                <span style={{ color: DS.green, fontWeight: 600, marginLeft: 6 }}>
+                  · {sseEventCount} realtime
+                </span>
+              )}
             </div>
           </div>
         </div>
+        {/* SSE connection status */}
         <div className="flex items-center gap-2">
+          {sseConnected ? (
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg"
+              style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)' }}>
+              <Wifi size={12} style={{ color: DS.green }} />
+              <span style={{ color: DS.green, fontSize: 10, fontFamily: DS.mono }}>Realtime</span>
+            </div>
+          ) : sseError ? (
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg"
+              style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
+              <WifiOff size={12} style={{ color: DS.red }} />
+              <span style={{ color: DS.red, fontSize: 10, fontFamily: DS.mono }}>Offline</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg"
+              style={{ background: 'rgba(148,163,184,0.08)', border: '1px solid rgba(148,163,184,0.2)' }}>
+              <Wifi size={12} style={{ color: DS.text4 }} />
+              <span style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono }}>Đang kết nối...</span>
+            </div>
+          )}
           <button onClick={() => setShowArchived(!showArchived)}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg"
             style={{ background: showArchived ? rgba(DS.purple, 0.1) : rgba('#FFFFFF', 0.03), border: `1px solid ${showArchived ? rgba(DS.purple, 0.3) : DS.border}`, color: showArchived ? DS.purple : DS.text4, cursor: 'pointer', fontSize: 11 }}>

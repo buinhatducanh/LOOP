@@ -5,6 +5,8 @@ import { signToken } from "@/lib/auth/jwt";
 import { createAuditLog } from "@/lib/auth/audit";
 import { cookies } from "next/headers";
 import { ROLE_LEVEL } from "@/lib/auth/roles";
+import { applyRateLimit, extractClientIp } from "@/lib/rate-limit";
+import { authLogger } from "@/lib/logger";
 
 // Pre-computed hash to use for timing-safe comparison when user doesn't exist
 const DUMMY_HASH = "$2a$12$LJ3m4ys3Rl3hPcyFSevMnuGHvZw7KLEqKl6.s8EWYFONbJdRe0Gu2";
@@ -24,6 +26,13 @@ function isDbUnavailableError(err: unknown): boolean {
 }
 
 export async function POST(req: NextRequest) {
+  // ── Rate limit: 5 attempts/min per IP for auth endpoint ─────────────────────
+  const rateLimitResult = await applyRateLimit(req, "auth");
+  if (!rateLimitResult.allowed) {
+    return rateLimitResult.response!;
+  }
+
+  const start = Date.now();
   type LoginUser = {
     id: string;
     email: string;
@@ -137,6 +146,13 @@ export async function POST(req: NextRequest) {
       resource: "auth",
     });
 
+    authLogger.withSLO("POST /api/admin/auth/login success", {
+      endpoint: "/api/admin/auth/login",
+      method: "POST",
+      statusCode: 200,
+      latencyMs: Date.now() - start,
+    });
+
     const response = NextResponse.json({
       user: {
         userId: user.id,
@@ -174,7 +190,13 @@ export async function POST(req: NextRequest) {
 
     return response;
   } catch (err) {
-    console.error("[/api/admin/auth/login]", err);
+    authLogger.withSLO("POST /api/admin/auth/login failed", {
+      endpoint: "/api/admin/auth/login",
+      method: "POST",
+      statusCode: 500,
+      latencyMs: Date.now() - start,
+      error: err instanceof Error ? err.message : String(err),
+    });
     // If DB is down, tell the user — don't confuse them with wrong password error
     if (isDbUnavailableError(err)) {
       return NextResponse.json(

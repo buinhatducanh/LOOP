@@ -9,6 +9,8 @@ import {
   buildPaginationResponse,
   ORDER_FILTER_CONFIG,
 } from "@/lib/api/search-utils";
+import { orderLogger } from "@/lib/logger";
+import { withIdempotency } from "@/lib/idempotency";
 
 export async function GET(req: NextRequest) {
   try {
@@ -66,61 +68,82 @@ export async function GET(req: NextRequest) {
       ...buildPaginationResponse(total, page, limit),
     });
   } catch (error) {
+    orderLogger.withSLO("GET /api/admin/orders failed", {
+      endpoint: "/api/admin/orders",
+      method: "GET",
+      statusCode: 500,
+      error: error instanceof Error ? error.message : String(error),
+    });
     return handleError(error);
   }
 }
 
-export async function POST(req: NextRequest) {
-  try {
-    const session = await requirePermission("orders", "create");
-    const data = await req.json();
+export const POST = withIdempotency(
+  "create_order_admin",
+  async (req: NextRequest) => {
+    try {
+      const session = await requirePermission("orders", "create");
+      const data = await req.json();
 
-    if (!data.packageId || !data.customerName || !data.customerEmail) {
-      return NextResponse.json(
-        { error: "packageId, customerName, and customerEmail are required" },
-        { status: 400 }
-      );
+      if (!data.packageId || !data.customerName || !data.customerEmail) {
+        return NextResponse.json(
+          { error: "packageId, customerName, and customerEmail are required" },
+          { status: 400 }
+        );
+      }
+
+      // Only allow non-terminal statuses at creation — prevents bypassing payment workflow
+      const ALLOWED_CREATE_STATUSES = ["pending", "quote", "draft"];
+      const requestedStatus = data.status ?? "pending";
+      if (!ALLOWED_CREATE_STATUSES.includes(requestedStatus)) {
+        return NextResponse.json(
+          { error: `Cannot create order with status "${requestedStatus}". Allowed: ${ALLOWED_CREATE_STATUSES.join(", ")}` },
+          { status: 400 }
+        );
+      }
+
+      // Use UUID-based order number to prevent collision under concurrent requests
+      const orderNumber = `ORD-${crypto.randomUUID().replace(/-/g, "").slice(0, 12).toUpperCase()}`;
+
+      const order = await prisma.order.create({
+        data: {
+          orderNumber,
+          packageId: data.packageId,
+          customerName: data.customerName,
+          customerEmail: data.customerEmail,
+          customerPhone: data.customerPhone || null,
+          companyName: data.companyName || null,
+          requirements: data.requirements || null,
+          status: requestedStatus,
+          paymentStatus: data.paymentStatus || "unpaid",
+          totalAmount: data.totalAmount ? parseInt(data.totalAmount) : null,
+        },
+        include: { package: { select: { title: true } } },
+      });
+
+      await createAuditLog({
+        userId: session.userId,
+        action: "create",
+        resource: "orders",
+        resourceId: order.id,
+        newValues: data,
+      });
+
+      orderLogger.info("Admin order created", {
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        customerEmail: order.customerEmail,
+        status: order.status,
+        createdBy: session.userId,
+      });
+
+      return ok(order, 201);
+    } catch (error) {
+      orderLogger.withSLO("POST /api/admin/orders failed", {
+        endpoint: "/api/admin/orders",
+        statusCode: 500,
+      });
+      return handleError(error);
     }
-
-    // Only allow non-terminal statuses at creation — prevents bypassing payment workflow
-    const ALLOWED_CREATE_STATUSES = ["pending", "quote", "draft"];
-    const requestedStatus = data.status ?? "pending";
-    if (!ALLOWED_CREATE_STATUSES.includes(requestedStatus)) {
-      return NextResponse.json(
-        { error: `Cannot create order with status "${requestedStatus}". Allowed: ${ALLOWED_CREATE_STATUSES.join(", ")}` },
-        { status: 400 }
-      );
-    }
-
-    // Use UUID-based order number to prevent collision under concurrent requests
-    const orderNumber = `ORD-${crypto.randomUUID().replace(/-/g, "").slice(0, 12).toUpperCase()}`;
-
-    const order = await prisma.order.create({
-      data: {
-        orderNumber,
-        packageId: data.packageId,
-        customerName: data.customerName,
-        customerEmail: data.customerEmail,
-        customerPhone: data.customerPhone || null,
-        companyName: data.companyName || null,
-        requirements: data.requirements || null,
-        status: requestedStatus,
-        paymentStatus: data.paymentStatus || "unpaid",
-        totalAmount: data.totalAmount ? parseInt(data.totalAmount) : null,
-      },
-      include: { package: { select: { title: true } } },
-    });
-
-    await createAuditLog({
-      userId: session.userId,
-      action: "create",
-      resource: "orders",
-      resourceId: order.id,
-      newValues: data,
-    });
-
-    return ok(order, 201);
-  } catch (error) {
-    return handleError(error);
   }
-}
+);

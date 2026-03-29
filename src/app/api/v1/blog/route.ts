@@ -13,10 +13,12 @@ import { NextResponse } from "next/server";
 import { client } from "@/sanity/client";
 import { postsQuery } from "@/sanity/queries";
 import { handleError } from "@/lib/api/response";
+import { logger } from "@/lib/logger";
 
 export const revalidate = 300;
 
 export async function GET() {
+  const start = Date.now();
   try {
     const posts = await client.fetch<Array<{
       _id: string;
@@ -40,6 +42,12 @@ export async function GET() {
       // Image URL should be constructed by the client using @sanity/image-url
     }));
 
+    logger.withSLO("GET /api/v1/blog success", {
+      endpoint: "/api/v1/blog",
+      method: "GET",
+      statusCode: 200,
+      latencyMs: Date.now() - start,
+    });
     return NextResponse.json(
       {
         version: "v1",
@@ -54,6 +62,13 @@ export async function GET() {
       }
     );
   } catch (error) {
+    logger.withSLO("GET /api/v1/blog failed", {
+      endpoint: "/api/v1/blog",
+      method: "GET",
+      statusCode: 500,
+      latencyMs: Date.now() - start,
+      error: error instanceof Error ? error.message : String(error),
+    });
     return handleError(error);
   }
 }

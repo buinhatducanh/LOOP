@@ -13,8 +13,10 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { parseLocaleParam, getLocalizedField } from "@/lib/i18n/localization";
 import { handleError } from "@/lib/api/response";
+import { logger } from "@/lib/logger";
 
 export async function GET(req: Request) {
+  const start = Date.now();
   try {
     const { searchParams } = new URL(req.url);
     const locale = parseLocaleParam(searchParams);
@@ -46,15 +48,33 @@ export async function GET(req: Request) {
       _localeUsed: locale,
     }));
 
+    logger.withSLO("GET /api/v1/team success", {
+      endpoint: "/api/v1/team",
+      method: "GET",
+      statusCode: 200,
+      latencyMs: Date.now() - start,
+    });
     return NextResponse.json(
       {
         version: "v1",
         data: publicMembers,
         meta: { count: publicMembers.length, locale },
       },
-      { headers: { "X-API-Version": "v1" } }
+      {
+        headers: {
+          "X-API-Version": "v1",
+          "Cache-Control": "public, s-maxage=60, stale-while-revalidate=120",
+        },
+      }
     );
   } catch (error) {
+    logger.withSLO("GET /api/v1/team failed", {
+      endpoint: "/api/v1/team",
+      method: "GET",
+      statusCode: 500,
+      latencyMs: Date.now() - start,
+      error: error instanceof Error ? error.message : String(error),
+    });
     return handleError(error);
   }
 }

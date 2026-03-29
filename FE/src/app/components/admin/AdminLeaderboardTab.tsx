@@ -230,7 +230,7 @@ export function AdminLeaderboardTab() {
     changes.forEach(m => {
       if (m.delta > 0) {
         lpService.awardLp({
-          memberId: Number(m.seedId) || 0,
+          memberId: m.id, // BE accepts CUID string from team API
           amount: m.delta,
           source: 'manual',
           reason: 'Điều chỉnh LP thủ công',

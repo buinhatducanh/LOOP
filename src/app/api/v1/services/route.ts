@@ -13,8 +13,10 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { parseLocaleParam, getLocalizedField, getLocalizedArray } from "@/lib/i18n/localization";
 import { handleError } from "@/lib/api/response";
+import { logger } from "@/lib/logger";
 
 export async function GET(req: Request) {
+  const start = Date.now();
   try {
     const { searchParams } = new URL(req.url);
     const locale = parseLocaleParam(searchParams);
@@ -49,15 +51,27 @@ export async function GET(req: Request) {
       grouped[cat].push(service);
     }
 
+    logger.withSLO("GET /api/v1/services success", {
+      endpoint: "/api/v1/services",
+      method: "GET",
+      statusCode: 200,
+      latencyMs: Date.now() - start,
+    });
     return NextResponse.json(
       {
         version: "v1",
         data: { services: localized, grouped, categories: Object.keys(grouped) },
         meta: { count: localized.length, locale },
       },
-      { headers: { "X-API-Version": "v1" } }
+      {
+        headers: {
+          "X-API-Version": "v1",
+          "Cache-Control": "public, s-maxage=60, stale-while-revalidate=120",
+        },
+      }
     );
   } catch (error) {
+    logger.withSLO("GET /api/v1/services failed", { endpoint: "/api/v1/services", latencyMs: 0, statusCode: 500 });
     return handleError(error);
   }
 }

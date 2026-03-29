@@ -1,7 +1,7 @@
 # FE Scale Operating Runbook — LOOP Solutions
 
 > **Mục tiêu:** Runbook vận hành thực chiến khi hệ thống tăng tải, đảm bảo release ổn định và không phá vỡ core flow.
-> **Cập nhật:** 2026-03-28
+> **Cập nhật:** 2026-03-30
 
 ---
 
@@ -41,6 +41,8 @@ Kích hoạt ngay nếu có một trong các dấu hiệu:
 
 ## 3) SLO/SLI baseline cần theo dõi
 
+> Baseline numbers from `src/lib/slo.ts` (222 lines, updated 2026-03-30).
+
 ## Endpoint SLO
 - Public API p95 < 300ms (cached path)
 - Admin CRUD p95 < 500ms
@@ -54,6 +56,19 @@ Kích hoạt ngay nếu có một trong các dấu hiệu:
 ## UX SLO
 - Critical flow success rate (auth/order/payment) >= 99%
 - Không có blocker bug mở ở release candidate
+
+## Scale Gate Enforcement (CI)
+Scale gates được enforce tự động trong CI pipeline (`.github/workflows/ci.yml`):
+- Job: `be-scale-gate` — chạy sau `be-lint-typecheck`, trước `be-build`
+- Script: `scripts/run-scale-gates.ts` → gọi `runScaleGates(KNOWN_P0_ENDPOINTS, { mode: "ci" })`
+- **Blocking gates** (fail CI nếu violate):
+  - `ASYNC_FOR_HEAVY_OPS`: tác vụ nặng phải chạy qua Inngest
+  - `IDEMPOTENCY_KEY`: mutations critical (order/LP/enroll) phải support `Idempotency-Key`
+  - `QUERY_OPTIMIZATION`: list endpoints phải paginate
+- **Warning gates** (log nhưng không fail):
+  - `CACHE_STRATEGY`, `RETRY_POLICY`, `RATE_LIMIT`, `OBSERVABILITY`
+- CI fail = release blocked cho đến khi blocking errors được fix.
+- **Known blocking gaps** (2026-03-30): 5 `IDEMPOTENCY_KEY` errors trên 5 critical POST endpoints. BE cần thêm `Idempotency-Key` deduplication trong DB trước khi production release.
 
 ---
 
@@ -91,22 +106,34 @@ Kích hoạt ngay nếu có một trong các dấu hiệu:
 
 ---
 
-## 5) Incident quick play
+## 5) Incident quick play (tested 2026-03-30)
 
-## Nếu auth lỗi diện rộng
-1. Kiểm tra cookie/session backend
-2. Rollback build mới nhất nếu cần
-3. Mở comms channel + update mỗi 30 phút
+## A. Auth lỗi diện rộng
+1. Kiểm tra Neon DB connection — cold start có thể gây auth timeout
+2. Check `/api/admin/auth/me` trả 200 không
+3. Rollback build mới nhất nếu auth lỗi bắt đầu sau deploy mới
+4. Verify cookie domain + SameSite + Secure flag trong production
+5. Mở comms channel + update mỗi 30 phút
 
-## Nếu order flow chậm
-1. Tách nhanh analytics calls khỏi synchronous path
-2. Bật cache ngắn cho read path
-3. Giảm tải non-critical widgets
+## B. Order flow chậm / lỗi
+1. Kiểm tra `Idempotency-Key` deduplication: order được tạo 2 lần với cùng key = bug idempotency chưa done
+2. Tách analytics calls khỏi synchronous path ngay
+3. Bật cache ngắn (TTL 30s) cho `GET /api/admin/dashboard`
+4. Check Inngest job queue: order confirmation email chạy chưa?
+5. Giảm tải non-critical widgets (Revenue chart, Analytics chart)
 
-## Nếu queue backlog tăng
-1. Scale worker/concurrency
-2. Tạm tắt job không critical
-3. Requeue có kiểm soát, theo dõi fail spikes
+## C. Queue backlog tăng
+1. Check Inngest dashboard: queue depth per job type + failed count
+2. Check `InngestJob` table (Prisma): các job failed gần nhất — error stack cụ thể là gì?
+3. DLQ alert: nếu failed > 10 items → notify BE Lead ngay
+4. Scale worker/concurrency: tăng Inngest concurrency limit
+5. Tạm tắt job không critical (warmCache, pruneOldAuditLogs) nếu cần
+6. Manual requeue failed jobs có thể retry
+
+## D. SEV-1 / SEV-2 Alert
+1. Incident Commander (IC) điều phối — quyết định rollback vs hotfix
+2. Nếu rollback: Vercel Dashboard → Revert deployment, hoặc `vercel rollback`
+3. Postmortem trong vòng 24h — root cause + action items
 
 ---
 
@@ -160,3 +187,16 @@ Thứ tự ưu tiên tách:
 - `.claude/rules/fe-testing-playbook.md`
 - `.claude/rules/fe-risk-register-template.md`
 - `.claude/rules/fe-architecture-microservices.md`
+
+## 10) Infrastructure files (F8 baseline, 2026-03-30)
+
+| File | Mục đích | Lines |
+|------|-----------|-------|
+| `src/lib/slo.ts` | SLO definitions + burn rate helpers | 222 |
+| `src/lib/logger.ts` | Structured logger (JSON, Sentry, redaction) | 259 |
+| `src/lib/scaleGate.ts` | Scale readiness gate (7 rules, CI-enforced) | 475 |
+| `src/lib/capacity.ts` | Sprint capacity planner | 378 |
+| `scripts/run-scale-gates.ts` | CI runner cho scale gate | 16 |
+| `src/lib/jobs/client.ts` | Inngest client singleton + event registry (8 events) | — |
+| `src/lib/jobs/functions.ts` | 8 Inngest functions (email, SLA, standup, report, cache, prune) | 397 |
+| `prisma/schema.prisma` | `InngestJob` model added 2026-03-30 (DLQ observability) | — |

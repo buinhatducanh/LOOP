@@ -1,7 +1,7 @@
 # FE Release Checklist — LOOP Solutions
 
 > **Mục tiêu:** Checklist phát hành chuẩn để giảm lỗi production, tăng độ ổn định và sẵn sàng scale.
-> **Cập nhật:** 2026-03-28
+> **Cập nhật:** 2026-03-30
 
 ---
 
@@ -32,6 +32,28 @@
 - [ ] `npm run build` pass
 - [ ] Không có secret leak (.env/token/key)
 - [ ] Không có TODO/FIXME critical trong phần code mới
+
+---
+
+## 3b) Scale-readiness gates (mandatory, CI-enforced)
+
+> Scale gates tự động trong CI: `be-scale-gate` job → `scripts/run-scale-gates.ts`
+
+- [ ] `be-scale-gate` job passed trong CI pipeline
+- [ ] **Blocking errors = 0** (nếu có blocking errors → CI fail → release blocked)
+  - Check CI log: `Scale gates: BLOCKED | Errors: N` — mỗi error phải có BE fix trước merge
+- [ ] **Known blocking gaps (5x `IDEMPOTENCY_KEY`)** — ghi nhận lý do + ETA fix:
+  - [ ] `POST /api/orders` — idempotency deduplication chưa implement
+  - [ ] `POST /api/admin/orders` — idempotency deduplication chưa implement
+  - [ ] `POST /api/orders/:id/messages` — idempotency deduplication chưa implement
+  - [ ] `POST /api/lp/redeem` — idempotency deduplication chưa implement
+  - [ ] `POST /api/academy/enroll` — idempotency deduplication chưa implement
+- [ ] Warning gates logged (non-blocking, review optional):
+  - Cache strategy warnings: public list endpoints chưa có `Cache-Control` headers
+  - Retry policy warnings: mutations chưa có exponential backoff
+  - Rate limit warnings: endpoints chưa có Upstash Redis rate limit
+- [ ] All 8 Inngest jobs tested (email, SLA check, standup, LP report, prune, warmCache)
+- [ ] `InngestJob` table có data: recent job runs visible trong DB
 
 ---
 

@@ -1,9 +1,9 @@
 # LOOP Solutions — Claude Code Context
 
 > Project: LOOP Solutions Agency Platform — FE (Vite/React) + BE (Next.js 15 API)
-> Last Updated: 2026-03-29
+> Last Updated: 2026-03-30
 > Language: Vietnamese (code comments, docs), English (variable names, function names)
-> Status: Phase F0 ✅ completed | Phase F1 ✅ completed | Phase F2 ✅ completed | Phase F3 ✅ completed | Phase F4 ✅ completed — Code Exercise (POST /api/academy/lessons/[id]/exercise, sandbox vm.runInNewContext) + Comments (GET/POST /api/academy/lessons/[id]/comments) + all P0/P1/P2 done. Seed pending. Next: F5 Customer Portal.
+> Status: Phase F0 ✅ completed | Phase F1 ✅ completed | Phase F2 ✅ completed | Phase F3 ✅ completed | Phase F4 ✅ completed | Phase F5 ✅ completed | Phase F6 ✅ completed | Phase F7 ✅ completed | Phase F8 Scale Hardening ✅ COMPLETED — infrastructure: slo.ts + logger.ts (259L) + scaleGate.ts (515L) + capacity.ts (378L) + Inngest (8 functions); cache: Cache-Control on all 6 v1 GETs; idempotency: IdempotencyKey model + withIdempotency() on 6 mutations; observability: logger.withSLO() on 14 endpoints; rate-limit: applyRateLimit() on 5 public endpoints + auth/login; scale gate final: 0 blocking, 4 legitimate non-critical warnings (user-specific data + safe-to-retry). Build ✅ tsc ✅ lint ✅.
 > CI/CD: GitHub connected to Vercel, auto-deploy on push. Domain: loops.vn (production).
 
 ---
