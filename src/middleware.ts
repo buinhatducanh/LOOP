@@ -27,6 +27,10 @@ export async function middleware(req: NextRequest) {
 
   // ─── 2) Admin page auth ────────────────────────────────────────────────────
   if (pathname === "/admin" || pathname.startsWith("/admin/")) {
+    // /admin/login is always public — skip auth check to avoid redirect loop
+    if (pathname === "/admin/login") {
+      return NextResponse.next();
+    }
     const result = checkAdminAccess(req, pathname);
     if (!result.allowed) {
       if (result.reason === "unauthenticated") {
@@ -37,9 +41,12 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // ─── 3) Static assets + favicon ───────────────────────────────────────────
+  // ─── 3) Static assets + manifest + sitemap + robots ──────────────────────
   if (
     pathname === "/favicon.ico" ||
+    pathname === "/manifest.json" ||
+    pathname === "/robots.txt" ||
+    pathname === "/sitemap.xml" ||
     pathname.startsWith("/images/") ||
     pathname.startsWith("/fonts/")
   ) {

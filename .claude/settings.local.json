@@ -123,7 +123,12 @@
       "Bash(powershell -NoProfile -Command \"Get-ChildItem -Path 'D:/LOOP_COMPANY/LOOP/src/app/[locale]' -Directory -Recurse | Select-Object FullName\")",
       "Bash(cmd.exe /c \"dir /s /b D:\\\\LOOP_COMPANY\\\\LOOP\\\\src\\\\app\\\\[locale] 2>nul | findstr team\")",
       "Read(//d/LOOP_COMPANY/**)",
-      "Bash(printf 'export * from \"\"./slo\"\";\\\\r\\\\n')"
+      "Bash(printf 'export * from \"\"./slo\"\";\\\\r\\\\n')",
+      "WebFetch(domain:drive.google.com)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(''''packages:'''', len\\(d.get\\(''''packages'''',[]\\)\\), ''''features:'''', len\\(d.get\\(''''features'''',[]\\)\\), ''''addons:'''', len\\(d.get\\(''''addons'''',[]\\)\\), ''''infraTiers:'''', len\\(d.get\\(''''infraTiers'''',[]\\)\\), ''''packageLps:'''', len\\(d.get\\(''''packageLps'''',{}\\)\\)\\)\")",
+      "Read(//d/LOOP_COMPANY/LOOP/FE/**)",
+      "Bash(1 echo:*)",
+      "Read(//d/LOOP_COMPANY/LOOP/src/app/**)"
     ],
     "additionalDirectories": [
       "D:\\LOOP_COMPANY\\LOOP\\src\\app\\api\\admin\\expertises",
