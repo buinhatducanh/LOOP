@@ -21,7 +21,6 @@
     "e2e": "playwright test",
     "e2e:headed": "playwright test --headed",
     "e2e:ui": "playwright test --ui",
-    "phase:update": "npx tsx scripts/update-phase-status.ts",
     "phase:update": "npx tsx scripts/update-phase-status.ts"
   },
   "prisma": {

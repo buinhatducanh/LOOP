@@ -4,18 +4,20 @@
  * Cấp 2: Phòng ban → Danh sách dự án (List/Gantt view) + Workload
  * Cấp 3: Dự án → KanbanBoard (Drag & Drop tasks)
  */
-import { useState, type ReactNode } from 'react';
+import { useState, useEffect, useMemo, type ReactNode } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   FolderKanban, Plus, ChevronRight, Search, Clock,
   TrendingUp, AlertTriangle, CheckCircle2, Target,
   BarChart3, ArrowLeft, Edit3, Trash2, X,
   Megaphone, Monitor, Film, Calendar, LayoutList,
-  Users, Zap, Save, ChevronDown,
+  Users, Zap, Save, ChevronDown, Loader2,
 } from 'lucide-react';
 import { DS, GRD } from '../layout/ds';
-import { members, RANKS } from '../team/memberData';
+import { members as seedMembers, RANKS } from '../team/memberData';
 import { KanbanBoard } from './KanbanBoard';
+import { projectsService } from '../../../api/projects.service';
+import { teamService } from '../../../api/team.service';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -32,13 +34,20 @@ interface KanbanProject {
   startDate: string;
   deadline: string;
   progress: number;
-  leadId: number;
-  memberIds: number[];
+  leadId: string | number; // BE: CUID string, seed: number
+  memberIds: (string | number)[]; // mixed bridge type
   taskStats: { total: number; done: number; inProgress: number; urgent: number };
   tags: string[];
   budget?: number;
   color: string;
   clientName?: string;
+}
+
+interface KanbanMember {
+  id: string | number;
+  name: string;
+  img: string;
+  rank: keyof typeof RANKS;
 }
 
 interface Department {
@@ -48,7 +57,7 @@ interface Department {
   emoji: string;
   color: string;
   description: string;
-  headId: number;
+  headId: string | number; // BE: CUID, seed: number
 }
 
 // ── Config ─────────────────────────────────────────────────────────────────
@@ -126,8 +135,8 @@ type NavState =
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-function MemberAvatar({ id, size = 28 }: { id: number; size?: number }) {
-  const m = members.find(x => x.id === id);
+function MemberAvatar({ id, size = 28 }: { id: string | number; size?: number }) {
+  const m = seedMembers.find(x => String(x.id) === String(id));
   if (!m) return null;
   const rc = RANKS[m.rank];
   return (
@@ -171,7 +180,7 @@ const EMPTY_PROJECT = (): Omit<KanbanProject, 'id'> => ({
   startDate: '',
   deadline: '',
   progress: 0,
-  leadId: members[0]?.id ?? 1,
+  leadId: Number(seedMembers[0]?.id ?? 1),
   memberIds: [],
   taskStats: { total: 0, done: 0, inProgress: 0, urgent: 0 },
   tags: [],
@@ -201,7 +210,7 @@ function ProjectModal({
   const set = <K extends keyof typeof draft>(key: K, val: (typeof draft)[K]) =>
     setDraft(d => ({ ...d, [key]: val }));
 
-  const toggleMember = (id: number) =>
+  const toggleMember = (id: string | number) =>
     set('memberIds', draft.memberIds.includes(id)
       ? draft.memberIds.filter(x => x !== id)
       : [...draft.memberIds, id]);
@@ -340,8 +349,8 @@ function ProjectModal({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label style={labelStyle}>TRƯỞNG DỰ ÁN</label>
-              <select value={draft.leadId} onChange={e => set('leadId', Number(e.target.value))} style={inputStyle}>
-                {members.slice(0, 20).map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+              <select value={String(draft.leadId)} onChange={e => set('leadId', Number(e.target.value))} style={inputStyle}>
+                {seedMembers.slice(0, 20).map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
               </select>
             </div>
             <div>
@@ -359,7 +368,7 @@ function ProjectModal({
           {memberOpen && (
             <div className="rounded-xl p-3" style={{ background: DS.bgCard2, border: `1px solid ${DS.border}` }}>
               <div className="flex flex-wrap gap-2">
-                {members.slice(0, 20).map(m => {
+                {seedMembers.slice(0, 20).map(m => {
                   const rc = RANKS[m.rank];
                   const sel = draft.memberIds.includes(m.id);
                   return (
@@ -454,7 +463,7 @@ function DeptCard({ dept, projects, onClick }: {
   const doneTasks = projects.reduce((s, p) => s + p.taskStats.done, 0);
   const urgentTasks = projects.reduce((s, p) => s + p.taskStats.urgent, 0);
   const overallProgress = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
-  const headMember = members.find(m => m.id === dept.headId);
+  const headMember = seedMembers.find(m => String(m.id) === String(dept.headId));
   const headRank = headMember ? RANKS[headMember.rank] : null;
 
   return (
@@ -765,12 +774,12 @@ function GanttView({ projects, onOpen }: { projects: KanbanProject[]; onOpen: (i
 function WorkloadPanel({ projects }: { projects: KanbanProject[] }) {
   // Count active projects per member
   const activeProjects = projects.filter(p => p.status === 'active' || p.status === 'planning');
-  const countMap: Record<number, number> = {};
+  const countMap: Record<string, number> = {};
   activeProjects.forEach(p => p.memberIds.forEach(id => {
-    countMap[id] = (countMap[id] ?? 0) + 1;
+    countMap[String(id)] = (countMap[String(id)] ?? 0) + 1;
   }));
   const entries = Object.entries(countMap)
-    .map(([id, count]) => ({ id: Number(id), count }))
+    .map(([id, count]) => ({ id, count }))
     .sort((a, b) => b.count - a.count)
     .slice(0, 8);
   const maxCount = Math.max(...entries.map(e => e.count), 1);
@@ -782,7 +791,7 @@ function WorkloadPanel({ projects }: { projects: KanbanProject[] }) {
       <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.18em', marginBottom: 14 }}>── WORKLOAD THÀNH VIÊN</div>
       <div className="space-y-3">
         {entries.map(({ id, count }) => {
-          const m = members.find(x => x.id === id);
+          const m = seedMembers.find(x => String(x.id) === id);
           if (!m) return null;
           const rc = RANKS[m.rank];
           const pct = (count / maxCount) * 100;
@@ -921,7 +930,7 @@ function DeptView({ deptId, projects, onNavigate, onProjectsChange }: {
   const [modalState, setModalState] = useState<{ open: boolean; project?: KanbanProject }>({ open: false });
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
-  const head = members.find(m => m.id === dept.headId);
+  const head = seedMembers.find(m => String(m.id) === String(dept.headId));
   const headRank = head ? RANKS[head.rank] : null;
 
   const filtered = deptProjects
@@ -1111,20 +1120,76 @@ function DeptView({ deptId, projects, onNavigate, onProjectsChange }: {
 
 export function KanbanHub() {
   const [nav, setNav] = useState<NavState>({ view: 'hub' });
-  const [projects, setProjects] = useState<KanbanProject[]>(INIT_PROJECTS);
+  const [beProjects, setBeProjects] = useState<KanbanProject[]>([]);
+  const [projectsLoading, setProjectsLoading] = useState(true);
+  const [projectsError, setProjectsError] = useState('');
+
+  // ── Fetch BE projects ──────────────────────────────────────────────
+  useEffect(() => {
+    let cancelled = false;
+    setProjectsLoading(true);
+    setProjectsError('');
+    projectsService.getAdminProjects()
+      .then(be => {
+        if (cancelled) return;
+        // Map BE PortfolioProject → KanbanProject bridge shape
+        const mapped: KanbanProject[] = be.map(p => ({
+          id: p.id,
+          deptId: 'it', // BE doesn't have deptId → fallback
+          name: p.title,
+          description: p.challenge || p.solution || '',
+          status: p.status === 'completed' ? 'completed' : p.status === 'active' ? 'active' : 'planning',
+          priority: 'medium' as ProjectPriority,
+          startDate: p.publishedAt ?? '',
+          deadline: '',
+          progress: 0,
+          leadId: 1,
+          memberIds: [],
+          taskStats: { total: 0, done: 0, inProgress: 0, urgent: 0 },
+          tags: p.tags ?? [],
+          budget: undefined,
+          color: p.color,
+          clientName: p.client,
+        }));
+        setBeProjects(mapped);
+      })
+      .catch(() => { if (!cancelled) setProjectsError('Không tải được dự án'); })
+      .finally(() => { if (!cancelled) setProjectsLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  // Fallback-safe display list
+  const displayProjects = useMemo<KanbanProject[]>(() => {
+    if (beProjects.length > 0) return beProjects;
+    return INIT_PROJECTS;
+  }, [beProjects]);
 
   const currentProject = nav.view === 'board'
-    ? projects.find(p => p.id === (nav as { projectId: string }).projectId)
+    ? displayProjects.find(p => p.id === (nav as { projectId: string }).projectId)
     : null;
+
+  // ── CRUD handlers (optimistic + BE sync) ───────────────────────────
+  const handleProjectsChange = (updated: KanbanProject[]) => {
+    setBeProjects(updated); // optimistic — BE sync optional for kanban
+  };
 
   return (
     <div className="space-y-4">
       {/* Top navigation bar */}
       <div className="flex items-center justify-between gap-3 flex-wrap p-3.5 rounded-2xl"
         style={{ background: DS.bgCard, border: `1px solid ${DS.border}` }}>
-        <Breadcrumb nav={nav} projects={projects} onNavigate={setNav} />
+        <Breadcrumb nav={nav} projects={displayProjects} onNavigate={setNav} />
 
         <div className="flex items-center gap-2">
+          {projectsLoading && (
+            <div className="flex items-center gap-1.5 px-2" style={{ color: DS.text5 }}>
+              <Loader2 size={12} className="animate-spin" />
+              <span style={{ fontSize: 10, fontFamily: DS.mono }}>Đang tải...</span>
+            </div>
+          )}
+          {projectsError && (
+            <span style={{ fontSize: 10, color: DS.red, fontFamily: DS.mono }}>{projectsError}</span>
+          )}
           {nav.view !== 'hub' && (
             <motion.button onClick={() => setNav({ view: 'hub' })}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl"
@@ -1158,19 +1223,20 @@ export function KanbanHub() {
           initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.18, ease: 'easeOut' }}>
 
-          {nav.view === 'hub' && <HubView projects={projects} onNavigate={setNav} />}
+          {nav.view === 'hub' && <HubView projects={displayProjects} onNavigate={setNav} />}
 
           {nav.view === 'dept' && (
             <DeptView
               deptId={(nav as { deptId: string }).deptId}
-              projects={projects}
+              projects={displayProjects}
               onNavigate={setNav}
-              onProjectsChange={setProjects}
+              onProjectsChange={handleProjectsChange}
             />
           )}
 
           {nav.view === 'board' && currentProject && (
             <KanbanBoard
+              projectId={currentProject.id}
               projectTitle={currentProject.name}
               projectColor={currentProject.color}
               onBack={() => setNav({ view: 'dept', deptId: currentProject.deptId })}

@@ -2,7 +2,7 @@
  * ServicesTab — Quản lý dịch vụ (Admin)
  * CRUD dịch vụ, demo links, thống kê đơn hàng
  */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Monitor, Edit3, Save, X, Eye, EyeOff, TrendingUp,
@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { DS, GRD } from '../layout/ds';
 import { useLoopStore, type Service, type ServiceType } from '../../store/loopStore';
+import { servicesService } from '../../../api/services.service';
 import { DemoViewer } from '../ui/DemoViewer';
 
 const fmtVND = (n: number) =>
@@ -130,8 +131,25 @@ function ServiceEditModal({ service, onClose, onSave }: {
 // ── Main ──────────────────────────────────────────────────────────────────────
 export function ServicesTab() {
   const { services, orders, updateService } = useLoopStore();
+  const [apiServices, setApiServices] = useState<Service[]>([]);
+  const [servicesLoading, setServicesLoading] = useState(true);
+  const [servicesError, setServicesError] = useState('');
   const [editingService, setEditingService] = useState<Service | null>(null);
   const [previewDemoId, setPreviewDemoId] = useState<ServiceType | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setServicesLoading(true);
+    setServicesError('');
+    servicesService.getAdminServices()
+      .then(fetched => { if (!cancelled) setApiServices(fetched); })
+      .catch(() => { if (!cancelled) setServicesError('Không tải được danh sách dịch vụ'); })
+      .finally(() => { if (!cancelled) setServicesLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  // Use API services when loaded, fall back to store
+  const displayServices = servicesLoading && servicesError === '' ? services : apiServices.length > 0 ? apiServices : services;
 
   const getServiceOrders = (id: ServiceType) => orders.filter(o => o.serviceType === id);
   const getServiceRevenue = (id: ServiceType) => getServiceOrders(id).filter(o => o.status !== 'pending_payment' && o.status !== 'cancelled').reduce((s, o) => s + o.budget, 0);
@@ -157,7 +175,7 @@ export function ServicesTab() {
       </AnimatePresence>
 
       <div className="flex items-center justify-between">
-        <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.18em' }}>── QUẢN LÝ DỊCH VỤ ({services.length} dịch vụ)</div>
+        <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.18em' }}>── QUẢN LÝ DỊCH VỤ ({displayServices.length} dịch vụ)</div>
         <div className="flex items-center gap-3">
           <div style={{ color: DS.text4, fontSize: 12 }}>Tổng doanh thu dịch vụ:</div>
           <div style={{ color: DS.green, fontFamily: DS.mono, fontWeight: 700, fontSize: 14 }}>
@@ -168,7 +186,7 @@ export function ServicesTab() {
 
       {/* Service cards */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
-        {services.map((svc, i) => {
+        {displayServices.map((svc, i) => {
           const svcOrders = getServiceOrders(svc.id);
           const svcRevenue = getServiceRevenue(svc.id);
           const activeOrders = svcOrders.filter(o => o.status === 'in_progress' || o.status === 'demo_ready');

@@ -13,10 +13,32 @@ type Props = { params: Promise<{ locale: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
+  const tSeo = await getTranslations("seo");
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://loop.vn";
+  const title = tSeo("aboutTitle");
+  const description = tSeo("aboutDescription");
+  const brandMetaTitle = tSeo("brandMetaTitle");
+  const brandMetaDescription = tSeo("brandMetaDescription");
+  const ogImage = tSeo("ogImage");
+  const canonical = `${baseUrl}/${locale}/about`;
+
   return {
-    title: "Về LOOP - Đội ngũ thiết kế và phát triển web cao cấp",
-    alternates: { canonical: `${baseUrl}/${locale}/about` },
+    title,
+    description,
+    alternates: { canonical },
+    openGraph: {
+      type: "website",
+      title: `${title} — ${brandMetaTitle}`,
+      description: brandMetaDescription || description,
+      url: canonical,
+      images: [{ url: ogImage || "/og-cover.jpg", width: 1200, height: 630, alt: "LOOP Solutions" }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${title} — ${brandMetaTitle}`,
+      description: brandMetaDescription || description,
+      images: [ogImage || "/og-cover.jpg"],
+    },
   };
 }
 

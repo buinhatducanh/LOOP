@@ -8,7 +8,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireAuth();
+    await requireAuth(req);
     const { id } = await params;
 
     const expertise = await prisma.expertise.findUnique({
@@ -30,7 +30,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireAuth();
+    await requireAuth(req);
     const { id } = await params;
     const data = await req.json();
 
@@ -65,7 +65,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireAuth();
+    await requireAuth(req);
     const { id } = await params;
 
     await prisma.expertise.delete({

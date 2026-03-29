@@ -17,6 +17,7 @@ import { DS, GRD } from '../components/layout/ds';
 import { members, RANKS } from '../components/team/memberData';
 import { useAuthStore } from '../store/authStore';
 import { useLoopStore } from '../store/loopStore';
+import { useLocaleStore, ORDER_STATUS_LABELS } from '../store/localeStore';
 import { ChatWidget } from '../components/ui/ChatWidget';
 import { useIsMobile } from '../components/ui/use-mobile';
 
@@ -404,6 +405,7 @@ function HomeTab({ user, onSelect }: { user: ReturnType<typeof useAuthStore>['us
 // ── PROJECTS TAB — with Kanban Lite ─────────────────────────────────────────
 function ProjectsTab({ user }: { user: ReturnType<typeof useAuthStore>['user'] }) {
   const { orders } = useLoopStore();
+  const { locale } = useLocaleStore();
   const FILTERS = ['Tất cả', 'Đang làm', 'Review', 'Hoàn thành'];
   const [filter, setFilter] = useState('Tất cả');
   const [kanbanView, setKanbanView] = useState(false);
@@ -437,13 +439,13 @@ function ProjectsTab({ user }: { user: ReturnType<typeof useAuthStore>['user'] }
     : allOrders.filter(o => o.status === 'done');
 
   const STATUS_CFG: Record<string, { label: string; color: string }> = {
-    pending_payment: { label: 'Chờ thanh toán', color: DS.text4 },
-    paid: { label: 'Mới - Chờ phân công', color: DS.blue },
-    in_progress: { label: 'Đang thực hiện', color: DS.purple },
-    demo_ready: { label: 'Demo sẵn sàng', color: DS.cyan },
-    client_review: { label: 'Client review', color: DS.amber },
-    done: { label: 'Hoàn thành', color: DS.green },
-    cancelled: { label: 'Đã hủy', color: DS.red },
+    pending_payment: { label: ORDER_STATUS_LABELS[locale].pending_payment, color: DS.text4 },
+    paid: { label: ORDER_STATUS_LABELS[locale].paid, color: DS.blue },
+    in_progress: { label: ORDER_STATUS_LABELS[locale].in_progress, color: DS.purple },
+    demo_ready: { label: ORDER_STATUS_LABELS[locale].demo_ready, color: DS.cyan },
+    client_review: { label: ORDER_STATUS_LABELS[locale].client_review, color: DS.amber },
+    done: { label: ORDER_STATUS_LABELS[locale].done, color: DS.green },
+    cancelled: { label: ORDER_STATUS_LABELS[locale].cancelled, color: DS.red },
   };
 
   return (

@@ -119,4 +119,37 @@ export const projectsService = {
       return null;
     }
   },
+
+  // ── Admin CRUD ───────────────────────────────────────────────────────────
+
+  /**
+   * GET /api/admin/projects
+   */
+  getAdminProjects: async (): Promise<PortfolioProject[]> => {
+    const res = await api.get<{ data: unknown[] }>('/admin/projects');
+    return res.data as PortfolioProject[];
+  },
+
+  /**
+   * POST /api/admin/projects
+   */
+  createProject: async (data: unknown): Promise<PortfolioProject> => {
+    const res = await api.post<{ data: PortfolioProject }>('/admin/projects', data);
+    return res.data;
+  },
+
+  /**
+   * PUT /api/admin/projects/[id]
+   */
+  updateProject: async (id: string, data: unknown): Promise<PortfolioProject> => {
+    const res = await api.put<{ data: PortfolioProject }>(`/admin/projects/${id}`, data);
+    return res.data;
+  },
+
+  /**
+   * DELETE /api/admin/projects/[id]
+   */
+  deleteProject: async (id: string): Promise<void> => {
+    await api.delete(`/admin/projects/${id}`);
+  },
 };

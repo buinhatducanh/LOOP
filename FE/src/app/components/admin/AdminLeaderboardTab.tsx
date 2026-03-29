@@ -2,15 +2,17 @@
  * AdminLeaderboardTab — Tab "Leaderboard quản trị" trong Admin Dashboard
  * Cho phép admin xem, điều chỉnh LP, thưởng/phạt thủ công cho từng thành viên
  */
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Trophy, Zap, Plus, Minus, Search, Filter, ChevronUp,
   ChevronDown, Save, X, Award, TrendingUp, Users, RotateCcw,
-  Check, AlertTriangle,
+  Check, AlertTriangle, Loader2,
 } from 'lucide-react';
 import { DS, GRD } from '../layout/ds';
-import { members, RANKS, type RankKey } from '../team/memberData';
+import { members as seedMembers, RANKS, type RankKey } from '../team/memberData';
+import { teamService } from '../../../api/team.service';
+import { lpService } from '../../../api/lp.service';
 
 const fmtLP = (n: number) =>
   n >= 1_000_000 ? `${(n / 1_000_000).toFixed(2)}M`
@@ -20,7 +22,7 @@ const fmtLP = (n: number) =>
 type AdjustType = 'bonus' | 'penalty' | 'event' | 'manual';
 
 interface LPAdjustment {
-  memberId: number;
+  memberId: string;
   memberName: string;
   amount: number;
   type: AdjustType;
@@ -29,7 +31,8 @@ interface LPAdjustment {
 }
 
 interface LocalMember {
-  id: number;
+  id: string; // BE CUID string
+  seedId: number; // Fallback seed numeric id
   name: string;
   rank: RankKey;
   level: number;
@@ -55,16 +58,17 @@ const PRESET_REASONS = [
 ];
 
 export function AdminLeaderboardTab() {
-  const [localMembers, setLocalMembers] = useState<LocalMember[]>(
-    () => [...members]
-      .sort((a, b) => b.lpBalance - a.lpBalance)
-      .map(m => ({ ...m, delta: 0 }))
-  );
+  // ── BE state ──────────────────────────────────────────────────────
+  const [beMembers, setBeMembers] = useState<LocalMember[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+
+  const [localMembers, setLocalMembers] = useState<LocalMember[]>([]);
   const [search, setSearch] = useState('');
   const [filterRank, setFilterRank] = useState<RankKey | 'all'>('all');
   const [filterTeam, setFilterTeam] = useState<'all' | 'Alpha' | 'Sigma' | 'Omega'>('all');
   const [sortBy, setSortBy] = useState<'lp' | 'level' | 'missions'>('lp');
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [adjustAmount, setAdjustAmount] = useState('');
   const [adjustType, setAdjustType] = useState<AdjustType>('bonus');
   const [adjustReason, setAdjustReason] = useState('');
@@ -73,9 +77,70 @@ export function AdminLeaderboardTab() {
   const [saved, setSaved] = useState(false);
   const [bulkAmount, setBulkAmount] = useState('');
   const [bulkReason, setBulkReason] = useState('');
-  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  const totalLP = localMembers.reduce((s, m) => s + m.lpBalance, 0);
+  // ── Fetch BE members ───────────────────────────────────────────────
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setLoadError('');
+    teamService.getAdminMembers({ limit: 100 })
+      .then(({ members: be }) => {
+        if (cancelled) return;
+        // Map BE members → LocalMember
+        const mapped: LocalMember[] = be.map(m => {
+          // Find matching seed member by name for numeric id
+          const seed = seedMembers.find(sm => sm.name === m.name);
+          const rk = (m.rank ?? 'iron') as RankKey;
+          const rc = RANKS[rk] ?? RANKS.iron;
+          return {
+            id: m.id, // BE CUID
+            seedId: seed?.id ?? 0, // fallback seed id
+            name: m.name,
+            rank: rk,
+            level: m.level,
+            lpBalance: m.lpBalance,
+            img: m.image ?? seed?.img ?? `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(m.name)}`,
+            role: m.role,
+            team: (m.department ?? 'engineering') as LocalMember['team'],
+            missions: seed?.missions ?? 0,
+            delta: 0,
+          };
+        });
+        // Sort by LP desc
+        mapped.sort((a, b) => b.lpBalance - a.lpBalance);
+        setBeMembers(mapped);
+        setLocalMembers(mapped);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setLoadError('Không tải được danh sách thành viên');
+        // Fallback to seed members
+        const fallback: LocalMember[] = seedMembers.map(m => ({
+          id: String(m.id),
+          seedId: m.id,
+          name: m.name,
+          rank: m.rank,
+          level: m.level,
+          lpBalance: m.lpBalance,
+          img: m.img,
+          role: m.role,
+          team: m.team as LocalMember['team'],
+          missions: m.missions,
+          delta: 0,
+        }));
+        fallback.sort((a, b) => b.lpBalance - a.lpBalance);
+        setLocalMembers(fallback);
+      })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  const displayMembers = useMemo(() => {
+    return beMembers.length > 0 ? beMembers : localMembers;
+  }, [beMembers, localMembers]);
+
+  const totalLP = displayMembers.reduce((s, m) => s + m.lpBalance, 0);
   const pendingChanges = localMembers.filter(m => m.delta !== 0).length;
   const rankKeys: RankKey[] = ['iron', 'bronze', 'silver', 'gold', 'platinum', 'ruby', 'diamond'];
 
@@ -92,7 +157,7 @@ export function AdminLeaderboardTab() {
       return b.missions - a.missions;
     });
 
-  const applyAdjustment = (id: number) => {
+  const applyAdjustment = (id: string) => {
     const amount = parseInt(adjustAmount);
     if (!amount || !adjustReason.trim()) return;
     const signed = adjustType === 'penalty' ? -Math.abs(amount) : Math.abs(amount);
@@ -102,6 +167,8 @@ export function AdminLeaderboardTab() {
     setLocalMembers(prev => prev.map(m =>
       m.id === id ? { ...m, delta: m.delta + signed } : m
     ));
+    // Optimistic: also update beMembers for display consistency
+    setBeMembers(prev => prev.map(m => m.id === id ? { ...m, lpBalance: m.lpBalance + signed } : m));
     setHistory(prev => [{
       memberId: id,
       memberName: member.name,
@@ -123,6 +190,9 @@ export function AdminLeaderboardTab() {
     setLocalMembers(prev => prev.map(m =>
       ids.includes(m.id) ? { ...m, delta: m.delta + amount } : m
     ));
+    setBeMembers(prev => prev.map(m =>
+      ids.includes(m.id) ? { ...m, lpBalance: m.lpBalance + amount } : m
+    ));
     ids.forEach(id => {
       const member = localMembers.find(m => m.id === id);
       if (!member) return;
@@ -140,17 +210,38 @@ export function AdminLeaderboardTab() {
     setBulkReason('');
   };
 
-  const resetDelta = (id: number) => {
+  const resetDelta = (id: string) => {
+    const member = localMembers.find(m => m.id === id);
+    const oldDelta = member?.delta ?? 0;
     setLocalMembers(prev => prev.map(m => m.id === id ? { ...m, delta: 0 } : m));
+    setBeMembers(prev => prev.map(m => m.id === id ? { ...m, lpBalance: m.lpBalance - oldDelta } : m));
   };
 
   const commitAll = () => {
+    // Collect all pending deltas
+    const changes = localMembers.filter(m => m.delta !== 0);
+    // Apply locally
     setLocalMembers(prev => prev.map(m => ({ ...m, lpBalance: m.lpBalance + m.delta, delta: 0 })));
+    setBeMembers(prev => prev.map(m => {
+      const change = changes.find(c => c.id === m.id);
+      return change ? { ...m, lpBalance: m.lpBalance + change.delta } : m;
+    }));
+    // Sync to BE: award LP for each positive delta
+    changes.forEach(m => {
+      if (m.delta > 0) {
+        lpService.awardLp({
+          memberId: Number(m.seedId) || 0,
+          amount: m.delta,
+          source: 'manual',
+          reason: 'Điều chỉnh LP thủ công',
+        }).catch(() => {/* silently ignore — already applied optimistically */});
+      }
+    });
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   };
 
-  const toggleSelect = (id: number) => {
+  const toggleSelect = (id: string) => {
     setSelectedIds(prev => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
@@ -161,9 +252,21 @@ export function AdminLeaderboardTab() {
   return (
     <div className="space-y-5">
       {/* Header stats */}
+      {loading && (
+        <div className="flex items-center gap-2 px-4 py-2 rounded-xl" style={{ background: DS.bgCard, border: `1px solid ${DS.border}` }}>
+          <Loader2 size={14} className="animate-spin" style={{ color: DS.blue }} />
+          <span style={{ color: DS.text4, fontSize: 12 }}>Đang tải danh sách LP thành viên...</span>
+        </div>
+      )}
+      {loadError && (
+        <div className="flex items-center gap-2 px-4 py-2 rounded-xl" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
+          <AlertTriangle size={14} style={{ color: DS.red }} />
+          <span style={{ color: DS.red, fontSize: 12 }}>{loadError}</span>
+        </div>
+      )}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
         {[
-          { label: 'Tổng thành viên', value: String(members.length), color: DS.blue, icon: <Users size={15} /> },
+          { label: 'Tổng thành viên', value: String(displayMembers.length), color: DS.blue, icon: <Users size={15} /> },
           { label: 'Tổng LP hệ thống', value: fmtLP(totalLP), color: DS.purple, icon: <Zap size={15} /> },
           { label: 'LP chờ duyệt', value: `${pendingChanges} người`, color: DS.amber, icon: <AlertTriangle size={15} /> },
           { label: 'Lịch sử điều chỉnh', value: String(history.length), color: DS.green, icon: <TrendingUp size={15} /> },
@@ -331,7 +434,7 @@ export function AdminLeaderboardTab() {
       <div className="rounded-2xl overflow-hidden" style={{ border: `1px solid ${DS.border}` }}>
         <div className="flex items-center justify-between px-5 py-3" style={{ background: DS.bgCard, borderBottom: `1px solid ${DS.border}` }}>
           <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.15em' }}>
-            ── BẢNG LP QUẢN TRỊ · {filtered.length} / {members.length} THÀNH VIÊN
+            ── BẢNG LP QUẢN TRỊ · {filtered.length} / {displayMembers.length} THÀNH VIÊN
           </div>
           <div className="flex items-center gap-2">
             {selectedIds.size > 0 && (

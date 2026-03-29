@@ -1,13 +1,26 @@
 /**
  * LOOP Solutions — Services API Service
- * Public services: list + detail
+ * Public + Admin services: list, detail, CRUD
  *
- * BE contract:
+ * Public:
  * GET /api/v1/services?lang={locale}  → { data: { services, grouped, categories }, meta }
  * GET /api/v1/services/[slug]?lang=  → { data: service, meta }
+ *
+ * Admin:
+ * GET    /api/admin/services         → { data: Service[], pagination }
+ * POST   /api/admin/services         → { data: Service }
+ * PUT    /api/admin/services/[id]     → { data: Service }
+ * DELETE /api/admin/services/[id]     → {}
  */
 import { api } from './client';
+import { DS } from '../app/components/layout/ds';
 import type { Service } from '../store/loopStore';
+
+// ── Wizard config types (used by QuotationTab) ──────────────────────────────────
+export interface WizardService {
+  id: string; title: string; desc: string; basePrice: number;
+  color: string; icon: string; active: boolean; perMonth?: boolean;
+}
 
 // ── BE response types ──────────────────────────────────────────────────────────
 interface BeService {
@@ -42,7 +55,7 @@ interface BeServiceDetailResponse {
 }
 
 // ── Mapping: BE → FE Service ──────────────────────────────────────────────────
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 function mapService(be: BeService, fallbackPrice = 0): Service {
   return {
     id: be.slug as Service['id'],
@@ -58,6 +71,17 @@ function mapService(be: BeService, fallbackPrice = 0): Service {
     maskedUrl: '#',
     ordersCount: 0,
     revenue: 0,
+    // Detail fields — sourced from longDescription and features
+    desc: be.longDescription ?? be.shortDescription,
+    features: be.features ?? [],
+    process: [
+      { title: 'Discovery & Wireframe', desc: 'Phan tich brand, UX research va tao wireframe chi tiet.' },
+      { title: 'UI Design & Prototype', desc: 'Thiet ke Figma hoan chinh, interactive prototype de review.' },
+      { title: 'Development Sprint', desc: 'Code voi CI/CD, code review tung PR.' },
+      { title: 'QA & Performance', desc: 'Test da thiet bi, lighthouse audit va toi uu toc do.' },
+      { title: 'Launch & Handover', desc: 'Deploy, training, ban giao source va nhan LP diem thuong.' },
+    ],
+    tech: be.technologies ?? [],
   };
 }
 
@@ -113,5 +137,79 @@ export const servicesService = {
     } catch {
       return null;
     }
+  },
+
+  // ── Admin CRUD ─────────────────────────────────────────────────────────────
+
+  /**
+   * GET /api/admin/services
+   * Admin list of all services (all statuses, no locale grouping).
+   */
+  getAdminServices: async (): Promise<Service[]> => {
+    const res = await api.get<{ data: Service[] }>('/admin/services');
+    return res.data;
+  },
+
+  /**
+   * POST /api/admin/services
+   * Create a new service.
+   */
+  createService: async (data: Omit<Service, 'id'>): Promise<Service> => {
+    const res = await api.post<{ data: Service }>('/admin/services', data);
+    return res.data;
+  },
+
+  /**
+   * PUT /api/admin/services/[id]
+   * Update an existing service.
+   */
+  updateService: async (id: string, data: Partial<Service>): Promise<Service> => {
+    const res = await api.put<{ data: Service }>(`/admin/services/${id}`, data);
+    return res.data;
+  },
+
+  /**
+   * DELETE /api/admin/services/[id]
+   */
+  deleteService: async (id: string): Promise<void> => {
+    await api.delete(`/admin/services/${id}`);
+  },
+
+  // ── Wizard Quotation Config ────────────────────────────────────────────────
+
+  /**
+   * Map a Service (BE admin shape) → WizardService (tab shape).
+   */
+  mapToWizardService(be: Service): WizardService {
+    const colorMap: Record<string, string> = {
+      web: DS.blue,
+      app: DS.purple,
+      saas: DS.green,
+      seo: DS.amber,
+      dashboard: DS.cyan,
+      media: DS.red,
+      marketing: '#F59E0B',
+      design: '#EC4899',
+    };
+    const cat = (be.category ?? '').toLowerCase();
+    return {
+      id: be.id,
+      title: be.title,
+      desc: be.desc ?? be.subtitle ?? '',
+      basePrice: be.startPrice,
+      color: colorMap[cat] ?? DS.blue,
+      icon: be.icon ?? '🌐',
+      active: be.active,
+      perMonth: be.perMonth,
+    };
+  },
+
+  /**
+   * GET /api/admin/services → WizardService[]
+   * Fetches all admin services and maps to wizard shape.
+   */
+  getWizardServices: async (): Promise<WizardService[]> => {
+    const services = await servicesService.getAdminServices();
+    return services.map(s => servicesService.mapToWizardService(s));
   },
 };

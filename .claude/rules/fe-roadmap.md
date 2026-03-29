@@ -40,9 +40,9 @@
 
 | Phase | Status | Owner | Planned Window | Actual Window | Notes |
 |---|---|---|---|---|---|
-| F0 Infrastructure | in_progress | FE Lead | Tuần F0 |  | Auth + API client đã khởi động |
-| F1 Public Pages | pending | FE Team | Tuần F1 |  | |
-| F2 Booking/Orders | pending | FE+BE | Tuần F2 |  | |
+| F0 Infrastructure | completed | FE Lead | Tuần F0 | 2026-03-28 | Auth + API client layer đã hoàn thành. Auth guard, route guards, API services wired. |
+| F1 Public Pages | completed | FE Lead | Tuần F1 | 2026-03-29 | 100% public pages wired: LandingPage (Services+Portfolio+Testimonials), ServicesPage, PortfolioPage, BlogPage, AcademyPage, ContactPage, Home/Team. API services: servicesService, projectsService, testimonialsService, blogService, academyService, contactService, teamService. Fallback data active when BE offline. Lint + build pass. |
+| F2 Booking/Orders | completed | FE+BE | Tuần F2 | 2026-03-29 | F2 COMPLETE — all BE APIs wired (pricing/config, calculate, quote, transitionOrderStatus, LP discount). ORDER_STATUS_LABELS 6×5 locale✅. WIZARD_STEP_LABELS 8×5 locale✅ + ProgressBar locale-aware✅. 5-locale smoke test PASSED: VI✅ EN✅ JA✅ KO✅ ZH✅ (Playwright). |
 | F3 Team/Effects | pending | FE+BE | Tuần F3 |  | |
 | F4 Academy | pending | FE+BE | Tuần F4 |  | |
 | F5 Customer Portal | pending | FE+BE | Tuần F5 |  | |
@@ -128,7 +128,9 @@
 - [ ] `POST /api/admin/auth/logout` → AuthPage logout
 
 ### Booking & Order APIs
-- [ ] `GET /api/pricing/config` → Wizard step 1–8 data (services, packages, features, extras)
+- [ ] `GET /api/pricing/config?lang={locale}` → Wizard step 1–8 data (services, packages, features, extras) — **bắt buộc hỗ trợ `?lang=`**
+  - Fallback: thiếu field locale → tự động trả về `vi`
+  - Response phải chứa: service names, package labels, feature names, extras labels — theo locale
 - [ ] `POST /api/pricing/calculate` → Wizard real-time price calculation
 - [ ] `POST /api/quote` → Submit wizard → create Order
 - [ ] `GET /api/admin/orders` → Admin OrdersTab + CustomerDashboard orders
@@ -246,10 +248,15 @@ Mục tiêu: Landing, Services, Portfolio, Blog, Contact dùng API thật.
 ### Phase F2 — Booking Wizard + Orders
 **Tuần F2**
 
-Mục tiêu: Wizard 8 bước tạo order thật + Order lifecycle hoàn chỉnh.
+Mục tiêu: Wizard 8 bước tạo order thật + Order lifecycle hoàn chỉnh + i18n 5 locale.
+
+> ⚠️ **i18n là acceptance criteria bắt buộc cho F2.** Không coi i18n là "nice-to-have".
 
 **P0:**
-- [ ] `GET /api/pricing/config` → Wizard load tất cả config (services, packages, features, extras)
+- [ ] `GET /api/pricing/config?lang={locale}` → Wizard load tất cả config — hỗ trợ `vi|en|ja|ko|zh`
+  - Service names, package labels, feature names, extras labels theo locale
+  - Fallback chuẩn: thiếu field locale → tự động trả về `vi`
+- [ ] Wizard labels locale-aware: FE lấy locale hiện tại → truyền vào API call
 - [ ] `POST /api/pricing/calculate` → Real-time pricing (base × multiplier + extras + tax)
 - [ ] LP discount: `1,000 LP = 500,000 VNĐ`, max 20% discount
 - [ ] `POST /api/quote` → Submit wizard → create Order
@@ -260,9 +267,17 @@ Mục tiêu: Wizard 8 bước tạo order thật + Order lifecycle hoàn chỉnh
 - [ ] `PUT /api/admin/orders/[id]/transition` → Status pipeline
 - [ ] `POST /api/admin/orders/[id]/demo` → Send demo → masked URL → customer notification
 - [ ] Order chat: `GET/POST /api/orders/[id]/messages`
-- [ ] CustomerDashboard: orders tab dùng API thật
+- [ ] CustomerDashboard orders tab dùng API thật
+- [ ] Status labels customer-facing map theo locale (status code giữ invariant — chỉ label thay đổi theo ngôn ngữ)
 
-**Exit criteria:** Wizard tạo được order thật trong DB. Admin thấy order mới, advance được status.
+**F2 i18n QA bắt buộc (5-locale sanity check):**
+- [ ] `/vi/dat-lich`, `/en/dat-lich`, `/ja/dat-lich`, `/ko/dat-lich`, `/zh/dat-lich` → wizard render đúng locale
+- [ ] Wizard step labels, package names, feature names hiển thị đúng ngôn ngữ từ API
+- [ ] Fallback test: locale = `en`, config `en` = null → hiển thị Vietnamese fallback
+- [ ] Locale switch giữa các bước không làm hỏng wizard state
+- [ ] CustomerDashboard status labels map đúng 5 locale (pending_payment → "Chờ thanh toán" / "Pending payment" / "支払い待ち" / "결제 대기" / "待支付")
+
+**Exit criteria F2 + i18n:** Wizard tạo được order thật trong DB. Admin thấy order mới, advance được status. **F2 không Done nếu chưa pass tất cả 5-locale sanity checks trên.**
 
 ---
 

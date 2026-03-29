@@ -2,7 +2,7 @@
  * QuotationTab — Quản lý cấu hình Báo giá 8 bước (Admin)
  * Quản lý dịch vụ, gói, tính năng, nhân sự, extras, pricing
  */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Plus, Edit3, Trash2, X, Save, ChevronDown, ChevronUp,
@@ -11,72 +11,65 @@ import {
   CreditCard, Star, Check, AlertCircle,
 } from 'lucide-react';
 import { DS, GRD } from '../layout/ds';
+import { servicesService, type WizardService } from '../../../api/services.service';
+import { featuresService, type WizardFeature } from '../../../api/features.service';
+import { addonService, type WizardExtra } from '../../../api/addon.service';
+import { teamService } from '../../../api/team.service';
 
 const fmtVND = (n: number) =>
   new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(n);
 
-// ── Types ──────────────────────────────────────────────────────────────
-interface WizardService {
-  id: string; title: string; desc: string; basePrice: number; color: string; icon: string; active: boolean; perMonth?: boolean;
-}
+// ── Wizard types (imported from services) ──────────────────────────────────────
+// WizardService, WizardFeature, WizardExtra → imported from api/services, features, addon
+// WizardPackage — kept local (no BE model yet)
 interface WizardPackage {
   id: string; name: string; multiplier: number; color: string; desc: string; features: string[]; lp: number; popular?: boolean;
-}
-interface WizardFeature {
-  id: string; serviceId: string; label: string; price: number; icon: string;
-}
-interface WizardExtra {
-  id: string; label: string; price: number; color: string;
 }
 interface WizardTalent {
   id: string; name: string; role: string; rank: string; rankColor: string; specialty: string; img: string; active: boolean;
 }
 
-// ── Initial Data matching BookingWizardPage ──────────────────────────────
-const INIT_SERVICES: WizardService[] = [
+// ── Fallback data (used when BE is offline) ────────────────────────────────────
+const FALLBACK_SERVICES: WizardService[] = [
   { id: 'web', title: 'Thiết kế & Phát triển Website', desc: 'Landing page, corporate site, e-commerce', basePrice: 15_000_000, color: DS.blue, icon: '🌐', active: true },
   { id: 'app', title: 'Phát triển App & SaaS Platform', desc: 'Mobile app, web app, SaaS enterprise', basePrice: 80_000_000, color: DS.purple, icon: '⚙️', active: true },
   { id: 'dashboard', title: 'Dashboard & Data Analytics', desc: 'Real-time dashboard, data visualization', basePrice: 25_000_000, color: DS.cyan, icon: '📊', active: true },
   { id: 'seo', title: 'SEO & Digital Marketing', desc: 'Tăng trưởng organic bền vững', basePrice: 8_000_000, color: DS.green, icon: '📈', active: true, perMonth: true },
 ];
-
-const INIT_PACKAGES: WizardPackage[] = [
-  { id: 'starter', name: 'Starter', multiplier: 1, color: DS.text3, desc: 'Phù hợp cá nhân, startup', features: ['Thiết kế cơ bản', 'Responsive design', 'SEO cơ bản', 'Bảo hành 3 tháng'], lp: 50 },
-  { id: 'business', name: 'Business', multiplier: 2.2, color: DS.blue, desc: 'Doanh nghiệp vừa, cần scale', features: ['Thiết kế độc quyền', 'CMS tích hợp', 'Analytics dashboard', 'Bảo hành 6 tháng', 'Không giới hạn sửa'], lp: 120, popular: true },
-  { id: 'enterprise', name: 'Enterprise', multiplier: 3.8, color: DS.purple, desc: 'Doanh nghiệp lớn, yêu cầu cao', features: ['Tùy chỉnh hoàn toàn', 'API & Integrations', 'SLA 99.9%', 'Dedicated PM', 'Support 24/7', 'Bảo hành 12 tháng'], lp: 250 },
+const FALLBACK_FEATURES: WizardFeature[] = [
+  { id: 'cms', serviceId: 'web', label: 'Tích hợp CMS (Sanity/Contentful)', description: '', price: 5_000_000, icon: '📄', variants: [], active: true },
+  { id: 'i18n', serviceId: 'web', label: 'Đa ngôn ngữ (i18n)', description: '', price: 3_000_000, icon: '🌍', variants: [], active: true },
+  { id: 'ecom', serviceId: 'web', label: 'E-commerce (giỏ hàng, thanh toán)', description: '', price: 12_000_000, icon: '🛒', variants: [], active: true },
+  { id: 'blog', serviceId: 'web', label: 'Blog & Content module', description: '', price: 2_500_000, icon: '📰', variants: [], active: true },
+  { id: 'analytics-web', serviceId: 'web', label: 'Analytics dashboard riêng', description: '', price: 4_000_000, icon: '📊', variants: [], active: true },
+  { id: 'auth', serviceId: 'app', label: 'Auth & User management', description: '', price: 6_000_000, icon: '🔐', variants: [], active: true },
+  { id: 'notification', serviceId: 'app', label: 'Push notification', description: '', price: 3_500_000, icon: '🔔', variants: [], active: true },
+  { id: 'payment', serviceId: 'app', label: 'Tích hợp thanh toán (VNPAY/Momo)', description: '', price: 8_000_000, icon: '💳', variants: [], active: true },
+  { id: 'chat', serviceId: 'app', label: 'In-app chat & messaging', description: '', price: 7_000_000, icon: '💬', variants: [], active: true },
+  { id: 'realtime', serviceId: 'dashboard', label: 'Real-time data sync', description: '', price: 5_000_000, icon: '⚡', variants: [], active: true },
+  { id: 'export', serviceId: 'dashboard', label: 'Export PDF/Excel tự động', description: '', price: 3_000_000, icon: '📥', variants: [], active: true },
+  { id: 'ml', serviceId: 'dashboard', label: 'ML predictions & insights', description: '', price: 15_000_000, icon: '🤖', variants: [], active: true },
+  { id: 'ads', serviceId: 'seo', label: 'Quản lý Google Ads', description: '', price: 3_000_000, icon: '📢', variants: [], active: true },
+  { id: 'content', serviceId: 'seo', label: 'Content marketing (4 bài/tháng)', description: '', price: 4_000_000, icon: '✍️', variants: [], active: true },
 ];
-
-const INIT_FEATURES: WizardFeature[] = [
-  { id: 'cms', serviceId: 'web', label: 'Tích hợp CMS (Sanity/Contentful)', price: 5_000_000, icon: '📄' },
-  { id: 'i18n', serviceId: 'web', label: 'Đa ngôn ngữ (i18n)', price: 3_000_000, icon: '🌍' },
-  { id: 'ecom', serviceId: 'web', label: 'E-commerce (giỏ hàng, thanh toán)', price: 12_000_000, icon: '🛒' },
-  { id: 'blog', serviceId: 'web', label: 'Blog & Content module', price: 2_500_000, icon: '📰' },
-  { id: 'analytics-web', serviceId: 'web', label: 'Analytics dashboard riêng', price: 4_000_000, icon: '📊' },
-  { id: 'auth', serviceId: 'app', label: 'Auth & User management', price: 6_000_000, icon: '🔐' },
-  { id: 'notification', serviceId: 'app', label: 'Push notification', price: 3_500_000, icon: '🔔' },
-  { id: 'payment', serviceId: 'app', label: 'Tích hợp thanh toán (VNPAY/Momo)', price: 8_000_000, icon: '💳' },
-  { id: 'chat', serviceId: 'app', label: 'In-app chat & messaging', price: 7_000_000, icon: '💬' },
-  { id: 'realtime', serviceId: 'dashboard', label: 'Real-time data sync', price: 5_000_000, icon: '⚡' },
-  { id: 'export', serviceId: 'dashboard', label: 'Export PDF/Excel tự động', price: 3_000_000, icon: '📥' },
-  { id: 'ml', serviceId: 'dashboard', label: 'ML predictions & insights', price: 15_000_000, icon: '🤖' },
-  { id: 'ads', serviceId: 'seo', label: 'Quản lý Google Ads', price: 3_000_000, icon: '📢' },
-  { id: 'content', serviceId: 'seo', label: 'Content marketing (4 bài/tháng)', price: 4_000_000, icon: '✍️' },
+const FALLBACK_EXTRAS: WizardExtra[] = [
+  { id: 'hosting', label: 'Hosting & Domain 1 năm', price: 3_000_000, color: DS.blue, type: 'hosting', active: true },
+  { id: 'maintenance', label: 'Bảo trì & cập nhật 1 năm', price: 5_000_000, color: DS.green, type: 'maintenance', active: true },
+  { id: 'analytics-setup', label: 'Setup Google Analytics 4', price: 1_500_000, color: DS.cyan, type: 'analytics', active: true },
+  { id: 'training', label: 'Training & hướng dẫn (3 buổi)', price: 2_000_000, color: DS.purple, type: 'training', active: true },
+  { id: 'priority', label: 'Priority support 24/7 (6 tháng)', price: 4_500_000, color: DS.amber, type: 'support', active: true },
+  { id: 'seo-basic', label: 'SEO cơ bản & submission', price: 1_200_000, color: DS.red, type: 'seo', active: true },
 ];
-
-const INIT_EXTRAS: WizardExtra[] = [
-  { id: 'hosting', label: 'Hosting & Domain 1 năm', price: 3_000_000, color: DS.blue },
-  { id: 'maintenance', label: 'Bảo trì & cập nhật 1 năm', price: 5_000_000, color: DS.green },
-  { id: 'analytics-setup', label: 'Setup Google Analytics 4', price: 1_500_000, color: DS.cyan },
-  { id: 'training', label: 'Training & hướng dẫn (3 buổi)', price: 2_000_000, color: DS.purple },
-  { id: 'priority', label: 'Priority support 24/7 (6 tháng)', price: 4_500_000, color: DS.amber },
-  { id: 'seo-basic', label: 'SEO cơ bản & submission', price: 1_200_000, color: DS.red },
-];
-
-const INIT_TALENTS: WizardTalent[] = [
+const FALLBACK_TALENTS: WizardTalent[] = [
   { id: 'akira', name: 'Akira Sato', role: 'Lead Full-stack Dev', rank: 'DIAMOND', rankColor: '#818CF8', specialty: 'React, Node.js, AWS', img: 'https://images.unsplash.com/photo-1557862921-37829c790f19?auto=format&fit=crop&w=80&h=80&crop=faces', active: true },
   { id: 'yuna', name: 'Yuna Park', role: 'UI/UX Design Lead', rank: 'RUBY', rankColor: '#EF4444', specialty: 'Figma, Design Systems', img: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?auto=format&fit=crop&w=80&h=80&crop=faces', active: true },
   { id: 'shin', name: 'Shin Watanabe', role: 'DevOps & Backend', rank: 'DIAMOND', rankColor: '#818CF8', specialty: 'Docker, K8s, Rust', img: 'https://images.unsplash.com/photo-1547425260-76bcadfb4f2c?auto=format&fit=crop&w=80&h=80&crop=faces', active: true },
   { id: 'mei', name: 'Mei Lin', role: 'Mobile & SEO Expert', rank: 'RUBY', rankColor: '#EF4444', specialty: 'React Native, SEO', img: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=80&h=80&crop=faces', active: true },
+];
+const INIT_PACKAGES: WizardPackage[] = [
+  { id: 'starter', name: 'Starter', multiplier: 1, color: DS.text3, desc: 'Phù hợp cá nhân, startup', features: ['Thiết kế cơ bản', 'Responsive design', 'SEO cơ bản', 'Bảo hành 3 tháng'], lp: 50 },
+  { id: 'business', name: 'Business', multiplier: 2.2, color: DS.blue, desc: 'Doanh nghiệp vừa, cần scale', features: ['Thiết kế độc quyền', 'CMS tích hợp', 'Analytics dashboard', 'Bảo hành 6 tháng', 'Không giới hạn sửa'], lp: 120, popular: true },
+  { id: 'enterprise', name: 'Enterprise', multiplier: 3.8, color: DS.purple, desc: 'Doanh nghiệp lớn, yêu cầu cao', features: ['Tùy chỉnh hoàn toàn', 'API & Integrations', 'SLA 99.9%', 'Dedicated PM', 'Support 24/7', 'Bảo hành 12 tháng'], lp: 250 },
 ];
 
 const STEP_LABELS = ['Dịch vụ', 'Gói', 'Tính năng', 'Team', 'Lịch', 'Thêm', 'Xem lại', 'Thanh toán'];
@@ -135,12 +128,44 @@ function Field({ label, value, onChange, type = 'text' }: { label: string; value
 // ── MAIN ──────────────────────────────────────────────────────────────────
 export function QuotationTab() {
   const [activeSection, setActiveSection] = useState<'overview' | 'services' | 'packages' | 'features' | 'extras' | 'talents' | 'steps'>('overview');
-  const [services, setServices] = useState(INIT_SERVICES);
-  const [packages, setPackages] = useState(INIT_PACKAGES);
-  const [features, setFeatures] = useState(INIT_FEATURES);
-  const [extras, setExtras] = useState(INIT_EXTRAS);
-  const [talents, setTalents] = useState(INIT_TALENTS);
-  const [editModal, setEditModal] = useState<{ type: string; item: any } | null>(null);
+  const [services, setServices] = useState<WizardService[]>([]);
+  const [packages, setPackages] = useState(INIT_PACKAGES); // local only (no BE model yet)
+  const [features, setFeatures] = useState<WizardFeature[]>([]);
+  const [extras, setExtras] = useState<WizardExtra[]>([]);
+  const [talents, setTalents] = useState<WizardTalent[]>([]);
+  const [tabLoading, setTabLoading] = useState(false);
+
+  // Fetch all config from BE on mount
+  useEffect(() => {
+    let cancelled = false;
+    setTabLoading(true);
+    Promise.all([
+      servicesService.getWizardServices().catch(() => FALLBACK_SERVICES),
+      featuresService.getFeatures().catch(() => FALLBACK_FEATURES),
+      addonService.getAddons().catch(() => FALLBACK_EXTRAS),
+      teamService.getAdminMembers({ limit: 20 }).catch(() => ({ members: [] })),
+    ])
+      .then(([svc, feat, add, tm]) => {
+        if (cancelled) return;
+        setServices(svc);
+        setFeatures(feat);
+        setExtras(add);
+        setTalents(tm.members.map(m => ({
+          id: m.id,
+          name: m.name,
+          role: m.role,
+          rank: m.rank.toUpperCase(),
+          rankColor: m.rankColor,
+          specialty: m.tags.join(', '),
+          img: m.image,
+          active: true,
+        })));
+      })
+      .finally(() => { if (!cancelled) setTabLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  const [editModal, setEditModal] = useState<{ type: string; item: unknown } | null>(null);
 
   const sections = [
     { id: 'overview', label: 'Tổng quan', icon: <Eye size={14} />, count: 0 },
@@ -154,18 +179,25 @@ export function QuotationTab() {
 
   // ── Service CRUD ──────────────────────────────────────────────────────
   const handleSaveService = (item: WizardService) => {
+    // Optimistic update
     setServices(prev => {
       const exists = prev.find(s => s.id === item.id);
       return exists ? prev.map(s => s.id === item.id ? item : s) : [...prev, item];
     });
     setEditModal(null);
+    // Sync to BE (create or update by presence of real id)
+    const isNew = !item.id || item.id.startsWith('svc-') || item.id.startsWith('wiz-');
+    if (!isNew) {
+      servicesService.updateService(item.id, item as Parameters<typeof servicesService.updateService>[1]).catch(() => {});
+    } else {
+      servicesService.createService({ ...item, id: '' } as Parameters<typeof servicesService.createService>[0]).then(created => {
+        setServices(prev => prev.map(s => s.id === item.id ? { ...s, id: created.id } : s));
+      }).catch(() => {});
+    }
   };
 
-  const handleSavePackage = (item: WizardPackage) => {
-    setPackages(prev => {
-      const exists = prev.find(p => p.id === item.id);
-      return exists ? prev.map(p => p.id === item.id ? item : p) : [...prev, item];
-    });
+  const handleSavePackage = (_item: WizardPackage) => {
+    // Packages are local-only (no BE model yet)
     setEditModal(null);
   };
 
@@ -175,6 +207,19 @@ export function QuotationTab() {
       return exists ? prev.map(f => f.id === item.id ? item : f) : [...prev, item];
     });
     setEditModal(null);
+    const isNew = !item.id || item.id.startsWith('feat-');
+    if (!isNew) {
+      featuresService.updateFeature(item.id, item).catch(() => {});
+    } else {
+      featuresService.createFeature({
+        groupId: item.serviceId,
+        featureName: item.label,
+        description: item.description,
+        variants: item.variants?.map(v => ({ variantName: v.variantName, description: v.description ?? '', price: v.price })) ?? [],
+      }).then(created => {
+        setFeatures(prev => prev.map(f => f.id === item.id ? created : f));
+      }).catch(() => {});
+    }
   };
 
   const handleSaveExtra = (item: WizardExtra) => {
@@ -183,13 +228,18 @@ export function QuotationTab() {
       return exists ? prev.map(e => e.id === item.id ? item : e) : [...prev, item];
     });
     setEditModal(null);
+    const isNew = !item.id || item.id.startsWith('ext-');
+    if (!isNew) {
+      addonService.updateAddon(item.id, item).catch(() => {});
+    } else {
+      addonService.createAddon({ name: item.label, nameVi: item.label, type: item.type ?? undefined, price: item.price }).then(created => {
+        setExtras(prev => prev.map(e => e.id === item.id ? created : e));
+      }).catch(() => {});
+    }
   };
 
-  const handleSaveTalent = (item: WizardTalent) => {
-    setTalents(prev => {
-      const exists = prev.find(t => t.id === item.id);
-      return exists ? prev.map(t => t.id === item.id ? item : t) : [...prev, item];
-    });
+  const handleSaveTalent = (_item: WizardTalent) => {
+    // Talents → team members; edits handled in MembersTab
     setEditModal(null);
   };
 
@@ -317,7 +367,13 @@ export function QuotationTab() {
                         style={{ color: DS.blue, background: `${DS.blue}12`, border: `1px solid ${DS.blue}25`, borderRadius: 6, padding: '4px 8px', cursor: 'pointer', fontSize: 11 }}>
                         <Edit3 size={11} />
                       </button>
-                      <button onClick={() => setServices(prev => prev.filter(sv => sv.id !== s.id))}
+                      <button onClick={() => {
+                        const id = s.id;
+                        setServices(prev => prev.filter(sv => sv.id !== id));
+                        if (!id.startsWith('svc-') && !id.startsWith('wiz-')) {
+                          servicesService.deleteService(id).catch(() => setServices(prev => [...prev, s]));
+                        }
+                      }}
                         style={{ color: DS.red, background: `${DS.red}10`, border: `1px solid ${DS.red}20`, borderRadius: 6, padding: '4px 8px', cursor: 'pointer', fontSize: 11 }}>
                         <Trash2 size={11} />
                       </button>
@@ -391,7 +447,13 @@ export function QuotationTab() {
                             style={{ color: DS.blue, background: 'none', border: `1px solid ${DS.blue}30`, borderRadius: 5, padding: '3px 6px', cursor: 'pointer' }}>
                             <Edit3 size={10} />
                           </button>
-                          <button onClick={() => setFeatures(prev => prev.filter(ff => ff.id !== f.id))}
+                          <button onClick={() => {
+                            const id = f.id;
+                            setFeatures(prev => prev.filter(ff => ff.id !== id));
+                            if (!id.startsWith('feat-')) {
+                              featuresService.deleteFeature(id).catch(() => setFeatures(prev => [...prev, f]));
+                            }
+                          }}
                             style={{ color: DS.red, background: 'none', border: `1px solid ${DS.red}20`, borderRadius: 5, padding: '3px 6px', cursor: 'pointer' }}>
                             <Trash2 size={10} />
                           </button>
@@ -421,7 +483,13 @@ export function QuotationTab() {
                       style={{ color: DS.blue, background: 'none', border: `1px solid ${DS.blue}30`, borderRadius: 5, padding: '3px 6px', cursor: 'pointer' }}>
                       <Edit3 size={10} />
                     </button>
-                    <button onClick={() => setExtras(prev => prev.filter(ex => ex.id !== e.id))}
+                    <button onClick={() => {
+                      const id = e.id;
+                      setExtras(prev => prev.filter(ex => ex.id !== id));
+                      if (!id.startsWith('ext-')) {
+                        addonService.deleteAddon(id).catch(() => setExtras(prev => [...prev, e]));
+                      }
+                    }}
                       style={{ color: DS.red, background: 'none', border: `1px solid ${DS.red}20`, borderRadius: 5, padding: '3px 6px', cursor: 'pointer' }}>
                       <Trash2 size={10} />
                     </button>

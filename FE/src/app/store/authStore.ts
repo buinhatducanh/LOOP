@@ -183,11 +183,12 @@ interface AuthStore {
   isInitialized: boolean; // true after first session check
 
   // Auth actions
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<AuthUser>;
   loginAs: (user: AuthUser) => void;
   logout: () => Promise<void>;
   initAuth: () => Promise<void>; // restore session on app load
   setLoading: (v: boolean) => void;
+  updateUserLpBalance: (balance: number, rank?: string, rankColor?: string) => void;
 
   // Quest/Event data
   quests: Quest[];
@@ -202,11 +203,13 @@ interface AuthStore {
   addQuest: (quest: Quest) => void;
   updateQuest: (id: string, data: Partial<Quest>) => void;
   deleteQuest: (id: string) => void;
+  setQuests: (quests: Quest[]) => void;
 
   // Event actions
   addEvent: (event: CompanyEvent) => void;
   updateEvent: (id: string, data: Partial<CompanyEvent>) => void;
   deleteEvent: (id: string) => void;
+  setEvents: (events: CompanyEvent[]) => void;
   joinEvent: (id: string) => void;
 
   // Helpers
@@ -262,13 +265,14 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       const user = DEMO_USERS[preset] ?? DEMO_USERS.client;
       await new Promise(r => setTimeout(r, 600)); // simulate latency
       set({ user, isAuthenticated: true, isLoading: false });
-      return;
+      return user;
     }
 
     try {
       const { authService } = await import('../../api/auth.service');
       const user = await authService.login(email, password);
       set({ user, isAuthenticated: true, isLoading: false });
+      return user;
     } catch (err) {
       set({ isLoading: false });
       throw err; // Let AuthPage handle the error
@@ -311,6 +315,12 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
   setLoading: (v) => set({ isLoading: v }),
 
+  updateUserLpBalance: (balance, rank, rankColor) => {
+    const { user } = get();
+    if (!user) return;
+    set({ user: { ...user, lpBalance: balance, rank: rank ?? user.rank, rankColor: rankColor ?? user.rankColor } });
+  },
+
   checkIn: () => {
     const today = new Date().toDateString();
     const { lastCheckIn, dailyStreak, quests } = get();
@@ -338,10 +348,12 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   addQuest: (quest) => set(s => ({ quests: [quest, ...s.quests] })),
   updateQuest: (id, data) => set(s => ({ quests: s.quests.map(q => q.id === id ? { ...q, ...data } : q) })),
   deleteQuest: (id) => set(s => ({ quests: s.quests.filter(q => q.id !== id) })),
+  setQuests: (quests) => set({ quests }),
 
   addEvent: (event) => set(s => ({ events: [event, ...s.events] })),
   updateEvent: (id, data) => set(s => ({ events: s.events.map(e => e.id === id ? { ...e, ...data } : e) })),
   deleteEvent: (id) => set(s => ({ events: s.events.filter(e => e.id !== id) })),
+  setEvents: (events) => set({ events }),
   joinEvent: (id) => set(s => ({ events: s.events.map(e => e.id === id ? { ...e, participants: Math.min(e.participants + 1, e.maxParticipants) } : e) })),
 
   getQuestsForRole: (role) => get().quests.filter(q => q.forRoles.includes(role)),

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Link } from 'react-router';
 import {
@@ -6,17 +6,23 @@ import {
   ChevronDown, Filter, Check, ChevronRight, X,
 } from 'lucide-react';
 import { DS, GRD } from '../components/layout/ds';
+import { academyService, type AcademyCourse } from '../../api/academy.service';
+import { useLocaleStore } from '../store/localeStore';
 
 const fmtVND = (n: number) =>
   new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(n);
 
-const COURSES = [
-  { id: 1, title: 'React & Next.js 14 Từ Zero Đến Hero', instructor: 'Akira Sato', instructorRole: 'Diamond · Lead Fullstack', instructorImg: 'https://images.unsplash.com/photo-1557862921-37829c790f19?auto=format&fit=crop&w=60&h=60&crop=faces', duration: '32h', students: 2400, rating: 4.9, reviews: 312, price: 2_000_000, lpPrice: 4000, lpReward: 200, img: 'https://images.unsplash.com/photo-1634836023845-eddbfe9937da?auto=format&fit=crop&w=500&q=80', cat: 'Frontend', level: 'Intermediate', color: DS.blue, featured: true, updatedAt: '15/03/2026', lectures: 48, certificate: true, tags: ['React', 'Next.js', 'TypeScript'] },
-  { id: 2, title: 'UI/UX Design System với Figma & Tailwind', instructor: 'Mei Lin', instructorRole: 'Ruby · Design Lead', instructorImg: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=60&h=60&crop=faces', duration: '18h', students: 1800, rating: 4.8, reviews: 245, price: 1_500_000, lpPrice: 3000, lpReward: 150, img: 'https://images.unsplash.com/photo-1590965918603-0dce981d13b8?auto=format&fit=crop&w=500&q=80', cat: 'Design', level: 'Beginner', color: DS.purple, featured: false, updatedAt: '10/03/2026', lectures: 32, certificate: true, tags: ['Figma', 'Tailwind', 'UX'] },
-  { id: 3, title: 'Node.js API & PostgreSQL: Production-Ready', instructor: 'Ryo Hashimoto', instructorRole: 'Diamond · Backend Architect', instructorImg: 'https://images.unsplash.com/photo-1547425260-76bcadfb4f2c?auto=format&fit=crop&w=60&h=60&crop=faces', duration: '26h', students: 1200, rating: 4.9, reviews: 189, price: 2_500_000, lpPrice: 5000, lpReward: 250, img: 'https://images.unsplash.com/photo-1771012788703-d310cdf189bb?auto=format&fit=crop&w=500&q=80', cat: 'Backend', level: 'Advanced', color: DS.cyan, featured: false, updatedAt: '08/03/2026', lectures: 56, certificate: true, tags: ['Node.js', 'PostgreSQL', 'Docker'] },
-  { id: 4, title: 'Kubernetes & DevOps cho Startup Việt Nam', instructor: 'Shin Watanabe', instructorRole: 'Platinum · DevOps Lead', instructorImg: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=60&h=60&crop=faces', duration: '22h', students: 890, rating: 4.7, reviews: 134, price: 3_000_000, lpPrice: 6000, lpReward: 300, img: 'https://images.unsplash.com/photo-1596843720750-7de9329da5d7?auto=format&fit=crop&w=500&q=80', cat: 'DevOps', level: 'Advanced', color: DS.green, featured: false, updatedAt: '01/03/2026', lectures: 40, certificate: true, tags: ['K8s', 'Docker', 'AWS'] },
-  { id: 5, title: 'SEO & Content Marketing cho SaaS B2B', instructor: 'Yuna Park', instructorRole: 'Gold · Marketing Lead', instructorImg: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=60&h=60&crop=faces', duration: '14h', students: 3100, rating: 4.8, reviews: 421, price: 1_200_000, lpPrice: 2400, lpReward: 120, img: 'https://images.unsplash.com/photo-1517309561013-16f6e4020305?auto=format&fit=crop&w=500&q=80', cat: 'Marketing', level: 'Beginner', color: DS.amber, featured: false, updatedAt: '20/02/2026', lectures: 28, certificate: true, tags: ['SEO', 'Content', 'Growth'] },
-  { id: 6, title: 'High-Performance Rust & Go cho Backend', instructor: 'Rin Nakamura', instructorRole: 'Ruby · Performance Expert', instructorImg: 'https://images.unsplash.com/photo-1502685104226-ee32379fefbe?auto=format&fit=crop&w=60&h=60&crop=faces', duration: '40h', students: 680, rating: 5.0, reviews: 98, price: 4_500_000, lpPrice: 9000, lpReward: 450, img: 'https://images.unsplash.com/photo-1762330910399-95caa55acf04?auto=format&fit=crop&w=500&q=80', cat: 'Backend', level: 'Expert', color: DS.red, featured: false, updatedAt: '12/03/2026', lectures: 72, certificate: true, tags: ['Rust', 'Go', 'Performance'] },
+/**
+ * Fallback courses used when the API is unavailable (Phase F0-F3).
+ * BE API: GET /api/v1/courses → AcademyCourse[]
+ */
+const FALLBACK_COURSES: AcademyCourse[] = [
+  { id: '1', title: 'React & Next.js 14 Từ Zero Đến Hero', instructor: 'Akira Sato', instructorRole: 'Diamond · Lead Fullstack', instructorImg: 'https://images.unsplash.com/photo-1557862921-37829c790f19?auto=format&fit=crop&w=60&h=60&crop=faces', duration: '32h', students: 2400, rating: 4.9, reviews: 312, price: 2_000_000, lpPrice: 4000, lpReward: 200, img: 'https://images.unsplash.com/photo-1634836023845-eddbfe9937da?auto=format&fit=crop&w=500&q=80', cat: 'Frontend', level: 'Intermediate', color: DS.blue, featured: true, updatedAt: '15/03/2026', lectures: 48, certificate: true, tags: ['React', 'Next.js', 'TypeScript'] },
+  { id: '2', title: 'UI/UX Design System với Figma & Tailwind', instructor: 'Mei Lin', instructorRole: 'Ruby · Design Lead', instructorImg: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=60&h=60&crop=faces', duration: '18h', students: 1800, rating: 4.8, reviews: 245, price: 1_500_000, lpPrice: 3000, lpReward: 150, img: 'https://images.unsplash.com/photo-1590965918603-0dce981d13b8?auto=format&fit=crop&w=500&q=80', cat: 'Design', level: 'Beginner', color: DS.purple, featured: false, updatedAt: '10/03/2026', lectures: 32, certificate: true, tags: ['Figma', 'Tailwind', 'UX'] },
+  { id: '3', title: 'Node.js API & PostgreSQL: Production-Ready', instructor: 'Ryo Hashimoto', instructorRole: 'Diamond · Backend Architect', instructorImg: 'https://images.unsplash.com/photo-1547425260-76bcadfb4f2c?auto=format&fit=crop&w=60&h=60&crop=faces', duration: '26h', students: 1200, rating: 4.9, reviews: 189, price: 2_500_000, lpPrice: 5000, lpReward: 250, img: 'https://images.unsplash.com/photo-1771012788703-d310cdf189bb?auto=format&fit=crop&w=500&q=80', cat: 'Backend', level: 'Advanced', color: DS.cyan, featured: false, updatedAt: '08/03/2026', lectures: 56, certificate: true, tags: ['Node.js', 'PostgreSQL', 'Docker'] },
+  { id: '4', title: 'Kubernetes & DevOps cho Startup Việt Nam', instructor: 'Shin Watanabe', instructorRole: 'Platinum · DevOps Lead', instructorImg: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=60&h=60&crop=faces', duration: '22h', students: 890, rating: 4.7, reviews: 134, price: 3_000_000, lpPrice: 6000, lpReward: 300, img: 'https://images.unsplash.com/photo-1596843720750-7de9329da5d7?auto=format&fit=crop&w=500&q=80', cat: 'DevOps', level: 'Advanced', color: DS.green, featured: false, updatedAt: '01/03/2026', lectures: 40, certificate: true, tags: ['K8s', 'Docker', 'AWS'] },
+  { id: '5', title: 'SEO & Content Marketing cho SaaS B2B', instructor: 'Yuna Park', instructorRole: 'Gold · Marketing Lead', instructorImg: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=60&h=60&crop=faces', duration: '14h', students: 3100, rating: 4.8, reviews: 421, price: 1_200_000, lpPrice: 2400, lpReward: 120, img: 'https://images.unsplash.com/photo-1517309561013-16f6e4020305?auto=format&fit=crop&w=500&q=80', cat: 'Marketing', level: 'Beginner', color: DS.amber, featured: false, updatedAt: '20/02/2026', lectures: 28, certificate: true, tags: ['SEO', 'Content', 'Growth'] },
+  { id: '6', title: 'High-Performance Rust & Go cho Backend', instructor: 'Rin Nakamura', instructorRole: 'Ruby · Performance Expert', instructorImg: 'https://images.unsplash.com/photo-1502685104226-ee32379fefbe?auto=format&fit=crop&w=60&h=60&crop=faces', duration: '40h', students: 680, rating: 5.0, reviews: 98, price: 4_500_000, lpPrice: 9000, lpReward: 450, img: 'https://images.unsplash.com/photo-1762330910399-95caa55acf04?auto=format&fit=crop&w=500&q=80', cat: 'Backend', level: 'Expert', color: DS.red, featured: false, updatedAt: '12/03/2026', lectures: 72, certificate: true, tags: ['Rust', 'Go', 'Performance'] },
 ];
 
 const CATS = ['Tất cả', 'Frontend', 'Backend', 'Design', 'DevOps', 'Marketing'];
@@ -197,13 +203,35 @@ export default function AcademyPage() {
   const [sort, setSort] = useState('featured');
   const [showFilters, setShowFilters] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
-  const [payModal, setPayModal] = useState<typeof COURSES[0] | null>(null);
+  const [payModal, setPayModal] = useState<AcademyCourse | null>(null);
+  const [apiCourses, setApiCourses] = useState<AcademyCourse[]>([]);
+  const [loadingCourses, setLoadingCourses] = useState(true);
 
   const USER_LP = 15_200;
 
-  const featured = COURSES[0];
+  // i18n: current locale
+  const { locale } = useLocaleStore();
 
-  let filtered = COURSES.slice(1).filter(c =>
+  // Fetch courses from API on mount; fallback to FALLBACK_COURSES if unavailable
+  useEffect(() => {
+    let cancelled = false;
+    setLoadingCourses(true);
+    academyService.getCourses(locale, 1, 20)
+      .then(({ courses }) => {
+        if (!cancelled && courses.length > 0) {
+          setApiCourses(courses);
+        }
+      })
+      .catch(() => { /* keep fallback */ })
+      .finally(() => { if (!cancelled) setLoadingCourses(false); });
+    return () => { cancelled = true; };
+  }, [locale]);
+
+  // Use API courses if available, otherwise fall back to hardcoded data
+  const courses: AcademyCourse[] = apiCourses.length > 0 ? apiCourses : FALLBACK_COURSES;
+  const featured = courses[0];
+
+  let filtered = courses.slice(1).filter(c =>
     (activeCat === 'Tất cả' || c.cat === activeCat) &&
     (activeLevel === 'Tất cả' || c.level === activeLevel) &&
     (c.title.toLowerCase().includes(search.toLowerCase()) || c.instructor.toLowerCase().includes(search.toLowerCase()))
@@ -288,6 +316,13 @@ export default function AcademyPage() {
       </section>
 
       {/* ── Featured course ──────────────────────────────────────────────── */}
+      {loadingCourses ? (
+        <section className="px-6 mb-12">
+          <div className="max-w-6xl mx-auto">
+            <div style={{ height: 300, borderRadius: 24, background: DS.bgCard }} />
+          </div>
+        </section>
+      ) : featured ? (
       <section className="px-6 mb-12">
         <div className="max-w-6xl mx-auto">
           <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.18em', marginBottom: 16 }}>── KHÓA HỌC NỔI BẬT</div>
@@ -360,6 +395,7 @@ export default function AcademyPage() {
           </motion.div>
         </div>
       </section>
+      ) : null}
 
       {/* ── Learning Paths ───────────────────────────────────────────────── */}
       <section className="px-6 mb-14" style={{ background: 'rgba(15,23,42,0.5)' }}>

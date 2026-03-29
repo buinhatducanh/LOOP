@@ -2,7 +2,7 @@
  * OrdersTab — Quản lý đơn hàng & giao tiếp khách hàng (Admin)
  * Khi khách thanh toán → admin nhận notif → phân công → gửi demo link → khách xem
  */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   X, Send, Monitor, Link as LinkIcon, ChevronRight,
@@ -11,6 +11,8 @@ import {
 } from 'lucide-react';
 import { DS, GRD } from '../layout/ds';
 import { useLoopStore, type Order, type OrderStatus } from '../../store/loopStore';
+import { ordersService, type Order as ApiOrder } from '../../../api/orders.service';
+import { bookingService } from '../../../api/booking.service';
 import { DemoViewer } from '../ui/DemoViewer';
 import { members } from '../team/memberData';
 
@@ -30,18 +32,30 @@ const STATUS_CFG: Record<OrderStatus, { label: string; color: string; icon: Reac
 const STATUS_FLOW: OrderStatus[] = ['pending_payment', 'paid', 'in_progress', 'demo_ready', 'client_review', 'done'];
 
 // ── Send Demo Modal ────────────────────────────────────────────────────────────
-function SendDemoModal({ order, onClose }: { order: Order; onClose: () => void }) {
-  const { sendDemoLink } = useLoopStore();
-  const [demoUrl, setDemoUrl] = useState(order.demoUrl ?? '');
-  const [maskedUrl, setMaskedUrl] = useState(order.maskedUrl ?? `demo.loop-solutions.vn/${order.id.toLowerCase()}`);
+function SendDemoModal({ order, onClose, onSent }: { order: Order; onClose: () => void; onSent: () => void }) {
+  const { sendAdminMessage } = useLoopStore();
+  const [demoUrl, setDemoUrl] = useState('');
+  const [maskedUrl, setMaskedUrl] = useState(`demo.loop-solutions.vn/${order.orderNumber.toLowerCase()}`);
   const [note, setNote] = useState('Demo bản mới nhất đã sẵn sàng! Anh/Chị xem và phản hồi nhé 🎉');
   const [showPreview, setShowPreview] = useState(false);
   const [sent, setSent] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleSend = () => {
-    sendDemoLink(order.id, demoUrl, maskedUrl, note);
-    setSent(true);
-    setTimeout(onClose, 2000);
+  const handleSend = async () => {
+    if (!demoUrl) return;
+    setLoading(true);
+    try {
+      const result = await bookingService.sendDemo(order.id, { figmaUrl: demoUrl, note, maskedUrl });
+      // Record demo link in local store chat history
+      sendAdminMessage(order.id, note ?? 'Demo sẵn sàng!', 'demo_link', result.figmaUrl, result.maskedUrl);
+      setSent(true);
+      onSent();
+      setTimeout(onClose, 2000);
+    } catch (err) {
+      console.error('Failed to send demo:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -124,25 +138,49 @@ function SendDemoModal({ order, onClose }: { order: Order; onClose: () => void }
 }
 
 // ── Order Detail Panel ─────────────────────────────────────────────────────────
-function OrderDetailPanel({ order, onClose }: { order: Order; onClose: () => void }) {
+function OrderDetailPanel({ order, onClose, onDemoSent }: { order: Order; onClose: () => void; onDemoSent: () => void }) {
   const { updateOrderStatus, updateOrderProgress, sendAdminMessage } = useLoopStore();
   const [msgText, setMsgText] = useState('');
   const [showSendDemo, setShowSendDemo] = useState(false);
-  const [selectedPM, setSelectedPM] = useState(order.assignedPM ?? '');
+  const [selectedPM, setSelectedPM] = useState((order as Record<string, unknown>).assignedPM as string ?? '');
+  const [transitioning, setTransitioning] = useState(false);
+  const [currentOrder, setCurrentOrder] = useState(order);
 
-  const sc = STATUS_CFG[order.status];
-  const nextStatus = STATUS_FLOW[STATUS_FLOW.indexOf(order.status) + 1];
+  const sc = STATUS_CFG[currentOrder.status as OrderStatus] ?? STATUS_CFG.pending_payment;
+  const currentStatusIdx = STATUS_FLOW.indexOf(currentOrder.status as OrderStatus);
+  const nextStatus = currentStatusIdx >= 0 && currentStatusIdx < STATUS_FLOW.length - 1
+    ? STATUS_FLOW[currentStatusIdx + 1]
+    : null;
+
+  const handleTransition = async () => {
+    if (!nextStatus || transitioning) return;
+    setTransitioning(true);
+    try {
+      await ordersService.transitionOrderStatus(currentOrder.id, nextStatus);
+      setCurrentOrder((prev: Order) => ({ ...prev, status: nextStatus }));
+    } catch (err) {
+      console.error('Transition failed:', err);
+    } finally {
+      setTransitioning(false);
+    }
+  };
 
   const handleSendMsg = () => {
     if (!msgText.trim()) return;
-    sendAdminMessage(order.id, msgText);
+    sendAdminMessage(currentOrder.id, msgText);
     setMsgText('');
   };
 
   return (
     <>
       <AnimatePresence>
-        {showSendDemo && <SendDemoModal order={order} onClose={() => setShowSendDemo(false)} />}
+        {showSendDemo && (
+          <SendDemoModal
+            order={currentOrder as unknown as Order}
+            onClose={() => setShowSendDemo(false)}
+            onSent={onDemoSent}
+          />
+        )}
       </AnimatePresence>
 
       <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 30 }}
@@ -150,8 +188,8 @@ function OrderDetailPanel({ order, onClose }: { order: Order; onClose: () => voi
         {/* Header */}
         <div className="flex items-center justify-between p-5 flex-shrink-0" style={{ borderBottom: `1px solid ${DS.border}` }}>
           <div>
-            <div style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono, letterSpacing: '0.15em' }}>ĐƠN HÀNG · {order.invoiceId}</div>
-            <div style={{ color: DS.text, fontSize: 14, fontWeight: 700, marginTop: 2, lineHeight: 1.3 }}>{order.title}</div>
+            <div style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono, letterSpacing: '0.15em' }}>ĐƠN HÀNG · {(currentOrder as Record<string, unknown>).invoiceId as string ?? currentOrder.orderNumber}</div>
+            <div style={{ color: DS.text, fontSize: 14, fontWeight: 700, marginTop: 2, lineHeight: 1.3 }}>{(currentOrder as Record<string, unknown>).title as string ?? currentOrder.orderNumber}</div>
           </div>
           <button onClick={onClose} style={{ color: DS.text4, background: 'none', border: 'none', cursor: 'pointer' }}><X size={18} /></button>
         </div>
@@ -162,8 +200,8 @@ function OrderDetailPanel({ order, onClose }: { order: Order; onClose: () => voi
             <div style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono, letterSpacing: '0.12em', marginBottom: 10 }}>TIẾN TRÌNH ĐƠN HÀNG</div>
             <div className="flex items-center gap-1">
               {STATUS_FLOW.map((s, si) => {
-                const idx = STATUS_FLOW.indexOf(order.status);
-                const isCurrent = s === order.status;
+                const idx = STATUS_FLOW.indexOf(currentOrder.status as OrderStatus);
+                const isCurrent = s === currentOrder.status;
                 const isDone = si < idx;
                 const sc2 = STATUS_CFG[s];
                 return (
@@ -178,7 +216,7 @@ function OrderDetailPanel({ order, onClose }: { order: Order; onClose: () => voi
                       </span>
                     </div>
                     {si < STATUS_FLOW.length - 1 && (
-                      <div style={{ flex: '0 0 12px', height: 1, background: si < STATUS_FLOW.indexOf(order.status) ? DS.green : DS.border, marginBottom: 14 }} />
+                      <div style={{ flex: '0 0 12px', height: 1, background: si < STATUS_FLOW.indexOf(currentOrder.status as OrderStatus) ? DS.green : DS.border, marginBottom: 14 }} />
                     )}
                   </div>
                 );
@@ -190,10 +228,10 @@ function OrderDetailPanel({ order, onClose }: { order: Order; onClose: () => voi
           <div className="p-4 space-y-3" style={{ borderBottom: `1px solid ${DS.border}` }}>
             <div className="grid grid-cols-2 gap-3">
               {[
-                { icon: <User size={12} />, label: 'Khách hàng', val: order.clientName },
-                { icon: <DollarSign size={12} />, label: 'Giá trị', val: fmtVND(order.budget) },
-                { icon: <Calendar size={12} />, label: 'Ngày tạo', val: order.createdAt },
-                { icon: <Zap size={12} />, label: 'LP thưởng', val: `+${order.lpReward.toLocaleString()} LP` },
+                { icon: <User size={12} />, label: 'Khách hàng', val: currentOrder.customerName },
+                { icon: <DollarSign size={12} />, label: 'Giá trị', val: currentOrder.totalAmount ? fmtVND(currentOrder.totalAmount) : '—' },
+                { icon: <Calendar size={12} />, label: 'Ngày tạo', val: currentOrder.createdAt },
+                { icon: <Zap size={12} />, label: 'LP thưởng', val: `+${currentOrder.lpReward.toLocaleString()} LP` },
               ].map(item => (
                 <div key={item.label} className="p-3 rounded-xl" style={{ background: DS.bgCard2, border: `1px solid ${DS.border}` }}>
                   <div className="flex items-center gap-1.5 mb-1" style={{ color: DS.text4 }}>
@@ -209,12 +247,46 @@ function OrderDetailPanel({ order, onClose }: { order: Order; onClose: () => voi
             <div>
               <div className="flex items-center justify-between mb-2">
                 <span style={{ color: DS.text4, fontSize: 12 }}>Tiến độ dự án</span>
-                <span style={{ color: DS.cyan, fontFamily: DS.mono, fontSize: 13, fontWeight: 700 }}>{order.progress}%</span>
+                <span style={{ color: DS.cyan, fontFamily: DS.mono, fontSize: 13, fontWeight: 700 }}>{(currentOrder as Record<string, unknown>).progress as number ?? 0}%</span>
               </div>
-              <input type="range" min={0} max={100} step={5} value={order.progress}
-                onChange={e => updateOrderProgress(order.id, Number(e.target.value))}
+              <input type="range" min={0} max={100} step={5} value={(currentOrder as Record<string, unknown>).progress as number ?? 0}
+                onChange={e => updateOrderProgress(currentOrder.id, Number(e.target.value))}
                 style={{ width: '100%', accentColor: DS.cyan }} />
             </div>
+
+            {/* Demo info */}
+            {currentOrder.demoUrl && (
+              <div className="p-3 rounded-xl" style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.25)' }}>
+                <div style={{ color: DS.green, fontSize: 10, fontFamily: DS.mono, letterSpacing: '0.12em', marginBottom: 6 }}>DEMO LINK AVAILABLE</div>
+                <div style={{ color: DS.text3, fontSize: 12, marginBottom: 8, wordBreak: 'break-all' }}>
+                  {currentOrder.maskedUrl ?? currentOrder.demoUrl}
+                </div>
+                <button
+                  onClick={() => setShowSendDemo(true)}
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg"
+                  style={{ background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.35)', color: DS.green, fontSize: 11, cursor: 'pointer' }}
+                >
+                  <Monitor size={11} /> Cập nhật demo
+                </button>
+              </div>
+            )}
+
+            {/* Demo info */}
+            {currentOrder.demoUrl && (
+              <div className="p-3 rounded-xl" style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.25)' }}>
+                <div style={{ color: DS.green, fontSize: 10, fontFamily: DS.mono, letterSpacing: '0.12em', marginBottom: 6 }}>DEMO LINK AVAILABLE</div>
+                <div style={{ color: DS.text3, fontSize: 12, marginBottom: 8, wordBreak: 'break-all' }}>
+                  {currentOrder.maskedUrl ?? currentOrder.demoUrl}
+                </div>
+                <button
+                  onClick={() => setShowSendDemo(true)}
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg"
+                  style={{ background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.35)', color: DS.green, fontSize: 11, cursor: 'pointer' }}
+                >
+                  <Monitor size={11} /> Cập nhật demo
+                </button>
+              </div>
+            )}
 
             {/* PM assignment */}
             <div>
@@ -225,7 +297,7 @@ function OrderDetailPanel({ order, onClose }: { order: Order; onClose: () => voi
                   <option value="">-- Chọn PM --</option>
                   {members.slice(0, 8).map(m => <option key={m.id} value={m.name}>{m.name}</option>)}
                 </select>
-                <button onClick={() => updateOrderStatus(order.id, order.status, selectedPM)}
+                <button onClick={() => updateOrderStatus(currentOrder.id, currentOrder.status, selectedPM)}
                   style={{ padding: '8px 14px', borderRadius: 10, background: GRD.primary, color: '#fff', border: 'none', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
                   Lưu
                 </button>
@@ -249,17 +321,17 @@ function OrderDetailPanel({ order, onClose }: { order: Order; onClose: () => voi
               </div>
             </button>
 
-            {nextStatus && order.status !== 'done' && (
-              <button onClick={() => updateOrderStatus(order.id, nextStatus, selectedPM)}
+            {nextStatus && currentOrder.status !== 'done' && (
+              <button onClick={handleTransition} disabled={transitioning}
                 className="w-full flex items-center gap-3 px-4 py-3 rounded-xl"
-                style={{ background: `${STATUS_CFG[nextStatus].color}08`, border: `1px solid ${STATUS_CFG[nextStatus].color}25`, cursor: 'pointer', textAlign: 'left' }}>
+                style={{ background: `${STATUS_CFG[nextStatus].color}08`, border: `1px solid ${STATUS_CFG[nextStatus].color}25`, cursor: transitioning ? 'default' : 'pointer', textAlign: 'left', opacity: transitioning ? 0.6 : 1 }}>
                 <div className="w-8 h-8 rounded-lg flex items-center justify-center"
                   style={{ background: `${STATUS_CFG[nextStatus].color}15` }}>
                   <span style={{ color: STATUS_CFG[nextStatus].color }}>{STATUS_CFG[nextStatus].icon}</span>
                 </div>
                 <div>
                   <div style={{ color: STATUS_CFG[nextStatus].color, fontSize: 13, fontWeight: 700 }}>
-                    Chuyển → {STATUS_CFG[nextStatus].label}
+                    {transitioning ? 'Đang xử lý...' : `Chuyển → ${STATUS_CFG[nextStatus].label}`}
                   </div>
                   <div style={{ color: DS.text4, fontSize: 11 }}>Cập nhật trạng thái và thông báo khách</div>
                 </div>
@@ -270,10 +342,13 @@ function OrderDetailPanel({ order, onClose }: { order: Order; onClose: () => voi
           {/* Chat history */}
           <div className="p-4">
             <div style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono, letterSpacing: '0.12em', marginBottom: 12 }}>
-              LỊCH SỬ TRAO ĐỔI ({order.messages.length})
+              LỊCH SỬ TRAO ĐỔI ({((currentOrder as Record<string, unknown>).messages as unknown[] | undefined)?.length ?? 0})
             </div>
             <div className="space-y-3">
-              {order.messages.map(msg => (
+              {((currentOrder as Record<string, unknown>).messages as Array<{
+                id: string; senderId: string; senderName: string; content: string;
+                type: string; maskedUrl?: string; timestamp: string;
+              }> ?? []).map(msg => (
                 <div key={msg.id}
                   className={`flex gap-2.5 ${msg.senderId === 'admin' ? '' : 'flex-row-reverse'}`}>
                   <div className="w-7 h-7 rounded-lg flex-shrink-0 overflow-hidden"
@@ -335,17 +410,65 @@ function OrderDetailPanel({ order, onClose }: { order: Order; onClose: () => voi
 // ── Main ──────────────────────────────────────────────────────────────────────
 export function OrdersTab() {
   const { orders, adminNotifications } = useLoopStore();
+  const [ordersLoading, setOrdersLoading] = useState(true);
+  const [ordersError, setOrdersError] = useState('');
+  const [apiOrders, setApiOrders] = useState<Order[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [filterStatus, setFilterStatus] = useState<OrderStatus | 'all'>('all');
   const [search, setSearch] = useState('');
 
-  const newPaidOrders = orders.filter(o => o.status === 'paid');
-  const filtered = orders.filter(o =>
+  const mapApiOrderToUiOrder = (o: ApiOrder): Order => ({
+    id: o.id,
+    clientId: 0,
+    clientName: o.customerName,
+    clientCompany: o.companyName ?? 'Khách hàng LOOP',
+    clientAvatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=80&h=80&crop=faces',
+    type: 'service',
+    serviceType: 'thiet-ke-web',
+    serviceTitle: o.packageTitle || 'Dịch vụ LOOP',
+    title: o.packageTitle || `Đơn hàng ${o.orderNumber}`,
+    budget: o.totalAmount ?? 0,
+    lpUsed: o.lpUsed ?? 0,
+    lpReward: o.lpReward ?? 0,
+    status: (o.status as OrderStatus) ?? 'pending_payment',
+    progress: o.status === 'done' ? 100 : o.status === 'demo_ready' ? 85 : o.status === 'in_progress' ? 55 : o.status === 'paid' ? 20 : 0,
+    createdAt: new Date(o.createdAt).toLocaleDateString('vi-VN'),
+    updatedAt: new Date(o.updatedAt).toLocaleDateString('vi-VN'),
+    invoiceId: o.orderNumber,
+    assignedPM: null,
+    tags: [],
+    messages: [],
+    demoUrl: o.demoUrl,
+    maskedUrl: o.maskedUrl,
+  });
+
+  const loadOrders = async (): Promise<void> => {
+    setOrdersLoading(true);
+    setOrdersError('');
+    try {
+      const { orders: fetched } = await ordersService.getOrders({ limit: 50 });
+      setApiOrders(fetched.map(mapApiOrderToUiOrder));
+    } catch {
+      setOrdersError('Không tải được danh sách đơn hàng');
+    } finally {
+      setOrdersLoading(false);
+    }
+  };
+
+  // Fetch real orders from BE
+  useEffect(() => {
+    void loadOrders();
+  }, []);
+
+  // Use API orders when loaded, fall back to store orders
+  const displayOrders = ordersLoading && ordersError === '' ? orders : apiOrders.length > 0 ? apiOrders : orders;
+
+  const newPaidOrders = displayOrders.filter(o => o.status === 'paid');
+  const filtered = displayOrders.filter(o =>
     (filterStatus === 'all' || o.status === filterStatus) &&
     (o.title.toLowerCase().includes(search.toLowerCase()) || o.clientName.toLowerCase().includes(search.toLowerCase()))
   );
-
-  const totalRevenue = orders.filter(o => o.status !== 'pending_payment' && o.status !== 'cancelled')
+  const totalRevenue = displayOrders.filter(o => o.status !== 'pending_payment' && o.status !== 'cancelled')
     .reduce((s, o) => s + o.budget, 0);
 
   return (
@@ -354,7 +477,7 @@ export function OrdersTab() {
       <div className="flex-1 overflow-y-auto space-y-5 pr-4">
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-3">
-          <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.18em' }}>── QUẢN LÝ ĐƠN HÀNG ({orders.length})</div>
+          <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.18em' }}>── QUẢN LÝ ĐƠN HÀNG ({displayOrders.length})</div>
           <div style={{ color: DS.green, fontFamily: DS.mono, fontSize: 13, fontWeight: 700 }}>
             Tổng thu: {fmtVND(totalRevenue)}
           </div>
@@ -434,6 +557,13 @@ export function OrdersTab() {
                         <span style={{ color: sc.color }}>{sc.icon}</span>
                         <span style={{ color: sc.color, fontSize: 10, fontFamily: DS.mono }}>{sc.label}</span>
                       </div>
+                      {order.demoUrl && (
+                        <div className="flex items-center gap-1 px-2 py-0.5 rounded-full"
+                          style={{ background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.3)' }}>
+                          <Monitor size={10} style={{ color: DS.green }} />
+                          <span style={{ color: DS.green, fontSize: 10, fontFamily: DS.mono }}>DEMO</span>
+                        </div>
+                      )}
                       {unreadMsgs > 0 && (
                         <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full"
                           style={{ background: DS.red, boxShadow: `0 0 6px ${DS.red}` }}>
@@ -465,6 +595,18 @@ export function OrdersTab() {
                         <div style={{ color: DS.text5, fontSize: 9, fontFamily: DS.mono, marginTop: 1 }}>{order.progress}%</div>
                       </div>
                     )}
+                    {order.demoUrl && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedOrder(order);
+                        }}
+                        className="mt-2 inline-flex items-center gap-1 px-2 py-1 rounded-lg"
+                        style={{ background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.35)', color: DS.green, fontSize: 10, fontFamily: DS.mono, cursor: 'pointer' }}
+                      >
+                        <Eye size={10} /> Xem Demo
+                      </button>
+                    )}
                   </div>
                   <ChevronRight size={14} style={{ color: DS.text5, transform: isSelected ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }} />
                 </div>
@@ -479,8 +621,11 @@ export function OrdersTab() {
         {selectedOrder && (
           <OrderDetailPanel
             key={selectedOrder.id}
-            order={orders.find(o => o.id === selectedOrder.id) ?? selectedOrder}
+            order={displayOrders.find(o => o.id === selectedOrder.id) ?? selectedOrder}
             onClose={() => setSelectedOrder(null)}
+            onDemoSent={() => {
+              void loadOrders();
+            }}
           />
         )}
       </AnimatePresence>

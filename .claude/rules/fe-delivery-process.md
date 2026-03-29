@@ -1,7 +1,7 @@
 # FE Delivery Process — LOOP Solutions
 
 > **Mục tiêu:** Chuẩn hóa quy trình PO -> Design -> Dev -> QA -> Release theo FE-first, contract-first, scale-ready.
-> **Cập nhật:** 2026-03-28
+> **Cập nhật:** 2026-03-29
 
 ---
 
@@ -24,6 +24,10 @@
    - FE giữ nguyên UI, thay data source theo roadmap phase.
    - BE bổ sung endpoint/business rule còn thiếu.
    - Không merge nếu chưa bám contract.
+   - **i18n bắt buộc:** public/customer-facing routes phải theo chuẩn `/:locale/...` (`vi|en|ja|ko|zh`).
+   - **i18n API bắt buộc:** mọi endpoint content/pricing/public phải nhận `?lang=` hoặc trả đủ multilingual fields + fallback `vi` khi thiếu bản dịch.
+   - **i18n bắt buộc:** public/customer-facing routes phải theo chuẩn `/:locale/...` (`vi|en|ja|ko|zh`).
+   - **i18n API bắt buộc:** mọi endpoint content/pricing/public phải nhận `?lang=` hoặc trả đủ multilingual fields + fallback `vi` khi thiếu bản dịch.
 
 5. **QA Scenario Test**
    - Test theo journey (không test rời rạc).
@@ -71,9 +75,23 @@
 - [ ] FE dùng API thật (hoặc fallback policy rõ)
 - [ ] Loading/empty/error/success states đủ
 - [ ] Auth/permission flow đúng vai trò
+- [ ] **Locale URL chuẩn:** public route dùng `/:locale/...`, không dùng route phẳng cho user-facing pages
+- [ ] **Locale propagation chuẩn:** locale từ URL được sync vào store và truyền xuống API layer
+- [ ] **API i18n chuẩn:** call phải gửi `?lang={locale}` cho content/pricing/public endpoints
+- [ ] **Fallback i18n chuẩn:** thiếu bản dịch locale phải fallback `vi`, không để undefined/null lộ ra UI
 - [ ] Lint + type-check pass
 - [ ] Test trọng yếu pass
 - [ ] Không làm xấu đi hiệu năng chính
+- [ ] **i18n sanity pass:** `/vi|en|ja|ko|zh` cho các flow chính (ít nhất Landing + Services + Booking) pass smoke trước merge
+
+### 3.1) i18n guardrails (hard rule)
+
+- Không merge task customer/public nếu:
+  - route không có locale prefix `/:locale`
+  - chưa truyền `lang` theo locale vào API
+  - chưa có fallback `vi` rõ ràng
+  - chưa pass 5-locale sanity smoke
+- Khi review code mới, mặc định reviewer phải check 4 mục trên (không coi i18n là nice-to-have).
 
 ---
 

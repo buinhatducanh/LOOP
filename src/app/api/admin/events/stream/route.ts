@@ -11,9 +11,9 @@ import { requireAuth } from "@/lib/auth/permissions";
  *
  * Frontend can keep EventSource open and react to events.
  */
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
-    const session = await requireAuth();
+    const session = await requireAuth(req);
 
     let interval: ReturnType<typeof setInterval> | undefined;
     let timeout: ReturnType<typeof setTimeout> | undefined;

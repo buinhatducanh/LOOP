@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { DS, GRD } from '../layout/ds';
 import { useLoopStore, type PortfolioProject } from '../../store/loopStore';
+import { projectsService } from '../../../api/projects.service';
 import { DemoViewer } from '../ui/DemoViewer';
 
 const fmtVND = (n: number) =>
@@ -214,13 +215,31 @@ function ProjectDetailModal({ project, onClose, onSave }: {
 // ── MAIN ──────────────────────────────────────────────────────────────────
 export function ProjectsCompletedTab() {
   const { portfolio, updateProject, addProject, deleteProject } = useLoopStore();
+  // ── API state ────────────────────────────────────────────────────────
+  const [apiProjects, setApiProjects] = useState<PortfolioProject[]>([]);
+  const [projectsLoading, setProjectsLoading] = useState(true);
+  const [projectsError, setProjectsError] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    setProjectsLoading(true);
+    setProjectsError('');
+    projectsService.getAdminProjects()
+      .then(fetched => { if (!cancelled) setApiProjects(fetched as unknown as PortfolioProject[]); })
+      .catch(() => { if (!cancelled) setProjectsError('Không tải được danh sách dự án'); })
+      .finally(() => { if (!cancelled) setProjectsLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  const displayProjects = projectsLoading && projectsError === '' ? portfolio : apiProjects.length > 0 ? apiProjects : portfolio;
+
   const [search, setSearch] = useState('');
   const [filterCat, setFilterCat] = useState('Tất cả');
   const [detailProject, setDetailProject] = useState<PortfolioProject | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const cats = ['Tất cả', 'SaaS', 'App', 'Website'];
-  const completed = portfolio.filter(p => p.status === 'completed');
+  const completed = displayProjects.filter(p => p.status === 'completed');
   const filtered = completed.filter(p =>
     (filterCat === 'Tất cả' || p.cat === filterCat) &&
     (p.title.toLowerCase().includes(search.toLowerCase()) || p.client.toLowerCase().includes(search.toLowerCase()))
@@ -239,9 +258,13 @@ export function ProjectsCompletedTab() {
 
   const handleSave = (data: Partial<PortfolioProject>) => {
     if (data.id === 'new') {
-      addProject({ ...data, id: `proj-${Date.now()}` } as PortfolioProject);
+      projectsService.createProject(data)
+        .then(created => addProject(created))
+        .catch(() => {});
     } else {
-      updateProject(data.id!, data);
+      projectsService.updateProject(data.id!, data)
+        .then(updated => updateProject(data.id!, updated))
+        .catch(() => {});
     }
     setDetailProject(null);
   };
@@ -287,7 +310,31 @@ export function ProjectsCompletedTab() {
         </button>
       </div>
 
+      {/* Error state */}
+      {projectsError && (
+        <div className="p-4 rounded-xl text-center" style={{ background: `${DS.red}15`, border: `1px solid ${DS.red}30`, color: DS.red, fontSize: 13 }}>
+          {projectsError}
+        </div>
+      )}
+
+      {/* Loading skeletons */}
+      {projectsLoading && !projectsError && (
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="rounded-2xl overflow-hidden animate-pulse" style={{ background: DS.bgCard, border: `1px solid ${DS.border}` }}>
+              <div style={{ height: 140, background: DS.bgCard2 }} />
+              <div className="p-4 space-y-3">
+                <div className="h-4 rounded" style={{ width: '60%', background: DS.bgCard2 }} />
+                <div className="h-3 rounded" style={{ width: '40%', background: DS.bgCard2 }} />
+                <div className="h-3 rounded" style={{ width: '80%', background: DS.bgCard2 }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Project cards */}
+      {!projectsLoading && !projectsError && (
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
         {filtered.map(p => {
           const cc = CAT_COLORS[p.cat] ?? DS.blue;
@@ -351,6 +398,7 @@ export function ProjectsCompletedTab() {
           );
         })}
       </div>
+      )}
 
       {filtered.length === 0 && (
         <div className="py-16 text-center rounded-2xl" style={{ background: DS.bgCard, border: `1px solid ${DS.border}` }}>

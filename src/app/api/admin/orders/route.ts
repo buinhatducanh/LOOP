@@ -23,13 +23,46 @@ export async function GET(req: NextRequest) {
         orderBy,
         skip: (page - 1) * limit,
         take: limit,
-        include: { package: { select: { title: true } } },
+        include: {
+          package: { select: { title: true } },
+          figmaDemos: {
+            orderBy: { createdAt: "desc" },
+            take: 1,
+            select: {
+              id: true,
+              figmaUrl: true,
+              clientToken: true,
+              status: true,
+              createdAt: true,
+              approvedAt: true,
+            },
+          },
+        },
       }),
       prisma.order.count({ where }),
     ]);
 
+    const data = orders.map((order) => {
+      const latestDemo = order.figmaDemos[0] ?? null;
+      return {
+        ...order,
+        demo: latestDemo
+          ? {
+              id: latestDemo.id,
+              status: latestDemo.status,
+              figmaUrl: latestDemo.figmaUrl,
+              maskedUrl: latestDemo.clientToken
+                ? `demo.loop-solutions.vn/${order.orderNumber.toLowerCase()}`
+                : null,
+              createdAt: latestDemo.createdAt,
+              approvedAt: latestDemo.approvedAt,
+            }
+          : null,
+      };
+    });
+
     return NextResponse.json({
-      data: orders,
+      data,
       ...buildPaginationResponse(total, page, limit),
     });
   } catch (error) {

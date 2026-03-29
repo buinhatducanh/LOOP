@@ -38,7 +38,22 @@
       "mcp__ide__executeCode",
       "Bash(BASE=\"D:\\\\LOOP_COMPANY\\\\LOOP\\\\src\\\\lib\" && mkdir -p \"$BASE/services/landing\" && mkdir -p \"$BASE/services/content\" && mkdir -p \"$BASE/services/gamification\" && mkdir -p \"$BASE/services/customer\" && echo \"Directories ready\")",
       "Bash(cmd /c \"dir D:\\\\LOOP_COMPANY\\\\LOOP\\\\.env* /b 2>nul\")",
-      "Bash(cmd /c \"if exist D:\\\\LOOP_COMPANY\\\\LOOP\\\\.env.example \\(type D:\\\\LOOP_COMPANY\\\\LOOP\\\\.env.example\\) else \\(echo NOT_FOUND\\)\")"
+      "Bash(cmd /c \"if exist D:\\\\LOOP_COMPANY\\\\LOOP\\\\.env.example \\(type D:\\\\LOOP_COMPANY\\\\LOOP\\\\.env.example\\) else \\(echo NOT_FOUND\\)\")",
+      "Bash(powershell -Command \"Get-NetTCPConnection -LocalPort 5173,5174 -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_OwningProcess -Force -ErrorAction SilentlyContinue; Write-Host \\(''Killed PID '' + $_OwningProcess\\) }\")",
+      "Bash(powershell -Command \"Get-NetTCPConnection -LocalPort 5173,5174 -ErrorAction SilentlyContinue | Format-Table -AutoSize\")",
+      "Bash(powershell -Command \"Stop-Process -Id 18548 -Force; Write-Host ''Killed 18548''\")",
+      "Bash(powershell -Command \"Get-NetTCPConnection -LocalPort 5174 -ErrorAction SilentlyContinue | Where-Object { $_State -eq ''Listen'' } | Format-Table -AutoSize\")",
+      "Bash(powershell -Command \"Get-NetTCPConnection -LocalPort 5173 -ErrorAction SilentlyContinue | Where-Object { $_State -eq ''Listen'' } | ForEach-Object { Stop-Process -Id $_OwningProcess -Force }; Write-Host ''Stopped''\")",
+      "Bash(powershell -Command \"Get-NetTCPConnection -LocalPort 5173 -ErrorAction SilentlyContinue\")",
+      "Bash(powershell -Command \"Get-NetTCPConnection -LocalPort 5173 | Select-Object -First 1 | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force; Write-Host \\(''Stopped '' + $_.OwningProcess\\) }\")",
+      "Bash(powershell -Command \"Get-NetTCPConnection -LocalPort 5173 -ErrorAction SilentlyContinue | Where-Object { $_.State -eq ''Listen'' }\")",
+      "Bash(powershell -Command \"Get-NetTCPConnection -LocalPort 5173 | Select-Object -First 1 | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force; Write-Host \\(''Restarted''\\) }\")",
+      "Bash(for lang:*)",
+      "Read(//d/LOOP_COMPANY/LOOP/**)",
+      "Bash(node -e \"require\\(''''@playwright/test''''\\)\")",
+      "Bash(where playwright:*)",
+      "Bash(pnpm add:*)",
+      "Bash(head -20 grep -r \"rank-effect\\\\|rank_effect\\\\|RankEffect\" d:/LOOP_COMPANY/LOOP/src/app/api --include=*.ts -l)"
     ],
     "additionalDirectories": [
       "D:\\LOOP_COMPANY\\LOOP\\src\\app\\[locale]\\team\\[slug]",

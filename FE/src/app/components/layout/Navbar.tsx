@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
-import { Menu, X, LogIn, Zap, Search, ChevronRight, Sparkles, User, LogOut, Shield, Settings, ChevronDown } from 'lucide-react';
+import { LogIn, Zap, Search, ChevronRight, Sparkles, User, LogOut, Shield, Settings, ChevronDown } from 'lucide-react';
 import { DS, GRD, NAV_LINKS } from './ds';
 import { AdvancedSearch } from './AdvancedSearch';
-import { useAuthStore } from '../../store/authStore';
+import { useAuthStore, DEMO_USERS } from '../../store/authStore';
+import { useLocaleStore, SUPPORTED_LOCALES, LOCALE_LABELS, LOCALE_FLAGS } from '../../store/localeStore';
 
 /* ── helpers ─────────────────────────────────────────────────────────────── */
 const rgba = (hex: string, a: number) => {
@@ -37,7 +38,7 @@ function InlineSearchBar({ onOpen }: { onOpen: () => void }) {
 
 /* ── User Avatar Menu ────────────────────────────────────────────────────── */
 function UserAvatarMenu({ onNavigate }: { onNavigate: (path: string) => void }) {
-  const { user, isAuthenticated, logout, login } = useAuthStore();
+  const { user, isAuthenticated, logout, loginAs } = useAuthStore();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -149,7 +150,7 @@ function UserAvatarMenu({ onNavigate }: { onNavigate: (path: string) => void }) 
               <div style={{ color: DS.text5, fontSize: 8, fontFamily: DS.mono, letterSpacing: '0.2em', padding: '4px 8px', marginBottom: 2 }}>CHUYỂN TÀI KHOẢN (DEMO)</div>
               <div className="grid grid-cols-1 gap-0.5">
                 {quickSwitch.map(s => (
-                  <button key={s.key} onClick={() => { login(s.key); setOpen(false); }}
+                  <button key={s.key} onClick={() => { loginAs(DEMO_USERS[s.key]); setOpen(false); }}
                     className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-left transition-all duration-150"
                     style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: DS.text4, fontSize: 11 }}
                     onMouseEnter={e => { e.currentTarget.style.background = rgba('#FFFFFF', 0.04); }}
@@ -190,6 +191,15 @@ export function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuthStore();
+  const { locale, setLocale } = useLocaleStore();
+  const [langOpen, setLangOpen] = useState(false);
+  const langRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const fn = (e: MouseEvent) => { if (langRef.current && !langRef.current.contains(e.target as Node)) setLangOpen(false); };
+    if (langOpen) document.addEventListener('mousedown', fn);
+    return () => document.removeEventListener('mousedown', fn);
+  }, [langOpen]);
 
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 12);
@@ -207,7 +217,15 @@ export function Navbar() {
     return () => window.removeEventListener('keydown', fn);
   }, []);
 
-  const active = (href: string) => location.pathname === href;
+  const withLocale = (href: string) => {
+    if (href.startsWith('/admin') || href.startsWith('/khach-hang') || href.startsWith('/nhan-vien') || href.startsWith('/dang-')) {
+      return href;
+    }
+    if (href === '/') return `/${locale}`;
+    return `/${locale}${href}`;
+  };
+
+  const active = (href: string) => location.pathname === withLocale(href);
 
   const PRIMARY_COUNT = 5;
   const primaryLinks = NAV_LINKS.slice(0, PRIMARY_COUNT);
@@ -237,7 +255,7 @@ export function Navbar() {
 
         <div className="max-w-7xl mx-auto px-4 md:px-6 flex items-center justify-between" style={{ height: 56 }}>
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2.5 no-underline flex-shrink-0">
+          <Link to={`/${locale}`} className="flex items-center gap-2.5 no-underline flex-shrink-0">
             <div style={{ width: 32, height: 32 }}>
               <svg width="32" height="32" viewBox="0 0 40 40" fill="none">
                 <defs>
@@ -263,7 +281,7 @@ export function Navbar() {
           {/* Desktop center nav */}
           <div className="hidden lg:flex items-center gap-0.5 mx-4">
             {primaryLinks.map(link => (
-              <Link key={link.href} to={link.href}
+              <Link key={link.href} to={withLocale(link.href)}
                 style={{
                   color: active(link.href) ? DS.blue : DS.text4, fontSize: 12.5,
                   fontWeight: active(link.href) ? 600 : 500, padding: '5px 10px', borderRadius: 7,
@@ -304,7 +322,7 @@ export function Navbar() {
                       transition={{ duration: 0.15 }}
                     >
                       {moreLinks.map(link => (
-                        <Link key={link.href} to={link.href} onClick={() => setMoreOpen(false)}
+                        <Link key={link.href} to={withLocale(link.href)} onClick={() => setMoreOpen(false)}
                           className="flex items-center gap-2 transition-all duration-150"
                           style={{ color: active(link.href) ? DS.blue : DS.text3, fontSize: 12.5, padding: '8px 14px', textDecoration: 'none', background: active(link.href) ? rgba(DS.blue, 0.06) : 'transparent' }}
                           onMouseEnter={e => { e.currentTarget.style.background = rgba('#FFFFFF', 0.04); e.currentTarget.style.color = DS.text; }}
@@ -323,6 +341,75 @@ export function Navbar() {
 
           {/* Desktop right actions */}
           <div className="hidden lg:flex items-center gap-2">
+            {/* Locale switcher */}
+            <div className="relative" ref={langRef}>
+              <button
+                onClick={() => setLangOpen(v => !v)}
+                className="flex items-center gap-1.5 cursor-pointer transition-all duration-150"
+                style={{
+                  color: DS.text4, fontSize: 11, padding: '5px 10px',
+                  borderRadius: 8, background: langOpen ? rgba(DS.blue, 0.06) : 'transparent',
+                  border: `1px solid ${langOpen ? rgba(DS.blue, 0.2) : 'transparent'}`,
+                }}
+                onMouseEnter={e => { e.currentTarget.style.color = DS.text2; e.currentTarget.style.background = rgba('#FFFFFF', 0.03); }}
+                onMouseLeave={e => { if (!langOpen) { e.currentTarget.style.color = DS.text4; e.currentTarget.style.background = 'transparent'; } }}
+              >
+                <span style={{ fontSize: 14 }}>{LOCALE_FLAGS[locale]}</span>
+                <span style={{ fontSize: 11 }}>{LOCALE_LABELS[locale]}</span>
+                <motion.span animate={{ rotate: langOpen ? 90 : 0 }} transition={{ duration: 0.15 }}>
+                  <ChevronRight size={10} />
+                </motion.span>
+              </button>
+
+              <AnimatePresence>
+                {langOpen && (
+                  <motion.div
+                    className="absolute top-full right-0 mt-1.5 py-1.5 rounded-xl overflow-hidden"
+                    style={{
+                      background: rgba(DS.bgCard, 0.98), border: `1px solid ${rgba(DS.blue, 0.12)}`,
+                      backdropFilter: 'blur(20px)', boxShadow: `0 12px 40px rgba(0,0,0,0.5)`,
+                      minWidth: 160, zIndex: 60,
+                    }}
+                    initial={{ opacity: 0, y: -6, scale: 0.97 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -6, scale: 0.97 }}
+                    transition={{ duration: 0.15 }}
+                  >
+                    {SUPPORTED_LOCALES.map(loc => (
+                      <button
+                        key={loc}
+                        onClick={() => {
+                          setLocale(loc);
+                          const parts = location.pathname.split('/').filter(Boolean);
+                          if (parts.length > 0 && SUPPORTED_LOCALES.includes(parts[0] as typeof SUPPORTED_LOCALES[number])) {
+                            parts[0] = loc;
+                            navigate(`/${parts.join('/')}`);
+                          } else {
+                            navigate(`/${loc}`);
+                          }
+                          setLangOpen(false);
+                        }}
+                        className="w-full flex items-center gap-3 px-3 py-2 transition-all duration-150"
+                        style={{
+                          background: loc === locale ? rgba(DS.blue, 0.08) : 'transparent',
+                          border: 'none', cursor: 'pointer',
+                          color: loc === locale ? DS.blue : DS.text3, fontSize: 12,
+                        }}
+                        onMouseEnter={e => { if (loc !== locale) e.currentTarget.style.background = rgba('#FFFFFF', 0.04); }}
+                        onMouseLeave={e => { if (loc !== locale) e.currentTarget.style.background = 'transparent'; }}
+                      >
+                        <span style={{ fontSize: 15 }}>{LOCALE_FLAGS[loc]}</span>
+                        <span style={{ fontWeight: loc === locale ? 600 : 400 }}>{LOCALE_LABELS[loc]}</span>
+                        {loc === locale && (
+                          <span className="ml-auto w-1.5 h-1.5 rounded-full" style={{ background: DS.blue }} />
+                        )}
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
             <InlineSearchBar onOpen={() => setSearchOpen(true)} />
 
             {/* LP badge */}
@@ -417,7 +504,7 @@ export function Navbar() {
               {/* Links */}
               <div className="p-2 grid grid-cols-2 gap-1">
                 {NAV_LINKS.map(link => (
-                  <Link key={link.href} to={link.href}
+                  <Link key={link.href} to={withLocale(link.href)}
                     className="flex items-center gap-2 rounded-xl transition-all duration-150"
                     style={{ color: active(link.href) ? DS.blue : DS.text3, fontSize: 13, padding: '10px 12px', textDecoration: 'none', background: active(link.href) ? rgba(DS.blue, 0.08) : 'transparent' }}>
                     {active(link.href) && <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: DS.blue, boxShadow: `0 0 4px ${DS.blue}` }} />}

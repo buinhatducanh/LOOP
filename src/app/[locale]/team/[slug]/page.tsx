@@ -28,10 +28,28 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const mapped = mapLocalizedTeamMember(member, resolvedLocale) as Record<string, string | null | undefined>;
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://loop.vn";
 
+  const pageTitle = `${mapped.name ?? ""} - ${mapped.role ?? ""} | LOOP Solutions`;
+  const pageDescription = (mapped.shortBio as string | undefined) ?? (mapped.bio as string | undefined) ?? `Gặp gỡ ${mapped.name} tại LOOP`;
+  const canonical = `${baseUrl}/${locale}/team/${slug}`;
+  const ogImage = (mapped.image as string | undefined) ?? "/og-cover.jpg";
+
   return {
-    title: `${mapped.name ?? ""} - ${mapped.role ?? ""} | LOOP`,
-    description: (mapped.shortBio as string | undefined) ?? (mapped.bio as string | undefined) ?? `Gặp gỡ ${mapped.name} tại LOOP`,
-    alternates: { canonical: `${baseUrl}/${locale}/team/${slug}` },
+    title: pageTitle,
+    description: pageDescription,
+    alternates: { canonical },
+    openGraph: {
+      type: "profile",
+      title: pageTitle,
+      description: pageDescription,
+      url: canonical,
+      images: [{ url: ogImage, width: 1200, height: 630, alt: String(mapped.name ?? "LOOP Member") }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: pageTitle,
+      description: pageDescription,
+      images: [ogImage],
+    },
   };
 }
 

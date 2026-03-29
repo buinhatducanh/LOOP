@@ -28,3 +28,4 @@ export * from "./models/project";
 export * from "./models/education";
 export * from "./models/gamification";
 export * from "./models/analytics";
+export * from "./slo";

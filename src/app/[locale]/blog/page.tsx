@@ -12,9 +12,31 @@ type Props = { params: Promise<{ locale: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations("seo");
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://loop.vn";
+  const title = t("blogTitle");
+  const description = t("blogDescription");
+  const brandMetaTitle = t("brandMetaTitle");
+  const brandMetaDescription = t("brandMetaDescription");
+  const ogImage = t("ogImage");
+  const canonical = `${baseUrl}/${locale}/blog`;
+
   return {
-    title: t("blogTitle"),
-    description: t("blogDescription"),
+    title,
+    description,
+    alternates: { canonical },
+    openGraph: {
+      type: "website",
+      title: `${title} — ${brandMetaTitle}`,
+      description: brandMetaDescription || description,
+      url: canonical,
+      images: [{ url: ogImage || "/og-cover.jpg", width: 1200, height: 630, alt: "LOOP Solutions" }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${title} — ${brandMetaTitle}`,
+      description: brandMetaDescription || description,
+      images: [ogImage || "/og-cover.jpg"],
+    },
   };
 }
 

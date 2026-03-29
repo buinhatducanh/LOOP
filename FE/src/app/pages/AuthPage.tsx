@@ -3,8 +3,41 @@ import { Link } from 'react-router';
 import { useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
 import { Eye, EyeOff, ArrowRight, Check, ChevronRight, Shield, Users, Zap } from 'lucide-react';
-import { useAuthStore, DEMO_USERS } from '../store/authStore';
+import { useAuthStore, DEMO_USERS, type AuthUser } from '../store/authStore';
+import { ApiError } from '../../api/client';
 import { DS, GRD } from '../components/layout/ds';
+
+function getLoginErrorMessage(error: unknown): string {
+  if (error instanceof ApiError) {
+    switch (error.code) {
+      case 'UNAUTHORIZED':
+        return 'Email hoặc mật khẩu không đúng';
+      case 'FORBIDDEN':
+        return 'Tài khoản của bạn không có quyền truy cập';
+      case 'TIMEOUT':
+        return 'Kết nối quá chậm. Vui lòng thử lại';
+      case 'MAX_RETRIES':
+        return 'Máy chủ đang bận. Vui lòng thử lại sau ít phút';
+      default:
+        if (error.status === 503) {
+          return 'Máy chủ tạm thời không khả dụng. Vui lòng thử lại sau';
+        }
+        return error.message || 'Đăng nhập thất bại';
+    }
+  }
+
+  if (error instanceof Error) {
+    return error.message || 'Đăng nhập thất bại';
+  }
+
+  return 'Đăng nhập thất bại';
+}
+
+function navigatePathByRole(role: AuthUser['role']): '/admin' | '/khach-hang' | '/nhan-vien' {
+  if (role === 'admin' || role === 'manager') return '/admin';
+  if (role === 'client') return '/khach-hang';
+  return '/nhan-vien';
+}
 
 type AuthMode = 'login' | 'register' | 'otp' | 'onboarding';
 
@@ -383,22 +416,21 @@ export default function AuthPage() {
   const nav = useNavigate();
 
   // Navigate after successful auth based on role
-  const navigateByRole = (role: string) => {
-    if (role === 'admin') nav('/admin');
-    else if (role === 'client') nav('/khach-hang');
-    else nav('/nhan-vien');
+  const navigateByRole = (role: AuthUser['role']) => {
+    nav(navigatePathByRole(role));
   };
 
   // Demo role shortcut: uses DEMO_USERS without calling BE
   const handleDemoLogin = async (roleKey: string) => {
     setLoginError('');
     try {
-      await login('demo@loop.vn', 'demo');
+      const user = await login('demo@loop.vn', 'demo');
+      navigateByRole(user.role);
     } catch {
       // DEMO_MODE fallback: use loginAs directly
       const user = DEMO_USERS[roleKey] ?? DEMO_USERS.client;
       loginAs(user);
-      navigateByRole(roleKey);
+      navigateByRole(user.role);
     }
   };
 

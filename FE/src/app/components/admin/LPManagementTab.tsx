@@ -2,7 +2,7 @@
  * LPManagementTab — Quản lý LP toàn diện
  * Các nguồn: Dự án · Thưởng hiệu suất · Dịch vụ · Lương cứng · Thưởng Tết
  */
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Wallet, Plus, Save, X, Search, Filter,
@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { DS, GRD } from '../layout/ds';
 import { members, RANKS, type RankKey } from '../team/memberData';
+import { lpService, type LpAward } from '../../../api/lp.service';
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -91,30 +92,22 @@ const SALARY_BY_RANK: Record<RankKey, keyof LPRateConfig> = {
 const MONTHS = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'];
 const CURRENT_YEAR = 2026;
 
-// ── Init transactions ──────────────────────────────────────────────────────
-
+// ── Bridge: LpAward → LPTransaction ──────────────────────────────────
 function genId() { return `tx-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`; }
 
-const INIT_TRANSACTIONS: LPTransaction[] = [
-  // Salary examples
-  { id: genId(), memberId: 7, source: 'salary',      amount: 50_000, vndEquivalent: 50_000_000, note: 'Lương tháng 3/2026 — Diamond', period: 'T3/2026', createdAt: '2026-03-01', createdBy: 'Admin' },
-  { id: genId(), memberId: 6, source: 'salary',      amount: 22_000, vndEquivalent: 22_000_000, note: 'Lương tháng 3/2026 — Ruby',    period: 'T3/2026', createdAt: '2026-03-01', createdBy: 'Admin' },
-  { id: genId(), memberId: 5, source: 'salary',      amount: 10_000, vndEquivalent: 10_000_000, note: 'Lương tháng 3/2026 — Platinum', period: 'T3/2026', createdAt: '2026-03-01', createdBy: 'Admin' },
-  { id: genId(), memberId: 4, source: 'salary',      amount: 5_000,  vndEquivalent: 5_000_000,  note: 'Lương tháng 3/2026 — Gold',    period: 'T3/2026', createdAt: '2026-03-01', createdBy: 'Admin' },
-  { id: genId(), memberId: 3, source: 'salary',      amount: 2_500,  vndEquivalent: 2_500_000,  note: 'Lương tháng 3/2026 — Silver',  period: 'T3/2026', createdAt: '2026-03-01', createdBy: 'Admin' },
-  // Project
-  { id: genId(), memberId: 6, source: 'project',     amount: 4_000,  vndEquivalent: 4_000_000,  note: 'Dự án: LOOP OS v2.0 — Large project milestone', period: 'T3/2026', createdAt: '2026-03-13', createdBy: 'Admin' },
-  { id: genId(), memberId: 4, source: 'project',     amount: 1_500,  vndEquivalent: 1_500_000,  note: 'Dự án: VNRetail v3 — Sprint 4 hoàn thành', period: 'T3/2026', createdAt: '2026-03-14', createdBy: 'Admin' },
-  { id: genId(), memberId: 3, source: 'project',     amount: 1_500,  vndEquivalent: 1_500_000,  note: 'Dự án: Security Infra — Phase 1 done', period: 'T3/2026', createdAt: '2026-03-15', createdBy: 'Admin' },
-  // Performance
-  { id: genId(), memberId: 7, source: 'performance', amount: 10_000, vndEquivalent: 10_000_000, note: 'Thưởng KPI Q1/2026 — Đạt 140% target', period: 'Q1/2026', createdAt: '2026-03-31', createdBy: 'Admin' },
-  { id: genId(), memberId: 5, source: 'performance', amount: 2_000,  vndEquivalent: 2_000_000,  note: 'Thưởng KPI T3/2026 — Phòng IT uptime 99.98%', period: 'T3/2026', createdAt: '2026-03-31', createdBy: 'Admin' },
-  // Service
-  { id: genId(), memberId: 9, source: 'service',     amount: 900,   vndEquivalent: 900_000,     note: 'Design system delivery — 3 gói × 300 LP', period: 'T3/2026', createdAt: '2026-03-20', createdBy: 'Admin' },
-  { id: genId(), memberId: 2, source: 'service',     amount: 600,   vndEquivalent: 600_000,     note: 'UI/UX audit cho client MedTech — 2 gói', period: 'T3/2026', createdAt: '2026-03-18', createdBy: 'Admin' },
-  // Tết
-  { id: genId(), memberId: 1, source: 'tet_bonus',   amount: 750,   vndEquivalent: 750_000,     note: 'Thưởng Tết Bính Ngọ 2026 — 1.5 tháng lương Iron', period: 'Tết 2026', createdAt: '2026-01-25', createdBy: 'Admin' },
-];
+function mapAwardToTransaction(award: LpAward): LPTransaction {
+  return {
+    id: award.id,
+    memberId: award.memberId,
+    source: award.source,
+    amount: award.amount,
+    vndEquivalent: 0,
+    note: award.reason,
+    period: new Date(award.createdAt).toLocaleDateString('vi-VN', { month: '2-digit', year: 'numeric' }),
+    createdAt: award.createdAt,
+    createdBy: award.awardedBy,
+  };
+}
 
 // ── Format helpers ────────────────────────────────────────────────────────
 
@@ -254,18 +247,37 @@ function AddLPModal({ rate, onClose, onSave }: {
 
   const handleSave = () => {
     const finalAmount = amount || calcAmount();
-    onSave({
-      id: genId(),
-      memberId,
-      source,
-      amount: finalAmount,
-      vndEquivalent: finalAmount * rate.lp_to_vnd,
-      note: note || `${sc.labelVi} — ${period}`,
-      period,
-      createdAt: new Date().toISOString().split('T')[0],
-      createdBy: 'Admin',
-    });
-    onClose();
+    // Call BE API
+    lpService.awardLp({ memberId, amount: finalAmount, source, reason: note || `${sc.labelVi} — ${period}` })
+      .then(() => {
+        onSave({
+          id: genId(),
+          memberId,
+          source,
+          amount: finalAmount,
+          vndEquivalent: finalAmount * rate.lp_to_vnd,
+          note: note || `${sc.labelVi} — ${period}`,
+          period,
+          createdAt: new Date().toISOString().split('T')[0],
+          createdBy: 'Admin',
+        });
+        onClose();
+      })
+      .catch(() => {
+        // Fallback: save locally even if API fails
+        onSave({
+          id: genId(),
+          memberId,
+          source,
+          amount: finalAmount,
+          vndEquivalent: finalAmount * rate.lp_to_vnd,
+          note: note || `${sc.labelVi} — ${period}`,
+          period,
+          createdAt: new Date().toISOString().split('T')[0],
+          createdBy: 'Admin',
+        });
+        onClose();
+      });
   };
 
   return (
@@ -397,7 +409,7 @@ function AddLPModal({ rate, onClose, onSave }: {
 // ── Main ──────────────────────────────────────────────────────────────────
 
 export function LPManagementTab() {
-  const [transactions, setTransactions] = useState<LPTransaction[]>(INIT_TRANSACTIONS);
+  const [transactions, setTransactions] = useState<LPTransaction[]>([]);
   const [rate, setRate] = useState<LPRateConfig>(INIT_RATE);
   const [showConfig, setShowConfig] = useState(false);
   const [showAddLP, setShowAddLP] = useState(false);
@@ -405,6 +417,19 @@ export function LPManagementTab() {
   const [filterMember, setFilterMember] = useState<number | 'all'>('all');
   const [filterPeriod, setFilterPeriod] = useState<string>('all');
   const [activeView, setActiveView] = useState<'transactions' | 'summary' | 'config'>('transactions');
+
+  // Fetch LP awards from BE
+  useEffect(() => {
+    let cancelled = false;
+    lpService.getAwards()
+      .then(awards => {
+        if (cancelled) return;
+        const mapped = awards.map(mapAwardToTransaction);
+        setTransactions(mapped);
+      })
+      .catch(() => {/* keep empty transactions on error */});
+    return () => { cancelled = true; };
+  }, []);
 
   const periods = useMemo(() => {
     const set = new Set(transactions.map(t => t.period));

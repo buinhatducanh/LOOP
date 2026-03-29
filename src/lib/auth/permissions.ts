@@ -17,9 +17,10 @@
 
 import { prisma } from "@/lib/prisma";
 import { verifyToken } from "./jwt";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { ROLE_LEVEL, type NavPermission } from "./roles";
 import { auth } from "@/auth";
+import type { NextRequest } from "next/server";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -50,6 +51,75 @@ export interface SessionUser {
 
 // ─── Session ──────────────────────────────────────────────────────────────────
 
+/**
+ * Get session from Authorization: Bearer <token> header.
+ * Used by FE API client (FE stores JWT in localStorage, sends as Bearer).
+ * Falls back to cookie-based session if no Bearer token is present.
+ */
+export async function getSessionFromBearer(
+  bearerToken: string | null
+): Promise<SessionUser | null> {
+  if (!bearerToken) return null;
+
+  const payload = verifyToken(bearerToken);
+  if (!payload || !payload.userId) return null;
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: payload.userId, isActive: true },
+      include: {
+        userRoles: {
+          include: { role: { include: { permissions: true } } },
+          where: {
+            isActive: true,
+            OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+          },
+        },
+      },
+    });
+
+    if (!user) return null;
+
+    const permissions = user.userRoles.flatMap((ur) =>
+      ur.role.permissions.map((p) => ({
+        resource: p.resource,
+        action: p.action,
+        scope: p.scope,
+      }))
+    );
+
+    return {
+      userId: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      roles: user.userRoles.map((ur) => ur.role.name),
+      avatar: user.avatar,
+      accountType: (user.accountType as "staff" | "customer") || "customer",
+      teamMemberId: user.teamMemberId,
+      roleLevel: ROLE_LEVEL[user.role] ?? 99,
+      permissions,
+    };
+  } catch {
+    // DB unavailable — return minimal session from JWT payload only
+    return {
+      userId: payload.userId,
+      email: payload.email ?? "",
+      name: "",
+      role: payload.role ?? "user",
+      roles: payload.roles ?? [],
+      avatar: null,
+      accountType: "staff",
+      teamMemberId: null,
+      roleLevel: ROLE_LEVEL[payload.role ?? "user"] ?? 99,
+      permissions: [],
+    };
+  }
+}
+
+/**
+ * Get session from cookies (server-side, e.g., SSR, API routes with HttpOnly cookies).
+ */
 export async function getSession(): Promise<SessionUser | null> {
   const cookieStore = await cookies();
   const authMethod = cookieStore.get("auth-method")?.value;
@@ -163,7 +233,26 @@ export async function getSession(): Promise<SessionUser | null> {
   }
 }
 
-export async function requireAuth(): Promise<SessionUser> {
+export async function requireAuth(req?: NextRequest): Promise<SessionUser> {
+  // Priority 1: Authorization header (FE API client sends Bearer token)
+  let bearer: string | null = null;
+
+  if (req) {
+    bearer = req.headers.get("Authorization");
+  } else {
+    // Fallback: read headers from Next.js request context for routes that call requireAuth() without req
+    const h = await headers();
+    bearer = h.get("authorization") ?? h.get("Authorization");
+  }
+
+  if (bearer?.startsWith("Bearer ")) {
+    const session = await getSessionFromBearer(bearer.slice(7));
+    if (session) return session;
+    // Bearer invalid → 401 (don't fall through to cookie)
+    throw new AuthError("Unauthorized", 401);
+  }
+
+  // Priority 2: cookie-based session
   const session = await getSession();
   if (!session) {
     throw new AuthError("Unauthorized", 401);
@@ -240,8 +329,8 @@ export async function requirePermissionFast(
   resource: string,
   action: PermissionAction
 ): Promise<void> {
-  // Super admin: bypass everything
-  if (isSuperAdmin(session)) return;
+  // Super admin + admin: bypass permission matrix for operational routes
+  if (isSuperAdmin(session) || isAdmin(session)) return;
 
   if (!hasPermission(session.permissions, resource, action)) {
     throw new AuthError("Forbidden", 403);
@@ -258,7 +347,7 @@ export async function checkPermission(
   resource: string,
   action: PermissionAction
 ): Promise<boolean> {
-  if (isSuperAdmin(session)) return true;
+  if (isSuperAdmin(session) || isAdmin(session)) return true;
 
   const count = await prisma.permission.count({
     where: {
@@ -283,12 +372,17 @@ export async function checkPermission(
  * Require a specific resource + action permission.
  * Super admin bypasses all checks.
  * Throws AuthError on failure.
+ *
+ * @param resource - e.g. "orders", "team", "services"
+ * @param action - e.g. "read", "create", "update", "delete"
+ * @param req - optional NextRequest; if provided, reads Authorization: Bearer header first
  */
 export async function requirePermission(
   resource: string,
-  action: PermissionAction
+  action: PermissionAction,
+  req?: NextRequest
 ): Promise<SessionUser> {
-  const session = await requireAuth();
+  const session = await requireAuth(req);
 
   if (isSuperAdmin(session)) return session;
 
@@ -304,13 +398,42 @@ export async function requirePermission(
  * Require minimum role level.
  * Throws AuthError on failure.
  */
-export async function requireMinRole(minLevel: number): Promise<SessionUser> {
-  const session = await requireAuth();
+export async function requireMinRole(minLevel: number, req?: NextRequest): Promise<SessionUser> {
+  const session = await requireAuth(req);
   const userLevel = ROLE_LEVEL[session.role] ?? 99;
   if (userLevel > minLevel) {
     throw new AuthError("Forbidden", 403);
   }
   return session;
+}
+
+// ─── API Route Helpers (reads from NextRequest) ────────────────────────────────
+
+/**
+ * Require permission from an incoming NextRequest.
+ * Shorthand for `requirePermission(resource, action, req)`.
+ * Use this in API routes that receive FE API calls with Bearer token in header.
+ */
+export async function requirePermissionFromRequest(
+  req: NextRequest,
+  resource: string,
+  action: PermissionAction
+): Promise<SessionUser> {
+  return requirePermission(resource, action, req);
+}
+
+/**
+ * Get session from a NextRequest (reads Bearer header first, then cookies).
+ * Does NOT throw — returns null if not authenticated.
+ */
+export async function getSessionFromRequest(
+  req: NextRequest
+): Promise<SessionUser | null> {
+  const bearer = req.headers.get("Authorization");
+  if (bearer?.startsWith("Bearer ")) {
+    return getSessionFromBearer(bearer.slice(7));
+  }
+  return getSession();
 }
 
 // ─── Nav Permission Guards ────────────────────────────────────────────────────

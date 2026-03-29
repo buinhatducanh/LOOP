@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Plus, Search, Edit3, Trash2, Eye, Clock, User, Tag,
@@ -6,6 +6,7 @@ import {
   ToggleLeft, ToggleRight, FileText,
 } from 'lucide-react';
 import { DS, GRD } from '../layout/ds';
+import { blogService } from '../../../api/blog.service';
 
 type BlogPost = {
   id: number;
@@ -161,6 +162,9 @@ function PostModal({ post, onClose, onSave }: {
 
 // ── MAIN ──────────────────────────────────────────────────────────────────
 export function BlogTab() {
+  const [apiPosts, setApiPosts] = useState<BlogPost[]>([]);
+  const [postsLoading, setPostsLoading] = useState(true);
+  const [postsError, setPostsError] = useState('');
   const [posts, setPosts] = useState<BlogPost[]>(INITIAL_POSTS);
   const [search, setSearch] = useState('');
   const [filterCat, setFilterCat] = useState('Tất cả');
@@ -168,10 +172,24 @@ export function BlogTab() {
   const [modal, setModal] = useState<null | 'new' | BlogPost>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
 
+  useEffect(() => {
+    let cancelled = false;
+    setPostsLoading(true);
+    setPostsError('');
+    blogService.getAdminPosts({ limit: 50 })
+      .then(({ posts: fetched }) => { if (!cancelled) setApiPosts(fetched as unknown as BlogPost[]); })
+      .catch(() => { if (!cancelled) setPostsError('Không tải được danh sách bài viết'); })
+      .finally(() => { if (!cancelled) setPostsLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  // Use API posts when loaded, fall back to mock
+  const displayPosts = postsLoading && postsError === '' ? posts : apiPosts.length > 0 ? apiPosts : posts;
+
   const cats = ['Tất cả', 'Design', 'Tech', 'Marketing', 'DevOps', 'LP System', 'Business'];
   const statuses = ['Tất cả', 'published', 'draft', 'scheduled'];
 
-  const filtered = posts.filter(p =>
+  const filtered = displayPosts.filter(p =>
     (filterCat === 'Tất cả' || p.cat === filterCat) &&
     (filterStatus === 'Tất cả' || p.status === filterStatus) &&
     (p.title.toLowerCase().includes(search.toLowerCase()) || p.author.toLowerCase().includes(search.toLowerCase()))
@@ -201,9 +219,9 @@ export function BlogTab() {
     setDeleteId(null);
   };
 
-  const published = posts.filter(p => p.status === 'published');
-  const totalViews = published.reduce((s, p) => s + p.views, 0);
-  const totalLikes = published.reduce((s, p) => s + p.likes, 0);
+  const published = displayPosts.filter(p => p.status === 'published');
+  const totalViews = published.reduce((s, p) => s + (p.views ?? 0), 0);
+  const totalLikes = published.reduce((s, p) => s + (p.likes ?? 0), 0);
 
   return (
     <div className="space-y-5">
@@ -243,6 +261,17 @@ export function BlogTab() {
           style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 12, padding: '8px 12px', color: DS.text3, fontSize: 12, outline: 'none', cursor: 'pointer' }}>
           {statuses.map(s => <option key={s} value={s}>{s === 'Tất cả' ? 'Tất cả trạng thái' : statusCfg[s].label}</option>)}
         </select>
+        {postsLoading && postsError === '' && (
+          <div className="text-center py-16" style={{ color: DS.text4 }}>
+            <div className="text-3xl mb-2">⏳</div>
+            <div style={{ fontFamily: DS.mono, fontSize: 11 }}>Đang tải bài viết...</div>
+          </div>
+        )}
+        {postsError && (
+          <div className="text-center py-12" style={{ color: DS.red }}>
+            <div style={{ fontFamily: DS.mono, fontSize: 12 }}>{postsError}</div>
+          </div>
+        )}
         <button onClick={() => setModal('new')}
           style={{ background: GRD.primary, color: '#fff', border: 'none', borderRadius: 12, padding: '8px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap', boxShadow: '0 0 16px rgba(129,140,248,0.35)' }}>
           <Plus size={14} /> Tạo bài viết

@@ -42,10 +42,28 @@ const MOCK_COURSE_DETAIL = {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale, slug } = await params;
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://loop.vn";
+  const pageTitle = `${MOCK_COURSE_DETAIL.title} | LOOP Academy`;
+  const pageDescription = MOCK_COURSE_DETAIL.shortDescription;
+  const canonical = `${baseUrl}/${locale}/academy/${slug}`;
+  const ogImage = MOCK_COURSE_DETAIL.image;
+
   return {
-    title: `${MOCK_COURSE_DETAIL.title} | LOOP Academy`,
-    description: MOCK_COURSE_DETAIL.shortDescription,
-    alternates: { canonical: `${baseUrl}/${locale}/academy/${slug}` },
+    title: pageTitle,
+    description: pageDescription,
+    alternates: { canonical },
+    openGraph: {
+      type: "website",
+      title: pageTitle,
+      description: pageDescription,
+      url: canonical,
+      images: [{ url: ogImage, width: 1200, height: 630, alt: MOCK_COURSE_DETAIL.title }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: pageTitle,
+      description: pageDescription,
+      images: [ogImage],
+    },
   };
 }
 

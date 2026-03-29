@@ -24,6 +24,8 @@ interface BeLoginUser {
 
 interface LoginResponse {
   user: BeLoginUser;
+  /** JWT token — store in localStorage for client-side auth */
+  token: string;
 }
 
 interface MeResponse {
@@ -76,10 +78,28 @@ export const authService = {
    */
   login: async (email: string, password: string): Promise<AuthUser> => {
     const res = await api.post<LoginResponse>('/admin/auth/login', { email, password });
+
+    // Store JWT in localStorage for client-side auth checks
+    if (res.token) {
+      setToken(res.token);
+    }
+
     const user = mapBeUser(res.user);
 
-    // Also extract and store token from cookie if BE sets it
-    // (BE sets HttpOnly cookie; we don't read it, but we could read auth-method cookie)
+    // Also try to enrich with LP balance + rank (non-blocking)
+    fetchLpBalanceAndRank(user.id).then(enriched => {
+      if (enriched) {
+        const updated: AuthUser = { ...user, ...enriched };
+        try {
+          localStorage.setItem('loop_user', JSON.stringify(updated));
+          // Update Navbar LP badge immediately
+          import('../app/store/authStore').then(({ useAuthStore }) => {
+            useAuthStore.getState().updateUserLpBalance(enriched.lpBalance, enriched.rank, enriched.rankColor);
+          }).catch(() => { /* ignore */ });
+        } catch { /* ignore */ }
+      }
+    }).catch(() => { /* not critical */ });
+
     return user;
   },
 
@@ -92,20 +112,18 @@ export const authService = {
     const res = await api.get<MeResponse>('/admin/auth/me');
     const user = mapBeUser(res.user);
 
-    // Try to fetch LP balance in parallel (non-blocking)
-    fetchLpBalance(user.id).then(lp => {
-      if (lp !== null) {
-        user.lpBalance = lp;
-        // Store updated user
+    // Enrich with LP balance + rank asynchronously (non-blocking)
+    fetchLpBalanceAndRank(user.id).then(enriched => {
+      if (enriched) {
+        const updated: AuthUser = { ...user, ...enriched };
         try {
-          localStorage.setItem('loop_user', JSON.stringify(user));
-        } catch {
-          // ignore
-        }
+          localStorage.setItem('loop_user', JSON.stringify(updated));
+          import('../app/store/authStore').then(({ useAuthStore }) => {
+            useAuthStore.getState().updateUserLpBalance(enriched.lpBalance, enriched.rank, enriched.rankColor);
+          }).catch(() => { /* ignore */ });
+        } catch { /* ignore */ }
       }
-    }).catch(() => {
-      // LP fetch failed — not critical
-    });
+    }).catch(() => { /* not critical */ });
 
     return user;
   },
@@ -120,11 +138,23 @@ export const authService = {
 };
 
 // ── LP balance helper ─────────────────────────────────────────────────────────
-// Fetch LP balance for a user. Returns null if unavailable.
-async function fetchLpBalance(userId: string): Promise<number | null> {
+// Fetch LP balance + rank for a user. Returns null if unavailable.
+async function fetchLpBalanceAndRank(
+  userId: string
+): Promise<{ lpBalance: number; rank?: string; rankColor?: string } | null> {
   try {
-    const res = await api.get<{ balance: number }>(`/customer/points?userId=${userId}`);
-    return res.balance ?? null;
+    // Fetch LP balance from customer points endpoint
+    const [pointsRes, rankRes] = await Promise.allSettled([
+      api.get<{ balance: number }>(`/customer/points?userId=${userId}`),
+      // Rank endpoint if available
+      api.get<{ rank?: string; rankColor?: string }>(`/admin/team/${userId}`).catch(() => null),
+    ]);
+
+    const lpBalance = pointsRes.status === 'fulfilled' ? (pointsRes.value.balance ?? 0) : 0;
+    const rank = rankRes.status === 'fulfilled' ? rankRes.value?.rank : undefined;
+    const rankColor = rankRes.status === 'fulfilled' ? rankRes.value?.rankColor : undefined;
+
+    return lpBalance > 0 || rank ? { lpBalance, rank, rankColor } : null;
   } catch {
     return null;
   }

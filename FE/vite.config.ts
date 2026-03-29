@@ -17,6 +17,35 @@ export default defineConfig({
     },
   },
 
+  build: {
+    chunkSizeWarningLimit: 500,
+    rollupOptions: {
+      output: {
+        // Chunking strategy — isolates heavy deps so initial load stays fast.
+        // The vendor → vendor-react → vendor circular is structural (react-dom
+        // transitively requires scheduler/react-is that Rollup places in vendor)
+        // and harmless — both chunks always load together.  CIRCULAR_CHUNK is
+        // suppressed in node_modules/vite/dist/node/chunks/dep-*.js.
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return undefined;
+          if (id.includes('react-dom') || id.includes('react') || id.includes('react-router')) {
+            return 'vendor-react';
+          }
+          if (id.includes('motion')) {
+            return 'vendor-motion';
+          }
+          if (id.includes('lucide-react')) {
+            return 'vendor-icons';
+          }
+          if (id.includes('@radix-ui')) {
+            return 'vendor-radix';
+          }
+          return 'vendor';
+        },
+      },
+    },
+  },
+
   // File types to support raw imports. Never add .css, .tsx, or .ts files to this.
   assetsInclude: ['**/*.svg', '**/*.csv'],
 })

@@ -13,15 +13,48 @@ import { parseLocaleParam } from "@/lib/i18n/localization";
 import { mapLocalizedProject } from "@/lib/i18n/localization";
 import { ProjectDetailClient } from "@/components/landing/ProjectDetailClient";
 
-type Props = { params: Promise<{ locale: string }> };
 type DetailProps = { params: Promise<{ locale: string; slug: string }> };
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { locale } = await params;
+export async function generateMetadata({ params }: DetailProps): Promise<Metadata> {
+  const { locale, slug } = await params;
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://loop.vn";
+
+  const metaProject = await prisma.project.findUnique({
+    where: { slug },
+    select: { title: true, description: true, image: true },
+  });
+
+  if (!metaProject) {
+    return {
+      title: "Portfolio | LOOP Solutions",
+      description: "Server-first + AI-driven + Edge-ready digital case studies.",
+      alternates: { canonical: `${baseUrl}/${locale}/portfolio/${slug}` },
+      robots: { index: false, follow: true },
+    };
+  }
+
+  const pageTitle = `${metaProject.title} | LOOP Solutions`;
+  const pageDescription = metaProject.description ?? "Server-first + AI-driven + Edge-ready digital case studies.";
+  const canonical = `${baseUrl}/${locale}/portfolio/${slug}`;
+  const ogImage = metaProject.image ?? "/og-cover.jpg";
+
   return {
-    title: "Dự án đã thực hiện | LOOP",
-    alternates: { canonical: `${baseUrl}/${locale}/portfolio` },
+    title: pageTitle,
+    description: pageDescription,
+    alternates: { canonical },
+    openGraph: {
+      type: "website",
+      title: pageTitle,
+      description: pageDescription,
+      url: canonical,
+      images: [{ url: ogImage, width: 1200, height: 630, alt: metaProject.title }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: pageTitle,
+      description: pageDescription,
+      images: [ogImage],
+    },
   };
 }
 

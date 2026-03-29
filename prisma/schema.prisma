@@ -145,6 +145,7 @@ model User {
   sessions             Session[]
   userRoles            UserRole[]
   teamMember           TeamMember?    @relation(fields: [teamMemberId], references: [id])
+  questParticipants     QuestParticipant[]
 
   @@map("users")
 }
@@ -402,10 +403,18 @@ model ServicePackage {
   id             String         @id @default(cuid())
   slug           String         @unique
   title          String
+  titleEn        String?        @map("title_en")
+  titleJa        String?        @map("title_ja")
+  titleKo        String?        @map("title_ko")
+  titleZh        String?        @map("title_zh")
+  shortDesc      String         @map("short_desc")
+  shortDescEn    String?        @map("short_desc_en")
+  shortDescJa    String?        @map("short_desc_ja")
+  shortDescKo    String?        @map("short_desc_ko")
+  shortDescZh    String?        @map("short_desc_zh")
   type           String
   price          Int?
   priceText      String?        @map("price_text")
-  shortDesc      String         @map("short_desc")
   features       String[]
   isSubscription Boolean        @default(false) @map("is_subscription")
   billingPeriod  String?        @map("billing_period")
@@ -506,6 +515,10 @@ model InfrastructureTier {
   slug          String   @unique @map("slug")
   name          String
   nameVi        String   @map("name_vi")
+  nameEn        String?  @map("name_en")
+  nameJa        String?  @map("name_ja")
+  nameKo        String?  @map("name_ko")
+  nameZh        String?  @map("name_zh")
   /// *
   ///    * Monthly cost in VND for this tier. Used in pricing formula.
   monthlyCost   Int      @map("monthly_cost")
@@ -516,6 +529,10 @@ model InfrastructureTier {
   ///    * Description shown in the pricing calculator
   description   String?
   descriptionVi String?  @map("description_vi")
+  descriptionEn String?  @map("description_en")
+  descriptionJa String?  @map("description_ja")
+  descriptionKo String?  @map("description_ko")
+  descriptionZh String?  @map("description_zh")
   /// *
   ///    * Icon name (lucide-react) for the UI
   icon          String?
@@ -585,10 +602,18 @@ model ServiceAttribute {
   slug               String                 @unique
   name               String
   nameVi             String                 @map("name_vi")
+  nameEn             String?                @map("name_en")
+  nameJa             String?                @map("name_ja")
+  nameKo             String?                @map("name_ko")
+  nameZh             String?                @map("name_zh")
   description        String?
   descriptionVi      String?                @map("description_vi")
   category           String
   categoryVi         String                 @map("category_vi")
+  categoryEn         String?                @map("category_en")
+  categoryJa         String?                @map("category_ja")
+  categoryKo         String?                @map("category_ko")
+  categoryZh         String?                @map("category_zh")
   icon               String?
   price              Int                    @default(0)
   isRequired         Boolean                @default(false) @map("is_required")
@@ -989,8 +1014,16 @@ model AddonService {
   slug            String           @unique
   name            String
   nameVi          String           @map("name_vi")
+  nameEn          String?          @map("name_en")
+  nameJa          String?          @map("name_ja")
+  nameKo          String?          @map("name_ko")
+  nameZh          String?          @map("name_zh")
   description     String?
   descriptionVi   String?          @map("description_vi")
+  descriptionEn   String?          @map("description_en")
+  descriptionJa   String?          @map("description_ja")
+  descriptionKo   String?          @map("description_ko")
+  descriptionZh   String?          @map("description_zh")
   icon            String?
   type            String           @default("one_time")
   price           Int
@@ -2086,4 +2119,99 @@ model MediaBooking {
   @@index([teamMemberId])
   @@index([deadline])
   @@map("media_bookings")
+}
+
+// ── Rank Effects System ────────────────────────────────────────────────────────
+model RankEffect {
+  id          String    @id @default(cuid())
+  name        String
+  description String
+  /// * Effect type: particle | glow | border | aura | trail | shimmer | fire | holographic
+  type        String
+  /// * Rarity: common | rare | epic | legendary
+  rarity      String
+  icon        String
+  color       String
+  /// * Minimum rank to unlock: iron | bronze | silver | gold | platinum | ruby | diamond
+  minRank     String    @map("min_rank")
+  minLevel    Int       @map("min_level")
+  maxLevel    Int?      @map("max_level")
+  isEnabled   Boolean   @default(true) @map("is_enabled")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@map("rank_effects")
+}
+
+// ── Quests ─────────────────────────────────────────────────────────────────────
+model Quest {
+  id          String    @id @default(cuid())
+  title       String
+  description String
+  lpReward    Int       @map("lp_reward")
+  xpReward    Int       @default(0) @map("xp_reward")
+  /// * Frequency: daily | weekly | monthly | one_time | event
+  frequency   String
+  /// * Category: engagement | project | social | learning | achievement
+  category    String
+  icon        String
+  color       String
+  target      Int       @default(1)
+  forRoles    String[]  @map("for_roles")
+  isActive    Boolean   @default(true) @map("is_active")
+  sortOrder   Int       @default(0) @map("sort_order")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  participants QuestParticipant[]
+
+  @@map("quests")
+}
+
+// ── Company Events ─────────────────────────────────────────────────────────────
+model CompanyEvent {
+  id          String    @id @default(cuid())
+  title       String
+  description String
+  /// * Event type: seasonal | competition | celebration | promotional
+  type        String
+  startDate   DateTime  @map("start_date")
+  endDate     DateTime  @map("end_date")
+  lpBonus     Int       @map("lp_bonus")
+  color       String
+  icon        String
+  bannerUrl   String?   @map("banner_url")
+  isActive    Boolean   @default(true) @map("is_active")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  participants QuestParticipant[]
+
+  @@index([isActive, startDate])
+  @@map("company_events")
+}
+
+// ── Quest Participants (join table) ───────────────────────────────────────────
+model QuestParticipant {
+  id          String       @id @default(cuid())
+  userId      String       @map("user_id")
+  questId     String?      @map("quest_id")
+  eventId     String?      @map("event_id")
+  progress    Int          @default(0)
+  completed   Boolean      @default(false) @map("completed")
+  lpEarned    Int          @default(0) @map("lp_earned")
+  xpEarned    Int          @default(0) @map("xp_earned")
+  claimedAt   DateTime?   @map("claimed_at")
+  joinedAt    DateTime     @default(now()) @map("joined_at")
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quest       Quest?       @relation(fields: [questId], references: [id], onDelete: Cascade)
+  event       CompanyEvent? @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, questId])
+  @@unique([userId, eventId])
+  @@index([userId])
+  @@index([questId])
+  @@index([eventId])
+  @@map("quest_participants")
 }

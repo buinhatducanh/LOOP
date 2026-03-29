@@ -8,6 +8,12 @@ import {
   GitBranch, Rocket, Heart, Eye
 } from 'lucide-react';
 import { DS, GRD } from '../components/layout/ds';
+import { useLocaleStore } from '../store/localeStore';
+import { testimonialsService } from '../../api/testimonials.service';
+import type { Testimonial } from '../../api/testimonials.service';
+import { servicesService } from '../../api/services.service';
+import type { Service, PortfolioProject } from '../../store/loopStore';
+import { projectsService } from '../../api/projects.service';
 
 // ── Animated Counter ────────────────────────────────────────────────────────
 function AnimatedCounter({ to, suffix = '' }: { to: number; suffix?: string }) {
@@ -425,48 +431,29 @@ function StatsSection() {
 
 // ── SERVICES SECTION ─────────────────────────────────────────────────────
 function ServicesSection() {
-  const services = [
-    {
-      icon: <Globe size={26} />,
-      title: 'Thiết kế & Phát triển Web',
-      desc: 'Website cao cấp, tối ưu chuyển đổi với React/Next.js. Từ landing page đến e-commerce phức tạp.',
-      color: DS.blue,
-      priceFrom: '15,000,000 VNĐ',
-      lpReward: '500 LP / 10M VNĐ',
-      tags: ['React', 'Next.js', 'TypeScript'],
-      href: '/dich-vu',
-    },
-    {
-      icon: <Code2 size={26} />,
-      title: 'Phát triển App & SaaS',
-      desc: 'Từ MVP đến enterprise. Mobile app, web app và nền tảng SaaS scalable cho hàng triệu người dùng.',
-      color: DS.purple,
-      priceFrom: '80,000,000 VNĐ',
-      lpReward: '500 LP / 10M VNĐ',
-      tags: ['React Native', 'Node.js', 'AWS'],
-      href: '/dich-vu',
-    },
-    {
-      icon: <BarChart3 size={26} />,
-      title: 'Dashboard & Analytics',
-      desc: 'Biến dữ liệu thành insight. Real-time dashboard, báo cáo tự động và data visualization.',
-      color: DS.cyan,
-      priceFrom: '25,000,000 VNĐ',
-      lpReward: '500 LP / 10M VNĐ',
-      tags: ['React', 'D3.js', 'BigQuery'],
-      href: '/dich-vu',
-    },
-    {
-      icon: <Target size={26} />,
-      title: 'SEO & Digital Marketing',
-      desc: 'Tăng trưởng organic bền vững. Technical SEO, content strategy và quảng cáo hiệu suất cao.',
-      color: DS.green,
-      priceFrom: '8,000,000 VNĐ/tháng',
-      lpReward: '500 LP / 10M VNĐ',
-      tags: ['SEO', 'Google Ads', 'Analytics'],
-      href: '/dich-vu',
-    },
-  ];
+  const [services, setServices] = useState<Service[]>([]);
+  const { locale } = useLocaleStore();
+
+  useEffect(() => {
+    let cancelled = false;
+    servicesService.getServices(locale)
+      .then(({ services: fetched }) => {
+        if (!cancelled && fetched.length > 0) setServices(fetched.slice(0, 4));
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [locale]);
+
+  const iconMap: Record<string, React.ReactNode> = {
+    '🌐': <Globe size={26} />,
+    '⚛️': <Code2 size={26} />,
+    '📊': <BarChart3 size={26} />,
+    '🎯': <Target size={26} />,
+    '🛡️': <Shield size={26} />,
+    '🚀': <Rocket size={26} />,
+    '⚡': <Zap size={26} />,
+    '💎': <Star size={26} />,
+  };
 
   return (
     <section className="py-24 px-6">
@@ -482,59 +469,66 @@ function ServicesSection() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {services.map((svc, i) => (
-            <motion.div
-              key={svc.title}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.1, duration: 0.5 }}
-            >
-              <Link to={svc.href} style={{ textDecoration: 'none', display: 'block', height: '100%' }}>
-                <motion.div
-                  className="h-full rounded-2xl p-7 cursor-pointer"
-                  style={{
-                    background: 'rgba(15,23,42,0.7)',
-                    backdropFilter: 'blur(16px)',
-                    border: `1px solid ${DS.border}`,
-                  }}
-                  whileHover={{
-                    borderColor: `${svc.color}40`,
-                    boxShadow: `0 8px 40px ${svc.color}15, 0 0 0 1px ${svc.color}15`,
-                    y: -4,
-                  }}
-                  transition={{ duration: 0.25 }}
-                >
-                  <div className="flex items-start justify-between mb-5">
-                    <div className="w-13 h-13 rounded-xl flex items-center justify-center" style={{ background: `${svc.color}15`, border: `1px solid ${svc.color}30`, padding: 12 }}>
-                      <span style={{ color: svc.color }}>{svc.icon}</span>
+          {services.map((svc, i) => {
+            const icon = iconMap[svc.icon] ?? <Globe size={26} />;
+            const priceDisplay = svc.startPrice > 0
+              ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(svc.startPrice)
+              : 'Liên hệ';
+            const tags: string[] = svc.tech?.slice(0, 3) ?? [];
+            return (
+              <motion.div
+                key={svc.id}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1, duration: 0.5 }}
+              >
+                <Link to={`/dich-vu/${svc.id}`} style={{ textDecoration: 'none', display: 'block', height: '100%' }}>
+                  <motion.div
+                    className="h-full rounded-2xl p-7 cursor-pointer"
+                    style={{
+                      background: 'rgba(15,23,42,0.7)',
+                      backdropFilter: 'blur(16px)',
+                      border: `1px solid ${DS.border}`,
+                    }}
+                    whileHover={{
+                      borderColor: `${svc.color}40`,
+                      boxShadow: `0 8px 40px ${svc.color}15, 0 0 0 1px ${svc.color}15`,
+                      y: -4,
+                    }}
+                    transition={{ duration: 0.25 }}
+                  >
+                    <div className="flex items-start justify-between mb-5">
+                      <div className="w-13 h-13 rounded-xl flex items-center justify-center" style={{ background: `${svc.color}15`, border: `1px solid ${svc.color}30`, padding: 12 }}>
+                        <span style={{ color: svc.color }}>{icon}</span>
+                      </div>
+                      <ArrowRight size={16} style={{ color: svc.color, marginTop: 4, opacity: 0.6 }} />
                     </div>
-                    <ArrowRight size={16} style={{ color: svc.color, marginTop: 4, opacity: 0.6 }} />
-                  </div>
 
-                  <h3 style={{ color: DS.text, fontSize: 18, fontWeight: 700, marginBottom: 10, lineHeight: 1.3 }}>{svc.title}</h3>
-                  <p style={{ color: DS.text3, fontSize: 13.5, lineHeight: 1.8, marginBottom: 18 }}>{svc.desc}</p>
+                    <h3 style={{ color: DS.text, fontSize: 18, fontWeight: 700, marginBottom: 10, lineHeight: 1.3 }}>{svc.title}</h3>
+                    <p style={{ color: DS.text3, fontSize: 13.5, lineHeight: 1.8, marginBottom: 18 }}>{svc.desc}</p>
 
-                  <div className="flex flex-wrap gap-1.5 mb-5">
-                    {svc.tags.map(t => (
-                      <span key={t} style={{ color: svc.color, fontSize: 10, fontFamily: DS.mono, padding: '3px 8px', borderRadius: 4, background: `${svc.color}10`, border: `1px solid ${svc.color}20` }}>{t}</span>
-                    ))}
-                  </div>
-
-                  <div className="flex items-center justify-between pt-4" style={{ borderTop: `1px solid ${DS.border}` }}>
-                    <div>
-                      <div style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono, marginBottom: 2 }}>GIÁ TỪ (VNĐ)</div>
-                      <div style={{ color: svc.color, fontSize: 14, fontWeight: 700 }}>{svc.priceFrom}</div>
+                    <div className="flex flex-wrap gap-1.5 mb-5">
+                      {tags.map(t => (
+                        <span key={t} style={{ color: svc.color, fontSize: 10, fontFamily: DS.mono, padding: '3px 8px', borderRadius: 4, background: `${svc.color}10`, border: `1px solid ${svc.color}20` }}>{t}</span>
+                      ))}
                     </div>
-                    <div className="text-right">
-                      <div style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono, marginBottom: 2 }}>ĐIỂM THƯỞNG LP</div>
-                      <div style={{ color: DS.purple, fontSize: 12, fontFamily: DS.mono }}>◈ {svc.lpReward}</div>
+
+                    <div className="flex items-center justify-between pt-4" style={{ borderTop: `1px solid ${DS.border}` }}>
+                      <div>
+                        <div style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono, marginBottom: 2 }}>GIÁ TỪ (VNĐ)</div>
+                        <div style={{ color: svc.color, fontSize: 14, fontWeight: 700 }}>{priceDisplay}</div>
+                      </div>
+                      <div className="text-right">
+                        <div style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono, marginBottom: 2 }}>ĐIỂM THƯỞNG LP</div>
+                        <div style={{ color: DS.purple, fontSize: 12, fontFamily: DS.mono }}>◈ 500 LP / 10M</div>
+                      </div>
                     </div>
-                  </div>
-                </motion.div>
-              </Link>
-            </motion.div>
-          ))}
+                  </motion.div>
+                </Link>
+              </motion.div>
+            );
+          })}
         </div>
 
         <div className="text-center mt-10">
@@ -700,15 +694,28 @@ function LPSystemSection() {
 }
 
 // ── PORTFOLIO PREVIEW ────────────────────────────────────────────────────
+const FALLBACK_PROJECTS: PortfolioProject[] = [
+  { id: '1', title: 'VNRetail Platform', tag: 'E-commerce SaaS', metric: '+320% doanh thu', cat: 'saas', img: 'https://images.unsplash.com/photo-1517309561013-16f6e4020305?auto=format&fit=crop&w=500&q=80', color: DS.blue, year: '2025', client: 'VNRetail', slug: 'vnretail-platform', techStack: [], features: [], description: '', screenshots: [], results: '' },
+  { id: '2', title: 'MedApp Vietnam', tag: 'Mobile Health App', metric: '200K downloads', cat: 'mobile', img: 'https://images.unsplash.com/photo-1596843720750-7de9329da5d7?auto=format&fit=crop&w=500&q=80', color: DS.purple, year: '2025', client: 'MedApp', slug: 'medapp-vietnam', techStack: [], features: [], description: '', screenshots: [], results: '' },
+  { id: '3', title: 'AnalyticsPro', tag: 'Dashboard SaaS', metric: '#1 market share', cat: 'saas', img: 'https://images.unsplash.com/photo-1771012788703-d310cdf189bb?auto=format&fit=crop&w=500&q=80', color: DS.cyan, year: '2025', client: 'AnalyticsPro', slug: 'analyticspro', techStack: [], features: [], description: '', screenshots: [], results: '' },
+  { id: '4', title: 'EduViet Portal', tag: 'EdTech Platform', metric: '10K students', cat: 'app', img: 'https://images.unsplash.com/photo-1762330910399-95caa55acf04?auto=format&fit=crop&w=500&q=80', color: DS.green, year: '2025', client: 'EduViet', slug: 'eduviet-portal', techStack: [], features: [], description: '', screenshots: [], results: '' },
+  { id: '5', title: 'StartupHub', tag: 'Corporate Website', metric: '+45% conversion', cat: 'website', img: 'https://images.unsplash.com/photo-1588336443962-49d88df004a1?auto=format&fit=crop&w=500&q=80', color: DS.amber, year: '2025', client: 'StartupHub', slug: 'startuphub', techStack: [], features: [], description: '', screenshots: [], results: '' },
+  { id: '6', title: 'FinDash Enterprise', tag: 'FinTech Dashboard', metric: '500+ tx/day', cat: 'saas', img: 'https://images.unsplash.com/photo-1634836023845-eddbfe9937da?auto=format&fit=crop&w=500&q=80', color: DS.red, year: '2025', client: 'FinDash', slug: 'findash-enterprise', techStack: [], features: [], description: '', screenshots: [], results: '' },
+];
+
 function PortfolioPreview() {
-  const projects = [
-    { id: 1, title: 'VNRetail Platform', tag: 'E-commerce SaaS', metric: '+320% doanh thu', img: 'https://images.unsplash.com/photo-1517309561013-16f6e4020305?auto=format&fit=crop&w=500&q=80', color: DS.blue },
-    { id: 2, title: 'MedApp Vietnam', tag: 'Mobile Health App', metric: '200K downloads', img: 'https://images.unsplash.com/photo-1596843720750-7de9329da5d7?auto=format&fit=crop&w=500&q=80', color: DS.purple },
-    { id: 3, title: 'AnalyticsPro', tag: 'Dashboard SaaS', metric: '#1 market share', img: 'https://images.unsplash.com/photo-1771012788703-d310cdf189bb?auto=format&fit=crop&w=500&q=80', color: DS.cyan },
-    { id: 4, title: 'EduViet Portal', tag: 'EdTech Platform', metric: '10K students', img: 'https://images.unsplash.com/photo-1762330910399-95caa55acf04?auto=format&fit=crop&w=500&q=80', color: DS.green },
-    { id: 5, title: 'StartupHub', tag: 'Corporate Website', metric: '+45% conversion', img: 'https://images.unsplash.com/photo-1588336443962-49d88df004a1?auto=format&fit=crop&w=500&q=80', color: DS.amber },
-    { id: 6, title: 'FinDash Enterprise', tag: 'FinTech Dashboard', metric: '500+ tx/day', img: 'https://images.unsplash.com/photo-1634836023845-eddbfe9937da?auto=format&fit=crop&w=500&q=80', color: DS.red },
-  ];
+  const [projects, setProjects] = useState<PortfolioProject[]>(FALLBACK_PROJECTS);
+  const { locale } = useLocaleStore();
+
+  useEffect(() => {
+    let cancelled = false;
+    projectsService.getProjects(locale)
+      .then(({ projects: fetched }) => {
+        if (!cancelled && fetched.length > 0) setProjects(fetched.slice(0, 6));
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [locale]);
 
   return (
     <section className="py-24 px-6" style={{ background: 'linear-gradient(160deg, rgba(15,23,42,0.3) 0%, rgba(2,6,23,0) 100%)' }}>
@@ -765,21 +772,24 @@ function PortfolioPreview() {
 }
 
 // ── TESTIMONIALS ─────────────────────────────────────────────────────────
+// FALLBACK_TESTIMONIALS
+const FALLBACK_TESTIMONIALS = [
+  { id: '1', name: 'Nguyen Minh Tuan', role: 'CEO, TechViet JSC', company: 'TechViet JSC', quote: 'LOOP Solutions da giup chung toi ra mat SaaS platform trong 3 thang. Chat luong code vuot ky vong, doi ngu cuc ky chuyen nghiep. LP tich luy giup toi tiet kiem 18% hoa don du an tiep theo.', rating: 5, avatar: '' },
+  { id: '2', name: 'Tran Thu Hang', role: 'Marketing Director, VNRetail', company: 'VNRetail', quote: 'He thong LP thuc su thu vi! Toi tich luy du diem de giam 15% cho du an tiep theo. Rat minh bach va chuyen nghiep.', rating: 5, avatar: '' },
+  { id: '3', name: 'Le Quang Duc', role: 'Founder, Startup Hub', company: 'Startup Hub', quote: 'Dashboard tracking real-time giup toi nam ro tien do moi luc. Khong can email hoi lien tuc. Gia minh bach, khong phat sinh. Tuyet voi!', rating: 5, avatar: '' },
+];
+
 function TestimonialsSection() {
-  const testimonials = [
-    {
-      name: 'Nguyễn Minh Tuấn', role: 'CEO, TechViet JSC', rank: 'GOLD', rankColor: '#FFD700', rankSymbol: '★',
-      quote: 'LOOP Solutions đã giúp chúng tôi ra mắt SaaS platform trong 3 tháng. Chất lượng code vượt kỳ vọng, đội ngũ cực kỳ chuyên nghiệp. LP tích lũy giúp tôi tiết kiệm 18% hóa đơn dự án tiếp theo.',
-    },
-    {
-      name: 'Trần Thu Hằng', role: 'Marketing Director, VNRetail', rank: 'SILVER', rankColor: '#CBD5E1', rankSymbol: '◇',
-      quote: 'Hệ thống LP thực sự thú vị! Tôi tích lũy đủ điểm để giảm 15% cho dự án tiếp theo. Giải thích rõ ràng LP chỉ là điểm thưởng, không phải tiền — rất minh bạch và chuyên nghiệp.',
-    },
-    {
-      name: 'Lê Quang Đức', role: 'Founder, Startup Hub', rank: 'PLATINUM', rankColor: '#14B8A6', rankSymbol: '❋',
-      quote: 'Dashboard tracking real-time giúp tôi nắm rõ tiến độ mọi lúc. Không cần phải email hỏi liên tục. Giá cả VNĐ minh bạch, không phát sinh thêm. Tuyệt vời!',
-    },
-  ];
+  const [testimonials, setTestimonials] = useState<Testimonial[]>(FALLBACK_TESTIMONIALS);
+  const { locale } = useLocaleStore();
+
+  useEffect(() => {
+    let cancelled = false;
+    testimonialsService.getTestimonials(locale)
+      .then(fetched => { if (!cancelled && fetched.length > 0) setTestimonials(fetched); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [locale]);
 
   return (
     <section className="py-24 px-6">

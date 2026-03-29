@@ -1,9 +1,9 @@
 # LOOP Solutions — Claude Code Context
 
 > Project: LOOP Solutions Agency Platform — FE (Vite/React) + BE (Next.js 15 API)
-> Last Updated: 2026-03-28
+> Last Updated: 2026-03-29
 > Language: Vietnamese (code comments, docs), English (variable names, function names)
-> Status: Phase 0 pending — FE mock UI hoàn chỉnh, chưa kết nối BE
+> Status: Phase F0 ✅ completed | Phase F1 ✅ completed | Phase F2 ✅ completed — Wizard wired BE APIs, ORDER_STATUS_LABELS 6×5 locale, WIZARD_STEP_LABELS 8×5 locale. 5-locale smoke test PASSED.
 
 ---
 
@@ -347,10 +347,10 @@ FE/src/
 
 ## Phase Roadmap (FE-first)
 
-### Phase F0 — Infrastructure (Foundation)
+### Phase F0 — Infrastructure (Foundation) ✅
 Thiết lập hạ tầng kết nối FE → BE, auth, routing.
 
-### Phase F1 — Public Pages
+### Phase F1 — Public Pages 🔄
 Landing, Services, Portfolio, Blog, Contact — kết nối public APIs.
 
 ### Phase F2 — Booking Wizard + Orders

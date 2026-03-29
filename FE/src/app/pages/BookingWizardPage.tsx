@@ -1,67 +1,62 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Globe, Code2, BarChart3, Target, Check, ArrowRight, ArrowLeft,
-  ChevronRight, Users, Calendar, Layers, Sparkles, CreditCard,
-  Zap, Star, Award, Clock, MapPin, Phone, Mail, Shield, X, Plus, Minus
+  Users, Calendar, Layers, Sparkles, CreditCard,
+  Zap, Star, Shield, X, Plus, Minus
 } from 'lucide-react';
 import { DS, GRD } from '../components/layout/ds';
-import { useLoopStore, type Order } from '../store/loopStore';
+import { useLoopStore, type Order, type ServiceType } from '../store/loopStore';
+import { useAuthStore } from '../store/authStore';
+import { useLocaleStore, WIZARD_STEP_LABELS } from '../store/localeStore';
+import { ordersService } from '../../api/orders.service';
+import { bookingService, calcLpDiscount, type LpRateConfig } from '../../api/booking.service';
 
 // ── Format helpers ────────────────────────────────────────────────────────
 const fmtVND = (n: number) =>
   new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(n);
 
-// ── Data ─────────────────────────────────────────────────────────────────
-const SERVICES = [
-  {
-    id: 'web', icon: <Globe size={28} /> as ReactNode, title: 'Thiết kế & Phát triển Website', color: DS.blue,
-    desc: 'Landing page, corporate site, e-commerce — chuẩn React/Next.js, tốc độ cao.',
-    basePrice: 15_000_000,
-  },
-  {
-    id: 'app', icon: <Code2 size={28} /> as ReactNode, title: 'Phát triển App & SaaS Platform', color: DS.purple,
-    desc: 'Mobile app (React Native), web app, nền tảng SaaS cho doanh nghiệp.',
-    basePrice: 80_000_000,
-  },
-  {
-    id: 'dashboard', icon: <BarChart3 size={28} /> as ReactNode, title: 'Dashboard & Data Analytics', color: DS.cyan,
-    desc: 'Real-time dashboard, báo cáo tự động, data visualization chuyên nghiệp.',
-    basePrice: 25_000_000,
-  },
-  {
-    id: 'seo', icon: <Target size={28} /> as ReactNode, title: 'SEO & Digital Marketing', color: DS.green,
-    desc: 'Tăng trưởng organic, Google Ads, content strategy — gói tháng linh hoạt.',
-    basePrice: 8_000_000,
-    perMonth: true,
-  },
+// ── Wizard data types ───────────────────────────────────────────────────────
+export interface WizardService {
+  id: string; icon: ReactNode; title: string; desc: string;
+  basePrice: number; color: string; perMonth?: boolean;
+}
+
+export interface WizardPackage {
+  id: string; name: string; multiplier: number; color: string;
+  desc: string; features: string[]; lp: number; popular?: boolean;
+}
+
+export interface WizardFeature {
+  id: string; label: string; price: number; icon: ReactNode;
+}
+
+export interface WizardTalent {
+  id: string; name: string; role: string; rank: string;
+  rankColor: string; rankSymbol: string; img: string; specialty: string;
+}
+
+export interface WizardExtra {
+  id: string; label: string; price: number; icon: ReactNode; color: string;
+}
+
+// ── Fallback data (used when BE config unavailable) ────────────────────────
+const FALLBACK_SERVICES: WizardService[] = [
+  { id: 'web', icon: <Globe size={28} />, title: 'Thiết kế & Phát triển Website', color: DS.blue, basePrice: 15_000_000, desc: 'Landing page, corporate site, e-commerce — chuẩn React/Next.js, tốc độ cao.' },
+  { id: 'app', icon: <Code2 size={28} />, title: 'Phát triển App & SaaS Platform', color: DS.purple, basePrice: 80_000_000, desc: 'Mobile app (React Native), web app, nền tảng SaaS cho doanh nghiệp.' },
+  { id: 'dashboard', icon: <BarChart3 size={28} />, title: 'Dashboard & Data Analytics', color: DS.cyan, basePrice: 25_000_000, desc: 'Real-time dashboard, báo cáo tự động, data visualization chuyên nghiệp.' },
+  { id: 'seo', icon: <Target size={28} />, title: 'SEO & Digital Marketing', color: DS.green, basePrice: 8_000_000, perMonth: true, desc: 'Tăng trưởng organic, Google Ads, content strategy — gói tháng linh hoạt.' },
 ];
 
-const PACKAGES = [
-  {
-    id: 'starter', name: 'Starter', multiplier: 1, color: DS.text3,
-    desc: 'Phù hợp cá nhân, startup giai đoạn đầu',
-    features: ['Thiết kế cơ bản', 'Responsive design', 'SEO cơ bản', 'Bảo hành 3 tháng'],
-    lp: 50,
-  },
-  {
-    id: 'business', name: 'Business', multiplier: 2.2, color: DS.blue,
-    desc: 'Doanh nghiệp vừa, sản phẩm cần scale',
-    features: ['Thiết kế độc quyền', 'CMS tích hợp', 'Analytics dashboard', 'Bảo hành 6 tháng', 'Không giới hạn sửa'],
-    lp: 120,
-    popular: true,
-  },
-  {
-    id: 'enterprise', name: 'Enterprise', multiplier: 3.8, color: DS.purple,
-    desc: 'Doanh nghiệp lớn, yêu cầu cao về tính năng',
-    features: ['Tùy chỉnh hoàn toàn', 'API & Integrations', 'SLA 99.9%', 'Dedicated PM', 'Support 24/7', 'Bảo hành 12 tháng'],
-    lp: 250,
-  },
+const FALLBACK_PACKAGES: WizardPackage[] = [
+  { id: 'starter', name: 'Starter', multiplier: 1, color: DS.text3, desc: 'Phù hợp cá nhân, startup giai đoạn đầu', features: ['Thiết kế cơ bản', 'Responsive design', 'SEO cơ bản', 'Bảo hành 3 tháng'], lp: 50 },
+  { id: 'business', name: 'Business', multiplier: 2.2, color: DS.blue, desc: 'Doanh nghiệp vừa, sản phẩm cần scale', features: ['Thiết kế độc quyền', 'CMS tích hợp', 'Analytics dashboard', 'Bảo hành 6 tháng', 'Không giới hạn sửa'], lp: 120, popular: true },
+  { id: 'enterprise', name: 'Enterprise', multiplier: 3.8, color: DS.purple, desc: 'Doanh nghiệp lớn, yêu cầu cao về tính năng', features: ['Tùy chỉnh hoàn toàn', 'API & Integrations', 'SLA 99.9%', 'Dedicated PM', 'Support 24/7', 'Bảo hành 12 tháng'], lp: 250 },
 ];
 
-const FEATURE_OPTIONS: Record<string, { id: string; label: string; price: number; icon: ReactNode }[]> = {
+const FALLBACK_FEATURES: Record<string, WizardFeature[]> = {
   web: [
     { id: 'cms', label: 'Tích hợp CMS (Sanity/Contentful)', price: 5_000_000, icon: <Layers size={14} /> },
     { id: 'i18n', label: 'Đa ngôn ngữ (i18n)', price: 3_000_000, icon: <Globe size={14} /> },
@@ -91,14 +86,14 @@ const FEATURE_OPTIONS: Record<string, { id: string; label: string; price: number
   ],
 };
 
-const TALENTS = [
+const FALLBACK_TALENTS: WizardTalent[] = [
   { id: 'akira', name: 'Akira Sato', role: 'Lead Full-stack Dev', rank: 'DIAMOND', rankColor: '#818CF8', rankSymbol: '✦', img: 'https://images.unsplash.com/photo-1557862921-37829c790f19?auto=format&fit=crop&w=80&h=80&crop=faces', specialty: 'React, Node.js, AWS' },
   { id: 'yuna', name: 'Yuna Park', role: 'UI/UX Design Lead', rank: 'RUBY', rankColor: '#EF4444', rankSymbol: '♦', img: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?auto=format&fit=crop&w=80&h=80&crop=faces', specialty: 'Figma, Design Systems' },
   { id: 'shin', name: 'Shin Watanabe', role: 'DevOps & Backend', rank: 'DIAMOND', rankColor: '#818CF8', rankSymbol: '✦', img: 'https://images.unsplash.com/photo-1547425260-76bcadfb4f2c?auto=format&fit=crop&w=80&h=80&crop=faces', specialty: 'Docker, K8s, Rust' },
   { id: 'mei', name: 'Mei Lin', role: 'Mobile & SEO Expert', rank: 'RUBY', rankColor: '#EF4444', rankSymbol: '♦', img: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=80&h=80&crop=faces', specialty: 'React Native, SEO' },
 ];
 
-const EXTRAS = [
+const FALLBACK_EXTRAS: WizardExtra[] = [
   { id: 'hosting', label: 'Hosting & Domain 1 năm', price: 3_000_000, icon: <Globe size={16} />, color: DS.blue },
   { id: 'maintenance', label: 'Bảo trì & cập nhật 1 năm', price: 5_000_000, icon: <Shield size={16} />, color: DS.green },
   { id: 'analytics-setup', label: 'Setup Google Analytics 4', price: 1_500_000, icon: <BarChart3 size={16} />, color: DS.cyan },
@@ -107,16 +102,14 @@ const EXTRAS = [
   { id: 'seo-basic', label: 'SEO cơ bản & submission', price: 1_200_000, icon: <Target size={16} />, color: DS.red },
 ];
 
-const STEP_LABELS = [
-  'Dịch vụ', 'Gói', 'Tính năng', 'Team', 'Lịch', 'Thêm', 'Xem lại', 'Thanh toán'
-];
+
 
 // ── Progress Bar ───────────────────────────────────────────────────────────
-function ProgressBar({ step }: { step: number }) {
+function ProgressBar({ step, stepLabels }: { step: number; stepLabels: string[] }) {
   return (
     <div className="w-full" style={{ padding: '20px 0' }}>
       <div className="flex items-center justify-between max-w-3xl mx-auto px-4">
-        {STEP_LABELS.map((label, i) => (
+        {stepLabels.map((label, i) => (
           <div key={label} className="flex flex-col items-center" style={{ flex: i < 7 ? 1 : 'none' }}>
             <div className="flex items-center w-full">
               <div
@@ -149,24 +142,26 @@ function ProgressBar({ step }: { step: number }) {
 
 // ── Live Price Sidebar ────────────────────────────────────────────────────
 function PriceSidebar({
-  service, pkg, features, extras, lpDiscount, lpBalance,
+  service, pkg, featureOptions, features, extras, extraOptions, lpDiscount, lpBalance, lpRate,
 }: {
-  service: typeof SERVICES[0] | null;
-  pkg: typeof PACKAGES[0] | null;
+  service: WizardService | null;
+  pkg: WizardPackage | null;
+  featureOptions: WizardFeature[];
   features: string[];
-  extras: string[];
+  extras: WizardExtra[];
+  extraOptions: WizardExtra[];
   lpDiscount: number;
   lpBalance: number;
+  lpRate: LpRateConfig;
 }) {
   const basePrice = service ? service.basePrice * (pkg?.multiplier ?? 1) : 0;
-  const featurePrices = service
-    ? (FEATURE_OPTIONS[service.id] ?? []).filter(f => features.includes(f.id)).reduce((s, f) => s + f.price, 0)
-    : 0;
-  const extraPrices = EXTRAS.filter(e => extras.includes(e.id)).reduce((s, e) => s + e.price, 0);
+  const featurePrices = featureOptions.filter(f => features.includes(f.id)).reduce((s, f) => s + f.price, 0);
+  const extraPrices = extraOptions.filter(e => extras.includes(e.id)).reduce((s, e) => s + e.price, 0);
   const subtotal = basePrice + featurePrices + extraPrices;
-  const discountAmt = Math.min(lpDiscount * 500, subtotal * 0.2);
+  const lpApplied = calcLpDiscount(subtotal, lpDiscount, lpBalance, lpRate);
+  const discountAmt = lpApplied.vndDiscount;
   const total = subtotal - discountAmt;
-  const lpEarned = Math.floor(total / 1_000_000) * 50;
+  const lpEarned = Math.floor(total / 1_000_000) * lpRate.lpEarnPerMillion;
 
   return (
     <div
@@ -251,7 +246,11 @@ function PriceSidebar({
 
 // ── Step components ────────────────────────────────────────────────────────
 
-function Step1_Service({ selected, onSelect }: { selected: string; onSelect: (id: string) => void }) {
+function Step1_Service({ services, selected, onSelect }: {
+  services: WizardService[];
+  selected: string;
+  onSelect: (id: string) => void;
+}) {
   return (
     <div>
       <h3 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 22, fontWeight: 900, letterSpacing: '0.05em', marginBottom: 8 }}>
@@ -259,7 +258,7 @@ function Step1_Service({ selected, onSelect }: { selected: string; onSelect: (id
       </h3>
       <p style={{ color: DS.text3, fontSize: 14, marginBottom: 24 }}>Bạn cần loại dịch vụ nào? Mỗi dịch vụ đều được báo giá bằng VNĐ.</p>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {SERVICES.map(svc => (
+        {services.map(svc => (
           <motion.button
             key={svc.id}
             onClick={() => onSelect(svc.id)}
@@ -296,8 +295,12 @@ function Step1_Service({ selected, onSelect }: { selected: string; onSelect: (id
   );
 }
 
-function Step2_Package({ selected, onSelect, serviceId }: { selected: string; onSelect: (id: string) => void; serviceId: string }) {
-  const service = SERVICES.find(s => s.id === serviceId);
+function Step2_Package({ packages, service, selected, onSelect }: {
+  packages: WizardPackage[];
+  service: WizardService | null;
+  selected: string;
+  onSelect: (id: string) => void;
+}) {
   return (
     <div>
       <h3 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 22, fontWeight: 900, letterSpacing: '0.05em', marginBottom: 8 }}>
@@ -305,7 +308,7 @@ function Step2_Package({ selected, onSelect, serviceId }: { selected: string; on
       </h3>
       <p style={{ color: DS.text3, fontSize: 14, marginBottom: 24 }}>Lựa chọn gói phù hợp với quy mô và nhu cầu của bạn.</p>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {PACKAGES.map(pkg => {
+        {packages.map(pkg => {
           const price = (service?.basePrice ?? 0) * pkg.multiplier;
           return (
             <motion.button
@@ -357,19 +360,22 @@ function Step2_Package({ selected, onSelect, serviceId }: { selected: string; on
   );
 }
 
-function Step3_Configure({ serviceId, selected, onToggle }: { serviceId: string; selected: string[]; onToggle: (id: string) => void }) {
-  const opts = FEATURE_OPTIONS[serviceId] ?? [];
+function Step3_Configure({ featureOptions, selected, onToggle }: {
+  featureOptions: WizardFeature[];
+  selected: string[];
+  onToggle: (id: string) => void;
+}) {
   return (
     <div>
       <h3 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 22, fontWeight: 900, letterSpacing: '0.05em', marginBottom: 8 }}>
         CẤU HÌNH TÍNH NĂNG
       </h3>
       <p style={{ color: DS.text3, fontSize: 14, marginBottom: 24 }}>Tùy chọn thêm tính năng để mở rộng phạm vi dự án. Tất cả giá bằng VNĐ.</p>
-      {opts.length === 0 ? (
+      {featureOptions.length === 0 ? (
         <div style={{ color: DS.text3, fontSize: 14 }}>Gói này đã bao gồm tất cả tính năng cần thiết.</div>
       ) : (
         <div className="space-y-3">
-          {opts.map(opt => (
+          {featureOptions.map(opt => (
             <motion.button
               key={opt.id}
               onClick={() => onToggle(opt.id)}
@@ -401,7 +407,11 @@ function Step3_Configure({ serviceId, selected, onToggle }: { serviceId: string;
   );
 }
 
-function Step4_Talent({ selected, onSelect }: { selected: string; onSelect: (id: string) => void }) {
+function Step4_Talent({ talents, selected, onSelect }: {
+  talents: WizardTalent[];
+  selected: string;
+  onSelect: (id: string) => void;
+}) {
   return (
     <div>
       <h3 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 22, fontWeight: 900, letterSpacing: '0.05em', marginBottom: 8 }}>
@@ -409,7 +419,7 @@ function Step4_Talent({ selected, onSelect }: { selected: string; onSelect: (id:
       </h3>
       <p style={{ color: DS.text3, fontSize: 14, marginBottom: 24 }}>Chọn PM phụ trách dự án của bạn. Tất cả đều từ rank Ruby trở lên.</p>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {TALENTS.map(t => (
+        {talents.map(t => (
           <motion.button
             key={t.id}
             onClick={() => onSelect(t.id)}
@@ -534,7 +544,11 @@ function Step5_Schedule({ startDate, setStartDate, duration, setDuration }: {
   );
 }
 
-function Step6_Extras({ selected, onToggle }: { selected: string[]; onToggle: (id: string) => void }) {
+function Step6_Extras({ extraOptions, selected, onToggle }: {
+  extraOptions: WizardExtra[];
+  selected: string[];
+  onToggle: (id: string) => void;
+}) {
   return (
     <div>
       <h3 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 22, fontWeight: 900, letterSpacing: '0.05em', marginBottom: 8 }}>
@@ -542,7 +556,7 @@ function Step6_Extras({ selected, onToggle }: { selected: string[]; onToggle: (i
       </h3>
       <p style={{ color: DS.text3, fontSize: 14, marginBottom: 24 }}>Thêm các dịch vụ hỗ trợ để đảm bảo dự án thành công lâu dài. Giá VNĐ một lần.</p>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {EXTRAS.map(ext => (
+        {extraOptions.map(ext => (
           <motion.button
             key={ext.id}
             onClick={() => onToggle(ext.id)}
@@ -572,19 +586,23 @@ function Step6_Extras({ selected, onToggle }: { selected: string[]; onToggle: (i
 }
 
 function Step7_Review({
-  serviceId, pkgId, features, talentId, extras, startDate, duration,
+  service, pkg, talent, featureOptions, features, extraOptions, extras, startDate, duration,
 }: {
-  serviceId: string; pkgId: string; features: string[]; talentId: string;
-  extras: string[]; startDate: string; duration: string;
+  service: WizardService | null;
+  pkg: WizardPackage | null;
+  talent: WizardTalent | null;
+  featureOptions: WizardFeature[];
+  features: string[];
+  extraOptions: WizardExtra[];
+  extras: string[];
+  startDate: string;
+  duration: string;
 }) {
-  const svc = SERVICES.find(s => s.id === serviceId);
-  const pkg = PACKAGES.find(p => p.id === pkgId);
-  const talent = TALENTS.find(t => t.id === talentId);
-  const featureOpts = (FEATURE_OPTIONS[serviceId] ?? []).filter(f => features.includes(f.id));
-  const extraOpts = EXTRAS.filter(e => extras.includes(e.id));
+  const featureOpts = featureOptions.filter(f => features.includes(f.id));
+  const extraOpts = extraOptions.filter(e => extras.includes(e.id));
 
   const rows = [
-    { label: 'Dịch vụ', value: svc?.title ?? '—', color: svc?.color },
+    { label: 'Dịch vụ', value: service?.title ?? '—', color: service?.color },
     { label: 'Gói', value: pkg?.name ?? '—', color: DS.blue },
     { label: 'PM / Lead', value: talent?.name ?? '—', color: talent ? talent.rankColor : DS.text3 },
     { label: 'Bắt đầu', value: startDate ? new Date(startDate).toLocaleDateString('vi-VN') : '—' },
@@ -650,10 +668,10 @@ function Step7_Review({
 }
 
 function Step8_Payment({
-  lpBalance, lpDiscount, setLpDiscount, name, setName, email, setEmail,
-  phone, setPhone, company, setCompany, submitted, setSubmitted, onConfirm, orderId,
+  lpBalance, maxLpRedeem, lpDiscount, setLpDiscount, name, setName, email, setEmail,
+  phone, setPhone, company, setCompany, submitted, onConfirm, orderId,
 }: {
-  lpBalance: number; lpDiscount: number; setLpDiscount: (n: number) => void;
+  lpBalance: number; maxLpRedeem: number; lpDiscount: number; setLpDiscount: (n: number) => void;
   name: string; setName: (s: string) => void;
   email: string; setEmail: (s: string) => void;
   phone: string; setPhone: (s: string) => void;
@@ -661,7 +679,25 @@ function Step8_Payment({
   submitted: boolean; setSubmitted: (b: boolean) => void;
   onConfirm: (n: string, em: string, ph: string, co: string) => void;
   orderId: string;
+  submitLoading: boolean; submitError: string; setSubmitError: (s: string) => void;
 }) {
+  // Error display
+  if (submitError) {
+    return (
+      <div className="text-center py-8">
+        <div style={{ color: DS.red, fontSize: 13, marginBottom: 12, padding: '12px 16px', background: 'rgba(239,68,68,0.1)', borderRadius: 10, border: '1px solid rgba(239,68,68,0.25)' }}>
+          {submitError}
+        </div>
+        <button
+          onClick={() => setSubmitError('')}
+          style={{ color: DS.text4, fontSize: 12, background: 'none', border: 'none', cursor: 'pointer', fontFamily: DS.mono }}
+        >
+          Đóng và thử lại
+        </button>
+      </div>
+    );
+  }
+
   const payMethods = [
     { id: 'bank', label: 'Chuyển khoản ngân hàng', icon: '🏦' },
     { id: 'vnpay', label: 'VNPay QR', icon: '📱' },
@@ -736,7 +772,7 @@ function Step8_Payment({
           <div className="flex items-center justify-between mb-3">
             <div>
               <div style={{ color: DS.purple, fontSize: 12, fontFamily: DS.mono, letterSpacing: '0.1em', marginBottom: 2 }}>◈ DÙNG LP ĐIỂM THƯỞNG ĐỂ GIẢM GIÁ</div>
-              <div style={{ color: DS.text4, fontSize: 11 }}>Số dư: {lpBalance.toLocaleString()} LP · 1,000 LP = 500,000 VNĐ (tối đa 20%)</div>
+              <div style={{ color: DS.text4, fontSize: 11 }}>Số dư: {lpBalance.toLocaleString()} LP · Tối đa dùng: {maxLpRedeem.toLocaleString()} LP (20%)</div>
             </div>
           </div>
           <div className="flex items-center gap-4">
@@ -746,7 +782,7 @@ function Step8_Payment({
             <div style={{ color: DS.purple, fontFamily: DS.mono, fontSize: 16, fontWeight: 700, minWidth: 80, textAlign: 'center' }}>
               {lpDiscount.toLocaleString()} LP
             </div>
-            <button onClick={() => setLpDiscount(Math.min(lpBalance, lpDiscount + 1000))} style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(255,255,255,0.06)', border: `1px solid ${DS.border}`, color: DS.text3, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <button onClick={() => setLpDiscount(Math.min(maxLpRedeem, lpDiscount + 1000))} style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(255,255,255,0.06)', border: `1px solid ${DS.border}`, color: DS.text3, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Plus size={14} />
             </button>
           </div>
@@ -817,13 +853,92 @@ export default function BookingWizardPage() {
   const [phone, setPhone] = useState('');
   const [company, setCompany] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [submitLoading, setSubmitLoading] = useState(false);
+  const [submitError, setSubmitError] = useState('');
   const [newOrderId, setNewOrderId] = useState('');
 
-  const { addOrder } = useLoopStore();
-  const LP_BALANCE = 15200;
+  // ── Wizard config from BE (falls back to hardcoded data when unavailable) ──
+  const [services, setServices] = useState<WizardService[]>(FALLBACK_SERVICES);
+  const [packages, setPackages] = useState<WizardPackage[]>(FALLBACK_PACKAGES);
+  const [featureOptions, setFeatureOptions] = useState<Record<string, WizardFeature[]>>(FALLBACK_FEATURES);
+  const [talents] = useState<WizardTalent[]>(FALLBACK_TALENTS);
+  const [extraOptions] = useState<WizardExtra[]>(FALLBACK_EXTRAS);
+  const [lpRate, setLpRate] = useState<LpRateConfig>({
+    lpPerVnd: 500,
+    vndPerLp: 2,
+    maxDiscountPercent: 20,
+    lpEarnPerMillion: 50,
+  });
+  const [maxLpRedeem, setMaxLpRedeem] = useState(0);
 
-  const service = SERVICES.find(s => s.id === serviceId) ?? null;
-  const pkg = PACKAGES.find(p => p.id === pkgId) ?? null;
+  // ── i18n: current locale from store ─────────────────────────────────────
+  const { locale } = useLocaleStore();
+
+  useEffect(() => {
+    let cancelled = false;
+    bookingService.getPricingConfig(locale)
+      .then(config => {
+        if (cancelled) return;
+
+        // Services from BE → map to WizardService (use slug as id for routing)
+        const wSvcs: WizardService[] = config.packages.map((p: typeof config.packages[0]) => ({
+          id: p.slug, icon: <span>🌐</span>,
+          title: p.name, desc: p.desc,
+          basePrice: p.price ?? config.basePrice,
+          color: '#3B82F6', perMonth: p.isSubscription,
+        }));
+        if (wSvcs.length > 0) setServices(wSvcs);
+
+        // Packages from BE
+        if (config.packages.length > 0) {
+          setPackages(config.packages.map((p: typeof config.packages[0]) => ({
+            id: p.id, slug: p.slug, name: p.name, multiplier: p.multiplier,
+            color: '#3B82F6', desc: p.desc, features: p.features ?? [],
+            lp: config.packageLps[p.slug] ?? 50,
+          })));
+        }
+
+        // Features grouped by category from BE
+        if (Object.keys(config.featuresByCategory).length > 0) {
+          const grouped: Record<string, WizardFeature[]> = {};
+          for (const [cat, feats] of Object.entries(config.featuresByCategory)) {
+            grouped[cat] = (feats as typeof config.features).map((f: typeof config.features[0]) => ({
+              id: f.id, label: f.label, labelEn: f.labelEn ?? f.label,
+              price: f.price, icon: <Star size={14} />,
+            }));
+          }
+          setFeatureOptions(grouped);
+        }
+
+        // LP economy config from BE
+        if (config.lpRate) setLpRate(config.lpRate);
+      })
+      .catch(() => { /* keep fallback */ });
+    return () => { cancelled = true; };
+  }, [locale]);
+
+  const { addOrder } = useLoopStore();
+  const { user } = useAuthStore();
+  const lpBalance = user?.lpBalance ?? 0;
+
+  const service = services.find(s => s.id === serviceId) ?? null;
+  const pkg = packages.find(p => p.id === pkgId) ?? null;
+  const talent = talents.find(t => t.id === talentId) ?? null;
+  const currentFeatureOptions: WizardFeature[] = featureOptions[serviceId] ?? [];
+
+  // Current subtotal to compute LP cap (max 20%)
+  const currentBasePrice = service ? service.basePrice * (pkg?.multiplier ?? 1) : 0;
+  const currentFeaturePrice = currentFeatureOptions.filter(f => features.includes(f.id)).reduce((sum, f) => sum + f.price, 0);
+  const currentExtraPrice = extraOptions.filter(e => extras.includes(e.id)).reduce((sum, e) => sum + e.price, 0);
+  const currentSubtotal = currentBasePrice + currentFeaturePrice + currentExtraPrice;
+
+  useEffect(() => {
+    const maxDiscountVnd = currentSubtotal * (lpRate.maxDiscountPercent / 100);
+    const lpNeededForMax = Math.floor(maxDiscountVnd / lpRate.lpPerVnd);
+    const maxAllowed = Math.max(0, Math.min(lpBalance, lpNeededForMax));
+    setMaxLpRedeem(maxAllowed);
+    if (lpDiscount > maxAllowed) setLpDiscount(maxAllowed);
+  }, [currentSubtotal, lpBalance, lpRate, lpDiscount]);
 
   const toggleFeature = (id: string) => setFeatures(prev => prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id]);
   const toggleExtra = (id: string) => setExtras(prev => prev.includes(id) ? prev.filter(e => e !== id) : [...prev, id]);
@@ -836,61 +951,90 @@ export default function BookingWizardPage() {
     return true;
   };
 
-  const handleSubmit = (n: string, em: string, ph: string, co: string) => {
-    const svc = SERVICES.find(s => s.id === serviceId);
-    const pkg = PACKAGES.find(p => p.id === pkgId);
-    const basePrice = svc ? svc.basePrice * (pkg?.multiplier ?? 1) : 0;
-    const featPrices = (FEATURE_OPTIONS[serviceId] ?? []).filter(f => features.includes(f.id)).reduce((s, f) => s + f.price, 0);
-    const extraPrices = EXTRAS.filter(e => extras.includes(e.id)).reduce((s, e) => s + e.price, 0);
-    const total = Math.round((basePrice + featPrices + extraPrices) * 1.1);
-    const lpEarned = Math.round(total / 1_000_000) * (pkg?.lp ?? 50);
-    const orderId = `ORD-${Date.now().toString().slice(-4)}`;
-    setNewOrderId(orderId);
+  const handleSubmit = async (n: string, em: string, ph: string, co: string) => {
+    const svc = service;
+    const selectedPkg = pkg;
+    const featOpts = currentFeatureOptions;
+    const basePrice = svc ? svc.basePrice * (selectedPkg?.multiplier ?? 1) : 0;
+    const featPrices = featOpts.filter(f => features.includes(f.id)).reduce((s, f) => s + f.price, 0);
+    const extraPricesTotal = extraOptions.filter(e => extras.includes(e.id)).reduce((s, e) => s + e.price, 0);
+    const total = Math.round((basePrice + featPrices + extraPricesTotal) * 1.1);
+    const lpEarned = Math.round(total / 1_000_000) * (selectedPkg?.lp ?? 50);
 
-    const svcTypeMap: Record<string, string> = {
-      web: 'thiet-ke-web', app: 'phat-trien-app',
-      dashboard: 'dashboard-analytics', seo: 'seo-marketing',
-    };
+    // Build selectedItems matching BE BeQuoteItem schema
+    const selectedItems = [
+      { featureId: svc?.id ?? serviceId, featureName: svc?.title ?? '', variantId: selectedPkg?.id ?? '', variantName: selectedPkg?.name ?? '', price: basePrice },
+      ...featOpts.filter(f => features.includes(f.id)).map(f => ({
+        featureId: f.id, featureName: f.label, variantId: '', variantName: '', price: f.price,
+      })),
+      ...extraOptions.filter(e => extras.includes(e.id)).map(e => ({
+        featureId: e.id, featureName: e.label, variantId: '', variantName: '', price: e.price,
+      })),
+    ];
 
-    const newOrder: Order = {
-      id: orderId,
-      clientId: 9, clientName: n, clientCompany: co || company || 'Khách hàng mới',
-      clientAvatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=80&h=80&crop=faces',
-      type: 'service',
-      serviceType: svcTypeMap[serviceId] as any,
-      serviceTitle: svc?.title,
-      title: `${svc?.title ?? 'Dịch vụ'} — ${pkg?.name ?? 'Gói'} (${co || 'New Client'})`,
-      budget: total,
-      lpUsed: lpDiscount,
-      lpReward: lpEarned,
-      status: 'pending_payment',
-      progress: 0,
-      createdAt: new Date().toLocaleDateString('vi-VN'),
-      updatedAt: new Date().toLocaleDateString('vi-VN'),
-      invoiceId: `INV-${orderId}`,
-      tags: features.length > 0 ? features : [svc?.id ?? 'web'],
-      messages: [
-        {
-          id: 'm_init', senderId: 'admin', senderName: 'LOOP System',
-          content: `Cảm ơn ${n} đã đặt dịch vụ ${svc?.title ?? ''}! Chúng tôi sẽ liên hệ qua ${em} trong vòng 2 giờ làm việc để xác nhận và tạo hợp đồng.`,
-          type: 'system',
-          timestamp: new Date().toLocaleString('vi-VN'), read: true,
-        }
-      ],
-    };
-    addOrder(newOrder);
-    setSubmitted(true);
+    try {
+      setSubmitLoading(true);
+      setSubmitError('');
+      const result = await ordersService.submitQuote({
+        customerName: n,
+        customerEmail: em,
+        customerPhone: ph || undefined,
+        companyName: co || undefined,
+        selectedItems,
+        totalAmount: total,
+        notes: `Dịch vụ: ${svc?.title ?? ''} | Gói: ${selectedPkg?.name ?? ''}`,
+      });
+      setNewOrderId(result.orderNumber);
+
+      // Add mock Order to local store for portal navigation UX
+      const svcTypeMap: Record<string, string> = {
+        web: 'thiet-ke-web', app: 'phat-trien-app',
+        dashboard: 'dashboard-analytics', seo: 'seo-marketing',
+      };
+      const newOrder: Order = {
+        id: result.id,
+        clientId: 9, clientName: n, clientCompany: co || company || 'Khách hàng mới',
+        clientAvatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=80&h=80&crop=faces',
+        type: 'service',
+        serviceType: svcTypeMap[serviceId] as ServiceType,
+        serviceTitle: svc?.title,
+        title: `${svc?.title ?? 'Dịch vụ'} — ${selectedPkg?.name ?? 'Gói'} (${co || 'New Client'})`,
+        budget: total,
+        lpUsed: lpDiscount,
+        lpReward: lpEarned,
+        status: 'pending_payment',
+        progress: 0,
+        createdAt: new Date().toLocaleDateString('vi-VN'),
+        updatedAt: new Date().toLocaleDateString('vi-VN'),
+        invoiceId: `INV-${result.orderNumber}`,
+        tags: features.length > 0 ? features : [svc?.id ?? 'web'],
+        messages: [
+          {
+            id: 'm_init', senderId: 'admin', senderName: 'LOOP System',
+            content: `Cảm ơn ${n} đã đặt dịch vụ ${svc?.title ?? ''}! Chúng tôi sẽ liên hệ qua ${em} trong vòng 2 giờ làm việc để xác nhận và tạo hợp đồng.`,
+            type: 'system',
+            timestamp: new Date().toLocaleString('vi-VN'), read: true,
+          }
+        ],
+      };
+      addOrder(newOrder);
+      setSubmitted(true);
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : 'Đã xảy ra lỗi khi gửi yêu cầu. Vui lòng thử lại.');
+    } finally {
+      setSubmitLoading(false);
+    }
   };
 
   const steps = [
-    <Step1_Service key={0} selected={serviceId} onSelect={setServiceId} />,
-    <Step2_Package key={1} selected={pkgId} onSelect={setPkgId} serviceId={serviceId} />,
-    <Step3_Configure key={2} serviceId={serviceId} selected={features} onToggle={toggleFeature} />,
-    <Step4_Talent key={3} selected={talentId} onSelect={setTalentId} />,
+    <Step1_Service key={0} services={services} selected={serviceId} onSelect={setServiceId} />,
+    <Step2_Package key={1} packages={packages} service={service} selected={pkgId} onSelect={setPkgId} />,
+    <Step3_Configure key={2} featureOptions={currentFeatureOptions} selected={features} onToggle={toggleFeature} />,
+    <Step4_Talent key={3} talents={talents} selected={talentId} onSelect={setTalentId} />,
     <Step5_Schedule key={4} startDate={startDate} setStartDate={setStartDate} duration={duration} setDuration={setDuration} />,
-    <Step6_Extras key={5} selected={extras} onToggle={toggleExtra} />,
-    <Step7_Review key={6} serviceId={serviceId} pkgId={pkgId} features={features} talentId={talentId} extras={extras} startDate={startDate} duration={duration} />,
-    <Step8_Payment key={7} lpBalance={LP_BALANCE} lpDiscount={lpDiscount} setLpDiscount={setLpDiscount} name={name} setName={setName} email={email} setEmail={setEmail} phone={phone} setPhone={setPhone} company={company} setCompany={setCompany} submitted={submitted} setSubmitted={setSubmitted} onConfirm={handleSubmit} orderId={newOrderId} />,
+    <Step6_Extras key={5} extraOptions={extraOptions} selected={extras} onToggle={toggleExtra} />,
+    <Step7_Review key={6} service={service} pkg={pkg} talent={talent} featureOptions={currentFeatureOptions} features={features} extraOptions={extraOptions} extras={extras} startDate={startDate} duration={duration} />,
+    <Step8_Payment key={7} lpBalance={lpBalance} maxLpRedeem={maxLpRedeem} lpDiscount={lpDiscount} setLpDiscount={setLpDiscount} name={name} setName={setName} email={email} setEmail={setEmail} phone={phone} setPhone={setPhone} company={company} setCompany={setCompany} submitted={submitted} setSubmitted={setSubmitted} onConfirm={handleSubmit} orderId={newOrderId} submitLoading={submitLoading} submitError={submitError} setSubmitError={setSubmitError} />
   ];
 
   return (
@@ -916,7 +1060,7 @@ export default function BookingWizardPage() {
           </div>
 
           {/* Progress */}
-          <ProgressBar step={step} />
+          <ProgressBar step={step} stepLabels={WIZARD_STEP_LABELS[locale]} />
         </div>
       </div>
 
@@ -987,10 +1131,13 @@ export default function BookingWizardPage() {
             <PriceSidebar
               service={service}
               pkg={pkg}
+              featureOptions={currentFeatureOptions}
               features={features}
               extras={extras}
+              extraOptions={extraOptions}
               lpDiscount={lpDiscount}
-              lpBalance={LP_BALANCE}
+              lpBalance={lpBalance}
+              lpRate={lpRate}
             />
           </div>
         </div>

@@ -162,6 +162,13 @@ export interface Service {
   maskedUrl: string;
   ordersCount: number;
   revenue: number;
+  /** Extra fields for ServiceDetailPage */
+  desc?: string;
+  features?: string[];
+  process?: Array<{ title: string; desc: string }>;
+  tech?: string[];
+  cases?: Array<{ name: string; metric: string; img: string }>;
+  faqs?: Array<{ q: string; a: string }>;
 }
 
 // ── Initial Effects Data ──────────────────────────────────────────────────────
@@ -555,6 +562,7 @@ export const useLoopStore = create<LoopStore>((set, get) => ({
   bulkReadAdminNotifs: (ids) => set(s => ({ adminNotifications: s.adminNotifications.map(n => ids.includes(n.id) ? { ...n, read: true } : n) })),
   bulkArchiveAdminNotifs: (ids) => set(s => ({ adminNotifications: s.adminNotifications.map(n => ids.includes(n.id) ? { ...n, archived: true } : n) })),
   addAdminNotification: (notif) => set(s => ({ adminNotifications: [notif, ...s.adminNotifications] })),
+  setAdminNotifications: (notifs) => set(s => ({ adminNotifications: notifs })),
 
   // ── Portfolio ────────────────────────────────────────────────────────────
   updateProject: (id, data) => set(s => ({ portfolio: s.portfolio.map(p => p.id === id ? { ...p, ...data } : p) })),
@@ -573,6 +581,18 @@ export const useLoopStore = create<LoopStore>((set, get) => ({
   })),
   toggleEffectEnabled: (id) => set(s => ({ effects: s.effects.map(e => e.id === id ? { ...e, enabled: !e.enabled } : e) })),
   setGlobalEffectsEnabled: (enabled) => set({ globalEffectsEnabled: enabled }),
+  // Replace all effects (used for BE sync)
+  setEffects: (effects) => set({ effects }),
+  // Sync effects from BE — merges BE data into store, keeps local-only fields
+  syncEffects: (beEffects: RankEffect[]) => set(s => {
+    const merged = [...s.effects];
+    for (const be of beEffects) {
+      const idx = merged.findIndex(e => e.id === be.id);
+      if (idx >= 0) merged[idx] = { ...merged[idx], ...be };
+      else merged.push(be);
+    }
+    return { effects: merged };
+  }),
   updateMemberOverride: (override) => set(s => {
     const idx = s.memberEffectOverrides.findIndex(o => o.memberId === override.memberId && o.effectId === override.effectId);
     if (idx >= 0) {

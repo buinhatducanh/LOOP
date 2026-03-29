@@ -2,7 +2,7 @@
  * PortfolioTab — Quản lý dự án portfolio (Admin)
  * CRUD projects, demo links, featured control
  */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Plus, Edit3, Trash2, X, Save, Monitor, Star, ExternalLink,
@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { DS, GRD } from '../layout/ds';
 import { useLoopStore, type PortfolioProject } from '../../store/loopStore';
+import { projectsService } from '../../../api/projects.service';
 import { DemoViewer } from '../ui/DemoViewer';
 import { Link } from 'react-router';
 
@@ -249,6 +250,23 @@ function ProjectEditModal({ project, onClose, onSave }: {
 // ── Main ──────────────────────────────────────────────────────────────────────
 export function PortfolioTab() {
   const { portfolio, updateProject, deleteProject, addProject } = useLoopStore();
+  const [apiProjects, setApiProjects] = useState<PortfolioProject[]>([]);
+  const [projectsLoading, setProjectsLoading] = useState(true);
+  const [projectsError, setProjectsError] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    setProjectsLoading(true);
+    setProjectsError('');
+    projectsService.getAdminProjects()
+      .then(fetched => { if (!cancelled) setApiProjects(fetched); })
+      .catch(() => { if (!cancelled) setProjectsError('Không tải được danh sách dự án'); })
+      .finally(() => { if (!cancelled) setProjectsLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  // Use API projects when loaded, fall back to store
+  const displayProjects = projectsLoading && projectsError === '' ? portfolio : apiProjects.length > 0 ? apiProjects : portfolio;
   const [editingProject, setEditingProject] = useState<PortfolioProject | null>(null);
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [filterCat, setFilterCat] = useState('Tất cả');
@@ -256,7 +274,7 @@ export function PortfolioTab() {
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   const cats = ['Tất cả', 'SaaS', 'App', 'Website'];
-  const filtered = portfolio.filter(p =>
+  const filtered = displayProjects.filter(p =>
     (filterCat === 'Tất cả' || p.cat === filterCat) &&
     (p.title.toLowerCase().includes(search.toLowerCase()) || p.client.toLowerCase().includes(search.toLowerCase()))
   );
@@ -285,7 +303,7 @@ export function PortfolioTab() {
             project={editingProject}
             onClose={() => setEditingProject(null)}
             onSave={(data) => {
-              if (portfolio.find(p => p.id === editingProject.id)) {
+              if (displayProjects.find(p => p.id === editingProject.id)) {
                 updateProject(editingProject.id, data);
               } else {
                 addProject({ ...editingProject, ...data });
@@ -297,7 +315,7 @@ export function PortfolioTab() {
 
       {/* Toolbar */}
       <div className="flex items-center gap-4 flex-wrap">
-        <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.18em' }}>── QUẢN LÝ PORTFOLIO ({portfolio.length} dự án)</div>
+        <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.18em' }}>── QUẢN LÝ PORTFOLIO ({displayProjects.length} dự án)</div>
         <div className="flex gap-2 ml-auto flex-wrap">
           <div className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: DS.bgCard, border: `1px solid ${DS.border}` }}>
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Tìm dự án..."
@@ -320,10 +338,10 @@ export function PortfolioTab() {
       {/* Summary stats */}
       <div className="grid grid-cols-4 gap-4">
         {[
-          { label: 'Tổng dự án', val: portfolio.length, color: DS.blue },
-          { label: 'Có demo', val: portfolio.filter(p => p.hasDemo).length, color: DS.cyan },
-          { label: 'Featured', val: portfolio.filter(p => p.featured).length, color: DS.amber },
-          { label: 'Tổng LP phát hành', val: portfolio.reduce((s, p) => s + p.lp, 0).toLocaleString(), color: DS.purple },
+          { label: 'Tổng dự án', val: displayProjects.length, color: DS.blue },
+          { label: 'Có demo', val: displayProjects.filter(p => p.hasDemo).length, color: DS.cyan },
+          { label: 'Featured', val: displayProjects.filter(p => p.featured).length, color: DS.amber },
+          { label: 'Tổng LP phát hành', val: displayProjects.reduce((s, p) => s + (p.lp ?? 0), 0).toLocaleString(), color: DS.purple },
         ].map(s => (
           <div key={s.label} className="p-4 rounded-2xl" style={{ background: DS.bgCard, border: `1px solid ${DS.border}` }}>
             <div style={{ color: s.color, fontFamily: DS.mono, fontSize: 20, fontWeight: 700 }}>{s.val}</div>

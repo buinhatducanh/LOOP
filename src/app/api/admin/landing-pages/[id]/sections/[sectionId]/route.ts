@@ -10,7 +10,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string; sectionId: string }> }
 ) {
   try {
-    await requireAuth();
+    await requireAuth(req);
     const { sectionId } = await params;
 
     const section = await prisma.landingSection.findUnique({
@@ -33,7 +33,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string; sectionId: string }> }
 ) {
   try {
-    const session = await requireAuth();
+    const session = await requireAuth(req);
     const { sectionId } = await params;
     const data = await req.json();
 
@@ -69,7 +69,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string; sectionId: string }> }
 ) {
   try {
-    const session = await requireAuth();
+    const session = await requireAuth(req);
     const { sectionId } = await params;
 
     const existing = await prisma.landingSection.findUnique({

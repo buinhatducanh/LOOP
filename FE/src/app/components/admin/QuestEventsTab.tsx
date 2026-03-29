@@ -1,14 +1,15 @@
 /**
  * QuestEventsTab — Admin management for Quests & Company Events
  */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Star, Calendar, Users, Zap, Plus, Edit3, Trash2, Check, X,
-  Clock, Trophy, Target, Gift, ChevronDown, Flame,
+  Clock, Trophy, Target, Gift, ChevronDown, Flame, RefreshCw,
 } from 'lucide-react';
 import { DS, GRD } from '../layout/ds';
 import { useAuthStore, type Quest, type CompanyEvent } from '../../store/authStore';
+import { questsService } from '../../../api/quests.service';
 
 const rgba = (hex: string, a: number) => {
   const h = hex.replace('#', '');
@@ -29,9 +30,39 @@ const CAT_LABELS: Record<string, string> = {
 };
 
 export function QuestEventsTab() {
-  const { quests, events, addQuest, updateQuest, deleteQuest, addEvent, updateEvent, deleteEvent } = useAuthStore();
+  const { quests, events, addQuest, updateQuest, deleteQuest, addEvent, updateEvent, deleteEvent, setQuests, setEvents } = useAuthStore();
   const [tab, setTab] = useState<'quests' | 'events'>('quests');
   const [editQuest, setEditQuest] = useState<Quest | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  // Fetch from BE on mount
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    Promise.all([
+      questsService.getQuests({ limit: 100 }),
+      questsService.getEvents({ limit: 100 }),
+    ])
+      .then(([qr, er]) => {
+        if (!cancelled) {
+          setQuests(qr.data);
+          setEvents(er.data);
+        }
+      })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [setQuests, setEvents]);
+
+  const handleDeleteQuest = (id: string) => {
+    deleteQuest(id);
+    questsService.deleteQuest(id).catch(() => {});
+  };
+
+  const handleToggleEvent = (ev: CompanyEvent) => {
+    const next = !ev.active;
+    updateEvent(ev.id, { active: next });
+    questsService.updateEvent(ev.id, { active: next }).catch(() => updateEvent(ev.id, { active: !next }));
+  };
 
   const questStats = {
     total: quests.length,
@@ -116,7 +147,7 @@ export function QuestEventsTab() {
                         </div>
                       </div>
                       <div className="flex items-center gap-1 flex-shrink-0">
-                        <button onClick={() => deleteQuest(q.id)} style={{ width: 28, height: 28, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: 'none', cursor: 'pointer', color: DS.text5 }}
+                        <button onClick={() => handleDeleteQuest(q.id)} style={{ width: 28, height: 28, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: 'none', cursor: 'pointer', color: DS.text5 }}
                           onMouseEnter={e => { e.currentTarget.style.color = DS.red; }} onMouseLeave={e => { e.currentTarget.style.color = DS.text5; }}>
                           <Trash2 size={12} />
                         </button>
@@ -155,7 +186,7 @@ export function QuestEventsTab() {
                         </div>
                       </div>
                     </div>
-                    <button onClick={() => updateEvent(ev.id, { active: !ev.active })}
+                    <button onClick={() => handleToggleEvent(ev)}
                       className="px-3 py-1.5 rounded-lg"
                       style={{ background: rgba(ev.active ? DS.red : DS.green, 0.08), border: `1px solid ${rgba(ev.active ? DS.red : DS.green, 0.2)}`, color: ev.active ? DS.red : DS.green, cursor: 'pointer', fontSize: 11, fontWeight: 600 }}>
                       {ev.active ? 'Kết thúc' : 'Kích hoạt'}

@@ -16,6 +16,7 @@ import { DS, GRD } from '../components/layout/ds';
 import { members, RANKS } from '../components/team/memberData';
 import { useLoopStore } from '../store/loopStore';
 import { useAuthStore } from '../store/authStore';
+import { useLocaleStore, ORDER_STATUS_LABELS } from '../store/localeStore';
 import { DemoViewer } from '../components/ui/DemoViewer';
 import { EffectsInventoryTab } from '../components/customer/EffectsInventoryTab';
 import { QuestsTab } from '../components/customer/QuestsTab';
@@ -622,8 +623,59 @@ function ProjectsTab() {
   const { orders, clientNotifications, sendClientMessage } = useLoopStore();
   const [msgText, setMsgText] = useState('');
 
-  // Orders belonging to client ID=2 (Nguyễn Minh Tuấn)
-  const clientOrders = orders.filter(o => o.clientId === 2);
+  // Orders from BE (fallback to local store for offline/demo)
+  const { user } = useAuthStore();
+  const { locale } = useLocaleStore();
+  const [clientOrders, setClientOrders] = useState<Order[]>(orders.filter(o => o.clientId === 2));
+  const [ordersLoading, setOrdersLoading] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!user?.email) return;
+
+    setOrdersLoading(true);
+    ordersService.getOrders({ limit: 50, customerEmail: user.email })
+      .then(({ orders: fetched }) => {
+        if (cancelled) return;
+
+        // Convert API order type -> UI order shape used in this page
+        const mapped = fetched.map((o) => ({
+          id: o.id,
+          clientId: 2,
+          clientName: o.customerName,
+          clientCompany: o.companyName ?? 'Khách hàng LOOP',
+          clientAvatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=80&h=80&crop=faces',
+          type: 'service' as const,
+          serviceType: 'thiet-ke-web' as const,
+          serviceTitle: o.packageTitle || 'Dịch vụ LOOP',
+          title: o.packageTitle || `Đơn hàng ${o.orderNumber}`,
+          budget: o.totalAmount ?? 0,
+          lpUsed: o.lpUsed ?? 0,
+          lpReward: o.lpReward ?? 0,
+          status: (o.status as Order['status']) ?? 'pending_payment',
+          progress: o.status === 'done' ? 100 : o.status === 'demo_ready' ? 85 : o.status === 'in_progress' ? 55 : o.status === 'paid' ? 20 : 0,
+          createdAt: new Date(o.createdAt).toLocaleDateString('vi-VN'),
+          updatedAt: new Date(o.updatedAt).toLocaleDateString('vi-VN'),
+          invoiceId: o.orderNumber,
+          assignedPM: null,
+          tags: [],
+          messages: [],
+          demoUrl: o.demoUrl,
+          maskedUrl: o.maskedUrl,
+        }));
+
+        setClientOrders(mapped.length > 0 ? mapped : orders.filter(o => o.clientId === 2));
+      })
+      .catch(() => {
+        if (!cancelled) setClientOrders(orders.filter(o => o.clientId === 2));
+      })
+      .finally(() => {
+        if (!cancelled) setOrdersLoading(false);
+      });
+
+    return () => { cancelled = true; };
+  }, [user?.email, orders]);
+
   const demoReady = clientOrders.filter(o => o.status === 'demo_ready' || (o.demoUrl && o.status === 'in_progress'));
   const selectedDemoOrder = clientOrders.find(o => o.id === demoOrderId);
 
@@ -749,6 +801,12 @@ function ProjectsTab() {
       </AnimatePresence>
 
       {/* Store orders summary */}
+      {ordersLoading && (
+        <div className="rounded-2xl p-4" style={{ background: DS.bgCard, border: `1px solid ${DS.border}` }}>
+          <div style={{ color: DS.text4, fontSize: 12, fontFamily: DS.mono }}>Đang tải đơn hàng từ hệ thống...</div>
+        </div>
+      )}
+
       {clientOrders.length > 0 && (
         <div className="rounded-2xl overflow-hidden" style={{ background: DS.bgCard, border: `1px solid ${DS.border}` }}>
           <div className="px-5 py-3" style={{ borderBottom: `1px solid ${DS.border}` }}>
@@ -758,7 +816,7 @@ function ProjectsTab() {
             {clientOrders.map(o => {
               const statusColors: Record<string, string> = { pending_payment: DS.text4, paid: DS.blue, in_progress: DS.cyan, demo_ready: DS.amber, done: DS.green, cancelled: DS.red };
               const sc = statusColors[o.status] ?? DS.text4;
-              const statusLabels: Record<string, string> = { pending_payment: 'Chờ TT', paid: 'Đã TT', in_progress: 'Đang làm', demo_ready: '⚡ Demo sẵn', client_review: 'Đang review', done: '✓ Hoàn thành', cancelled: 'Đã hủy' };
+              const statusLabel = ORDER_STATUS_LABELS[locale]?.[o.status] ?? ORDER_STATUS_LABELS.vi[o.status] ?? o.status;
               return (
                 <div key={o.id} className="flex items-center gap-4 px-5 py-3">
                   <div className="flex-1 min-w-0">
@@ -766,7 +824,7 @@ function ProjectsTab() {
                     <div style={{ color: DS.text5, fontSize: 11, fontFamily: DS.mono }}>{o.invoiceId} · PM: {o.assignedPM ?? 'Chưa phân công'}</div>
                   </div>
                   <div style={{ color: sc, fontSize: 10, fontFamily: DS.mono, padding: '2px 8px', borderRadius: 4, background: `${sc}12`, border: `1px solid ${sc}30`, flexShrink: 0 }}>
-                    {statusLabels[o.status] ?? o.status}
+                    {statusLabel}
                   </div>
                   {o.demoUrl && (
                     <button onClick={() => setDemoOrderId(demoOrderId === o.id ? null : o.id)}

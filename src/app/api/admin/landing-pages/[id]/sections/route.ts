@@ -10,7 +10,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireAuth();
+    await requireAuth(req);
     const { id } = await params;
 
     const sections = await prisma.landingSection.findMany({
@@ -30,7 +30,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await requireAuth();
+    const session = await requireAuth(req);
     const { id } = await params;
     const data = await req.json();
 
@@ -73,7 +73,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await requireAuth();
+    const session = await requireAuth(req);
     const { id } = await params;
     const { sections } = await req.json();
 

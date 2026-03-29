@@ -1,29 +1,17 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowLeft, Check, Calendar, Users, TrendingUp, Star, Clock, Monitor, X } from 'lucide-react';
+import { ArrowLeft, Check, Calendar, Users, TrendingUp, Star, Clock, Monitor } from 'lucide-react';
 import { DS, GRD } from '../components/layout/ds';
 import { DemoViewer } from '../components/ui/DemoViewer';
+import { projectsService } from '../../api/projects.service';
+import type { PortfolioProject } from '../../store/loopStore';
+import { useLocaleStore } from '../store/localeStore';
 
-const PROJECTS: Record<string, {
-  id: number; title: string; tag: string; cat: string;
-  color: string; img: string;
-  client: string; year: string; duration: string;
-  budget: string; team: string;
-  metric1: string; m1label: string;
-  metric2: string; m2label: string;
-  metric3: string; m3label: string;
-  challenge: string; solution: string; result: string;
-  tags: string[];
-  features: string[];
-  lp: number;
-  testimonial?: { name: string; role: string; quote: string };
-  // Demo fields
-  hasDemo: boolean;
-  demoUrl: string;
-  maskedUrl: string;
-  demoTitle: string;
-}> = {
+const USE_MOCK_FALLBACK = (import.meta.env.VITE_USE_MOCK_FALLBACK as string) !== 'false';
+
+// ── Fallback mock data (used when BE is offline) ─────────────────────────────
+const FALLBACK: Record<string, PortfolioProject> = {
   '1': {
     id: 1, title: 'VNRetail Platform', tag: 'E-commerce SaaS', cat: 'SaaS',
     color: DS.blue,
@@ -167,9 +155,113 @@ function NdaNotice({ color }: { color: string }) {
 }
 
 export default function ProjectDetailPage() {
-  const { id = '1' } = useParams<{ id: string }>();
-  const project = PROJECTS[id] ?? PROJECTS['1'];
+  const { id: slug } = useParams<{ id: string }>();
+
+  // API state
+  const [apiProject, setApiProject] = useState<PortfolioProject | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
+  const { locale } = useLocaleStore();
+
+  useEffect(() => {
+    if (!slug) { setLoading(false); return; }
+    let cancelled = false;
+    setLoading(true);
+    setNotFound(false);
+
+    projectsService.getProjectBySlug(slug, locale)
+      .then(p => {
+        if (cancelled) return;
+        if (!p) { setNotFound(true); }
+        else {
+          // fmt removed - PortfolioProject already has formatted fields
+          // const fmt = (n) => n ? n.toLocaleString('vi-VN') + ' VNĐ' : '';
+          setApiProject({
+            id: p.id,
+            title: p.title,
+            tag: p.tag,
+            cat: p.cat,
+            color: p.color,
+            img: p.img,
+            client: p.client,
+            year: p.year,
+            duration: p.duration,
+            budget: p.budget,
+            team: p.team,
+            metric1: p.metric1,
+            m1label: p.m1label,
+            metric2: p.metric2,
+            m2label: p.m2label,
+            metric3: p.metric3,
+            m3label: p.m3label,
+            challenge: p.challenge,
+            solution: p.solution,
+            result: p.result,
+            tags: p.tags,
+            features: p.features,
+            lp: p.lp,
+            testimonial: p.testimonial,
+            hasDemo: p.hasDemo,
+            demoUrl: p.demoUrl,
+            maskedUrl: p.maskedUrl,
+            demoTitle: p.demoTitle,
+          });
+        }
+      })
+      .catch(() => { if (!cancelled) setNotFound(true); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [slug, locale]);
+
+  // Fallback when API is offline
+  const fallback = FALLBACK[slug ?? ''] ?? FALLBACK['1'];
+  const project = apiProject ?? (USE_MOCK_FALLBACK ? fallback : null);
   const [showDemo, setShowDemo] = useState(false);
+
+  if (!loading && !project) {
+    return (
+      <div style={{ background: DS.bg, minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, paddingTop: 64 }}>
+        <div style={{ color: DS.text5, fontSize: 64, fontFamily: DS.mono }}>503</div>
+        <div style={{ color: DS.text3, fontSize: 18 }}>Không tải được dữ liệu dự án</div>
+        <div style={{ color: DS.text4, fontSize: 13, textAlign: 'center', maxWidth: 420 }}>
+          API hiện không khả dụng và chế độ fallback đã tắt.
+          Vui lòng thử lại sau hoặc bật VITE_USE_MOCK_FALLBACK=true trong môi trường dev.
+        </div>
+        <Link to="/du-an" style={{ color: DS.blue, fontFamily: DS.mono, fontSize: 13, textDecoration: 'none' }}>
+          ← Quay lại Portfolio
+        </Link>
+      </div>
+    );
+  }
+
+  if (!project) return null;
+
+  // Loading skeleton
+  if (loading) {
+    return (
+      <div style={{ background: DS.bg, fontFamily: DS.body, paddingTop: 64 }}>
+        <div style={{ height: 420, background: DS.bgCard }} />
+        <div className="max-w-5xl mx-auto px-6 py-12">
+          <div style={{ height: 48, width: '55%', background: DS.bgCard, borderRadius: 8, marginBottom: 24 }} />
+          <div style={{ height: 16, width: '100%', background: DS.bgCard, borderRadius: 4, marginBottom: 12 }} />
+          <div style={{ height: 16, width: '75%', background: DS.bgCard, borderRadius: 4 }} />
+        </div>
+      </div>
+    );
+  }
+
+  // Not found
+  if (notFound) {
+    return (
+      <div style={{ background: DS.bg, minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, paddingTop: 64 }}>
+        <div style={{ color: DS.text5, fontSize: 64, fontFamily: DS.mono }}>404</div>
+        <div style={{ color: DS.text3, fontSize: 18 }}>Dự án không tồn tại</div>
+        <Link to="/du-an" style={{ color: DS.blue, fontFamily: DS.mono, fontSize: 13, textDecoration: 'none' }}>
+          ← Quay lại Portfolio
+        </Link>
+      </div>
+    );
+  }
 
   const infoItems = [
     { icon: <Users size={14} />, label: 'Khách hàng', value: project.client },

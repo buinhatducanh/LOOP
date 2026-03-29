@@ -1,7 +1,8 @@
 # Inngest — Event Catalog & Background Jobs
 
-> **Source:** `src/lib/inngest/client.ts` + `src/lib/jobs/functions.ts` + `src/lib/inngest/functions.ts`
-> **Updated:** 2026-03-26 | **Status:** ✅ Implemented
+> **Source:** `src/lib/jobs/client.ts` + `src/lib/jobs/functions.ts`
+> **Handler:** `src/app/api/inngest/route.ts`
+> **Updated:** 2026-03-28 | **Status:** ✅ Implemented & Consolidated
 
 ---
 
@@ -14,14 +15,15 @@ API Route / Event → Inngest Cloud → Worker Function → DB / Email / Cache
 ```
 src/
 ├── lib/
-│   ├── jobs/               # Shared: client.ts + all functions
-│   │   ├── client.ts       # Inngest singleton + event types
-│   │   └── functions.ts    # PM functions (standup, SLA, LP reports)
-│   └── inngest/          # Website functions (emails, cache)
-│       ├── client.ts      # Re-exports from jobs/client.ts
-│       └── functions.ts    # Email + cleanup jobs
-└── app/api/inngest/route.ts  # HTTP handler (GET/POST)
+│   └── jobs/                    # Sole source of truth — all jobs here
+│       ├── client.ts            # Inngest singleton + event types + EVENTS map
+│       └── functions.ts         # All job functions (event-driven + cron)
+└── app/api/inngest/route.ts    # HTTP handler (GET/POST/PUT)
 ```
+
+> ⚠️ **2026-03-28:** The `src/lib/inngest/` directory has been removed.
+> All functions (website emails + PM cron jobs) are now consolidated in `src/lib/jobs/`.
+> The route handler imports only from `jobs/`.
 
 ---
 
@@ -135,35 +137,55 @@ export async function POST(req: NextRequest) {
 
 ### Implemented Functions
 
+#### Event-Driven Jobs
+
 | Function ID | Trigger | Description |
 |------------|---------|-------------|
 | `contact-confirmation-job` | `contact/submitted` | Sends confirmation email to customer + admin notification |
 | `order-confirmation-job` | `order/created` | Sends order confirmation to customer |
-| `prune-old-audit-logs` | Cron: `0 2 * * 0` (Sun 02:00) | Deletes audit logs older than 90 days |
-| `warm-cache` | Cron: `0 6,12 * * *` (06:00 + 12:00 UTC) | Pre-warms ISR cache for hot pages |
-| `daily-standup-reminder` | Cron: `0 8 * * 1-5` (Mon-Fri 08:00) | Sends standup reminder to PMs without today's standup |
-| `sla-violation-check` | Cron: `0 * * * *` (hourly) | Marks SLA-breached tasks + sends alerts |
-| `sla-warning-notification` | Cron: `0 * * * *` (hourly) | Warns assignees 24h before deadline |
-| `lp-monthly-report` | Cron: `0 8 1 * *` (1st of month 08:00) | Sends LP/XP monthly summary report |
 
-### Not Yet Implemented (Missing Handlers)
+#### Cron-Scheduled Jobs
+
+| Function ID | Schedule | Description |
+|------------|----------|-------------|
+| `daily-standup-reminder` | `0 8 * * 1-5` (Mon–Fri 08:00) | Sends standup reminder to PMs without today's standup |
+| `sla-violation-check` | `0 * * * *` (hourly) | Marks SLA-breached tasks + sends violation alerts |
+| `sla-warning-notification` | `0 * * * *` (hourly) | Warns assignees 24h before deadline |
+| `lp-monthly-report` | `0 8 1 * *` (1st of month 08:00) | Sends LP/XP monthly summary report |
+| `prune-old-audit-logs` | `0 2 * * 0` (Sunday 02:00) | Deletes audit logs older than 90 days |
+| `warm-cache` | `0 6,12 * * *` (06:00 + 12:00 UTC) | Pre-warms ISR cache for hot pages |
+
+### Missing Handlers
 
 | Event | Handler Needed |
 |-------|--------------|
 | `order/updated` | `order-updated-job` — notify customer on status change |
 | `user/signed_up` | `welcome-email-job` — send onboarding email |
-| `cache/invalidated` | `cache-invalidation-job` — coordinated multi-key invalidation |
+| `cache/invalidated` | No handler yet — used for documentation/future use |
 
 ---
 
-## Adding a New Event
+## Cron Expression Reference
 
-### 1. Define the event type
+| Schedule | Cron | Description |
+|----------|------|-------------|
+| Every weekday 08:00 | `0 8 * * 1-5` | Daily standup reminder |
+| Every hour | `0 * * * *` | SLA check + warning |
+| Every Sunday 02:00 | `0 2 * * 0` | Prune old audit logs |
+| Daily 06:00 + 12:00 | `0 6,12 * * *` | Cache warming |
+| 1st of month 08:00 | `0 8 1 * *` | LP monthly report |
 
+---
+
+## Adding a New Job
+
+### Step 1 — Event or Cron?
+
+**Event-driven** (fires when something happens):
 ```typescript
-// src/lib/jobs/client.ts
+// Add event type to src/lib/jobs/client.ts → EVENTS
 export const EVENTS = {
-  // ...existing
+  ...existing,
   TASK_COMPLETED: "task/completed",
 } as const;
 
@@ -176,36 +198,50 @@ export interface TaskCompletedPayload {
 }
 ```
 
-### 2. Create the handler
+**Cron-scheduled** (fires on a schedule):
+Add directly to `functions.ts` with a cron trigger.
+
+### Step 2 — Create the handler
 
 ```typescript
 // src/lib/jobs/functions.ts
-import { EVENTS, type TaskCompletedPayload } from "./client";
+import { inngest } from "./client";
+import { EVENTS } from "./client";
+import type { TaskCompletedPayload } from "./client";
 
 export const taskCompletedJob = inngest.createFunction(
   {
     id: "task-completed-notification",
     name: "Task Completed Notification",
+    rateLimit: { limit: 10, period: "1m" }, // optional: rate limit
     triggers: [{ event: EVENTS.TASK_COMPLETED }],
   },
   async ({ event }) => {
     const payload = event.data as TaskCompletedPayload;
-    // Send Slack/email notification
+    // Send notification...
     return { notified: true, taskId: payload.taskId };
   }
 );
 ```
 
-### 3. Register in the route handler
+### Step 3 — Register
 
 ```typescript
-// src/app/api/inngest/route.ts
-export { GET, POST, PUT } from "inngest/next";
+// src/lib/jobs/functions.ts — add to the allJobs array:
+export const allJobs = [
+  contactConfirmationJob,
+  orderConfirmationJob,
+  dailyStandupReminder,
+  slaViolationCheck,
+  slaWarningNotification,
+  lpMonthlyReport,
+  pruneOldAuditLogs,
+  warmCache,
+  taskCompletedJob, // ← add here
+];
 ```
 
-The `allJobs` + `pmFunctions` arrays in `src/lib/jobs/functions.ts` and `src/lib/inngest/functions.ts` are automatically merged in the route handler. Just add to the array.
-
-### 4. Trigger from anywhere
+### Step 4 — Trigger
 
 ```typescript
 await inngest.send({
@@ -216,17 +252,24 @@ await inngest.send({
 
 ---
 
-## Scheduled Functions
+## Route Handler
 
-### Cron Expression Reference
+```typescript
+// src/app/api/inngest/route.ts
+export const dynamic = "force-dynamic";
 
-| Schedule | Cron | Description |
-|----------|------|-------------|
-| Every weekday 08:00 | `0 8 * * 1-5` | Daily standup reminder |
-| Every hour | `0 * * * *` | SLA check + warning |
-| Every Sunday 02:00 | `0 2 * * 0` | Prune old audit logs |
-| Daily 06:00 + 12:00 | `0 6,12 * * *` | Cache warming |
-| 1st of month 08:00 | `0 8 1 * *` | LP monthly report |
+import { serve } from "inngest/next";
+import { inngest } from "@/lib/jobs/client";
+import { allJobs } from "@/lib/jobs/functions";
+
+export const { GET, POST, PUT } = serve({
+  client: inngest,
+  functions: allJobs,
+});
+```
+
+All job functions are registered via the single `allJobs` array.
+No need to manually merge arrays — everything is in one place.
 
 ---
 
@@ -246,9 +289,8 @@ Both required. Get from [inngest.com](https://www.inngest.com) dashboard.
 ```typescript
 // src/lib/jobs/functions.test.ts
 import { describe, it, expect, vi } from "vitest";
-import { inngest } from "@/lib/inngest/client";
+import { inngest } from "@/lib/jobs/client";
 
-// Test by calling the handler directly
 describe("contact-confirmation-job", () => {
   it("sends confirmation email", async () => {
     const mockSend = vi.fn();
@@ -267,19 +309,12 @@ describe("contact-confirmation-job", () => {
 
 1. Check `INNGEST_EVENT_KEY` is set in environment
 2. Check Inngest dashboard for failed runs
-3. Verify function ID matches the registered array in route handler
+3. Verify function ID matches an entry in the `allJobs` array in `src/lib/jobs/functions.ts`
 
 ### Jobs timing out
 
 Inngest gives each function 25 minutes max. For longer jobs, use `step.run()` to break into smaller steps (built into Inngest SDK automatically).
 
-### Missing function
+### All functions consolidated
 
-```typescript
-// In route handler, make sure all function arrays are spread:
-import { allJobs } from "@/lib/jobs/functions";     // website jobs
-import { pmFunctions } from "@/lib/inngest/functions"; // PM jobs
-export { GET, POST, PUT } from "inngest/next";
-// handler needs both arrays merged:
-serve({ client: inngest, functions: [...allJobs, ...pmFunctions] });
-```
+Since 2026-03-28, all functions are in `src/lib/jobs/functions.ts` — no more splitting between `inngest/` and `jobs/`. The route handler imports only from `jobs/`.

@@ -1,8 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense, lazy } from 'react';
 import { RouterProvider } from 'react-router';
+import { DS } from './components/layout/ds';
 import { router } from './routes.tsx';
-import OnboardingPage from './pages/OnboardingPage';
 import { useAuthStore } from './store/authStore';
+
+const OnboardingPage = lazy(() => import('./pages/OnboardingPage'));
 
 const ONBOARDING_KEY = 'loop_onboarding_completed';
 
@@ -34,6 +36,25 @@ function AppLoader() {
   );
 }
 
+function RouteChunkLoader() {
+  return (
+    <div style={{
+      minHeight: '100vh',
+      background: DS.bg,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexDirection: 'column',
+      gap: 12,
+    }}>
+      <div style={{ fontFamily: 'Cinzel, serif', fontSize: 22, color: DS.purple, letterSpacing: '0.08em' }}>
+        LOOP
+      </div>
+      <div style={{ color: DS.text4, fontSize: 12 }}>Đang tải trang...</div>
+    </div>
+  );
+}
+
 export default function App() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [ready, setReady] = useState(false);
@@ -60,8 +81,14 @@ export default function App() {
 
   return (
     <>
-      <RouterProvider router={router} />
-      {showOnboarding && <OnboardingPage onComplete={completeOnboarding} />}
+      <Suspense fallback={<RouteChunkLoader />}>
+        <RouterProvider router={router} />
+      </Suspense>
+      {showOnboarding && (
+        <Suspense fallback={<RouteChunkLoader />}>
+          <OnboardingPage onComplete={completeOnboarding} />
+        </Suspense>
+      )}
     </>
   );
 }

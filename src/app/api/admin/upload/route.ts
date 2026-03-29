@@ -12,7 +12,7 @@ cloudinary.config({
 // Require authentication for upload
 export async function POST(req: NextRequest) {
   try {
-    const authUser = await requireAuth();
+    const authUser = await requireAuth(req);
 
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   try {
-    await requireAuth();
+    await requireAuth(req);
 
     const { searchParams } = new URL(req.url);
     const publicId = searchParams.get("publicId");

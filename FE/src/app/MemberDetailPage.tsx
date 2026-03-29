@@ -1,7 +1,8 @@
 import { useParams, useNavigate } from 'react-router';
 import { motion } from 'motion/react';
 import { useState, CSSProperties, useEffect } from 'react';
-import { members, RANKS, RankKey } from './components/team/memberData';
+import { members as fallbackMembers, RANKS, RankKey, type Member as FallbackMember } from './components/team/memberData';
+import { teamService, mapTeamMemberToMember } from '../api/team.service';
 import { LEDRunner } from './components/team/LEDRunner';
 import { Counter } from './components/team/Counter';
 import { GUILD_ANIMATIONS_CSS } from './components/team/MemberCard';
@@ -349,17 +350,50 @@ function StatusPill({ status }: { status: ProjectEntry['status'] }) {
 export default function MemberDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const member = members.find((m) => m.id === Number(id));
+
+  // API-loaded member — falls back to hardcoded data when offline
+  const [apiMember, setApiMember] = useState<FallbackMember | null>(null);
+  const [memberLoading, setMemberLoading] = useState(true);
+
+  useEffect(() => {
+    if (!id) { setMemberLoading(false); return; }
+    let cancelled = false;
+    setMemberLoading(true);
+    teamService.getMemberBySlug(id, 'vi')
+      .then(beMember => {
+        if (!cancelled && beMember) {
+          const fb = fallbackMembers.find(m => m.id === Number(id));
+          const mapped = mapTeamMemberToMember(beMember, { [id]: fb ?? { id: 0 } });
+          setApiMember(mapped);
+        }
+      })
+      .catch(() => { /* fall back to hardcoded */ })
+      .finally(() => { if (!cancelled) setMemberLoading(false); });
+    return () => { cancelled = true; };
+  }, [id]);
+
+  const member = apiMember ?? fallbackMembers.find((m) => m.id === Number(id));
   const [hovered, setHovered] = useState(false);
 
   useEffect(() => { window.scrollTo(0, 0); }, []);
+
+  if (memberLoading) {
+    return (
+      <div className="min-h-screen bg-[#020617] flex items-center justify-center">
+        <div className="text-center">
+          <div style={{ color: '#3B82F6', fontSize: 48, marginBottom: 16 }}>◈</div>
+          <div style={{ color: '#94A3B8', fontFamily: "'JetBrains Mono', monospace", fontSize: 13 }}>Loading member data...</div>
+        </div>
+      </div>
+    );
+  }
 
   if (!member) {
     return (
       <div className="min-h-screen bg-[#020617] flex items-center justify-center text-white font-serif">
         <div className="text-center">
           <h1 className="text-4xl mb-4">Member Not Found</h1>
-          <button onClick={() => navigate('/')} className="text-blue-400 hover:underline">Return to Guild Hall</button>
+          <button onClick={() => navigate('/doi-ngu')} className="text-blue-400 hover:underline">Return to Guild Hall</button>
         </div>
       </div>
     );

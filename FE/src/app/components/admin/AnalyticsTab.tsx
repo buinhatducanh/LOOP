@@ -10,6 +10,8 @@ import {
   Activity, Filter,
 } from 'lucide-react';
 import { DS, GRD } from '../layout/ds';
+import { revenueService } from '../../../api/revenue.service';
+import type { DashboardCharts } from '../../../api/revenue.service';
 import { useLoopStore } from '../../store/loopStore';
 import { members, RANKS } from '../team/memberData';
 
@@ -403,6 +405,22 @@ const RADAR_AXES = ['Doanh thu', 'LP', 'Dự án', 'Khách hàng', 'Đội ngũ'
 const RADAR_DATA = [88, 75, 92, 71, 85, 90];
 
 export function AnalyticsTab() {
+  // ── API state ──────────────────────────────────────────────────────────────
+  const [apiCharts, setApiCharts] = useState<DashboardCharts | null>(null);
+  const [chartsLoading, setChartsLoading] = useState(true);
+  const [chartsError, setChartsError] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    setChartsLoading(true);
+    setChartsError('');
+    revenueService.getCharts()
+      .then(data => { if (!cancelled) setApiCharts(data); })
+      .catch(() => { if (!cancelled) setChartsError('Không tải được dữ liệu'); })
+      .finally(() => { if (!cancelled) setChartsLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
   const { orders } = useLoopStore();
   const [period, setPeriod] = useState<'3m' | '6m' | '12m'>('12m');
 

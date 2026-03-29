@@ -1,7 +1,7 @@
 # FE Phase Status Log — LOOP Solutions
 
 > **Mục tiêu:** Lưu lịch sử thay đổi trạng thái roadmap F0–F8 theo tuần để audit minh bạch.
-> **Cập nhật:** 2026-03-28
+> **Cập nhật:** 2026-03-29
 
 ---
 
@@ -29,6 +29,12 @@ Chỉ dùng 4 trạng thái:
 | Date | Week | Phase | Old Status | New Status | Changed By | Reason | Impact | ETA Recovery | Escalation Owner | Related Docs |
 |------|------|-------|------------|------------|------------|--------|--------|--------------|------------------|--------------|
 | 2026-03-28 | F0 | F0 Infrastructure | pending | in_progress | FE Lead | Khởi động wiring auth + api client | low | N/A | N/A | fe-roadmap.md |
+| 2026-03-29 | F0 | F0 Infrastructure | in_progress | completed | FE Lead | API client + auth service + store wired, build pass, auth guards active | low | N/A | N/A | fe-roadmap.md, fe-week-F0-plan.md |
+| 2026-03-29 | F1 | F1 Public Pages | pending | in_progress | FE Lead | Bắt đầu Phase F1: ServicesPage, PortfolioPage, LandingPage testimonials đã wired. | low | N/A | N/A | fe-roadmap.md, fe-week-01-plan.md |
+| 2026-03-29 | F1 | F1 Public Pages | in_progress | completed | FE Lead | Tất cả public pages đã wired: LandingPage Services + Portfolio sections, ServicesPage, PortfolioPage, BlogPage, AcademyPage, ContactPage, Home/Team. 7 service files wired to real APIs. Fallback data active khi BE offline. Lint + build pass. | low | N/A | N/A | fe-roadmap.md |
+| 2026-03-29 | F2 | F2 Booking/Orders | pending | in_progress | FE Lead | F2 i18n mandate added: GET /api/pricing/config must support ?lang= (vi/en/ja/ko/zh), ORDER_STATUS_LABELS map 6x5 locale, 5-locale QA mandatory. | medium | 2026-04-04 | FE Lead | fe-roadmap.md, fe-week-02-plan.md |
+| 2026-03-29 | F2 | F2 Booking/Orders | in_progress | in_progress | FE Lead | Verified: pricing/config BE✅, bookingService.getPricingConfig✅, submitQuote BE✅, transitionOrderStatus BE✅, calcLpDiscount✅, ORDER_STATUS_LABELS✅ (localeStore.ts). Fixed: BookingWizardPage useEffect locale dependency (locale→[locale]). Added legacy path redirect (routes.tsx). Home.tsx HeroSection/RankStrip props fix. Known issue: wizard header hardcoded VI labels. | low | N/A | N/A | fe-roadmap.md |
+| 2026-03-29 | F2 | F2 Booking/Orders | in_progress | completed | FE Lead | F2 COMPLETE. Item #1: WIZARD_STEP_LABELS 8×5 locale added to localeStore.ts. ProgressBar updated to accept stepLabels prop driven by WIZARD_STEP_LABELS[locale]. Build✅ lint✅. Item #2: 5-locale smoke test PASSED via Playwright — VI✅ EN✅ JA✅ KO✅ ZH✅ (ProgressBar step labels render correctly per locale). F2 closed. | low | N/A | N/A | fe-roadmap.md |
 
 ---
 

@@ -11,10 +11,30 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations("seo");
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://loop.vn";
+  const title = t("academyTitle") || "Academy | LOOP";
+  const description = t("academyDescription") || "Khóa học chuyên sâu từ LOOP Academy";
+  const brandMetaTitle = t("brandMetaTitle");
+  const brandMetaDescription = t("brandMetaDescription");
+  const ogImage = t("ogImage");
+  const canonical = `${baseUrl}/${locale}/academy`;
+
   return {
-    title: t("academyTitle") || "Academy | LOOP",
-    description: t("academyDescription") || "Khóa học chuyên sâu từ LOOP Academy",
-    alternates: { canonical: `${baseUrl}/${locale}/academy` },
+    title,
+    description,
+    alternates: { canonical },
+    openGraph: {
+      type: "website",
+      title: `${title} — ${brandMetaTitle}`,
+      description: brandMetaDescription || description,
+      url: canonical,
+      images: [{ url: ogImage || "/og-cover.jpg", width: 1200, height: 630, alt: "LOOP Solutions" }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${title} — ${brandMetaTitle}`,
+      description: brandMetaDescription || description,
+      images: [ogImage || "/og-cover.jpg"],
+    },
   };
 }
 
