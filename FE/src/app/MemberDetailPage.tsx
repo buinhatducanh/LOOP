@@ -6,6 +6,7 @@ import { teamService, mapTeamMemberToMember } from '../api/team.service';
 import { LEDRunner } from './components/team/LEDRunner';
 import { Counter } from './components/team/Counter';
 import { GUILD_ANIMATIONS_CSS } from './components/team/MemberCard';
+import { useLocaleStore } from './store/localeStore';
 import {
   ArrowLeft, Shield, Zap, Target, Trophy, Cpu, Award, Terminal,
   Github, Linkedin, Globe, Mail, CheckCircle, Clock, XCircle,
@@ -359,7 +360,8 @@ export default function MemberDetailPage() {
     if (!id) { setMemberLoading(false); return; }
     let cancelled = false;
     setMemberLoading(true);
-    teamService.getMemberBySlug(id, 'vi')
+    const { locale } = useLocaleStore.getState();
+    teamService.getMemberBySlug(id, locale)
       .then(beMember => {
         if (!cancelled && beMember) {
           const fb = fallbackMembers.find(m => m.id === Number(id));
