@@ -18,7 +18,11 @@ import { checkAdminAccess } from "./lib/auth/edge";
 const LOCALE_PREFIXES = routing.locales as unknown as string[];
 
 export async function middleware(req: NextRequest) {
-  const { pathname } = req.nextUrl;
+  // Normalize: remove trailing slash to prevent redirect loops (e.g. /admin/login/ → /admin/login)
+  let { pathname } = req.nextUrl;
+  if (pathname !== "/" && pathname.endsWith("/")) {
+    pathname = pathname.slice(0, -1);
+  }
 
   // ─── 1) API routes → pass through ──────────────────────────────────────────
   if (pathname.startsWith("/api/") || pathname.startsWith("/_next/")) {
