@@ -10,6 +10,7 @@ import { SearchSortBar, SortOption } from './components/team/SearchSortBar';
 import { GRD, DS } from './components/layout/ds';
 import { teamService, mapTeamMemberToMember } from '../api/team.service';
 import { Shield, Users, Zap, Trophy, ChevronRight, ArrowRight } from 'lucide-react';
+import { useLocaleStore } from './store/localeStore';
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 function fmtLP(n: number): string {
@@ -263,10 +264,13 @@ export default function Home() {
   const [apiMembers, setApiMembers] = useState<Member[]>([]);
   const [membersLoading, setMembersLoading] = useState(true);
 
+  // i18n: read current locale from global store
+  const { locale } = useLocaleStore();
+
   useEffect(() => {
     let cancelled = false;
     setMembersLoading(true);
-    teamService.getMembers('vi')
+    teamService.getMembers(locale)
       .then(({ members: fetched }) => {
         if (!cancelled && fetched.length > 0) {
           // Build lookup by slug (lowercase, hyphenated) → fallback Member
