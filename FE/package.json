@@ -4,8 +4,8 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
-    "build": "vite build",
-    "dev": "vite",
+    "build": "node init && vite build",
+    "dev": "node init && vite",
     "preview": "vite preview",
     "lint": "eslint src/ --max-warnings 230",
     "type-check": "tsc --noEmit --skipLibCheck"
