@@ -1254,6 +1254,758 @@ async function seedCompanyEvents() {
   console.log(`  ✓ ${count} company events seeded`);
 }
 // ══════════════════════════════════════════════════════════════════
+// R2 — UNIFIED SEED DATA (2026-03-30)
+// Canonical: LP/level/rank from memberData.ts; orders from loopStore INIT_ORDERS;
+//   effects from loopStore INIT_EFFECTS; quests/events from authStore INIT_QUESTS/INIT_EVENTS
+// ══════════════════════════════════════════════════════════════════
+
+// ── Seed all 26 team members (CEO already seeded) ─────────────────────────────
+async function seedAllTeamMembers() {
+  console.log("\n[R2-TeamMembers] Seeding 26 team members...");
+
+  // memberData.ts canonical LP values (source of truth per fe-reseed-plan)
+  const members = [
+    // id=1: Kai Tanaka
+    { slug: "kai-tanaka",       name: "Kai Tanaka",          title: "Junior Operative",          bio: "Thanh kiếm vẫn đang được rèn giũa. Tiềm năng thô đang chờ đợi ngọn lửa kinh nghiệm.",     shortBio: "Frontend Dev chuyên Vue.js & CSS Animations.",  level: 8,   rank: "iron",     availableLp: 850,   totalEarnedLp: 1200,  totalSpentLp: 350,  currentXp: 45,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 1 },
+    // id=2: Mei Lin
+    { slug: "mei-lin",           name: "Mei Lin",              title: "Visual Artisan",            bio: "Một hòn than hồng rực cháy ổn định. Kỹ năng sắc bén qua từng chu kỳ thiết kế.",                    shortBio: "UI/UX Designer — Design Systems & Figma.",          level: 24,  rank: "bronze",   availableLp: 3200,  totalEarnedLp: 8500,  totalSpentLp: 5300, currentXp: 78,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 2 },
+    // id=3: Ryo Hashimoto
+    { slug: "ryo-hashimoto",     name: "Ryo Hashimoto",        title: "Code Sentinel",           bio: "Những con đường bạc được khắc qua vô số cơn bão debug. API phải tuân lệnh anh.",            shortBio: "Backend Dev — Node.js & Microservices.",          level: 43,  rank: "silver",   availableLp: 8500,  totalEarnedLp: 22000, totalSpentLp: 13500, currentXp: 62,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 3 },
+    // id=4: Yuna Park
+    { slug: "yuna-park",         name: "Yuna Park",            title: "Dual-Path Operative",     bio: "Nơi mã nguồn gặp gỡ nghệ thuật — Yuna điều khiển cả hai với sự uyển chuyển tự nhiên.", shortBio: "Full Stack Dev — React & System Architecture.", level: 68,  rank: "gold",     availableLp: 15800, totalEarnedLp: 65000, totalSpentLp: 49200, currentXp: 85,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 4 },
+    // id=5: Shin Watanabe
+    { slug: "shin-watanabe",    name: "Shin Watanabe",         title: "Infrastructure Warden",   bio: "Người thì thầm với hạ tầng. Không hệ thống nào thoát khỏi trật tự của anh.",              shortBio: "DevOps Engineer — Kubernetes & CI/CD.",               level: 85,  rank: "platinum", availableLp: 28500, totalEarnedLp: 142000,totalSpentLp: 113500,currentXp: 40,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 5 },
+    // id=6: Rin Nakamura
+    { slug: "rin-nakamura",      name: "Rin Nakamura",           title: "Crimson Architect",        bio: "Sự chính xác đầy quyết đoán. Mọi hàm số là một đòn tấn công.",                            shortBio: "Backend Lead — High-Performance Systems.",            level: 103, rank: "ruby",     availableLp: 52000, totalEarnedLp: 380000,totalSpentLp: 328000,currentXp: 60,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 6 },
+    // id=7: Akira Sato
+    { slug: "akira-sato",        name: "Akira Sato",             title: "Guild Master",             bio: "Đặc vụ đỉnh cao. Một huyền thoại được khắc trên silicon và ánh sao. Guild cúi chào.", shortBio: "Tech Lead — Vision & System Architecture.",       level: 118, rank: "diamond",  availableLp: 98000, totalEarnedLp: 820000,totalSpentLp: 722000,currentXp: 92,  maxXp: 100, isActive: true,  isFeatured: true,  sortOrder: 7 },
+    // id=8: Trần Hữu Phúc
+    { slug: "tran-huu-phuc",     name: "Trần Hữu Phúc",         title: "Senior Operative",       bio: "Sự chính xác trong từng pixel. Một bậc thầy của nghệ thuật dàn trang.",                        shortBio: "Frontend Dev — Tailwind CSS & React Hooks.",         level: 28,  rank: "bronze",   availableLp: 4500,  totalEarnedLp: 12000, totalSpentLp: 7500,  currentXp: 32,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 8 },
+    // id=9: Nguyễn Minh Thư
+    { slug: "nguyen-minh-thu",   name: "Nguyễn Minh Thư",       title: "Creative Artisan",         bio: "Thiết kế những giao diện đầy sức sống.",                                                   shortBio: "UI Designer — Minimalist UX & Visual Systems.",    level: 48,  rank: "silver",   availableLp: 7800,  totalEarnedLp: 25000, totalSpentLp: 17200, currentXp: 65,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 9 },
+    // id=10: Lê Văn Nam
+    { slug: "le-van-nam",        name: "Lê Văn Nam",             title: "Junior Operative",        bio: "Lặng lẽ, hiệu quả và sắc bén trong việc sửa lỗi.",                                      shortBio: "Backend Dev — API Development & SQL Optimization.", level: 12,  rank: "iron",     availableLp: 1200,  totalEarnedLp: 2500,  totalSpentLp: 1300,  currentXp: 85,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 10 },
+    // id=11: Phạm Hoàng Long
+    { slug: "pham-hoang-long",    name: "Phạm Hoàng Long",        title: "System Guardian",          bio: "Bảo vệ ranh giới hệ thống. Đảm bảo luồng dữ liệu không bao giờ bị gián đoạn.",           shortBio: "DevOps — AWS & Kubernetes.",                       level: 65,  rank: "gold",     availableLp: 12500, totalEarnedLp: 58000, totalSpentLp: 45500, currentXp: 22,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 11 },
+    // id=12: Đặng Mỹ Linh
+    { slug: "dang-my-linh",       name: "Đặng Mỹ Linh",           title: "Strategic Overseer",      bio: "Điều phối các chiến dịch phức tạp với sự điềm tĩnh thiền định.",                     shortBio: "Project Manager — Agile Strategy & Resource Mgmt.", level: 88,  rank: "platinum", availableLp: 32000, totalEarnedLp: 135000,totalSpentLp: 103000,currentXp: 45,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 12 },
+    // id=13: Vũ Đình Trọng
+    { slug: "vu-dinh-trong",      name: "Vũ Đình Trọng",          title: "Quality Sentry",          bio: "Không lỗi nào thoát khỏi tầm mắt của lính gác.",                                       shortBio: "QA Lead — Automated Testing & Security Audits.",    level: 52,  rank: "silver",   availableLp: 6200,  totalEarnedLp: 22000, totalSpentLp: 15800, currentXp: 15,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 13 },
+    // id=14: Haru Tanaka (Media Manager — matches DEMO_USERS.manager_media)
+    { slug: "haru-tanaka",       name: "Haru Tanaka",            title: "Media Artisan",            bio: "Kiến trúc sư của hình ảnh và âm thanh. Mỗi khung hình là một tuyên bố nghệ thuật.",        shortBio: "Media Manager — Media Production & Brand Identity.",  level: 72,  rank: "ruby",     availableLp: 45000, totalEarnedLp: 175000,totalSpentLp: 130000,currentXp: 88,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 14 },
+    // id=15: Lý Gia Hưng
+    { slug: "ly-gia-hung",       name: "Lý Gia Hưng",            title: "Data Oracle",             bio: "Nhìn thấy các mô hình nơi người khác chỉ thấy sự nhiễu loạn.",                              shortBio: "Data Scientist — Predictive Analytics & AI Models.",   level: 82,  rank: "platinum", availableLp: 24000, totalEarnedLp: 110000,totalSpentLp: 86000, currentXp: 38,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 15 },
+    // id=16: Dương Bảo Ngọc
+    { slug: "duong-bao-ngoc",     name: "Dương Bảo Ngọc",         title: "Vocal Vanguard",          bio: "Khuếch đại tiếng vang của guild khắp cõi hư vô kỹ thuật số.",                           shortBio: "Marketing Lead — Growth Hacking & Brand Narrative.",  level: 62,  rank: "gold",     availableLp: 11200, totalEarnedLp: 45000, totalSpentLp: 33800, currentXp: 55,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 16 },
+    // id=17: Bùi Tiến Dũng
+    { slug: "bui-tien-dung",     name: "Bùi Tiến Dũng",          title: "Mobile Specialist",       bio: "Xây dựng những trải nghiệm bản địa nằm gọn trong lòng bàn tay bạn.",                        shortBio: "Mobile Developer — React Native & iOS Dev.",       level: 32,  rank: "bronze",   availableLp: 3800,  totalEarnedLp: 15000, totalSpentLp: 11200, currentXp: 42,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 17 },
+    // id=18: Hồ Diệu Thảo
+    { slug: "ho-dieu-thao",       name: "Hồ Diệu Thảo",           title: "Culture Guardian",         bio: "Nuôi dưỡng yếu tố con người trong guild silicon.",                                  shortBio: "HR Specialist — Talent Acquisition & Guild Culture.", level: 42,  rank: "silver",   availableLp: 5500,  totalEarnedLp: 18000, totalSpentLp: 12500, currentXp: 28,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 18 },
+    // id=19: Trương Công Định
+    { slug: "truong-cong-dinh",   name: "Trương Công Định",       title: "Product Visionary",       bio: "Xác định con đường phía trước. Kim chỉ nam cho sự tiến hóa sản phẩm.",               shortBio: "Product Owner — Product Lifecycle & Market Strategy.", level: 92,  rank: "platinum", availableLp: 35000, totalEarnedLp: 150000,totalSpentLp: 115000,currentXp: 68,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 19 },
+    // id=20: Đỗ Quyên
+    { slug: "do-quyen",           name: "�Ứoàn Quyên",            title: "Visual Master",            bio: "Vượt lên trên những giao diện. Tạo ra những trải nghiệm số chạm đến tâm hồn.",        shortBio: "UI/UX Designer — Immersive UX & Design Psychology.", level: 98,  rank: "ruby",     availableLp: 48000, totalEarnedLp: 320000,totalSpentLp: 272000,currentXp: 12,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 20 },
+    // id=21: Phan Anh Tuấn
+    { slug: "phan-anh-tuan",      name: "Phan Anh Tuấn",          title: "Digital Sentinel",         bio: "Lá chắn tối thượng. Bảo vệ tài sản số của guild với sự cảnh giác không lay chuyển.",   shortBio: "Security Engineer — Cybersecurity & Ethical Hacking.", level: 105, rank: "ruby",     availableLp: 55000, totalEarnedLp: 400000,totalSpentLp: 345000,currentXp: 45,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 21 },
+    // id=22: Võ Minh Tuấn
+    { slug: "vo-minh-tuan",      name: "Võ Minh Tuấn",           title: "Grand Architect",         bio: "Phác thảo bản thiết kế của tương lai. Kiến trúc sư của những hệ thống phức tạp nhất.", shortBio: "Solution Architect — Distributed Systems & Enterprise Architecture.", level: 122, rank: "diamond",  availableLp: 110000,totalEarnedLp: 950000,totalSpentLp: 840000,currentXp: 15,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 22 },
+    // id=23: Mai Phương Linh
+    { slug: "mai-phuong-linh",   name: "Mai Phương Linh",        title: "Messenger",               bio: "Xây dựng những thông điệp xuyên qua sự nhiễu loạn.",                                   shortBio: "Content Strategist — Copywriting & Content Marketing.", level: 5,   rank: "iron",     availableLp: 650,   totalEarnedLp: 1500,  totalSpentLp: 850,   currentXp: 62,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 23 },
+    // id=24: Cao Hữu Việt
+    { slug: "cao-huu-viet",      name: "Cao Hữu Việt",           title: "Initiate",                bio: "Mài giũa thanh kiếm Backend. Hiệu quả là mục tiêu cuối cùng.",                        shortBio: "Junior Backend — Node.js Basics & DB Queries.",       level: 14,  rank: "iron",     availableLp: 1500,  totalEarnedLp: 3200,  totalSpentLp: 1700,  currentXp: 95,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 24 },
+    // id=25: Đoàn Minh Quân
+    { slug: "doan-minh-quan",    name: "Đoàn Minh Quân",          title: "Elite Operative",        bio: "Làm chủ nghệ thuật tương tác. Mỗi khung hình là một sự lựa chọn có chủ đích.",      shortBio: "Senior Frontend — Animation Systems & State Management.", level: 94,  rank: "platinum", availableLp: 42000, totalEarnedLp: 210000,totalSpentLp: 168000,currentXp: 92,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 25 },
+    // id=26: Tạ Minh Tâm
+    { slug: "ta-minh-tam",       name: "Tạ Minh Tâm",            title: "Void Weaver",             bio: "Dệt nên niềm tin vào hư vô. Bậc thầy của sổ cái bất biến.",                         shortBio: "Blockchain Dev — Smart Contracts & DeFi Architecture.", level: 112, rank: "ruby",     availableLp: 68000, totalEarnedLp: 480000,totalSpentLp: 412000,currentXp: 82,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 26 },
+    // id=27: Đinh Tiến Đạt
+    { slug: "dinh-tien-dat",     name: "Đinh Tiến Đạt",          title: "Talent Scout",            bio: "Xác định những huyền thoại tiếp theo trước khi họ tự nhận ra điều đó.",                   shortBio: "Tech Recruiter — Sourcing & Technical Assessment.", level: 22,  rank: "bronze",   availableLp: 2800,  totalEarnedLp: 10000, totalSpentLp: 7200,  currentXp: 58,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 27 },
+  ];
+
+  const memberCUIDs: Record<string, string> = {};
+  for (const m of members) {
+    const existing = await prisma.teamMember.findUnique({ where: { slug: m.slug } });
+    if (existing) {
+      await prisma.teamMember.update({
+        where: { id: existing.id },
+        data: {
+          name: m.name, role: m.title, bio: m.bio, shortBio: m.shortBio,
+          level: m.level, rank: m.rank, availableLp: m.availableLp,
+          currentXp: m.currentXp, maxXp: m.maxXp,
+          isActive: m.isActive, isFeatured: m.isFeatured, sortOrder: m.sortOrder,
+        },
+      });
+      memberCUIDs[m.slug] = existing.id;
+      console.log(`  ↻ ${m.name} (${m.rank}/${m.level}) updated`);
+    } else {
+      const created = await prisma.teamMember.create({
+        data: {
+          slug: m.slug, name: m.name, role: m.title, bio: m.bio, shortBio: m.shortBio,
+          level: m.level, rank: m.rank, availableLp: m.availableLp,
+          currentXp: m.currentXp, maxXp: m.maxXp,
+          isActive: m.isActive, isFeatured: m.isFeatured, sortOrder: m.sortOrder,
+        },
+      });
+      memberCUIDs[m.slug] = created.id;
+      console.log(`  ✓ ${m.name} (${m.rank}/${m.level}) created`);
+    }
+  }
+  return memberCUIDs;
+}
+
+// ── Seed Team Users (User records for team members — needed for QuestParticipant) ─
+async function seedTeamUsers(memberCUIDs: Record<string, string>): Promise<Record<string, string>> {
+  console.log("\n[R2-TeamUsers] Creating User records for team members...");
+
+  // Create User accounts for top members (so they can participate in quests/events)
+  // Use loop.vn emails that don't conflict with existing users
+  const teamUsers: Array<{ slug: string; name: string; email: string }> = [
+    { slug: "akira-sato",      name: "Akira Sato",       email: "akira.sato@loop.vn" },
+    { slug: "yuna-park",       name: "Yuna Park",         email: "yuna.park@loop.vn" },
+    { slug: "ryo-hashimoto",   name: "Ryo Hashimoto",     email: "ryo.hashimoto@loop.vn" },
+    { slug: "mei-lin",         name: "Mei Lin",           email: "mei.lin@loop.vn" },
+    { slug: "shin-watanabe",   name: "Shin Watanabe",      email: "shin.watanabe@loop.vn" },
+    { slug: "haru-tanaka",     name: "Haru Tanaka",       email: "haru.tanaka@loop.vn" },
+    { slug: "tran-huu-phuc",   name: "Trần Hữu Phúc",     email: "tran.huuphuoc@loop.vn" },
+    { slug: "vu-dinh-trong",   name: "Vũ Đình Trọng",     email: "vu.dinhtrong@loop.vn" },
+    { slug: "pham-hoang-long", name: "Phạm Hoàng Long",   email: "phamhoanglong@loop.vn" },
+    { slug: "dang-my-linh",    name: "Đặng Mỹ Linh",      email: "dangmylinh@loop.vn" },
+    { slug: "rin-nakamura",    name: "Rin Nakamura",        email: "rin.nakamura@loop.vn" },
+    { slug: "nguyen-minh-thu", name: "Nguyễn Minh Thư",   email: "nguyenminhthu@loop.vn" },
+    { slug: "le-van-nam",      name: "Lê Văn Nam",         email: "levannam@loop.vn" },
+    { slug: "ly-gia-hung",     name: "Lý Gia Hưng",       email: "ly.giahung@loop.vn" },
+    { slug: "duong-bao-ngoc",  name: "Dương Bảo Ngọc",   email: "duongbaongoc@loop.vn" },
+  ];
+
+  const userIdMap: Record<string, string> = {};
+  for (const u of teamUsers) {
+    const existing = await prisma.user.findUnique({ where: { email: u.email } });
+    if (existing) {
+      userIdMap[u.slug] = existing.id;
+    } else {
+      const created = await prisma.user.create({
+        data: {
+          email: u.email,
+          name: u.name,
+          passwordHash: undefined,
+          role: "user",
+          isActive: true,
+          accountType: "team",
+        },
+      });
+      userIdMap[u.slug] = created.id;
+    }
+  }
+  console.log(`  ✓ ${Object.keys(userIdMap).length} team user accounts`);
+  return userIdMap;
+}
+
+// ── Seed MemberExpertise ──────────────────────────────────────────────────────────
+async function seedMemberExpertise(memberCUIDs: Record<string, string>) {
+  console.log("\n[R2-Expertise] Seeding member-expertise links...");
+
+  const expertiseLinks: Record<string, string[]> = {
+    "kai-tanaka":         ["Vue.js", "Tailwind CSS", "TypeScript", "Figma"],
+    "mei-lin":            ["Figma", "Adobe XD", "Framer", "Protopie", "Spline"],
+    "ryo-hashimoto":      ["Node.js", "PostgreSQL", "Redis", "Docker", "GraphQL"],
+    "yuna-park":          ["React", "Next.js", "Prisma", "PostgreSQL", "AWS", "Tailwind"],
+    "shin-watanabe":      ["Kubernetes", "Terraform", "AWS", "Git", "CI/CD"],
+    "rin-nakamura":       ["Rust", "Go", "PostgreSQL", "Kafka", "gRPC"],
+    "akira-sato":         ["React", "Next.js", "TypeScript", "AWS", "GCP"],
+    "tran-huu-phuc":      ["React", "TypeScript", "Tailwind CSS", "Framer Motion"],
+    "nguyen-minh-thu":    ["Figma", "Adobe XD", "Spline", "Rive"],
+    "le-van-nam":         ["Node.js", "Express", "PostgreSQL"],
+    "pham-hoang-long":     ["AWS", "Docker", "Kubernetes", "Terraform"],
+    "dang-my-linh":       ["Jira", "Notion", "Miro", "ClickUp"],
+    "vu-dinh-trong":      ["Cypress", "Playwright", "Jest", "Postman"],
+    "haru-tanaka":        ["Figma", "Adobe Premiere", "After Effects", "DaVinci Resolve", "Blender"],
+    "ly-gia-hung":        ["Python", "TensorFlow", "PyTorch", "Pandas"],
+    "duong-bao-ngoc":      ["Google Ads", "Meta Ads", "SEO", "Analytics"],
+    "bui-tien-dung":      ["React Native", "Swift", "Kotlin", "Expo"],
+    "ho-dieu-thao":       ["LinkedIn", "Notion", "Slack"],
+    "truong-cong-dinh":   ["Jira", "Amplitude", "Hotjar", "Mixpanel"],
+    "do-quyen":           ["Figma", "Blender", "After Effects", "Protopie"],
+    "phan-anh-tuan":      ["Kali Linux", "Metasploit", "Wireshark", "Burp Suite"],
+    "vo-minh-tuan":       ["Microservices", "Event Sourcing", "Cloud Native", "Kubernetes"],
+    "mai-phuong-linh":    ["Notion", "Grammarly", "Canva"],
+    "cao-huu-viet":       ["Node.js", "MySQL", "JavaScript"],
+    "doan-minh-quan":     ["React", "Zustand", "Framer Motion", "Three.js"],
+    "ta-minh-tam":        ["Solidity", "Rust", "Web3.js", "Ethereum"],
+    "dinh-tien-dat":      ["LinkedIn Recruiter", "Greenhouse", "Notion"],
+  };
+
+  // Get all expertises
+  const expertises = await prisma.expertise.findMany();
+  const expMap: Record<string, string> = {};
+  for (const e of expertises) expMap[e.name] = e.id;
+
+  let linkCount = 0;
+  for (const [slug, skillNames] of Object.entries(expertiseLinks)) {
+    const memberId = memberCUIDs[slug];
+    if (!memberId) continue;
+    for (const skillName of skillNames) {
+      const expId = expMap[skillName];
+      if (!expId) continue;
+      await prisma.memberExpertise.upsert({
+        where: { memberId_expertiseId: { memberId, expertiseId: expId } },
+        create: { memberId, expertiseId: expId, level: 5 },
+        update: {},
+      });
+      linkCount++;
+    }
+  }
+  console.log(`  ✓ ${linkCount} member-expertise links`);
+  return memberCUIDs;
+}
+
+// ── Seed RankEffects ────────────────────────────────────────────────────────────
+async function seedRankEffects() {
+  console.log("\n[R2-RankEffects] Seeding 12 rank effects...");
+
+  const effects = [
+    { id: "eff-1",  name: "Particle Glow cơ bản",  description: "Hiệu ứng particle nhẹ xung quanh card",      type: "particle",    minRank: "iron",     minLevel: 1,   isEnabled: true,  rarity: "common",    icon: "✨", color: "#9CA3AF", maxLevel: null },
+    { id: "eff-2",  name: "Border Gradient",          description: "Viền gradient xoay theo rank color",          type: "border",       minRank: "bronze",   minLevel: 15,  isEnabled: true,  rarity: "common",    icon: "◈", color: "#CD7F32", maxLevel: null },
+    { id: "eff-3",  name: "Silver Shimmer",          description: "Hiệu ứng lấp lánh bạc trên card",            type: "glow",         minRank: "silver",   minLevel: 35,  isEnabled: true,  rarity: "rare",      icon: "◇", color: "#CBD5E1", maxLevel: null },
+    { id: "eff-4",  name: "Gold Aura",               description: "Hào quang vàng bao quanh avatar",             type: "aura",         minRank: "gold",     minLevel: 55,  isEnabled: true,  rarity: "rare",      icon: "★", color: "#FFD700", maxLevel: null },
+    { id: "eff-5",  name: "Platinum Trail",           description: "Vệt sáng theo chuyển động",                   type: "trail",        minRank: "platinum", minLevel: 75,  isEnabled: true,  rarity: "epic",      icon: "❋", color: "#14B8A6", maxLevel: null },
+    { id: "eff-6",  name: "Ruby Fire Particles",       description: "Particles lửa đỏ xung quanh card",            type: "particle",     minRank: "ruby",     minLevel: 85,  isEnabled: true,  rarity: "epic",      icon: "♦", color: "#EF4444", maxLevel: null },
+    { id: "eff-7",  name: "Diamond Holographic",      description: "Hiệu ứng holographic toàn card",              type: "aura",         minRank: "diamond",  minLevel: 95,  isEnabled: true,  rarity: "legendary", icon: "✦", color: "#818CF8", maxLevel: null },
+    { id: "eff-8",  name: "Cosmic Badge",             description: "Badge đặc biệt hiển thị trên avatar",         type: "badge",        minRank: "diamond",  minLevel: 100, isEnabled: true,  rarity: "legendary", icon: "🌟", color: "#818CF8", maxLevel: null },
+    { id: "eff-9",  name: "Neon Pulse Border",       description: "Viền neon nhấp nháy theo nhịp",               type: "border",       minRank: "gold",     minLevel: 60,  isEnabled: true,  rarity: "rare",      icon: "💫", color: "#3B82F6", maxLevel: null },
+    { id: "eff-10", name: "Matrix Rain",               description: "Hiệu ứng mưa matrix trên card",               type: "particle",     minRank: "platinum", minLevel: 80,  isEnabled: false, rarity: "epic",      icon: "🌧", color: "#22C55E", maxLevel: null },
+    { id: "eff-11", name: "Bronze Ember",              description: "Tia lửa màu đồng bay lên",                    type: "particle",     minRank: "bronze",   minLevel: 20,  isEnabled: true,  rarity: "common",    icon: "🔥", color: "#CD7F32", maxLevel: null },
+    { id: "eff-12", name: "Iron Shield Pulse",         description: "Vòng khiên kim loại rung nhẹ",                type: "border",       minRank: "iron",     minLevel: 5,   isEnabled: true,  rarity: "common",    icon: "🛡", color: "#9CA3AF", maxLevel: null },
+  ];
+
+  for (const e of effects) {
+    await prisma.rankEffect.upsert({
+      where: { id: e.id },
+      create: e,
+      update: { name: e.name, description: e.description, type: e.type, minRank: e.minRank, minLevel: e.minLevel, isEnabled: e.isEnabled, rarity: e.rarity, icon: e.icon, color: e.color, maxLevel: e.maxLevel },
+    });
+  }
+  console.log(`  ✓ ${effects.length} rank effects`);
+}
+
+// ── Seed MemberEffectOverrides ─────────────────────────────────────────────────
+async function seedMemberOverrides(memberCUIDs: Record<string, string>) {
+  console.log("\n[R2-Overrides] Seeding member effect overrides...");
+
+  // Maps: member slug → effectId → override settings
+  const overrides = [
+    // Akira Sato (#7) — Diamond: Diamond Holographic + Cosmic Badge selected; Ruby Fire hidden
+    { memberSlug: "akira-sato",      effectId: "eff-7", visible: true,  selectedByMember: true,  priority: 10 },
+    { memberSlug: "akira-sato",      effectId: "eff-8", visible: true,  selectedByMember: true,  priority: 9  },
+    { memberSlug: "akira-sato",      effectId: "eff-6", visible: false, selectedByMember: false, priority: 0  },
+    // Ryo Hashimoto (#3) — Silver: Platinum Trail selected
+    { memberSlug: "ryo-hashimoto",   effectId: "eff-5", visible: true,  selectedByMember: true,  priority: 8  },
+    // Vũ Đình Trọng (#13) — Silver: Diamond Holographic demo override
+    { memberSlug: "vu-dinh-trong",   effectId: "eff-7", visible: true,  selectedByMember: true,  priority: 7  },
+    // Haru Tanaka (#14) — Ruby: Neon Pulse Border demo
+    { memberSlug: "haru-tanaka",     effectId: "eff-9", visible: true,  selectedByMember: true,  priority: 6  },
+  ];
+
+  for (const o of overrides) {
+    const memberId = memberCUIDs[o.memberSlug];
+    if (!memberId) { console.warn(`  ⚠ member ${o.memberSlug} not found — skipping override`); continue; }
+    await prisma.memberEffectOverride.upsert({
+      where: { memberId_effectId: { memberId, effectId: o.effectId } },
+      create: { memberId, effectId: o.effectId, visible: o.visible, selectedByMember: o.selectedByMember, priority: o.priority },
+      update: { visible: o.visible, selectedByMember: o.selectedByMember, priority: o.priority },
+    });
+  }
+  console.log(`  ✓ ${overrides.length} member effect overrides`);
+}
+
+// ── Seed Projects (6 portfolio items) ────────────────────────────────────────────
+async function seedProjects() {
+  console.log("\n[R2-Projects] Seeding 6 portfolio projects...");
+
+  const projects = [
+    { slug: "vnretail-platform",  title: "VNRetail Platform",    tagline: "E-commerce SaaS Platform",   category: "SaaS",        client: "VNRetail JSC",        year: 2025, status: "completed", isActive: true,  sortOrder: 1, description: "Nền tảng SaaS multi-tenant với kiến trúc microservices trên AWS." },
+    { slug: "medapp-vietnam",     title: "MedApp Vietnam",       tagline: "Mobile Health App",       category: "App",         client: "HealthTech Vietnam",    year: 2025, status: "completed", isActive: true,  sortOrder: 2, description: "Ứng dụng y tế kết nối bệnh nhân với bác sĩ." },
+    { slug: "analyticspro-dash",  title: "AnalyticsPro Dashboard",tagline: "Data Analytics SaaS",     category: "SaaS",        client: "DataViet Corp",       year: 2024, status: "completed", isActive: true,  sortOrder: 3, description: "Dashboard analytics real-time xử lý 100M+ data points." },
+    { slug: "eduviet-portal",     title: "EduViet Portal",       tagline: "EdTech Platform",       category: "Website",     client: "EduViet Foundation",   year: 2024, status: "completed", isActive: true,  sortOrder: 4, description: "Nền tảng học trực tuyến với video streaming và quiz." },
+    { slug: "startuphub-landing",  title: "StartupHub Landing",    tagline: "Corporate Website",       category: "Website",     client: "StartupHub Vietnam",   year: 2025, status: "completed", isActive: true,  sortOrder: 5, description: "Landing page cần chuyển đổi cao, tốc độ cực nhanh." },
+    { slug: "findash-enterprise",  title: "FinDash Enterprise",   tagline: "FinTech Dashboard",      category: "SaaS",        client: "FinCorp Vietnam",      year: 2025, status: "completed", isActive: true,  sortOrder: 6, description: "Nền tảng fintech enterprise với bảo mật banking-grade." },
+  ];
+
+  for (const p of projects) {
+    await prisma.project.upsert({
+      where: { slug: p.slug },
+      update: { title: p.title, category: p.category, client: p.client, year: String(p.year), description: p.description, isPublished: true, sortOrder: p.sortOrder },
+      create: { slug: p.slug, title: p.title, category: p.category, client: p.client, year: String(p.year), image: "", description: p.description, results: "" },
+    });
+  }
+  console.log(`  ✓ ${projects.length} portfolio projects`);
+}
+
+// ── Seed Orders (5 demo orders) ─────────────────────────────────────────────────
+async function seedOrders(memberCUIDs: Record<string, string>) {
+  console.log("\n[R2-Orders] Seeding 5 demo orders...");
+
+  // Map PM names → member CUIDs
+  const pmMap: Record<string, string | undefined> = {
+    "Yuna Park":     memberCUIDs["yuna-park"],
+    "Mei Lin":       memberCUIDs["mei-lin"],
+    "Akira Sato":    memberCUIDs["akira-sato"],
+    "Shin Watanabe": memberCUIDs["shin-watanabe"],
+    "Haru Tanaka":   memberCUIDs["haru-tanaka"],
+  };
+
+  const orders = [
+    {
+      orderNumber: "ORD-2601", orderType: "package", packageSlug: "phat-trien-app",
+      customerName: "Nguyễn Minh Tuấn", customerEmail: "minhtuan@vnretail.vn",
+      status: "in_progress", paymentStatus: "paid",
+      totalAmount: 175000000, totalXp: 8750, totalProjectLp: 8750,
+      startedAt: new Date("2026-03-10T08:00:00Z"),
+      completedAt: null, isActiveProject: true, projectStatus: "in_progress",
+      pmName: "Yuna Park",  // links to Yuna Park in projectMember
+      tag: "phat-trien-app", serviceTitle: "Phát triển App & SaaS Platform",
+    },
+    {
+      orderNumber: "ORD-2602", orderType: "package", packageSlug: "thiet-ke-web",
+      customerName: "Dr. Trần Thị Mai", customerEmail: "mai@healthtech.vn",
+      status: "demo_ready", paymentStatus: "paid",
+      totalAmount: 45000000, totalXp: 2250, totalProjectLp: 2250,
+      startedAt: new Date("2026-02-15T08:00:00Z"),
+      completedAt: null, isActiveProject: true, projectStatus: "demo_ready",
+      pmName: "Mei Lin",
+      tag: "thiet-ke-web", serviceTitle: "Thiết kế & Phát triển Website",
+    },
+    {
+      orderNumber: "ORD-2603", orderType: "package", packageSlug: "dashboard-analytics",
+      customerName: "Lê Quang Đức", customerEmail: "leduc@findcorp.vn",
+      status: "paid", paymentStatus: "paid",
+      totalAmount: 280000000, totalXp: 14000, totalProjectLp: 14000,
+      startedAt: new Date("2026-03-23T08:00:00Z"),
+      completedAt: null, isActiveProject: false, projectStatus: null,
+      pmName: undefined,
+      tag: "dashboard-analytics", serviceTitle: "Dashboard & Data Analytics",
+    },
+    {
+      orderNumber: "ORD-2604", orderType: "package", packageSlug: "thiet-ke-web",
+      customerName: "Vũ Hoàng Minh", customerEmail: "minh@retailmax.vn",
+      status: "pending_payment", paymentStatus: "unpaid",
+      totalAmount: 80000000, totalXp: 4000, totalProjectLp: 4000,
+      startedAt: new Date("2026-03-24T08:00:00Z"),
+      completedAt: null, isActiveProject: false, projectStatus: null,
+      pmName: undefined,
+      tag: "thiet-ke-web", serviceTitle: "Thiết kế & Phát triển Website",
+    },
+    {
+      orderNumber: "ORD-2505", orderType: "package", packageSlug: "seo-marketing",
+      customerName: "Ngô Thị Lan", customerEmail: "lan@eduviet.edu.vn",
+      status: "done", paymentStatus: "paid",
+      totalAmount: 96000000, totalXp: 4800, totalProjectLp: 4800,
+      startedAt: new Date("2026-01-01T08:00:00Z"),
+      completedAt: new Date("2026-03-20T08:00:00Z"), isActiveProject: false, projectStatus: null,
+      pmName: "Yuna Park",
+      tag: "seo-marketing", serviceTitle: "SEO & Digital Marketing",
+    },
+  ];
+
+  const pmMembers = await prisma.teamMember.findMany({ where: { slug: { in: ["yuna-park", "mei-lin", "akira-sato"] } } });
+  const pmMemberMap: Record<string, string> = {};
+  for (const m of pmMembers) pmMemberMap[m.slug] = m.id;
+
+  let orderCount = 0;
+  for (const o of orders) {
+    const existing = await prisma.order.findUnique({ where: { orderNumber: o.orderNumber } });
+    if (existing) {
+      await prisma.order.update({
+        where: { id: existing.id },
+        data: {
+          status: o.status, paymentStatus: o.paymentStatus,
+          totalAmount: o.totalAmount, totalXp: o.totalXp, totalProjectLp: o.totalProjectLp,
+          startedAt: o.startedAt, completedAt: o.completedAt,
+          isActiveProject: o.isActiveProject, projectStatus: o.projectStatus,
+        },
+      });
+      orderCount++;
+      console.log(`  ↻ ${o.orderNumber} (${o.status}) updated`);
+    } else {
+      await prisma.order.create({
+        data: {
+          orderNumber: o.orderNumber, orderType: o.orderType,
+          customerName: o.customerName, customerEmail: o.customerEmail,
+          status: o.status, paymentStatus: o.paymentStatus,
+          totalAmount: o.totalAmount, totalXp: o.totalXp, totalProjectLp: o.totalProjectLp,
+          startedAt: o.startedAt, completedAt: o.completedAt,
+          isActiveProject: o.isActiveProject, projectStatus: o.projectStatus,
+        },
+      });
+      orderCount++;
+      console.log(`  ✓ ${o.orderNumber} (${o.status}) created`);
+    }
+
+    // Seed OrderStatusHistory for each order
+    const order = await prisma.order.findUnique({ where: { orderNumber: o.orderNumber } });
+    if (!order) continue;
+
+    const statusFlow = ["pending", "paid", "in_progress", "demo_ready", "client_review", "done"];
+    const doneIdx = o.status === "done" ? 5
+                   : o.status === "client_review" ? 4
+                   : o.status === "demo_ready" ? 3
+                   : o.status === "in_progress" ? 2
+                   : o.status === "paid" ? 1 : 0;
+
+    let prevStatus = "pending";
+    for (let i = 0; i <= doneIdx; i++) {
+      const newStatus = statusFlow[i];
+      const createdAt = new Date(order.startedAt!.getTime() + i * 3 * 24 * 3600 * 1000);
+      await prisma.orderStatusHistory.create({
+        data: {
+          orderId: order.id,
+          fromStatus: i === 0 ? "pending" : prevStatus,
+          toStatus: newStatus,
+          changedBy: o.pmName ?? undefined,
+          note: i === 0 ? "Order created from booking wizard" : `Status updated to ${newStatus}`,
+          createdAt,
+        },
+      });
+      prevStatus = newStatus;
+    }
+  }
+  console.log(`  ✓ ${orderCount} orders + status histories`);
+}
+
+// ── Seed ProjectMembers (PM assignments) ────────────────────────────────────────
+async function seedProjectMembers(memberCUIDs: Record<string, string>) {
+  console.log("\n[R2-ProjectMembers] Seeding project member assignments...");
+
+  const orders = await prisma.order.findMany({ where: { orderNumber: { in: ["ORD-2601", "ORD-2602", "ORD-2505"] } } });
+  const orderMap: Record<string, string> = {};
+  for (const o of orders) orderMap[o.orderNumber] = o.id;
+
+  // VNRetail (ORD-2601): Yuna (PM), Ryo (dev), Akira (consultant)
+  const vnRetail = [
+    { slug: "yuna-park",        projectRole: "PM",       assignedLp: 3000 },
+    { slug: "ryo-hashimoto",    projectRole: "DEVELOPER", assignedLp: 2500 },
+    { slug: "akira-sato",       projectRole: "CONSULTANT", assignedLp: 1500 },
+  ];
+  // MedApp (ORD-2602): Mei Lin (PM), Haru (media)
+  const medApp = [
+    { slug: "mei-lin",         projectRole: "PM",       assignedLp: 2000 },
+    { slug: "haru-tanaka",     projectRole: "DESIGNER",  assignedLp: 1500 },
+  ];
+  // EduViet SEO (ORD-2505): Yuna (PM)
+  const eduViet = [
+    { slug: "yuna-park",       projectRole: "PM",       assignedLp: 4000 },
+  ];
+
+  const allLinks = [
+    { orderNumber: "ORD-2601", links: vnRetail },
+    { orderNumber: "ORD-2602", links: medApp },
+    { orderNumber: "ORD-2505", links: eduViet },
+  ];
+
+  let linkCount = 0;
+  for (const group of allLinks) {
+    const projectId = orderMap[group.orderNumber];
+    if (!projectId) continue;
+    for (const link of group.links) {
+      const memberId = memberCUIDs[link.slug];
+      if (!memberId) continue;
+      await prisma.projectMember.upsert({
+        where: { projectId_memberId: { projectId, memberId } },
+        create: {
+          memberId, projectId, projectRole: link.projectRole,
+          assignedLp: link.assignedLp, joinedAt: new Date("2026-03-10T08:00:00Z"),
+        },
+        update: { projectRole: link.projectRole, assignedLp: link.assignedLp },
+      });
+      linkCount++;
+    }
+  }
+  console.log(`  ✓ ${linkCount} project member links`);
+}
+
+// ── Seed LP economy: CustomerPoints + LpTransactions ─────────────────────────
+async function seedLPEconomy(memberCUIDs: Record<string, string>, _teamUserIds: Record<string, string>) {
+  console.log("\n[R2-LPEconomy] Seeding LP economy...");
+
+  // Clean slate: delete existing LP data before re-seeding (prevents accumulation on re-run)
+  await prisma.lpTransaction.deleteMany({});
+  await prisma.customerPoint.deleteMany({});
+
+  // CustomerPoints for all 27 members
+  const pointIdMap: Record<string, string> = {};
+  for (const [slug, memberId] of Object.entries(memberCUIDs)) {
+    const email = `${slug}@loop.vn`;
+    const id = `loop-pt-${slug}`;
+    pointIdMap[slug] = id;
+    await prisma.customerPoint.create({
+      data: {
+        id,
+        userId: memberId,
+        userEmail: email,
+        userName: slug,
+        balance: 0,
+        totalEarned: 0,
+        totalSpent: 0,
+      },
+    });
+  }
+  console.log(`  ✓ ${Object.keys(pointIdMap).length} customer points (LP balance = 0 — updated via LP transactions)`);
+
+  // LpTransactions: synthetic history per member
+  // Realistic LP earning pattern: task completion + quest rewards + order LP
+  const lpHistory: Array<{ memberSlug: string, amount: number, type: string, description: string, source: string, daysAgo: number }> = [];
+
+  // Add some history entries per active member
+  const activeMembers = ["kai-tanaka", "mei-lin", "ryo-hashimoto", "yuna-park", "shin-watanabe",
+    "akira-sato", "tran-huu-phuc", "vu-dinh-trong", "haru-tanaka", "pham-hoang-long", "dang-my-linh"];
+
+  for (const slug of activeMembers) {
+    // Monthly task awards
+    for (let m = 3; m >= 0; m--) {
+      lpHistory.push({
+        memberSlug: slug,
+        amount: Math.floor(Math.random() * 3000) + 500,
+        type: "award",
+        description: "Monthly task completion reward",
+        source: "task_award",
+        daysAgo: m * 30 + Math.floor(Math.random() * 10),
+      });
+    }
+    // Quest completions
+    for (let q = 0; q < 5; q++) {
+      lpHistory.push({
+        memberSlug: slug,
+        amount: Math.floor(Math.random() * 200) + 50,
+        type: "award",
+        description: "Daily quest completed",
+        source: "quest_reward",
+        daysAgo: Math.floor(Math.random() * 60),
+      });
+    }
+    // Order LP rewards (for PMs)
+    if (["yuna-park", "akira-sato"].includes(slug)) {
+      for (let o = 0; o < 3; o++) {
+        lpHistory.push({
+          memberSlug: slug,
+          amount: Math.floor(Math.random() * 5000) + 2000,
+          type: "award",
+          description: "Order milestone LP reward",
+          source: "order_lp",
+          daysAgo: Math.floor(Math.random() * 120) + 30,
+        });
+      }
+    }
+    // LP spending/redemption (for members with earned LP)
+    if (["akira-sato", "yuna-park", "ryo-hashimoto"].includes(slug)) {
+      for (let s = 0; s < 2; s++) {
+        lpHistory.push({
+          memberSlug: slug,
+          amount: -(Math.floor(Math.random() * 5000) + 1000),
+          type: "spend",
+          description: "LP redeemed for Academy course upgrade",
+          source: "redemption",
+          daysAgo: Math.floor(Math.random() * 45) + 5,
+        });
+      }
+    }
+  }
+
+  let txCount = 0;
+  for (const entry of lpHistory) {
+    const memberId = memberCUIDs[entry.memberSlug];
+    if (!memberId) continue;
+    const createdAt = new Date(Date.now() - entry.daysAgo * 86400 * 1000);
+    await prisma.lpTransaction.create({
+      data: {
+        memberId,
+        amount: entry.amount,
+        type: entry.type as "award" | "spend",
+        status: "completed",
+        description: entry.description,
+        source: entry.source,
+        balanceAfter: 0,
+        createdBy: undefined,
+      },
+    });
+    txCount++;
+  }
+  console.log(`  ✓ ${txCount} LP transactions (awards + redemptions)`);
+}
+
+// ── Seed PM Kanban: Epics → Backlogs → Tasks ──────────────────────────────────
+async function seedPMData(memberCUIDs: Record<string, string>) {
+  console.log("\n[R2-PM] Seeding epics, backlogs, tasks...");
+
+  // Find active orders with PM assigned
+  const activeProjects = await prisma.order.findMany({
+    where: { isActiveProject: true },
+  });
+  const pmOrderMap: Record<string, string> = {};
+  for (const o of activeProjects) pmOrderMap[o.orderNumber] = o.id;
+
+  if (Object.keys(pmOrderMap).length === 0) {
+    console.log("  ⚠ No active projects found — skipping PM seed");
+    return;
+  }
+
+  // Seed one Epic + Backlog + Tasks for each active project
+  const epicsData = [
+    { slug: "vnretail-sprint1", title: "Sprint 1 — Core Features",    color: "#3B82F6", orderNumber: "ORD-2601" },
+    { slug: "medapp-phase1",   title: "Phase 1 — MVP Launch",         color: "#8B5CF6", orderNumber: "ORD-2602" },
+  ];
+
+  let epicCount = 0, taskCount = 0;
+  for (const epic of epicsData) {
+    const projectId = pmOrderMap[epic.orderNumber];
+    if (!projectId) continue;
+
+    const createdEpic = await prisma.epic.upsert({
+      where: { id: epic.slug },
+      update: { title: epic.title, color: epic.color, isActive: true },
+      create: { id: epic.slug, title: epic.title, color: epic.color, isActive: true, projectId },
+    });
+    epicCount++;
+
+    // Default backlog
+    const backlog = await prisma.backlog.upsert({
+      where: { id: `${epic.slug}-default` },
+      update: { title: "Sprint Backlog", isDefault: true, isActive: true },
+      create: { id: `${epic.slug}-default`, title: "Sprint Backlog", name: "Sprint Backlog", isDefault: true, isActive: true, epicId: createdEpic.id, projectId },
+    });
+
+    // Seed tasks assigned to members
+    const taskDefs = [
+      { title: "Setup project structure & CI/CD pipeline",        status: "done",       priority: "high",    slugRef: "ryo-hashimoto" },
+      { title: "Design database schema & migrations",            status: "done",       priority: "high",    slugRef: "ryo-hashimoto" },
+      { title: "Implement authentication & authorization",         status: "done",       priority: "high",    slugRef: "ryo-hashimoto" },
+      { title: "Build API endpoints for core modules",             status: "in_progress", priority: "high",    slugRef: "ryo-hashimoto" },
+      { title: "Frontend dashboard layout & navigation",          status: "in_progress", priority: "high",    slugRef: "tran-huu-phuc" },
+      { title: "Responsive design system implementation",         status: "todo",        priority: "medium",  slugRef: "mei-lin" },
+      { title: "Payment integration & webhook handlers",         status: "todo",        priority: "high",    slugRef: "ryo-hashimoto" },
+      { title: "Real-time notifications with SSE",               status: "todo",        priority: "medium",  slugRef: "akira-sato" },
+      { title: "Performance optimization & caching",             status: "todo",        priority: "low",     slugRef: "shin-watanabe" },
+      { title: "Security audit & penetration testing",           status: "todo",        priority: "medium",  slugRef: "vu-dinh-trong" },
+    ];
+
+    for (let i = 0; i < taskDefs.length; i++) {
+      const t = taskDefs[i];
+      const assigneeId = memberCUIDs[t.slugRef] ?? null;
+      await prisma.task.upsert({
+        where: { id: `${epic.slug}-task-${i + 1}` },
+        create: {
+          id: `${epic.slug}-task-${i + 1}`,
+          backlogId: backlog.id,
+          title: t.title,
+          lp: Math.floor(Math.random() * 500) + 100,
+          status: t.status,
+          priority: t.priority as "low" | "medium" | "high",
+          assigneeId,
+        },
+        update: {
+          status: t.status,
+          priority: t.priority as "low" | "medium" | "high",
+          assigneeId,
+        },
+      });
+      taskCount++;
+    }
+  }
+  console.log(`  ✓ ${epicCount} epics + ${taskCount} tasks`);
+}
+
+// ── Seed QuestParticipants (link members → quests + events) ──────────────────
+async function seedQuestParticipants(memberCUIDs: Record<string, string>, teamUserIds: Record<string, string>) {
+  console.log("\n[R2-QuestParticipants] Seeding quest participants...");
+
+  // Get quests and events from DB
+  const quests = await prisma.quest.findMany({ take: 5 });
+  const events = await prisma.companyEvent.findMany();
+  const springEvent = events.find((e) => e.id.includes("spring"));
+
+  // Build batch data — use createMany for efficiency
+  // Note: spring event participation has questId=null; quest participation has eventId=null
+  // This avoids unique constraint issues between the two groups
+  const batchData: Array<{
+    userId: string;
+    questId: string | null;
+    eventId: string | null;
+    progress: number;
+    completed: boolean;
+    joinedAt: Date;
+  }> = [];
+
+  for (const [, userId] of Object.entries(teamUserIds)) {
+    // Join spring event
+    if (springEvent) {
+      batchData.push({
+        userId,
+        questId: null,
+        eventId: springEvent.id,
+        progress: Math.floor(Math.random() * 3),
+        completed: false,
+        joinedAt: new Date("2026-03-20T08:00:00Z"),
+      });
+    }
+
+    // Join some quests (first 3 quests = daily/weekly)
+    for (const quest of quests.slice(0, 3)) {
+      batchData.push({
+        userId,
+        questId: quest.id,
+        eventId: null,
+        progress: Math.floor(Math.random() * 3),
+        completed: Math.random() > 0.7,
+        joinedAt: new Date("2026-03-01T08:00:00Z"),
+      });
+    }
+  }
+
+  // Use upsert per participant to handle existing records gracefully
+  let participantCount = 0;
+  for (const p of batchData) {
+    try {
+      if (p.questId) {
+        await prisma.questParticipant.upsert({
+          where: { userId_questId: { userId: p.userId, questId: p.questId } },
+          update: { progress: p.progress, completed: p.completed },
+          create: p,
+        });
+        participantCount++;
+      } else if (p.eventId) {
+        await prisma.questParticipant.upsert({
+          where: { userId_eventId: { userId: p.userId, eventId: p.eventId } },
+          update: { progress: p.progress },
+          create: p,
+        });
+        participantCount++;
+      }
+    } catch {
+      // Skip on constraint error — already exists
+    }
+  }
+  console.log(`  ✓ ${participantCount} quest/event participations`);
+}
+
+// ── MAIN R2 DISPATCHER ────────────────────────────────────────────────────────
+async function seedR2() {
+  console.log("\n" + "═".repeat(50));
+  console.log("🌱 R2 — Unified Demo Data Seed (2026-03-30)");
+  console.log("═".repeat(50));
+
+  const memberCUIDs = await seedAllTeamMembers();
+  const teamUserIds = await seedTeamUsers(memberCUIDs);
+  await seedMemberExpertise(memberCUIDs);
+  await seedRankEffects();
+  await seedMemberOverrides(memberCUIDs);
+  await seedProjects();
+  await seedOrders(memberCUIDs);
+  await seedProjectMembers(memberCUIDs);
+  await seedLPEconomy(memberCUIDs, teamUserIds);
+  await seedPMData(memberCUIDs);
+  await seedQuestParticipants(memberCUIDs, teamUserIds);
+
+  console.log("\n✅ R2 seed complete — all demo data unified");
+}
+
+// ══════════════════════════════════════════════════════════════════
 
 async function main() {
   console.log("=".repeat(50));
@@ -1274,6 +2026,29 @@ async function main() {
     await seedAcademy();
     await seedQuests();
     await seedCompanyEvents();
+    await seedR2(); // <-- NEW: R2 unified demo data
+
+    // Verify counts
+    const [tm, us, pr, ord, pm, ef, ov, lp, tx, qp, ec, tsk, q, ev, exp, me] = await Promise.all([
+      prisma.teamMember.count(),
+      prisma.user.count(),
+      prisma.project.count(),
+      prisma.order.count(),
+      prisma.projectMember.count(),
+      prisma.rankEffect.count(),
+      prisma.memberEffectOverride.count(),
+      prisma.customerPoint.count(),
+      prisma.lpTransaction.count(),
+      prisma.questParticipant.count(),
+      prisma.epic.count(),
+      prisma.task.count(),
+      prisma.quest.count(),
+      prisma.companyEvent.count(),
+      prisma.expertise.count(),
+      prisma.memberExpertise.count(),
+    ]);
+    console.log("\n[VERIFY] TM=%d US=%d PR=%d OR=%d PM=%d | EF=%d OV=%d LP=%d TX=%d QP=%d | EC=%d TS=%d Q=%d EV=%d | EXP=%d ME=%d",
+      tm, us, pr, ord, pm, ef, ov, lp, tx, qp, ec, tsk, q, ev, exp, me);
 
     console.log("\n" + "=".repeat(50));
     console.log("✅ All seeds completed successfully!");

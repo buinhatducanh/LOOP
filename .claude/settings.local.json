@@ -128,11 +128,14 @@
       "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(''''packages:'''', len\\(d.get\\(''''packages'''',[]\\)\\), ''''features:'''', len\\(d.get\\(''''features'''',[]\\)\\), ''''addons:'''', len\\(d.get\\(''''addons'''',[]\\)\\), ''''infraTiers:'''', len\\(d.get\\(''''infraTiers'''',[]\\)\\), ''''packageLps:'''', len\\(d.get\\(''''packageLps'''',{}\\)\\)\\)\")",
       "Read(//d/LOOP_COMPANY/LOOP/FE/**)",
       "Bash(1 echo:*)",
-      "Read(//d/LOOP_COMPANY/LOOP/src/app/**)"
+      "Read(//d/LOOP_COMPANY/LOOP/src/app/**)",
+      "Bash(npx tsx -e \":*)",
+      "Bash(PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION=\"clear r chạy seed đi\" npx prisma migrate reset --force)"
     ],
     "additionalDirectories": [
       "D:\\LOOP_COMPANY\\LOOP\\src\\app\\api\\admin\\expertises",
-      "C:\\Users\\MSI\\.claude\\plans"
+      "C:\\Users\\MSI\\.claude\\plans",
+      "d:\\LOOP_COMPANY\\LOOP\\src\\app\\[locale]"
     ]
   }
 }

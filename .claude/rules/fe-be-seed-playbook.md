@@ -87,13 +87,23 @@ npx tsx prisma/seed.ts                         # seed data mới
 | `Lesson` | `seedAcademy()` | CourseDetailPage curriculum (in COURSES[]) | 2026-03-29 |
 | `Enrollment` | `seedAcademy()` | AcademyTab MOCK_STUDENTS | 2026-03-29 |
 | `StudentProgress` | `seedAcademy()` | AcademyTab MOCK_STUDENTS progress | 2026-03-29 |
-| TeamMember | `seedCEO()` | Home.tsx memberData.ts | 2026-03-29 |
-| Service | — | loopStore.ts INIT_SERVICES | — |
-| Project | — | loopStore.ts INIT_PORTFOLIO | — |
-| Order | — | loopStore.ts INIT_ORDERS | — |
-| Effect | — | loopStore.ts INIT_EFFECTS | — |
-| Quest | — | authStore.ts INIT_QUESTS | — |
-| Event | — | authStore.ts INIT_EVENTS | — |
+| TeamMember | `seedAllTeamMembers()` | Home.tsx memberData.ts | 2026-03-30 |
+| MemberExpertise | `seedMemberExpertise()` | memberData.ts expertises[] | 2026-03-30 |
+| RankEffect | `seedRankEffects()` | loopStore.ts INIT_EFFECTS | 2026-03-30 |
+| MemberEffectOverride | `seedMemberOverrides()` | loopStore.ts INIT_OVERRIDES | 2026-03-30 |
+| Project (Portfolio) | `seedProjects()` | loopStore.ts INIT_PORTFOLIO | 2026-03-30 |
+| Order | `seedOrders()` | loopStore.ts INIT_ORDERS | 2026-03-30 |
+| OrderStatusHistory | `seedOrders()` | — | 2026-03-30 |
+| ProjectMember | `seedProjectMembers()` | — | 2026-03-30 |
+| CustomerPoint | `seedLPEconomy()` | authStore.ts DEMO_USERS (lpBalance) | 2026-03-30 |
+| LpTransaction | `seedLPEconomy()` | — | 2026-03-30 |
+| User (Team) | `seedTeamUsers()` | — | 2026-03-30 |
+| QuestParticipant | `seedQuestParticipants()` | — | 2026-03-30 |
+| Epic | `seedPMData()` | — | 2026-03-30 |
+| Backlog | `seedPMData()` | — | 2026-03-30 |
+| Task | `seedPMData()` | — | 2026-03-30 |
+| Quest | `seedQuests()` | authStore.ts INIT_QUESTS | 2026-03-29 |
+| CompanyEvent | `seedCompanyEvents()` | authStore.ts INIT_EVENTS | 2026-03-29 |
 
 ---
 

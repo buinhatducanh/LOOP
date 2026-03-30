@@ -188,12 +188,15 @@ export const INIT_EFFECTS: RankEffect[] = [
   { id: 'eff-12', name: 'Iron Shield Pulse',        description: 'Vòng khiên kim loại rung nhẹ',                type: 'border',   unlockRank: 'iron',     unlockLevel: 5,   enabled: true,  cssConfig: 'style: shield; vibrate: 0.2s; color: #9CA3AF',       preview: '🛡', rarity: 'common' },
 ];
 
+// NOTE: memberId references are by memberData.ts id (number).
+// After R1.1 insert: Haru Tanaka=#14, Ngô Thanh Vân removed, IDs shifted.
+// Current key members: Akira=#7, Ryo=#3, Vũ Đình Trọng=#13.
 const INIT_OVERRIDES: MemberEffectOverride[] = [
-  { memberId: 1, effectId: 'eff-7', visible: true,  selectedByMember: true },
-  { memberId: 1, effectId: 'eff-8', visible: true,  selectedByMember: true },
-  { memberId: 1, effectId: 'eff-6', visible: false, selectedByMember: false },
-  { memberId: 7, effectId: 'eff-7', visible: true,  selectedByMember: true },
-  { memberId: 3, effectId: 'eff-5', visible: true,  selectedByMember: true },
+  { memberId: 7,  effectId: 'eff-7', visible: true,  selectedByMember: true },   // Akira Sato (Diamond) — Diamond Holographic
+  { memberId: 7,  effectId: 'eff-8', visible: true,  selectedByMember: true },   // Akira — Cosmic Badge
+  { memberId: 7,  effectId: 'eff-6', visible: false, selectedByMember: false },  // Akira — (Ruby Fire hidden)
+  { memberId: 3,  effectId: 'eff-5', visible: true,  selectedByMember: true },  // Ryo Hashimoto — Platinum Trail
+  { memberId: 13, effectId: 'eff-7', visible: true,  selectedByMember: true },  // Vũ Đình Trọng (QA, Silver) — demo override
 ];
 
 // ── Initial Data ─────────────────────────────────────────────────────────────
@@ -407,19 +410,27 @@ const INIT_ORDERS: Order[] = [
   },
 ];
 
+// ── Seed reference time: 2026-03-30 09:00 UTC (session start) ──────────────
+// Captured once at module load → timestamps stay fresh within a session
+// while remaining consistent across page reloads (not frozen at build time).
+const SEED_NOW = Date.now();
+const ago = (minutes: number) => SEED_NOW - minutes * 60 * 1000;
+const agoH = (hours: number)   => SEED_NOW - hours * 3600 * 1000;
+const agoD = (days: number)    => SEED_NOW - days * 86400 * 1000;
+
 const INIT_ADMIN_NOTIFS: AdminNotification[] = [
-  { id: 'an1', type: 'payment',        title: '💳 Thanh toán mới — FinCorp 280M VNĐ',  body: 'Lê Quang Đức (FinCorp Vietnam) vừa thanh toán INV-2603 trị giá 280,000,000 VNĐ.',  time: '5 phút trước',  timestamp: Date.now() - 5*60000, read: false, color: DS.green,  relatedOrderId: 'ORD-2603', relatedClientId: 1, priority: 'high', department: 'finance', assignedTo: 'Yuna Park', category: 'finance', archived: false },
-  { id: 'an2', type: 'client_message', title: '💬 Phản hồi từ khách hàng',              body: 'Nguyễn Minh Tuấn (VNRetail) đã reply: "Nhờ chỉnh màu button checkout."',            time: '32 phút trước', timestamp: Date.now() - 32*60000, read: false, color: DS.blue,   relatedOrderId: 'ORD-2601', relatedClientId: 2, priority: 'normal', department: 'design', assignedTo: 'Yuna Park', category: 'client', archived: false },
-  { id: 'an3', type: 'new_order',      title: '📦 Đơn hàng mới — RetailMax 80M',        body: 'Vũ Hoàng Minh (RetailMax VN) xác nhận đơn ORD-2604. Đang chờ thanh toán.',         time: '2 giờ trước',   timestamp: Date.now() - 2*3600000, read: false, color: DS.purple, relatedOrderId: 'ORD-2604', relatedClientId: 7, priority: 'high', department: 'sales', category: 'order', archived: false },
-  { id: 'an4', type: 'task',           title: '⚠️ Task khẩn sắp deadline',              body: 'Payment API Integration của Ryo Hashimoto đến hạn 01/04/2026.',                      time: '3 giờ trước',   timestamp: Date.now() - 3*3600000, read: true,  color: DS.red, priority: 'urgent', department: 'engineering', assignedTo: 'Ryo Hashimoto', category: 'team', archived: false },
-  { id: 'an5', type: 'lp',            title: '⚡ Yuna Park lên cấp Level 69',           body: 'Yuna Park đạt Level 69 · Gold Rank. Tổng LP earned: 65,000.',                       time: '5 giờ trước',   timestamp: Date.now() - 5*3600000, read: true,  color: DS.amber, priority: 'low', department: 'management', assignedTo: 'Yuna Park', category: 'team', archived: false },
-  { id: 'an6', type: 'system',         title: '📊 Báo cáo tuần S12',                   body: 'Báo cáo tuần #12/2026: Doanh thu 87M VNĐ, LP phát hành 8,200.',                      time: '1 ngày trước',  timestamp: Date.now() - 86400000, read: true,  color: DS.cyan, priority: 'normal', department: 'management', category: 'system', archived: false },
-  { id: 'an7', type: 'media_booking',  title: '📸 Booking mới — CafeHouse chụp ẩm thực', body: 'Trần Minh Hùng (CafeHouse VN) đặt lịch chụp ảnh sản phẩm + ẩm thực. Gói Professional, 19M VNĐ.', time: '6 giờ trước', timestamp: Date.now() - 6*3600000, read: false, color: '#F59E0B', relatedOrderId: 'MDA-8821', priority: 'normal', department: 'media', assignedTo: 'Haru Tanaka', category: 'media', archived: false },
-  { id: 'an8', type: 'media_delivery', title: '🎬 Giao file — FashionX lookbook xong',   body: 'Haru Tanaka đã giao toàn bộ ảnh lookbook Summer 2026 cho Phạm Thị Lan (FashionX). 120 ảnh, 5 sets.', time: '8 giờ trước', timestamp: Date.now() - 8*3600000, read: true, color: '#14B8A6', relatedOrderId: 'MDA-8824', priority: 'normal', department: 'media', assignedTo: 'Haru Tanaka', category: 'media', archived: false },
-  { id: 'an9', type: 'escalation',     title: '🔴 Escalation — ResortStar yêu cầu chỉnh sửa gấp', body: 'Vũ Đức Anh (ResortStar) yêu cầu chỉnh video intro trong 24h. Cần ưu tiên xử lý.', time: '10 giờ trước', timestamp: Date.now() - 10*3600000, read: false, color: DS.red, relatedOrderId: 'MDA-8825', priority: 'urgent', department: 'media', assignedTo: 'Trần Thu Linh', category: 'media', archived: false },
-  { id: 'an10', type: 'payment',       title: '💳 Đặt cọc 30% — BeautyLab 24.75M VNĐ', body: 'Nguyễn Thu Hà (BeautyLab) đã đặt cọc 30% cho gói quay phim Premium. Tổng 82.5M VNĐ.', time: '3 ngày trước', timestamp: Date.now() - 3*86400000, read: true, color: DS.green, relatedOrderId: 'MDA-8822', priority: 'normal', department: 'finance', category: 'finance', archived: false },
-  { id: 'an11', type: 'client_message', title: '💬 TechStart hỏi về tiến độ content',    body: 'Lê Hoàng Nam (TechStart VN): "Anh muốn hỏi timeline series 8 videos. Khi nào bắt đầu quay?"', time: '12 giờ trước', timestamp: Date.now() - 12*3600000, read: false, color: DS.blue, relatedOrderId: 'MDA-8823', priority: 'normal', department: 'media', assignedTo: 'Kai Nguyen', category: 'client', archived: false },
-  { id: 'an12', type: 'task',          title: '📋 Review script TVC BeautyLab',          body: 'Trần Thu Linh cần Akira Sato review và approve script TVC 30s trước khi quay.', time: '1 ngày trước', timestamp: Date.now() - 86400000, read: true, color: DS.amber, priority: 'high', department: 'media', assignedTo: 'Akira Sato', category: 'team', archived: false },
+  { id: 'an1', type: 'payment',        title: '💳 Thanh toán mới — FinCorp 280M VNĐ',  body: 'Lê Quang Đức (FinCorp Vietnam) vừa thanh toán INV-2603 trị giá 280,000,000 VNĐ.',  time: '5 phút trước',  timestamp: ago(5),     read: false, color: DS.green,  relatedOrderId: 'ORD-2603', relatedClientId: 1, priority: 'high',    department: 'finance',     assignedTo: 'Yuna Park',      category: 'finance', archived: false },
+  { id: 'an2', type: 'client_message', title: '💬 Phản hồi từ khách hàng',              body: 'Nguyễn Minh Tuấn (VNRetail) đã reply: "Nhờ chỉnh màu button checkout."',           time: '32 phút trước', timestamp: ago(32),    read: false, color: DS.blue,   relatedOrderId: 'ORD-2601', relatedClientId: 2, priority: 'normal',  department: 'design',     assignedTo: 'Yuna Park',      category: 'client',   archived: false },
+  { id: 'an3', type: 'new_order',      title: '📦 Đơn hàng mới — RetailMax 80M',        body: 'Vũ Hoàng Minh (RetailMax VN) xác nhận đơn ORD-2604. Đang chờ thanh toán.',          time: '2 giờ trước',   timestamp: agoH(2),   read: false, color: DS.purple, relatedOrderId: 'ORD-2604', relatedClientId: 7, priority: 'high',    department: 'sales',      assignedTo: undefined,       category: 'order',    archived: false },
+  { id: 'an4', type: 'task',           title: '⚠️ Task khẩn sắp deadline',              body: 'Payment API Integration của Ryo Hashimoto đến hạn 01/04/2026.',                       time: '3 giờ trước',   timestamp: agoH(3),   read: true,  color: DS.red,   priority: 'urgent',  department: 'engineering', assignedTo: 'Ryo Hashimoto',  category: 'team',     archived: false },
+  { id: 'an5', type: 'lp',             title: '⚡ Yuna Park lên cấp Level 68',          body: 'Yuna Park đạt Level 68 · Gold Rank. Tổng LP earned: 65,000.',                       time: '5 giờ trước',   timestamp: agoH(5),   read: true,  color: DS.amber, priority: 'low',     department: 'management',  assignedTo: 'Yuna Park',      category: 'team',     archived: false },
+  { id: 'an6', type: 'system',         title: '📊 Báo cáo tuần S12',                    body: 'Báo cáo tuần #12/2026: Doanh thu 87M VNĐ, LP phát hành 8,200.',                     time: '1 ngày trước',  timestamp: agoD(1),   read: true,  color: DS.cyan,  priority: 'normal',  department: 'management',  category: 'system',   archived: false },
+  { id: 'an7', type: 'media_booking', title: '📸 Booking mới — CafeHouse chụp ẩm thực', body: 'Trần Minh Hùng (CafeHouse VN) đặt lịch chụp ảnh sản phẩm + ẩm thực. Gói Professional, 19M VNĐ.', time: '6 giờ trước', timestamp: agoH(6),   read: false, color: '#F59E0B', relatedOrderId: 'MDA-8821', priority: 'normal',  department: 'media',     assignedTo: 'Haru Tanaka',     category: 'media',    archived: false },
+  { id: 'an8', type: 'media_delivery', title: '🎬 Giao file — FashionX lookbook xong', body: 'Haru Tanaka đã giao toàn bộ ảnh lookbook Summer 2026 cho Phạm Thị Lan (FashionX). 120 ảnh, 5 sets.', time: '8 giờ trước', timestamp: agoH(8),   read: true,  color: '#14B8A6', relatedOrderId: 'MDA-8824', priority: 'normal',  department: 'media',     assignedTo: 'Haru Tanaka',     category: 'media',    archived: false },
+  { id: 'an9', type: 'escalation',     title: '🔴 Escalation — ResortStar yêu cầu chỉnh sửa gấp', body: 'Vũ Đức Anh (ResortStar) yêu cầu chỉnh video intro trong 24h. Cần ưu tiên xử lý.', time: '10 giờ trước', timestamp: agoH(10),  read: false, color: DS.red,   priority: 'urgent',  department: 'media',     assignedTo: 'Trần Thu Linh',   category: 'media',    archived: false },
+  { id: 'an10', type: 'payment',       title: '💳 Đặt cọc 30% — BeautyLab 24.75M VNĐ', body: 'Nguyễn Thu Hà (BeautyLab) đã đặt cọc 30% cho gói quay phim Premium. Tổng 82.5M VNĐ.', time: '3 ngày trước', timestamp: agoD(3),   read: true,  color: DS.green,  relatedOrderId: 'MDA-8822', priority: 'normal',  department: 'finance',     category: 'finance',   archived: false },
+  { id: 'an11', type: 'client_message', title: '💬 TechStart hỏi về tiến độ content',  body: 'Lê Hoàng Nam (TechStart VN): "Anh muốn hỏi timeline series 8 videos. Khi nào bắt đầu quay?"', time: '12 giờ trước', timestamp: agoH(12),  read: false, color: DS.blue,   relatedOrderId: 'MDA-8823', priority: 'normal',  department: 'media',     assignedTo: 'Haru Tanaka',     category: 'client',   archived: false },
+  { id: 'an12', type: 'task',          title: '📋 Review script TVC BeautyLab',        body: 'Haru Tanaka cần Akira Sato review và approve script TVC 30s trước khi quay.',          time: '1 ngày trước',  timestamp: agoD(1),   read: true,  color: DS.amber, priority: 'high',    department: 'media',     assignedTo: 'Akira Sato',      category: 'team',     archived: false },
 ];
 
 const INIT_CLIENT_NOTIFS: ClientNotification[] = [

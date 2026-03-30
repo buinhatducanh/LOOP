@@ -59,31 +59,33 @@ export function canEdit(role: UserRole): boolean {
 }
 
 // ── Preset users for demo ──────────────────────────────────────────────
+// LP/level synced with memberData.ts canonical values (R1.2 reseed fix).
+// Haru Tanaka (#14) added to memberData.ts to match manager_media demo user (R1.1).
 export const DEMO_USERS: Record<string, AuthUser> = {
   admin: {
     id: 'u-admin', name: 'Akira Sato', shortName: 'Akira', email: 'akira@loop.vn',
-    avatar: 'https://images.unsplash.com/photo-1557862921-37829c790f19?auto=format&fit=crop&w=80&h=80&crop=faces',
-    role: 'admin', department: 'management', rank: 'diamond', rankColor: '#818CF8', lpBalance: 180000, level: 99,
+    avatar: 'https://images.unsplash.com/photo-1750741268857-7e44510f867d?auto=format&fit=crop&w=80&h=80&crop=faces',
+    role: 'admin', department: 'management', rank: 'diamond', rankColor: '#818CF8', lpBalance: 98_000, level: 118,
   },
   manager_media: {
     id: 'u-mgr-media', name: 'Haru Tanaka', shortName: 'Haru', email: 'haru@loop.vn',
     avatar: 'https://images.unsplash.com/photo-1612192279155-f7fab0a4f377?auto=format&fit=crop&w=80&h=80&crop=faces',
-    role: 'manager', department: 'media', rank: 'ruby', rankColor: '#EF4444', lpBalance: 45000, level: 72,
+    role: 'manager', department: 'media', rank: 'ruby', rankColor: '#EF4444', lpBalance: 45_000, level: 72,
   },
   manager_marketing: {
     id: 'u-mgr-mkt', name: 'Yuna Park', shortName: 'Yuna', email: 'yuna@loop.vn',
     avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=80&h=80&crop=faces',
-    role: 'manager', department: 'marketing', rank: 'gold', rankColor: '#F59E0B', lpBalance: 65000, level: 69,
+    role: 'manager', department: 'marketing', rank: 'gold', rankColor: '#F59E0B', lpBalance: 15_800, level: 68,
   },
   staff: {
     id: 'u-staff', name: 'Ryo Hashimoto', shortName: 'Ryo', email: 'ryo@loop.vn',
-    avatar: 'https://images.unsplash.com/photo-1547425260-76bcadfb4f2c?auto=format&fit=crop&w=80&h=80&crop=faces',
-    role: 'staff', department: 'engineering', rank: 'silver', rankColor: '#94A3B8', lpBalance: 8500, level: 28,
+    avatar: 'https://images.unsplash.com/photo-1547137289-636000d1ec10?auto=format&fit=crop&w=80&h=80&crop=faces',
+    role: 'staff', department: 'engineering', rank: 'silver', rankColor: '#94A3B8', lpBalance: 8_500, level: 43,
   },
   client: {
     id: 'u-client', name: 'Nguyễn Minh Tuấn', shortName: 'Minh Tuấn', email: 'minhtuan@techviet.vn',
     avatar: 'https://images.unsplash.com/photo-1746105625407-5d49d69a2a47?auto=format&fit=crop&w=80&h=80&crop=faces',
-    role: 'client', lpBalance: 15200, level: 12,
+    role: 'client', lpBalance: 15_200, level: 12,
   },
 };
 

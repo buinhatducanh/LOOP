@@ -337,12 +337,12 @@ FE/src/
 | Epic | KanbanBoard epics |
 | Backlog | KanbanBoard backlogs |
 | BlogPost | Blog content |
-
-**⚠️ MISSING in BE (cần tạo):**
-- `RankEffect` model — hiệu ứng theo rank (effectsTab)
-- `MemberEffectOverride` — override hiệu ứng theo member
-- `Quest` / `CompanyEvent` models — quest + event system
-- `QuestParticipant` — ai tham gia event nào
+| RankEffect | EffectsTab CRUD + per-rank display |
+| MemberEffectOverride | Member card effects (Akira, Ryo, Vũ Trọng overrides) |
+| Quest | QuestEventsTab CRUD |
+| CompanyEvent | QuestEventsTab CRUD |
+| QuestParticipant | Quest participation tracking (15 team members) |
+| User (Team) | User accounts for team members (QuestParticipant FK) |
 
 ---
 
