@@ -3,6 +3,8 @@ import { RouterProvider } from 'react-router';
 import { DS } from './components/layout/ds';
 import { router } from './routes.tsx';
 import { useAuthStore } from './store/authStore';
+import { useLocaleStore } from './store/localeStore';
+import { I18nProvider } from '../i18n/sync';
 
 const OnboardingPage = lazy(() => import('./pages/OnboardingPage'));
 
@@ -79,8 +81,10 @@ export default function App() {
 
   if (!ready) return <AppLoader />;
 
+  const { locale } = useLocaleStore();
+
   return (
-    <>
+    <I18nProvider locale={locale}>
       <Suspense fallback={<RouteChunkLoader />}>
         <RouterProvider router={router} />
       </Suspense>
@@ -89,6 +93,6 @@ export default function App() {
           <OnboardingPage onComplete={completeOnboarding} />
         </Suspense>
       )}
-    </>
+    </I18nProvider>
   );
 }
