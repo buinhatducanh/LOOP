@@ -12,7 +12,7 @@ import { useLocaleStore } from '../store/localeStore';
 import { testimonialsService } from '../../api/testimonials.service';
 import type { Testimonial } from '../../api/testimonials.service';
 import { servicesService } from '../../api/services.service';
-import type { Service, PortfolioProject } from '../../store/loopStore';
+import type { Service, PortfolioProject } from '../store/loopStore';
 import { projectsService } from '../../api/projects.service';
 import { useI18n } from '../../i18n/sync.tsx';
 
@@ -713,6 +713,15 @@ function LPSystemSection() {
 }
 
 // ── PORTFOLIO PREVIEW ────────────────────────────────────────────────────
+const FALLBACK_PROJECTS: PortfolioProject[] = [
+  { id: '1', title: 'VNRetail Platform', tag: 'E-commerce SaaS', cat: 'SaaS', metric1: '+320%', m1label: 'Doanh thu', metric2: '50K', m2label: 'Users', img: 'https://images.unsplash.com/photo-1517309561013-16f6e4020305?auto=format&fit=crop&w=600&q=80', color: DS.blue, tags: ['React', 'Node.js', 'AWS'] },
+  { id: '2', title: 'MedApp Vietnam', tag: 'Mobile Health App', cat: 'App', metric1: '4.9★', m1label: 'App Store', metric2: '200K', m2label: 'Downloads', img: 'https://images.unsplash.com/photo-1596843720750-7de9329da5d7?auto=format&fit=crop&w=600&q=80', color: DS.purple, tags: ['React Native', 'Firebase'] },
+  { id: '3', title: 'AnalyticsPro Dashboard', tag: 'Data Analytics SaaS', cat: 'SaaS', metric1: '#1', m1label: 'Market Share', metric2: '99.9%', m2label: 'Uptime', img: 'https://images.unsplash.com/photo-1771012788703-d310cdf189bb?auto=format&fit=crop&w=600&q=80', color: DS.cyan, tags: ['React', 'Python', 'BigQuery'] },
+  { id: '4', title: 'EduViet Portal', tag: 'EdTech Platform', cat: 'Website', metric1: '10K', m1label: 'Students', metric2: '+180%', m2label: 'Engagement', img: 'https://images.unsplash.com/photo-1762330910399-95caa55acf04?auto=format&fit=crop&w=600&q=80', color: DS.green, tags: ['Next.js', 'Supabase', 'Tailwind'] },
+  { id: '5', title: 'StartupHub Landing', tag: 'Corporate Website', cat: 'Website', metric1: '98', m1label: 'PageSpeed', metric2: '+45%', m2label: 'Conversion', img: 'https://images.unsplash.com/photo-1588336443962-49d88df004a1?auto=format&fit=crop&w=600&q=80', color: DS.amber, tags: ['React', 'Framer Motion'] },
+  { id: '6', title: 'FinDash Enterprise', tag: 'FinTech Dashboard', cat: 'SaaS', metric1: '$2M', m1label: 'Managed', metric2: '500+', m2label: 'Transactions/day', img: 'https://images.unsplash.com/photo-1634836023845-eddbfe9937da?auto=format&fit=crop&w=600&q=80', color: DS.red, tags: ['React', 'Rust', 'PostgreSQL'] },
+] as unknown as PortfolioProject[];
+
 function PortfolioPreview() {
   const { t } = useI18n();
   const [projects, setProjects] = useState<PortfolioProject[]>(FALLBACK_PROJECTS);
@@ -761,7 +770,7 @@ function PortfolioPreview() {
                   <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center" style={{ background: `linear-gradient(135deg, ${p.color}cc, rgba(2,6,23,0.9))` }}>
                     <div className="text-center px-6">
                       <div style={{ color: '#fff', fontFamily: DS.heading, fontSize: 16, fontWeight: 700, letterSpacing: '0.06em', marginBottom: 8 }}>{p.title}</div>
-                      <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13, marginBottom: 16 }}>{p.metric}</div>
+                      <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13, marginBottom: 16 }}>{p.metric1}</div>
                       <div style={{ color: '#fff', fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.15em', border: '1px solid rgba(255,255,255,0.3)', padding: '6px 14px', borderRadius: 6, display: 'inline-block' }}>
                         {t('landing.portfolio.viewDetails', 'XEM CHI TIẾT →')}
                       </div>
@@ -771,7 +780,7 @@ function PortfolioPreview() {
                 <div className="p-4" style={{ background: DS.bgCard }}>
                   <div style={{ color: p.color, fontSize: 10, fontFamily: DS.mono, letterSpacing: '0.12em', marginBottom: 4 }}>{p.tag}</div>
                   <div style={{ color: DS.text, fontSize: 15, fontWeight: 700 }}>{p.title}</div>
-                  <div style={{ color: DS.green, fontSize: 12, fontFamily: DS.mono, marginTop: 4 }}>{p.metric}</div>
+                  <div style={{ color: DS.green, fontSize: 12, fontFamily: DS.mono, marginTop: 4 }}>{p.metric1}</div>
                 </div>
               </Link>
             </motion.div>
@@ -784,10 +793,10 @@ function PortfolioPreview() {
 
 // ── TESTIMONIALS ─────────────────────────────────────────────────────────
 // FALLBACK_TESTIMONIALS
-const FALLBACK_TESTIMONIALS = [
-  { id: '1', name: 'Nguyen Minh Tuan', role: 'CEO, TechViet JSC', company: 'TechViet JSC', quote: 'LOOP Solutions da giup chung toi ra mat SaaS platform trong 3 thang. Chat luong code vuot ky vong, doi ngu cuc ky chuyen nghiep. LP tich luy giup toi tiet kiem 18% hoa don du an tiep theo.', rating: 5, avatar: '' },
-  { id: '2', name: 'Tran Thu Hang', role: 'Marketing Director, VNRetail', company: 'VNRetail', quote: 'He thong LP thuc su thu vi! Toi tich luy du diem de giam 15% cho du an tiep theo. Rat minh bach va chuyen nghiep.', rating: 5, avatar: '' },
-  { id: '3', name: 'Le Quang Duc', role: 'Founder, Startup Hub', company: 'Startup Hub', quote: 'Dashboard tracking real-time giup toi nam ro tien do moi luc. Khong can email hoi lien tuc. Gia minh bach, khong phat sinh. Tuyet voi!', rating: 5, avatar: '' },
+const FALLBACK_TESTIMONIALS: Testimonial[] = [
+  { id: '1', name: 'Nguyen Minh Tuan', role: 'CEO, TechViet JSC', company: 'TechViet JSC', quote: 'LOOP Solutions da giup chung toi ra mat SaaS platform trong 3 thang. Chat luong code vuot ky vong, doi ngu cuc ky chuyen nghiep. LP tich luy giup toi tiet kiem 18% hoa don du an tiep theo.', rating: 5, avatar: '', rank: 'PLATINUM', rankColor: '#14B8A6', rankSymbol: '❋' },
+  { id: '2', name: 'Tran Thu Hang', role: 'Marketing Director, VNRetail', company: 'VNRetail', quote: 'He thong LP thuc su thu vi! Toi tich luy du diem de giam 15% cho du an tiep theo. Rat minh bach va chuyen nghiep.', rating: 5, avatar: '', rank: 'GOLD', rankColor: '#FFD700', rankSymbol: '★' },
+  { id: '3', name: 'Le Quang Duc', role: 'Founder, Startup Hub', company: 'Startup Hub', quote: 'Dashboard tracking real-time giup toi nam ro tien do moi luc. Khong can email hoi lien tuc. Gia minh bach, khong phat sinh. Tuyet voi!', rating: 5, avatar: '', rank: 'RUBY', rankColor: '#EF4444', rankSymbol: '♦' },
 ];
 
 function TestimonialsSection() {

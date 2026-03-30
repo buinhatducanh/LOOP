@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="ribbonGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#1e2a4a"/>
+      <stop offset="100%" stop-color="#060a12"/>
+    </linearGradient>
+    <linearGradient id="infOuter" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a0f1e"/>
+      <stop offset="100%" stop-color="#050810"/>
+    </linearGradient>
+    <linearGradient id="infInner" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#06B6D4"/>
+      <stop offset="50%" stop-color="#8B5CF6"/>
+      <stop offset="100%" stop-color="#6366F1"/>
+    </linearGradient>
+    <linearGradient id="highlight" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#BAE6FD" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#67E8F9" stop-opacity="0.3"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="4" dy="8" stdDeviation="8" flood-color="#000" flood-opacity="0.6"/>
+    </filter>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <radialGradient id="bg" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#1a1040"/>
+      <stop offset="100%" stop-color="#0a0d1a"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+
+  <!-- L vertical stem -->
+  <rect x="112" y="112" width="80" height="224" rx="32"
+        fill="url(#ribbonGrad)" filter="url(#shadow)"/>
+  <rect x="112" y="112" width="28" height="224" rx="16"
+        fill="#2a3f6e" opacity="0.7"/>
+
+  <!-- L ribbon base -->
+  <path d="M 112 288
+           C 160 288, 208 272, 240 288
+           L 448 288
+           C 464 288, 464 288, 448 272
+           L 240 224
+           C 208 240, 160 224, 112 224 Z"
+        fill="url(#ribbonGrad)" filter="url(#shadow)"/>
+  <path d="M 128 288 C 168 288, 211 275.5, 248 288 L 436 288 L 248 232 C 211 248, 168 235.5, 128 224 Z"
+        fill="#1e2f5e" opacity="0.6"/>
+  <path d="M 136 288 C 176 287.8, 216 275.5, 248 288 L 424 288 L 248 280.5 C 216 266.8, 176 287.5, 136 288 Z"
+        fill="url(#highlight)" opacity="0.25"/>
+  <path d="M 416 288 L 480 224 L 448 272 Z" fill="#040810"/>
+  <path d="M 424 288 L 472 231 L 448 272 Z" fill="#1e2a4a" opacity="0.5"/>
+
+  <!-- Left infinity loop outer -->
+  <path d="M 272 256
+           C 272 200, 232 160, 184 160
+           C 136 160, 96 200, 96 256
+           C 96 312, 136 352, 184 352
+           C 232 352, 272 312, 272 256"
+        fill="none" stroke="url(#infOuter)" stroke-width="72" stroke-linecap="round" filter="url(#shadow)"/>
+  <!-- Left infinity inner -->
+  <path d="M 272 256
+           C 272 200, 232 160, 184 160
+           C 136 160, 96 200, 96 256
+           C 96 312, 136 352, 184 352
+           C 232 352, 272 312, 272 256"
+        fill="none" stroke="url(#infInner)" stroke-width="36" stroke-linecap="round" filter="url(#glow)"/>
+  <!-- Left loop gloss -->
+  <path d="M 184 160 C 136 160, 96 200, 96 256 C 96 208, 132 172, 184 168"
+        fill="none" stroke="#7DD3FC" stroke-width="14" stroke-linecap="round" opacity="0.75"/>
+
+  <!-- Right infinity loop outer -->
+  <path d="M 240 256
+           C 240 200, 280 160, 328 160
+           C 376 160, 416 200, 416 256
+           C 416 312, 376 352, 328 352
+           C 280 352, 240 312, 240 256"
+        fill="none" stroke="url(#infOuter)" stroke-width="72" stroke-linecap="round"/>
+  <!-- Right infinity inner -->
+  <path d="M 240 256
+           C 240 200, 280 160, 328 160
+           C 376 160, 416 200, 416 256
+           C 416 312, 376 352, 328 352
+           C 280 352, 240 312, 240 256"
+        fill="none" stroke="url(#infInner)" stroke-width="36" stroke-linecap="round" filter="url(#glow)"/>
+  <!-- Right loop gloss -->
+  <path d="M 328 160 C 376 160, 416 200, 416 256 C 416 208, 380 172, 328 168"
+        fill="none" stroke="#7DD3FC" stroke-width="14" stroke-linecap="round" opacity="0.75"/>
+
+  <!-- Shadow under L over infinity -->
+  <path d="M 112 288 C 160 288, 208 272, 240 288 L 272 256"
+        fill="none" stroke="#000" stroke-width="8" opacity="0.35"/>
+</svg>

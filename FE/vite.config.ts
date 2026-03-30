@@ -48,4 +48,19 @@ export default defineConfig({
 
   // File types to support raw imports. Never add .css, .tsx, or .ts files to this.
   assetsInclude: ['**/*.svg', '**/*.csv'],
+
+  // ── API Proxy ────────────────────────────────────────────────────────────────
+  // Forward /api requests to the Next.js backend.
+  // This avoids CORS issues and lets the backend run on any port (3000 or 3001).
+  // Usage in FE: fetch('/api/v1/team') → proxied to BE without CORS.
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+        // Don't rewrite — keep the /api prefix so Next.js routes match
+        rewrite: (path) => path,
+      },
+    },
+  },
 })

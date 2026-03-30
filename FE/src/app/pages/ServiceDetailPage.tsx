@@ -6,13 +6,13 @@ import { DS, GRD } from '../components/layout/ds';
 import { useParams, Link } from 'react-router';
 import { DemoViewer } from '../components/ui/DemoViewer';
 import { servicesService } from '../../api/services.service';
-import type { Service } from '../../store/loopStore';
+import type { Service } from '../store/loopStore';
 import { useLocaleStore } from '../store/localeStore';
 
 const fmtVND = (n: number) =>
   new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(n);
 
-const USE_MOCK_FALLBACK = (import.meta.env.VITE_USE_MOCK_FALLBACK as string) !== 'false';
+const USE_MOCK_FALLBACK = ((import.meta as any).env.VITE_USE_MOCK_FALLBACK as string) !== 'false';
 
 const FALLBACK_SERVICES: Record<string, {
   id: string; icon: ReactNode; color: string;
@@ -176,7 +176,7 @@ export default function ServiceDetailPage() {
   }, [slug, locale]);
 
   const fallbackSvc = FALLBACK_SERVICES[slug] ?? Object.values(FALLBACK_SERVICES)[0];
-  const svc = apiSvc ?? (USE_MOCK_FALLBACK ? fallbackSvc : null);
+  const svc = (apiSvc ?? (USE_MOCK_FALLBACK ? fallbackSvc : null)) as any;
   const [showDemo, setShowDemo] = useState(false);
 
   if (!loading && !svc) {
@@ -304,7 +304,7 @@ export default function ServiceDetailPage() {
                 <div style={{ color: '#fff', fontSize: 15, fontWeight: 700 }}>Xem Demo Giao Diện</div>
                 <div className="flex items-center gap-2 px-4 py-2 rounded-lg"
                   style={{ background: 'rgba(2,6,23,0.8)', border: `1px solid ${svc.color}30`, backdropFilter: 'blur(8px)' }}>
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={DS.green} strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={DS.green} strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
                   <span style={{ color: DS.green, fontSize: 10, fontFamily: DS.mono }}>URL được bảo vệ · Chỉ xem tại LOOP</span>
                 </div>
               </div>
@@ -328,7 +328,7 @@ export default function ServiceDetailPage() {
             <div>
               <h2 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 22, fontWeight: 900, letterSpacing: '0.04em', marginBottom: 16 }}>QUY TRÌNH THỰC HIỆN</h2>
               <div className="space-y-4">
-                {svc.process.map((p, i) => (
+                {svc.process.map((p: any, i: number) => (
                   <motion.div key={p.title} className="flex gap-5 p-4 rounded-xl"
                     style={{ background: 'rgba(15,23,42,0.6)', border: `1px solid ${DS.border}` }}
                     initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }}
@@ -349,7 +349,7 @@ export default function ServiceDetailPage() {
             <div>
               <h2 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 22, fontWeight: 900, letterSpacing: '0.04em', marginBottom: 16 }}>DỰ ÁN LIÊN QUAN</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {svc.cases.map(c => (
+                {svc.cases.map((c: any) => (
                   <div key={c.name} className="rounded-xl overflow-hidden" style={{ background: DS.bgCard, border: `1px solid ${DS.border}` }}>
                     <img src={c.img} alt={c.name} className="w-full object-cover" style={{ height: 140 }} />
                     <div className="p-4">
@@ -365,7 +365,7 @@ export default function ServiceDetailPage() {
             <div>
               <h2 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 22, fontWeight: 900, letterSpacing: '0.04em', marginBottom: 16 }}>CÂU HỎI THƯỜNG GẶP</h2>
               <div className="space-y-4">
-                {svc.faqs.map(faq => (
+                {svc.faqs.map((faq: any) => (
                   <div key={faq.q} className="p-5 rounded-xl" style={{ background: 'rgba(15,23,42,0.6)', border: `1px solid ${DS.border}` }}>
                     <div style={{ color: svc.color, fontSize: 14, fontWeight: 700, marginBottom: 8 }}>Q: {faq.q}</div>
                     <div style={{ color: DS.text3, fontSize: 13, lineHeight: 1.7 }}>{faq.a}</div>
@@ -381,7 +381,7 @@ export default function ServiceDetailPage() {
             <div className="p-5 rounded-2xl" style={{ background: 'rgba(15,23,42,0.8)', border: `1px solid ${DS.border}` }}>
               <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.15em', marginBottom: 14 }}>TÍNH NĂNG BAO GỒM</div>
               <div className="space-y-2.5">
-                {svc.features.map(f => (
+                {svc.features.map((f: any) => (
                   <div key={f} className="flex items-start gap-2.5">
                     <Check size={13} style={{ color: svc.color, flexShrink: 0, marginTop: 1.5 }} />
                     <span style={{ color: DS.text3, fontSize: 12, lineHeight: 1.5 }}>{f}</span>
@@ -394,7 +394,7 @@ export default function ServiceDetailPage() {
             <div className="p-5 rounded-2xl" style={{ background: 'rgba(15,23,42,0.8)', border: `1px solid ${DS.border}` }}>
               <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.15em', marginBottom: 14 }}>TECH STACK</div>
               <div className="flex flex-wrap gap-2">
-                {svc.tech.map(t => (
+                {svc.tech.map((t: any) => (
                   <span key={t} style={{ color: svc.color, fontSize: 10, fontFamily: DS.mono, padding: '3px 8px', borderRadius: 4, background: `${svc.color}10`, border: `1px solid ${svc.color}25` }}>{t}</span>
                 ))}
               </div>

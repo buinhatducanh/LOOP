@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { DS, GRD } from '../components/layout/ds';
 import { servicesService } from '../../api/services.service';
-import type { Service } from '../../store/loopStore';
+import type { Service } from '../store/loopStore';
 import { useLocaleStore } from '../store/localeStore';
 import { useI18n } from '../../i18n/sync.tsx';
 

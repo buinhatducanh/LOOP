@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a0d1a"/>
+      <stop offset="100%" stop-color="#1a1040"/>
+    </linearGradient>
+    <linearGradient id="ribbonGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#1e2a4a"/>
+      <stop offset="100%" stop-color="#060a12"/>
+    </linearGradient>
+    <linearGradient id="infOuter" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a0f1e"/>
+      <stop offset="100%" stop-color="#050810"/>
+    </linearGradient>
+    <linearGradient id="infInner" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#06B6D4"/>
+      <stop offset="50%" stop-color="#8B5CF6"/>
+      <stop offset="100%" stop-color="#6366F1"/>
+    </linearGradient>
+    <linearGradient id="textGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#A5F3FC"/>
+      <stop offset="50%" stop-color="#C4B5FD"/>
+      <stop offset="100%" stop-color="#818CF8"/>
+    </linearGradient>
+    <linearGradient id="line" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="transparent"/>
+      <stop offset="25%" stop-color="#06B6D4"/>
+      <stop offset="75%" stop-color="#8B5CF6"/>
+      <stop offset="100%" stop-color="transparent"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#8B5CF6" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="transparent"/>
+    </radialGradient>
+    <filter id="glow-filter" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <!-- Center glow -->
+  <ellipse cx="600" cy="280" rx="400" ry="200" fill="url(#glow)"/>
+
+  <!-- Top accent line -->
+  <rect width="1200" height="4" fill="url(#line)"/>
+
+  <!-- Logo mark centered -->
+  <g transform="translate(510, 160)">
+    <!-- L vertical stem -->
+    <rect x="0" y="0" width="40" height="112" rx="14" fill="url(#ribbonGrad)"/>
+    <rect x="0" y="0" width="14" height="112" rx="7" fill="#2a3f6e" opacity="0.7"/>
+    <!-- L ribbon base -->
+    <path d="M 0 144 C 24 144, 48 136, 60 144 L 180 144 C 192 144, 192 144, 180 132 L 60 112 C 48 120, 24 112, 0 112 Z" fill="url(#ribbonGrad)"/>
+    <path d="M 8 144 C 28 144, 52 137.5, 64 144 L 174 144 L 64 114 C 52 121, 28 113.5, 8 112 Z" fill="#1e2f5e" opacity="0.6"/>
+    <!-- Infinity left loop -->
+    <path d="M 80 128 C 80 96, 48 64, 16 64 C -16 64, -48 96, -48 128 C -48 160, -16 192, 16 192 C 48 192, 80 160, 80 128" fill="none" stroke="url(#infOuter)" stroke-width="36" stroke-linecap="round" filter="url(#glow-filter)"/>
+    <path d="M 80 128 C 80 96, 48 64, 16 64 C -16 64, -48 96, -48 128 C -48 160, -16 192, 16 192 C 48 192, 80 160, 80 128" fill="none" stroke="url(#infInner)" stroke-width="18" stroke-linecap="round"/>
+    <!-- Infinity right loop -->
+    <path d="M 60 128 C 60 96, 92 64, 124 64 C 156 64, 188 96, 188 128 C 188 160, 156 192, 124 192 C 92 192, 60 160, 60 128" fill="none" stroke="url(#infOuter)" stroke-width="36" stroke-linecap="round"/>
+    <path d="M 60 128 C 60 96, 92 64, 124 64 C 156 64, 188 96, 188 128 C 188 160, 156 192, 124 192 C 92 192, 60 160, 60 128" fill="none" stroke="url(#infInner)" stroke-width="18" stroke-linecap="round"/>
+  </g>
+
+  <!-- LOOPS text -->
+  <text x="600" y="360" font-family="Inter,system-ui,Arial,sans-serif" font-size="100" font-weight="800" fill="url(#textGrad)" text-anchor="middle" letter-spacing="-3">LOOPS</text>
+  <text x="600" y="400" font-family="Inter,system-ui,Arial,sans-serif" font-size="20" font-weight="600" fill="#A78BFA" text-anchor="middle" letter-spacing="6" opacity="0.8">LOOP SOLUTIONS</text>
+
+  <!-- Bottom tagline -->
+  <text x="600" y="490" font-family="Inter,system-ui,Arial,sans-serif" font-size="22" font-weight="400" fill="#94A3B8" text-anchor="middle" letter-spacing="2">Thiết kế Website &amp; Ứng dụng chuyên nghiệp</text>
+
+  <!-- Bottom accent dots -->
+  <g transform="translate(552, 520)">
+    <rect width="48" height="3" rx="2" fill="#06B6D4"/>
+    <rect x="56" width="48" height="3" rx="2" fill="#8B5CF6"/>
+  </g>
+</svg>

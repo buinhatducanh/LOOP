@@ -16,7 +16,7 @@ const rgba = (hex: string, a: number) => {
 };
 
 /* ── Compact inline search bar ───────────────────────────────────────────── */
-function InlineSearchBar({ onOpen }: { onOpen: () => void }) {
+function InlineSearchBar({ onOpen, t }: { onOpen: () => void; t: (key: string, fallback?: string) => string }) {
   const isMac = typeof navigator !== 'undefined' && /Mac/i.test(navigator.userAgent);
   return (
     <button
@@ -39,7 +39,7 @@ function InlineSearchBar({ onOpen }: { onOpen: () => void }) {
 }
 
 /* ── User Avatar Menu ────────────────────────────────────────────────────── */
-function UserAvatarMenu({ onNavigate }: { onNavigate: (path: string) => void }) {
+function UserAvatarMenu({ onNavigate, t }: { onNavigate: (path: string) => void; t: (key: string, fallback?: string) => string }) {
   const { user, isAuthenticated, logout, loginAs } = useAuthStore();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -430,7 +430,7 @@ export function Navbar() {
               </AnimatePresence>
             </div>
 
-            <InlineSearchBar onOpen={() => setSearchOpen(true)} />
+            <InlineSearchBar t={t} onOpen={() => setSearchOpen(true)} />
 
             {/* LP badge */}
             {isAuthenticated && user && (
@@ -444,7 +444,7 @@ export function Navbar() {
             )}
 
             {/* User Avatar Menu */}
-            <UserAvatarMenu onNavigate={navigate} />
+            <UserAvatarMenu t={t} onNavigate={navigate} />
           </div>
 
           {/* Mobile right */}

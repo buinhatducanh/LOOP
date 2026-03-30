@@ -5,15 +5,15 @@ import { ArrowLeft, Check, Calendar, Users, TrendingUp, Star, Clock, Monitor } f
 import { DS, GRD } from '../components/layout/ds';
 import { DemoViewer } from '../components/ui/DemoViewer';
 import { projectsService } from '../../api/projects.service';
-import type { PortfolioProject } from '../../store/loopStore';
+import type { PortfolioProject } from '../store/loopStore';
 import { useLocaleStore } from '../store/localeStore';
 
-const USE_MOCK_FALLBACK = (import.meta.env.VITE_USE_MOCK_FALLBACK as string) !== 'false';
+const USE_MOCK_FALLBACK = ((import.meta as any).env.VITE_USE_MOCK_FALLBACK as string) !== 'false';
 
 // ── Fallback mock data (used when BE is offline) ─────────────────────────────
-const FALLBACK: Record<string, PortfolioProject> = {
+const FALLBACK: Record<string, any> = {
   '1': {
-    id: 1, title: 'VNRetail Platform', tag: 'E-commerce SaaS', cat: 'SaaS',
+    id: '1', title: 'VNRetail Platform', tag: 'E-commerce SaaS', cat: 'SaaS',
     color: DS.blue,
     img: 'https://images.unsplash.com/photo-1517309561013-16f6e4020305?auto=format&fit=crop&w=900&q=80',
     client: 'VNRetail JSC', year: '2025', duration: '5 tháng', budget: '350,000,000 VNĐ', team: '6 người',
@@ -33,7 +33,7 @@ const FALLBACK: Record<string, PortfolioProject> = {
     demoTitle: 'VNRetail Platform — Live Demo',
   },
   '2': {
-    id: 2, title: 'MedApp Vietnam', tag: 'Mobile Health App', cat: 'App',
+    id: '2', title: 'MedApp Vietnam', tag: 'Mobile Health App', cat: 'App',
     color: DS.purple,
     img: 'https://images.unsplash.com/photo-1596843720750-7de9329da5d7?auto=format&fit=crop&w=900&q=80',
     client: 'HealthTech Vietnam', year: '2025', duration: '4 tháng', budget: '180,000,000 VNĐ', team: '4 người',
@@ -53,7 +53,7 @@ const FALLBACK: Record<string, PortfolioProject> = {
     demoTitle: 'MedApp Vietnam — UI Prototype',
   },
   '3': {
-    id: 3, title: 'AnalyticsPro Dashboard', tag: 'Data Analytics SaaS', cat: 'SaaS',
+    id: '3', title: 'AnalyticsPro Dashboard', tag: 'Data Analytics SaaS', cat: 'SaaS',
     color: DS.cyan,
     img: 'https://images.unsplash.com/photo-1771012788703-d310cdf189bb?auto=format&fit=crop&w=900&q=80',
     client: 'DataViet Corp', year: '2024', duration: '3 tháng', budget: '120,000,000 VNĐ', team: '3 người',
@@ -72,7 +72,7 @@ const FALLBACK: Record<string, PortfolioProject> = {
     demoTitle: 'AnalyticsPro Dashboard — Live Demo',
   },
   '4': {
-    id: 4, title: 'EduViet Portal', tag: 'EdTech Platform', cat: 'Website',
+    id: '4', title: 'EduViet Portal', tag: 'EdTech Platform', cat: 'Website',
     color: DS.green,
     img: 'https://images.unsplash.com/photo-1762330910399-95caa55acf04?auto=format&fit=crop&w=900&q=80',
     client: 'EduViet Foundation', year: '2024', duration: '3 tháng', budget: '75,000,000 VNĐ', team: '3 người',
@@ -91,7 +91,7 @@ const FALLBACK: Record<string, PortfolioProject> = {
     demoTitle: '',
   },
   '5': {
-    id: 5, title: 'StartupHub Landing', tag: 'Corporate Website', cat: 'Website',
+    id: '5', title: 'StartupHub Landing', tag: 'Corporate Website', cat: 'Website',
     color: DS.amber,
     img: 'https://images.unsplash.com/photo-1588336443962-49d88df004a1?auto=format&fit=crop&w=900&q=80',
     client: 'StartupHub Vietnam', year: '2025', duration: '3 tuần', budget: '25,000,000 VNĐ', team: '2 người',
@@ -110,7 +110,7 @@ const FALLBACK: Record<string, PortfolioProject> = {
     demoTitle: 'StartupHub Landing — Live Preview',
   },
   '6': {
-    id: 6, title: 'FinDash Enterprise', tag: 'FinTech Dashboard', cat: 'SaaS',
+    id: '6', title: 'FinDash Enterprise', tag: 'FinTech Dashboard', cat: 'SaaS',
     color: DS.red,
     img: 'https://images.unsplash.com/photo-1634836023845-eddbfe9937da?auto=format&fit=crop&w=900&q=80',
     client: 'FinCorp Vietnam', year: '2025', duration: '6 tháng', budget: '500,000,000 VNĐ', team: '8 người',
@@ -205,7 +205,7 @@ export default function ProjectDetailPage() {
             demoUrl: p.demoUrl,
             maskedUrl: p.maskedUrl,
             demoTitle: p.demoTitle,
-          });
+          } as any);
         }
       })
       .catch(() => { if (!cancelled) setNotFound(true); })
@@ -215,7 +215,7 @@ export default function ProjectDetailPage() {
 
   // Fallback when API is offline
   const fallback = FALLBACK[slug ?? ''] ?? FALLBACK['1'];
-  const project = apiProject ?? (USE_MOCK_FALLBACK ? fallback : null);
+  const project = (apiProject ?? (USE_MOCK_FALLBACK ? fallback : null)) as any;
   const [showDemo, setShowDemo] = useState(false);
 
   if (!loading && !project) {
@@ -342,7 +342,7 @@ export default function ProjectDetailPage() {
             <div>
               <h3 style={{ color: DS.text, fontSize: 16, fontFamily: DS.heading, fontWeight: 700, letterSpacing: '0.06em', marginBottom: 14 }}>TÍNH NĂNG CHÍNH</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-                {project.features.map(f => (
+                {project.features.map((f: any) => (
                   <div key={f} className="flex items-center gap-2.5 p-3 rounded-xl"
                     style={{ background: 'rgba(15,23,42,0.4)', border: `1px solid ${DS.border}` }}>
                     <Check size={13} style={{ color: project.color, flexShrink: 0 }} />
@@ -462,7 +462,7 @@ export default function ProjectDetailPage() {
             <div className="p-5 rounded-2xl" style={{ background: 'rgba(15,23,42,0.8)', border: `1px solid ${DS.border}` }}>
               <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.15em', marginBottom: 12 }}>TECH STACK</div>
               <div className="flex flex-wrap gap-2">
-                {project.tags.map(t => (
+                {project.tags.map((t: any) => (
                   <span key={t} style={{ color: project.color, fontSize: 10, fontFamily: DS.mono, padding: '3px 8px', borderRadius: 4, background: `${project.color}10`, border: `1px solid ${project.color}25` }}>{t}</span>
                 ))}
               </div>

@@ -394,8 +394,8 @@ export default function Home() {
             <div className="flex flex-col gap-3 mb-8">
               <RoleFilters activeFilter={roleFilter} onFilterChange={setRoleFilter} />
               <SearchSortBar
-                searchQuery={searchQuery} onSearch={setSearchQuery}
-                sortBy={sortBy} onSort={setSortBy}
+                searchQuery={searchQuery} onSearchChange={setSearchQuery}
+                sortBy={sortBy} onSortChange={setSortBy}
                 resultCount={filtered.length} totalCount={members.length}
               />
             </div>

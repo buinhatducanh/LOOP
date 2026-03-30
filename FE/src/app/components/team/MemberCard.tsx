@@ -579,7 +579,7 @@ export function MemberCard({ member, onClick }: MemberCardProps) {
           <div
             className="absolute inset-0"
             style={{
-              backgroundImage: 'linear-gradient(to top, #0F172A 0%, #0F172A55 35%, transparent 62%)',
+              backgroundImage: 'linear-gradient(to top, rgba(15,23,42,0.95) 0%, rgba(15,23,42,0.6) 30%, rgba(15,23,42,0.15) 55%, transparent 75%)',
               borderRadius: '10px 10px 0 0',
             }}
           />

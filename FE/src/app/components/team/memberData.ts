@@ -894,7 +894,7 @@ export const members: Member[] = [
     ],
   },
   {
-    id: 26,
+    id: 27,
     name: 'Tạ Minh Tâm',
     title: 'Void Weaver',
     role: 'Blockchain Developer',

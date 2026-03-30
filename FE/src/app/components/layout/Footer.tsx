@@ -47,7 +47,6 @@ export function Footer() {
         { labelKey: 'navigation.team', href: '/doi-ngu' },
         { labelKey: 'navigation.contact', href: '/lien-he' },
         { labelKey: 'footer.privacyPolicy', href: '/' },
-        { labelKey: 'navigation.contact', href: '/lien-he' },
       ],
     },
   ];

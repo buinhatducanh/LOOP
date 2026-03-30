@@ -1,22 +1,18 @@
 /**
  * FE i18n — Synchronous Translation Context
  *
- * Provides a synchronous translation API backed by a React Context.
- * Translation messages are loaded eagerly into context on mount,
- * enabling synchronous use in JSX without async/await.
+ * All 5 locale JSON files are imported statically at module level.
+ * Vite bundles them eagerly — no dynamic imports, no async,
+ * no Suspense, no loading flash.  t() is always synchronous.
  *
  * Usage:
- *   // Wrap app with I18nProvider in App.tsx:
  *   <I18nProvider locale="vi">
  *     <App />
  *   </I18nProvider>
  *
- *   // Use in components:
- *   import { useI18n } from '@/i18n/sync';
  *   const { t } = useI18n();
- *   t("navigation.home")  // "Trang chủ" (synchronous!)
+ *   t("navigation.home")  // "Trang chủ"
  */
-
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { Locale } from '../app/store/localeStore';
 
@@ -24,54 +20,29 @@ import type { Locale } from '../app/store/localeStore';
 
 export type Messages = typeof import('./messages/vi.json');
 
-// ── Context ────────────────────────────────────────────────────────────────
+// ── Static imports — available immediately when module is evaluated ──────
+// Vite/ESBuild handles these synchronously; no await needed.
 
-interface I18nContextValue {
-  locale: Locale;
-  setLocale: (locale: Locale) => void;
-  messages: Messages | null;
-  isLoading: boolean;
-  t: (key: string, fallback?: string) => string;
-}
+import viMessages from './messages/vi.json';
+import enMessages from './messages/en.json';
+import jaMessages from './messages/ja.json';
+import koMessages from './messages/ko.json';
+import zhMessages from './messages/zh.json';
 
-const I18nContext = createContext<I18nContextValue | null>(null);
+// ── Message accessor ─────────────────────────────────────────────────────────
 
-// ── Load messages ─────────────────────────────────────────────────────────
-
-// Pre-load all 5 locale messages at module level for synchronous access
-// This adds ~20KB to initial bundle but enables instant synchronous translations
-
-let viMessages: Messages | null = null;
-let enMessages: Messages | null = null;
-let jaMessages: Messages | null = null;
-let koMessages: Messages | null = null;
-let zhMessages: Messages | null = null;
-
-async function loadAllMessages(): Promise<void> {
-  [viMessages, enMessages, jaMessages, koMessages, zhMessages] = await Promise.all([
-    import('./messages/vi.json'),
-    import('./messages/en.json'),
-    import('./messages/ja.json'),
-    import('./messages/ko.json'),
-    import('./messages/zh.json'),
-  ]);
-}
-
-// Start loading in background (non-blocking)
-loadAllMessages().catch(console.error);
-
-function getMessages(locale: Locale): Messages | null {
+function getMessages(locale: Locale): Messages {
   switch (locale) {
     case 'vi': return viMessages;
     case 'en': return enMessages;
     case 'ja': return jaMessages;
-    case 'ko': return koMessages;
+    case 'ko': return koMessages; // Korean
     case 'zh': return zhMessages;
     default: return viMessages;
   }
 }
 
-// ── Key path resolution ────────────────────────────────────────────────
+// ── Key path resolution ───────────────────────────────────────────────────────
 
 function getNestedValue(obj: unknown, path: string): string | null {
   const keys = path.split('.');
@@ -85,13 +56,11 @@ function getNestedValue(obj: unknown, path: string): string | null {
 
 function resolveKey(key: string, locale: Locale): string {
   const messages = getMessages(locale);
-  if (!messages) return key;
-
   const value = getNestedValue(messages, key);
   if (value !== null) return value;
 
   // Fallback to VI
-  if (locale !== 'vi' && viMessages) {
+  if (locale !== 'vi') {
     const viValue = getNestedValue(viMessages, key);
     if (viValue !== null) return viValue;
   }
@@ -99,7 +68,21 @@ function resolveKey(key: string, locale: Locale): string {
   return key;
 }
 
-// ── Provider ────────────────────────────────────────────────────────────
+// ── Context ───────────────────────────────────────────────────────────────
+
+interface I18nContextValue {
+  locale: Locale;
+  setLocale: (locale: Locale) => void;
+  t: (key: string, fallback?: string) => string;
+}
+
+const I18nContext = createContext<I18nContextValue>({
+  locale: 'vi',
+  setLocale: () => {},
+  t: (key) => key,
+});
+
+// ── Provider ──────────────────────────────────────────────────────────────
 
 export interface I18nProviderProps {
   locale: Locale;
@@ -109,25 +92,12 @@ export interface I18nProviderProps {
 
 export function I18nProvider({ locale, children, onLocaleChange }: I18nProviderProps) {
   const [currentLocale, setCurrentLocale] = useState<Locale>(locale);
-  const [messages, setMessages] = useState<Messages | null>(viMessages);
-  const [isLoading] = useState(false);
 
-  // Sync locale to messages when it changes
-  useEffect(() => {
-    const msgs = getMessages(currentLocale);
-    if (msgs) {
-      setMessages(msgs);
-    }
-  }, [currentLocale]);
-
-  // When locale prop changes, sync
   useEffect(() => {
     if (locale !== currentLocale) {
       setCurrentLocale(locale);
-      const msgs = getMessages(locale);
-      if (msgs) setMessages(msgs);
     }
-  }, [locale]);
+  }, [locale, currentLocale]);
 
   const handleSetLocale = useCallback((newLocale: Locale) => {
     setCurrentLocale(newLocale);
@@ -143,69 +113,14 @@ export function I18nProvider({ locale, children, onLocaleChange }: I18nProviderP
   );
 
   return (
-    <I18nContext.Provider
-      value={{
-        locale: currentLocale,
-        setLocale: handleSetLocale,
-        messages,
-        isLoading,
-        t,
-      }}
-    >
+    <I18nContext.Provider value={{ locale: currentLocale, setLocale: handleSetLocale, t }}>
       {children}
     </I18nContext.Provider>
   );
 }
 
-// ── Hook ────────────────────────────────────────────────────────────────
+// ── Hook ─────────────────────────────────────────────────────────────────
 
 export function useI18n(): I18nContextValue {
-  const ctx = useContext(I18nContext);
-  if (!ctx) {
-    // Fallback: use VI messages directly (for components outside provider)
-    return {
-      locale: 'vi',
-      setLocale: () => {},
-      messages: viMessages,
-      isLoading: false,
-      t: (key: string, fallback?: string) => {
-        const value = getNestedValue(viMessages, key);
-        return value ?? fallback ?? key;
-      },
-    };
-  }
-  return ctx;
-}
-
-// ── Simple namespace hook ──────────────────────────────────────────────
-
-/**
- * Get all translations for a namespace as a flat object.
- * Re-renders when locale changes.
- *
- * @example
- * const nav = useNamespace("navigation");
- * nav.home  // "Trang chủ" / "Home" / ...
- * nav.login // "Đăng nhập" / "Login" / ...
- */
-export function useNamespace<T = Record<string, string>>(namespace: string): T {
-  const locale = useI18n().locale;
-  const [, forceUpdate] = useState(0);
-
-  useEffect(() => {
-    // Re-render when messages load
-    if (!messages) {
-      const id = setInterval(() => {
-        const msgs = getMessages(locale);
-        if (msgs) {
-          forceUpdate(n => n + 1);
-        }
-      }, 50);
-      return () => clearInterval(id);
-    }
-  }, []);
-
-  if (!messages) return {} as T;
-  const ns = getNestedValue(messages, namespace);
-  return (ns && typeof ns === 'object' ? ns : {}) as T;
+  return useContext(I18nContext);
 }

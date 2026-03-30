@@ -123,7 +123,7 @@ function ClientModal({ client, onClose, onSave, onDelete }: {
               <label style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono, display: 'block', marginBottom: 5 }}>{f.label.toUpperCase()}</label>
               <input
                 type={f.type}
-                value={(draft as Record<string, unknown>)[f.key] as string}
+                value={(draft as any)[f.key] as string}
                 onChange={e => setDraft(d => ({ ...d, [f.key]: e.target.value }))}
                 style={{ width: '100%', background: DS.bgCard2, border: `1px solid ${DS.border}`, borderRadius: 10, padding: '9px 12px', color: DS.text, fontSize: 13, outline: 'none', boxSizing: 'border-box' }}
               />

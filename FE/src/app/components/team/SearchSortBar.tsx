@@ -8,6 +8,8 @@ interface SearchSortBarProps {
   onSearchChange: (query: string) => void;
   sortBy: SortOption;
   onSortChange: (sort: SortOption) => void;
+  resultCount?: number;
+  totalCount?: number;
 }
 
 const SORT_OPTIONS: Array<{ value: SortOption; label: string }> = [
@@ -23,6 +25,8 @@ export function SearchSortBar({
   onSearchChange,
   sortBy,
   onSortChange,
+  resultCount,
+  totalCount,
 }: SearchSortBarProps) {
   return (
     <div className="flex items-center gap-3 max-w-3xl mx-auto">
@@ -127,6 +131,19 @@ export function SearchSortBar({
             </option>
           ))}
         </select>
+        {resultCount !== undefined && totalCount !== undefined && (
+          <span
+            style={{
+              color: resultCount === totalCount ? '#64748B' : '#3B82F6',
+              fontSize: 10,
+              fontFamily: "'JetBrains Mono', monospace",
+              whiteSpace: 'nowrap',
+              paddingLeft: 4,
+            }}
+          >
+            {resultCount}/{totalCount}
+          </span>
+        )}
       </div>
     </div>
   );

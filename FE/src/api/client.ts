@@ -19,7 +19,7 @@
 import { AuthUser } from '../store/authStore';
 
 // ── Config ───────────────────────────────────────────────────────────────────
-const BASE_URL = (import.meta.env.VITE_API_BASE_URL as string) || 'http://localhost:3000/api';
+const BASE_URL = (import.meta.env.VITE_API_BASE_URL as string) || '/api';
 const TOKEN_KEY = 'loop_token';
 const USER_KEY = 'loop_user';
 const REQUEST_TIMEOUT_MS = 15_000;

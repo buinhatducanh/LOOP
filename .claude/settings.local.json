@@ -132,7 +132,15 @@
       "Bash(npx tsx -e \":*)",
       "Bash(PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION=\"clear r chạy seed đi\" npx prisma migrate reset --force)",
       "Bash(npm run:*)",
-      "Bash(1:*)"
+      "Bash(1:*)",
+      "Bash(grep -n '\"\"navigation\"\":' src/i18n/messages/vi.json)",
+      "Bash(cmd //c \"taskkill /PID 13196 /F\")",
+      "Bash(cmd //c \"taskkill /PID 21164 /F\")",
+      "Bash(cmd //c \"taskkill /PID 29960 /F\")",
+      "Bash(cmd //c \"taskkill /PID 10532 /F\")",
+      "Bash(cmd //c \"taskkill /PID 25936 /F\")",
+      "Bash(cp d:/LOOP_COMPANY/LOOP/public/* d:/LOOP_COMPANY/LOOP/FE/public/)",
+      "Bash(cp -r d:/LOOP_COMPANY/LOOP/public/images d:/LOOP_COMPANY/LOOP/FE/public/)"
     ],
     "additionalDirectories": [
       "D:\\LOOP_COMPANY\\LOOP\\src\\app\\api\\admin\\expertises",
