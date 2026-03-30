@@ -5,7 +5,7 @@
  * Supports ?lang=vi|en|ja|ko|zh (default: vi)
  */
 
-import { NextResponse } from "next/server";
+import { ok, notFound, handleError } from "@/lib/api/response";
 import { prisma } from "@/lib/prisma";
 import { parseLocaleParam, getLocalizedField } from "@/lib/i18n/localization";
 
@@ -35,34 +35,23 @@ export async function GET(
     });
 
     if (!post) {
-      return NextResponse.json(
-        { version: "v1", error: "Blog post not found" },
-        { status: 404 }
-      );
+      return notFound("Blog post not found");
     }
 
-    return NextResponse.json({
-      version: "v1",
-      data: {
-        id: post.id,
-        slug: post.slug,
-        title: getLocalizedField(post, "title", locale),
-        content: getLocalizedField(post, "content", locale),
-        excerpt: getLocalizedField(post, "excerpt", locale),
-        coverImage: post.coverImage,
-        publishedAt: post.publishedAt,
-        seoTitle: getLocalizedField(post, "seoTitle", locale),
-        seoDesc: getLocalizedField(post, "seoDesc", locale),
-        author: post.author,
-        _localeUsed: locale,
-      },
-      headers: { "X-API-Version": "v1" },
+    return ok({
+      id: post.id,
+      slug: post.slug,
+      title: getLocalizedField(post, "title", locale),
+      content: getLocalizedField(post, "content", locale),
+      excerpt: getLocalizedField(post, "excerpt", locale),
+      coverImage: post.coverImage,
+      publishedAt: post.publishedAt,
+      seoTitle: getLocalizedField(post, "seoTitle", locale),
+      seoDesc: getLocalizedField(post, "seoDesc", locale),
+      author: post.author,
+      _localeUsed: locale,
     });
   } catch (error) {
-    console.error("[/api/blog-posts/[slug]] Failed:", error);
-    return NextResponse.json(
-      { version: "v1", error: "Failed to fetch blog post" },
-      { status: 500 }
-    );
+    return handleError(error);
   }
 }

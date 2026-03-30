@@ -56,14 +56,14 @@ export const GLOW = {
 
 // Navigation links
 export const NAV_LINKS = [
-  { label: 'Trang chủ', href: '/' },
-  { label: 'Dịch vụ', href: '/dich-vu' },
-  { label: 'Media', href: '/media' },
-  { label: 'Dự án', href: '/du-an' },
-  { label: 'Đội ngũ', href: '/doi-ngu' },
-  { label: 'Học viện', href: '/hoc-vien' },
-  { label: 'Blog', href: '/blog' },
-  { label: 'Bảng giá', href: '/bao-gia' },
-  { label: 'Xếp hạng', href: '/bang-xep-hang' },
-  { label: 'Liên hệ', href: '/lien-he' },
+  { label: 'navigation.home', href: '/' },
+  { label: 'navigation.services', href: '/dich-vu' },
+  { label: 'navigation.media', href: '/media' },
+  { label: 'navigation.portfolio', href: '/du-an' },
+  { label: 'navigation.team', href: '/doi-ngu' },
+  { label: 'navigation.academy', href: '/hoc-vien' },
+  { label: 'navigation.blog', href: '/blog' },
+  { label: 'navigation.pricing', href: '/bao-gia' },
+  { label: 'navigation.leaderboard', href: '/bang-xep-hang' },
+  { label: 'navigation.contact', href: '/lien-he' },
 ];

@@ -292,7 +292,7 @@ export default function Home() {
       .catch(() => { /* keep using fallback */ })
       .finally(() => { if (!cancelled) setMembersLoading(false); });
     return () => { cancelled = true; };
-  }, []);
+  }, [locale]);
 
   // Use API members when loaded, fall back to hardcoded data
   const members: Member[] = apiMembers.length > 0 ? apiMembers : fallbackMembers;
@@ -342,9 +342,9 @@ export default function Home() {
   }, [roleFilter, rankFilter, searchQuery, sortBy]);
 
   const isFiltered = roleFilter !== 'all' || rankFilter !== 'all' || !!searchQuery;
-  const diamond = members.find(m => m.rank === 'diamond')!;
-  const ruby    = members.find(m => m.rank === 'ruby')!;
-  const gold    = members.find(m => m.rank === 'gold')!;
+  const diamond = members.find(m => m.rank === 'diamond') ?? members[0];
+  const ruby    = members.find(m => m.rank === 'ruby') ?? members[0];
+  const gold    = members.find(m => m.rank === 'gold') ?? members[0];
 
   const row1 = filtered.slice(0, 4);
   const row2 = filtered.slice(4);

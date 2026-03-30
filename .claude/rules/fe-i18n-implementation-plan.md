@@ -2,7 +2,7 @@
 
 > **Tuần:** Foundation → Optimization (Tuần 1–5)
 > **Mục tiêu:** Triển khai i18n 5 ngôn ngữ (VI–EN–JA–KO–ZH) với hiệu suất tối ưu, SEO đầy đủ, và hạ tầng vận hành sẵn sàng mở rộng.
-> **Cập nhật:** 2026-03-26
+> **Cập nhật:** 2026-03-30
 
 ---
 
@@ -19,7 +19,240 @@ Trong 5 tuần, đạt các kết quả bắt buộc:
 
 ---
 
-## 2) Phân giai đoạn (Phase Breakdown)
+## 1b) Phase Status Tracker
+
+| Phase | Tên | Trạng thái | Notes |
+|-------|------|-----------|-------|
+| **Phase 0** | Foundation | ✅ COMPLETE | next-intl routing, middleware, 5 messages files, `[locale]/` pages |
+| **Phase 0.5** | BE API i18n | ✅ COMPLETE | 14 API endpoints `?lang=`, `getLocalizedField()`, `mapLocalizedService/Project/TeamMember/BlogPost` |
+| **Phase 1** | JA+KO Expansion | ✅ PARTIAL | CJK fonts ✅, JA+KO+ZH messages ✅, routing ✅, **FE i18n system mới ✅ (2026-03-30)** |
+| **Phase 1.5** | FE i18n System | ✅ COMPLETE | Translation JSONs 5 locale ✅, sync provider ✅, useI18n hook ✅, CJK fonts lazy-load ✅ (2026-03-30) |
+| **Phase 2** | ZH Optimization | ✅ PARTIAL | ZH font ✅, ZH messages ✅, **Prisma array i18n ✅** (2026-03-30) |
+| **Phase 3** | Admin CMS Translate Tabs | ✅ COMPLETE | ServicesTab/PortfolioTab/BlogTab/MembersTab translate UI ✅ |
+| **Phase 4** | Scale / Ops | ⏳ PENDING | Phrase/Lokalise production, GSC verify, perf audit |
+
+---
+
+## 2) Phase Status chi tiết
+
+### ✅ Phase 0 — Foundation (COMPLETE — 2026-03-24/26)
+
+**Backend (BE):**
+- [x] `src/i18n/routing.ts` — 5 locales, `localePrefix: "always"`, `defaultLocale: "vi"` ✅
+- [x] `src/i18n/request.ts` — `getRequestConfig()` locale detection ✅
+- [x] `src/i18n/navigation.ts` — `createNavigation()` locale-aware Link/router ✅
+- [x] `src/i18n/i18n.ts` — `useLocale`, `useTranslations`, `useFormatter` ✅
+- [x] `src/middleware.ts` — Edge locale routing (cookie → Accept-Language → vi) ✅
+- [x] `src/messages/vi.json` — ~465 keys (Navigation, Footer, Home, Services, Portfolio, Blog, Contact, SEO) ✅
+- [x] `src/messages/en.json` — ~465 keys ✅
+- [x] `src/messages/ja.json` — ~465 keys ✅
+- [x] `src/messages/ko.json` — ~465 keys ✅
+- [x] `src/messages/zh.json` — ~465 keys ✅
+- [x] `src/app/[locale]/` — 14 pages (Home, About, Services, Portfolio, Blog, Team, Contact, Pricing, Privacy, Terms, etc.) ✅
+- [x] `src/lib/i18n/localization.ts` — `getLocalizedField()`, `getLocalizedArray()`, `getAllLocalizedFields()`, `parseLocaleParam()` ✅
+- [x] `src/lib/i18n/missing-keys.ts` — dev-only VI↔EN key coverage checker ✅
+
+**Frontend (FE — legacy):**
+- [x] `FE/src/store/localeStore.ts` — `SUPPORTED_LOCALES`, `LOCALE_LABELS`, `LOCALE_FLAGS`, `WIZARD_STEP_LABELS ×5`, `ORDER_STATUS_LABELS ×5`, Zustand store ✅
+
+### ✅ Phase 0.5 — BE API i18n (COMPLETE — 2026-03-27/28)
+
+**14 API endpoints hỗ trợ `?lang=`:**
+- [x] `GET /api/services` ✅
+- [x] `GET /api/services/[slug]` ✅
+- [x] `GET /api/projects` ✅
+- [x] `GET /api/projects/[slug]` ✅
+- [x] `GET /api/team` ✅
+- [x] `GET /api/team/[slug]` ✅
+- [x] `GET /api/testimonials` ✅
+- [x] `GET /api/expertises` ✅
+- [x] `GET /api/blog-posts` ✅
+- [x] `GET /api/blog-posts/[slug]` ✅ (`ok()` helper applied 2026-03-30)
+- [x] `GET /api/v1/services` ✅
+- [x] `GET /api/v1/projects` ✅
+- [x] `GET /api/v1/team` ✅
+- [x] `GET /api/v1/testimonials` ✅
+
+**Prisma i18n fields (schema.prisma):**
+
+| Model | VI fields | EN/JA/KO/ZH fields | Status |
+|-------|-----------|---------------------|--------|
+| Service | title, shortDescription, longDescription, features[], technologies[] | ✅ titleEn/Ja/Ko/Zh, shortDescEn/Ja/Ko/Zh, longDescEn/Ja/Ko/Zh ✅ featuresEn/Ja/Ko/Zh[], technologiesEn/Ja/Ko/Zh[] (2026-03-30) | ✅ COMPLETE |
+| Project | title, description, techStack[], features[], results | ✅ titleEn/Ja/Ko/Zh, descEn/Ja/Ko/Zh, resultsEn/Ja/Ko/Zh ✅ techStackEn/Ja/Ko/Zh[], featuresEn/Ja/Ko/Zh[] (2026-03-30) | ✅ COMPLETE |
+| BlogPost | title, content, excerpt, seoTitle, seoDesc | ✅ all 5 fields × 4 locales | ✅ COMPLETE |
+| TeamMember | name, role, bio, shortBio | ✅ all 4 fields × 4 locales | ✅ COMPLETE |
+| Testimonial | text, role, company | ✅ all 3 fields × 4 locales | ✅ COMPLETE |
+| Expertise | name, category | ✅ nameEn/Ja/Ko/Zh, categoryEn/Ja/Ko/Zh | ✅ COMPLETE |
+| HomeSlider | title, subtitle | ✅ titleEn/Ja/Ko/Zh, subtitleEn/Ja/Ko/Zh | ✅ COMPLETE |
+| ServicePackage | title, shortDesc | ✅ titleEn/Ja/Ko/Zh, shortDescEn/Ja/Ko/Zh | ✅ COMPLETE |
+
+### ✅ Phase 1 — JA+KO Expansion (PARTIAL)
+
+- [x] JA + KO routing ✅
+- [x] JA + KO message files ✅
+- [x] CJK font lazy-load (`Noto Sans JP`, `Noto Sans KR`) ✅
+- [x] JA + KO hreflang + sitemap ✅
+- [x] `mapLocalizedTeamMember()` expertise handling ✅
+
+### ✅ Phase 1.5 — FE i18n System (NEW — COMPLETE 2026-03-30)
+
+**Hệ thống i18n mới cho FE (Vite/React):**
+- [x] `FE/src/i18n/messages/vi.json` — ~200 keys (common, navigation, footer, home, services, portfolio, team, academy, blog, contact, booking, auth, customer, admin, errors) ✅ **NEW**
+- [x] `FE/src/i18n/messages/en.json` — ~200 keys ✅ **NEW**
+- [x] `FE/src/i18n/messages/ja.json` — ~200 keys ✅ **NEW**
+- [x] `FE/src/i18n/messages/ko.json` — ~200 keys ✅ **NEW**
+- [x] `FE/src/i18n/messages/zh.json` — ~200 keys ✅ **NEW**
+- [x] `FE/src/i18n/i18n.ts` — `t()`, `namespace()`, locale detection, path helpers ✅ **NEW**
+- [x] `FE/src/i18n/sync.ts` — `I18nProvider`, `useI18n()` sync context, pre-loaded messages ✅ **NEW**
+- [x] `FE/src/i18n/useTranslation.ts` — `useTranslation()` + `useLocale()` hooks ✅ **NEW**
+- [x] `FE/src/i18n/fonts.ts` — CJK font lazy-load (JA/KO/ZH), `injectFontClasses()`, `applyLocaleFont()` ✅ **NEW**
+- [x] `FE/src/i18n/index.ts` — public barrel export ✅ **NEW**
+- [x] `Navbar.tsx` — hardcoded VI → `useI18n()` t() keys ✅ **UPDATED 2026-03-30**
+- [x] `Footer.tsx` — hardcoded VI → `useI18n()` t() keys ✅ **UPDATED 2026-03-30**
+- [x] `ds.ts` NAV_LINKS → translation key format (`navigation.home`, etc.) ✅ **UPDATED 2026-03-30**
+
+### ✅ Phase 2 — ZH Optimization (PARTIAL)
+
+- [x] ZH lazy SSR ✅
+- [x] ZH messages ✅
+- [x] Noto Sans SC font ✅
+- [x] `FE/src/i18n/fonts.ts` — ZH font lazy-load ✅
+
+### ✅ Phase 3 — Admin CMS Translate Tabs (COMPLETE — Week 13)
+
+- [x] ServicesTab translate tab (EN/JA/KO/ZH per-field) ✅
+- [x] PortfolioTab translate tab ✅
+- [x] BlogTab translate tab ✅
+- [x] MembersTab translate tab ✅
+
+### ⏳ Phase 4 — Scale / Ops (PENDING)
+
+- [ ] Phrase/Lokalise production wiring → CI/CD
+- [ ] Google Search Console verify JA/KO/ZH properties
+- [ ] Performance audit (TTFB per locale tier)
+- [ ] SEO audit (Screaming Frog hreflang)
+- [ ] Translation lint in CI (missing-keys.ts → pre-build step)
+- [ ] JA/KO/ZH professional human QA
+- [ ] FE pages remaining to migrate: `LandingPage`, `ServicesPage`, `PortfolioPage`, `AcademyPage`, `BookingWizardPage`, `AuthPage`, `ContactPage`, `CustomerDashboard`, `AdminDashboard`
+
+---
+
+## 3) Các thay đổi Schema mới (2026-03-30)
+
+**Migration cần tạo:**
+```bash
+cd d:/LOOP_COMPANY/LOOP
+npx prisma migrate dev --name add_i18n_array_fields
+```
+
+**Fields mới đã thêm vào schema.prisma:**
+
+```
+Service:
+  featuresEn     String[]  @map("features_en")
+  featuresJa     String[]  @map("features_ja")
+  featuresKo     String[]  @map("features_ko")
+  featuresZh     String[]  @map("features_zh")
+  technologiesEn String[]  @map("technologies_en")
+  technologiesJa String[]  @map("technologies_ja")
+  technologiesKo String[]  @map("technologies_ko")
+  technologiesZh String[]  @map("technologies_zh")
+
+Project:
+  techStackEn   String[]  @map("tech_stack_en")
+  techStackJa  String[]  @map("tech_stack_ja")
+  techStackKo  String[]  @map("tech_stack_ko")
+  techStackZh  String[]  @map("tech_stack_zh")
+  featuresEn    String[]  @map("features_en")
+  featuresJa   String[]  @map("features_ja")
+  featuresKo   String[]  @map("features_ko")
+  featuresZh   String[]  @map("features_zh")
+```
+
+**`getLocalizedArray()` tự động handle fields mới** — không cần sửa helper.
+
+---
+
+## 4) Các file mới / thay đổi (2026-03-30)
+
+### File mới (FE i18n system)
+```
+FE/src/i18n/
+  messages/vi.json        (~200 keys, 5 namespaces)
+  messages/en.json        (~200 keys)
+  messages/ja.json        (~200 keys)
+  messages/ko.json        (~200 keys)
+  messages/zh.json        (~200 keys)
+  i18n.ts               (async t, namespace, locale utils)
+  sync.ts               (I18nProvider, useI18n sync context)
+  useTranslation.ts      (useTranslation, useLocale hooks)
+  fonts.ts              (CJK lazy-load, applyLocaleFont)
+  index.ts              (public barrel export)
+```
+
+### File thay đổi (FE)
+```
+FE/src/app/components/layout/Navbar.tsx      (hardcoded VI → useI18n t())
+FE/src/app/components/layout/Footer.tsx    (hardcoded VI → useI18n t())
+FE/src/app/components/layout/ds.ts         (NAV_LINKS → translation key format)
+FE/src/app/store/localeStore.ts          (giữ nguyên, làm source of truth cho locale)
+```
+
+### File thay đổi (BE)
+```
+prisma/schema.prisma                     (+featuresEn/Ja/Ko/Zh[], technologiesEn/Ja/Ko/Zh[] for Service; +techStackEn/Ja/Ko/Zh[], featuresEn/Ja/Ko/Zh[] for Project)
+src/app/api/blog-posts/[slug]/route.ts   (raw NextResponse → ok() helper)
+```
+
+---
+
+## 5) Remaining Work — FE Pages i18n Migration
+
+Sau khi hệ thống i18n đã setup, các pages cần migrate hardcoded strings:
+
+| Page | Hardcoded strings | Priority | Status |
+|------|-----------------|----------|--------|
+| LandingPage.tsx | Hero, sections, CTA | P0 | ⏳ |
+| ServicesPage.tsx | Page title, empty state | P1 | ⏳ |
+| PortfolioPage.tsx | Page title, filter labels | P1 | ⏳ |
+| AcademyPage.tsx | Course labels, instructor | P1 | ⏳ |
+| BookingWizardPage.tsx | Step labels, extras (WIZARD_STEP_LABELS đã có) | P2 | ⏳ |
+| ContactPage.tsx | Form labels, validation | P2 | ⏳ |
+| CustomerDashboard.tsx | Tab labels, status labels (ORDER_STATUS_LABELS đã có) | P2 | ⏳ |
+| AdminDashboard.tsx | Tab labels | P2 | ⏳ |
+
+---
+
+## 6) Lệnh kiểm tra
+
+```bash
+# 1. Verify BE build
+cd d:/LOOP_COMPANY/LOOP
+npx tsc --noEmit
+
+# 2. Run migration
+npx prisma migrate dev --name add_i18n_array_fields
+
+# 3. Verify API locale endpoints
+curl "http://localhost:3000/api/services?lang=en"
+curl "http://localhost:3000/api/projects?lang=ja"
+curl "http://localhost:3000/api/team?lang=ko"
+
+# 4. FE type check
+cd d:/LOOP_COMPANY/LOOP/FE
+npx tsc --noEmit
+
+# 5. FE build
+npm run build
+
+# 6. Missing translation keys check (dev)
+cd d:/LOOP_COMPANY/LOOP
+npx tsx src/i18n/missing-keys.ts
+```
+
+---
+
+## 7) Phase 0 cũ — Phase Status Tracker (legacy, for reference)
 
 ### Phase 0 — Foundation (Tuần 1–2)
 Thiết lập nền tảng i18n với 2 ngôn ngữ đầu tiên (VI + EN).
@@ -35,7 +268,7 @@ Translation management workflow, analytics per locale, hardening production.
 
 ---
 
-## 3) Scope chi tiết theo Giai đoạn
+## 8) Scope chi tiết theo Giai đoạn (cũ — để reference)
 
 ### Phase 0 — Foundation (Tuần 1–2)
 

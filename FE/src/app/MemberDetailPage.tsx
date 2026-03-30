@@ -2,7 +2,7 @@ import { useParams, useNavigate } from 'react-router';
 import { motion } from 'motion/react';
 import { useState, CSSProperties, useEffect } from 'react';
 import { members as fallbackMembers, RANKS, RankKey, type Member as FallbackMember } from './components/team/memberData';
-import { teamService, mapTeamMemberToMember } from '../api/team.service';
+import { teamService, mapTeamMemberToMember, type TeamMember } from '../api/team.service';
 import { LEDRunner } from './components/team/LEDRunner';
 import { Counter } from './components/team/Counter';
 import { GUILD_ANIMATIONS_CSS } from './components/team/MemberCard';
@@ -364,8 +364,13 @@ export default function MemberDetailPage() {
     teamService.getMemberBySlug(id, locale)
       .then(beMember => {
         if (!cancelled && beMember) {
+          // Look up fallback by id (numeric) — match via fallbackMembers array
           const fb = fallbackMembers.find(m => m.id === Number(id));
-          const mapped = mapTeamMemberToMember(beMember, { [id]: fb ?? { id: 0 } });
+          // Build fallback lookup keyed by slug (for mapTeamMemberToMember)
+          const fbSlug: string = fb
+            ? `${fb.name.toLowerCase().replace(/\s+/g, '-')}`
+            : '';
+          const mapped = mapTeamMemberToMember(beMember, { [fbSlug]: fb ?? { id: 0 } });
           setApiMember(mapped);
         }
       })

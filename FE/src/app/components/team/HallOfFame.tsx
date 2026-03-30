@@ -36,6 +36,18 @@ const CRYSTAL_SPARKS = [
   { left: '91%',  delay: '4s',   dur: '6s',  size: 1.5, color: '#F0ABFC' },
 ];
 
+// ── HolographicCard floating particles (fixed — no Math.random) ──────
+const HOLOGRAPHIC_PARTICLES = [
+  { leftPct: 8,   delay: 0.0, dur: 4.2, size: 2.2 },
+  { leftPct: 22,  delay: 0.6, dur: 3.6, size: 1.4 },
+  { leftPct: 38,  delay: 1.3, dur: 5.0, size: 2.8 },
+  { leftPct: 52,  delay: 0.3, dur: 3.8, size: 1.8 },
+  { leftPct: 66,  delay: 1.8, dur: 4.5, size: 2.5 },
+  { leftPct: 78,  delay: 0.9, dur: 3.4, size: 1.2 },
+  { leftPct: 89,  delay: 1.6, dur: 4.8, size: 2.0 },
+  { leftPct: 96,  delay: 0.5, dur: 3.9, size: 1.6 },
+];
+
 // ── Diamond Prism Background (toàn màn hình Hall of Fame) ────────────────
 function PrismBackground() {
   return (
@@ -279,27 +291,27 @@ function HolographicCard({
           }}
         />
 
-        {/* Floating particles background */}
+        {/* Floating particles background (pre-generated — no Math.random flicker) */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          {[...Array(8)].map((_, i) => (
+          {HOLOGRAPHIC_PARTICLES.map((p, i) => (
             <motion.div
               key={i}
               className="absolute rounded-full"
               style={{
-                width: Math.random() * 3 + 1,
-                height: Math.random() * 3 + 1,
+                width: p.size,
+                height: p.size,
                 background: accentColor,
-                left: `${Math.random() * 100}%`,
+                left: `${p.leftPct}%`,
                 boxShadow: `0 0 6px ${accentColor}`,
               }}
               animate={{
-                y: [0, -100 - Math.random() * 50],
+                y: [0, -110],
                 opacity: [0, 0.8, 0],
               }}
               transition={{
-                duration: 3 + Math.random() * 2,
+                duration: p.dur,
                 repeat: Infinity,
-                delay: Math.random() * 2,
+                delay: p.delay,
                 ease: 'easeOut',
               }}
             />

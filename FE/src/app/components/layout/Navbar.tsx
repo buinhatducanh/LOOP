@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
 import { LogIn, Zap, Search, ChevronRight, Sparkles, User, LogOut, Shield, Settings, ChevronDown } from 'lucide-react';
@@ -6,6 +6,8 @@ import { DS, GRD, NAV_LINKS } from './ds';
 import { AdvancedSearch } from './AdvancedSearch';
 import { useAuthStore, DEMO_USERS } from '../../store/authStore';
 import { useLocaleStore, SUPPORTED_LOCALES, LOCALE_LABELS, LOCALE_FLAGS } from '../../store/localeStore';
+import { useI18n } from '../../../i18n/sync.tsx';
+import { injectFontClasses, applyLocaleFont } from '../../../i18n/fonts';
 
 /* ── helpers ─────────────────────────────────────────────────────────────── */
 const rgba = (hex: string, a: number) => {
@@ -28,7 +30,7 @@ function InlineSearchBar({ onOpen }: { onOpen: () => void }) {
       onMouseLeave={e => { e.currentTarget.style.borderColor = rgba('#FFFFFF', 0.07); e.currentTarget.style.background = rgba('#FFFFFF', 0.03); }}
     >
       <Search size={13} style={{ color: DS.text5, flexShrink: 0 }} />
-      <span style={{ fontSize: 12, color: DS.text5, flex: 1, textAlign: 'left', whiteSpace: 'nowrap' }}>Tìm kiếm...</span>
+      <span style={{ fontSize: 12, color: DS.text5, flex: 1, textAlign: 'left', whiteSpace: 'nowrap' }}>{t("navigation.search", "Tìm kiếm...")}</span>
       <kbd style={{ display: 'inline-flex', alignItems: 'center', gap: 1, background: rgba('#FFFFFF', 0.04), border: `1px solid ${rgba('#FFFFFF', 0.08)}`, borderRadius: 4, padding: '1px 5px', fontSize: 9, color: DS.text5, fontFamily: DS.mono, lineHeight: 1.4 }}>
         {isMac ? '⌘' : 'Ctrl+'}K
       </kbd>
@@ -55,25 +57,25 @@ function UserAvatarMenu({ onNavigate }: { onNavigate: (path: string) => void }) 
         onMouseEnter={e => { e.currentTarget.style.color = DS.text; e.currentTarget.style.borderColor = rgba('#FFFFFF', 0.18); }}
         onMouseLeave={e => { e.currentTarget.style.color = DS.text4; e.currentTarget.style.borderColor = rgba('#FFFFFF', 0.07); }}
       >
-        <User size={14} /> <span className="hidden xl:inline">Đăng nhập</span>
+        <User size={14} /> <span className="hidden xl:inline">{t("navigation.login", "Đăng nhập")}</span>
       </Link>
     );
   }
 
   const roleLabels: Record<string, { label: string; color: string }> = {
     admin: { label: 'ADMIN', color: '#818CF8' },
-    manager: { label: 'TRƯỞNG PHÒNG', color: '#F59E0B' },
-    staff: { label: 'NHÂN VIÊN', color: '#14B8A6' },
-    client: { label: 'KHÁCH HÀNG', color: DS.blue },
+    manager: { label: t("admin.title", "TRƯỞNG PHÒNG"), color: '#F59E0B' },
+    staff: { label: t("admin.title", "NHÂN VIÊN"), color: '#14B8A6' },
+    client: { label: t("admin.customer", "KHÁCH HÀNG"), color: DS.blue },
   };
   const rl = roleLabels[user.role] ?? { label: user.role, color: DS.text4 };
 
   const quickSwitch = [
     { key: 'admin', label: 'Admin', icon: '👑' },
-    { key: 'manager_media', label: 'Trưởng phòng Media', icon: '📸' },
-    { key: 'manager_marketing', label: 'Trưởng phòng Marketing', icon: '📈' },
-    { key: 'staff', label: 'Nhân viên', icon: '👤' },
-    { key: 'client', label: 'Khách hàng', icon: '🧑‍💼' },
+    { key: 'manager_media', label: `${t("team.title", "Đội ngũ")} Media`, icon: '📸' },
+    { key: 'manager_marketing', label: `${t("team.title", "Đội ngũ")} Marketing`, icon: '📈' },
+    { key: 'staff', label: t("auth.login", "Nhân viên"), icon: '👤' },
+    { key: 'client', label: t("admin.customer", "Khách hàng"), icon: '🧑‍💼' },
   ];
 
   return (
@@ -129,9 +131,9 @@ function UserAvatarMenu({ onNavigate }: { onNavigate: (path: string) => void }) 
             {/* Navigation */}
             <div className="p-1.5" style={{ borderBottom: `1px solid ${rgba('#FFFFFF', 0.05)}` }}>
               {[
-                ...(user.role !== 'client' ? [{ to: '/admin', icon: <Shield size={13} />, label: 'Admin Dashboard', color: DS.purple }] : []),
-                { to: '/khach-hang', icon: <Sparkles size={13} />, label: user.role === 'client' ? 'Dashboard' : 'Customer Portal', color: DS.blue },
-                { to: '#settings', icon: <Settings size={13} />, label: 'Cài đặt tài khoản', color: DS.text4 },
+                ...(user.role !== 'client' ? [{ to: '/admin', icon: <Shield size={13} />, label: t("admin.title", "Admin Dashboard"), color: DS.purple }] : []),
+                { to: '/khach-hang', icon: <Sparkles size={13} />, label: user.role === 'client' ? t("customer.dashboard", "Dashboard") : t("admin.customer", "Customer Portal"), color: DS.blue },
+                { to: '#settings', icon: <Settings size={13} />, label: t("customer.settings", "Cài đặt tài khoản"), color: DS.text4 },
               ].map(item => (
                 <button key={item.to} onClick={() => { setOpen(false); if (item.to.startsWith('/')) onNavigate(item.to); }}
                   className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-all duration-150"
@@ -147,7 +149,7 @@ function UserAvatarMenu({ onNavigate }: { onNavigate: (path: string) => void }) 
 
             {/* Quick role switch (demo) */}
             <div className="p-2" style={{ borderBottom: `1px solid ${rgba('#FFFFFF', 0.05)}` }}>
-              <div style={{ color: DS.text5, fontSize: 8, fontFamily: DS.mono, letterSpacing: '0.2em', padding: '4px 8px', marginBottom: 2 }}>CHUYỂN TÀI KHOẢN (DEMO)</div>
+              <div style={{ color: DS.text5, fontSize: 8, fontFamily: DS.mono, letterSpacing: '0.2em', padding: '4px 8px', marginBottom: 2 }}>SWITCH ACCOUNT (DEMO)</div>
               <div className="grid grid-cols-1 gap-0.5">
                 {quickSwitch.map(s => (
                   <button key={s.key} onClick={() => { loginAs(DEMO_USERS[s.key]); setOpen(false); }}
@@ -171,7 +173,7 @@ function UserAvatarMenu({ onNavigate }: { onNavigate: (path: string) => void }) 
                 onMouseEnter={e => { e.currentTarget.style.background = rgba(DS.red, 0.06); }}
                 onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
               >
-                <LogOut size={13} /> Đăng xuất
+                <LogOut size={13} /> {t("navigation.logout", "Đăng xuất")}
               </button>
             </div>
           </motion.div>
@@ -191,9 +193,33 @@ export function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuthStore();
-  const { locale, setLocale } = useLocaleStore();
+  const { locale, setLocale: setStoreLocale } = useLocaleStore();
+  const { t, setLocale } = useI18n();
   const [langOpen, setLangOpen] = useState(false);
   const langRef = useRef<HTMLDivElement>(null);
+
+  // Inject font classes and apply locale font on mount
+  useEffect(() => {
+    injectFontClasses();
+    applyLocaleFont(locale);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Handle locale change — sync both store and i18n
+  const handleLocaleChange = useCallback((newLocale: typeof locale) => {
+    setStoreLocale(newLocale);
+    setLocale(newLocale);
+    applyLocaleFont(newLocale);
+    // Persist to localStorage
+    localStorage.setItem('loop_locale', newLocale);
+    // Update URL
+    const parts = location.pathname.split('/').filter(Boolean);
+    if (parts.length > 0 && SUPPORTED_LOCALES.includes(parts[0] as typeof SUPPORTED_LOCALES[number])) {
+      parts[0] = newLocale;
+      navigate(`/${parts.join('/')}`);
+    } else {
+      navigate(`/${newLocale}`);
+    }
+  }, [location.pathname, navigate, setLocale, setStoreLocale]);
 
   useEffect(() => {
     const fn = (e: MouseEvent) => { if (langRef.current && !langRef.current.contains(e.target as Node)) setLangOpen(false); };
@@ -291,7 +317,8 @@ export function Navbar() {
                 onMouseEnter={e => { if (!active(link.href)) { e.currentTarget.style.color = DS.text2; e.currentTarget.style.background = rgba('#FFFFFF', 0.03); } }}
                 onMouseLeave={e => { if (!active(link.href)) { e.currentTarget.style.color = DS.text4; e.currentTarget.style.background = 'transparent'; } }}
               >
-                {link.label}
+                {/* Translation key format: "namespace.key" */}
+                {link.label.includes('.') ? t(link.label, link.label) : link.label}
                 {active(link.href) && (
                   <span className="absolute bottom-0 left-1/2 -translate-x-1/2" style={{ width: 14, height: 2, borderRadius: 1, background: DS.blue, boxShadow: `0 0 6px ${DS.blue}` }} />
                 )}
@@ -306,7 +333,7 @@ export function Navbar() {
                   onMouseEnter={e => { e.currentTarget.style.color = DS.text2; }}
                   onMouseLeave={e => { if (!moreOpen) e.currentTarget.style.color = moreLinks.some(l => active(l.href)) ? DS.blue : DS.text4; }}
                 >
-                  Thêm
+                  {t("navigation.more", "Thêm")}
                   <motion.span animate={{ rotate: moreOpen ? 90 : 0 }} transition={{ duration: 0.15 }}>
                     <ChevronRight size={12} />
                   </motion.span>
@@ -379,14 +406,7 @@ export function Navbar() {
                       <button
                         key={loc}
                         onClick={() => {
-                          setLocale(loc);
-                          const parts = location.pathname.split('/').filter(Boolean);
-                          if (parts.length > 0 && SUPPORTED_LOCALES.includes(parts[0] as typeof SUPPORTED_LOCALES[number])) {
-                            parts[0] = loc;
-                            navigate(`/${parts.join('/')}`);
-                          } else {
-                            navigate(`/${loc}`);
-                          }
+                          handleLocaleChange(loc);
                           setLangOpen(false);
                         }}
                         className="w-full flex items-center gap-3 px-3 py-2 transition-all duration-150"
@@ -494,7 +514,7 @@ export function Navbar() {
                 <button onClick={() => { setMobileOpen(false); setTimeout(() => setSearchOpen(true), 100); }}
                   className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl cursor-pointer"
                   style={{ background: rgba('#FFFFFF', 0.03), border: `1px solid ${rgba('#FFFFFF', 0.06)}`, color: DS.text5, fontSize: 13 }}>
-                  <Search size={14} /><span style={{ flex: 1, textAlign: 'left' }}>Tìm kiếm nhanh...</span>
+                  <Search size={14} /><span style={{ flex: 1, textAlign: 'left' }}>{t("navigation.search", "Tìm kiếm nhanh...")}</span>
                   <kbd style={{ fontSize: 9, fontFamily: DS.mono, color: DS.text5, background: rgba('#FFFFFF', 0.04), borderRadius: 3, padding: '1px 4px' }}>⌘K</kbd>
                 </button>
               </div>
@@ -508,7 +528,7 @@ export function Navbar() {
                     className="flex items-center gap-2 rounded-xl transition-all duration-150"
                     style={{ color: active(link.href) ? DS.blue : DS.text3, fontSize: 13, padding: '10px 12px', textDecoration: 'none', background: active(link.href) ? rgba(DS.blue, 0.08) : 'transparent' }}>
                     {active(link.href) && <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: DS.blue, boxShadow: `0 0 4px ${DS.blue}` }} />}
-                    {link.label}
+                    {link.label.includes('.') ? t(link.label, link.label) : link.label}
                   </Link>
                 ))}
               </div>
@@ -522,23 +542,23 @@ export function Navbar() {
                     {user.role !== 'client' && (
                       <Link to="/admin" className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl"
                         style={{ color: DS.purple, fontSize: 13, textDecoration: 'none', border: `1px solid ${rgba(DS.purple, 0.2)}`, background: rgba(DS.purple, 0.06) }}>
-                        <Shield size={13} /> Admin
+                        <Shield size={13} /> {t("admin.title", "Admin")}
                       </Link>
                     )}
                     <Link to="/khach-hang" className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl"
                       style={{ background: GRD.primary, color: '#fff', fontSize: 13, fontWeight: 600, textDecoration: 'none', boxShadow: `0 0 16px ${rgba(DS.purple, 0.3)}` }}>
-                      <Sparkles size={13} /> Dashboard
+                      <Sparkles size={13} /> {t("customer.dashboard", "Dashboard")}
                     </Link>
                   </>
                 ) : (
                   <>
                     <Link to="/dang-nhap" className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl"
                       style={{ color: DS.text3, fontSize: 13, textDecoration: 'none', border: `1px solid ${rgba('#FFFFFF', 0.08)}`, background: rgba('#FFFFFF', 0.02) }}>
-                      <LogIn size={13} /> Đăng nhập
+                      <LogIn size={13} /> {t("navigation.login", "Đăng nhập")}
                     </Link>
                     <Link to="/dang-ky" className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl"
                       style={{ background: GRD.primary, color: '#fff', fontSize: 13, fontWeight: 600, textDecoration: 'none', boxShadow: `0 0 16px ${rgba(DS.purple, 0.3)}` }}>
-                      <Sparkles size={13} /> Đăng ký
+                      <Sparkles size={13} /> {t("auth.register", "Đăng ký")}
                     </Link>
                   </>
                 )}

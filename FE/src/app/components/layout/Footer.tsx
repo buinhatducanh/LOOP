@@ -1,10 +1,12 @@
 import { Link } from 'react-router';
 import { DS, GRD } from './ds';
 import { useLocaleStore } from '../../store/localeStore';
+import { useI18n } from '../../../i18n/sync.tsx';
 import { Mail, Phone, MapPin, Send, Zap, Globe, Shield, BookOpen, Settings } from 'lucide-react';
 
 export function Footer() {
   const { locale } = useLocaleStore();
+  const { t } = useI18n();
 
   const withLocale = (href: string) => {
     if (href.startsWith('/admin') || href.startsWith('/khach-hang') || href.startsWith('/nhan-vien') || href.startsWith('/dang-')) {
@@ -16,37 +18,36 @@ export function Footer() {
 
   const cols = [
     {
-      title: 'Dịch vụ',
+      titleKey: 'footer.services',
       icon: <Globe size={14} />,
       links: [
-        { label: 'Thiết kế Website', href: '/dich-vu' },
-        { label: 'Phát triển App', href: '/dich-vu' },
-        { label: 'SaaS Platform', href: '/dich-vu' },
-        { label: 'SEO & Marketing', href: '/dich-vu' },
-        { label: 'Đặt lịch tư vấn', href: '/dat-lich' },
+        { labelKey: 'services.webDev', href: '/dich-vu' },
+        { labelKey: 'services.appDev', href: '/dich-vu' },
+        { labelKey: 'services.dashboard', href: '/dich-vu' },
+        { labelKey: 'services.seo', href: '/dich-vu' },
+        { labelKey: 'booking.title', href: '/dat-lich' },
       ],
     },
     {
-      title: 'Tài nguyên',
+      titleKey: 'footer.resources',
       icon: <BookOpen size={14} />,
       links: [
-        { label: 'Học viện LOOP', href: '/hoc-vien' },
-        { label: 'Blog & Insights', href: '/blog' },
-        { label: 'Portfolio dự án', href: '/du-an' },
-        { label: 'Hệ thống LP', href: '/khach-hang' },
-        { label: 'Bảo giá dịch vụ', href: '/bao-gia' },
+        { labelKey: 'academy.title', href: '/hoc-vien' },
+        { labelKey: 'blog.title', href: '/blog' },
+        { labelKey: 'portfolio.title', href: '/du-an' },
+        { labelKey: 'customer.dashboard', href: '/khach-hang' },
+        { labelKey: 'navigation.pricing', href: '/bao-gia' },
       ],
     },
     {
-      title: 'Công ty',
+      titleKey: 'footer.company',
       icon: <Shield size={14} />,
       links: [
-        { label: 'Về chúng tôi', href: '/' },
-        { label: 'Đội ngũ', href: '/doi-ngu' },
-        { label: 'Tuyển dụng', href: '/lien-he' },
-        { label: 'Quy trình công ty', href: '/quy-trinh' },
-        { label: 'Điều khoản', href: '/' },
-        { label: 'Liên hệ', href: '/lien-he' },
+        { labelKey: 'about.title', href: '/' },
+        { labelKey: 'navigation.team', href: '/doi-ngu' },
+        { labelKey: 'navigation.contact', href: '/lien-he' },
+        { labelKey: 'footer.privacyPolicy', href: '/' },
+        { labelKey: 'navigation.contact', href: '/lien-he' },
       ],
     },
   ];
@@ -67,7 +68,7 @@ export function Footer() {
             style={{ background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.25)' }}
           >
             <Zap size={12} style={{ color: DS.blue }} />
-            <span style={{ color: DS.blue, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.18em' }}>BẮT ĐẦU HÀNH TRÌNH</span>
+            <span style={{ color: DS.blue, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.18em' }}>START YOUR JOURNEY</span>
           </div>
           <h2
             style={{
@@ -81,10 +82,10 @@ export function Footer() {
               marginBottom: 12,
             }}
           >
-            SẴN SÀNG NÂNG CẤP DIGITAL?
+            {t('footer.ctaTitle', 'SẴN SÀNG NÂNG CẤP DIGITAL?')}
           </h2>
           <p style={{ color: DS.text3, fontSize: 15, marginBottom: 32, lineHeight: 1.7 }}>
-            Tư vấn miễn phí 30 phút. Nhận ngay <span style={{ color: DS.blue, fontWeight: 700 }}>500 LP</span> điểm thưởng khi đăng ký hôm nay.
+            {t('footer.ctaDesc', 'Tư vấn miễn phí 30 phút. Nhận ngay điểm thưởng khi đăng ký hôm nay.')}
           </p>
           <div className="flex items-center justify-center gap-4 flex-wrap">
             <Link
@@ -100,7 +101,7 @@ export function Footer() {
                 boxShadow: '0 0 24px rgba(129,140,248,0.4)',
               }}
             >
-              Đặt lịch tư vấn →
+              {t('booking.title', 'Đặt lịch tư vấn')} →
             </Link>
             <Link
               to={withLocale('/du-an')}
@@ -113,7 +114,7 @@ export function Footer() {
                 textDecoration: 'none',
               }}
             >
-              Xem portfolio
+              {t('navigation.portfolio', 'Xem Portfolio')}
             </Link>
           </div>
         </div>
@@ -139,7 +140,7 @@ export function Footer() {
               </div>
             </div>
             <p style={{ color: DS.text4, fontSize: 13, lineHeight: 1.8, marginBottom: 20 }}>
-              Hệ điều hành số cho Digital Agency. Kết hợp công nghệ tiên tiến với hệ thống LP gamified, biến công việc thành trải nghiệm đáng nhớ.
+              {t('footer.description', 'Hệ điều hành số cho Digital Agency. Kết hợp công nghệ tiên tiến với hệ thống LP gamified, biến công việc thành trải nghiệm đáng nhớ.')}
             </p>
             {/* Contact info */}
             <div className="space-y-2.5">
@@ -157,7 +158,7 @@ export function Footer() {
             {/* Newsletter */}
             <div className="mt-6">
               <div style={{ color: DS.text3, fontSize: 12, marginBottom: 8, fontFamily: DS.mono, letterSpacing: '0.1em' }}>
-                ── NHẬN CẬP NHẬT
+                ── {t('footer.stayConnected', 'NHẬN CẬP NHẬT').toUpperCase()}
               </div>
               <div className="flex gap-2">
                 <input
@@ -192,24 +193,24 @@ export function Footer() {
 
           {/* Link columns */}
           {cols.map((col) => (
-            <div key={col.title}>
+            <div key={col.titleKey}>
               <div
                 className="flex items-center gap-2 mb-5"
                 style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.18em' }}
               >
                 <span style={{ color: DS.blue }}>{col.icon}</span>
-                {col.title.toUpperCase()}
+                {t(col.titleKey, col.titleKey).toUpperCase()}
               </div>
               <div className="space-y-2.5">
                 {col.links.map((link) => (
                   <Link
-                    key={link.label}
+                    key={link.labelKey}
                     to={withLocale(link.href)}
                     style={{ display: 'block', color: DS.text4, fontSize: 13, textDecoration: 'none', transition: 'color 0.2s' }}
                     onMouseEnter={(e) => { e.currentTarget.style.color = DS.text; }}
                     onMouseLeave={(e) => { e.currentTarget.style.color = DS.text4; }}
                   >
-                    {link.label}
+                    {t(link.labelKey, link.labelKey)}
                   </Link>
                 ))}
               </div>
@@ -219,50 +220,46 @@ export function Footer() {
 
         {/* Bottom bar */}
         <div
-          className="flex items-center justify-between flex-wrap gap-4 mt-12 pt-6"
+          className="mt-10 pt-6 flex flex-col md:flex-row items-center justify-between gap-4"
           style={{ borderTop: `1px solid ${DS.border}` }}
         >
-          <div style={{ color: DS.text5, fontSize: 12, fontFamily: DS.mono }}>
-            © 2026 LOOP SOLUTIONS. All rights reserved.
+          <div style={{ color: DS.text5, fontSize: 11 }}>
+            {t('footer.rights', '© 2026 LOOP. All rights reserved.')}
           </div>
-
-          <div className="flex items-center gap-2">
-            {(['iron', 'bronze', 'silver', 'gold', 'platinum', 'ruby', 'diamond'] as const).map((r, i) => {
-              const colors = ['#9CA3AF','#CD7F32','#CBD5E1','#FFD700','#14B8A6','#EF4444','#818CF8'];
-              return (
-                <div
-                  key={r}
-                  className="w-1.5 h-1.5 rounded-full"
-                  style={{ background: colors[i], boxShadow: `0 0 4px ${colors[i]}` }}
-                />
-              );
-            })}
+          <div className="flex gap-6">
+            <Link
+              to={withLocale('/')}
+              style={{ color: DS.text5, fontSize: 11, textDecoration: 'none', transition: 'color 0.2s' }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = DS.text3; }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = DS.text5; }}
+            >
+              {t('footer.privacyPolicy', 'Privacy Policy')}
+            </Link>
+            <Link
+              to={withLocale('/')}
+              style={{ color: DS.text5, fontSize: 11, textDecoration: 'none', transition: 'color 0.2s' }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = DS.text3; }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = DS.text5; }}
+            >
+              {t('footer.termsOfService', 'Terms of Service')}
+            </Link>
           </div>
-
-          {/* Admin link */}
-          <Link
-            to="/admin"
-            className="flex items-center gap-1.5"
-            style={{
-              color: DS.text5,
-              fontSize: 11,
-              fontFamily: DS.mono,
-              letterSpacing: '0.12em',
-              textDecoration: 'none',
-              padding: '4px 10px',
-              borderRadius: 6,
-              border: '1px solid rgba(255,255,255,0.06)',
-              transition: 'all 0.2s',
-            }}
-            onMouseEnter={e => { e.currentTarget.style.color = DS.blue; e.currentTarget.style.borderColor = 'rgba(59,130,246,0.3)'; }}
-            onMouseLeave={e => { e.currentTarget.style.color = DS.text5; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; }}
-          >
-            <Settings size={11} />
-            ADMIN
-          </Link>
-
-          <div style={{ color: DS.text5, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.15em' }}>
-            SEASON III · 2026
+          {/* Highlights */}
+          <div className="flex gap-4 flex-wrap justify-center">
+            {[
+              t('footer.highlightGlobal', '30+ countries'),
+              t('footer.highlightQuality', '95+ Lighthouse'),
+              t('footer.highlightSupport', '12mo support'),
+            ].map((h) => (
+              <div
+                key={h}
+                className="flex items-center gap-1.5"
+                style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono }}
+              >
+                <span style={{ color: DS.blue, fontSize: 8 }}>✦</span>
+                {h}
+              </div>
+            ))}
           </div>
         </div>
       </div>

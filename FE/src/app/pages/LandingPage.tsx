@@ -14,6 +14,7 @@ import type { Testimonial } from '../../api/testimonials.service';
 import { servicesService } from '../../api/services.service';
 import type { Service, PortfolioProject } from '../../store/loopStore';
 import { projectsService } from '../../api/projects.service';
+import { useI18n } from '../../i18n/sync.tsx';
 
 // ── Animated Counter ────────────────────────────────────────────────────────
 function AnimatedCounter({ to, suffix = '' }: { to: number; suffix?: string }) {
@@ -82,12 +83,13 @@ function Badge({ label, color = DS.blue }: { label: string; color?: string }) {
 
 // ── HERO SECTION ─────────────────────────────────────────────────────────
 function HeroSection() {
+  const { t } = useI18n();
   const [activeMetric, setActiveMetric] = useState(0);
   const metrics = [
-    { label: 'Dự án hoàn thành', value: '120+', color: DS.blue },
-    { label: 'Khách hàng hài lòng', value: '98%', color: DS.green },
-    { label: 'Năm kinh nghiệm', value: '7+', color: DS.purple },
-    { label: 'Đối tác tin cậy', value: '50+', color: DS.cyan },
+    { label: 'landing.hero.metric1', value: '120+', color: DS.blue },
+    { label: 'landing.hero.metric2', value: '98%', color: DS.green },
+    { label: 'landing.hero.metric3', value: '7+', color: DS.purple },
+    { label: 'landing.hero.metric4', value: '50+', color: DS.cyan },
   ];
 
   useEffect(() => {
@@ -104,7 +106,7 @@ function HeroSection() {
           <motion.div initial={{ opacity: 0, x: -40 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}>
             {/* Eyebrow */}
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-              <Badge label="DIGITAL AGENCY OPERATING SYSTEM — v3.0" />
+              <Badge label={t('landing.hero.badge', 'DIGITAL AGENCY OPERATING SYSTEM — v3.0')} />
             </motion.div>
 
             {/* Headline */}
@@ -116,7 +118,7 @@ function HeroSection() {
                 style={{ display: 'block', fontSize: 'clamp(36px, 5vw, 64px)', fontWeight: 900 }}
               >
                 <span style={{ background: 'linear-gradient(135deg, #FFFFFF 0%, #CBD5E1 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                  HỆ ĐIỀU HÀNH SỐ
+                  {t('landing.hero.headline1', 'HỆ ĐIỀU HÀNH SỐ')}
                 </span>
               </motion.span>
               <motion.span
@@ -126,7 +128,7 @@ function HeroSection() {
                 style={{ display: 'block', fontSize: 'clamp(36px, 5vw, 64px)', fontWeight: 900 }}
               >
                 <span style={{ background: GRD.primary, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                  CHO AGENCY ĐỈNH CAO
+                  {t('landing.hero.headline2', 'CHO AGENCY ĐỈNH CAO')}
                 </span>
               </motion.span>
             </h1>
@@ -137,8 +139,7 @@ function HeroSection() {
               transition={{ delay: 0.4 }}
               style={{ color: DS.text3, fontSize: 17, lineHeight: 1.8, marginBottom: 36, maxWidth: 520 }}
             >
-              Giải pháp công nghệ toàn diện — từ thiết kế đến triển khai. 
-              Tích lũy LP điểm thưởng, thăng hạng và tạo ra những sản phẩm web đỉnh cao cho thị trường Việt Nam.
+              {t('landing.hero.description', 'Giải pháp công nghệ toàn diện — từ thiết kế đến triển khai. Tích lũy LP điểm thưởng, thăng hạng và tạo ra những sản phẩm web đỉnh cao cho thị trường Việt Nam.')}
             </motion.p>
 
             {/* CTAs */}
@@ -166,7 +167,7 @@ function HeroSection() {
                 }}
               >
                 <Rocket size={17} />
-                Bắt đầu dự án
+                {t('landing.hero.ctaProject', 'Bắt đầu dự án')}
               </Link>
               <Link
                 to="/du-an"
@@ -186,7 +187,7 @@ function HeroSection() {
                 }}
               >
                 <Eye size={16} />
-                Xem dự án
+                {t('landing.hero.ctaPortfolio', 'Xem dự án')}
               </Link>
             </motion.div>
 
@@ -205,7 +206,7 @@ function HeroSection() {
                   <div style={{ color: m.color, fontFamily: DS.heading, fontSize: 24, fontWeight: 900, textShadow: `0 0 16px ${m.color}60` }}>
                     {m.value}
                   </div>
-                  <div style={{ color: DS.text5, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.1em', marginTop: 2 }}>{m.label}</div>
+                  <div style={{ color: DS.text5, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.1em', marginTop: 2 }}>{t(m.label, m.label)}</div>
                 </div>
               ))}
             </motion.div>
@@ -364,10 +365,22 @@ function HeroSection() {
 
 // ── TICKER / MARQUEE ─────────────────────────────────────────────────────
 function Marquee() {
+  const { t } = useI18n();
   const items = [
-    '✦ React & Next.js', '◈ Supabase', '✦ TypeScript', '◈ AWS', '✦ Figma to Code',
-    '◈ React Native', '✦ Node.js', '◈ PostgreSQL', '✦ Docker', '◈ SEO Pro',
-    '✦ CI/CD Pipeline', '◈ Tailwind CSS', '✦ Rust', '◈ BigQuery',
+    t('landing.marquee.tech1', '✦ React & Next.js'),
+    t('landing.marquee.tech2', '◈ Supabase'),
+    t('landing.marquee.tech3', '✦ TypeScript'),
+    t('landing.marquee.tech4', '◈ AWS'),
+    t('landing.marquee.tech5', '✦ Figma to Code'),
+    t('landing.marquee.tech6', '◈ React Native'),
+    t('landing.marquee.tech7', '✦ Node.js'),
+    t('landing.marquee.tech8', '◈ PostgreSQL'),
+    t('landing.marquee.tech9', '✦ Docker'),
+    t('landing.marquee.tech10', '◈ SEO Pro'),
+    t('landing.marquee.tech11', '✦ CI/CD Pipeline'),
+    t('landing.marquee.tech12', '◈ Tailwind CSS'),
+    t('landing.marquee.tech13', '✦ Rust'),
+    t('landing.marquee.tech14', '◈ BigQuery'),
   ];
   const doubled = [...items, ...items];
 
@@ -390,13 +403,14 @@ function Marquee() {
 
 // ── STATS SECTION ────────────────────────────────────────────────────────
 function StatsSection() {
+  const { t } = useI18n();
   const stats = [
-    { value: 120, suffix: '+', label: 'Dự án hoàn thành', icon: <Rocket size={22} />, color: DS.blue },
-    { value: 98, suffix: '%', label: 'Tỷ lệ hài lòng', icon: <Heart size={22} />, color: DS.green },
-    { value: 7, suffix: '+', label: 'Năm kinh nghiệm', icon: <Award size={22} />, color: DS.amber },
-    { value: 50, suffix: '+', label: 'Đối tác & Khách hàng', icon: <Users size={22} />, color: DS.purple },
-    { value: 24, suffix: '/7', label: 'Hỗ trợ liên tục', icon: <Clock size={22} />, color: DS.cyan },
-    { value: 99.9, suffix: '%', label: 'Uptime SLA', icon: <Shield size={22} />, color: DS.red },
+    { value: 120, suffix: '+', label: 'landing.stats2.completed', icon: <Rocket size={22} />, color: DS.blue },
+    { value: 98, suffix: '%', label: 'landing.stats2.satisfaction', icon: <Heart size={22} />, color: DS.green },
+    { value: 7, suffix: '+', label: 'landing.stats2.experience', icon: <Award size={22} />, color: DS.amber },
+    { value: 50, suffix: '+', label: 'landing.stats2.partners', icon: <Users size={22} />, color: DS.purple },
+    { value: 24, suffix: '/7', label: 'landing.stats2.support', icon: <Clock size={22} />, color: DS.cyan },
+    { value: 99.9, suffix: '%', label: 'landing.stats2.uptime', icon: <Shield size={22} />, color: DS.red },
   ];
 
   return (
@@ -420,7 +434,7 @@ function StatsSection() {
               <div style={{ color: s.color, fontFamily: DS.heading, fontSize: 26, fontWeight: 900, textShadow: `0 0 16px ${s.color}50` }}>
                 <AnimatedCounter to={s.value} suffix={s.suffix} />
               </div>
-              <div style={{ color: DS.text4, fontSize: 11, marginTop: 4, lineHeight: 1.4 }}>{s.label}</div>
+              <div style={{ color: DS.text4, fontSize: 11, marginTop: 4, lineHeight: 1.4 }}>{t(s.label, s.label)}</div>
             </motion.div>
           ))}
         </div>
@@ -431,6 +445,7 @@ function StatsSection() {
 
 // ── SERVICES SECTION ─────────────────────────────────────────────────────
 function ServicesSection() {
+  const { t } = useI18n();
   const [services, setServices] = useState<Service[]>([]);
   const { locale } = useLocaleStore();
 
@@ -459,12 +474,12 @@ function ServicesSection() {
     <section className="py-24 px-6">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-16">
-          <Badge label="DỊCH VỤ CHUYÊN NGHIỆP" />
+          <Badge label={t('landing.stats.label', 'DỊCH VỤ CHUYÊN NGHIỆP')} />
           <h2 style={{ fontFamily: DS.heading, fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 900, letterSpacing: '0.05em', background: 'linear-gradient(135deg, #FFFFFF, #94A3B8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: 14 }}>
-            GIẢI PHÁP TOÀN DIỆN
+            {t('landing.stats.title', 'GIẢI PHÁP TOÀN DIỆN')}
           </h2>
           <p style={{ color: DS.text3, fontSize: 16, maxWidth: 540, margin: '0 auto', lineHeight: 1.8 }}>
-            Mọi dịch vụ đều được thanh toán bằng VNĐ. Tích lũy LP điểm thưởng và nhận ưu đãi ngay từ dự án đầu tiên.
+            {t('landing.stats.subtitle', 'Mọi dịch vụ đều được thanh toán bằng VNĐ. Tích lũy LP điểm thưởng và nhận ưu đãi ngay từ dự án đầu tiên.')}
           </p>
         </div>
 
@@ -516,11 +531,11 @@ function ServicesSection() {
 
                     <div className="flex items-center justify-between pt-4" style={{ borderTop: `1px solid ${DS.border}` }}>
                       <div>
-                        <div style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono, marginBottom: 2 }}>GIÁ TỪ (VNĐ)</div>
+                        <div style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono, marginBottom: 2 }}>{t('landing.stats.priceFrom', 'GIÁ TỪ (VNĐ)')}</div>
                         <div style={{ color: svc.color, fontSize: 14, fontWeight: 700 }}>{priceDisplay}</div>
                       </div>
                       <div className="text-right">
-                        <div style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono, marginBottom: 2 }}>ĐIỂM THƯỞNG LP</div>
+                        <div style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono, marginBottom: 2 }}>{t('landing.stats.lpReward', 'ĐIỂM THƯỞNG LP')}</div>
                         <div style={{ color: DS.purple, fontSize: 12, fontFamily: DS.mono }}>◈ 500 LP / 10M</div>
                       </div>
                     </div>
@@ -538,7 +553,7 @@ function ServicesSection() {
             textDecoration: 'none', boxShadow: '0 0 30px rgba(129,140,248,0.35)',
           }}>
             <MousePointer size={15} />
-            Đặt lịch tư vấn miễn phí — 8 bước dễ dàng
+            {t('landing.stats.cta', 'Đặt lịch tư vấn miễn phí — 8 bước dễ dàng')}
           </Link>
         </div>
       </div>
@@ -548,23 +563,24 @@ function ServicesSection() {
 
 // ── HOW IT WORKS ─────────────────────────────────────────────────────────
 function ProcessSection() {
+  const { t } = useI18n();
   const steps = [
-    { num: '01', title: 'Tư vấn & Khảo sát', desc: 'Meeting 30 phút. Phân tích nhu cầu, mục tiêu và ngân sách. Hoàn toàn miễn phí.', icon: <Users size={20} />, color: DS.blue },
-    { num: '02', title: 'Proposal & Timeline', desc: 'Gửi proposal chi tiết với tech stack, deliverables và giá VNĐ minh bạch trong 24h.', icon: <GitBranch size={20} />, color: DS.purple },
-    { num: '03', title: 'Thiết kế & Prototype', desc: 'UI/UX thiết kế, wireframe và interactive prototype để xác nhận trước khi dev.', icon: <Layers size={20} />, color: DS.cyan },
-    { num: '04', title: 'Development & Sprint', desc: 'Agile sprint 2 tuần. Daily update. Continuous integration và automated testing.', icon: <Code2 size={20} />, color: DS.green },
-    { num: '05', title: 'QA & Launch', desc: 'Kiểm tra chất lượng nghiêm ngặt. Deploy, training và nhận LP điểm thưởng đầu tiên.', icon: <Rocket size={20} />, color: DS.amber },
+    { num: '01', title: 'landing.process.step1', desc: 'landing.process.step1Desc', icon: <Users size={20} />, color: DS.blue },
+    { num: '02', title: 'landing.process.step2', desc: 'landing.process.step2Desc', icon: <GitBranch size={20} />, color: DS.purple },
+    { num: '03', title: 'landing.process.step3', desc: 'landing.process.step3Desc', icon: <Layers size={20} />, color: DS.cyan },
+    { num: '04', title: 'landing.process.step4', desc: 'landing.process.step4Desc', icon: <Code2 size={20} />, color: DS.green },
+    { num: '05', title: 'landing.process.step5', desc: 'landing.process.step5Desc', icon: <Rocket size={20} />, color: DS.amber },
   ];
 
   return (
     <section className="py-24 px-6" style={{ background: 'linear-gradient(160deg, rgba(15,23,42,0.5) 0%, rgba(2,6,23,0.5) 100%)' }}>
       <div className="max-w-5xl mx-auto">
         <div className="text-center mb-16">
-          <Badge label="QUY TRÌNH LÀM VIỆC" color={DS.cyan} />
+          <Badge label={t('landing.process.label', 'QUY TRÌNH LÀM VIỆC')} color={DS.cyan} />
           <h2 style={{ fontFamily: DS.heading, fontSize: 'clamp(26px, 3.5vw, 40px)', fontWeight: 900, letterSpacing: '0.06em', background: 'linear-gradient(135deg, #FFFFFF, #94A3B8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: 12 }}>
-            5 BƯỚC ĐƠN GIẢN
+            {t('landing.process.title', '5 BƯỚC ĐƠN GIẢN')}
           </h2>
-          <p style={{ color: DS.text3, fontSize: 15 }}>Quy trình minh bạch, predictable và luôn đúng deadline.</p>
+          <p style={{ color: DS.text3, fontSize: 15 }}>{t('landing.process.subtitle', 'Quy trình minh bạch, predictable và luôn đúng deadline.')}</p>
         </div>
 
         <div className="relative">
@@ -590,8 +606,8 @@ function ProcessSection() {
                     <span style={{ color: s.color, fontFamily: DS.mono, fontSize: 10, letterSpacing: '0.2em' }}>STEP {s.num}</span>
                     <div className="flex-1 h-px" style={{ background: `linear-gradient(90deg, ${s.color}20, transparent)` }} />
                   </div>
-                  <div style={{ color: DS.text, fontSize: 16, fontWeight: 700, marginBottom: 6 }}>{s.title}</div>
-                  <div style={{ color: DS.text3, fontSize: 13, lineHeight: 1.7 }}>{s.desc}</div>
+                  <div style={{ color: DS.text, fontSize: 16, fontWeight: 700, marginBottom: 6 }}>{t(s.title, s.title)}</div>
+                  <div style={{ color: DS.text3, fontSize: 13, lineHeight: 1.7 }}>{t(s.desc, s.desc)}</div>
                 </div>
                 <div style={{ color: s.color, fontFamily: DS.heading, fontSize: 32, fontWeight: 900, opacity: 0.12, alignSelf: 'center', flexShrink: 0 }}>{s.num}</div>
               </motion.div>
@@ -605,6 +621,7 @@ function ProcessSection() {
 
 // ── LP SYSTEM SECTION (explained as rewards) ─────────────────────────────
 function LPSystemSection() {
+  const { t } = useI18n();
   const rankFlow = [
     { rank: 'IRON', color: '#9CA3AF', symbol: '⬡', desc: 'Khởi đầu' },
     { rank: 'BRONZE', color: '#CD7F32', symbol: '◈', desc: '+350 LP' },
@@ -615,43 +632,45 @@ function LPSystemSection() {
     { rank: 'DIAMOND', color: '#818CF8', symbol: '✦', desc: '+30K LP' },
   ];
 
+  const lpBenefits = [
+    { icon: <Zap size={15} />, text: 'landing.lp.benefit1', color: DS.blue },
+    { icon: <Users size={15} />, text: 'landing.lp.benefit2', color: DS.purple },
+    { icon: <Award size={15} />, text: 'landing.lp.benefit3', color: DS.green },
+    { icon: <Sparkles size={15} />, text: 'landing.lp.benefit4', color: DS.amber },
+  ];
+
   return (
     <section className="py-24 px-6">
       <div className="max-w-6xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
           {/* Left */}
           <motion.div initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }}>
-            <Badge label="HỆ THỐNG ĐIỂM THƯỞNG LP" color={DS.purple} />
+            <Badge label={t('landing.lp.label', 'HỆ THỐNG ĐIỂM THƯỞNG LP')} color={DS.purple} />
             <h2 style={{ fontFamily: DS.heading, fontSize: 'clamp(26px, 3.5vw, 40px)', fontWeight: 900, letterSpacing: '0.05em', background: 'linear-gradient(135deg, #FFFFFF, #94A3B8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: 16 }}>
-              LOOP POINTS — PHẦN THƯỞNG CHO SỰ TRUNG THÀNH
+              {t('landing.lp.title', 'LOOP POINTS — PHẦN THƯỞNG CHO SỰ TRUNG THÀNH')}
             </h2>
             <p style={{ color: DS.text3, fontSize: 15, lineHeight: 1.8, marginBottom: 24 }}>
-              <strong style={{ color: DS.text }}>Tất cả dịch vụ được thanh toán bằng VNĐ.</strong> LP là hệ thống điểm thưởng nội bộ — bạn tích lũy LP khi hoàn thành dự án, giới thiệu khách hàng và đạt milestone. Dùng LP để nhận ưu đãi, giảm giá hóa đơn và mở khóa đặc quyền cao cấp.
+              <strong style={{ color: DS.text }}>Tất cả dịch vụ được thanh toán bằng VNĐ.</strong> {t('landing.lp.description', 'LP là hệ thống điểm thưởng nội bộ — bạn tích lũy LP khi hoàn thành dự án, giới thiệu khách hàng và đạt milestone. Dùng LP để nhận ưu đãi, giảm giá hóa đơn và mở khóa đặc quyền cao cấp.')}
             </p>
             <div className="space-y-3 mb-8">
-              {[
-                { icon: <Zap size={15} />, text: 'Nhận 50 LP cho mỗi 1,000,000 VNĐ giao dịch', color: DS.blue },
-                { icon: <Users size={15} />, text: 'Referral bonus: 500–2,000 LP mỗi khách hàng mới', color: DS.purple },
-                { icon: <Award size={15} />, text: 'Dùng LP giảm tối đa 20% hóa đơn dịch vụ tiếp theo', color: DS.green },
-                { icon: <Sparkles size={15} />, text: 'Diamond rank: ưu tiên PM tốt nhất + 2x LP bonus', color: DS.amber },
-              ].map(b => (
+              {lpBenefits.map(b => (
                 <div key={b.text} className="flex items-start gap-3">
                   <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: `${b.color}15`, border: `1px solid ${b.color}25` }}>
                     <span style={{ color: b.color }}>{b.icon}</span>
                   </div>
-                  <span style={{ color: DS.text3, fontSize: 14, lineHeight: 1.6 }}>{b.text}</span>
+                  <span style={{ color: DS.text3, fontSize: 14, lineHeight: 1.6 }}>{t(b.text, b.text)}</span>
                 </div>
               ))}
             </div>
             <Link to="/khach-hang" style={{ background: GRD.primary, color: '#fff', fontSize: 14, fontWeight: 600, padding: '11px 24px', borderRadius: 10, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 8, boxShadow: '0 0 20px rgba(129,140,248,0.3)' }}>
-              Xem ví LP của bạn <ArrowRight size={15} />
+              {t('landing.lp.cta', 'Xem ví LP của bạn')} <ArrowRight size={15} />
             </Link>
           </motion.div>
 
           {/* Right: Rank progression */}
           <motion.div initial={{ opacity: 0, x: 30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }}>
             <div className="rounded-2xl p-7" style={{ background: 'rgba(15,23,42,0.7)', border: `1px solid ${DS.border}`, backdropFilter: 'blur(12px)' }}>
-              <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.18em', marginBottom: 20 }}>BẢNG XẾP HẠNG RANK</div>
+              <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.18em', marginBottom: 20 }}>{t('landing.lp.rankTitle', 'BẢNG XẾP HẠNG RANK')}</div>
               <div className="space-y-2.5">
                 {rankFlow.map((r, i) => (
                   <motion.div
@@ -682,7 +701,7 @@ function LPSystemSection() {
               </div>
               <div className="mt-6 p-4 rounded-xl" style={{ background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)' }}>
                 <div style={{ color: DS.text4, fontSize: 12, lineHeight: 1.6 }}>
-                  💡 <strong style={{ color: DS.text3 }}>Lưu ý:</strong> LP là điểm thưởng nội bộ, không phải tiền tệ. Mọi thanh toán dịch vụ đều bằng <strong style={{ color: DS.blue }}>VNĐ</strong>.
+                  💡 <strong style={{ color: DS.text3 }}>Lưu ý:</strong> {t('landing.lp.rankNote', 'LP là điểm thưởng nội bộ, không phải tiền tệ. Mọi thanh toán dịch vụ đều bằng VNĐ.')}
                 </div>
               </div>
             </div>
@@ -694,16 +713,8 @@ function LPSystemSection() {
 }
 
 // ── PORTFOLIO PREVIEW ────────────────────────────────────────────────────
-const FALLBACK_PROJECTS: PortfolioProject[] = [
-  { id: '1', title: 'VNRetail Platform', tag: 'E-commerce SaaS', metric: '+320% doanh thu', cat: 'saas', img: 'https://images.unsplash.com/photo-1517309561013-16f6e4020305?auto=format&fit=crop&w=500&q=80', color: DS.blue, year: '2025', client: 'VNRetail', slug: 'vnretail-platform', techStack: [], features: [], description: '', screenshots: [], results: '' },
-  { id: '2', title: 'MedApp Vietnam', tag: 'Mobile Health App', metric: '200K downloads', cat: 'mobile', img: 'https://images.unsplash.com/photo-1596843720750-7de9329da5d7?auto=format&fit=crop&w=500&q=80', color: DS.purple, year: '2025', client: 'MedApp', slug: 'medapp-vietnam', techStack: [], features: [], description: '', screenshots: [], results: '' },
-  { id: '3', title: 'AnalyticsPro', tag: 'Dashboard SaaS', metric: '#1 market share', cat: 'saas', img: 'https://images.unsplash.com/photo-1771012788703-d310cdf189bb?auto=format&fit=crop&w=500&q=80', color: DS.cyan, year: '2025', client: 'AnalyticsPro', slug: 'analyticspro', techStack: [], features: [], description: '', screenshots: [], results: '' },
-  { id: '4', title: 'EduViet Portal', tag: 'EdTech Platform', metric: '10K students', cat: 'app', img: 'https://images.unsplash.com/photo-1762330910399-95caa55acf04?auto=format&fit=crop&w=500&q=80', color: DS.green, year: '2025', client: 'EduViet', slug: 'eduviet-portal', techStack: [], features: [], description: '', screenshots: [], results: '' },
-  { id: '5', title: 'StartupHub', tag: 'Corporate Website', metric: '+45% conversion', cat: 'website', img: 'https://images.unsplash.com/photo-1588336443962-49d88df004a1?auto=format&fit=crop&w=500&q=80', color: DS.amber, year: '2025', client: 'StartupHub', slug: 'startuphub', techStack: [], features: [], description: '', screenshots: [], results: '' },
-  { id: '6', title: 'FinDash Enterprise', tag: 'FinTech Dashboard', metric: '500+ tx/day', cat: 'saas', img: 'https://images.unsplash.com/photo-1634836023845-eddbfe9937da?auto=format&fit=crop&w=500&q=80', color: DS.red, year: '2025', client: 'FinDash', slug: 'findash-enterprise', techStack: [], features: [], description: '', screenshots: [], results: '' },
-];
-
 function PortfolioPreview() {
+  const { t } = useI18n();
   const [projects, setProjects] = useState<PortfolioProject[]>(FALLBACK_PROJECTS);
   const { locale } = useLocaleStore();
 
@@ -722,13 +733,13 @@ function PortfolioPreview() {
       <div className="max-w-6xl mx-auto">
         <div className="flex items-end justify-between mb-14 flex-wrap gap-6">
           <div>
-            <Badge label="DỰ ÁN NỔI BẬT" color={DS.cyan} />
+            <Badge label={t('landing.portfolio.label', 'DỰ ÁN NỔI BẬT')} color={DS.cyan} />
             <h2 style={{ fontFamily: DS.heading, fontSize: 'clamp(26px, 3.5vw, 40px)', fontWeight: 900, letterSpacing: '0.05em', background: 'linear-gradient(135deg, #FFFFFF, #94A3B8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-              NHỮNG GÌ CHÚNG TÔI XÂY DỰNG
+              {t('landing.portfolio.title', 'NHỮNG GÌ CHÚNG TÔI XÂY DỰNG')}
             </h2>
           </div>
           <Link to="/du-an" style={{ color: DS.blue, fontSize: 13, textDecoration: 'none', fontFamily: DS.mono, letterSpacing: '0.1em', display: 'flex', alignItems: 'center', gap: 6, border: `1px solid rgba(59,130,246,0.3)`, padding: '8px 16px', borderRadius: 8 }}>
-            XEM TẤT CẢ <ChevronRight size={14} />
+            {t('landing.portfolio.ctaAll', 'XEM TẤT CẢ')} <ChevronRight size={14} />
           </Link>
         </div>
 
@@ -752,7 +763,7 @@ function PortfolioPreview() {
                       <div style={{ color: '#fff', fontFamily: DS.heading, fontSize: 16, fontWeight: 700, letterSpacing: '0.06em', marginBottom: 8 }}>{p.title}</div>
                       <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13, marginBottom: 16 }}>{p.metric}</div>
                       <div style={{ color: '#fff', fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.15em', border: '1px solid rgba(255,255,255,0.3)', padding: '6px 14px', borderRadius: 6, display: 'inline-block' }}>
-                        XEM CHI TIẾT →
+                        {t('landing.portfolio.viewDetails', 'XEM CHI TIẾT →')}
                       </div>
                     </div>
                   </div>
@@ -780,6 +791,7 @@ const FALLBACK_TESTIMONIALS = [
 ];
 
 function TestimonialsSection() {
+  const { t } = useI18n();
   const [testimonials, setTestimonials] = useState<Testimonial[]>(FALLBACK_TESTIMONIALS);
   const { locale } = useLocaleStore();
 
@@ -795,9 +807,9 @@ function TestimonialsSection() {
     <section className="py-24 px-6">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-14">
-          <Badge label="KHÁCH HÀNG NÓI GÌ" color={DS.green} />
+          <Badge label={t('landing.testimonials.label', 'KHÁCH HÀNG NÓI GÌ')} color={DS.green} />
           <h2 style={{ fontFamily: DS.heading, fontSize: 'clamp(26px, 3.5vw, 40px)', fontWeight: 900, letterSpacing: '0.06em', background: 'linear-gradient(135deg, #FFFFFF, #94A3B8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-            ĐÁNH GIÁ THỰC TẾ
+            {t('landing.testimonials.title', 'ĐÁNH GIÁ THỰC TẾ')}
           </h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -841,6 +853,7 @@ function TestimonialsSection() {
 
 // ── ACADEMY TEASER ───────────────────────────────────────────────────────
 function AcademyTeaser() {
+  const { t } = useI18n();
   return (
     <section className="py-24 px-6" style={{ background: 'linear-gradient(135deg, rgba(15,23,42,0.5) 0%, rgba(11,17,34,0.5) 100%)' }}>
       <div className="max-w-6xl mx-auto">
@@ -879,24 +892,28 @@ function AcademyTeaser() {
           </motion.div>
 
           <motion.div initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}>
-            <Badge label="LOOP ACADEMY" color={DS.amber} />
+            <Badge label={t('landing.academy.label', 'LOOP ACADEMY')} color={DS.amber} />
             <h2 style={{ fontFamily: DS.heading, fontSize: 'clamp(26px, 3.5vw, 38px)', fontWeight: 900, letterSpacing: '0.05em', background: 'linear-gradient(135deg, #FFFFFF, #94A3B8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: 16 }}>
-              HỌC TỪ CHUYÊN GIA DIAMOND–RUBY
+              {t('landing.academy.title', 'HỌC TỪ CHUYÊN GIA DIAMOND–RUBY')}
             </h2>
             <p style={{ color: DS.text3, fontSize: 15, lineHeight: 1.8, marginBottom: 24 }}>
-              Khóa học thực chiến từ đội ngũ top rank. Giá niêm yết bằng VNĐ. Học xong nhận LP điểm thưởng và cơ hội hợp tác trực tiếp với LOOP Solutions.
+              {t('landing.academy.description', 'Khóa học thực chiến từ đội ngũ top rank. Giá niêm yết bằng VNĐ. Học xong nhận LP điểm thưởng và cơ hội hợp tác trực tiếp với LOOP Solutions.')}
             </p>
             <div className="flex items-center gap-6 mb-8">
-              {[{ val: '6+', label: 'Khóa học' }, { val: '10K+', label: 'Học viên' }, { val: '4.9★', label: 'Đánh giá' }].map(s => (
+              {[
+                { val: '6+', label: 'landing.academy.courses' },
+                { val: '10K+', label: 'landing.academy.students' },
+                { val: '4.9★', label: 'landing.academy.rating' },
+              ].map(s => (
                 <div key={s.label}>
                   <div style={{ color: DS.amber, fontFamily: DS.heading, fontSize: 22, fontWeight: 700 }}>{s.val}</div>
-                  <div style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, marginTop: 2 }}>{s.label}</div>
+                  <div style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, marginTop: 2 }}>{t(s.label, s.label)}</div>
                 </div>
               ))}
             </div>
             <Link to="/hoc-vien" style={{ background: GRD.gold, color: '#000', fontSize: 14, fontWeight: 700, padding: '11px 24px', borderRadius: 10, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
               <Play size={15} />
-              Khám phá khóa học
+              {t('landing.academy.cta', 'Khám phá khóa học')}
             </Link>
           </motion.div>
         </div>
@@ -907,6 +924,7 @@ function AcademyTeaser() {
 
 // ── FINAL CTA ────────────────────────────────────────────────────────────
 function FinalCTA() {
+  const { t } = useI18n();
   return (
     <section className="py-28 px-6 relative overflow-hidden">
       <div
@@ -915,27 +933,32 @@ function FinalCTA() {
       />
       <div className="max-w-4xl mx-auto text-center relative">
         <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }}>
-          <Badge label="SẴN SÀNG BẮT ĐẦU?" />
+          <Badge label={t('landing.cta.badge', 'SẴN SÀNG BẮT ĐẦU?')} />
           <h2 style={{ fontFamily: DS.heading, fontSize: 'clamp(28px, 5vw, 52px)', fontWeight: 900, letterSpacing: '0.05em', background: 'linear-gradient(135deg, #FFFFFF, #94A3B8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: 16, lineHeight: 1.15 }}>
-            NÂNG CẤP DIGITAL AGENCY<br />CỦA BẠN NGAY HÔM NAY
+            {t('landing.cta.title', 'NÂNG CẤP DIGITAL AGENCY')} <br />{t('landing.cta.title2', 'CỦA BẠN NGAY HÔM NAY')}
           </h2>
-          <p style={{ color: DS.text3, fontSize: 16, lineHeight: 1.8, marginBottom: 40, maxWidth: 540, margin: '0 auto 40px' }}>
-            Tư vấn miễn phí 30 phút. Nhận 500 LP điểm thưởng khi đăng ký. Không ràng buộc, không phí ẩn.
+          <p style={{ color: DS.text3, fontSize: 16, lineHeight: 1.8, maxWidth: 540, margin: '0 auto 40px' }}>
+            {t('landing.cta.description', 'Tư vấn miễn phí 30 phút. Nhận 500 LP điểm thưởng khi đăng ký. Không ràng buộc, không phí ẩn.')}
           </p>
           <div className="flex items-center justify-center gap-4 flex-wrap">
             <Link to="/dat-lich" style={{ background: GRD.primary, color: '#fff', fontSize: 16, fontWeight: 700, padding: '16px 36px', borderRadius: 16, textDecoration: 'none', boxShadow: '0 0 50px rgba(129,140,248,0.5), 0 8px 24px rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', gap: 10, letterSpacing: '0.02em' }}>
               <Rocket size={18} />
-              Bắt đầu — Hoàn toàn miễn phí
+              {t('landing.cta.ctaPrimary', 'Bắt đầu — Hoàn toàn miễn phí')}
             </Link>
             <Link to="/lien-he" style={{ color: DS.text2, fontSize: 15, padding: '16px 36px', borderRadius: 16, border: '1px solid rgba(255,255,255,0.12)', textDecoration: 'none', background: 'rgba(255,255,255,0.04)' }}>
-              Liên hệ trực tiếp
+              {t('landing.cta.ctaSecondary', 'Liên hệ trực tiếp')}
             </Link>
           </div>
           <div className="flex items-center justify-center gap-6 mt-10">
-            {['Tư vấn miễn phí', 'Giá VNĐ minh bạch', 'LP điểm thưởng', 'Bảo hành 6 tháng'].map(item => (
+            {[
+              'landing.cta.benefit1',
+              'landing.cta.benefit2',
+              'landing.cta.benefit3',
+              'landing.cta.benefit4',
+            ].map((item) => (
               <div key={item} className="flex items-center gap-2">
                 <Check size={13} style={{ color: DS.green }} />
-                <span style={{ color: DS.text4, fontSize: 12 }}>{item}</span>
+                <span style={{ color: DS.text4, fontSize: 12 }}>{t(item, item)}</span>
               </div>
             ))}
           </div>
