@@ -140,7 +140,10 @@
       "Bash(cmd //c \"taskkill /PID 10532 /F\")",
       "Bash(cmd //c \"taskkill /PID 25936 /F\")",
       "Bash(cp d:/LOOP_COMPANY/LOOP/public/* d:/LOOP_COMPANY/LOOP/FE/public/)",
-      "Bash(cp -r d:/LOOP_COMPANY/LOOP/public/images d:/LOOP_COMPANY/LOOP/FE/public/)"
+      "Bash(cp -r d:/LOOP_COMPANY/LOOP/public/images d:/LOOP_COMPANY/LOOP/FE/public/)",
+      "Bash(for ep:*)",
+      "Bash(do curl:*)",
+      "Bash(tasklist //FI \"PID eq 11884\" //FO TABLE)"
     ],
     "additionalDirectories": [
       "D:\\LOOP_COMPANY\\LOOP\\src\\app\\api\\admin\\expertises",

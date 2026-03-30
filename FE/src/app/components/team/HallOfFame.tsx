@@ -250,7 +250,7 @@ function HolographicCard({
   delay: number;
   onClick: () => void;
 }) {
-  const cfg = RANKS[member.rank];
+  const cfg = RANKS[member.rank] ?? RANKS.iron;
 
   return (
     <motion.div

@@ -38,7 +38,7 @@ const HeroSection = memo(function HeroSection({ members }: { members: Member[] }
   const totalLP   = members.reduce((s, m) => s + m.lpEarned, 0);
   const totalMissions = members.reduce((s, m) => s + m.missions, 0);
   const totalAchievements = members.reduce((s, m) => s + m.achievements.length, 0);
-  const topMember = [...members].sort((a, b) => RANKS[b.rank].tier - RANKS[a.rank].tier)[0];
+  const topMember = [...members].sort((a, b) => (RANKS[b.rank]?.tier ?? 0) - (RANKS[a.rank]?.tier ?? 0))[0];
 
   const kpis = [
     { label: 'Thành viên đang hoạt động', value: `${members.length}`, suffix: ' operative', color: DS.blue },
