@@ -61,6 +61,7 @@ export default function App() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [ready, setReady] = useState(false);
   const initAuth = useAuthStore(s => s.initAuth);
+  const { locale } = useLocaleStore(); // ← must be before any early return (Rules of Hooks)
 
   useEffect(() => {
     // Init auth session + onboarding check in parallel
@@ -80,8 +81,6 @@ export default function App() {
   };
 
   if (!ready) return <AppLoader />;
-
-  const { locale } = useLocaleStore();
 
   return (
     <I18nProvider locale={locale}>
