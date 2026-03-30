@@ -440,7 +440,102 @@ async function seedExpertises() {
 }
 
 // ══════════════════════════════════════════════════════════════════
-// 8. Addon Services
+// 8. Services (Public — used by /api/v1/services)
+// NOTE: Only base fields (title, shortDescription, features, etc.) are seeded.
+// Localization fields (titleEn/Ja/Ko/Zh etc.) require DB migration.
+// They default to null on create and can be added via Admin CMS.
+
+async function seedServices() {
+  console.log("\n[Services] Seeding public services...");
+
+  const services = [
+    {
+      slug: 'web-design',
+      icon: 'Globe',
+      title: 'Thiết kế Website',
+      shortDescription: 'Thiết kế website chuyên nghiệp, tối ưu SEO, responsive trên mọi thiết bị.',
+      longDescription: 'Chúng tôi xây dựng website với công nghệ hiện đại nhất, đảm bảo tốc độ load nhanh, bảo mật cao và dễ dàng quản trị nội dung.',
+      features: ['Giao diện hiện đại', 'Responsive mobile', 'SEO tối ưu', 'Tốc độ nhanh', 'Bảo mật cao', 'Quản trị dễ dàng'],
+      technologies: ['React', 'Next.js', 'TypeScript', 'Tailwind CSS', 'Node.js'],
+      startingPrice: 8000000,
+      deliveryTime: '2-4 tuần',
+      category: 'Development',
+    },
+    {
+      slug: 'app-development',
+      icon: 'Smartphone',
+      title: 'Ứng dụng di động',
+      shortDescription: 'Phát triển ứng dụng iOS, Android native hoặc cross-platform với React Native.',
+      longDescription: 'Ứng dụng di động với trải nghiệm người dùng mượt mà, hiệu suất cao, tích hợp push notification và đồng bộ dữ liệu real-time.',
+      features: ['iOS & Android', 'Cross-platform', 'Push notification', 'Offline mode', 'Biometric auth', 'Real-time sync'],
+      technologies: ['React Native', 'TypeScript', 'Firebase', 'Expo', 'GraphQL'],
+      startingPrice: 25000000,
+      deliveryTime: '4-8 tuần',
+      category: 'Development',
+    },
+    {
+      slug: 'dashboard-saas',
+      icon: 'LayoutDashboard',
+      title: 'Dashboard & SaaS',
+      shortDescription: 'Hệ thống quản trị, dashboard phân tích, phần mềm SaaS theo yêu cầu doanh nghiệp.',
+      longDescription: 'Xây dựng hệ thống quản lý nội bộ, dashboard phân tích KPIs, ERP mini, CRM với giao diện hiện đại và báo cáo trực quan.',
+      features: ['Analytics real-time', 'Data visualization', 'Role-based access', 'Export reports', 'Multi-tenant', 'API integrations'],
+      technologies: ['Next.js', 'Prisma', 'PostgreSQL', 'Tailwind CSS', 'Zustand'],
+      startingPrice: 30000000,
+      deliveryTime: '6-12 tuần',
+      category: 'Development',
+    },
+    {
+      slug: 'seo-marketing',
+      icon: 'Search',
+      title: 'SEO & Marketing',
+      shortDescription: 'Dịch vụ SEO tổng thể, Google Ads, Marketing để tăng traffic và chuyển đổi.',
+      longDescription: 'Chiến dịch SEO toàn diện từ kỹ thuật, nội dung đến off-page. Google Ads quảng cáo hiệu quả với chi phí tối ưu.',
+      features: ['Audit SEO', 'On-page optimization', 'Content strategy', 'Backlink building', 'Google Ads', 'Analytics setup'],
+      technologies: ['Google Analytics', 'Search Console', 'Ahrefs', 'SEMrush', 'Google Tag Manager'],
+      startingPrice: 5000000,
+      deliveryTime: '1-3 tháng',
+      category: 'Marketing',
+    },
+  ];
+
+  for (let i = 0; i < services.length; i++) {
+    const svc = services[i];
+    await prisma.service.upsert({
+      where: { slug: svc.slug },
+      create: {
+        slug: svc.slug,
+        icon: svc.icon,
+        title: svc.title,
+        shortDescription: svc.shortDescription,
+        longDescription: svc.longDescription,
+        features: svc.features,
+        technologies: svc.technologies,
+        startingPrice: svc.startingPrice,
+        deliveryTime: svc.deliveryTime,
+        category: svc.category,
+        isActive: true,
+        sortOrder: i,
+      },
+      update: {
+        icon: svc.icon,
+        title: svc.title,
+        shortDescription: svc.shortDescription,
+        longDescription: svc.longDescription,
+        features: svc.features,
+        technologies: svc.technologies,
+        startingPrice: svc.startingPrice,
+        deliveryTime: svc.deliveryTime,
+        category: svc.category,
+        isActive: true,
+        sortOrder: i,
+      },
+    });
+  }
+  console.log('  ✓ ' + services.length + ' services');
+}
+
+// 9. Addon Services// 9. Addon Services
 // ══════════════════════════════════════════════════════════════════
 
 async function seedAddonServices() {
@@ -945,10 +1040,8 @@ async function seedAcademy() {
     const data = {
       title: course.title,
       titleVi: course.titleVi,
-      titleEn: course.titleEn,
-      description: course.desc,
+      description: course.desc ?? course.titleVi,
       descriptionVi: course.descVi,
-      descriptionEn: course.descEn,
       type: "group",
       instructorId,
       price: course.price,
@@ -2042,10 +2135,11 @@ async function main() {
     await seedAcademy();
     await seedQuests();
     await seedCompanyEvents();
+    await seedServices(); // <-- Seed public services (used by /api/v1/services)
     await seedR2(); // <-- NEW: R2 unified demo data
 
     // Verify counts
-    const [tm, us, pr, ord, pm, ef, ov, lp, tx, qp, ec, tsk, q, ev, exp, me] = await Promise.all([
+    const [tm, us, pr, ord, pm, ef, ov, lp, tx, qp, ec, tsk, q, ev, exp, me, svc] = await Promise.all([
       prisma.teamMember.count(),
       prisma.user.count(),
       prisma.project.count(),
@@ -2062,9 +2156,10 @@ async function main() {
       prisma.companyEvent.count(),
       prisma.expertise.count(),
       prisma.memberExpertise.count(),
+      prisma.service.count(),
     ]);
-    console.log("\n[VERIFY] TM=%d US=%d PR=%d OR=%d PM=%d | EF=%d OV=%d LP=%d TX=%d QP=%d | EC=%d TS=%d Q=%d EV=%d | EXP=%d ME=%d",
-      tm, us, pr, ord, pm, ef, ov, lp, tx, qp, ec, tsk, q, ev, exp, me);
+    console.log("\n[VERIFY] TM=%d US=%d PR=%d OR=%d PM=%d | EF=%d OV=%d LP=%d TX=%d QP=%d | EC=%d TS=%d Q=%d EV=%d | EXP=%d ME=%d | SVC=%d",
+      tm, us, pr, ord, pm, ef, ov, lp, tx, qp, ec, tsk, q, ev, exp, me, svc);
 
     console.log("\n" + "=".repeat(50));
     console.log("✅ All seeds completed successfully!");

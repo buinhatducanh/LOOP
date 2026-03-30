@@ -115,6 +115,7 @@ export default async function LocaleLayout({ children, params }: Props) {
     // "dark" class activates Figma dark theme CSS variables from figma-theme.css
     <html lang={locale} suppressHydrationWarning className="dark">
       <head>
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
         <link rel="manifest" href="/manifest.json" />
         <link rel="apple-touch-icon" href="/icon-192.svg" />
         <meta name="msapplication-TileColor" content="#020617" />

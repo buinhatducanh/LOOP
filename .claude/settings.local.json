@@ -131,7 +131,8 @@
       "Read(//d/LOOP_COMPANY/LOOP/src/app/**)",
       "Bash(npx tsx -e \":*)",
       "Bash(PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION=\"clear r chạy seed đi\" npx prisma migrate reset --force)",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Bash(1:*)"
     ],
     "additionalDirectories": [
       "D:\\LOOP_COMPANY\\LOOP\\src\\app\\api\\admin\\expertises",
