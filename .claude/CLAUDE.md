@@ -1,9 +1,9 @@
 # LOOP Solutions — Claude Code Context
 
 > Project: LOOP Solutions Agency Platform — FE (Vite/React) + BE (Next.js 15 API)
-> Last Updated: 2026-03-30
+> Last Updated: 2026-03-31
 > Language: Vietnamese (code comments, docs), English (variable names, function names)
-> Status: Phase F0 ✅ completed | Phase F1 ✅ completed | Phase F2 ✅ completed | Phase F3 ✅ completed | Phase F4 ✅ completed | Phase F5 ✅ completed | Phase F6 ✅ completed | Phase F7 ✅ completed | Phase F8 Scale Hardening ✅ COMPLETED — infrastructure: slo.ts + logger.ts (259L) + scaleGate.ts (515L) + capacity.ts (378L) + Inngest (8 functions); cache: Cache-Control on all 6 v1 GETs; idempotency: IdempotencyKey model + withIdempotency() on 6 mutations; observability: logger.withSLO() on 14 endpoints; rate-limit: applyRateLimit() on 5 public endpoints + auth/login; scale gate final: 0 blocking, 4 legitimate non-critical warnings (user-specific data + safe-to-retry). Build ✅ tsc ✅ lint ✅.
+> Status: ALL 8 PHASES COMPLETE ✅ (F0–F8) + Fi + Fs + R-seed ✅ — 224 route files, 99 models, ~90 i18n columns, 5 locales; infrastructure: slo.ts(221L) + logger.ts(265L) + scaleGate.ts(552L) + capacity.ts(377L) + Inngest (8 functions, 396L); cache: Cache-Control on 6 v1 GETs; idempotency: IdempotencyKey model + withIdempotency() on 6 mutations; observability: logger.withSLO() on 14 endpoints; rate-limit: applyRateLimit() on 5 public + auth/login; scale gate: 0 blocking, 4 non-critical warnings; 4/4 admin translate tabs ✅ (MembersTab done 2026-03-31); remaining: JA/KO/ZH translation (MEDIUM), I18N-RUNBOOK (MEDIUM), JSON migration (P2). Build ✅ tsc ✅ lint ✅.
 > CI/CD: GitHub connected to Vercel, auto-deploy on push. Domain: loops.vn (production).
 
 ---
@@ -17,7 +17,7 @@
 | **Thư mục** | `d:/LOOP_COMPANY/LOOP/FE/` | `d:/LOOP_COMPANY/LOOP/` |
 | **Framework** | Vite + React 18 + Tailwind v4 | Next.js 15 + Prisma 7 + PostgreSQL/Neon |
 | **Port dev** | `5173` / `5174` | `3000` |
-| **Trạng thái** | Mock UI hoàn chỉnh, đang kết nối BE APIs | 200 route files, 357+ HTTP methods, seed đầy đủ |
+| **Trạng thái** | FE mock → BE thật, all 8 phases done | 224 route files, 99 models, seed đầy đủ (28 members, LP economy, quests, events) |
 | **Phong cách** | Gaming/Cyberpunk dark theme | Professional agency website |
 | **i18n** | useLocaleStore → 5 locale | 5 ngôn ngữ (VI/EN/JA/KO/ZH) |
 
@@ -35,7 +35,7 @@
 | **Vercel project** | `prj_T3kS2kTcAF38IuhMtqGRRlINOSR5` · `team_zgpVFIa6a7Y9QE4H4yTHe3Bv` | |
 
 ### Mục tiêu hiện tại
-Kết nối FE mock với BE thật theo nghiệp vụ LOOP — giữ nguyên 100% giao diện FE, thay mock data bằng API thật từ BE.
+All 8 phases hoàn thành. Remaining: JA/KO/ZH professional translation (MEDIUM), I18N-RUNBOOK done ✅. Deferred P2: JSON Translation migration, SupportedLocale model, TTFB audit, GSC verify, bundle opt. Chi tiết: `docs/FE-BE-INTEGRATION-STATUS.md`.
 
 ---
 
@@ -257,8 +257,8 @@ FE/src/
 - `GET /api/v1/projects?lang=` → Project list
 - `GET /api/v1/team?lang=` → TeamMember list
 - `GET /api/v1/testimonials?lang=`
-- `GET /api/v1/pricing?lang=`
-- `GET /api/v1/blog?lang=` → BlogPost list
+- `GET /api/v1/pricing?lang=` → ❌ NOT implemented — FE uses `/api/pricing/config?lang=`
+- `GET /api/v1/blog?lang=` → ❌ NOT implemented — FE uses `/api/blog-posts?lang=` (DB-backed)
 - `GET /api/v1/courses?lang=` → Academy course list
 - `GET /api/v1/courses/[id]?lang=` → Academy course detail + curriculum
 
@@ -374,23 +374,38 @@ FE/src/
 ### Phase F0 — Infrastructure (Foundation) ✅
 Thiết lập hạ tầng kết nối FE → BE, auth, routing.
 
-### Phase F1 — Public Pages 🔄
+### Phase F1 — Public Pages ✅
 Landing, Services, Portfolio, Blog, Contact — kết nối public APIs.
 
-### Phase F2 — Booking Wizard + Orders
+### Phase F2 — Booking Wizard + Orders ✅
 Wizard 8 bước + Order lifecycle.
 
-### Phase F3 — Team + Effects
+### Phase F3 — Team + Effects ✅
 27 members + Rank effects system.
 
-### Phase F4 — Academy 🔄
+### Phase F4 — Academy ✅
 Courses + Enrollment + Video Gate. BE endpoints: `courses/[id]`, `enroll`, `lessons/[id]/complete`, `progress`, `certificate`, admin `PUT/DELETE`. Academy seed: 6 instructors, 7 courses, lessons, enrollments. FE wiring: PaymentModal→enroll API, CoursePlayer→completeLesson API, AcademyTab→CRUD.
 
-### Phase F5 — Customer Portal
+### Phase F5 — Customer Portal ✅
 Customer dashboard + LP wallet + quests.
 
-### Phase F6 — Admin CMS
-23 admin tabs — 100% wired to BE APIs.
+### Phase F6 — Admin CMS ✅
+23 admin tabs — 100% wired to BE APIs. 4/4 translate tabs (Services/Portfolio/Blog/Members) via `TranslationEditor`.
+
+### Phase F7 — Realtime/Polish ✅
+SSE notifications, AnalyticsTab wired, AdminLeaderboardTab fixed (CUID memberId), seed quests/events.
+
+### Phase F8 — Scale Hardening ✅
+SLO/logger/scaleGate/capacity + Inngest 8 functions + Cache-Control + IdempotencyKey + Rate-limit.
+
+### Fi — I18n Remediation ✅
+Navbar/Footer wired useI18n(), LocaleSwitcher cookie, error page hardcoded (Next.js limitation).
+
+### Fs — SEO/PWA/Geo ✅
+Dynamic OG via /api/og, geo tags, JSON-LD (Organization+WebSite), manifest linked, theme_color fixed.
+
+### R-seed — Unified Demo Data ✅
+28 members, LP economy, quests/events, orders, rank effects — BE seed + FE fallback sync.
 
 ---
 

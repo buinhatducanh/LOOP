@@ -3,9 +3,9 @@
  * Route: /vi/booking, /en/booking, /ja/booking, /ko/booking, /zh/booking
  */
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 import { routing } from "@/i18n/routing";
+import { BookingWizardClient } from "@/components/landing/BookingWizardClient";
 
 type Props = { params: Promise<{ locale: string }> };
 
@@ -25,5 +25,6 @@ export function generateStaticParams() {
 
 export default async function BookingPage({ params }: Props) {
   const { locale } = await params;
-  notFound(); // TODO: wire real BookingWizardPage FE component
+  setRequestLocale(locale);
+  return <BookingWizardClient locale={locale} />;
 }

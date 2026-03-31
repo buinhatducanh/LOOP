@@ -1,6 +1,6 @@
 # API Contract — Full Reference
 
-> **Version:** 1.0 | **Updated:** 2026-03-26
+> **Version:** 1.0 | **Updated:** 2026-03-31 (FE-BE phases F0–F8 + Fi + Fs + R-seed all complete)
 > **Base URL:** `https://loopcompany.com` (production), `http://localhost:3000` (dev)
 
 ---

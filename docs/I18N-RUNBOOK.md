@@ -1,7 +1,7 @@
 # I18N Runbook — LOOP Solutions
 
 > **Mục đích:** Hướng dẫn vận hành i18n cho 5 ngôn ngữ (VI/EN/JA/KO/ZH).
-> **Cập nhật:** 2026-03-27
+> **Cập nhật:** 2026-03-31 (All phases complete — docs aligned with FE-BE-INTEGRATION-STATUS.md)
 
 ---
 

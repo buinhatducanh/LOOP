@@ -7,12 +7,17 @@ import { motion, AnimatePresence } from 'motion/react';
 import {
   Monitor, Edit3, Save, X, Eye, EyeOff, TrendingUp,
   Globe, Code2, BarChart3, Target, ExternalLink, CheckCircle2,
-  DollarSign, Package, Link as LinkIcon,
+  DollarSign, Package, Link as LinkIcon, Languages,
 } from 'lucide-react';
 import { DS, GRD } from '../layout/ds';
 import { useLoopStore, type Service, type ServiceType } from '../../store/loopStore';
 import { servicesService } from '../../../api/services.service';
 import { DemoViewer } from '../ui/DemoViewer';
+import {
+  TranslationEditor,
+  type TranslationsMap,
+  type FieldDef,
+} from './TranslationEditor';
 
 const fmtVND = (n: number) =>
   new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 }).format(n);
@@ -24,14 +29,110 @@ const SERVICE_ICON_MAP: Record<ServiceType, React.ReactNode> = {
   'seo-marketing': <Target size={20} />,
 };
 
+// ── Service Translation Fields ────────────────────────────────────────────────
+const SERVICE_I18N_FIELDS: FieldDef[] = [
+  { key: 'title',           label: 'Tiêu đề',           type: 'text'     },
+  { key: 'subtitle',        label: 'Mô tả ngắn',        type: 'textarea' },
+  { key: 'longDescription', label: 'Mô tả dài',         type: 'textarea' },
+  { key: 'features',        label: 'Tính năng',         type: 'array'    },
+  { key: 'technologies',    label: 'Công nghệ',         type: 'array'    },
+];
+
 // ── Service Edit Modal ────────────────────────────────────────────────────────
+type ServiceEditTab = 'basic' | 'demo' | 'translate';
+
 function ServiceEditModal({ service, onClose, onSave }: {
   service: Service;
   onClose: () => void;
-  onSave: (data: Partial<Service>) => void;
+  onSave: (data: Partial<Service>) => Promise<void>;
 }) {
   const [draft, setDraft] = useState({ ...service });
+  const [activeTab, setActiveTab] = useState<ServiceEditTab>('basic');
   const [showDemoPreview, setShowDemoPreview] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  // Build translations map from service i18n fields
+  const buildTranslations = (svc: Service): TranslationsMap => ({
+    en: {
+      title: svc.titleEn ?? '',
+      subtitle: svc.shortDescriptionEn ?? '',
+      longDescription: svc.longDescriptionEn ?? '',
+      features: svc.featuresEn ?? [],
+      technologies: svc.technologiesEn ?? [],
+    },
+    ja: {
+      title: svc.titleJa ?? '',
+      subtitle: svc.shortDescriptionJa ?? '',
+      longDescription: svc.longDescriptionJa ?? '',
+      features: svc.featuresJa ?? [],
+      technologies: svc.technologiesJa ?? [],
+    },
+    ko: {
+      title: svc.titleKo ?? '',
+      subtitle: svc.shortDescriptionKo ?? '',
+      longDescription: svc.longDescriptionKo ?? '',
+      features: svc.featuresKo ?? [],
+      technologies: svc.technologiesKo ?? [],
+    },
+    zh: {
+      title: svc.titleZh ?? '',
+      subtitle: svc.shortDescriptionZh ?? '',
+      longDescription: svc.longDescriptionZh ?? '',
+      features: svc.featuresZh ?? [],
+      technologies: svc.technologiesZh ?? [],
+    },
+  });
+
+  const [translations, setTranslations] = useState<TranslationsMap>(() => buildTranslations(service));
+
+  // Sync translations when service changes
+  useEffect(() => {
+    setTranslations(buildTranslations(service));
+  }, [service.id]);
+
+  const handleTranslationsChange = (next: TranslationsMap) => {
+    setTranslations(next);
+    // Also update draft for saving
+    setDraft(d => ({
+      ...d,
+      titleEn: next.en?.title,
+      titleJa: next.ja?.title,
+      titleKo: next.ko?.title,
+      titleZh: next.zh?.title,
+      shortDescriptionEn: next.en?.subtitle,
+      shortDescriptionJa: next.ja?.subtitle,
+      shortDescriptionKo: next.ko?.subtitle,
+      shortDescriptionZh: next.zh?.subtitle,
+      longDescriptionEn: next.en?.longDescription,
+      longDescriptionJa: next.ja?.longDescription,
+      longDescriptionKo: next.ko?.longDescription,
+      longDescriptionZh: next.zh?.longDescription,
+      featuresEn: next.en?.features,
+      featuresJa: next.ja?.features,
+      featuresKo: next.ko?.features,
+      featuresZh: next.zh?.features,
+      technologiesEn: next.en?.technologies,
+      technologiesJa: next.ja?.technologies,
+      technologiesKo: next.ko?.technologies,
+      technologiesZh: next.zh?.technologies,
+    }));
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await onSave(draft);
+      onClose();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const TABS: { key: ServiceEditTab; label: string; icon: React.ReactNode }[] = [
+    { key: 'basic',     label: 'Thông tin',      icon: <Edit3 size={12} /> },
+    { key: 'demo',      label: 'Demo Link',     icon: <ExternalLink size={12} /> },
+    { key: 'translate', label: 'Translate',     icon: <Languages size={12} /> },
+  ];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -39,6 +140,7 @@ function ServiceEditModal({ service, onClose, onSave }: {
       <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
         className="w-full max-w-2xl rounded-3xl overflow-hidden"
         style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, maxHeight: '90vh', overflowY: 'auto' }}>
+
         {/* Header */}
         <div className="flex items-center justify-between p-5" style={{ borderBottom: `1px solid ${DS.border}`, position: 'sticky', top: 0, background: DS.bgCard, zIndex: 10 }}>
           <div>
@@ -48,79 +150,161 @@ function ServiceEditModal({ service, onClose, onSave }: {
           <button onClick={onClose} style={{ color: DS.text4, background: 'none', border: 'none', cursor: 'pointer' }}><X size={18} /></button>
         </div>
 
-        <div className="p-5 space-y-4">
-          {/* Basic info */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, display: 'block', marginBottom: 6 }}>GIÁ BẮT ĐẦU (VNĐ)</label>
-              <input type="number" value={draft.startPrice} onChange={e => setDraft({ ...draft, startPrice: Number(e.target.value) })}
-                style={{ width: '100%', background: DS.bgCard2, border: `1px solid ${DS.border}`, borderRadius: 10, padding: '10px 12px', color: DS.text, fontSize: 14, outline: 'none', boxSizing: 'border-box' }} />
-            </div>
-            <div>
-              <label style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, display: 'block', marginBottom: 6 }}>GIÁ TỐI ĐA (VNĐ)</label>
-              <input type="number" value={draft.endPrice} onChange={e => setDraft({ ...draft, endPrice: Number(e.target.value) })}
-                style={{ width: '100%', background: DS.bgCard2, border: `1px solid ${DS.border}`, borderRadius: 10, padding: '10px 12px', color: DS.text, fontSize: 14, outline: 'none', boxSizing: 'border-box' }} />
-            </div>
-          </div>
-
-          {/* Demo URLs */}
-          <div style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.15em', marginTop: 8 }}>── DEMO LINK</div>
-          <div>
-            <label style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, display: 'block', marginBottom: 6 }}>URL GỐC (ẩn với khách hàng)</label>
-            <div className="flex items-center gap-2">
-              <input value={draft.demoUrl} onChange={e => setDraft({ ...draft, demoUrl: e.target.value })}
-                placeholder="https://demo.example.com"
-                style={{ flex: 1, background: DS.bgCard2, border: `1px solid ${DS.border}`, borderRadius: 10, padding: '10px 12px', color: DS.text, fontSize: 14, outline: 'none' }} />
-              <button onClick={() => window.open(draft.demoUrl, '_blank')}
-                style={{ padding: '10px 12px', borderRadius: 10, background: `${draft.color}15`, border: `1px solid ${draft.color}30`, color: draft.color, cursor: 'pointer' }}>
-                <ExternalLink size={14} />
-              </button>
-            </div>
-          </div>
-          <div>
-            <label style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, display: 'block', marginBottom: 6 }}>URL CHE (hiển thị với khách hàng)</label>
-            <input value={draft.maskedUrl} onChange={e => setDraft({ ...draft, maskedUrl: e.target.value })}
-              placeholder="demo.loop-solutions.vn/ten-dich-vu"
-              style={{ width: '100%', background: DS.bgCard2, border: `1px solid ${DS.border}`, borderRadius: 10, padding: '10px 12px', color: DS.text, fontSize: 14, outline: 'none', boxSizing: 'border-box' }} />
-          </div>
-
-          {/* Preview demo */}
-          <div>
-            <button onClick={() => setShowDemoPreview(!showDemoPreview)}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl"
-              style={{ background: `${draft.color}12`, border: `1px solid ${draft.color}30`, color: draft.color, fontSize: 12, cursor: 'pointer' }}>
-              <Monitor size={13} />
-              {showDemoPreview ? 'Ẩn preview' : 'Xem demo preview'}
+        {/* Tab bar */}
+        <div className="flex" style={{ borderBottom: `1px solid ${DS.border}`, background: `${DS.bg}50` }}>
+          {TABS.map(tab => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className="flex items-center gap-2 px-5 py-3 transition-all"
+              style={{
+                background: 'none',
+                border: 'none',
+                borderBottom: `2px solid ${activeTab === tab.key ? DS.purple : 'transparent'}`,
+                color: activeTab === tab.key ? DS.purple : DS.text4,
+                cursor: 'pointer',
+                fontSize: 12,
+                fontFamily: DS.mono,
+                fontWeight: activeTab === tab.key ? 700 : 400,
+              }}
+            >
+              {tab.icon}
+              {tab.label}
             </button>
-          </div>
-          {showDemoPreview && (
-            <DemoViewer
-              demoUrl={draft.demoUrl}
-              maskedUrl={draft.maskedUrl}
-              previewImg="https://images.unsplash.com/photo-1590965918603-0dce981d13b8?auto=format&fit=crop&w=800&q=80"
-              title={draft.title}
-              accentColor={draft.color}
-              height={280}
-            />
+          ))}
+        </div>
+
+        <div className="p-5 space-y-4">
+          {/* ── Tab: Basic ─────────────────────────────────── */}
+          {activeTab === 'basic' && (
+            <motion.div key="basic" initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, display: 'block', marginBottom: 6 }}>GIÁ BẮT ĐẦU (VNĐ)</label>
+                  <input type="number" value={draft.startPrice} onChange={e => setDraft({ ...draft, startPrice: Number(e.target.value) })}
+                    style={{ width: '100%', background: DS.bgCard2, border: `1px solid ${DS.border}`, borderRadius: 10, padding: '10px 12px', color: DS.text, fontSize: 14, outline: 'none', boxSizing: 'border-box' }} />
+                </div>
+                <div>
+                  <label style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, display: 'block', marginBottom: 6 }}>GIÁ TỐI ĐA (VNĐ)</label>
+                  <input type="number" value={draft.endPrice} onChange={e => setDraft({ ...draft, endPrice: Number(e.target.value) })}
+                    style={{ width: '100%', background: DS.bgCard2, border: `1px solid ${DS.border}`, borderRadius: 10, padding: '10px 12px', color: DS.text, fontSize: 14, outline: 'none', boxSizing: 'border-box' }} />
+                </div>
+              </div>
+
+              {/* Status toggle */}
+              <div className="flex items-center justify-between p-4 rounded-2xl" style={{ background: DS.bgCard2, border: `1px solid ${DS.border}` }}>
+                <div>
+                  <div style={{ color: DS.text, fontSize: 13, fontWeight: 600 }}>Hiển thị dịch vụ</div>
+                  <div style={{ color: DS.text4, fontSize: 12 }}>Ẩn/hiện trên trang dịch vụ công khai</div>
+                </div>
+                <button onClick={() => setDraft({ ...draft, active: !draft.active })}
+                  className="w-12 h-6 rounded-full relative"
+                  style={{ background: draft.active ? DS.green : DS.border, border: 'none', cursor: 'pointer', flexShrink: 0 }}>
+                  <div className="absolute top-0.5 w-5 h-5 rounded-full"
+                    style={{ background: '#fff', left: draft.active ? 'calc(100% - 22px)' : 2, transition: 'left 0.2s', boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }} />
+                </button>
+              </div>
+
+              {/* VI content fields */}
+              <div>
+                <label style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, display: 'block', marginBottom: 6 }}>TÊN DỊCH VỤ (TIẾNG VIỆT)</label>
+                <input value={draft.title} onChange={e => setDraft({ ...draft, title: e.target.value })}
+                  style={{ width: '100%', background: DS.bgCard2, border: `1px solid ${DS.border}`, borderRadius: 10, padding: '10px 12px', color: DS.text, fontSize: 14, outline: 'none', boxSizing: 'border-box' }} />
+              </div>
+              <div>
+                <label style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, display: 'block', marginBottom: 6 }}>MÔ TẢ NGẮN (TIẾNG VIỆT)</label>
+                <textarea value={draft.subtitle} onChange={e => setDraft({ ...draft, subtitle: e.target.value })}
+                  rows={2}
+                  style={{ width: '100%', background: DS.bgCard2, border: `1px solid ${DS.border}`, borderRadius: 10, padding: '10px 12px', color: DS.text, fontSize: 13, outline: 'none', resize: 'vertical', fontFamily: 'inherit', boxSizing: 'border-box' }} />
+              </div>
+            </motion.div>
           )}
 
-          {/* Status toggle */}
-          <div className="flex items-center justify-between p-4 rounded-2xl" style={{ background: DS.bgCard2, border: `1px solid ${DS.border}` }}>
-            <div>
-              <div style={{ color: DS.text, fontSize: 13, fontWeight: 600 }}>Hiển thị dịch vụ</div>
-              <div style={{ color: DS.text4, fontSize: 12 }}>Ẩn/hiện trên trang dịch vụ công khai</div>
-            </div>
-            <button onClick={() => setDraft({ ...draft, active: !draft.active })}
-              className="w-12 h-6 rounded-full relative"
-              style={{ background: draft.active ? DS.green : DS.border, border: 'none', cursor: 'pointer', flexShrink: 0 }}>
-              <div className="absolute top-0.5 w-5 h-5 rounded-full"
-                style={{ background: '#fff', left: draft.active ? 'calc(100% - 22px)' : 2, transition: 'left 0.2s', boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }} />
-            </button>
-          </div>
+          {/* ── Tab: Demo ──────────────────────────────────── */}
+          {activeTab === 'demo' && (
+            <motion.div key="demo" initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
+              <div>
+                <label style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, display: 'block', marginBottom: 6 }}>URL GỐC (ẩn với khách hàng)</label>
+                <div className="flex items-center gap-2">
+                  <input value={draft.demoUrl} onChange={e => setDraft({ ...draft, demoUrl: e.target.value })}
+                    placeholder="https://demo.example.com"
+                    style={{ flex: 1, background: DS.bgCard2, border: `1px solid ${DS.border}`, borderRadius: 10, padding: '10px 12px', color: DS.text, fontSize: 14, outline: 'none' }} />
+                  <button onClick={() => window.open(draft.demoUrl, '_blank')}
+                    style={{ padding: '10px 12px', borderRadius: 10, background: `${draft.color}15`, border: `1px solid ${draft.color}30`, color: draft.color, cursor: 'pointer' }}>
+                    <ExternalLink size={14} />
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, display: 'block', marginBottom: 6 }}>URL CHE (hiển thị với khách hàng)</label>
+                <input value={draft.maskedUrl} onChange={e => setDraft({ ...draft, maskedUrl: e.target.value })}
+                  placeholder="demo.loop-solutions.vn/ten-dich-vu"
+                  style={{ width: '100%', background: DS.bgCard2, border: `1px solid ${DS.border}`, borderRadius: 10, padding: '10px 12px', color: DS.text, fontSize: 14, outline: 'none', boxSizing: 'border-box' }} />
+              </div>
+              <div>
+                <button onClick={() => setShowDemoPreview(!showDemoPreview)}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl"
+                  style={{ background: `${draft.color}12`, border: `1px solid ${draft.color}30`, color: draft.color, fontSize: 12, cursor: 'pointer' }}>
+                  <Monitor size={13} />
+                  {showDemoPreview ? 'Ẩn preview' : 'Xem demo preview'}
+                </button>
+              </div>
+              {showDemoPreview && (
+                <DemoViewer
+                  demoUrl={draft.demoUrl}
+                  maskedUrl={draft.maskedUrl}
+                  previewImg="https://images.unsplash.com/photo-1590965918603-0dce981d13b8?auto=format&fit=crop&w=800&q=80"
+                  title={draft.title}
+                  accentColor={draft.color}
+                  height={280}
+                />
+              )}
+            </motion.div>
+          )}
 
-          <button onClick={() => { onSave(draft); onClose(); }}
-            style={{ width: '100%', background: GRD.primary, color: '#fff', border: 'none', borderRadius: 12, padding: '13px', fontSize: 14, fontWeight: 700, cursor: 'pointer', boxShadow: '0 0 24px rgba(129,140,248,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-            <Save size={15} /> Lưu thay đổi
+          {/* ── Tab: Translate ───────────────────────────── */}
+          {activeTab === 'translate' && (
+            <motion.div key="translate" initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}>
+              <TranslationEditor
+                baseValues={draft as Record<string, unknown>}
+                translations={translations}
+                locales={[
+                  { code: 'en', label: 'EN', flag: '🇬🇧', nativeLabel: 'English' },
+                  { code: 'ja', label: 'JA', flag: '🇯🇵', nativeLabel: '日本語' },
+                  { code: 'ko', label: 'KO', flag: '🇰🇷', nativeLabel: '한국어' },
+                  { code: 'zh', label: 'ZH', flag: '🇨🇳', nativeLabel: '中文' },
+                ]}
+                fields={SERVICE_I18N_FIELDS}
+                onChange={handleTranslationsChange}
+                sectionLabel="Service"
+              />
+            </motion.div>
+          )}
+
+          {/* Save button */}
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            style={{
+              width: '100%',
+              background: saving ? `${GRD.primary}80` : GRD.primary,
+              color: '#fff',
+              border: 'none',
+              borderRadius: 12,
+              padding: '13px',
+              fontSize: 14,
+              fontWeight: 700,
+              cursor: saving ? 'not-allowed' : 'pointer',
+              boxShadow: '0 0 24px rgba(129,140,248,0.35)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              opacity: saving ? 0.7 : 1,
+            }}
+          >
+            <Save size={15} />
+            {saving ? 'Đang lưu...' : 'Lưu thay đổi'}
           </button>
         </div>
       </motion.div>
@@ -130,7 +314,7 @@ function ServiceEditModal({ service, onClose, onSave }: {
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 export function ServicesTab() {
-  const { services, orders, updateService } = useLoopStore();
+  const { services, orders } = useLoopStore();
   const [apiServices, setApiServices] = useState<Service[]>([]);
   const [servicesLoading, setServicesLoading] = useState(true);
   const [servicesError, setServicesError] = useState('');
@@ -169,7 +353,11 @@ export function ServicesTab() {
           <ServiceEditModal
             service={editingService}
             onClose={() => setEditingService(null)}
-            onSave={(data) => updateService(editingService.id, data)}
+            onSave={async (data) => {
+              await servicesService.updateService(editingService.id, data);
+              const refreshed = await servicesService.getAdminServices();
+              setApiServices(refreshed);
+            }}
           />
         )}
       </AnimatePresence>

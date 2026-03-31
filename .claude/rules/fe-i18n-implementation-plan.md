@@ -28,7 +28,7 @@ Trong 5 tuần, đạt các kết quả bắt buộc:
 | **Phase 1** | JA+KO Expansion | ✅ PARTIAL | CJK fonts ✅, JA+KO+ZH messages ✅, routing ✅, **FE i18n system mới ✅ (2026-03-30)** |
 | **Phase 1.5** | FE i18n System | ✅ COMPLETE | Translation JSONs 5 locale ✅, sync provider ✅, useI18n hook ✅, CJK fonts lazy-load ✅ (2026-03-30) |
 | **Phase 2** | ZH Optimization | ✅ PARTIAL | ZH font ✅, ZH messages ✅, **Prisma array i18n ✅** (2026-03-30) |
-| **Phase 3** | Admin CMS Translate Tabs | ✅ COMPLETE | ServicesTab/PortfolioTab/BlogTab/MembersTab translate UI ✅ |
+| **Phase 3** | Admin CMS Translate Tabs | ✅ COMPLETE | ServicesTab✅ PortfolioTab✅ BlogTab✅ MembersTab✅ (2026-03-31) |
 | **Phase 4** | Scale / Ops | ⏳ PENDING | Phrase/Lokalise production, GSC verify, perf audit |
 
 ---
@@ -118,14 +118,16 @@ Trong 5 tuần, đạt các kết quả bắt buộc:
 - [x] Noto Sans SC font ✅
 - [x] `FE/src/i18n/fonts.ts` — ZH font lazy-load ✅
 
-### ✅ Phase 3 — Admin CMS Translate Tabs (COMPLETE — Week 13)
+### ✅ Phase 3 — Admin CMS Translate Tabs (COMPLETE — 2026-03-31)
 
-- [x] ServicesTab translate tab (EN/JA/KO/ZH per-field) ✅
-- [x] PortfolioTab translate tab ✅
-- [x] BlogTab translate tab ✅
-- [x] MembersTab translate tab ✅
+- [x] ServicesTab translate tab (EN/JA/KO/ZH per-field) ✅ — `TranslationEditor` với fields: title, subtitle, longDescription, features, technologies
+- [x] PortfolioTab translate tab ✅ — `TranslationEditor` với fields: title, tag, challenge, solution, result, techStack, features
+- [x] BlogTab translate tab ✅ — `TranslationEditor` với fields: title, excerpt, content, seoTitle, seoDesc
+- [x] MembersTab translate tab ✅ — `TranslationEditor` với fields: name, role, title, bio. Added MEMBER_I18N_FIELDS, i18n state, merge-on-save logic.
 
 ### ⏳ Phase 4 — Scale / Ops (PENDING)
+
+> ✅ ALL PHASE 3 SUB-TASKS COMPLETE (2026-03-31). Phases 0–3 done. Phase 4 PENDING.
 
 - [ ] Phrase/Lokalise production wiring → CI/CD
 - [ ] Google Search Console verify JA/KO/ZH properties
@@ -133,7 +135,7 @@ Trong 5 tuần, đạt các kết quả bắt buộc:
 - [ ] SEO audit (Screaming Frog hreflang)
 - [ ] Translation lint in CI (missing-keys.ts → pre-build step)
 - [ ] JA/KO/ZH professional human QA
-- [ ] FE pages remaining to migrate: `LandingPage`, `ServicesPage`, `PortfolioPage`, `AcademyPage`, `BookingWizardPage`, `AuthPage`, `ContactPage`, `CustomerDashboard`, `AdminDashboard`
+- [ ] FE pages remaining to migrate: `LandingPage`, `ServicesPage`, `PortfolioPage`, `AcademyPage`, `BookingWizardPage`, `AuthPage`, `ContactPage`, `CustomerDashboard`, `AdminDashboard` (i18n system ✅ in place — pages can be wired progressively)
 
 ---
 
@@ -304,7 +306,8 @@ Translation management workflow, analytics per locale, hardening production.
 - [ ] Prisma schema: bổ sung translated fields cho `Service`, `Project`, `BlogPost` (titleEn, titleJa, titleKo, descEn, descJa, descKo, contentEn, contentJa, contentKo, v.v.).
 
 #### P1 (quan trọng)
-- [x] Admin CMS: translate interface cho Services / Portfolio / Blog / Members (per-field translation) ✅ done (Week 13).
+- [x] Admin CMS: translate interface cho Services / Portfolio / Blog (per-field translation) ✅ done (Week 13).
+- [x] Admin CMS: MembersTab translate interface ✅ done (2026-03-31) — TranslationEditor, MEMBER_I18N_FIELDS, i18n state, merge-on-save.
 - [x] `getLocalizedField()` helper trong BE — fallback tự động sang Việt khi field chưa translate ✅ done (Phase 0).
 - [x] API endpoint list/detail: hỗ trợ `?lang=xx` query param → trả đúng localized content ✅ done (Week 13, 14 endpoints).
 

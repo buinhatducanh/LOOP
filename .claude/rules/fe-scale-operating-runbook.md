@@ -41,7 +41,7 @@ Kích hoạt ngay nếu có một trong các dấu hiệu:
 
 ## 3) SLO/SLI baseline cần theo dõi
 
-> Baseline numbers from `src/lib/slo.ts` (222 lines, updated 2026-03-30).
+> Baseline numbers from `src/lib/slo.ts` (221 lines, updated 2026-03-31).
 
 ## Endpoint SLO
 - Public API p95 < 300ms (cached path)
@@ -188,15 +188,15 @@ Thứ tự ưu tiên tách:
 - `.claude/rules/fe-risk-register-template.md`
 - `.claude/rules/fe-architecture-microservices.md`
 
-## 10) Infrastructure files (F8 baseline, 2026-03-30)
+## 10) Infrastructure files (F8 baseline, 2026-03-31)
 
 | File | Mục đích | Lines |
 |------|-----------|-------|
-| `src/lib/slo.ts` | SLO definitions + burn rate helpers | 222 |
-| `src/lib/logger.ts` | Structured logger (JSON, Sentry, redaction) | 259 |
-| `src/lib/scaleGate.ts` | Scale readiness gate (7 rules, CI-enforced) | 475 |
-| `src/lib/capacity.ts` | Sprint capacity planner | 378 |
-| `scripts/run-scale-gates.ts` | CI runner cho scale gate | 16 |
+| `src/lib/slo.ts` | SLO definitions + burn rate helpers | 221 |
+| `src/lib/logger.ts` | Structured logger (JSON, Sentry, redaction) | 265 |
+| `src/lib/scaleGate.ts` | Scale readiness gate (7 rules, CI-enforced) | 552 |
+| `src/lib/capacity.ts` | Sprint capacity planner | 377 |
+| `scripts/run-scale-gates.ts` | CI runner cho scale gate | 25 |
 | `src/lib/jobs/client.ts` | Inngest client singleton + event registry (8 events) | — |
-| `src/lib/jobs/functions.ts` | 8 Inngest functions (email, SLA, standup, report, cache, prune) | 397 |
+| `src/lib/jobs/functions.ts` | 8 Inngest functions (email, SLA, standup, report, cache, prune) | 396 |
 | `prisma/schema.prisma` | `InngestJob` model added 2026-03-30 (DLQ observability) | — |

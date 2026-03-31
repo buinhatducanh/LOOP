@@ -50,7 +50,7 @@
 | F5 Customer Portal | completed | FE | Tuần F5 | 2026-03-29 | All 10 tabs wired (Home/Projects/LP/Invoices/Courses/Referral/Support/Settings/Effects/Quests). Services: lp/referral/settings/support. Graceful fallback all tabs. Build✅ tsc✅ lint✅.
 | F6 Admin 23 tabs | completed | FE | Tuần F6 | 2026-03-30 | COMPLETE — all 23 tabs wired to BE APIs with graceful fallback. Inline tabs: LPFinanceTab → lpService.getAwards/getCustomerPoints + useApi + skeleton loaders + fallback; NotificationsTab → notificationsService.getNotifications + optimistic store sync (markRead/delete). All 21 lazy tabs verified wired: ServicesTab✅ PortfolioTab✅ BlogTab✅ AcademyTab✅ EffectsTab✅ (duplicate import fixed) QuotationTab✅ RevenueTab✅ AnalyticsTab✅ ClientsTab✅ LPManagementTab✅ AdminLeaderboardTab✅ KanbanHub✅ DepartmentTab✅ QuestEventsTab✅ NotificationCenter✅ ProjectsCompletedTab✅ WebPackagesTab✅ MediaTab✅ IncomeTaxTab✅. New service: departments.service.ts. Quality gates: lint✅ 0 errors, tsc✅ 0 errors, build✅ 3.43s.
 | F7 Realtime/Polish | completed | FE+BE | Tuần F7 | 2026-03-30 | ✅ SSE realtime: `useRealtimeNotifications.ts` hook wired to `NotificationCenter.tsx` (Wifi status indicator + live event dispatch: notification/order_new/lp_change/quest_complete/system_alert). ✅ AnalyticsTab wired to BE: `/api/admin/dashboard` (KPIs) + `/api/admin/dashboard/charts` (monthlyTrend/ordersByStatus/messageTrend/paymentBreakdown) with graceful fallback to hardcoded data. ✅ AdminLeaderboardTab: fixed memberId → CUID string (BE `LpAward.memberId` is String), Leaderboard sends `m.id` (CUID) to `POST /api/admin/lp-awards`. ✅ Seed: `seedQuests()` (12 quests: daily/weekly/monthly/one_time/client) + `seedCompanyEvents()` (Spring/Hackathon/Anniversary). ✅ BE `POST /admin/lp-awards`: accepts both numeric and CUID memberId (String casting). BE TypeScript✅ FE TypeScript✅ build✅ lint✅ (pre-existing warnings only). |
-| F8 Scale Hardening | completed | FE+BE+DevOps | Tuần F8 | 2026-03-30 | F8 COMPLETE ✅ (2026-03-30). Infrastructure: slo.ts, logger.ts (259 lines), scaleGate.ts (515 lines), capacity.ts (378 lines), Inngest jobs/client.ts+functions.ts (8 functions). Cache: Cache-Control headers on all 6 v1 GETs (s-maxage=60-300), ISR revalidate=300 on blog/pricing/courses. Retry/Idempotency: IdempotencyKey model (4 indexes, 24h TTL, upsert), withIdempotency() on 6 critical mutations. Observability: logger.withSLO() on 14 endpoints. Rate-limit: applyRateLimit() on 5 public endpoints + auth/login. Scale gate final: PASSED (0 blocking, 4 legitimate non-critical warnings). 4 remaining warnings: auth/me/admin-orders/admin-dashboard → user-specific data (can't use public cache); login → safe to retry. tsc✅. |
+| F8 Scale Hardening | completed | FE+BE+DevOps | Tuần F8 | 2026-03-30 | F8 COMPLETE ✅ (2026-03-30). Infrastructure: slo.ts(221L), logger.ts(265L), scaleGate.ts(552L), capacity.ts(377L), Inngest jobs/client.ts+functions.ts(396L, 8 functions). Cache: Cache-Control headers on all 6 v1 GETs (s-maxage=60-300), ISR revalidate=300 on blog/pricing/courses. Retry/Idempotency: IdempotencyKey model (4 indexes, 24h TTL, upsert), withIdempotency() on 6 critical mutations. Observability: logger.withSLO() on 14 endpoints. Rate-limit: applyRateLimit() on 5 public endpoints + auth/login. Scale gate final: PASSED (0 blocking, 4 legitimate non-critical warnings). 4 remaining warnings: auth/me/admin-orders/admin-dashboard → user-specific data (can't use public cache); login → safe to retry. tsc✅. |
 | **R-seed** Unified Demo Data | completed | FE | 2026-03-30 | 2026-03-30 | Re-seed COMPLETE ✅. BE: 28 team members (upsert), 28 User accounts (for QuestParticipant FK), 37 member-expertise, 12 rank effects, 6 member overrides, 6 portfolio projects, 5 orders+histories, 6 project members, 27 customer points, 111 LpTransactions (awards+spending, deleteMany→re-seed safe), 2 epics+20 tasks, 60 quest participants. FE: Haru Tanaka canonical (id=14), DEMO_USERS LP/level synced with memberData, INIT_OVERRIDES corrected, INIT_ADMIN_NOTIFS timestamps fixed (SEED_NOW). Docs: phase-status-log + seed-playbook + CLAUDE.md updated. |
 
 ### Quy tắc cập nhật tracker (mỗi tuần)
@@ -117,13 +117,16 @@
 ## 4. API Contract Checklist
 
 ### Public Content APIs
-- [ ] `GET /api/v1/services?lang={locale}` → ServicesPage + ServiceDetailPage
-- [ ] `GET /api/v1/projects?lang={locale}` → PortfolioPage + ProjectDetailPage
-- [ ] `GET /api/v1/team?lang={locale}` → Home.tsx (27 members)
-- [ ] `GET /api/v1/testimonials?lang={locale}` → LandingPage testimonials
-- [ ] `GET /api/v1/pricing?lang={locale}` → BookingWizardPage (pricing config)
-- [ ] `GET /api/v1/blog?lang={locale}` → BlogPage + BlogDetailPage
-- [ ] `POST /api/contact` → ContactPage form submission
+- [x] `GET /api/v1/services?lang={locale}` → ServicesPage + ServiceDetailPage
+- [x] `GET /api/v1/projects?lang={locale}` → PortfolioPage + ProjectDetailPage
+- [x] `GET /api/v1/team?lang={locale}` → Home.tsx (27 members)
+- [x] `GET /api/v1/testimonials?lang={locale}` → LandingPage testimonials
+- [x] `GET /api/v1/courses?lang={locale}` → AcademyPage
+- [x] `GET /api/v1/courses/[id]?lang={locale}` → CourseDetailPage
+- [ ] `GET /api/v1/pricing?lang={locale}` → ❌ NOT supported — FE uses `/api/pricing/config?lang=` instead
+- [ ] `GET /api/v1/blog?lang={locale}` → ❌ NOT supported — FE uses `/api/blog-posts?lang=` (DB-backed)
+- [x] `GET /api/blog-posts?lang={locale}` → BlogPage + BlogDetailPage (DB-backed)
+- [x] `POST /api/contact` → ContactPage form submission
 
 ### Auth APIs
 - [ ] `POST /api/admin/auth/login` → AuthPage
@@ -240,7 +243,7 @@ Mục tiêu: Landing, Services, Portfolio, Blog, Contact dùng API thật.
 - [ ] Loading/empty/error states đầy đủ cho tất cả pages
 
 **P1:**
-- [ ] `GET /api/v1/blog?lang=` → BlogPage + BlogDetailPage
+- [x] `GET /api/blog-posts?lang=` → BlogPage + BlogDetailPage (DB-backed; `/api/v1/blog` is Sanity CMS, FE does not use it)
 - [ ] `GET /api/v1/home-sliders` → LandingPage hero sliders
 - [ ] `GET /api/v1/home-video` → LandingPage video section
 

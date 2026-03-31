@@ -23,6 +23,12 @@ interface BeBlogPost {
   seoTitle: string | null;
   seoDesc: string | null;
   _localeUsed: string;
+  // i18n fields
+  titleEn?: string; titleJa?: string; titleKo?: string; titleZh?: string;
+  excerptEn?: string; excerptJa?: string; excerptKo?: string; excerptZh?: string;
+  contentEn?: string; contentJa?: string; contentKo?: string; contentZh?: string;
+  seoTitleEn?: string; seoTitleJa?: string; seoTitleKo?: string; seoTitleZh?: string;
+  seoDescEn?: string; seoDescJa?: string; seoDescKo?: string; seoDescZh?: string;
 }
 
 interface BeBlogDetail extends BeBlogPost {
@@ -57,6 +63,12 @@ export interface BlogPost {
   color: string;
   img: string;
   featured: boolean;
+  // i18n fields
+  titleEn?: string; titleJa?: string; titleKo?: string; titleZh?: string;
+  excerptEn?: string; excerptJa?: string; excerptKo?: string; excerptZh?: string;
+  contentEn?: string; contentJa?: string; contentKo?: string; contentZh?: string;
+  seoTitleEn?: string; seoTitleJa?: string; seoTitleKo?: string; seoTitleZh?: string;
+  seoDescEn?: string; seoDescJa?: string; seoDescKo?: string; seoDescZh?: string;
 }
 
 export interface BlogDetail {
@@ -98,6 +110,12 @@ function mapPost(be: BeBlogPost): BlogPost {
     color: catColor(cat),
     img: be.coverImage ?? 'https://images.unsplash.com/photo-1499750310107-5fef28a66643?auto=format&fit=crop&w=600&q=80',
     featured: false,
+    // i18n fields
+    titleEn: be.titleEn, titleJa: be.titleJa, titleKo: be.titleKo, titleZh: be.titleZh,
+    excerptEn: be.excerptEn, excerptJa: be.excerptJa, excerptKo: be.excerptKo, excerptZh: be.excerptZh,
+    contentEn: be.contentEn, contentJa: be.contentJa, contentKo: be.contentKo, contentZh: be.contentZh,
+    seoTitleEn: be.seoTitleEn, seoTitleJa: be.seoTitleJa, seoTitleKo: be.seoTitleKo, seoTitleZh: be.seoTitleZh,
+    seoDescEn: be.seoDescEn, seoDescJa: be.seoDescJa, seoDescKo: be.seoDescKo, seoDescZh: be.seoDescZh,
   };
 }
 
@@ -255,8 +273,16 @@ export const blogService = {
     title: string; slug: string; excerpt: string; content: string;
     coverImage: string; seoTitle: string; seoDesc: string;
     publishedAt: string; isPublished: boolean;
+    titleEn: string; titleJa: string; titleKo: string; titleZh: string;
+    excerptEn: string; excerptJa: string; excerptKo: string; excerptZh: string;
+    contentEn: string; contentJa: string; contentKo: string; contentZh: string;
+    seoTitleEn: string; seoTitleJa: string; seoTitleKo: string; seoTitleZh: string;
+    seoDescEn: string; seoDescJa: string; seoDescKo: string; seoDescZh: string;
   }>): Promise<BlogPost> => {
-    const res = await api.put<{ data: BeBlogPost }>(`/admin/blog-posts/${id}`, data);
+    const payload = Object.fromEntries(
+      Object.entries(data).filter(([, v]) => v !== undefined)
+    );
+    const res = await api.put<{ data: BeBlogPost }>(`/admin/blog-posts/${id}`, payload);
     return mapPost(res.data);
   },
 

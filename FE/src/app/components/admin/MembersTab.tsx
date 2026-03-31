@@ -10,6 +10,8 @@ import {
 import { DS, GRD } from '../layout/ds';
 import { members as INITIAL_MEMBERS, RANKS, Member, RankKey, MissionLog } from '../team/memberData';
 import { teamService, mapTeamMemberToMember } from '../../../api/team.service';
+import { TranslationEditor, CMS_LOCALES, type TranslationsMap, type FieldDef } from './TranslationEditor';
+import { Languages } from 'lucide-react';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 type MemberStatus = 'active' | 'inactive' | 'on-leave' | 'probation';
@@ -23,6 +25,11 @@ interface MemberExt extends Member {
   lastActive: string;
   phone: string;
   email: string;
+  // i18n fields
+  nameEn?: string; roleEn?: string; titleEn?: string; bioEn?: string;
+  nameJa?: string; roleJa?: string; titleJa?: string; bioJa?: string;
+  nameKo?: string; roleKo?: string; titleKo?: string; bioKo?: string;
+  nameZh?: string; roleZh?: string; titleZh?: string; bioZh?: string;
 }
 
 // ── Status config ──────────────────────────────────────────────────────────
@@ -256,6 +263,14 @@ const EMPTY_MEMBER: Omit<MemberExt, 'id'> = {
   phone: '', email: '',
 };
 
+// ── Member i18n field definitions ────────────────────────────────────────────────
+const MEMBER_I18N_FIELDS: FieldDef[] = [
+  { key: 'name',  label: 'Họ và Tên',        type: 'text'     },
+  { key: 'role',  label: 'Vai trò',           type: 'text'     },
+  { key: 'title', label: 'Danh hiệu',          type: 'text'     },
+  { key: 'bio',   label: 'Giới thiệu',         type: 'textarea' },
+];
+
 function MemberFormModal({ member, onClose, onSave, isEdit }: {
   member: MemberExt | null;
   onClose: () => void;
@@ -264,7 +279,21 @@ function MemberFormModal({ member, onClose, onSave, isEdit }: {
 }) {
   const defaultData: MemberExt = isEdit && member ? { ...member } : { ...EMPTY_MEMBER, id: Date.now() };
   const [draft, setDraft] = useState<MemberExt>(defaultData);
-  const [activeSection, setActiveSection] = useState<'info' | 'stats' | 'skills'>('info');
+  const [activeSection, setActiveSection] = useState<'info' | 'stats' | 'skills' | 'translate'>('info');
+
+  // i18n translations state: { en: { name, role, title, bio }, ja: {...}, ko: {...}, zh: {...} }
+  const buildTranslations = (m: MemberExt): TranslationsMap => ({
+    en: { name: m.nameEn ?? '', role: m.roleEn ?? '', title: m.titleEn ?? '', bio: m.bioEn ?? '' },
+    ja: { name: m.nameJa ?? '', role: m.roleJa ?? '', title: m.titleJa ?? '', bio: m.bioJa ?? '' },
+    ko: { name: m.nameKo ?? '', role: m.roleKo ?? '', title: m.titleKo ?? '', bio: m.bioKo ?? '' },
+    zh: { name: m.nameZh ?? '', role: m.roleZh ?? '', title: m.titleZh ?? '', bio: m.bioZh ?? '' },
+  });
+  const [translations, setTranslations] = useState<TranslationsMap>(() => buildTranslations(defaultData));
+
+  // Sync translations when switching members
+  useEffect(() => {
+    setTranslations(buildTranslations(defaultData));
+  }, [member]);
   const rc = RANKS[draft.rank];
 
   const set = <K extends keyof MemberExt>(key: K, val: MemberExt[K]) => setDraft(d => ({ ...d, [key]: val }));
@@ -276,6 +305,7 @@ function MemberFormModal({ member, onClose, onSave, isEdit }: {
     { id: 'info', label: 'Thông tin' },
     { id: 'stats', label: 'Rank & LP' },
     { id: 'skills', label: 'Kỹ năng' },
+    { id: 'translate', label: 'Dịch', icon: Languages },
   ] as const;
 
   return (
@@ -303,13 +333,14 @@ function MemberFormModal({ member, onClose, onSave, isEdit }: {
         {/* Section tabs */}
         <div className="flex px-6 flex-shrink-0" style={{ borderBottom: `1px solid ${DS.border}` }}>
           {sections.map(s => (
-            <button key={s.id} onClick={() => setActiveSection(s.id)} style={{
+            <button key={s.id} onClick={() => setActiveSection(s.id as typeof activeSection)} style={{
               padding: '10px 16px', border: 'none', background: 'none', cursor: 'pointer',
-              color: activeSection === s.id ? DS.blue : DS.text4,
+              color: activeSection === s.id ? (s.id === 'translate' ? DS.purple : DS.blue) : DS.text4,
               fontSize: 12, fontFamily: DS.mono, letterSpacing: '0.08em',
-              borderBottom: activeSection === s.id ? `2px solid ${DS.blue}` : '2px solid transparent',
-              transition: 'all 0.15s',
+              borderBottom: activeSection === s.id ? `2px solid ${s.id === 'translate' ? DS.purple : DS.blue}` : '2px solid transparent',
+              transition: 'all 0.15s', display: 'flex', alignItems: 'center', gap: 6,
             }}>
+              {s.id === 'translate' && <Languages size={12} />}
               {s.label}
             </button>
           ))}
@@ -510,12 +541,50 @@ function MemberFormModal({ member, onClose, onSave, isEdit }: {
               ))}
             </div>
           )}
+
+          {/* ── SECTION: TRANSLATE ── */}
+          {activeSection === 'translate' && (
+            <div className="space-y-4">
+              <TranslationEditor
+                baseValues={draft as Record<string, unknown>}
+                translations={translations}
+                locales={CMS_LOCALES}
+                fields={MEMBER_I18N_FIELDS}
+                onChange={setTranslations}
+                sectionLabel="Member"
+              />
+            </div>
+          )}
         </div>
 
         {/* Footer */}
         <div className="flex gap-3 px-6 py-4 flex-shrink-0" style={{ borderTop: `1px solid ${DS.border}` }}>
           <button onClick={onClose} style={{ padding: '10px 20px', background: DS.bgCard2, border: `1px solid ${DS.border}`, borderRadius: 10, color: DS.text3, cursor: 'pointer', fontSize: 13 }}>Hủy</button>
-          <button onClick={() => { if (draft.name.trim()) { onSave(draft); onClose(); } }}
+          <button onClick={() => {
+            if (!draft.name.trim()) return;
+            // Merge translations into draft before saving
+            const toSave: MemberExt = {
+              ...draft,
+              nameEn: translations.en.name,
+              roleEn: translations.en.role,
+              titleEn: translations.en.title,
+              bioEn: translations.en.bio,
+              nameJa: translations.ja.name,
+              roleJa: translations.ja.role,
+              titleJa: translations.ja.title,
+              bioJa: translations.ja.bio,
+              nameKo: translations.ko.name,
+              roleKo: translations.ko.role,
+              titleKo: translations.ko.title,
+              bioKo: translations.ko.bio,
+              nameZh: translations.zh.name,
+              roleZh: translations.zh.role,
+              titleZh: translations.zh.title,
+              bioZh: translations.zh.bio,
+            };
+            onSave(toSave);
+            onClose();
+          }}
             style={{ flex: 1, background: GRD.primary, color: '#fff', border: 'none', borderRadius: 10, padding: '10px', cursor: 'pointer', fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
             <Save size={14} /> {isEdit ? 'Lưu thay đổi' : 'Thêm thành viên'}
           </button>

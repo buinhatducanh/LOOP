@@ -2,7 +2,7 @@
 
 > **Source:** `src/lib/jobs/client.ts` + `src/lib/jobs/functions.ts`
 > **Handler:** `src/app/api/inngest/route.ts`
-> **Updated:** 2026-03-28 | **Status:** ✅ Implemented & Consolidated
+> **Updated:** 2026-03-31 | **Status:** ✅ Implemented & Consolidated (F8 complete — dual Jobs/Inngest merged to Inngest-only)
 
 ---
 

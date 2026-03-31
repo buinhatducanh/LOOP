@@ -115,6 +115,13 @@ export interface PortfolioProject {
   testimonial?: { name: string; role: string; quote: string };
   featured: boolean;
   publishedAt: string;
+  // i18n fields
+  titleEn?: string;   titleJa?: string;   titleKo?: string;   titleZh?: string;
+  challengeEn?: string; challengeJa?: string; challengeKo?: string; challengeZh?: string;
+  solutionEn?: string;  solutionJa?: string;  solutionKo?: string;  solutionZh?: string;
+  resultEn?: string;    resultJa?: string;    resultKo?: string;    resultZh?: string;
+  tagsEn?: string[];    tagsJa?: string[];   tagsKo?: string[];    tagsZh?: string[];
+  featuresEn?: string[]; featuresJa?: string[]; featuresKo?: string[]; featuresZh?: string[];
 }
 
 export interface AdminNotification {
@@ -169,6 +176,12 @@ export interface Service {
   tech?: string[];
   cases?: Array<{ name: string; metric: string; img: string }>;
   faqs?: Array<{ q: string; a: string }>;
+  /** i18n — BE stores these as Prisma fields; FE uses them for translation display */
+  titleEn?: string;   titleJa?: string;   titleKo?: string;   titleZh?: string;
+  shortDescriptionEn?: string; shortDescriptionJa?: string; shortDescriptionKo?: string; shortDescriptionZh?: string;
+  longDescriptionEn?: string;  longDescriptionJa?: string;  longDescriptionKo?: string;  longDescriptionZh?: string;
+  featuresEn?: string[]; featuresJa?: string[]; featuresKo?: string[]; featuresZh?: string[];
+  technologiesEn?: string[]; technologiesJa?: string[]; technologiesKo?: string[]; technologiesZh?: string[];
 }
 
 // ── Initial Effects Data ──────────────────────────────────────────────────────

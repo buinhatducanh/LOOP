@@ -1,18 +1,23 @@
 /**
  * PortfolioTab — Quản lý dự án portfolio (Admin)
- * CRUD projects, demo links, featured control
+ * CRUD projects, demo links, featured control, translate
  */
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Plus, Edit3, Trash2, X, Save, Monitor, Star, ExternalLink,
-  Eye, EyeOff, Image, Link as LinkIcon, Check, Globe,
+  Eye, EyeOff, Image, Link as LinkIcon, Check, Globe, Languages,
 } from 'lucide-react';
 import { DS, GRD } from '../layout/ds';
 import { useLoopStore, type PortfolioProject } from '../../store/loopStore';
 import { projectsService } from '../../../api/projects.service';
 import { DemoViewer } from '../ui/DemoViewer';
 import { Link } from 'react-router';
+import {
+  TranslationEditor,
+  type TranslationsMap,
+  type FieldDef,
+} from './TranslationEditor';
 
 const fmtVND = (n: number) =>
   new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 }).format(n);
@@ -27,21 +32,99 @@ const STATUS_CFG = {
   paused: { label: 'Tạm dừng', color: DS.amber },
 };
 
+// ── Project i18n Fields ──────────────────────────────────────────────────────
+const PORTFOLIO_I18N_FIELDS: FieldDef[] = [
+  { key: 'title',      label: 'Tên dự án',  type: 'text'     },
+  { key: 'challenge',  label: 'Thách thức',  type: 'textarea' },
+  { key: 'solution',   label: 'Giải pháp',  type: 'textarea' },
+  { key: 'result',     label: 'Kết quả',    type: 'textarea' },
+  { key: 'tags',        label: 'Tech Stack',  type: 'array'    },
+  { key: 'features',   label: 'Tính năng',  type: 'array'    },
+];
+
+type ProjectEditTab = 'basic' | 'demo' | 'translate';
+
 // ── Project Edit Modal ────────────────────────────────────────────────────────
 function ProjectEditModal({ project, onClose, onSave }: {
   project: PortfolioProject;
   onClose: () => void;
-  onSave: (data: Partial<PortfolioProject>) => void;
+  onSave: (data: Partial<PortfolioProject>) => Promise<void>;
 }) {
   const [draft, setDraft] = useState({ ...project });
   const [showPreview, setShowPreview] = useState(false);
-  const [tab, setTab] = useState<'basic' | 'demo' | 'content'>('basic');
+  const [activeTab, setActiveTab] = useState<ProjectEditTab>('basic');
+  const [saving, setSaving] = useState(false);
 
-  const tabs = [
-    { id: 'basic', label: 'Thông tin cơ bản' },
-    { id: 'demo', label: 'Demo Link' },
-    { id: 'content', label: 'Nội dung' },
-  ] as const;
+  // Build translations map from project i18n fields
+  const buildTranslations = (p: PortfolioProject): TranslationsMap => ({
+    en: {
+      title: p.titleEn ?? '',
+      challenge: p.challengeEn ?? '',
+      solution: p.solutionEn ?? '',
+      result: p.resultEn ?? '',
+      tags: p.tagsEn ?? [],
+      features: p.featuresEn ?? [],
+    },
+    ja: {
+      title: p.titleJa ?? '',
+      challenge: p.challengeJa ?? '',
+      solution: p.solutionJa ?? '',
+      result: p.resultJa ?? '',
+      tags: p.tagsJa ?? [],
+      features: p.featuresJa ?? [],
+    },
+    ko: {
+      title: p.titleKo ?? '',
+      challenge: p.challengeKo ?? '',
+      solution: p.solutionKo ?? '',
+      result: p.resultKo ?? '',
+      tags: p.tagsKo ?? [],
+      features: p.featuresKo ?? [],
+    },
+    zh: {
+      title: p.titleZh ?? '',
+      challenge: p.challengeZh ?? '',
+      solution: p.solutionZh ?? '',
+      result: p.resultZh ?? '',
+      tags: p.tagsZh ?? [],
+      features: p.featuresZh ?? [],
+    },
+  });
+
+  const [translations, setTranslations] = useState<TranslationsMap>(() => buildTranslations(project));
+
+  useEffect(() => {
+    setTranslations(buildTranslations(project));
+  }, [project.id]);
+
+  const handleTranslationsChange = (next: TranslationsMap) => {
+    setTranslations(next);
+    setDraft(d => ({
+      ...d,
+      titleEn: next.en?.title, titleJa: next.ja?.title, titleKo: next.ko?.title, titleZh: next.zh?.title,
+      challengeEn: next.en?.challenge, challengeJa: next.ja?.challenge, challengeKo: next.ko?.challenge, challengeZh: next.zh?.challenge,
+      solutionEn: next.en?.solution, solutionJa: next.ja?.solution, solutionKo: next.ko?.solution, solutionZh: next.zh?.solution,
+      resultEn: next.en?.result, resultJa: next.ja?.result, resultKo: next.ko?.result, resultZh: next.zh?.result,
+      tagsEn: next.en?.tags, tagsJa: next.ja?.tags, tagsKo: next.ko?.tags, tagsZh: next.zh?.tags,
+      featuresEn: next.en?.features, featuresJa: next.ja?.features, featuresKo: next.ko?.features, featuresZh: next.zh?.features,
+    }));
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await onSave(draft);
+      onClose();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const TABS: { key: ProjectEditTab; label: string; icon: React.ReactNode }[] = [
+    { key: 'basic',     label: 'Thông tin cơ bản', icon: <Edit3 size={12} /> },
+    { key: 'demo',      label: 'Demo Link',         icon: <ExternalLink size={12} /> },
+    { key: 'translate', label: 'Translate',           icon: <Languages size={12} /> },
+  ];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -63,23 +146,26 @@ function ProjectEditModal({ project, onClose, onSave }: {
 
         {/* Tab navigation */}
         <div className="flex border-b flex-shrink-0" style={{ borderColor: DS.border }}>
-          {tabs.map(t => (
-            <button key={t.id} onClick={() => setTab(t.id)}
-              className="flex-1 py-3 text-center"
+          {TABS.map(t => (
+            <button key={t.key} onClick={() => setActiveTab(t.key)}
+              className="flex items-center gap-1.5 px-4 py-3 flex-1 justify-center transition-all"
               style={{
-                background: tab === t.id ? 'rgba(59,130,246,0.08)' : 'none',
+                background: 'none',
                 border: 'none',
-                borderBottom: `2px solid ${tab === t.id ? DS.blue : 'transparent'}`,
-                color: tab === t.id ? DS.blue : DS.text4,
+                borderBottom: `2px solid ${activeTab === t.key ? DS.purple : 'transparent'}`,
+                color: activeTab === t.key ? DS.purple : DS.text4,
                 fontSize: 12, cursor: 'pointer',
+                fontFamily: DS.mono,
+                fontWeight: activeTab === t.key ? 700 : 400,
               }}>
+              {t.icon}
               {t.label}
             </button>
           ))}
         </div>
 
         <div className="flex-1 overflow-y-auto p-5 space-y-4">
-          {tab === 'basic' && (
+          {activeTab === 'basic' && (
             <>
               <div>
                 <label style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, display: 'block', marginBottom: 6 }}>TÊN DỰ ÁN</label>
@@ -154,7 +240,7 @@ function ProjectEditModal({ project, onClose, onSave }: {
             </>
           )}
 
-          {tab === 'demo' && (
+          {activeTab === 'demo' && (
             <>
               <div className="p-4 rounded-2xl" style={{ background: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.2)' }}>
                 <div style={{ color: DS.blue, fontSize: 12, fontFamily: DS.mono, marginBottom: 6 }}>💡 HƯỚNG DẪN</div>
@@ -211,35 +297,28 @@ function ProjectEditModal({ project, onClose, onSave }: {
             </>
           )}
 
-          {tab === 'content' && (
-            <>
-              {[
-                { label: 'THÁCH THỨC', key: 'challenge' },
-                { label: 'GIẢI PHÁT', key: 'solution' },
-                { label: 'KẾT QUẢ', key: 'result' },
-              ].map(f => (
-                <div key={f.key}>
-                  <label style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, display: 'block', marginBottom: 6 }}>{f.label}</label>
-                  <textarea value={draft[f.key as keyof PortfolioProject] as string}
-                    onChange={e => setDraft({ ...draft, [f.key]: e.target.value })}
-                    rows={3}
-                    style={{ width: '100%', background: DS.bgCard2, border: `1px solid ${DS.border}`, borderRadius: 10, padding: '10px 12px', color: DS.text, fontSize: 13, outline: 'none', resize: 'vertical', boxSizing: 'border-box', lineHeight: 1.6, fontFamily: DS.body }} />
-                </div>
-              ))}
-              <div>
-                <label style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, display: 'block', marginBottom: 6 }}>TECH STACK (phân cách bằng dấu phẩy)</label>
-                <input value={draft.tags.join(', ')} onChange={e => setDraft({ ...draft, tags: e.target.value.split(',').map(t => t.trim()).filter(Boolean) })}
-                  placeholder="React, Node.js, AWS..."
-                  style={{ width: '100%', background: DS.bgCard2, border: `1px solid ${DS.border}`, borderRadius: 10, padding: '10px 12px', color: DS.text, fontSize: 14, outline: 'none', boxSizing: 'border-box' }} />
-              </div>
-            </>
+          {activeTab === 'translate' && (
+            <TranslationEditor
+              baseValues={draft as Record<string, unknown>}
+              translations={translations}
+              locales={[
+                { code: 'en', label: 'EN', flag: '🇬🇧', nativeLabel: 'English' },
+                { code: 'ja', label: 'JA', flag: '🇯🇵', nativeLabel: '日本語' },
+                { code: 'ko', label: 'KO', flag: '🇰🇷', nativeLabel: '한국어' },
+                { code: 'zh', label: 'ZH', flag: '🇨🇳', nativeLabel: '中文' },
+              ]}
+              fields={PORTFOLIO_I18N_FIELDS}
+              onChange={handleTranslationsChange}
+              sectionLabel="Portfolio"
+            />
           )}
         </div>
 
         <div className="p-5 flex-shrink-0" style={{ borderTop: `1px solid ${DS.border}` }}>
-          <button onClick={() => { onSave(draft); onClose(); }}
-            style={{ width: '100%', background: GRD.primary, color: '#fff', border: 'none', borderRadius: 12, padding: '13px', fontSize: 14, fontWeight: 700, cursor: 'pointer', boxShadow: '0 0 24px rgba(129,140,248,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-            <Save size={15} /> Lưu thay đổi
+          <button onClick={handleSave}
+            disabled={saving}
+            style={{ width: '100%', background: saving ? `${GRD.primary}80` : GRD.primary, color: '#fff', border: 'none', borderRadius: 12, padding: '13px', fontSize: 14, fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', boxShadow: '0 0 24px rgba(129,140,248,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, opacity: saving ? 0.7 : 1 }}>
+            <Save size={15} /> {saving ? 'Đang lưu...' : 'Lưu thay đổi'}
           </button>
         </div>
       </motion.div>
@@ -249,7 +328,7 @@ function ProjectEditModal({ project, onClose, onSave }: {
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 export function PortfolioTab() {
-  const { portfolio, updateProject, deleteProject, addProject } = useLoopStore();
+  const { portfolio, deleteProject } = useLoopStore();
   const [apiProjects, setApiProjects] = useState<PortfolioProject[]>([]);
   const [projectsLoading, setProjectsLoading] = useState(true);
   const [projectsError, setProjectsError] = useState('');
@@ -300,13 +379,16 @@ export function PortfolioTab() {
       <AnimatePresence>
         {editingProject && (
           <ProjectEditModal
+            key={editingProject.id}
             project={editingProject}
             onClose={() => setEditingProject(null)}
-            onSave={(data) => {
+            onSave={async (data) => {
               if (displayProjects.find(p => p.id === editingProject.id)) {
-                updateProject(editingProject.id, data);
+                const updated = await projectsService.updateProject(editingProject.id, data);
+                setApiProjects(prev => prev.map(p => p.id === updated.id ? updated : p));
               } else {
-                addProject({ ...editingProject, ...data });
+                const created = await projectsService.createProject(data);
+                setApiProjects(prev => [...prev, created]);
               }
             }}
           />
@@ -474,7 +556,11 @@ export function PortfolioTab() {
                   style={{ flex: 1, padding: '11px', borderRadius: 10, background: 'none', border: `1px solid ${DS.border}`, color: DS.text3, cursor: 'pointer' }}>
                   Hủy
                 </button>
-                <button onClick={() => { deleteProject(confirmDelete); setConfirmDelete(null); }}
+                <button onClick={async () => {
+                  await projectsService.deleteProject(confirmDelete);
+                  setApiProjects(prev => prev.filter(p => p.id !== confirmDelete));
+                  setConfirmDelete(null);
+                }}
                   style={{ flex: 1, padding: '11px', borderRadius: 10, background: 'rgba(239,68,68,0.15)', border: `1px solid rgba(239,68,68,0.3)`, color: DS.red, cursor: 'pointer', fontWeight: 700 }}>
                   Xóa
                 </button>

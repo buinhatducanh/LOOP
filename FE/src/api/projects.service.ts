@@ -28,6 +28,13 @@ interface BeProject {
   service?: { slug: string };
   teamMember?: { id: string; slug: string; role: string; image: string };
   _localeUsed: string;
+  // i18n fields
+  titleEn?: string; titleJa?: string; titleKo?: string; titleZh?: string;
+  challengeEn?: string; challengeJa?: string; challengeKo?: string; challengeZh?: string;
+  solutionEn?: string;  solutionJa?: string;  solutionKo?: string;  solutionZh?: string;
+  resultEn?: string;    resultJa?: string;    resultKo?: string;    resultZh?: string;
+  techStackEn?: string[]; techStackJa?: string[]; techStackKo?: string[]; techStackZh?: string[];
+  featuresEn?: string[]; featuresJa?: string[]; featuresKo?: string[]; featuresZh?: string[];
 }
 
 interface BeProjectsResponse {
@@ -85,6 +92,13 @@ function mapProject(be: BeProject): PortfolioProject {
     demoTitle: '',
     featured: be.isPublished,
     publishedAt: new Date().toISOString().split('T')[0],
+    // i18n fields
+    titleEn: be.titleEn, titleJa: be.titleJa, titleKo: be.titleKo, titleZh: be.titleZh,
+    challengeEn: be.challengeEn, challengeJa: be.challengeJa, challengeKo: be.challengeKo, challengeZh: be.challengeZh,
+    solutionEn: be.solutionEn, solutionJa: be.solutionJa, solutionKo: be.solutionKo, solutionZh: be.solutionZh,
+    resultEn: be.resultEn, resultJa: be.resultJa, resultKo: be.resultKo, resultZh: be.resultZh,
+    tagsEn: be.techStackEn, tagsJa: be.techStackJa, tagsKo: be.techStackKo, tagsZh: be.techStackZh,
+    featuresEn: be.featuresEn, featuresJa: be.featuresJa, featuresKo: be.featuresKo, featuresZh: be.featuresZh,
   };
 }
 
@@ -126,24 +140,61 @@ export const projectsService = {
    * GET /api/admin/projects
    */
   getAdminProjects: async (): Promise<PortfolioProject[]> => {
-    const res = await api.get<{ data: unknown[] }>('/admin/projects');
-    return res.data as PortfolioProject[];
+    const res = await api.get<{ data: BeProject[] }>('/admin/projects');
+    return (res.data ?? []).map(mapProject);
   },
 
   /**
    * POST /api/admin/projects
    */
-  createProject: async (data: unknown): Promise<PortfolioProject> => {
-    const res = await api.post<{ data: PortfolioProject }>('/admin/projects', data);
-    return res.data;
+  createProject: async (data: Partial<PortfolioProject>): Promise<PortfolioProject> => {
+    const payload: Record<string, unknown> = {
+      title: data.title,
+      description: data.solution,
+      challenge: data.challenge,
+      results: data.result,
+      techStack: data.tags,
+      features: data.features,
+      isPublished: data.featured,
+    };
+    const cleanPayload = Object.fromEntries(
+      Object.entries(payload).filter(([, v]) => v !== undefined)
+    );
+    const res = await api.post<{ data: BeProject }>('/admin/projects', cleanPayload);
+    return mapProject(res.data);
   },
 
   /**
    * PUT /api/admin/projects/[id]
+   * Sends i18n fields as flat Prisma columns.
    */
-  updateProject: async (id: string, data: unknown): Promise<PortfolioProject> => {
-    const res = await api.put<{ data: PortfolioProject }>(`/admin/projects/${id}`, data);
-    return res.data;
+  updateProject: async (id: string, data: Partial<PortfolioProject>): Promise<PortfolioProject> => {
+    const payload: Record<string, unknown> = {
+      title: data.title,
+      description: data.solution, // FE uses 'solution' for description
+      challenge: data.challenge,
+      results: data.result,
+      techStack: data.tags,
+      features: data.features,
+      isPublished: data.featured,
+      // i18n flat fields
+      titleEn: data.titleEn, titleJa: data.titleJa, titleKo: data.titleKo, titleZh: data.titleZh,
+      challengeEn: data.challengeEn, challengeJa: data.challengeJa,
+      challengeKo: data.challengeKo, challengeZh: data.challengeZh,
+      solutionEn: data.solutionEn, solutionJa: data.solutionJa,
+      solutionKo: data.solutionKo, solutionZh: data.solutionZh,
+      resultEn: data.resultEn, resultJa: data.resultJa,
+      resultKo: data.resultKo, resultZh: data.resultZh,
+      techStackEn: data.tagsEn, techStackJa: data.tagsJa,
+      techStackKo: data.tagsKo, techStackZh: data.tagsZh,
+      featuresEn: data.featuresEn, featuresJa: data.featuresJa,
+      featuresKo: data.featuresKo, featuresZh: data.featuresZh,
+    };
+    const cleanPayload = Object.fromEntries(
+      Object.entries(payload).filter(([, v]) => v !== undefined)
+    );
+    const res = await api.put<{ data: BeProject }>(`/admin/projects/${id}`, cleanPayload);
+    return mapProject(res.data);
   },
 
   /**

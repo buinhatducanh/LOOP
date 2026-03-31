@@ -1,7 +1,7 @@
 # FE Master Index — LOOP Solutions
 
 > **Mục đích:** 1 điểm vào duy nhất cho toàn bộ tài liệu roadmap, process, architecture, execution, governance và reporting của FE.
-> **Cập nhật:** 2026-03-28 (rewritten: FE-first approach — design from FE mock folder)
+> **Cập nhật:** 2026-03-31 (all phases complete — line counts corrected, MembersTab translate tab confirmed ✅)
 
 ---
 
@@ -10,7 +10,6 @@
 1. `./fe-roadmap.md` ⭐
    - **FE-First Roadmap** — thiết kế từ FE mock folder, kết nối BE thật theo luồng nghiệp vụ.
    - 8 phases: F0 (Infrastructure) → F1 (Public) → F2 (Booking/Orders) → F3 (Team/Effects) → F4 (Academy) → F5 (Customer Portal) → F6 (Admin) → F7 (Realtime/Polish) → F8 (Scale Hardening)
-   - Có **Phase Status Tracker** (single source of truth) để cập nhật trạng thái tuần.
    - Có **Phase Status Tracker** (single source of truth) để cập nhật trạng thái tuần.
 
 2. `./fe-delivery-process.md`
@@ -38,7 +37,6 @@
 | F5 | Tuần F5 | Customer Portal + LP Economy | Dashboard 100% from BE, LP redeem hoạt động |
 | F6 | Tuần F6 | Admin 23 tabs full integration | RBAC enforced, all tabs wired |
 | F7 | Tuần F7 | Real-time + Quest/Events + Polish | Go-live |
-| F8 | Tuần F8 | Scale Hardening (cache/async/SLO) | Ops scale gates active, SLO baseline stable |
 | F8 | Tuần F8 | Scale Hardening (cache/async/SLO) | Ops scale gates active, SLO baseline stable |
 
 ---

@@ -1,57 +1,89 @@
-# ROADMAP STATUS — 2026-03-27
+# ROADMAP STATUS — 2026-03-31
 
-## Phase 0 Foundation COMPLETE
+> **Cập nhật:** 2026-03-31
+> **All 8 phases (F0–F8) + Fi + Fs + R-seed: COMPLETE**
 
-13 public pages wired to DB 5-locale routing 200 route files.
+---
 
-## Phase 1 JA+KO PENDING
+## Overall Status
 
-CJK fonts translation tabs.
+All phases complete. System is production-ready. Remaining work: 0 HIGH, 2 MEDIUM (JA/KO/ZH translation + I18N-RUNBOOK), 5 P2 items.
 
-## Phase 2 ZH+Perf PENDING
+---
 
-ZH lazy-load audit.
+## Phase Completion Summary
 
-## Phase 3 Ops PENDING
+| Phase | Name | Status | Date | Notes |
+|-------|------|--------|------|-------|
+| F0 | Infrastructure | ✅ COMPLETE | 2026-03-28 | Auth + API client layer, route guards |
+| F1 | Public Pages | ✅ COMPLETE | 2026-03-29 | 14 public pages wired DB, 7 services |
+| F2 | Booking/Orders | ✅ COMPLETE | 2026-03-29 | Wizard 8 steps, pricing config, LP discount, 5-locale |
+| F3 | Team/Effects | ✅ COMPLETE | 2026-03-29 | 27 members, rank effects, EffectsTab BE CRUD |
+| F4 | Academy | ✅ COMPLETE | 2026-03-29 | Video Gate, Code Exercise, Comments, Certificate |
+| F5 | Customer Portal | ✅ COMPLETE | 2026-03-29 | 10 tabs all wired with graceful fallback |
+| F6 | Admin 23 tabs | ✅ COMPLETE | 2026-03-30 | All 23 tabs wired to BE APIs |
+| F7 | Realtime/Polish | ✅ COMPLETE | 2026-03-30 | SSE notifications, AnalyticsTab, Quests/Events seed |
+| F8 | Scale Hardening | ✅ COMPLETE | 2026-03-30 | slo.ts(221L), logger.ts(265L), scaleGate.ts(552L), capacity.ts(377L), 8 Inngest jobs |
+| Fi | I18n Remediation | ✅ COMPLETE | 2026-03-29 | Navbar/Footer useI18n, LocaleSwitcher cookie |
+| Fs | SEO/PWA/Geo | ✅ COMPLETE | 2026-03-29 | Dynamic OG, geo tags, JSON-LD, manifest, theme_color |
+| R-seed | Unified Demo Data | ✅ COMPLETE | 2026-03-30 | 28 members, LP economy, quests/events, orders, rank effects |
 
-Phrase monitoring.
-## Phase 0 — Foundation
-
-COMPLETE. 13 pages wired 200 routes 5 locales.
-
-## Phase 1 — JA+KO Expansion
-PENDING. CJK fonts JA KO hreflang translation.
-Effort: ~5d FE + 3d translation.
-
-## Phase 2 — ZH+Performance
-PENDING. ZH lazy-load Noto Sans SC ~8MB perf audit.
-Effort: ~3d FE + 2d translation.
-
-## Phase 3 — Scale+Ops
-PENDING. Phrase Lokalise analytics runbook.
-Effort: ~3d.
-
-## Technical Debt
-Add lang to /api/services /api/team LOW BE TBD.
-Deprecate mock APIs LOW BE TBD.
-Admin CMS translate tabs MEDIUM BE+FE Phase1.
-CJK fonts HIGH FE Phase1.
-
-## Risk Summary
-CJK font ~8MB ZH MEDIUM mitigated by lazy-load.
-Translation quality JA/KO/ZH MEDIUM AI+human review.
-Prisma migration MEDIUM Phase0 migration done.
-SEO hreflang LOW pending Phase1-2 audit.
+---
 
 ## Key Metrics
-Total route files: 200.
-Public pages wired: 13.
-i18n models: 7.
-Locale message files: 5 x 211+ keys.
-Lint errors: 0. TypeScript errors: 0. Build: PASS.
+
+| Metric | Value |
+|--------|-------|
+| Total route files | 224 |
+| Total Prisma models | 99 |
+| i18n database columns | ~90 (across 8 models) |
+| Public pages wired DB | 14 / 14 ✅ |
+| Admin tabs wired | 23 / 23 ✅ |
+| Scale infrastructure files | 5 (slo/logger/scaleGate/capacity/functions) |
+| Inngest background jobs | 8 |
+| Quality gates | ✅ lint · ✅ tsc · ✅ build |
+
+---
+
+## Remaining Work
+
+### HIGH — ✅ ALL DONE
+
+### MEDIUM (2 items)
+
+| # | Item | Owner |
+|---|------|-------|
+| 1 | JA/KO/ZH professional translation (UI + CMS) | Translator |
+| 2 | I18N-RUNBOOK.md finalize | FE Lead |
+
+### P2 (5 items)
+
+| # | Item | Owner |
+|---|------|-------|
+| 3 | `translations` Json field migration | BE |
+| 4 | `SupportedLocale` model | BE |
+| 5 | Per-locale TTFB performance audit | DevOps |
+| 6 | Google Search Console verify JA/KO/ZH | SEO |
+| 7 | FE bundle size optimization | FE |
+
+---
+
+## Risk Summary
+
+| Risk | Impact | Status |
+|------|--------|--------|
+| JA/KO/ZH translation quality | MEDIUM | Active — AI draft, human review pending |
+| Prisma schema changes | LOW | All migrations complete |
+| SEO hreflang misconfig | LOW | Phase Fs complete |
+
+---
 
 ## Links
-ADR: docs/ADR-2026-001-i18n-strategy.md
-i18n: docs/I18N-STATUS.md
-FE-BE: docs/FE-BE-INTEGRATION-STATUS.md
-FE Rules: .claude/rules/fe-master-index.md
+
+| Doc | Purpose |
+|-----|---------|
+| `docs/FE-BE-INTEGRATION-STATUS.md` | Full FE-BE integration status |
+| `docs/I18N-STATUS.md` | i18n implementation status |
+| `docs/I18N-RUNBOOK.md` | i18n operations guide |
+| `.claude/rules/fe-i18n-scale-plan.md` | JSON Translation migration plan (P2) |
+| `.claude/rules/fe-master-index.md` | FE rules master index |

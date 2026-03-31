@@ -38,6 +38,12 @@ interface BeService {
   isActive: boolean;
   sortOrder: number | null;
   _localeUsed: string;
+  // i18n fields
+  titleEn?: string; titleJa?: string; titleKo?: string; titleZh?: string;
+  shortDescriptionEn?: string; shortDescriptionJa?: string; shortDescriptionKo?: string; shortDescriptionZh?: string;
+  longDescriptionEn?: string; longDescriptionJa?: string; longDescriptionKo?: string; longDescriptionZh?: string;
+  featuresEn?: string[]; featuresJa?: string[]; featuresKo?: string[]; featuresZh?: string[];
+  technologiesEn?: string[]; technologiesJa?: string[]; technologiesKo?: string[]; technologiesZh?: string[];
 }
 
 interface BeServicesResponse {
@@ -52,6 +58,56 @@ interface BeServicesResponse {
 interface BeServiceDetailResponse {
   data: BeService;
   meta: { locale: string };
+}
+
+/** Admin service response — raw Prisma Service including i18n fields */
+interface BeAdminService {
+  id: string; slug: string; icon: string | null; title: string;
+  shortDescription: string; longDescription: string | null;
+  features: string[]; technologies: string[];
+  startingPrice: number | null; deliveryTime: string | null;
+  category: string | null; isActive: boolean; sortOrder: number | null;
+  titleEn?: string; titleJa?: string; titleKo?: string; titleZh?: string;
+  shortDescriptionEn?: string; shortDescriptionJa?: string; shortDescriptionKo?: string; shortDescriptionZh?: string;
+  longDescriptionEn?: string; longDescriptionJa?: string; longDescriptionKo?: string; longDescriptionZh?: string;
+  featuresEn?: string[]; featuresJa?: string[]; featuresKo?: string[]; featuresZh?: string[];
+  technologiesEn?: string[]; technologiesJa?: string[]; technologiesKo?: string[]; technologiesZh?: string[];
+}
+
+/** Map BE admin service → FE Service (admin shape) */
+function mapAdminService(be: BeAdminService): Service {
+  const colorMap: Record<string, string> = {
+    web: '#3B82F6', app: '#8B5CF6', saas: '#10B981', seo: '#F59E0B',
+    dashboard: '#818CF8', media: '#EF4444', marketing: '#F59E0B', design: '#EC4899',
+  };
+  const cat = (be.category ?? '').toLowerCase();
+  return {
+    id: be.slug as Service['id'],
+    title: be.title,
+    subtitle: be.shortDescription,
+    icon: be.icon ?? '🌐',
+    color: colorMap[cat] ?? '#818CF8',
+    startPrice: be.startingPrice ?? 0,
+    endPrice: be.startingPrice ? Math.round(be.startingPrice * 1.5) : 0,
+    perMonth: false,
+    active: be.isActive,
+    demoUrl: '#',
+    maskedUrl: '#',
+    ordersCount: 0,
+    revenue: 0,
+    desc: be.longDescription ?? be.shortDescription,
+    features: be.features ?? [],
+    tech: be.technologies ?? [],
+    // i18n fields
+    titleEn: be.titleEn, titleJa: be.titleJa, titleKo: be.titleKo, titleZh: be.titleZh,
+    shortDescriptionEn: be.shortDescriptionEn, shortDescriptionJa: be.shortDescriptionJa,
+    shortDescriptionKo: be.shortDescriptionKo, shortDescriptionZh: be.shortDescriptionZh,
+    longDescriptionEn: be.longDescriptionEn, longDescriptionJa: be.longDescriptionJa,
+    longDescriptionKo: be.longDescriptionKo, longDescriptionZh: be.longDescriptionZh,
+    featuresEn: be.featuresEn, featuresJa: be.featuresJa, featuresKo: be.featuresKo, featuresZh: be.featuresZh,
+    technologiesEn: be.technologiesEn, technologiesJa: be.technologiesJa,
+    technologiesKo: be.technologiesKo, technologiesZh: be.technologiesZh,
+  };
 }
 
 // ── Mapping: BE → FE Service ──────────────────────────────────────────────────
@@ -82,6 +138,15 @@ function mapService(be: BeService, fallbackPrice = 0): Service {
       { title: 'Launch & Handover', desc: 'Deploy, training, ban giao source va nhan LP diem thuong.' },
     ],
     tech: be.technologies ?? [],
+    // i18n fields
+    titleEn: be.titleEn, titleJa: be.titleJa, titleKo: be.titleKo, titleZh: be.titleZh,
+    shortDescriptionEn: be.shortDescriptionEn, shortDescriptionJa: be.shortDescriptionJa,
+    shortDescriptionKo: be.shortDescriptionKo, shortDescriptionZh: be.shortDescriptionZh,
+    longDescriptionEn: be.longDescriptionEn, longDescriptionJa: be.longDescriptionJa,
+    longDescriptionKo: be.longDescriptionKo, longDescriptionZh: be.longDescriptionZh,
+    featuresEn: be.featuresEn, featuresJa: be.featuresJa, featuresKo: be.featuresKo, featuresZh: be.featuresZh,
+    technologiesEn: be.technologiesEn, technologiesJa: be.technologiesJa,
+    technologiesKo: be.technologiesKo, technologiesZh: be.technologiesZh,
   };
 }
 
@@ -144,28 +209,55 @@ export const servicesService = {
   /**
    * GET /api/admin/services
    * Admin list of all services (all statuses, no locale grouping).
+   * Returns full Service shape including i18n fields.
    */
   getAdminServices: async (): Promise<Service[]> => {
-    const res = await api.get<{ data: Service[] }>('/admin/services');
-    return res.data;
+    const res = await api.get<{ data: BeAdminService[] }>('/admin/services');
+    return (res.data ?? []).map(mapAdminService);
   },
 
   /**
    * POST /api/admin/services
    * Create a new service.
    */
-  createService: async (data: Omit<Service, 'id'>): Promise<Service> => {
-    const res = await api.post<{ data: Service }>('/admin/services', data);
-    return res.data;
+  createService: async (data: Partial<Service>): Promise<Service> => {
+    const res = await api.post<{ data: BeAdminService }>('/admin/services', data);
+    return mapAdminService(res.data);
   },
 
   /**
    * PUT /api/admin/services/[id]
-   * Update an existing service.
+   * Update an existing service. Sends i18n fields to BE as flat Prisma fields.
    */
   updateService: async (id: string, data: Partial<Service>): Promise<Service> => {
-    const res = await api.put<{ data: Service }>(`/admin/services/${id}`, data);
-    return res.data;
+    // Flatten Service → BE payload (i18n fields go as separate columns)
+    const payload: Record<string, unknown> = {
+      title: data.title,
+      shortDescription: data.subtitle,
+      longDescription: data.desc,
+      features: data.features,
+      technologies: data.tech,
+      isActive: data.active,
+      startingPrice: data.startPrice,
+      deliveryTime: null,
+      category: null,
+      // i18n flat fields
+      titleEn: data.titleEn, titleJa: data.titleJa, titleKo: data.titleKo, titleZh: data.titleZh,
+      shortDescriptionEn: data.shortDescriptionEn, shortDescriptionJa: data.shortDescriptionJa,
+      shortDescriptionKo: data.shortDescriptionKo, shortDescriptionZh: data.shortDescriptionZh,
+      longDescriptionEn: data.longDescriptionEn, longDescriptionJa: data.longDescriptionJa,
+      longDescriptionKo: data.longDescriptionKo, longDescriptionZh: data.longDescriptionZh,
+      featuresEn: data.featuresEn, featuresJa: data.featuresJa,
+      featuresKo: data.featuresKo, featuresZh: data.featuresZh,
+      technologiesEn: data.technologiesEn, technologiesJa: data.technologiesJa,
+      technologiesKo: data.technologiesKo, technologiesZh: data.technologiesZh,
+    };
+    // Remove undefined values to avoid sending nulls for unset optional fields
+    const cleanPayload: Record<string, unknown> = Object.fromEntries(
+      Object.entries(payload).filter(([, v]) => v !== undefined)
+    );
+    const res = await api.put<{ data: BeAdminService }>(`/admin/services/${id}`, cleanPayload);
+    return mapAdminService(res.data);
   },
 
   /**

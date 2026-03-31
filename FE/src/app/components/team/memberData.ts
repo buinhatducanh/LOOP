@@ -127,8 +127,21 @@ export interface RankProgressEvent {
 export interface Member {
   id: number;
   name: string;
+  /** VI: Danh hiệu — e.g. "Code Sentinel" */
   title: string;
   role: string;
+  /** VI: Giới thiệu ngắn — e.g. "Những con đường bạc được khắc..." */
+  bio: string;
+  /** VI: shortBio (not used in FE yet but present in DB) */
+  shortBio?: string;
+  /** i18n — English */
+  nameEn?: string; roleEn?: string; titleEn?: string; bioEn?: string;
+  /** i18n — Japanese */
+  nameJa?: string; roleJa?: string; titleJa?: string; bioJa?: string;
+  /** i18n — Korean */
+  nameKo?: string; roleKo?: string; titleKo?: string; bioKo?: string;
+  /** i18n — Chinese */
+  nameZh?: string; roleZh?: string; titleZh?: string; bioZh?: string;
   roleCode: string;
   team: string;
   rank: RankKey;

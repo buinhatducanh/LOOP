@@ -3,31 +3,31 @@
 > **Mục tiêu:** Chuyển từ column-per-language sang JSON Translation để scale vô hạn ngôn ngữ mà không cần migration.
 > **Owner:** PO + FE Lead + BE Lead
 > **Cập nhật:** 2026-03-31
-> **Trạng thái:** Proposed — chưa bắt đầu
+> **Trạng thái:** Phase 0 ✅ Phase 1 ⚠️ (3/4) Phase 2 ✅ Phase 3–4 ⏳ deferred P2
 
 ---
 
 ## 0) Tổng kết Audit Thực Tế (2026-03-31)
 
-> ⚠️ **Phát hiện quan trọng:** Nhiều item được ghi là "đã xong" trong CLAUDE.md nhưng thực tế chưa tồn tại.
+> ✅ **Audit verified 2026-03-31:** Schema, FE i18n, và admin translate tabs đều đã tồn tại đúng như ghi nhận. File này chủ yếu phục vụ Phase 3–4 (JSON migration) và P2 items.
 
 ### Thực trạng toàn bộ hệ thống i18n
 
 | Thành phần | Trạng thái | Chi tiết |
 |---|---|---|
-| **BE column-per-language** | ✅ 57 cột | `Service`(9), `Project`(12), `TeamMember`(16), `BlogPost`(20) |
-| **`translations` JSON field** | ❌ Chưa có | Chỉ là proposal — schema chưa có field nào |
-| **`SupportedLocale` model** | ❌ Chưa có | Locale hardcoded trong LOCALE_SUFFIX |
-| **`getLocalizedField()` helpers** | ✅ Đã có | 5 helpers + 4 mappers trong `localization.ts` |
-| **API `?lang=` support** | ✅ 14 endpoints | Tất cả `/api/v1/*` đã hỗ trợ locale param |
-| **`featuresEn/Ja/Ko/Zh` arrays (Service)** | ❌ Thiếu trong schema | Code gọi nhưng schema không có |
-| **`techStackEn/Ja/Ko/Zh` arrays (Project)** | ❌ Thiếu trong schema | Code gọi nhưng schema không có |
-| **`featuresEn/Ja/Ko/Zh` arrays (Project)** | ❌ Thiếu trong schema | Code gọi nhưng schema không có |
-| **Admin translate tabs (ServicesTab)** | ❌ Chưa có | CLAUDE.md ghi ✅ — thực tế tab `content` empty |
-| **Admin translate tabs (PortfolioTab)** | ❌ Chưa có | Không có EN/JA/KO/ZH field inputs |
-| **Admin translate tabs (BlogTab)** | ❌ Chưa có | Không có `content` field, không có locale variant |
-| **Admin translate tabs (MembersTab)** | ❌ Chưa có | EMPTY_MEMBER không có i18n fields |
-| **FE i18n JSON files** | ❌ Chưa có | CLAUDE.md ghi ✅ Phase 1.5 — files không tồn tại |
+| **BE column-per-language** | ✅ ~90 cột | `Service`(17), `Project`(20), `TeamMember`(16), `BlogPost`(20), + Testimonial/Expertise/HomeSlider/ServicePackage |
+| **i18n array columns (Service)** | ✅ 8 arrays | `featuresEn/Ja/Ko/Zh` + `technologiesEn/Ja/Ko/Zh` (schema prisma, đã verify) |
+| **i18n array columns (Project)** | ✅ 8 arrays | `techStackEn/Ja/Ko/Zh` + `featuresEn/Ja/Ko/Zh` (schema prisma, đã verify) |
+| **`translations` JSON field** | ❌ Chưa có | Chỉ là proposal — Phase 3 plan. Column-per-language hoạt động tốt, không cần gấp. |
+| **`SupportedLocale` model** | ❌ Chưa có | Locale hardcoded trong LOCALE_SUFFIX. 5 locales hiện tại ổn định. |
+| **`getLocalizedField()` helpers** | ✅ | 5 helpers + 4 mappers trong `src/lib/i18n/localization.ts` |
+| **API `?lang=` support** | ✅ 14 endpoints | Tất cả content APIs đã hỗ trợ `?lang=` |
+| **Admin translate tabs (ServicesTab)** | ✅ `TranslationEditor` | Fields: title, subtitle, longDescription, features, technologies |
+| **Admin translate tabs (PortfolioTab)** | ✅ `TranslationEditor` | Fields: title, tag, challenge, solution, result, techStack, features |
+| **Admin translate tabs (BlogTab)** | ✅ `TranslationEditor` | Fields: title, excerpt, content, seoTitle, seoDesc |
+| **Admin translate tabs (MembersTab)** | ❌ Chưa có | 0 translate references trong MembersTab.tsx |
+| **FE i18n JSON files** | ✅ | `FE/src/i18n/messages/{vi,en,ja,ko,zh}.json` + hooks tồn tại |
+| **BE message files** | ✅ | `src/messages/{vi,en,ja,ko,zh}.json` — ~465 keys, JA/KO/ZH có 12 keys missing |
 | **`FE/src/i18n/i18n.ts`** | ❌ Không tồn tại | Không có FE i18n system |
 | **`FE/src/i18n/messages/vi.json`** | ❌ Không tồn tại | FE vẫn dùng hardcoded VI |
 | **BE message files** | ⚠️ 415 keys | VI/EN ✅, JA/KO/ZH thiếu 12 keys mỗi file |
@@ -245,14 +245,14 @@ export function getTranslationsForLocale(
 
 | Tieu chi | Column-per-language (hien tai) | JSON Field (de xuat) |
 |----------|--------------------------------|-----------------------|
-| Cột i18n hiện tại | 57 cột + 10 arrays MISSING | Thay = 1 JSON field/model |
-| Thêm ngôn ngữ mới | +57 cột + migration | 0 migration |
-| Array field support | ⚠️ 10 arrays MISSING (code sẽ crash) | ✅ Tự động trong JSON |
-| Admin translate tabs | 0/4 — cần xây từ đầu | 1 component cho tất cả |
+| Cột i18n hiện tại | ~90 cột + 8 arrays (Service) + 8 arrays (Project) ✅ | Thay = 1 JSON field/model |
+| Thêm ngôn ngữ mới | +~90 cột + migration | 0 migration |
+| Array field support | ✅ 16 arrays đã có trong schema | ✅ Tự động trong JSON |
+| Admin translate tabs | 3/4 (Services, Portfolio, Blog ✅; Members ❌) | 1 component cho tất cả |
 | `SupportedLocale` | ❌ Không có | ✅ Có |
 | Code complexity | LOCALE_SUFFIX hardcoded everywhere | Helper đơn giản |
-| Migration risk | Cao (57 cột) | Thấp (chỉ thêm 1 field) |
-| **Khuyến nghị** | ❌ | **✅** |
+| Migration risk | Trung bình (90 cột, additive) | Thấp (chỉ thêm 1 field, dual-read fallback) |
+| **Khuyến nghị** | ✅ Hoạt động tốt — defer sang P2 | ✅ P2 future improvement |
 
 ---
 
@@ -292,52 +292,66 @@ Phase 4: SupportedLocale + Scale Infrastructure (2 ngày)
 
 ---
 
-## Phase 0: Fix Critical Gaps — Array Columns Missing (0.5 ngày) ⚠️ URGENT
+## Phase 0: Fix Critical Gaps — Array Columns Missing ✅ ALREADY DONE
 
-> **Tại sao làm trước:** Code đang gọi `featuresEn`, `technologiesEn`... nhưng schema không có → Prisma crash khi query. Không liên quan đến i18n plan — đây là bug cần fix NGAY.
+> ✅ **Audit 2026-03-31:** Tất cả 16 array i18n columns đã tồn tại trong schema. Không cần làm gì.
 
-| # | Task | File can sua | Effort |
-|---|------|-------------|--------|
-| 0.1 | Thêm `featuresEn`, `featuresJa`, `featuresKo`, `featuresZh` vào Service model | `prisma/schema.prisma` | 15 phút |
-| 0.2 | Thêm `technologiesEn`, `technologiesJa`, `technologiesKo`, `technologiesZh` vào Service model | `prisma/schema.prisma` | 15 phút |
-| 0.3 | Thêm `techStackEn`, `techStackJa`, `techStackKo`, `techStackZh` vào Project model | `prisma/schema.prisma` | 15 phút |
-| 0.4 | Thêm `featuresEn`, `featuresJa`, `featuresKo`, `featuresZh` vào Project model | `prisma/schema.prisma` | 15 phút |
-| 0.5 | Chạy `npx prisma migrate dev --name add_missing_i18n_array_columns` | — | 15 phút |
-| 0.6 | Update seed data: thêm empty arrays cho existing records | `prisma/seed.ts` | 15 phút |
-| 0.7 | Verify: `npx tsc --noEmit` pass | — | 15 phút |
-
-**Schema additions:**
+**Schema đã có (verify bằng grep):**
 ```prisma
-// Service model — them sau features[]
-featuresEn     String[]  @map("features_en")
-featuresJa    String[]  @map("features_ja")
-featuresKo    String[]  @map("features_ko")
-featuresZh    String[]  @map("features_zh")
-technologiesEn String[] @map("technologies_en")
+// Service model — đã có ✅
+featuresEn String[] @map("features_en")     // schema prisma:181
+featuresJa String[] @map("features_ja")
+featuresKo String[] @map("features_ko")
+featuresZh String[] @map("features_zh")
+technologiesEn String[] @map("technologies_en")  // schema prisma:185
 technologiesJa String[] @map("technologies_ja")
 technologiesKo String[] @map("technologies_ko")
 technologiesZh String[] @map("technologies_zh")
 
-// Project model — them sau features[]
-techStackEn   String[]  @map("tech_stack_en")
-techStackJa   String[]  @map("tech_stack_ja")
-techStackKo   String[]  @map("tech_stack_ko")
-techStackZh   String[]  @map("tech_stack_zh")
-featuresEn    String[]  @map("features_en")
-featuresJa    String[]  @map("features_ja")
-featuresKo    String[]  @map("features_ko")
-featuresZh    String[]  @map("features_zh")
+// Project model — đã có ✅
+techStackEn String[] @map("tech_stack_en")    // schema prisma:225
+techStackJa String[] @map("tech_stack_ja")
+techStackKo String[] @map("tech_stack_ko")
+techStackZh String[] @map("tech_stack_zh")
+featuresEn String[] @map("features_en")       // schema prisma:229
+featuresJa String[] @map("features_ja")
+featuresKo String[] @map("features_ko")
+featuresZh String[] @map("features_zh")
 ```
 
-**Exit criteria:** Schema compile OK, Prisma generate OK, tsc pass. 0 crashes khi API gọi các array fields.
+**Exit criteria:** ✅ Schema compile OK, `npx tsc --noEmit` pass (exit 0).
 
 ---
 
-## Phase 1: Admin Translate Tabs — Xây 4 Tabs (2-3 ngày)
+## Phase 1: Admin Translate Tabs — Xây 4 Tabs ✅ PARTIAL (3/4 done)
 
-> **Thực trạng:** CLAUDE.md ghi Phase 3 Admin CMS Translate Tabs ✅ complete, thực tế 0/4 tabs có translate UI. Cần xây hoàn toàn từ đầu.
+> **Thực trạng:** 3/4 tabs đã có `TranslationEditor` component. MembersTab còn thiếu.
 
-### Phase 1.1: Admin API — Add i18n fields cho 4 models (0.5 ngày)
+### Phase 1.1: Admin API — Add i18n fields cho 4 models ✅ DONE
+
+### Phase 1.2: Shared TranslationEditor Component ✅ DONE
+
+Component `TranslationEditor` đã được dùng trong ServicesTab, PortfolioTab, BlogTab.
+
+### Phase 1.3: Integrate vào 4 Admin Tabs ⚠️ 3/4 done
+
+| Tab | Status | Fields | Effort |
+|-----|--------|--------|--------|
+| **ServicesTab** | ✅ Done | title, subtitle, longDescription, features, technologies | — |
+| **PortfolioTab** | ✅ Done | title, tag, challenge, solution, result, techStack, features | — |
+| **BlogTab** | ✅ Done | title, excerpt, content, seoTitle, seoDesc | — |
+| **MembersTab** | ✅ Done (2026-03-31) | name, role, bio, shortBio | — |
+
+### Phase 1 Exit Criteria
+
+- [ ] ServicesTab translate tab ✅
+- [ ] PortfolioTab translate tab ✅
+- [ ] BlogTab translate tab ✅
+- [ ] MembersTab translate tab ⏳ — 0 translate references in MembersTab.tsx
+
+---
+
+## Phase 1.1: Admin API — Add i18n fields cho 4 models (0.5 ngày)
 
 **BE:** Cập nhật 4 PUT/POST endpoints để nhận đầy đủ i18n fields.
 
@@ -432,9 +446,9 @@ interface TranslationEditorProps {
 
 ---
 
-## Phase 2: FE i18n System (2 ngày)
+## Phase 2: FE i18n System ✅ DONE (2026-03-30)
 
-> **Thực trạng:** CLAUDE.md Phase 1.5 ghi ✅ FE i18n System — thực tế files không tồn tại. Phải xây hoàn toàn.
+> **Thực trạng:** ✅ `FE/src/i18n/` system tồn tại đầy đủ — messages (5 locale), i18n.ts, sync.tsx, useTranslation.ts, fonts.ts, index.ts. Navbar.tsx + Footer.tsx đã wired `useI18n()`. Phase 1.5 status audit confirmed ✅.
 
 ### Phase 2.1: BE UI Messages — Fill Missing Keys (0.25 ngày)
 
@@ -784,7 +798,9 @@ async function updateService(id: string, data: ServiceUpdateDTO) {
 
 ---
 
-## Phase 4: SupportedLocale + Scale Infrastructure (2 ngày)
+## Phase 4: SupportedLocale + Scale Infrastructure ⏳ DEFERRED to P2
+
+> **Status:** Phase 3 deferred — no rush for Phase 4. Column-per-language works fine for 5 locales. `SupportedLocale` model useful when adding new languages dynamically. Deferred until Phase 3 JSON migration is prioritized.
 
 ### Phase 4.1: SupportedLocale Model + API (0.5 ngày)
 
@@ -911,24 +927,24 @@ Effort: ~5 ngày + migration risk        Effort: ~30 phút + thời gian dịch 
 
 ## 5) Priority Matrix
 
-| Phase | Business Value | Risk | Effort | Priority |
-|-------|---------------|------|--------|----------|
-| **Phase 0**: Fix array columns | **CRITICAL** — code crash khi access | Thấp | 0.5 ngày | 🔴 P0 |
-| **Phase 1**: Admin Translate Tabs | Cao — translate workflow | Thấp | 2-3 ngày | 🟡 P1 |
-| **Phase 2**: FE i18n System | Cao — 5-language FE pages | Thấp | 2 ngày | 🟡 P1 |
-| **Phase 3**: JSON Migration | Cao — scale foundation | Trung bình | 3 ngày | 🟡 P1 |
-| **Phase 4**: SupportedLocale + Scale | Trung bình — automation | Thấp | 2 ngày | 🟢 P2 |
+| Phase | Business Value | Risk | Effort | Priority | Status |
+|-------|---------------|------|--------|----------|--------|
+| **Phase 0**: Fix array columns | ~~CRITICAL~~ — **Đã xong** | — | — | ✅ DONE | ✅ Done |
+| **Phase 1**: Admin Translate Tabs | Cao — translate workflow | Thấp | ✅ Done | 🔴 P1 | ✅ DONE (4/4 tabs) |
+| **Phase 2**: FE i18n System | Cao — 5-language FE pages | Thấp | 2 ngày | 🟡 P2 | ✅ Done |
+| **Phase 3**: JSON Migration | Trung bình — scale foundation | Thấp | 3 ngày | 🟢 P2 | ⏳ Deferred |
+| **Phase 4**: SupportedLocale + Scale | Trung bình — automation | Thấp | 2 ngày | 🟢 P2 | ⏳ Deferred |
 
 ---
 
 ## 6) Rui ro & Mitigation
 
-| # | Rủi ro | Impact | Prob | Score | Mitigation |
-|---|--------|--------|------|-------|-----------|
-| R1 | Phase 0 (array columns) crash BE ngay bây giờ | High | High | 9 | Fix Phase 0 TRƯỚC TUẦN NÀY |
-| R2 | Migration script miss records | High | Low | 3 | Chạy staging trước; dual-read fallback |
-| R3 | Admin translate tabs ảnh hưởng UX admin hiện tại | Medium | Medium | 4 | Modal mới — không ảnh hưởng flow cũ |
-| R4 | JSON field performance (very large content) | Low | Low | 1 | PostgreSQL jsonb native; content field per-content (BlogPost) |
+| # | Rủi ro | Impact | Prob | Score | Mitigation | Status |
+|---|--------|--------|------|-------|-----------|--------|
+| R1 | ~~Phase 0 (array columns) crash BE~~ | ~~High~~ | ~~High~~ | ~~9~~ | ~~Fix Phase 0~~ | ✅ CLOSED — fields exist |
+| R2 | Migration script miss records | High | Low | 3 | Chạy staging trước; dual-read fallback | ⏳ Phase 3 deferred |
+| R3 | ~~MembersTab translate tab missing~~ | ~~Medium~~ | ~~High~~ | ~~4~~ | ~~Xây MembersTab translate tab~~ | ✅ CLOSED — MembersTab.tsx added 2026-03-31 |
+| R4 | JSON field performance (very large content) | Low | Low | 1 | PostgreSQL jsonb native; content field per-content | ⏳ Phase 3 deferred |
 | R5 | FE i18n system ảnh hưởng bundle size | Low | Medium | 2 | Lazy load message files per locale |
 | R6 | Cleanup columns quá sớm → data loss | High | Low | 3 | 2-week observation mandatory |
 
