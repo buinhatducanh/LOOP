@@ -1851,8 +1851,16 @@ model Course {
   id                 String       @id @default(cuid())
   title              String
   titleVi            String       @map("title_vi")
+  titleEn            String?      @map("title_en")
+  titleJa            String?      @map("title_ja")
+  titleKo            String?      @map("title_ko")
+  titleZh            String?      @map("title_zh")
   description        String?
   descriptionVi      String?      @map("description_vi")
+  descriptionEn      String?      @map("description_en")
+  descriptionJa      String?      @map("description_ja")
+  descriptionKo      String?      @map("description_ko")
+  descriptionZh      String?      @map("description_zh")
   type               String       @default("group")
   instructorId       String       @map("instructor_id")
   instructorType     String       @default("instructor") @map("instructor_type")

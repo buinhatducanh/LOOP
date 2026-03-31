@@ -39,22 +39,27 @@ const LOCALE_LABELS: Record<string, { short: string; long: string; flag: string 
   zh: { short: "ZH", long: "中文", flag: "🇨🇳" },
 };
 
-const ROLE_LABELS: Record<string, { label: string; color: string }> = {
-  admin: { label: "ADMIN", color: "#818CF8" },
-  manager: { label: "TRƯỞNG PHÒNG", color: "#F59E0B" },
-  staff: { label: "NHÂN VIÊN", color: "#14B8A6" },
-  client: { label: "KHÁCH HÀNG", color: DS.blue },
-};
+/** Returns role labels localized via the given translator. */
+function getRoleLabels(
+  t: ReturnType<typeof useTranslations<"Navigation">>
+): Record<string, { label: string; color: string }> {
+  return {
+    admin: { label: t("roleAdmin"), color: "#818CF8" },
+    manager: { label: t("roleManager"), color: "#F59E0B" },
+    staff: { label: t("roleStaff"), color: "#14B8A6" },
+    client: { label: t("roleClient"), color: DS.blue },
+  };
+}
 
 function useNavLinks(locale: string) {
   const t = useTranslations("Navigation");
   return [
     { label: t("home"), href: `/${locale}` },
     { label: t("services"), href: `/${locale}/services` },
-    { label: "Media", href: `/${locale}/media` },
+    { label: t("media"), href: `/${locale}/media` },
     { label: t("portfolio"), href: `/${locale}/portfolio` },
     { label: t("team"), href: `/${locale}/team` },
-    { label: "Học viện", href: `/${locale}/academy` },
+    { label: t("academy"), href: `/${locale}/academy` },
     { label: t("blog"), href: `/${locale}/blog` },
     { label: t("pricing"), href: `/${locale}/pricing` },
     { label: t("contact"), href: `/${locale}/contact` },
@@ -220,10 +225,12 @@ export default function SiteHeader({ locale }: { locale: string }) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, isAuthenticated, logout } = useAuthStore();
+  const t = useTranslations("Navigation");
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const navLinks = useNavLinks(locale);
+  const roleLabels = getRoleLabels(t);
 
   // Close user menu on outside click
   useEffect(() => {
@@ -440,7 +447,7 @@ export default function SiteHeader({ locale }: { locale: string }) {
                     cursor: "pointer",
                   }}
                   onMouseEnter={(e) => {
-                    const rl = ROLE_LABELS[user.role] ?? { color: DS.text4 };
+                    const rl = roleLabels[user.role] ?? { color: DS.text4 };
                     (e.currentTarget as HTMLButtonElement).style.borderColor = rgba(rl.color, 0.3);
                   }}
                   onMouseLeave={(e) => {
@@ -464,12 +471,12 @@ export default function SiteHeader({ locale }: { locale: string }) {
                     </div>
                     <div
                       style={{
-                        color: (ROLE_LABELS[user.role] ?? { color: DS.text4 }).color,
+                        color: (roleLabels[user.role] ?? { color: DS.text4 }).color,
                         fontSize: "0.5rem",
                         fontFamily: "'JetBrains Mono', monospace",
                       }}
                     >
-                      {ROLE_LABELS[user.role]?.label ?? user.role}
+                      {roleLabels[user.role]?.label ?? user.role}
                     </div>
                   </div>
                   <ChevronDown
@@ -533,8 +540,8 @@ export default function SiteHeader({ locale }: { locale: string }) {
 
                       {/* Links */}
                       {[
-                        { href: "/admin/overview", label: "Dashboard Admin", icon: "⚙️" },
-                        { href: `/${locale}`, label: "Ví LP của tôi", icon: "💎" },
+                        { href: "/admin/overview", label: t("dashboardAdmin"), icon: "⚙️" },
+                        { href: `/${locale}`, label: t("myLpWallet"), icon: "💎" },
                       ].map((item) => (
                         <Link
                           key={item.href}
@@ -587,7 +594,7 @@ export default function SiteHeader({ locale }: { locale: string }) {
                           (e.currentTarget as HTMLButtonElement).style.background = "none";
                         }}
                       >
-                        <LogOut size={14} /> Đăng xuất
+                        <LogOut size={14} /> {t("logout")}
                       </button>
                     </motion.div>
                   )}
@@ -618,7 +625,7 @@ export default function SiteHeader({ locale }: { locale: string }) {
                 }}
               >
                 <LogIn size={14} />
-                <span className="hide-mobile">Đăng nhập</span>
+                <span className="hide-mobile">{t("login")}</span>
               </Link>
             )}
 
@@ -648,7 +655,7 @@ export default function SiteHeader({ locale }: { locale: string }) {
               }}
             >
               <Rocket size={14} />
-              Đặt lịch
+              {t("bookNow")}
             </Link>
 
             {/* Mobile hamburger */}
@@ -730,7 +737,7 @@ export default function SiteHeader({ locale }: { locale: string }) {
                     gap: "0.5rem",
                   }}
                 >
-                  <Rocket size={16} /> Đặt lịch tư vấn
+                  <Rocket size={16} /> {t("bookNowConsult")}
                 </Link>
               </nav>
             </motion.div>

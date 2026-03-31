@@ -66,32 +66,32 @@ export default function SiteFooter({ locale = "vi" }: { locale?: string }) {
       title: t("services"),
       icon: <Globe size={14} />,
       links: [
-        { label: "Thiết kế Website", href: `/${locale}/services` },
-        { label: "Phát triển App", href: `/${locale}/services` },
-        { label: "SaaS Platform", href: `/${locale}/services` },
-        { label: "SEO & Marketing", href: `/${locale}/services` },
-        { label: "Đặt lịch tư vấn", href: `/${locale}/booking` },
+        { label: t("servicesLinks.webDesign"), href: `/${locale}/services` },
+        { label: t("servicesLinks.appDev"), href: `/${locale}/services` },
+        { label: t("servicesLinks.saas"), href: `/${locale}/services` },
+        { label: t("servicesLinks.seoMarketing"), href: `/${locale}/services` },
+        { label: t("servicesLinks.bookConsultation"), href: `/${locale}/booking` },
       ],
     },
     {
       title: t("stayConnected"),
       icon: <BookOpen size={14} />,
       links: [
-        { label: "Học viện LOOP", href: `/${locale}/academy` },
-        { label: "Blog & Insights", href: `/${locale}/blog` },
-        { label: "Portfolio dự án", href: `/${locale}/portfolio` },
-        { label: "Hệ thống LP", href: `/${locale}/customer-portal` },
-        { label: "Bảng giá", href: `/${locale}/pricing` },
+        { label: t("stayConnectedLinks.academy"), href: `/${locale}/academy` },
+        { label: t("stayConnectedLinks.blog"), href: `/${locale}/blog` },
+        { label: t("stayConnectedLinks.portfolio"), href: `/${locale}/portfolio` },
+        { label: t("stayConnectedLinks.lpSystem"), href: `/${locale}/customer-portal` },
+        { label: t("stayConnectedLinks.pricing"), href: `/${locale}/pricing` },
       ],
     },
     {
       title: t("company"),
       icon: <Shield size={14} />,
       links: [
-        { label: "Về chúng tôi", href: `/${locale}` },
+        { label: t("companyLinks.about"), href: `/${locale}` },
         { label: tNav("team"), href: `/${locale}/team` },
-        { label: "Tuyển dụng", href: `/${locale}/contact` },
-        { label: "Quy trình công ty", href: `/${locale}/about` },
+        { label: t("companyLinks.careers"), href: `/${locale}/careers` },
+        { label: t("companyLinks.companyProcess"), href: `/${locale}/about` },
         { label: tNav("contact"), href: `/${locale}/contact` },
       ],
     },
@@ -281,7 +281,7 @@ export default function SiteFooter({ locale = "vi" }: { locale?: string }) {
               }}
             >
               <Mail size={14} style={{ color: DS.blue }} />
-              Liên hệ
+              {t("contactSection")}
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.625rem" }}>
               {[
@@ -326,7 +326,7 @@ export default function SiteFooter({ locale = "vi" }: { locale?: string }) {
             {[
               { label: t("privacyPolicy"), href: `/${locale}/privacy` },
               { label: t("termsOfService"), href: `/${locale}/terms` },
-              { label: "Cookie Policy", href: `/${locale}` },
+              { label: t("cookiePolicy"), href: `/${locale}` },
             ].map((item) => (
               <Link
                 key={item.label}

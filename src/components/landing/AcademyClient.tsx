@@ -9,6 +9,40 @@ import {
   Clock, Code2, Palette, Server, TrendingUp, GraduationCap,
   CheckCircle2, X, ArrowRight, Sparkles
 } from "lucide-react";
+import { useTranslations } from "next-intl";
+
+// ─── i18n Context ─────────────────────────────────────────────────────────────
+
+import { createContext, useContext } from "react";
+
+type AcademyI18n = {
+  t: ReturnType<typeof useTranslations<"Academy">>;
+};
+
+const AcademyI18nContext = createContext<AcademyI18n | null>(null);
+
+function AcademyI18nProvider({
+  children,
+  t,
+}: {
+  children: React.ReactNode;
+  t: AcademyI18n["t"];
+}) {
+  return (
+    <AcademyI18nContext.Provider value={{ t }}>
+      {children}
+    </AcademyI18nContext.Provider>
+  );
+}
+
+function useAcademyT(): AcademyI18n["t"] {
+  const ctx = useContext(AcademyI18nContext);
+  if (!ctx) {
+    // Fallback: use identity function if context not available
+    return ((key: string) => key) as AcademyI18n["t"];
+  }
+  return ctx.t;
+}
 
 // ─── Data ────────────────────────────────────────────────────────────────────
 
@@ -318,6 +352,7 @@ function PaymentModal({
   course: Course;
   onClose: () => void;
 }) {
+  const t = useAcademyT();
   const [mode, setMode] = useState<"vnd" | "lp-partial" | "lp-full">("vnd");
   const [processing, setProcessing] = useState(false);
   const [done, setDone] = useState(false);
@@ -361,16 +396,16 @@ function PaymentModal({
             <div style={{ width: 64, height: 64, borderRadius: "50%", background: `${DS.green}20`, display: "grid", placeItems: "center", margin: "0 auto 16px" }}>
               <CheckCircle2 size={32} style={{ color: DS.green }} />
             </div>
-            <h3 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 20, marginBottom: 8 }}>Đăng ký thành công!</h3>
-            <p style={{ color: DS.text3, fontSize: 14, marginBottom: 24 }}>Khóa học đã được thêm vào thư viện của bạn.</p>
+            <h3 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 20, marginBottom: 8 }}>{t("enrollSuccess")}</h3>
+            <p style={{ color: DS.text3, fontSize: 14, marginBottom: 24 }}>{t("enrollSuccessDesc")}</p>
             <button onClick={onClose} style={{ background: DS.blue, color: "#fff", border: "none", borderRadius: 12, padding: "12px 24px", fontFamily: DS.mono, fontWeight: 700, cursor: "pointer", width: "100%" }}>
-              Bắt đầu học ngay
+              {t("startLearning")}
             </button>
           </div>
         ) : (
           <>
             <div style={{ padding: "20px 24px", borderBottom: `1px solid ${DS.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <h3 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 16, fontWeight: 800 }}>Đăng ký khóa học</h3>
+              <h3 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 16, fontWeight: 800 }}>{t("enrollCourse")}</h3>
               <button onClick={onClose} style={{ background: "none", border: "none", color: DS.text4, cursor: "pointer", display: "flex", alignItems: "center" }}>
                 <X size={18} />
               </button>
@@ -393,7 +428,7 @@ function PaymentModal({
                   style={{ cursor: "pointer", padding: 12, borderRadius: 10, border: `2px solid ${mode === "vnd" ? DS.blue : DS.border}`, background: mode === "vnd" ? `${DS.blue}10` : "transparent" }}
                 >
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span style={{ color: DS.text, fontWeight: 600, fontSize: 13 }}>Thanh toán VNĐ</span>
+                    <span style={{ color: DS.text, fontWeight: 600, fontSize: 13 }}>{t("payVND")}</span>
                     <span style={{ color: DS.text, fontFamily: DS.mono, fontWeight: 800, fontSize: 14 }}>
                       {new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(course.price ?? 0)}
                     </span>
@@ -405,7 +440,7 @@ function PaymentModal({
                   style={{ cursor: canPayLpPartial ? "pointer" : "not-allowed", padding: 12, borderRadius: 10, border: `2px solid ${mode === "lp-partial" ? DS.cyan : DS.border}`, background: mode === "lp-partial" ? `${DS.cyan}10` : "transparent", opacity: canPayLpPartial ? 1 : 0.5 }}
                 >
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span style={{ color: DS.text, fontWeight: 600, fontSize: 13 }}>LP + VNĐ</span>
+                    <span style={{ color: DS.text, fontWeight: 600, fontSize: 13 }}>{t("payLPVND")}</span>
                     <div style={{ textAlign: "right" }}>
                       <span style={{ color: DS.cyan, fontFamily: DS.mono, fontWeight: 800, fontSize: 14 }}>{lpPartialPay.toLocaleString()} LP</span>
                       <span style={{ color: DS.text4, fontFamily: DS.mono, fontSize: 11 }}> + {new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(Number(vndPartial))}</span>
@@ -419,8 +454,8 @@ function PaymentModal({
                 >
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div>
-                      <span style={{ color: DS.text, fontWeight: 600, fontSize: 13 }}>100% LP</span>
-                      <span style={{ marginLeft: 8, background: `${DS.purple}20`, color: DS.purple, padding: "1px 6px", borderRadius: 4, fontSize: 10, fontFamily: DS.mono }}>TIẾT KIỆM</span>
+                      <span style={{ color: DS.text, fontWeight: 600, fontSize: 13 }}>{t("payFullLP")}</span>
+                      <span style={{ marginLeft: 8, background: `${DS.purple}20`, color: DS.purple, padding: "1px 6px", borderRadius: 4, fontSize: 10, fontFamily: DS.mono }}>{t("savings")}</span>
                     </div>
                     <span style={{ color: DS.purple, fontFamily: DS.mono, fontWeight: 800, fontSize: 14 }}>{lpFullPay.toLocaleString()} LP</span>
                   </div>
@@ -448,12 +483,12 @@ function PaymentModal({
                 {processing ? (
                   <>
                     <div style={{ width: 16, height: 16, border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
-                    Đang xử lý...
+                    {t("processing")}
                   </>
                 ) : (
                   <>
                     <GraduationCap size={16} />
-                    Đăng ký ngay
+                    {t("enrollNow")}
                   </>
                 )}
               </button>
@@ -480,6 +515,7 @@ function CourseCard({
   index: number;
   onEnroll: (course: Course) => void;
 }) {
+  const t = useAcademyT();
   const fmt = (n: number) =>
     new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(n);
 
@@ -502,7 +538,7 @@ function CourseCard({
           )}
           {course.isFeatured && (
             <div style={{ position: "absolute", top: 10, left: 10, background: GRD.primary, color: "#fff", borderRadius: 9999, padding: "3px 10px", fontSize: 10, fontFamily: DS.mono, fontWeight: 700 }}>
-              NỔI BẬT
+              {t("featured")}
             </div>
           )}
           {course.lpReward && (
@@ -513,7 +549,7 @@ function CourseCard({
           <div style={{ position: "absolute", bottom: 10, right: 10 }}>
             <div style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", borderRadius: 8, padding: "4px 10px", display: "flex", alignItems: "center", gap: 4 }}>
               <Play size={12} style={{ color: "#fff" }} />
-              <span style={{ color: "#fff", fontSize: 11, fontFamily: DS.mono }}>Xem thử</span>
+              <span style={{ color: "#fff", fontSize: 11, fontFamily: DS.mono }}>{t("preview")}</span>
             </div>
           </div>
         </div>
@@ -560,7 +596,7 @@ function CourseCard({
             )}
             {course.lectureCount && (
               <span style={{ display: "flex", alignItems: "center", gap: 3, color: DS.text4, fontSize: 11, fontFamily: DS.mono }}>
-                <BookOpen size={11} /> {course.lectureCount} bài
+                <BookOpen size={11} /> {course.lectureCount} {t("lecture")}
               </span>
             )}
             {course.duration && (
@@ -581,7 +617,7 @@ function CourseCard({
             </div>
             {course.hasCertificate && (
               <span style={{ display: "flex", alignItems: "center", gap: 4, color: DS.green, fontSize: 11, fontFamily: DS.mono, fontWeight: 600 }}>
-                <Check size={12} /> Chứng chỉ
+                <Check size={12} /> {t("certificate")}
               </span>
             )}
           </div>
@@ -597,7 +633,7 @@ function CourseCard({
             fontFamily: DS.mono, fontWeight: 700, fontSize: 13, cursor: "pointer",
           }}
         >
-          Đăng ký ngay
+          {t("enrollNow")}
         </button>
       </div>
     </motion.article>
@@ -685,6 +721,7 @@ function InstructorCard({ ins }: { ins: typeof INSTRUCTORS[0] }) {
 // ─── Main AcademyClient ───────────────────────────────────────────────────────
 
 export function AcademyClient({ locale }: { locale: string }) {
+  const t = useTranslations("Academy");
   const [search, setSearch] = useState("");
   const [cat, setCat] = useState("Tất cả");
   const [level, setLevel] = useState("Tất cả");
@@ -707,6 +744,7 @@ export function AcademyClient({ locale }: { locale: string }) {
   const featured = MOCK_COURSES.find((c) => c.isFeatured);
 
   return (
+    <AcademyI18nProvider t={t}>
     <main style={{ background: DS.bg, minHeight: "100vh" }}>
       {/* Hero */}
       <section style={{ background: "linear-gradient(180deg, rgba(20,184,166,0.05) 0%, transparent 100%)", padding: "64px 24px 48px" }}>
@@ -724,11 +762,10 @@ export function AcademyClient({ locale }: { locale: string }) {
             WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
             marginBottom: 16,
           }}>
-            HỌC TẬP THEO CÁCH CỦA BẠN
+            {t("heroTitle")}
           </h1>
           <p style={{ color: DS.text3, fontSize: 16, lineHeight: 1.8, maxWidth: 640, margin: "0 auto 24px" }}>
-            Khóa học chuyên sâu từ chuyên gia Diamond. Học theo tốc độ riêng,
-            nhận chứng chỉ khi hoàn thành và tích lũy LP khi học xong.
+            {t("heroDesc")}
           </p>
 
           {/* LP Banner */}
@@ -739,13 +776,13 @@ export function AcademyClient({ locale }: { locale: string }) {
           }}>
             <Zap size={16} style={{ color: DS.cyan }} />
             <span style={{ color: DS.text, fontSize: 13, fontFamily: DS.mono }}>
-              Số dư LP của bạn:
+              {t("lpBalance")}
             </span>
             <span style={{ color: DS.cyan, fontFamily: DS.mono, fontWeight: 800, fontSize: 16 }}>
               {USER_LP.toLocaleString()} LP
             </span>
             <Link href={`/${locale}`} style={{ color: DS.blue, fontSize: 12, fontFamily: DS.mono, display: "flex", alignItems: "center", gap: 4 }}>
-              Nạp thêm <ArrowRight size={12} />
+              {t("recharge")} <ArrowRight size={12} />
             </Link>
           </div>
         </div>
@@ -767,7 +804,7 @@ export function AcademyClient({ locale }: { locale: string }) {
                 )}
                 <div style={{ flex: 1, padding: "32px 40px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
                   <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-                    <span style={{ background: "rgba(255,255,255,0.2)", color: "#fff", padding: "3px 12px", borderRadius: 9999, fontSize: 10, fontFamily: DS.mono, fontWeight: 700 }}>★ KHÓA NỔI BẬT NHẤT</span>
+                    <span style={{ background: "rgba(255,255,255,0.2)", color: "#fff", padding: "3px 12px", borderRadius: 9999, fontSize: 10, fontFamily: DS.mono, fontWeight: 700 }}>{t("featuredBadge")}</span>
                     {featured.lpReward && (
                       <span style={{ background: `${DS.cyan}30`, color: DS.cyan, padding: "3px 12px", borderRadius: 9999, fontSize: 10, fontFamily: DS.mono, fontWeight: 700 }}>
                         +{featured.lpReward} LP
@@ -777,9 +814,9 @@ export function AcademyClient({ locale }: { locale: string }) {
                   <h2 style={{ fontFamily: DS.heading, fontSize: 24, fontWeight: 800, color: "#fff", marginBottom: 8 }}>{featured.title}</h2>
                   <p style={{ color: "rgba(255,255,255,0.75)", fontSize: 14, marginBottom: 16, lineHeight: 1.7 }}>{featured.shortDescription}</p>
                   <div style={{ display: "flex", gap: 20 }}>
-                    <span style={{ color: DS.amber, fontFamily: DS.mono, fontSize: 13, fontWeight: 800 }}>★ {featured.rating} ({featured.reviews} đánh giá)</span>
-                    <span style={{ color: "rgba(255,255,255,0.6)", fontSize: 12, fontFamily: DS.mono }}>{featured.totalStudents?.toLocaleString()} học viên</span>
-                    <span style={{ color: "rgba(255,255,255,0.6)", fontSize: 12, fontFamily: DS.mono }}>{featured.lectureCount} bài học</span>
+                    <span style={{ color: DS.amber, fontFamily: DS.mono, fontSize: 13, fontWeight: 800 }}>★ {featured.rating} ({featured.reviews} {t("reviews")})</span>
+                    <span style={{ color: "rgba(255,255,255,0.6)", fontSize: 12, fontFamily: DS.mono }}>{featured.totalStudents?.toLocaleString()} {t("students")}</span>
+                    <span style={{ color: "rgba(255,255,255,0.6)", fontSize: 12, fontFamily: DS.mono }}>{featured.lectureCount} {t("lessons")}</span>
                   </div>
                 </div>
               </motion.div>
@@ -792,8 +829,8 @@ export function AcademyClient({ locale }: { locale: string }) {
       <section style={{ padding: "0 24px 40px" }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
           <div style={{ marginBottom: 20 }}>
-            <h2 style={{ fontFamily: DS.heading, fontSize: 22, fontWeight: 800, color: DS.text, letterSpacing: "0.04em", marginBottom: 4 }}>Lộ trình học</h2>
-            <p style={{ color: DS.text4, fontSize: 13 }}>Chọn lộ trình phù hợp với mục tiêu nghề nghiệp của bạn</p>
+            <h2 style={{ fontFamily: DS.heading, fontSize: 22, fontWeight: 800, color: DS.text, letterSpacing: "0.04em", marginBottom: 4 }}>{t("learningPaths")}</h2>
+            <p style={{ color: DS.text4, fontSize: 13 }}>{t("learningPathsDesc")}</p>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}>
             {PATHS.map((path, i) => {
@@ -845,7 +882,7 @@ export function AcademyClient({ locale }: { locale: string }) {
               <Search size={15} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: DS.text4 }} />
               <input
                 type="text"
-                placeholder="Tìm khóa học, công nghệ..."
+                placeholder={t("searchPlaceholder")}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 style={{
@@ -882,7 +919,7 @@ export function AcademyClient({ locale }: { locale: string }) {
               }}
             >
               {LEVELS.map((l) => (
-                <option key={l} value={l}>{l === "Tất cả" ? "Tất cả trình độ" : LEVEL_VN[l] ?? l}</option>
+                <option key={l} value={l}>{l === "Tất cả" ? t("filterAllLevel") : LEVEL_VN[l] ?? l}</option>
               ))}
             </select>
           </div>
@@ -895,8 +932,8 @@ export function AcademyClient({ locale }: { locale: string }) {
           {filtered.length === 0 ? (
             <div style={{ textAlign: "center", padding: "5rem", color: DS.text4 }}>
               <BookOpen size={36} style={{ marginBottom: 16, opacity: 0.4 }} />
-              <p style={{ fontSize: 16, fontFamily: DS.mono }}>Chưa có khóa học phù hợp</p>
-              <p style={{ fontSize: 13, color: DS.text5, marginTop: 8 }}>Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm</p>
+              <p style={{ fontSize: 16, fontFamily: DS.mono }}>{t("emptyState")}</p>
+              <p style={{ fontSize: 13, color: DS.text5, marginTop: 8 }}>{t("emptyStateHint")}</p>
             </div>
           ) : (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(290px, 1fr))", gap: 16 }}>
@@ -918,8 +955,8 @@ export function AcademyClient({ locale }: { locale: string }) {
       <section style={{ padding: "48px 24px", background: `${DS.bgCard}` }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: 32 }}>
-            <h2 style={{ fontFamily: DS.heading, fontSize: 26, fontWeight: 800, color: DS.text, letterSpacing: "0.04em", marginBottom: 8 }}>Giảng viên</h2>
-            <p style={{ color: DS.text4, fontSize: 14 }}>Học từ những chuyên gia thực chiến từ LOOP Solutions</p>
+            <h2 style={{ fontFamily: DS.heading, fontSize: 26, fontWeight: 800, color: DS.text, letterSpacing: "0.04em", marginBottom: 8 }}>{t("instructors")}</h2>
+            <p style={{ color: DS.text4, fontSize: 14 }}>{t("instructorsDesc")}</p>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 16 }}>
             {INSTRUCTORS.map((ins) => (
@@ -933,7 +970,7 @@ export function AcademyClient({ locale }: { locale: string }) {
       <section style={{ padding: "48px 24px" }}>
         <div style={{ maxWidth: 720, margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: 32 }}>
-            <h2 style={{ fontFamily: DS.heading, fontSize: 26, fontWeight: 800, color: DS.text, letterSpacing: "0.04em", marginBottom: 8 }}>Câu hỏi thường gặp</h2>
+            <h2 style={{ fontFamily: DS.heading, fontSize: 26, fontWeight: 800, color: DS.text, letterSpacing: "0.04em", marginBottom: 8 }}>{t("faqTitle")}</h2>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {FAQS.map((faq, i) => (
@@ -952,10 +989,10 @@ export function AcademyClient({ locale }: { locale: string }) {
         <div style={{ maxWidth: 640, margin: "0 auto" }}>
           <Award size={40} style={{ color: DS.blue, margin: "0 auto 16px" }} />
           <h2 style={{ fontFamily: DS.heading, fontSize: 28, fontWeight: 800, color: DS.text, marginBottom: 12 }}>
-            Sẵn sàng bắt đầu?
+            {t("ctaReady")}
           </h2>
           <p style={{ color: DS.text3, fontSize: 15, lineHeight: 1.7, marginBottom: 24 }}>
-            Đăng ký khóa học đầu tiên và bắt đầu hành trình học tập của bạn ngay hôm nay.
+            {t("ctaDesc")}
           </p>
           <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
             <Link href={`/${locale}`} style={{ textDecoration: "none" }}>
@@ -964,7 +1001,7 @@ export function AcademyClient({ locale }: { locale: string }) {
                 border: "none", borderRadius: 12, fontFamily: DS.mono, fontWeight: 700, fontSize: 14,
                 cursor: "pointer",
               }}>
-                Khám phá khóa học
+                {t("exploreCourses")}
               </button>
             </Link>
             <Link href={`/${locale}/khach-hang`} style={{ textDecoration: "none" }}>
@@ -973,7 +1010,7 @@ export function AcademyClient({ locale }: { locale: string }) {
                 border: `1px solid ${DS.border}`, borderRadius: 12,
                 fontFamily: DS.mono, fontWeight: 700, fontSize: 14, cursor: "pointer",
               }}>
-                Dashboard của tôi
+                {t("myDashboard")}
               </button>
             </Link>
           </div>
@@ -987,5 +1024,6 @@ export function AcademyClient({ locale }: { locale: string }) {
         )}
       </AnimatePresence>
     </main>
+    </AcademyI18nProvider>
   );
 }

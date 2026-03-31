@@ -101,7 +101,7 @@ export async function GET(
         data: {
           id: course.id,
           slug: course.id,
-          title: locale === "vi" ? (course.titleVi || course.title) : course.title,
+          title: getLocalizedField(course, "title", locale) ?? course.titleVi ?? course.title,
           titleVi: course.titleVi,
           shortDescription: getLocalizedField(course, "description", locale) ?? "",
           description: getLocalizedField(course, "description", locale),

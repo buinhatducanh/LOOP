@@ -7,6 +7,7 @@
  */
 
 import { useState, useEffect, useRef } from "react";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { motion } from "motion/react";
 import {
@@ -88,18 +89,18 @@ function Badge({ label, color = DS.blue }: { label: string; color?: string }) {
 
 // ── HERO SECTION ─────────────────────────────────────────────────────────────
 
-function HeroSection({ locale }: { locale: string }) {
+function HeroSection({ locale, t }: { locale: string; t: ReturnType<typeof useTranslations<"HomePage">> }) {
   const [activeMetric, setActiveMetric] = useState(0);
   const metrics = [
-    { label: "Dự án hoàn thành", value: "120+", color: DS.blue },
-    { label: "Khách hàng hài lòng", value: "98%", color: DS.green },
-    { label: "Năm kinh nghiệm", value: "7+", color: DS.purple },
-    { label: "Đối tác tin cậy", value: "50+", color: DS.cyan },
+    { label: t("heroMetricProjects"), value: "120+", color: DS.blue },
+    { label: t("heroMetricClients"), value: "98%", color: DS.green },
+    { label: t("heroMetricYears"), value: "7+", color: DS.purple },
+    { label: t("heroMetricPartners"), value: "50+", color: DS.cyan },
   ];
 
   useEffect(() => {
-    const t = setInterval(() => setActiveMetric((p) => (p + 1) % metrics.length), 3000);
-    return () => clearInterval(t);
+    const timer = setInterval(() => setActiveMetric((p) => (p + 1) % metrics.length), 3000);
+    return () => clearInterval(timer);
   }, []);
 
   return (
@@ -187,7 +188,7 @@ function HeroSection({ locale }: { locale: string }) {
               marginBottom: "1.5rem",
             }}
           >
-            {["HỆ ĐIỀU HÀNH SỐ", "CHO AGENCY ĐỈNH CAO"].map((text, i) => (
+            {[t("heroTitle1"), t("heroTitle2")].map((text, i) => (
               <motion.span
                 key={i}
                 initial={{ opacity: 0, y: 20 }}
@@ -228,8 +229,7 @@ function HeroSection({ locale }: { locale: string }) {
               maxWidth: 520,
             }}
           >
-            Giải pháp công nghệ toàn diện — từ thiết kế đến triển khai.
-            Tích lũy LP điểm thưởng, thăng hạng và tạo ra những sản phẩm web đỉnh cao cho thị trường Việt Nam.
+            t("heroDesc")
           </motion.p>
 
           {/* CTAs */}
@@ -240,7 +240,7 @@ function HeroSection({ locale }: { locale: string }) {
             style={{ display: "flex", flexWrap: "wrap", gap: "1rem", marginBottom: "3rem" }}
           >
             <Link
-              href="/dat-lich"
+              href={`/${locale}/booking`}
               style={{
                 background: GRD.primary,
                 color: "#fff",
@@ -257,10 +257,10 @@ function HeroSection({ locale }: { locale: string }) {
               }}
             >
               <Rocket size={17} />
-              Bắt đầu dự án
+              {t("ctaPrimary")}
             </Link>
             <Link
-              href="/du-an"
+              href={`/${locale}/portfolio`}
               style={{
                 color: DS.text2,
                 fontSize: "0.9375rem",
@@ -277,7 +277,7 @@ function HeroSection({ locale }: { locale: string }) {
               }}
             >
               <Eye size={16} />
-              Xem dự án
+              {t("btnPortfolio")}
             </Link>
           </motion.div>
 
@@ -392,9 +392,9 @@ function HeroSection({ locale }: { locale: string }) {
               {/* Stats row */}
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "0.75rem", marginBottom: "1rem" }}>
                 {[
-                  { label: "Dự án", value: "24", color: DS.blue, icon: <Layers size={13} /> },
-                  { label: "Doanh thu", value: "2.4B", color: DS.green, icon: <TrendingUp size={13} /> },
-                  { label: "LP tích lũy", value: "820K", color: DS.purple, icon: <Zap size={13} /> },
+                  { label: t("dashboardProjects"), value: "24", color: DS.blue, icon: <Layers size={13} /> },
+                  { label: t("dashboardRevenue"), value: "2.4B", color: DS.green, icon: <TrendingUp size={13} /> },
+                  { label: t("dashboardLP"), value: "820K", color: DS.purple, icon: <Zap size={13} /> },
                 ].map((s) => (
                   <div
                     key={s.label}
@@ -425,7 +425,7 @@ function HeroSection({ locale }: { locale: string }) {
                 }}
               >
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "1rem" }}>
-                  <span style={{ color: DS.text3, fontSize: "0.75rem", fontFamily: "'JetBrains Mono', monospace" }}>DOANH THU THEO THÁNG</span>
+                  <span style={{ color: DS.text3, fontSize: "0.75rem", fontFamily: "'JetBrains Mono', monospace" }}>{t("dashboardChartLabel")}</span>
                   <span style={{ color: DS.green, fontSize: "0.6875rem", fontFamily: "'JetBrains Mono', monospace" }}>+28.4% ↑</span>
                 </div>
                 <svg width="100%" height="70" viewBox="0 0 300 70">
@@ -445,9 +445,9 @@ function HeroSection({ locale }: { locale: string }) {
 
               {/* Project list */}
               {[
-                { name: "VNRetail Platform", status: "Đang thực hiện", prog: 72, color: DS.blue },
-                { name: "MedApp v3.0", status: "Review", prog: 91, color: DS.amber },
-                { name: "FinDash Enterprise", status: "Hoàn thành", prog: 100, color: DS.green },
+                { name: "VNRetail Platform", status: t("statusInProgress"), prog: 72, color: DS.blue },
+                { name: "MedApp v3.0", status: t("statusReview"), prog: 91, color: DS.amber },
+                { name: "FinDash Enterprise", status: t("statusCompleted"), prog: 100, color: DS.green },
               ].map((p) => (
                 <div key={p.name} style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.625rem" }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -488,7 +488,7 @@ function HeroSection({ locale }: { locale: string }) {
             animate={{ y: [0, -8, 0] }}
             transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
           >
-            <div style={{ color: DS.text5, fontSize: "0.5625rem", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.15em", marginBottom: "0.25rem" }}>LP ĐIỂM THƯỞNG HÔM NAY</div>
+            <div style={{ color: DS.text5, fontSize: "0.5625rem", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.15em", marginBottom: "0.25rem" }}>{t("lpBadge")}</div>
             <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
               <Zap size={14} style={{ color: DS.purple }} />
               <span style={{ color: DS.purple, fontFamily: "'Cinzel', serif", fontSize: "1.125rem", fontWeight: 700, textShadow: "0 0 12px rgba(129,140,248,0.7)" }}>+2,450 LP</span>
@@ -597,14 +597,14 @@ function MarqueeSection() {
 
 // ── STATS SECTION ────────────────────────────────────────────────────────────
 
-function StatsSection({ projectCount = 120 }: { projectCount?: number }) {
+function StatsSection({ projectCount = 120, t }: { projectCount?: number; t: ReturnType<typeof useTranslations<"HomePage">> }) {
   const stats = [
-    { value: projectCount, suffix: "+", label: "Dự án hoàn thành", icon: <Rocket size={22} />, color: DS.blue },
-    { value: 98, suffix: "%", label: "Tỷ lệ hài lòng", icon: <Heart size={22} />, color: DS.green },
-    { value: 7, suffix: "+", label: "Năm kinh nghiệm", icon: <Award size={22} />, color: DS.amber },
-    { value: 50, suffix: "+", label: "Đối tác & Khách hàng", icon: <Users size={22} />, color: DS.purple },
-    { value: 24, suffix: "/7", label: "Hỗ trợ liên tục", icon: <Clock size={22} />, color: DS.cyan },
-    { value: 99.9, suffix: "%", label: "Uptime SLA", icon: <Shield size={22} />, color: DS.red },
+    { value: projectCount, suffix: "+", label: t("statsProjects"), icon: <Rocket size={22} />, color: DS.blue },
+    { value: 98, suffix: "%", label: t("statsSatisfaction"), icon: <Heart size={22} />, color: DS.green },
+    { value: 7, suffix: "+", label: t("statsYears"), icon: <Award size={22} />, color: DS.amber },
+    { value: 50, suffix: "+", label: t("statsPartners"), icon: <Users size={22} />, color: DS.purple },
+    { value: 24, suffix: "/7", label: t("statsSupport"), icon: <Clock size={22} />, color: DS.cyan },
+    { value: 99.9, suffix: "%", label: t("statsUptime"), icon: <Shield size={22} />, color: DS.red },
   ];
 
   return (
@@ -689,15 +689,15 @@ function StatsSection({ projectCount = 120 }: { projectCount?: number }) {
 
 // ── LP SYSTEM SECTION ─────────────────────────────────────────────────────────
 
-function LPSystemSection({ locale }: { locale: string }) {
+function LPSystemSection({ locale, t }: { locale: string; t: ReturnType<typeof useTranslations<"HomePage">> }) {
   const rankFlow = [
-    { rank: "IRON", color: "#9CA3AF", symbol: "⬡", desc: "Khởi đầu" },
-    { rank: "BRONZE", color: "#CD7F32", symbol: "◈", desc: "+350 LP" },
-    { rank: "SILVER", color: "#CBD5E1", symbol: "◇", desc: "+800 LP" },
-    { rank: "GOLD", color: "#FFD700", symbol: "★", desc: "+2K LP" },
-    { rank: "PLATINUM", color: "#14B8A6", symbol: "❋", desc: "+5K LP" },
-    { rank: "RUBY", color: "#EF4444", symbol: "♦", desc: "+12K LP" },
-    { rank: "DIAMOND", color: "#818CF8", symbol: "✦", desc: "+30K LP" },
+    { rank: "IRON", color: "#9CA3AF", symbol: "⬡", desc: t("rankFlowStart") },
+    { rank: "BRONZE", color: "#CD7F32", symbol: "◈", desc: t("rankFlowPlus", { count: "350" }) },
+    { rank: "SILVER", color: "#CBD5E1", symbol: "◇", desc: t("rankFlowPlus", { count: "800" }) },
+    { rank: "GOLD", color: "#FFD700", symbol: "★", desc: t("rankFlowPlus", { count: "2K" }) },
+    { rank: "PLATINUM", color: "#14B8A6", symbol: "❋", desc: t("rankFlowPlus", { count: "5K" }) },
+    { rank: "RUBY", color: "#EF4444", symbol: "♦", desc: t("rankFlowPlus", { count: "12K" }) },
+    { rank: "DIAMOND", color: "#818CF8", symbol: "✦", desc: t("rankFlowPlus", { count: "30K" }) },
   ];
 
   return (
@@ -706,7 +706,7 @@ function LPSystemSection({ locale }: { locale: string }) {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "4rem", alignItems: "center" }}>
           {/* Left */}
           <div>
-            <Badge label="HỆ THỐNG ĐIỂM THƯỞNG LP" color={DS.purple} />
+            <Badge label={t("lpSectionBadge")} color={DS.purple} />
             <h2
               style={{
                 fontFamily: "'Cinzel', serif",
@@ -720,18 +720,18 @@ function LPSystemSection({ locale }: { locale: string }) {
                 marginBottom: "1rem",
               }}
             >
-              LOOP POINTS — PHẦN THƯỞNG CHO SỰ TRUNG THÀNH
+              {t("lpSectionTitle")}
             </h2>
             <p style={{ color: DS.text3, fontSize: "0.9375rem", lineHeight: 1.8, marginBottom: "1.5rem" }}>
-              <strong style={{ color: DS.text }}>Tất cả dịch vụ được thanh toán bằng VNĐ.</strong> LP là hệ thống điểm thưởng nội bộ — bạn tích lũy LP khi hoàn thành dự án, giới thiệu khách hàng và đạt milestone. Dùng LP để nhận ưu đãi, giảm giá hóa đơn và mở khóa đặc quyền cao cấp.
+              {t("lpSectionDesc")}
             </p>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", marginBottom: "2rem" }}>
               {[
-                { icon: <Zap size={15} />, text: "Nhận 50 LP cho mỗi 1,000,000 VNĐ giao dịch", color: DS.blue },
-                { icon: <Users size={15} />, text: "Referral bonus: 500–2,000 LP mỗi khách hàng mới", color: DS.purple },
-                { icon: <Award size={15} />, text: "Dùng LP giảm tối đa 20% hóa đơn dịch vụ tiếp theo", color: DS.green },
-                { icon: <Sparkles size={15} />, text: "Diamond rank: ưu tiên PM tốt nhất + 2x LP bonus", color: DS.amber },
+                { icon: <Zap size={15} />, text: t("lpBenefit1"), color: DS.blue },
+                { icon: <Users size={15} />, text: t("lpBenefit2"), color: DS.purple },
+                { icon: <Award size={15} />, text: t("lpBenefit3"), color: DS.green },
+                { icon: <Sparkles size={15} />, text: t("lpBenefit4"), color: DS.amber },
               ].map((b) => (
                 <div key={b.text} style={{ display: "flex", alignItems: "flex-start", gap: "0.75rem" }}>
                   <div
@@ -771,7 +771,7 @@ function LPSystemSection({ locale }: { locale: string }) {
                 boxShadow: "0 0 20px rgba(129,140,248,0.3)",
               }}
             >
-              Xem ví LP của bạn <ArrowRight size={15} />
+              {t("ctaPrimary")} <ArrowRight size={15} />
             </Link>
           </div>
 
@@ -792,7 +792,7 @@ function LPSystemSection({ locale }: { locale: string }) {
               }}
             >
               <div style={{ color: DS.text3, fontSize: "0.6875rem", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.18em", marginBottom: "1.25rem" }}>
-                BẢNG XẾP HẠNG RANK
+                {t("rankBoardTitle")}
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: "0.625rem" }}>
                 {rankFlow.map((r, i) => (
@@ -826,7 +826,7 @@ function LPSystemSection({ locale }: { locale: string }) {
                     </span>
                     <div style={{ flex: 1 }}>
                       <div style={{ color: r.color, fontSize: "0.6875rem", fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, letterSpacing: "0.12em" }}>{r.rank}</div>
-                      <div style={{ color: DS.text5, fontSize: "0.625rem", fontFamily: "'JetBrains Mono', monospace" }}>Cần: {r.desc}</div>
+                      <div style={{ color: DS.text5, fontSize: "0.625rem", fontFamily: "'JetBrains Mono', monospace" }}>{t("rankBoardNeed", { desc: r.desc })}</div>
                     </div>
                     {i === 3 && (
                       <div
@@ -841,7 +841,7 @@ function LPSystemSection({ locale }: { locale: string }) {
                         }}
                       >
                         <span style={{ width: 6, height: 6, borderRadius: "50%", background: r.color }} />
-                        <span style={{ color: r.color, fontSize: "0.5625rem", fontFamily: "'JetBrains Mono', monospace" }}>BẠN</span>
+                        <span style={{ color: r.color, fontSize: "0.5625rem", fontFamily: "'JetBrains Mono', monospace" }}>{t("rankBoardYou")}</span>
                       </div>
                     )}
                     <div style={{ width: 80, height: 6, borderRadius: 3, background: "rgba(255,255,255,0.05)" }}>
@@ -860,8 +860,7 @@ function LPSystemSection({ locale }: { locale: string }) {
                 }}
               >
                 <div style={{ color: DS.text4, fontSize: "0.75rem", lineHeight: 1.6 }}>
-                  💡 <strong style={{ color: DS.text3 }}>Lưu ý:</strong> LP là điểm thưởng nội bộ, không phải tiền tệ. Mọi thanh toán dịch vụ đều bằng{" "}
-                  <strong style={{ color: DS.blue }}>VNĐ</strong>.
+                  💡 <strong style={{ color: DS.text3 }}>Lưu ý: </strong>{t("rankBoardNote")}
                 </div>
               </div>
             </div>
@@ -874,7 +873,7 @@ function LPSystemSection({ locale }: { locale: string }) {
 
 // ── CTA SECTION ────────────────────────────────────────────────────────────────
 
-function CTASection({ locale }: { locale: string }) {
+function CTASection({ locale, t }: { locale: string; t: ReturnType<typeof useTranslations<"HomePage">> }) {
   return (
     <section
       style={{
@@ -899,7 +898,7 @@ function CTASection({ locale }: { locale: string }) {
           position: "relative",
         }}
       >
-        <Badge label="BẮT ĐẦU NGAY HÔM NAY" color={DS.cyan} />
+        <Badge label={t("ctaBadge")} color={DS.cyan} />
         <h2
           style={{
             fontFamily: "'Cinzel', serif",
@@ -910,14 +909,14 @@ function CTASection({ locale }: { locale: string }) {
             marginBottom: "1rem",
           }}
         >
-          SẴN SÀNG TẠO RA ĐIỀU KHÁC BIỆT?
+          {t("ctaTitle")}
         </h2>
         <p style={{ color: DS.text3, fontSize: "1rem", lineHeight: 1.8, marginBottom: "2rem" }}>
-          Đặt lịch tư vấn miễn phí 30 phút. Chúng tôi sẽ phân tích nhu cầu, đề xuất giải pháp phù hợp và gửi proposal trong 24h.
+          {t("ctaDesc")}
         </p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem", justifyContent: "center" }}>
           <Link
-            href={`/${locale}/dat-lich`}
+            href={`/${locale}/booking`}
             style={{
               background: GRD.primary,
               color: "#fff",
@@ -933,10 +932,10 @@ function CTASection({ locale }: { locale: string }) {
             }}
           >
             <Rocket size={18} />
-            Bắt đầu dự án ngay
+            {t("ctaPrimary")}
           </Link>
           <Link
-            href="/lien-he"
+            href={`/${locale}/contact`}
             style={{
               color: DS.text2,
               fontSize: "1rem",
@@ -952,7 +951,7 @@ function CTASection({ locale }: { locale: string }) {
             }}
           >
             <ChevronRight size={18} />
-            Liên hệ trực tiếp
+            {t("ctaSecondary")}
           </Link>
         </div>
       </div>
@@ -971,14 +970,16 @@ export default function HomePage({ params }: PageProps) {
     params.then((p) => setLocale(p.locale));
   }, [params]);
 
+  const t = useTranslations("HomePage");
+
   return (
     <main style={{ background: DS.bg, color: DS.text, minHeight: "100vh" }}>
-      <HeroSection locale={locale} />
+      <HeroSection locale={locale} t={t} />
       <MarqueeSection />
-      <StatsSection />
+      <StatsSection t={t} />
       <ServicesSection locale={locale} />
-      <LPSystemSection locale={locale} />
-      <CTASection locale={locale} />
+      <LPSystemSection locale={locale} t={t} />
+      <CTASection locale={locale} t={t} />
     </main>
   );
 }

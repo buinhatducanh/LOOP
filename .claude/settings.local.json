@@ -143,7 +143,20 @@
       "Bash(cp -r d:/LOOP_COMPANY/LOOP/public/images d:/LOOP_COMPANY/LOOP/FE/public/)",
       "Bash(for ep:*)",
       "Bash(do curl:*)",
-      "Bash(tasklist //FI \"PID eq 11884\" //FO TABLE)"
+      "Bash(tasklist //FI \"PID eq 11884\" //FO TABLE)",
+      "Bash(ls \"d:/LOOP_COMPANY/LOOP/src/app/\\(public\\)\")",
+      "Read(//mnt/**)",
+      "Read(//mnt/d/**)",
+      "Bash(python3 -c \"open\\(''D:/LOOP_COMPANY/LOOP/docs/I18N-SEEDING-PLAN.md'',''w''\\).write\\(''''\\)\")",
+      "Bash(python -c \"open\\(''D:/LOOP_COMPANY/LOOP/docs/I18N-SEEDING-PLAN.md'',''w''\\).write\\(''''\\)\")",
+      "Bash(python -c \"open\\(''D:/LOOP_COMPANY/LOOP/docs/I18N-SEEDING-PLAN.md'',''wb''\\).write\\(b''''\\)\")",
+      "Bash(python -c \"open\\(''''D:/LOOP_COMPANY/LOOP/docs/_gen_seed.py'''',''''w'''',encoding=''''utf-8''''\\).write\\(open\\(''''D:/LOOP_COMPANY/LOOP/docs/I18N-SEEDING-PLAN.md'''',''''r'''',encoding=''''utf-8''''\\).read\\(\\).replace\\(''''\\\\''''''''\\\\''''''''\\\\'''''''''''',''''TQQ''''\\)\\)\")",
+      "Bash(echo \"import { prisma } from ''''./src/lib/prisma''''; const courses = await prisma.course.findMany\\({ select: { id: true, titleEn: true, titleJa: true, titleKo: true, titleZh: true } }\\); courses.forEach\\(c => console.log\\(c.id + '''' | EN='''' + \\(c.titleEn ?? ''''NULL''''\\)\\)\\); await prisma.$disconnect\\(\\);\")",
+      "Bash(for LOC in vi en ja ko zh)",
+      "Bash(node -e \"const d=JSON.parse\\(require\\(''''fs''''\\).readFileSync\\(0,''''utf8''''\\)\\); const c=d.data[0]; console.log\\(''''title:'''', c.title, ''''| titleVi:'''', c.titleVi, ''''| _localeUsed:'''', d.meta.locale\\)\")",
+      "Bash(node -e \"const d=JSON.parse\\(require\\(''''fs''''\\).readFileSync\\(0,''''utf8''''\\)\\); const c=d.data[0]; console.log\\(''''title:'''', c.title, ''''| _localeUsed:'''', d.meta.locale\\)\")",
+      "Bash(for LOC in vi en ja)",
+      "Bash(node -e \"const d=JSON.parse\\(require\\(''''fs''''\\).readFileSync\\(0,''''utf8''''\\)\\); const c=d.data; console.log\\(''''title:'''', c.title, ''''| titleVi:'''', c.titleVi, ''''| _localeUsed:'''', d.meta.locale\\)\")"
     ],
     "additionalDirectories": [
       "D:\\LOOP_COMPANY\\LOOP\\src\\app\\api\\admin\\expertises",
