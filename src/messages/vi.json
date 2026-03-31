@@ -115,7 +115,7 @@
     "ctaHighlight": "Chuyển Đổi",
     "ctaTitle2": "Hiện Diện Số",
     "ctaTitle3": "Chuyên Nghiệp?",
-    "ctaDesc": "Gia nhập cùng 150+ doanh nghiệp đã chọn LOOP xây dựng tương lai thành công.",
+    "ctaDesc": "Đặt lịch tư vấn miễn phí 30 phút. Chúng tôi sẽ phân tích nhu cầu, đề xuất giải pháp phù hợp và gửi proposal trong 24h.",
     "btnStart": "Bắt đầu ngay hôm nay",
     "btnPricing": "Xem bảng giá chi tiết",
     "teamSub": "Đội ngũ của chúng tôi",
@@ -153,7 +153,6 @@
     "rankBoardNote": "LP là điểm thưởng nội bộ, không phải tiền tệ. Mọi thanh toán dịch vụ đều bằng VNĐ.",
     "ctaBadge": "BẮT ĐẦU NGAY HÔM NAY",
     "ctaTitle": "SẴN SÀNG TẠO RA ĐIỀU KHÁC BIỆT?",
-    "ctaDesc": "Đặt lịch tư vấn miễn phí 30 phút. Chúng tôi sẽ phân tích nhu cầu, đề xuất giải pháp phù hợp và gửi proposal trong 24h.",
     "ctaPrimary": "Bắt đầu dự án ngay",
     "ctaSecondary": "Liên hệ trực tiếp"
   },
@@ -319,7 +318,12 @@
     "infoAddress": "Địa chỉ",
     "infoHours": "Giờ làm việc",
     "infoHoursValue": "Thứ 2 – Thứ 6, 8:00 – 18:00 (ICT)",
-    "required": "Bắt buộc"
+    "required": "Bắt buộc",
+    "formSendMore": "Gửi thêm tin nhắn",
+    "formService": "Dịch vụ quan tâm",
+    "formSelectService": "— Chọn dịch vụ —",
+    "formProjectDesc": "Mô tả dự án của bạn...",
+    "formCompanyPlaceholder": "Công ty ABC"
   },
   "Breadcrumbs": {
     "home": "Trang chủ",
@@ -455,7 +459,9 @@
   "TeamMemberPage": {
     "teamMember": "Thành viên đội ngũ",
     "relatedMembers": "Thành viên khác",
-    "backToTeam": "Quay lại đội ngũ"
+    "backToTeam": "Quay lại đội ngũ",
+    "notFoundDesc": "Khong tim thay thanh vien nay",
+    "memberMeetDesc": "Gap mui {name} tai LOOP"
   },
   "NotFound": {
     "title": "Không tìm thấy trang",
@@ -570,7 +576,16 @@
     "levelBeginner": "Cơ bản",
     "levelIntermediate": "Trung cấp",
     "levelAdvanced": "Nâng cao",
-    "levelExpert": "Chuyên gia"
+    "levelExpert": "Chuyên gia",
+    "studentLabel": "học viên",
+    "durationLabel": "Thời lượng",
+    "certYes": "Có chứng chỉ",
+    "certNo": "Không chứng chỉ",
+    "lectures": "bài học",
+    "courseDesc": "Mô tả khóa học",
+    "courseLearn": "Bạn sẽ học được gì",
+    "courseReq": "Yêu cầu đầu vào",
+    "technology": "Công nghệ"
   },
   "BookingPage": {
     "badge": "BÁO GIÁ DỊCH VỤ",

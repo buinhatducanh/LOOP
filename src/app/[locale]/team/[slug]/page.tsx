@@ -23,13 +23,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     where: { slug, isActive: true },
   });
 
-  if (!member) return { title: "Không tìm thấy" };
+  if (!member) notFound();
 
   const mapped = mapLocalizedTeamMember(member, resolvedLocale) as Record<string, string | null | undefined>;
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://loop.vn";
 
   const pageTitle = `${mapped.name ?? ""} - ${mapped.role ?? ""} | LOOP Solutions`;
-  const pageDescription = (mapped.shortBio as string | undefined) ?? (mapped.bio as string | undefined) ?? `Gặp gỡ ${mapped.name} tại LOOP`;
+  const pageDescription = (mapped.shortBio as string | undefined) ?? (mapped.bio as string | undefined) ?? `${mapped.name} - LOOP Solutions`;
   const canonical = `${baseUrl}/${locale}/team/${slug}`;
   const ogImage = (mapped.image as string | undefined) ?? "/og-cover.jpg";
 

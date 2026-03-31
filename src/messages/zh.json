@@ -14,7 +14,18 @@
     "portfolio": "作品集",
     "blog": "博客",
     "glossary": "术语表",
-    "more": "更多"
+    "more": "更多",
+    "media": "媒体",
+    "academy": "学院",
+    "dashboardAdmin": "管理后台",
+    "myLpWallet": "我的LP钱包",
+    "logout": "退出登录",
+    "bookNow": "立即预约",
+    "bookNowConsult": "预约咨询",
+    "roleAdmin": "管理员",
+    "roleManager": "经理",
+    "roleStaff": "员工",
+    "roleClient": "客户"
   },
   "Footer": {
     "ctaTitle": "准备好开始您的项目了吗？",
@@ -31,7 +42,28 @@
     "highlightSupport": "12个月技术支持",
     "rights": "© 2025 LOOP. 版權所有。",
     "privacyPolicy": "隐私政策",
-    "termsOfService": "服务条款"
+    "termsOfService": "服务条款",
+    "cookiePolicy": "Cookie政策",
+    "contactSection": "联系我们",
+    "servicesLinks": {
+      "webDesign": "网站设计",
+      "appDev": "应用开发",
+      "saas": "SaaS平台",
+      "seoMarketing": "SEO与营销",
+      "bookConsultation": "预约咨询"
+    },
+    "stayConnectedLinks": {
+      "academy": "LOOP学院",
+      "blog": "博客",
+      "portfolio": "作品集",
+      "lpSystem": "LP系统",
+      "pricing": "价格表"
+    },
+    "companyLinks": {
+      "about": "关于我们",
+      "careers": "招聘",
+      "companyProcess": "公司流程"
+    }
   },
   "ServiceCard": {
     "priceFrom": "起价",
@@ -88,7 +120,43 @@
     "teamHighlight": "专家团队",
     "teamTitle2": "优秀人才",
     "teamDesc": "每一个成功项目背后的优秀人才",
-    "teamViewAll": "查看全部团队成员"
+    "teamViewAll": "查看全部团队成员",
+    "ctaBadge": "立即开始行动",
+    "ctaPrimary": "立即启动项目",
+    "ctaSecondary": "直接联系",
+    "ctaTitle": "准备好创造不同了吗？",
+    "dashboardChartLabel": "月度营收",
+    "dashboardLP": "累计LP",
+    "dashboardProjects": "项目",
+    "dashboardRevenue": "营收",
+    "heroBadge": "DIGITAL AGENCY OPERATING SYSTEM — v3.0",
+    "heroMetricClients": "客户满意度",
+    "heroMetricPartners": "可信赖的合作伙伴",
+    "heroMetricProjects": "已完成项目",
+    "heroMetricYears": "年经验",
+    "lpBadge": "今日LP奖励",
+    "lpBenefit1": "每1,000,000越盾交易获得50 LP",
+    "lpBenefit2": "推荐奖金：每位新客户500–2,000 LP",
+    "lpBenefit3": "LP可用于下次服务账单，最高可享20%折扣",
+    "lpBenefit4": "Diamond等级：优先PM + 2倍LP奖励",
+    "lpSectionBadge": "LP积分系统",
+    "lpSectionDesc": "所有服务均以越南盾结算。LP是内部积分系统——您在完成项目、推荐客户和达成里程碑时积累LP。可用于获得优惠、折扣和高级权限解锁。",
+    "lpSectionTitle": "LOOP POINTS — 忠诚的回报",
+    "rankBoardNeed": "需要: {desc}",
+    "rankBoardNote": "LP是内部积分，不是货币。所有服务均以越南盾结算。",
+    "rankBoardTitle": "等级排行榜",
+    "rankBoardYou": "你",
+    "rankFlowPlus": "+{count} LP",
+    "rankFlowStart": "起步",
+    "statsPartners": "合作伙伴及客户",
+    "statsProjects": "已完成项目",
+    "statsSatisfaction": "满意度",
+    "statsSupport": "持续支持",
+    "statsUptime": "正常运行 SLA",
+    "statsYears": "年经验",
+    "statusCompleted": "已完成",
+    "statusInProgress": "进行中",
+    "statusReview": "审核"
   },
   "TeamPage": {
     "badge": "认识团队",
@@ -99,7 +167,19 @@
     "viewProfile": "查看简介",
     "skills": "技能",
     "experience": "经验",
-    "noResults": "未找到团队成员。"
+    "noResults": "未找到团队成员。",
+    "hallOfFame": "名人堂 — 顶尖人才",
+    "filterAll": "全部",
+    "filterFrontend": "前端",
+    "filterBackend": "后端",
+    "filterDesign": "设计",
+    "filterMarketing": "营销",
+    "filterQA": "QA",
+    "filterDevOps": "DevOps",
+    "filterPM": "项目经理",
+    "filterCEO": "CEO",
+    "filterAdmin": "管理员",
+    "searchPlaceholder": "按姓名、职位、技能搜索..."
   },
   "Stats": {
     "projects_label": "已交付项目",
@@ -240,7 +320,12 @@
     "infoAddress": "地址",
     "infoHours": "营业时间",
     "infoHoursValue": "周一至周五，8:00 – 18:00（ICT）",
-    "required": "必填"
+    "required": "必填",
+    "formSendMore": "发送更多消息",
+    "formService": "感兴趣的服务",
+    "formSelectService": "— 选择服务 —",
+    "formProjectDesc": "描述您的项目...",
+    "formCompanyPlaceholder": "ABC公司"
   },
   "Breadcrumbs": {
     "home": "首页",
@@ -376,7 +461,9 @@
   "TeamMemberPage": {
     "teamMember": "团队成员",
     "relatedMembers": "其他成员",
-    "backToTeam": "返回团队"
+    "backToTeam": "返回团队",
+    "notFoundDesc": "Wei zhaodao ci chengyuan",
+    "memberMeetDesc": "Zai LOOP renshi {name}"
   },
   "NotFound": {
     "title": "页面未找到",
@@ -550,6 +637,15 @@
     "levelBeginner": "初级",
     "levelIntermediate": "中级",
     "levelAdvanced": "高级",
-    "levelExpert": "专家"
+    "levelExpert": "专家",
+    "studentLabel": "学员",
+    "durationLabel": "学习时长",
+    "certYes": "结业证书",
+    "certNo": "无结业证书",
+    "lectures": "课时",
+    "courseDesc": "课程描述",
+    "courseLearn": "您将学到",
+    "courseReq": "入学要求",
+    "technology": "技术"
   }
 }

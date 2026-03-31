@@ -1,68 +1,49 @@
+/**
+ * Academy Course Detail Page — LOOP Solutions
+ * Route: /[locale]/academy/[slug]
+ * Wired to real API via Prisma + getLocalizedField
+ */
+
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 import { routing } from "@/i18n/routing";
-import type { Metadata } from "next";
+import { parseLocaleParam, getLocalizedField } from "@/lib/i18n/localization";
+import { prisma } from "@/lib/prisma";
 import { CourseDetailClient } from "@/components/landing/CourseDetailClient";
 
 type Props = { params: Promise<{ locale: string; slug: string }> };
 
-const MOCK_COURSE_DETAIL = {
-  id: "1",
-  slug: "react-nextjs-zero-hero",
-  title: "React & Next.js từ Zero Đến Hero",
-  shortDescription: "Học React từ cơ bản đến chuyên sâu với Next.js 14 App Router, TypeScript, Tailwind CSS",
-  description: "Khóa học toàn diện giúp bạn làm chủ React, Next.js App Router, Server Components, API routes và triển khai production-ready app.\n\nTừ kiến thức nền tảng đến best practices thực chiến tại doanh nghiệp.",
-  instructor: "Akira Sato",
-  instructorRole: "Diamond · Lead Fullstack",
-  instructorImage: "https://images.unsplash.com/photo-1507003211169-0a1dd7268e1d?w=80&h=80&fit=crop&crop=face",
-  duration: "32h",
-  students: 2400,
-  rating: 4.9,
-  reviews: 312,
-  price: 2000000,
-  image: "https://images.unsplash.com/photo-1634836023845-eddbfe9937da?auto=format&fit=crop&w=900&q=80",
-  lectureCount: 48,
-  hasCertificate: true,
-  level: "Intermediate",
-  category: "Frontend",
-  tags: ["React", "Next.js", "TypeScript", "Tailwind"],
-  objectives: [
-    "Làm chủ React hooks, state management, performance optimization",
-    "Xây dựng ứng dụng Next.js 14 App Router chuẩn production",
-    "Implement authentication, API routes, database integration",
-    "Deploy và tối ưu Core Web Vitals",
-  ],
-  requirements: [
-    "Biết HTML/CSS/JavaScript cơ bản",
-    "Có kiến thức ES6 và async/await",
-    "Máy tính cài Node.js 18+",
-  ],
-};
+function deriveLevel(weeks: number): string {
+  if (weeks <= 4) return "Beginner";
+  if (weeks <= 8) return "Intermediate";
+  if (weeks <= 12) return "Advanced";
+  return "Expert";
+}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale, slug } = await params;
+  const resolvedLocale = parseLocaleParam(new URLSearchParams({ lang: locale }));
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://loop.vn";
-  const pageTitle = `${MOCK_COURSE_DETAIL.title} | LOOP Academy`;
-  const pageDescription = MOCK_COURSE_DETAIL.shortDescription;
-  const canonical = `${baseUrl}/${locale}/academy/${slug}`;
-  const ogImage = MOCK_COURSE_DETAIL.image;
+
+  const course = await prisma.course.findFirst({
+    where: { id: slug, status: "published" },
+  });
+
+  if (!course) return { title: "Course Not Found | LOOP Academy" };
+
+  const title = getLocalizedField(course, "title", resolvedLocale) ?? course.titleVi ?? course.title ?? "";
+  const description = getLocalizedField(course, "description", resolvedLocale) ?? course.descriptionVi ?? "";
 
   return {
-    title: pageTitle,
-    description: pageDescription,
-    alternates: { canonical },
+    title: `${title} | LOOP Academy`,
+    description,
+    alternates: { canonical: `${baseUrl}/${locale}/academy/${slug}` },
     openGraph: {
       type: "website",
-      title: pageTitle,
-      description: pageDescription,
-      url: canonical,
-      images: [{ url: ogImage, width: 1200, height: 630, alt: MOCK_COURSE_DETAIL.title }],
-    },
-    twitter: {
-      card: "summary_large_image",
-      title: pageTitle,
-      description: pageDescription,
-      images: [ogImage],
+      title: `${title} | LOOP Academy`,
+      description,
+      url: `${baseUrl}/${locale}/academy/${slug}`,
     },
   };
 }
@@ -72,9 +53,61 @@ export default async function CourseDetailPage({ params }: Props) {
   if (!routing.locales.includes(locale as (typeof routing.locales)[number])) notFound();
   setRequestLocale(locale);
 
-  // TODO next step: wire real API /api/admin/edu/courses + slug mapping
-  const course = slug === MOCK_COURSE_DETAIL.slug ? MOCK_COURSE_DETAIL : null;
+  const resolvedLocale = parseLocaleParam(new URLSearchParams({ lang: locale }));
+
+  const course = await prisma.course.findFirst({
+    where: { id: slug, status: "published" },
+    include: {
+      instructor: true,
+      instructorMember: true,
+      lessons: {
+        where: { isPublished: true },
+        select: { id: true },
+      },
+      enrollments: {
+        where: { status: "active" },
+        select: { id: true },
+      },
+    },
+  });
+
   if (!course) notFound();
 
-  return <CourseDetailClient locale={locale} course={course} />;
+  // Resolve instructor info
+  const instructorName =
+    course.instructorMember?.name ??
+    course.instructor?.name ??
+    course.instructorId;
+  const instructorRole =
+    course.instructorMember?.role ??
+    (course.instructor?.specialties?.[0] ??
+    course.instructorType ??
+    "");
+  const instructorImage =
+    course.instructorMember?.image ?? "";
+
+  const clientCourse = {
+    id: course.id,
+    slug: course.id,
+    title: getLocalizedField(course, "title", resolvedLocale) ?? course.titleVi ?? course.title ?? "",
+    shortDescription: getLocalizedField(course, "description", resolvedLocale) ?? "",
+    description: getLocalizedField(course, "description", resolvedLocale) ?? "",
+    instructor: instructorName,
+    instructorRole: instructorRole,
+    instructorImage: instructorImage,
+    duration: `${course.durationWeeks} tuần`,
+    students: course.enrollments.length,
+    rating: course.instructor?.rating ?? 0,
+    reviews: course.instructor?.totalStudents ?? 0,
+    price: course.price,
+    image: "",
+    lectureCount: course.lessons.length,
+    hasCertificate: true,
+    level: deriveLevel(course.durationWeeks),
+    tags: [] as string[],
+    objectives: [] as string[],
+    requirements: [] as string[],
+  };
+
+  return <CourseDetailClient locale={locale} course={clientCourse} />;
 }

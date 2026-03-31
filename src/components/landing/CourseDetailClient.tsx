@@ -4,6 +4,7 @@ import Link from "next/link";
 import { motion } from "motion/react";
 import { DS, GRD } from "@/lib/design-tokens";
 import { ArrowLeft, Play, Clock, Users, Star, BookOpen, Check } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 type Course = {
   id: string;
@@ -33,13 +34,15 @@ const fmtVND = (n?: number) =>
   n == null ? "Liên hệ" : new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(n);
 
 export function CourseDetailClient({ locale, course }: { locale: string; course: Course }) {
+  const t = useTranslations("Academy");
+  const navT = useTranslations("Navigation");
   return (
     <main style={{ background: DS.bg, minHeight: "100vh" }}>
       {/* Hero */}
       <section style={{ background: "linear-gradient(180deg, rgba(129,140,248,0.06) 0%, transparent 60%)" }}>
         <div className="max-w-6xl mx-auto px-6 py-14">
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20, fontSize: 13, color: DS.text4 }}>
-            <Link href={`/${locale}/academy`} style={{ color: DS.blue, textDecoration: "none", fontFamily: DS.mono }}>Academy</Link>
+            <Link href={`/${locale}/academy`} style={{ color: DS.blue, textDecoration: "none", fontFamily: DS.mono }}>{navT("academy")}</Link>
             <span style={{ opacity: 0.4 }}>›</span>
             <span style={{ color: DS.text2 }}>{course.title}</span>
           </div>
@@ -66,7 +69,7 @@ export function CourseDetailClient({ locale, course }: { locale: string; course:
                 )}
                 {course.students !== undefined && (
                   <span style={{ display: "flex", alignItems: "center", gap: 4, color: DS.text4, fontSize: 12, fontFamily: DS.mono }}>
-                    <Users size={12} /> {course.students.toLocaleString()} học viên
+                    <Users size={12} /> {course.students?.toLocaleString()} {t("studentLabel")}
                   </span>
                 )}
                 {course.duration && (
@@ -92,18 +95,18 @@ export function CourseDetailClient({ locale, course }: { locale: string; course:
                 {fmtVND(course.price)}
               </div>
               <button style={{ width: "100%", background: GRD.primary, color: "#fff", border: "none", borderRadius: 10, padding: "11px 14px", fontWeight: 700, cursor: "pointer", fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginBottom: 10 }}>
-                <Play size={14} /> Bắt đầu học
+                <Play size={14} /> {t("startLearning")}
               </button>
               <button style={{ width: "100%", background: "transparent", border: `1px solid ${DS.border}`, color: DS.text3, borderRadius: 10, padding: "10px 14px", cursor: "pointer", fontSize: 13 }}>
-                Học thử miễn phí
+                {t("preview")}
               </button>
 
               <div style={{ marginTop: 14, display: "grid", gap: 8 }}>
                 {[
-                  { icon: <BookOpen size={13} />, label: `${course.lectureCount ?? 0} bài học` },
-                  { icon: <Clock size={13} />, label: `Thời lượng ${course.duration ?? "--"}` },
-                  { icon: <Users size={13} />, label: `${course.students?.toLocaleString() ?? 0} học viên` },
-                  { icon: <Check size={13} />, label: course.hasCertificate ? "Có chứng chỉ" : "Không chứng chỉ" },
+                  { icon: <BookOpen size={13} />, label: `${course.lectureCount ?? 0} ${t("lectures")}` },
+                  { icon: <Clock size={13} />, label: `${t("durationLabel")} ${course.duration ?? "--"}` },
+                  { icon: <Users size={13} />, label: `${course.students?.toLocaleString() ?? 0} ${t("studentLabel")}` },
+                  { icon: <Check size={13} />, label: course.hasCertificate ? t("certYes") : t("certNo") },
                 ].map((it, i) => (
                   <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, color: DS.text4, fontSize: 12 }}>
                     <span style={{ color: DS.cyan }}>{it.icon}</span>
@@ -122,7 +125,7 @@ export function CourseDetailClient({ locale, course }: { locale: string; course:
             {/* Description */}
             <section style={{ marginBottom: 24 }}>
               <div style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 16, padding: 24 }}>
-                <h2 style={{ fontFamily: DS.heading, fontSize: 20, fontWeight: 800, color: DS.text, marginBottom: 14 }}>Mô tả khóa học</h2>
+                <h2 style={{ fontFamily: DS.heading, fontSize: 20, fontWeight: 800, color: DS.text, marginBottom: 14 }}>{t("courseDesc")}</h2>
                 <div style={{ color: DS.text3, fontSize: 15, lineHeight: 1.9 }}>
                   {(course.description ?? course.shortDescription ?? "").split("\n").map((p, i) => p.trim() ? <p key={i} style={{ marginBottom: 12 }}>{p}</p> : null)}
                 </div>
@@ -133,7 +136,7 @@ export function CourseDetailClient({ locale, course }: { locale: string; course:
             {course.objectives && course.objectives.length > 0 && (
               <section style={{ marginBottom: 24 }}>
                 <div style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 16, padding: 24 }}>
-                  <h2 style={{ fontFamily: DS.heading, fontSize: 18, fontWeight: 800, color: DS.text, marginBottom: 14 }}>Bạn sẽ học được gì</h2>
+                  <h2 style={{ fontFamily: DS.heading, fontSize: 18, fontWeight: 800, color: DS.text, marginBottom: 14 }}>{t("courseLearn")}</h2>
                   <div style={{ display: "grid", gap: 8 }}>
                     {course.objectives.map((o, i) => (
                       <div key={i} style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
@@ -150,7 +153,7 @@ export function CourseDetailClient({ locale, course }: { locale: string; course:
             {course.requirements && course.requirements.length > 0 && (
               <section style={{ marginBottom: 24 }}>
                 <div style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 16, padding: 24 }}>
-                  <h2 style={{ fontFamily: DS.heading, fontSize: 18, fontWeight: 800, color: DS.text, marginBottom: 14 }}>Yêu cầu đầu vào</h2>
+                  <h2 style={{ fontFamily: DS.heading, fontSize: 18, fontWeight: 800, color: DS.text, marginBottom: 14 }}>{t("courseReq")}</h2>
                   <ul style={{ margin: 0, paddingLeft: 18, color: DS.text3, fontSize: 14, lineHeight: 1.8 }}>
                     {course.requirements.map((r, i) => <li key={i}>{r}</li>)}
                   </ul>
@@ -162,7 +165,7 @@ export function CourseDetailClient({ locale, course }: { locale: string; course:
           <div>
             {/* Instructor card */}
             <div style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 16, padding: 18, marginBottom: 14 }}>
-              <h3 style={{ color: DS.text2, fontSize: 13, fontFamily: DS.mono, letterSpacing: "0.12em", marginBottom: 12 }}>GIẢNG VIÊN</h3>
+              <h3 style={{ color: DS.text2, fontSize: 13, fontFamily: DS.mono, letterSpacing: "0.12em", marginBottom: 12 }}>{t("instructors").toUpperCase()}</h3>
               <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
                 {course.instructorImage && <img src={course.instructorImage} alt={course.instructor} style={{ width: 52, height: 52, borderRadius: "50%", objectFit: "cover" }} />}
                 <div>
@@ -175,7 +178,7 @@ export function CourseDetailClient({ locale, course }: { locale: string; course:
             {/* Tags */}
             {course.tags && course.tags.length > 0 && (
               <div style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 16, padding: 18 }}>
-                <h3 style={{ color: DS.text2, fontSize: 13, fontFamily: DS.mono, letterSpacing: "0.12em", marginBottom: 12 }}>CÔNG NGHỆ</h3>
+                <h3 style={{ color: DS.text2, fontSize: 13, fontFamily: DS.mono, letterSpacing: "0.12em", marginBottom: 12 }}>{t("technology")}</h3>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                   {course.tags.map((tag, i) => (
                     <span key={i} style={{ background: "rgba(129,140,248,0.1)", border: "1px solid rgba(129,140,248,0.25)", color: DS.purple, padding: "4px 12px", borderRadius: 9999, fontSize: 11, fontFamily: DS.mono }}>
@@ -190,7 +193,7 @@ export function CourseDetailClient({ locale, course }: { locale: string; course:
 
         <div style={{ marginTop: 24 }}>
           <Link href={`/${locale}/academy`} style={{ display: "inline-flex", alignItems: "center", gap: 8, color: DS.blue, textDecoration: "none", fontFamily: DS.mono, fontSize: 13, fontWeight: 600 }}>
-            <ArrowLeft size={14} /> Quay lại Academy
+            <ArrowLeft size={14} /> {navT("back")} {navT("academy")}
           </Link>
         </div>
       </div>

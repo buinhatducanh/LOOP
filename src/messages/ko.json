@@ -14,7 +14,18 @@
     "portfolio": "포트폴리오",
     "blog": "블로그",
     "glossary": "용어집",
-    "more": "더보기"
+    "more": "더보기",
+    "media": "미디어",
+    "academy": "아카데미",
+    "dashboardAdmin": "관리자 대시보드",
+    "myLpWallet": "내 LP 지갑",
+    "logout": "로그아웃",
+    "bookNow": "예약하기",
+    "bookNowConsult": "상담 예약",
+    "roleAdmin": "어드민",
+    "roleManager": "매니저",
+    "roleStaff": "스태프",
+    "roleClient": "클라이언트"
   },
   "Footer": {
     "ctaTitle": "프로젝트를 시작하시겠습니까?",
@@ -31,7 +42,28 @@
     "highlightSupport": "12개월 기술 지원",
     "rights": "© 2025 LOOP. All rights reserved.",
     "privacyPolicy": "개인정보 처리방침",
-    "termsOfService": "이용약관"
+    "termsOfService": "이용약관",
+    "cookiePolicy": "쿠키 정책",
+    "contactSection": "문의하기",
+    "servicesLinks": {
+      "webDesign": "웹사이트 디자인",
+      "appDev": "앱 개발",
+      "saas": "SaaS 플랫폼",
+      "seoMarketing": "SEO & 마케팅",
+      "bookConsultation": "상담 예약"
+    },
+    "stayConnectedLinks": {
+      "academy": "LOOP 아카데미",
+      "blog": "블로그",
+      "portfolio": "포트폴리오",
+      "lpSystem": "LP 시스템",
+      "pricing": "가격표"
+    },
+    "companyLinks": {
+      "about": "회사 소개",
+      "careers": "채용",
+      "companyProcess": "회사 프로세스"
+    }
   },
   "ServiceCard": {
     "priceFrom": "시작가",
@@ -88,7 +120,43 @@
     "teamHighlight": "팀을",
     "teamTitle2": "만나보세요",
     "teamDesc": "모든 성공적인 프로젝트 뒤에 있는 재능 있는 사람들",
-    "teamViewAll": "전체 팀원 보기"
+    "teamViewAll": "전체 팀원 보기",
+    "ctaBadge": "오늘 바로 시작하세요",
+    "ctaPrimary": "프로젝트 즉시 시작",
+    "ctaSecondary": "직접 문의하기",
+    "ctaTitle": "차이를 만들 준비가 되셨나요?",
+    "dashboardChartLabel": "월별 수익",
+    "dashboardLP": "누적 LP",
+    "dashboardProjects": "프로젝트",
+    "dashboardRevenue": "수익",
+    "heroBadge": "DIGITAL AGENCY OPERATING SYSTEM — v3.0",
+    "heroMetricClients": "고객 만족도",
+    "heroMetricPartners": "신뢰할 수 있는 파트너",
+    "heroMetricProjects": "완료된 프로젝트",
+    "heroMetricYears": "년의 경험",
+    "lpBadge": "오늘의 LP 보너스",
+    "lpBenefit1": "거래 1,000,000 VND당 50LP 적립",
+    "lpBenefit2": "추천 보너스: 신고객 1명당 500~2,000LP",
+    "lpBenefit3": "LP로次回 서비스 결제 시 최대 20% 할인",
+    "lpBenefit4": "Diamond 등급: 최우선 PM + 2배 LP 보너스",
+    "lpSectionBadge": "LP 포인트 시스템",
+    "lpSectionDesc": "모든 서비스는 VND로 결제됩니다. LP는 내부 포인트 시스템으로, 프로젝트 완료, 고객 추천, 마일스톤 달성 시 적립됩니다. 차후 서비스 할인, 포인트 교환, 고급 권한 잠금 해제에 사용됩니다.",
+    "lpSectionTitle": "LOOP POINTS — 충성도 보상",
+    "rankBoardNeed": "필요: {desc}",
+    "rankBoardNote": "LP는 내부 포인트이며 화폐가 아닙니다.",
+    "rankBoardTitle": "랭킹 보드",
+    "rankBoardYou": "나",
+    "rankFlowPlus": "+{count} LP",
+    "rankFlowStart": "시작",
+    "statsPartners": "파트너 및 고객",
+    "statsProjects": "완료된 프로젝트",
+    "statsSatisfaction": "만족도율",
+    "statsSupport": "지속적 지원",
+    "statsUptime": "가동률 SLA",
+    "statsYears": "년의 경험",
+    "statusCompleted": "완료",
+    "statusInProgress": "진행 중",
+    "statusReview": "검토"
   },
   "TeamPage": {
     "badge": "팀 만나기",
@@ -99,7 +167,19 @@
     "viewProfile": "프로필 보기",
     "skills": "스킬",
     "experience": "경력",
-    "noResults": "팀원을 찾을 수 없습니다."
+    "noResults": "팀원을 찾을 수 없습니다.",
+    "hallOfFame": "명예의 전당 — 최고 기여자",
+    "filterAll": "전체",
+    "filterFrontend": "프론트엔드",
+    "filterBackend": "백엔드",
+    "filterDesign": "디자인",
+    "filterMarketing": "마케팅",
+    "filterQA": "QA",
+    "filterDevOps": "DevOps",
+    "filterPM": "PM",
+    "filterCEO": "CEO",
+    "filterAdmin": "어드민",
+    "searchPlaceholder": "이름, 역할, 스킬로 검색..."
   },
   "Stats": {
     "projects_label": "완료된 프로젝트",
@@ -240,7 +320,12 @@
     "infoAddress": "주소",
     "infoHours": "영업 시간",
     "infoHoursValue": "월~금, 8:00~18:00 (ICT)",
-    "required": "필수"
+    "required": "필수",
+    "formSendMore": "추가 메시지 보내기",
+    "formService": "관심 서비스",
+    "formSelectService": "— 서비스를 선택 —",
+    "formProjectDesc": "프로젝트에 대해 설명...",
+    "formCompanyPlaceholder": "ABC 회사"
   },
   "Breadcrumbs": {
     "home": "홈",
@@ -376,7 +461,9 @@
   "TeamMemberPage": {
     "teamMember": "팀 멤버",
     "relatedMembers": "다른 멤버",
-    "backToTeam": "팀으로 돌아가기"
+    "backToTeam": "팀으로 돌아가기",
+    "notFoundDesc": "I member reul chat-eul su eopss-eumyo",
+    "memberMeetDesc": "LOOP-e-seo {name} mannagi"
   },
   "NotFound": {
     "title": "페이지를 찾을 수 없습니다",
@@ -550,6 +637,15 @@
     "levelBeginner": "초급",
     "levelIntermediate": "중급",
     "levelAdvanced": "고급",
-    "levelExpert": "전문가"
+    "levelExpert": "전문가",
+    "studentLabel": "학생",
+    "durationLabel": "학습 시간",
+    "certYes": "수료증",
+    "certNo": "수료증 없음",
+    "lectures": "레슨",
+    "courseDesc": "강좌 설명",
+    "courseLearn": "배울 내용",
+    "courseReq": "요구 사항",
+    "technology": "기술"
   }
 }

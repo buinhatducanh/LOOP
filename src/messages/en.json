@@ -116,7 +116,7 @@
     "ctaHighlight": "Transform",
     "ctaTitle2": "Your",
     "ctaTitle3": "Digital Presence?",
-    "ctaDesc": "Join 150+ businesses who've already chosen LOOP to build their digital future.",
+    "ctaDesc": "Book a free 30-minute consultation. We'll analyze your needs, recommend the right solutions, and send a proposal within 24 hours.",
     "btnStart": "Get Started Today",
     "btnPricing": "View Pricing",
     "teamSub": "Our Team",
@@ -154,7 +154,6 @@
     "rankBoardNote": "LP are internal reward points, not currency. All service payments are in VND.",
     "ctaBadge": "START TODAY",
     "ctaTitle": "READY TO MAKE A DIFFERENCE?",
-    "ctaDesc": "Book a free 30-minute consultation. We'll analyze your needs, recommend the right solutions, and send a proposal within 24 hours.",
     "ctaPrimary": "Start Your Project Now",
     "ctaSecondary": "Contact Us Directly"
   },
@@ -320,7 +319,12 @@
     "infoAddress": "Address",
     "infoHours": "Business Hours",
     "infoHoursValue": "Mon–Fri, 8:00 AM – 6:00 PM (ICT)",
-    "required": "Required"
+    "required": "Required",
+    "formCompanyPlaceholder": "ABC Company",
+    "formSendMore": "Send another message",
+    "formService": "Interested service",
+    "formSelectService": "— Select a service —",
+    "formProjectDesc": "Describe your project..."
   },
   "Breadcrumbs": {
     "home": "Home",
@@ -456,7 +460,9 @@
   "TeamMemberPage": {
     "teamMember": "Team Member",
     "relatedMembers": "Other Members",
-    "backToTeam": "Back to Team"
+    "backToTeam": "Back to Team",
+    "notFoundDesc": "Member not found",
+    "memberMeetDesc": "Meet {name} at LOOP"
   },
   "NotFound": {
     "title": "Page Not Found",
@@ -571,7 +577,16 @@
     "levelBeginner": "Beginner",
     "levelIntermediate": "Intermediate",
     "levelAdvanced": "Advanced",
-    "levelExpert": "Expert"
+    "levelExpert": "Expert",
+    "studentLabel": "students",
+    "durationLabel": "Duration",
+    "certYes": "Certificate",
+    "certNo": "No certificate",
+    "lectures": "lectures",
+    "courseDesc": "Course Description",
+    "courseLearn": "What You'll Learn",
+    "courseReq": "Requirements",
+    "technology": "Technology"
   },
   "BookingPage": {
     "badge": "SERVICE QUOTE",

@@ -340,8 +340,9 @@ const LEVEL_COLORS: Record<string, string> = {
   Expert: DS.red,
 };
 
-const CATS = ["Tất cả", "Frontend", "Backend", "Design", "DevOps", "Marketing"];
-const LEVELS = ["Tất cả", "Beginner", "Intermediate", "Advanced", "Expert"];
+// Empty string = "All" filter option (locale-agnostic identifier)
+const CATS = ["", "Frontend", "Backend", "Design", "DevOps", "Marketing"];
+const LEVELS = ["", "Beginner", "Intermediate", "Advanced", "Expert"];
 
 // ─── PaymentModal ──────────────────────────────────────────────────────────────
 
@@ -723,8 +724,8 @@ function InstructorCard({ ins }: { ins: typeof INSTRUCTORS[0] }) {
 export function AcademyClient({ locale }: { locale: string }) {
   const t = useTranslations("Academy");
   const [search, setSearch] = useState("");
-  const [cat, setCat] = useState("Tất cả");
-  const [level, setLevel] = useState("Tất cả");
+  const [cat, setCat] = useState("");
+  const [level, setLevel] = useState("");
   const [enrolling, setEnrolling] = useState<Course | null>(null);
 
   const filtered = useMemo(() => {
@@ -735,8 +736,8 @@ export function AcademyClient({ locale }: { locale: string }) {
         c.title.toLowerCase().includes(q) ||
         (c.shortDescription ?? "").toLowerCase().includes(q) ||
         (c.tags ?? []).some((t) => t.toLowerCase().includes(q));
-      const matchCat = cat === "Tất cả" || c.category === cat;
-      const matchLevel = level === "Tất cả" || c.level === level;
+      const matchCat = cat === "" || c.category === cat;
+      const matchLevel = level === "" || c.level === level;
       return matchSearch && matchCat && matchLevel;
     });
   }, [search, cat, level]);
@@ -906,7 +907,7 @@ export function AcademyClient({ locale }: { locale: string }) {
                     cursor: "pointer",
                   }}
                 >
-                  {c}
+                  {c === "" ? t("filterAll") : c}
                 </button>
               ))}
             </div>
@@ -919,7 +920,7 @@ export function AcademyClient({ locale }: { locale: string }) {
               }}
             >
               {LEVELS.map((l) => (
-                <option key={l} value={l}>{l === "Tất cả" ? t("filterAllLevel") : LEVEL_VN[l] ?? l}</option>
+                <option key={l} value={l}>{l === "" ? t("filterAllLevel") : LEVEL_VN[l] ?? l}</option>
               ))}
             </select>
           </div>

@@ -14,7 +14,18 @@
     "portfolio": "ポートフォリオ",
     "blog": "ブログ",
     "glossary": "用語集",
-    "more": "もっと見る"
+    "more": "もっと見る",
+    "media": "メディア",
+    "academy": "アカデミー",
+    "dashboardAdmin": "管理ダッシュ",
+    "myLpWallet": "私のLPウォレット",
+    "logout": "ログアウト",
+    "bookNow": "予約する",
+    "bookNowConsult": "カウンセリン予約",
+    "roleAdmin": "アドミン",
+    "roleManager": "マネージャー",
+    "roleStaff": "スタッフ",
+    "roleClient": "クライアント"
   },
   "Footer": {
     "ctaTitle": "プロジェクトを始めませんか？",
@@ -31,7 +42,28 @@
     "highlightSupport": "12ヶ月の技術サポート",
     "rights": "© 2025 LOOP. All rights reserved.",
     "privacyPolicy": "プライバシーポリシー",
-    "termsOfService": "利用規約"
+    "termsOfService": "利用規約",
+    "cookiePolicy": "Cookieポリシー",
+    "contactSection": "お問い合わせ",
+    "servicesLinks": {
+      "webDesign": "ウェブサイトデザイン",
+      "appDev": "アプリ開発",
+      "saas": "SaaSプラットフォーム",
+      "seoMarketing": "SEO&MARKETING",
+      "bookConsultation": "カウンセリン予約"
+    },
+    "stayConnectedLinks": {
+      "academy": "LOOPアカデミー",
+      "blog": "ブログ",
+      "portfolio": "ポートフォリオ",
+      "lpSystem": "LPシステム",
+      "pricing": "料金表"
+    },
+    "companyLinks": {
+      "about": "会社概要",
+      "careers": "採用情報",
+      "companyProcess": "会社プロセス"
+    }
   },
   "ServiceCard": {
     "priceFrom": "価格",
@@ -88,7 +120,43 @@
     "teamHighlight": "会う",
     "teamTitle2": "の専門チーム",
     "teamDesc": "すべての成功プロジェクトの背後にある才能ある人々",
-    "teamViewAll": "全チームメンバーを表示"
+    "teamViewAll": "全チームメンバーを表示",
+    "ctaBadge": "今日から始めよう",
+    "ctaPrimary": "プロジェクトを今すぐ開始",
+    "ctaSecondary": "直接お問い合わせ",
+    "ctaTitle": "違いを生み出す準備はできましたか？",
+    "dashboardChartLabel": "月次収益",
+    "dashboardLP": "累計LP",
+    "dashboardProjects": "プロジェクト",
+    "dashboardRevenue": "収益",
+    "heroBadge": "DIGITAL AGENCY OPERATING SYSTEM — v3.0",
+    "heroMetricClients": "顧客満足度",
+    "heroMetricPartners": "信頼できるパートナー",
+    "heroMetricProjects": "完了プロジェクト",
+    "heroMetricYears": "年の経験",
+    "lpBadge": "本日のLPボーナス",
+    "lpBenefit1": "取引1,000,000円ごとに50LP獲得",
+    "lpBenefit2": "紹介ボーナス：新顧客1人につき500〜2,000LP",
+    "lpBenefit3": "LPで次回サービスの請求書を最大20% 할인",
+    "lpBenefit4": "Diamondランク：最優先PM＋2倍LPボーナス",
+    "lpSectionBadge": "LP報酬システム",
+    "lpSectionDesc": "すべてのサービスはVNDでお支払い。LPは社内ポイントシステムです。プロジェクト完了、顧客紹介、マイルストーン達成時にLPを蓄積。次回サービスの割引、ポイント交換、上位権限のロック解除に使用できます。",
+    "lpSectionTitle": "LOOP POINTS — 忠诚への報酬",
+    "rankBoardNeed": "必要: {desc}",
+    "rankBoardNote": "LPは社内ポイントであり、通貨ではありません。すべてのサービス決済はVNDで行います。",
+    "rankBoardTitle": "ランク榜",
+    "rankBoardYou": "あなた",
+    "rankFlowPlus": "+{count} LP",
+    "rankFlowStart": "スタート",
+    "statsPartners": "パートナー＆顧客",
+    "statsProjects": "完了プロジェクト",
+    "statsSatisfaction": "満足度率",
+    "statsSupport": "継続サポート",
+    "statsUptime": "稼働率SLA",
+    "statsYears": "年の経験",
+    "statusCompleted": "完了",
+    "statusInProgress": "進行中",
+    "statusReview": "レビュー"
   },
   "TeamPage": {
     "badge": "チーム紹介",
@@ -99,7 +167,19 @@
     "viewProfile": "プロフィールを見る",
     "skills": "スキル",
     "experience": "経験",
-    "noResults": "チームメンバーが見つかりません。"
+    "noResults": "チームメンバーが見つかりません。",
+    "hallOfFame": "名誉堂 — トップパフォーマー",
+    "filterAll": "すべて",
+    "filterFrontend": "フロントエンド",
+    "filterBackend": "バックエンド",
+    "filterDesign": "デザイン",
+    "filterMarketing": "マーケティング",
+    "filterQA": "QA",
+    "filterDevOps": "DevOps",
+    "filterPM": "プロジェクトマネージャー",
+    "filterCEO": "CEO",
+    "filterAdmin": "アドミン",
+    "searchPlaceholder": "名前・役職・スキルで検索..."
   },
   "Stats": {
     "projects_label": "完了プロジェクト",
@@ -240,7 +320,12 @@
     "infoAddress": "住所",
     "infoHours": "営業時間",
     "infoHoursValue": "月曜日〜金曜日、8:00〜18:00（ICT）",
-    "required": "必須"
+    "required": "必須",
+    "formSendMore": "別のメッセージを送る",
+    "formService": "関心のあるサービス",
+    "formSelectService": "— サービスを選択 —",
+    "formProjectDesc": "プロジェクトについて説明...",
+    "formCompanyPlaceholder": "会社名ABC"
   },
   "Breadcrumbs": {
     "home": "ホーム",
@@ -376,7 +461,9 @@
   "TeamMemberPage": {
     "teamMember": "チームメンバー",
     "relatedMembers": "その他のメンバー",
-    "backToTeam": "チームに戻る"
+    "backToTeam": "チームに戻る",
+    "notFoundDesc": "Kono member wa mitsukarimasendeshita",
+    "memberMeetDesc": "LOOP-de {name} wo shoukai"
   },
   "NotFound": {
     "title": "ページが見つかりません",
@@ -550,6 +637,15 @@
     "levelBeginner": "初級",
     "levelIntermediate": "中級",
     "levelAdvanced": "上級",
-    "levelExpert": "エキスパート"
+    "levelExpert": "エキスパート",
+    "studentLabel": "学员",
+    "durationLabel": "学習時間",
+    "certYes": "修了証",
+    "certNo": "修了証なし",
+    "lectures": "レッスン",
+    "courseDesc": "コースの説明",
+    "courseLearn": "学ぶこと",
+    "courseReq": "必要条件",
+    "technology": "テクノロジー"
   }
 }

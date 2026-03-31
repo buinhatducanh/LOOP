@@ -232,7 +232,7 @@ export function ContactForm({ t }: ContactFormProps) {
 
       {/* Service */}
       <div style={{ marginBottom: "1.25rem" }}>
-        <label htmlFor="service" style={labelStyle}>Dịch vụ quan tâm</label>
+        <label htmlFor="service" style={labelStyle}>{t("formService")}</label>
         <select
           id="service"
           name="service"
@@ -240,7 +240,7 @@ export function ContactForm({ t }: ContactFormProps) {
           onChange={handleChange}
           style={{ ...inputStyle, cursor: "pointer" }}
         >
-          <option value="">— Chọn dịch vụ —</option>
+          <option value="">{t("formSelectService")}</option>
           {SERVICE_OPTIONS.map((opt) => (
             <option key={opt} value={opt}>{opt}</option>
           ))}
@@ -257,7 +257,7 @@ export function ContactForm({ t }: ContactFormProps) {
           name="message"
           required
           rows={5}
-          placeholder="Mô tả dự án của bạn..."
+          placeholder={t("formProjectDesc")}
           value={form.message}
           onChange={handleChange}
           style={{ ...inputStyle, resize: "vertical", minHeight: "120px" }}
