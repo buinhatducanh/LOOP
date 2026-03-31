@@ -1830,6 +1830,10 @@ model Instructor {
   userId        String?     @unique @map("user_id")
   name          String
   bio           String?
+  bioEn         String?     @map("bio_en")
+  bioJa         String?     @map("bio_ja")
+  bioKo         String?     @map("bio_ko")
+  bioZh         String?     @map("bio_zh")
   email         String?
   phone         String?
   specialties   String[]
@@ -1892,6 +1896,10 @@ model Lesson {
   courseId        String            @map("course_id")
   title           String
   titleVi         String            @map("title_vi")
+  titleEn         String?           @map("title_en")
+  titleJa         String?           @map("title_ja")
+  titleKo         String?           @map("title_ko")
+  titleZh         String?           @map("title_zh")
   orderIndex      Int               @default(0) @map("order_index")
   content         String?
   durationMinutes Int               @default(60) @map("duration_minutes")

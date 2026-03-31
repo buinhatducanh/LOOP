@@ -61,6 +61,10 @@ export async function GET(req: Request) {
           slug: c.id, // Course uses id as slug for public URLs
           title: getLocalizedField(c, "title", locale) ?? c.titleVi ?? c.title,
           titleVi: c.titleVi,
+          titleEn: c.titleEn,
+          titleJa: c.titleJa,
+          titleKo: c.titleKo,
+          titleZh: c.titleZh,
           shortDescription: getLocalizedField(c, "description", locale) ?? "",
           description: getLocalizedField(c, "description", locale),
           type: c.type,
