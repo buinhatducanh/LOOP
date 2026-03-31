@@ -4,6 +4,9 @@ import { Member, RANKS, RankKey } from './memberData';
 import { LEDRunner } from './LEDRunner';
 import { Counter } from './Counter';
 
+// ── Avatar fallback ──────────────────────────────────────────────────────────
+const AVATAR_FALLBACK = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' fill='%230F172A'/%3E%3Ctext x='100' y='118' font-family='system-ui' font-size='72' font-weight='700' text-anchor='middle' fill='%233B82F6'%3E%E2%9C%A8%3C/text%3E%3C/svg%3E";
+
 // ── Format LP helper ──────────────────────────────────────────────────────
 function fmtLP(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(2)}M`;
@@ -570,10 +573,11 @@ export function MemberCard({ member, onClick }: MemberCardProps) {
         {/* Avatar image section */}
         <div className="relative" style={{ paddingBottom: '110%' }}>
           <img
-            src={member.img}
+            src={member.img || AVATAR_FALLBACK}
             alt={member.name}
             className="absolute inset-0 w-full h-full object-cover"
             style={{ borderRadius: '10px 10px 0 0' }}
+            onError={(e) => { e.currentTarget.src = AVATAR_FALLBACK; }}
           />
           {/* Bottom gradient fade */}
           <div

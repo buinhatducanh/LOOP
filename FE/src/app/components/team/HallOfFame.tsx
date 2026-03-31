@@ -2,6 +2,9 @@ import { motion } from 'motion/react';
 import { Member, RANKS } from './memberData';
 import { Trophy, Zap, Target } from 'lucide-react';
 
+// ── Avatar fallback SVG (inline data URI — no external dependency) ──
+const AVATAR_FALLBACK = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' fill='%230F172A'/%3E%3Ctext x='100' y='118' font-family='system-ui' font-size='72' font-weight='700' text-anchor='middle' fill='%233B82F6'%3E%E2%9C%A8%3C/text%3E%3C/svg%3E";
+
 interface HallOfFameProps {
   mvp: Member;
   bugSlayer: Member;
@@ -354,9 +357,10 @@ function HolographicCard({
                 }}
               >
                 <img
-                  src={member.img}
+                  src={member.img || AVATAR_FALLBACK}
                   alt={member.name}
                   className="w-full h-full object-cover"
+                  onError={(e) => { e.currentTarget.src = AVATAR_FALLBACK; }}
                 />
               </div>
               {/* Rank symbol badge */}
