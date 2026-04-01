@@ -112,7 +112,7 @@
     "ctaHighlight": "转型",
     "ctaTitle2": "您的",
     "ctaTitle3": "数字形象了吗？",
-    "ctaDesc": "加入150多家已选择LOOP构建数字未来的企业。",
+    "ctaDesc": "预约免费30分钟咨询。我们将分析您的需求，推荐合适的解决方案，并在24小时内发送方案。",
     "btnStart": "立即开始",
     "btnPricing": "查看价格",
     "teamSub": "我们的团队",
@@ -156,7 +156,8 @@
     "statsYears": "年经验",
     "statusCompleted": "已完成",
     "statusInProgress": "进行中",
-    "statusReview": "审核"
+    "statusReview": "审核",
+    "ctaBookingWizard": "预约免费咨询 — 简单8步搞定"
   },
   "TeamPage": {
     "badge": "认识团队",

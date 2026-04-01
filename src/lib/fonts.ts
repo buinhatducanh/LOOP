@@ -12,17 +12,19 @@
  * VI/EN users pay ZERO font overhead.
  */
 
-import { Noto_Sans_JP, Noto_Sans_KR, Noto_Sans_SC } from "next/font/google";
+import { Noto_Sans_JP, Noto_Sans_KR, Noto_Sans_SC, Plus_Jakarta_Sans } from "next/font/google";
 
 // Singleton instances — font objects are created once at module load,
 // but only the active locale's className is used per page render.
 const jpFont = Noto_Sans_JP({ subsets: ["latin"], weight: ["400", "500", "700"] });
 const krFont = Noto_Sans_KR({ subsets: ["latin"], weight: ["400", "500", "700"] });
 const scFont = Noto_Sans_SC({ subsets: ["latin"], weight: ["400", "500", "700"] });
+const jakartaFont = Plus_Jakarta_Sans({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"] });
 
 /**
  * Returns the next/font CSS class for the active locale's font.
- * VI/EN return "" — they fall back to the system-ui stack.
+ * VI/EN → Plus Jakarta Sans (modern, clean, premium feel).
+ * JA/KO/ZH → Noto Sans (native CJK coverage).
  *
  * Usage: <body className={getFontClass(locale)} ...>
  */
@@ -35,6 +37,7 @@ export function getFontClass(locale: string): string {
     case "zh":
       return scFont.className;
     default:
-      return "";
+      // VI and EN use Plus Jakarta Sans
+      return jakartaFont.className;
   }
 }

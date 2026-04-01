@@ -8,6 +8,7 @@
  */
 
 import { useQuery } from "@tanstack/react-query";
+import { useTranslations } from "next-intl";
 import { motion } from "motion/react";
 import Link from "next/link";
 import {
@@ -95,6 +96,7 @@ function Badge({ label, color = DS.blue }: { label: string; color?: string }) {
 }
 
 function ServicesSectionInner({ locale }: { locale: string }) {
+  const t = useTranslations("HomePage");
   const { data } = useQuery({
     queryKey: ["landing-services", locale],
     queryFn: async () => {
@@ -336,7 +338,7 @@ function ServicesSectionInner({ locale }: { locale: string }) {
             }}
           >
             <MousePointer size={15} />
-            Đặt lịch tư vấn miễn phí — 8 bước dễ dàng
+            {t("ctaBookingWizard")}
           </Link>
         </div>
       </div>
