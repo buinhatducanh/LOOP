@@ -54,7 +54,7 @@ function getRoleLabels(
 function useNavLinks(locale: string) {
   const t = useTranslations("Navigation");
   return [
-    { label: t("home"), href: `/${locale}` },
+    { label: t("home"), href: `/${locale}/` },
     { label: t("services"), href: `/${locale}/services` },
     { label: t("media"), href: `/${locale}/media` },
     { label: t("portfolio"), href: `/${locale}/portfolio` },
@@ -244,7 +244,7 @@ export default function SiteHeader({ locale }: { locale: string }) {
   }, [userMenuOpen]);
 
   const isActive = (href: string) =>
-    href === `/${locale}` ? pathname === `/${locale}` : pathname.startsWith(href);
+    href === `/${locale}/` ? pathname === `/${locale}/` : pathname.startsWith(href);
 
   const handleLogout = async () => {
     await logout();
@@ -299,7 +299,7 @@ export default function SiteHeader({ locale }: { locale: string }) {
         >
           {/* Logo */}
           <Link
-            href={`/${locale}`}
+            href={`/${locale}/`}
             style={{
               display: "flex",
               alignItems: "center",
@@ -541,7 +541,7 @@ export default function SiteHeader({ locale }: { locale: string }) {
                       {/* Links */}
                       {[
                         { href: "/admin/overview", label: t("dashboardAdmin"), icon: "⚙️" },
-                        { href: `/${locale}`, label: t("myLpWallet"), icon: "💎" },
+                        { href: `/${locale}/`, label: t("myLpWallet"), icon: "💎" },
                       ].map((item) => (
                         <Link
                           key={item.href}

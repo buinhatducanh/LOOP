@@ -39,6 +39,22 @@ const nextConfig: NextConfig = {
           { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
         ],
       },
+      // CORS — allow cross-origin requests from localhost dev and any Vercel preview/prod FE
+      {
+        source: '/api/:path*',
+        headers: [
+          { key: 'Access-Control-Allow-Origin', value: '*' },
+          { key: 'Access-Control-Allow-Methods', value: 'GET, POST, PUT, DELETE, PATCH, OPTIONS' },
+          { key: 'Access-Control-Allow-Headers', value: 'Content-Type, Authorization, Idempotency-Key, Accept-Language' },
+          { key: 'Access-Control-Max-Age', value: '86400' },
+        ],
+      },
+      {
+        source: '/manifest.json',
+        headers: [
+          { key: 'Access-Control-Allow-Origin', value: '*' },
+        ],
+      },
       {
         source: '/_next/static/(.*)',
         headers: [

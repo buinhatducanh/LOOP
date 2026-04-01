@@ -160,7 +160,8 @@
       "Bash(grep -rn \"locale === \"\"vi\"\"\\\\|locale === ''''vi''''\\\\|locale === \"\"en\"\"\\\\|locale === ''''en''''\" src/app/api/)",
       "Bash(grep -n '\"\"searchPlaceholder\"\":' src/messages/en.json src/messages/ja.json src/messages/ko.json src/messages/zh.json)",
       "Bash(find d:/LOOP_COMPANY/LOOP/FE/src -type f \\\\\\(-name *.svg -o -name *.png \\\\\\))",
-      "Bash(nslookup loops.vn)"
+      "Bash(nslookup loops.vn)",
+      "Bash(python3 -c \"import sys; data=sys.stdin.read\\(\\); idx=data.find\\(''''error:''''\\); print\\(data[idx:idx+300] if idx>=0 else ''''no error: found''''\\)\")"
     ],
     "additionalDirectories": [
       "D:\\LOOP_COMPANY\\LOOP\\src\\app\\api\\admin\\expertises",
