@@ -1,7 +1,14 @@
 /**
  * Guild Member Data — LOOP Solutions
- * Rank config + role symbol mapping used across guild UI components.
- * Source of truth for rank tiering, colors, and symbols.
+ *
+ * ⚠️  SOURCE OF TRUTH FOR VISUAL EFFECTS — NOT FROM DATABASE ⚠️
+ *
+ * Effects are FIXED in this file per rank tier.
+ * The DB tables RankEffect + MemberEffectOverride are kept for future use
+ * but the UI does NOT read them. See docs/PROJECT-PLAN.md §5.3.
+ *
+ * To change an effect → edit this file (not the DB).
+ * To add a new rank → edit RANKS config + add BOX_SHADOW_ANIM entry.
  */
 
 export type RankKey = "iron" | "bronze" | "silver" | "gold" | "platinum" | "ruby" | "diamond";

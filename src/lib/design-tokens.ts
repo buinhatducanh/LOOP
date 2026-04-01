@@ -2,17 +2,15 @@
  * LOOP Solutions — Figma Design System Tokens
  * Re-exported from FIGMA OLD FE ds.ts for use across Next.js app.
  *
- * Source: FIGMA OLD FE/src/app/components/layout/ds.ts
- * Dark theme colors are mapped to CSS custom properties in src/styles/index.css
- * (under the .dark class on <html>).
+ * Source: DESIGN LOOPS/src/app/components/layout/ds.ts (đã đồng bộ)
+ * ⚠️ NGUỒN SỰ THẬT CHO TOÀN BỘ PROJECT ⚠️
+ * File DESIGN LOOPS là reference-only — chỉ dùng nguồn này.
  *
  * Usage in React:
  *   import { DS, GRD, GLOW, NAV_LINKS } from "@/lib/design-tokens"
  *   style={{ background: DS.bg, color: DS.text }}
  *
- * For Tailwind classes, use the CSS custom properties:
- *   className="dark"  → applies .dark { --bg: #020617; --text: #fff }
- *   style={{ background: "var(--figma-bg)" }}
+ * Dark theme colors mapped to CSS custom properties in src/styles/index.css.
  */
 
 export const DS = {

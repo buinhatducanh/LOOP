@@ -161,12 +161,25 @@
       "Bash(grep -n '\"\"searchPlaceholder\"\":' src/messages/en.json src/messages/ja.json src/messages/ko.json src/messages/zh.json)",
       "Bash(find d:/LOOP_COMPANY/LOOP/FE/src -type f \\\\\\(-name *.svg -o -name *.png \\\\\\))",
       "Bash(nslookup loops.vn)",
-      "Bash(python3 -c \"import sys; data=sys.stdin.read\\(\\); idx=data.find\\(''''error:''''\\); print\\(data[idx:idx+300] if idx>=0 else ''''no error: found''''\\)\")"
+      "Bash(python3 -c \"import sys; data=sys.stdin.read\\(\\); idx=data.find\\(''''error:''''\\); print\\(data[idx:idx+300] if idx>=0 else ''''no error: found''''\\)\")",
+      "Bash(powershell -Command \"Get-Process | Where-Object { \\\\$_.Path -like '*LOOP*' -or \\\\$_.Path -like '*node*' } | Select-Object Name,Id,Path | Format-Table -AutoSize\" 2>&1)",
+      "Bash(powershell -Command \"Get-Process -Id 22580 -ErrorAction SilentlyContinue | Select-Object Name,Id\" 2>&1)",
+      "Bash(powershell -Command \"Get-Process | Where-Object { \\\\$_.MainWindowTitle -like '*FE*' -or \\\\$_.MainWindowTitle -like '*LOOP*' } | Select-Object Name,Id,MainWindowTitle | Format-Table -AutoSize\" 2>&1)",
+      "Bash(powershell -Command \"Remove-Item -Path 'd:/LOOP_COMPANY/LOOP/FE' -Recurse -Force -ErrorAction Continue; if \\(Test-Path 'd:/LOOP_COMPANY/LOOP/FE'\\) { 'Still exists' } else { 'Deleted' }\" 2>&1)",
+      "Bash(powershell -Command 'Get-Process | Where-Object { $_.Path -like '\\\\''*LOOP*'\\\\'' -or $_.Id -eq 23784 } | Select-Object Name,Id,Path | Format-Table -AutoSize')",
+      "Bash(powershell -Command \"cmd /c 'rmdir /s /q \\\\\"D:\\\\\\\\LOOP_COMPANY\\\\\\\\LOOP\\\\\\\\FE\\\\\"' 2>&1; if \\(Test-Path 'D:\\\\\\\\LOOP_COMPANY\\\\\\\\LOOP\\\\\\\\FE'\\) { 'STILL THERE' } else { 'GONE' }\")",
+      "Bash(powershell -Command 'Get-Process | Where-Object { $_.Path -like '\\\\''*FE*'\\\\'' } | Select-Object Name,Id | Format-Table -AutoSize')",
+      "Bash(powershell -Command \"Rename-Item -Path 'D:\\\\\\\\LOOP_COMPANY\\\\\\\\LOOP\\\\\\\\FE' -NewName 'FE_old' -Force -ErrorAction Continue; if \\(Test-Path 'D:\\\\\\\\LOOP_COMPANY\\\\\\\\LOOP\\\\\\\\FE'\\) { 'RENAME FAILED' } else { 'RENAMED TO FE_old' }\")",
+      "Bash(powershell -Command 'Get-Process | Where-Object { $_.Name -in @\\('\\\\''esbuild'\\\\'','\\\\''node'\\\\''\\) } | Select-Object Name,Id,Path | Format-Table -AutoSize')",
+      "Bash(powershell -Command '[System.IO.Directory]::Delete\\('\\\\''D:\\\\LOOP_COMPANY\\\\LOOP\\\\FE'\\\\'', $false\\); '\\\\''DELETED'\\\\''')",
+      "Bash(npm create:*)",
+      "Bash(npm install:*)"
     ],
     "additionalDirectories": [
       "D:\\LOOP_COMPANY\\LOOP\\src\\app\\api\\admin\\expertises",
       "C:\\Users\\MSI\\.claude\\plans",
-      "d:\\LOOP_COMPANY\\LOOP\\src\\app\\[locale]"
+      "d:\\LOOP_COMPANY\\LOOP\\src\\app\\[locale]",
+      "d:\\LOOP_COMPANY\\LOOP\\FE"
     ]
   }
 }

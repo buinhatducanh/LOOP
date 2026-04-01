@@ -1650,6 +1650,10 @@ async function seedMemberExpertise(memberCUIDs: Record<string, string>) {
 }
 
 // ── Seed RankEffects ────────────────────────────────────────────────────────────
+// DISABLED — Effects are FIXED in code (guildMemberData.ts) per rank tier.
+// DB RankEffect table kept for future use, but UI does NOT read it.
+// To re-enable, uncomment this function AND add call in seedR2().
+/*
 async function seedRankEffects() {
   console.log("\n[R2-RankEffects] Seeding 12 rank effects...");
 
@@ -1682,17 +1686,12 @@ async function seedRankEffects() {
 async function seedMemberOverrides(memberCUIDs: Record<string, string>) {
   console.log("\n[R2-Overrides] Seeding member effect overrides...");
 
-  // Maps: member slug → effectId → override settings
   const overrides = [
-    // Akira Sato (#7) — Diamond: Diamond Holographic + Cosmic Badge selected; Ruby Fire hidden
     { memberSlug: "akira-sato",      effectId: "eff-7", visible: true,  selectedByMember: true,  priority: 10 },
     { memberSlug: "akira-sato",      effectId: "eff-8", visible: true,  selectedByMember: true,  priority: 9  },
     { memberSlug: "akira-sato",      effectId: "eff-6", visible: false, selectedByMember: false, priority: 0  },
-    // Ryo Hashimoto (#3) — Silver: Platinum Trail selected
     { memberSlug: "ryo-hashimoto",   effectId: "eff-5", visible: true,  selectedByMember: true,  priority: 8  },
-    // Vũ Đình Trọng (#13) — Silver: Diamond Holographic demo override
     { memberSlug: "vu-dinh-trong",   effectId: "eff-7", visible: true,  selectedByMember: true,  priority: 7  },
-    // Haru Tanaka (#14) — Ruby: Neon Pulse Border demo
     { memberSlug: "haru-tanaka",     effectId: "eff-9", visible: true,  selectedByMember: true,  priority: 6  },
   ];
 
@@ -1707,6 +1706,7 @@ async function seedMemberOverrides(memberCUIDs: Record<string, string>) {
   }
   console.log(`  ✓ ${overrides.length} member effect overrides`);
 }
+*/
 
 // ── Seed Projects (6 portfolio items) ────────────────────────────────────────────
 async function seedProjects() {
@@ -2185,8 +2185,10 @@ async function seedR2() {
   const memberCUIDs = await seedAllTeamMembers();
   const teamUserIds = await seedTeamUsers(memberCUIDs);
   await seedMemberExpertise(memberCUIDs);
-  await seedRankEffects();
-  await seedMemberOverrides(memberCUIDs);
+  // NOTE: seedRankEffects() and seedMemberOverrides() removed —
+  // Effects are FIXED in code (guildMemberData.ts) per rank tier.
+  // DB RankEffect + MemberEffectOverride tables are kept for future use
+  // but NOT read by the UI. See docs/PROJECT-PLAN.md §5.3.
   await seedProjects();
   await seedOrders(memberCUIDs);
   await seedProjectMembers(memberCUIDs);
@@ -2228,8 +2230,9 @@ async function main() {
       prisma.project.count(),
       prisma.order.count(),
       prisma.projectMember.count(),
-      prisma.rankEffect.count(),
-      prisma.memberEffectOverride.count(),
+      // RankEffect + MemberEffectOverride — NOT seeded (effects in code)
+      0 as number, // prisma.rankEffect.count(),
+      0 as number, // prisma.memberEffectOverride.count(),
       prisma.customerPoint.count(),
       prisma.lpTransaction.count(),
       prisma.questParticipant.count(),
@@ -2241,8 +2244,9 @@ async function main() {
       prisma.memberExpertise.count(),
       prisma.service.count(),
     ]);
-    console.log("\n[VERIFY] TM=%d US=%d PR=%d OR=%d PM=%d | EF=%d OV=%d LP=%d TX=%d QP=%d | EC=%d TS=%d Q=%d EV=%d | EXP=%d ME=%d | SVC=%d",
-      tm, us, pr, ord, pm, ef, ov, lp, tx, qp, ec, tsk, q, ev, exp, me, svc);
+    console.log("\n[VERIFY] TM=%d US=%d PR=%d OR=%d PM=%d | LP=%d TX=%d QP=%d | EC=%d TS=%d Q=%d EV=%d | EXP=%d ME=%d | SVC=%d",
+      tm, us, pr, ord, pm, lp, tx, qp, ec, tsk, q, ev, exp, me, svc);
+    console.log("  (EF=%d OV=%d — effects in code, not DB)", ef, ov);
 
     console.log("\n" + "=".repeat(50));
     console.log("✅ All seeds completed successfully!");

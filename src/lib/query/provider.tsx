@@ -78,9 +78,6 @@ export const qk = {
   lpTransactions: (params?: Record<string, string | number>) => ["admin", "lp", "transactions", params] as const,
   lpLeaderboard: () => ["admin", "lp", "leaderboard"] as const,
 
-  // Admin — effects
-  effects: () => ["admin", "effects"] as const,
-
   // Admin — dashboard
   dashboard: () => ["admin", "dashboard"] as const,
   dashboardCharts: () => ["admin", "dashboard", "charts"] as const,
