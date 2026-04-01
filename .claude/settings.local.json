@@ -157,7 +157,8 @@
       "Bash(node -e \"const d=JSON.parse\\(require\\(''''fs''''\\).readFileSync\\(0,''''utf8''''\\)\\); const c=d.data[0]; console.log\\(''''title:'''', c.title, ''''| _localeUsed:'''', d.meta.locale\\)\")",
       "Bash(for LOC in vi en ja)",
       "Bash(node -e \"const d=JSON.parse\\(require\\(''''fs''''\\).readFileSync\\(0,''''utf8''''\\)\\); const c=d.data; console.log\\(''''title:'''', c.title, ''''| titleVi:'''', c.titleVi, ''''| _localeUsed:'''', d.meta.locale\\)\")",
-      "Bash(grep -rn \"locale === \"\"vi\"\"\\\\|locale === ''''vi''''\\\\|locale === \"\"en\"\"\\\\|locale === ''''en''''\" src/app/api/)"
+      "Bash(grep -rn \"locale === \"\"vi\"\"\\\\|locale === ''''vi''''\\\\|locale === \"\"en\"\"\\\\|locale === ''''en''''\" src/app/api/)",
+      "Bash(grep -n '\"\"searchPlaceholder\"\":' src/messages/en.json src/messages/ja.json src/messages/ko.json src/messages/zh.json)"
     ],
     "additionalDirectories": [
       "D:\\LOOP_COMPANY\\LOOP\\src\\app\\api\\admin\\expertises",

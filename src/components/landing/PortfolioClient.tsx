@@ -74,6 +74,8 @@ export function PortfolioClient({ locale, projects }: { locale: string; projects
             const slug = (p.slug as string) ?? String(p.id ?? i);
             const category = (p.category as string) ?? "Dự án";
             const description = (p.description as string) ?? "";
+            const results = (p.results as string) ?? "";
+            const techStack = (Array.isArray(p.techStack) ? p.techStack : []) as string[];
             const image = (p.image as string) || "";
             const year = (p.year as string) ?? "";
             const client = (p.client as string) ?? "";
@@ -101,16 +103,28 @@ export function PortfolioClient({ locale, projects }: { locale: string; projects
                   </div>
 
                   <div className="p-4">
-                    <div style={{ color: DS.blue, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.12em", marginBottom: 4 }}>{category}</div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
+                      <div style={{ color: DS.blue, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.12em" }}>{category}</div>
+                      <div style={{ color: DS.text5, fontSize: 10 }}>{year}</div>
+                    </div>
                     <div style={{ color: DS.text, fontSize: 15, fontWeight: 700, marginBottom: 6 }}>{title}</div>
+                    {!!results && (
+                      <div style={{ color: DS.green, fontSize: 12, fontWeight: 600, marginBottom: 6 }}>{results}</div>
+                    )}
                     {!!description && (
                       <div style={{ color: DS.text4, fontSize: 12, lineHeight: 1.7, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", marginBottom: 8 }}>
                         {description}
                       </div>
                     )}
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", color: DS.text5, fontSize: 11 }}>
+                    {techStack.length > 0 && (
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 8 }}>
+                        {techStack.slice(0, 4).map((t) => (
+                          <span key={t} style={{ padding: "2px 8px", borderRadius: 4, fontSize: 10, fontFamily: DS.mono, background: "rgba(59,130,246,0.08)", color: DS.blue, border: "1px solid rgba(59,130,246,0.2)" }}>{t}</span>
+                        ))}
+                      </div>
+                    )}
+                    <div style={{ color: DS.text5, fontSize: 11 }}>
                       <span>{client || "LOOP Client"}</span>
-                      <span>{year}</span>
                     </div>
                   </div>
                 </Link>
