@@ -158,7 +158,9 @@
       "Bash(for LOC in vi en ja)",
       "Bash(node -e \"const d=JSON.parse\\(require\\(''''fs''''\\).readFileSync\\(0,''''utf8''''\\)\\); const c=d.data; console.log\\(''''title:'''', c.title, ''''| titleVi:'''', c.titleVi, ''''| _localeUsed:'''', d.meta.locale\\)\")",
       "Bash(grep -rn \"locale === \"\"vi\"\"\\\\|locale === ''''vi''''\\\\|locale === \"\"en\"\"\\\\|locale === ''''en''''\" src/app/api/)",
-      "Bash(grep -n '\"\"searchPlaceholder\"\":' src/messages/en.json src/messages/ja.json src/messages/ko.json src/messages/zh.json)"
+      "Bash(grep -n '\"\"searchPlaceholder\"\":' src/messages/en.json src/messages/ja.json src/messages/ko.json src/messages/zh.json)",
+      "Bash(find d:/LOOP_COMPANY/LOOP/FE/src -type f \\\\\\(-name *.svg -o -name *.png \\\\\\))",
+      "Bash(nslookup loops.vn)"
     ],
     "additionalDirectories": [
       "D:\\LOOP_COMPANY\\LOOP\\src\\app\\api\\admin\\expertises",

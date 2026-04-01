@@ -2,6 +2,7 @@
 
 /**
  * MemberCard — Guild-styled team member card
+ * Matches FE design from FE/src/app/components/team/MemberCard.tsx
  *
  * Full gaming/guild aesthetic with:
  * - LED running border animation (LEDRunner)
@@ -12,12 +13,25 @@
 import { useState, CSSProperties } from "react";
 import { motion } from "motion/react";
 import Link from "next/link";
-import { RANKS, normalizeRank, formatLP, calcXpPct, BOX_SHADOW_ANIM, ROLE_SYMBOLS, type RankKey } from "./guildMemberData";
+import {
+  RANKS,
+  normalizeRank,
+  formatLP,
+  calcXpPct,
+  BOX_SHADOW_ANIM,
+  ROLE_SYMBOLS,
+  type RankKey,
+} from "./guildMemberData";
 import { LEDRunner } from "./LEDRunner";
 import { Counter } from "./Counter";
 
 type MemberRecord = Record<string, unknown>;
 
+// ── Avatar fallback SVG ─────────────────────────────────────────────────────────
+const AVATAR_FALLBACK =
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' fill='%230F172A'/%3E%3Ctext x='100' y='118' font-family='system-ui' font-size='72' font-weight='700' text-anchor='middle' fill='%233B82F6'%3E%E2%9C%A8%3C/text%3E%3C/svg%3E";
+
+// ── Corner decoration (rendered OUTSIDE overflow:hidden) ───────────────────
 function CornerDeco({ color, opacity = 1 }: { color: string; opacity?: number }) {
   const s: CSSProperties = { borderColor: color, opacity, transition: "opacity 0.25s ease" };
   return (
@@ -30,6 +44,7 @@ function CornerDeco({ color, opacity = 1 }: { color: string; opacity?: number })
   );
 }
 
+// ── Rank Badge ───────────────────────────────────────────────────────────
 function RankBadge({ rank }: { rank: RankKey }) {
   const cfg = RANKS[rank];
   return (
@@ -38,6 +53,7 @@ function RankBadge({ rank }: { rank: RankKey }) {
       style={{
         backgroundImage: `linear-gradient(135deg, ${cfg.gradientFrom}22, ${cfg.gradientTo}22)`,
         border: `1px solid ${cfg.color}55`,
+        backdropFilter: "blur(4px)",
       }}
     >
       <span style={{ color: cfg.color, fontSize: 10 }}>{cfg.symbol}</span>
@@ -56,7 +72,7 @@ function RankBadge({ rank }: { rank: RankKey }) {
   );
 }
 
-// ── Floating particles (platinum / ruby / diamond) ────────────────────────
+// ── Floating particles (platinum / ruby) ────────────────────────────────────────
 const PARTICLES: Record<string, Array<{ left: string; delay: string; duration: string; size: number }>> = {
   platinum: [
     { left: "12%", delay: "0s", duration: "3.2s", size: 2 },
@@ -75,18 +91,7 @@ const PARTICLES: Record<string, Array<{ left: string; delay: string; duration: s
   ],
 };
 
-const DIAMOND_PARTICLES_LIST = [
-  { left: "5%", delay: "0s", dur: "5.0s", size: 2.5, color: "#818CF8" },
-  { left: "16%", delay: "1.3s", dur: "4.2s", size: 1.5, color: "#7DD3FC" },
-  { left: "28%", delay: "0.5s", dur: "5.8s", size: 2.0, color: "#F0ABFC" },
-  { left: "42%", delay: "2.1s", dur: "4.5s", size: 1.5, color: "#FFFFFF" },
-  { left: "55%", delay: "0.9s", dur: "5.2s", size: 2.5, color: "#818CF8" },
-  { left: "68%", delay: "1.7s", dur: "3.8s", size: 1.5, color: "#7DD3FC" },
-  { left: "80%", delay: "0.3s", dur: "4.8s", size: 2.0, color: "#F0ABFC" },
-  { left: "93%", delay: "2.4s", dur: "5.5s", size: 1.5, color: "#FFFFFF" },
-];
-
-function Particles({ rank }: { rank: RankKey }) {
+export function Particles({ rank }: { rank: RankKey }) {
   const list = PARTICLES[rank] || [];
   const color = RANKS[rank].particleColor;
   return (
@@ -109,7 +114,19 @@ function Particles({ rank }: { rank: RankKey }) {
   );
 }
 
-function DiamondParticles() {
+// ── Diamond prismatic particles ──────────────────────────────────────────────
+const DIAMOND_PARTICLES_LIST = [
+  { left: "5%", delay: "0s", dur: "5.0s", size: 2.5, color: "#818CF8" },
+  { left: "16%", delay: "1.3s", dur: "4.2s", size: 1.5, color: "#7DD3FC" },
+  { left: "28%", delay: "0.5s", dur: "5.8s", size: 2.0, color: "#F0ABFC" },
+  { left: "42%", delay: "2.1s", dur: "4.5s", size: 1.5, color: "#FFFFFF" },
+  { left: "55%", delay: "0.9s", dur: "5.2s", size: 2.5, color: "#818CF8" },
+  { left: "68%", delay: "1.7s", dur: "3.8s", size: 1.5, color: "#7DD3FC" },
+  { left: "80%", delay: "0.3s", dur: "4.8s", size: 2.0, color: "#F0ABFC" },
+  { left: "93%", delay: "2.4s", dur: "5.5s", size: 1.5, color: "#FFFFFF" },
+];
+
+export function DiamondParticles() {
   return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden z-30">
       {DIAMOND_PARTICLES_LIST.map((p, i) => (
@@ -130,10 +147,13 @@ function DiamondParticles() {
   );
 }
 
-// ── Gold comet line ──────────────────────────────────────────────────────
-function CometLine({ color }: { color: string }) {
+// ── Gold comet line ──────────────────────────────────────────────────────────
+export function CometLine({ color }: { color: string }) {
   return (
-    <div className="absolute top-0 left-0 right-0 overflow-hidden pointer-events-none z-30" style={{ height: 2 }}>
+    <div
+      className="absolute top-0 left-0 right-0 overflow-hidden pointer-events-none z-30"
+      style={{ height: 2 }}
+    >
       <div
         className="absolute top-0 h-full"
         style={{
@@ -146,8 +166,8 @@ function CometLine({ color }: { color: string }) {
   );
 }
 
-// ── Ruby electric sparks ───────────────────────────────────────────────
-function ElectricSparks({ color }: { color: string }) {
+// ── Ruby electric sparks ────────────────────────────────────────────────────
+export function ElectricSparks({ color }: { color: string }) {
   const sparks = [
     { top: "15%", left: "0", width: "40%", delay: "0s", dur: "0.6s" },
     { top: "35%", left: "60%", width: "40%", delay: "0.3s", dur: "0.5s" },
@@ -174,7 +194,7 @@ function ElectricSparks({ color }: { color: string }) {
   );
 }
 
-// ── Diamond prismatic beams ─────────────────────────────────────────────
+// ── Diamond prismatic beams ────────────────────────────────────────────────
 const PRISM_BEAMS = [
   { top: "10%", delay: "0s", dur: "5.5s", color: "#818CF8", rot: "16deg" },
   { top: "35%", delay: "1.8s", dur: "4.8s", color: "#7DD3FC", rot: "-20deg" },
@@ -182,7 +202,7 @@ const PRISM_BEAMS = [
   { top: "82%", delay: "0.9s", dur: "5.2s", color: "#FFFFFF", rot: "-14deg" },
 ];
 
-function DiamondPrism() {
+export function DiamondPrism() {
   return (
     <div className="absolute inset-0 pointer-events-none z-5 overflow-hidden">
       {PRISM_BEAMS.map((b, i) => (
@@ -193,7 +213,7 @@ function DiamondPrism() {
             top: b.top,
             left: "-40%",
             width: "180%",
-            height: "1px",
+            height: 1,
             backgroundImage: `linear-gradient(90deg, transparent 0%, ${b.color}55 35%, ${b.color}90 50%, ${b.color}55 65%, transparent 100%)`,
             transform: `rotate(${b.rot})`,
             animation: `guildDiamondBeam ${b.dur} ${b.delay} ease-in-out infinite`,
@@ -204,6 +224,61 @@ function DiamondPrism() {
   );
 }
 
+// ── GUILD_ANIMATIONS_CSS (exported for injection) ───────────────────────────
+export const GUILD_ANIMATIONS_CSS = `
+  @keyframes guildFloatParticle {
+    0%   { transform: translateY(0) scale(1); opacity: 0; }
+    10%  { opacity: 0.85; }
+    85%  { opacity: 0.6; }
+    100% { transform: translateY(-320px) scale(0.2); opacity: 0; }
+  }
+  @keyframes guildCometSweep {
+    0%   { transform: translateX(-100%); opacity: 0; }
+    10%  { opacity: 1; }
+    85%  { opacity: 0.8; }
+    100% { transform: translateX(200%); opacity: 0; }
+  }
+  @keyframes guildElectric {
+    0%,100% { opacity: 0; transform: scaleX(0.4); }
+    50%     { opacity: 0.9; transform: scaleX(1); }
+  }
+  @keyframes guildSilverPulse {
+    0%,100% { box-shadow: 0 0 8px rgba(203,213,225,0.25), 0 0 20px rgba(203,213,225,0.08); }
+    50%     { box-shadow: 0 0 18px rgba(203,213,225,0.55), 0 0 40px rgba(203,213,225,0.18); }
+  }
+  @keyframes guildBronzeFlow {
+    0%,100% { box-shadow: 0 0 10px rgba(205,127,50,0.35), 0 0 25px rgba(205,127,50,0.12); }
+    50%     { box-shadow: 0 0 18px rgba(205,127,50,0.65), 0 0 45px rgba(205,127,50,0.22); }
+  }
+  @keyframes guildGoldGlow {
+    0%,100% { box-shadow: 0 0 14px rgba(255,215,0,0.5), 0 0 35px rgba(255,215,0,0.2), 0 0 60px rgba(255,215,0,0.06); }
+    50%     { box-shadow: 0 0 24px rgba(255,215,0,0.85), 0 0 55px rgba(255,215,0,0.35), 0 0 90px rgba(255,215,0,0.12); }
+  }
+  @keyframes guildPlatinumPulse {
+    0%,100% { box-shadow: 0 0 15px rgba(20,184,166,0.5), 0 0 45px rgba(139,92,246,0.25), 0 0 70px rgba(20,184,166,0.08); }
+    50%     { box-shadow: 0 0 28px rgba(20,184,166,0.8), 0 0 65px rgba(139,92,246,0.45), 0 0 110px rgba(20,184,166,0.15); }
+  }
+  @keyframes guildHeartbeat {
+    0%,100% { box-shadow: 0 0 10px rgba(239,68,68,0.4), 0 0 30px rgba(239,68,68,0.15); }
+    14%     { box-shadow: 0 0 28px rgba(239,68,68,0.95), 0 0 70px rgba(239,68,68,0.45), 0 0 110px rgba(239,68,68,0.12); }
+    28%     { box-shadow: 0 0 10px rgba(239,68,68,0.4), 0 0 30px rgba(239,68,68,0.15); }
+    42%     { box-shadow: 0 0 20px rgba(239,68,68,0.75), 0 0 55px rgba(239,68,68,0.35); }
+    70%     { box-shadow: 0 0 10px rgba(239,68,68,0.4), 0 0 30px rgba(239,68,68,0.15); }
+  }
+  @keyframes guildDiamondSpectral {
+    0%   { box-shadow: 0 0 22px rgba(129,140,248,0.55), 0 0 60px rgba(125,211,252,0.2), 0 0 110px rgba(240,171,252,0.06); }
+    33%  { box-shadow: 0 0 40px rgba(125,211,252,0.78), 0 0 90px rgba(240,171,252,0.32), 0 0 155px rgba(255,255,255,0.13); }
+    66%  { box-shadow: 0 0 34px rgba(240,171,252,0.68), 0 0 78px rgba(129,140,248,0.34), 0 0 138px rgba(125,211,252,0.12); }
+    100% { box-shadow: 0 0 22px rgba(129,140,248,0.55), 0 0 60px rgba(125,211,252,0.2), 0 0 110px rgba(240,171,252,0.06); }
+  }
+  @keyframes guildDiamondBeam {
+    0%, 12%  { opacity: 0; }
+    32%, 68% { opacity: 1; }
+    88%, 100% { opacity: 0; }
+  }
+`;
+
+// ── Main MemberCard ────────────────────────────────────────────────────────
 interface MemberCardProps {
   member: MemberRecord;
   index: number;
@@ -262,8 +337,11 @@ export function MemberCard({ member, index, locale }: MemberCardProps) {
         }}
       />
 
-      {/* ── Card (overflow:hidden clips VFX) ─────────────── */}
-      <Link href={`/${locale}/team/${slug}`} style={{ textDecoration: "none", color: "inherit", display: "block" }}>
+      {/* ── Card (overflow:hidden clips VFX) ─────────── */}
+      <Link
+        href={`/${locale}/team/${slug}`}
+        style={{ textDecoration: "none", color: "inherit", display: "block" }}
+      >
         <div style={cardStyle}>
           {hasComet && <CometLine color={cfg.color} />}
           {hasSparks && <ElectricSparks color={cfg.color} />}
@@ -285,17 +363,24 @@ export function MemberCard({ member, index, locale }: MemberCardProps) {
                 className="absolute inset-0 flex items-center justify-center"
                 style={{ background: "#111827", borderRadius: "10px 10px 0 0" }}
               >
-                <span style={{ color: "#374151", fontSize: "3rem", fontWeight: 900 }}>
+                <span
+                  style={{
+                    color: "#374151",
+                    fontSize: "3rem",
+                    fontWeight: 900,
+                  }}
+                >
                   {name.charAt(0).toUpperCase()}
                 </span>
               </div>
             )}
 
-            {/* Bottom gradient fade */}
+            {/* Bottom gradient fade — matches FE exactly */}
             <div
               className="absolute inset-0"
               style={{
-                backgroundImage: "linear-gradient(to top, #0F172A 0%, #0F172A55 35%, transparent 62%)",
+                backgroundImage:
+                  "linear-gradient(to top, rgba(15,23,42,0.95) 0%, rgba(15,23,42,0.6) 30%, rgba(15,23,42,0.15) 55%, transparent 75%)",
                 borderRadius: "10px 10px 0 0",
               }}
             />
@@ -311,9 +396,17 @@ export function MemberCard({ member, index, locale }: MemberCardProps) {
               style={{
                 backgroundColor: "rgba(2,6,23,0.72)",
                 border: "1px solid #1F2937",
+                backdropFilter: "blur(4px)",
               }}
             >
-              <span style={{ color: "#64748B", fontSize: 9, letterSpacing: "0.12em", fontFamily: "'JetBrains Mono', monospace" }}>
+              <span
+                style={{
+                  color: "#64748B",
+                  fontSize: 9,
+                  letterSpacing: "0.12em",
+                  fontFamily: "'JetBrains Mono', monospace",
+                }}
+              >
                 ⬡ {team}
               </span>
             </div>
@@ -332,7 +425,15 @@ export function MemberCard({ member, index, locale }: MemberCardProps) {
               >
                 <Counter value={level} duration={1.2} delay={0.1} />
               </span>
-              <span style={{ color: "#64748B", fontSize: 9, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.1em", marginBottom: 2 }}>
+              <span
+                style={{
+                  color: "#64748B",
+                  fontSize: 9,
+                  fontFamily: "'JetBrains Mono', monospace",
+                  letterSpacing: "0.1em",
+                  marginBottom: 2,
+                }}
+              >
                 LVL
               </span>
             </div>
@@ -347,7 +448,14 @@ export function MemberCard({ member, index, locale }: MemberCardProps) {
                   animation: "guildHeartbeat 0.5s ease-in-out infinite",
                 }}
               >
-                <span style={{ color: cfg.color, fontSize: 8, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.1em" }}>
+                <span
+                  style={{
+                    color: cfg.color,
+                    fontSize: 8,
+                    fontFamily: "'JetBrains Mono', monospace",
+                    letterSpacing: "0.1em",
+                  }}
+                >
                   ⚡ BOOST
                 </span>
               </div>
@@ -376,22 +484,35 @@ export function MemberCard({ member, index, locale }: MemberCardProps) {
             {/* Role */}
             <div
               className="mt-0.5"
-              style={{ color: "#64748B", fontSize: 10, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.08em" }}
+              style={{
+                color: "#64748B",
+                fontSize: 10,
+                fontFamily: "'JetBrains Mono', monospace",
+                letterSpacing: "0.08em",
+              }}
             >
               {ROLE_SYMBOLS[roleCode] ?? "◎"} {role}
             </div>
 
             {/* XP bar */}
             <div className="mt-2.5">
-              <div className="flex justify-between mb-1" style={{ color: "#475569", fontSize: 9, fontFamily: "'JetBrains Mono', monospace" }}>
+              <div
+                className="flex justify-between mb-1"
+                style={{ color: "#475569", fontSize: 9, fontFamily: "'JetBrains Mono', monospace" }}
+              >
                 <span style={{ color: cfg.color }}>
-                  XP <Counter value={xpPct} duration={1.2} delay={0.2} />%
+                  XP{" "}
+                  <Counter value={xpPct} duration={1.2} delay={0.2} />
+                  %
                 </span>
                 <span>
                   {currentXp}/{maxXp}
                 </span>
               </div>
-              <div className="rounded-full overflow-hidden" style={{ height: 3, backgroundColor: "#1F2937" }}>
+              <div
+                className="rounded-full overflow-hidden"
+                style={{ height: 3, backgroundColor: "#1F2937" }}
+              >
                 <div
                   className="h-full rounded-full"
                   style={{
@@ -414,7 +535,14 @@ export function MemberCard({ member, index, locale }: MemberCardProps) {
             >
               <div className="flex items-center gap-1">
                 <span style={{ color: cfg.color, fontSize: 8 }}>◈</span>
-                <span style={{ color: "#475569", fontSize: 8, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.06em" }}>
+                <span
+                  style={{
+                    color: "#475569",
+                    fontSize: 8,
+                    fontFamily: "'JetBrains Mono', monospace",
+                    letterSpacing: "0.06em",
+                  }}
+                >
                   LP BALANCE
                 </span>
               </div>
@@ -436,7 +564,9 @@ export function MemberCard({ member, index, locale }: MemberCardProps) {
             <div
               className="w-full mt-3 py-1.5 rounded-sm text-center"
               style={{
-                backgroundImage: hovered ? `linear-gradient(135deg, ${cfg.gradientFrom}35, ${cfg.gradientTo}35)` : `linear-gradient(135deg, ${cfg.gradientFrom}15, ${cfg.gradientTo}15)`,
+                backgroundImage: hovered
+                  ? `linear-gradient(135deg, ${cfg.gradientFrom}35, ${cfg.gradientTo}35)`
+                  : `linear-gradient(135deg, ${cfg.gradientFrom}15, ${cfg.gradientTo}15)`,
                 backgroundColor: "transparent",
                 border: `1px solid ${hovered ? cfg.color + "70" : cfg.color + "30"}`,
                 color: hovered ? cfg.color : "#64748B",
@@ -454,10 +584,16 @@ export function MemberCard({ member, index, locale }: MemberCardProps) {
         </div>
 
         {/* ── LED Runner — outside overflow:hidden ─────────── */}
-        <LEDRunner member={{ id: (member.id as string | number) ?? index, rank: rankKey, level }} />
+        <LEDRunner
+          member={{
+            id: (member.id as string | number) ?? index,
+            rank: rankKey,
+            level,
+          }}
+        />
       </Link>
 
-      {/* ── Corner decorations ──────────────────────────────── */}
+      {/* ── Corner decorations ────────────────────────────── */}
       <CornerDeco color={cfg.color} opacity={hovered ? 1 : 0.5} />
     </motion.div>
   );

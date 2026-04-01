@@ -40,12 +40,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const description = seo.defaultDescription ?? "LOOP Solutions platform with server-first architecture, AI-driven workflows, and edge-ready delivery.";
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://loop.vn";
   const ogImage = `/api/og?title=${encodeURIComponent(title)}&description=${encodeURIComponent(description)}&locale=${locale}`;
+  const gaId = process.env.NEXT_PUBLIC_GA_ID ?? "";
+  const gscVerification = process.env.NEXT_PUBLIC_GSC_VERIFICATION ?? "";
 
   return {
     metadataBase: new URL(baseUrl),
     title: {
       default: homeTitle,
-      template: `%s | ${homeTitle}`,
+      // Clean short template — "LOOP" fits any page title width
+      template: `%s | LOOP`,
     },
     description,
     keywords: seo.keywords ?? [
@@ -67,7 +70,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       ),
     },
     openGraph: {
-      siteName: seo.siteName ?? "LOOP Solutions",
+      siteName: "LOOP",
       title: title,
       description: description,
       url: `${baseUrl}/${locale}`,
@@ -89,11 +92,25 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description: description,
       images: [ogImage],
     },
+    // ── Icons — all via metadata.icons (Next.js App Router requirement) ─────
+    icons: {
+      icon: [
+        { url: `${baseUrl}/favicon.svg`, type: "image/svg+xml" },
+        { url: `${baseUrl}/favicon.ico` },
+      ],
+      apple: [
+        { url: `${baseUrl}/icon-192.svg` },
+      ],
+    },
+    // PWA manifest
+    manifest: `${baseUrl}/manifest.json`,
     // ── Geo tags ────────────────────────────────────────────────────────────
     other: {
       "geo.region": "VN",
       "geo.placename": "Ho Chi Minh City",
       "ICBM": "10.7769, 106.7009",
+      // Google Search Console ownership verification
+      ...(gscVerification ? { "google-site-verification": gscVerification } : {}),
     },
   };
 }
@@ -110,17 +127,11 @@ export default async function LocaleLayout({ children, params }: Props) {
   const messages = await getMessages();
   const organizationJsonLd = buildOrganizationJsonLd();
   const websiteJsonLd = buildWebSiteJsonLd();
+  const gaId = process.env.NEXT_PUBLIC_GA_ID ?? "";
 
   return (
     // "dark" class activates Figma dark theme CSS variables from figma-theme.css
     <html lang={locale} suppressHydrationWarning className="dark">
-      <head>
-        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-        <link rel="manifest" href="/manifest.json" />
-        <link rel="apple-touch-icon" href="/icon-192.svg" />
-        <meta name="msapplication-TileColor" content="#020617" />
-        <meta name="msapplication-config" content="/browserconfig.xml" />
-      </head>
       <body
         style={{ margin: 0, display: "flex", flexDirection: "column", minHeight: "100vh" }}
         className={`dark ${getFontClass(locale)}`}
@@ -133,6 +144,18 @@ export default async function LocaleLayout({ children, params }: Props) {
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
         />
+        {/* Google Analytics 4 */}
+        {gaId && (
+          <>
+            <script async src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`} />
+            <script
+              dangerouslySetInnerHTML={{
+                __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','${gaId}',{page_path:window.location.pathname});`,
+              }}
+            />
+          </>
+        )}
+
         <NextIntlClientProvider messages={messages}>
           <SiteHeader locale={locale} />
           <div style={{ flex: 1 }}>

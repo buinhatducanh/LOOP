@@ -28,9 +28,10 @@ import { useAuthStore, canAccessTab, type AdminTab } from '../store/authStore';
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
+import { StatCard } from '../components/admin/StatCard';
 import {
   LayoutDashboard, Users, FolderKanban, Wallet, Settings,
-  TrendingUp, ArrowUpRight, ArrowDownRight, Bell, Search,
+  TrendingUp, Bell, Search,
   ChevronRight, Zap, Plus, LogOut, Globe,
   DollarSign, UserCheck, CheckCircle2, Clock, AlertCircle, X,
   BookOpen, FileText, BarChart3, Briefcase, Package, ShoppingCart,
@@ -388,51 +389,7 @@ function TopBar({ tab, onSelect, onMenuToggle }: { tab: string; onSelect: (t: st
   );
 }
 
-// ── Animated StatCard ────────────────────────────────────────────────────────
-function StatCard({ label, value, sub, color, icon, trend, trendUp }: {
-  label: string; value: string; sub?: string; color: string;
-  icon: React.ReactNode; trend?: string; trendUp?: boolean;
-}) {
-  const [inView, setInView] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setInView(true); }, { threshold: 0.2 });
-    if (ref.current) obs.observe(ref.current);
-    return () => obs.disconnect();
-  }, []);
-
-  return (
-    <motion.div ref={ref} className="rounded-2xl p-5 relative overflow-hidden"
-      style={{ background: DS.bgCard, border: `1px solid ${DS.border}` }}
-      initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-      whileHover={{ borderColor: `${color}40`, boxShadow: `0 0 24px ${color}12` }}>
-      <div className="absolute inset-0 pointer-events-none" style={{ background: `radial-gradient(circle at top right, ${color}06, transparent 60%)` }} />
-      <div className="flex items-start justify-between mb-4">
-        <motion.div className="w-10 h-10 rounded-xl flex items-center justify-center"
-          style={{ background: `${color}15`, border: `1px solid ${color}25` }}
-          animate={inView ? { boxShadow: [`0 0 0px ${color}00`, `0 0 14px ${color}50`, `0 0 0px ${color}00`] } : {}}
-          transition={{ duration: 2.5, repeat: Infinity, delay: 0.3 }}>
-          <span style={{ color }}>{icon}</span>
-        </motion.div>
-        {trend && (
-          <div className="flex items-center gap-1" style={{ color: trendUp ? DS.green : DS.red, fontSize: 12 }}>
-            {trendUp ? <ArrowUpRight size={13} /> : <ArrowDownRight size={13} />}
-            {trend}
-          </div>
-        )}
-      </div>
-      <div style={{ color, fontFamily: DS.heading, fontSize: 26, fontWeight: 700, textShadow: `0 0 12px ${color}50`, lineHeight: 1 }}>{value}</div>
-      <div style={{ color: DS.text3, fontSize: 13, marginTop: 6 }}>{label}</div>
-      {sub && <div style={{ color: DS.text5, fontSize: 11, fontFamily: DS.mono, marginTop: 3 }}>{sub}</div>}
-      <motion.div className="absolute bottom-0 left-0 h-0.5"
-        style={{ background: `linear-gradient(90deg, ${color}, transparent)` }}
-        initial={{ width: '0%' }} animate={{ width: inView ? '100%' : '0%' }}
-        transition={{ duration: 1.2, delay: 0.3, ease: 'easeOut' }} />
-    </motion.div>
-  );
-}
-
+// StatCard is imported from '../components/admin/StatCard' (shared)
 // ── OVERVIEW TAB ──────────────────────────────────────────────────────────
 function OverviewTab() {
   const { orders } = useLoopStore();

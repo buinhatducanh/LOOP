@@ -7,10 +7,11 @@ import { useState, useRef, useEffect } from 'react';
 import { motion } from 'motion/react';
 import {
   TrendingUp, TrendingDown, BarChart3, Users, Zap,
-  ArrowUpRight, ArrowDownRight, DollarSign, FolderKanban,
+  DollarSign, FolderKanban,
   Activity, Filter, Loader2,
 } from 'lucide-react';
 import { DS, GRD } from '../layout/ds';
+import { StatCard } from './StatCard';
 import { revenueService } from '../../../api/revenue.service';
 import type { DashboardCharts, DashboardOverview } from '../../../api/revenue.service';
 import { useLoopStore } from '../../store/loopStore';
@@ -522,31 +523,12 @@ export function AnalyticsTab() {
       ) : (
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
         {[
-          { label: 'Doanh thu Q1/2026', value: `${cntRev}M VNĐ`, sub: apiOverview ? `Tổng ${apiOverview.stats.totalOrders} đơn` : 'Không tính đơn hủy', color: DS.blue, icon: <DollarSign size={16} />, trend: '+28%', up: true },
-          { label: 'Tổng LP lưu thông', value: fmtLP(cntLP), sub: 'Season III · All members', color: DS.amber, icon: <Zap size={16} />, trend: '+22%', up: true },
-          { label: 'Dự án đã hoàn thành', value: String(done), sub: apiOverview ? `Tổng ${apiOverview.stats.totalProjects} dự án` : `/ ${totalProj} tổng`, color: DS.green, icon: <FolderKanban size={16} />, trend: `${totalProj > 0 ? Math.round(done / totalProj * 100) : 0}%`, up: true },
-          { label: 'Thành viên đội ngũ', value: String(apiOverview?.stats.totalUsers ?? 27), sub: 'Season III active', color: DS.cyan, icon: <Users size={16} />, trend: 'Full', up: true },
+          { label: 'Doanh thu Q1/2026', value: `${cntRev}M VNĐ`, sub: apiOverview ? `Tổng ${apiOverview.stats.totalOrders} đơn` : 'Không tính đơn hủy', color: DS.blue, icon: <DollarSign size={16} />, trend: '+28%', trendUp: true },
+          { label: 'Tổng LP lưu thông', value: fmtLP(cntLP), sub: 'Season III · All members', color: DS.amber, icon: <Zap size={16} />, trend: '+22%', trendUp: true },
+          { label: 'Dự án đã hoàn thành', value: String(done), sub: apiOverview ? `Tổng ${apiOverview.stats.totalProjects} dự án` : `/ ${totalProj} tổng`, color: DS.green, icon: <FolderKanban size={16} />, trend: `${totalProj > 0 ? Math.round(done / totalProj * 100) : 0}%`, trendUp: true },
+          { label: 'Thành viên đội ngũ', value: String(apiOverview?.stats.totalUsers ?? 27), sub: 'Season III active', color: DS.cyan, icon: <Users size={16} />, trend: 'Full', trendUp: true },
         ].map(k => (
-          <motion.div key={k.label} className="rounded-2xl p-5 relative overflow-hidden"
-            style={{ background: DS.bgCard, border: `1px solid ${DS.border}` }}
-            initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
-            <div style={{ position: 'absolute', top: -30, right: -20, width: 80, height: 80, borderRadius: '50%', background: `${k.color}08`, filter: 'blur(20px)' }} />
-            <div className="flex items-center justify-between mb-3">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: `${k.color}15`, border: `1px solid ${k.color}25` }}>
-                <span style={{ color: k.color }}>{k.icon}</span>
-              </div>
-              <div className="flex items-center gap-1" style={{ color: k.up ? DS.green : DS.red, fontSize: 11 }}>
-                {k.up ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
-                {k.trend}
-              </div>
-            </div>
-            <div style={{ color: k.color, fontFamily: DS.heading, fontSize: 22, fontWeight: 700, textShadow: `0 0 12px ${k.color}50` }}>{k.value}</div>
-            <div style={{ color: DS.text3, fontSize: 12, marginTop: 4 }}>{k.label}</div>
-            <div style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono, marginTop: 2 }}>{k.sub}</div>
-            <motion.div className="absolute bottom-0 left-0 h-0.5"
-              style={{ background: `linear-gradient(90deg, ${k.color}, transparent)` }}
-              initial={{ width: '0%' }} animate={{ width: '100%' }} transition={{ duration: 1.2, delay: 0.2, ease: 'easeOut' }} />
-          </motion.div>
+          <StatCard key={k.label} {...k} />
         ))}
       </div>
       )}

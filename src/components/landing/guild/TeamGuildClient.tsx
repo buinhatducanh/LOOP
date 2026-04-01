@@ -97,7 +97,7 @@ function RankLegend() {
 }
 
 // ── CTA Banner ─────────────────────────────────────────────────────────────
-function CTABanner() {
+function CTABanner({ locale }: { locale: string }) {
   const t = useTranslations("TeamPage");
   return (
     <div
@@ -125,13 +125,13 @@ function CTABanner() {
         </p>
         <div className="flex items-center justify-center gap-4 flex-wrap">
           <Link
-            href="/dat-lich"
+            href={`/${locale}/dat-lich`}
             style={{ background: "linear-gradient(135deg, #3B82F6, #6366F1)", color: "#fff", fontSize: 14, fontWeight: 700, padding: "12px 28px", borderRadius: 12, textDecoration: "none", boxShadow: "0 0 28px rgba(129,140,248,0.4)", display: "flex", alignItems: "center", gap: 8 }}
           >
             Đặt lịch tư vấn <ChevronRight size={15} />
           </Link>
           <Link
-            href="/lien-he"
+            href={`/${locale}/contact`}
             style={{ color: "#64748B", fontSize: 14, padding: "11px 24px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.12)", textDecoration: "none" }}
           >
             Liên hệ ngay
@@ -213,13 +213,31 @@ function RankStrip({ members, active, onChange }: { members: MemberRecord[]; act
   );
 }
 
+// ── Hex Pattern Background ───────────────────────────────────────────────────
+function HexPattern() {
+  return (
+    <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ opacity: 0.02 }}>
+      <defs>
+        <pattern id="hexTeam" width="40" height="46" patternUnits="userSpaceOnUse">
+          <path d="M20 2 L36 11 L36 29 L20 38 L4 29 L4 11 Z" fill="none" stroke="#3B82F6" strokeWidth="0.8" />
+        </pattern>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#hexTeam)" />
+    </svg>
+  );
+}
+
 // ── Hero Section ───────────────────────────────────────────────────────────
-function HeroSection({ members }: { members: MemberRecord[] }) {
-  const t = useTranslations("TeamPage");
+interface HeroSectionProps {
+  members: MemberRecord[];
+  hero: TeamGuildClientProps["hero"];
+  locale: string;
+}
+
+function HeroSection({ members, hero, locale }: HeroSectionProps) {
   const totalLP = members.reduce((s, m) => s + ((m.availableLp as number) ?? 0), 0);
   const totalMissions = members.reduce((s, m) => s + ((m.missions as number) ?? 0), 0);
   const totalAchievements = members.reduce((s, m) => s + ((m.achievements as string[])?.length ?? 0), 0);
-  const topMember = [...members].sort((a, b) => (RANKS[normalizeRank(b.rank as string)]?.tier ?? 0) - (RANKS[normalizeRank(a.rank as string)]?.tier ?? 0))[0];
 
   const kpis = [
     { label: "Thành viên đang hoạt động", value: `${members.length}`, suffix: " operative", color: "#3B82F6" },
@@ -266,10 +284,10 @@ function HeroSection({ members }: { members: MemberRecord[] }) {
             style={{ fontFamily: "'Cinzel', serif", letterSpacing: "0.04em", lineHeight: 1.1, marginBottom: 20 }}
           >
             <span style={{ display: "block", fontSize: "clamp(32px, 5vw, 58px)", fontWeight: 900, background: "linear-gradient(135deg, #FFFFFF 0%, #CBD5E1 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-              ĐỘI NGŨ TINH NHUẸ
+              {hero.heroTitle1}
             </span>
             <span style={{ display: "block", fontSize: "clamp(32px, 5vw, 58px)", fontWeight: 900, background: "linear-gradient(135deg, #3B82F6, #818CF8)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-              LOOP SOLUTIONS
+              {hero.heroHighlight}{hero.heroTitle2}
             </span>
           </motion.h1>
 
@@ -280,8 +298,7 @@ function HeroSection({ members }: { members: MemberRecord[] }) {
             transition={{ delay: 0.3 }}
             style={{ color: "#64748B", fontSize: 16, lineHeight: 1.8, maxWidth: 560, margin: "0 auto 40px" }}
           >
-            Mỗi thành viên là một mảnh ghép quan trọng. Cùng nhau chúng tôi xây dựng những sản phẩm kỹ thuật số
-            đỉnh cao — được đo lường bằng LP, thăng hạng bằng kết quả thực tế.
+            {hero.heroDesc}
           </motion.p>
 
           {/* CTA row */}
@@ -292,13 +309,13 @@ function HeroSection({ members }: { members: MemberRecord[] }) {
             className="flex items-center justify-center gap-4 flex-wrap"
           >
             <Link
-              href="/dat-lich"
+              href={`/${locale}/dat-lich`}
               style={{ background: "linear-gradient(135deg, #3B82F6, #6366F1)", color: "#fff", fontSize: 14, fontWeight: 700, padding: "12px 28px", borderRadius: 12, textDecoration: "none", boxShadow: "0 0 32px rgba(129,140,248,0.45)", display: "flex", alignItems: "center", gap: 8 }}
             >
               Làm việc cùng chúng tôi <ArrowRight size={15} />
             </Link>
             <Link
-              href="/admin"
+              href={`/${locale}/admin`}
               style={{ color: "#64748B", fontSize: 13, padding: "11px 22px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.1)", textDecoration: "none", display: "flex", alignItems: "center", gap: 6, backdropFilter: "blur(8px)" }}
             >
               <Shield size={13} style={{ color: "#64748B" }} /> Admin Panel
@@ -318,8 +335,6 @@ function HeroSection({ members }: { members: MemberRecord[] }) {
               key={k.label}
               className="rounded-2xl p-5 text-center relative overflow-hidden"
               whileHover={{ borderColor: `${k.color}50`, boxShadow: `0 0 24px ${k.color}15` }}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.55 + i * 0.06 }}
               style={{ background: "rgba(15,23,42,0.7)", border: `1px solid ${k.color}20`, backdropFilter: "blur(12px)" }}
             >
@@ -439,15 +454,51 @@ export function TeamGuildClient({ locale, members, hero }: TeamGuildClientProps)
     <>
       <GuildAnimations />
 
+      {/* Fixed background — orbs + hex pattern (matches FE Home.tsx) */}
+      <div
+        className="fixed inset-0 pointer-events-none overflow-hidden"
+        style={{ zIndex: 0 }}
+      >
+        {/* Blue orb top-left */}
+        <div
+          style={{
+            position: "absolute",
+            top: "-20%",
+            left: "-15%",
+            width: "60%",
+            height: "70%",
+            background: "radial-gradient(circle, rgba(29,78,216,0.09) 0%, transparent 65%)",
+            borderRadius: "50%",
+            pointerEvents: "none",
+          }}
+        />
+        {/* Purple orb bottom-right */}
+        <div
+          style={{
+            position: "absolute",
+            bottom: "-15%",
+            right: "-10%",
+            width: "55%",
+            height: "65%",
+            background: "radial-gradient(circle, rgba(129,140,248,0.07) 0%, transparent 65%)",
+            borderRadius: "50%",
+            pointerEvents: "none",
+          }}
+        />
+        <HexPattern />
+      </div>
+
       <main
         style={{
-          background: "#020617",
+          background: "transparent",
           minHeight: "100vh",
           fontFamily: "'Inter', sans-serif",
+          position: "relative",
+          zIndex: 1,
         }}
       >
         {/* ── Hero ── */}
-        <HeroSection members={members} />
+        <HeroSection members={members} hero={hero} locale={locale} />
 
         <div className="max-w-7xl mx-auto px-6 pb-24">
 
@@ -559,7 +610,7 @@ export function TeamGuildClient({ locale, members, hero }: TeamGuildClientProps)
           <RankLegend />
 
           {/* ── CTA Banner ── */}
-          <CTABanner />
+          <CTABanner locale={locale} />
         </div>
       </main>
     </>

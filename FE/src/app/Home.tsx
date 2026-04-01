@@ -49,10 +49,10 @@ const HeroSection = memo(function HeroSection({ members }: { members: Member[] }
 
   return (
     <section className="relative pt-28 pb-20 px-6 overflow-hidden">
-      {/* Gradient orbs */}
-      <motion.div style={{ position: 'absolute', top: '-10%', left: '-8%', width: '55%', height: '55%', background: 'radial-gradient(circle, rgba(29,78,216,0.1) 0%, transparent 70%)', borderRadius: '50%', pointerEvents: 'none' }}
+      {/* Gradient orbs — opacity reduced to 0.04 to avoid doubling with the page-level fixed background orbs */}
+      <motion.div style={{ position: 'absolute', top: '-10%', left: '-8%', width: '55%', height: '55%', background: 'radial-gradient(circle, rgba(29,78,216,0.04) 0%, transparent 70%)', borderRadius: '50%', pointerEvents: 'none' }}
         animate={{ x: [0, 30, 0], y: [0, -20, 0] }} transition={{ duration: 20, repeat: Infinity, ease: 'easeInOut' }} />
-      <motion.div style={{ position: 'absolute', top: '30%', right: '-5%', width: '45%', height: '45%', background: 'radial-gradient(circle, rgba(129,140,248,0.08) 0%, transparent 70%)', borderRadius: '50%', pointerEvents: 'none' }}
+      <motion.div style={{ position: 'absolute', top: '30%', right: '-5%', width: '45%', height: '45%', background: 'radial-gradient(circle, rgba(129,140,248,0.04) 0%, transparent 70%)', borderRadius: '50%', pointerEvents: 'none' }}
         animate={{ x: [0, -20, 0], y: [0, 20, 0] }} transition={{ duration: 16, repeat: Infinity, ease: 'easeInOut', delay: 4 }} />
 
       <div className="max-w-7xl mx-auto">
@@ -138,7 +138,7 @@ const RankStrip = memo(function RankStrip({ members, active, onChange }: { membe
         )}
       </div>
 
-      <div className="grid grid-cols-7 gap-2">
+      <div className="grid grid-cols-7 gap-2" style={{ borderLeft: `2px solid ${DS.border}`, paddingLeft: 8 }}>
         {rankKeys.map((rk, idx) => {
           const cfg = RANKS[rk];
           const isActive = active === rk;
