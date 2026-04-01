@@ -173,7 +173,11 @@
       "Bash(powershell -Command 'Get-Process | Where-Object { $_.Name -in @\\('\\\\''esbuild'\\\\'','\\\\''node'\\\\''\\) } | Select-Object Name,Id,Path | Format-Table -AutoSize')",
       "Bash(powershell -Command '[System.IO.Directory]::Delete\\('\\\\''D:\\\\LOOP_COMPANY\\\\LOOP\\\\FE'\\\\'', $false\\); '\\\\''DELETED'\\\\''')",
       "Bash(npm create:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(Get-ChildItem -Path \"D:\\\\LOOP_COMPANY\\\\LOOP\\\\BE\\\\src\\\\styles\\\\\" -Recurse -Name)",
+      "Bash(Get-ChildItem -Path \"D:\\\\LOOP_COMPANY\\\\LOOP\\\\BE\\\\src\\\\app\\\\[locale]\" -Recurse -Name)",
+      "Bash(Get-ChildItem -Path \"D:\\\\LOOP_COMPANY\\\\LOOP\\\\BE\" -Name postcss.config*, tailwind.config*, tsconfig*)",
+      "Bash(more +0)"
     ],
     "additionalDirectories": [
       "D:\\LOOP_COMPANY\\LOOP\\src\\app\\api\\admin\\expertises",

@@ -12,7 +12,8 @@ import { getSession } from "@/lib/auth/permissions";
 import { QueryProvider } from "@/lib/query/provider";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { AdminTopbar } from "@/components/admin/AdminTopbar";
-import "@/styles/figma-theme.css";
+import { AdminSessionInit } from "@/components/admin/AdminSessionInit";
+import "@/styles/globals.css";
 
 export default async function AdminLayout({
   children,
@@ -63,6 +64,7 @@ export default async function AdminLayout({
             />
             {/* Page content */}
             <main style={{ flex: 1, padding: "1.5rem", overflowY: "auto" }}>
+              <AdminSessionInit session={session} />
               {children}
             </main>
           </div>

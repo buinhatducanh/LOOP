@@ -16,7 +16,6 @@ import SiteHeader from "./components/SiteHeader";
 import SiteFooter from "./components/SiteFooter";
 import { getFontClass } from "@/lib/fonts";
 import { buildOrganizationJsonLd, buildWebSiteJsonLd } from "@/lib/json-ld";
-import "@/styles/figma-theme.css";
 
 type Props = {
   children: React.ReactNode;

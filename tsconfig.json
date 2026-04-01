@@ -43,6 +43,7 @@
     "_legacy_spa",
     "FE",
     "FIGMA OLD FE",
+    "DESIGN LOOPS",
     "tests/e2e/**",
     "playwright.config.ts"
   ]

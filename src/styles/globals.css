@@ -1,0 +1,291 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/* ── Tailwind v4 dark theme ──────────────────────────────────────────────── */
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --background: #020617;
+  --foreground: #ffffff;
+  --card: #0F172A;
+  --card-foreground: #ffffff;
+  --popover: #0F172A;
+  --popover-foreground: #ffffff;
+  --primary: #3B82F6;
+  --primary-foreground: #ffffff;
+  --secondary: #1F2937;
+  --secondary-foreground: #E2E8F0;
+  --muted: #1F2937;
+  --muted-foreground: #94A3B8;
+  --accent: #818CF8;
+  --accent-foreground: #ffffff;
+  --destructive: #EF4444;
+  --destructive-foreground: #ffffff;
+  --border: #1F2937;
+  --input: #1F2937;
+  --ring: #3B82F6;
+  --chart-1: #3B82F6;
+  --chart-2: #818CF8;
+  --chart-3: #14B8A6;
+  --chart-4: #F59E0B;
+  --chart-5: #22C55E;
+  --radius: 0.625rem;
+
+  /* FE Gaming/Cyberpunk dark palette */
+  --bg: #020617;
+  --bg-card: #0F172A;
+  --bg-card2: #111827;
+  --bg-card3: #0D1526;
+  --blue: #3B82F6;
+  --blue-dark: #1D4ED8;
+  --purple: #818CF8;
+  --cyan: #14B8A6;
+  --green: #22C55E;
+  --amber: #F59E0B;
+  --red: #EF4444;
+  --text: #ffffff;
+  --text2: #E2E8F0;
+  --text3: #94A3B8;
+  --text4: #64748B;
+  --text5: #475569;
+  --border2: #374151;
+
+  /* Figma tokens (alias) */
+  --figma-bg: #020617;
+  --figma-bg-card: #0F172A;
+  --figma-bg-card2: #111827;
+  --figma-bg-card3: #0D1526;
+  --figma-border: #1F2937;
+  --figma-border2: #374151;
+  --figma-blue: #3B82F6;
+  --figma-blue-dark: #1D4ED8;
+  --figma-purple: #818CF8;
+  --figma-cyan: #14B8A6;
+  --figma-green: #22C55E;
+  --figma-amber: #F59E0B;
+  --figma-red: #EF4444;
+  --figma-text: #ffffff;
+  --figma-text2: #E2E8F0;
+  --figma-text3: #94A3B8;
+  --figma-text4: #64748B;
+  --figma-text5: #475569;
+  --figma-grd-primary: linear-gradient(135deg, #1D4ED8, #818CF8);
+  --figma-grd-blue: linear-gradient(135deg, #1D4ED8, #3B82F6);
+  --figma-grd-purple: linear-gradient(135deg, #818CF8, #7DD3FC);
+  --figma-grd-cyan: linear-gradient(135deg, #14B8A6, #818CF8);
+  --figma-grd-gold: linear-gradient(135deg, #F59E0B, #FDE68A);
+  --figma-grd-hero: linear-gradient(135deg, rgba(29,78,216,0.15), rgba(129,140,248,0.08));
+  --figma-glow-blue: 0 0 20px rgba(59,130,246,0.4);
+  --figma-glow-purple: 0 0 20px rgba(129,140,248,0.4);
+  --figma-glow-cyan: 0 0 20px rgba(20,184,166,0.4);
+  --figma-glow-card: 0 8px 32px rgba(0,0,0,0.4);
+
+  /* Fonts */
+  --font-cinzel: "Cinzel", serif;
+  --font-inter: "Inter", "Noto Serif JP", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+  --font-serif: "Noto Serif JP", serif;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  /* FE Gaming colors as Tailwind theme */
+  --color-bg: var(--bg);
+  --color-bg-card: var(--bg-card);
+  --color-bg-card2: var(--bg-card2);
+  --color-bg-card3: var(--bg-card3);
+  --color-blue: var(--blue);
+  --color-blue-dark: var(--blue-dark);
+  --color-purple: var(--purple);
+  --color-cyan: var(--cyan);
+  --color-green: var(--green);
+  --color-amber: var(--amber);
+  --color-red: var(--red);
+  --color-text: var(--text);
+  --color-text2: var(--text2);
+  --color-text3: var(--text3);
+  --color-text4: var(--text4);
+  --color-text5: var(--text5);
+  --color-border2: var(--border2);
+  --font-cinzel: var(--font-cinzel);
+  --font-inter: var(--font-inter);
+  --font-mono: var(--font-mono);
+  --font-serif: var(--font-serif);
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-inter);
+    min-height: 100vh;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Figma heading font */
+  .figma-heading {
+    font-family: var(--font-cinzel);
+  }
+
+  .figma-mono {
+    font-family: var(--font-mono);
+  }
+}
+
+/* ── Custom Scrollbar — Cyberpunk Zen ────────────────────────────────────── */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(6, 182, 212, 0.45) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 3px;
+  height: 3px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: linear-gradient(
+    180deg,
+    rgba(0, 245, 255, 0.55) 0%,
+    rgba(59, 130, 246, 0.55) 50%,
+    rgba(139, 92, 246, 0.55) 100%
+  );
+  border-radius: 9999px;
+  box-shadow: 0 0 6px rgba(0, 245, 255, 0.3), 0 0 12px rgba(59, 130, 246, 0.15);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(
+    180deg,
+    rgba(0, 245, 255, 0.9) 0%,
+    rgba(59, 130, 246, 0.9) 50%,
+    rgba(139, 92, 246, 0.9) 100%
+  );
+  box-shadow: 0 0 10px rgba(0, 245, 255, 0.6), 0 0 20px rgba(59, 130, 246, 0.35);
+}
+
+/* .scrollbar-zen — wider variant */
+.scrollbar-zen {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(6, 182, 212, 0.5) rgba(255, 255, 255, 0.03);
+}
+
+.scrollbar-zen::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.scrollbar-zen::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 9999px;
+}
+
+.scrollbar-zen::-webkit-scrollbar-thumb {
+  background: linear-gradient(
+    180deg,
+    rgba(0, 245, 255, 0.6) 0%,
+    rgba(59, 130, 246, 0.6) 50%,
+    rgba(139, 92, 246, 0.6) 100%
+  );
+  border-radius: 9999px;
+  box-shadow: 0 0 8px rgba(0, 245, 255, 0.4), 0 0 16px rgba(59, 130, 246, 0.2);
+}
+
+/* Figma utility helpers */
+.figma-card {
+  background-color: var(--figma-bg-card);
+  border: 1px solid var(--figma-border);
+  border-radius: 0.75rem;
+  box-shadow: var(--figma-glow-card);
+}
+
+.figma-card-hover {
+  background-color: var(--figma-bg-card);
+  border: 1px solid var(--figma-border2);
+  border-radius: 0.75rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.figma-card-hover:hover {
+  border-color: var(--figma-blue);
+  box-shadow: var(--figma-glow-blue);
+}
+
+.figma-text-gradient {
+  background: var(--figma-grd-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.figma-grid-bg {
+  position: relative;
+}
+
+.figma-grid-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--figma-border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--figma-border) 1px, transparent 1px);
+  background-size: 60px 60px;
+  opacity: 0.15;
+  pointer-events: none;
+}
+
+/* Figma dark scrollbar override */
+.dark ::-webkit-scrollbar {
+  width: 3px;
+  height: 3px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: linear-gradient(
+    180deg,
+    rgba(0, 245, 255, 0.55) 0%,
+    rgba(59, 130, 246, 0.55) 50%,
+    rgba(139, 92, 246, 0.55) 100%
+  );
+  border-radius: 9999px;
+  box-shadow: 0 0 6px rgba(0, 245, 255, 0.3), 0 0 12px rgba(59, 130, 246, 0.15);
+}
