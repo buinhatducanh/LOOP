@@ -34,6 +34,12 @@ export const metadata: Metadata = {
     description: "Professional Web & App Development — SEO-optimized, 95+ performance, 150+ projects delivered.",
     images: ["/og-cover.jpg"],
   },
+  icons: {
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/favicon.ico" },
+    ],
+  },
   robots: { index: false, follow: false },
 };
 

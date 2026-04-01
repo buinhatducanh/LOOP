@@ -177,7 +177,9 @@
       "Bash(Get-ChildItem -Path \"D:\\\\LOOP_COMPANY\\\\LOOP\\\\BE\\\\src\\\\styles\\\\\" -Recurse -Name)",
       "Bash(Get-ChildItem -Path \"D:\\\\LOOP_COMPANY\\\\LOOP\\\\BE\\\\src\\\\app\\\\[locale]\" -Recurse -Name)",
       "Bash(Get-ChildItem -Path \"D:\\\\LOOP_COMPANY\\\\LOOP\\\\BE\" -Name postcss.config*, tailwind.config*, tsconfig*)",
-      "Bash(more +0)"
+      "Bash(more +0)",
+      "Bash(xxd)",
+      "Bash(xxd d:/LOOP_COMPANY/LOOP/public/favicon.ico)"
     ],
     "additionalDirectories": [
       "D:\\LOOP_COMPANY\\LOOP\\src\\app\\api\\admin\\expertises",

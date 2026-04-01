@@ -702,7 +702,7 @@ export default function SiteHeader({ locale }: { locale: string }) {
                   const active = isActive(link.href);
                   return (
                     <Link
-                      key={link.href}
+                      key={`mobile-${link.href}`}
                       href={link.href}
                       onClick={() => setMobileOpen(false)}
                       style={{

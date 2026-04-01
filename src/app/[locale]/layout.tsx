@@ -37,7 +37,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const homeTitle = seo.homeTitle ?? "LOOP Solutions";
   const title = seo.defaultTitle ?? homeTitle;
   const description = seo.defaultDescription ?? "LOOP Solutions platform with server-first architecture, AI-driven workflows, and edge-ready delivery.";
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://loop.vn";
+  const baseUrl =
+    process.env.NODE_ENV === "development"
+      ? "http://localhost:3000"
+      : (process.env.NEXT_PUBLIC_SITE_URL ?? "https://loop.vn");
   const ogImage = `/api/og?title=${encodeURIComponent(title)}&description=${encodeURIComponent(description)}&locale=${locale}`;
   const gaId = process.env.NEXT_PUBLIC_GA_ID ?? "";
   const gscVerification = process.env.NEXT_PUBLIC_GSC_VERIFICATION ?? "";
@@ -94,11 +97,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // ── Icons — all via metadata.icons (Next.js App Router requirement) ─────
     icons: {
       icon: [
-        { url: `${baseUrl}/favicon.svg`, type: "image/svg+xml" },
-        { url: `${baseUrl}/favicon.ico` },
+        { url: "/favicon.svg", type: "image/svg+xml" },
+        { url: "/favicon.ico" },
       ],
       apple: [
-        { url: `${baseUrl}/icon-192.svg` },
+        { url: "/icon-192.svg" },
       ],
     },
     // PWA manifest

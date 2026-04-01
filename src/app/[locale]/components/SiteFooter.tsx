@@ -35,8 +35,8 @@ function FooterColumn({ col }: { col: FooterCol }) {
         {col.title}
       </div>
       <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-        {col.links.map((link) => (
-          <li key={link.href}>
+        {col.links.map((link, idx) => (
+          <li key={`${link.href}-${idx}`}>
             <Link
               href={link.href}
               style={{
