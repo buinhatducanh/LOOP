@@ -10,14 +10,14 @@ import "@/styles/figma-theme.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://loop.vn"),
-  title: "LOOP Solutions — Server-first + AI-driven + Edge-ready",
-  description: "LOOP Solutions platform with server-first architecture, AI-driven workflows, and edge-ready delivery.",
-  keywords: ["LOOP Solutions", "server-first", "ai-driven", "edge-ready", "web", "app", "seo", "media"],
+  title: "LOOP Solutions",
+  description: "LOOP Solutions — Professional Web & App Development. SEO-optimized, 95+ performance, 150+ projects delivered.",
+  keywords: ["LOOP Solutions", "web design", "web app", "SaaS", "dashboard", "SEO", "agency Vietnam"],
   openGraph: {
     type: "website",
     siteName: "LOOP Solutions",
-    title: "LOOP Solutions — Server-first + AI-driven + Edge-ready",
-    description: "Server-first architecture, AI-driven execution, edge-ready delivery for scalable digital products.",
+    title: "LOOP Solutions",
+    description: "Professional Web & App Development — SEO-optimized, 95+ performance, 150+ projects delivered.",
     url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://loop.vn",
     images: [
       {
@@ -30,8 +30,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "LOOP Solutions — Server-first + AI-driven + Edge-ready",
-    description: "Server-first architecture, AI-driven execution, edge-ready delivery for scalable digital products.",
+    title: "LOOP Solutions",
+    description: "Professional Web & App Development — SEO-optimized, 95+ performance, 150+ projects delivered.",
     images: ["/og-cover.jpg"],
   },
   robots: { index: false, follow: false },

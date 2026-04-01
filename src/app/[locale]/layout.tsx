@@ -34,18 +34,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   const seo = (messages as Record<string, Record<string, string>>).seo ?? {};
-  const title = seo.defaultTitle ?? "LOOP Solutions — Server-first + AI-driven + Edge-ready";
+  // Use seo.homeTitle as default — business-facing tagline (not tech tagline)
+  const homeTitle = seo.homeTitle ?? "LOOP Solutions";
+  const title = seo.defaultTitle ?? homeTitle;
   const description = seo.defaultDescription ?? "LOOP Solutions platform with server-first architecture, AI-driven workflows, and edge-ready delivery.";
-  const brandMetaTitle = seo.brandMetaTitle ?? "Server-first + AI-driven + Edge-ready";
-  const brandMetaDescription = seo.brandMetaDescription ?? "Server-first architecture, AI-driven execution, edge-ready delivery for scalable digital products.";
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://loop.vn";
-  const ogImage = `/api/og?title=${encodeURIComponent(brandMetaTitle)}&description=${encodeURIComponent(brandMetaDescription)}&locale=${locale}`;
+  const ogImage = `/api/og?title=${encodeURIComponent(title)}&description=${encodeURIComponent(description)}&locale=${locale}`;
 
   return {
     metadataBase: new URL(baseUrl),
     title: {
-      default: title,
-      template: `%s | ${title}`,
+      default: homeTitle,
+      template: `%s | ${homeTitle}`,
     },
     description,
     keywords: seo.keywords ?? [
@@ -68,8 +68,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     },
     openGraph: {
       siteName: seo.siteName ?? "LOOP Solutions",
-      title: `${title} — ${brandMetaTitle}`,
-      description: brandMetaDescription,
+      title: title,
+      description: description,
       url: `${baseUrl}/${locale}`,
       images: [
         {
@@ -85,8 +85,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     },
     twitter: {
       card: "summary_large_image",
-      title: `${title} — ${brandMetaTitle}`,
-      description: brandMetaDescription,
+      title: title,
+      description: description,
       images: [ogImage],
     },
     // ── Geo tags ────────────────────────────────────────────────────────────
