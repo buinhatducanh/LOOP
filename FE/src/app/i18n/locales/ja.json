@@ -166,7 +166,7 @@
       "statusInProgress": "進行中",
       "statusReview": "レビュー",
       "statusCompleted": "完了",
-      "lpDailyTitle": "今日のLP報酬ポイント", //com
+      "lpDailyTitle": "今日のLP報酬ポイント",
       "rankProgressionTitle": "ランク進行状況"
     },
     "servicesSection": {
