@@ -595,5 +595,16 @@
     "title": "Trang không tồn tại",
     "description": "Trang bạn đang tìm kiếm không tồn tại hoặc đã bị di chuyển.",
     "backToHome": "Về trang chủ"
+  },
+  "HomePage": {
+    "homeTitle": "Xây Dựng Tương Lai Số",
+    "homeDescription": "LOOP Solutions là đối tác công nghệ tin cậy — thiết kế, phát triển và vận hành giải pháp số toàn diện cho doanh nghiệp Việt Nam.",
+    "heroMetricProjects": "Dự án hoàn thành",
+    "heroMetricClients": "Khách hàng hài lòng",
+    "heroMetricYears": "Năm kinh nghiệm",
+    "heroMetricPartners": "Đối tác chiến lược",
+    "ctaBookingWizard": "Đặt lịch tư vấn",
+    "servicesSectionTitle": "Giải pháp toàn diện",
+    "servicesSectionDesc": "Mọi dịch vụ đều thanh toán VNĐ, tích lũy LP điểm thưởng ngay từ dự án đầu tiên."
   }
 }

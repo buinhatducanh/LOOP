@@ -585,5 +585,16 @@
     "title": "页面未找到",
     "description": "您访问的页面不存在或已被移动。",
     "backToHome": "返回首页"
+  },
+  "HomePage": {
+    "homeTitle": "建设数字未来",
+    "homeDescription": "LOOP Solutions是越南可信赖的技术合作伙伴 — 设计，开发、运营全方位的数字解决方案。",
+    "heroMetricProjects": "已完成项目",
+    "heroMetricClients": "满意客户",
+    "heroMetricYears": "年经验",
+    "heroMetricPartners": "战略合作伙伴",
+    "ctaBookingWizard": "预约咨询",
+    "servicesSectionTitle": "全方位解决方案",
+    "servicesSectionDesc": "所有服务支持USD付款。从首个项目起即可累积LP积分。"
   }
 }

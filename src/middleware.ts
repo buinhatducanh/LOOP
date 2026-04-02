@@ -48,11 +48,13 @@ export async function middleware(req: NextRequest) {
   // ─── 3) Static assets + manifest + sitemap + robots ──────────────────────
   if (
     pathname === "/favicon.ico" ||
+    pathname === "/favicon.svg" ||
     pathname === "/manifest.json" ||
     pathname === "/robots.txt" ||
     pathname === "/sitemap.xml" ||
     pathname.startsWith("/images/") ||
-    pathname.startsWith("/fonts/")
+    pathname.startsWith("/fonts/") ||
+    pathname.startsWith("/icon-")
   ) {
     return NextResponse.next();
   }
@@ -113,6 +115,6 @@ function detectAcceptLanguage(req: NextRequest): string | undefined {
 export const config = {
   matcher: [
     // Exclude API routes, static files, and Next.js internals
-    "/((?!api/|_next/static|_next/image|favicon.ico).*)",
+    "/((?!api/|_next/static|_next/image|favicon.ico|favicon.svg).*)",
   ],
 };

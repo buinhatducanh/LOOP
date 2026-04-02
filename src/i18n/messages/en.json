@@ -585,5 +585,16 @@
     "title": "Page Not Found",
     "description": "The page you are looking for does not exist or has been moved.",
     "backToHome": "Back to Home"
+  },
+  "HomePage": {
+    "homeTitle": "Building the Digital Future",
+    "homeDescription": "LOOP Solutions is Vietnam trusted tech partner — design, develop and operate comprehensive digital solutions.",
+    "heroMetricProjects": "Projects Completed",
+    "heroMetricClients": "Happy Clients",
+    "heroMetricYears": "Years Experience",
+    "heroMetricPartners": "Strategic Partners",
+    "ctaBookingWizard": "Book a Consultation",
+    "servicesSectionTitle": "Comprehensive Solutions",
+    "servicesSectionDesc": "All services payable in USD. Earn LP loyalty points from your first project."
   }
 }

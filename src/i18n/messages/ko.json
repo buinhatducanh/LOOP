@@ -585,5 +585,16 @@
     "title": "페이지를 찾을 수 없습니다",
     "description": "찾고 있는 페이지가 존재하지 않거나 이동되었습니다.",
     "backToHome": "홈으로 돌아가기"
+  },
+  "HomePage": {
+    "homeTitle": "디지털 미래를 건설하다",
+    "homeDescription": "LOOP Solutions은 베트남 신뢰의 기술 파트너 — 디자인, 개발, 운영까지 종합적인 디지털 솔루션을 제공합니다.",
+    "heroMetricProjects": "완료된 프로젝트",
+    "heroMetricClients": "만족 고객",
+    "heroMetricYears": "년 경력",
+    "heroMetricPartners": "전략적 파트너",
+    "ctaBookingWizard": "상담 예약",
+    "servicesSectionTitle": "포괄적 솔루션",
+    "servicesSectionDesc": "모든 서비스 USD 결제 가능. 첫 프로젝트부터 LP 적립."
   }
 }

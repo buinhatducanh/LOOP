@@ -585,5 +585,16 @@
     "title": "ページが見つかりません",
     "description": "お探しのページは存在しないか、移動された可能性があります。",
     "backToHome": "ホームに戻る"
+  },
+  "HomePage": {
+    "homeTitle": "デジタル未来を築く",
+    "homeDescription": "LOOP Solutionsはベトナム最高の技術パートナー — デザイン、開発、運用まで包括的なデジタルソリューションを提供。",
+    "heroMetricProjects": "完了プロジェクト",
+    "heroMetricClients": "満足クライアント",
+    "heroMetricYears": "年の経験",
+    "heroMetricPartners": "戦略的パートナー",
+    "ctaBookingWizard": "コンサルテーション予約",
+    "servicesSectionTitle": "包括的ソリューション",
+    "servicesSectionDesc": "全サービスUSD支払い対応。最初プロジェクトからLP加算。"
   }
 }
