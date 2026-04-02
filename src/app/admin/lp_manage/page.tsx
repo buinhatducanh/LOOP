@@ -74,6 +74,15 @@ export default function LpManagePage() {
       await adminApi.post(`/api/admin/lp-awards/${awardId}/approve`, {});
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "lp", "awards-manage"] }),
+    onError: (err) => { alert(err instanceof Error ? err.message : "Duyệt thất bại"); },
+  });
+
+  const rejectMutation = useMutation({
+    mutationFn: async (awardId: string) => {
+      await adminApi.post(`/api/admin/lp-awards/${awardId}/reject`, {});
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "lp", "awards-manage"] }),
+    onError: (err) => { alert(err instanceof Error ? err.message : "Từ chối thất bại"); },
   });
 
   return (
@@ -90,7 +99,7 @@ export default function LpManagePage() {
         </div>
         <div style={{ display: "flex", gap: 8 }}>
           <button
-            onClick={() => qc.invalidateQueries({ queryKey: ["admin", "lp"] })}
+            onClick={() => qc.invalidateQueries({ queryKey: ["admin", "lp", "awards-manage"] })}
             style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 14px", background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 10, color: DS.text3, cursor: "pointer", fontSize: 12, fontFamily: DS.mono }}
           >
             <RefreshCw size={13} className={awardsFetching ? "animate-spin" : ""} /> Làm mới
@@ -216,7 +225,11 @@ export default function LpManagePage() {
                               >
                                 <Check size={11} /> Duyệt
                               </button>
-                              <button style={{ padding: "4px 8px", background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.4)", borderRadius: 6, color: DS.red, cursor: "pointer", fontSize: 11, fontFamily: DS.mono, display: "flex", alignItems: "center", gap: 3 }}>
+                              <button
+                                onClick={() => rejectMutation.mutate(a.id)}
+                                disabled={rejectMutation.isPending}
+                                style={{ padding: "4px 8px", background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.4)", borderRadius: 6, color: DS.red, cursor: "pointer", fontSize: 11, fontFamily: DS.mono, display: "flex", alignItems: "center", gap: 3 }}
+                              >
                                 <X size={11} /> Từ chối
                               </button>
                             </div>

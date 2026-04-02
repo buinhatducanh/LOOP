@@ -99,7 +99,10 @@ export default function QuotationPage() {
         </div>
         <div style={{ display: "flex", gap: 8 }}>
           <button
-            onClick={() => tab === "quotes" ? qc.invalidateQueries({ queryKey: ["admin", "quotation", "quotes"] }) : qc.invalidateQueries({ queryKey: ["admin", "quotation", "requests"] })}
+            onClick={() => {
+              qc.invalidateQueries({ queryKey: ["admin", "quotation", "quotes"] });
+              qc.invalidateQueries({ queryKey: ["admin", "quotation", "requests"] });
+            }}
             style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 14px", background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 10, color: DS.text3, cursor: "pointer", fontSize: 12, fontFamily: DS.mono }}
           >
             <RefreshCw size={13} className={quotesFetching ? "animate-spin" : ""} /> Làm mới
@@ -244,7 +247,7 @@ export default function QuotationPage() {
                       <td style={{ padding: "12px 16px", color: DS.text4, fontSize: 12, fontFamily: DS.mono }}>{fmtDate(r.createdAt)}</td>
                       <td style={{ padding: "12px 16px" }}>
                         <span style={{ background: STATUS_CFG[r.status]?.bg ?? "transparent", color: STATUS_CFG[r.status]?.color ?? DS.text4, padding: "2px 10px", borderRadius: 9999, fontSize: 11, fontFamily: DS.mono, fontWeight: 600 }}>
-                          {r.status}
+                          {STATUS_CFG[r.status]?.label ?? r.status}
                         </span>
                       </td>
                     </tr>

@@ -40,12 +40,10 @@ function OrderRow({
   onDetail,
 }: {
   order: Order;
-  onTransition: (id: string, nextStatus: string) => void;
+  onTransition: (id: string, currentStatus: string) => void;
   onDetail: (order: Order) => void;
 }) {
   const cfg = STATUS_CONFIG[order.status] ?? { label: order.status, color: DS.text4, bg: "transparent" };
-  const currentIdx = STATUS_FLOW.indexOf(order.status);
-  const nextStatus = STATUS_FLOW[currentIdx + 1];
 
   const fmt = (n: number) =>
     new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(n);
@@ -86,19 +84,24 @@ function OrderRow({
 
       {/* Actions */}
       <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
-        {nextStatus && (
-          <button
-            onClick={() => onTransition(order.id, nextStatus)}
-            title={`Chuyển → ${STATUS_CONFIG[nextStatus]?.label}`}
-            style={{
-              background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.3)",
-              borderRadius: 8, padding: "5px 10px", cursor: "pointer", color: DS.green,
-              display: "flex", alignItems: "center", fontSize: 11, fontFamily: DS.mono,
-            }}
-          >
-            <ChevronRight size={12} />
-          </button>
-        )}
+        {((): React.ReactNode => {
+          const idx = STATUS_FLOW.indexOf(order.status);
+          const next = STATUS_FLOW[idx + 1];
+          if (!next) return null;
+          return (
+            <button
+              onClick={() => onTransition(order.id, order.status)}
+              title={`Chuyển → ${STATUS_CONFIG[next]?.label ?? ""}`}
+              style={{
+                background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.3)",
+                borderRadius: 8, padding: "5px 10px", cursor: "pointer", color: DS.green,
+                display: "flex", alignItems: "center", fontSize: 11, fontFamily: DS.mono,
+              }}
+            >
+              <ChevronRight size={12} />
+            </button>
+          );
+        })()}
         <button
           onClick={() => onDetail(order)}
           title="Chi tiết"
@@ -223,7 +226,7 @@ export default function OrdersPage() {
       const res = await adminApi.put<{ data: Order }>(`/api/admin/orders/${id}`, { status });
       return res;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "orders"] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.orders() }),
   });
 
   return (
@@ -310,7 +313,11 @@ export default function OrdersPage() {
               <OrderRow
                 key={order.id}
                 order={order}
-                onTransition={(id, nextStatus) => transition.mutate({ id, status: nextStatus })}
+                onTransition={(id, currentStatus) => {
+                  const idx = STATUS_FLOW.indexOf(currentStatus);
+                  const next = STATUS_FLOW[idx + 1];
+                  if (next) transition.mutate({ id, status: next });
+                }}
                 onDetail={setSelectedOrder}
               />
             ))

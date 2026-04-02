@@ -248,7 +248,7 @@ export default function SiteHeader({ locale }: { locale: string }) {
 
   const handleLogout = async () => {
     await logout();
-    router.push("/admin/login");
+    router.push(`/${locale}/dang-nhap`);
   };
 
   return (
@@ -540,8 +540,10 @@ export default function SiteHeader({ locale }: { locale: string }) {
 
                       {/* Links */}
                       {[
-                        { href: "/admin/overview", label: t("dashboardAdmin"), icon: "⚙️" },
-                        { href: `/${locale}/`, label: t("myLpWallet"), icon: "💎" },
+                        ...(user.role === "client"
+                          ? [{ href: `/${locale}/khach-hang`, label: t("customer"), icon: "🏠" }]
+                          : [{ href: "/admin/overview", label: t("dashboardAdmin"), icon: "⚙️" }]),
+                        { href: `/${locale}/khach-hang`, label: t("myLpWallet"), icon: "💎" },
                       ].map((item) => (
                         <Link
                           key={item.href}
@@ -602,7 +604,7 @@ export default function SiteHeader({ locale }: { locale: string }) {
               </div>
             ) : (
               <Link
-                href="/admin/login"
+                href={`/${locale}/dang-nhap`}
                 style={{
                   display: "flex",
                   alignItems: "center",

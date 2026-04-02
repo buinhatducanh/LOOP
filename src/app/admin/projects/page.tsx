@@ -121,7 +121,7 @@ function Column({ status, projects }: { status: string; projects: Project[] }) {
 }
 
 export default function ProjectsPage() {
-  const [page] = useState(1);
+  const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const qc = useQueryClient();
 
@@ -154,7 +154,7 @@ export default function ProjectsPage() {
               type="text"
               placeholder="Tìm dự án..."
               value={search}
-              onChange={e => setSearch(e.target.value)}
+              onChange={e => { setSearch(e.target.value); setPage(1); }}
               style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 10, padding: "6px 12px 6px 32px", color: DS.text, fontSize: 12, outline: "none", width: 180, fontFamily: DS.body }}
             />
           </div>

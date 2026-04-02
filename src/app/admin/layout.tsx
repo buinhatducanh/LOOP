@@ -4,10 +4,11 @@
  * Dark-themed admin shell wrapping all /admin/* pages.
  * Provides React Query context, auth session, and Figma dark nav layout.
  *
- * Auth guard: redirects to /admin/login if no session.
+ * Auth guard: redirects to /{locale}/dang-nhap if no session.
  */
 
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { getSession } from "@/lib/auth/permissions";
 import { QueryProvider } from "@/lib/query/provider";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
@@ -23,7 +24,9 @@ export default async function AdminLayout({
   const session = await getSession();
 
   if (!session) {
-    redirect("/admin/login");
+    const cookieStore = await cookies();
+    const locale = cookieStore.get("NEXT_LOCALE")?.value ?? "vi";
+    redirect(`/${locale}/dang-nhap`);
   }
 
   return (

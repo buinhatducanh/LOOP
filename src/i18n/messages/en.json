@@ -259,7 +259,29 @@
     "hasAccount": "Already have an account?",
     "loginSuccess": "Login successful!",
     "loginError": "Incorrect email or password.",
-    "logoutSuccess": "Logout successful!"
+    "logoutSuccess": "Logout successful!",
+    "loginSubtitle": "Sign in to your LOOP account",
+    "registerSubtitle": "Create an account to get started",
+    "name": "Full Name",
+    "companyOptional": "Company (optional)",
+    "submitRegister": "Create Account",
+    "termsAgree": "By registering, you agree to LOOP Solutions' Terms of Service and Privacy Policy.",
+    "continueWithGoogle": "Continue with Google",
+    "or": "or",
+    "registerCta": "Register now",
+    "otp": {
+      "title": "Verify Email",
+      "desc": "Enter the 6-digit code sent to",
+      "verify": "Verify",
+      "resend": "Resend",
+      "resendHint": "Didn't receive the code?"
+    },
+    "sidePanel": {
+      "desc": "The digital OS for top-tier agencies. LP Rewards, Rank System, and professional services.",
+      "rankTier": "Rank up & earn rewards",
+      "welcomeNewMember": "Welcome, new member!",
+      "welcomeReward": "Claim your reward upon account registration"
+    }
   },
   "customer": {
     "dashboard": "Overview",

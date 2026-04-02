@@ -259,7 +259,29 @@
     "hasAccount": "Đã có tài khoản?",
     "loginSuccess": "Đăng nhập thành công!",
     "loginError": "Email hoặc mật khẩu không đúng.",
-    "logoutSuccess": "Đăng xuất thành công!"
+    "logoutSuccess": "Đăng xuất thành công!",
+    "loginSubtitle": "Đăng nhập vào tài khoản LOOP của bạn",
+    "registerSubtitle": "Tạo tài khoản để bắt đầu",
+    "name": "Họ tên",
+    "companyOptional": "Công ty (tùy chọn)",
+    "submitRegister": "Tạo tài khoản",
+    "termsAgree": "Khi đăng ký, bạn đồng ý với Điều khoản dịch vụ và Chính sách bảo mật của LOOP Solutions.",
+    "continueWithGoogle": "Tiếp tục với Google",
+    "or": "hoặc",
+    "registerCta": "Đăng ký ngay",
+    "otp": {
+      "title": "Xác minh Email",
+      "desc": "Nhập mã 6 chữ số đã gửi đến",
+      "verify": "Xác minh",
+      "resend": "Gửi lại",
+      "resendHint": "Không nhận được mã?"
+    },
+    "sidePanel": {
+      "desc": "Hệ điều hành số cho Agency đỉnh cao. LP Rewards, Rank System, và dịch vụ chuyên nghiệp.",
+      "rankTier": "Thăng hạng & phần thưởng",
+      "welcomeNewMember": "Chào mừng thành viên mới!",
+      "welcomeReward": "Nhận ngay khi đăng ký tài khoản"
+    }
   },
   "customer": {
     "dashboard": "Tổng quan",

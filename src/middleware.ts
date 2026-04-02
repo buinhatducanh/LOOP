@@ -38,7 +38,10 @@ export async function middleware(req: NextRequest) {
     const result = checkAdminAccess(req, pathname);
     if (!result.allowed) {
       if (result.reason === "unauthenticated") {
-        return NextResponse.redirect(new URL("/admin/login", req.url));
+        // Redirect to unified login page (locale-aware)
+        const locale =
+          req.cookies.get("NEXT_LOCALE")?.value ?? routing.defaultLocale;
+        return NextResponse.redirect(new URL(`/${locale}/dang-nhap`, req.url));
       }
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }

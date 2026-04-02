@@ -117,6 +117,7 @@ export default function PortfolioTabPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [isCreating, setIsCreating] = useState(false);
+  const [editProject, setEditProject] = useState<Project | null>(null);
 
   const { data, isLoading, isFetching } = useQuery({
     queryKey: qk.adminProjects({ page, limit: 20, search }),
@@ -183,6 +184,15 @@ export default function PortfolioTabPage() {
         )}
       </AnimatePresence>
 
+      {/* Edit form */}
+      {editProject && (
+        <EditProjectForm
+          project={editProject}
+          onClose={() => setEditProject(null)}
+          onUpdated={() => { setEditProject(null); qc.invalidateQueries({ queryKey: qk.adminProjects() }); }}
+        />
+      )}
+
       {/* Loading */}
       {isLoading && (
         <div style={{ display: "flex", justifyContent: "center", padding: 40 }}>
@@ -196,7 +206,7 @@ export default function PortfolioTabPage() {
           {projects.length === 0 ? (
             <div style={{ textAlign: "center", padding: "3rem", color: DS.text4, fontSize: 14 }}>Chưa có dự án nào</div>
           ) : (
-            projects.map((p) => <ProjectRow key={p.id} project={p} onEdit={() => {}} />)
+            projects.map((p) => <ProjectRow key={p.id} project={p} onEdit={setEditProject} />)
           )}
         </div>
       )}
@@ -212,6 +222,72 @@ export default function PortfolioTabPage() {
         </div>
       )}
     </div>
+  );
+}
+
+function EditProjectForm({ project, onClose, onUpdated }: { project: Project; onClose: () => void; onUpdated: () => void }) {
+  const qc = useQueryClient();
+  const [title, setTitle] = useState(project.title || "");
+  const [slug, setSlug] = useState(project.slug || "");
+  const [category, setCategory] = useState(project.category || "");
+  const [client, setClient] = useState(project.client || "");
+
+  const update = useMutation({
+    mutationFn: async () => {
+      await adminApi.put(`/api/admin/projects/${project.id}`, { title, slug, category, client });
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: qk.adminProjects() }); onUpdated(); },
+    onError: (err) => { alert(err instanceof Error ? err.message : "Cập nhật thất bại"); },
+  });
+
+  const inputStyle: React.CSSProperties = {
+    width: "100%", background: DS.bg, border: `1px solid ${DS.border}`,
+    borderRadius: 8, padding: "8px 12px", color: DS.text, fontSize: 13, outline: "none", boxSizing: "border-box", fontFamily: DS.body,
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 12, padding: 20, marginBottom: 16 }}
+    >
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+        <h3 style={{ color: DS.text, fontWeight: 700, fontSize: 15 }}>Sửa dự án</h3>
+        <button onClick={onClose} style={{ background: "none", border: "none", color: DS.text4, cursor: "pointer" }}>
+          <X size={16} />
+        </button>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+        <div>
+          <label style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, display: "block", marginBottom: 4 }}>TÊN DỰ ÁN *</label>
+          <input value={title} onChange={(e) => setTitle(e.target.value)} style={inputStyle} placeholder="Dự án A" />
+        </div>
+        <div>
+          <label style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, display: "block", marginBottom: 4 }}>SLUG *</label>
+          <input value={slug} onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/\s+/g, "-"))} style={inputStyle} placeholder="du-an-a" />
+        </div>
+        <div>
+          <label style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, display: "block", marginBottom: 4 }}>DANH MỤC</label>
+          <input value={category} onChange={(e) => setCategory(e.target.value)} style={inputStyle} placeholder="Web Design" />
+        </div>
+        <div>
+          <label style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, display: "block", marginBottom: 4 }}>KHÁCH HÀNG</label>
+          <input value={client} onChange={(e) => setClient(e.target.value)} style={inputStyle} placeholder="Công ty ABC" />
+        </div>
+      </div>
+      <div style={{ display: "flex", gap: 8 }}>
+        <button
+          onClick={() => update.mutate()}
+          disabled={!title || !slug || update.isPending}
+          style={{ flex: 1, padding: "9px", background: GRD.primary, color: "#fff", border: "none", borderRadius: 10, cursor: "pointer", fontWeight: 700, fontSize: 13, opacity: (!title || !slug || update.isPending) ? 0.6 : 1 }}
+        >
+          {update.isPending ? "Đang lưu..." : "Lưu thay đổi"}
+        </button>
+        <button onClick={onClose} style={{ padding: "9px 16px", background: "transparent", border: `1px solid ${DS.border}`, color: DS.text3, borderRadius: 10, cursor: "pointer", fontSize: 13 }}>
+          Hủy
+        </button>
+      </div>
+    </motion.div>
   );
 }
 

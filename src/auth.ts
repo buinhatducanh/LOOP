@@ -135,6 +135,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
   pages: {
-    signIn: "/vi/login",
+    signIn: "/vi/dang-nhap",
   },
 });

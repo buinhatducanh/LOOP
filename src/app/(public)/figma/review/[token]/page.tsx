@@ -13,7 +13,7 @@ interface FigmaDemo {
   approvedAt: string | null;
   sentAt: string | null;
   createdAt: string;
-  project: {
+  project?: {
     orderNumber: string;
     customerName: string;
   };
@@ -119,7 +119,7 @@ export default function FigmaReviewPage({ params }: { params: Promise<{ token: s
           <div>
             <h1 className="text-lg font-bold text-white">{demo.title}</h1>
             <p className="text-sm" style={{ color: "rgba(209,213,219,0.4)" }}>
-              {demo.project.customerName} · {demo.project.orderNumber}
+              {demo.project ? `${demo.project.customerName} · ${demo.project.orderNumber}` : "—"}
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -166,7 +166,7 @@ export default function FigmaReviewPage({ params }: { params: Promise<{ token: s
                   <span className="text-[10px] uppercase" style={{ color: "rgba(209,213,219,0.3)" }}>version</span>
                   <code className="text-xs rounded px-2 py-0.5 font-mono"
                     style={{ background: "rgba(139,92,246,0.15)", color: "#A78BFA" }}>
-                    {demo.versionHash.slice(0, 8)}
+                    {demo.versionHash?.slice(0, 8) ?? "—"}
                   </code>
                 </div>
               )}

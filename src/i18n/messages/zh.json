@@ -265,7 +265,29 @@
     "hasAccount": "已有账户？",
     "loginSuccess": "登录成功！",
     "loginError": "邮箱或密码不正确。",
-    "logoutSuccess": "退出成功！"
+    "logoutSuccess": "退出成功！",
+    "loginSubtitle": "登录您的LOOP账户",
+    "registerSubtitle": "创建账户以开始",
+    "name": "姓名",
+    "companyOptional": "公司（选填）",
+    "submitRegister": "创建账户",
+    "termsAgree": "注册即表示您同意LOOP Solutions的服务条款和隐私政策。",
+    "continueWithGoogle": "使用Google继续",
+    "or": "或",
+    "registerCta": "立即注册",
+    "otp": {
+      "title": "验证邮箱",
+      "desc": "输入发送的6位验证码",
+      "verify": "验证",
+      "resend": "重新发送",
+      "resendHint": "没有收到验证码？"
+    },
+    "sidePanel": {
+      "desc": "顶级代理机构的数字操作系统。LP奖励、等级系统和专业服务。",
+      "rankTier": "升级并获得奖励",
+      "welcomeNewMember": "欢迎新成员！",
+      "welcomeReward": "注册账户即可领取奖励"
+    }
   },
   "customer": {
     "dashboard": "概览",

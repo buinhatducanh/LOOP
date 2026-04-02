@@ -265,7 +265,29 @@
     "hasAccount": "이미 계정이 있으신가요?",
     "loginSuccess": "로그인 성공!",
     "loginError": "이메일 또는 비밀번호가 올바르지 않습니다.",
-    "logoutSuccess": "로그아웃 성공!"
+    "logoutSuccess": "로그아웃 성공!",
+    "loginSubtitle": "LOOP 계정에 로그인하세요",
+    "registerSubtitle": "시작하려면 계정을 만드세요",
+    "name": "이름",
+    "companyOptional": "회사 (선택)",
+    "submitRegister": "계정 만들기",
+    "termsAgree": "등록하면 LOOP Solutions의 서비스 약관 및 개인정보 보호정책에 동의하는 것입니다.",
+    "continueWithGoogle": "Google으로 계속",
+    "or": "또는",
+    "registerCta": "지금 등록",
+    "otp": {
+      "title": "이메일 확인",
+      "desc": "보낸 6자리 코드를 입력하세요",
+      "verify": "확인",
+      "resend": "재발송",
+      "resendHint": "코드를 받지 못하셨나요?"
+    },
+    "sidePanel": {
+      "desc": "최고 등급 에이전시를 위한 디지털 OS. LP 보상, 랭크 시스템 및 전문 서비스.",
+      "rankTier": "랭크업 & 보상 획득",
+      "welcomeNewMember": "새 멤버 환영합니다!",
+      "welcomeReward": "계정 등록 시 보상을 받으세요"
+    }
   },
   "customer": {
     "dashboard": "개요",

@@ -7,7 +7,7 @@
  */
 
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "motion/react";
 import { qk } from "@/lib/query/provider";
 import { adminApi } from "@/lib/api/client";
@@ -85,6 +85,7 @@ function HealthBar({ score, label }: { score: number; label: string }) {
 // ── Main ──────────────────────────────────────────────────
 export default function AnalyticsPage() {
   const [period, setPeriod] = useState("30");
+  const qc = useQueryClient();
 
   const { data, isLoading, isFetching } = useQuery({
     queryKey: ["admin", "analytics", period],
@@ -124,6 +125,7 @@ export default function AnalyticsPage() {
             <option value="90">90 ngày</option>
           </select>
           <button
+            onClick={() => qc.invalidateQueries({ queryKey: ["admin", "analytics", period] })}
             style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 14px", background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 10, color: DS.text3, cursor: "pointer", fontSize: 12, fontFamily: DS.mono }}
           >
             <RefreshCw size={13} className={isFetching ? "animate-spin" : ""} /> Làm mới

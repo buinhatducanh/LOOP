@@ -10,6 +10,7 @@ import {
   Plus, Edit2, Search, RefreshCw,
   X, Globe,
 } from "lucide-react";
+import { AnimatePresence } from "motion/react";
 
 type Service = {
   id: string;
@@ -120,6 +121,7 @@ export default function ServicesTabPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [isCreating, setIsCreating] = useState(false);
+  const [editService, setEditService] = useState<Service | null>(null);
 
   const { data, isLoading, isFetching } = useQuery({
     queryKey: qk.adminServices({ page, limit: 20, search }),
@@ -189,6 +191,13 @@ export default function ServicesTabPage() {
             />
           </motion.div>
         )}
+        {editService && (
+          <EditServiceForm
+            service={editService}
+            onClose={() => setEditService(null)}
+            onUpdated={() => { setEditService(null); qc.invalidateQueries({ queryKey: qk.adminServices() }); }}
+          />
+        )}
       </AnimatePresence>
 
       {/* Loading */}
@@ -207,7 +216,7 @@ export default function ServicesTabPage() {
             </div>
           ) : (
             services.map((s) => (
-              <ServiceRow key={s.id} service={s} onEdit={() => {}} />
+              <ServiceRow key={s.id} service={s} onEdit={setEditService} />
             ))
           )}
         </div>
@@ -234,6 +243,73 @@ export default function ServicesTabPage() {
         </div>
       )}
     </div>
+  );
+}
+
+// Inline edit form
+function EditServiceForm({ service, onClose, onUpdated }: { service: Service; onClose: () => void; onUpdated: () => void }) {
+  const qc = useQueryClient();
+  const [title, setTitle] = useState(service.title || "");
+  const [slug, setSlug] = useState(service.slug || "");
+  const [category, setCategory] = useState(service.category || "");
+
+  const update = useMutation({
+    mutationFn: async () => {
+      await adminApi.put<{ data: Service }>(`/api/admin/services/${service.id}`, { title, slug, category });
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: qk.adminServices() }); onUpdated(); },
+    onError: (err) => { alert(err instanceof Error ? err.message : "Cập nhật thất bại"); },
+  });
+
+  const inputStyle: React.CSSProperties = {
+    width: "100%", background: DS.bg, border: `1px solid ${DS.border}`,
+    borderRadius: 8, padding: "8px 12px", color: DS.text, fontSize: 13, outline: "none", boxSizing: "border-box", fontFamily: DS.body,
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 12, padding: 20, marginBottom: 16 }}
+    >
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+        <h3 style={{ color: DS.text, fontWeight: 700, fontSize: 15 }}>Sửa dịch vụ</h3>
+        <button onClick={onClose} style={{ background: "none", border: "none", color: DS.text4, cursor: "pointer" }}>
+          <X size={16} />
+        </button>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+        <div>
+          <label style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, display: "block", marginBottom: 4 }}>TÊN DỊCH VỤ *</label>
+          <input value={title} onChange={(e) => setTitle(e.target.value)} style={inputStyle} placeholder="Thiết kế Website" />
+        </div>
+        <div>
+          <label style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, display: "block", marginBottom: 4 }}>SLUG *</label>
+          <input value={slug} onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/\s+/g, "-"))} style={inputStyle} placeholder="thiet-ke-website" />
+        </div>
+      </div>
+      <div style={{ marginBottom: 12 }}>
+        <label style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, display: "block", marginBottom: 4 }}>DANH MỤC</label>
+        <select value={category} onChange={(e) => setCategory(e.target.value)} style={{ ...inputStyle, cursor: "pointer" }}>
+          <option value="">Chọn danh mục</option>
+          {["Web Design", "App Development", "Dashboard / Analytics", "SEO / Marketing", "E-commerce", "Branding"].map((c) => (
+            <option key={c} value={c}>{c}</option>
+          ))}
+        </select>
+      </div>
+      <div style={{ display: "flex", gap: 8 }}>
+        <button
+          onClick={() => update.mutate()}
+          disabled={!title || !slug || update.isPending}
+          style={{ flex: 1, padding: "9px", background: GRD.primary, color: "#fff", border: "none", borderRadius: 10, cursor: "pointer", fontWeight: 700, fontSize: 13, opacity: (!title || !slug || update.isPending) ? 0.6 : 1 }}
+        >
+          {update.isPending ? "Đang lưu..." : "Lưu thay đổi"}
+        </button>
+        <button onClick={onClose} style={{ padding: "9px 16px", background: "transparent", border: `1px solid ${DS.border}`, color: DS.text3, borderRadius: 10, cursor: "pointer", fontSize: 13 }}>
+          Hủy
+        </button>
+      </div>
+    </motion.div>
   );
 }
 
@@ -310,5 +386,3 @@ function CreateServiceForm({ onClose, onCreated }: { onClose: () => void; onCrea
     </motion.div>
   );
 }
-
-import { AnimatePresence } from "motion/react";

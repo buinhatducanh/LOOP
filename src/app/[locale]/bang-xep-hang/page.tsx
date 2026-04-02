@@ -7,6 +7,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Trophy, Zap, Users, TrendingUp, Filter, Crown,
@@ -462,6 +463,8 @@ function DeptSummary() {
 
 // ── MAIN PAGE ─────────────────────────────────────────────────────────────────
 export default function LeaderboardPage() {
+  const params = useParams();
+  const locale = (params.locale as string) ?? "vi";
   const { user } = useAuthStore();
   const [filter, setFilter] = useState<'all' | 'Alpha' | 'Sigma' | 'Omega'>('all');
   const [search, setSearch] = useState('');
@@ -657,11 +660,11 @@ export default function LeaderboardPage() {
               Tích lũy LP qua mỗi dự án, nhiệm vụ và sự kiện. Thăng hạng từ Iron đến Diamond.
             </p>
             <div className="flex gap-3 justify-center flex-wrap">
-              <Link href="/dang-ky"
+              <Link href={`/${locale}/dang-nhap`}
                 style={{ padding: '12px 28px', background: GRD.primary, color: '#fff', borderRadius: 12, fontWeight: 700, fontSize: 14, textDecoration: 'none', boxShadow: '0 0 20px rgba(129,140,248,0.35)', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                Đăng ký ngay <ArrowUpRight size={15} />
+                Tham gia ngay <ArrowUpRight size={15} />
               </Link>
-              <Link href="/dang-nhap"
+              <Link href={`/${locale}/dang-nhap`}
                 style={{ padding: '12px 28px', background: 'transparent', color: DS.blue, borderRadius: 12, fontWeight: 600, fontSize: 14, textDecoration: 'none', border: `1px solid rgba(59,130,246,0.35)` }}>
                 Đăng nhập
               </Link>

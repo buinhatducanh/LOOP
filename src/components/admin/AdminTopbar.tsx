@@ -30,7 +30,9 @@ export function AdminTopbar({ userName, userEmail, userAvatar }: AdminTopbarProp
 
   const handleLogout = async () => {
     await logout();
-    router.push("/admin/login");
+    // Redirect to unified login (preserve locale from cookie)
+    const locale = document.cookie.match(/NEXT_LOCALE=([^;]+)/)?.[1] ?? "vi";
+    router.push(`/${locale}/dang-nhap`);
   };
 
   return (

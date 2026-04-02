@@ -265,7 +265,29 @@
     "hasAccount": "アカウントはお持ちですか？",
     "loginSuccess": "ログイン成功！",
     "loginError": "メールアドレスまたはパスワードが正しくありません。",
-    "logoutSuccess": "ログアウト成功！"
+    "logoutSuccess": "ログアウト成功！",
+    "loginSubtitle": "LOOPアカウントにサインイン",
+    "registerSubtitle": "アカウントを作成して始めましょう",
+    "name": "お名前",
+    "companyOptional": "会社名（任意）",
+    "submitRegister": "アカウント作成",
+    "termsAgree": "登録することで、LOOP Solutionsの利用規約とプライバシーポリシーに同意します。",
+    "continueWithGoogle": "Googleで続ける",
+    "or": "または",
+    "registerCta": "今すぐ登録",
+    "otp": {
+      "title": "メール確認",
+      "desc": "送信された6桁のコードを入力してください",
+      "verify": "確認",
+      "resend": "再送",
+      "resendHint": "コードが届かない場合？"
+    },
+    "sidePanel": {
+      "desc": "トップティア代理店向けデジタルOS。LP報酬、ランクシステム、専門サービス。",
+      "rankTier": "ランクアップ＆報酬獲得",
+      "welcomeNewMember": "ようこそ、新メンバー！",
+      "welcomeReward": "アカウント登録時に報酬を受け取る"
+    }
   },
   "customer": {
     "dashboard": "概要",

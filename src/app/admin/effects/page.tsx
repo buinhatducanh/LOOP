@@ -19,7 +19,21 @@ import { adminApi } from "@/lib/api/client";
 import { DS } from "@/lib/design-tokens";
 import { Sparkles, Info, RefreshCw, ToggleLeft, ToggleRight } from "lucide-react";
 
-// Ranks with their effect configs (mirrors guildMemberData.ts)
+const EFFECT_TYPE_CONFIG: Record<string, string> = {
+  particle:        "Particle",
+  glow:           "Glow",
+  aura:           "Aura",
+  spark:          "Spark",
+  shimmer:        "Shimmer",
+  pulse:          "Pulse",
+  trail:          "Trail",
+  holographic:    "Holographic",
+  fire_particles: "Fire Particles",
+  matrix_rain:    "Matrix Rain",
+  cosmic:         "Cosmic",
+  electric:       "Electric",
+};
+
 const RANK_EFFECTS = [
   {
     rank: "Iron",
@@ -221,7 +235,7 @@ export default function EffectsPage() {
                   {dbEffects.map((e) => (
                     <tr key={e.id} style={{ borderBottom: `1px solid ${DS.border}` }}>
                       <td style={{ padding: "10px 12px", color: DS.text, fontSize: 12, fontWeight: 600 }}>{e.name}</td>
-                      <td style={{ padding: "10px 12px", color: DS.text3, fontSize: 12 }}>{e.type}</td>
+                      <td style={{ padding: "10px 12px", color: DS.text3, fontSize: 12 }}>{EFFECT_TYPE_CONFIG[e.type] ?? e.type}</td>
                       <td style={{ padding: "10px 12px", color: DS.text3, fontSize: 12 }}>{e.minRank}</td>
                       <td style={{ padding: "10px 12px" }}>
                         <div style={{ width: 16, height: 16, borderRadius: "50%", background: e.color, boxShadow: `0 0 6px ${e.color}` }} />

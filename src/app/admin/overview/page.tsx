@@ -153,12 +153,14 @@ interface OrderRow {
   createdAt: string;
 }
 
-const STATUS_COLORS: Record<string, string> = {
-  pending: "#F59E0B",
-  paid: "#3B82F6",
-  in_progress: "#818CF8",
-  done: "#22C55E",
-  cancelled: "#EF4444",
+const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
+  pending_payment: { label: "Chờ thanh toán", color: "#F59E0B" },
+  paid:           { label: "Đã thanh toán",    color: "#3B82F6" },
+  in_progress:    { label: "Đang thực hiện",   color: "#818CF8" },
+  demo_ready:     { label: "Demo sẵn sàng",     color: "#A78BFA" },
+  client_review:  { label: "Khách review",      color: "#60A5FA" },
+  done:           { label: "Hoàn thành",         color: "#22C55E" },
+  cancelled:      { label: "Đã hủy",            color: "#EF4444" },
 };
 
 function OrderRow({ order }: { order: OrderRow }) {
@@ -220,14 +222,14 @@ function OrderRow({ order }: { order: OrderRow }) {
             fontWeight: 600,
           }}
         >
-          {order.total.toLocaleString("vi-VN")}đ
+          {order.total != null ? order.total.toLocaleString("vi-VN") + "đ" : "—"}
         </div>
         <div
           style={{
             display: "inline-flex",
             alignItems: "center",
             gap: "0.25rem",
-            color: STATUS_COLORS[order.status] ?? "var(--figma-text4, #64748B)",
+            color: STATUS_CONFIG[order.status]?.color ?? "var(--figma-text4, #64748B)",
             fontSize: "0.6875rem",
             textTransform: "capitalize",
           }}
@@ -237,11 +239,11 @@ function OrderRow({ order }: { order: OrderRow }) {
               width: 6,
               height: 6,
               borderRadius: "50%",
-              background: STATUS_COLORS[order.status] ?? "var(--figma-text4, #64748B)",
+              background: STATUS_CONFIG[order.status]?.color ?? "var(--figma-text4, #64748B)",
               display: "inline-block",
             }}
           />
-          {order.status}
+          {STATUS_CONFIG[order.status]?.label ?? order.status}
         </div>
       </div>
     </div>

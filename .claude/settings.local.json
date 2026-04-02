@@ -193,7 +193,8 @@
       "Bash(powershell -Command \"[System.Text.Encoding]::UTF8.GetString\\([System.IO.File]::ReadAllBytes\\(''''D:\\\\LOOP_COMPANY\\\\LOOP\\\\FE\\\\src\\\\app\\\\i18n\\\\locales\\\\vi.json''''\\)\\)\")",
       "Bash(Select-String 'headline1' -Context 0,1)",
       "Bash(for locale:*)",
-      "Bash(do)"
+      "Bash(do)",
+      "Bash(grep '\"\"next-auth\"\"' D:/LOOP_COMPANY/LOOP/package.json)"
     ],
     "additionalDirectories": [
       "D:\\LOOP_COMPANY\\LOOP\\src\\app\\api\\admin\\expertises",

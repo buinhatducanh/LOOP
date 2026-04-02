@@ -13,15 +13,15 @@ import { adminApi } from "@/lib/api/client";
 import { DS } from "@/lib/design-tokens";
 import { Bell, RefreshCw, CheckCheck, Trash2, MessageSquare, Zap, AlertTriangle, Info } from "lucide-react";
 
-const TYPE_ICONS: Record<string, { icon: React.ReactNode; color: string; bg: string }> = {
-  info:     { icon: <Info size={14} />, color: DS.blue, bg: "rgba(59,130,246,0.1)" },
-  warning:  { icon: <AlertTriangle size={14} />, color: DS.amber, bg: "rgba(245,158,11,0.1)" },
-  success:  { icon: <CheckCheck size={14} />, color: DS.green, bg: "rgba(34,197,94,0.1)" },
-  lp:       { icon: <Zap size={14} />, color: DS.purple, bg: "rgba(139,92,246,0.1)" },
-  message:  { icon: <MessageSquare size={14} />, color: DS.cyan, bg: "rgba(6,182,212,0.1)" },
+const TYPE_ICONS: Record<string, { icon: React.ReactNode; color: string; bg: string; label: string }> = {
+  info:     { icon: <Info size={14} />, color: DS.blue, bg: "rgba(59,130,246,0.1)", label: "Thông tin" },
+  warning:  { icon: <AlertTriangle size={14} />, color: DS.amber, bg: "rgba(245,158,11,0.1)", label: "Cảnh báo" },
+  success:  { icon: <CheckCheck size={14} />, color: DS.green, bg: "rgba(34,197,94,0.1)", label: "Thành công" },
+  lp:       { icon: <Zap size={14} />, color: DS.purple, bg: "rgba(139,92,246,0.1)", label: "LP" },
+  message:  { icon: <MessageSquare size={14} />, color: DS.cyan, bg: "rgba(6,182,212,0.1)", label: "Tin nhắn" },
 };
 
-const TYPE_DEFAULT = { icon: <Bell size={14} />, color: DS.text4, bg: "rgba(100,116,139,0.1)" };
+const TYPE_DEFAULT = { icon: <Bell size={14} />, color: DS.text4, bg: "rgba(100,116,139,0.1)", label: "Thông báo" };
 
 const fmtDate = (d: string | Date | null | undefined) => {
   if (!d) return "—";
@@ -82,7 +82,7 @@ function NotificationItem({ n, onMarkRead, onDelete }: {
         <div style={{ color: DS.text3, fontSize: 12, lineHeight: 1.5 }}>{n.message}</div>
         {n.type && (
           <span style={{ display: "inline-block", marginTop: 6, background: cfg.bg, color: cfg.color, padding: "1px 8px", borderRadius: 9999, fontSize: 10, fontFamily: DS.mono, fontWeight: 600 }}>
-            {n.type}
+            {TYPE_ICONS[n.type]?.label ?? n.type}
           </span>
         )}
       </div>
@@ -124,6 +124,16 @@ export default function NotificationCenterPage() {
 
   const notifications = data?.data ?? [];
   const unreadCount = notifications.filter(n => !n.isRead).length;
+
+  const markRead = useMutation({
+    mutationFn: (id: string) => adminApi.patch(`/api/admin/notifications/${id}`, { isRead: true }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "notifications"] }),
+  });
+
+  const deleteNotif = useMutation({
+    mutationFn: (id: string) => adminApi.delete(`/api/admin/notifications/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "notifications"] }),
+  });
 
   return (
     <div>
@@ -207,8 +217,8 @@ export default function NotificationCenterPage() {
             <NotificationItem
               key={n.id}
               n={n}
-              onMarkRead={() => {/* mark read mutation */}}
-              onDelete={() => {/* delete mutation */}}
+              onMarkRead={(id) => markRead.mutate(id)}
+              onDelete={(id) => deleteNotif.mutate(id)}
             />
           ))}
         </div>
