@@ -19,9 +19,9 @@ export default getRequestConfig(async ({ requestLocale }) => {
   // 2) Load messages for resolved locale
   let messages;
   try {
-    messages = (await import(`../messages/${resolvedLocale}.json`)).default;
+    messages = (await import(`./messages/${resolvedLocale}.json`)).default;
   } catch {
-    messages = (await import(`../messages/${routing.defaultLocale}.json`)).default;
+    messages = (await import(`./messages/${routing.defaultLocale}.json`)).default;
   }
 
   return {

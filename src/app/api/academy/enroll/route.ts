@@ -28,7 +28,7 @@ import { academyLogger } from "@/lib/logger";
 import { withIdempotency } from "@/lib/idempotency";
 import { applyRateLimit } from "@/lib/rate-limit";
 
-const LP_VND_RATE = 20_000; // 1 LP = 20,000 VND
+const LP_VND_RATE = 20_000; // legacy — use @/lib/constants in new code
 const MAX_LP_PAYMENT_RATIO = 0.5; // max 50% of course price can be paid with LP
 
 // GET /api/academy/enroll — get user's enrollments

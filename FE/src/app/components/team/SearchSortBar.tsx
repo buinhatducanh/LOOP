@@ -7,7 +7,9 @@ interface SearchSortBarProps {
   searchQuery: string;
   onSearchChange: (query: string) => void;
   sortBy: SortOption;
-  onSortChange: (sort: SortOption) => void;
+  onSortChange?: (sort: SortOption) => void;
+  /** Alias for onSortChange — FE Home.tsx uses this name */
+  onSort?: (sort: SortOption) => void;
 }
 
 const SORT_OPTIONS: Array<{ value: SortOption; label: string }> = [
@@ -23,7 +25,9 @@ export function SearchSortBar({
   onSearchChange,
   sortBy,
   onSortChange,
+  onSort,
 }: SearchSortBarProps) {
+  const handleSort = onSort ?? onSortChange ?? (() => {});
   return (
     <div className="flex items-center gap-3 max-w-3xl mx-auto">
       {/* Search input */}
@@ -101,7 +105,7 @@ export function SearchSortBar({
         </div>
         <select
           value={sortBy}
-          onChange={(e) => onSortChange(e.target.value as SortOption)}
+          onChange={(e) => handleSort(e.target.value as SortOption)}
           className="px-3 py-2.5 rounded-sm outline-none cursor-pointer transition-all duration-300"
           style={{
             background: '#0F172A',

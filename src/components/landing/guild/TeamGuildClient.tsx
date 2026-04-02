@@ -405,6 +405,8 @@ export function TeamGuildClient({ locale, members, hero }: TeamGuildClientProps)
     DEV: t("filterDev"),
   }), [t]);
 
+  // Sort updated via useMemo deps: [members, search, roleFilter, rankFilter, sortOption]
+
   // Hall of Fame — diamond/ruby/gold members
   const { diamond, ruby, gold } = useMemo(() => {
     const sorted = [...members].sort(
@@ -436,12 +438,14 @@ export function TeamGuildClient({ locale, members, hero }: TeamGuildClientProps)
     });
     // Sort
     return [...list].sort((a, b) => {
-      if (sortOption === "level-desc") return ((b.level as number) ?? 0) - ((a.level as number) ?? 0);
-      if (sortOption === "level-asc") return ((a.level as number) ?? 0) - ((b.level as number) ?? 0);
-      if (sortOption === "rank-desc") return (RANKS[normalizeRank(b.rank as string)]?.tier ?? 0) - (RANKS[normalizeRank(a.rank as string)]?.tier ?? 0);
-      if (sortOption === "rank-asc") return (RANKS[normalizeRank(a.rank as string)]?.tier ?? 0) - (RANKS[normalizeRank(b.rank as string)]?.tier ?? 0);
-      if (sortOption === "team") return ((a.team as string) ?? "").localeCompare((b.team as string) ?? "");
-      return 0;
+      const idA = String(a.id ?? "");
+      const idB = String(b.id ?? "");
+      if (sortOption === "level-desc") return ((b.level as number) ?? 0) - ((a.level as number) ?? 0) || idA.localeCompare(idB);
+      if (sortOption === "level-asc") return ((a.level as number) ?? 0) - ((b.level as number) ?? 0) || idA.localeCompare(idB);
+      if (sortOption === "rank-desc") return (RANKS[normalizeRank(b.rank as string)]?.tier ?? 0) - (RANKS[normalizeRank(a.rank as string)]?.tier ?? 0) || idA.localeCompare(idB);
+      if (sortOption === "rank-asc") return (RANKS[normalizeRank(a.rank as string)]?.tier ?? 0) - (RANKS[normalizeRank(b.rank as string)]?.tier ?? 0) || idA.localeCompare(idB);
+      if (sortOption === "team") return ((a.team as string) ?? "").localeCompare((b.team as string) ?? "") || idA.localeCompare(idB);
+      return idA.localeCompare(idB);
     });
   }, [members, search, roleFilter, rankFilter, sortOption]);
 
@@ -577,7 +581,7 @@ export function TeamGuildClient({ locale, members, hero }: TeamGuildClientProps)
                 className="flex flex-col items-center justify-center py-24 gap-4"
               >
                 <Users size={48} style={{ color: "#64748B", opacity: 0.3 }} />
-                <div style={{ color: "#475569", fontSize: 15, fontFamily: "'JetBrains Mono', monospace" }}>Không tìm thấy thành viên phù hợp</div>
+                <div style={{ color: "#475569", fontSize: 15, fontFamily: "'JetBrains Mono', monospace" }}>{t("noMembersFound")}</div>
                 <button
                   onClick={() => { setRoleFilter("all"); setRankFilter("all"); setSearch(""); }}
                   style={{ color: "#3B82F6", background: "none", border: "1px solid rgba(59,130,246,0.3)", borderRadius: 8, padding: "7px 16px", cursor: "pointer", fontSize: 13 }}

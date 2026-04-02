@@ -3,8 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
-
-const LP_VND_RATE = 20_000;
+import { LP_VND_RATE } from "@/lib/constants";
 
 // GET /api/admin/edu/courses
 export async function GET(req: NextRequest) {

@@ -3,6 +3,7 @@
  * Route: /vi/booking, /en/booking, /ja/booking, /ko/booking, /zh/booking
  */
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { setRequestLocale } from "next-intl/server";
 import { routing } from "@/i18n/routing";
 import { BookingWizardClient } from "@/components/landing/BookingWizardClient";
@@ -11,11 +12,40 @@ type Props = { params: Promise<{ locale: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
+  const t = await getTranslations("seo");
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://loop.vn";
+  const title = t("bookingTitle") || "Đặt lịch tư vấn";
+  const description = t("bookingDescription") || "Đặt lịch tư vấn miễn phí với đội ngũ kỹ thuật LOOP Solutions. Wizard 8 bước giúp bạn chọn dịch vụ phù hợp.";
+  const ogImage = t("ogImage");
+  const brandMetaTitle = t("brandMetaTitle");
+  const canonical = `${baseUrl}/${locale}/booking`;
+
   return {
-    title: `Booking Wizard — LOOP Solutions`,
-    description: `Book our professional services with our 8-step pricing wizard.`,
-    alternates: { canonical: `${baseUrl}/${locale}/booking` },
+    title,
+    description,
+    alternates: {
+      canonical,
+      languages: {
+        vi: "/vi/booking",
+        en: "/en/booking",
+        ja: "/ja/booking",
+        ko: "/ko/booking",
+        zh: "/zh/booking",
+      },
+    },
+    openGraph: {
+      type: "website",
+      title: `${title} — ${brandMetaTitle}`,
+      description,
+      url: canonical,
+      images: [{ url: ogImage || "/og-cover.jpg", width: 1200, height: 630, alt: "LOOP Solutions Booking" }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${title} — ${brandMetaTitle}`,
+      description,
+      images: [ogImage || "/og-cover.jpg"],
+    },
   };
 }
 

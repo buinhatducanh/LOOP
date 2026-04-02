@@ -1,29 +1,26 @@
 /**
- * Customer LP (Points) Service
+ * Customer LP (Points) Service — GAMIFICATION VERSION
+ *
+ * DEPRECATED: Import from @/lib/services/customer/lp.service.ts instead.
+ * This file is kept for backward compatibility during migration.
  *
  * Customers earn LP when they pay for orders.
- * Formula: LP earned = floor(orderPaidAmount × LP_EXCHANGE_RATE × 0.10)
- * e.g. 2,000,000 VND → floor(2,000,000 × 1/20,000 × 0.10) = floor(100 × 0.10) = 10 LP
+ * Formula: LP earned = ceil(VND × 0.00005 × 0.10)
  *
  * Flow:
  *  1. recordPayment() → `awardCustomerLpOnPayment()`
- *     Triggered on every successful payment record.
- *     - Creates or upserts CustomerPoint by email
- *     - Credits LP + creates PointTransaction (type=earn, source=purchase)
- *     - Updates balance, totalEarned, level
- *
  *  2. transitionOrderStatus() → `awardCustomerLpOnOrderComplete()`
- *     Triggered when order transitions to "completed".
- *     - Awards LP for any remaining unpaid amount (e.g. split payments)
- *     - Marks source as "upgrade" for loyalty bonus
+ *
+ * LP rate constant imported from @/lib/constants.ts
  */
 
 import { prisma } from "@/lib/prisma";
 
-// ── Constants ─────────────────────────────────────────────────────────────────
+// ── Constants (imported from shared constants) ──────────────────────────────────
 
-/** VND per $1 LP. $1 LP = 20,000 VND → LP = VND / 20,000 */
-export const LP_VND_RATE = 20_000;
+import { LP_VND_RATE } from "@/lib/constants";
+// Re-export so existing callers that import from this module still work
+export { LP_VND_RATE };
 
 /** LP earned per VND spent (before the 10% loyalty rate). */
 export const LP_PER_VND = 1 / LP_VND_RATE;

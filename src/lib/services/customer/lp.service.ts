@@ -2,8 +2,8 @@
  * Customer LP (Points) Service
  *
  * Customers earn LP when they pay for orders.
- * Formula: LP earned = floor(orderPaidAmount × LP_EXCHANGE_RATE × 0.10)
- * e.g. 2,000,000 VND → floor(2,000,000 × 1/20,000 × 0.10) = floor(100 × 0.10) = 10 LP
+ * Formula: LP earned = ceil(VND × 1/20000 × 0.10)
+ * e.g. 2,000,000 VND → ceil(2,000,000 × 0.00005 × 0.10) = 10 LP
  *
  * Flow:
  *  1. recordPayment() → `awardCustomerLpOnPayment()`
@@ -16,14 +16,16 @@
  *     Triggered when order transitions to "completed".
  *     - Awards LP for any remaining unpaid amount (e.g. split payments)
  *     - Marks source as "upgrade" for loyalty bonus
+ *
+ * LP rate constant imported from @/lib/constants.ts
  */
 
 import { prisma } from "@/lib/prisma";
+import { LP_VND_RATE } from "@/lib/constants";
+// Re-export so existing callers that import from this module still work
+export { LP_VND_RATE };
 
-// ── Constants ─────────────────────────────────────────────────────────────────
-
-/** VND per $1 LP. $1 LP = 20,000 VND → LP = VND / 20,000 */
-export const LP_VND_RATE = 20_000;
+// ── Derived constants (from shared constants.ts) ──────────────────────────────
 
 /** LP earned per VND spent (before the 10% loyalty rate). */
 export const LP_PER_VND = 1 / LP_VND_RATE;

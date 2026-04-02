@@ -47,7 +47,24 @@ export interface SessionUser {
   roleLevel: number;
   /** Cached permission list for the active role */
   permissions?: UserPermission[];
+  /** Team member rank (from TeamMember.rank) */
+  rank?: string;
+  /** Available LP balance */
+  availableLp?: number;
+  /** Locked LP */
+  lockedLp?: number;
 }
+
+/** RANK → display color map */
+export const RANK_COLORS: Record<string, string> = {
+  iron: "#9CA3AF",
+  bronze: "#CD7F32",
+  silver: "#CBD5E1",
+  gold: "#FFD700",
+  platinum: "#14B8A6",
+  ruby: "#EF4444",
+  diamond: "#818CF8",
+};
 
 // ─── Session ──────────────────────────────────────────────────────────────────
 
@@ -75,6 +92,7 @@ export async function getSessionFromBearer(
             OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
           },
         },
+        teamMember: { select: { rank: true, availableLp: true, lockedLp: true } },
       },
     });
 
@@ -99,6 +117,9 @@ export async function getSessionFromBearer(
       teamMemberId: user.teamMemberId,
       roleLevel: ROLE_LEVEL[user.role] ?? 99,
       permissions,
+      rank: user.teamMember?.rank,
+      availableLp: user.teamMember?.availableLp,
+      lockedLp: user.teamMember?.lockedLp,
     };
   } catch {
     // DB unavailable — return minimal session from JWT payload only
@@ -143,6 +164,7 @@ export async function getSession(): Promise<SessionUser | null> {
               OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
             },
           },
+          teamMember: { select: { rank: true, availableLp: true, lockedLp: true } },
         },
       });
 
@@ -167,6 +189,9 @@ export async function getSession(): Promise<SessionUser | null> {
         teamMemberId: user.teamMemberId,
         roleLevel: ROLE_LEVEL[user.role] ?? 99,
         permissions,
+        rank: user.teamMember?.rank,
+        availableLp: user.teamMember?.availableLp,
+        lockedLp: user.teamMember?.lockedLp,
       };
     } catch {
       // DB unavailable — return minimal session from JWT payload (graceful degradation)
@@ -203,6 +228,7 @@ export async function getSession(): Promise<SessionUser | null> {
             OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
           },
         },
+        teamMember: { select: { rank: true, availableLp: true, lockedLp: true } },
       },
     });
 
@@ -227,6 +253,9 @@ export async function getSession(): Promise<SessionUser | null> {
       teamMemberId: user.teamMemberId,
       roleLevel: ROLE_LEVEL[user.role] ?? 99,
       permissions,
+      rank: user.teamMember?.rank,
+      availableLp: user.teamMember?.availableLp,
+      lockedLp: user.teamMember?.lockedLp,
     };
   } catch {
     return null;

@@ -1,8 +1,9 @@
-import { ok, handleError } from "@/lib/api/response";
+import { ok, handleError, badRequest } from "@/lib/api/response";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
+import { CUSTOM_ORDER_STATUSES, TEMPLATE_ORDER_STATUSES } from "@/lib/pricing/order-lifecycle";
 
 export async function GET(
   req: NextRequest,
@@ -39,6 +40,21 @@ export async function PUT(
     const existing = await prisma.order.findUnique({ where: { id } });
     if (!existing) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
+    // Validate status if being updated — must be a known status for this order type
+    if (data.status !== undefined) {
+      const orderType = (existing.orderType as string) ?? "custom";
+      const validStatuses = orderType === "template" || orderType === "web-package"
+        ? TEMPLATE_ORDER_STATUSES
+        : CUSTOM_ORDER_STATUSES;
+
+      if (!validStatuses.includes(data.status)) {
+        return badRequest(
+          `Invalid status "${data.status}" for order type "${orderType}". ` +
+          `Valid statuses: ${validStatuses.join(", ")}`
+        );
+      }
     }
 
     const order = await prisma.order.update({

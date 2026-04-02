@@ -23,7 +23,7 @@
  */
 
 import { prisma } from "@/lib/prisma";
-import { LP_VND_RATE } from "./lp.service";
+import { LP_VND_RATE } from "@/lib/constants";
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 

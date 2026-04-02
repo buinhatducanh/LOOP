@@ -17,6 +17,57 @@ type HeroContent = {
   heroDesc: string;
 };
 
+// ─── Featured Card (Hall of Fame) ─────────────────────────────────────────────
+
+function FeaturedCard({ member, index, locale, fallbackRankLabel }: {
+  member: MemberRecord;
+  index: number;
+  locale: string;
+  fallbackRankLabel: string;
+}) {
+  const rStyle = getRankStyle(member.rank as string | undefined);
+  const [imgError, setImgError] = useState(false);
+
+  return (
+    <Link href={`/${locale}/team/${member.slug as string}`} style={{ textDecoration: "none" }}>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: index * 0.07 }}
+        style={{ background: rStyle.bg, border: `1px solid ${rStyle.border}`, borderRadius: 12, padding: "16px", display: "flex", alignItems: "center", gap: 12 }}
+      >
+        <div style={{ width: 48, height: 48, borderRadius: "50%", overflow: "hidden", background: "#111827", flexShrink: 0 }}>
+          {(member.image as string) && !imgError ? (
+            <img
+              src={member.image as string}
+              alt={member.name as string}
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              onError={() => setImgError(true)}
+            />
+          ) : (
+            <div style={{ width: "100%", height: "100%", display: "grid", placeItems: "center", color: DS.text5, fontSize: "1.25rem", fontWeight: 700 }}>
+              {(member.name as string).charAt(0).toUpperCase()}
+            </div>
+          )}
+        </div>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ color: DS.text, fontSize: 13, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            {member.name as string}
+          </div>
+          <div style={{ color: rStyle.color, fontSize: 10, fontFamily: DS.mono, fontWeight: 700 }}>
+            {rStyle.label || fallbackRankLabel}
+          </div>
+          {(member.lpBalance as number) != null && (member.lpBalance as number) > 0 && (
+            <div style={{ color: DS.cyan, fontSize: 10, fontFamily: DS.mono, marginTop: 2 }}>
+              {(member.lpBalance as number).toLocaleString()} LP
+            </div>
+          )}
+        </div>
+      </motion.div>
+    </Link>
+  );
+}
+
 // ─── Rank config ──────────────────────────────────────────────────────────────
 
 const RANK_CONFIG: Record<string, { label: string; color: string; bg: string; border: string; icon: React.ReactNode }> = {
@@ -44,6 +95,8 @@ function MemberCard({ member, index, locale }: { member: MemberRecord; index: nu
   const level = member.level as number | undefined;
   const lpBalance = member.lpBalance as number | undefined;
   const rStyle = getRankStyle(rank);
+  // Self-contained image error state
+  const [imgError, setImgError] = useState(false);
 
   return (
     <motion.article
@@ -56,8 +109,8 @@ function MemberCard({ member, index, locale }: { member: MemberRecord; index: nu
       <Link href={`/${locale}/team/${slug}`} style={{ textDecoration: "none", color: "inherit", display: "block" }}>
         {/* Avatar */}
         <div style={{ height: 220, background: "#111827", overflow: "hidden", position: "relative" }}>
-          {image ? (
-            <img src={image} alt={name} onError={() => markImgError(member.id as string)} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          {image && !imgError ? (
+            <img src={image} alt={name} onError={() => setImgError(true)} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           ) : (
             <div style={{ width: "100%", height: "100%", display: "grid", placeItems: "center", color: DS.text5, fontSize: "4rem", fontWeight: 800 }}>
               {name.charAt(0).toUpperCase()}
@@ -153,11 +206,6 @@ export function TeamClient({
   const t = useTranslations("TeamPage");
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState<FilterKey>("filterAll");
-  // Track per-member image load errors
-  const [imgErrors, setImgErrors] = useState<Record<string, boolean>({});
-
-  const markImgError = (id: string) =>
-    setImgErrors(prev => ({ ...prev, [id]: true }));
 
   // Filter members by search query + role filter
   const filtered = useMemo(() => {
@@ -213,40 +261,7 @@ export function TeamClient({
               </span>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
-              {featured.map((m, i) => {
-                const rStyle = getRankStyle(m.rank as string | undefined);
-                return (
-                  <Link key={m.id as string} href={`/${locale}/team/${m.slug as string}`} style={{ textDecoration: "none" }}>
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: i * 0.07 }}
-                      style={{ background: rStyle.bg, border: `1px solid ${rStyle.border}`, borderRadius: 12, padding: "16px", display: "flex", alignItems: "center", gap: 12 }}
-                    >
-                      <div style={{ width: 48, height: 48, borderRadius: "50%", overflow: "hidden", background: "#111827", flexShrink: 0 }}>
-                        {(m.image as string) && !imgErrors[m.id as string] ? (
-                          <img src={m.image as string} alt={m.name as string} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={() => markImgError(m.id as string)} />
-                        ) : (
-                          <div style={{ width: "100%", height: "100%", display: "grid", placeItems: "center", color: DS.text5, fontSize: "1.25rem", fontWeight: 700 }}>
-                            {(m.name as string).charAt(0).toUpperCase()}
-                          </div>
-                        )}
-                      </div>
-                      <div style={{ minWidth: 0 }}>
-                        <div style={{ color: DS.text, fontSize: 13, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{m.name as string}</div>
-                        <div style={{ color: rStyle.color, fontSize: 10, fontFamily: DS.mono, fontWeight: 700 }}>
-                          {rStyle.label || fallbackRankLabel}
-                        </div>
-                        {(m.lpBalance as number) != null && (m.lpBalance as number) > 0 && (
-                          <div style={{ color: DS.cyan, fontSize: 10, fontFamily: DS.mono, marginTop: 2 }}>
-                            {(m.lpBalance as number).toLocaleString()} LP
-                          </div>
-                        )}
-                      </div>
-                    </motion.div>
-                  </Link>
-                );
-              })}
+              {featured.map((m, i) => <FeaturedCard key={m.id as string} member={m} index={i} locale={locale} fallbackRankLabel={fallbackRankLabel} />)}
             </div>
           </div>
         </section>
