@@ -152,15 +152,59 @@
       "cta": "Book a Free Consultation — 8 Easy Steps",
       "priceFrom": "STARTING PRICE (VND)",
       "lpReward": "LP REWARD POINTS",
-      "contact": "Contact"
-    },
-    "stats2": {
-      "completed": "Projects Completed",
-      "satisfaction": "Satisfaction Rate",
-      "experience": "Years Experience",
-      "partners": "Partners & Clients",
+      "contact": "Contact",
+      "projects": "Projects Completed",
+      "satisfaction": "Happy Clients",
+      "years": "Years Experience",
+      "partners": "Trusted Partners",
       "support": "24/7 Support",
       "uptime": "Uptime SLA"
+    },
+    "dashboard": {
+      "cardProjects": "Projects",
+      "cardRevenue": "Revenue",
+      "cardLp": "LP Earned",
+      "chartTitle": "MONTHLY REVENUE",
+      "statusInProgress": "In Progress",
+      "statusReview": "Review",
+      "statusCompleted": "Completed",
+      "lpDailyTitle": "LP REWARD POINTS TODAY",
+      "rankProgressionTitle": "RANK PROGRESSION"
+    },
+    "servicesSection": {
+      "subtitle": "All services paid in VND. Earn LP reward points and get perks from your very first project.",
+      "priceFrom": "PRICE FROM (VND)",
+      "lpReward": "LP REWARD POINTS",
+      "cta": "Book a Free Consultation — 8 Easy Steps",
+      "service1Title": "Web Design & Development",
+      "service1Desc": "Premium websites optimized for conversion with React/Next.js. From landing pages to complex e-commerce.",
+      "service2Title": "App & SaaS Development",
+      "service2Desc": "From MVP to enterprise. Mobile apps, web apps and scalable SaaS platforms serving millions of users.",
+      "service3Title": "Dashboard & Analytics",
+      "service3Desc": "Turn data into insights. Real-time dashboards, automated reports and data visualization.",
+      "service4Title": "SEO & Digital Marketing",
+      "service4Desc": "Sustainable organic growth. Technical SEO, content strategy and high-performance advertising."
+    },
+    "testimonialsSection": {
+      "testimonial1Name": "Nguyen Minh Tuan",
+      "testimonial1Role": "CEO, TechViet JSC",
+      "testimonial1Quote": "LOOP Solutions helped us launch our SaaS platform in 3 months. Code quality exceeded expectations, the team is extremely professional. Accumulated LP helped me save 18% on my next project invoice.",
+      "testimonial2Name": "Tran Thu Hang",
+      "testimonial2Role": "Marketing Director, VNRetail",
+      "testimonial2Quote": "The LP system is truly interesting! I accumulated enough points to get 15% off my next project. Clear explanation that LP is just reward points, not money — very transparent and professional.",
+      "testimonial3Name": "Le Quang Duc",
+      "testimonial3Role": "Founder, Startup Hub",
+      "testimonial3Quote": "Real-time tracking dashboard helps me monitor progress at all times. No need to email asking constantly. VND pricing is transparent, no hidden costs. Absolutely wonderful!"
+    },
+    "academyTeaser": {
+      "course1Title": "React & Next.js",
+      "course1Level": "Intermediate",
+      "course2Title": "UI/UX with Figma",
+      "course2Level": "Beginner",
+      "course3Title": "Node.js API Pro",
+      "course3Level": "Advanced",
+      "course4Title": "DevOps & K8s",
+      "course4Level": "Advanced"
     },
     "process": {
       "label": "WORKFLOW",

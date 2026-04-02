@@ -150,15 +150,59 @@
       "cta": "预约免费咨询 — 8步轻松搞定",
       "priceFrom": "起始价格 (VND)",
       "lpReward": "LP积分",
-      "contact": "联系我们"
-    },
-    "stats2": {
-      "completed": "已完成项目",
-      "satisfaction": "满意率",
-      "experience": "年经验",
-      "partners": "合作伙伴与客户",
+      "contact": "联系我们",
+      "projects": "已完成项目",
+      "satisfaction": "满意客户",
+      "years": "年经验",
+      "partners": "可信赖伙伴",
       "support": "全天候支持",
       "uptime": "运行时间保证"
+    },
+    "dashboard": {
+      "cardProjects": "项目",
+      "cardRevenue": "营收",
+      "cardLp": "LP累计",
+      "chartTitle": "月度营收",
+      "statusInProgress": "进行中",
+      "statusReview": "审核",
+      "statusCompleted": "已完成",
+      "lpDailyTitle": "今日LP奖励积分",
+      "rankProgressionTitle": "等级进度"
+    },
+    "servicesSection": {
+      "subtitle": "所有服务均以VND支付。从第一个项目起积累LP积分并获得优惠。",
+      "priceFrom": "起始价格 (VND)",
+      "lpReward": "LP积分",
+      "cta": "预约免费咨询 — 8步轻松搞定",
+      "service1Title": "网页设计与开发",
+      "service1Desc": "使用React/Next.js构建的优质网站。从落地页到复杂的电商平台。",
+      "service2Title": "App与SaaS开发",
+      "service2Desc": "从MVP到企业级。移动应用、网页应用和可服务数百万用户的SaaS平台。",
+      "service3Title": "仪表盘与数据分析",
+      "service3Desc": "将数据转化为洞察。实时仪表盘、自动报告和数据可视化。",
+      "service4Title": "SEO与数字营销",
+      "service4Desc": "可持续的有机增长。技术SEO、内容策略和高效果广告。"
+    },
+    "testimonialsSection": {
+      "testimonial1Name": "Nguyen Minh Tuan",
+      "testimonial1Role": "CEO, TechViet JSC",
+      "testimonial1Quote": "LOOP Solutions帮助我们在3个月内推出了SaaS平台。代码质量超出预期，团队非常专业。积累的LP帮助我在下一个项目上节省了18%的费用。",
+      "testimonial2Name": "Tran Thu Hang",
+      "testimonial2Role": "Marketing Director, VNRetail",
+      "testimonial2Quote": "LP系统真的很有趣！我积累了足够的积分，在下一个项目上享受了15%的折扣。LP只是奖励积分而非货币，解释得非常清楚——非常透明和专业。",
+      "testimonial3Name": "Le Quang Duc",
+      "testimonial3Role": "Founder, Startup Hub",
+      "testimonial3Quote": "实时追踪仪表盘让我随时掌握进度。不再需要不断发邮件询问。VND价格透明，无隐藏费用。非常棒！"
+    },
+    "academyTeaser": {
+      "course1Title": "React & Next.js",
+      "course1Level": "中级",
+      "course2Title": "UI/UX with Figma",
+      "course2Level": "初级",
+      "course3Title": "Node.js API Pro",
+      "course3Level": "高级",
+      "course4Title": "DevOps & K8s",
+      "course4Level": "高级"
     },
     "process": {
       "label": "工作流程",

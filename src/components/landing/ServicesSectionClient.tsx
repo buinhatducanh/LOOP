@@ -96,18 +96,19 @@ function Badge({ label, color = DS.blue }: { label: string; color?: string }) {
 }
 
 function ServicesSectionInner({ locale }: { locale: string }) {
-  const t = useTranslations("HomePage");
+  const t = useTranslations("home");
   const { data } = useQuery({
     queryKey: ["landing-services", locale],
     queryFn: async () => {
       try {
         const res = await apiClient.get<{
-          data: Array<{
-            id: string; slug: string;
-            titleVi: string; titleEn: string;
-            descriptionVi: string; descriptionEn: string;
-            icon: string; basePrice: number;
-          }>;
+          data: {
+            services: Array<{
+              id: string; slug: string;
+              title: string | null; shortDescription: string | null;
+              icon: string; startingPrice: number; technologies: string[];
+            }>;
+          };
         }>(`/api/v1/services`, { params: { lang: locale, limit: 4 }, throwOnError: false });
         return res;
       } catch {
@@ -118,17 +119,19 @@ function ServicesSectionInner({ locale }: { locale: string }) {
     retry: 1,
   });
 
-  const services = data?.data?.length
-    ? data.data.map((s, i) => {
+  const services = data?.data?.services?.length
+    ? data.data.services.slice(0, 4).map((s, i) => {
         const colors = [DS.blue, DS.purple, DS.cyan, DS.green];
         return {
           id: s.id,
           slug: s.slug,
-          title: s.titleVi ?? s.titleEn ?? s.id,
-          description: s.descriptionVi ?? s.descriptionEn ?? "",
+          title: s.title ?? s.id,
+          description: s.shortDescription ?? "",
           color: colors[i % colors.length],
-          priceFrom: s.basePrice ? `${s.basePrice.toLocaleString("vi-VN")} VNĐ` : "Liên hệ",
-          tags: ["React", "Next.js", "TypeScript"],
+          priceFrom: s.startingPrice ? `${s.startingPrice.toLocaleString("vi-VN")} VNĐ` : "Liên hệ",
+          tags: Array.isArray(s.technologies) && s.technologies.length > 0
+            ? s.technologies.slice(0, 3)
+            : ["React", "Next.js", "TypeScript"],
         };
       })
     : FALLBACK_SERVICES;
@@ -137,7 +140,7 @@ function ServicesSectionInner({ locale }: { locale: string }) {
     <section style={{ padding: "6rem 1.5rem" }}>
       <div style={{ maxWidth: "72rem", margin: "0 auto" }}>
         <div style={{ textAlign: "center", marginBottom: "4rem" }}>
-          <Badge label="DỊCH VỤ CHUYÊN NGHIỆP" />
+          <Badge label={t("servicesSectionBadge")} />
           <h2
             style={{
               fontFamily: "'Cinzel', serif",
@@ -151,10 +154,10 @@ function ServicesSectionInner({ locale }: { locale: string }) {
               marginBottom: "0.875rem",
             }}
           >
-            GIẢI PHÁP TOÀN DIỆN
+            {t("servicesSectionTitle")}
           </h2>
           <p style={{ color: DS.text3, fontSize: "1rem", maxWidth: 540, margin: "0 auto", lineHeight: 1.8 }}>
-            Mọi dịch vụ đều được thanh toán bằng VNĐ. Tích lũy LP điểm thưởng và nhận ưu đãi ngay từ dự án đầu tiên.
+            {t("servicesSectionDesc")}
           </p>
         </div>
 
@@ -286,7 +289,7 @@ function ServicesSectionInner({ locale }: { locale: string }) {
                           marginBottom: "0.125rem",
                         }}
                       >
-                        GIÁ TỪ (VNĐ)
+                        {t("priceFrom")}
                       </div>
                       <div style={{ color: svc.color, fontSize: "0.875rem", fontWeight: 700 }}>
                         {svc.priceFrom}
@@ -301,7 +304,7 @@ function ServicesSectionInner({ locale }: { locale: string }) {
                           marginBottom: "0.125rem",
                         }}
                       >
-                        ĐIỂM THƯỞNG LP
+                        {t("lpRewardLabel")}
                       </div>
                       <div
                         style={{
@@ -310,7 +313,7 @@ function ServicesSectionInner({ locale }: { locale: string }) {
                           fontFamily: "'JetBrains Mono', monospace",
                         }}
                       >
-                        ◈ 500 LP / 10M
+                        {t("lpRewardPer", { amount: "500", threshold: "10M" })}
                       </div>
                     </div>
                   </div>

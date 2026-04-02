@@ -77,11 +77,14 @@
   },
   "HomePage": {
     "badge": "Premium Web Development Agency",
+    "heroBadge": "DIGITAL AGENCY OPERATING SYSTEM — v3.0",
     "heroTitle1": "Custom Website Development",
     "heroTitle2": "for",
     "heroHighlight1": "Businesses",
     "heroHighlight2": "Branches",
     "heroDesc": "We engineer premium digital experiences — from corporate websites and branch systems to e-commerce platforms and custom web applications that scale with your business.",
+    "heroStartNow": "Get Started",
+    "heroViewProjects": "View Projects",
     "btnServices": "View Services",
     "btnPortfolio": "View Portfolio",
     "scroll": "Scroll",
@@ -156,7 +159,9 @@
     "ctaTitle": "READY TO MAKE A DIFFERENCE?",
     "ctaPrimary": "Start Your Project Now",
     "ctaSecondary": "Contact Us Directly",
-    "ctaBookingWizard": "Book a Free Consultation — 8 Easy Steps"
+    "ctaBookingWizard": "Book a Free Consultation — 8 Easy Steps",
+    "ctaTurnIdeaTitle": "Turn Ideas into Reality",
+    "ctaTurnIdeaDesc": "Book a free 30-minute consultation with our technical team. No commitment, no obligation — just the right solutions for your business."
   },
   "TeamPage": {
     "badge": "Meet the Team",

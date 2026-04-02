@@ -85,6 +85,17 @@ function HeroSection() {
     { label: t('landing.hero.metric3'), value: '7+', color: DS.purple },
     { label: t('landing.hero.metric4'), value: '50+', color: DS.cyan },
   ];
+  const { cardProjects, cardRevenue, cardLp, chartTitle, statusInProgress, statusReview, statusCompleted, lpDailyTitle, rankProgressionTitle } = {
+    cardProjects: t('landing.dashboard.cardProjects'),
+    cardRevenue: t('landing.dashboard.cardRevenue'),
+    cardLp: t('landing.dashboard.cardLp'),
+    chartTitle: t('landing.dashboard.chartTitle'),
+    statusInProgress: t('landing.dashboard.statusInProgress'),
+    statusReview: t('landing.dashboard.statusReview'),
+    statusCompleted: t('landing.dashboard.statusCompleted'),
+    lpDailyTitle: t('landing.dashboard.lpDailyTitle'),
+    rankProgressionTitle: t('landing.dashboard.rankProgressionTitle'),
+  };
 
   useEffect(() => {
     const t = setInterval(() => setActiveMetric(p => (p + 1) % metrics.length), 3000);
@@ -239,9 +250,9 @@ function HeroSection() {
                 {/* Stats row */}
                 <div className="grid grid-cols-3 gap-3 mb-4">
                   {[
-                    { label: 'Dự án', value: '24', color: DS.blue, icon: <Layers size={13} /> },
-                    { label: 'Doanh thu', value: '2.4B', color: DS.green, icon: <TrendingUp size={13} /> },
-                    { label: 'LP tích lũy', value: '820K', color: DS.purple, icon: <Zap size={13} /> },
+                    { label: cardProjects, value: '24', color: DS.blue, icon: <Layers size={13} /> },
+                    { label: cardRevenue, value: '2.4B', color: DS.green, icon: <TrendingUp size={13} /> },
+                    { label: cardLp, value: '820K', color: DS.purple, icon: <Zap size={13} /> },
                   ].map(s => (
                     <div key={s.label} className="rounded-xl p-3" style={{ background: 'rgba(255,255,255,0.04)', border: `1px solid ${s.color}20` }}>
                       <div className="flex items-center justify-between mb-2">
@@ -256,7 +267,7 @@ function HeroSection() {
                 {/* Chart area */}
                 <div className="rounded-xl p-4 mb-4" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(59,130,246,0.1)' }}>
                   <div className="flex items-center justify-between mb-4">
-                    <span style={{ color: DS.text3, fontSize: 12, fontFamily: DS.mono }}>DOANH THU THEO THÁNG</span>
+                    <span style={{ color: DS.text3, fontSize: 12, fontFamily: DS.mono }}>{chartTitle}</span>
                     <span style={{ color: DS.green, fontSize: 11, fontFamily: DS.mono }}>+28.4% ↑</span>
                   </div>
                   <svg width="100%" height="70" viewBox="0 0 300 70">
@@ -276,9 +287,9 @@ function HeroSection() {
 
                 {/* Project list */}
                 {[
-                  { name: 'VNRetail Platform', status: 'Đang thực hiện', prog: 72, color: DS.blue },
-                  { name: 'MedApp v3.0', status: 'Review', prog: 91, color: DS.amber },
-                  { name: 'FinDash Enterprise', status: 'Hoàn thành', prog: 100, color: DS.green },
+                  { name: 'VNRetail Platform', status: statusInProgress, prog: 72, color: DS.blue },
+                  { name: 'MedApp v3.0', status: statusReview, prog: 91, color: DS.amber },
+                  { name: 'FinDash Enterprise', status: statusCompleted, prog: 100, color: DS.green },
                 ].map(p => (
                   <div key={p.name} className="flex items-center gap-3 mb-2.5">
                     <div className="flex-1 min-w-0">
@@ -307,7 +318,7 @@ function HeroSection() {
               animate={{ y: [0, -8, 0] }}
               transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
             >
-              <div style={{ color: DS.text5, fontSize: 9, fontFamily: DS.mono, letterSpacing: '0.15em', marginBottom: 4 }}>LP ĐIỂM THƯỞNG HÔM NAY</div>
+              <div style={{ color: DS.text5, fontSize: 9, fontFamily: DS.mono, letterSpacing: '0.15em', marginBottom: 4 }}>{lpDailyTitle}</div>
               <div className="flex items-center gap-2">
                 <Zap size={14} style={{ color: DS.purple }} />
                 <span style={{ color: DS.purple, fontFamily: DS.heading, fontSize: 18, fontWeight: 700, textShadow: '0 0 12px rgba(129,140,248,0.7)' }}>+2,450 LP</span>
@@ -326,7 +337,7 @@ function HeroSection() {
               animate={{ y: [0, 8, 0] }}
               transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
             >
-              <div style={{ color: DS.text5, fontSize: 9, fontFamily: DS.mono, letterSpacing: '0.15em', marginBottom: 4 }}>RANK PROGRESSION</div>
+              <div style={{ color: DS.text5, fontSize: 9, fontFamily: DS.mono, letterSpacing: '0.15em', marginBottom: 4 }}>{rankProgressionTitle}</div>
               <div className="flex items-center gap-2">
                 <span style={{ color: '#FFD700', fontSize: 16 }}>★</span>
                 <span style={{ color: '#FFD700', fontFamily: DS.heading, fontSize: 14, fontWeight: 700 }}>GOLD</span>
@@ -427,11 +438,20 @@ function StatsSection() {
 
 // ── SERVICES SECTION ─────────────────────────────────────────────────────
 function ServicesSection() {
+  const { t } = useI18n();
+  const servicesBadge = t('landing.stats.label');
+  const servicesHeading = t('landing.stats.title');
+  const ss = {
+    subtitle: t('landing.servicesSection.subtitle'),
+    priceFrom: t('landing.servicesSection.priceFrom'),
+    lpReward: t('landing.servicesSection.lpReward'),
+    cta: t('landing.servicesSection.cta'),
+  };
   const services = [
     {
       icon: <Globe size={26} />,
-      title: 'Thiết kế & Phát triển Web',
-      desc: 'Website cao cấp, tối ưu chuyển đổi với React/Next.js. Từ landing page đến e-commerce phức tạp.',
+      title: t('landing.servicesSection.service1Title'),
+      desc: t('landing.servicesSection.service1Desc'),
       color: DS.blue,
       priceFrom: '15,000,000 VNĐ',
       lpReward: '500 LP / 10M VNĐ',
@@ -440,8 +460,8 @@ function ServicesSection() {
     },
     {
       icon: <Code2 size={26} />,
-      title: 'Phát triển App & SaaS',
-      desc: 'Từ MVP đến enterprise. Mobile app, web app và nền tảng SaaS scalable cho hàng triệu người dùng.',
+      title: t('landing.servicesSection.service2Title'),
+      desc: t('landing.servicesSection.service2Desc'),
       color: DS.purple,
       priceFrom: '80,000,000 VNĐ',
       lpReward: '500 LP / 10M VNĐ',
@@ -450,8 +470,8 @@ function ServicesSection() {
     },
     {
       icon: <BarChart3 size={26} />,
-      title: 'Dashboard & Analytics',
-      desc: 'Biến dữ liệu thành insight. Real-time dashboard, báo cáo tự động và data visualization.',
+      title: t('landing.servicesSection.service3Title'),
+      desc: t('landing.servicesSection.service3Desc'),
       color: DS.cyan,
       priceFrom: '25,000,000 VNĐ',
       lpReward: '500 LP / 10M VNĐ',
@@ -460,8 +480,8 @@ function ServicesSection() {
     },
     {
       icon: <Target size={26} />,
-      title: 'SEO & Digital Marketing',
-      desc: 'Tăng trưởng organic bền vững. Technical SEO, content strategy và quảng cáo hiệu suất cao.',
+      title: t('landing.servicesSection.service4Title'),
+      desc: t('landing.servicesSection.service4Desc'),
       color: DS.green,
       priceFrom: '8,000,000 VNĐ/tháng',
       lpReward: '500 LP / 10M VNĐ',
@@ -474,12 +494,12 @@ function ServicesSection() {
     <section className="py-24 px-6">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-16">
-          <Badge label="DỊCH VỤ CHUYÊN NGHIỆP" />
+          <Badge label={servicesBadge} />
           <h2 style={{ fontFamily: DS.heading, fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 900, letterSpacing: '0.05em', background: 'linear-gradient(135deg, #FFFFFF, #94A3B8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: 14 }}>
-            GIẢI PHÁP TOÀN DIỆN
+            {servicesHeading}
           </h2>
           <p style={{ color: DS.text3, fontSize: 16, maxWidth: 540, margin: '0 auto', lineHeight: 1.8 }}>
-            Mọi dịch vụ đều được thanh toán bằng VNĐ. Tích lũy LP điểm thưởng và nhận ưu đãi ngay từ dự án đầu tiên.
+            {ss.subtitle}
           </p>
         </div>
 
@@ -525,11 +545,11 @@ function ServicesSection() {
 
                   <div className="flex items-center justify-between pt-4" style={{ borderTop: `1px solid ${DS.border}` }}>
                     <div>
-                      <div style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono, marginBottom: 2 }}>GIÁ TỪ (VNĐ)</div>
+                      <div style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono, marginBottom: 2 }}>{ss.priceFrom}</div>
                       <div style={{ color: svc.color, fontSize: 14, fontWeight: 700 }}>{svc.priceFrom}</div>
                     </div>
                     <div className="text-right">
-                      <div style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono, marginBottom: 2 }}>ĐIỂM THƯỞNG LP</div>
+                      <div style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono, marginBottom: 2 }}>{ss.lpReward}</div>
                       <div style={{ color: DS.purple, fontSize: 12, fontFamily: DS.mono }}>◈ {svc.lpReward}</div>
                     </div>
                   </div>
@@ -546,7 +566,7 @@ function ServicesSection() {
             textDecoration: 'none', boxShadow: '0 0 30px rgba(129,140,248,0.35)',
           }}>
             <MousePointer size={15} />
-            Đặt lịch tư vấn miễn phí — 8 bước dễ dàng
+            {ss.cta}
           </Link>
         </div>
       </div>
@@ -774,16 +794,22 @@ function TestimonialsSection() {
   const { t } = useI18n();
   const testimonials = [
     {
-      name: 'Nguyễn Minh Tuấn', role: 'CEO, TechViet JSC', rank: 'GOLD', rankColor: '#FFD700', rankSymbol: '★',
-      quote: 'LOOP Solutions đã giúp chúng tôi ra mắt SaaS platform trong 3 tháng. Chất lượng code vượt kỳ vọng, đội ngũ cực kỳ chuyên nghiệp. LP tích lũy giúp tôi tiết kiệm 18% hóa đơn dự án tiếp theo.',
+      name: t('landing.testimonialsSection.testimonial1Name'),
+      role: t('landing.testimonialsSection.testimonial1Role'),
+      rank: 'GOLD', rankColor: '#FFD700', rankSymbol: '★',
+      quote: t('landing.testimonialsSection.testimonial1Quote'),
     },
     {
-      name: 'Trần Thu Hằng', role: 'Marketing Director, VNRetail', rank: 'SILVER', rankColor: '#CBD5E1', rankSymbol: '◇',
-      quote: 'Hệ thống LP thực sự thú vị! Tôi tích lũy đủ điểm để giảm 15% cho dự án tiếp theo. Giải thích rõ ràng LP chỉ là điểm thưởng, không phải tiền — rất minh bạch và chuyên nghiệp.',
+      name: t('landing.testimonialsSection.testimonial2Name'),
+      role: t('landing.testimonialsSection.testimonial2Role'),
+      rank: 'SILVER', rankColor: '#CBD5E1', rankSymbol: '◇',
+      quote: t('landing.testimonialsSection.testimonial2Quote'),
     },
     {
-      name: 'Lê Quang Đức', role: 'Founder, Startup Hub', rank: 'PLATINUM', rankColor: '#14B8A6', rankSymbol: '❋',
-      quote: 'Dashboard tracking real-time giúp tôi nắm rõ tiến độ mọi lúc. Không cần phải email hỏi liên tục. Giá cả VNĐ minh bạch, không phát sinh thêm. Tuyệt vời!',
+      name: t('landing.testimonialsSection.testimonial3Name'),
+      role: t('landing.testimonialsSection.testimonial3Role'),
+      rank: 'PLATINUM', rankColor: '#14B8A6', rankSymbol: '❋',
+      quote: t('landing.testimonialsSection.testimonial3Quote'),
     },
   ];
 
@@ -845,10 +871,10 @@ function AcademyTeaser() {
           <motion.div initial={{ opacity: 0, x: 30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}>
             <div className="grid grid-cols-2 gap-3">
               {[
-                { title: 'React & Next.js', level: 'Intermediate', rating: 4.9, students: '2.4K', color: DS.blue },
-                { title: 'UI/UX with Figma', level: 'Beginner', rating: 4.8, students: '1.8K', color: DS.purple },
-                { title: 'Node.js API Pro', level: 'Advanced', rating: 4.9, students: '1.2K', color: DS.cyan },
-                { title: 'DevOps & K8s', level: 'Advanced', rating: 4.7, students: '890', color: DS.green },
+                { title: t('landing.academyTeaser.course1Title'), level: t('landing.academyTeaser.course1Level'), rating: 4.9, students: '2.4K', color: DS.blue },
+                { title: t('landing.academyTeaser.course2Title'), level: t('landing.academyTeaser.course2Level'), rating: 4.8, students: '1.8K', color: DS.purple },
+                { title: t('landing.academyTeaser.course3Title'), level: t('landing.academyTeaser.course3Level'), rating: 4.9, students: '1.2K', color: DS.cyan },
+                { title: t('landing.academyTeaser.course4Title'), level: t('landing.academyTeaser.course4Level'), rating: 4.7, students: '890', color: DS.green },
               ].map((c, i) => (
                 <motion.div
                   key={c.title}

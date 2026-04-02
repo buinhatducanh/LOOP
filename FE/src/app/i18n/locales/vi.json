@@ -152,15 +152,59 @@
       "cta": "Đặt lịch tư vấn miễn phí — 8 bước dễ dàng",
       "priceFrom": "GIÁ TỪ (VNĐ)",
       "lpReward": "ĐIỂM THƯỞNG LP",
-      "contact": "Liên hệ"
-    },
-    "stats2": {
-      "completed": "Dự án hoàn thành",
-      "satisfaction": "Tỷ lệ hài lòng",
-      "experience": "Năm kinh nghiệm",
-      "partners": "Đối tác & Khách hàng",
-      "support": "Hỗ trợ liên tục",
+      "contact": "Liên hệ",
+      "projects": "Dự án hoàn thành",
+      "satisfaction": "Khách hàng hài lòng",
+      "years": "Năm kinh nghiệm",
+      "partners": "Đối tác chiến lược",
+      "support": "Hỗ trợ 24/7",
       "uptime": "Uptime SLA"
+    },
+    "dashboard": {
+      "cardProjects": "Dự án",
+      "cardRevenue": "Doanh thu",
+      "cardLp": "LP tích lũy",
+      "chartTitle": "DOANH THU THEO THÁNG",
+      "statusInProgress": "Đang thực hiện",
+      "statusReview": "Review",
+      "statusCompleted": "Hoàn thành",
+      "lpDailyTitle": "LP ĐIỂM THƯỞNG HÔM NAY",
+      "rankProgressionTitle": "RANK PROGRESSION"
+    },
+    "servicesSection": {
+      "subtitle": "Mọi dịch vụ đều được thanh toán bằng VNĐ. Tích lũy LP điểm thưởng và nhận ưu đãi ngay từ dự án đầu tiên.",
+      "priceFrom": "GIÁ TỪ (VNĐ)",
+      "lpReward": "ĐIỂM THƯỞNG LP",
+      "cta": "Đặt lịch tư vấn miễn phí — 8 bước dễ dàng",
+      "service1Title": "Thiết kế & Phát triển Web",
+      "service1Desc": "Website cao cấp, tối ưu chuyển đổi với React/Next.js. Từ landing page đến e-commerce phức tạp.",
+      "service2Title": "Phát triển App & SaaS",
+      "service2Desc": "Từ MVP đến enterprise. Mobile app, web app và nền tảng SaaS scalable cho hàng triệu người dùng.",
+      "service3Title": "Dashboard & Analytics",
+      "service3Desc": "Biến dữ liệu thành insight. Real-time dashboard, báo cáo tự động và data visualization.",
+      "service4Title": "SEO & Digital Marketing",
+      "service4Desc": "Tăng trưởng organic bền vững. Technical SEO, content strategy và quảng cáo hiệu suất cao."
+    },
+    "testimonialsSection": {
+      "testimonial1Name": "Nguyễn Minh Tuấn",
+      "testimonial1Role": "CEO, TechViet JSC",
+      "testimonial1Quote": "LOOP Solutions đã giúp chúng tôi ra mắt SaaS platform trong 3 tháng. Chất lượng code vượt kỳ vọng, đội ngũ cực kỳ chuyên nghiệp. LP tích lũy giúp tôi tiết kiệm 18% hóa đơn dự án tiếp theo.",
+      "testimonial2Name": "Trần Thu Hằng",
+      "testimonial2Role": "Marketing Director, VNRetail",
+      "testimonial2Quote": "Hệ thống LP thực sự thú vị! Tôi tích lũy đủ điểm để giảm 15% cho dự án tiếp theo. Giải thích rõ ràng LP chỉ là điểm thưởng, không phải tiền — rất minh bạch và chuyên nghiệp.",
+      "testimonial3Name": "Lê Quang Đức",
+      "testimonial3Role": "Founder, Startup Hub",
+      "testimonial3Quote": "Dashboard tracking real-time giúp tôi nắm rõ tiến độ mọi lúc. Không cần phải email hỏi liên tục. Giá cả VNĐ minh bạch, không phát sinh thêm. Tuyệt vời!"
+    },
+    "academyTeaser": {
+      "course1Title": "React & Next.js",
+      "course1Level": "Trung cấp",
+      "course2Title": "UI/UX with Figma",
+      "course2Level": "Người mới",
+      "course3Title": "Node.js API Pro",
+      "course3Level": "Nâng cao",
+      "course4Title": "DevOps & K8s",
+      "course4Level": "Nâng cao"
     },
     "process": {
       "label": "QUY TRÌNH LÀM VIỆC",

@@ -78,9 +78,11 @@
   "HomePage": {
     "badge": "Agency Phát triển Web Cao Cấp",
     "heroBadge": "DIGITAL AGENCY OPERATING SYSTEM — v3.0",
-    "heroTitle1": "HỆ ĐIỀU HÀNH SỐ",
-    "heroTitle2": "CHO AGENCY ĐỈNH CAO",
-    "heroDesc": "Giải pháp công nghệ toàn diện — từ thiết kế đến triển khai. Tích lũy LP điểm thưởng, thăng hạng và tạo ra những sản phẩm web đỉnh cao cho thị trường Việt Nam.",
+    "heroTitle1": "XÂY DỰNG",
+    "heroTitle2": "TƯƠNG LAI SỐ",
+    "heroDesc": "LOOP Solutions là đối tác công nghệ tin cậy — thiết kế, phát triển và vận hành giải pháp số toàn diện cho doanh nghiệp Việt Nam. Đo lường bằng kết quả, thăng hạng bằng LP.",
+    "heroStartNow": "Bắt đầu ngay",
+    "heroViewProjects": "Xem dự án",
     "btnServices": "Xem dịch vụ",
     "btnPortfolio": "Xem dự án",
     "scroll": "Cuộn xuống",
@@ -135,9 +137,9 @@
     "statsProjects": "Dự án hoàn thành",
     "statsSatisfaction": "Tỷ lệ hài lòng",
     "statsYears": "Năm kinh nghiệm",
-    "statsPartners": "Đối tác & Khách hàng",
-    "statsSupport": "Hỗ trợ liên tục",
-    "statsUptime": "Uptime SLA",
+    "statsPartners": "Đối tác chiến lược",
+    "statsSupport": "Hỗ trợ 24/7",
+    "statsUptime": "Uptime cam kết",
     "lpSectionBadge": "HỆ THỐNG ĐIỂM THƯỞNG LP",
     "lpSectionTitle": "LOOP POINTS — PHẦN THƯỞNG CHO SỰ TRUNG THÀNH",
     "lpSectionDesc": "Tất cả dịch vụ được thanh toán bằng VNĐ. LP là hệ thống điểm thưởng nội bộ — bạn tích lũy LP khi hoàn thành dự án, giới thiệu khách hàng và đạt milestone. Dùng LP để nhận ưu đãi, giảm giá hóa đơn và mở khóa đặc quyền cao cấp.",
@@ -155,7 +157,9 @@
     "ctaTitle": "SẴN SÀNG TẠO RA ĐIỀU KHÁC BIỆT?",
     "ctaPrimary": "Bắt đầu dự án ngay",
     "ctaSecondary": "Liên hệ trực tiếp",
-    "ctaBookingWizard": "Đặt lịch tư vấn miễn phí — 8 bước dễ dàng"
+    "ctaBookingWizard": "Đặt lịch tư vấn miễn phí — 8 bước dễ dàng",
+    "ctaTurnIdeaTitle": "Biến ý tưởng thành hiện thực",
+    "ctaTurnIdeaDesc": "Đặt lịch tư vấn miễn phí 30 phút với đội ngũ kỹ thuật. Không cam kết, không ràng buộc — chỉ giải pháp phù hợp nhất."
   },
   "TeamPage": {
     "badge": "Gặp gỡ đội ngũ",

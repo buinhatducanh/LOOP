@@ -150,15 +150,59 @@
       "cta": "無料コンサルテーションを予約 — 8ステップ",
       "priceFrom": "起始価格 (VND)",
       "lpReward": "LPポイント",
-      "contact": "お問い合わせ"
-    },
-    "stats2": {
-      "completed": "完了プロジェクト",
-      "satisfaction": "満足率",
-      "experience": "年の経験",
-      "partners": "パートナー＆クライアント",
+      "contact": "お問い合わせ",
+      "projects": "完了プロジェクト",
+      "satisfaction": "満足クライアント",
+      "years": "年の経験",
+      "partners": "信頼できるパートナー",
       "support": "24/7サポート",
       "uptime": "稼働率SLA"
+    },
+    "dashboard": {
+      "cardProjects": "プロジェクト",
+      "cardRevenue": "収益",
+      "cardLp": "LP獲得",
+      "chartTitle": "月次収益",
+      "statusInProgress": "進行中",
+      "statusReview": "レビュー",
+      "statusCompleted": "完了",
+      "lpDailyTitle": "今日のLP報酬ポイント", //com
+      "rankProgressionTitle": "ランク進行状況"
+    },
+    "servicesSection": {
+      "subtitle": "全サービスVNDでのお支払い。最初のプロジェクトからLPポイントを蓄積してお得に。",
+      "priceFrom": "起始価格 (VND)",
+      "lpReward": "LPポイント",
+      "cta": "無料コンサルテーションを予約 — 8ステップ",
+      "service1Title": "ウェブサイト設計 & 開発",
+      "service1Desc": "React/Next.jsによるプレミアムウェブサイト。ランディングページから複雑なEコマースまで。",
+      "service2Title": "App & SaaS開発",
+      "service2Desc": "MVPからエンタープライズまで。モバイルアプリ、ウェブアプリ、百万ユーザー対応SaaSプラットフォーム。",
+      "service3Title": "ダッシュボード & アナリティクス",
+      "service3Desc": "データをインサイトに変換。リアルタイムダッシュボード、自動レポート、データ可視化。",
+      "service4Title": "SEO & デジタルマーケティング",
+      "service4Desc": "持続可能なオーガニック成長。テクニカルSEO、コンテンツ戦略、高効果広告。"
+    },
+    "testimonialsSection": {
+      "testimonial1Name": "グエン・ミン・ツアン",
+      "testimonial1Role": "CEO、TechViet JSC",
+      "testimonial1Quote": "LOOP Solutionsは3ヶ月でSaaSプラットフォームの立ち上げを支援してくれました。コード品質は期待以上、チームは非常に専門的。蓄積したLPで次のプロジェクトの請求書を18%節約できました。",
+      "testimonial2Name": "チャン・チュ・ハン",
+      "testimonial2Role": "Marketing Director、VNRetail",
+      "testimonial2Quote": "LPシステムは本当に面白い！十分なポイントを蓄積して次のプロジェクトを15%割引ってもらいました。LPは報酬ポイントであり通貨ではないという明確な説明—非常に透明性が高く專業的。",
+      "testimonial3Name": "レ・グアン・ドック",
+      "testimonial3Role": "Founder、Startup Hub",
+      "testimonial3Quote": "リアルタイムトラッキングダッシュボードで、いつでも進捗を把握できます。常にメールで確認する必要がありません。VND価格は透明で、隠れ費用もありません。最高です！"
+    },
+    "academyTeaser": {
+      "course1Title": "React & Next.js",
+      "course1Level": "中級者",
+      "course2Title": "UI/UX with Figma",
+      "course2Level": "初級者",
+      "course3Title": "Node.js API Pro",
+      "course3Level": "上級者",
+      "course4Title": "DevOps & K8s",
+      "course4Level": "上級者"
     },
     "process": {
       "label": "ワークフロー",
