@@ -1,7 +1,7 @@
 /**
  * Services Page — LOOP Solutions
- * Figma dark UI + real Prisma DB data.
- * Server component for SEO, Prisma queries; interactive filter section uses client component.
+ * Server component: fetches custom services from DB + WebPackages from locale data.
+ * Client component: interactive filter, animations.
  */
 
 import { notFound } from "next/navigation";
@@ -54,8 +54,8 @@ export default async function ServicesPage({ params }: Props) {
 
   const resolvedLocale = parseLocaleParam(new URLSearchParams({ lang: locale }));
 
-  // Fetch real services from DB
-  let services: Record<string, unknown>[] = [];
+  // 1. Fetch custom services from DB (localized)
+  let customServices: Record<string, unknown>[] = [];
   try {
     const raw = await prisma.service.findMany({
       where: { isActive: true },
@@ -63,6 +63,7 @@ export default async function ServicesPage({ params }: Props) {
         id: true,
         slug: true,
         category: true,
+        icon: true,
         title: true,
         titleEn: true,
         titleJa: true,
@@ -78,10 +79,63 @@ export default async function ServicesPage({ params }: Props) {
       },
       orderBy: { sortOrder: "asc" },
     });
-    services = raw.map((s) => mapLocalizedService(s, resolvedLocale));
+    customServices = raw.map((s) => mapLocalizedService(s, resolvedLocale));
   } catch {
-    services = [];
+    customServices = [];
   }
 
-  return <ServicesClient locale={locale} services={services} />;
+  // 2. Fetch WebPackages from locale data (imported directly — no API call needed)
+  const { getServicesPackages } = await import("@/app/data/locales");
+  const webPackages = getServicesPackages(locale);
+
+  // 3. Fetch UI labels from i18n
+  const t = await getTranslations("services");
+  const ui = {
+    heroBadge: t("heroBadge"),
+    heroTitle: t("heroTitle"),
+    heroDesc: t("heroDesc"),
+    ctaPrimary: t("ctaPrimary"),
+    ctaSecondary: t("ctaSecondary"),
+    filterAll: t("filterAll"),
+    processLabel: t("processLabel"),
+    processTitle: t("processTitle"),
+    processStep1Title: t("processStep1Title"),
+    processStep1Desc: t("processStep1Desc"),
+    processStep2Title: t("processStep2Title"),
+    processStep2Desc: t("processStep2Desc"),
+    processStep3Title: t("processStep3Title"),
+    processStep3Desc: t("processStep3Desc"),
+    processStep4Title: t("processStep4Title"),
+    processStep4Desc: t("processStep4Desc"),
+    ctaReady: t("ctaReady"),
+    ctaReadyDesc: t("ctaReadyDesc"),
+    ctaReadyBtn: t("ctaReadyBtn"),
+    webPackagesLabel: t("webPackagesLabel"),
+    customServicesLabel: t("customServicesLabel"),
+    customServicesDesc: t("customServicesDesc"),
+    pkgPrice: t("pkgPrice"),
+    pkgOrTrial: t("pkgOrTrial"),
+    pkgFeatures: t("pkgFeatures"),
+    pkgMoreFeatures: t("pkgMoreFeatures"),
+    pkgCollapse: t("pkgCollapse"),
+    pkgLpReward: t("pkgLpReward"),
+    pkgTrialCta: t("pkgTrialCta"),
+    emptyState: t("emptyState"),
+    mapLabel: t("mapLabel"),
+    anUong: t("anUong"),
+    sucKhoe: t("sucKhoe"),
+    luuTru: t("luuTru"),
+    batDongSan: t("batDongSan"),
+    khac: t("khac"),
+    liênHệ: t("liênHệ"),
+  };
+
+  return (
+    <ServicesClient
+      locale={locale}
+      customServices={customServices}
+      webPackages={webPackages}
+      ui={ui}
+    />
+  );
 }

@@ -5,11 +5,15 @@
  */
 
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 import { getTranslations } from "next-intl/server";
 import { routing } from "@/i18n/routing";
 import { prisma } from "@/lib/prisma";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 type Props = { params: Promise<{ locale: string }> };
 
@@ -72,195 +76,224 @@ export default async function PricingPage({ params }: Props) {
       orderBy: { sortOrder: "asc" },
     });
   } catch {
-    // Fallback to static display if DB unavailable
     plans = [];
   }
 
+  const hasDbPlans = plans.length > 0;
+
+  // Static fallback plans (used when DB is empty)
+  const staticPlans = [
+    {
+      name: t("planStarter"),
+      price: t("planStarterPrice"),
+      period: t("planStarterPeriod"),
+      tagline: t("starterDesc"),
+      features: [t("feat1"), t("feat2"), t("feat3"), t("feat4")],
+      highlighted: false,
+    },
+    {
+      name: t("planProfessional"),
+      price: t("planProfessionalPrice"),
+      period: t("planProfessionalPeriod"),
+      tagline: t("comparisonDesc"),
+      features: [t("feat1"), t("feat2"), t("feat3"), t("feat4"), t("feat5"), t("feat6"), t("feat7")],
+      highlighted: true,
+    },
+    {
+      name: t("planEnterprise"),
+      price: t("planEnterprisePrice"),
+      period: "",
+      tagline: t("deploymentDesc"),
+      features: [t("feat1"), t("feat2"), t("feat3"), t("feat4"), t("feat5"), t("feat6"), t("feat7"), t("feat8")],
+      highlighted: false,
+    },
+  ];
+
+  const displayPlans = hasDbPlans
+    ? plans.map((p) => ({
+        name: p.name,
+        price: p.price != null ? `$${p.price.toLocaleString()}` : t("planCustom"),
+        period: p.period,
+        tagline: p.tagline,
+        features: p.features,
+        highlighted: p.highlighted,
+      }))
+    : staticPlans;
+
+  const allFeatures = [t("feat1"), t("feat2"), t("feat3"), t("feat4"), t("feat5"), t("feat6"), t("feat7"), t("feat8")];
+
   return (
-    <div style={{ background: "#f8fafc", minHeight: "100vh" }}>
+    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950">
       {/* Hero */}
-      <section style={{
-        background: "linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%)",
-        color: "white",
-        padding: "5rem 2rem 4rem",
-        textAlign: "center",
-      }}>
-        <div style={{ maxWidth: "700px", margin: "0 auto" }}>
-          <span style={{
-            display: "inline-block",
-            background: "rgba(99,102,241,0.3)",
-            border: "1px solid rgba(99,102,241,0.5)",
-            color: "#a5b4fc",
-            padding: "0.25rem 1rem",
-            borderRadius: "9999px",
-            fontSize: "0.875rem",
-            marginBottom: "1rem",
-          }}>
+      <section className="relative overflow-hidden py-24 lg:py-32">
+        {/* Background grid */}
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_80%_80%_at_50%_0%,#000_70%,transparent_110%)] opacity-30" />
+
+        {/* Radial glow */}
+        <div className="pointer-events-none absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2">
+          <div className="h-[600px] w-[600px] rounded-full bg-indigo-600/20 blur-[120px]" />
+        </div>
+
+        <div className="relative mx-auto max-w-4xl px-6 text-center">
+          <Badge
+            variant="outline"
+            className="mb-6 border-indigo-500/40 bg-indigo-500/10 text-indigo-300"
+          >
             {t("badge")}
-          </span>
-          <h1 style={{ fontSize: "clamp(2rem, 4vw, 3.5rem)", fontWeight: 900, marginBottom: "0.75rem", lineHeight: 1.1 }}>
-            {t("heroTitle1")} <span style={{ color: "#818cf8" }}>{t("heroHighlight")}</span>
+          </Badge>
+
+          <h1 className="mb-6 font-heading text-4xl font-black tracking-tight text-white sm:text-5xl lg:text-6xl">
+            {t("heroTitle1")}{" "}
+            <span className="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+              {t("heroHighlight")}
+            </span>
           </h1>
-          <p style={{ fontSize: "1.0625rem", opacity: 0.85, maxWidth: "540px", margin: "0 auto" }}>
+
+          <p className="mx-auto max-w-2xl text-lg text-slate-300">
             {t("heroDesc")}
           </p>
         </div>
       </section>
 
       {/* Pricing Cards */}
-      <section style={{ padding: "4rem 2rem", maxWidth: "1100px", margin: "0 auto" }}>
-        {plans.length === 0 ? (
-          /* Static fallback when DB has no plans */
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: "1.5rem", alignItems: "stretch" }}>
-            <PricingCard
-              name="Starter"
-              price="$500"
-              period="/ project"
-              desc={t("starterDesc")}
-              features={[t("feat1"), t("feat2"), t("feat3"), t("feat4")]}
-              cta={t("btnContact")}
-              ctaLink={`/${locale}/contact`}
-              highlight={false}
-            />
-            <PricingCard
-              name="Professional"
-              price="$1,500"
-              period="/ project"
-              desc={t("comparisonDesc")}
-              features={[t("feat1"), t("feat2"), t("feat3"), t("feat4"), t("feat5"), t("feat6"), t("feat7")]}
-              cta={t("btnContact")}
-              ctaLink={`/${locale}/contact`}
-              highlight={true}
-            />
-            <PricingCard
-              name="Enterprise"
-              price="Custom"
-              period=""
-              desc={t("deploymentDesc")}
-              features={[t("feat1"), t("feat2"), t("feat3"), t("feat4"), t("feat5"), t("feat6"), t("feat7"), t("feat8")]}
-              cta={t("btnContact")}
-              ctaLink={`/${locale}/contact`}
-              highlight={false}
-            />
-          </div>
-        ) : (
-          /* Dynamic cards from DB */
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: "1.5rem", alignItems: "stretch" }}>
-            {plans.map((plan) => (
-              <PricingCard
-                key={plan.id}
-                name={plan.name}
-                price={plan.price != null ? `$${plan.price.toLocaleString()}` : "Custom"}
-                period={plan.period}
-                desc={plan.tagline}
-                features={plan.features}
-                cta={plan.cta || t("btnContact")}
-                ctaLink={`/${locale}/contact`}
-                highlight={plan.highlighted}
-              />
-            ))}
-          </div>
-        )}
+      <section className="relative mx-auto max-w-6xl px-6 pb-24">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8">
+          {displayPlans.map((plan, i) => (
+            <Card
+              key={i}
+              className={`relative flex flex-col border-slate-800 bg-slate-900/80 backdrop-blur transition-all duration-300 hover:-translate-y-1 ${
+                plan.highlighted
+                  ? "border-indigo-500/60 shadow-[0_0_60px_-12px_rgba(99,102,241,0.4)] ring-1 ring-indigo-500/30"
+                  : "hover:border-slate-700"
+              }`}
+            >
+              {plan.highlighted && (
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                  <Badge className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white">
+                    {t("mostPopular")}
+                  </Badge>
+                </div>
+              )}
+
+              <CardHeader className="pb-4 text-center">
+                <CardTitle className="text-xl font-bold text-white">
+                  {plan.name}
+                </CardTitle>
+                <CardDescription className="pt-2 text-slate-400">
+                  {plan.tagline}
+                </CardDescription>
+                <div className="pt-4">
+                  <span className="font-heading text-4xl font-black text-white">
+                    {plan.price}
+                  </span>
+                  {plan.period && (
+                    <span className="ml-1 text-sm text-slate-400">
+                      {plan.period}
+                    </span>
+                  )}
+                </div>
+              </CardHeader>
+
+              <CardContent className="flex-1">
+                <ul className="space-y-3">
+                  {plan.features.map((feat, fi) => (
+                    <li key={fi} className="flex items-start gap-3 text-sm text-slate-300">
+                      <svg
+                        className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2.5}
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                      {feat}
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+
+              <CardFooter className="pt-4">
+                <Button
+                  asChild
+                  className={`w-full font-bold transition-all duration-200 ${
+                    plan.highlighted
+                      ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/30 hover:from-indigo-500 hover:to-purple-500"
+                      : "bg-slate-800 text-slate-200 hover:bg-slate-700 border border-slate-700"
+                  }`}
+                >
+                  <Link href={`/${locale}/contact`}>{t("btnContact")}</Link>
+                </Button>
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
       </section>
 
-      {/* Feature comparison */}
-      <section style={{ padding: "4rem 2rem", background: "white" }}>
-        <div style={{ maxWidth: "800px", margin: "0 auto", textAlign: "center" }}>
-          <h2 style={{ fontSize: "1.75rem", fontWeight: 900, color: "#0f172a", marginBottom: "0.5rem" }}>
-            {t("comparisonTitle")} <span style={{ color: "#6366f1" }}>{t("comparisonHighlight")}</span>
-          </h2>
-          <p style={{ color: "#64748b", marginBottom: "2.5rem" }}>{t("comparisonDesc")}</p>
-          <div style={{ textAlign: "left", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-            {[t("feat1"), t("feat2"), t("feat3"), t("feat4"), t("feat5"), t("feat6"), t("feat7"), t("feat8")].map((f, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.75rem 1rem", background: "#f8fafc", borderRadius: "0.5rem" }}>
-                <span style={{ color: "#10b981", fontSize: "1.25rem" }}>✓</span>
-                <span style={{ color: "#374151", fontSize: "0.9375rem" }}>{f}</span>
+      {/* Feature Comparison */}
+      <section className="border-t border-slate-800 bg-slate-900/50 py-20">
+        <div className="mx-auto max-w-3xl px-6">
+          <div className="mb-12 text-center">
+            <h2 className="mb-3 font-heading text-3xl font-black text-white sm:text-4xl">
+              {t("comparisonTitle")}{" "}
+              <span className="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+                {t("comparisonHighlight")}
+              </span>
+            </h2>
+            <p className="text-slate-400">{t("comparisonDesc")}</p>
+          </div>
+
+          <div className="space-y-3">
+            {allFeatures.map((feat, i) => (
+              <div
+                key={i}
+                className="flex items-center gap-4 rounded-xl border border-slate-800 bg-slate-900/60 p-4 backdrop-blur transition-colors hover:border-slate-700"
+              >
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10">
+                  <svg
+                    className="h-4 w-4 text-emerald-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2.5}
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <span className="text-slate-200">{feat}</span>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Hosting */}
-      <section style={{ padding: "4rem 2rem", background: "#f8fafc" }}>
-        <div style={{ maxWidth: "800px", margin: "0 auto", textAlign: "center" }}>
-          <h2 style={{ fontSize: "1.75rem", fontWeight: 900, color: "#0f172a", marginBottom: "0.5rem" }}>
-            {t("hostingTitle")} <span style={{ color: "#6366f1" }}>{t("hostingHighlight")}</span>
-          </h2>
-          <p style={{ color: "#64748b", marginBottom: "2rem" }}>{t("hostingDesc")}</p>
-          <a href={`/${locale}/contact`} style={{
-            display: "inline-block",
-            padding: "0.875rem 2.5rem",
-            background: "#6366f1",
-            color: "white",
-            borderRadius: "0.5rem",
-            textDecoration: "none",
-            fontWeight: 800,
-          }}>
-            {t("ctaEnterprise")}
-          </a>
+      {/* Hosting & Enterprise CTA */}
+      <section className="border-t border-slate-800 py-20">
+        <div className="mx-auto max-w-3xl px-6 text-center">
+          <div className="pointer-events-none absolute left-1/2 -translate-x-1/2">
+            <div className="h-[300px] w-[600px] rounded-full bg-purple-600/10 blur-[100px]" />
+          </div>
+
+          <div className="relative">
+            <h2 className="mb-4 font-heading text-3xl font-black text-white sm:text-4xl">
+              {t("hostingTitle")}{" "}
+              <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                {t("hostingHighlight")}
+              </span>
+            </h2>
+            <p className="mx-auto mb-8 max-w-xl text-slate-400">
+              {t("hostingDesc")}
+            </p>
+            <Button
+              asChild
+              size="lg"
+              className="bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-500/30 hover:from-purple-500 hover:to-pink-500"
+            >
+              <Link href={`/${locale}/contact`}>{t("ctaEnterprise")}</Link>
+            </Button>
+          </div>
         </div>
       </section>
-    </div>
-  );
-}
-
-function PricingCard({
-  name, price, period, desc, features, cta, ctaLink, highlight,
-}: {
-  name: string;
-  price: string;
-  period: string;
-  desc: string;
-  features: string[];
-  cta: string;
-  ctaLink: string;
-  highlight: boolean;
-}) {
-  return (
-    <div style={{
-      background: highlight ? "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)" : "white",
-      color: highlight ? "white" : "#0f172a",
-      borderRadius: "1.25rem",
-      padding: "2rem",
-      border: highlight ? "none" : "1px solid #e2e8f0",
-      boxShadow: highlight ? "0 20px 40px rgba(99,102,241,0.3)" : "0 1px 3px rgba(0,0,0,0.08)",
-      display: "flex",
-      flexDirection: "column",
-      transform: highlight ? "scale(1.03)" : "none",
-    }}>
-      <h3 style={{ fontSize: "1.125rem", fontWeight: 800, marginBottom: "0.5rem" }}>{name}</h3>
-      <div style={{ marginBottom: "1rem" }}>
-        <span style={{ fontSize: "2.5rem", fontWeight: 900 }}>{price}</span>
-        {period && <span style={{ opacity: 0.7, fontSize: "0.875rem" }}>{period}</span>}
-      </div>
-      <p style={{ fontSize: "0.875rem", opacity: highlight ? 0.9 : 0.7, marginBottom: "1.5rem", lineHeight: 1.5 }}>
-        {desc}
-      </p>
-      <ul style={{ listStyle: "none", padding: 0, margin: "0 0 2rem", flex: 1, display: "flex", flexDirection: "column", gap: "0.625rem" }}>
-        {features.map((f, i) => (
-          <li key={i} style={{ display: "flex", gap: "0.5rem", fontSize: "0.875rem" }}>
-            <span style={{ color: highlight ? "#fde68a" : "#10b981", fontWeight: 700 }}>✓</span>
-            {f}
-          </li>
-        ))}
-      </ul>
-      <a
-        href={ctaLink}
-        style={{
-          display: "block",
-          textAlign: "center",
-          padding: "0.75rem",
-          borderRadius: "0.5rem",
-          textDecoration: "none",
-          fontWeight: 700,
-          fontSize: "0.9375rem",
-          background: highlight ? "white" : "#6366f1",
-          color: highlight ? "#6366f1" : "white",
-        }}
-      >
-        {cta}
-      </a>
     </div>
   );
 }

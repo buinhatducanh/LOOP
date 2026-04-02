@@ -1,122 +1,35 @@
 "use client";
 
 /**
- * ServicesClient — Figma dark Services page with real DB data.
+ * ServicesClient — Figma dark Services page.
+ * Receives localized data (webPackages, customServices, ui labels) from server.
  */
 
 import { useState } from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
 import {
-  ArrowRight, Rocket, Shield, Sparkles, Star, MousePointer,
-  ChevronRight, ChevronDown, ChevronUp, ArrowUpRight, CheckCircle2,
-  LayoutGrid, List, Sparkles as SparkAlt,
+  ArrowRight, Rocket, Star, MousePointer,
+  ChevronRight, ChevronDown, ChevronUp, CheckCircle2, Sparkles,
   Zap as ZapAlt, Clock as ClockAlt,
 } from "lucide-react";
 import { DS, GRD } from "@/lib/design-tokens";
+import type { ServicesPackage } from "@/app/data/locales/services-vi";
 
-const fmtVND = (n: number | null | undefined) =>
-  n == null ? "Liên hệ" : new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(n);
+const fmtVND = (n: number | null | undefined, fallbackLabel = "—") =>
+  n == null ? fallbackLabel : new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(n);
 
 const fmtLP = (n: number) =>
   n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M` : n >= 1_000 ? `${(n / 1_000).toFixed(0)}K` : String(n);
 
-const ALL_PACKAGES = [
-  {
-    id: "nha-hang", industry: "Web Nhà hàng",
-    icon: "🍜", color: "#F59E0B",
-    gradFrom: "#F59E0B", gradTo: "#EF4444",
-    tagline: "Thực đơn online · Đặt bàn · Giao hàng",
-    description: "Website nhà hàng chuyên nghiệp với thực đơn đẹp, đặt bàn trực tuyến, tích hợp giao hàng.",
-    trialDays: 5, trialPrice: 0, fullPrice: 7_900_000,
-    activateTime: "2 giờ", badge: "PHỔ BIẾN NHẤT", badgeColor: "#F59E0B",
-    features: ["Thực đơn dạng ảnh + mô tả", "Đặt bàn online (form + xác nhận", "Tích hợp Grab/ShopeeFood", "Gallery ảnh món ăn", "Review & Rating khách hàng", "Bản đồ & giờ mở cửa", "Fanpage tích hợp", "SEO tối ưu cho từ khóa địa phương"],
-    previewImg: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=600&q=80",
-    category: "ăn uống", popular: true, lp: 395,
-  },
-  {
-    id: "spa", industry: "Web Spa & Làm đẹp",
-    icon: "💆", color: "#C084FC",
-    gradFrom: "#C084FC", gradTo: "#818CF8",
-    tagline: "Booking online · Gallery dịch vụ · Voucher",
-    description: "Website spa sang trọng với bảng giá dịch vụ, đặt lịch trực tuyến, gallery before/after và hệ thống voucher ưu đãi.",
-    trialDays: 5, trialPrice: 0, fullPrice: 8_500_000,
-    activateTime: "2 giờ", badge: "HOT", badgeColor: "#EF4444",
-    features: ["Booking online có nhắc nhở qua SMS", "Gallery before/after ấn tượng", "Bảng giá dịch vụ đẹp", "Hệ thống voucher & ưu đãi", "Đội ngũ chuyên viên", "Video giới thiệu", "Tích hợp Zalo OA", "Form tư vấn da miễn phí"],
-    previewImg: "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=600&q=80",
-    category: "sức khỏe", popular: true, lp: 425,
-  },
-  {
-    id: "nha-thuoc", industry: "Web Nhà thuốc",
-    icon: "💊", color: "#22C55E",
-    gradFrom: "#22C55E", gradTo: "#14B8A6",
-    tagline: "Tra cứu thuốc · Đặt hàng · Tư vấn dược sĩ",
-    description: "Website nhà thuốc uy tín với hệ thống tra cứu thuốc, đặt hàng online, tư vấn từ dược sĩ.",
-    trialDays: 3, trialPrice: 0, fullPrice: 9_900_000,
-    activateTime: "4 giờ", features: ["Tra cứu thuốc thông minh (tên, hoạt chất)", "Đặt hàng online giao tận nhà", "Chat tư vấn với dược sĩ", "Hồ sơ bệnh nhân & nhắc uống thuốc", "Nhập xuất tồn kho", "Chứng nhận GPP & giấy phép", "Blog sức khỏe SEO", "Kết nối bảo hiểm y tế"],
-    previewImg: "https://images.unsplash.com/photo-1585435557343-3b092cdfbb2a?auto=format&fit=crop&w=600&q=80",
-    category: "sức khỏe", lp: 495,
-  },
-  {
-    id: "cafe", industry: "Web Café & Trà sữa",
-    icon: "☕", color: "#D97706",
-    gradFrom: "#D97706", gradTo: "#F59E0B",
-    tagline: "Menu digital · Không gian · Order online",
-    description: "Website café trendy với menu digital đẹp, giới thiệu không gian, loyalty card tích điểm.",
-    trialDays: 5, trialPrice: 0, fullPrice: 6_500_000,
-    activateTime: "2 giờ", features: ["Menu digital với filter đồ uống", "Order takeaway & pickup", "Loyalty card tích điểm", "Gallery không gian check-in", "WiFi password thông minh", "Sự kiện & ưu đãi đặc biệt", "Review Google Maps tích hợp"],
-    previewImg: "https://images.unsplash.com/photo-1442512595331-e89e73853f31?auto=format&fit=crop&w=600&q=80",
-    category: "ăn uống", lp: 325,
-  },
-  {
-    id: "khach-san", industry: "Web Khách sạn & Resort",
-    icon: "🏨", color: "#3B82F6",
-    gradFrom: "#3B82F6", gradTo: "#06B6D4",
-    tagline: "Đặt phòng · Gallery · Tiện nghi",
-    description: "Website khách sạn sang trọng với hệ thống đặt phòng real-time, gallery 360°, giới thiệu tiện nghi và tích hợp OTA.",
-    trialDays: 5, trialPrice: 0, fullPrice: 14_900_000,
-    activateTime: "4 giờ", badge: "PREMIUM", badgeColor: "#3B82F6",
-    features: ["Đặt phòng real-time với lịch availability", "Gallery 360° virtual tour", "Giới thiệu loại phòng & tiện nghi", "Tích hợp Booking.com, Agoda, AirBnB", "Bản đồ điểm tham quan xung quanh", "Đa ngôn ngữ (VI/EN/ZH)", "Chatbot 24/7 tư vấn", "CMS quản lý giá phòng theo ngày"],
-    previewImg: "https://images.unsplash.com/photo-1566073771259-6a8c4a9b4e9c?auto=format&fit=crop&w=600&q=80",
-    category: "lưu trú", popular: true, lp: 745,
-  },
-  {
-    id: "gym", industry: "Web Gym & Fitness",
-    icon: "💪", color: "#EF4444",
-    gradFrom: "#EF4444", gradTo: "#F97316",
-    tagline: "Lịch tập · Đăng ký thành viên · PT",
-    description: "Website gym năng động với lịch tập hàng tuần, đăng ký gói thành viên, hồ sơ huấn luyện viên và tracking kết quả.",
-    trialDays: 3, trialPrice: 0, fullPrice: 8_900_000,
-    activateTime: "2 giờ", features: ["Lịch tập lớp nhóm hàng tuần", "Đăng ký thành viên online", "Hồ sơ huấn luyện viên", "Gallery thiết bị & không gian", "Tracking tiến độ tập luyện", "Blog dinh dưỡng & thể hình", "Chương trình referral", "App mobile companion (add-on)"],
-    previewImg: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=600&q=80",
-    category: "sức khỏe", lp: 445,
-  },
-  {
-    id: "bat-dong-san", industry: "Web Bất động sản",
-    icon: "🏠", color: "#14B8A6",
-    gradFrom: "#14B8A6", gradTo: "#818CF8",
-    tagline: "Tìm kiếm BDS · Virtual tour · CRM",
-    description: "Website bất động sản chuyên nghiệp với công cụ tìm kiếm thông minh, bản đồ tích hợp và CRM quản lý leads.",
-    trialDays: 5, trialPrice: 0, fullPrice: 18_900_000,
-    activateTime: "6 giờ", badge: "ENTERPRISE", badgeColor: "#14B8A6",
-    features: ["Tìm kiếm BDS theo bộ lọc nâng cao", "Virtual tour 360° từng căn hộ", "Bản đồ tích hợp Google Maps", "CRM quản lý leads tự động", "Tính toán trả góp ngân hàng", "So sánh căn hộ side-by-side", "Form đặt cọc & hợp đồng online", "Dashboard báo cáo môi giới"],
-    previewImg: "https://images.unsplash.com/photo-1560518883-ce09059ee634?auto=format&fit=crop&w=600&q=80",
-    category: "bất động sản", popular: true, lp: 945,
-  },
-  {
-    id: "web-ca-nhan", industry: "Web Cá nhân / Portfolio",
-    icon: "👤", color: "#818CF8",
-    gradFrom: "#818CF8", gradTo: "#7DD3FC",
-    tagline: "Portfolio · CV online · Landing cá nhân",
-    description: "Trang cá nhân chuyên nghiệp, portfolio ấn tượng, CV online tương tác.",
-    trialDays: 3, trialPrice: 0, fullPrice: 3_500_000,
-    activateTime: "1 giờ", features: ["Portfolio ấn tượng", "CV online tương tác", "Form liên hệ", "SEO cá nhân", "Responsive trên mọi thiết bị"],
-    previewImg: "https://images.unsplash.com/photo-1497032628192-86dc8a19e13e?auto=format&fit=crop&w=600&q=80",
-    category: "khác", lp: 175,
-  },
-];
+const CAT_ICONS: Record<string, string> = {
+  "an-uong": "🍜",
+  "suc-khoe": "💆",
+  "luu-tru": "🏨",
+  "bat-dong-san": "🏠",
+  "khac": "📦",
+};
 
-const CATEGORIES = ["Tất cả", "ăn uống", "sức khỏe", "lưu trú", "bất động sản", "khác"];
 
 function hexRgba(hex: string, alpha: number): string {
   const h = hex.replace("#", "");
@@ -214,7 +127,24 @@ function ProcessStep({
   );
 }
 
-function PackageCard({ pkg, locale }: { pkg: typeof ALL_PACKAGES[0]; locale: string }) {
+function PackageCard({
+  pkg,
+  locale,
+  labels,
+}: {
+  pkg: ServicesPackage;
+  locale: string;
+  labels: {
+    pkgPrice: string;
+    pkgOrTrial: string;
+    pkgFeatures: string;
+    pkgMoreFeatures: string;
+    pkgCollapse: string;
+    pkgLpReward: string;
+    pkgTrialCta: string;
+    liênHệ: string;
+  };
+}) {
   const [expanded, setExpanded] = useState(false);
   const grad = `linear-gradient(135deg, ${pkg.gradFrom}, ${pkg.gradTo})`;
 
@@ -270,15 +200,15 @@ function PackageCard({ pkg, locale }: { pkg: typeof ALL_PACKAGES[0]; locale: str
         {/* Pricing */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
           <div>
-            <div style={{ color: DS.text4, fontSize: "0.625rem", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.1em", marginBottom: 2 }}>GIÁ WEBPACKAGE</div>
+            <div style={{ color: DS.text4, fontSize: "0.625rem", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.1em", marginBottom: 2 }}>{labels.pkgPrice}</div>
             <div style={{ color: pkg.color, fontSize: "1.25rem", fontWeight: 800, fontFamily: "'Cinzel', serif" }}>
               {new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(pkg.fullPrice)}
             </div>
           </div>
           <div style={{ textAlign: "right" }}>
-            <div style={{ color: DS.text4, fontSize: "0.625rem", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.1em", marginBottom: 2 }}>HOẶC TRIAL</div>
+            <div style={{ color: DS.text4, fontSize: "0.625rem", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.1em", marginBottom: 2 }}>{labels.pkgOrTrial}</div>
             <div style={{ color: pkg.color, fontSize: "1rem", fontWeight: 600 }}>
-              {pkg.trialPrice === 0 ? "Miễn phí" : fmtVND(pkg.trialPrice)}
+              {pkg.trialPrice === 0 ? labels.liênHệ : fmtVND(pkg.trialPrice, labels.liênHệ)}
             </div>
           </div>
         </div>
@@ -304,14 +234,16 @@ function PackageCard({ pkg, locale }: { pkg: typeof ALL_PACKAGES[0]; locale: str
           onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = hexRgba(pkg.color, 0.1); }}
         >
           <Rocket size={13} style={{ display: "inline", marginRight: 4 }} />
-          Dùng thử {pkg.trialDays} ngày — {pkg.activateTime} kích hoạt
+          {labels.pkgTrialCta
+            .replace("{days}", String(pkg.trialDays))
+            .replace("{time}", pkg.activateTime)}
         </Link>
 
         <div style={{ borderTop: `1px solid ${DS.border}`, margin: "0.875rem 0" }} />
 
         {/* Features */}
         <div style={{ marginBottom: "0.875rem" }}>
-          <div style={{ color: DS.text4, fontSize: "0.625rem", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.15em", marginBottom: "0.5rem" }}>TÍNH NĂNG BAO GỒM</div>
+          <div style={{ color: DS.text4, fontSize: "0.625rem", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.15em", marginBottom: "0.5rem" }}>{labels.pkgFeatures}</div>
           <div style={{ display: "flex", flexDirection: "column", gap: "0.375rem" }}>
             {pkg.features.slice(0, expanded ? undefined : 5).map((f) => (
               <div key={f} style={{ display: "flex", alignItems: "flex-start", gap: "0.5rem", fontSize: "0.8125rem", color: DS.text3 }}>
@@ -336,7 +268,7 @@ function PackageCard({ pkg, locale }: { pkg: typeof ALL_PACKAGES[0]; locale: str
                 marginTop: "0.5rem",
               }}
             >
-              {expanded ? "Thu gọn" : `+${pkg.features.length - 5} tính năng khác`}
+              {expanded ? labels.pkgCollapse : `+${pkg.features.length - 5} ${labels.pkgMoreFeatures}`}
               {expanded ? <ChevronUp style={{ color: pkg.color }} size={12} /> : <ChevronDown style={{ color: pkg.color }} size={12} />}
             </button>
           )}
@@ -356,7 +288,7 @@ function PackageCard({ pkg, locale }: { pkg: typeof ALL_PACKAGES[0]; locale: str
         >
           <ZapAlt size={12} style={{ color: pkg.color }} />
           <span style={{ color: DS.text3, fontSize: "0.75rem" }}>
-            Đặt gói này nhận
+            {labels.pkgLpReward}
           </span>
           <span style={{ color: DS.purple, fontWeight: 600, fontSize: "0.8125rem", fontFamily: "'JetBrains Mono', monospace" }}>
             +{fmtLP(pkg.lp)} LP
@@ -369,17 +301,70 @@ function PackageCard({ pkg, locale }: { pkg: typeof ALL_PACKAGES[0]; locale: str
 
 // ── Main Component ─────────────────────────────────────────────────────────────
 
+type ServicesUI = {
+  heroBadge: string;
+  heroTitle: string;
+  heroDesc: string;
+  ctaPrimary: string;
+  ctaSecondary: string;
+  filterAll: string;
+  processLabel: string;
+  processTitle: string;
+  processStep1Title: string;
+  processStep1Desc: string;
+  processStep2Title: string;
+  processStep2Desc: string;
+  processStep3Title: string;
+  processStep3Desc: string;
+  processStep4Title: string;
+  processStep4Desc: string;
+  ctaReady: string;
+  ctaReadyDesc: string;
+  ctaReadyBtn: string;
+  webPackagesLabel: string;
+  customServicesLabel: string;
+  customServicesDesc: string;
+  pkgPrice: string;
+  pkgOrTrial: string;
+  pkgFeatures: string;
+  pkgMoreFeatures: string;
+  pkgCollapse: string;
+  pkgLpReward: string;
+  pkgTrialCta: string;
+  emptyState: string;
+  anUong: string;
+  sucKhoe: string;
+  luuTru: string;
+  batDongSan: string;
+  khac: string;
+  liênHệ: string;
+};
+
 export function ServicesClient({
   locale,
-  services,
+  customServices,
+  webPackages,
+  ui,
 }: {
   locale: string;
-  services: Record<string, unknown>[];
+  customServices: Record<string, unknown>[];
+  webPackages: ServicesPackage[];
+  ui: ServicesUI;
 }) {
-  const [activeCat, setActiveCat] = useState("Tất cả");
-  const filtered = activeCat === "Tất cả"
-    ? ALL_PACKAGES
-    : ALL_PACKAGES.filter((p) => p.category === activeCat);
+  const [activeCat, setActiveCat] = useState("all");
+  const filtered = activeCat === "all"
+    ? webPackages
+    : webPackages.filter((p) => p.category === activeCat);
+
+  const catLabels: Record<string, string> = {
+    "an-uong": ui.anUong,
+    "suc-khoe": ui.sucKhoe,
+    "luu-tru": ui.luuTru,
+    "bat-dong-san": ui.batDongSan,
+    "khac": ui.khac,
+  };
+
+  const allCats = ["all", "an-uong", "suc-khoe", "luu-tru", "bat-dong-san", "khac"];
 
   return (
     <main style={{ background: DS.bg, minHeight: "100vh", paddingTop: 0 }}>
@@ -416,7 +401,7 @@ export function ServicesClient({
               }}
             >
               <Star size={10} style={{ color: DS.amber }} />
-              WEBPACKAGES & DỊCH VỤ
+              {ui.heroBadge}
             </div>
             <h1
               style={{
@@ -432,10 +417,10 @@ export function ServicesClient({
                 lineHeight: 1.1,
               }}
             >
-              WEBPACKAGES & DỊCH VỤ TÙY CHỈNH
+              {ui.heroTitle}
             </h1>
             <p style={{ color: DS.text3, fontSize: "1rem", lineHeight: 1.8, marginBottom: "2rem" }}>
-              Chọn gói có sẵn để deploy nhanh trong vài giờ, hoặc liên hệ tùy chỉnh theo yêu cầu riêng.
+              {ui.heroDesc}
             </p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem", justifyContent: "center" }}>
               <Link
@@ -455,7 +440,7 @@ export function ServicesClient({
                 }}
               >
                 <MousePointer size={16} />
-                Báo giá tùy chỉnh
+                {ui.ctaPrimary}
               </Link>
               <Link
                 href={`/${locale}/portfolio`}
@@ -472,7 +457,7 @@ export function ServicesClient({
                   background: "rgba(255,255,255,0.03)",
                 }}
               >
-                Xem portfolio
+                {ui.ctaSecondary}
                 <ArrowRight size={16} />
               </Link>
             </div>
@@ -482,7 +467,7 @@ export function ServicesClient({
 
       {/* Category filter */}
       <section style={{ padding: "0 1.5rem 2rem", display: "flex", justifyContent: "center", gap: "0.5rem", flexWrap: "wrap" }}>
-        {CATEGORIES.map((cat) => {
+        {allCats.map((cat) => {
           const active = cat === activeCat;
           return (
             <button
@@ -501,7 +486,7 @@ export function ServicesClient({
                 boxShadow: active ? "0 0 16px rgba(129,140,248,0.35)" : "none",
               }}
             >
-              {cat === "Tất cả" ? "Tất cả" : cat === "ăn uống" ? "🍜 Ăn uống" : cat === "sức khỏe" ? "💆 Sức khỏe" : cat === "lưu trú" ? "🏨 Lưu trú" : cat === "bất động sản" ? "🏠 BĐS" : cat === "khác" ? "📦 Khác" : cat}
+              {cat === "all" ? ui.filterAll : `${CAT_ICONS[cat] ?? "📦"} ${catLabels[cat] ?? cat}`}
             </button>
           );
         })}
@@ -517,117 +502,129 @@ export function ServicesClient({
           }}
         >
           {filtered.map((pkg) => (
-            <PackageCard key={pkg.id} pkg={pkg} locale={locale} />
+            <PackageCard
+              key={pkg.id}
+              pkg={pkg}
+              locale={locale}
+              labels={{
+                pkgPrice: ui.pkgPrice,
+                pkgOrTrial: ui.pkgOrTrial,
+                pkgFeatures: ui.pkgFeatures,
+                pkgMoreFeatures: ui.pkgMoreFeatures,
+                pkgCollapse: ui.pkgCollapse,
+                pkgLpReward: ui.pkgLpReward,
+                pkgTrialCta: ui.pkgTrialCta,
+                liênHệ: ui.liênHệ,
+              }}
+            />
           ))}
         </div>
         {filtered.length === 0 && (
           <div style={{ textAlign: "center", padding: "4rem", color: DS.text4 }}>
-            Không có gói nào cho danh mục này.
+            {ui.emptyState}
           </div>
         )}
       </section>
 
       {/* Custom services */}
-      {services.length > 0 && (
-        <>
+      {customServices.length > 0 && (
+        <div
+          style={{
+            maxWidth: 1200,
+            margin: "0 auto 3rem",
+            padding: "0 1.5rem",
+          }}
+        >
           <div
             style={{
-              maxWidth: 1200,
-              margin: "0 auto 3rem",
-              padding: "0 1.5rem",
+              borderTop: `1px solid ${DS.border}`,
+              paddingTop: "2rem",
+              marginBottom: "1.5rem",
             }}
           >
             <div
               style={{
-                borderTop: `1px solid ${DS.border}`,
-                paddingTop: "2rem",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.5rem",
+                padding: "0.25rem 0.75rem",
+                borderRadius: 9999,
+                background: "rgba(20,184,166,0.08)",
+                border: "1px solid rgba(20,184,166,0.2)",
+                color: DS.cyan,
+                fontSize: "0.6875rem",
+                fontFamily: "'JetBrains Mono', monospace",
+                letterSpacing: "0.15em",
                 marginBottom: "1.5rem",
               }}
             >
-              <div
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "0.5rem",
-                  padding: "0.25rem 0.75rem",
-                  borderRadius: 9999,
-                  background: "rgba(20,184,166,0.08)",
-                  border: "1px solid rgba(20,184,166,0.2)",
-                  color: DS.cyan,
-                  fontSize: "0.6875rem",
-                  fontFamily: "'JetBrains Mono', monospace",
-                  letterSpacing: "0.15em",
-                  marginBottom: "1.5rem",
-                }}
-              >
-                <SparkAlt size={10} />
-                DỊCH VỤ TÙY CHỈNH
-              </div>
-              <h2
-                style={{
-                  fontFamily: "'Cinzel', serif",
-                  fontSize: "clamp(1.25rem, 3vw, 2rem",
-                  fontWeight: 900,
-                  letterSpacing: "0.04em",
-                  color: DS.text,
-                  marginBottom: "0.5rem",
-                }}
-              >
-                Dịch vụ tùy chỉnh theo yêu cầu riêng
-              </h2>
-              <p style={{ color: DS.text3, fontSize: "0.9375rem", marginBottom: "1.5rem" }}>
-                Ngoài các gói có sẵn, chúng tôi nhận dự án tùy chỉnh theo yêu cầu riêng.
-              </p>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr)",
-                  gap: "1rem",
-                }}
-              >
-                {services.map((svc: Record<string, unknown>) => (
-                  <Link
-                    key={svc.id as string}
-                    href={`/${locale}/services/${svc.slug as string}`}
-                    style={{
-                      padding: "1.25rem",
-                      borderRadius: 12,
-                      background: "rgba(15,23,42,0.7)",
-                      border: `1px solid ${DS.border}`,
-                      textDecoration: "none",
-                      display: "block",
-                      transition: "border-color 0.2s ease, transform 0.2s ease",
-                    }}
-                    onMouseEnter={(e) => {
-                      (e.currentTarget as HTMLAnchorElement).style.borderColor = DS.blue;
-                      (e.currentTarget as HTMLAnchorElement).style.transform = "translateY(-2px)";
-                    }}
-                    onMouseLeave={(e) => {
-                      (e.currentTarget as HTMLAnchorElement).style.borderColor = DS.border;
-                      (e.currentTarget as HTMLAnchorElement).style.transform = "translateY(0)";
-                    }}
-                  >
-                    <div style={{ color: DS.blue, fontSize: "0.75rem", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.1em", marginBottom: "0.5rem" }}>
-                      {(svc.category as string)?.toUpperCase()}
+              <Sparkles size={10} />
+              {ui.webPackagesLabel}
+            </div>
+            <h2
+              style={{
+                fontFamily: "'Cinzel', serif",
+                fontSize: "clamp(1.25rem, 3vw, 2rem",
+                fontWeight: 900,
+                letterSpacing: "0.04em",
+                color: DS.text,
+                marginBottom: "0.5rem",
+              }}
+            >
+              {ui.customServicesLabel}
+            </h2>
+            <p style={{ color: DS.text3, fontSize: "0.9375rem", marginBottom: "1.5rem" }}>
+              {ui.customServicesDesc}
+            </p>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr)",
+                gap: "1rem",
+              }}
+            >
+              {customServices.map((svc: Record<string, unknown>) => (
+                <Link
+                  key={svc.id as string}
+                  href={`/${locale}/services/${svc.slug as string}`}
+                  style={{
+                    padding: "1.25rem",
+                    borderRadius: 12,
+                    background: "rgba(15,23,42,0.7)",
+                    border: `1px solid ${DS.border}`,
+                    textDecoration: "none",
+                    display: "block",
+                    transition: "border-color 0.2s ease, transform 0.2s ease",
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLAnchorElement).style.borderColor = DS.blue;
+                    (e.currentTarget as HTMLAnchorElement).style.transform = "translateY(-2px)";
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLAnchorElement).style.borderColor = DS.border;
+                    (e.currentTarget as HTMLAnchorElement).style.transform = "translateY(0)";
+                  }}
+                >
+                  <div style={{ color: DS.blue, fontSize: "0.75rem", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.1em", marginBottom: "0.5rem" }}>
+                    {(svc.category as string)?.toUpperCase()}
+                  </div>
+                  <div style={{ color: DS.text, fontWeight: 600, fontSize: "1rem", marginBottom: "0.375rem" }}>
+                    {(svc.title as string) ?? ""}
+                  </div>
+                  <div style={{ color: DS.text3, fontSize: "0.8125rem", marginBottom: "0.75rem", lineHeight: 1.6 }}>
+                    {(svc.shortDescription as string) ?? ""}
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div style={{ color: DS.green, fontWeight: 700, fontSize: "0.875rem" }}>
+                      {svc.startingPrice != null ? fmtVND(svc.startingPrice as number) : ui.liênHệ}
                     </div>
-                    <div style={{ color: DS.text, fontWeight: 600, fontSize: "1rem", marginBottom: "0.375rem" }}>
-                      {(svc.title as string) ?? svc.titleEn ?? svc.titleVi ?? ""}
-                    </div>
-                    <div style={{ color: DS.text3, fontSize: "0.8125rem", marginBottom: "0.75rem", lineHeight: 1.6 }}>
-                      {(svc.shortDescription as string) ?? (svc.shortDescriptionEn as string) ?? ""}
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <div style={{ color: DS.green, fontWeight: 700, fontSize: "0.875rem" }}>
-                        {svc.startingPrice != null ? fmtVND(svc.startingPrice as number) : "Liên hệ"}
-                      </div>
-                      <ArrowRight size={14} style={{ color: DS.blue }} />
-                    </div>
-                  </Link>
-                ))}
-              </div>
+                    <ArrowRight size={14} style={{ color: DS.blue }} />
+                  </div>
+                </Link>
+              ))}
             </div>
           </div>
-        </>
+        </div>
       )}
 
       {/* Process */}
@@ -654,7 +651,7 @@ export function ServicesClient({
               marginBottom: "1rem",
             }}
           >
-            QUY TRÌNH LÀM VIỆC
+            {ui.processLabel}
           </div>
           <h2
             style={{
@@ -669,7 +666,7 @@ export function ServicesClient({
               marginBottom: "3rem",
             }}
           >
-            4 BƯỚC TRIỂN KHAI WEBSITE
+            {ui.processTitle}
           </h2>
           <div
             style={{
@@ -678,10 +675,10 @@ export function ServicesClient({
               gap: "1rem",
             }}
           >
-            <ProcessStep n="01" title="Liên hệ & Khảo sát" desc="Tư vấn 30 phút miễn phí. Phân tích nhu cầu, mục tiêu và ngân sách." color={DS.blue} />
-            <ProcessStep n="02" title="Proposal & Timeline" desc="Gửi proposal chi tiết với tech stack, deliverables trong 24h." color={DS.purple} />
-            <ProcessStep n="03" title="Thiết kế & Phát triển" desc="Agile sprint 2 tuần. Daily update. CI/CD tự động." color={DS.cyan} />
-            <ProcessStep n="04" title="QA & Launch" desc="Kiểm tra chất lượng. Deploy production. Training & handover." color={DS.green} />
+            <ProcessStep n="01" title={ui.processStep1Title} desc={ui.processStep1Desc} color={DS.blue} />
+            <ProcessStep n="02" title={ui.processStep2Title} desc={ui.processStep2Desc} color={DS.purple} />
+            <ProcessStep n="03" title={ui.processStep3Title} desc={ui.processStep3Desc} color={DS.cyan} />
+            <ProcessStep n="04" title={ui.processStep4Title} desc={ui.processStep4Desc} color={DS.green} />
           </div>
         </div>
       </section>
@@ -705,10 +702,10 @@ export function ServicesClient({
               marginBottom: "1rem",
             }}
           >
-            SẴN SÀNG BẮT ĐẦU?
+            {ui.ctaReady}
           </h2>
           <p style={{ color: DS.text3, fontSize: "1rem", lineHeight: 1.7, marginBottom: "2rem" }}>
-            Đặt lịch tư vấn miễn phí 30 phút. Nhận ngay 500 LP điểm thưởng khi bắt đầu dự án.
+            {ui.ctaReadyDesc}
           </p>
           <Link
             href={`/${locale}/contact`}
@@ -727,7 +724,7 @@ export function ServicesClient({
             }}
           >
             <MousePointer size={18} />
-            Đặt lịch tư vấn miễn phí
+            {ui.ctaReadyBtn}
           </Link>
         </div>
       </section>
