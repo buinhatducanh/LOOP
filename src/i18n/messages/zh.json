@@ -142,7 +142,20 @@
     "skills": "技能",
     "projectHistory": "项目历史",
     "title": "团队",
-    "subtitle": "LOOP成员"
+    "subtitle": "LOOP成员",
+    "viewOperative": "查看OPERATIVE资料",
+    "xpLabel": "XP",
+    "lpBalance": "LP",
+    "filterPO": "PO",
+    "rankDistribution": "等级分布矩阵",
+    "rankDistributionSub": "点击筛选",
+    "memberCount": "成员",
+    "lpEarned": "LP已获得",
+    "rankLevel": "等级",
+    "clearFilter": "× 清除筛选",
+    "resetFilters": "重置所有筛选",
+    "noMembersFound": "未找到匹配的成员",
+    "hallOfFame": "HALL OF FAME · 传奇公会"
   },
   "services": {
     "title": "服务",

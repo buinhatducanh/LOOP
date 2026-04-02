@@ -236,14 +236,13 @@ interface HeroSectionProps {
 
 function HeroSection({ members, hero, locale }: HeroSectionProps) {
   const totalLP = members.reduce((s, m) => s + ((m.availableLp as number) ?? 0), 0);
-  const totalMissions = members.reduce((s, m) => s + ((m.missions as number) ?? 0), 0);
   const totalAchievements = members.reduce((s, m) => s + ((m.achievements as string[])?.length ?? 0), 0);
 
   const kpis = [
     { label: "Thành viên đang hoạt động", value: `${members.length}`, suffix: " operative", color: "#3B82F6" },
     { label: "Tổng LP lưu thông", value: fmtLP(totalLP), suffix: " LP", color: "#818CF8" },
-    { label: "Nhiệm vụ hoàn thành", value: String(totalMissions), suffix: " ops", color: "#06B6D4" },
     { label: "Thành tích guild", value: String(totalAchievements), suffix: " trophy", color: "#F59E0B" },
+    { label: "Thành viên Diamond", value: String(members.filter(m => normalizeRank(m.rank as string) === "diamond").length), suffix: " star", color: "#06B6D4" },
   ];
 
   return (

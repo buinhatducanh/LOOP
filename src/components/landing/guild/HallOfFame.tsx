@@ -4,6 +4,7 @@
  * HallOfFame — Top 3 members displayed with holographic prismatic cards
  * Features: prism beams, crystal grid, rising sparks, cometary top border.
  */
+import { useState } from "react";
 import { motion } from "motion/react";
 import Link from "next/link";
 import { Trophy, Zap, Target } from "lucide-react";
@@ -236,6 +237,7 @@ function HolographicCard({
   delay: number;
   locale: string;
 }) {
+  const [imgError, setImgError] = useState(false);
   const rankKey = normalizeRank(member.rank as string | undefined);
   const cfg = RANKS[rankKey];
   const name = (member.name as string) ?? "???";
@@ -243,7 +245,7 @@ function HolographicCard({
   const role = (member.role as string) ?? "";
   const image = (member.image as string) ?? "";
   const level = (member.level as number) ?? 1;
-  const missions = (member.missions as number) ?? 0;
+  const achievements = ((member.achievements as string[]) ?? []).length;
   const lpBalance = (member.availableLp as number) ?? 0;
 
   return (
@@ -320,8 +322,8 @@ function HolographicCard({
                     boxShadow: `0 0 20px ${cfg.glowColor}, 0 0 40px ${cfg.glowColor}40, inset 0 0 20px rgba(0,0,0,0.3)`,
                   }}
                 >
-                  {image ? (
-                    <img src={image} alt={name} className="w-full h-full object-cover" />
+                  {image && !imgError ? (
+                    <img src={image} alt={name} className="w-full h-full object-cover" onError={() => setImgError(true)} />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center bg-[#111827]" style={{ color: cfg.color }}>
                       {name.charAt(0)}
@@ -412,7 +414,7 @@ function HolographicCard({
                     textShadow: `0 0 8px ${accentColor}`,
                   }}
                 >
-                  {missions}
+                  {achievements}
                 </div>
                 <div
                   style={{
@@ -422,7 +424,7 @@ function HolographicCard({
                     letterSpacing: "0.1em",
                   }}
                 >
-                  MISSIONS
+                  ACHIEVEMENTS
                 </div>
               </div>
             </div>

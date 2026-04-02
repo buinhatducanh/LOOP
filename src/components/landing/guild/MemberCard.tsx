@@ -31,6 +31,69 @@ type MemberRecord = Record<string, unknown>;
 const AVATAR_FALLBACK =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' fill='%230F172A'/%3E%3Ctext x='100' y='118' font-family='system-ui' font-size='72' font-weight='700' text-anchor='middle' fill='%233B82F6'%3E%E2%9C%A8%3C/text%3E%3C/svg%3E";
 
+/**
+ * Avatar — renders an <img> with graceful onError fallback to a styled initial.
+ * Props match common patterns used across TeamClient, HallOfFame, MemberCard.
+ */
+function Avatar({
+  src,
+  name,
+  size = 80,
+  radius = 10,
+  bg = "#111827",
+  color = "#374151",
+  fontSize,
+  objectFit = "cover",
+}: {
+  src: string;
+  name: string;
+  size?: number;
+  radius?: number;
+  bg?: string;
+  color?: string;
+  fontSize?: number;
+  objectFit?: "cover" | "contain";
+}) {
+  const [imgError, setImgError] = useState(false);
+  const initial = name?.charAt(0)?.toUpperCase() ?? "?";
+
+  if (!src || imgError) {
+    return (
+      <div
+        style={{
+          width: size,
+          height: size,
+          borderRadius: radius,
+          background: bg,
+          display: "grid",
+          placeItems: "center",
+          color,
+          fontSize: fontSize ?? Math.round(size * 0.4),
+          fontWeight: 700,
+          flexShrink: 0,
+        }}
+      >
+        {initial}
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={src}
+      alt={name}
+      onError={() => setImgError(true)}
+      style={{
+        width: size,
+        height: size,
+        borderRadius: radius,
+        objectFit,
+        flexShrink: 0,
+      }}
+    />
+  );
+}
+
 // ── Corner decoration (rendered OUTSIDE overflow:hidden) ───────────────────
 function CornerDeco({ color, opacity = 1 }: { color: string; opacity?: number }) {
   const s: CSSProperties = { borderColor: color, opacity, transition: "opacity 0.25s ease" };
@@ -287,6 +350,7 @@ interface MemberCardProps {
 
 export function MemberCard({ member, index, locale }: MemberCardProps) {
   const [hovered, setHovered] = useState(false);
+  const [imgError, setImgError] = useState(false);
 
   const rankKey = normalizeRank(member.rank as string | undefined);
   const cfg = RANKS[rankKey];
@@ -351,12 +415,13 @@ export function MemberCard({ member, index, locale }: MemberCardProps) {
 
           {/* Avatar section */}
           <div className="relative" style={{ paddingBottom: "110%" }}>
-            {image ? (
+            {image && !imgError ? (
               <img
                 src={image}
                 alt={name}
                 className="absolute inset-0 w-full h-full object-cover"
                 style={{ borderRadius: "10px 10px 0 0" }}
+                onError={() => setImgError(true)}
               />
             ) : (
               <div

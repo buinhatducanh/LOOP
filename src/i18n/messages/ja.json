@@ -142,7 +142,20 @@
     "skills": "スキル",
     "projectHistory": "プロジェクト履歴",
     "title": "チーム",
-    "subtitle": "LOOPメンバー"
+    "subtitle": "LOOPメンバー",
+    "viewOperative": "OPERATIVE PROFILEを見る",
+    "xpLabel": "XP",
+    "lpBalance": "LP",
+    "filterPO": "PO",
+    "rankDistribution": "ランク分布マトリックス",
+    "rankDistributionSub": "クリックでフィルター",
+    "memberCount": "メンバー",
+    "lpEarned": "LP獲得済み",
+    "rankLevel": "ランクレベル",
+    "clearFilter": "× フィルターをクリア",
+    "resetFilters": "すべてのフィルターをリセット",
+    "noMembersFound": "一致するメンバーが見つかりません",
+    "hallOfFame": "HALL OF FAME · レジェンダリーギルド"
   },
   "services": {
     "title": "サービス",

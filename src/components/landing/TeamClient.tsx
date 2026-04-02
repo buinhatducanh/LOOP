@@ -57,7 +57,7 @@ function MemberCard({ member, index, locale }: { member: MemberRecord; index: nu
         {/* Avatar */}
         <div style={{ height: 220, background: "#111827", overflow: "hidden", position: "relative" }}>
           {image ? (
-            <img src={image} alt={name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            <img src={image} alt={name} onError={() => markImgError(member.id as string)} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           ) : (
             <div style={{ width: "100%", height: "100%", display: "grid", placeItems: "center", color: DS.text5, fontSize: "4rem", fontWeight: 800 }}>
               {name.charAt(0).toUpperCase()}
@@ -153,6 +153,11 @@ export function TeamClient({
   const t = useTranslations("TeamPage");
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState<FilterKey>("filterAll");
+  // Track per-member image load errors
+  const [imgErrors, setImgErrors] = useState<Record<string, boolean>({});
+
+  const markImgError = (id: string) =>
+    setImgErrors(prev => ({ ...prev, [id]: true }));
 
   // Filter members by search query + role filter
   const filtered = useMemo(() => {
@@ -219,8 +224,8 @@ export function TeamClient({
                       style={{ background: rStyle.bg, border: `1px solid ${rStyle.border}`, borderRadius: 12, padding: "16px", display: "flex", alignItems: "center", gap: 12 }}
                     >
                       <div style={{ width: 48, height: 48, borderRadius: "50%", overflow: "hidden", background: "#111827", flexShrink: 0 }}>
-                        {(m.image as string) ? (
-                          <img src={m.image as string} alt={m.name as string} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        {(m.image as string) && !imgErrors[m.id as string] ? (
+                          <img src={m.image as string} alt={m.name as string} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={() => markImgError(m.id as string)} />
                         ) : (
                           <div style={{ width: "100%", height: "100%", display: "grid", placeItems: "center", color: DS.text5, fontSize: "1.25rem", fontWeight: 700 }}>
                             {(m.name as string).charAt(0).toUpperCase()}

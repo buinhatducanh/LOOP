@@ -179,7 +179,8 @@
       "Bash(Get-ChildItem -Path \"D:\\\\LOOP_COMPANY\\\\LOOP\\\\BE\" -Name postcss.config*, tailwind.config*, tsconfig*)",
       "Bash(more +0)",
       "Bash(xxd)",
-      "Bash(xxd d:/LOOP_COMPANY/LOOP/public/favicon.ico)"
+      "Bash(xxd d:/LOOP_COMPANY/LOOP/public/favicon.ico)",
+      "Bash(node -e \"const fs=require\\(''''fs''''\\);const locales=[''''vi'''',''''en'''',''''ja'''',''''ko'''',''''zh''''];let ok=true;for\\(const l of locales\\){const d=JSON.parse\\(fs.readFileSync\\(''''src/i18n/messages/''''+l+''''.json''''\\)\\);const n=Object.keys\\(d.team\\).length;console.log\\(l+'''': ''''+n+'''' keys''''+\\(n<43?'''' ⚠️'''':'''' ✅''''\\)\\);if\\(n<43\\)ok=false}if\\(ok\\)console.log\\(''''\\\\nAll 5 locales complete ✅''''\\);\")"
     ],
     "additionalDirectories": [
       "D:\\LOOP_COMPANY\\LOOP\\src\\app\\api\\admin\\expertises",

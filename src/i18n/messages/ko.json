@@ -142,7 +142,20 @@
     "skills": "스킬",
     "projectHistory": "프로젝트 이력",
     "title": "팀",
-    "subtitle": "LOOP 멤버"
+    "subtitle": "LOOP 멤버",
+    "viewOperative": "OPERATIVE 프로필 보기",
+    "xpLabel": "XP",
+    "lpBalance": "LP",
+    "filterPO": "PO",
+    "rankDistribution": "순위 분포 매트릭스",
+    "rankDistributionSub": "클릭하여 필터",
+    "memberCount": "멤버",
+    "lpEarned": "LP 획득",
+    "rankLevel": "순위 레벨",
+    "clearFilter": "× 필터 지우기",
+    "resetFilters": "모든 필터 재설정",
+    "noMembersFound": "일치하는 멤버가 없습니다",
+    "hallOfFame": "HALL OF FAME · 전설의 길드"
   },
   "services": {
     "title": "서비스",
