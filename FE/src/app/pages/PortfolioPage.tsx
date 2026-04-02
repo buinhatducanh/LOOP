@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { motion } from 'motion/react';
 import { Link } from 'react-router';
-import { ArrowRight, ExternalLink, TrendingUp } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { DS, GRD } from '../components/layout/ds';
+import { useI18n } from '@/hooks/useI18n';
 
 const PROJECTS = [
   { id: 1, title: 'VNRetail Platform', tag: 'E-commerce SaaS', cat: 'SaaS', metric1: '+320%', m1label: 'Doanh thu', metric2: '50K', m2label: 'Users', img: 'https://images.unsplash.com/photo-1517309561013-16f6e4020305?auto=format&fit=crop&w=600&q=80', color: DS.blue, tags: ['React', 'Node.js', 'AWS'] },
@@ -13,9 +14,8 @@ const PROJECTS = [
   { id: 6, title: 'FinDash Enterprise', tag: 'FinTech Dashboard', cat: 'SaaS', metric1: '$2M', m1label: 'Managed', metric2: '500+', m2label: 'Transactions/day', img: 'https://images.unsplash.com/photo-1634836023845-eddbfe9937da?auto=format&fit=crop&w=600&q=80', color: DS.red, tags: ['React', 'Rust', 'PostgreSQL'] },
 ];
 
-const CATS = ['Tất cả', 'Website', 'App', 'SaaS'];
-
 export default function PortfolioPage() {
+  const { t } = useI18n();
   const [active, setActive] = useState('Tất cả');
   const filtered = active === 'Tất cả' ? PROJECTS : PROJECTS.filter(p => p.cat === active);
 
@@ -25,35 +25,40 @@ export default function PortfolioPage() {
       <section className="py-20 px-6 text-center" style={{ background: 'linear-gradient(180deg, rgba(129,140,248,0.07) 0%, transparent 100%)' }}>
         <div className="max-w-2xl mx-auto">
           <div className="inline-flex items-center gap-2 mb-5 px-4 py-1.5 rounded-full" style={{ background: 'rgba(129,140,248,0.08)', border: '1px solid rgba(129,140,248,0.2)' }}>
-            <span style={{ color: DS.purple, fontSize: 10, fontFamily: DS.mono, letterSpacing: '0.22em' }}>PORTFOLIO & DỰ ÁN</span>
+            <span style={{ color: DS.purple, fontSize: 10, fontFamily: DS.mono, letterSpacing: '0.22em' }}>{t('portfolio.badge')}</span>
           </div>
           <h1 style={{ fontFamily: DS.heading, fontSize: 40, fontWeight: 900, letterSpacing: '0.06em', background: 'linear-gradient(135deg, #FFFFFF, #94A3B8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: 14 }}>
-            DỰ ÁN ĐÃ THỰC HIỆN
+            {t('portfolio.heroTitle')}
           </h1>
-          <p style={{ color: DS.text3, fontSize: 15, lineHeight: 1.8 }}>120+ dự án thành công. Từ startup nhỏ đến enterprise lớn — mỗi dự án đều là một câu chuyện thành công.</p>
+          <p style={{ color: DS.text3, fontSize: 15, lineHeight: 1.8 }}>{t('portfolio.heroDesc')}</p>
         </div>
       </section>
 
       {/* Filter */}
       <div className="flex justify-center gap-3 pb-10 flex-wrap px-6">
-        {CATS.map((cat) => (
+        {[
+          { key: 'all', label: t('portfolio.categories.all') },
+          { key: 'Website', label: t('portfolio.categories.web') },
+          { key: 'App', label: t('portfolio.categories.app') },
+          { key: 'SaaS', label: t('portfolio.categories.design') },
+        ].map(({ key, label }) => (
           <button
-            key={cat}
-            onClick={() => setActive(cat)}
+            key={key}
+            onClick={() => setActive(key)}
             style={{
               padding: '8px 20px',
               borderRadius: 30,
               fontSize: 13,
               fontWeight: 500,
               cursor: 'pointer',
-              background: active === cat ? GRD.primary : 'transparent',
-              border: active === cat ? 'none' : `1px solid ${DS.border}`,
-              color: active === cat ? '#fff' : DS.text3,
-              boxShadow: active === cat ? '0 0 16px rgba(129,140,248,0.35)' : 'none',
+              background: active === key ? GRD.primary : 'transparent',
+              border: active === key ? 'none' : `1px solid ${DS.border}`,
+              color: active === key ? '#fff' : DS.text3,
+              boxShadow: active === key ? '0 0 16px rgba(129,140,248,0.35)' : 'none',
               transition: 'all 0.2s',
             }}
           >
-            {cat}
+            {label}
           </button>
         ))}
       </div>
@@ -85,7 +90,7 @@ export default function PortfolioPage() {
                     style={{ color: '#fff', fontSize: 12, fontFamily: DS.mono, letterSpacing: '0.15em', border: '1px solid rgba(255,255,255,0.4)', padding: '8px 18px', borderRadius: 8, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.08)' }}
                     onClick={e => e.stopPropagation()}
                   >
-                    XEM CHI TIẾT <ArrowRight size={12} />
+                    {t('portfolio.viewProject')} <ArrowRight size={12} />
                   </Link>
                 </div>
                 {/* Category badge */}
@@ -108,7 +113,7 @@ export default function PortfolioPage() {
                   </div>
                 </div>
                 <Link to={`/du-an/${p.id}`} style={{ display: 'flex', alignItems: 'center', gap: 6, color: p.color, fontSize: 12, fontFamily: DS.mono, textDecoration: 'none', letterSpacing: '0.1em' }}>
-                  XEM DỰ ÁN <ArrowRight size={12} />
+                  {t('portfolio.viewProjectLink')} <ArrowRight size={12} />
                 </Link>
               </div>
             </motion.div>
@@ -119,10 +124,10 @@ export default function PortfolioPage() {
       {/* CTA */}
       <section className="py-16 px-6" style={{ background: 'rgba(15,23,42,0.4)', borderTop: `1px solid ${DS.border}` }}>
         <div className="max-w-2xl mx-auto text-center">
-          <h2 style={{ fontFamily: DS.heading, fontSize: 28, fontWeight: 900, color: DS.text, marginBottom: 12 }}>DỰ ÁN TIẾP THEO CỦA BẠN?</h2>
-          <p style={{ color: DS.text3, fontSize: 14, lineHeight: 1.7, marginBottom: 24 }}>Hãy để chúng tôi biến ý tưởng của bạn thành sản phẩm thực tế.</p>
+          <h2 style={{ fontFamily: DS.heading, fontSize: 28, fontWeight: 900, color: DS.text, marginBottom: 12 }}>{t('portfolio.ctaTitle')}</h2>
+          <p style={{ color: DS.text3, fontSize: 14, lineHeight: 1.7, marginBottom: 24 }}>{t('portfolio.ctaDesc')}</p>
           <Link to="/lien-he" style={{ background: GRD.primary, color: '#fff', fontSize: 14, fontWeight: 600, padding: '12px 28px', borderRadius: 12, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 8, boxShadow: '0 0 24px rgba(129,140,248,0.35)' }}>
-            Bắt đầu dự án <ArrowRight size={15} />
+            {t('portfolio.ctaButton')} <ArrowRight size={15} />
           </Link>
         </div>
       </section>

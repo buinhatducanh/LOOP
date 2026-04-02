@@ -3,84 +3,50 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Link } from 'react-router';
 import {
   Search, Star, Clock, Users, Play, BookOpen, ArrowRight, Zap,
-  ChevronDown, Filter, Check, ChevronRight, X,
+  ChevronDown, Filter, ChevronRight, X,
 } from 'lucide-react';
 import { DS, GRD } from '../components/layout/ds';
+import { useI18n } from '@/hooks/useI18n';
+import { useLocaleStore } from '@/store/localeStore';
+import { ACADEMY_DATA } from '../data/locales';
 
 const fmtVND = (n: number) =>
   new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(n);
 
-const COURSES = [
-  { id: 1, title: 'React & Next.js 14 Từ Zero Đến Hero', instructor: 'Akira Sato', instructorRole: 'Diamond · Lead Fullstack', instructorImg: 'https://images.unsplash.com/photo-1557862921-37829c790f19?auto=format&fit=crop&w=60&h=60&crop=faces', duration: '32h', students: 2400, rating: 4.9, reviews: 312, price: 2_000_000, lpPrice: 4000, lpReward: 200, img: 'https://images.unsplash.com/photo-1634836023845-eddbfe9937da?auto=format&fit=crop&w=500&q=80', cat: 'Frontend', level: 'Intermediate', color: DS.blue, featured: true, updatedAt: '15/03/2026', lectures: 48, certificate: true, tags: ['React', 'Next.js', 'TypeScript'] },
-  { id: 2, title: 'UI/UX Design System với Figma & Tailwind', instructor: 'Mei Lin', instructorRole: 'Ruby · Design Lead', instructorImg: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=60&h=60&crop=faces', duration: '18h', students: 1800, rating: 4.8, reviews: 245, price: 1_500_000, lpPrice: 3000, lpReward: 150, img: 'https://images.unsplash.com/photo-1590965918603-0dce981d13b8?auto=format&fit=crop&w=500&q=80', cat: 'Design', level: 'Beginner', color: DS.purple, featured: false, updatedAt: '10/03/2026', lectures: 32, certificate: true, tags: ['Figma', 'Tailwind', 'UX'] },
-  { id: 3, title: 'Node.js API & PostgreSQL: Production-Ready', instructor: 'Ryo Hashimoto', instructorRole: 'Diamond · Backend Architect', instructorImg: 'https://images.unsplash.com/photo-1547425260-76bcadfb4f2c?auto=format&fit=crop&w=60&h=60&crop=faces', duration: '26h', students: 1200, rating: 4.9, reviews: 189, price: 2_500_000, lpPrice: 5000, lpReward: 250, img: 'https://images.unsplash.com/photo-1771012788703-d310cdf189bb?auto=format&fit=crop&w=500&q=80', cat: 'Backend', level: 'Advanced', color: DS.cyan, featured: false, updatedAt: '08/03/2026', lectures: 56, certificate: true, tags: ['Node.js', 'PostgreSQL', 'Docker'] },
-  { id: 4, title: 'Kubernetes & DevOps cho Startup Việt Nam', instructor: 'Shin Watanabe', instructorRole: 'Platinum · DevOps Lead', instructorImg: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=60&h=60&crop=faces', duration: '22h', students: 890, rating: 4.7, reviews: 134, price: 3_000_000, lpPrice: 6000, lpReward: 300, img: 'https://images.unsplash.com/photo-1596843720750-7de9329da5d7?auto=format&fit=crop&w=500&q=80', cat: 'DevOps', level: 'Advanced', color: DS.green, featured: false, updatedAt: '01/03/2026', lectures: 40, certificate: true, tags: ['K8s', 'Docker', 'AWS'] },
-  { id: 5, title: 'SEO & Content Marketing cho SaaS B2B', instructor: 'Yuna Park', instructorRole: 'Gold · Marketing Lead', instructorImg: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=60&h=60&crop=faces', duration: '14h', students: 3100, rating: 4.8, reviews: 421, price: 1_200_000, lpPrice: 2400, lpReward: 120, img: 'https://images.unsplash.com/photo-1517309561013-16f6e4020305?auto=format&fit=crop&w=500&q=80', cat: 'Marketing', level: 'Beginner', color: DS.amber, featured: false, updatedAt: '20/02/2026', lectures: 28, certificate: true, tags: ['SEO', 'Content', 'Growth'] },
-  { id: 6, title: 'High-Performance Rust & Go cho Backend', instructor: 'Rin Nakamura', instructorRole: 'Ruby · Performance Expert', instructorImg: 'https://images.unsplash.com/photo-1502685104226-ee32379fefbe?auto=format&fit=crop&w=60&h=60&crop=faces', duration: '40h', students: 680, rating: 5.0, reviews: 98, price: 4_500_000, lpPrice: 9000, lpReward: 450, img: 'https://images.unsplash.com/photo-1762330910399-95caa55acf04?auto=format&fit=crop&w=500&q=80', cat: 'Backend', level: 'Expert', color: DS.red, featured: false, updatedAt: '12/03/2026', lectures: 72, certificate: true, tags: ['Rust', 'Go', 'Performance'] },
+// Static course data (images, colors, numbers — don't translate)
+const COURSE_STATIC = [
+  { id: 1, instructorImg: 'https://images.unsplash.com/photo-1557862921-37829c790f19?auto=format&fit=crop&w=60&h=60&crop=faces', img: 'https://images.unsplash.com/photo-1634836023845-eddbfe9937da?auto=format&fit=crop&w=500&q=80', color: DS.blue, featured: true, tags: ['React', 'Next.js', 'TypeScript'] },
+  { id: 2, instructorImg: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=60&h=60&crop=faces', img: 'https://images.unsplash.com/photo-1590965918603-0dce981d13b8?auto=format&fit=crop&w=500&q=80', color: DS.purple, featured: false, tags: ['Figma', 'Tailwind', 'UX'] },
+  { id: 3, instructorImg: 'https://images.unsplash.com/photo-1547425260-76bcadfb4f2c?auto=format&fit=crop&w=60&h=60&crop=faces', img: 'https://images.unsplash.com/photo-1771012788703-d310cdf189bb?auto=format&fit=crop&w=500&q=80', color: DS.cyan, featured: false, tags: ['Node.js', 'PostgreSQL', 'Docker'] },
+  { id: 4, instructorImg: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=60&h=60&crop=faces', img: 'https://images.unsplash.com/photo-1596843720750-7de9329da5d7?auto=format&fit=crop&w=500&q=80', color: DS.green, featured: false, tags: ['K8s', 'Docker', 'AWS'] },
+  { id: 5, instructorImg: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=60&h=60&crop=faces', img: 'https://images.unsplash.com/photo-1517309561013-16f6e4020305?auto=format&fit=crop&w=500&q=80', color: DS.amber, featured: false, tags: ['SEO', 'Content', 'Growth'] },
+  { id: 6, instructorImg: 'https://images.unsplash.com/photo-1502685104226-ee32379fefbe?auto=format&fit=crop&w=60&h=60&crop=faces', img: 'https://images.unsplash.com/photo-1762330910399-95caa55acf04?auto=format&fit=crop&w=500&q=80', color: DS.red, featured: false, tags: ['Rust', 'Go', 'Performance'] },
 ];
 
-const CATS = ['Tất cả', 'Frontend', 'Backend', 'Design', 'DevOps', 'Marketing'];
-const LEVELS = ['Tất cả', 'Beginner', 'Intermediate', 'Advanced', 'Expert'];
-const SORTS = [
-  { label: 'Nổi bật nhất', val: 'featured' },
-  { label: 'Đánh giá cao', val: 'rating' },
-  { label: 'Học viên nhiều', val: 'students' },
-  { label: 'Mới nhất', val: 'newest' },
-  { label: 'Giá thấp → cao', val: 'price-asc' },
-  { label: 'Giá cao → thấp', val: 'price-desc' },
+// Static instructor data
+const INSTRUCTORS_STATIC = [
+  { name: 'Akira Sato', rank: 'Diamond', img: 'https://images.unsplash.com/photo-1557862921-37829c790f19?auto=format&fit=crop&w=100&h=100&crop=faces', rankColor: '#7DD3FC' },
+  { name: 'Rin Nakamura', rank: 'Ruby', img: 'https://images.unsplash.com/photo-1502685104226-ee32379fefbe?auto=format&fit=crop&w=100&h=100&crop=faces', rankColor: '#FB7185' },
+  { name: 'Mei Lin', rank: 'Ruby', img: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=100&h=100&crop=faces', rankColor: '#FB7185' },
+  { name: 'Ryo Hashimoto', rank: 'Diamond', img: 'https://images.unsplash.com/photo-1547425260-76bcadfb4f2c?auto=format&fit=crop&w=100&h=100&crop=faces', rankColor: '#7DD3FC' },
 ];
+
 const levelColor: Record<string, string> = {
   Beginner: DS.green, Intermediate: DS.blue, Advanced: DS.amber, Expert: DS.red,
 };
-const levelVN: Record<string, string> = {
-  Beginner: 'Cơ bản', Intermediate: 'Trung cấp', Advanced: 'Nâng cao', Expert: 'Chuyên gia',
-};
-
-// ── Learning paths ──────────────────────────────────────────────────────────
-const PATHS = [
-  {
-    id: 'fullstack', title: 'Lộ trình Full-Stack', icon: '⚡', color: DS.blue,
-    desc: 'Từ Frontend đến Backend – xây dựng sản phẩm hoàn chỉnh',
-    steps: ['UI/UX Design System', 'React & Next.js 14', 'Node.js & PostgreSQL'],
-    duration: '76h', totalLP: 600, difficulty: 'Intermediate → Advanced',
-  },
-  {
-    id: 'design', title: 'Lộ trình Product Designer', icon: '✦', color: DS.purple,
-    desc: 'Thiết kế giao diện đẹp, tối ưu trải nghiệm người dùng',
-    steps: ['UI/UX Design System với Figma', 'SEO & Content Marketing', 'UX Writing (Sắp ra mắt)'],
-    duration: '32h', totalLP: 270, difficulty: 'Beginner → Intermediate',
-  },
-  {
-    id: 'devops', title: 'Lộ trình DevOps Engineer', icon: '◈', color: DS.green,
-    desc: 'Hạ tầng, CI/CD và vận hành hệ thống quy mô lớn',
-    steps: ['Node.js & PostgreSQL', 'Kubernetes & DevOps', 'Rust & Go Performance'],
-    duration: '88h', totalLP: 1000, difficulty: 'Advanced → Expert',
-  },
-];
-
-// ── FAQ data ────────────────────────────────────────────────────────────────
-const FAQS = [
-  { q: 'LP (Learning Points) hoạt động như thế nào?', a: 'Sau khi hoàn thành một khóa học, bạn nhận LP tương ứng. LP có thể dùng để giảm giá dịch vụ LOOP (1,000 LP = 500,000 VNĐ giảm giá, tối đa 20% hóa đơn) hoặc đăng ký khóa học khác.' },
-  { q: 'Tôi có thể thanh toán bằng LP không?', a: 'Có! Với khóa học giá dưới 3,000,000 VNĐ, bạn có thể thanh toán tối đa 50% bằng LP. Ví dụ: khóa 2,000,000 VNĐ = 1,000,000 VNĐ + 2,000 LP.' },
-  { q: 'Chứng chỉ có giá trị như thế nào?', a: 'Chứng chỉ LOOP Academy được cấp dưới dạng PDF có QR code xác thực. Chứng chỉ được nhiều startup và doanh nghiệp công nghệ tại Việt Nam công nhận.' },
-  { q: 'Tôi có được hỗ trợ sau khi học không?', a: 'Tất cả học viên được tham gia Discord LOOP Academy để hỏi đáp với giảng viên và cộng đồng. Giảng viên cam kết phản hồi trong 24 giờ.' },
-  { q: 'Content có được cập nhật không?', a: 'Có, tất cả khóa học được cập nhật ít nhất 1 lần/quý. Khi mua khóa học, bạn có quyền truy cập lifetime kể cả các phiên bản cập nhật.' },
-];
-
-// ── Instructor showcase ─────────────────────────────────────────────────────
-const INSTRUCTORS = [
-  { name: 'Akira Sato', role: 'Lead Fullstack', rank: 'Diamond', courses: 2, students: 4100, img: 'https://images.unsplash.com/photo-1557862921-37829c790f19?auto=format&fit=crop&w=100&h=100&crop=faces', rankColor: '#7DD3FC' },
-  { name: 'Rin Nakamura', role: 'Performance Expert', rank: 'Ruby', courses: 1, students: 680, img: 'https://images.unsplash.com/photo-1502685104226-ee32379fefbe?auto=format&fit=crop&w=100&h=100&crop=faces', rankColor: '#FB7185' },
-  { name: 'Mei Lin', role: 'Design Lead', rank: 'Ruby', courses: 1, students: 1800, img: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=100&h=100&crop=faces', rankColor: '#FB7185' },
-  { name: 'Ryo Hashimoto', role: 'Backend Architect', rank: 'Diamond', courses: 1, students: 1200, img: 'https://images.unsplash.com/photo-1547425260-76bcadfb4f2c?auto=format&fit=crop&w=100&h=100&crop=faces', rankColor: '#7DD3FC' },
-];
 
 // ── Payment Modal ───────────────────────────────────────────────────────────
-function PaymentModal({ course, lpBalance, onClose }: {
-  course: typeof COURSES[0];
+function PaymentModal({ courseId, lpBalance, onClose }: {
+  courseId: number;
   lpBalance: number;
   onClose: () => void;
 }) {
+  const locale = useLocaleStore(s => s.locale);
+  const { courses } = ACADEMY_DATA[locale] ?? ACADEMY_DATA.vi;
+  const staticCourses = COURSE_STATIC;
+  const allCourses = mergeCourses(courses, staticCourses);
+  const course = allCourses.find(c => c.id === courseId)!;
+  const { t } = useI18n();
   const [payMode, setPayMode] = useState<'vnd' | 'lp-partial' | 'lp-full'>('vnd');
   const [enrolled, setEnrolled] = useState(false);
   const lpPartialMax = Math.min(Math.floor(course.price * 0.5 / 500) * 1000, lpBalance);
@@ -94,13 +60,12 @@ function PaymentModal({ course, lpBalance, onClose }: {
         <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}
           className="text-center p-10 rounded-3xl max-w-sm w-full" style={{ background: DS.bgCard, border: `1px solid ${DS.green}40` }}>
           <div className="text-5xl mb-5">🎉</div>
-          <div style={{ color: DS.green, fontFamily: DS.heading, fontSize: 20, fontWeight: 900, marginBottom: 8 }}>ĐĂNG KÝ THÀNH CÔNG!</div>
+          <div style={{ color: DS.green, fontFamily: DS.heading, fontSize: 20, fontWeight: 900, marginBottom: 8 }}>{t('academy.payment.successTitle')}</div>
           <div style={{ color: DS.text3, fontSize: 14, lineHeight: 1.7, marginBottom: 20 }}>
-            Bạn đã đăng ký khóa học <span style={{ color: DS.text }}>{course.title}</span> thành công.
-            Hoàn thành để nhận <span style={{ color: DS.purple }}>+{course.lpReward} LP</span>!
+            {t('academy.payment.lpEarned', { lp: String(course.lpReward) })}
           </div>
           <button onClick={onClose} style={{ background: GRD.primary, color: '#fff', border: 'none', borderRadius: 12, padding: '12px 28px', fontSize: 14, fontWeight: 700, cursor: 'pointer', width: '100%' }}>
-            Bắt đầu học ngay
+            {t('academy.detail.enrollNow')}
           </button>
         </motion.div>
       </div>
@@ -113,7 +78,7 @@ function PaymentModal({ course, lpBalance, onClose }: {
         className="w-full max-w-md rounded-2xl overflow-hidden" style={{ background: DS.bgCard, border: `1px solid ${DS.border}` }}>
         {/* Header */}
         <div className="flex items-center justify-between p-5" style={{ borderBottom: `1px solid ${DS.border}` }}>
-          <div style={{ color: DS.text, fontSize: 15, fontWeight: 700 }}>Đăng ký khóa học</div>
+          <div style={{ color: DS.text, fontSize: 15, fontWeight: 700 }}>{t('academy.payment.title')}</div>
           <button onClick={onClose} style={{ color: DS.text4, background: 'none', border: 'none', cursor: 'pointer' }}><X size={18} /></button>
         </div>
         <div className="p-5 space-y-4">
@@ -129,13 +94,13 @@ function PaymentModal({ course, lpBalance, onClose }: {
           </div>
 
           {/* Payment mode */}
-          <div style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.15em', marginBottom: 8 }}>PHƯƠNG THỨC THANH TOÁN</div>
+          <div style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.15em', marginBottom: 8 }}>{t('academy.payment.title').toUpperCase()}</div>
 
           {/* Full VND */}
           <label className="flex items-center gap-3 p-4 rounded-xl cursor-pointer" style={{ background: payMode === 'vnd' ? 'rgba(59,130,246,0.08)' : 'transparent', border: `1px solid ${payMode === 'vnd' ? DS.blue + '40' : DS.border}` }}>
             <input type="radio" checked={payMode === 'vnd'} onChange={() => setPayMode('vnd')} style={{ accentColor: DS.blue }} />
             <div className="flex-1">
-              <div style={{ color: DS.text, fontSize: 14, fontWeight: 600 }}>Thanh toán VNĐ đầy đủ</div>
+              <div style={{ color: DS.text, fontSize: 14, fontWeight: 600 }}>{t('academy.payment.fullVnd')}</div>
               <div style={{ color: DS.blue, fontFamily: DS.heading, fontSize: 20, fontWeight: 900 }}>{fmtVND(course.price)}</div>
             </div>
           </label>
@@ -145,13 +110,13 @@ function PaymentModal({ course, lpBalance, onClose }: {
             <label className="flex items-center gap-3 p-4 rounded-xl cursor-pointer" style={{ background: payMode === 'lp-partial' ? 'rgba(129,140,248,0.08)' : 'transparent', border: `1px solid ${payMode === 'lp-partial' ? DS.purple + '40' : DS.border}` }}>
               <input type="radio" checked={payMode === 'lp-partial'} onChange={() => setPayMode('lp-partial')} style={{ accentColor: DS.purple }} />
               <div className="flex-1">
-                <div style={{ color: DS.text, fontSize: 14, fontWeight: 600 }}>Kết hợp LP + VNĐ</div>
+                <div style={{ color: DS.text, fontSize: 14, fontWeight: 600 }}>{t('academy.payment.mixedPayment')}</div>
                 <div className="flex items-center gap-3 mt-1">
                   <span style={{ color: DS.purple, fontFamily: DS.mono, fontSize: 13 }}>-{lpPartialMax.toLocaleString('vi-VN')} LP</span>
                   <span style={{ color: DS.text4, fontSize: 12 }}>+</span>
                   <span style={{ color: DS.blue, fontFamily: DS.mono, fontSize: 13 }}>{fmtVND(partialRemain)}</span>
                 </div>
-                <div style={{ color: DS.green, fontSize: 11, marginTop: 2 }}>Tiết kiệm {fmtVND(lpSaved)}</div>
+                <div style={{ color: DS.green, fontSize: 11, marginTop: 2 }}>{t('academy.payment.maxLpNote')} {fmtVND(lpSaved)}</div>
               </div>
             </label>
           )}
@@ -160,15 +125,15 @@ function PaymentModal({ course, lpBalance, onClose }: {
           <label className="flex items-center gap-3 p-4 rounded-xl cursor-pointer" style={{ background: payMode === 'lp-full' ? 'rgba(245,158,11,0.08)' : 'transparent', border: `1px solid ${payMode === 'lp-full' ? DS.amber + '40' : DS.border}`, opacity: canFullLP ? 1 : 0.5 }}>
             <input type="radio" checked={payMode === 'lp-full'} onChange={() => canFullLP && setPayMode('lp-full')} disabled={!canFullLP} style={{ accentColor: DS.amber }} />
             <div className="flex-1">
-              <div style={{ color: DS.text, fontSize: 14, fontWeight: 600 }}>Toàn bộ bằng LP ◈</div>
+              <div style={{ color: DS.text, fontSize: 14, fontWeight: 600 }}>{t('academy.payment.fullLp')} ◈</div>
               <div style={{ color: DS.amber, fontFamily: DS.mono, fontSize: 16, fontWeight: 700 }}>{course.lpPrice.toLocaleString('vi-VN')} LP</div>
-              {!canFullLP && <div style={{ color: DS.red, fontSize: 11, marginTop: 2 }}>LP không đủ (bạn có {lpBalance.toLocaleString('vi-VN')} LP)</div>}
+              {!canFullLP && <div style={{ color: DS.red, fontSize: 11, marginTop: 2 }}>{t('academy.payment.insufficientLp')} ({lpBalance.toLocaleString('vi-VN')} LP)</div>}
             </div>
           </label>
 
           {/* LP balance indicator */}
           <div className="flex items-center justify-between p-3 rounded-xl" style={{ background: 'rgba(129,140,248,0.06)', border: '1px solid rgba(129,140,248,0.15)' }}>
-            <div style={{ color: DS.text4, fontSize: 12 }}>LP hiện có của bạn</div>
+            <div style={{ color: DS.text4, fontSize: 12 }}>{t('academy.payment.balance')}</div>
             <div style={{ color: DS.purple, fontFamily: DS.mono, fontWeight: 700 }}>{lpBalance.toLocaleString('vi-VN')} LP</div>
           </div>
 
@@ -176,12 +141,12 @@ function PaymentModal({ course, lpBalance, onClose }: {
           <div className="flex items-center gap-2 p-3 rounded-xl" style={{ background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.15)' }}>
             <Zap size={12} style={{ color: DS.green, flexShrink: 0 }} />
             <div style={{ color: DS.text4, fontSize: 12 }}>
-              Hoàn thành khóa học nhận <span style={{ color: DS.green, fontWeight: 700 }}>+{course.lpReward} LP</span> phần thưởng
+              {t('academy.detail.lpReward', { lp: String(course.lpReward) })}
             </div>
           </div>
 
           <button onClick={() => setEnrolled(true)} style={{ width: '100%', background: GRD.primary, color: '#fff', border: 'none', borderRadius: 12, padding: '13px', fontSize: 15, fontWeight: 700, cursor: 'pointer', boxShadow: '0 0 24px rgba(129,140,248,0.35)' }}>
-            Xác nhận đăng ký
+            {t('academy.payment.confirmEnroll')}
           </button>
         </div>
       </motion.div>
@@ -191,21 +156,31 @@ function PaymentModal({ course, lpBalance, onClose }: {
 
 // ── Main ────────────────────────────────────────────────────────────────────
 export default function AcademyPage() {
-  const [activeCat, setActiveCat] = useState('Tất cả');
-  const [activeLevel, setActiveLevel] = useState('Tất cả');
+  const { t } = useI18n();
+  const locale = useLocaleStore(s => s.locale);
+  const { courses, cats, sorts, levelVN, paths, faqs, instructors } = ACADEMY_DATA[locale] ?? ACADEMY_DATA.vi;
+
+  const [activeCat, setActiveCat] = useState(cats[0]);
+  const [activeLevel, setActiveLevel] = useState(cats[0]);
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState('featured');
   const [showFilters, setShowFilters] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
-  const [payModal, setPayModal] = useState<typeof COURSES[0] | null>(null);
+  const [payModal, setPayModal] = useState<number | null>(null);
 
   const USER_LP = 15_200;
 
-  const featured = COURSES[0];
+  // Merge static (img/color) with locale (title/desc) course data
+  const mergeCourses = (localeCourses: typeof courses, staticCourses: typeof COURSE_STATIC) =>
+    localeCourses.map((c, i) => ({ ...c, ...staticCourses[i] }));
 
-  let filtered = COURSES.slice(1).filter(c =>
-    (activeCat === 'Tất cả' || c.cat === activeCat) &&
-    (activeLevel === 'Tất cả' || c.level === activeLevel) &&
+  const allCourses = mergeCourses(courses, COURSE_STATIC);
+  const featured = allCourses[0];
+  const otherCourses = allCourses.slice(1);
+
+  let filtered = otherCourses.filter(c =>
+    (activeCat === cats[0] || c.cat === activeCat) &&
+    (activeLevel === cats[0] || c.level === activeLevel) &&
     (c.title.toLowerCase().includes(search.toLowerCase()) || c.instructor.toLowerCase().includes(search.toLowerCase()))
   );
 
@@ -216,7 +191,7 @@ export default function AcademyPage() {
   else if (sort === 'price-desc') filtered = [...filtered].sort((a, b) => b.price - a.price);
   else if (sort === 'newest') filtered = [...filtered].reverse();
 
-  const hasFilters = activeCat !== 'Tất cả' || activeLevel !== 'Tất cả';
+  const hasFilters = activeCat !== cats[0] || activeLevel !== cats[0];
 
   return (
     <div style={{ background: DS.bg, fontFamily: DS.body, paddingTop: 64 }}>
@@ -229,10 +204,10 @@ export default function AcademyPage() {
             <span style={{ color: DS.purple, fontSize: 10, fontFamily: DS.mono, letterSpacing: '0.22em' }}>LOOP ACADEMY</span>
           </div>
           <h1 style={{ fontFamily: DS.heading, fontSize: 'clamp(32px, 5vw, 52px)', fontWeight: 900, letterSpacing: '0.06em', background: 'linear-gradient(135deg, #FFFFFF, #94A3B8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: 14 }}>
-            HỌC TỪ CHUYÊN GIA LOOP
+            {t('academy.hero.title')}
           </h1>
           <p style={{ color: DS.text3, fontSize: 16, lineHeight: 1.8, marginBottom: 28 }}>
-            Khóa học thực chiến từ đội ngũ Diamond–Ruby. Học bằng LP, thăng hạng nhanh hơn.
+            {t('academy.hero.subtitle')}
           </p>
 
           {/* Search */}
@@ -240,22 +215,22 @@ export default function AcademyPage() {
             <Search size={16} style={{ color: DS.text4 }} />
             <input
               value={search} onChange={e => setSearch(e.target.value)}
-              placeholder="Tìm khóa học, kỹ năng, giảng viên..."
+              placeholder={t('academy.hero.searchPlaceholder')}
               style={{ flex: 1, background: 'none', border: 'none', outline: 'none', color: DS.text, fontSize: 15, fontFamily: DS.body }}
             />
             {search && (
               <button onClick={() => setSearch('')} style={{ color: DS.text4, background: 'none', border: 'none', cursor: 'pointer' }}><X size={14} /></button>
             )}
-            <button style={{ background: GRD.primary, color: '#fff', border: 'none', borderRadius: 10, padding: '8px 16px', fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' }}>Tìm kiếm</button>
+            <button style={{ background: GRD.primary, color: '#fff', border: 'none', borderRadius: 10, padding: '8px 16px', fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' }}>{t('academy.hero.searchBtn')}</button>
           </div>
 
           {/* Stats */}
           <div className="flex items-center justify-center gap-8 mt-12 flex-wrap">
             {[
-              { val: '6+', label: 'Khóa học', icon: '📚' },
-              { val: '10.2K', label: 'Học viên', icon: '👥' },
-              { val: '4.9★', label: 'Đánh giá TB', icon: '⭐' },
-              { val: '100%', label: 'Thực chiến', icon: '⚡' },
+              { val: '6+', label: t('academy.hero.statsCourses'), icon: '📚' },
+              { val: '10.2K', label: t('academy.hero.statsStudents'), icon: '👥' },
+              { val: '4.9★', label: t('academy.hero.statsRating'), icon: '⭐' },
+              { val: '100%', label: t('academy.hero.statsRealWorld'), icon: '⚡' },
             ].map(s => (
               <div key={s.label} className="text-center">
                 <div style={{ color: DS.purple, fontFamily: DS.heading, fontSize: 22, fontWeight: 700 }}>{s.icon} {s.val}</div>
@@ -274,14 +249,14 @@ export default function AcademyPage() {
               <Zap size={22} style={{ color: DS.purple }} />
             </div>
             <div className="flex-1 min-w-60">
-              <div style={{ color: DS.text, fontSize: 15, fontWeight: 700, marginBottom: 4 }}>Bạn có {USER_LP.toLocaleString('vi-VN')} LP — Dùng ngay để học!</div>
+              <div style={{ color: DS.text, fontSize: 15, fontWeight: 700, marginBottom: 4 }}>{t('academy.lpBanner.title', { lp: USER_LP.toLocaleString('vi-VN') })}</div>
               <div style={{ color: DS.text3, fontSize: 13, lineHeight: 1.6 }}>
-                LP của bạn có thể dùng để giảm giá tối đa 50% học phí hoặc thanh toán toàn phần cho một số khóa học. <span style={{ color: DS.purple }}>1,000 LP = 500,000 VNĐ giảm giá.</span>
+                {t('academy.lpBanner.subtitle')} <span style={{ color: DS.purple }}>{t('academy.lpBanner.discountNote')}</span>
               </div>
             </div>
             <div className="flex items-center gap-3 flex-wrap">
               <div style={{ color: DS.purple, fontFamily: DS.heading, fontSize: 20, fontWeight: 700 }}>{USER_LP.toLocaleString('vi-VN')} LP</div>
-              <div style={{ color: DS.text4, fontSize: 11 }}>≈ giảm được {fmtVND(Math.floor(USER_LP / 1000) * 500_000)}</div>
+              <div style={{ color: DS.text4, fontSize: 11 }}>{t('academy.lpBanner.discountLabel')} {fmtVND(Math.floor(USER_LP / 1000) * 500_000)}</div>
             </div>
           </div>
         </div>
@@ -290,7 +265,7 @@ export default function AcademyPage() {
       {/* ── Featured course ──────────────────────────────────────────────── */}
       <section className="px-6 mb-12">
         <div className="max-w-6xl mx-auto">
-          <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.18em', marginBottom: 16 }}>── KHÓA HỌC NỔI BẬT</div>
+          <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.18em', marginBottom: 16 }}>{t('academy.featured.sectionLabel')}</div>
           <motion.div
             className="grid grid-cols-1 lg:grid-cols-2 rounded-3xl overflow-hidden"
             style={{ background: 'linear-gradient(135deg, rgba(29,78,216,0.18) 0%, rgba(15,23,42,0.9) 100%)', border: '1.5px solid rgba(59,130,246,0.35)', boxShadow: '0 0 40px rgba(59,130,246,0.08)' }}
@@ -317,7 +292,7 @@ export default function AcademyPage() {
               <div className="flex items-center gap-2 mb-4 flex-wrap">
                 <span style={{ color: DS.blue, fontSize: 9, fontFamily: DS.mono, letterSpacing: '0.15em', padding: '2px 8px', borderRadius: 4, background: 'rgba(59,130,246,0.15)', border: '1px solid rgba(59,130,246,0.3)' }}>{featured.cat.toUpperCase()}</span>
                 <span style={{ color: levelColor[featured.level], fontSize: 9, fontFamily: DS.mono, letterSpacing: '0.12em', padding: '2px 8px', borderRadius: 4, background: `${levelColor[featured.level]}15` }}>{levelVN[featured.level].toUpperCase()}</span>
-                <span style={{ color: DS.amber, fontSize: 9, fontFamily: DS.mono, padding: '2px 8px', borderRadius: 4, background: `${DS.amber}12` }}>★ BÀI NỔI BẬT</span>
+                <span style={{ color: DS.amber, fontSize: 9, fontFamily: DS.mono, padding: '2px 8px', borderRadius: 4, background: `${DS.amber}12` }}>★ {t('academy.featured.featuredBadge')}</span>
               </div>
               <h2 style={{ color: DS.text, fontSize: 22, fontWeight: 700, lineHeight: 1.4, marginBottom: 12 }}>{featured.title}</h2>
               <div className="flex items-center gap-4 mb-4 flex-wrap">
@@ -328,8 +303,8 @@ export default function AcademyPage() {
                 </div>
               </div>
               <div className="flex items-center gap-5 mb-5 flex-wrap">
-                <div className="flex items-center gap-1.5" style={{ color: DS.text3, fontSize: 12 }}><Users size={13} />{featured.students.toLocaleString()} học viên</div>
-                <div className="flex items-center gap-1.5" style={{ color: DS.text3, fontSize: 12 }}><Clock size={13} />{featured.duration} · {featured.lectures} bài</div>
+                <div className="flex items-center gap-1.5" style={{ color: DS.text3, fontSize: 12 }}><Users size={13} />{featured.students.toLocaleString()} {t('academy.featured.students')}</div>
+                <div className="flex items-center gap-1.5" style={{ color: DS.text3, fontSize: 12 }}><Clock size={13} />{featured.duration} · {featured.lectures} {t('academy.featured.baihoc')}</div>
               </div>
               {/* Instructor mini */}
               <div className="flex items-center gap-2 mb-5 p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.04)', border: `1px solid ${DS.border}` }}>
@@ -345,14 +320,14 @@ export default function AcademyPage() {
                     {fmtVND(featured.price)}
                   </div>
                   <div style={{ color: DS.text5, fontSize: 12, textDecoration: 'line-through' }}>{fmtVND(featured.price * 1.3)}</div>
-                  <div style={{ color: DS.purple, fontSize: 11, fontFamily: DS.mono, marginTop: 2 }}>◈ hoặc {featured.lpPrice.toLocaleString()} LP toàn phần</div>
+                  <div style={{ color: DS.purple, fontSize: 11, fontFamily: DS.mono, marginTop: 2 }}>◈ {t('academy.featured.orLp', { lp: featured.lpPrice.toLocaleString() })}</div>
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={() => setPayModal(featured)} style={{ background: GRD.primary, color: '#fff', border: 'none', borderRadius: 12, padding: '12px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer', boxShadow: '0 0 20px rgba(59,130,246,0.4)', display: 'flex', alignItems: 'center', gap: 8 }}>
-                    Đăng ký <Zap size={13} />
+                  <button onClick={() => setPayModal(featured.id)} style={{ background: GRD.primary, color: '#fff', border: 'none', borderRadius: 12, padding: '12px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer', boxShadow: '0 0 20px rgba(59,130,246,0.4)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    {t('academy.featured.registerBtn')} <Zap size={13} />
                   </button>
                   <Link to={`/hoc-vien/${featured.id}`} style={{ background: 'rgba(59,130,246,0.1)', color: DS.blue, border: '1px solid rgba(59,130,246,0.3)', borderRadius: 12, padding: '12px 16px', fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, textDecoration: 'none' }}>
-                    Xem <ArrowRight size={13} />
+                    {t('academy.featured.viewBtn')} <ArrowRight size={13} />
                   </Link>
                 </div>
               </div>
@@ -366,13 +341,13 @@ export default function AcademyPage() {
         <div className="max-w-6xl mx-auto py-12">
           <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
             <div>
-              <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.18em', marginBottom: 6 }}>── LỘ TRÌNH HỌC TẬP</div>
-              <h2 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 22, fontWeight: 900, letterSpacing: '0.06em' }}>CHỌN LỘ TRÌNH PHÙ HỢP</h2>
+              <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.18em', marginBottom: 6 }}>{t('academy.paths.sectionLabel')}</div>
+              <h2 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 22, fontWeight: 900, letterSpacing: '0.06em' }}>{t('academy.paths.sectionTitle')}</h2>
             </div>
-            <div style={{ color: DS.text4, fontSize: 13 }}>Học theo thứ tự, nhận LP bonus khi hoàn thành trọn bộ</div>
+            <div style={{ color: DS.text4, fontSize: 13 }}>{t('academy.paths.subtitle')}</div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {PATHS.map((path, i) => (
+            {paths.map((path, i) => (
               <motion.div key={path.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}
                 className="rounded-2xl p-5 cursor-pointer group"
                 style={{ background: DS.bgCard, border: `1px solid ${DS.border}` }}
@@ -394,17 +369,17 @@ export default function AcademyPage() {
                       <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: `${path.color}20`, border: `1px solid ${path.color}40` }}>
                         <span style={{ color: path.color, fontSize: 9, fontFamily: DS.mono }}>{si + 1}</span>
                       </div>
-                      <span style={{ color: step.includes('Sắp') ? DS.text5 : DS.text3, fontSize: 12 }}>{step}</span>
+                      <span style={{ color: step.includes('Coming Soon') ? DS.text5 : DS.text3, fontSize: 12 }}>{step}</span>
                     </div>
                   ))}
                 </div>
                 <div className="flex items-center justify-between pt-3" style={{ borderTop: `1px solid ${DS.border}` }}>
                   <div className="flex items-center gap-3">
-                    <span style={{ color: DS.text4, fontSize: 11, display: 'flex', alignItems: 'center', gap: 3 }}><Clock size={11} />{path.duration}</span>
+                    <span style={{ color: DS.text4, fontSize: 11, display: 'flex', alignItems: 'center', gap: 3 }}><Clock size={11} />{path.duration} {t('academy.paths.hours')}</span>
                     <span style={{ color: DS.purple, fontSize: 11, display: 'flex', alignItems: 'center', gap: 3 }}><Zap size={11} />+{path.totalLP} LP</span>
                   </div>
                   <span style={{ color: path.color, fontSize: 11, fontFamily: DS.mono, display: 'flex', alignItems: 'center', gap: 3 }}>
-                    Xem lộ trình <ChevronRight size={11} />
+                    {t('academy.paths.viewPath')} <ChevronRight size={11} />
                   </span>
                 </div>
               </motion.div>
@@ -419,7 +394,7 @@ export default function AcademyPage() {
           <div className="flex items-center gap-3 flex-wrap">
             {/* Category tabs */}
             <div className="flex gap-2 flex-wrap flex-1">
-              {CATS.map(cat => (
+              {cats.map(cat => (
                 <button key={cat} onClick={() => setActiveCat(cat)}
                   style={{ padding: '7px 16px', borderRadius: 30, fontSize: 12, cursor: 'pointer', background: activeCat === cat ? GRD.primary : 'transparent', border: activeCat === cat ? 'none' : `1px solid ${DS.border}`, color: activeCat === cat ? '#fff' : DS.text3, transition: 'all 0.2s' }}>
                   {cat}
@@ -431,11 +406,11 @@ export default function AcademyPage() {
               <button onClick={() => setShowFilters(!showFilters)}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl"
                 style={{ background: hasFilters ? 'rgba(59,130,246,0.12)' : DS.bgCard, border: `1px solid ${hasFilters ? DS.blue + '40' : DS.border}`, color: hasFilters ? DS.blue : DS.text3, fontSize: 12, cursor: 'pointer' }}>
-                <Filter size={13} />Bộ lọc {hasFilters && `(${(activeCat !== 'Tất cả' ? 1 : 0) + (activeLevel !== 'Tất cả' ? 1 : 0)})`}
+                <Filter size={13} />{t('academy.filters.filterBtn')} {hasFilters && `(${(activeCat !== cats[0] ? 1 : 0) + (activeLevel !== cats[0] ? 1 : 0)})`}
               </button>
               <select value={sort} onChange={e => setSort(e.target.value)}
                 style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 12, padding: '8px 12px', color: DS.text3, fontSize: 12, outline: 'none', cursor: 'pointer' }}>
-                {SORTS.map(s => <option key={s.val} value={s.val}>{s.label}</option>)}
+                {sorts.map(s => <option key={s.val} value={s.val}>{s.label}</option>)}
               </select>
             </div>
           </div>
@@ -445,19 +420,19 @@ export default function AcademyPage() {
             {showFilters && (
               <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
                 <div className="mt-4 p-4 rounded-2xl" style={{ background: DS.bgCard, border: `1px solid ${DS.border}` }}>
-                  <div style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.15em', marginBottom: 12 }}>CẤP ĐỘ</div>
+                  <div style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.15em', marginBottom: 12 }}>{t('academy.filters.levelLabel')}</div>
                   <div className="flex gap-2 flex-wrap">
-                    {LEVELS.map(l => (
-                      <button key={l} onClick={() => setActiveLevel(l)}
+                    {Object.keys(levelColor).map(l => (
+                      <button key={l} onClick={() => setActiveLevel(l === cats[0] ? cats[0] : l)}
                         style={{ padding: '6px 14px', borderRadius: 20, fontSize: 12, cursor: 'pointer', background: activeLevel === l ? `${levelColor[l] ?? DS.blue}20` : 'transparent', border: `1px solid ${activeLevel === l ? (levelColor[l] ?? DS.blue) + '60' : DS.border}`, color: activeLevel === l ? (levelColor[l] ?? DS.blue) : DS.text3 }}>
-                        {l === 'Tất cả' ? 'Tất cả cấp độ' : levelVN[l]}
+                        {l === 'Beginner' ? cats[0] : levelVN[l]}
                       </button>
                     ))}
                   </div>
                   {hasFilters && (
-                    <button onClick={() => { setActiveCat('Tất cả'); setActiveLevel('Tất cả'); }}
+                    <button onClick={() => { setActiveCat(cats[0]); setActiveLevel(cats[0]); }}
                       style={{ marginTop: 12, color: DS.red, background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <X size={12} /> Xóa bộ lọc
+                      <X size={12} /> {t('academy.filters.clearFilters')}
                     </button>
                   )}
                 </div>
@@ -472,7 +447,7 @@ export default function AcademyPage() {
         <div className="max-w-6xl mx-auto">
           <div className="flex items-center justify-between mb-5">
             <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.18em' }}>
-              ── {filtered.length} KHÓA HỌC {search ? `cho "${search}"` : ''}
+              {t('academy.courseGrid.header', { count: String(filtered.length), search: search ? ` for "${search}"` : '' })}
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -496,7 +471,7 @@ export default function AcademyPage() {
                     </div>
                     {course.lpPrice <= USER_LP && (
                       <div className="absolute top-3 right-3">
-                        <span style={{ color: DS.purple, background: 'rgba(2,6,23,0.9)', border: '1px solid rgba(129,140,248,0.3)', borderRadius: 6, padding: '2px 7px', fontSize: 9, fontFamily: DS.mono, backdropFilter: 'blur(8px)' }}>◈ LP OK</span>
+                        <span style={{ color: DS.purple, background: 'rgba(2,6,23,0.9)', border: '1px solid rgba(129,140,248,0.3)', borderRadius: 6, padding: '2px 7px', fontSize: 9, fontFamily: DS.mono, backdropFilter: 'blur(8px)' }}>◈ {t('academy.courseCard.lpOk')}</span>
                       </div>
                     )}
                   </div>
@@ -516,7 +491,7 @@ export default function AcademyPage() {
                       <Star size={12} style={{ color: DS.amber, fill: DS.amber }} />
                       <span style={{ color: DS.amber, fontSize: 12, fontWeight: 700 }}>{course.rating}</span>
                       <span style={{ color: DS.text4, fontSize: 11 }}>({course.reviews})</span>
-                      <span style={{ color: DS.text5, marginLeft: 8, fontSize: 11 }}>{course.students.toLocaleString()} học viên · {course.duration}</span>
+                      <span style={{ color: DS.text5, marginLeft: 8, fontSize: 11 }}>{course.students.toLocaleString()} {t('academy.courseCard.students')} · {course.duration}</span>
                     </div>
                     {/* Price row */}
                     <div className="flex items-center justify-between pt-3" style={{ borderTop: `1px solid ${DS.border}` }}>
@@ -525,16 +500,16 @@ export default function AcademyPage() {
                           {fmtVND(course.price)}
                         </div>
                         <div style={{ color: DS.purple, fontSize: 10, fontFamily: DS.mono, marginTop: 1 }}>
-                          ◈ {course.lpPrice.toLocaleString()} LP · +{course.lpReward} LP hoàn thành
+                          ◈ {course.lpPrice.toLocaleString()} LP · {t('academy.courseCard.lpPrice', { lp: String(course.lpReward) })}
                         </div>
                       </div>
                       <div className="flex gap-2">
-                        <button onClick={() => setPayModal(course)}
+                        <button onClick={() => setPayModal(course.id)}
                           style={{ background: `${course.color}18`, border: `1px solid ${course.color}40`, borderRadius: 8, padding: '6px 10px', color: course.color, fontSize: 11, cursor: 'pointer', fontFamily: DS.mono }}>
-                          Đăng ký
+                          {t('academy.courseCard.registerBtn')}
                         </button>
                         <Link to={`/hoc-vien/${course.id}`} style={{ background: 'transparent', border: `1px solid ${DS.border}`, borderRadius: 8, padding: '6px 10px', color: DS.text4, fontSize: 11, cursor: 'pointer', fontFamily: DS.mono, textDecoration: 'none' }}>
-                          Xem
+                          {t('academy.courseCard.viewBtn')}
                         </Link>
                       </div>
                     </div>
@@ -547,10 +522,10 @@ export default function AcademyPage() {
           {filtered.length === 0 && (
             <div className="text-center py-20">
               <div style={{ color: DS.text4, fontSize: 40, marginBottom: 12 }}>◎</div>
-              <div style={{ color: DS.text3, fontSize: 14, marginBottom: 8 }}>Không tìm thấy khóa học phù hợp</div>
-              <button onClick={() => { setSearch(''); setActiveCat('Tất cả'); setActiveLevel('Tất cả'); }}
+              <div style={{ color: DS.text3, fontSize: 14, marginBottom: 8 }}>{t('academy.courseGrid.empty')}</div>
+              <button onClick={() => { setSearch(''); setActiveCat(cats[0]); setActiveLevel(cats[0]); }}
                 style={{ color: DS.blue, background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, fontFamily: DS.mono }}>
-                Xóa bộ lọc
+                {t('academy.courseGrid.clearFilters')}
               </button>
             </div>
           )}
@@ -561,27 +536,30 @@ export default function AcademyPage() {
       <section className="px-6 py-14" style={{ background: 'rgba(15,23,42,0.6)' }}>
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-10">
-            <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.18em', marginBottom: 8 }}>── GIẢNG VIÊN</div>
-            <h2 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 22, fontWeight: 900, letterSpacing: '0.06em' }}>HỌC TỪ NHỮNG CHUYÊN GIA HÀNG ĐẦU</h2>
+            <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.18em', marginBottom: 8 }}>{t('academy.instructors.sectionLabel')}</div>
+            <h2 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 22, fontWeight: 900, letterSpacing: '0.06em' }}>{t('academy.instructors.sectionTitle')}</h2>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
-            {INSTRUCTORS.map((ins, i) => (
+            {instructors.map((ins, i) => {
+              const staticIns = INSTRUCTORS_STATIC.find(s => s.name === ins.name) ?? INSTRUCTORS_STATIC[0];
+              return (
               <motion.div key={ins.name} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}
                 className="p-5 rounded-2xl text-center cursor-pointer"
                 style={{ background: DS.bgCard, border: `1px solid ${DS.border}` }}
-                whileHover={{ borderColor: `${ins.rankColor}40`, y: -4 }}>
-                <div className="w-16 h-16 rounded-2xl overflow-hidden mx-auto mb-3" style={{ border: `2px solid ${ins.rankColor}60`, boxShadow: `0 0 16px ${ins.rankColor}25` }}>
-                  <img src={ins.img} alt={ins.name} className="w-full h-full object-cover" />
+                whileHover={{ borderColor: `${staticIns.rankColor}40`, y: -4 }}>
+                <div className="w-16 h-16 rounded-2xl overflow-hidden mx-auto mb-3" style={{ border: `2px solid ${staticIns.rankColor}60`, boxShadow: `0 0 16px ${staticIns.rankColor}25` }}>
+                  <img src={staticIns.img} alt={ins.name} className="w-full h-full object-cover" />
                 </div>
                 <div style={{ color: DS.text, fontSize: 14, fontWeight: 700 }}>{ins.name}</div>
                 <div style={{ color: DS.text4, fontSize: 12, marginTop: 2 }}>{ins.role}</div>
-                <div style={{ color: ins.rankColor, fontSize: 10, fontFamily: DS.mono, marginTop: 4 }}>✦ {ins.rank.toUpperCase()}</div>
+                <div style={{ color: staticIns.rankColor, fontSize: 10, fontFamily: DS.mono, marginTop: 4 }}>✦ {ins.rank.toUpperCase()}</div>
                 <div className="flex items-center justify-center gap-3 mt-3 pt-3" style={{ borderTop: `1px solid ${DS.border}` }}>
-                  <span style={{ color: DS.text4, fontSize: 11 }}>📚 {ins.courses} khóa</span>
-                  <span style={{ color: DS.text4, fontSize: 11 }}>👥 {ins.students.toLocaleString()}</span>
+                  <span style={{ color: DS.text4, fontSize: 11 }}>📚 {ins.courses} {t('academy.instructors.courses')}</span>
+                  <span style={{ color: DS.text4, fontSize: 11 }}>👥 {ins.students.toLocaleString()} {t('academy.instructors.students')}</span>
                 </div>
               </motion.div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
@@ -590,11 +568,11 @@ export default function AcademyPage() {
       <section className="px-6 py-16">
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-10">
-            <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.18em', marginBottom: 8 }}>── FAQ</div>
-            <h2 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 22, fontWeight: 900, letterSpacing: '0.06em' }}>CÂU HỎI THƯỜNG GẶP</h2>
+            <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.18em', marginBottom: 8 }}>{t('academy.faq.sectionLabel')}</div>
+            <h2 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 22, fontWeight: 900, letterSpacing: '0.06em' }}>{t('academy.faq.sectionTitle')}</h2>
           </div>
           <div className="space-y-3">
-            {FAQS.map((faq, i) => (
+            {faqs.map((faq, i) => (
               <div key={i} className="rounded-2xl overflow-hidden" style={{ border: `1px solid ${openFaq === i ? DS.blue + '40' : DS.border}` }}>
                 <button onClick={() => setOpenFaq(openFaq === i ? null : i)}
                   className="w-full flex items-center justify-between p-5"
@@ -622,19 +600,19 @@ export default function AcademyPage() {
       {/* ── Bottom CTA ───────────────────────────────────────────────────── */}
       <section className="px-6 pb-20">
         <div className="max-w-3xl mx-auto text-center rounded-3xl p-12" style={{ background: 'linear-gradient(135deg, rgba(29,78,216,0.2), rgba(129,140,248,0.1))', border: '1px solid rgba(129,140,248,0.25)' }}>
-          <div style={{ color: DS.purple, fontFamily: DS.mono, fontSize: 11, letterSpacing: '0.2em', marginBottom: 12 }}>◈ LOOP ACADEMY</div>
+          <div style={{ color: DS.purple, fontFamily: DS.mono, fontSize: 11, letterSpacing: '0.2em', marginBottom: 12 }}>{t('academy.cta.label')}</div>
           <h2 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 26, fontWeight: 900, letterSpacing: '0.05em', marginBottom: 12 }}>
-            SẴN SÀNG NÂNG CẤP KỸ NĂNG?
+            {t('academy.cta.title')}
           </h2>
           <p style={{ color: DS.text3, fontSize: 14, lineHeight: 1.8, marginBottom: 24 }}>
-            Học cùng chuyên gia thực chiến, nhận LP thưởng và mở khóa đặc quyền trong hệ sinh thái LOOP.
+            {t('academy.cta.subtitle')}
           </p>
           <div className="flex items-center justify-center gap-3 flex-wrap">
             <Link to="/dat-lich" style={{ background: GRD.primary, color: '#fff', borderRadius: 12, padding: '12px 28px', fontSize: 14, fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8, boxShadow: '0 0 24px rgba(129,140,248,0.35)' }}>
-              Đặt tư vấn miễn phí <ArrowRight size={14} />
+              {t('academy.cta.bookFree')} <ArrowRight size={14} />
             </Link>
             <Link to="/hoc-vien/1" style={{ background: 'transparent', color: DS.text3, border: `1px solid ${DS.border}`, borderRadius: 12, padding: '12px 24px', fontSize: 14, textDecoration: 'none' }}>
-              Xem tất cả khóa học
+              {t('academy.cta.viewAll')}
             </Link>
           </div>
         </div>
@@ -643,7 +621,7 @@ export default function AcademyPage() {
       {/* Payment Modal */}
       <AnimatePresence>
         {payModal && (
-          <PaymentModal course={payModal} lpBalance={USER_LP} onClose={() => setPayModal(null)} />
+          <PaymentModal courseId={payModal} lpBalance={USER_LP} onClose={() => setPayModal(null)} />
         )}
       </AnimatePresence>
     </div>

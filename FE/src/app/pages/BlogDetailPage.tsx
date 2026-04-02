@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router';
 import { motion } from 'motion/react';
 import { ArrowLeft, Clock, User, Tag, Share2, Bookmark, ThumbsUp, MessageSquare } from 'lucide-react';
 import { DS } from '../components/layout/ds';
+import { useI18n } from '@/hooks/useI18n';
 
 const catColors: Record<string, string> = {
   Design: DS.blue,
@@ -112,6 +113,7 @@ const POSTS = [
 ];
 
 export default function BlogDetailPage() {
+  const { t } = useI18n();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [liked, setLiked] = useState(false);
@@ -136,9 +138,9 @@ export default function BlogDetailPage() {
         }}
       >
         <div style={{ color: DS.text5, fontSize: 64, fontFamily: DS.mono }}>404</div>
-        <div style={{ color: DS.text3, fontSize: 18 }}>Bài viết không tồn tại</div>
+        <div style={{ color: DS.text3, fontSize: 18 }}>{t('blog.detail.notFound')}</div>
         <Link to="/blog" style={{ color: DS.blue, fontFamily: DS.mono, fontSize: 13 }}>
-          ← Quay lại Blog
+          ← {t('blog.detail.backToBlog')}
         </Link>
       </div>
     );
@@ -190,7 +192,7 @@ export default function BlogDetailPage() {
                 marginBottom: 20,
               }}
             >
-              <ArrowLeft size={13} /> QUAY LẠI BLOG
+              <ArrowLeft size={13} /> {t('blog.detail.backToBlog').toUpperCase()}
             </button>
             <div className="flex items-center gap-3 mb-4 flex-wrap">
               <span
@@ -216,7 +218,7 @@ export default function BlogDetailPage() {
                   gap: 4,
                 }}
               >
-                <Clock size={11} /> {post.time} đọc
+                <Clock size={11} /> {t('blog.detail.readTime', { min: Number(post.time.replace(/\D/g, '')) })}
               </span>
               <span style={{ color: DS.text5, fontSize: 12 }}>{post.date}</span>
             </div>
@@ -264,7 +266,7 @@ export default function BlogDetailPage() {
               <div>
                 <div style={{ color: DS.text2, fontSize: 14, fontWeight: 600 }}>{post.author}</div>
                 <div style={{ color: DS.text5, fontSize: 12, fontFamily: DS.mono }}>
-                  LOOP Solutions · Senior Specialist
+                  {t('blog.detail.authorRole')}
                 </div>
               </div>
               <div className="ml-auto flex gap-2">
@@ -385,7 +387,7 @@ export default function BlogDetailPage() {
                 className="flex items-center gap-2 mb-6"
                 style={{ color: DS.text3, fontSize: 14, fontFamily: DS.mono, letterSpacing: '0.1em' }}
               >
-                <MessageSquare size={15} /> BÌNH LUẬN (12)
+                <MessageSquare size={15} /> {t('blog.detail.comments')}
               </div>
               <div
                 style={{
@@ -398,12 +400,12 @@ export default function BlogDetailPage() {
                   border: `1px dashed ${DS.border}`,
                 }}
               >
-                Đăng nhập để tham gia thảo luận →{' '}
+                {t('blog.detail.loginToComment')}{' '}
                 <Link
                   to="/dang-nhap"
                   style={{ color: catColor, textDecoration: 'none' }}
                 >
-                  Đăng nhập
+                  {t('blog.detail.login')}
                 </Link>
               </div>
             </div>
@@ -425,13 +427,13 @@ export default function BlogDetailPage() {
                   marginBottom: 12,
                 }}
               >
-                ── THÔNG TIN BÀI VIẾT
+                ── {t('blog.detail.postInfo')}
               </div>
               {[
-                { label: 'Chuyên mục', value: post.cat },
-                { label: 'Thời gian đọc', value: post.time },
-                { label: 'Ngày đăng', value: post.date },
-                { label: 'Tác giả', value: post.author },
+                { label: t('blog.detail.category'), value: post.cat },
+                { label: t('blog.detail.readTimeShort', { min: post.time }) },
+                { label: t('blog.detail.publishedOn'), value: post.date },
+                { label: t('blog.article.author'), value: post.author },
               ].map((item) => (
                 <div
                   key={item.label}
@@ -460,7 +462,7 @@ export default function BlogDetailPage() {
                   marginBottom: 16,
                 }}
               >
-                ── BÀI VIẾT LIÊN QUAN
+                ── {t('blog.detail.relatedShort')}
               </div>
               <div className="space-y-4">
                 {related.map((r) => (
@@ -493,7 +495,7 @@ export default function BlogDetailPage() {
                           {r.title.slice(0, 55)}...
                         </div>
                         <div style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono }}>
-                          {r.time} đọc
+                          {t('blog.detail.readTimeShort', { min: Number(r.time.replace(/\D/g, '')) })}
                         </div>
                       </div>
                     </div>
@@ -519,10 +521,10 @@ export default function BlogDetailPage() {
                   marginBottom: 8,
                 }}
               >
-                LOOP ACADEMY
+                {t('blog.detail.academyCta')}
               </div>
               <div style={{ color: DS.text2, fontSize: 13, fontWeight: 600, marginBottom: 12 }}>
-                Học sâu hơn về {post.cat}
+                {t('blog.detail.learnMore')} {post.cat}
               </div>
               <Link
                 to="/hoc-vien"
@@ -538,7 +540,7 @@ export default function BlogDetailPage() {
                   fontWeight: 700,
                 }}
               >
-                XEM KHÓA HỌC
+                {t('blog.detail.viewCourses')}
               </Link>
             </div>
           </div>

@@ -1,41 +1,43 @@
 import { Link } from 'react-router';
 import { DS, GRD } from './ds';
 import { Mail, Phone, MapPin, Send, Zap, Globe, Shield, BookOpen, Settings } from 'lucide-react';
+import { useI18n } from '@/hooks/useI18n';
 
 export function Footer() {
+  const { t } = useI18n();
+
   const cols = [
     {
-      title: 'Dịch vụ',
+      title: t('footer.services'),
       icon: <Globe size={14} />,
       links: [
-        { label: 'Thiết kế Website', href: '/dich-vu' },
-        { label: 'Phát triển App', href: '/dich-vu' },
-        { label: 'SaaS Platform', href: '/dich-vu' },
-        { label: 'SEO & Marketing', href: '/dich-vu' },
-        { label: 'Đặt lịch tư vấn', href: '/dat-lich' },
+        { label: t('footer.webDesign'), href: '/dich-vu' },
+        { label: t('footer.appDev'), href: '/dich-vu' },
+        { label: t('footer.saaS'), href: '/dich-vu' },
+        { label: t('footer.seoMarketing'), href: '/dich-vu' },
+        { label: t('footer.bookConsultation'), href: '/dat-lich' },
       ],
     },
     {
-      title: 'Tài nguyên',
+      title: t('footer.resources'),
       icon: <BookOpen size={14} />,
       links: [
-        { label: 'Học viện LOOP', href: '/hoc-vien' },
-        { label: 'Blog & Insights', href: '/blog' },
-        { label: 'Portfolio dự án', href: '/du-an' },
-        { label: 'Hệ thống LP', href: '/khach-hang' },
-        { label: 'Bảo giá dịch vụ', href: '/bao-gia' },
+        { label: t('footer.academy'), href: '/hoc-vien' },
+        { label: t('footer.blog'), href: '/blog' },
+        { label: t('footer.portfolio'), href: '/du-an' },
+        { label: t('footer.lpSystem'), href: '/khach-hang' },
+        { label: t('footer.pricing'), href: '/bao-gia' },
       ],
     },
     {
-      title: 'Công ty',
+      title: t('footer.company'),
       icon: <Shield size={14} />,
       links: [
-        { label: 'Về chúng tôi', href: '/' },
-        { label: 'Đội ngũ', href: '/doi-ngu' },
-        { label: 'Tuyển dụng', href: '/lien-he' },
-        { label: 'Quy trình công ty', href: '/quy-trinh' },
-        { label: 'Điều khoản', href: '/' },
-        { label: 'Liên hệ', href: '/lien-he' },
+        { label: t('footer.about'), href: '/' },
+        { label: t('navbar.team'), href: '/doi-ngu' },
+        { label: t('footer.careers'), href: '/lien-he' },
+        { label: t('footer.process'), href: '/quy-trinh' },
+        { label: t('footer.contact'), href: '/lien-he' },
       ],
     },
   ];
@@ -56,7 +58,9 @@ export function Footer() {
             style={{ background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.25)' }}
           >
             <Zap size={12} style={{ color: DS.blue }} />
-            <span style={{ color: DS.blue, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.18em' }}>BẮT ĐẦU HÀNH TRÌNH</span>
+            <span style={{ color: DS.blue, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.18em' }}>
+              {t('landing.cta.badge')}
+            </span>
           </div>
           <h2
             style={{
@@ -70,10 +74,10 @@ export function Footer() {
               marginBottom: 12,
             }}
           >
-            SẴN SÀNG NÂNG CẤP DIGITAL?
+            {t('footer.ctaTitle')}
           </h2>
           <p style={{ color: DS.text3, fontSize: 15, marginBottom: 32, lineHeight: 1.7 }}>
-            Tư vấn miễn phí 30 phút. Nhận ngay <span style={{ color: DS.blue, fontWeight: 700 }}>500 LP</span> điểm thưởng khi đăng ký hôm nay.
+            {t('footer.ctaDesc')}
           </p>
           <div className="flex items-center justify-center gap-4 flex-wrap">
             <Link
@@ -89,7 +93,7 @@ export function Footer() {
                 boxShadow: '0 0 24px rgba(129,140,248,0.4)',
               }}
             >
-              Đặt lịch tư vấn →
+              {t('footer.ctaButton')}
             </Link>
             <Link
               to="/du-an"
@@ -102,7 +106,7 @@ export function Footer() {
                 textDecoration: 'none',
               }}
             >
-              Xem portfolio
+              {t('footer.portfolio')}
             </Link>
           </div>
         </div>
@@ -128,7 +132,7 @@ export function Footer() {
               </div>
             </div>
             <p style={{ color: DS.text4, fontSize: 13, lineHeight: 1.8, marginBottom: 20 }}>
-              Hệ điều hành số cho Digital Agency. Kết hợp công nghệ tiên tiến với hệ thống LP gamified, biến công việc thành trải nghiệm đáng nhớ.
+              {t('footer.brand')}
             </p>
             {/* Contact info */}
             <div className="space-y-2.5">
@@ -146,12 +150,12 @@ export function Footer() {
             {/* Newsletter */}
             <div className="mt-6">
               <div style={{ color: DS.text3, fontSize: 12, marginBottom: 8, fontFamily: DS.mono, letterSpacing: '0.1em' }}>
-                ── NHẬN CẬP NHẬT
+                {t('footer.newsletter')}
               </div>
               <div className="flex gap-2">
                 <input
                   type="email"
-                  placeholder="email@company.vn"
+                  placeholder={t('footer.newsletterPlaceholder')}
                   style={{
                     flex: 1,
                     background: DS.bgCard2,
@@ -212,7 +216,7 @@ export function Footer() {
           style={{ borderTop: `1px solid ${DS.border}` }}
         >
           <div style={{ color: DS.text5, fontSize: 12, fontFamily: DS.mono }}>
-            © 2026 LOOP SOLUTIONS. All rights reserved.
+            {t('footer.copyright')}
           </div>
 
           <div className="flex items-center gap-2">
@@ -247,11 +251,11 @@ export function Footer() {
             onMouseLeave={e => { e.currentTarget.style.color = DS.text5; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; }}
           >
             <Settings size={11} />
-            ADMIN
+            {t('navbar.adminDashboard').split(' ')[0].toUpperCase()}
           </Link>
 
           <div style={{ color: DS.text5, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.15em' }}>
-            SEASON III · 2026
+            {t('footer.seasonBadge')}
           </div>
         </div>
       </div>

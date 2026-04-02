@@ -4,6 +4,7 @@
  * Secondary: Dịch vụ Tùy chỉnh · Bảng giá
  */
 import { useState } from 'react';
+import { useI18n } from '@/hooks/useI18n';
 import { Link } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
 import {
@@ -55,7 +56,6 @@ export interface WebPackage {
 export const WEB_PACKAGES: WebPackage[] = [
   {
     id: 'nha-hang',
-    industry: 'Web Nhà hàng',
     icon: '🍜',
     color: '#F59E0B',
     gradFrom: '#F59E0B',
@@ -77,7 +77,6 @@ export const WEB_PACKAGES: WebPackage[] = [
   },
   {
     id: 'spa',
-    industry: 'Web Spa & Làm đẹp',
     icon: '💆',
     color: '#C084FC',
     gradFrom: '#C084FC',
@@ -261,6 +260,7 @@ type Category = typeof CATEGORIES[number];
 // ── Trial/Buy Modal ────────────────────────────────────────────────────────────
 
 function PackageModal({ pkg, onClose }: { pkg: WebPackage; onClose: () => void }) {
+  const { t } = useI18n();
   const [step, setStep] = useState<'detail' | 'trial' | 'buy' | 'success'>('detail');
   const [flowType, setFlowType] = useState<'trial' | 'buy'>('trial');
   const [openFaq, setOpenFaq] = useState<number | null>(null);
@@ -270,10 +270,10 @@ function PackageModal({ pkg, onClose }: { pkg: WebPackage; onClose: () => void }
   const handleConfirm = () => setStep('success');
 
   const faqs = [
-    { q: 'Dùng thử có mất phí không?', a: 'Hoàn toàn MIỄN PHÍ. Bạn được trải nghiệm đầy đủ giao diện và tính năng demo trong ' + pkg.trialDays + ' ngày.' },
-    { q: 'Sau khi dùng thử tôi có cần mua không?', a: 'Không bắt buộc. Sau khi hết hạn dùng thử, website demo sẽ tạm ngưng. Bạn có thể quyết định mua gói full bất cứ lúc nào.' },
-    { q: 'Gói full bao gồm những gì?', a: 'Tất cả tính năng đã liệt kê, domain tùy chỉnh (.vn/.com), hosting 1 năm, SSL, bàn giao source code và bảo hành 6 tháng.' },
-    { q: 'Có thể tùy chỉnh thiết kế không?', a: 'Gói Web Doanh Nghiệp có template cố định (có thể thay màu, logo, nội dung). Nếu cần thiết kế hoàn toàn riêng, xem Dịch vụ Tùy chỉnh của chúng tôi.' },
+    { q: t('services.faqQ1'), a: t('services.faqA1', { days: pkg.trialDays }) },
+    { q: t('services.faqQ2'), a: t('services.faqA2') },
+    { q: t('services.faqQ3'), a: t('services.faqA3') },
+    { q: t('services.faqQ4'), a: t('services.faqA4') },
   ];
 
   return (
@@ -317,8 +317,8 @@ function PackageModal({ pkg, onClose }: { pkg: WebPackage; onClose: () => void }
                     <CalendarClock size={20} style={{ color: pkg.color }} />
                   </div>
                   <div className="flex-1">
-                    <div style={{ color: pkg.color, fontSize: 13, fontWeight: 700 }}>Dùng thử {pkg.trialDays} ngày — MIỄN PHÍ</div>
-                    <div style={{ color: DS.text4, fontSize: 11 }}>Kích hoạt trong {pkg.activateTime} · Đầy đủ tính năng demo</div>
+                    <div style={{ color: pkg.color, fontSize: 13, fontWeight: 700 }}>{t('services.modalFreeTrial', { days: pkg.trialDays })}</div>
+                    <div style={{ color: DS.text4, fontSize: 11 }}>{t('services.modalActivate', { time: pkg.activateTime })}</div>
                   </div>
                   <div style={{ color: DS.green, fontSize: 11, fontFamily: DS.mono, fontWeight: 700, background: 'rgba(34,197,94,0.12)', padding: '4px 10px', borderRadius: 8 }}>FREE</div>
                 </div>
@@ -326,20 +326,20 @@ function PackageModal({ pkg, onClose }: { pkg: WebPackage; onClose: () => void }
                 {/* Pricing */}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="p-4 rounded-2xl text-center" style={{ background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.2)' }}>
-                    <div style={{ color: DS.green, fontSize: 11, fontFamily: DS.mono, marginBottom: 4 }}>DÙNG THỬ</div>
-                    <div style={{ color: DS.green, fontSize: 24, fontWeight: 900 }}>MIỄN PHÍ</div>
-                    <div style={{ color: DS.text5, fontSize: 10 }}>{pkg.trialDays} ngày · Kích hoạt trong {pkg.activateTime}</div>
+                    <div style={{ color: DS.green, fontSize: 11, fontFamily: DS.mono, marginBottom: 4 }}>{t('services.modalTrialSection')}</div>
+                    <div style={{ color: DS.green, fontSize: 24, fontWeight: 900 }}>{t('services.modalTrialFree')}</div>
+                    <div style={{ color: DS.text5, fontSize: 10 }}>{t('services.modalTrialDays', { days: pkg.trialDays, time: pkg.activateTime })}</div>
                   </div>
                   <div className="p-4 rounded-2xl text-center" style={{ background: `${pkg.color}08`, border: `1px solid ${pkg.color}30` }}>
-                    <div style={{ color: pkg.color, fontSize: 11, fontFamily: DS.mono, marginBottom: 4 }}>GÓI FULL</div>
+                    <div style={{ color: pkg.color, fontSize: 11, fontFamily: DS.mono, marginBottom: 4 }}>{t('services.modalFullSection')}</div>
                     <div style={{ color: pkg.color, fontSize: 20, fontWeight: 900 }}>{new Intl.NumberFormat('vi-VN').format(pkg.fullPrice)}</div>
-                    <div style={{ color: DS.text5, fontSize: 10 }}>VNĐ · Bảo hành 6 tháng</div>
+                    <div style={{ color: DS.text5, fontSize: 10 }}>{t('services.modalFullWarranty')}</div>
                   </div>
                 </div>
 
                 {/* Features */}
                 <div>
-                  <div style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: '0.12em', marginBottom: 10 }}>TÍNH NĂNG BAO GỒM ({pkg.features.length})</div>
+                  <div style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: '0.12em', marginBottom: 10 }}>{t('services.modalFeatures')} ({pkg.features.length})</div>
                   <div className="grid grid-cols-2 gap-2">
                     {pkg.features.map((f, i) => (
                       <div key={i} className="flex items-start gap-2">
@@ -378,8 +378,8 @@ function PackageModal({ pkg, onClose }: { pkg: WebPackage; onClose: () => void }
 
                 {/* LP note */}
                 <div className="p-3 rounded-xl" style={{ background: 'rgba(129,140,248,0.06)', border: '1px solid rgba(129,140,248,0.2)' }}>
-                  <span style={{ color: DS.purple, fontSize: 10, fontFamily: DS.mono }}>◈ LP THƯỞNG: </span>
-                  <span style={{ color: DS.text4, fontSize: 12 }}>Nhận <strong style={{ color: DS.purple }}>{pkg.lp.toLocaleString()} LP</strong> sau khi thanh toán gói Full — quy đổi giảm giá dịch vụ tiếp theo.</span>
+                  <span style={{ color: DS.purple, fontSize: 10, fontFamily: DS.mono }}>{t('services.formLPReward')}: </span>
+                  <span style={{ color: DS.text4, fontSize: 12 }}>{t('services.formLPRewardMsg', { lp: pkg.lp.toLocaleString() })}</span>
                 </div>
               </motion.div>
             )}
@@ -387,18 +387,18 @@ function PackageModal({ pkg, onClose }: { pkg: WebPackage; onClose: () => void }
             {(step === 'trial' || step === 'buy') && (
               <motion.div key="form" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="p-6 space-y-4">
                 <div style={{ color: DS.text, fontSize: 16, fontWeight: 700, marginBottom: 4 }}>
-                  {step === 'trial' ? `🎯 Kích hoạt dùng thử ${pkg.trialDays} ngày` : `🚀 Mua gói Full — ${new Intl.NumberFormat('vi-VN').format(pkg.fullPrice)} VNĐ`}
+                  {step === 'trial' ? t('services.modalTrialActivate', { days: pkg.trialDays }) : t('services.modalBuyActivate', { price: new Intl.NumberFormat('vi-VN').format(pkg.fullPrice) })}
                 </div>
                 <div style={{ color: DS.text4, fontSize: 12, marginBottom: 16 }}>
-                  {step === 'trial' ? 'Điền thông tin để nhận link demo trong ' + pkg.activateTime : 'Đặt hàng và nhận website hoàn chỉnh trong 24-48 giờ'}
+                  {step === 'trial' ? t('services.modalTrialSub', { time: pkg.activateTime }) : t('services.modalBuySub')}
                 </div>
                 <div className="space-y-3">
                   {[
-                    { label: 'Họ và tên', placeholder: 'Nguyễn Văn A' },
-                    { label: 'Số điện thoại', placeholder: '09xx xxx xxx' },
-                    { label: 'Email', placeholder: 'email@doanhnghiep.vn' },
-                    { label: 'Tên doanh nghiệp', placeholder: `Ví dụ: ${pkg.industry.replace('Web ', '')} Hoàng Gia` },
-                    ...(step === 'buy' ? [{ label: 'Địa chỉ website mong muốn', placeholder: 'tenwebsite.vn (không bắt buộc)' }] : []),
+                    { label: t('services.formName'), placeholder: t('services.formNamePlaceholder') },
+                    { label: t('services.formPhone'), placeholder: t('services.formPhonePlaceholder') },
+                    { label: t('services.formEmail'), placeholder: t('services.formEmailPlaceholder') },
+                    { label: t('services.formBusiness'), placeholder: t('services.formBusinessPlaceholder', { name: pkg.industry.replace('Web ', '') }) },
+                    ...(step === 'buy' ? [{ label: t('services.formDomain'), placeholder: t('services.formDomainPlaceholder') }] : []),
                   ].map(f => (
                     <div key={f.label}>
                       <label style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono, display: 'block', marginBottom: 5 }}>{f.label.toUpperCase()}</label>
@@ -410,11 +410,11 @@ function PackageModal({ pkg, onClose }: { pkg: WebPackage; onClose: () => void }
                 <div className="flex gap-3 pt-2">
                   <button onClick={() => setStep('detail')}
                     style={{ padding: '12px 16px', background: DS.bgCard2, border: `1px solid ${DS.border}`, borderRadius: 12, color: DS.text3, cursor: 'pointer', fontSize: 13 }}>
-                    ← Quay lại
+                    ← {t('services.formBack')}
                   </button>
                   <button onClick={handleConfirm}
                     style={{ flex: 1, background: step === 'trial' ? 'linear-gradient(135deg, #22C55E, #14B8A6)' : GRD.primary, color: '#fff', border: 'none', borderRadius: 12, padding: '12px', cursor: 'pointer', fontSize: 14, fontWeight: 700 }}>
-                    {step === 'trial' ? '✓ Kích hoạt dùng thử ngay' : '✓ Xác nhận đặt hàng'}
+                    {step === 'trial' ? `✓ ${t('services.formConfirmTrial')}` : `✓ ${t('services.formConfirmBuy')}`}
                   </button>
                 </div>
               </motion.div>
@@ -428,21 +428,21 @@ function PackageModal({ pkg, onClose }: { pkg: WebPackage; onClose: () => void }
                   {flowType === 'trial' ? '🎉' : '🚀'}
                 </motion.div>
                 <div style={{ color: DS.text, fontSize: 20, fontWeight: 800, marginBottom: 8 }}>
-                  {flowType === 'trial' ? 'Đăng ký thành công!' : 'Đặt hàng thành công!'}
+                  {flowType === 'trial' ? t('services.formSuccessTrial') : t('services.formSuccessBuy')}
                 </div>
                 <p style={{ color: DS.text3, fontSize: 13, lineHeight: 1.8, marginBottom: 24, maxWidth: 380, margin: '0 auto 24px' }}>
                   {flowType === 'trial'
-                    ? <>Team LOOP sẽ liên hệ bạn trong <strong style={{ color: DS.green }}>{pkg.activateTime}</strong> để gửi link demo {pkg.industry}. Kiểm tra email & điện thoại nhé!</>
-                    : <>Cảm ơn bạn đã tin tưởng LOOP! Team sẽ liên hệ trong <strong style={{ color: DS.blue }}>2 giờ làm việc</strong>. <span style={{ color: DS.purple }}>◈ {pkg.lp.toLocaleString()} LP</span> sẽ ghi nhận sau bàn giao.</>}
+                    ? t('services.formSuccessTrialMsg', { time: pkg.activateTime })
+                    : t('services.formSuccessBuyMsg')}
                 </p>
                 <div className="flex gap-3 justify-center">
                   <button onClick={onClose}
                     style={{ background: GRD.primary, color: '#fff', border: 'none', borderRadius: 12, padding: '12px 28px', cursor: 'pointer', fontSize: 14, fontWeight: 700 }}>
-                    Xong
+                    {t('services.formDone')}
                   </button>
                   <Link to="/dat-lich" onClick={onClose}
                     style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '12px 20px', borderRadius: 12, background: DS.bgCard2, border: `1px solid ${DS.border}`, color: DS.text3, fontSize: 13, textDecoration: 'none' }}>
-                    <Phone size={13} /> Đặt lịch tư vấn
+                    <Phone size={13} /> {t('services.formBookConsult')}
                   </Link>
                 </div>
               </motion.div>
@@ -456,12 +456,12 @@ function PackageModal({ pkg, onClose }: { pkg: WebPackage; onClose: () => void }
             <button onClick={handleTrial}
               className="flex items-center justify-center gap-2"
               style={{ flex: 1, background: 'linear-gradient(135deg, rgba(34,197,94,0.15), rgba(20,184,166,0.15))', border: '1px solid rgba(34,197,94,0.35)', borderRadius: 12, padding: '13px', cursor: 'pointer', color: DS.green, fontSize: 14, fontWeight: 700 }}>
-              <Play size={14} /> Dùng thử {pkg.trialDays} ngày FREE
+              <Play size={14} /> {t('services.pkgTrial', { days: pkg.trialDays })}
             </button>
             <button onClick={handleBuy}
               className="flex items-center justify-center gap-2"
               style={{ flex: 1, background: GRD.primary, border: 'none', borderRadius: 12, padding: '13px', cursor: 'pointer', color: '#fff', fontSize: 14, fontWeight: 700, boxShadow: `0 0 24px ${pkg.color}30` }}>
-              <ShoppingCart size={14} /> Mua ngay
+              <ShoppingCart size={14} /> {t('services.pkgBuyNow')}
             </button>
           </div>
         )}
@@ -473,6 +473,8 @@ function PackageModal({ pkg, onClose }: { pkg: WebPackage; onClose: () => void }
 // ── Package Card ───────────────────────────────────────────────────────────────
 
 function PackageCard({ pkg, layout, onClick }: { pkg: WebPackage; layout: 'grid' | 'list'; onClick: () => void }) {
+  const { t } = useI18n();
+
   if (layout === 'list') {
     return (
       <motion.div onClick={onClick}
@@ -491,13 +493,13 @@ function PackageCard({ pkg, layout, onClick }: { pkg: WebPackage; layout: 'grid'
           </div>
           <div style={{ color: DS.text5, fontSize: 11, marginBottom: 4 }}>{pkg.tagline}</div>
           <div className="flex items-center gap-3">
-            <span style={{ color: DS.green, fontSize: 10, fontFamily: DS.mono, background: 'rgba(34,197,94,0.1)', padding: '2px 7px', borderRadius: 5 }}>Thử {pkg.trialDays}N FREE</span>
-            <span style={{ color: DS.text5, fontSize: 10 }}>Kích hoạt {pkg.activateTime}</span>
+            <span style={{ color: DS.green, fontSize: 10, fontFamily: DS.mono, background: 'rgba(34,197,94,0.1)', padding: '2px 7px', borderRadius: 5 }}>{t('services.pkgTrialBadge', { days: pkg.trialDays })}</span>
+            <span style={{ color: DS.text5, fontSize: 10 }}>{t('services.pkgActivate', { time: pkg.activateTime })}</span>
           </div>
         </div>
         <div className="text-right flex-shrink-0">
           <div style={{ color: pkg.color, fontSize: 15, fontWeight: 800 }}>{new Intl.NumberFormat('vi-VN').format(pkg.fullPrice)}</div>
-          <div style={{ color: DS.text5, fontSize: 9, fontFamily: DS.mono }}>VNĐ / GÓI FULL</div>
+          <div style={{ color: DS.text5, fontSize: 9, fontFamily: DS.mono }}>{t('services.pkgPrice')}</div>
         </div>
         <ChevronRight size={16} style={{ color: DS.text5, flexShrink: 0 }} />
       </motion.div>
@@ -528,12 +530,12 @@ function PackageCard({ pkg, layout, onClick }: { pkg: WebPackage; layout: 'grid'
         </div>
         <div className="absolute top-3 right-3">
           <span style={{ color: DS.green, fontSize: 9, fontFamily: DS.mono, fontWeight: 700, background: 'rgba(34,197,94,0.18)', border: '1px solid rgba(34,197,94,0.4)', padding: '2px 7px', borderRadius: 8, backdropFilter: 'blur(6px)' }}>
-            THỬ {pkg.trialDays}N FREE
+            {t('services.pkgTrialBadge', { days: pkg.trialDays }).toUpperCase()}
           </span>
         </div>
 
         {/* Icon */}
-        <div className="absolute bottom-3 left-4">
+        < <div className="absolute bottom-3 left-4">
           <span style={{ fontSize: 28, filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.5))' }}>{pkg.icon}</span>
         </div>
       </div>
@@ -552,7 +554,7 @@ function PackageCard({ pkg, layout, onClick }: { pkg: WebPackage; layout: 'grid'
         {/* Price row */}
         <div className="flex items-end justify-between pt-3" style={{ borderTop: `1px solid ${DS.border}` }}>
           <div>
-            <div style={{ color: DS.text5, fontSize: 9, fontFamily: DS.mono, marginBottom: 1 }}>GÓI FULL</div>
+            <div style={{ color: DS.text5, fontSize: 9, fontFamily: DS.mono, marginBottom: 1 }}>{t('services.pkgFull')}</div>
             <div style={{ color: pkg.color, fontSize: 15, fontWeight: 800 }}>
               {new Intl.NumberFormat('vi-VN').format(pkg.fullPrice)} <span style={{ fontSize: 10, fontFamily: DS.mono }}>VNĐ</span>
             </div>
@@ -560,7 +562,7 @@ function PackageCard({ pkg, layout, onClick }: { pkg: WebPackage; layout: 'grid'
           <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl"
             style={{ background: `${pkg.color}12`, border: `1px solid ${pkg.color}30` }}>
             <Eye size={12} style={{ color: pkg.color }} />
-            <span style={{ color: pkg.color, fontSize: 11, fontWeight: 700 }}>Xem chi tiết</span>
+            <span style={{ color: pkg.color, fontSize: 11, fontWeight: 700 }}>{t('services.pkgViewDetails')}</span>
           </div>
         </div>
       </div>
@@ -570,11 +572,12 @@ function PackageCard({ pkg, layout, onClick }: { pkg: WebPackage; layout: 'grid'
 
 // ── Main Services Page ─────────────────────────────────────────────────────────
 
-const PAGE_TABS = ['Gói Web Doanh Nghiệp', 'Dịch vụ Tùy chỉnh', 'Bảng giá'] as const;
+const PAGE_TABS = ['tabWebPackage', 'tabCustom', 'tabPricing'] as const;
 type PageTab = typeof PAGE_TABS[number];
 
 export default function ServicesPage() {
-  const [activeTab, setActiveTab] = useState<PageTab>('Gói Web Doanh Nghiệp');
+  const { t } = useI18n();
+  const [activeTab, setActiveTab] = useState<PageTab>('tabWebPackage');
   const [category, setCategory] = useState<Category>('tất cả');
   const [layout, setLayout] = useState<'grid' | 'list'>('grid');
   const [selectedPkg, setSelectedPkg] = useState<WebPackage | null>(null);
@@ -623,16 +626,16 @@ export default function ServicesPage() {
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
             className="flex flex-wrap justify-center gap-4 mb-10">
             {[
-              { val: `${WEB_PACKAGES.length}`, label: 'Loại website', color: DS.blue, icon: '🌐' },
-              { val: 'FREE', label: 'Dùng thử 3-5 ngày', color: DS.green, icon: '🎯' },
-              { val: '2 giờ', label: 'Thời gian kích hoạt', color: DS.amber, icon: '⚡' },
-              { val: '100%', label: 'Giá cố định', color: DS.purple, icon: '✅' },
+              { val: `${WEB_PACKAGES.length}`, labelKey: 'services.statsTypes', color: DS.blue, icon: '🌐' },
+              { val: 'FREE', labelKey: 'services.statsFreeTrial', color: DS.green, icon: '🎯' },
+              { val: '2 giờ', labelKey: 'services.statsActivation', color: DS.amber, icon: '⚡' },
+              { val: '100%', labelKey: 'services.statsFixedPrice', color: DS.purple, icon: '✅' },
             ].map(s => (
-              <div key={s.label} className="flex items-center gap-2 px-4 py-2 rounded-full"
+              <div key={s.labelKey} className="flex items-center gap-2 px-4 py-2 rounded-full"
                 style={{ background: `${s.color}10`, border: `1px solid ${s.color}25` }}>
                 <span>{s.icon}</span>
                 <span style={{ color: s.color, fontFamily: DS.mono, fontSize: 13, fontWeight: 800 }}>{s.val}</span>
-                <span style={{ color: DS.text5, fontSize: 11 }}>{s.label}</span>
+                <span style={{ color: DS.text5, fontSize: 11 }}>{t(s.labelKey)}</span>
               </div>
             ))}
           </motion.div>
@@ -645,8 +648,8 @@ export default function ServicesPage() {
           {PAGE_TABS.map(tab => (
             <button key={tab} onClick={() => setActiveTab(tab)}
               style={{ padding: '7px 18px', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer', border: `1px solid ${activeTab === tab ? DS.blue + '50' : DS.border}`, background: activeTab === tab ? 'rgba(59,130,246,0.12)' : 'none', color: activeTab === tab ? DS.blue : DS.text4, transition: 'all 0.2s', whiteSpace: 'nowrap' }}>
-              {tab === 'Gói Web Doanh Nghiệp' && <Zap size={12} style={{ display: 'inline', marginRight: 5, marginBottom: -1 }} />}
-              {tab}
+              {tab === 'tabWebPackage' && <Zap size={12} style={{ display: 'inline', marginRight: 5, marginBottom: -1 }} />}
+              {t(`services.${tab}`)}
             </button>
           ))}
         </div>
@@ -655,7 +658,7 @@ export default function ServicesPage() {
       <AnimatePresence mode="wait">
 
         {/* ── TAB: GÓI WEB DOANH NGHIỆP ─────────────────────────────────── */}
-        {activeTab === 'Gói Web Doanh Nghiệp' && (
+        {activeTab === 'tabWebPackage' && (
           <motion.section key="goi-web" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="py-10 px-6">
             <div className="max-w-6xl mx-auto">
@@ -666,11 +669,20 @@ export default function ServicesPage() {
                 <div className="flex flex-wrap gap-2">
                   {CATEGORIES.map(cat => {
                     const count = cat === 'tất cả' ? WEB_PACKAGES.length : WEB_PACKAGES.filter(p => p.category === cat).length;
+                    const catKey: Record<Category, string> = {
+                      'tất cả': 'services.catAll',
+                      'ăn uống': 'services.catFood',
+                      'sức khỏe': 'services.catHealth',
+                      'lưu trú': 'services.catLodging',
+                      'mua sắm': 'services.catRetail',
+                      'giáo dục': 'services.catEducation',
+                      'bất động sản': 'services.catRealEstate',
+                    };
                     return (
                       <motion.button key={cat} onClick={() => setCategory(cat)}
                         style={{ padding: '6px 16px', borderRadius: 20, fontSize: 12, fontFamily: DS.mono, cursor: 'pointer', border: `1px solid ${category === cat ? DS.blue : DS.border}`, background: category === cat ? 'rgba(59,130,246,0.12)' : 'none', color: category === cat ? DS.blue : DS.text5 }}
                         whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
-                        {cat.charAt(0).toUpperCase() + cat.slice(1)} ({count})
+                        {t(catKey[cat])} ({count})
                       </motion.button>
                     );
                   })}
@@ -680,9 +692,9 @@ export default function ServicesPage() {
                 <div className="flex items-center gap-3">
                   <select value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)}
                     style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 8, padding: '6px 12px', color: DS.text4, fontSize: 12, fontFamily: DS.mono, outline: 'none', cursor: 'pointer' }}>
-                    <option value="popular">Phổ biến nhất</option>
-                    <option value="price-asc">Giá: Thấp → Cao</option>
-                    <option value="price-desc">Giá: Cao → Thấp</option>
+                    <option value="popular">{t('services.sortPopular')}</option>
+                    <option value="price-asc">{t('services.sortPriceAsc')}</option>
+                    <option value="price-desc">{t('services.sortPriceDesc')}</option>
                   </select>
                   <div className="ml-auto flex gap-1">
                     <button onClick={() => setLayout('grid')}
@@ -694,7 +706,7 @@ export default function ServicesPage() {
                       <List size={14} />
                     </button>
                   </div>
-                  <span style={{ color: DS.text5, fontSize: 11, fontFamily: DS.mono }}>{filtered.length} loại website</span>
+                  <span style={{ color: DS.text5, fontSize: 11, fontFamily: DS.mono }}>{filtered.length} {t('services.statsTypes').toLowerCase()}</span>
                 </div>
               </div>
 
@@ -721,16 +733,16 @@ export default function ServicesPage() {
               <motion.div className="mt-12 rounded-3xl p-8 text-center relative overflow-hidden"
                 style={{ background: 'linear-gradient(135deg, rgba(59,130,246,0.1), rgba(129,140,248,0.08))', border: '1px solid rgba(129,140,248,0.25)' }}
                 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-                <div style={{ color: DS.purple, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.2em', marginBottom: 10 }}>KHÔNG TÌM THẤY NGÀNH NGHỀ PHÙ HỢP?</div>
-                <h3 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 22, fontWeight: 900, marginBottom: 10 }}>YÊU CẦU THIẾT KẾ RIÊNG</h3>
-                <p style={{ color: DS.text3, fontSize: 14, marginBottom: 20 }}>Chúng tôi có thể xây dựng website hoàn toàn tùy chỉnh theo thương hiệu và yêu cầu đặc thù của bạn.</p>
+                <div style={{ color: DS.purple, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.2em', marginBottom: 10 }}>{t('services.ctaNotFound')}</div>
+                <h3 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 22, fontWeight: 900, marginBottom: 10 }}>{t('services.ctaCustomDesign')}</h3>
+                <p style={{ color: DS.text3, fontSize: 14, marginBottom: 20 }}>{t('services.ctaCustomDesc')}</p>
                 <div className="flex flex-wrap justify-center gap-3">
                   <Link to="/dat-lich" style={{ background: GRD.primary, color: '#fff', padding: '12px 24px', borderRadius: 12, textDecoration: 'none', fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <Phone size={14} /> Tư vấn miễn phí 30 phút
+                    <Phone size={14} /> {t('services.ctaFreeConsult')}
                   </Link>
-                  <button onClick={() => setActiveTab('Dịch vụ Tùy chỉnh')}
+                  <button onClick={() => setActiveTab('tabCustom')}
                     style={{ padding: '12px 24px', borderRadius: 12, background: 'rgba(255,255,255,0.06)', border: `1px solid ${DS.border}`, color: DS.text3, fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
-                    Xem dịch vụ tùy chỉnh <ArrowRight size={14} />
+                    {t('services.ctaViewCustom')} <ArrowRight size={14} />
                   </button>
                 </div>
               </motion.div>
@@ -739,7 +751,7 @@ export default function ServicesPage() {
         )}
 
         {/* ── TAB: DỊCH VỤ TÙY CHỈNH ──────────────────────────────────── */}
-        {activeTab === 'Dịch vụ Tùy chỉnh' && (
+        {activeTab === 'tabCustom' && (
           <motion.section key="custom" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="py-10 px-6">
             <div className="max-w-6xl mx-auto space-y-10">
@@ -778,11 +790,11 @@ export default function ServicesPage() {
                     </div>
                     <div className="mt-auto flex items-center justify-between">
                       <div>
-                        <div style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono }}>GIÁ TỪ</div>
+                        <div style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono }}>{t('services.customPriceFrom')}</div>
                         <div style={{ color: svc.color, fontSize: 16, fontWeight: 800 }}>{fmtVND(svc.priceFrom)}</div>
                       </div>
                       <Link to="/dat-lich" style={{ display: 'flex', alignItems: 'center', gap: 7, background: GRD.primary, color: '#fff', padding: '10px 18px', borderRadius: 10, textDecoration: 'none', fontSize: 13, fontWeight: 700 }}>
-                        Tư vấn ngay <ArrowRight size={13} />
+                        {t('services.customConsult')} <ArrowRight size={13} />
                       </Link>
                     </div>
                   </div>
@@ -793,19 +805,19 @@ export default function ServicesPage() {
         )}
 
         {/* ── TAB: BẢNG GIÁ ────────────────────────────────────────────── */}
-        {activeTab === 'Bảng giá' && (
+        {activeTab === 'tabPricing' && (
           <motion.section key="pricing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="py-10 px-6">
             <div className="max-w-5xl mx-auto">
               <div className="text-center mb-10">
-                <h2 style={{ fontFamily: DS.heading, fontSize: 28, fontWeight: 900, color: DS.text, marginBottom: 8 }}>BẢNG GIÁ MINH BẠCH</h2>
-                <p style={{ color: DS.text3, fontSize: 14 }}>Tất cả giá niêm yết bằng VNĐ. LP là điểm thưởng nội bộ, không phải tiền tệ.</p>
+                <h2 style={{ fontFamily: DS.heading, fontSize: 28, fontWeight: 900, color: DS.text, marginBottom: 8 }}>{t('services.pricingHeader')}</h2>
+                <p style={{ color: DS.text3, fontSize: 14 }}>{t('services.pricingSubheader')}</p>
               </div>
 
               {/* Web Package pricing table */}
               <div className="rounded-3xl overflow-hidden mb-8" style={{ border: `1px solid ${DS.border}` }}>
                 <div className="px-6 py-4" style={{ background: DS.bgCard2, borderBottom: `1px solid ${DS.border}` }}>
-                  <span style={{ color: DS.blue, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.15em' }}>── GÓI WEB DOANH NGHIỆP</span>
+                  <span style={{ color: DS.blue, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.15em' }}>── {t('services.webSectionLabel')}</span>
                 </div>
                 <div style={{ background: DS.bgCard }}>
                   {WEB_PACKAGES.map((pkg, i) => (
@@ -817,16 +829,16 @@ export default function ServicesPage() {
                         <div style={{ color: DS.text5, fontSize: 11 }}>{pkg.tagline}</div>
                       </div>
                       <div className="text-center px-4 flex-shrink-0">
-                        <div style={{ color: DS.green, fontSize: 11, fontWeight: 700, fontFamily: DS.mono }}>FREE</div>
-                        <div style={{ color: DS.text5, fontSize: 9 }}>Thử {pkg.trialDays} ngày</div>
+                        <div style={{ color: DS.green, fontSize: 11, fontWeight: 700, fontFamily: DS.mono }}>{t('services.webTableTrial')}</div>
+                        <div style={{ color: DS.text5, fontSize: 9 }}>{t('services.webTableTrialDays', { days: pkg.trialDays })}</div>
                       </div>
                       <div className="text-right flex-shrink-0">
                         <div style={{ color: pkg.color, fontSize: 14, fontWeight: 800 }}>{new Intl.NumberFormat('vi-VN').format(pkg.fullPrice)}</div>
-                        <div style={{ color: DS.text5, fontSize: 9, fontFamily: DS.mono }}>VNĐ / GÓI FULL</div>
+                        <div style={{ color: DS.text5, fontSize: 9, fontFamily: DS.mono }}>{t('services.pkgPrice')}</div>
                       </div>
                       <button onClick={() => setSelectedPkg(pkg)}
                         style={{ flexShrink: 0, padding: '6px 14px', borderRadius: 8, background: `${pkg.color}12`, border: `1px solid ${pkg.color}30`, color: pkg.color, fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
-                        Xem
+                        {t('services.webTableSee')}
                       </button>
                     </div>
                   ))}
@@ -836,9 +848,9 @@ export default function ServicesPage() {
               {/* Custom services pricing */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                 {[
-                  { name: 'Starter', price: '15,000,000', sub: 'Cá nhân / Startup', color: DS.text4, features: ['1 Landing Page', 'Responsive design', 'SEO cơ bản', 'Deploy 1 năm', 'Bảo hành 3 tháng', '2 lần chỉnh sửa'], cta: 'Bắt đầu ngay', lp: 750, popular: false },
-                  { name: 'Business', price: '45,000,000', sub: 'Doanh nghiệp vừa', color: DS.blue, features: ['5-10 trang', 'Thiết kế độc quyền', 'CMS tích hợp', 'Analytics', 'SEO nâng cao', 'Bảo hành 6 tháng', 'Sửa không giới hạn'], cta: 'Chọn Business', lp: 2250, popular: true },
-                  { name: 'Enterprise', price: 'Tùy chỉnh', sub: 'Doanh nghiệp lớn', color: DS.purple, features: ['Tùy chỉnh hoàn toàn', 'API & Integrations', 'Multi-tenant', 'SLA 99.9%', 'Dedicated PM', 'Support 24/7'], cta: 'Liên hệ tư vấn', lp: 0, popular: false },
+                  { name: 'planStarter', price: '15,000,000', subKey: 'services.planStarterSub', color: DS.text4, featureKey: 'services.planStarterFeatures', ctaKey: 'services.planStartNow', lp: 750, popular: false },
+                  { name: 'planBusiness', price: '45,000,000', subKey: 'services.planBusinessSub', color: DS.blue, featureKey: 'services.planBusinessFeatures', ctaKey: 'services.planChooseBusiness', lp: 2250, popular: true },
+                  { name: 'planEnterprise', priceKey: 'planCustomPrice', subKey: 'services.planEnterpriseSub', color: DS.purple, featureKey: 'services.planEnterpriseFeatures', ctaKey: 'services.planContactConsult', lp: 0, popular: false },
                 ].map(plan => (
                   <motion.div key={plan.name}
                     className="rounded-3xl p-6 relative"
@@ -846,25 +858,25 @@ export default function ServicesPage() {
                     initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
                     {plan.popular && (
                       <div className="absolute -top-3 left-1/2" style={{ transform: 'translateX(-50%)', background: GRD.primary, color: '#fff', fontSize: 9, fontFamily: DS.mono, fontWeight: 700, padding: '3px 14px', borderRadius: 20 }}>
-                        PHỔ BIẾN
+                        {t('services.planPopular')}
                       </div>
                     )}
-                    <div style={{ color: plan.color, fontSize: 13, fontFamily: DS.mono, fontWeight: 700, marginBottom: 4 }}>{plan.name}</div>
-                    <div style={{ color: DS.text, fontFamily: DS.heading, fontSize: 22, fontWeight: 900, marginBottom: 4 }}>{plan.price}</div>
-                    {plan.price !== 'Tùy chỉnh' && <div style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono, marginBottom: 4 }}>VNĐ</div>}
-                    <div style={{ color: DS.text4, fontSize: 12, marginBottom: 16 }}>{plan.sub}</div>
+                    <div style={{ color: plan.color, fontSize: 13, fontFamily: DS.mono, fontWeight: 700, marginBottom: 4 }}>{t(`services.${plan.name}`)}</div>
+                    <div style={{ color: DS.text, fontFamily: DS.heading, fontSize: 22, fontWeight: 900, marginBottom: 4 }}>{plan.price ?? t(`services.${plan.priceKey}`)}</div>
+                    {(plan.price) && <div style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono, marginBottom: 4 }}>{t('services.planVND')}</div>}
+                    <div style={{ color: DS.text4, fontSize: 12, marginBottom: 16 }}>{t(plan.subKey)}</div>
                     <div className="space-y-2 mb-6">
-                      {plan.features.map(f => (
+                      {t(plan.featureKey).split(', ').map((f: string) => (
                         <div key={f} className="flex items-center gap-2">
                           <Check size={11} style={{ color: plan.color, flexShrink: 0 }} />
                           <span style={{ color: DS.text3, fontSize: 12 }}>{f}</span>
                         </div>
                       ))}
                     </div>
-                    {plan.lp > 0 && <div style={{ color: DS.purple, fontSize: 10, fontFamily: DS.mono, marginBottom: 12 }}>◈ +{plan.lp.toLocaleString()} LP thưởng</div>}
+                    {plan.lp > 0 && <div style={{ color: DS.purple, fontSize: 10, fontFamily: DS.mono, marginBottom: 12 }}>{t('services.planLPReward', { lp: plan.lp.toLocaleString() })}</div>}
                     <Link to="/dat-lich"
                       style={{ display: 'block', textAlign: 'center', background: plan.popular ? GRD.primary : 'none', border: plan.popular ? 'none' : `1px solid ${DS.border}`, color: plan.popular ? '#fff' : DS.text3, padding: '11px', borderRadius: 12, textDecoration: 'none', fontSize: 13, fontWeight: 700 }}>
-                      {plan.cta}
+                      {t(plan.ctaKey)}
                     </Link>
                   </motion.div>
                 ))}
@@ -872,12 +884,12 @@ export default function ServicesPage() {
 
               {/* LP info */}
               <div className="mt-8 p-6 rounded-3xl text-center" style={{ background: 'linear-gradient(135deg, rgba(59,130,246,0.08), rgba(129,140,248,0.06))', border: '1px solid rgba(129,140,248,0.25)' }}>
-                <div style={{ color: DS.purple, fontSize: 10, fontFamily: DS.mono, letterSpacing: '0.2em', marginBottom: 8 }}>◈ CHƯƠNG TRÌNH ĐIỂM THƯỞNG LP</div>
+                <div style={{ color: DS.purple, fontSize: 10, fontFamily: DS.mono, letterSpacing: '0.2em', marginBottom: 8 }}>{t('services.lpProgram')}</div>
                 <div className="flex flex-wrap justify-center gap-6">
-                  {[{ val: '50 LP', label: 'mỗi 1M VNĐ thanh toán', color: DS.blue }, { val: '500 LP', label: 'giới thiệu khách hàng mới', color: DS.purple }, { val: '20%', label: 'tối đa giảm giá bằng LP', color: DS.cyan }].map(s => (
-                    <div key={s.label} className="text-center">
+                  {[{ val: '50 LP', labelKey: 'services.lpPerMillion', color: DS.blue }, { val: '500 LP', labelKey: 'services.lpReferral', color: DS.purple }, { val: '20%', labelKey: 'services.lpMaxDiscount', color: DS.cyan }].map(s => (
+                    <div key={s.labelKey} className="text-center">
                       <div style={{ color: s.color, fontFamily: DS.heading, fontSize: 22, fontWeight: 900 }}>{s.val}</div>
-                      <div style={{ color: DS.text4, fontSize: 11 }}>{s.label}</div>
+                      <div style={{ color: DS.text4, fontSize: 11 }}>{t(s.labelKey)}</div>
                     </div>
                   ))}
                 </div>

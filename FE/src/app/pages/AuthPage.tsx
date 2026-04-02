@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Eye, EyeOff, ArrowRight, Check, ChevronRight, Shield, Users, Zap } from 'lucide-react';
 import { DS, GRD } from '../components/layout/ds';
 import { useAuthStore } from '../store/authStore';
+import { useI18n } from '../hooks/useI18n';
 
 type AuthMode = 'login' | 'register' | 'otp' | 'onboarding';
 
@@ -70,6 +71,7 @@ function AuthBg() {
 
 // ── Login form ────────────────────────────────────────────────────────────
 function LoginFormWithNav({ onSwitch, onSuccess }: { onSwitch: (m: AuthMode) => void; onSuccess: () => void }) {
+  const { t } = useI18n();
   const [email, setEmail] = useState('');
   const [pass, setPass] = useState('');
 
@@ -77,34 +79,34 @@ function LoginFormWithNav({ onSwitch, onSuccess }: { onSwitch: (m: AuthMode) => 
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }}>
       <div className="text-center mb-8">
         <h1 style={{ fontFamily: DS.heading, fontSize: 26, fontWeight: 900, letterSpacing: '0.06em', background: GRD.primary, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: 6 }}>
-          ĐĂNG NHẬP
+          {t('auth.login').toUpperCase()}
         </h1>
-        <p style={{ color: DS.text3, fontSize: 13 }}>Chào mừng trở lại vào LOOP OS</p>
+        <p style={{ color: DS.text3, fontSize: 13 }}>{t('auth.loginSubtitle')}</p>
       </div>
-      <Input label="EMAIL" type="email" placeholder="email@company.vn" value={email} onChange={setEmail} />
-      <Input label="MẬT KHẨU" type="password" placeholder="••••••••" value={pass} onChange={setPass} />
+      <Input label={t('auth.email').toUpperCase()} type="email" placeholder="email@company.vn" value={email} onChange={setEmail} />
+      <Input label={t('auth.password').toUpperCase()} type="password" placeholder="••••••••" value={pass} onChange={setPass} />
       <div className="flex justify-end mb-5">
-        <button style={{ color: DS.blue, background: 'none', border: 'none', fontSize: 12, cursor: 'pointer' }}>Quên mật khẩu?</button>
+        <button style={{ color: DS.blue, background: 'none', border: 'none', fontSize: 12, cursor: 'pointer' }}>{t('auth.forgotPassword')}</button>
       </div>
       <button
         onClick={onSuccess}
         style={{ width: '100%', background: GRD.primary, color: '#fff', border: 'none', borderRadius: 12, padding: '13px', fontSize: 14, fontWeight: 700, cursor: 'pointer', boxShadow: '0 0 20px rgba(129,140,248,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
       >
-        Đăng nhập <ArrowRight size={16} />
+        {t('auth.login')} <ArrowRight size={16} />
       </button>
       <div className="flex items-center gap-3 my-5">
         <div style={{ flex: 1, height: 1, background: DS.border }} />
-        <span style={{ color: DS.text5, fontSize: 12 }}>hoặc</span>
+        <span style={{ color: DS.text5, fontSize: 12 }}>{t('common.or')}</span>
         <div style={{ flex: 1, height: 1, background: DS.border }} />
       </div>
       {/* Google */}
       <button style={{ width: '100%', background: DS.bgCard2, border: `1px solid ${DS.border}`, borderRadius: 12, padding: '12px', fontSize: 13, color: DS.text2, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-        <span style={{ fontSize: 16 }}>🔵</span> Tiếp tục với Google
+        <span style={{ fontSize: 16 }}>🔵</span> {t('auth.continueWithGoogle')}
       </button>
       <p className="text-center mt-6" style={{ color: DS.text4, fontSize: 13 }}>
-        Chưa có tài khoản?{' '}
+        {t('auth.noAccount')}{' '}
         <button onClick={() => onSwitch('register')} style={{ color: DS.blue, background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
-          Đăng ký ngay
+          {t('auth.registerCta')}
         </button>
       </p>
     </motion.div>
@@ -113,6 +115,7 @@ function LoginFormWithNav({ onSwitch, onSuccess }: { onSwitch: (m: AuthMode) => 
 
 // ── Register form ─────────────────────────────────────────────────────────
 function RegisterForm({ onSwitch }: { onSwitch: (m: AuthMode) => void }) {
+  const { t } = useI18n();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [pass, setPass] = useState('');
@@ -122,16 +125,16 @@ function RegisterForm({ onSwitch }: { onSwitch: (m: AuthMode) => void }) {
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }}>
       <div className="text-center mb-7">
         <h1 style={{ fontFamily: DS.heading, fontSize: 24, fontWeight: 900, letterSpacing: '0.06em', background: GRD.primary, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: 6 }}>
-          ĐĂNG KÝ
+          {t('auth.register').toUpperCase()}
         </h1>
         <p style={{ color: DS.text3, fontSize: 13 }}>
-          Bắt đầu hành trình LOOP — Nhận <span style={{ color: DS.blue, fontWeight: 700 }}>500 LP</span> chào mừng
+          {t('auth.registerSubtitle')}
         </p>
       </div>
-      <Input label="HỌ TÊN" placeholder="Nguyễn Văn A" value={name} onChange={setName} />
-      <Input label="EMAIL" type="email" placeholder="email@company.vn" value={email} onChange={setEmail} />
-      <Input label="TÊN CÔNG TY (TÙY CHỌN)" placeholder="Công ty TNHH..." value={company} onChange={setCompany} />
-      <Input label="MẬT KHẨU" type="password" placeholder="Tối thiểu 8 ký tự" value={pass} onChange={setPass} />
+      <Input label={t('auth.name').toUpperCase()} placeholder="Nguyễn Văn A" value={name} onChange={setName} />
+      <Input label={t('auth.email').toUpperCase()} type="email" placeholder="email@company.vn" value={email} onChange={setEmail} />
+      <Input label={t('auth.companyOptional').toUpperCase()} placeholder="Công ty TNHH..." value={company} onChange={setCompany} />
+      <Input label={t('auth.password').toUpperCase()} type="password" placeholder="Tối thiểu 8 ký tự" value={pass} onChange={setPass} />
       {/* Password strength */}
       <div className="flex gap-1 mb-4">
         {[0,1,2,3].map(i => (
@@ -142,17 +145,15 @@ function RegisterForm({ onSwitch }: { onSwitch: (m: AuthMode) => void }) {
         onClick={() => onSwitch('otp')}
         style={{ width: '100%', background: GRD.primary, color: '#fff', border: 'none', borderRadius: 12, padding: '13px', fontSize: 14, fontWeight: 700, cursor: 'pointer', boxShadow: '0 0 20px rgba(129,140,248,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
       >
-        Tạo tài khoản <ArrowRight size={16} />
+        {t('auth.submitRegister')} <ArrowRight size={16} />
       </button>
       <p style={{ color: DS.text5, fontSize: 11, textAlign: 'center', marginTop: 14, lineHeight: 1.6 }}>
-        Bằng cách đăng ký, bạn đồng ý với{' '}
-        <span style={{ color: DS.blue }}>Điều khoản dịch vụ</span> và{' '}
-        <span style={{ color: DS.blue }}>Chính sách bảo mật</span>
+        {t('auth.termsAgree')}
       </p>
       <p className="text-center mt-4" style={{ color: DS.text4, fontSize: 13 }}>
-        Đã có tài khoản?{' '}
+        {t('auth.hasAccount')}{' '}
         <button onClick={() => onSwitch('login')} style={{ color: DS.blue, background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
-          Đăng nhập
+          {t('auth.login')}
         </button>
       </p>
     </motion.div>
@@ -161,14 +162,15 @@ function RegisterForm({ onSwitch }: { onSwitch: (m: AuthMode) => void }) {
 
 // ── OTPForm with verify callback ──────────────────────────────────────────
 function OTPFormWithNav({ onSwitch, onVerify }: { onSwitch: (m: AuthMode) => void; onVerify: () => void }) {
+  const { t } = useI18n();
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
 
   return (
     <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
       <div className="text-center mb-8">
         <div style={{ fontSize: 40, marginBottom: 12 }}>📱</div>
-        <h2 style={{ fontFamily: DS.heading, fontSize: 22, fontWeight: 900, letterSpacing: '0.06em', color: DS.text, marginBottom: 6 }}>XÁC THỰC OTP</h2>
-        <p style={{ color: DS.text3, fontSize: 13 }}>Nhập mã 6 chữ số được gửi đến<br /><span style={{ color: DS.text2, fontWeight: 700 }}>user@example.com</span></p>
+        <h2 style={{ fontFamily: DS.heading, fontSize: 22, fontWeight: 900, letterSpacing: '0.06em', color: DS.text, marginBottom: 6 }}>{t('auth.otp.title').toUpperCase()}</h2>
+        <p style={{ color: DS.text3, fontSize: 13 }}>{t('auth.otp.desc')}<br /><span style={{ color: DS.text2, fontWeight: 700 }}>user@example.com</span></p>
       </div>
       <div className="flex gap-3 justify-center mb-8">
         {otp.map((digit, i) => (
@@ -197,11 +199,11 @@ function OTPFormWithNav({ onSwitch, onVerify }: { onSwitch: (m: AuthMode) => voi
         onClick={onVerify}
         style={{ width: '100%', background: GRD.primary, color: '#fff', border: 'none', borderRadius: 12, padding: '13px', fontSize: 14, fontWeight: 700, cursor: 'pointer', boxShadow: '0 0 20px rgba(129,140,248,0.35)', marginBottom: 16 }}
       >
-        Xác nhận
+        {t('auth.otp.verify')}
       </button>
       <div className="text-center">
         <button style={{ color: DS.text4, background: 'none', border: 'none', fontSize: 13, cursor: 'pointer' }}>
-          Không nhận được mã? <span style={{ color: DS.blue }}>Gửi lại (60s)</span>
+          {t('auth.otp.resendHint')} <span style={{ color: DS.blue }}>{t('auth.otp.resend')}</span>
         </button>
       </div>
     </motion.div>
@@ -210,25 +212,26 @@ function OTPFormWithNav({ onSwitch, onVerify }: { onSwitch: (m: AuthMode) => voi
 
 // ── Onboarding ────────────────────────────────────────────────────────────
 function OnboardingFlow({ onDone }: { onDone: () => void }) {
+  const { t } = useI18n();
   const [step, setStep] = useState(0);
   const steps = [
     {
-      title: 'Hồ sơ doanh nghiệp',
-      desc: 'Cho chúng tôi biết về công ty của bạn',
-      fields: ['Lĩnh vực kinh doanh', 'Quy mô công ty', 'Ngân sách dự kiến'],
+      title: t('auth.onboarding.step1Title'),
+      desc: t('auth.onboarding.step1Desc'),
+      fields: [t('auth.onboarding.field1'), t('auth.onboarding.field2'), t('auth.onboarding.field3')],
     },
     {
-      title: 'Nhu cầu dịch vụ',
-      desc: 'Bạn cần giải pháp gì?',
+      title: t('auth.onboarding.step2Title'),
+      desc: t('auth.onboarding.step2Desc'),
       options: ['Website', 'Mobile App', 'SaaS Platform', 'SEO & Marketing', 'Data Analytics'],
     },
     {
-      title: 'Kết nối hệ thống LP',
-      desc: 'Kích hoạt tài khoản LP của bạn',
+      title: t('auth.onboarding.step3Title'),
+      desc: t('auth.onboarding.step3Desc'),
     },
     {
-      title: 'Hoàn tất!',
-      desc: 'Chào mừng vào LOOP OS',
+      title: t('auth.onboarding.step4Title'),
+      desc: t('auth.onboarding.step4Desc'),
     },
   ];
 
@@ -283,14 +286,14 @@ function OnboardingFlow({ onDone }: { onDone: () => void }) {
       {step === 2 && (
         <div className="mb-6 p-5 rounded-2xl text-center" style={{ background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.25)' }}>
           <div style={{ color: DS.blue, fontFamily: DS.heading, fontSize: 32, fontWeight: 900, textShadow: '0 0 16px rgba(59,130,246,0.5)', marginBottom: 4 }}>500 LP</div>
-          <div style={{ color: DS.text3, fontSize: 13 }}>Phần thưởng chào mừng đã sẵn sàng</div>
+          <div style={{ color: DS.text3, fontSize: 13 }}>{t('auth.onboarding.lpRewardReady')}</div>
           <div style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, marginTop: 8 }}>IRON Rank · Level 1 · 0 XP</div>
         </div>
       )}
 
       {step === 3 && (
         <div className="mb-6 space-y-3">
-          {['Tài khoản đã được kích hoạt', '500 LP đã được nạp vào ví', 'Rank IRON đã được gán'].map(item => (
+          {[t('auth.onboarding.done1'), t('auth.onboarding.done2'), t('auth.onboarding.done3')].map(item => (
             <div key={item} className="flex items-center gap-3 px-4 py-3 rounded-xl" style={{ background: DS.bgCard2, border: '1px solid rgba(34,197,94,0.2)' }}>
               <Check size={14} style={{ color: DS.green, flexShrink: 0 }} />
               <span style={{ color: DS.text2, fontSize: 13 }}>{item}</span>
@@ -303,7 +306,7 @@ function OnboardingFlow({ onDone }: { onDone: () => void }) {
         onClick={() => step < steps.length - 1 ? setStep(step + 1) : onDone()}
         style={{ width: '100%', background: GRD.primary, color: '#fff', border: 'none', borderRadius: 12, padding: '13px', fontSize: 14, fontWeight: 700, cursor: 'pointer', boxShadow: '0 0 20px rgba(129,140,248,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
       >
-        {step < steps.length - 1 ? 'Tiếp theo' : 'Vào Dashboard'} <ArrowRight size={16} />
+        {step < steps.length - 1 ? t('common.next') : t('auth.onboarding.goDashboard')} <ArrowRight size={16} />
       </button>
 
       {step < steps.length - 1 && (
@@ -311,7 +314,7 @@ function OnboardingFlow({ onDone }: { onDone: () => void }) {
           onClick={() => setStep(step + 1)}
           style={{ width: '100%', background: 'none', border: 'none', color: DS.text4, fontSize: 13, cursor: 'pointer', marginTop: 10 }}
         >
-          Bỏ qua
+          {t('common.skip')}
         </button>
       )}
     </motion.div>
@@ -320,6 +323,7 @@ function OnboardingFlow({ onDone }: { onDone: () => void }) {
 
 // ── Side panel info ───────────────────────────────────────────────────────
 function SidePanel() {
+  const { t } = useI18n();
   const ranks = [
     { label: 'IRON', color: '#9CA3AF', symbol: '⬡' },
     { label: 'GOLD', color: '#FFD700', symbol: '★' },
@@ -339,10 +343,12 @@ function SidePanel() {
           </div>
         </Link>
         <h2 style={{ fontFamily: DS.heading, fontSize: 28, fontWeight: 900, color: DS.text, lineHeight: 1.3, marginBottom: 16, letterSpacing: '0.04em' }}>
-          HỆ THỐNG<br />THĂNG TIẾN<br /><span style={{ background: GRD.primary, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>LP & RANK</span>
+          {t('auth.sidePanel.title').split('\n').map((line, i) => (
+            <span key={i}>{line}<br /></span>
+          ))}
         </h2>
         <p style={{ color: DS.text3, fontSize: 14, lineHeight: 1.8, marginBottom: 28 }}>
-          Mỗi hành động đều được thưởng. Mỗi dự án đưa bạn lên một tầm cao mới.
+          {t('auth.sidePanel.desc')}
         </p>
         {/* Rank badges */}
         <div className="flex flex-col gap-3">
@@ -351,7 +357,7 @@ function SidePanel() {
               <span style={{ color: r.color, fontSize: 18, textShadow: `0 0 10px ${r.color}60` }}>{r.symbol}</span>
               <div>
                 <div style={{ color: r.color, fontSize: 11, fontFamily: DS.mono, fontWeight: 700 }}>{r.label}</div>
-                <div style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono }}>Rank tier</div>
+                <div style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono }}>{t('auth.sidePanel.rankTier')}</div>
               </div>
             </div>
           ))}
@@ -360,9 +366,9 @@ function SidePanel() {
 
       {/* LP info */}
       <div className="px-4 py-4 rounded-2xl" style={{ background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(59,130,246,0.2)' }}>
-        <div style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: '0.15em', marginBottom: 6 }}>CHÀO MỪNG THÀNH VIÊN MỚI</div>
+        <div style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: '0.15em', marginBottom: 6 }}>{t('auth.sidePanel.welcomeNewMember').toUpperCase()}</div>
         <div style={{ color: DS.blue, fontFamily: DS.heading, fontSize: 24, fontWeight: 900, textShadow: '0 0 12px rgba(59,130,246,0.5)' }}>500 LP</div>
-        <div style={{ color: DS.text3, fontSize: 12 }}>Phần thưởng đăng ký đầu tiên</div>
+        <div style={{ color: DS.text3, fontSize: 12 }}>{t('auth.sidePanel.welcomeReward')}</div>
       </div>
     </div>
   );
@@ -374,6 +380,7 @@ export default function AuthPage() {
   const [selectedRole, setSelectedRole] = useState<string>('client');
   const { login, isLoading } = useAuthStore();
   const nav = useNavigate();
+  const { t } = useI18n();
 
   const handleLoginSuccess = (role: string) => {
     login(role);
@@ -410,7 +417,7 @@ export default function AuthPage() {
                 className="mb-4 p-4 rounded-2xl"
                 style={{ background: 'rgba(15,23,42,0.7)', border: '1px solid rgba(129,140,248,0.2)', backdropFilter: 'blur(12px)' }}>
                 <div style={{ color: DS.text5, fontSize: 9, fontFamily: DS.mono, letterSpacing: '0.2em', marginBottom: 10 }}>
-                  ⚡ DEMO — CHỌN VAI TRÒ ĐỂ ĐĂNG NHẬP NHANH
+                  ⚡ {t('auth.demoRole.header')}
                 </div>
                 <div className="grid grid-cols-4 gap-2">
                   {DEMO_ROLES.map(r => (
@@ -431,7 +438,7 @@ export default function AuthPage() {
                   className="w-full mt-3 py-2.5 rounded-xl flex items-center justify-center gap-2"
                   style={{ background: GRD.primary, color: '#fff', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700, boxShadow: '0 0 16px rgba(129,140,248,0.35)' }}
                   whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}>
-                  {isLoading ? '⏳ Đang đăng nhập...' : <><Zap size={13} /> Đăng nhập Demo ngay</>}
+                  {isLoading ? `⏳ ${t('auth.demoRole.loggingIn')}` : <><Zap size={13} /> {t('auth.demoRole.loginNow')}</>}
                 </motion.button>
               </motion.div>
             )}

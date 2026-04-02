@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { DS, GRD } from '../components/layout/ds';
 import { useIsMobile } from '../components/ui/use-mobile';
+import { useI18n } from '../hooks/useI18n';
 
 const fmtVND = (n: number) =>
   new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(n);
@@ -196,12 +197,19 @@ const levelColor: Record<string, string> = {
 const levelVN: Record<string, string> = {
   Beginner: 'Cơ bản', Intermediate: 'Trung cấp', Advanced: 'Nâng cao', Expert: 'Chuyên gia',
 };
+const levelI18nKey: Record<string, string> = {
+  Beginner: 'academy.detail.levelBeginner',
+  Intermediate: 'academy.detail.levelIntermediate',
+  Advanced: 'academy.detail.levelAdvanced',
+  Expert: 'academy.detail.levelExpert',
+};
 
 // ── Payment Modal ─────────────────────────────────────────────────────────────
-function PaymentModal({ course, onClose, onSuccess }: {
+function PaymentModal({ course, onClose, onSuccess, t }: {
   course: typeof DEFAULT_COURSE;
   onClose: () => void;
   onSuccess: () => void;
+  t: (key: string, vars?: Record<string, string | number>) => string;
 }) {
   const [payMode, setPayMode] = useState<'vnd' | 'lp-partial' | 'lp-full'>('vnd');
   const [step, setStep] = useState<'select' | 'confirm' | 'success'>('select');
@@ -222,34 +230,34 @@ function PaymentModal({ course, onClose, onSuccess }: {
 
   const payModes = [
     {
-      key: 'vnd', label: 'Thanh toán VNĐ đầy đủ',
+      key: 'vnd', label: t('academy.payment.modeVndLabel'),
       sub: fmtVND(course.price),
       subColor: DS.blue,
-      note: `Giá gốc: ${fmtVND(course.price * 1.3)} (-23%)`,
+      note: t('academy.payment.modeVndNote', { price: fmtVND(course.price * 1.3) }),
       noteColor: DS.green,
       enabled: true,
     },
     {
-      key: 'lp-partial', label: 'Kết hợp LP + VNĐ',
+      key: 'lp-partial', label: t('academy.payment.modeLpPartialLabel'),
       sub: `${lpPartialMax.toLocaleString('vi-VN')} LP + ${fmtVND(partialRemain)}`,
       subColor: DS.purple,
-      note: `Tiết kiệm ${fmtVND(lpSaved)}`,
+      note: t('academy.payment.modeLpPartialNote', { saved: fmtVND(lpSaved) }),
       noteColor: DS.green,
       enabled: lpPartialMax >= 1000,
     },
     {
-      key: 'lp-full', label: 'Toàn bộ bằng LP ◈',
+      key: 'lp-full', label: t('academy.payment.modeLpFullLabel'),
       sub: `${course.lpPrice.toLocaleString('vi-VN')} LP`,
       subColor: DS.amber,
-      note: canFullLP ? 'Không mất VNĐ!' : `Bạn cần thêm ${(course.lpPrice - USER_LP).toLocaleString()} LP`,
+      note: canFullLP ? t('academy.payment.modeLpFullNoteSaved') : t('academy.payment.modeLpFullNoteNeed', { needed: (course.lpPrice - USER_LP).toLocaleString() }),
       noteColor: canFullLP ? DS.green : DS.red,
       enabled: canFullLP,
     },
   ] as const;
 
-  const payLabel = payMode === 'vnd' ? `Thanh toán ${fmtVND(course.price)}`
-    : payMode === 'lp-partial' ? `Dùng ${lpPartialMax.toLocaleString()} LP + ${fmtVND(partialRemain)}`
-    : `Dùng ${course.lpPrice.toLocaleString()} LP`;
+  const payLabel = payMode === 'vnd' ? t('academy.payment.payVnd', { price: fmtVND(course.price) })
+    : payMode === 'lp-partial' ? t('academy.payment.payLpPartial', { lp: lpPartialMax.toLocaleString(), price: fmtVND(partialRemain) })
+    : t('academy.payment.payLpFull', { lp: course.lpPrice.toLocaleString() });
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -264,16 +272,16 @@ function PaymentModal({ course, onClose, onSuccess }: {
               <div className="text-7xl mb-6">🎉</div>
             </motion.div>
             <div style={{ color: DS.green, fontFamily: DS.heading, fontSize: 22, fontWeight: 900, letterSpacing: '0.06em', marginBottom: 10 }}>
-              ĐĂNG KÝ THÀNH CÔNG!
+              {t('academy.payment.successTitle')}
             </div>
             <p style={{ color: DS.text3, fontSize: 14, lineHeight: 1.7, marginBottom: 6 }}>
-              Chào mừng bạn đến với <span style={{ color: DS.text }}>{course.title}</span>
+              {t('academy.payment.successWelcome')} <span style={{ color: DS.text }}>{course.title}</span>
             </p>
             <p style={{ color: DS.text4, fontSize: 13, marginBottom: 24 }}>
-              Hoàn thành để nhận <span style={{ color: DS.purple, fontWeight: 700 }}>+{course.lpReward} LP</span> phần thưởng!
+              {t('academy.payment.successReward', { lp: String(course.lpReward) })}
             </p>
             <div className="p-4 rounded-2xl mb-6" style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)' }}>
-              <div style={{ color: DS.green, fontSize: 12, fontFamily: DS.mono, letterSpacing: '0.1em', marginBottom: 4 }}>QUYỀN LỢI ĐÃ MỞ KHÓA</div>
+              <div style={{ color: DS.green, fontSize: 12, fontFamily: DS.mono, letterSpacing: '0.1em', marginBottom: 4 }}>{t('academy.payment.benefitsUnlocked')}</div>
               {course.included.map(f => (
                 <div key={f} className="flex items-center gap-2 mt-2">
                   <Check size={11} style={{ color: DS.green }} />
@@ -283,7 +291,7 @@ function PaymentModal({ course, onClose, onSuccess }: {
             </div>
             <button onClick={onSuccess}
               style={{ width: '100%', background: GRD.primary, color: '#fff', border: 'none', borderRadius: 14, padding: '14px', fontSize: 15, fontWeight: 700, cursor: 'pointer', boxShadow: '0 0 28px rgba(129,140,248,0.4)' }}>
-              Bắt đầu học ngay →
+              {t('academy.payment.startLearning')}
             </button>
           </div>
         ) : (
@@ -291,8 +299,8 @@ function PaymentModal({ course, onClose, onSuccess }: {
             {/* Header */}
             <div className="flex items-center justify-between p-5 pb-4" style={{ borderBottom: `1px solid ${DS.border}` }}>
               <div>
-                <div style={{ color: DS.text, fontSize: 16, fontWeight: 700 }}>Đăng ký khóa học</div>
-                <div style={{ color: DS.text4, fontSize: 12, marginTop: 2 }}>Chọn phương thức thanh toán phù hợp</div>
+                <div style={{ color: DS.text, fontSize: 16, fontWeight: 700 }}>{t('academy.payment.title')}</div>
+                <div style={{ color: DS.text4, fontSize: 12, marginTop: 2 }}>{t('academy.payment.subtitle')}</div>
               </div>
               <button onClick={onClose} style={{ color: DS.text4, background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
                 <X size={18} />
@@ -317,12 +325,12 @@ function PaymentModal({ course, onClose, onSuccess }: {
 
               {/* LP Balance */}
               <div className="flex items-center justify-between px-4 py-2.5 rounded-xl mb-4" style={{ background: 'rgba(129,140,248,0.07)', border: '1px solid rgba(129,140,248,0.15)' }}>
-                <span style={{ color: DS.text4, fontSize: 12 }}>◈ LP hiện có của bạn</span>
+                <span style={{ color: DS.text4, fontSize: 12 }}>◈ {t('academy.payment.yourLpBalance')}</span>
                 <span style={{ color: DS.purple, fontFamily: DS.mono, fontWeight: 700, fontSize: 14 }}>{USER_LP.toLocaleString('vi-VN')} LP</span>
               </div>
 
               {/* Payment modes */}
-              <div style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: '0.15em', marginBottom: 10 }}>PHƯƠNG THỨC THANH TOÁN</div>
+              <div style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: '0.15em', marginBottom: 10 }}>{t('academy.payment.paymentModes')}</div>
               <div className="space-y-2.5 mb-5">
                 {payModes.map(m => (
                   <label key={m.key}
@@ -349,7 +357,7 @@ function PaymentModal({ course, onClose, onSuccess }: {
               <div className="flex items-center gap-2 p-3 rounded-xl mb-5" style={{ background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.15)' }}>
                 <Zap size={12} style={{ color: DS.green }} />
                 <span style={{ color: DS.text4, fontSize: 12 }}>
-                  Hoàn thành khóa học nhận <span style={{ color: DS.green, fontWeight: 700 }}>+{course.lpReward} LP</span> phần thưởng
+                  {t('academy.payment.lpRewardNote', { lp: String(course.lpReward) })}
                 </span>
               </div>
 
@@ -358,24 +366,24 @@ function PaymentModal({ course, onClose, onSuccess }: {
                 {processing ? (
                   <>
                     <div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
-                    Đang xử lý...
+                    {t('academy.payment.processing')}
                   </>
                 ) : payLabel}
               </button>
               <div style={{ color: DS.text5, fontSize: 11, textAlign: 'center', marginTop: 10 }}>
-                🔒 Thanh toán bảo mật · Hoàn tiền 7 ngày nếu không hài lòng
+                🔒 {t('academy.payment.secureNote')}
               </div>
 
               {/* Additional enrollment details */}
               <div className="mt-5 p-4 rounded-xl" style={{ background: 'rgba(255,255,255,0.02)', border: `1px solid ${DS.border}` }}>
-                <div style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: '0.1em', marginBottom: 8 }}>QUYỀN LỢI KHI ĐĂNG KÝ</div>
+                <div style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: '0.1em', marginBottom: 8 }}>{t('academy.payment.enrollmentBenefits')}</div>
                 {[
-                  { icon: '🎬', text: `${course.lectures} bài giảng video HD` },
-                  { icon: '📝', text: 'Bài tập code trực tiếp trên trang' },
-                  { icon: '💬', text: 'Bình luận & hỏi đáp mỗi bài' },
-                  { icon: '🏆', text: 'Certificate PDF có QR xác thực' },
-                  { icon: '◈', text: `Nhận +${course.lpReward} LP khi hoàn thành` },
-                  { icon: '♾️', text: 'Truy cập vĩnh viễn, cập nhật miễn phí' },
+                  { icon: '🎬', text: t('academy.payment.benefitLectures', { n: course.lectures }) },
+                  { icon: '📝', text: t('academy.payment.benefitCode') },
+                  { icon: '💬', text: t('academy.payment.benefitComments') },
+                  { icon: '🏆', text: t('academy.payment.benefitCertificate') },
+                  { icon: '◈', text: t('academy.payment.benefitLp', { lp: String(course.lpReward) }) },
+                  { icon: '♾️', text: t('academy.payment.benefitLifetime') },
                 ].map(b => (
                   <div key={b.text} className="flex items-center gap-2 mt-2">
                     <span style={{ fontSize: 12 }}>{b.icon}</span>
@@ -388,8 +396,8 @@ function PaymentModal({ course, onClose, onSuccess }: {
               <div className="mt-4 flex items-center gap-3 p-3 rounded-xl" style={{ background: 'rgba(34,197,94,0.05)', border: '1px solid rgba(34,197,94,0.15)' }}>
                 <Shield size={16} style={{ color: DS.green, flexShrink: 0 }} />
                 <div>
-                  <div style={{ color: DS.green, fontSize: 11, fontWeight: 700 }}>Cam kết hoàn tiền</div>
-                  <div style={{ color: DS.text4, fontSize: 10 }}>7 ngày hoàn tiền 100% nếu không hài lòng. Không cần lý do.</div>
+                  <div style={{ color: DS.green, fontSize: 11, fontWeight: 700 }}>{t('academy.payment.refundTitle')}</div>
+                  <div style={{ color: DS.text4, fontSize: 10 }}>{t('academy.payment.refundBody')}</div>
                 </div>
               </div>
             </div>
@@ -401,10 +409,11 @@ function PaymentModal({ course, onClose, onSuccess }: {
 }
 
 // ── Free Trial Player ─────────────────────────────────────────────────────────
-function FreeTrialModal({ course, onClose, onEnroll }: {
+function FreeTrialModal({ course, onClose, onEnroll, t }: {
   course: typeof DEFAULT_COURSE;
   onClose: () => void;
   onEnroll: () => void;
+  t: (key: string, vars?: Record<string, string | number>) => string;
 }) {
   const freeLessons = course.curriculum.flatMap((ch) =>
     ch.lessons.filter(l => l.free).map(l => ({ ...l, chapter: ch.chapter }))
@@ -451,8 +460,8 @@ function FreeTrialModal({ course, onClose, onEnroll }: {
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3" style={{ background: 'rgba(5,12,30,0.8)', borderBottom: `1px solid ${DS.border}` }}>
           <div>
-            <span style={{ color: DS.green, fontSize: 10, fontFamily: DS.mono, letterSpacing: '0.15em', marginRight: 10 }}>🎬 HỌC THỬ MIỄN PHÍ</span>
-            <span style={{ color: DS.text4, fontSize: 11 }}>{freeLessons.length} bài miễn phí · Đăng ký để xem toàn bộ</span>
+            <span style={{ color: DS.green, fontSize: 10, fontFamily: DS.mono, letterSpacing: '0.15em', marginRight: 10 }}>{t('academy.freeTrial.header')}</span>
+            <span style={{ color: DS.text4, fontSize: 11 }}>{t('academy.freeTrial.headerSub', { n: String(freeLessons.length) })}</span>
           </div>
           <button onClick={onClose} style={{ color: DS.text4, background: 'none', border: 'none', cursor: 'pointer' }}><X size={18} /></button>
         </div>
@@ -462,7 +471,7 @@ function FreeTrialModal({ course, onClose, onEnroll }: {
           <img src={course.img} alt="" className="w-full h-full object-cover opacity-30" />
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <div style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: '0.15em', marginBottom: 12 }}>
-              BÀI {currentIdx + 1} / {freeLessons.length}
+              {t('academy.freeTrial.lessonCounter', { current: String(currentIdx + 1), total: String(freeLessons.length) })}
             </div>
             <div style={{ color: DS.text, fontSize: 17, fontWeight: 700, textAlign: 'center', maxWidth: 400, marginBottom: 20, lineHeight: 1.4 }}>
               {current?.title}
@@ -485,13 +494,13 @@ function FreeTrialModal({ course, onClose, onEnroll }: {
               className="absolute inset-0 flex flex-col items-center justify-center"
               style={{ background: 'rgba(2,6,23,0.88)', backdropFilter: 'blur(4px)' }}>
               <Lock size={28} style={{ color: DS.amber, marginBottom: 14 }} />
-              <div style={{ color: DS.text, fontSize: 16, fontWeight: 700, marginBottom: 8 }}>Hết bài học thử</div>
+              <div style={{ color: DS.text, fontSize: 16, fontWeight: 700, marginBottom: 8 }}>{t('academy.freeTrial.trialEndTitle')}</div>
               <div style={{ color: DS.text4, fontSize: 13, marginBottom: 20, textAlign: 'center' }}>
-                Đăng ký để xem toàn bộ {course.lectures} bài và nhận certificate
+                {t('academy.freeTrial.trialEndSub', { n: String(course.lectures) })}
               </div>
               <button onClick={onEnroll}
                 style={{ background: GRD.primary, color: '#fff', border: 'none', borderRadius: 12, padding: '12px 28px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
-                Đăng ký ngay — {fmtVND(course.price)}
+                {t('academy.freeTrial.enrollNow', { price: fmtVND(course.price) })}
               </button>
             </motion.div>
           )}
@@ -526,7 +535,7 @@ function FreeTrialModal({ course, onClose, onEnroll }: {
 
         {/* Lesson list */}
         <div className="p-4" style={{ borderTop: `1px solid ${DS.border}` }}>
-          <div style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: '0.15em', marginBottom: 10 }}>BÀI HỌC THỬ</div>
+          <div style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: '0.15em', marginBottom: 10 }}>{t('academy.freeTrial.trialLessons')}</div>
           <div className="space-y-2">
             {freeLessons.map((l, i) => (
               <button key={i} onClick={() => setCurrentIdx(i)}
@@ -553,14 +562,14 @@ function FreeTrialModal({ course, onClose, onEnroll }: {
                 style={{ background: 'rgba(255,255,255,0.04)' }}>
                 <Lock size={11} style={{ color: DS.text5 }} />
               </div>
-              <div style={{ color: DS.text5, fontSize: 12 }}>+{course.lectures - freeLessons.length} bài học khác (cần đăng ký)</div>
+              <div style={{ color: DS.text5, fontSize: 12 }}>{t('academy.freeTrial.lockedLessons', { n: String(course.lectures - freeLessons.length) })}</div>
             </div>
           </div>
 
           <button onClick={onEnroll}
             className="mt-4 w-full py-3 rounded-2xl"
             style={{ background: GRD.primary, color: '#fff', border: 'none', fontSize: 14, fontWeight: 700, cursor: 'pointer', boxShadow: '0 0 24px rgba(129,140,248,0.35)' }}>
-            Mở khóa toàn bộ — {fmtVND(course.price)} <span style={{ opacity: 0.7, fontSize: 11 }}>· hoặc {course.lpPrice.toLocaleString()} LP</span>
+            {t('academy.freeTrial.unlockAll', { price: fmtVND(course.price), lp: String(course.lpPrice.toLocaleString()) })}
           </button>
         </div>
       </motion.div>
@@ -574,9 +583,10 @@ type LessonWithMeta = {
   chapterTitle: string; chapterIdx: number; lessonIdx: number; globalIdx: number;
 };
 
-function CoursePlayer({ course, onClose }: {
+function CoursePlayer({ course, onClose, t }: {
   course: typeof DEFAULT_COURSE;
   onClose: () => void;
+  t: (key: string, vars?: Record<string, string | number>) => string;
 }) {
   const allLessons: LessonWithMeta[] = course.curriculum.flatMap((ch, ci) =>
     ch.lessons.map((l, li) => ({ ...l, chapterTitle: ch.chapter, chapterIdx: ci, lessonIdx: li, globalIdx: 0 }))
@@ -679,7 +689,7 @@ function CoursePlayer({ course, onClose }: {
         <button onClick={onClose} className="flex items-center gap-2"
           style={{ color: DS.text4, background: 'none', border: 'none', cursor: 'pointer', padding: '6px 2px', flexShrink: 0 }}>
           <ArrowLeft size={16} />
-          {!isMobile && <span style={{ fontSize: 13 }}>Quay lại</span>}
+          {!isMobile && <span style={{ fontSize: 13 }}>{t('academy.player.back')}</span>}
         </button>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ color: DS.text, fontSize: isMobile ? 12 : 13, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -689,7 +699,7 @@ function CoursePlayer({ course, onClose }: {
 
         {/* Progress */}
         <div className="flex items-center gap-2 flex-shrink-0">
-          {!isMobile && <div style={{ color: DS.text4, fontSize: 12 }}>{totalCompleted}/{total} bài</div>}
+          {!isMobile && <div style={{ color: DS.text4, fontSize: 12 }}>{t('academy.player.lessonProgress', { done: String(totalCompleted), total: String(total) })}</div>}
           <div style={{ width: isMobile ? 60 : 100, height: 5, background: 'rgba(255,255,255,0.08)', borderRadius: 3 }}>
             <div style={{ height: '100%', width: `${courseProgress}%`, background: GRD.primary, borderRadius: 3, transition: 'width 0.3s' }} />
           </div>
@@ -698,7 +708,7 @@ function CoursePlayer({ course, onClose }: {
 
         <button onClick={() => setSidebarOpen(s => !s)}
           style={{ color: DS.text4, background: 'rgba(255,255,255,0.06)', border: `1px solid ${DS.border}`, borderRadius: 8, padding: isMobile ? '6px 8px' : '5px 10px', cursor: 'pointer', fontSize: 11, flexShrink: 0 }}>
-          {sidebarOpen ? (isMobile ? '✕' : '◀ Ẩn') : (isMobile ? '☰' : 'Danh sách ▶')}
+          {sidebarOpen ? (isMobile ? '✕' : t('academy.player.sidebarHide')) : (isMobile ? '☰' : t('academy.player.sidebarShow'))}
         </button>
       </div>
 
@@ -727,18 +737,18 @@ function CoursePlayer({ course, onClose }: {
                 <motion.button initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
                   onClick={goNext}
                   style={{ background: GRD.primary, color: '#fff', border: 'none', borderRadius: 12, padding: '10px 22px', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  Bài tiếp theo <ChevronRight size={15} />
+                  {t('academy.player.nextLesson')} <ChevronRight size={15} />
                 </motion.button>
               )}
               {/* Video gate progress indicator */}
               {vidProgress > 0 && vidProgress < VIDEO_GATE_THRESHOLD && !completed.has(globalIdx) && (
                 <div style={{ color: DS.amber, fontSize: 11, fontFamily: DS.mono, marginTop: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <Lock size={12} /> Xem thêm {Math.ceil(VIDEO_GATE_THRESHOLD - vidProgress)}% để mở bài tiếp
+                  <Lock size={12} /> {t('academy.player.gateLocked', { pct: String(Math.ceil(VIDEO_GATE_THRESHOLD - vidProgress)) })}
                 </div>
               )}
               {vidProgress >= VIDEO_GATE_THRESHOLD && vidProgress < 100 && !completed.has(globalIdx) && (
                 <div style={{ color: DS.green, fontSize: 11, fontFamily: DS.mono, marginTop: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <Unlock size={12} /> Đã đủ điều kiện chuyển bài tiếp theo
+                  <Unlock size={12} /> {t('academy.player.gateUnlocked')}
                 </div>
               )}
             </div>
@@ -749,13 +759,12 @@ function CoursePlayer({ course, onClose }: {
                 className="absolute inset-0 flex flex-col items-center justify-center"
                 style={{ background: 'rgba(2,6,23,0.9)', backdropFilter: 'blur(8px)' }}>
                 <div className="text-6xl mb-4">🏆</div>
-                <div style={{ color: DS.amber, fontFamily: DS.heading, fontSize: 24, fontWeight: 900, letterSpacing: '0.06em', marginBottom: 8 }}>CHÚC MỪNG!</div>
+                <div style={{ color: DS.amber, fontFamily: DS.heading, fontSize: 24, fontWeight: 900, letterSpacing: '0.06em', marginBottom: 8 }}>{t('academy.certificate.congrats')}</div>
                 <div style={{ color: DS.text3, fontSize: 14, marginBottom: 20, textAlign: 'center' }}>
-                  Bạn đã hoàn thành toàn bộ khóa học.<br />
-                  <span style={{ color: DS.purple }}>+{course.lpReward} LP</span> đã được thêm vào tài khoản!
+                  {t('academy.certificate.completed', { lp: String(course.lpReward) })}
                 </div>
                 <button style={{ display: 'flex', alignItems: 'center', gap: 8, background: GRD.gold, color: '#000', border: 'none', borderRadius: 12, padding: '12px 24px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
-                  <Award size={16} /> Tải Certificate PDF
+                  <Award size={16} /> {t('academy.certificate.downloadPdf')}
                 </button>
               </motion.div>
             )}
@@ -790,7 +799,7 @@ function CoursePlayer({ course, onClose }: {
                 <button onClick={markComplete}
                   style={{ color: completed.has(globalIdx) ? DS.green : DS.text4, background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, fontSize: 12 }}>
                   <Check size={14} style={{ color: completed.has(globalIdx) ? DS.green : DS.text4 }} />
-                  {completed.has(globalIdx) ? 'Đã hoàn thành' : 'Đánh dấu hoàn thành'}
+                  {completed.has(globalIdx) ? t('academy.player.markedComplete') : t('academy.player.markComplete')}
                 </button>
               )}
               {isMobile && (
@@ -811,20 +820,20 @@ function CoursePlayer({ course, onClose }: {
             <div className="flex items-center gap-3 mt-4 flex-wrap">
               <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
                 style={{ background: 'rgba(255,255,255,0.04)', border: `1px solid ${DS.border}`, color: DS.text4, fontSize: 12, cursor: 'pointer' }}>
-                <FileText size={12} /> Tài liệu bài học
+                <FileText size={12} /> {t('academy.player.lessonMaterials')}
               </button>
               <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
                 style={{ background: 'rgba(255,255,255,0.04)', border: `1px solid ${DS.border}`, color: DS.text4, fontSize: 12, cursor: 'pointer' }}>
-                <Download size={12} /> Source code
+                <Download size={12} /> {t('academy.player.sourceCode')}
               </button>
               <button onClick={() => setShowCodeExercise(e => !e)} className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
                 style={{ background: showCodeExercise ? 'rgba(129,140,248,0.15)' : 'rgba(255,255,255,0.04)', border: `1px solid ${showCodeExercise ? DS.purple + '40' : DS.border}`, color: showCodeExercise ? DS.purple : DS.text4, fontSize: 12, cursor: 'pointer' }}>
-                <FileText size={12} /> Code Exercise
+                <FileText size={12} /> {t('academy.player.codeExercise')}
               </button>
               {!completed.has(globalIdx) && (
                 <button onClick={markComplete} className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
                   style={{ background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.25)', color: DS.green, fontSize: 12, cursor: 'pointer' }}>
-                  <Check size={12} /> Hoàn thành bài này
+                  <Check size={12} /> {t('academy.player.completeThis')}
                 </button>
               )}
             </div>
@@ -836,7 +845,7 @@ function CoursePlayer({ course, onClose }: {
                 style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)' }}>
                 <Lock size={14} style={{ color: DS.amber, flexShrink: 0 }} />
                 <span style={{ color: DS.amber, fontSize: 12 }}>
-                  Bạn cần xem ít nhất <strong>{VIDEO_GATE_THRESHOLD}%</strong> video trước khi chuyển bài tiếp ({Math.round(vidProgress)}% hiện tại)
+                  {t('academy.player.gateWarning', { threshold: String(VIDEO_GATE_THRESHOLD), current: String(Math.round(vidProgress)) })}
                 </span>
               </motion.div>
             )}
@@ -846,12 +855,12 @@ function CoursePlayer({ course, onClose }: {
               <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }}
                 className="mt-3 rounded-xl overflow-hidden" style={{ border: `1px solid ${DS.purple}30` }}>
                 <div className="flex items-center justify-between px-4 py-2" style={{ background: 'rgba(129,140,248,0.08)', borderBottom: `1px solid ${DS.purple}20` }}>
-                  <span style={{ color: DS.purple, fontSize: 12, fontWeight: 700 }}>🛠 Code Exercise — {current?.title}</span>
+                  <span style={{ color: DS.purple, fontSize: 12, fontWeight: 700 }}>🛠 {t('academy.player.codeExercisePanel', { title: current?.title ?? '' })}</span>
                   <div className="flex gap-2">
                     <button onClick={() => {
                       setCodeOutput('✅ Output: Hello World\n\n🎉 Bài làm đúng! Component render thành công.');
                     }} style={{ background: GRD.primary, color: '#fff', border: 'none', borderRadius: 6, padding: '4px 12px', fontSize: 11, cursor: 'pointer', fontWeight: 700 }}>
-                      ▶ Chạy code
+                      ▶ {t('academy.player.runCode')}
                     </button>
                     <button onClick={() => setShowCodeExercise(false)}
                       style={{ color: DS.text4, background: 'none', border: 'none', cursor: 'pointer' }}>
@@ -863,7 +872,7 @@ function CoursePlayer({ course, onClose }: {
                   <textarea value={codeValue} onChange={e => setCodeValue(e.target.value)}
                     style={{ background: '#0a0f1a', color: DS.green, fontFamily: DS.mono, fontSize: 12, padding: 12, border: 'none', borderRight: `1px solid ${DS.border}`, outline: 'none', resize: 'none', minHeight: 150 }} />
                   <div style={{ background: '#050a15', padding: 12, fontFamily: DS.mono, fontSize: 11, color: codeOutput.includes('✅') ? DS.green : DS.text4, whiteSpace: 'pre-wrap' }}>
-                    {codeOutput || '// Output sẽ hiển thị ở đây sau khi chạy code'}
+                    {codeOutput || t('academy.player.outputPlaceholder')}
                   </div>
                 </div>
               </motion.div>
@@ -873,11 +882,11 @@ function CoursePlayer({ course, onClose }: {
             <div className="mt-4">
               <div className="flex items-center gap-2 mb-3">
                 <MessageCircle size={14} style={{ color: DS.text4 }} />
-                <span style={{ color: DS.text3, fontSize: 13, fontWeight: 600 }}>Bình luận ({comments.length})</span>
+                <span style={{ color: DS.text3, fontSize: 13, fontWeight: 600 }}>{t('academy.player.comments', { count: String(comments.length) })}</span>
               </div>
               <div className="flex gap-2 mb-3">
                 <input value={newComment} onChange={e => setNewComment(e.target.value)}
-                  placeholder="Viết bình luận hoặc câu hỏi..."
+                  placeholder={t('academy.player.commentPlaceholder')}
                   onKeyDown={e => {
                     if (e.key === 'Enter' && newComment.trim()) {
                       setComments(prev => [...prev, { id: Date.now(), user: 'Bạn', avatar: 'https://images.unsplash.com/photo-1746105625407-5d49d69a2a47?auto=format&fit=crop&w=50&h=50&crop=faces', text: newComment, time: 'Vừa xong', likes: 0 }]);
@@ -891,7 +900,7 @@ function CoursePlayer({ course, onClose }: {
                     setNewComment('');
                   }
                 }} style={{ background: GRD.primary, color: '#fff', border: 'none', borderRadius: 8, padding: '8px 14px', fontSize: 12, cursor: 'pointer', fontWeight: 700 }}>
-                  Gửi
+                  {t('academy.player.send')}
                 </button>
               </div>
               <div className="space-y-2" style={{ maxHeight: 140, overflowY: 'auto' }}>
@@ -948,8 +957,8 @@ function CoursePlayer({ course, onClose }: {
               }}>
               <div className="px-4 py-3 sticky top-0 z-10 flex items-center justify-between gap-2" style={{ background: 'rgba(5,12,30,0.98)', borderBottom: `1px solid ${DS.border}` }}>
                 <div>
-                  <div style={{ color: DS.text, fontSize: 13, fontWeight: 700 }}>Nội dung khóa học</div>
-                  <div style={{ color: DS.text4, fontSize: 11, marginTop: 2 }}>{totalCompleted}/{total} bài · {courseProgress}% hoàn thành</div>
+                  <div style={{ color: DS.text, fontSize: 13, fontWeight: 700 }}>{t('academy.player.courseContent')}</div>
+                  <div style={{ color: DS.text4, fontSize: 11, marginTop: 2 }}>{t('academy.player.courseProgress', { done: String(totalCompleted), total: String(total), pct: String(courseProgress) })}</div>
                 </div>
                 {isMobile && (
                   <button onClick={() => setSidebarOpen(false)}
@@ -1006,17 +1015,17 @@ function CoursePlayer({ course, onClose }: {
               <div className="p-4 m-4 rounded-2xl" style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)' }}>
                 <div className="flex items-center gap-2 mb-2">
                   <Award size={16} style={{ color: DS.amber }} />
-                  <span style={{ color: DS.amber, fontSize: 12, fontWeight: 700 }}>Certificate</span>
+                  <span style={{ color: DS.amber, fontSize: 12, fontWeight: 700 }}>{t('academy.certificate.title')}</span>
                   {allDone
-                    ? <span style={{ color: DS.green, fontSize: 10, fontFamily: DS.mono, marginLeft: 'auto' }}>✓ ĐÃ MỞ KHÓA</span>
+                    ? <span style={{ color: DS.green, fontSize: 10, fontFamily: DS.mono, marginLeft: 'auto' }}>{t('academy.certificate.unlocked')}</span>
                     : <span style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono, marginLeft: 'auto' }}>{courseProgress}%</span>}
                 </div>
                 {allDone
                   ? <button className="w-full flex items-center justify-center gap-2 py-2 rounded-xl"
                       style={{ background: GRD.gold, color: '#000', border: 'none', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
-                      <Download size={14} /> Tải Certificate PDF
+                      <Download size={14} /> {t('academy.certificate.downloadPdf')}
                     </button>
-                  : <div style={{ color: DS.text5, fontSize: 11 }}>Hoàn thành tất cả bài học để nhận certificate và <span style={{ color: DS.purple }}>+{course.lpReward} LP</span></div>}
+                  : <div style={{ color: DS.text5, fontSize: 11 }}>{t('academy.certificate.completeToUnlock', { lp: String(course.lpReward) })}</div>}
               </div>
             </motion.div>
             </>
@@ -1029,6 +1038,7 @@ function CoursePlayer({ course, onClose }: {
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function CourseDetailPage() {
+  const { t } = useI18n();
   const { id = '1' } = useParams<{ id: string }>();
   const course = COURSES[id] ?? DEFAULT_COURSE;
 
@@ -1057,13 +1067,13 @@ export default function CourseDetailPage() {
       {/* ── Modals ─────────────────────────────────────────────────────────── */}
       <AnimatePresence>
         {showPayment && (
-          <PaymentModal course={course} onClose={() => setShowPayment(false)} onSuccess={handlePurchaseSuccess} />
+          <PaymentModal course={course} onClose={() => setShowPayment(false)} onSuccess={handlePurchaseSuccess} t={t} />
         )}
         {showFreeTrial && (
-          <FreeTrialModal course={course} onClose={() => setShowFreeTrial(false)} onEnroll={handleEnroll} />
+          <FreeTrialModal course={course} onClose={() => setShowFreeTrial(false)} onEnroll={handleEnroll} t={t} />
         )}
         {showPlayer && (
-          <CoursePlayer course={course} onClose={() => setShowPlayer(false)} />
+          <CoursePlayer course={course} onClose={() => setShowPlayer(false)} t={t} />
         )}
       </AnimatePresence>
 
@@ -1072,7 +1082,7 @@ export default function CourseDetailPage() {
         <div className="max-w-6xl mx-auto px-4 py-8 lg:px-6 lg:py-12">
           <Link to="/hoc-vien" className="inline-flex items-center gap-2 mb-6"
             style={{ color: DS.text4, fontSize: 13, textDecoration: 'none' }}>
-            <ArrowLeft size={14} /> Tất cả khóa học
+            <ArrowLeft size={14} /> {t('academy.detail.backToCourses')}
           </Link>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 items-start">
@@ -1081,14 +1091,14 @@ export default function CourseDetailPage() {
               {/* Badges */}
               <div className="flex items-center gap-2 mb-4 flex-wrap">
                 <span style={{ color: levelColor[course.level], fontSize: 10, fontFamily: DS.mono, fontWeight: 700, letterSpacing: '0.15em', background: `${levelColor[course.level]}15`, border: `1px solid ${levelColor[course.level]}30`, padding: '3px 10px', borderRadius: 4 }}>
-                  {levelVN[course.level].toUpperCase()}
+                  {t(levelI18nKey[course.level]).toUpperCase()}
                 </span>
                 <span style={{ color: course.color, fontSize: 10, fontFamily: DS.mono, letterSpacing: '0.15em', background: `${course.color}10`, border: `1px solid ${course.color}25`, padding: '3px 10px', borderRadius: 4 }}>
                   {course.cat.toUpperCase()}
                 </span>
                 {enrolled && (
                   <span style={{ color: DS.green, fontSize: 10, fontFamily: DS.mono, letterSpacing: '0.15em', background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', padding: '3px 10px', borderRadius: 4 }}>
-                    ✓ ĐÃ ĐĂNG KÝ
+                    {t('academy.detail.enrolled')}
                   </span>
                 )}
               </div>
@@ -1103,16 +1113,16 @@ export default function CourseDetailPage() {
                 <div className="flex items-center gap-1.5">
                   {[1,2,3,4,5].map(s => <Star key={s} size={14} style={{ color: DS.amber, fill: s <= Math.floor(course.rating) ? DS.amber : 'none' }} />)}
                   <span style={{ color: DS.amber, fontFamily: DS.mono, fontSize: 14, fontWeight: 700, marginLeft: 4 }}>{course.rating}</span>
-                  <span style={{ color: DS.text4, fontSize: 12 }}>({course.reviews} đánh giá)</span>
+                  <span style={{ color: DS.text4, fontSize: 12 }}>({course.reviews} {t('academy.detail.reviews')})</span>
                 </div>
                 <div className="flex items-center gap-1.5" style={{ color: DS.text3, fontSize: 13 }}>
-                  <Users size={13} style={{ color: DS.text4 }} />{course.students} học viên
+                  <Users size={13} style={{ color: DS.text4 }} />{course.students} {t('academy.detail.students')}
                 </div>
                 <div className="flex items-center gap-1.5" style={{ color: DS.text3, fontSize: 13 }}>
-                  <Clock size={13} style={{ color: DS.text4 }} />{course.duration} · {totalLessons} bài học
+                  <Clock size={13} style={{ color: DS.text4 }} />{course.duration} · {totalLessons} {t('academy.detail.lessons')}
                 </div>
                 <div className="flex items-center gap-1.5" style={{ color: DS.text3, fontSize: 13 }}>
-                  <BookOpen size={13} style={{ color: DS.text4 }} />Cập nhật {course.updatedAt}
+                  <BookOpen size={13} style={{ color: DS.text4 }} />{t('academy.detail.updated')} {course.updatedAt}
                 </div>
               </div>
 
@@ -1141,7 +1151,7 @@ export default function CourseDetailPage() {
                   </div>
                   <div className="absolute bottom-3 left-0 right-0 text-center">
                     <span style={{ color: DS.text3, fontSize: 12, background: 'rgba(0,0,0,0.7)', padding: '4px 12px', borderRadius: 20, backdropFilter: 'blur(4px)' }}>
-                      ▶ Xem trước {freeLessons.length} bài miễn phí
+                      ▶ {t('academy.detail.freePreview', { n: String(freeLessons.length) })}
                     </span>
                   </div>
                 </div>
@@ -1157,40 +1167,40 @@ export default function CourseDetailPage() {
                     </div>
                   </div>
                   <div style={{ color: DS.purple, fontSize: 12, fontFamily: DS.mono, marginBottom: 4 }}>
-                    ◈ hoặc {course.lpPrice.toLocaleString()} LP toàn phần
+                    ◈ {t('academy.detail.orLpFull', { lp: String(course.lpPrice.toLocaleString()) })}
                   </div>
                   <div className="flex items-center gap-1.5 mb-5" style={{ color: DS.red, fontSize: 12 }}>
                     <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: DS.red, display: 'inline-block' }} />
-                    Ưu đãi kết thúc trong 2 ngày
+                    {t('academy.detail.urgency')}
                   </div>
 
                   {enrolled ? (
                     <button onClick={() => setShowPlayer(true)}
                       style={{ width: '100%', background: GRD.primary, color: '#fff', fontSize: 15, fontWeight: 700, padding: '13px', borderRadius: 12, border: 'none', cursor: 'pointer', boxShadow: '0 0 24px rgba(129,140,248,0.4)', marginBottom: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                      <Play size={16} style={{ fill: '#fff' }} /> Tiếp tục học
+                      <Play size={16} style={{ fill: '#fff' }} /> {t('academy.detail.continueLearning')}
                     </button>
                   ) : (
                     <>
                       <button onClick={() => setShowPayment(true)}
                         style={{ width: '100%', background: GRD.primary, color: '#fff', fontSize: 15, fontWeight: 700, padding: '13px', borderRadius: 12, border: 'none', cursor: 'pointer', boxShadow: '0 0 24px rgba(129,140,248,0.4)', marginBottom: 10 }}>
-                        Mua khóa học ngay
+                        {t('academy.detail.buyNow')}
                       </button>
                       <button onClick={() => setShowFreeTrial(true)}
                         style={{ width: '100%', background: 'transparent', color: DS.text3, fontSize: 14, padding: '11px', borderRadius: 10, border: `1px solid ${DS.border}`, cursor: 'pointer', marginBottom: 16 }}>
-                        🎬 Học thử miễn phí ({freeLessons.length} bài)
+                        🎬 {t('academy.detail.freeTrial', { n: String(freeLessons.length) })}
                       </button>
                     </>
                   )}
 
                   {/* LP reward */}
                   <div className="p-3 rounded-xl mb-4" style={{ background: 'rgba(129,140,248,0.1)', border: '1px solid rgba(129,140,248,0.2)' }}>
-                    <div style={{ color: DS.purple, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.1em', marginBottom: 4 }}>◈ LP ĐIỂM THƯỞNG KHI HOÀN THÀNH</div>
+                    <div style={{ color: DS.purple, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.1em', marginBottom: 4 }}>◈ {t('academy.detail.lpRewardLabel')}</div>
                     <div style={{ color: DS.purple, fontFamily: DS.heading, fontSize: 22, fontWeight: 900 }}>+{course.lpReward} LP</div>
-                    <div style={{ color: DS.text5, fontSize: 10, marginTop: 2 }}>Tích lũy dùng giảm giá dịch vụ hoặc khóa học tiếp</div>
+                    <div style={{ color: DS.text5, fontSize: 10, marginTop: 2 }}>{t('academy.detail.lpRewardSub')}</div>
                   </div>
 
                   {/* Included */}
-                  <div style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: '0.12em', marginBottom: 10 }}>BAO GỒM</div>
+                  <div style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: '0.12em', marginBottom: 10 }}>{t('academy.detail.included')}</div>
                   <div className="space-y-2">
                     {course.included.map(f => (
                       <div key={f} className="flex items-center gap-2">
@@ -1204,7 +1214,7 @@ export default function CourseDetailPage() {
                 {/* Shield */}
                 <div className="flex items-center justify-center gap-2 py-3" style={{ borderTop: `1px solid ${DS.border}`, background: 'rgba(255,255,255,0.02)' }}>
                   <Shield size={12} style={{ color: DS.text5 }} />
-                  <span style={{ color: DS.text5, fontSize: 11 }}>Hoàn tiền 7 ngày nếu không hài lòng</span>
+                  <span style={{ color: DS.text5, fontSize: 11 }}>{t('academy.detail.refundNote')}</span>
                 </div>
               </div>
             </div>
@@ -1230,7 +1240,7 @@ export default function CourseDetailPage() {
 
             {/* Objectives */}
             <div>
-              <h2 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 20, fontWeight: 900, letterSpacing: '0.05em', marginBottom: 16 }}>BẠN SẼ HỌC ĐƯỢC GÌ</h2>
+              <h2 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 20, fontWeight: 900, letterSpacing: '0.05em', marginBottom: 16 }}>{t('academy.detail.objectives')}</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {course.objectives.map(o => (
                   <div key={o} className="flex items-start gap-2.5 p-3 rounded-xl"
@@ -1244,9 +1254,9 @@ export default function CourseDetailPage() {
 
             {/* Curriculum */}
             <div>
-              <h2 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 20, fontWeight: 900, letterSpacing: '0.05em', marginBottom: 8 }}>NỘI DUNG KHÓA HỌC</h2>
+              <h2 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 20, fontWeight: 900, letterSpacing: '0.05em', marginBottom: 8 }}>{t('academy.detail.curriculum')}</h2>
               <div style={{ color: DS.text4, fontSize: 12, marginBottom: 14 }}>
-                {course.curriculum.length} chương · {totalLessons} bài học · {course.duration} tổng thời gian
+                {course.curriculum.length} {t('academy.detail.chapters')} · {totalLessons} {t('academy.detail.lessons')} · {course.duration} {t('academy.detail.totalTime')}
               </div>
               <div className="space-y-2">
                 {course.curriculum.map((ch, ci) => (
@@ -1257,7 +1267,7 @@ export default function CourseDetailPage() {
                       <div>
                         <div style={{ color: DS.text, fontSize: 14, fontWeight: 700 }}>{ci + 1}. {ch.chapter}</div>
                         <div style={{ color: DS.text4, fontSize: 11, marginTop: 2 }}>
-                          {ch.lessons.length} bài · {ch.duration} · {ch.lessons.filter(l => l.free).length > 0 && <span style={{ color: DS.green }}>{ch.lessons.filter(l => l.free).length} bài miễn phí</span>}
+                          {ch.lessons.length} {t('academy.detail.lessons')} · {ch.duration} · {ch.lessons.filter(l => l.free).length > 0 && <span style={{ color: DS.green }}>{ch.lessons.filter(l => l.free).length} {t('academy.detail.free')}</span>}
                         </div>
                       </div>
                       {openChapter === ci ? <ChevronUp size={16} style={{ color: DS.text4 }} /> : <ChevronDown size={16} style={{ color: DS.text4 }} />}
@@ -1283,7 +1293,7 @@ export default function CourseDetailPage() {
                                 {lesson.free && (
                                   <button onClick={() => setShowFreeTrial(true)}
                                     style={{ color: DS.green, fontSize: 10, fontFamily: DS.mono, border: '1px solid rgba(34,197,94,0.3)', padding: '1px 6px', borderRadius: 4, background: 'rgba(34,197,94,0.05)', cursor: 'pointer' }}>
-                                    XEM MIỄN PHÍ
+                                    {t('academy.detail.watchFree')}
                                   </button>
                                 )}
                                 {!lesson.free && !enrolled && (
@@ -1303,7 +1313,7 @@ export default function CourseDetailPage() {
 
             {/* Instructor */}
             <div>
-              <h2 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 20, fontWeight: 900, letterSpacing: '0.05em', marginBottom: 16 }}>GIẢNG VIÊN</h2>
+              <h2 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 20, fontWeight: 900, letterSpacing: '0.05em', marginBottom: 16 }}>{t('academy.detail.instructor')}</h2>
               <div className="flex flex-col sm:flex-row gap-4 sm:gap-5 p-5 rounded-2xl" style={{ background: 'rgba(15,23,42,0.6)', border: `1px solid ${DS.border}` }}>
                 <img src={course.instructorImg} alt={course.instructor} className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover flex-shrink-0" style={{ border: `2px solid ${course.color}50` }} />
                 <div>
@@ -1317,9 +1327,9 @@ export default function CourseDetailPage() {
             {/* Testimonials */}
             <div>
               <h2 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 20, fontWeight: 900, letterSpacing: '0.05em', marginBottom: 16 }}>
-                ĐÁNH GIÁ TỪ HỌC VIÊN
+                {t('academy.detail.testimonials')}
                 <span style={{ color: DS.amber, fontSize: 15, marginLeft: 12 }}>★ {course.rating}</span>
-                <span style={{ color: DS.text4, fontSize: 12, fontWeight: 400, marginLeft: 8 }}>({course.reviews} đánh giá)</span>
+                <span style={{ color: DS.text4, fontSize: 12, fontWeight: 400, marginLeft: 8 }}>({course.reviews} {t('academy.detail.reviews')})</span>
               </h2>
 
               {/* Rating breakdown - pure SVG chart */}
@@ -1329,7 +1339,7 @@ export default function CourseDetailPage() {
                   <div className="flex justify-center gap-0.5 my-2">
                     {[1,2,3,4,5].map(i => <Star key={i} size={14} style={{ color: DS.amber, fill: DS.amber }} />)}
                   </div>
-                  <div style={{ color: DS.text4, fontSize: 11 }}>Xếp hạng tổng</div>
+                  <div style={{ color: DS.text4, fontSize: 11 }}>{t('academy.detail.overallRating')}</div>
                 </div>
                 <div className="flex-1 space-y-2">
                   {[5,4,3,2,1].map(stars => {
@@ -1375,7 +1385,7 @@ export default function CourseDetailPage() {
           <div className="space-y-5">
             {/* Requirements */}
             <div className="p-5 rounded-2xl" style={{ background: 'rgba(15,23,42,0.8)', border: `1px solid ${DS.border}` }}>
-              <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.15em', marginBottom: 12 }}>YÊU CẦU ĐẦU VÀO</div>
+              <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.15em', marginBottom: 12 }}>{t('academy.detail.requirements')}</div>
               <div className="space-y-2">
                 {course.requirements.map(r => (
                   <div key={r} className="flex items-start gap-2">
@@ -1388,7 +1398,7 @@ export default function CourseDetailPage() {
 
             {/* Target audience */}
             <div className="p-5 rounded-2xl" style={{ background: 'rgba(15,23,42,0.8)', border: `1px solid ${DS.border}` }}>
-              <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.15em', marginBottom: 12 }}>DÀNH CHO AI</div>
+              <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.15em', marginBottom: 12 }}>{t('academy.detail.targetAudience')}</div>
               <div className="space-y-2">
                 {course.targetAudience.map(a => (
                   <div key={a} className="flex items-start gap-2">
@@ -1401,17 +1411,17 @@ export default function CourseDetailPage() {
 
             {/* LP Info */}
             <div className="p-5 rounded-2xl" style={{ background: 'rgba(129,140,248,0.07)', border: '1px solid rgba(129,140,248,0.2)' }}>
-              <div style={{ color: DS.purple, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.12em', marginBottom: 8 }}>◈ HỆ THỐNG LP</div>
+              <div style={{ color: DS.purple, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.12em', marginBottom: 8 }}>◈ {t('academy.detail.lpSystem')}</div>
               <div className="space-y-2" style={{ color: DS.text3, fontSize: 12, lineHeight: 1.7 }}>
-                <div>🎓 Nhận <span style={{ color: DS.purple, fontWeight: 700 }}>+{course.lpReward} LP</span> khi hoàn thành</div>
-                <div>💳 Dùng LP để giảm giá dịch vụ LOOP</div>
-                <div>📈 <span style={{ color: DS.amber }}>1,000 LP = 500,000 VNĐ</span> giảm giá</div>
+                <div>{t('academy.detail.lpEarn', { lp: String(course.lpReward) })}</div>
+                <div>{t('academy.detail.lpUse')}</div>
+                <div>{t('academy.detail.lpRate')}</div>
               </div>
             </div>
 
             {/* Share & gift */}
             <div className="p-4 rounded-2xl" style={{ background: 'rgba(15,23,42,0.8)', border: `1px solid ${DS.border}` }}>
-              <div style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.12em', marginBottom: 10 }}>CHIA SẺ KHÓA HỌC</div>
+              <div style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.12em', marginBottom: 10 }}>{t('academy.detail.shareCourse')}</div>
               <div className="flex gap-2">
                 {['Facebook', 'Twitter', 'LinkedIn'].map(s => (
                   <button key={s} style={{ flex: 1, background: 'rgba(255,255,255,0.04)', border: `1px solid ${DS.border}`, color: DS.text4, fontSize: 10, padding: '7px 4px', borderRadius: 8, cursor: 'pointer' }}>
@@ -1423,7 +1433,7 @@ export default function CourseDetailPage() {
 
             {/* Back */}
             <Link to="/hoc-vien" style={{ display: 'block', color: DS.text3, fontSize: 13, padding: '11px', borderRadius: 10, textDecoration: 'none', textAlign: 'center', border: `1px solid ${DS.border}` }}>
-              ← Xem thêm khóa học
+              ← {t('academy.detail.moreCourses')}
             </Link>
           </div>
         </div>
@@ -1444,11 +1454,11 @@ export default function CourseDetailPage() {
             </div>
             <button onClick={() => setShowFreeTrial(true)}
               style={{ background: 'rgba(255,255,255,0.06)', border: `1px solid ${DS.border}`, color: DS.text3, fontSize: 12, padding: '10px 13px', borderRadius: 10, cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}>
-              🎬 Học thử
+              🎬 {t('academy.detail.freeTrialShort')}
             </button>
             <button onClick={() => setShowPayment(true)}
               style={{ background: GRD.primary, color: '#fff', fontSize: 13, fontWeight: 700, padding: '10px 18px', borderRadius: 10, border: 'none', cursor: 'pointer', flexShrink: 0, boxShadow: '0 0 20px rgba(129,140,248,0.4)', whiteSpace: 'nowrap' }}>
-              Mua ngay
+              {t('academy.detail.buyNowShort')}
             </button>
           </div>
         </div>

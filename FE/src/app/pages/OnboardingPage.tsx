@@ -11,6 +11,7 @@ import {
   Sparkles, Target, Award, Heart, Play, X
 } from 'lucide-react';
 import { DS, GRD } from '../components/layout/ds';
+import { useI18n } from '@/hooks/useI18n';
 import logoImg from 'figma:asset/3de9c8bfb537946e3dd01b9dbae9004d9c921471.png';
 
 // ── hex → rgba helper ────────────────────────────────────────────────────
@@ -230,7 +231,7 @@ interface SlideProps {
 }
 
 // SLIDE 0: Welcome / Logo Reveal
-function SlideWelcome({ direction }: SlideProps) {
+function SlideWelcome({ direction, t }: SlideProps & { t: ReturnType<typeof useI18n>['t'] }) {
   return (
     <SlideWrapper direction={direction}>
       <div className="flex flex-col items-center justify-center min-h-full text-center px-6">
@@ -260,7 +261,7 @@ function SlideWelcome({ direction }: SlideProps) {
           style={{ fontFamily: DS.heading, fontSize: 'clamp(28px, 5vw, 52px)', letterSpacing: '0.06em', marginBottom: 16 }}
         >
           <span style={{ background: 'linear-gradient(135deg, #FFFFFF 0%, #818CF8 50%, #3B82F6 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-            CHÀO MỪNG ĐẾN VỚI
+            {t('onboarding.slide1.title')}
           </span>
           <br />
           <span style={{ background: 'linear-gradient(135deg, #3B82F6, #818CF8, #7DD3FC)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
@@ -274,8 +275,7 @@ function SlideWelcome({ direction }: SlideProps) {
           transition={{ delay: 0.9 }}
           style={{ color: DS.text3, fontSize: 'clamp(14px, 2vw, 18px)', lineHeight: 1.8, maxWidth: 560, marginBottom: 32 }}
         >
-          Hệ điều hành số dành cho Digital Agency — Nơi công nghệ gặp nghệ thuật,
-          kiến tạo giải pháp web đỉnh cao cho thị trường Việt Nam.
+          {t('onboarding.slide1.desc')}
         </motion.p>
 
         {/* Scroll hint */}
@@ -286,7 +286,7 @@ function SlideWelcome({ direction }: SlideProps) {
           className="flex flex-col items-center gap-2"
         >
           <span style={{ color: DS.text5, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.15em' }}>
-            NHẤN TIẾP TỤC ĐỂ KHÁM PHÁ
+            {t('onboarding.slide1.hint')}
           </span>
           <motion.div
             animate={{ y: [0, 8, 0] }}
@@ -301,12 +301,12 @@ function SlideWelcome({ direction }: SlideProps) {
 }
 
 // SLIDE 1: About Company
-function SlideAbout({ direction }: SlideProps) {
+function SlideAbout({ direction, t }: SlideProps & { t: ReturnType<typeof useI18n>['t'] }) {
   const pillars = [
-    { icon: <Shield size={20} />, title: 'Uy tín', desc: '7+ năm kinh nghiệm, 120+ dự án thành công', color: DS.blue },
-    { icon: <Zap size={20} />, title: 'Tốc độ', desc: 'Triển khai nhanh chóng, bàn giao đúng hạn', color: DS.amber },
-    { icon: <Heart size={20} />, title: 'Tận tâm', desc: 'Hỗ trợ 24/7, đồng hành lâu dài', color: DS.red },
-    { icon: <Target size={20} />, title: 'Chất lượng', desc: 'Tiêu chuẩn quốc tế, thiết kế tinh xảo', color: DS.purple },
+    { icon: <Shield size={20} />, title: t('onboarding.slide2.pillar1'), desc: t('onboarding.slide2.pillar1Desc'), color: DS.blue },
+    { icon: <Zap size={20} />, title: t('onboarding.slide2.pillar2'), desc: t('onboarding.slide2.pillar2Desc'), color: DS.amber },
+    { icon: <Heart size={20} />, title: t('onboarding.slide2.pillar3'), desc: t('onboarding.slide2.pillar3Desc'), color: DS.red },
+    { icon: <Target size={20} />, title: t('onboarding.slide2.pillar4'), desc: t('onboarding.slide2.pillar4Desc'), color: DS.purple },
   ];
 
   return (
@@ -316,18 +316,15 @@ function SlideAbout({ direction }: SlideProps) {
           <div className="inline-flex items-center gap-2 mb-4 px-4 py-1.5 rounded-full"
             style={{ background: hexRgba(DS.blue, 0.08), border: `1px solid ${hexRgba(DS.blue, 0.2)}` }}>
             <Sparkles size={12} style={{ color: DS.blue }} />
-            <span style={{ color: DS.blue, fontSize: 10, fontFamily: DS.mono, letterSpacing: '0.2em' }}>VỀ CHÚNG TÔI</span>
+            <span style={{ color: DS.blue, fontSize: 10, fontFamily: DS.mono, letterSpacing: '0.2em' }}>{t('onboarding.slide2.badge')}</span>
           </div>
           <h2 style={{ fontFamily: DS.heading, fontSize: 'clamp(24px, 4vw, 40px)', letterSpacing: '0.04em', marginBottom: 12 }}>
             <span style={{ background: 'linear-gradient(135deg, #FFF, #94A3B8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-              LOOP SOLUTIONS LÀ AI?
+              {t('onboarding.slide2.title')}
             </span>
           </h2>
           <p style={{ color: DS.text3, fontSize: 'clamp(13px, 1.5vw, 16px)', lineHeight: 1.8, maxWidth: 600, margin: '0 auto' }}>
-            Chúng tôi là đội ngũ <span style={{ color: DS.blue }}>27 chuyên gia công nghệ</span> hàng đầu,
-            chuyên cung cấp giải pháp số toàn diện cho doanh nghiệp Việt Nam.
-            Từ thiết kế web, phát triển ứng dụng đến chiến lược marketing số —
-            tất cả trong <span style={{ color: DS.purple }}>một hệ sinh thái thống nhất</span>.
+            {t('onboarding.slide2.desc')}
           </p>
         </motion.div>
 
@@ -365,12 +362,12 @@ function SlideAbout({ direction }: SlideProps) {
 }
 
 // SLIDE 2: Services
-function SlideServices({ direction }: SlideProps) {
+function SlideServices({ direction, t }: SlideProps & { t: ReturnType<typeof useI18n>['t'] }) {
   const services = [
-    { icon: <Globe size={22} />, title: 'Thiết kế Website', desc: 'Landing page, web doanh nghiệp, thương mại điện tử — kích hoạt trong 2h, dùng thử miễn phí 3-5 ngày', color: '#3B82F6', badge: '12 gói ngành' },
-    { icon: <Code2 size={22} />, title: 'Phát triển App & SaaS', desc: 'Mobile app, web app, hệ thống quản lý nội bộ — kiến trúc microservices hiện đại', color: '#818CF8', badge: 'Full-stack' },
-    { icon: <BarChart3 size={22} />, title: 'Dashboard & Analytics', desc: 'Real-time dashboard, báo cáo tự động, data visualization — ra quyết định dựa trên dữ liệu', color: '#14B8A6', badge: 'Real-time' },
-    { icon: <TrendingUp size={22} />, title: 'SEO & Digital Marketing', desc: 'Lên top Google trong 3-6 tháng, chiến dịch quảng cáo, content marketing bền vững', color: '#22C55E', badge: 'ROI 300%' },
+    { icon: <Globe size={22} />, title: t('onboarding.slide3.service1Title'), desc: t('onboarding.slide3.service1Desc'), color: '#3B82F6', badge: t('onboarding.slide3.service1Badge') },
+    { icon: <Code2 size={22} />, title: t('onboarding.slide3.service2Title'), desc: t('onboarding.slide3.service2Desc'), color: '#818CF8', badge: t('onboarding.slide3.service2Badge') },
+    { icon: <BarChart3 size={22} />, title: t('onboarding.slide3.service3Title'), desc: t('onboarding.slide3.service3Desc'), color: '#14B8A6', badge: t('onboarding.slide3.service3Badge') },
+    { icon: <TrendingUp size={22} />, title: t('onboarding.slide3.service4Title'), desc: t('onboarding.slide3.service4Desc'), color: '#22C55E', badge: t('onboarding.slide3.service4Badge') },
   ];
 
   return (
@@ -380,11 +377,11 @@ function SlideServices({ direction }: SlideProps) {
           <div className="inline-flex items-center gap-2 mb-4 px-4 py-1.5 rounded-full"
             style={{ background: hexRgba(DS.purple, 0.08), border: `1px solid ${hexRgba(DS.purple, 0.2)}` }}>
             <Rocket size={12} style={{ color: DS.purple }} />
-            <span style={{ color: DS.purple, fontSize: 10, fontFamily: DS.mono, letterSpacing: '0.2em' }}>DỊCH VỤ CHÍNH</span>
+            <span style={{ color: DS.purple, fontSize: 10, fontFamily: DS.mono, letterSpacing: '0.2em' }}>{t('onboarding.slide3.badge')}</span>
           </div>
           <h2 style={{ fontFamily: DS.heading, fontSize: 'clamp(24px, 4vw, 40px)', letterSpacing: '0.04em' }}>
             <span style={{ background: 'linear-gradient(135deg, #FFF, #94A3B8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-              GIẢI PHÁP TOÀN DIỆN
+              {t('onboarding.slide3.title')}
             </span>
           </h2>
         </motion.div>
@@ -431,20 +428,20 @@ function SlideServices({ direction }: SlideProps) {
 }
 
 // SLIDE 3: Why Choose Us + Growth
-function SlideGrowth({ direction }: SlideProps) {
+function SlideGrowth({ direction, t }: SlideProps & { t: ReturnType<typeof useI18n>['t'] }) {
   const stats = [
-    { value: 120, suffix: '+', label: 'Dự án hoàn thành', color: DS.blue, icon: <Star size={16} /> },
-    { value: 98, suffix: '%', label: 'Khách hàng hài lòng', color: DS.green, icon: <Heart size={16} /> },
-    { value: 50, suffix: '+', label: 'Đối tác tin cậy', color: DS.purple, icon: <Users size={16} /> },
-    { value: 380, suffix: '%', label: 'Tăng trưởng 2025', color: DS.cyan, icon: <TrendingUp size={16} /> },
+    { value: 120, suffix: '+', label: t('onboarding.slide4.stat1'), color: DS.blue, icon: <Star size={16} /> },
+    { value: 98, suffix: '%', label: t('onboarding.slide4.stat2'), color: DS.green, icon: <Heart size={16} /> },
+    { value: 50, suffix: '+', label: t('onboarding.slide4.stat3'), color: DS.purple, icon: <Users size={16} /> },
+    { value: 380, suffix: '%', label: t('onboarding.slide4.stat4'), color: DS.cyan, icon: <TrendingUp size={16} /> },
   ];
 
   const reasons = [
-    'Dùng thử miễn phí 3-5 ngày trước khi quyết định',
-    'Đội ngũ 27 chuyên gia, hệ thống rank từ Iron → Diamond',
-    'Hệ thống LP điểm thưởng — càng đồng hành, càng có lợi',
-    'Kích hoạt website trong 2 giờ, bàn giao đúng hạn',
-    'Hỗ trợ kỹ thuật 24/7, bảo hành trọn đời',
+    t('onboarding.slide4.reason1'),
+    t('onboarding.slide4.reason2'),
+    t('onboarding.slide4.reason3'),
+    t('onboarding.slide4.reason4'),
+    t('onboarding.slide4.reason5'),
   ];
 
   return (
@@ -454,11 +451,11 @@ function SlideGrowth({ direction }: SlideProps) {
           <div className="inline-flex items-center gap-2 mb-4 px-4 py-1.5 rounded-full"
             style={{ background: hexRgba(DS.green, 0.08), border: `1px solid ${hexRgba(DS.green, 0.2)}` }}>
             <TrendingUp size={12} style={{ color: DS.green }} />
-            <span style={{ color: DS.green, fontSize: 10, fontFamily: DS.mono, letterSpacing: '0.2em' }}>SỐ LIỆU TĂNG TRƯỞNG</span>
+            <span style={{ color: DS.green, fontSize: 10, fontFamily: DS.mono, letterSpacing: '0.2em' }}>{t('onboarding.slide4.badge')}</span>
           </div>
           <h2 style={{ fontFamily: DS.heading, fontSize: 'clamp(24px, 4vw, 40px)', letterSpacing: '0.04em' }}>
             <span style={{ background: 'linear-gradient(135deg, #FFF, #94A3B8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-              TẠI SAO CHỌN LOOP?
+              {t('onboarding.slide4.title')}
             </span>
           </h2>
         </motion.div>
@@ -497,7 +494,7 @@ function SlideGrowth({ direction }: SlideProps) {
             transition={{ delay: 0.5 }}
           >
             <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, marginBottom: 12, letterSpacing: '0.1em' }}>
-              📈 BIỂU ĐỒ TĂNG TRƯỞNG KHÁCH HÀNG 2025
+              {t('onboarding.slide4.chartLabel')}
             </div>
             <GrowthChart />
           </motion.div>
@@ -511,7 +508,7 @@ function SlideGrowth({ direction }: SlideProps) {
             transition={{ delay: 0.6 }}
           >
             <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, marginBottom: 12, letterSpacing: '0.1em' }}>
-              ✨ LÝ DO ĐỒNG HÀNH CÙNG LOOP
+              {t('onboarding.slide4.reasonsLabel')}
             </div>
             <div className="flex flex-col gap-3">
               {reasons.map((r, i) => (
@@ -538,22 +535,22 @@ function SlideGrowth({ direction }: SlideProps) {
 }
 
 // SLIDE 4: LP System + Get Started
-function SlideGetStarted({ direction, onComplete }: SlideProps & { onComplete: () => void }) {
+function SlideGetStarted({ direction, onComplete, t }: SlideProps & { onComplete: () => void; t: ReturnType<typeof useI18n>['t'] }) {
   const ranks = [
-    { name: 'Sắt', emoji: '🪨', color: '#9CA3AF', lp: '0' },
-    { name: 'Đồng', emoji: '🥉', color: '#CD7F32', lp: '500' },
-    { name: 'Bạc', emoji: '🥈', color: '#C0C0C0', lp: '2K' },
-    { name: 'Vàng', emoji: '🥇', color: '#FFD700', lp: '5K' },
-    { name: 'Bạch Kim', emoji: '💎', color: '#E5E4E2', lp: '10K' },
-    { name: 'Hồng Ngọc', emoji: '❤️‍🔥', color: '#E0115F', lp: '25K' },
-    { name: 'Kim Cương', emoji: '💠', color: '#7DD3FC', lp: '50K' },
+    { name: t('onboarding.slide5.rank1'), emoji: '🪨', color: '#9CA3AF', lp: '0' },
+    { name: t('onboarding.slide5.rank2'), emoji: '🥉', color: '#CD7F32', lp: '500' },
+    { name: t('onboarding.slide5.rank3'), emoji: '🥈', color: '#C0C0C0', lp: '2K' },
+    { name: t('onboarding.slide5.rank4'), emoji: '🥇', color: '#FFD700', lp: '5K' },
+    { name: t('onboarding.slide5.rank5'), emoji: '💎', color: '#E5E4E2', lp: '10K' },
+    { name: t('onboarding.slide5.rank6'), emoji: '❤️‍🔥', color: '#E0115F', lp: '25K' },
+    { name: t('onboarding.slide5.rank7'), emoji: '💠', color: '#7DD3FC', lp: '50K' },
   ];
 
   const quickActions = [
-    { label: 'Khám phá Dịch vụ', href: '/dich-vu', icon: <Globe size={16} />, color: DS.blue },
-    { label: 'Đặt lịch Tư vấn', href: '/dat-lich', icon: <Play size={16} />, color: DS.green },
-    { label: 'Xem Portfolio', href: '/du-an', icon: <Star size={16} />, color: DS.amber },
-    { label: 'Gặp đội ngũ', href: '/doi-ngu', icon: <Users size={16} />, color: DS.purple },
+    { label: t('onboarding.slide5.action1'), href: '/dich-vu', icon: <Globe size={16} />, color: DS.blue },
+    { label: t('onboarding.slide5.action2'), href: '/dat-lich', icon: <Play size={16} />, color: DS.green },
+    { label: t('onboarding.slide5.action3'), href: '/du-an', icon: <Star size={16} />, color: DS.amber },
+    { label: t('onboarding.slide5.action4'), href: '/doi-ngu', icon: <Users size={16} />, color: DS.purple },
   ];
 
   return (
@@ -564,15 +561,15 @@ function SlideGetStarted({ direction, onComplete }: SlideProps & { onComplete: (
           <div className="inline-flex items-center gap-2 mb-4 px-4 py-1.5 rounded-full"
             style={{ background: hexRgba(DS.amber, 0.08), border: `1px solid ${hexRgba(DS.amber, 0.2)}` }}>
             <Award size={12} style={{ color: DS.amber }} />
-            <span style={{ color: DS.amber, fontSize: 10, fontFamily: DS.mono, letterSpacing: '0.2em' }}>HỆ THỐNG LP & THĂNG HẠNG</span>
+            <span style={{ color: DS.amber, fontSize: 10, fontFamily: DS.mono, letterSpacing: '0.2em' }}>{t('onboarding.slide5.badge')}</span>
           </div>
           <h2 style={{ fontFamily: DS.heading, fontSize: 'clamp(24px, 4vw, 36px)', letterSpacing: '0.04em', marginBottom: 8 }}>
             <span style={{ background: 'linear-gradient(135deg, #FFF, #94A3B8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-              TÍCH LŨY — THĂNG HẠNG — NHẬN THƯỞNG
+              {t('onboarding.slide5.title')}
             </span>
           </h2>
           <p style={{ color: DS.text4, fontSize: 13, maxWidth: 500, margin: '0 auto' }}>
-            Mỗi giao dịch tích lũy điểm LP. Thăng hạng để nhận ưu đãi độc quyền và hiệu ứng đặc biệt.
+            {t('onboarding.slide5.desc')}
           </p>
         </motion.div>
 
@@ -652,7 +649,7 @@ function SlideGetStarted({ direction, onComplete }: SlideProps & { onComplete: (
           onClick={onComplete}
         >
           <Rocket size={20} />
-          BẮT ĐẦU KHÁM PHÁ
+          {t('onboarding.getStarted')}
           <ArrowRight size={18} />
         </motion.button>
 
@@ -662,7 +659,7 @@ function SlideGetStarted({ direction, onComplete }: SlideProps & { onComplete: (
           transition={{ delay: 1.1 }}
           style={{ color: DS.text5, fontSize: 11, fontFamily: DS.mono, marginTop: 16 }}
         >
-          Bạn có thể xem lại hướng dẫn này bất kỳ lúc nào
+          {t('onboarding.slide5.replayNote')}
         </motion.p>
       </div>
     </SlideWrapper>
@@ -709,13 +706,14 @@ function ProgressDots({ total, current, onGo }: { total: number; current: number
 }
 
 // ── Slide labels ─────────────────────────────────────────────────────────
-const SLIDE_LABELS = ['Chào mừng', 'Về chúng tôi', 'Dịch vụ', 'Tăng trưởng', 'Bắt đầu'];
+// NOTE: labels are now driven by t() calls inline in the main component
 
 // ══════════════════════════════════════════════════════════════════════════
 // ── MAIN COMPONENT ───────────────────────────────────────────────────────
 // ══════════════════════════════════════════════════════════════════════════
 
 export default function OnboardingPage({ onComplete }: { onComplete: () => void }) {
+  const { t } = useI18n();
   const [current, setCurrent] = useState(0);
   const [direction, setDirection] = useState(1);
   const total = 5;
@@ -740,11 +738,11 @@ export default function OnboardingPage({ onComplete }: { onComplete: () => void 
   }, [next, prev]);
 
   const slides = [
-    <SlideWelcome key="welcome" direction={direction} />,
-    <SlideAbout key="about" direction={direction} />,
-    <SlideServices key="services" direction={direction} />,
-    <SlideGrowth key="growth" direction={direction} />,
-    <SlideGetStarted key="start" direction={direction} onComplete={onComplete} />,
+    <SlideWelcome key="welcome" direction={direction} t={t} />,
+    <SlideAbout key="about" direction={direction} t={t} />,
+    <SlideServices key="services" direction={direction} t={t} />,
+    <SlideGrowth key="growth" direction={direction} t={t} />,
+    <SlideGetStarted key="start" direction={direction} onComplete={onComplete} t={t} />,
   ];
 
   return (
@@ -784,7 +782,7 @@ export default function OnboardingPage({ onComplete }: { onComplete: () => void 
           <span style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono }}>
             {String(current + 1).padStart(2, '0')} / {String(total).padStart(2, '0')}
           </span>
-          <span style={{ color: DS.text4, fontSize: 12 }}>{SLIDE_LABELS[current]}</span>
+          <span style={{ color: DS.text4, fontSize: 12 }}>{t(`onboarding.slide${current + 1}.label` as never)}</span>
         </div>
 
         {/* Center: dots */}
@@ -806,7 +804,7 @@ export default function OnboardingPage({ onComplete }: { onComplete: () => void 
               onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = hexRgba(DS.blue, 0.15); }}
             >
               <ChevronLeft size={14} />
-              Quay lại
+              {t('onboarding.prev')}
             </button>
           )}
           {current < total - 1 ? (
@@ -822,7 +820,7 @@ export default function OnboardingPage({ onComplete }: { onComplete: () => void 
                 boxShadow: '0 0 20px rgba(129,140,248,0.3)',
               }}
             >
-              Tiếp tục
+              {t('onboarding.next')}
               <ChevronRight size={14} />
             </button>
           ) : null}
@@ -834,7 +832,7 @@ export default function OnboardingPage({ onComplete }: { onComplete: () => void 
               className="cursor-pointer"
               style={{ background: 'none', border: 'none', color: DS.text5, fontSize: 11, fontFamily: DS.mono }}
             >
-              Bỏ qua →
+              {t('onboarding.skip')} →
             </button>
           )}
         </div>
@@ -856,7 +854,7 @@ export default function OnboardingPage({ onComplete }: { onComplete: () => void 
         onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '0.7'; }}
       >
         <X size={12} />
-        BỎ QUA
+        {t('onboarding.skip').toUpperCase()}
       </button>
     </div>
   );

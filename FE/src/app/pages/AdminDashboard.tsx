@@ -39,6 +39,7 @@ import { useLoopStore } from '../store/loopStore';
 import { useIsMobile } from '../components/ui/use-mobile';
 import { useRealtimeNotifications } from '../hooks/useRealtimeNotifications';
 import { AdminLeaderboardTab } from '../components/admin/AdminLeaderboardTab';
+import { useI18n } from '@/hooks/useI18n';
 
 const fmtLP = (n: number) => n >= 1_000_000 ? `${(n / 1_000_000).toFixed(2)}M` : n >= 1_000 ? `${(n / 1_000).toFixed(1)}K` : String(n);
 
@@ -62,38 +63,38 @@ function useCountUp(target: number, duration = 1400) {
 }
 
 // ── Sidebar ───────────────────────────────────────────────────────────────────
-const SIDEBAR_GROUPS = [
-  { label: 'QUẢN LÝ',   items: [
-    { id: 'overview',    icon: <LayoutDashboard size={16} />, label: 'Tổng quan' },
-    { id: 'orders',      icon: <ShoppingCart size={16} />,    label: 'Đơn hàng',  badge: 'orders' },
-    { id: 'members',     icon: <Users size={16} />,           label: 'Thành viên' },
-    { id: 'departments', icon: <Building2 size={16} />,       label: 'Phòng ban' },
-    { id: 'projects',    icon: <FolderKanban size={16} />,    label: 'Kanban' },
-    { id: 'leaderboard_admin', icon: <BarChart2 size={16} />, label: 'Leaderboard LP' },
+const SIDEBAR_GROUPS_RAW = [
+  { labelKey: 'admin.groupManage', items: [
+    { id: 'overview',           icon: <LayoutDashboard size={16} />, labelKey: 'admin.overview' },
+    { id: 'orders',             icon: <ShoppingCart size={16} />,   labelKey: 'admin.orders',     badge: 'orders' },
+    { id: 'members',            icon: <Users size={16} />,          labelKey: 'admin.members' },
+    { id: 'departments',        icon: <Building2 size={16} />,      labelKey: 'admin.departments' },
+    { id: 'projects',           icon: <FolderKanban size={16} />,   labelKey: 'admin.projects' },
+    { id: 'leaderboard_admin',  icon: <BarChart2 size={16} />,      labelKey: 'admin.leaderboard' },
   ]},
-  { label: 'SẢN PHẨM', items: [
-    { id: 'services',  icon: <Briefcase size={16} />,       label: 'Dịch vụ' },
-    { id: 'media',     icon: <Camera size={16} />,          label: 'Quản lý Media Booking', badge: 'media' },
-    { id: 'quotation', icon: <Receipt size={16} />,          label: 'Báo giá' },
-    { id: 'portfolio', icon: <Package size={16} />,          label: 'Portfolio' },
-    { id: 'projects_completed', icon: <FolderCheck size={16} />, label: 'Dự án xong' },
-    { id: 'academy',   icon: <BookOpen size={16} />,         label: 'Học viện' },
-    { id: 'blog',      icon: <FileText size={16} />,         label: 'Blog' },
+  { labelKey: 'admin.groupProducts', items: [
+    { id: 'services',            icon: <Briefcase size={16} />,    labelKey: 'admin.services' },
+    { id: 'media',              icon: <Camera size={16} />,       labelKey: 'admin.media',      badge: 'media' },
+    { id: 'quotation',          icon: <Receipt size={16} />,      labelKey: 'admin.quotation' },
+    { id: 'portfolio',           icon: <Package size={16} />,     labelKey: 'admin.portfolio' },
+    { id: 'projects_completed',  icon: <FolderCheck size={16} />,  labelKey: 'admin.projectsCompleted' },
+    { id: 'academy',            icon: <BookOpen size={16} />,     labelKey: 'admin.academy' },
+    { id: 'blog',               icon: <FileText size={16} />,     labelKey: 'admin.blog' },
   ]},
-  { label: 'TÀI CHÍNH', items: [
-    { id: 'revenue',    icon: <DollarSign size={16} />,   label: 'Doanh thu' },
-    { id: 'analytics',  icon: <BarChart2 size={16} />,    label: 'Phân tích & Báo cáo' },
-    { id: 'clients',    icon: <UserCheck size={16} />,     label: 'Khách hàng' },
-    { id: 'lp',         icon: <Wallet size={16} />,        label: 'Tài chính LP' },
-    { id: 'lp_manage',  icon: <Zap size={16} />,           label: 'Quản lý LP' },
-    { id: 'income_tax', icon: <Calculator size={16} />,    label: 'Thu nhập & Thuế' },
-    { id: 'web_packages', icon: <Package size={16} />,    label: 'Gói Web' },
+  { labelKey: 'admin.groupFinance', items: [
+    { id: 'revenue',            icon: <DollarSign size={16} />,  labelKey: 'admin.revenue' },
+    { id: 'analytics',          icon: <BarChart2 size={16} />,   labelKey: 'admin.analytics' },
+    { id: 'clients',            icon: <UserCheck size={16} />,    labelKey: 'admin.clients' },
+    { id: 'lp',                 icon: <Wallet size={16} />,      labelKey: 'admin.lp' },
+    { id: 'lp_manage',          icon: <Zap size={16} />,           labelKey: 'admin.lpManage' },
+    { id: 'income_tax',          icon: <Calculator size={16} />,   labelKey: 'admin.incomeTax' },
+    { id: 'web_packages',        icon: <Package size={16} />,      labelKey: 'admin.webPackages' },
   ]},
-  { label: 'HỆ THỐNG', items: [
-    { id: 'effects',   icon: <Sparkles size={16} />,         label: 'Hiệu ứng rank' },
-    { id: 'quests_events', icon: <Star size={16} />,         label: 'Nhiệm vụ & Sự kiện' },
-    { id: 'notification_center', icon: <Bell size={16} />,  label: 'Trung tâm TB', badge: 'notif' },
-    { id: 'settings',  icon: <Settings size={16} />,          label: 'Cài đặt' },
+  { labelKey: 'admin.groupSystem', items: [
+    { id: 'effects',             icon: <Sparkles size={16} />,     labelKey: 'admin.effects' },
+    { id: 'quests_events',       icon: <Star size={16} />,         labelKey: 'admin.questsEvents' },
+    { id: 'notification_center', icon: <Bell size={16} />,          labelKey: 'admin.notificationCenter', badge: 'notif' },
+    { id: 'settings',           icon: <Settings size={16} />,       labelKey: 'admin.settings' },
   ]},
 ];
 
@@ -107,6 +108,43 @@ function Sidebar({ active, onSelect, isOpen, onClose }: {
   const { orders, getUnreadAdminCount } = useLoopStore();
   const newOrders = orders.filter(o => o.status === 'paid').length;
   const unreadNotifs = getUnreadAdminCount();
+  const { t } = useI18n();
+
+  // Build i18n-aware SIDEBAR_GROUPS
+  const SIDEBAR_GROUPS = [
+    { label: t('admin.groupManage'), items: [
+      { id: 'overview',           icon: <LayoutDashboard size={16} />, label: t('admin.overview') },
+      { id: 'orders',             icon: <ShoppingCart size={16} />,    label: t('admin.orders'),     badge: 'orders' },
+      { id: 'members',            icon: <Users size={16} />,           label: t('admin.members') },
+      { id: 'departments',        icon: <Building2 size={16} />,       label: t('admin.departments') },
+      { id: 'projects',           icon: <FolderKanban size={16} />,   label: t('admin.projects') },
+      { id: 'leaderboard_admin',  icon: <BarChart2 size={16} />,       label: t('admin.leaderboard') },
+    ]},
+    { label: t('admin.groupProducts'), items: [
+      { id: 'services',           icon: <Briefcase size={16} />,    label: t('admin.services') },
+      { id: 'media',             icon: <Camera size={16} />,       label: t('admin.media'),        badge: 'media' },
+      { id: 'quotation',         icon: <Receipt size={16} />,     label: t('admin.quotation') },
+      { id: 'portfolio',          icon: <Package size={16} />,     label: t('admin.portfolio') },
+      { id: 'projects_completed', icon: <FolderCheck size={16} />, label: t('admin.projectsCompleted') },
+      { id: 'academy',           icon: <BookOpen size={16} />,     label: t('admin.academy') },
+      { id: 'blog',              icon: <FileText size={16} />,    label: t('admin.blog') },
+    ]},
+    { label: t('admin.groupFinance'), items: [
+      { id: 'revenue',           icon: <DollarSign size={16} />, label: t('admin.revenue') },
+      { id: 'analytics',         icon: <BarChart2 size={16} />,  label: t('admin.analytics') },
+      { id: 'clients',           icon: <UserCheck size={16} />,  label: t('admin.clients') },
+      { id: 'lp',                icon: <Wallet size={16} />,      label: t('admin.lp') },
+      { id: 'lp_manage',        icon: <Zap size={16} />,        label: t('admin.lpManage') },
+      { id: 'income_tax',        icon: <Calculator size={16} />, label: t('admin.incomeTax') },
+      { id: 'web_packages',      icon: <Package size={16} />,    label: t('admin.webPackages') },
+    ]},
+    { label: t('admin.groupSystem'), items: [
+      { id: 'effects',           icon: <Sparkles size={16} />,   label: t('admin.effects') },
+      { id: 'quests_events',     icon: <Star size={16} />,       label: t('admin.questsEvents') },
+      { id: 'notification_center', icon: <Bell size={16} />,      label: t('admin.notificationCenter'), badge: 'notif' },
+      { id: 'settings',          icon: <Settings size={16} />,   label: t('admin.settings') },
+    ]},
+  ];
 
   const getBadge = (badge?: string) => {
     if (badge === 'orders') return newOrders;
@@ -177,14 +215,14 @@ function Sidebar({ active, onSelect, isOpen, onClose }: {
           </div>
         ))}
 
-        <div style={{ color: DS.text5, fontSize: 9, fontFamily: DS.mono, letterSpacing: '0.2em', marginBottom: 8, marginLeft: 8, marginTop: 8 }}>ĐIỀU HƯỚNG</div>
-        {[{ to: '/', icon: <Globe size={15} />, label: 'Trang chủ' },
-          { to: '/khach-hang', icon: <UserCheck size={15} />, label: 'Customer Portal' },
-          { to: '/nhan-vien', icon: <Users size={15} />, label: 'Staff Portal' },
-          { to: '/bang-xep-hang', icon: <BarChart3 size={15} />, label: 'Bảng xếp hạng' },
+        <div style={{ color: DS.text5, fontSize: 9, fontFamily: DS.mono, letterSpacing: '0.2em', marginBottom: 8, marginLeft: 8, marginTop: 8 }}>{t('admin.navigation')}</div>
+        {[{ to: '/', icon: <Globe size={15} />, labelKey: 'navbar.home' },
+          { to: '/khach-hang', icon: <UserCheck size={15} />, labelKey: 'navbar.customerPortal' },
+          { to: '/nhan-vien', icon: <Users size={15} />, labelKey: 'navbar.staffPortal' },
+          { to: '/bang-xep-hang', icon: <BarChart3 size={15} />, labelKey: 'navbar.rankings' },
         ].map(l => (
           <Link key={l.to} to={l.to} onClick={() => isMobile && onClose && onClose()} className="flex items-center gap-2.5 px-3 py-2 rounded-xl" style={{ color: DS.text4, fontSize: 12, textDecoration: 'none', minHeight: 40 }}>
-            <span style={{ color: DS.text5 }}>{l.icon}</span>{l.label}
+            <span style={{ color: DS.text5 }}>{l.icon}</span>{t(l.labelKey)}
           </Link>
         ))}
       </nav>
@@ -282,26 +320,27 @@ function TopBar({ tab, onSelect, onMenuToggle }: { tab: string; onSelect: (t: st
   const [showNotifDropdown, setShowNotifDropdown] = useState(false);
   const isMobile = useIsMobile();
   const unread = getUnreadAdminCount();
+  const { t } = useI18n();
 
   const tabLabels: Record<string, string> = {
-    overview: 'Tổng quan hệ thống', members: 'Quản lý thành viên', projects: 'Kanban dự án',
-    revenue: 'Thống kê doanh thu', clients: 'Quản lý khách hàng', lp: 'Tài chính LP',
-    notifications: 'Thông báo', settings: 'Cài đặt hệ thống',
-    academy: 'Quản lý học viện', blog: 'Quản lý blog',
-    services: 'Quản lý dịch vụ', portfolio: 'Quản lý portfolio dự án',
-    orders: 'Quản lý đơn hàng & Demo',
-    quotation: 'Quản lý báo giá',
-    effects: 'Quản lý hiệu ứng rank',
-    projects_completed: 'Quản lý dự án hoàn thành',
-    departments: 'Quản lý phòng ban',
-    lp_manage: 'Quản lý LP',
-    income_tax: 'Thu nhập & Thuế',
-    web_packages: 'Gói Web',
-    media: 'Quản lý Media Booking',
-    notification_center: 'Trung tâm thông báo',
-    quests_events: 'Nhiệm vụ & Sự kiện',
-    analytics: 'Phân tích & Báo cáo',
-    leaderboard_admin: 'Leaderboard LP',
+    overview: t('admin.overview'), members: t('admin.members'), projects: t('admin.projects'),
+    revenue: t('admin.revenue'), clients: t('admin.clients'), lp: t('admin.lp'),
+    notifications: t('admin.notifications'), settings: t('admin.settings'),
+    academy: t('admin.academy'), blog: t('admin.blog'),
+    services: t('admin.services'), portfolio: t('admin.portfolio'),
+    orders: t('admin.orders'),
+    quotation: t('admin.quotation'),
+    effects: t('admin.effects'),
+    projects_completed: t('admin.projectsCompleted'),
+    departments: t('admin.departments'),
+    lp_manage: t('admin.lpManage'),
+    income_tax: t('admin.incomeTax'),
+    web_packages: t('admin.webPackages'),
+    media: t('admin.media'),
+    notification_center: t('admin.notificationCenter'),
+    quests_events: t('admin.questsEvents'),
+    analytics: t('admin.analytics'),
+    leaderboard_admin: t('admin.leaderboard'),
   };
 
   return (
@@ -322,7 +361,7 @@ function TopBar({ tab, onSelect, onMenuToggle }: { tab: string; onSelect: (t: st
         {!isMobile && (
           <div className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: DS.bgCard2, border: `1px solid ${DS.border}` }}>
             <Search size={14} style={{ color: DS.text4 }} />
-            <input type="text" placeholder="Tìm kiếm..." style={{ background: 'none', border: 'none', outline: 'none', color: DS.text3, fontSize: 13, width: 160, fontFamily: DS.body }} />
+            <input type="text" placeholder={t('admin.searchPlaceholder')} style={{ background: 'none', border: 'none', outline: 'none', color: DS.text3, fontSize: 13, width: 160, fontFamily: DS.body }} />
           </div>
         )}
         <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full" style={{ background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.25)' }}>
@@ -349,10 +388,10 @@ function TopBar({ tab, onSelect, onMenuToggle }: { tab: string; onSelect: (t: st
               <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }}
                 style={{ position: 'fixed', right: isMobile ? 8 : 'auto', top: 56, width: isMobile ? 'calc(100vw - 16px)' : 320, borderRadius: 16, overflow: 'hidden', zIndex: 50, background: DS.bgCard, border: `1px solid ${DS.border}`, boxShadow: '0 20px 60px rgba(0,0,0,0.5)' }}>
                 <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: `1px solid ${DS.border}` }}>
-                  <span style={{ color: DS.text, fontSize: 13, fontWeight: 700 }}>Thông báo ({unread} mới)</span>
+                  <span style={{ color: DS.text, fontSize: 13, fontWeight: 700 }}>{t('admin.notifications')} ({unread} {t('admin.notificationsNew')})</span>
                   <button onClick={() => { markAllAdminNotifsRead(); setShowNotifDropdown(false); onSelect('notifications'); }}
                     style={{ color: DS.blue, background: 'none', border: 'none', cursor: 'pointer', fontSize: 11 }}>
-                    Xem tất cả
+                    {t('admin.viewAllNotifications')}
                   </button>
                 </div>
                 <div style={{ maxHeight: 340, overflowY: 'auto' }}>
@@ -428,23 +467,24 @@ function StatCard({ label, value, sub, color, icon, trend, trendUp }: {
 // ── OVERVIEW TAB ──────────────────────────────────────────────────────────
 function OverviewTab() {
   const { orders } = useLoopStore();
+  const { t } = useI18n();
   const totalRevenue = orders.filter(o => o.status !== 'pending_payment' && o.status !== 'cancelled').reduce((s, o) => s + o.budget, 0);
   const activeCount = orders.filter(o => o.status === 'in_progress' || o.status === 'demo_ready').length;
   const newPaid = orders.filter(o => o.status === 'paid').length;
 
   const kpis = [
-    { label: 'Doanh thu Q1/2026', value: `${(totalRevenue / 1_000_000).toFixed(0)}M`, sub: '↑ 28% so Q4/2025 (VNĐ)', color: DS.blue, icon: <DollarSign size={18} />, trend: '+28%', trendUp: true },
-    { label: 'Đơn hàng đang làm', value: String(activeCount), sub: `${newPaid} đơn mới cần phân công`, color: DS.purple, icon: <ShoppingCart size={18} />, trend: `+${newPaid}`, trendUp: true },
-    { label: 'Thành viên tích cực', value: '27', sub: 'Season III · Full team', color: DS.cyan, icon: <Users size={18} />, trend: '100%', trendUp: true },
-    { label: 'LP phát hành T3', value: '35.2K', sub: 'Điểm thưởng nội bộ', color: DS.amber, icon: <Zap size={18} />, trend: '+22%', trendUp: true },
+    { label: t('admin.kpiRevenue'), value: `${(totalRevenue / 1_000_000).toFixed(0)}M`, sub: t('admin.kpiRevenueSub'), color: DS.blue, icon: <DollarSign size={18} />, trend: '+28%', trendUp: true },
+    { label: t('admin.kpiActiveOrders'), value: String(activeCount), sub: t('admin.kpiNewPaid', { count: newPaid }), color: DS.purple, icon: <ShoppingCart size={18} />, trend: `+${newPaid}`, trendUp: true },
+    { label: t('admin.kpiActiveMembers'), value: '27', sub: t('admin.kpiFullTeam'), color: DS.cyan, icon: <Users size={18} />, trend: '100%', trendUp: true },
+    { label: t('admin.kpiLpIssued'), value: '35.2K', sub: t('admin.kpiInternalReward'), color: DS.amber, icon: <Zap size={18} />, trend: '+22%', trendUp: true },
   ];
 
   const recentActivities = [
-    { user: 'Rin Nakamura', action: 'hoàn thành task', detail: '10x Performance Refactor · 25K LP', time: '2 phút trước', rank: 'ruby', type: 'done' },
-    { user: 'Akira Sato', action: 'phê duyệt dự án', detail: 'Platform Architecture Overhaul · 80K LP', time: '15 phút trước', rank: 'diamond', type: 'approve' },
-    { user: 'Yuna Park', action: 'lên cấp Level 69', detail: 'Gold Rank · Tổng LP: 65K', time: '1 giờ trước', rank: 'gold', type: 'levelup' },
-    { user: 'Shin Watanabe', action: 'nộp báo cáo', detail: 'Observability Stack Setup · 10K LP', time: '2 giờ trước', rank: 'platinum', type: 'report' },
-    { user: 'Nguyễn Minh Tuấn', action: 'booking dịch vụ', detail: 'VNRetail Platform v3 · 175M VNĐ', time: '4 giờ trước', rank: 'gold', type: 'booking' },
+    { user: 'Rin Nakamura', action: t('admin.actCompletedTask'), detail: '10x Performance Refactor · 25K LP', time: t('admin.act2minAgo'), rank: 'ruby', type: 'done' },
+    { user: 'Akira Sato', action: t('admin.actApprovedProject'), detail: 'Platform Architecture Overhaul · 80K LP', time: t('admin.act15minAgo'), rank: 'diamond', type: 'approve' },
+    { user: 'Yuna Park', action: t('admin.actLevelUp'), detail: 'Gold Rank · Tổng LP: 65K', time: t('admin.act1hrAgo'), rank: 'gold', type: 'levelup' },
+    { user: 'Shin Watanabe', action: t('admin.actSubmittedReport'), detail: 'Observability Stack Setup · 10K LP', time: t('admin.act2hrAgo'), rank: 'platinum', type: 'report' },
+    { user: 'Nguyễn Minh Tuấn', action: t('admin.actBookedService'), detail: 'VNRetail Platform v3 · 175M VNĐ', time: t('admin.act4hrAgo'), rank: 'gold', type: 'booking' },
   ];
 
   const projects = orders.filter(o => ['in_progress','demo_ready','client_review'].includes(o.status)).slice(0, 5).map(o => ({
@@ -454,9 +494,9 @@ function OverviewTab() {
   }));
 
   const statusCfg: Record<string, { label: string; color: string }> = {
-    'on-track': { label: 'Đúng tiến độ', color: DS.green },
-    'at-risk': { label: 'Có rủi ro', color: DS.amber },
-    'ahead': { label: 'Vượt kế hoạch', color: DS.blue },
+    'on-track': { label: t('admin.statusOnTrack'), color: DS.green },
+    'at-risk': { label: t('admin.statusAtRisk'), color: DS.amber },
+    'ahead': { label: t('admin.statusAhead'), color: DS.blue },
   };
 
   const actTypeIcon = (t: string) => {
@@ -476,9 +516,9 @@ function OverviewTab() {
         {/* Projects */}
         <div className="xl:col-span-2 rounded-2xl p-5" style={{ background: DS.bgCard, border: `1px solid ${DS.border}` }}>
           <div className="flex items-center justify-between mb-5">
-            <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.15em' }}>── DỰ ÁN ĐANG THỰC HIỆN</div>
+            <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.15em' }}>── {t('admin.overviewProjects').toUpperCase()}</div>
             <button style={{ color: DS.blue, background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, fontFamily: DS.mono, display: 'flex', alignItems: 'center', gap: 4 }}>
-              <Plus size={13} /> Thêm mới
+              <Plus size={13} /> {t('common.create')}
             </button>
           </div>
           <div className="space-y-3">
@@ -519,7 +559,7 @@ function OverviewTab() {
 
         {/* Activity feed */}
         <div className="rounded-2xl p-5" style={{ background: DS.bgCard, border: `1px solid ${DS.border}` }}>
-          <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.15em', marginBottom: 16 }}>── HOẠT ĐỘNG GẦN ĐÂY</div>
+          <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.15em', marginBottom: 16 }}>── {t('admin.recentActivity').toUpperCase()}</div>
           <div className="space-y-3">
             {recentActivities.map((a, i) => {
               const rc = RANKS[a.rank as keyof typeof RANKS];
@@ -549,6 +589,7 @@ function OverviewTab() {
 
 // ── LP FINANCE TAB ─────────────────────────────────────────────────────────
 function LPFinanceTab() {
+  const { t } = useI18n();
   const transactions = [
     { user: 'Akira Sato', type: 'earn', detail: 'Platform Architecture Overhaul', amount: 80000, date: '16/03', rank: 'diamond' },
     { user: 'Rin Nakamura', type: 'earn', detail: 'Distributed Cache System', amount: 20000, date: '13/03', rank: 'ruby' },
@@ -558,10 +599,10 @@ function LPFinanceTab() {
     { user: 'Mei Lin', type: 'spend', detail: 'Giảm giá hóa đơn khách hàng', amount: -500, date: '08/03', rank: 'bronze' },
   ];
   const lpStats = [
-    { label: 'LP Tổng phát hành', value: fmtLP(3_200_000), color: DS.blue, sub: 'All time' },
-    { label: 'LP Đang lưu thông', value: fmtLP(members.reduce((s, m) => s + m.lpBalance, 0)), color: DS.cyan, sub: 'Season III' },
-    { label: 'LP Đã đổi', value: fmtLP(820_000), color: DS.green, sub: 'Mùa này' },
-    { label: 'Rate: 1,000 LP', value: '500K VNĐ', color: DS.amber, sub: 'Giảm giá tối đa 20%' },
+    { label: t('admin.lpTotalIssued'), value: fmtLP(3_200_000), color: DS.blue, sub: t('admin.allTime') },
+    { label: t('admin.lpCirculating'), value: fmtLP(members.reduce((s, m) => s + m.lpBalance, 0)), color: DS.cyan, sub: t('admin.thisSeason') },
+    { label: t('admin.lpRedeemed'), value: fmtLP(820_000), color: DS.green, sub: t('admin.thisSeason') },
+    { label: t('admin.lpRate'), value: '500K VND', color: DS.amber, sub: t('admin.maxDiscount') },
   ];
   return (
     <div className="space-y-6">
@@ -576,7 +617,7 @@ function LPFinanceTab() {
       </div>
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
         <div className="rounded-2xl p-5" style={{ background: DS.bgCard, border: `1px solid ${DS.border}` }}>
-          <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.15em', marginBottom: 16 }}>── LP THEO THÀNH VIÊN</div>
+          <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.15em', marginBottom: 16 }}>── {t('admin.lpPerMember')}</div>
           <div className="space-y-3">
             {[...members].sort((a, b) => b.lpBalance - a.lpBalance).map((m) => {
               const rc = RANKS[m.rank];
@@ -606,7 +647,7 @@ function LPFinanceTab() {
           </div>
         </div>
         <div className="rounded-2xl p-5" style={{ background: DS.bgCard, border: `1px solid ${DS.border}` }}>
-          <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.15em', marginBottom: 16 }}>── GIAO DỊCH GẦN ĐÂY</div>
+          <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.15em', marginBottom: 16 }}>── {t('admin.lpRecentTx')}</div>
           <div className="space-y-2">
             {transactions.map((tx, i) => {
               const rc = RANKS[tx.rank as keyof typeof RANKS];
@@ -630,7 +671,7 @@ function LPFinanceTab() {
             })}
           </div>
           <button className="w-full mt-4 py-2.5 rounded-xl" style={{ background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)', color: DS.blue, fontSize: 12, fontFamily: DS.mono, cursor: 'pointer' }}>
-            PHÂN PHỐI LP MỚI +
+            {t('admin.distributeLp')}
           </button>
         </div>
       </div>
@@ -641,6 +682,7 @@ function LPFinanceTab() {
 // ── NOTIFICATIONS TAB ──────────────────────────────────────────────────────
 function NotificationsTab() {
   const { adminNotifications, markAdminNotifRead, markAllAdminNotifsRead, deleteAdminNotif } = useLoopStore();
+  const { t } = useI18n();
   const unread = adminNotifications.filter(n => !n.read).length;
 
   const typeIconMap: Record<string, React.ReactNode> = {
@@ -656,9 +698,9 @@ function NotificationsTab() {
   return (
     <div className="max-w-3xl space-y-4">
       <div className="flex items-center justify-between">
-        <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.18em' }}>── THÔNG BÁO HỆ THỐNG ({unread} chưa đọc)</div>
+        <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.18em' }}>── {t('admin.systemNotifications')} ({unread} {t('admin.notificationsNew')})</div>
         <button onClick={markAllAdminNotifsRead} style={{ color: DS.blue, background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, fontFamily: DS.mono }}>
-          Đánh dấu tất cả đã đọc
+          {t('admin.markAllRead')}
         </button>
       </div>
       {adminNotifications.map((n, i) => (
@@ -691,6 +733,7 @@ function NotificationsTab() {
 
 // ── SETTINGS TAB ───────────────────────────────────────────────────────────
 function SettingsTab() {
+  const { t } = useI18n();
   const [lpRate, setLpRate] = useState('500');
   const [seasonName, setSeasonName] = useState('Season III');
   const [notifications, setNotifications] = useState(true);
@@ -705,30 +748,30 @@ function SettingsTab() {
 
   return (
     <div className="max-w-2xl space-y-5">
-      <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.18em' }}>── CÀI ĐẶT HỆ THỐNG</div>
+      <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.18em' }}>── {t('admin.systemSettings')}</div>
       <div className="rounded-2xl p-6" style={{ background: DS.bgCard, border: `1px solid ${DS.border}` }}>
-        <div style={{ color: DS.text2, fontSize: 15, fontWeight: 700, marginBottom: 20 }}>◈ Hệ thống LP</div>
+        <div style={{ color: DS.text2, fontSize: 15, fontWeight: 700, marginBottom: 20 }}>{t('admin.lpSystem')}</div>
         <div className="space-y-5">
           <div>
-            <label style={{ color: DS.text4, fontSize: 12, fontFamily: DS.mono, display: 'block', marginBottom: 8 }}>TỶ GIÁ: 1,000 LP = ? VNĐ (Giảm giá)</label>
+            <label style={{ color: DS.text4, fontSize: 12, fontFamily: DS.mono, display: 'block', marginBottom: 8 }}>{t('admin.lpRate')}</label>
             <div className="flex items-center gap-3">
               <input type="number" value={lpRate} onChange={e => setLpRate(e.target.value)} style={{ flex: 1, background: DS.bgCard2, border: `1px solid ${DS.border}`, borderRadius: 10, padding: '10px 14px', color: DS.text, fontSize: 14, outline: 'none' }} />
-              <span style={{ color: DS.text3, fontSize: 13 }}>VNĐ / 1,000 LP</span>
+              <span style={{ color: DS.text3, fontSize: 13 }}>{t('admin.lpRateUnit')}</span>
             </div>
           </div>
           <div>
-            <label style={{ color: DS.text4, fontSize: 12, fontFamily: DS.mono, display: 'block', marginBottom: 8 }}>TÊN SEASON</label>
+            <label style={{ color: DS.text4, fontSize: 12, fontFamily: DS.mono, display: 'block', marginBottom: 8 }}>{t('admin.seasonName')}</label>
             <input value={seasonName} onChange={e => setSeasonName(e.target.value)} style={{ width: '100%', background: DS.bgCard2, border: `1px solid ${DS.border}`, borderRadius: 10, padding: '10px 14px', color: DS.text, fontSize: 14, outline: 'none', boxSizing: 'border-box' }} />
           </div>
         </div>
       </div>
       <div className="rounded-2xl p-6" style={{ background: DS.bgCard, border: `1px solid ${DS.border}` }}>
-        <div style={{ color: DS.text2, fontSize: 15, fontWeight: 700, marginBottom: 20 }}>⚙️ Tuỳ chọn hệ thống</div>
+        <div style={{ color: DS.text2, fontSize: 15, fontWeight: 700, marginBottom: 20 }}>{t('admin.systemOptions')}</div>
         <div className="space-y-5">
           {[
-            { label: 'Thông báo khi thành viên lên rank', desc: 'Email + in-app', val: notifications, set: setNotifications },
-            { label: 'Tự động thăng hạng LP đủ điều kiện', desc: 'Cập nhật rank tự động', val: autoRankUp, set: setAutoRankUp },
-            { label: 'Dark mode bắt buộc', desc: 'Asian Tech-Zen theme', val: darkMode, set: () => {} },
+            { label: t('admin.notifOnRankUp'), desc: t('admin.notifOnRankUpDesc'), val: notifications, set: setNotifications },
+            { label: t('admin.autoRankUp'), desc: t('admin.autoRankUpDesc'), val: autoRankUp, set: setAutoRankUp },
+            { label: t('admin.darkMode'), desc: t('admin.darkModeDesc'), val: darkMode, set: () => {} },
           ].map(({ label, desc, val, set }) => (
             <div key={label} className="flex items-center justify-between">
               <div>
@@ -741,7 +784,7 @@ function SettingsTab() {
         </div>
       </div>
       <button style={{ background: GRD.primary, color: '#fff', border: 'none', borderRadius: 12, padding: '12px 28px', cursor: 'pointer', fontSize: 14, fontWeight: 600, boxShadow: '0 0 20px rgba(129,140,248,0.35)' }}>
-        Lưu thay đổi
+        {t('admin.saveChanges')}
       </button>
     </div>
   );

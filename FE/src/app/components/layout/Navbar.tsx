@@ -2,9 +2,11 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
 import { Menu, X, LogIn, Zap, Search, ChevronRight, Sparkles, User, LogOut, Shield, Settings, ChevronDown } from 'lucide-react';
-import { DS, GRD, NAV_LINKS } from './ds';
+import { DS, GRD } from './ds';
 import { AdvancedSearch } from './AdvancedSearch';
 import { useAuthStore } from '../../store/authStore';
+import { useI18n } from '@/hooks/useI18n';
+import { LocaleSwitcher } from './LocaleSwitcher';
 
 /* ── helpers ─────────────────────────────────────────────────────────────── */
 const rgba = (hex: string, a: number) => {
@@ -14,6 +16,7 @@ const rgba = (hex: string, a: number) => {
 
 /* ── Compact inline search bar ───────────────────────────────────────────── */
 function InlineSearchBar({ onOpen }: { onOpen: () => void }) {
+  const { t } = useI18n();
   const isMac = typeof navigator !== 'undefined' && /Mac/i.test(navigator.userAgent);
   return (
     <button
@@ -27,7 +30,7 @@ function InlineSearchBar({ onOpen }: { onOpen: () => void }) {
       onMouseLeave={e => { e.currentTarget.style.borderColor = rgba('#FFFFFF', 0.07); e.currentTarget.style.background = rgba('#FFFFFF', 0.03); }}
     >
       <Search size={13} style={{ color: DS.text5, flexShrink: 0 }} />
-      <span style={{ fontSize: 12, color: DS.text5, flex: 1, textAlign: 'left', whiteSpace: 'nowrap' }}>Tìm kiếm...</span>
+      <span style={{ fontSize: 12, color: DS.text5, flex: 1, textAlign: 'left', whiteSpace: 'nowrap' }}>{t('navbar.searchPlaceholder')}</span>
       <kbd style={{ display: 'inline-flex', alignItems: 'center', gap: 1, background: rgba('#FFFFFF', 0.04), border: `1px solid ${rgba('#FFFFFF', 0.08)}`, borderRadius: 4, padding: '1px 5px', fontSize: 9, color: DS.text5, fontFamily: DS.mono, lineHeight: 1.4 }}>
         {isMac ? '⌘' : 'Ctrl+'}K
       </kbd>
@@ -37,6 +40,7 @@ function InlineSearchBar({ onOpen }: { onOpen: () => void }) {
 
 /* ── User Avatar Menu ────────────────────────────────────────────────────── */
 function UserAvatarMenu({ onNavigate }: { onNavigate: (path: string) => void }) {
+  const { t } = useI18n();
   const { user, isAuthenticated, logout, login } = useAuthStore();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -54,25 +58,25 @@ function UserAvatarMenu({ onNavigate }: { onNavigate: (path: string) => void }) 
         onMouseEnter={e => { e.currentTarget.style.color = DS.text; e.currentTarget.style.borderColor = rgba('#FFFFFF', 0.18); }}
         onMouseLeave={e => { e.currentTarget.style.color = DS.text4; e.currentTarget.style.borderColor = rgba('#FFFFFF', 0.07); }}
       >
-        <User size={14} /> <span className="hidden xl:inline">Đăng nhập</span>
+        <User size={14} /> <span className="hidden xl:inline">{t('navbar.login')}</span>
       </Link>
     );
   }
 
   const roleLabels: Record<string, { label: string; color: string }> = {
-    admin: { label: 'ADMIN', color: '#818CF8' },
-    manager: { label: 'TRƯỞNG PHÒNG', color: '#F59E0B' },
-    staff: { label: 'NHÂN VIÊN', color: '#14B8A6' },
-    client: { label: 'KHÁCH HÀNG', color: DS.blue },
+    admin: { label: t('navbar.roleAdmin').toUpperCase(), color: '#818CF8' },
+    manager: { label: t('navbar.roleManager').toUpperCase(), color: '#F59E0B' },
+    staff: { label: t('navbar.roleStaff').toUpperCase(), color: '#14B8A6' },
+    client: { label: t('navbar.roleClient').toUpperCase(), color: DS.blue },
   };
   const rl = roleLabels[user.role] ?? { label: user.role, color: DS.text4 };
 
   const quickSwitch = [
-    { key: 'admin', label: 'Admin', icon: '👑' },
+    { key: 'admin', label: t('auth.demoRole.admin'), icon: '👑' },
     { key: 'manager_media', label: 'Trưởng phòng Media', icon: '📸' },
     { key: 'manager_marketing', label: 'Trưởng phòng Marketing', icon: '📈' },
-    { key: 'staff', label: 'Nhân viên', icon: '👤' },
-    { key: 'client', label: 'Khách hàng', icon: '🧑‍💼' },
+    { key: 'staff', label: t('auth.demoRole.staff'), icon: '👤' },
+    { key: 'client', label: t('auth.demoRole.client'), icon: '🧑‍💼' },
   ];
 
   return (
@@ -128,9 +132,9 @@ function UserAvatarMenu({ onNavigate }: { onNavigate: (path: string) => void }) 
             {/* Navigation */}
             <div className="p-1.5" style={{ borderBottom: `1px solid ${rgba('#FFFFFF', 0.05)}` }}>
               {[
-                ...(user.role !== 'client' ? [{ to: '/admin', icon: <Shield size={13} />, label: 'Admin Dashboard', color: DS.purple }] : []),
-                { to: '/khach-hang', icon: <Sparkles size={13} />, label: user.role === 'client' ? 'Dashboard' : 'Customer Portal', color: DS.blue },
-                { to: '#settings', icon: <Settings size={13} />, label: 'Cài đặt tài khoản', color: DS.text4 },
+                ...(user.role !== 'client' ? [{ to: '/admin', icon: <Shield size={13} />, label: t('navbar.adminDashboard'), color: DS.purple }] : []),
+                { to: '/khach-hang', icon: <Sparkles size={13} />, label: user.role === 'client' ? t('navbar.customerPortal') : t('navbar.customerPortal'), color: DS.blue },
+                { to: '#settings', icon: <Settings size={13} />, label: t('navbar.settings'), color: DS.text4 },
               ].map(item => (
                 <button key={item.to} onClick={() => { setOpen(false); if (item.to.startsWith('/')) onNavigate(item.to); }}
                   className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-all duration-150"
@@ -146,7 +150,7 @@ function UserAvatarMenu({ onNavigate }: { onNavigate: (path: string) => void }) 
 
             {/* Quick role switch (demo) */}
             <div className="p-2" style={{ borderBottom: `1px solid ${rgba('#FFFFFF', 0.05)}` }}>
-              <div style={{ color: DS.text5, fontSize: 8, fontFamily: DS.mono, letterSpacing: '0.2em', padding: '4px 8px', marginBottom: 2 }}>CHUYỂN TÀI KHOẢN (DEMO)</div>
+              <div style={{ color: DS.text5, fontSize: 8, fontFamily: DS.mono, letterSpacing: '0.2em', padding: '4px 8px', marginBottom: 2 }}>{t('auth.demoRole.label').toUpperCase()}</div>
               <div className="grid grid-cols-1 gap-0.5">
                 {quickSwitch.map(s => (
                   <button key={s.key} onClick={() => { login(s.key); setOpen(false); }}
@@ -170,7 +174,7 @@ function UserAvatarMenu({ onNavigate }: { onNavigate: (path: string) => void }) 
                 onMouseEnter={e => { e.currentTarget.style.background = rgba(DS.red, 0.06); }}
                 onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
               >
-                <LogOut size={13} /> Đăng xuất
+                <LogOut size={13} /> {t('navbar.logout')}
               </button>
             </div>
           </motion.div>
@@ -184,12 +188,26 @@ function UserAvatarMenu({ onNavigate }: { onNavigate: (path: string) => void }) 
    ── NAVBAR ──────────────────────────────────────────────────────────────
    ═══════════════════════════════════════════════════════════════════════ */
 export function Navbar() {
+  const { t } = useI18n();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuthStore();
+
+  const NAV_LINKS = [
+    { label: t('navbar.home'), href: '/' },
+    { label: t('navbar.services'), href: '/dich-vu' },
+    { label: t('navbar.media'), href: '/media' },
+    { label: t('navbar.portfolio'), href: '/du-an' },
+    { label: t('navbar.team'), href: '/doi-ngu' },
+    { label: t('navbar.academy'), href: '/hoc-vien' },
+    { label: t('navbar.blog'), href: '/blog' },
+    { label: t('navbar.pricing'), href: '/bao-gia' },
+    { label: t('navbar.rankings'), href: '/bang-xep-hang' },
+    { label: t('navbar.contact'), href: '/lien-he' },
+  ];
 
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 12);
@@ -288,7 +306,7 @@ export function Navbar() {
                   onMouseEnter={e => { e.currentTarget.style.color = DS.text2; }}
                   onMouseLeave={e => { if (!moreOpen) e.currentTarget.style.color = moreLinks.some(l => active(l.href)) ? DS.blue : DS.text4; }}
                 >
-                  Thêm
+                  {t('navbar.more')}
                   <motion.span animate={{ rotate: moreOpen ? 90 : 0 }} transition={{ duration: 0.15 }}>
                     <ChevronRight size={12} />
                   </motion.span>
@@ -324,6 +342,7 @@ export function Navbar() {
           {/* Desktop right actions */}
           <div className="hidden lg:flex items-center gap-2">
             <InlineSearchBar onOpen={() => setSearchOpen(true)} />
+            <LocaleSwitcher />
 
             {/* LP badge */}
             {isAuthenticated && user && (
@@ -407,7 +426,7 @@ export function Navbar() {
                 <button onClick={() => { setMobileOpen(false); setTimeout(() => setSearchOpen(true), 100); }}
                   className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl cursor-pointer"
                   style={{ background: rgba('#FFFFFF', 0.03), border: `1px solid ${rgba('#FFFFFF', 0.06)}`, color: DS.text5, fontSize: 13 }}>
-                  <Search size={14} /><span style={{ flex: 1, textAlign: 'left' }}>Tìm kiếm nhanh...</span>
+                  <Search size={14} /><span style={{ flex: 1, textAlign: 'left' }}>{t('navbar.searchPlaceholder')}</span>
                   <kbd style={{ fontSize: 9, fontFamily: DS.mono, color: DS.text5, background: rgba('#FFFFFF', 0.04), borderRadius: 3, padding: '1px 4px' }}>⌘K</kbd>
                 </button>
               </div>
@@ -435,23 +454,23 @@ export function Navbar() {
                     {user.role !== 'client' && (
                       <Link to="/admin" className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl"
                         style={{ color: DS.purple, fontSize: 13, textDecoration: 'none', border: `1px solid ${rgba(DS.purple, 0.2)}`, background: rgba(DS.purple, 0.06) }}>
-                        <Shield size={13} /> Admin
+                        <Shield size={13} /> {t('navbar.roleAdmin')}
                       </Link>
                     )}
                     <Link to="/khach-hang" className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl"
                       style={{ background: GRD.primary, color: '#fff', fontSize: 13, fontWeight: 600, textDecoration: 'none', boxShadow: `0 0 16px ${rgba(DS.purple, 0.3)}` }}>
-                      <Sparkles size={13} /> Dashboard
+                      <Sparkles size={13} /> {t('navbar.customerPortal')}
                     </Link>
                   </>
                 ) : (
                   <>
                     <Link to="/dang-nhap" className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl"
                       style={{ color: DS.text3, fontSize: 13, textDecoration: 'none', border: `1px solid ${rgba('#FFFFFF', 0.08)}`, background: rgba('#FFFFFF', 0.02) }}>
-                      <LogIn size={13} /> Đăng nhập
+                      <LogIn size={13} /> {t('navbar.login')}
                     </Link>
                     <Link to="/dang-ky" className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl"
                       style={{ background: GRD.primary, color: '#fff', fontSize: 13, fontWeight: 600, textDecoration: 'none', boxShadow: `0 0 16px ${rgba(DS.purple, 0.3)}` }}>
-                      <Sparkles size={13} /> Đăng ký
+                      <Sparkles size={13} /> {t('navbar.register')}
                     </Link>
                   </>
                 )}

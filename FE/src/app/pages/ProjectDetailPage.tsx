@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { ArrowLeft, Check, Calendar, Users, TrendingUp, Star, Clock, Monitor, X } from 'lucide-react';
 import { DS, GRD } from '../components/layout/ds';
 import { DemoViewer } from '../components/ui/DemoViewer';
+import { useI18n } from '@/hooks/useI18n';
 
 const PROJECTS: Record<string, {
   id: number; title: string; tag: string; cat: string;
@@ -145,6 +146,7 @@ const PROJECTS: Record<string, {
 
 // ── NDA Notice (for projects without public demo) ─────────────────────────────
 function NdaNotice({ color }: { color: string }) {
+  const { t } = useI18n();
   return (
     <div className="flex flex-col items-center justify-center gap-4 py-12 rounded-2xl"
       style={{ background: 'rgba(15,23,42,0.6)', border: `1px dashed ${color}30` }}>
@@ -155,28 +157,29 @@ function NdaNotice({ color }: { color: string }) {
         </svg>
       </div>
       <div style={{ color: DS.text4, fontSize: 14, textAlign: 'center', lineHeight: 1.7 }}>
-        Demo bị hạn chế theo thỏa thuận NDA với khách hàng.<br />
-        <span style={{ color: DS.text5, fontSize: 12 }}>Liên hệ để xem demo riêng theo lịch hẹn.</span>
+        {t('portfolio.detail.ndaNotice')}<br />
+        <span style={{ color: DS.text5, fontSize: 12 }}>{t('portfolio.detail.ndaContact')}</span>
       </div>
       <Link to="/dat-lich"
         style={{ color, fontSize: 13, border: `1px solid ${color}30`, padding: '8px 20px', borderRadius: 10, textDecoration: 'none', background: `${color}08` }}>
-        Đặt lịch xem demo riêng
+        {t('portfolio.detail.bookDemo')}
       </Link>
     </div>
   );
 }
 
 export default function ProjectDetailPage() {
+  const { t } = useI18n();
   const { id = '1' } = useParams<{ id: string }>();
   const project = PROJECTS[id] ?? PROJECTS['1'];
   const [showDemo, setShowDemo] = useState(false);
 
   const infoItems = [
-    { icon: <Users size={14} />, label: 'Khách hàng', value: project.client },
-    { icon: <Calendar size={14} />, label: 'Năm thực hiện', value: project.year },
-    { icon: <Clock size={14} />, label: 'Thời gian', value: project.duration },
-    { icon: <TrendingUp size={14} />, label: 'Ngân sách', value: project.budget },
-    { icon: <Users size={14} />, label: 'Team size', value: project.team },
+    { icon: <Users size={14} />, label: t('portfolio.detail.client'), value: project.client },
+    { icon: <Calendar size={14} />, label: t('portfolio.detail.year'), value: project.year },
+    { icon: <Clock size={14} />, label: t('portfolio.detail.timeline'), value: project.duration },
+    { icon: <TrendingUp size={14} />, label: t('portfolio.detail.budget'), value: project.budget },
+    { icon: <Users size={14} />, label: t('portfolio.detail.teamSize'), value: project.team },
   ];
 
   return (
@@ -188,7 +191,7 @@ export default function ProjectDetailPage() {
         <div className="absolute bottom-0 left-0 right-0 p-8 max-w-5xl mx-auto">
           <Link to="/du-an" className="inline-flex items-center gap-2 mb-4"
             style={{ color: 'rgba(255,255,255,0.6)', fontSize: 13, textDecoration: 'none' }}>
-            <ArrowLeft size={14} /> Tất cả dự án
+            <ArrowLeft size={14} /> {t('portfolio.detail.backToPortfolio')}
           </Link>
           <div className="inline-flex items-center gap-2 mb-3 px-3 py-1 rounded-full"
             style={{ background: `${project.color}20`, border: `1px solid ${project.color}40` }}>
@@ -203,7 +206,7 @@ export default function ProjectDetailPage() {
               <button onClick={() => setShowDemo(true)}
                 className="flex items-center gap-2 px-5 py-3 rounded-2xl"
                 style={{ background: `${project.color}20`, border: `1px solid ${project.color}50`, color: project.color, fontSize: 13, fontWeight: 700, cursor: 'pointer', backdropFilter: 'blur(8px)' }}>
-                <Monitor size={15} /> Xem Demo Trực Tiếp
+                <Monitor size={15} /> {t('portfolio.detail.viewDemo')}
               </button>
             )}
           </div>
@@ -233,9 +236,9 @@ export default function ProjectDetailPage() {
           <div className="lg:col-span-2 space-y-10">
             {/* Challenge → Solution → Result */}
             {[
-              { title: 'THÁCH THỨC', content: project.challenge, color: DS.red },
-              { title: 'GIẢI PHÁP', content: project.solution, color: DS.blue },
-              { title: 'KẾT QUẢ', content: project.result, color: DS.green },
+              { title: t('portfolio.detail.challenge').toUpperCase(), content: project.challenge, color: DS.red },
+              { title: t('portfolio.detail.solution').toUpperCase(), content: project.solution, color: DS.blue },
+              { title: t('portfolio.detail.result').toUpperCase(), content: project.result, color: DS.green },
             ].map(s => (
               <motion.div key={s.title} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
                 <div className="flex items-center gap-3 mb-4">
@@ -248,7 +251,7 @@ export default function ProjectDetailPage() {
 
             {/* Features */}
             <div>
-              <h3 style={{ color: DS.text, fontSize: 16, fontFamily: DS.heading, fontWeight: 700, letterSpacing: '0.06em', marginBottom: 14 }}>TÍNH NĂNG CHÍNH</h3>
+              <h3 style={{ color: DS.text, fontSize: 16, fontFamily: DS.heading, fontWeight: 700, letterSpacing: '0.06em', marginBottom: 14 }}>{t('portfolio.detail.features')}</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
                 {project.features.map(f => (
                   <div key={f} className="flex items-center gap-2.5 p-3 rounded-xl"
@@ -266,7 +269,7 @@ export default function ProjectDetailPage() {
                 <div className="h-px flex-1" style={{ background: `linear-gradient(90deg, ${project.color}50, transparent)` }} />
                 <div className="flex items-center gap-2">
                   <Monitor size={14} style={{ color: project.color }} />
-                  <span style={{ color: project.color, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.2em' }}>XEM DEMO DỰ ÁN</span>
+                  <span style={{ color: project.color, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.2em' }}>{t('portfolio.detail.demoSection').toUpperCase()}</span>
                 </div>
               </div>
 
@@ -352,7 +355,7 @@ export default function ProjectDetailPage() {
           <div className="space-y-5">
             {/* Project info */}
             <div className="p-5 rounded-2xl" style={{ background: 'rgba(15,23,42,0.8)', border: `1px solid ${DS.border}` }}>
-              <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.15em', marginBottom: 14 }}>THÔNG TIN DỰ ÁN</div>
+              <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.15em', marginBottom: 14 }}>{t('portfolio.detail.projectInfo').toUpperCase()}</div>
               <div className="space-y-3.5">
                 {infoItems.map(item => (
                   <div key={item.label} className="flex items-center justify-between">
@@ -368,7 +371,7 @@ export default function ProjectDetailPage() {
 
             {/* Tech */}
             <div className="p-5 rounded-2xl" style={{ background: 'rgba(15,23,42,0.8)', border: `1px solid ${DS.border}` }}>
-              <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.15em', marginBottom: 12 }}>TECH STACK</div>
+              <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.15em', marginBottom: 12 }}>{t('portfolio.detail.techStack').toUpperCase()}</div>
               <div className="flex flex-wrap gap-2">
                 {project.tags.map(t => (
                   <span key={t} style={{ color: project.color, fontSize: 10, fontFamily: DS.mono, padding: '3px 8px', borderRadius: 4, background: `${project.color}10`, border: `1px solid ${project.color}25` }}>{t}</span>
@@ -381,34 +384,34 @@ export default function ProjectDetailPage() {
               <div className="p-5 rounded-2xl" style={{ background: `${project.color}08`, border: `1px solid ${project.color}25` }}>
                 <div style={{ color: project.color, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.12em', marginBottom: 10 }}>
                   <Monitor size={12} style={{ display: 'inline', marginRight: 6 }} />
-                  DEMO TRỰC TIẾP
+                  {t('portfolio.detail.liveDemo').toUpperCase()}
                 </div>
                 <p style={{ color: DS.text4, fontSize: 12, lineHeight: 1.6, marginBottom: 12 }}>
-                  Xem demo giao diện thực tế ngay trên nền tảng LOOP. URL gốc được bảo vệ hoàn toàn.
+                  {t('portfolio.detail.demoDesc')}
                 </p>
                 <button onClick={() => { setShowDemo(true); window.scrollTo({ top: 600, behavior: 'smooth' }); }}
                   className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl"
                   style={{ background: `${project.color}15`, border: `1px solid ${project.color}30`, color: project.color, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
-                  <Monitor size={14} /> Mở Demo
+                  <Monitor size={14} /> {t('portfolio.detail.openDemo')}
                 </button>
               </div>
             )}
 
             {/* LP earned */}
             <div className="p-5 rounded-2xl" style={{ background: 'rgba(129,140,248,0.08)', border: '1px solid rgba(129,140,248,0.25)' }}>
-              <div style={{ color: DS.purple, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.12em', marginBottom: 8 }}>◈ LP ĐIỂM THƯỞNG</div>
+              <div style={{ color: DS.purple, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.12em', marginBottom: 8 }}>{t('portfolio.detail.lpReward')}</div>
               <div style={{ color: DS.purple, fontFamily: DS.heading, fontSize: 24, fontWeight: 900, marginBottom: 4 }}>+{project.lp.toLocaleString()} LP</div>
-              <div style={{ color: DS.text5, fontSize: 11 }}>Đã được thêm vào tài khoản khách hàng sau khi hoàn thành.</div>
+              <div style={{ color: DS.text5, fontSize: 11 }}>{t('portfolio.detail.lpEarned')}</div>
             </div>
 
             {/* CTA */}
             <Link to="/dat-lich"
               style={{ display: 'block', background: GRD.primary, color: '#fff', fontSize: 14, fontWeight: 700, padding: '13px 20px', borderRadius: 12, textDecoration: 'none', textAlign: 'center', boxShadow: '0 0 24px rgba(129,140,248,0.3)' }}>
-              Bắt đầu dự án tương tự
+              {t('portfolio.detail.startSimilar')}
             </Link>
             <Link to="/du-an"
               style={{ display: 'block', color: DS.text3, fontSize: 13, padding: '11px 20px', borderRadius: 12, textDecoration: 'none', textAlign: 'center', border: `1px solid ${DS.border}` }}>
-              Xem thêm dự án
+              {t('portfolio.detail.viewMoreProjects')}
             </Link>
           </div>
         </div>

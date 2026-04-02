@@ -2,6 +2,7 @@ import { useParams, useNavigate } from 'react-router';
 import { motion } from 'motion/react';
 import { useState, CSSProperties, useEffect } from 'react';
 import { members, RANKS, RankKey } from './components/team/memberData';
+import { useI18n } from '@/hooks/useI18n';
 import { LEDRunner } from './components/team/LEDRunner';
 import { Counter } from './components/team/Counter';
 import { GUILD_ANIMATIONS_CSS } from './components/team/MemberCard';
@@ -337,16 +338,21 @@ function SectionHead({ icon: Icon, label, color = '#3B82F6' }: { icon: any; labe
 }
 
 // ── Project status pill ───────────────────────────────────────────────────
-function StatusPill({ status }: { status: ProjectEntry['status'] }) {
-  const map = { shipped: { label: 'SHIPPED', color: '#22C55E' }, wip: { label: 'IN PROGRESS', color: '#F59E0B' }, archived: { label: 'ARCHIVED', color: '#475569' } };
+function StatusPill({ status, t }: { status: ProjectEntry['status']; t: ReturnType<typeof useI18n>['t'] }) {
+  const map = {
+    shipped: { labelKey: 'team.member.statusShipped' as const, color: '#22C55E' },
+    wip:     { labelKey: 'team.member.statusInProgress' as const, color: '#F59E0B' },
+    archived:{ labelKey: 'team.member.statusArchived' as const, color: '#475569' },
+  };
   const c = map[status];
   return (
-    <span style={{ color: c.color, fontSize: 8, fontFamily: "'JetBrains Mono', monospace", letterSpacing: '0.15em', background: `${c.color}15`, border: `1px solid ${c.color}30`, padding: '2px 6px', borderRadius: 2 }}>{c.label}</span>
+    <span style={{ color: c.color, fontSize: 8, fontFamily: "'JetBrains Mono', monospace", letterSpacing: '0.15em', background: `${c.color}15`, border: `1px solid ${c.color}30`, padding: '2px 6px', borderRadius: 2 }}>{t(c.labelKey)}</span>
   );
 }
 
 // ── Main Component ────────────────────────────────────────────────────────
 export default function MemberDetailPage() {
+  const { t } = useI18n();
   const { id } = useParams();
   const navigate = useNavigate();
   const member = members.find((m) => m.id === Number(id));
@@ -358,8 +364,8 @@ export default function MemberDetailPage() {
     return (
       <div className="min-h-screen bg-[#020617] flex items-center justify-center text-white font-serif">
         <div className="text-center">
-          <h1 className="text-4xl mb-4">Member Not Found</h1>
-          <button onClick={() => navigate('/')} className="text-blue-400 hover:underline">Return to Guild Hall</button>
+          <h1 className="text-4xl mb-4">{t('errors.notFound')}</h1>
+          <button onClick={() => navigate('/')} className="text-blue-400 hover:underline">{t('team.member.backToTeam')}</button>
         </div>
       </div>
     );
@@ -393,12 +399,12 @@ export default function MemberDetailPage() {
           className="flex items-center gap-2 text-sm font-mono tracking-widest text-[#475569] hover:text-[#3B82F6] transition-colors group"
         >
           <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
-          RETURN_TO_BASE
+          {t('team.member.returnToBase')}
         </button>
         <div className="flex items-center gap-4 text-[10px] font-mono tracking-[0.3em] text-[#1F2937]">
-          <span>PROFILE_VIEW</span>
+          <span>{t('team.member.profileView')}</span>
           <div className="w-1 h-1 rounded-full bg-green-500 animate-pulse" />
-          <span>LVL_<Counter value={member.level} duration={1.5} /></span>
+          <span>{t('team.member.lvl')}_<Counter value={member.level} duration={1.5} /></span>
         </div>
       </nav>
 
@@ -474,7 +480,7 @@ export default function MemberDetailPage() {
                     <span style={{ fontFamily: "'Cinzel', serif", color: cfg.color, fontSize: 22, fontWeight: 700, lineHeight: 1, textShadow: `0 0 16px ${cfg.glowColor}` }}>
                       <Counter value={member.level} duration={1.2} delay={0.2} />
                     </span>
-                    <span style={{ color: '#64748B', fontSize: 9, fontFamily: "'JetBrains Mono', monospace", letterSpacing: '0.1em', marginBottom: 2 }}>LVL</span>
+                    <span style={{ color: '#64748B', fontSize: 9, fontFamily: "'JetBrains Mono', monospace", letterSpacing: '0.1em', marginBottom: 2 }}>{t('team.member.lvl')}</span>
                   </div>
 
                   {/* Boost indicator on hover */}
@@ -483,7 +489,7 @@ export default function MemberDetailPage() {
                       className="absolute bottom-3 right-3 z-20 flex items-center gap-1 px-1.5 py-0.5 rounded-sm"
                       style={{ backgroundColor: `${cfg.color}20`, border: `1px solid ${cfg.color}60`, animation: 'guildHeartbeat 0.5s ease-in-out infinite' }}
                     >
-                      <span style={{ color: cfg.color, fontSize: 8, fontFamily: "'JetBrains Mono', monospace", letterSpacing: '0.1em' }}>⚡ BOOSTED</span>
+                      <span style={{ color: cfg.color, fontSize: 8, fontFamily: "'JetBrains Mono', monospace", letterSpacing: '0.1em' }}>{t('team.member.boosted')}</span>
                     </div>
                   )}
                 </div>
@@ -540,10 +546,10 @@ export default function MemberDetailPage() {
               className="grid grid-cols-2 gap-3"
             >
               {[
-                { label: 'RANK', raw: cfg.label, icon: Award, color: cfg.color },
-                { label: 'MISSIONS', raw: member.missions, icon: Target, color: '#EF4444' },
-                { label: 'YRS EXP', raw: cv?.yearsOfExp ?? 0, suffix: '+', icon: Briefcase, color: '#F59E0B' },
-                { label: 'XP TOTAL', raw: member.currentXP, suffix: 'k', icon: Zap, color: '#3B82F6' },
+                { label: t('team.member.rank'), raw: cfg.label, icon: Award, color: cfg.color },
+                { label: t('team.member.missionsLabel'), raw: member.missions, icon: Target, color: '#EF4444' },
+                { label: t('team.member.yearsExpShort'), raw: cv?.yearsOfExp ?? 0, suffix: '+', icon: Briefcase, color: '#F59E0B' },
+                { label: t('team.member.xpTotalShort'), raw: member.currentXP, suffix: 'k', icon: Zap, color: '#3B82F6' },
               ].map((stat) => (
                 <div key={stat.label} className="bg-[#0F172A]/60 border border-[#1F2937] p-3 rounded-lg hover:border-[#374151] transition-colors">
                   <div className="flex items-center gap-1.5 mb-1.5">
@@ -572,7 +578,7 @@ export default function MemberDetailPage() {
                 transition={{ delay: 0.3 }}
                 className="bg-[#0F172A]/60 border border-[#1F2937] rounded-xl p-5"
               >
-                <SectionHead icon={Mail} label="CONTACT_LINKS" color={cfg.color} />
+                <SectionHead icon={Mail} label={t('team.member.contactLinks')} color={cfg.color} />
                 <div className="space-y-3">
                   {[
                     { icon: MapPin, val: cv.contact.location, color: '#475569' },
@@ -598,7 +604,7 @@ export default function MemberDetailPage() {
                 transition={{ delay: 0.35 }}
                 className="bg-[#0F172A]/60 border border-[#1F2937] rounded-xl p-5"
               >
-                <SectionHead icon={Languages} label="LANGUAGES" color={cfg.color} />
+                <SectionHead icon={Languages} label={t('team.member.languages')} color={cfg.color} />
                 <div className="space-y-4">
                   {cv.languages.map((lang) => (
                     <div key={lang.lang} className="space-y-1.5">
@@ -629,7 +635,7 @@ export default function MemberDetailPage() {
             <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
               className="bg-[#0F172A]/40 border border-[#1F2937] rounded-xl p-7"
             >
-              <SectionHead icon={Terminal} label="OPERATIVE_MANIFEST" color={cfg.color} />
+              <SectionHead icon={Terminal} label={t('team.member.operativeManifest')} color={cfg.color} />
               <blockquote className="text-xl font-serif text-white leading-relaxed italic border-l-2 pl-6 mb-5" style={{ borderColor: cfg.color + '50' }}>
                 "{member.bio}"
               </blockquote>
@@ -646,7 +652,7 @@ export default function MemberDetailPage() {
             <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28 }}
               className="bg-[#0F172A]/40 border border-[#1F2937] rounded-xl p-7"
             >
-              <SectionHead icon={Shield} label="SKILL_ARCHITECTURE" color={cfg.color} />
+              <SectionHead icon={Shield} label={t('team.member.skillArchitecture')} color={cfg.color} />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 {Object.entries(member.skills).map(([skill, val]) => (
                   <div key={skill} className="space-y-1.5">
@@ -673,7 +679,7 @@ export default function MemberDetailPage() {
               <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.34 }}
                 className="bg-[#0F172A]/40 border border-[#1F2937] rounded-xl p-7"
               >
-                <SectionHead icon={Briefcase} label="WORK_EXPERIENCE" color={cfg.color} />
+                <SectionHead icon={Briefcase} label={t('team.member.workExperience')} color={cfg.color} />
                 <div className="relative space-y-0">
                   {/* Timeline line */}
                   <div className="absolute left-[11px] top-2 bottom-2 w-px" style={{ background: `linear-gradient(to bottom, ${cfg.color}40, transparent)` }} />
@@ -719,7 +725,7 @@ export default function MemberDetailPage() {
               >
                 {/* Education */}
                 <div className="bg-[#0F172A]/40 border border-[#1F2937] rounded-xl p-6">
-                  <SectionHead icon={GraduationCap} label="EDUCATION" color={cfg.color} />
+                  <SectionHead icon={GraduationCap} label={t('team.member.education')} color={cfg.color} />
                   <div className="space-y-4">
                     {cv.education.map((edu, i) => (
                       <div key={i} className="flex gap-3">
@@ -729,7 +735,7 @@ export default function MemberDetailPage() {
                         <div>
                           <div style={{ color: '#FFFFFF', fontSize: 11, fontFamily: "'Cinzel', serif", fontWeight: 600, lineHeight: 1.4 }}>{edu.degree}</div>
                           <div style={{ color: '#64748B', fontSize: 10, fontFamily: "'JetBrains Mono', monospace", marginTop: 2 }}>{edu.school}</div>
-                          <div style={{ color: '#475569', fontSize: 9, fontFamily: "'JetBrains Mono', monospace", marginTop: 2 }}>Class of {edu.year}</div>
+                          <div style={{ color: '#475569', fontSize: 9, fontFamily: "'JetBrains Mono', monospace", marginTop: 2 }}>{t('team.member.classOf')} {edu.year}</div>
                         </div>
                       </div>
                     ))}
@@ -738,7 +744,7 @@ export default function MemberDetailPage() {
 
                 {/* Certifications */}
                 <div className="bg-[#0F172A]/40 border border-[#1F2937] rounded-xl p-6">
-                  <SectionHead icon={Award} label="CERTIFICATIONS" color={cfg.color} />
+                  <SectionHead icon={Award} label={t('team.member.certifications')} color={cfg.color} />
                   <div className="space-y-3">
                     {cv.certifications.map((cert, i) => (
                       <div key={i} className="flex items-start gap-3 p-2.5 rounded-lg hover:bg-[#1F2937]/30 transition-colors">
@@ -761,13 +767,13 @@ export default function MemberDetailPage() {
               <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.46 }}
                 className="bg-[#0F172A]/40 border border-[#1F2937] rounded-xl p-7"
               >
-                <SectionHead icon={Code2} label="FEATURED_PROJECTS" color={cfg.color} />
+                <SectionHead icon={Code2} label={t('team.member.featuredProjects')} color={cfg.color} />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {cv.featuredProjects.map((proj, i) => (
                     <div key={i} className="bg-[#020617]/60 border border-[#1F2937] rounded-lg p-4 hover:border-[#374151] transition-all hover:-translate-y-0.5 group">
                       <div className="flex items-start justify-between gap-2 mb-2">
                         <span style={{ color: '#FFFFFF', fontSize: 12, fontFamily: "'Cinzel', serif", fontWeight: 600 }}>{proj.name}</span>
-                        <StatusPill status={proj.status} />
+                        <StatusPill status={proj.status} t={t} />
                       </div>
                       <p style={{ color: '#64748B', fontSize: 10, lineHeight: 1.7, marginBottom: 10 }}>{proj.description}</p>
                       <div className="flex flex-wrap gap-1.5 mb-3">
@@ -791,13 +797,13 @@ export default function MemberDetailPage() {
                         {proj.repoUrl && (
                           <div className="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
                             <GitBranch size={9} style={{ color: cfg.color }} />
-                            <span style={{ color: cfg.color, fontSize: 9, fontFamily: "'JetBrains Mono', monospace" }}>REPO</span>
+                            <span style={{ color: cfg.color, fontSize: 9, fontFamily: "'JetBrains Mono', monospace" }}>{t('team.member.repo')}</span>
                           </div>
                         )}
                         {proj.liveUrl && (
                           <div className="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
                             <ExternalLink size={9} style={{ color: '#22C55E' }} />
-                            <span style={{ color: '#22C55E', fontSize: 9, fontFamily: "'JetBrains Mono', monospace" }}>LIVE</span>
+                            <span style={{ color: '#22C55E', fontSize: 9, fontFamily: "'JetBrains Mono', monospace" }}>{t('team.member.live')}</span>
                           </div>
                         )}
                       </div>
@@ -813,7 +819,7 @@ export default function MemberDetailPage() {
             >
               {/* Achievements */}
               <div className="bg-[#0F172A]/40 border border-[#1F2937] rounded-xl p-6">
-                <SectionHead icon={Trophy} label="TROPHY_VAULT" color={cfg.color} />
+                <SectionHead icon={Trophy} label={t('team.member.trophyVault')} color={cfg.color} />
                 <div className="space-y-2.5">
                   {member.achievements.map((ach) => (
                     <div key={ach} className="flex items-center gap-3 p-3 rounded-lg bg-[#020617]/40 border border-[#1F2937] hover:border-[#374151] transition-colors">
@@ -822,7 +828,7 @@ export default function MemberDetailPage() {
                       </div>
                       <div>
                         <div style={{ color: '#CBD5E1', fontSize: 10, fontFamily: "'JetBrains Mono', monospace" }}>{ach}</div>
-                        <div style={{ color: '#1F2937', fontSize: 8, fontFamily: "'JetBrains Mono', monospace", letterSpacing: '0.15em', marginTop: 1 }}>VERIFIED</div>
+                        <div style={{ color: '#1F2937', fontSize: 8, fontFamily: "'JetBrains Mono', monospace", letterSpacing: '0.15em', marginTop: 1 }}>{t('team.member.verified')}</div>
                       </div>
                     </div>
                   ))}
@@ -831,7 +837,7 @@ export default function MemberDetailPage() {
 
               {/* Mission log */}
               <div className="bg-[#0F172A]/40 border border-[#1F2937] rounded-xl p-6">
-                <SectionHead icon={Target} label="MISSION_LOG" color={cfg.color} />
+                <SectionHead icon={Target} label={t('team.member.missionLog')} color={cfg.color} />
                 <div className="space-y-3">
                   {member.missionLogs.map((log, i) => (
                     <div key={i} className="flex items-start gap-3 p-3 rounded-lg bg-[#020617]/40 border border-[#1F2937] hover:border-[#374151] transition-colors">
@@ -857,7 +863,7 @@ export default function MemberDetailPage() {
             <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.58 }}
               className="bg-[#0F172A]/40 border border-[#1F2937] rounded-xl p-7"
             >
-              <SectionHead icon={Zap} label="RANK_ASCENSION_HISTORY" color={cfg.color} />
+              <SectionHead icon={Zap} label={t('team.member.rankAscensionHistory')} color={cfg.color} />
               <div className="flex flex-wrap gap-3">
                 {member.rankHistory.map((ev, i) => {
                   const rc = RANKS[ev.rank];
@@ -884,11 +890,11 @@ export default function MemberDetailPage() {
       <footer className="py-10 border-t border-[#0F172A] mt-12 bg-[#020617] relative z-20">
         <div className="max-w-7xl mx-auto px-8 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-4 text-[#1F2937]">
-            <span className="text-[10px] font-mono tracking-[0.5em]">GUILD_OPERATIVE_PROFILE</span>
+            <span className="text-[10px] font-mono tracking-[0.5em]">{t('team.member.footerOperative')}</span>
             <div className="w-12 h-[1px] bg-[#1F2937]" />
-            <span className="text-[10px] font-mono tracking-[0.5em]">AUTH_V3.8</span>
+            <span className="text-[10px] font-mono tracking-[0.5em]">{t('team.member.footerAuth')}</span>
           </div>
-          <div className="text-[10px] font-mono text-[#1F2937]">© 2026 ASIAN_TECH_ZEN // NEON_SAGA</div>
+          <div className="text-[10px] font-mono text-[#1F2937]">{t('team.member.footerCopyright')}</div>
         </div>
       </footer>
     </div>

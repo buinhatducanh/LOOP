@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { DS, GRD } from '../components/layout/ds';
 import { useLoopStore, type Order } from '../store/loopStore';
+import { useI18n } from '../hooks/useI18n';
 
 // ── Format helpers ────────────────────────────────────────────────────────
 const fmtVND = (n: number) =>
@@ -107,17 +108,19 @@ const EXTRAS = [
   { id: 'seo-basic', label: 'SEO cơ bản & submission', price: 1_200_000, icon: <Target size={16} />, color: DS.red },
 ];
 
-const STEP_LABELS = [
-  'Dịch vụ', 'Gói', 'Tính năng', 'Team', 'Lịch', 'Thêm', 'Xem lại', 'Thanh toán'
-];
+const STEP_LABELS_KEYS = [
+  'booking.steps.service', 'booking.steps.package', 'booking.steps.features',
+  'booking.steps.team', 'booking.steps.schedule', 'booking.steps.addons',
+  'booking.steps.review', 'booking.steps.payment',
+] as const;
 
-// ── Progress Bar ───────────────────────────────────────────────────────────
-function ProgressBar({ step }: { step: number }) {
+// ── Progress Bar ────────────────────────────────────────────────────────────
+function ProgressBar({ step, labels }: { step: number; labels: string[] }) {
   return (
     <div className="w-full" style={{ padding: '20px 0' }}>
       <div className="flex items-center justify-between max-w-3xl mx-auto px-4">
-        {STEP_LABELS.map((label, i) => (
-          <div key={label} className="flex flex-col items-center" style={{ flex: i < 7 ? 1 : 'none' }}>
+        {labels.map((label, i) => (
+          <div key={i} className="flex flex-col items-center" style={{ flex: i < 7 ? 1 : 'none' }}>
             <div className="flex items-center w-full">
               <div
                 className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-300"
@@ -149,7 +152,7 @@ function ProgressBar({ step }: { step: number }) {
 
 // ── Live Price Sidebar ────────────────────────────────────────────────────
 function PriceSidebar({
-  service, pkg, features, extras, lpDiscount, lpBalance,
+  service, pkg, features, extras, lpDiscount, lpBalance, t,
 }: {
   service: typeof SERVICES[0] | null;
   pkg: typeof PACKAGES[0] | null;
@@ -157,6 +160,7 @@ function PriceSidebar({
   extras: string[];
   lpDiscount: number;
   lpBalance: number;
+  t: (key: string, opts?: Record<string, unknown>) => string;
 }) {
   const basePrice = service ? service.basePrice * (pkg?.multiplier ?? 1) : 0;
   const featurePrices = service
@@ -174,11 +178,11 @@ function PriceSidebar({
       style={{ background: 'rgba(15,23,42,0.9)', border: `1px solid ${DS.border}`, backdropFilter: 'blur(20px)' }}
     >
       <div className="px-5 py-4" style={{ background: GRD.primary }}>
-        <div style={{ color: '#fff', fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.15em', marginBottom: 2 }}>TỔNG GIÁ ƯỚC TÍNH</div>
+        <div style={{ color: '#fff', fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.15em', marginBottom: 2 }}>{t('booking.estimatedTotal').toUpperCase()}</div>
         <div style={{ color: '#fff', fontFamily: DS.heading, fontSize: 28, fontWeight: 900 }}>
           {fmtVND(total)}
         </div>
-        {service?.perMonth && <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 11, fontFamily: DS.mono }}>/tháng</div>}
+        {service?.perMonth && <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 11, fontFamily: DS.mono }}>{t('booking.perMonth')}</div>}
       </div>
 
       <div className="p-5 space-y-3">
@@ -190,59 +194,58 @@ function PriceSidebar({
         )}
         {pkg && pkg.multiplier > 1 && (
           <div className="flex justify-between">
-            <span style={{ color: DS.text3, fontSize: 12 }}>Gói {pkg.name}</span>
+            <span style={{ color: DS.text3, fontSize: 12 }}>{pkg.name}</span>
             <span style={{ color: DS.blue, fontSize: 12, fontFamily: DS.mono }}>×{pkg.multiplier}</span>
           </div>
         )}
         {featurePrices > 0 && (
           <div className="flex justify-between">
-            <span style={{ color: DS.text3, fontSize: 12 }}>Tính năng thêm ({features.length})</span>
+            <span style={{ color: DS.text3, fontSize: 12 }}>{t('booking.featuresExtra')} ({features.length})</span>
             <span style={{ color: DS.text, fontSize: 12, fontFamily: DS.mono }}>+{fmtVND(featurePrices)}</span>
           </div>
         )}
         {extraPrices > 0 && (
           <div className="flex justify-between">
-            <span style={{ color: DS.text3, fontSize: 12 }}>Dịch vụ bổ sung ({extras.length})</span>
+            <span style={{ color: DS.text3, fontSize: 12 }}>{t('booking.addonsExtra')} ({extras.length})</span>
             <span style={{ color: DS.text, fontSize: 12, fontFamily: DS.mono }}>+{fmtVND(extraPrices)}</span>
           </div>
         )}
 
         {subtotal > 0 && (
           <div className="flex justify-between pt-2" style={{ borderTop: `1px solid ${DS.border}` }}>
-            <span style={{ color: DS.text3, fontSize: 12 }}>Tạm tính</span>
+            <span style={{ color: DS.text3, fontSize: 12 }}>{t('booking.subtotal')}</span>
             <span style={{ color: DS.text, fontSize: 12, fontFamily: DS.mono }}>{fmtVND(subtotal)}</span>
           </div>
         )}
 
         {discountAmt > 0 && (
           <div className="flex justify-between p-2 rounded-lg" style={{ background: 'rgba(129,140,248,0.1)' }}>
-            <span style={{ color: DS.purple, fontSize: 12 }}>◈ Giảm LP ({lpDiscount.toLocaleString()} LP)</span>
+            <span style={{ color: DS.purple, fontSize: 12 }}>◈ {t('booking.lpDiscount')} ({lpDiscount.toLocaleString()} LP)</span>
             <span style={{ color: DS.purple, fontSize: 12, fontFamily: DS.mono }}>-{fmtVND(discountAmt)}</span>
           </div>
         )}
 
         {total > 0 && (
           <div className="flex justify-between pt-2" style={{ borderTop: `1px solid ${DS.border}` }}>
-            <span style={{ color: DS.text, fontSize: 13, fontWeight: 700 }}>TỔNG CỘNG</span>
+            <span style={{ color: DS.text, fontSize: 13, fontWeight: 700 }}>{t('booking.total').toUpperCase()}</span>
             <span style={{ color: DS.blue, fontSize: 13, fontFamily: DS.mono, fontWeight: 700 }}>{fmtVND(total)}</span>
           </div>
         )}
       </div>
 
-      {/* LP Earn Preview */}
       {lpEarned > 0 && (
         <div className="mx-5 mb-5 p-3 rounded-xl" style={{ background: 'rgba(129,140,248,0.1)', border: '1px solid rgba(129,140,248,0.2)' }}>
-          <div style={{ color: DS.purple, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.12em', marginBottom: 4 }}>LP ĐIỂM THƯỞNG SẼ NHẬN</div>
+          <div style={{ color: DS.purple, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.12em', marginBottom: 4 }}>{t('booking.lpReward').toUpperCase()}</div>
           <div style={{ color: DS.purple, fontFamily: DS.heading, fontSize: 20, fontWeight: 700 }}>+{lpEarned.toLocaleString()} LP</div>
-          <div style={{ color: DS.text5, fontSize: 10, marginTop: 2 }}>Sau khi hoàn thành dự án</div>
+          <div style={{ color: DS.text5, fontSize: 10, marginTop: 2 }}>{t('booking.lpEarnAfter')}</div>
         </div>
       )}
 
       {lpBalance > 0 && (
         <div className="mx-5 mb-5 p-3 rounded-xl" style={{ background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.15)' }}>
-          <div style={{ color: DS.blue, fontSize: 11, fontFamily: DS.mono }}>Số dư LP của bạn</div>
+          <div style={{ color: DS.blue, fontSize: 11, fontFamily: DS.mono }}>{t('booking.yourLpBalance')}</div>
           <div style={{ color: DS.blue, fontFamily: DS.mono, fontSize: 16, fontWeight: 700 }}>{lpBalance.toLocaleString()} LP</div>
-          <div style={{ color: DS.text5, fontSize: 10 }}>1,000 LP = 500,000 VNĐ (tối đa 20%)</div>
+          <div style={{ color: DS.text5, fontSize: 10 }}>{t('booking.lpRate')}</div>
         </div>
       )}
     </div>
@@ -251,13 +254,13 @@ function PriceSidebar({
 
 // ── Step components ────────────────────────────────────────────────────────
 
-function Step1_Service({ selected, onSelect }: { selected: string; onSelect: (id: string) => void }) {
+function Step1_Service({ selected, onSelect, t }: { selected: string; onSelect: (id: string) => void; t: (key: string, opts?: Record<string, unknown>) => string }) {
   return (
     <div>
       <h3 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 22, fontWeight: 900, letterSpacing: '0.05em', marginBottom: 8 }}>
-        CHỌN DỊCH VỤ
+        {t('booking.step0Title').toUpperCase()}
       </h3>
-      <p style={{ color: DS.text3, fontSize: 14, marginBottom: 24 }}>Bạn cần loại dịch vụ nào? Mỗi dịch vụ đều được báo giá bằng VNĐ.</p>
+      <p style={{ color: DS.text3, fontSize: 14, marginBottom: 24 }}>{t('booking.step0Desc')}</p>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {SERVICES.map(svc => (
           <motion.button
@@ -280,7 +283,7 @@ function Step1_Service({ selected, onSelect }: { selected: string; onSelect: (id
                 <div style={{ color: DS.text, fontSize: 15, fontWeight: 700, marginBottom: 4 }}>{svc.title}</div>
                 <div style={{ color: DS.text3, fontSize: 12, lineHeight: 1.6, marginBottom: 8 }}>{svc.desc}</div>
                 <div style={{ color: svc.color, fontSize: 12, fontFamily: DS.mono }}>
-                  Từ {fmtVND(svc.basePrice)}{svc.perMonth ? '/tháng' : ''}
+                  {t('booking.from')} {fmtVND(svc.basePrice)}{svc.perMonth ? t('booking.perMonth') : ''}
                 </div>
               </div>
               {selected === svc.id && (
@@ -296,14 +299,14 @@ function Step1_Service({ selected, onSelect }: { selected: string; onSelect: (id
   );
 }
 
-function Step2_Package({ selected, onSelect, serviceId }: { selected: string; onSelect: (id: string) => void; serviceId: string }) {
+function Step2_Package({ selected, onSelect, serviceId, t }: { selected: string; onSelect: (id: string) => void; serviceId: string; t: (key: string, opts?: Record<string, unknown>) => string }) {
   const service = SERVICES.find(s => s.id === serviceId);
   return (
     <div>
       <h3 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 22, fontWeight: 900, letterSpacing: '0.05em', marginBottom: 8 }}>
-        CHỌN GÓI DỊCH VỤ
+        {t('booking.step1Title').toUpperCase()}
       </h3>
-      <p style={{ color: DS.text3, fontSize: 14, marginBottom: 24 }}>Lựa chọn gói phù hợp với quy mô và nhu cầu của bạn.</p>
+      <p style={{ color: DS.text3, fontSize: 14, marginBottom: 24 }}>{t('booking.step1Desc')}</p>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {PACKAGES.map(pkg => {
           const price = (service?.basePrice ?? 0) * pkg.multiplier;
@@ -322,7 +325,7 @@ function Step2_Package({ selected, onSelect, serviceId }: { selected: string; on
             >
               {pkg.popular && (
                 <div className="absolute top-0 left-0 right-0 py-1 text-center" style={{ background: GRD.primary, fontSize: 9, color: '#fff', fontFamily: DS.mono, letterSpacing: '0.15em' }}>
-                  ★ PHỔ BIẾN NHẤT
+                  {t('booking.popular')}
                 </div>
               )}
               <div style={{ marginTop: pkg.popular ? 20 : 0 }}>
@@ -330,7 +333,7 @@ function Step2_Package({ selected, onSelect, serviceId }: { selected: string; on
                 <div style={{ color: DS.text, fontFamily: DS.heading, fontSize: 20, fontWeight: 900, marginBottom: 4 }}>
                   {fmtVND(price)}
                 </div>
-                {service?.perMonth && <div style={{ color: DS.text5, fontSize: 11, fontFamily: DS.mono, marginBottom: 8 }}>/tháng</div>}
+                {service?.perMonth && <div style={{ color: DS.text5, fontSize: 11, fontFamily: DS.mono, marginBottom: 8 }}>{t('booking.perMonth')}</div>}
                 <div style={{ color: DS.text3, fontSize: 12, marginBottom: 14 }}>{pkg.desc}</div>
                 <div className="space-y-2">
                   {pkg.features.map(f => (
@@ -341,7 +344,7 @@ function Step2_Package({ selected, onSelect, serviceId }: { selected: string; on
                   ))}
                 </div>
                 <div className="mt-4 pt-3" style={{ borderTop: `1px solid ${DS.border}` }}>
-                  <span style={{ color: DS.purple, fontSize: 10, fontFamily: DS.mono }}>◈ +{pkg.lp} LP điểm thưởng/tháng</span>
+                  <span style={{ color: DS.purple, fontSize: 10, fontFamily: DS.mono }}>◈ +{pkg.lp} LP {t('booking.perMonth').replace('/', '')}</span>
                 </div>
                 {selected === pkg.id && (
                   <div className="absolute top-3 right-3 w-6 h-6 rounded-full flex items-center justify-center" style={{ background: pkg.color }}>
@@ -357,16 +360,16 @@ function Step2_Package({ selected, onSelect, serviceId }: { selected: string; on
   );
 }
 
-function Step3_Configure({ serviceId, selected, onToggle }: { serviceId: string; selected: string[]; onToggle: (id: string) => void }) {
+function Step3_Configure({ serviceId, selected, onToggle, t }: { serviceId: string; selected: string[]; onToggle: (id: string) => void; t: (key: string, opts?: Record<string, unknown>) => string }) {
   const opts = FEATURE_OPTIONS[serviceId] ?? [];
   return (
     <div>
       <h3 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 22, fontWeight: 900, letterSpacing: '0.05em', marginBottom: 8 }}>
-        CẤU HÌNH TÍNH NĂNG
+        {t('booking.step2Title').toUpperCase()}
       </h3>
-      <p style={{ color: DS.text3, fontSize: 14, marginBottom: 24 }}>Tùy chọn thêm tính năng để mở rộng phạm vi dự án. Tất cả giá bằng VNĐ.</p>
+      <p style={{ color: DS.text3, fontSize: 14, marginBottom: 24 }}>{t('booking.step2Desc')}</p>
       {opts.length === 0 ? (
-        <div style={{ color: DS.text3, fontSize: 14 }}>Gói này đã bao gồm tất cả tính năng cần thiết.</div>
+        <div style={{ color: DS.text3, fontSize: 14 }}>{t('booking.step2AllIncluded')}</div>
       ) : (
         <div className="space-y-3">
           {opts.map(opt => (
@@ -401,39 +404,39 @@ function Step3_Configure({ serviceId, selected, onToggle }: { serviceId: string;
   );
 }
 
-function Step4_Talent({ selected, onSelect }: { selected: string; onSelect: (id: string) => void }) {
+function Step4_Talent({ selected, onSelect, t }: { selected: string; onSelect: (id: string) => void; t: (key: string, opts?: Record<string, unknown>) => string }) {
   return (
     <div>
       <h3 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 22, fontWeight: 900, letterSpacing: '0.05em', marginBottom: 8 }}>
-        CHỌN PROJECT MANAGER
+        {t('booking.step3Title').toUpperCase()}
       </h3>
-      <p style={{ color: DS.text3, fontSize: 14, marginBottom: 24 }}>Chọn PM phụ trách dự án của bạn. Tất cả đều từ rank Ruby trở lên.</p>
+      <p style={{ color: DS.text3, fontSize: 14, marginBottom: 24 }}>{t('booking.step3Desc')}</p>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {TALENTS.map(t => (
+        {TALENTS.map(talent => (
           <motion.button
-            key={t.id}
-            onClick={() => onSelect(t.id)}
+            key={talent.id}
+            onClick={() => onSelect(talent.id)}
             className="text-left p-5 rounded-2xl flex items-center gap-4"
             style={{
-              background: selected === t.id ? 'rgba(59,130,246,0.1)' : 'rgba(15,23,42,0.6)',
-              border: selected === t.id ? '1.5px solid rgba(59,130,246,0.4)' : `1px solid ${DS.border}`,
+              background: selected === talent.id ? 'rgba(59,130,246,0.1)' : 'rgba(15,23,42,0.6)',
+              border: selected === talent.id ? '1.5px solid rgba(59,130,246,0.4)' : `1px solid ${DS.border}`,
               cursor: 'pointer',
             }}
             whileHover={{ scale: 1.015 }}
           >
-            <div className="w-14 h-14 rounded-2xl overflow-hidden flex-shrink-0" style={{ border: `2px solid ${t.rankColor}50` }}>
-              <img src={t.img} alt={t.name} className="w-full h-full object-cover" />
+            <div className="w-14 h-14 rounded-2xl overflow-hidden flex-shrink-0" style={{ border: `2px solid ${talent.rankColor}50` }}>
+              <img src={talent.img} alt={talent.name} className="w-full h-full object-cover" />
             </div>
             <div className="flex-1 min-w-0">
-              <div style={{ color: DS.text, fontSize: 14, fontWeight: 700, marginBottom: 2 }}>{t.name}</div>
-              <div style={{ color: DS.text3, fontSize: 12, marginBottom: 4 }}>{t.role}</div>
+              <div style={{ color: DS.text, fontSize: 14, fontWeight: 700, marginBottom: 2 }}>{talent.name}</div>
+              <div style={{ color: DS.text3, fontSize: 12, marginBottom: 4 }}>{talent.role}</div>
               <div className="flex items-center gap-2">
-                <span style={{ color: t.rankColor, fontSize: 12 }}>{t.rankSymbol}</span>
-                <span style={{ color: t.rankColor, fontSize: 10, fontFamily: DS.mono, fontWeight: 700 }}>{t.rank}</span>
+                <span style={{ color: talent.rankColor, fontSize: 12 }}>{talent.rankSymbol}</span>
+                <span style={{ color: talent.rankColor, fontSize: 10, fontFamily: DS.mono, fontWeight: 700 }}>{talent.rank}</span>
               </div>
-              <div style={{ color: DS.text5, fontSize: 11, fontFamily: DS.mono, marginTop: 4 }}>{t.specialty}</div>
+              <div style={{ color: DS.text5, fontSize: 11, fontFamily: DS.mono, marginTop: 4 }}>{talent.specialty}</div>
             </div>
-            {selected === t.id && (
+            {selected === talent.id && (
               <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: DS.blue }}>
                 <Check size={12} style={{ color: '#fff' }} />
               </div>
@@ -445,27 +448,31 @@ function Step4_Talent({ selected, onSelect }: { selected: string; onSelect: (id:
   );
 }
 
-function Step5_Schedule({ startDate, setStartDate, duration, setDuration }: {
+function Step5_Schedule({ startDate, setStartDate, duration, setDuration, t }: {
   startDate: string; setStartDate: (v: string) => void;
   duration: string; setDuration: (v: string) => void;
+  t: (key: string, opts?: Record<string, unknown>) => string;
 }) {
   const durations = [
-    { val: '2', label: '2 tuần' }, { val: '4', label: '1 tháng' },
-    { val: '8', label: '2 tháng' }, { val: '12', label: '3 tháng' },
-    { val: '24', label: '6 tháng' }, { val: 'custom', label: 'Tùy chỉnh' },
+    { val: '2', label: t('booking.weeks2') },
+    { val: '4', label: t('booking.month1') },
+    { val: '8', label: t('booking.months2') },
+    { val: '12', label: t('booking.months3') },
+    { val: '24', label: t('booking.months6') },
+    { val: 'custom', label: t('booking.customDuration') },
   ];
 
   return (
     <div>
       <h3 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 22, fontWeight: 900, letterSpacing: '0.05em', marginBottom: 8 }}>
-        LỊCH TRÌNH DỰ ÁN
+        {t('booking.step4Title').toUpperCase()}
       </h3>
-      <p style={{ color: DS.text3, fontSize: 14, marginBottom: 24 }}>Chọn ngày bắt đầu và thời gian dự kiến hoàn thành.</p>
+      <p style={{ color: DS.text3, fontSize: 14, marginBottom: 24 }}>{t('booking.step4Desc')}</p>
 
       <div className="space-y-6">
         <div>
           <label style={{ color: DS.text3, fontSize: 13, fontFamily: DS.mono, letterSpacing: '0.1em', display: 'block', marginBottom: 10 }}>
-            NGÀY BẮT ĐẦU DỰ KIẾN
+            {t('booking.startDateLabel').toUpperCase()}
           </label>
           <input
             type="date"
@@ -488,7 +495,7 @@ function Step5_Schedule({ startDate, setStartDate, duration, setDuration }: {
 
         <div>
           <label style={{ color: DS.text3, fontSize: 13, fontFamily: DS.mono, letterSpacing: '0.1em', display: 'block', marginBottom: 10 }}>
-            THỜI GIAN THỰC HIỆN
+            {t('booking.durationLabel').toUpperCase()}
           </label>
           <div className="flex flex-wrap gap-3">
             {durations.map(d => (
@@ -518,12 +525,12 @@ function Step5_Schedule({ startDate, setStartDate, duration, setDuration }: {
           <div className="p-4 rounded-xl" style={{ background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)' }}>
             <div className="flex items-center gap-2 mb-2">
               <Calendar size={14} style={{ color: DS.blue }} />
-              <span style={{ color: DS.blue, fontSize: 12, fontFamily: DS.mono, letterSpacing: '0.1em' }}>TIMELINE DỰ KIẾN</span>
+              <span style={{ color: DS.blue, fontSize: 12, fontFamily: DS.mono, letterSpacing: '0.1em' }}>{t('booking.timelineLabel').toUpperCase()}</span>
             </div>
             <div style={{ color: DS.text3, fontSize: 13 }}>
-              Bắt đầu: <strong style={{ color: DS.text }}>{new Date(startDate).toLocaleDateString('vi-VN')}</strong>
+              {t('booking.starts')}: <strong style={{ color: DS.text }}>{new Date(startDate).toLocaleDateString('vi-VN')}</strong>
               {' → '}
-              Hoàn thành: <strong style={{ color: DS.green }}>
+              {t('booking.completes')}: <strong style={{ color: DS.green }}>
                 {new Date(new Date(startDate).getTime() + parseInt(duration) * 7 * 24 * 60 * 60 * 1000).toLocaleDateString('vi-VN')}
               </strong>
             </div>
@@ -534,13 +541,13 @@ function Step5_Schedule({ startDate, setStartDate, duration, setDuration }: {
   );
 }
 
-function Step6_Extras({ selected, onToggle }: { selected: string[]; onToggle: (id: string) => void }) {
+function Step6_Extras({ selected, onToggle, t }: { selected: string[]; onToggle: (id: string) => void; t: (key: string, opts?: Record<string, unknown>) => string }) {
   return (
     <div>
       <h3 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 22, fontWeight: 900, letterSpacing: '0.05em', marginBottom: 8 }}>
-        DỊCH VỤ BỔ SUNG
+        {t('booking.step5Title').toUpperCase()}
       </h3>
-      <p style={{ color: DS.text3, fontSize: 14, marginBottom: 24 }}>Thêm các dịch vụ hỗ trợ để đảm bảo dự án thành công lâu dài. Giá VNĐ một lần.</p>
+      <p style={{ color: DS.text3, fontSize: 14, marginBottom: 24 }}>{t('booking.step5Desc')}</p>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {EXTRAS.map(ext => (
           <motion.button
@@ -572,36 +579,41 @@ function Step6_Extras({ selected, onToggle }: { selected: string[]; onToggle: (i
 }
 
 function Step7_Review({
-  serviceId, pkgId, features, talentId, extras, startDate, duration,
+  serviceId, pkgId, features, talentId, extras, startDate, duration, t,
 }: {
   serviceId: string; pkgId: string; features: string[]; talentId: string;
   extras: string[]; startDate: string; duration: string;
+  t: (key: string, opts?: Record<string, unknown>) => string;
 }) {
   const svc = SERVICES.find(s => s.id === serviceId);
   const pkg = PACKAGES.find(p => p.id === pkgId);
-  const talent = TALENTS.find(t => t.id === talentId);
+  const talent = TALENTS.find(tg => tg.id === talentId);
   const featureOpts = (FEATURE_OPTIONS[serviceId] ?? []).filter(f => features.includes(f.id));
   const extraOpts = EXTRAS.filter(e => extras.includes(e.id));
 
+  const durationLabel = duration === 'custom' ? t('booking.customDuration')
+    : duration === '2' ? t('booking.weeks2')
+    : `${Math.floor(parseInt(duration) / 4)} ${t('booking.month1')}`;
+
   const rows = [
-    { label: 'Dịch vụ', value: svc?.title ?? '—', color: svc?.color },
-    { label: 'Gói', value: pkg?.name ?? '—', color: DS.blue },
-    { label: 'PM / Lead', value: talent?.name ?? '—', color: talent ? talent.rankColor : DS.text3 },
-    { label: 'Bắt đầu', value: startDate ? new Date(startDate).toLocaleDateString('vi-VN') : '—' },
-    { label: 'Thời gian', value: duration === 'custom' ? 'Tùy chỉnh' : duration === '2' ? '2 tuần' : `${parseInt(duration)/4} tháng` },
+    { label: t('booking.service'), value: svc?.title ?? '—', color: svc?.color },
+    { label: t('booking.package'), value: pkg?.name ?? '—', color: DS.blue },
+    { label: t('booking.pmLead'), value: talent?.name ?? '—', color: talent ? talent.rankColor : DS.text3 },
+    { label: t('booking.startsAt'), value: startDate ? new Date(startDate).toLocaleDateString('vi-VN') : '—' },
+    { label: t('booking.duration'), value: durationLabel },
   ];
 
   return (
     <div>
       <h3 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 22, fontWeight: 900, letterSpacing: '0.05em', marginBottom: 8 }}>
-        XEM LẠI ĐƠN HÀNG
+        {t('booking.step6Title').toUpperCase()}
       </h3>
-      <p style={{ color: DS.text3, fontSize: 14, marginBottom: 24 }}>Kiểm tra lại thông tin trước khi tiến hành thanh toán.</p>
+      <p style={{ color: DS.text3, fontSize: 14, marginBottom: 24 }}>{t('booking.step6Desc')}</p>
 
       <div className="space-y-4">
         <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${DS.border}` }}>
           <div className="px-5 py-3" style={{ background: 'rgba(59,130,246,0.08)', borderBottom: `1px solid ${DS.border}` }}>
-            <span style={{ color: DS.blue, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.15em' }}>THÔNG TIN DỰ ÁN</span>
+            <span style={{ color: DS.blue, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.15em' }}>{t('booking.projectInfo').toUpperCase()}</span>
           </div>
           <div className="p-5 space-y-3">
             {rows.map(r => (
@@ -616,7 +628,7 @@ function Step7_Review({
         {featureOpts.length > 0 && (
           <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${DS.border}` }}>
             <div className="px-5 py-3" style={{ background: 'rgba(20,184,166,0.08)', borderBottom: `1px solid ${DS.border}` }}>
-              <span style={{ color: DS.cyan, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.15em' }}>TÍNH NĂNG BỔ SUNG ({featureOpts.length})</span>
+              <span style={{ color: DS.cyan, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.15em' }}>{t('booking.additionalFeatures').toUpperCase()} ({featureOpts.length})</span>
             </div>
             <div className="p-5 space-y-2">
               {featureOpts.map(f => (
@@ -632,7 +644,7 @@ function Step7_Review({
         {extraOpts.length > 0 && (
           <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${DS.border}` }}>
             <div className="px-5 py-3" style={{ background: 'rgba(129,140,248,0.08)', borderBottom: `1px solid ${DS.border}` }}>
-              <span style={{ color: DS.purple, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.15em' }}>DỊCH VỤ BỔ SUNG ({extraOpts.length})</span>
+              <span style={{ color: DS.purple, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.15em' }}>{t('booking.addonServices').toUpperCase()} ({extraOpts.length})</span>
             </div>
             <div className="p-5 space-y-2">
               {extraOpts.map(e => (
@@ -651,7 +663,7 @@ function Step7_Review({
 
 function Step8_Payment({
   lpBalance, lpDiscount, setLpDiscount, name, setName, email, setEmail,
-  phone, setPhone, company, setCompany, submitted, setSubmitted, onConfirm, orderId,
+  phone, setPhone, company, setCompany, submitted, setSubmitted, onConfirm, orderId, t,
 }: {
   lpBalance: number; lpDiscount: number; setLpDiscount: (n: number) => void;
   name: string; setName: (s: string) => void;
@@ -661,6 +673,7 @@ function Step8_Payment({
   submitted: boolean; setSubmitted: (b: boolean) => void;
   onConfirm: (n: string, em: string, ph: string, co: string) => void;
   orderId: string;
+  t: (key: string, opts?: Record<string, unknown>) => string;
 }) {
   const payMethods = [
     { id: 'bank', label: 'Chuyển khoản ngân hàng', icon: '🏦' },
@@ -676,28 +689,28 @@ function Step8_Payment({
           <Check size={36} style={{ color: DS.green }} />
         </div>
         <h3 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 24, fontWeight: 900, letterSpacing: '0.06em', marginBottom: 12 }}>
-          YÊU CẦU ĐÃ GỬI THÀNH CÔNG!
+          {t('booking.successTitle').toUpperCase()}
         </h3>
         {orderId && (
           <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 rounded-xl" style={{ background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.25)' }}>
-            <span style={{ color: DS.text4, fontSize: 12 }}>Mã đơn:</span>
+            <span style={{ color: DS.text4, fontSize: 12 }}>{t('booking.orderId')}:</span>
             <span style={{ color: DS.blue, fontFamily: DS.mono, fontSize: 14, fontWeight: 700 }}>{orderId}</span>
           </div>
         )}
         <p style={{ color: DS.text3, fontSize: 15, lineHeight: 1.8, maxWidth: 400, margin: '0 auto 32px' }}>
-          Đội ngũ LOOP Solutions sẽ liên hệ với bạn trong vòng 2 giờ làm việc để xác nhận và bắt đầu dự án.
+          {t('booking.successTeam')}
         </p>
         <div className="inline-block px-5 py-3 rounded-xl mb-6" style={{ background: 'rgba(129,140,248,0.1)', border: '1px solid rgba(129,140,248,0.3)' }}>
-          <div style={{ color: DS.purple, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.15em', marginBottom: 4 }}>LP ĐIỂM THƯỞNG ĐĂNG KÝ</div>
+          <div style={{ color: DS.purple, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.15em', marginBottom: 4 }}>{t('booking.successLpBadge').toUpperCase()}</div>
           <div style={{ color: DS.purple, fontFamily: DS.heading, fontSize: 24, fontWeight: 900 }}>+500 LP</div>
         </div>
         <br />
         <div className="flex items-center justify-center gap-3 flex-wrap mt-4">
           <Link to="/khach-hang" style={{ background: GRD.primary, color: '#fff', fontSize: 14, fontWeight: 600, padding: '12px 28px', borderRadius: 10, textDecoration: 'none' }}>
-            Vào Customer Portal →
+            {t('booking.goToCustomerPortal')}
           </Link>
           <Link to="/" style={{ color: DS.text3, fontSize: 14, padding: '12px 20px', borderRadius: 10, textDecoration: 'none', border: `1px solid ${DS.border}` }}>
-            Về trang chủ
+            {t('booking.backToHome')}
           </Link>
         </div>
       </motion.div>
@@ -707,16 +720,16 @@ function Step8_Payment({
   return (
     <div>
       <h3 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 22, fontWeight: 900, letterSpacing: '0.05em', marginBottom: 8 }}>
-        THÔNG TIN & THANH TOÁN
+        {t('booking.step7Title').toUpperCase()}
       </h3>
-      <p style={{ color: DS.text3, fontSize: 14, marginBottom: 24 }}>Điền thông tin để LOOP Solutions liên hệ xác nhận và tạo hợp đồng.</p>
+      <p style={{ color: DS.text3, fontSize: 14, marginBottom: 24 }}>{t('booking.step7Desc')}</p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         {[
-          { label: 'Họ và tên *', value: name, set: setName, placeholder: 'Nguyễn Văn A' },
-          { label: 'Email công ty *', value: email, set: setEmail, placeholder: 'name@company.vn' },
-          { label: 'Số điện thoại *', value: phone, set: setPhone, placeholder: '0901 234 567' },
-          { label: 'Tên công ty', value: company, set: setCompany, placeholder: 'ABC Company' },
+          { label: t('booking.fullName'), value: name, set: setName, placeholder: t('booking.fullNamePlaceholder') },
+          { label: t('booking.companyEmail'), value: email, set: setEmail, placeholder: t('booking.companyEmailPlaceholder') },
+          { label: t('booking.phoneNumber'), value: phone, set: setPhone, placeholder: t('booking.phonePlaceholder') },
+          { label: t('booking.companyName'), value: company, set: setCompany, placeholder: t('booking.companyPlaceholder') },
         ].map(f => (
           <div key={f.label}>
             <label style={{ color: DS.text3, fontSize: 12, fontFamily: DS.mono, letterSpacing: '0.1em', display: 'block', marginBottom: 8 }}>{f.label}</label>
@@ -730,13 +743,12 @@ function Step8_Payment({
         ))}
       </div>
 
-      {/* LP Discount */}
       {lpBalance > 0 && (
         <div className="mb-6 p-5 rounded-xl" style={{ background: 'rgba(129,140,248,0.08)', border: '1px solid rgba(129,140,248,0.25)' }}>
           <div className="flex items-center justify-between mb-3">
             <div>
-              <div style={{ color: DS.purple, fontSize: 12, fontFamily: DS.mono, letterSpacing: '0.1em', marginBottom: 2 }}>◈ DÙNG LP ĐIỂM THƯỞNG ĐỂ GIẢM GIÁ</div>
-              <div style={{ color: DS.text4, fontSize: 11 }}>Số dư: {lpBalance.toLocaleString()} LP · 1,000 LP = 500,000 VNĐ (tối đa 20%)</div>
+              <div style={{ color: DS.purple, fontSize: 12, fontFamily: DS.mono, letterSpacing: '0.1em', marginBottom: 2 }}>{t('booking.useLpDiscount')}</div>
+              <div style={{ color: DS.text4, fontSize: 11 }}>{t('booking.balanceLp', { balance: lpBalance.toLocaleString() })}</div>
             </div>
           </div>
           <div className="flex items-center gap-4">
@@ -753,9 +765,8 @@ function Step8_Payment({
         </div>
       )}
 
-      {/* Payment method */}
       <div className="mb-6">
-        <label style={{ color: DS.text3, fontSize: 12, fontFamily: DS.mono, letterSpacing: '0.1em', display: 'block', marginBottom: 10 }}>PHƯƠNG THỨC THANH TOÁN ĐẶT CỌC (30%)</label>
+        <label style={{ color: DS.text3, fontSize: 12, fontFamily: DS.mono, letterSpacing: '0.1em', display: 'block', marginBottom: 10 }}>{t('booking.depositPayment').toUpperCase()}</label>
         <div className="flex gap-3 flex-wrap">
           {payMethods.map(m => (
             <button
@@ -791,11 +802,11 @@ function Step8_Payment({
         }}
       >
         <Shield size={16} />
-        Gửi yêu cầu & Đặt lịch tư vấn
+        {t('booking.sendRequest')}
         <ArrowRight size={15} />
       </button>
       <div style={{ color: DS.text5, fontSize: 11, marginTop: 10 }}>
-        * Thanh toán đặt cọc 30% sau khi ký hợp đồng. Số còn lại thanh toán theo tiến độ dự án.
+        {t('booking.depositNote')}
       </div>
     </div>
   );
@@ -803,6 +814,7 @@ function Step8_Payment({
 
 // ── MAIN COMPONENT ────────────────────────────────────────────────────────
 export default function BookingWizardPage() {
+  const { t } = useI18n();
   const [step, setStep] = useState(0);
   const [serviceId, setServiceId] = useState('');
   const [pkgId, setPkgId] = useState('business');
@@ -882,48 +894,46 @@ export default function BookingWizardPage() {
     setSubmitted(true);
   };
 
+  const stepLabels = STEP_LABELS_KEYS.map(k => t(k));
+
   const steps = [
-    <Step1_Service key={0} selected={serviceId} onSelect={setServiceId} />,
-    <Step2_Package key={1} selected={pkgId} onSelect={setPkgId} serviceId={serviceId} />,
-    <Step3_Configure key={2} serviceId={serviceId} selected={features} onToggle={toggleFeature} />,
-    <Step4_Talent key={3} selected={talentId} onSelect={setTalentId} />,
-    <Step5_Schedule key={4} startDate={startDate} setStartDate={setStartDate} duration={duration} setDuration={setDuration} />,
-    <Step6_Extras key={5} selected={extras} onToggle={toggleExtra} />,
-    <Step7_Review key={6} serviceId={serviceId} pkgId={pkgId} features={features} talentId={talentId} extras={extras} startDate={startDate} duration={duration} />,
-    <Step8_Payment key={7} lpBalance={LP_BALANCE} lpDiscount={lpDiscount} setLpDiscount={setLpDiscount} name={name} setName={setName} email={email} setEmail={setEmail} phone={phone} setPhone={setPhone} company={company} setCompany={setCompany} submitted={submitted} setSubmitted={setSubmitted} onConfirm={handleSubmit} orderId={newOrderId} />,
+    <Step1_Service key={0} selected={serviceId} onSelect={setServiceId} t={t} />,
+    <Step2_Package key={1} selected={pkgId} onSelect={setPkgId} serviceId={serviceId} t={t} />,
+    <Step3_Configure key={2} serviceId={serviceId} selected={features} onToggle={toggleFeature} t={t} />,
+    <Step4_Talent key={3} selected={talentId} onSelect={setTalentId} t={t} />,
+    <Step5_Schedule key={4} startDate={startDate} setStartDate={setStartDate} duration={duration} setDuration={setDuration} t={t} />,
+    <Step6_Extras key={5} selected={extras} onToggle={toggleExtra} t={t} />,
+    <Step7_Review key={6} serviceId={serviceId} pkgId={pkgId} features={features} talentId={talentId} extras={extras} startDate={startDate} duration={duration} t={t} />,
+    <Step8_Payment key={7} lpBalance={LP_BALANCE} lpDiscount={lpDiscount} setLpDiscount={setLpDiscount} name={name} setName={setName} email={email} setEmail={setEmail} phone={phone} setPhone={setPhone} company={company} setCompany={setCompany} submitted={submitted} setSubmitted={setSubmitted} onConfirm={handleSubmit} orderId={newOrderId} t={t} />,
   ];
 
   return (
     <div style={{ background: DS.bg, minHeight: '100vh', fontFamily: DS.body, paddingTop: 64 }}>
-      {/* Header */}
       <div style={{ background: 'linear-gradient(180deg, rgba(29,78,216,0.08) 0%, transparent 100%)', borderBottom: `1px solid ${DS.border}` }}>
         <div className="max-w-7xl mx-auto px-6 py-8">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div>
               <div className="inline-flex items-center gap-2 mb-3 px-3 py-1 rounded-full" style={{ background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.25)' }}>
                 <Sparkles size={11} style={{ color: DS.blue }} />
-                <span style={{ color: DS.blue, fontSize: 10, fontFamily: DS.mono, letterSpacing: '0.2em' }}>ĐẶT LỊCH TƯ VẤN</span>
+                <span style={{ color: DS.blue, fontSize: 10, fontFamily: DS.mono, letterSpacing: '0.2em' }}>{t('booking.badge')}</span>
               </div>
               <h1 style={{ fontFamily: DS.heading, fontSize: 28, fontWeight: 900, letterSpacing: '0.06em', background: 'linear-gradient(135deg, #FFFFFF, #94A3B8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                CẤU HÌNH DỰ ÁN CỦA BẠN
+                {t('booking.heroTitle').toUpperCase()}
               </h1>
-              <p style={{ color: DS.text3, fontSize: 13, marginTop: 4 }}>8 bước đơn giản · Báo giá VNĐ real-time · Nhận 500 LP điểm thưởng</p>
+              <p style={{ color: DS.text3, fontSize: 13, marginTop: 4 }}>{t('booking.heroDesc')}</p>
             </div>
             <Link to="/" style={{ color: DS.text4, fontSize: 13, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, border: `1px solid ${DS.border}` }}>
               <X size={13} />
-              Thoát
+              {t('booking.exit')}
             </Link>
           </div>
 
-          {/* Progress */}
-          <ProgressBar step={step} />
+          <ProgressBar step={step} labels={stepLabels} />
         </div>
       </div>
 
-      {/* Main content */}
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left: Step content */}
           <div className="lg:col-span-2">
             <AnimatePresence mode="wait">
               <motion.div
@@ -937,7 +947,6 @@ export default function BookingWizardPage() {
               </motion.div>
             </AnimatePresence>
 
-            {/* Navigation */}
             {!submitted && (
               <div className="flex items-center justify-between mt-10 pt-6" style={{ borderTop: `1px solid ${DS.border}` }}>
                 <button
@@ -953,7 +962,7 @@ export default function BookingWizardPage() {
                   }}
                 >
                   <ArrowLeft size={15} />
-                  Quay lại
+                  {t('booking.back')}
                 </button>
 
                 <div style={{ color: DS.text5, fontSize: 12, fontFamily: DS.mono }}>
@@ -974,7 +983,7 @@ export default function BookingWizardPage() {
                       boxShadow: canNext() ? '0 0 20px rgba(129,140,248,0.35)' : 'none',
                     }}
                   >
-                    {step === steps.length - 2 ? 'Xem lại' : 'Tiếp theo'}
+                    {step === steps.length - 2 ? t('booking.reviewButton') : t('booking.next')}
                     <ArrowRight size={15} />
                   </button>
                 )}
@@ -982,7 +991,6 @@ export default function BookingWizardPage() {
             )}
           </div>
 
-          {/* Right: Price sidebar */}
           <div className="hidden lg:block">
             <PriceSidebar
               service={service}
@@ -991,6 +999,7 @@ export default function BookingWizardPage() {
               extras={extras}
               lpDiscount={lpDiscount}
               lpBalance={LP_BALANCE}
+              t={t}
             />
           </div>
         </div>

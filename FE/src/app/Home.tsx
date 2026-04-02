@@ -9,6 +9,7 @@ import { RoleFilters, RoleFilter } from './components/team/RoleFilters';
 import { SearchSortBar, SortOption } from './components/team/SearchSortBar';
 import { GRD, DS } from './components/layout/ds';
 import { Shield, Users, Zap, Trophy, ChevronRight, ArrowRight } from 'lucide-react';
+import { useI18n } from './hooks/useI18n';
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 function fmtLP(n: number): string {
@@ -33,16 +34,17 @@ const HexPattern = memo(function HexPattern() {
 
 // ── Hero Section ──────────────────────────────────────────────────────────
 const HeroSection = memo(function HeroSection() {
+  const { t } = useI18n();
   const totalLP   = members.reduce((s, m) => s + m.lpEarned, 0);
   const totalMissions = members.reduce((s, m) => s + m.missions, 0);
   const totalAchievements = members.reduce((s, m) => s + m.achievements.length, 0);
   const topMember = [...members].sort((a, b) => RANKS[b.rank].tier - RANKS[a.rank].tier)[0];
 
   const kpis = [
-    { label: 'Thành viên đang hoạt động', value: `${members.length}`, suffix: ' operative', color: DS.blue },
-    { label: 'Tổng LP lưu thông', value: fmtLP(totalLP), suffix: ' LP', color: DS.purple },
-    { label: 'Nhiệm vụ hoàn thành', value: String(totalMissions), suffix: ' ops', color: DS.cyan },
-    { label: 'Thành tích guild', value: String(totalAchievements), suffix: ' trophy', color: DS.amber },
+    { label: t('team.kpi.activeMembers'), value: `${members.length}`, suffix: ` ${t('team.kpi.operative')}`, color: DS.blue },
+    { label: t('team.kpi.totalLp'), value: fmtLP(totalLP), suffix: ' LP', color: DS.purple },
+    { label: t('team.kpi.missionsCompleted'), value: String(totalMissions), suffix: ` ${t('team.kpi.ops')}`, color: DS.cyan },
+    { label: t('team.kpi.guildAchievements'), value: String(totalAchievements), suffix: ` ${t('team.kpi.trophy')}`, color: DS.amber },
   ];
 
   return (
@@ -67,7 +69,7 @@ const HeroSection = memo(function HeroSection() {
           <motion.h1 initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
             style={{ fontFamily: DS.heading, letterSpacing: '0.04em', lineHeight: 1.1, marginBottom: 20 }}>
             <span style={{ display: 'block', fontSize: 'clamp(32px, 5vw, 58px)', fontWeight: 900, background: 'linear-gradient(135deg, #FFFFFF 0%, #CBD5E1 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-              ĐỘI NGŨ TINH NHUỆ
+              {t('team.heroTitle1')}
             </span>
             <span style={{ display: 'block', fontSize: 'clamp(32px, 5vw, 58px)', fontWeight: 900, background: GRD.primary, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
               LOOP SOLUTIONS
@@ -76,8 +78,7 @@ const HeroSection = memo(function HeroSection() {
 
           <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}
             style={{ color: DS.text3, fontSize: 16, lineHeight: 1.8, maxWidth: 560, margin: '0 auto 40px' }}>
-            Mỗi thành viên là một mảnh ghép quan trọng. Cùng nhau chúng tôi xây dựng những sản phẩm kỹ thuật số
-            đỉnh cao — được đo lường bằng LP, thăng hạng bằng kết quả thực tế.
+            {t('team.heroSubtitle')}
           </motion.p>
 
           {/* CTA row */}
@@ -85,11 +86,11 @@ const HeroSection = memo(function HeroSection() {
             className="flex items-center justify-center gap-4 flex-wrap">
             <Link to="/dat-lich"
               style={{ background: GRD.primary, color: '#fff', fontSize: 14, fontWeight: 700, padding: '12px 28px', borderRadius: 12, textDecoration: 'none', boxShadow: '0 0 32px rgba(129,140,248,0.45)', display: 'flex', alignItems: 'center', gap: 8 }}>
-              Làm việc cùng chúng tôi <ArrowRight size={15} />
+              {t('team.heroCta')} <ArrowRight size={15} />
             </Link>
             <Link to="/admin"
               style={{ color: DS.text3, fontSize: 13, padding: '11px 22px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.1)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6, backdropFilter: 'blur(8px)' }}>
-              <Shield size={13} style={{ color: DS.text5 }} /> Admin Panel
+              <Shield size={13} style={{ color: DS.text5 }} /> {t('team.heroAdmin')}
             </Link>
           </motion.div>
         </div>
@@ -118,7 +119,7 @@ const HeroSection = memo(function HeroSection() {
 // ── Rank Distribution Strip ───────────────────────────────────────────────
 type RankFilter = RankKey | 'all';
 
-const RankStrip = memo(function RankStrip({ active, onChange }: { active: RankFilter; onChange: (r: RankFilter) => void }) {
+const RankStrip = memo(function RankStrip({ active, onChange, t }: { active: RankFilter; onChange: (r: RankFilter) => void; t: (key: string, vars?: Record<string, string | number>) => string }) {
   const rankKeys: RankKey[] = ['iron', 'bronze', 'silver', 'gold', 'platinum', 'ruby', 'diamond'];
   const countPerRank = rankKeys.reduce((acc, r) => ({ ...acc, [r]: members.filter(m => m.rank === r).length }), {} as Record<RankKey, number>);
   const lpPerRank = rankKeys.reduce((acc, r) => ({ ...acc, [r]: members.filter(m => m.rank === r).reduce((s, m) => s + m.lpEarned, 0) }), {} as Record<RankKey, number>);
@@ -127,11 +128,11 @@ const RankStrip = memo(function RankStrip({ active, onChange }: { active: RankFi
     <div className="mb-12">
       <div className="flex items-center gap-3 mb-5" style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono, letterSpacing: '0.2em' }}>
         <div style={{ width: 24, height: 1, background: DS.border }} />
-        PHÂN BỐ RANK · BẤM ĐỂ LỌC
+        {t('team.rankStrip.title')}
         <div style={{ flex: 1, height: 1, background: `linear-gradient(90deg, ${DS.border}, transparent)` }} />
         {active !== 'all' && (
           <button onClick={() => onChange('all')} style={{ color: DS.text5, background: 'none', border: 'none', cursor: 'pointer', fontSize: 10, fontFamily: DS.mono, display: 'flex', alignItems: 'center', gap: 4 }}>
-            <span style={{ color: RANKS[active].color }}>×</span> Bỏ lọc
+            <span style={{ color: RANKS[active].color }}>×</span> {t('team.rankStrip.clearFilter')}
           </button>
         )}
       </div>
@@ -158,9 +159,9 @@ const RankStrip = memo(function RankStrip({ active, onChange }: { active: RankFi
               <div style={{ color: cfg.color, fontSize: 18, lineHeight: 1, textShadow: isActive ? `0 0 12px ${cfg.glowColor}` : 'none', marginBottom: 4 }}>{cfg.symbol}</div>
               <div style={{ color: isActive ? cfg.color : DS.text5, fontSize: 9, fontFamily: DS.mono, letterSpacing: '0.1em', fontWeight: 700, marginBottom: 6 }}>{cfg.label}</div>
               <div style={{ color: '#FFFFFF', fontFamily: DS.heading, fontSize: 20, fontWeight: 700, lineHeight: 1, textShadow: isActive ? `0 0 10px ${cfg.glowColor}` : 'none' }}>{countPerRank[rk]}</div>
-              <div style={{ color: DS.text5, fontSize: 8, fontFamily: DS.mono, letterSpacing: '0.08em', marginBottom: 6 }}>thành viên</div>
+              <div style={{ color: DS.text5, fontSize: 8, fontFamily: DS.mono, letterSpacing: '0.08em', marginBottom: 6 }}>{t('team.rankStrip.members')}</div>
               <div style={{ color: cfg.color, fontSize: 10, fontFamily: DS.mono, fontWeight: 600, opacity: 0.85 }}>{fmtLP(lpPerRank[rk])}</div>
-              <div style={{ color: DS.text5, fontSize: 8, fontFamily: DS.mono }}>LP earned</div>
+              <div style={{ color: DS.text5, fontSize: 8, fontFamily: DS.mono }}>{t("team.rankStrip.lpEarned")}</div>
               <div className="mt-2 pt-2" style={{ borderTop: `1px solid ${cfg.color}15` }}>
                 <div style={{ color: DS.text5, fontSize: 8, fontFamily: DS.mono }}>Lv {cfg.minLevel}–{cfg.uncapped ? `${cfg.maxLevel}+` : cfg.maxLevel}</div>
               </div>
@@ -193,14 +194,15 @@ const SectionDivider = memo(function SectionDivider({ label, color = DS.text5 }:
 });
 
 // ── Rank Legend ────────────────────────────────────────────────────────────
-const RankLegend = memo(function RankLegend() {
+const RankLegend = memo(function RankLegend({ t }: { t: (key: string, vars?: Record<string, string | number>) => string }) {
   const rankKeys: RankKey[] = ['iron', 'bronze', 'silver', 'gold', 'platinum', 'ruby', 'diamond'];
   return (
     <div className="mt-20 mb-8">
-      <SectionDivider label="BẢNG XẾP HẠNG RANK" />
+      <SectionDivider label={t("team.rankLegend.title")} />
       <div className="flex items-stretch justify-center flex-wrap gap-3">
         {rankKeys.map(r => {
           const cfg = RANKS[r];
+          const lvlRange = `Lv ${cfg.minLevel}–${cfg.uncapped ? `${cfg.maxLevel}+` : cfg.maxLevel}`;
           return (
             <div key={r} className="flex flex-col gap-1.5 px-4 py-3 rounded-xl"
               style={{ background: DS.bgCard, border: `1px solid ${cfg.color}22`, minWidth: 100 }}>
@@ -208,8 +210,8 @@ const RankLegend = memo(function RankLegend() {
                 <span style={{ color: cfg.color, fontSize: 14, textShadow: `0 0 8px ${cfg.glowColor}` }}>{cfg.symbol}</span>
                 <span style={{ color: cfg.color, fontSize: 10, fontFamily: DS.mono, letterSpacing: '0.12em', fontWeight: 700 }}>{cfg.label}</span>
               </div>
-              <div style={{ color: DS.text5, fontSize: 9, fontFamily: DS.mono }}>Lv {cfg.minLevel}–{cfg.uncapped ? `${cfg.maxLevel}+` : cfg.maxLevel}</div>
-              <div style={{ color: DS.text5, fontSize: 8, fontFamily: DS.mono }}>{fmtLP(cfg.lpPerLevel)} LP/cấp</div>
+              <div style={{ color: DS.text5, fontSize: 9, fontFamily: DS.mono }}>{lvlRange}</div>
+              <div style={{ color: DS.text5, fontSize: 8, fontFamily: DS.mono }}>{fmtLP(cfg.lpPerLevel)} {t("team.rankLegend.lpPerLevel")}</div>
               <div className="h-px rounded-full mt-1" style={{ background: `linear-gradient(90deg, ${cfg.gradientFrom}, ${cfg.gradientTo})` }} />
             </div>
           );
@@ -220,7 +222,7 @@ const RankLegend = memo(function RankLegend() {
 });
 
 // ── CTA Banner ─────────────────────────────────────────────────────────────
-const CTABanner = memo(function CTABanner() {
+const CTABanner = memo(function CTABanner({ t }: { t: (key: string, vars?: Record<string, string | number>) => string }) {
   return (
     <div className="relative rounded-2xl overflow-hidden p-10 text-center mt-20"
       style={{ background: 'linear-gradient(135deg, rgba(29,78,216,0.15), rgba(129,140,248,0.1))', border: '1px solid rgba(129,140,248,0.2)' }}>
@@ -232,17 +234,17 @@ const CTABanner = memo(function CTABanner() {
           <div style={{ height: 1, width: 50, background: 'linear-gradient(90deg, rgba(129,140,248,0.5), transparent)' }} />
         </div>
         <h2 style={{ fontFamily: DS.heading, fontSize: 'clamp(22px, 3vw, 36px)', fontWeight: 900, background: 'linear-gradient(135deg, #FFFFFF, #94A3B8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: 12 }}>
-          Sẵn sàng làm việc cùng đội ngũ đỉnh cao?
+          {t('team.ctaBanner.heading')}
         </h2>
         <p style={{ color: DS.text3, fontSize: 15, lineHeight: 1.8, maxWidth: 500, margin: '0 auto 28px' }}>
-          Dù bạn là khách hàng hay nhân tài muốn gia nhập — LOOP Solutions luôn chào đón những người cùng chí hướng.
+          {t('team.ctaBanner.subtitle')}
         </p>
         <div className="flex items-center justify-center gap-4 flex-wrap">
           <Link to="/dat-lich" style={{ background: GRD.primary, color: '#fff', fontSize: 14, fontWeight: 700, padding: '12px 28px', borderRadius: 12, textDecoration: 'none', boxShadow: '0 0 28px rgba(129,140,248,0.4)', display: 'flex', alignItems: 'center', gap: 8 }}>
-            Đặt lịch tư vấn <ChevronRight size={15} />
+            {t('team.ctaBanner.cta')} <ChevronRight size={15} />
           </Link>
           <Link to="/lien-he" style={{ color: DS.text3, fontSize: 14, padding: '11px 24px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.12)', textDecoration: 'none' }}>
-            Liên hệ ngay
+            {t('team.ctaBanner.contact')}
           </Link>
         </div>
       </motion.div>
@@ -252,6 +254,7 @@ const CTABanner = memo(function CTABanner() {
 
 // ── Main Component ────────────────────────────────────────────────────────
 export default function Home() {
+  const { t } = useI18n();
   const [selected, setSelected]     = useState<Member | null>(null);
   const [roleFilter, setRoleFilter] = useState<RoleFilter>('all');
   const [rankFilter, setRankFilter] = useState<RankFilter>('all');
@@ -329,27 +332,27 @@ export default function Home() {
 
           {/* ── Hall of Fame ── */}
           <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}>
-            <SectionDivider label="HALL OF FAME · HUYỀN THOẠI GUILD" />
+            <SectionDivider label={t("team.hallOfFame.sectionTitle")} />
             <HallOfFame mvp={diamond} bugSlayer={ruby} topPerformer={gold} onMemberClick={setSelected} />
           </motion.div>
 
           {/* ── Rank Distribution ── */}
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5 }}>
-            <SectionDivider label="MA TRẬN PHÂN BỔ RANK" />
-            <RankStrip active={rankFilter} onChange={setRankFilter} />
+            <SectionDivider label={t("team.rankMatrix.title")} />
+            <RankStrip active={rankFilter} onChange={setRankFilter} t={t} />
           </motion.div>
 
           {/* ── Controls ── */}
           <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.4 }}>
             <div className="flex items-center gap-3 mb-5 flex-wrap">
               <div style={{ color: DS.text5, fontSize: 9, fontFamily: DS.mono, letterSpacing: '0.2em' }}>
-                BỘ LỌC ĐỘI NGŨ
+                {t("team.controls.title")}
               </div>
               <div style={{ flex: 1, height: 1, background: `linear-gradient(90deg, ${DS.border}, transparent)` }} />
               {isFiltered && (
                 <button onClick={() => { setRoleFilter('all'); setRankFilter('all'); setSearchQuery(''); }}
                   style={{ color: DS.blue, background: 'none', border: 'none', cursor: 'pointer', fontSize: 10, fontFamily: DS.mono, letterSpacing: '0.1em' }}>
-                  × XÓA BỘ LỌC
+                  × {t("team.controls.clearFilters")}
                 </button>
               )}
             </div>
@@ -369,10 +372,10 @@ export default function Home() {
               <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                 className="flex flex-col items-center justify-center py-24 gap-4">
                 <Users size={48} style={{ color: DS.text5, opacity: 0.3 }} />
-                <div style={{ color: DS.text4, fontSize: 15, fontFamily: DS.mono }}>Không tìm thấy thành viên phù hợp</div>
+                <div style={{ color: DS.text4, fontSize: 15, fontFamily: DS.mono }}>{t("team.emptyState.message")}</div>
                 <button onClick={() => { setRoleFilter('all'); setRankFilter('all'); setSearchQuery(''); }}
                   style={{ color: DS.blue, background: 'none', border: `1px solid rgba(59,130,246,0.3)`, borderRadius: 8, padding: '7px 16px', cursor: 'pointer', fontSize: 13 }}>
-                  Bỏ tất cả bộ lọc
+                  {t("team.emptyState.clearAll")}
                 </button>
               </motion.div>
             ) : (
@@ -406,10 +409,10 @@ export default function Home() {
           </AnimatePresence>
 
           {/* ── Rank legend ── */}
-          <RankLegend />
+          <RankLegend t={t} />
 
           {/* ── CTA ── */}
-          <CTABanner />
+          <CTABanner t={t} />
         </div>
       </div>
 

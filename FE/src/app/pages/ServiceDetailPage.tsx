@@ -5,6 +5,7 @@ import { Check, ArrowRight, Globe, Code2, BarChart3, Target, Monitor, ArrowLeft 
 import { DS, GRD } from '../components/layout/ds';
 import { useParams, Link } from 'react-router';
 import { DemoViewer } from '../components/ui/DemoViewer';
+import { useI18n } from '@/hooks/useI18n';
 
 const fmtVND = (n: number) =>
   new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(n);
@@ -25,7 +26,7 @@ const SERVICES_DATA: Record<string, {
     subtitle: 'Từ landing page đến e-commerce platform cao cấp',
     desc: 'Chúng tôi xây dựng website cao cấp, tốc độ cao và tối ưu chuyển đổi. Mỗi dự án được thiết kế riêng theo thương hiệu, đảm bảo performance và UX tốt nhất. Tất cả sản phẩm đều đạt chuẩn Core Web Vitals và sẵn sàng để scale.',
     startPrice: 15_000_000, endPrice: 200_000_000,
-    features: ['Thiết kế UI/UX độc đáo theo brand', 'Responsive 100% thiết bị', 'Core Web Vitals ≥ 90', 'SEO on-page tích hợp', 'CMS tùy chọn (Sanity, Contentful)', 'E-commerce & Payment gateway', 'Multi-language (i18n)', 'Analytics & Heatmap', 'Bàn giao full source code', 'Bảo hành 6 tháng'],
+    features: ['Thiết kế UI/UX độc đảo theo brand', 'Responsive 100% thiết bị', 'Core Web Vitals ≥ 90', 'SEO on-page tích hợp', 'CMS tùy chọn (Sanity, Contentful)', 'E-commerce & Payment gateway', 'Multi-language (i18n)', 'Analytics & Heatmap', 'Bàn giao full source code', 'Bảo hành 6 tháng'],
     process: [
       { title: 'Discovery & Wireframe', desc: 'Phân tích brand, UX research và tạo wireframe chi tiết.' },
       { title: 'UI Design & Prototype', desc: 'Thiết kế Figma hoàn chỉnh, interactive prototype để review.' },
@@ -151,6 +152,7 @@ const SLUG_MAP: Record<string, string> = {
 };
 
 export default function ServiceDetailPage() {
+  const { t } = useI18n();
   const { id = '' } = useParams<{ id: string }>();
   const slug = SLUG_MAP[id] ?? Object.keys(SERVICES_DATA)[0];
   const svc = SERVICES_DATA[slug] ?? Object.values(SERVICES_DATA)[0];
@@ -163,7 +165,7 @@ export default function ServiceDetailPage() {
         <div className="max-w-5xl mx-auto">
           <Link to="/dich-vu" className="inline-flex items-center gap-2 mb-6" style={{ color: DS.text4, fontSize: 13, textDecoration: 'none' }}>
             <ArrowLeft size={14} />
-            Tất cả dịch vụ
+            {t('services.detail.backLink')}
           </Link>
           <div className="flex items-start gap-6 flex-wrap">
             <div className="w-16 h-16 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ background: `${svc.color}15`, border: `1px solid ${svc.color}30` }}>
@@ -171,7 +173,7 @@ export default function ServiceDetailPage() {
             </div>
             <div className="flex-1 min-w-0">
               <div className="inline-flex items-center gap-2 mb-3 px-3 py-1 rounded-full" style={{ background: `${svc.color}10`, border: `1px solid ${svc.color}25` }}>
-                <span style={{ color: svc.color, fontSize: 10, fontFamily: DS.mono, letterSpacing: '0.2em' }}>DỊCH VỤ CHUYÊN NGHIỆP</span>
+                <span style={{ color: svc.color, fontSize: 10, fontFamily: DS.mono, letterSpacing: '0.2em' }}>{t('services.detail.badge')}</span>
               </div>
               <h1 style={{ fontFamily: DS.heading, fontSize: 'clamp(26px, 4vw, 44px)', fontWeight: 900, letterSpacing: '0.04em', background: 'linear-gradient(135deg, #FFFFFF, #94A3B8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: 10 }}>
                 {svc.title}
@@ -179,24 +181,24 @@ export default function ServiceDetailPage() {
               <p style={{ color: DS.text3, fontSize: 16, marginBottom: 6 }}>{svc.subtitle}</p>
               <div className="flex items-center gap-6 flex-wrap mt-4">
                 <div>
-                  <div style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono, marginBottom: 2 }}>GIÁ TỪ (VNĐ)</div>
+                  <div style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono, marginBottom: 2 }}>{t('services.detail.priceFrom')}</div>
                   <div style={{ color: svc.color, fontSize: 20, fontFamily: DS.heading, fontWeight: 900 }}>
                     {fmtVND(svc.startPrice)}{svc.perMonth ? '/tháng' : ''}
                   </div>
                 </div>
                 <div style={{ width: 1, height: 40, background: DS.border }} />
                 <div>
-                  <div style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono, marginBottom: 2 }}>LP ĐIỂM THƯỞNG</div>
+                  <div style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono, marginBottom: 2 }}>{t('services.detail.lpReward')}</div>
                   <div style={{ color: DS.purple, fontSize: 14, fontFamily: DS.mono }}>◈ {svc.lp} LP / 1M VNĐ</div>
                 </div>
                 <div style={{ width: 1, height: 40, background: DS.border }} />
                 <button onClick={() => setShowDemo(true)}
                   className="flex items-center gap-2 px-5 py-2.5 rounded-xl"
                   style={{ background: `${svc.color}12`, border: `1px solid ${svc.color}30`, color: svc.color, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
-                  <Monitor size={14} /> Xem Demo
+                  <Monitor size={14} /> {t('services.detail.viewDemo')}
                 </button>
                 <Link to="/dat-lich" style={{ background: GRD.primary, color: '#fff', fontSize: 14, fontWeight: 700, padding: '11px 24px', borderRadius: 12, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8, boxShadow: '0 0 24px rgba(129,140,248,0.3)' }}>
-                  Đặt lịch tư vấn <ArrowRight size={15} />
+                  {t('services.detail.bookConsult')} <ArrowRight size={15} />
                 </Link>
               </div>
             </div>
@@ -212,11 +214,11 @@ export default function ServiceDetailPage() {
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <Monitor size={15} style={{ color: svc.color }} />
-                  <span style={{ color: svc.color, fontSize: 12, fontFamily: DS.mono, letterSpacing: '0.15em' }}>DEMO GIAO DIỆN THỰC TẾ</span>
+                  <span style={{ color: svc.color, fontSize: 12, fontFamily: DS.mono, letterSpacing: '0.15em' }}>{t('services.detail.demoSection')}</span>
                 </div>
                 <button onClick={() => setShowDemo(false)}
                   style={{ color: DS.text4, background: 'rgba(255,255,255,0.05)', border: `1px solid ${DS.border}`, borderRadius: 8, padding: '4px 10px', cursor: 'pointer', fontSize: 12, display: 'flex', alignItems: 'center', gap: 5 }}>
-                  <span>Đóng</span>
+                  <span>{t('services.detail.close')}</span>
                 </button>
               </div>
               <DemoViewer
@@ -230,9 +232,8 @@ export default function ServiceDetailPage() {
               <div className="mt-3 p-3 rounded-xl flex items-start gap-3"
                 style={{ background: `${svc.color}06`, border: `1px solid ${svc.color}15` }}>
                 <Monitor size={13} style={{ color: svc.color, flexShrink: 0, marginTop: 2 }} />
-                <p style={{ color: DS.text4, fontSize: 12, lineHeight: 1.7 }}>
-                  Đây là bản demo giao diện từ dự án thực tế của LOOP Solutions. URL gốc được mã hóa và bảo vệ — chỉ có thể xem trực tiếp trên nền tảng này.
-                  Để xem chi tiết hoặc request demo riêng, <Link to="/dat-lich" style={{ color: svc.color }}>đặt lịch tư vấn</Link>.
+                <p style={{ color: DS.text4, fontSize: 12, lineHeight: 1.7, whiteSpace: 'pre-line' }}>
+                  {t('services.detail.demoDesc')}
                 </p>
               </div>
             </motion.div>
@@ -248,11 +249,11 @@ export default function ServiceDetailPage() {
                   style={{ background: `${svc.color}80`, boxShadow: `0 0 30px ${svc.color}40`, border: `1px solid ${svc.color}60` }}>
                   <Monitor size={26} style={{ color: '#fff' }} />
                 </div>
-                <div style={{ color: '#fff', fontSize: 15, fontWeight: 700 }}>Xem Demo Giao Diện</div>
+                <div style={{ color: '#fff', fontSize: 15, fontWeight: 700 }}>{t('services.detail.viewDemoLabel')}</div>
                 <div className="flex items-center gap-2 px-4 py-2 rounded-lg"
                   style={{ background: 'rgba(2,6,23,0.8)', border: `1px solid ${svc.color}30`, backdropFilter: 'blur(8px)' }}>
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={DS.green} strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                  <span style={{ color: DS.green, fontSize: 10, fontFamily: DS.mono }}>URL được bảo vệ · Chỉ xem tại LOOP</span>
+                  <span style={{ color: DS.green, fontSize: 10, fontFamily: DS.mono }}>{t('services.detail.demoProtected')}</span>
                 </div>
               </div>
             </motion.div>
@@ -267,13 +268,13 @@ export default function ServiceDetailPage() {
           <div className="lg:col-span-2 space-y-10">
             {/* Description */}
             <div>
-              <h2 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 22, fontWeight: 900, letterSpacing: '0.04em', marginBottom: 12 }}>TỔNG QUAN DỊCH VỤ</h2>
+              <h2 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 22, fontWeight: 900, letterSpacing: '0.04em', marginBottom: 12 }}>{t('services.detail.overviewTitle')}</h2>
               <p style={{ color: DS.text3, fontSize: 15, lineHeight: 1.9 }}>{svc.desc}</p>
             </div>
 
             {/* Process */}
             <div>
-              <h2 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 22, fontWeight: 900, letterSpacing: '0.04em', marginBottom: 16 }}>QUY TRÌNH THỰC HIỆN</h2>
+              <h2 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 22, fontWeight: 900, letterSpacing: '0.04em', marginBottom: 16 }}>{t('services.detail.processTitle')}</h2>
               <div className="space-y-4">
                 {svc.process.map((p, i) => (
                   <motion.div key={p.title} className="flex gap-5 p-4 rounded-xl"
@@ -294,7 +295,7 @@ export default function ServiceDetailPage() {
 
             {/* Case studies */}
             <div>
-              <h2 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 22, fontWeight: 900, letterSpacing: '0.04em', marginBottom: 16 }}>DỰ ÁN LIÊN QUAN</h2>
+              <h2 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 22, fontWeight: 900, letterSpacing: '0.04em', marginBottom: 16 }}>{t('services.detail.relatedProjectsTitle')}</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {svc.cases.map(c => (
                   <div key={c.name} className="rounded-xl overflow-hidden" style={{ background: DS.bgCard, border: `1px solid ${DS.border}` }}>
@@ -310,7 +311,7 @@ export default function ServiceDetailPage() {
 
             {/* FAQs */}
             <div>
-              <h2 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 22, fontWeight: 900, letterSpacing: '0.04em', marginBottom: 16 }}>CÂU HỎI THƯỜNG GẶP</h2>
+              <h2 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 22, fontWeight: 900, letterSpacing: '0.04em', marginBottom: 16 }}>{t('services.detail.faqTitle')}</h2>
               <div className="space-y-4">
                 {svc.faqs.map(faq => (
                   <div key={faq.q} className="p-5 rounded-xl" style={{ background: 'rgba(15,23,42,0.6)', border: `1px solid ${DS.border}` }}>
@@ -326,7 +327,7 @@ export default function ServiceDetailPage() {
           <div className="space-y-5">
             {/* Features */}
             <div className="p-5 rounded-2xl" style={{ background: 'rgba(15,23,42,0.8)', border: `1px solid ${DS.border}` }}>
-              <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.15em', marginBottom: 14 }}>TÍNH NĂNG BAO GỒM</div>
+              <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.15em', marginBottom: 14 }}>{t('services.detail.featuresIncluded')}</div>
               <div className="space-y-2.5">
                 {svc.features.map(f => (
                   <div key={f} className="flex items-start gap-2.5">
@@ -339,7 +340,7 @@ export default function ServiceDetailPage() {
 
             {/* Tech stack */}
             <div className="p-5 rounded-2xl" style={{ background: 'rgba(15,23,42,0.8)', border: `1px solid ${DS.border}` }}>
-              <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.15em', marginBottom: 14 }}>TECH STACK</div>
+              <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.15em', marginBottom: 14 }}>{t('services.detail.techStack')}</div>
               <div className="flex flex-wrap gap-2">
                 {svc.tech.map(t => (
                   <span key={t} style={{ color: svc.color, fontSize: 10, fontFamily: DS.mono, padding: '3px 8px', borderRadius: 4, background: `${svc.color}10`, border: `1px solid ${svc.color}25` }}>{t}</span>
@@ -351,30 +352,30 @@ export default function ServiceDetailPage() {
             <div className="p-5 rounded-2xl" style={{ background: `${svc.color}08`, border: `1px solid ${svc.color}25` }}>
               <div style={{ color: svc.color, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.12em', marginBottom: 10 }}>
                 <Monitor size={12} style={{ display: 'inline', marginRight: 6 }} />
-                XEM DEMO GIAO DIỆN
+                {t('services.detail.sidebarDemoTitle')}
               </div>
               <p style={{ color: DS.text4, fontSize: 12, lineHeight: 1.6, marginBottom: 12 }}>
-                Demo thực tế từ dự án đã triển khai. URL gốc được bảo vệ, chỉ xem được trực tiếp trên LOOP.
+                {t('services.detail.sidebarDemoDesc')}
               </p>
               <button onClick={() => { setShowDemo(true); window.scrollTo({ top: 400, behavior: 'smooth' }); }}
                 className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl"
                 style={{ background: `${svc.color}15`, border: `1px solid ${svc.color}30`, color: svc.color, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
-                <Monitor size={14} /> Mở Demo
+                <Monitor size={14} /> {t('services.detail.openDemo')}
               </button>
             </div>
 
             {/* LP Info */}
             <div className="p-5 rounded-2xl" style={{ background: 'rgba(129,140,248,0.08)', border: '1px solid rgba(129,140,248,0.25)' }}>
-              <div style={{ color: DS.purple, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.15em', marginBottom: 10 }}>◈ LP ĐIỂM THƯỞNG</div>
+              <div style={{ color: DS.purple, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.15em', marginBottom: 10 }}>{t('services.detail.lpInfoTitle')}</div>
               <p style={{ color: DS.text3, fontSize: 12, lineHeight: 1.7 }}>
-                Tích lũy <strong style={{ color: DS.purple }}>{svc.lp} LP</strong> cho mỗi 1,000,000 VNĐ giao dịch. LP là điểm thưởng nội bộ — dùng để giảm giá dịch vụ hoặc đổi quyền lợi cao cấp.
+                {t('services.detail.lpInfoDesc', { lp: svc.lp.toString() })}
               </p>
             </div>
 
             {/* CTA */}
             <Link to="/dat-lich" style={{ display: 'block', background: GRD.primary, color: '#fff', fontSize: 15, fontWeight: 700, padding: '14px 20px', borderRadius: 14, textDecoration: 'none', textAlign: 'center', boxShadow: '0 0 30px rgba(129,140,248,0.35)' }}>
-              Đặt lịch tư vấn miễn phí
-              <div style={{ fontSize: 11, fontWeight: 400, marginTop: 4, opacity: 0.8 }}>Nhận 500 LP điểm thưởng ngay hôm nay</div>
+              {t('services.detail.ctaTitle')}
+              <div style={{ fontSize: 11, fontWeight: 400, marginTop: 4, opacity: 0.8 }}>{t('services.detail.ctaSubtitle')}</div>
             </Link>
           </div>
         </div>

@@ -21,6 +21,7 @@ import { EffectsInventoryTab } from '../components/customer/EffectsInventoryTab'
 import { QuestsTab } from '../components/customer/QuestsTab';
 import { ChatWidget } from '../components/ui/ChatWidget';
 import { useIsMobile } from '../components/ui/use-mobile';
+import { useI18n } from '@/hooks/useI18n';
 
 // ── Build dynamic customer profile from AuthStore ─────────────────────────
 function useCustomerProfile() {
@@ -72,24 +73,25 @@ const fmtVND = (n: number) =>
 const fmtLP = (n: number) => n.toLocaleString('vi-VN');
 
 // ── Sidebar ───────────────────────────────────────────────────────────────
-const NAV_ITEMS = [
-  { id: 'home',     icon: <Home size={16} />,        label: 'Tổng quan' },
-  { id: 'projects', icon: <FolderKanban size={16} />, label: 'Dự án' },
-  { id: 'media',    icon: <Camera size={16} />,       label: 'Media Booking' },
-  { id: 'courses',  icon: <BookOpen size={16} />,     label: 'Khóa học', badge: 1 },
-  { id: 'effects',  icon: <Sparkles size={16} />,     label: 'Kho hiệu ứng' },
-  { id: 'quests',   icon: <Star size={16} />,          label: 'Nhiệm vụ' },
-  { id: 'invoices', icon: <FileText size={16} />,     label: 'Hóa đơn', badge: 1 },
-  { id: 'lp',       icon: <Wallet size={16} />,       label: 'Ví LP' },
-  { id: 'referral', icon: <Gift size={16} />,          label: 'Giới thiệu' },
-  { id: 'support',  icon: <MessageSquare size={16} />, label: 'Hỗ trợ', badge: 2 },
-  { id: 'settings', icon: <Settings size={16} />,      label: 'Cài đặt' },
+const NAV_ITEMS_RAW = [
+  { id: 'home',     icon: <Home size={16} />,        labelKey: 'customer.overview' },
+  { id: 'projects', icon: <FolderKanban size={16} />, labelKey: 'customer.projects' },
+  { id: 'media',    icon: <Camera size={16} />,        labelKey: 'admin.media' },
+  { id: 'courses',  icon: <BookOpen size={16} />,      labelKey: 'customer.courses' },
+  { id: 'effects',  icon: <Sparkles size={16} />,      labelKey: 'admin.effects' },
+  { id: 'quests',   icon: <Star size={16} />,           labelKey: 'admin.questsEvents' },
+  { id: 'invoices', icon: <FileText size={16} />,      labelKey: 'customer.invoices' },
+  { id: 'lp',       icon: <Wallet size={16} />,         labelKey: 'customer.wallet' },
+  { id: 'referral', icon: <Gift size={16} />,           labelKey: 'customer.referral' },
+  { id: 'support',  icon: <MessageSquare size={16} />, labelKey: 'customer.support' },
+  { id: 'settings', icon: <Settings size={16} />,       labelKey: 'customer.settings' },
 ];
 
 function Sidebar({ active, onSelect, isOpen, onClose }: { active: string; onSelect: (s: string) => void; isOpen?: boolean; onClose?: () => void }) {
   const isMobile = useIsMobile();
   const CUSTOMER = useCustomerProfile();
   const GLD = RANKS[CUSTOMER.rank] ?? RANKS['gold'];
+  const { t } = useI18n();
 
   const handleSelect = (id: string) => {
     onSelect(id);
@@ -144,14 +146,14 @@ function Sidebar({ active, onSelect, isOpen, onClose }: { active: string; onSele
 
       {/* Nav */}
       <nav className="flex-1 p-3 mt-2">
-        <div style={{ color: DS.text5, fontSize: 9, fontFamily: DS.mono, letterSpacing: '0.2em', marginBottom: 8, marginLeft: 8 }}>ĐIỀU HƯỚNG</div>
+        <div style={{ color: DS.text5, fontSize: 9, fontFamily: DS.mono, letterSpacing: '0.2em', marginBottom: 8, marginLeft: 8 }}>{t('common.navigation')}</div>
         <div className="space-y-0.5">
-          {NAV_ITEMS.map(item => (
+          {NAV_ITEMS_RAW.map(item => (
             <button key={item.id} onClick={() => handleSelect(item.id)}
               className="w-full flex items-center gap-3 px-3 rounded-xl text-left"
               style={{ background: active === item.id ? 'rgba(59,130,246,0.12)' : 'rgba(0,0,0,0)', border: active === item.id ? '1px solid rgba(59,130,246,0.22)' : '1px solid transparent', color: active === item.id ? DS.blue : DS.text3, fontSize: 13, cursor: 'pointer', transition: 'all 0.15s', minHeight: 44, paddingTop: 10, paddingBottom: 10 }}>
               <span style={{ color: active === item.id ? DS.blue : DS.text4 }}>{item.icon}</span>
-              <span className="flex-1">{item.label}</span>
+              <span className="flex-1">{t(item.labelKey)}</span>
               {item.badge && <span style={{ background: DS.red, color: '#fff', fontSize: 9, borderRadius: 10, padding: '1px 6px', fontFamily: DS.mono }}>{item.badge}</span>}
               {active === item.id && <div className="w-1.5 h-1.5 rounded-full" style={{ background: DS.blue, boxShadow: `0 0 6px ${DS.blue}` }} />}
             </button>
@@ -162,10 +164,10 @@ function Sidebar({ active, onSelect, isOpen, onClose }: { active: string; onSele
       {/* Footer */}
       <div className="p-3" style={{ borderTop: `1px solid ${DS.border}` }}>
         <Link to="/" onClick={() => isMobile && onClose && onClose()} className="flex items-center gap-2.5 px-3 py-2 rounded-xl" style={{ color: DS.text4, fontSize: 12, textDecoration: 'none', minHeight: 40 }}>
-          <Globe size={14} style={{ color: DS.text5 }} /> Trang chủ
+          <Globe size={14} style={{ color: DS.text5 }} /> {t('navbar.home')}
         </Link>
         <button className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl mt-0.5" style={{ background: 'none', border: 'none', color: DS.text4, fontSize: 12, cursor: 'pointer', textAlign: 'left', minHeight: 40 }}>
-          <LogOut size={14} style={{ color: DS.text5 }} /> Đăng xuất
+          <LogOut size={14} style={{ color: DS.text5 }} /> {t('navbar.logout')}
         </button>
       </div>
     </div>
@@ -198,11 +200,12 @@ function Sidebar({ active, onSelect, isOpen, onClose }: { active: string; onSele
 
 // ── Mobile bottom nav for Customer ─────────────────────────────────────────────
 function CustomerMobileBottomNav({ active, onSelect, onMenuOpen }: { active: string; onSelect: (id: string) => void; onMenuOpen: () => void }) {
+  const { t } = useI18n();
   const ITEMS = [
-    { id: 'home',     icon: <Home size={20} />,        label: 'Tổng quan', badge: 0 },
-    { id: 'projects', icon: <FolderKanban size={20} />, label: 'Dự án',    badge: 0 },
-    { id: 'courses',  icon: <BookOpen size={20} />,     label: 'Học viện', badge: 1 },
-    { id: 'lp',       icon: <Wallet size={20} />,       label: 'Ví LP',    badge: 0 },
+    { id: 'home',     icon: <Home size={20} />,         label: t('customer.overview'), badge: 0 },
+    { id: 'projects', icon: <FolderKanban size={20} />,  label: t('customer.projects'), badge: 0 },
+    { id: 'courses',  icon: <BookOpen size={20} />,       label: t('customer.courses'), badge: 1 },
+    { id: 'lp',       icon: <Wallet size={20} />,         label: t('customer.wallet'), badge: 0 },
   ];
 
   return (
@@ -228,7 +231,7 @@ function CustomerMobileBottomNav({ active, onSelect, onMenuOpen }: { active: str
           className="flex-1 flex flex-col items-center gap-0.5"
           style={{ background: 'none', border: 'none', cursor: 'pointer', color: DS.text4, padding: '10px 0 8px', minHeight: 56 }}>
           <Menu size={20} />
-          <span style={{ fontSize: 9, fontFamily: DS.mono }}>Thêm</span>
+          <span style={{ fontSize: 9, fontFamily: DS.mono }}>{t('navbar.more')}</span>
         </button>
       </div>
     </div>
@@ -240,13 +243,14 @@ function TopBar({ tab, onSelect, onMenuToggle }: { tab: string; onSelect: (s: st
   const isMobile = useIsMobile();
   const CUSTOMER = useCustomerProfile();
   const GLD = RANKS[CUSTOMER.rank] ?? RANKS['gold'];
+  const { t } = useI18n();
   const tabLabels: Record<string, string> = {
-    home: 'Tổng quan', projects: 'Dự án của tôi', media: 'Media Booking', quests: 'Nhiệm vụ & Sự kiện', invoices: 'Hóa đơn & Thanh toán',
-    courses: 'Khóa học của tôi', effects: 'Kho hiệu ứng & Khung avatar',
-    lp: 'Ví điểm thưởng LP', referral: 'Chương trình giới thiệu', support: 'Hỗ trợ khách hàng', settings: 'Cài đặt tài khoản',
+    home: t('customer.overview'), projects: t('customer.projects'), media: t('admin.media'), quests: t('admin.questsEvents'),
+    invoices: t('customer.invoices'), courses: t('customer.courses'), effects: t('admin.effects'),
+    lp: t('customer.wallet'), referral: t('customer.referral'), support: t('customer.support'), settings: t('customer.settings'),
   };
   const now = new Date();
-  const greeting = now.getHours() < 12 ? 'Chào buổi sáng' : now.getHours() < 18 ? 'Chào buổi chiều' : 'Chào buổi tối';
+  const greeting = now.getHours() < 12 ? t('common.morningGreeting') : now.getHours() < 18 ? t('common.afternoonGreeting') : t('common.eveningGreeting');
 
   return (
     <div className="flex items-center justify-between h-14 flex-shrink-0" style={{ background: DS.bgCard, borderBottom: `1px solid ${DS.border}`, padding: isMobile ? '0 12px' : '0 24px' }}>
@@ -275,7 +279,7 @@ function TopBar({ tab, onSelect, onMenuToggle }: { tab: string; onSelect: (s: st
         {/* Book service */}
         {!isMobile && (
           <Link to="/dat-lich" style={{ background: GRD.primary, color: '#fff', borderRadius: 10, padding: '7px 14px', fontSize: 12, fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 5, boxShadow: '0 0 12px rgba(129,140,248,0.3)' }}>
-            <Plus size={13} /> Đặt dịch vụ
+            <Plus size={13} /> {t('booking.bookService')}
           </Link>
         )}
         {isMobile && (
@@ -315,10 +319,10 @@ function ClientNotifBell({ onSelect }: { onSelect: (s: string) => void }) {
             className="absolute right-0 top-12 w-80 rounded-2xl overflow-hidden z-50"
             style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, boxShadow: '0 20px 60px rgba(0,0,0,0.5)' }}>
             <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: `1px solid ${DS.border}` }}>
-              <span style={{ color: DS.text, fontSize: 13, fontWeight: 700 }}>Thông báo ({unread} mới)</span>
+              <span style={{ color: DS.text, fontSize: 13, fontWeight: 700 }}>{t('admin.notifications')} ({unread} {t('admin.notificationsNew')})</span>
               <button onClick={() => { markAllClientNotifsRead(); setOpen(false); }}
                 style={{ color: DS.blue, background: 'none', border: 'none', cursor: 'pointer', fontSize: 11 }}>
-                Đánh dấu đã đọc
+                {t('admin.markAllRead')}
               </button>
             </div>
             <div style={{ maxHeight: 340, overflowY: 'auto' }}>
@@ -337,7 +341,7 @@ function ClientNotifBell({ onSelect }: { onSelect: (s: string) => void }) {
                       <div className="flex items-center gap-1.5 mt-2 px-2 py-1 rounded-lg"
                         style={{ background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.2)', display: 'inline-flex' }}>
                         <Monitor size={10} style={{ color: DS.green }} />
-                        <span style={{ color: DS.green, fontSize: 10, fontFamily: DS.mono }}>Demo sẵn sàng!</span>
+                        <span style={{ color: DS.green, fontSize: 10, fontFamily: DS.mono }}>{t('customer.demoReady')}</span>
                       </div>
                     )}
                   </div>
@@ -357,6 +361,7 @@ function ClientNotifBell({ onSelect }: { onSelect: (s: string) => void }) {
 function HomeTab({ onSelect }: { onSelect: (s: string) => void }) {
   const CUSTOMER = useCustomerProfile();
   const GLD = RANKS[CUSTOMER.rank] ?? RANKS['gold'];
+  const { t } = useI18n();
   const PROJECTS = [
     { id: 'p1', name: 'Website Công ty TechViet', type: 'Web Development', status: 'doing', progress: 65, pm: 'Yuna Park', pmImg: members[3].img, deadline: '28/03/2026', budget: '85M VNĐ', tags: ['React', 'TailwindCSS', 'Node.js'] },
     { id: 'p2', name: 'App Mobile TechViet v2', type: 'Mobile App', status: 'review', progress: 90, pm: 'Shin Watanabe', pmImg: members[4].img, deadline: '01/04/2026', budget: '120M VNĐ', tags: ['React Native', 'AWS'] },
@@ -364,10 +369,10 @@ function HomeTab({ onSelect }: { onSelect: (s: string) => void }) {
   ];
 
   const STATUS_CFG = {
-    todo:   { label: 'Chờ thực hiện', color: DS.text4,  bg: 'rgba(100,116,139,0.12)', border: 'rgba(100,116,139,0.25)', dot: DS.text4 },
-    doing:  { label: 'Đang thực hiện', color: DS.blue,  bg: 'rgba(59,130,246,0.12)',  border: 'rgba(59,130,246,0.3)',  dot: DS.blue },
-    review: { label: 'Đang review',    color: DS.amber, bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.3)', dot: DS.amber },
-    done:   { label: 'Hoàn thành',     color: DS.green, bg: 'rgba(34,197,94,0.12)',  border: 'rgba(34,197,94,0.3)',  dot: DS.green },
+    todo:   { label: t('common.statusTodo'), color: DS.text4,  bg: 'rgba(100,116,139,0.12)', border: 'rgba(100,116,139,0.25)', dot: DS.text4 },
+    doing:  { label: t('common.statusDoing'), color: DS.blue,  bg: 'rgba(59,130,246,0.12)',  border: 'rgba(59,130,246,0.3)',  dot: DS.blue },
+    review: { label: t('common.statusReview'), color: DS.amber, bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.3)', dot: DS.amber },
+    done:   { label: t('common.statusDone'), color: DS.green, bg: 'rgba(34,197,94,0.12)',  border: 'rgba(34,197,94,0.3)',  dot: DS.green },
   };
 
   const ACTIVITIES = [
@@ -410,15 +415,15 @@ function HomeTab({ onSelect }: { onSelect: (s: string) => void }) {
 
             <div className="flex items-end justify-between mt-4">
               <div>
-                <div style={{ color: DS.text5, fontSize: 9, fontFamily: DS.mono, letterSpacing: '0.15em', marginBottom: 4 }}>THÀNH VIÊN TỪ</div>
+                <div style={{ color: DS.text5, fontSize: 9, fontFamily: DS.mono, letterSpacing: '0.15em', marginBottom: 4 }}>{t('customer.memberSince')}</div>
                 <div style={{ color: DS.text3, fontFamily: DS.mono, fontSize: 14, fontWeight: 700 }}>{CUSTOMER.memberSince}</div>
               </div>
               <div className="text-center">
-                <div style={{ color: DS.text5, fontSize: 9, fontFamily: DS.mono, letterSpacing: '0.1em', marginBottom: 4 }}>TỔNG CHI TIÊU</div>
+                <div style={{ color: DS.text5, fontSize: 9, fontFamily: DS.mono, letterSpacing: '0.1em', marginBottom: 4 }}>{t('customer.totalSpent')}</div>
                 <div style={{ color: DS.text2, fontFamily: DS.mono, fontSize: 16, fontWeight: 700 }}>{fmtVND(CUSTOMER.totalSpent)} VNĐ</div>
               </div>
               <div className="text-right">
-                <div style={{ color: DS.text5, fontSize: 9, fontFamily: DS.mono, letterSpacing: '0.1em', marginBottom: 4 }}>LP BALANCE</div>
+                <div style={{ color: DS.text5, fontSize: 9, fontFamily: DS.mono, letterSpacing: '0.1em', marginBottom: 4 }}>{t('customer.lpBalance')}</div>
                 <div style={{ color: GLD.color, fontFamily: DS.heading, fontSize: 22, fontWeight: 900, textShadow: `0 0 12px ${GLD.glowColor}` }}>{fmtLP(CUSTOMER.lpBalance)}</div>
               </div>
             </div>
@@ -426,8 +431,8 @@ function HomeTab({ onSelect }: { onSelect: (s: string) => void }) {
             {/* XP Progress */}
             <div className="mt-4">
               <div className="flex justify-between mb-1.5">
-                <span style={{ color: GLD.color, fontSize: 10, fontFamily: DS.mono }}>XP LEVEL PROGRESS</span>
-                <span style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono }}>{CUSTOMER.xpPct}% · Cần {(100 - CUSTOMER.xpPct) * 140} LP để lên Lv.{CUSTOMER.level + 1}</span>
+                <span style={{ color: GLD.color, fontSize: 10, fontFamily: DS.mono }}>{t('customer.xpLevelProgress')}</span>
+                <span style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono }}>{t('customer.xpToNext', { lp: (100 - CUSTOMER.xpPct) * 140, level: CUSTOMER.level + 1 })}</span>
               </div>
               <div className="rounded-full overflow-hidden" style={{ height: 6, background: DS.border }}>
                 <div style={{ height: '100%', width: `${CUSTOMER.xpPct}%`, background: `linear-gradient(90deg, ${GLD.gradientFrom}, ${GLD.gradientTo})`, borderRadius: 99, boxShadow: `0 0 10px ${GLD.glowColor}` }} />
@@ -439,9 +444,9 @@ function HomeTab({ onSelect }: { onSelect: (s: string) => void }) {
         {/* Quick stats col */}
         <div className="space-y-3">
           {[
-            { label: 'Dự án đang chạy', value: '3', sub: '1 sắp deadline', color: DS.blue, icon: <FolderKanban size={16} /> },
-            { label: 'LP tổng tích lũy', value: fmtLP(CUSTOMER.lpEarned), sub: `Đã dùng ${fmtLP(CUSTOMER.lpSpent)}`, color: GLD.color, icon: <Zap size={16} /> },
-            { label: 'Khách giới thiệu', value: '3', sub: '4,500 LP earned', color: DS.purple, icon: <Users size={16} /> },
+            { label: t('customer.activeProjects'), value: '3', sub: t('customer.deadlineSoon'), color: DS.blue, icon: <FolderKanban size={16} /> },
+            { label: t('customer.totalLpEarned'), value: fmtLP(CUSTOMER.lpEarned), sub: t('customer.lpSpent', { amount: fmtLP(CUSTOMER.lpSpent) }), color: GLD.color, icon: <Zap size={16} /> },
+            { label: t('customer.referrals'), value: '3', sub: '4,500 LP earned', color: DS.purple, icon: <Users size={16} /> },
           ].map(s => (
             <motion.div key={s.label} className="rounded-2xl p-4" style={{ background: DS.bgCard, border: `1px solid ${DS.border}` }}
               whileHover={{ borderColor: `${s.color}35`, boxShadow: `0 4px 20px rgba(0,0,0,0.3)` }}>
@@ -462,9 +467,9 @@ function HomeTab({ onSelect }: { onSelect: (s: string) => void }) {
       {/* ── Active Projects ── */}
       <div className="rounded-2xl" style={{ background: DS.bgCard, border: `1px solid ${DS.border}` }}>
         <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: `1px solid ${DS.border}` }}>
-          <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.15em' }}>── DỰ ÁN ĐANG THỰC HIỆN</div>
+          <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.15em' }}>── {t('customer.activeProjectsSection').toUpperCase()}</div>
           <button onClick={() => onSelect('projects')} style={{ color: DS.blue, background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, fontFamily: DS.mono, display: 'flex', alignItems: 'center', gap: 4 }}>
-            Xem tất cả <ChevronRight size={12} />
+            {t('common.viewAll')} <ChevronRight size={12} />
           </button>
         </div>
         <div className="p-4 space-y-3">

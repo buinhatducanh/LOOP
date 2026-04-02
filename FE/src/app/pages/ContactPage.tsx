@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Mail, Phone, MapPin, Send, Check, ChevronDown, Clock } from 'lucide-react';
 import { DS, GRD } from '../components/layout/ds';
+import { useI18n } from '../hooks/useI18n';
 
 export default function ContactPage() {
+  const { t } = useI18n();
   const [submitted, setSubmitted] = useState(false);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -44,9 +46,9 @@ export default function ContactPage() {
             <span style={{ color: DS.cyan, fontSize: 10, fontFamily: DS.mono, letterSpacing: '0.22em' }}>LIÊN HỆ & TƯ VẤN</span>
           </div>
           <h1 style={{ fontFamily: DS.heading, fontSize: 38, fontWeight: 900, letterSpacing: '0.06em', background: 'linear-gradient(135deg, #FFFFFF, #94A3B8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: 12 }}>
-            HÃY NÓI CHUYỆN
+            {t('contact.title')}
           </h1>
-          <p style={{ color: DS.text3, fontSize: 15, lineHeight: 1.8 }}>Tư vấn miễn phí 30 phút. Nhận ngay 500 LP khi đặt lịch hôm nay.</p>
+          <p style={{ color: DS.text3, fontSize: 15, lineHeight: 1.8 }}>{t('contact.subtitle')}</p>
         </div>
       </section>
 
@@ -69,14 +71,14 @@ export default function ContactPage() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                     <div>
-                      <label style={labelStyle}>HỌ TÊN *</label>
+                      <label style={labelStyle}>{t('contact.name')} *</label>
                       <input style={inputStyle} placeholder="Nguyễn Văn A" value={name} onChange={e => setName(e.target.value)}
                         onFocus={e => { e.target.style.borderColor = DS.cyan; }}
                         onBlur={e => { e.target.style.borderColor = DS.border; }}
                       />
                     </div>
                     <div>
-                      <label style={labelStyle}>EMAIL *</label>
+                      <label style={labelStyle}>{t('contact.email')}</label>
                       <input style={inputStyle} type="email" placeholder="email@company.vn" value={email} onChange={e => setEmail(e.target.value)}
                         onFocus={e => { e.target.style.borderColor = DS.cyan; }}
                         onBlur={e => { e.target.style.borderColor = DS.border; }}
@@ -86,14 +88,14 @@ export default function ContactPage() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                     <div>
-                      <label style={labelStyle}>SỐ ĐIỆN THOẠI</label>
+                      <label style={labelStyle}>{t('contact.phone')}</label>
                       <input style={inputStyle} placeholder="+84 901 234 567" value={phone} onChange={e => setPhone(e.target.value)}
                         onFocus={e => { e.target.style.borderColor = DS.cyan; }}
                         onBlur={e => { e.target.style.borderColor = DS.border; }}
                       />
                     </div>
                     <div>
-                      <label style={labelStyle}>DỊCH VỤ QUAN TÂM</label>
+                      <label style={labelStyle}>{t('contact.service')}</label>
                       <select
                         value={service}
                         onChange={e => setService(e.target.value)}
@@ -102,17 +104,17 @@ export default function ContactPage() {
                         onBlur={e => { e.target.style.borderColor = DS.border; }}
                       >
                         <option value="">-- Chọn dịch vụ --</option>
-                        <option>Thiết kế Website</option>
-                        <option>Phát triển App</option>
+                        <option>{t('contact.serviceOptions.webDesign')}</option>
+                        <option>{t('contact.serviceOptions.appDev')}</option>
                         <option>SaaS Platform</option>
                         <option>SEO & Marketing</option>
-                        <option>Khác</option>
+                        <option>{t('contact.serviceOptions.other')}</option>
                       </select>
                     </div>
                   </div>
 
                   <div className="mb-4">
-                    <label style={labelStyle}>NGÂN SÁCH DỰ KIẾN</label>
+                    <label style={labelStyle}>{t('contact.budget')}</label>
                     <select
                       value={budget}
                       onChange={e => setBudget(e.target.value)}
@@ -121,18 +123,19 @@ export default function ContactPage() {
                       onBlur={e => { e.target.style.borderColor = DS.border; }}
                     >
                       <option value="">-- Chọn ngân sách --</option>
-                      <option>Dưới 20 triệu</option>
-                      <option>20 – 50 triệu</option>
-                      <option>50 – 100 triệu</option>
-                      <option>Trên 100 triệu</option>
+                      <option>{t('contact.budgetOptions.under50')}</option>
+                      <option>{t('contact.budgetOptions.50to100')}</option>
+                      <option>{t('contact.budgetOptions.100to500')}</option>
+                      <option>{t('contact.budgetOptions.over500')}</option>
+                      <option>{t('contact.budgetOptions.discuss')}</option>
                     </select>
                   </div>
 
                   <div className="mb-6">
-                    <label style={labelStyle}>MÔ TẢ DỰ ÁN *</label>
+                    <label style={labelStyle}>{t('contact.message')} *</label>
                     <textarea
                       rows={4}
-                      placeholder="Mô tả ngắn về dự án, mục tiêu và yêu cầu đặc biệt..."
+                      placeholder={t('contact.messagePlaceholder')}
                       value={msg}
                       onChange={e => setMsg(e.target.value)}
                       style={{ ...inputStyle, resize: 'vertical', fontFamily: DS.body }}
@@ -146,7 +149,7 @@ export default function ContactPage() {
                     className="mb-6 p-4 rounded-xl text-center"
                     style={{ background: DS.bgCard2, border: `2px dashed ${DS.border}`, cursor: 'pointer' }}
                   >
-                    <div style={{ color: DS.text4, fontSize: 13 }}>📎 Đính kèm file brief, wireframe (tùy chọn)</div>
+                    <div style={{ color: DS.text4, fontSize: 13 }}>📎 {t('contact.fileUpload')}</div>
                     <div style={{ color: DS.text5, fontSize: 11, fontFamily: DS.mono, marginTop: 4 }}>PDF, PNG, DOC · Max 10MB</div>
                   </div>
 
@@ -154,7 +157,7 @@ export default function ContactPage() {
                     onClick={() => setSubmitted(true)}
                     style={{ width: '100%', background: GRD.primary, color: '#fff', border: 'none', borderRadius: 12, padding: '14px', fontSize: 15, fontWeight: 700, cursor: 'pointer', boxShadow: '0 0 24px rgba(20,184,166,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
                   >
-                    <Send size={16} /> Gửi yêu cầu tư vấn
+                    <Send size={16} /> {t('contact.sendMessage')}
                   </button>
                   <div style={{ color: DS.text5, fontSize: 11, textAlign: 'center', marginTop: 12, fontFamily: DS.mono }}>
                     Phản hồi trong vòng 2 giờ làm việc · Miễn phí hoàn toàn
@@ -177,13 +180,13 @@ export default function ContactPage() {
                   >
                     <Check size={36} style={{ color: DS.green }} />
                   </motion.div>
-                  <h2 style={{ fontFamily: DS.heading, fontSize: 24, fontWeight: 900, color: DS.text, letterSpacing: '0.06em', marginBottom: 10 }}>ĐÃ NHẬN YÊU CẦU!</h2>
+                  <h2 style={{ fontFamily: DS.heading, fontSize: 24, fontWeight: 900, color: DS.text, letterSpacing: '0.06em', marginBottom: 10 }}>{t('contact.successTitle')}</h2>
                   <p style={{ color: DS.text3, fontSize: 14, lineHeight: 1.8, marginBottom: 20 }}>
-                    Cảm ơn bạn đã liên hệ với LOOP Solutions. Đội ngũ chúng tôi sẽ phản hồi trong vòng 2 giờ làm việc.
+                    {t('contact.successDesc')}
                   </p>
                   <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full" style={{ background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.25)' }}>
-                    <span style={{ color: DS.blue, fontSize: 13, fontFamily: DS.mono, fontWeight: 700 }}>+500 LP</span>
-                    <span style={{ color: DS.text3, fontSize: 13 }}>đã được nạp vào tài khoản của bạn!</span>
+                    <span style={{ color: DS.blue, fontSize: 13, fontFamily: DS.mono, fontWeight: 700 }}>{t('contact.lpBonus')}</span>
+                    <span style={{ color: DS.text3, fontSize: 13 }}>{t('contact.lpBonusDesc')}</span>
                   </div>
                 </motion.div>
               )}
@@ -197,10 +200,10 @@ export default function ContactPage() {
               <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.18em', marginBottom: 20 }}>── THÔNG TIN LIÊN HỆ</div>
               <div className="space-y-5">
                 {[
-                  { icon: <Mail size={18} />, label: 'Email', val: 'hello@loopsolutions.vn', sub: 'Phản hồi trong 2h' },
-                  { icon: <Phone size={18} />, label: 'Hotline', val: '+84 (0) 901 234 567', sub: 'T2–T6 · 8:00–18:00' },
-                  { icon: <MapPin size={18} />, label: 'Văn phòng', val: 'Tầng 12, Tòa nhà Landmark 81', sub: 'TP. Hồ Chí Minh, VN' },
-                  { icon: <Clock size={18} />, label: 'Giờ làm việc', val: 'Thứ 2 – Thứ 6', sub: '08:00 – 18:00 ICT' },
+                  { icon: <Mail size={18} />, label: t('contact.info.email'), val: 'hello@loopsolutions.vn', sub: 'Phản hồi trong 2h' },
+                  { icon: <Phone size={18} />, label: t('contact.info.phone'), val: '+84 (0) 901 234 567', sub: 'T2–T6 · 8:00–18:00' },
+                  { icon: <MapPin size={18} />, label: t('contact.info.address'), val: 'Tầng 12, Tòa nhà Landmark 81', sub: 'TP. Hồ Chí Minh, VN' },
+                  { icon: <Clock size={18} />, label: t('contact.info.hours'), val: 'Thứ 2 – Thứ 6', sub: '08:00 – 18:00 ICT' },
                 ].map(item => (
                   <div key={item.label} className="flex gap-4 items-start">
                     <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(20,184,166,0.1)', border: '1px solid rgba(20,184,166,0.2)' }}>
@@ -235,7 +238,7 @@ export default function ContactPage() {
               <div style={{ color: DS.blue, fontSize: 10, fontFamily: DS.mono, letterSpacing: '0.2em', marginBottom: 8 }}>◈ ƯU ĐÃI LIÊN HỆ HÔM NAY</div>
               <div className="flex items-center gap-3">
                 <div style={{ color: DS.blue, fontFamily: DS.heading, fontSize: 28, fontWeight: 900, textShadow: '0 0 12px rgba(59,130,246,0.5)' }}>+500 LP</div>
-                <div style={{ color: DS.text3, fontSize: 12, lineHeight: 1.6 }}>Nhận ngay khi gửi yêu cầu tư vấn thành công</div>
+                <div style={{ color: DS.text3, fontSize: 12, lineHeight: 1.6 }}>{t('contact.lpBonusDesc')}</div>
               </div>
             </div>
           </div>

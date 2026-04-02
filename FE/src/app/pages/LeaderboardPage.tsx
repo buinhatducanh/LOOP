@@ -12,6 +12,7 @@ import {
   BarChart3, Award, Target,
 } from 'lucide-react';
 import { DS, GRD } from '../components/layout/ds';
+import { useI18n } from '@/hooks/useI18n';
 import { members, RANKS, type RankKey } from '../components/team/memberData';
 import { useAuthStore } from '../store/authStore';
 
@@ -83,7 +84,7 @@ function RankDonut() {
           })}
           {/* Center label */}
           <text x={cx} y={cy - 8} textAnchor="middle" fill={DS.text} fontSize="20" fontWeight="900" fontFamily={DS.mono}>27</text>
-          <text x={cx} y={cy + 8} textAnchor="middle" fill={DS.text5} fontSize="9" fontFamily={DS.mono}>THÀNH VIÊN</text>
+          <text x={cx} y={cy + 8} textAnchor="middle" fill={DS.text5} fontSize="9" fontFamily={DS.mono}>{t('leaderboard.members')}</text>
         </svg>
       </div>
 
@@ -192,30 +193,30 @@ function SeasonBanner() {
         <div className="flex items-center gap-2 mb-3">
           <div className="flex items-center gap-1.5 px-3 py-1 rounded-full" style={{ background: 'rgba(129,140,248,0.12)', border: '1px solid rgba(129,140,248,0.25)' }}>
             <Flame size={11} style={{ color: RANKS.diamond.color }} />
-            <span style={{ color: RANKS.diamond.color, fontSize: 9, fontFamily: DS.mono, letterSpacing: '0.2em' }}>SEASON III · ĐANG DIỄN RA</span>
+            <span style={{ color: RANKS.diamond.color, fontSize: 9, fontFamily: DS.mono, letterSpacing: '0.2em' }}>{t('leaderboard.seasonLive')}</span>
           </div>
           <div className="flex items-center gap-1.5 px-3 py-1 rounded-full" style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)' }}>
             <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: DS.green }} />
-            <span style={{ color: DS.green, fontSize: 9, fontFamily: DS.mono }}>LIVE</span>
+            <span style={{ color: DS.green, fontSize: 9, fontFamily: DS.mono }}>{t('leaderboard.live')}</span>
           </div>
         </div>
 
         <h1 style={{ fontFamily: DS.heading, fontSize: 'clamp(24px, 4vw, 44px)', fontWeight: 900, letterSpacing: '0.06em', marginBottom: 6 }}>
           <span style={{ background: 'linear-gradient(135deg, #FFFFFF 0%, #818CF8 50%, #14B8A6 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-            BẢNG XẾP HẠNG LP
+            {t('leaderboard.title')}
           </span>
         </h1>
         <p style={{ color: DS.text3, fontSize: 14, marginBottom: 20, maxWidth: 480 }}>
-          Hành trình từ Iron đến Diamond — Mỗi nhiệm vụ hoàn thành là một bước tiến trên bảng vinh danh LOOP.
+          {t('leaderboard.subtitle')}
         </p>
 
         {/* Stats row */}
         <div className="flex flex-wrap gap-6">
           {[
-            { label: 'Tổng LP đã phát hành', value: fmtLP(countedLP), color: DS.blue, icon: <Zap size={14} /> },
-            { label: 'Tổng nhiệm vụ hoàn thành', value: countedMissions.toLocaleString('vi-VN'), color: DS.green, icon: <Target size={14} /> },
-            { label: 'Thành viên tích cực', value: '27', color: DS.purple, icon: <Users size={14} /> },
-            { label: 'Tuần của Season III', value: '12', color: DS.amber, icon: <Trophy size={14} /> },
+            { label: t('leaderboard.statTotalLp'), value: fmtLP(countedLP), color: DS.blue, icon: <Zap size={14} /> },
+            { label: t('leaderboard.statMissions'), value: countedMissions.toLocaleString('vi-VN'), color: DS.green, icon: <Target size={14} /> },
+            { label: t('leaderboard.statActiveMembers'), value: '27', color: DS.purple, icon: <Users size={14} /> },
+            { label: t('leaderboard.statSeasonWeek'), value: '12', color: DS.amber, icon: <Trophy size={14} /> },
           ].map(s => (
             <div key={s.label} className="flex items-center gap-2">
               <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: `${s.color}15`, border: `1px solid ${s.color}25` }}>
@@ -243,7 +244,7 @@ function Podium({ sorted }: { sorted: typeof members }) {
 
   return (
     <div className="rounded-2xl p-6 mb-6" style={{ background: DS.bgCard, border: `1px solid ${DS.border}` }}>
-      <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.18em', marginBottom: 24 }}>── TOP 3 · HUYỀN THOẠI SEASON III</div>
+      <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.18em', marginBottom: 24 }}>── {t('leaderboard.top3')}</div>
       <div className="flex items-end justify-center gap-4 md:gap-8">
         {ORDER.map((m, i) => {
           const rc = RANKS[m.rank];
@@ -370,12 +371,12 @@ const MemberRow = forwardRef<HTMLDivElement, {
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-1 flex-wrap">
           <span style={{ color: isMe ? DS.blue : DS.text, fontSize: 13, fontWeight: 700 }}>{m.name}</span>
-          {isMe && <span style={{ color: DS.blue, fontSize: 9, fontFamily: DS.mono, background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.3)', padding: '1px 6px', borderRadius: 20 }}>BẠN</span>}
+          {isMe && <span style={{ color: DS.blue, fontSize: 9, fontFamily: DS.mono, background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.3)', padding: '1px 6px', borderRadius: 20 }}>{t('leaderboard.you')}</span>}
           <span style={{ color: rc.color, fontSize: 9, fontFamily: DS.mono, background: `${rc.color}12`, border: `1px solid ${rc.color}25`, padding: '1px 6px', borderRadius: 20 }}>
             {rc.symbol} {rc.label} · Lv.{m.level}
           </span>
         </div>
-        <div style={{ color: DS.text5, fontSize: 11 }}>{m.role} · {m.team}</div>
+        <div style={{ color: DS.text5, fontSize: 11 }}>{m.role} · {t('leaderboard.team')} {m.team}</div>
         {/* LP bar */}
         <div className="mt-1.5 hidden md:block">
           <div className="rounded-full overflow-hidden" style={{ height: 3, background: DS.border }}>
@@ -396,7 +397,7 @@ const MemberRow = forwardRef<HTMLDivElement, {
         </div>
         <div style={{ color: DS.text5, fontSize: 9, fontFamily: DS.mono }}>LP</div>
         <div style={{ color: DS.text5, fontSize: 9, fontFamily: DS.mono, marginTop: 1 }}>
-          {m.missions} quests
+          {m.missions} {t('leaderboard.questCount')}
         </div>
       </div>
 
@@ -407,7 +408,7 @@ const MemberRow = forwardRef<HTMLDivElement, {
 MemberRow.displayName = 'MemberRow';
 
 // ── Department Overview ───────────────────────────────────────────────────────
-function DeptSummary() {
+function DeptSummary({ t }: { t: ReturnType<typeof useI18n>['t'] }) {
   const teams = ['Alpha', 'Sigma', 'Omega', 'All'];
   const teamStats = teams.map(team => {
     const teamMembers = members.filter(m => m.team === team || team === 'All');
@@ -422,28 +423,28 @@ function DeptSummary() {
 
   return (
     <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
-      {teamStats.map(t => {
-        const rc = t.topMember ? RANKS[t.topMember.rank] : RANKS.iron;
-        const color = teamColors[t.team];
+      {teamStats.map(s => {
+        const rc = s.topMember ? RANKS[s.topMember.rank] : RANKS.iron;
+        const color = teamColors[s.team];
         return (
-          <div key={t.team} className="rounded-2xl p-4" style={{ background: DS.bgCard, border: `1px solid ${color}25` }}>
+          <div key={s.team} className="rounded-2xl p-4" style={{ background: DS.bgCard, border: `1px solid ${color}25` }}>
             <div className="flex items-center gap-2 mb-3">
               <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: `${color}12`, border: `1px solid ${color}25` }}>
                 <Users size={14} style={{ color }} />
               </div>
               <div>
-                <div style={{ color, fontSize: 12, fontWeight: 700, fontFamily: DS.mono }}>TEAM {t.team.toUpperCase()}</div>
-                <div style={{ color: DS.text5, fontSize: 9, fontFamily: DS.mono }}>{t.count} thành viên</div>
+                <div style={{ color, fontSize: 12, fontWeight: 700, fontFamily: DS.mono }}>TEAM {s.team.toUpperCase()}</div>
+                <div style={{ color: DS.text5, fontSize: 9, fontFamily: DS.mono }}>{s.count} {t('leaderboard.members')}</div>
               </div>
             </div>
-            <div style={{ color, fontFamily: DS.mono, fontSize: 16, fontWeight: 900 }}>{fmtLP(Math.round(t.avgLP))}</div>
-            <div style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono, marginBottom: 6 }}>LP trung bình</div>
-            {t.topMember && (
+            <div style={{ color, fontFamily: DS.mono, fontSize: 16, fontWeight: 900 }}>{fmtLP(Math.round(s.avgLP))}</div>
+            <div style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono, marginBottom: 6 }}>{t('leaderboard.avgLp')}</div>
+            {s.topMember && (
               <div className="flex items-center gap-2">
                 <div className="w-5 h-5 rounded-lg overflow-hidden" style={{ border: `1px solid ${rc.color}60` }}>
-                  <img src={t.topMember.img} alt={t.topMember.name} className="w-full h-full object-cover" />
+                  <img src={s.topMember.img} alt={s.topMember.name} className="w-full h-full object-cover" />
                 </div>
-                <span style={{ color: DS.text4, fontSize: 10 }}>{t.topMember.name.split(' ').pop()}</span>
+                <span style={{ color: DS.text4, fontSize: 10 }}>{s.topMember.name.split(' ').pop()}</span>
                 <span style={{ color: rc.color, fontSize: 9, fontFamily: DS.mono }}>{rc.symbol}</span>
               </div>
             )}
@@ -456,6 +457,7 @@ function DeptSummary() {
 
 // ── MAIN PAGE ─────────────────────────────────────────────────────────────────
 export default function LeaderboardPage() {
+  const { t } = useI18n();
   const { user } = useAuthStore();
   const [filter, setFilter] = useState<'all' | 'Alpha' | 'Sigma' | 'Omega'>('all');
   const [search, setSearch] = useState('');
@@ -485,16 +487,16 @@ export default function LeaderboardPage() {
   const myRank = myMember ? allSorted.findIndex(m => m.id === myMember.id) + 1 : null;
 
   const FILTERS: { key: 'all' | 'Alpha' | 'Sigma' | 'Omega'; label: string; color: string }[] = [
-    { key: 'all', label: 'Tất cả', color: DS.blue },
+    { key: 'all', label: t('leaderboard.filter.all'), color: DS.blue },
     { key: 'Alpha', label: 'Alpha', color: DS.blue },
     { key: 'Sigma', label: 'Sigma', color: DS.purple },
     { key: 'Omega', label: 'Omega', color: DS.cyan },
   ];
 
   const SORTS = [
-    { key: 'lp' as const, label: 'LP Balance', icon: <Zap size={12} /> },
-    { key: 'level' as const, label: 'Level', icon: <TrendingUp size={12} /> },
-    { key: 'missions' as const, label: 'Quests', icon: <Target size={12} /> },
+    { key: 'lp' as const, label: t('leaderboard.points'), icon: <Zap size={12} /> },
+    { key: 'level' as const, label: t('leaderboard.levelLabel'), icon: <TrendingUp size={12} /> },
+    { key: 'missions' as const, label: t('leaderboard.questsLabel'), icon: <Target size={12} /> },
   ];
 
   return (
@@ -516,7 +518,7 @@ export default function LeaderboardPage() {
               <img src={myMember.img} alt={myMember.name} className="w-full h-full object-cover" />
             </div>
             <div className="flex-1 min-w-0">
-              <div style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: '0.15em', marginBottom: 2 }}>VỊ TRÍ CỦA BẠN · SEASON III</div>
+              <div style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: '0.15em', marginBottom: 2 }}>{t('leaderboard.yourPosition')}</div>
               <div style={{ color: DS.text, fontSize: 13, fontWeight: 700 }}>{myMember.name}</div>
             </div>
             <div className="text-right">
@@ -535,21 +537,21 @@ export default function LeaderboardPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
           {/* Rank distribution donut */}
           <div className="rounded-2xl p-6" style={{ background: DS.bgCard, border: `1px solid ${DS.border}` }}>
-            <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.15em', marginBottom: 16 }}>── PHÂN PHỐI RANK</div>
+            <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.15em', marginBottom: 16 }}>── {t('leaderboard.rankDistribution')}</div>
             <RankDonut />
           </div>
 
           {/* LP bar chart top 10 */}
           <div className="rounded-2xl p-6" style={{ background: DS.bgCard, border: `1px solid ${DS.border}` }}>
-            <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.15em', marginBottom: 16 }}>── LP TOP 10 THÀNH VIÊN</div>
+            <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.15em', marginBottom: 16 }}>── {t('leaderboard.top10')}</div>
             {showChart && <LPBarChart sorted={allSorted} />}
           </div>
         </div>
 
         {/* Team summary */}
         <div className="mb-6">
-          <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.15em', marginBottom: 12 }}>── TỔNG QUAN THEO NHÓM</div>
-          <DeptSummary />
+          <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.15em', marginBottom: 12 }}>── {t('leaderboard.teamOverview')}</div>
+          <DeptSummary t={t} />
         </div>
 
         {/* Filter bar */}
@@ -559,7 +561,7 @@ export default function LeaderboardPage() {
             <Search size={14} style={{ color: DS.text4, flexShrink: 0 }} />
             <input
               type="text"
-              placeholder="Tìm thành viên..."
+              placeholder={t('leaderboard.searchPlaceholder')}
               value={search}
               onChange={e => setSearch(e.target.value)}
               style={{ flex: 1, background: 'none', border: 'none', outline: 'none', color: DS.text, fontSize: 13, fontFamily: DS.body }}
@@ -604,10 +606,10 @@ export default function LeaderboardPage() {
         <div className="rounded-2xl overflow-hidden" style={{ border: `1px solid ${DS.border}` }}>
           <div className="flex items-center justify-between px-5 py-3" style={{ background: DS.bgCard, borderBottom: `1px solid ${DS.border}` }}>
             <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: '0.15em' }}>
-              ── BẢNG XẾP HẠNG · {sorted.length} THÀNH VIÊN
+              ── {t('leaderboard.tableTitle')} · {sorted.length} {t('leaderboard.members')}
             </div>
             <div style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono }}>
-              Sắp xếp theo {sortBy === 'lp' ? 'LP' : sortBy === 'level' ? 'Level' : 'Quests'}
+              {t('leaderboard.sortedBy')} {sortBy === 'lp' ? t('leaderboard.points') : sortBy === 'level' ? t('leaderboard.levelLabel') : t('leaderboard.questsLabel')}
             </div>
           </div>
           <div className="p-3 md:p-4 space-y-2" style={{ background: DS.bgCard }}>
@@ -628,7 +630,7 @@ export default function LeaderboardPage() {
             </AnimatePresence>
             {sorted.length === 0 && (
               <div className="py-12 text-center">
-                <div style={{ color: DS.text5, fontSize: 13 }}>Không tìm thấy thành viên phù hợp</div>
+                <div style={{ color: DS.text5, fontSize: 13 }}>{t('leaderboard.empty')}</div>
               </div>
             )}
           </div>
@@ -645,19 +647,19 @@ export default function LeaderboardPage() {
           >
             <div style={{ fontSize: 32, marginBottom: 12 }}>⚡</div>
             <h3 style={{ fontFamily: DS.heading, fontSize: 20, fontWeight: 900, color: DS.text, letterSpacing: '0.04em', marginBottom: 8 }}>
-              THAM GIA LOOP — LEO BẢNG XẾP HẠNG
+              {t('leaderboard.ctaTitle')}
             </h3>
             <p style={{ color: DS.text3, fontSize: 14, maxWidth: 400, margin: '0 auto 20px' }}>
-              Tích lũy LP qua mỗi dự án, nhiệm vụ và sự kiện. Thăng hạng từ Iron đến Diamond.
+              {t('leaderboard.ctaDesc')}
             </p>
             <div className="flex gap-3 justify-center flex-wrap">
               <Link to="/dang-ky"
                 style={{ padding: '12px 28px', background: GRD.primary, color: '#fff', borderRadius: 12, fontWeight: 700, fontSize: 14, textDecoration: 'none', boxShadow: '0 0 20px rgba(129,140,248,0.35)', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                Đăng ký ngay <ArrowUpRight size={15} />
+                {t('leaderboard.ctaRegister')} <ArrowUpRight size={15} />
               </Link>
               <Link to="/dang-nhap"
                 style={{ padding: '12px 28px', background: 'transparent', color: DS.blue, borderRadius: 12, fontWeight: 600, fontSize: 14, textDecoration: 'none', border: '1px solid rgba(59,130,246,0.35)' }}>
-                Đăng nhập
+                {t('leaderboard.ctaLogin')}
               </Link>
             </div>
           </motion.div>
