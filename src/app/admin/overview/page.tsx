@@ -20,10 +20,28 @@ import {
   CheckCircle2,
   ArrowUpRight,
   ArrowDownRight,
+  Users,
 } from "lucide-react";
 import { qk } from "@/lib/query/provider";
 import { adminApi } from "@/lib/api/client";
 import { useAuthStore } from "@/app/store/authStore";
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+/** Format number as Vietnamese currency */
+function fmtVND(n: number): string {
+  if (n >= 1_000_000_000) return `${(n / 1_000_000_000).toFixed(1)}B`;
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(0)}K`;
+  return String(n);
+}
+
+/** Check if an ISO date string is in the current month */
+function isThisMonth(isoDate: string): boolean {
+  const d = new Date(isoDate);
+  const now = new Date();
+  return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+}
 
 // ── KPI card ─────────────────────────────────────────────────────────────────
 
@@ -270,14 +288,72 @@ export default function AdminOverviewPage() {
     },
   });
 
+  // Fetch active team members count
+  const { data: teamData } = useQuery({
+    queryKey: ["admin", "overview", "team"],
+    queryFn: async () => {
+      const res = await adminApi.get<{
+        data: unknown[];
+        pagination: { total: number };
+      }>("/api/admin/team", { params: { page: 1, limit: 1 } });
+      return res;
+    },
+  });
+  const activeMembers = teamData && "pagination" in teamData
+    ? (teamData as { pagination: { total: number } }).pagination.total
+    : 0;
+
+  // Fetch clients count
+  const { data: clientsData } = useQuery({
+    queryKey: ["admin", "overview", "clients"],
+    queryFn: async () => {
+      const res = await adminApi.get<{
+        data: unknown[];
+        pagination: { total: number };
+      }>("/api/admin/sales-leads", { params: { page: 1, limit: 1 } });
+      return res;
+    },
+  });
+  const clientCount = clientsData && "pagination" in clientsData
+    ? (clientsData as { pagination: { total: number } }).pagination.total
+    : 0;
+
+  // Fetch course enrollments count
+  const { data: enrollData } = useQuery({
+    queryKey: ["admin", "overview", "enrollments"],
+    queryFn: async () => {
+      const res = await adminApi.get<{
+        data: unknown[];
+        pagination: { total: number };
+      }>("/api/admin/edu/enrollments", { params: { page: 1, limit: 1 } });
+      return res;
+    },
+  });
+  const enrollCount = enrollData && "pagination" in enrollData
+    ? (enrollData as { pagination: { total: number } }).pagination.total
+    : 0;
+
   const orders = ordersData && "data" in ordersData ? ordersData.data : [];
   const totalOrders = ordersData && "pagination" in ordersData ? (ordersData as { pagination: { total: number } }).pagination.total : 0;
 
+  // Real KPIs computed from orders
+  const monthRevenue = orders
+    .filter((o: OrderRow) => isThisMonth(o.createdAt))
+    .reduce((s: number, o: OrderRow) => s + (o.totalAmount ?? 0), 0);
+  const doneCount = orders.filter((o: OrderRow) => o.status === "done").length;
+  const inProgressCount = orders.filter((o: OrderRow) => o.status === "in_progress").length;
+
+  // Status counts from all fetched orders (not just 5)
+  const statusCounts = orders.reduce<Record<string, number>>((acc, o: OrderRow) => {
+    acc[o.status] = (acc[o.status] ?? 0) + 1;
+    return acc;
+  }, {});
+
   const stats = [
     { label: "Tổng đơn hàng", value: totalOrders, icon: <ShoppingCart size={16} />, change: 12, changeType: "up" as const },
-    { label: "Đang xử lý", value: orders.filter((o: OrderRow) => o.status === "in_progress").length, icon: <Clock size={16} /> },
-    { label: "Hoàn thành", value: orders.filter((o: OrderRow) => o.status === "done").length, icon: <CheckCircle2 size={16} /> },
-    { label: "Doanh thu tháng", value: "124.5M", icon: <DollarSign size={16} />, change: 8, changeType: "up" as const },
+    { label: "Đang xử lý", value: inProgressCount, icon: <Clock size={16} /> },
+    { label: "Hoàn thành", value: doneCount, icon: <CheckCircle2 size={16} /> },
+    { label: "Doanh thu tháng", value: fmtVND(monthRevenue), icon: <DollarSign size={16} />, change: 8, changeType: "up" as const },
   ];
 
   return (
@@ -395,10 +471,10 @@ export default function AdminOverviewPage() {
               Trạng thái đơn hàng
             </h2>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-              <StatChip label="Chờ thanh toán" value={3} color="#F59E0B" />
-              <StatChip label="Đã thanh toán" value={7} color="#3B82F6" />
-              <StatChip label="Đang thực hiện" value={5} color="#818CF8" />
-              <StatChip label="Hoàn thành" value={12} color="#22C55E" />
+              <StatChip label="Chờ thanh toán" value={statusCounts["pending_payment"] ?? 0} color="#F59E0B" />
+              <StatChip label="Đã thanh toán" value={statusCounts["paid"] ?? 0} color="#3B82F6" />
+              <StatChip label="Đang thực hiện" value={statusCounts["in_progress"] ?? 0} color="#818CF8" />
+              <StatChip label="Hoàn thành" value={statusCounts["done"] ?? 0} color="#22C55E" />
             </div>
           </div>
 
@@ -422,9 +498,9 @@ export default function AdminOverviewPage() {
               Thành viên
             </h2>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-              <StatChip label="Thành viên hoạt động" value={24} color="#3B82F6" />
-              <StatChip label="Khách hàng" value={156} color="#818CF8" />
-              <StatChip label="Khóa học đã enroll" value={87} color="#14B8A6" />
+              <StatChip label="Thành viên hoạt động" value={activeMembers} color="#3B82F6" />
+              <StatChip label="Khách hàng" value={clientCount} color="#818CF8" />
+              <StatChip label="Khóa học đã enroll" value={enrollCount} color="#14B8A6" />
             </div>
           </div>
         </div>

@@ -197,7 +197,7 @@ export async function distributeLpFromOrder(
             lpAmount: lpPerMember,
             expAmount: 0,
             source: "lp_allocation",
-            status: "approved",
+            status: "pending", // P2-3: PM reviews before LP is credited
           },
         });
       }

@@ -57,15 +57,11 @@ export function LoadingScreen({ message = 'Đang tải...' }: { message?: string
 
           {/* Center logo */}
           <div className="absolute inset-0 flex items-center justify-center">
-            <motion.div
-              animate={{ scale: [1, 1.1, 1] }}
-              transition={{ duration: 1.5, repeat: Infinity }}
-            >
-              <svg width="24" height="24" viewBox="0 0 40 40" fill="none">
-                <path d="M20 2 L36 11 L36 29 L20 38 L4 29 L4 11 Z" stroke={rgba(DS.blue, 0.5)} strokeWidth="1.5" fill="none" />
-                <text x="20" y="25" textAnchor="middle" fontSize="14" fontWeight="900" fill={DS.blue} fontFamily="Georgia,serif">∞</text>
-              </svg>
-            </motion.div>
+            <img
+              src="/logo.png"
+              alt="LOOP"
+              style={{ width: 32, height: 32, objectFit: "contain" }}
+            />
           </div>
         </div>
 

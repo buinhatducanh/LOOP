@@ -31,6 +31,8 @@ const staticRoutes = [
   { path: "contact", priority: 0.5, changeFrequency: "monthly" as const },
   { path: "privacy", priority: 0.4, changeFrequency: "monthly" as const },
   { path: "terms", priority: 0.4, changeFrequency: "monthly" as const },
+  { path: "hoc-vien", priority: 0.9, changeFrequency: "monthly" as const },
+  { path: "dat-lich", priority: 0.9, changeFrequency: "monthly" as const },
 ];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -104,6 +106,27 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           lastModified: project.updatedAt,
           changeFrequency: "monthly" as const,
           priority: 0.7,
+        });
+      }
+    }
+  } catch {
+    // Non-fatal
+  }
+
+  // ─── Dynamic course slugs (all locales) ─────────────────────────────────
+  try {
+    const courses = await prisma.course.findMany({
+      where: { instructorId: { not: "" } },
+      select: { id: true, updatedAt: true },
+    });
+
+    for (const locale of locales) {
+      for (const course of courses) {
+        entries.push({
+          url: `${baseUrl}/${locale}/hoc-vien/${course.id}`,
+          lastModified: course.updatedAt,
+          changeFrequency: "monthly" as const,
+          priority: 0.8,
         });
       }
     }

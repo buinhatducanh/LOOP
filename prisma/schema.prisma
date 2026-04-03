@@ -2382,3 +2382,21 @@ model QuestParticipant {
   @@index([eventId])
   @@map("quest_participants")
 }
+
+// ── Supported Locales (admin-configurable locale allowlist) ────────────────
+// Controls which locales are available to clients on public pages.
+// Admin can enable/disable locales from Settings tab without code changes.
+model SupportedLocale {
+  id        String   @id @default(cuid())
+  code      String   @unique @map("code") // e.g. "vi", "en", "ja", "ko", "zh"
+  name      String   @map("name")          // e.g. "Tiếng Việt", "English"
+  nativeName String  @map("native_name")   // e.g. "Tiếng Việt", "English", "日本語"
+  isEnabled Boolean  @default(true)        @map("is_enabled")
+  isDefault Boolean  @default(false)        @map("is_default") // exactly one locale should be true
+  order     Int      @default(0)           @map("order")         // display order in locale switcher
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("supported_locales")
+}

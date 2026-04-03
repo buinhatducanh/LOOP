@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { qk } from "@/lib/query/provider";
 import { adminApi } from "@/lib/api/client";
 import { DS, GRD } from "@/lib/design-tokens";
+import { useAdminTranslations } from "@/i18n/admin/useAdminTranslations";
 import {
   X, Camera, CheckCircle2, Eye, ChevronRight, Search,
   RefreshCw, Trash2, Plus, ChevronLeft, Upload, FileText,
@@ -14,30 +15,30 @@ import {
 // ─── Status config ─────────────────────────────────────────────────────────────
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
-  pending:       { label: "Chờ xác nhận", color: "#F59E0B", bg: "rgba(245,158,11,0.1)" },
-  confirmed:     { label: "Đã xác nhận", color: "#3B82F6", bg: "rgba(59,130,246,0.1)" },
-  in_progress:   { label: "Đang thực hiện", color: "#818CF8", bg: "rgba(129,140,248,0.1)" },
-  delivered:     { label: "Đã bàn giao", color: "#A78BFA", bg: "rgba(167,139,250,0.1)" },
-  approved:      { label: "Đã duyệt", color: "#22C55E", bg: "rgba(34,197,94,0.1)" },
-  rejected:      { label: "Từ chối", color: "#EF4444", bg: "rgba(239,68,68,0.1)" },
-  cancelled:     { label: "Đã hủy", color: "#6B7280", bg: "rgba(107,114,128,0.1)" },
+  pending:       { label: "pending", color: "#F59E0B", bg: "rgba(245,158,11,0.1)" },
+  confirmed:     { label: "confirmed", color: "#3B82F6", bg: "rgba(59,130,246,0.1)" },
+  in_progress:   { label: "inProgress", color: "#818CF8", bg: "rgba(129,140,248,0.1)" },
+  delivered:     { label: "delivered", color: "#A78BFA", bg: "rgba(167,139,250,0.1)" },
+  approved:      { label: "approved", color: "#22C55E", bg: "rgba(34,197,94,0.1)" },
+  rejected:      { label: "rejected", color: "#EF4444", bg: "rgba(239,68,68,0.1)" },
+  cancelled:     { label: "cancelled", color: "#6B7280", bg: "rgba(107,114,128,0.1)" },
 };
 
 const ALL_STATUSES = Object.keys(STATUS_CONFIG);
 
 const PAYMENT_CONFIG: Record<string, { label: string; color: string }> = {
-  unpaid:   { label: "Chưa thanh toán", color: "#F59E0B" },
-  partial:  { label: "Thanh toán một phần", color: "#3B82F6" },
-  paid:     { label: "Đã thanh toán", color: "#22C55E" },
-  refunded:  { label: "Đã hoàn tiền", color: "#6B7280" },
+  unpaid:   { label: "unpaid", color: "#F59E0B" },
+  partial:  { label: "partial", color: "#3B82F6" },
+  paid:     { label: "paid", color: "#22C55E" },
+  refunded:  { label: "refunded", color: "#6B7280" },
 };
 
 const BOOKING_TYPE_OPTIONS = [
-  { value: "event", label: "Sự kiện" },
-  { value: "product", label: "Sản phẩm" },
-  { value: "corporate", label: "Doanh nghiệp" },
-  { value: "social", label: "Mạng xã hội" },
-  { value: "custom", label: "Tùy chỉnh" },
+  { value: "event", labelKey: "typeEvent" },
+  { value: "product", labelKey: "typeProduct" },
+  { value: "corporate", labelKey: "typeCorporate" },
+  { value: "social", labelKey: "typeSocial" },
+  { value: "custom", labelKey: "typeCustom" },
 ];
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -90,14 +91,18 @@ function BookingRow({
   onTransition,
   onDetail,
   onDelete,
+  t,
 }: {
   booking: MediaBooking;
   onTransition: (id: string, toStatus: string) => void;
   onDetail: (b: MediaBooking) => void;
   onDelete: (id: string) => void;
+  t: ReturnType<typeof useAdminTranslations>["t"];
 }) {
-  const cfg = STATUS_CONFIG[booking.status] ?? { label: booking.status, color: DS.text4, bg: "transparent" };
-  const payCfg = PAYMENT_CONFIG[booking.paymentStatus] ?? { label: booking.paymentStatus, color: DS.text4 };
+  const cfgRaw = STATUS_CONFIG[booking.status] ?? { label: booking.status, color: DS.text4, bg: "transparent" };
+  const cfg = { ...cfgRaw, label: t(`media.status${cfgRaw.label.charAt(0).toUpperCase() + cfgRaw.label.slice(1)}` as `media.status${string}`) };
+  const payCfgRaw = PAYMENT_CONFIG[booking.paymentStatus] ?? { label: booking.paymentStatus, color: DS.text4 };
+  const payCfg = { ...payCfgRaw, label: t(`media.payment${payCfgRaw.label.charAt(0).toUpperCase() + payCfgRaw.label.slice(1)}` as `media.payment${string}`) };
 
   const fmt = (n?: number) =>
     n != null
@@ -166,7 +171,7 @@ function BookingRow({
         background: DS.bg, border: `1px solid ${DS.border}`,
         fontSize: 11, color: DS.text4, fontFamily: DS.mono,
       }}>
-        {BOOKING_TYPE_OPTIONS.find((t) => t.value === booking.bookingType)?.label ?? booking.bookingType}
+        {t(`media.${BOOKING_TYPE_OPTIONS.find((opt) => opt.value === booking.bookingType)?.labelKey ?? "typeCustom"}`)}
       </div>
 
       {/* Amount */}
@@ -181,7 +186,7 @@ function BookingRow({
           <button
             key={ns}
             onClick={() => onTransition(booking.id, ns)}
-            title={`Chuyển → ${STATUS_CONFIG[ns]?.label}`}
+            title={`→ ${t(`media.status${ns.charAt(0).toUpperCase() + ns.slice(1)}` as `media.status${string}`)}`}
             style={{
               background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.3)",
               borderRadius: 8, padding: "5px 10px", cursor: "pointer", color: DS.green,
@@ -193,7 +198,7 @@ function BookingRow({
         ))}
         <button
           onClick={() => onDetail(booking)}
-          title="Chi tiết"
+          title={t("media.btnDetail")}
           style={{
             background: "rgba(59,130,246,0.1)", border: "1px solid rgba(59,130,246,0.3)",
             borderRadius: 8, padding: "5px 10px", cursor: "pointer", color: DS.blue,
@@ -205,7 +210,7 @@ function BookingRow({
         {(booking.status === "pending" || booking.status === "cancelled") && (
           <button
             onClick={() => onDelete(booking.id)}
-            title="Xóa"
+            title={t("common.delete")}
             style={{
               background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)",
               borderRadius: 8, padding: "5px 10px", cursor: "pointer", color: "#EF4444",
@@ -227,16 +232,20 @@ function DetailModal({
   onClose,
   onTransition,
   onEdit,
+  t,
 }: {
   booking: MediaBooking | null;
   onClose: () => void;
   onTransition: (id: string, toStatus: string, note?: string) => void;
   onEdit: (b: MediaBooking) => void;
+  t: ReturnType<typeof useAdminTranslations>["t"];
 }) {
   if (!booking) return null;
 
   const cfg = STATUS_CONFIG[booking.status] ?? { label: booking.status, color: DS.text4, bg: "transparent" };
   const payCfg = PAYMENT_CONFIG[booking.paymentStatus] ?? { label: booking.paymentStatus, color: DS.text4 };
+  const statusLabel = (raw: string) => t(`media.status${raw.charAt(0).toUpperCase() + raw.slice(1)}` as `media.status${string}`);
+  const paymentLabel = (raw: string) => t(`media.payment${raw.charAt(0).toUpperCase() + raw.slice(1)}` as `media.payment${string}`);
   const fmt = (n?: number) =>
     n != null
       ? new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(n)
@@ -253,18 +262,18 @@ function DetailModal({
   }[booking.status] ?? [];
 
   const detailFields = [
-    { label: "Mã booking", value: booking.bookingNumber, mono: true },
-    { label: "Khách hàng", value: booking.customerName },
-    { label: "Email", value: booking.customerEmail, mono: true },
-    { label: "SĐT", value: booking.customerPhone ?? "—" },
-    { label: "Công ty", value: booking.companyName ?? "—" },
-    { label: "Loại", value: BOOKING_TYPE_OPTIONS.find((t) => t.value === booking.bookingType)?.label ?? booking.bookingType },
-    { label: "Gói dịch vụ", value: booking.package?.title ?? "—" },
-    { label: "Tổng tiền", value: fmt(booking.totalAmount), bold: true },
-    { label: "Đã thanh toán", value: fmt(booking.paidAmount) },
-    { label: "Deadline", value: booking.deadline ? new Date(booking.deadline).toLocaleDateString("vi-VN") : "—" },
-    { label: "NV phụ trách", value: booking.teamMember?.name ?? "—" },
-    { label: "Tạo lúc", value: new Date(booking.createdAt).toLocaleString("vi-VN") },
+    { label: t("media.detailId"), value: booking.bookingNumber, mono: true },
+    { label: t("media.detailCustomer"), value: booking.customerName },
+    { label: t("media.detailEmail"), value: booking.customerEmail, mono: true },
+    { label: t("media.detailPhone"), value: booking.customerPhone ?? "—" },
+    { label: t("media.detailCompany"), value: booking.companyName ?? "—" },
+    { label: t("media.detailType"), value: booking.bookingType },
+    { label: t("media.detailService"), value: booking.package?.title ?? "—" },
+    { label: t("media.detailTotal"), value: fmt(booking.totalAmount), bold: true },
+    { label: t("media.detailPaid"), value: fmt(booking.paidAmount) },
+    { label: t("media.detailDeadline"), value: booking.deadline ? new Date(booking.deadline).toLocaleDateString("vi-VN") : "—" },
+    { label: t("media.detailAssignee"), value: booking.teamMember?.name ?? "—" },
+    { label: t("media.detailCreated"), value: new Date(booking.createdAt).toLocaleString("vi-VN") },
   ];
 
   return (
@@ -309,7 +318,7 @@ function DetailModal({
                   color: DS.blue, fontSize: 12, fontWeight: 600,
                 }}
               >
-                Sửa
+                {t("media.btnEdit")}
               </button>
               <button onClick={onClose} style={{ background: "none", border: "none", color: DS.text4, cursor: "pointer" }}>
                 <X size={18} />
@@ -324,7 +333,7 @@ function DetailModal({
             marginBottom: 16,
           }}>
             <div style={{ width: 8, height: 8, borderRadius: "50%", background: cfg.color }} />
-            <span style={{ color: cfg.color, fontSize: 12, fontWeight: 600 }}>{cfg.label}</span>
+            <span style={{ color: cfg.color, fontSize: 12, fontWeight: 600 }}>{statusLabel(cfg.label)}</span>
           </div>
 
           {/* Info grid */}
@@ -354,7 +363,7 @@ function DetailModal({
           {/* Requirements */}
           {booking.requirements && (
             <div style={{ marginBottom: 16 }}>
-              <p style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.1em", marginBottom: 6 }}>YÊU CẦU</p>
+              <p style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.1em", marginBottom: 6 }}>{t("media.detailRequirements")}</p>
               <div style={{ background: DS.bg, border: `1px solid ${DS.border}`, borderRadius: 10, padding: 12 }}>
                 <p style={{ color: DS.text3, fontSize: 13, lineHeight: 1.6 }}>{booking.requirements}</p>
               </div>
@@ -364,7 +373,7 @@ function DetailModal({
           {/* Admin note */}
           {booking.note && (
             <div style={{ marginBottom: 16 }}>
-              <p style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.1em", marginBottom: 6 }}>GHI CHÚ</p>
+              <p style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.1em", marginBottom: 6 }}>{t("media.detailNotes")}</p>
               <div style={{ background: DS.bg, border: `1px solid ${DS.border}`, borderRadius: 10, padding: 12 }}>
                 <p style={{ color: DS.text3, fontSize: 13, lineHeight: 1.6 }}>{booking.note}</p>
               </div>
@@ -374,7 +383,7 @@ function DetailModal({
           {/* Delivered assets */}
           {booking.deliveredAssets && Array.isArray(booking.deliveredAssets) && booking.deliveredAssets.length > 0 && (
             <div style={{ marginBottom: 16 }}>
-              <p style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.1em", marginBottom: 6 }}>TÀI LIỆU ĐÃ BÀN GIAO ({booking.deliveredAssets.length})</p>
+              <p style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.1em", marginBottom: 6 }}>{t("media.detailDocs")} ({booking.deliveredAssets.length})</p>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                 {(booking.deliveredAssets as string[]).map((url, i) => (
                   <a
@@ -402,22 +411,25 @@ function DetailModal({
           {/* Status transition buttons */}
           {VALID_NEXT.length > 0 && (
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
-              {VALID_NEXT.map((ns) => (
+              {VALID_NEXT.map((ns) => {
+                const nsCfg = STATUS_CONFIG[ns] ?? { label: ns, color: DS.text4, bg: "transparent" };
+                return (
                 <button
                   key={ns}
                   onClick={() => { onTransition(booking.id, ns); }}
                   style={{
                     flex: 1, padding: "8px 12px", borderRadius: 10, cursor: "pointer",
-                    background: STATUS_CONFIG[ns]?.bg,
-                    border: `1px solid ${STATUS_CONFIG[ns]?.color}40`,
-                    color: STATUS_CONFIG[ns]?.color, fontSize: 12, fontWeight: 700,
+                    background: nsCfg.bg,
+                    border: `1px solid ${nsCfg.color}40`,
+                    color: nsCfg.color, fontSize: 12, fontWeight: 700,
                     display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
                   }}
                 >
                   <CheckCircle2 size={13} />
-                  {STATUS_CONFIG[ns]?.label}
+                  {t(`media.status${ns.charAt(0).toUpperCase() + ns.slice(1)}` as `media.status${string}`)}
                 </button>
-              ))}
+              );
+              })}
             </div>
           )}
 
@@ -429,7 +441,7 @@ function DetailModal({
               borderRadius: 10, fontWeight: 600, cursor: "pointer", fontSize: 13,
             }}
           >
-            Đóng
+            {t("media.btnClose")}
           </button>
         </motion.div>
       </motion.div>
@@ -448,6 +460,7 @@ function BookingFormModal({
   onClose: () => void;
   onSuccess: () => void;
 }) {
+  const { t } = useAdminTranslations();
   const isEdit = !!booking;
 
   const [form, setForm] = useState<BookingFormData>({
@@ -491,7 +504,7 @@ function BookingFormModal({
       onSuccess();
     },
     onError: (err: unknown) => {
-      const msg = err instanceof Error ? err.message : "Đã xảy ra lỗi";
+      const msg = err instanceof Error ? err.message : t("media.errGeneral");
       setError(msg);
       setSaving(false);
     },
@@ -500,7 +513,7 @@ function BookingFormModal({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.customerName.trim() || !form.customerEmail.trim()) {
-      setError("Tên và email khách hàng là bắt buộc");
+      setError(t("media.errRequired"));
       return;
     }
     setSaving(true);
@@ -561,7 +574,7 @@ function BookingFormModal({
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <Camera size={20} style={{ color: DS.blue }} />
               <h3 style={{ color: DS.text, fontWeight: 700, fontSize: 17 }}>
-                {isEdit ? "Sửa Booking" : "Tạo Booking Mới"}
+                {isEdit ? t("media.formEditTitle") : t("media.formCreateTitle")}
               </h3>
             </div>
             <button onClick={onClose} style={{ background: "none", border: "none", color: DS.text4, cursor: "pointer" }}>
@@ -573,12 +586,12 @@ function BookingFormModal({
             {/* Customer info */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, ...groupStyle }}>
               <div>
-                <label style={labelStyle}>TÊN KHÁCH HÀNG *</label>
+                <label style={labelStyle}>{t("media.formCustomerName")}</label>
                 <input style={fieldStyle} value={form.customerName}
                   onChange={(e) => setForm((f) => ({ ...f, customerName: e.target.value }))} />
               </div>
               <div>
-                <label style={labelStyle}>EMAIL *</label>
+                <label style={labelStyle}>{t("media.formEmail")}</label>
                 <input style={fieldStyle} type="email" value={form.customerEmail}
                   onChange={(e) => setForm((f) => ({ ...f, customerEmail: e.target.value }))} />
               </div>
@@ -586,12 +599,12 @@ function BookingFormModal({
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, ...groupStyle }}>
               <div>
-                <label style={labelStyle}>SỐ ĐIỆN THOẠI</label>
+                <label style={labelStyle}>{t("media.formPhone")}</label>
                 <input style={fieldStyle} value={form.customerPhone}
                   onChange={(e) => setForm((f) => ({ ...f, customerPhone: e.target.value }))} />
               </div>
               <div>
-                <label style={labelStyle}>CÔNG TY</label>
+                <label style={labelStyle}>{t("media.formCompany")}</label>
                 <input style={fieldStyle} value={form.companyName}
                   onChange={(e) => setForm((f) => ({ ...f, companyName: e.target.value }))} />
               </div>
@@ -600,16 +613,16 @@ function BookingFormModal({
             {/* Booking type + title */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 12, ...groupStyle }}>
               <div>
-                <label style={labelStyle}>LOẠI BOOKING</label>
+                <label style={labelStyle}>{t("media.formBookingType")}</label>
                 <select style={fieldStyle} value={form.bookingType}
                   onChange={(e) => setForm((f) => ({ ...f, bookingType: e.target.value }))}>
                   {BOOKING_TYPE_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    <option key={opt.value} value={opt.value}>{t(`media.${opt.labelKey}`)}</option>
                   ))}
                 </select>
               </div>
               <div>
-                <label style={labelStyle}>TÊN / TIÊU ĐỀ *</label>
+                <label style={labelStyle}>{t("media.formTitle")}</label>
                 <input style={fieldStyle} value={form.title}
                   placeholder="VD: Chụp ảnh sản phẩm tháng 4"
                   onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} />
@@ -619,12 +632,12 @@ function BookingFormModal({
             {/* Deadline + amount */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, ...groupStyle }}>
               <div>
-                <label style={labelStyle}>DEADLINE</label>
+                <label style={labelStyle}>{t("media.formDeadline")}</label>
                 <input type="date" style={fieldStyle} value={form.deadline}
                   onChange={(e) => setForm((f) => ({ ...f, deadline: e.target.value }))} />
               </div>
               <div>
-                <label style={labelStyle}>TỔNG TIỀN (VND)</label>
+                <label style={labelStyle}>{t("media.formTotal")}</label>
                 <input style={fieldStyle} type="number" placeholder="VD: 5000000"
                   value={form.totalAmount}
                   onChange={(e) => setForm((f) => ({ ...f, totalAmount: e.target.value }))} />
@@ -633,7 +646,7 @@ function BookingFormModal({
 
             {/* Requirements */}
             <div style={groupStyle}>
-              <label style={labelStyle}>YÊU CẦU / BRIEF</label>
+              <label style={labelStyle}>{t("media.formRequirements")}</label>
               <textarea style={{ ...fieldStyle, minHeight: 80, resize: "vertical" }}
                 value={form.requirements}
                 placeholder="Mô tả chi tiết yêu cầu media..."
@@ -642,7 +655,7 @@ function BookingFormModal({
 
             {/* Admin note */}
             <div style={groupStyle}>
-              <label style={labelStyle}>GHI CHÚ (NỘI BỘ)</label>
+              <label style={labelStyle}>{t("media.formNotes")}</label>
               <textarea style={{ ...fieldStyle, minHeight: 60, resize: "vertical" }}
                 value={form.note}
                 placeholder="Ghi chú cho team media..."
@@ -652,7 +665,7 @@ function BookingFormModal({
             {/* Delivered assets (edit only) */}
             {isEdit && (
               <div style={groupStyle}>
-                <label style={labelStyle}>TÀI LIỆU ĐÃ BÀN GIAO</label>
+                <label style={labelStyle}>{t("media.formDocs")}</label>
                 <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
                   <input
                     style={{ ...fieldStyle, flex: 1 }}
@@ -663,7 +676,7 @@ function BookingFormModal({
                   />
                   <button type="button" onClick={addAsset}
                     style={{ padding: "10px 14px", background: GRD.primary, color: "#fff", border: "none", borderRadius: 10, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
-                    <Upload size={13} /> Thêm
+                    <Upload size={13} /> {t("media.formBtnAdd")}
                   </button>
                 </div>
                 {deliveredAssets.length > 0 && (
@@ -700,7 +713,7 @@ function BookingFormModal({
             <div style={{ display: "flex", gap: 10 }}>
               <button type="button" onClick={onClose}
                 style={{ flex: 1, padding: "11px", background: DS.bg, color: DS.text3, border: `1px solid ${DS.border}`, borderRadius: 10, fontWeight: 600, cursor: "pointer", fontSize: 13 }}>
-                Hủy
+                {t("common.cancel")}
               </button>
               <button type="submit" disabled={saving}
                 style={{
@@ -708,7 +721,7 @@ function BookingFormModal({
                   color: "#fff", border: "none", borderRadius: 10, fontWeight: 700,
                   cursor: saving ? "not-allowed" : "pointer", fontSize: 13,
                 }}>
-                {saving ? "Đang lưu..." : isEdit ? "Lưu thay đổi" : "Tạo Booking"}
+                {saving ? t("common.loading") : isEdit ? t("common.save") : t("media.formBtnCreate")}
               </button>
             </div>
           </form>
@@ -721,6 +734,7 @@ function BookingFormModal({
 // ─── Main page ─────────────────────────────────────────────────────────────────
 
 export default function MediaBookingsPage() {
+  const { t } = useAdminTranslations();
   const qc = useQueryClient();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
@@ -728,6 +742,23 @@ export default function MediaBookingsPage() {
   const [selectedBooking, setSelectedBooking] = useState<MediaBooking | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [editBooking, setEditBooking] = useState<MediaBooking | null>(null);
+
+  const translatedStatuses = Object.fromEntries(
+    Object.entries(STATUS_CONFIG).map(([k, v]) => [
+      k,
+      { ...v, label: t(`media.status${k.charAt(0).toUpperCase() + k.slice(1)}` as `media.status${string}`) },
+    ])
+  );
+  const translatedPayments = Object.fromEntries(
+    Object.entries(PAYMENT_CONFIG).map(([k, v]) => [
+      k,
+      { ...v, label: t(`media.payment${k.charAt(0).toUpperCase() + k.slice(1)}` as `media.payment${string}`) },
+    ])
+  );
+  const translatedBookingTypes = BOOKING_TYPE_OPTIONS.map((opt) => ({
+    ...opt,
+    label: t(`media.${opt.labelKey}`),
+  }));
 
   const { data, isLoading, isFetching } = useQuery({
     queryKey: ["admin", "media-bookings", { page, limit: 20, search, status: statusFilter }],
@@ -764,10 +795,10 @@ export default function MediaBookingsPage() {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
         <div>
           <h2 style={{ fontFamily: DS.heading, fontSize: 20, fontWeight: 800, color: DS.text, marginBottom: 2 }}>
-            Quản lý Media Booking
+            {t("media.title")}
           </h2>
           <p style={{ color: DS.text4, fontSize: 12, fontFamily: DS.mono }}>
-            {pagination?.total ?? 0} booking
+            {t("media.titleCount", { n: pagination?.total ?? 0 })}
           </p>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
@@ -779,7 +810,7 @@ export default function MediaBookingsPage() {
               color: DS.text3, cursor: "pointer", fontSize: 12, fontFamily: DS.mono,
             }}
           >
-            <RefreshCw size={13} className={isFetching ? "animate-spin" : ""} /> Làm mới
+            <RefreshCw size={13} className={isFetching ? "animate-spin" : ""} /> {t("media.refreshBtn")}
           </button>
           <button
             onClick={() => setShowCreate(true)}
@@ -789,7 +820,7 @@ export default function MediaBookingsPage() {
               color: "#fff", cursor: "pointer", fontSize: 12, fontWeight: 700,
             }}
           >
-            <Plus size={14} /> Tạo Booking
+            <Plus size={14} /> {t("media.createBtn")}
           </button>
         </div>
       </div>
@@ -800,7 +831,7 @@ export default function MediaBookingsPage() {
           <Search size={14} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: DS.text4 }} />
           <input
             type="text"
-            placeholder="Tìm theo tên, email, mã booking..."
+            placeholder={t("media.searchPlaceholder")}
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             style={{
@@ -819,9 +850,9 @@ export default function MediaBookingsPage() {
             cursor: "pointer", fontFamily: DS.mono,
           }}
         >
-          <option value="">Tất cả trạng thái</option>
+          <option value="">{t("media.filterAll")}</option>
           {ALL_STATUSES.map((s) => (
-            <option key={s} value={s}>{STATUS_CONFIG[s].label}</option>
+            <option key={s} value={s}>{translatedStatuses[s]?.label ?? s}</option>
           ))}
         </select>
       </div>
@@ -843,7 +874,7 @@ export default function MediaBookingsPage() {
                 color: statusFilter === s ? cfg.color : DS.text4,
               }}
             >
-              {cfg.label} {count > 0 && <span>({count})</span>}
+              {translatedStatuses[s]?.label ?? s} {count > 0 && <span>({count})</span>}
             </button>
           );
         })}
@@ -857,8 +888,8 @@ export default function MediaBookingsPage() {
       ) : bookings.length === 0 ? (
         <div style={{ textAlign: "center", padding: "60px 0", color: DS.text4 }}>
           <Camera size={40} style={{ margin: "0 auto 12px", opacity: 0.4 }} />
-          <p style={{ fontSize: 14, fontWeight: 600 }}>Chưa có booking nào</p>
-          <p style={{ fontSize: 12, marginTop: 4 }}>Tạo booking đầu tiên để bắt đầu</p>
+          <p style={{ fontSize: 14, fontWeight: 600 }}>{t("media.emptyState")}</p>
+          <p style={{ fontSize: 12, marginTop: 4 }}>{t("media.emptyStateHint")}</p>
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -869,10 +900,11 @@ export default function MediaBookingsPage() {
               onTransition={(id, toStatus) => transitionMutation.mutate({ id, toStatus })}
               onDetail={setSelectedBooking}
               onDelete={(id) => {
-                if (confirm("Xóa booking này? Hành động này không thể hoàn tác.")) {
+                if (confirm(t("media.confirmDelete"))) {
                   deleteMutation.mutate(id);
                 }
               }}
+              t={t}
             />
           ))}
         </div>
@@ -917,6 +949,7 @@ export default function MediaBookingsPage() {
         onClose={() => setSelectedBooking(null)}
         onTransition={(id, toStatus) => transitionMutation.mutate({ id, toStatus })}
         onEdit={(b) => { setSelectedBooking(null); setEditBooking(b); }}
+        t={t}
       />
 
       {/* Create/Edit Modal */}

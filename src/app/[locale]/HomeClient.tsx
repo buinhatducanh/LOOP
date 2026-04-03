@@ -9,7 +9,7 @@
  * All hardcoded Vietnamese strings are replaced with t("key") calls
  * that map to keys in src/messages/{locale}/HomePage.
  */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { motion } from "motion/react";
@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { DS, GRD } from "@/lib/design-tokens";
 import ServicesSection from "@/components/landing/ServicesSectionClient";
+import { OnboardingClient } from "@/components/landing/OnboardingClient";
 
 // ── Shared sub-components ───────────────────────────────────────────────────────
 
@@ -757,14 +758,34 @@ function CTASection({ locale }: { locale: string }) {
 // ── MAIN COMPONENT ────────────────────────────────────────────────────────────
 
 export function HomeClient({ locale }: { locale: string }) {
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  useEffect(() => {
+    // Hiện onboarding lần đầu (chưa từng xem)
+    const done = localStorage.getItem("loop_onboarding_done");
+    if (!done) setShowOnboarding(true);
+  }, []);
+
+  const completeOnboarding = useCallback(() => {
+    localStorage.setItem("loop_onboarding_done", "1");
+    setShowOnboarding(false);
+  }, []);
+
   return (
-    <main style={{ background: DS.bg, color: DS.text, minHeight: "100vh" }}>
-      <HeroSection locale={locale} />
-      <MarqueeSection />
-      <StatsSection />
-      <ServicesSection locale={locale} />
-      <LPSystemSection locale={locale} />
-      <CTASection locale={locale} />
-    </main>
+    <>
+      <main style={{ background: DS.bg, color: DS.text, minHeight: "100vh" }}>
+        <HeroSection locale={locale} />
+        <MarqueeSection />
+        <StatsSection />
+        <ServicesSection locale={locale} />
+        <LPSystemSection locale={locale} />
+        <CTASection locale={locale} />
+      </main>
+      {showOnboarding && (
+        <div aria-hidden="true" data-nosnippet="" style={{ position: "fixed", inset: 0, zIndex: 200 }}>
+          <OnboardingClient onComplete={completeOnboarding} />
+        </div>
+      )}
+    </>
   );
 }

@@ -25,6 +25,7 @@ import {
   X, ChevronRight,
 } from "lucide-react";
 import { useAuthStore, canAccessTab, type AdminTab } from "@/app/store/authStore";
+import { useAdminTranslations } from "@/i18n/admin/useAdminTranslations";
 
 const fmtLP = (n: number) =>
   n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M` : n >= 1_000 ? `${(n / 1_000).toFixed(0)}K` : String(n);
@@ -32,58 +33,58 @@ const fmtLP = (n: number) =>
 type NavItem = {
   id: AdminTab;
   icon: React.ReactNode;
-  label: string;
-  badge?: string;
+  labelKey: string;
 };
 
 type NavGroup = {
-  label: string;
+  labelKey: string;
   items: NavItem[];
 };
 
-const SIDEBAR_GROUPS: NavGroup[] = [
+// Build SIDEBAR_GROUPS from i18n keys — labels come from hook at render time
+const SIDEBAR_GROUPS_CONFIG: NavGroup[] = [
   {
-    label: "QUẢN LÝ",
+    labelKey: "sidebar.groups.management",
     items: [
-      { id: "overview", icon: <LayoutDashboard size={16} />, label: "Tổng quan" },
-      { id: "orders", icon: <ShoppingCart size={16} />, label: "Đơn hàng" },
-      { id: "members", icon: <Users size={16} />, label: "Thành viên" },
-      { id: "departments", icon: <Building2 size={16} />, label: "Phòng ban" },
-      { id: "projects", icon: <FolderKanban size={16} />, label: "Kanban" },
-      { id: "leaderboard_admin", icon: <BarChart2 size={16} />, label: "Leaderboard LP" },
+      { id: "overview", icon: <LayoutDashboard size={16} />, labelKey: "sidebar.nav.overview" },
+      { id: "orders", icon: <ShoppingCart size={16} />, labelKey: "sidebar.nav.orders" },
+      { id: "members", icon: <Users size={16} />, labelKey: "sidebar.nav.members" },
+      { id: "departments", icon: <Building2 size={16} />, labelKey: "sidebar.nav.departments" },
+      { id: "projects", icon: <FolderKanban size={16} />, labelKey: "sidebar.nav.projects" },
+      { id: "leaderboard_admin", icon: <BarChart2 size={16} />, labelKey: "sidebar.nav.leaderboard_admin" },
     ],
   },
   {
-    label: "SẢN PHẨM",
+    labelKey: "sidebar.groups.products",
     items: [
-      { id: "services", icon: <Briefcase size={16} />, label: "Dịch vụ" },
-      { id: "media", icon: <Camera size={16} />, label: "Quản lý Media Booking" },
-      { id: "quotation", icon: <Receipt size={16} />, label: "Báo giá" },
-      { id: "portfolio", icon: <Package size={16} />, label: "Portfolio" },
-      { id: "projects_completed", icon: <FolderCheck size={16} />, label: "Dự án xong" },
-      { id: "academy", icon: <BookOpen size={16} />, label: "Học viện" },
-      { id: "blog", icon: <FileText size={16} />, label: "Blog" },
+      { id: "services", icon: <Briefcase size={16} />, labelKey: "sidebar.nav.services" },
+      { id: "media", icon: <Camera size={16} />, labelKey: "sidebar.nav.media" },
+      { id: "quotation", icon: <Receipt size={16} />, labelKey: "sidebar.nav.quotation" },
+      { id: "portfolio", icon: <Package size={16} />, labelKey: "sidebar.nav.portfolio" },
+      { id: "projects_completed", icon: <FolderCheck size={16} />, labelKey: "sidebar.nav.projects_completed" },
+      { id: "academy", icon: <BookOpen size={16} />, labelKey: "sidebar.nav.academy" },
+      { id: "blog", icon: <FileText size={16} />, labelKey: "sidebar.nav.blog" },
     ],
   },
   {
-    label: "TÀI CHÍNH",
+    labelKey: "sidebar.groups.finance",
     items: [
-      { id: "revenue", icon: <DollarSign size={16} />, label: "Doanh thu" },
-      { id: "analytics", icon: <BarChart2 size={16} />, label: "Phân tích & Báo cáo" },
-      { id: "clients", icon: <UserCheck size={16} />, label: "Khách hàng" },
-      { id: "lp", icon: <Wallet size={16} />, label: "Tài chính LP" },
-      { id: "lp_manage", icon: <Zap size={16} />, label: "Quản lý LP" },
-      { id: "income_tax", icon: <Calculator size={16} />, label: "Thu nhập & Thuế" },
-      { id: "web_packages", icon: <Package size={16} />, label: "Gói Web" },
+      { id: "revenue", icon: <DollarSign size={16} />, labelKey: "sidebar.nav.revenue" },
+      { id: "analytics", icon: <BarChart2 size={16} />, labelKey: "sidebar.nav.analytics" },
+      { id: "clients", icon: <UserCheck size={16} />, labelKey: "sidebar.nav.clients" },
+      { id: "lp", icon: <Wallet size={16} />, labelKey: "sidebar.nav.lp" },
+      { id: "lp_manage", icon: <Zap size={16} />, labelKey: "sidebar.nav.lp_manage" },
+      { id: "income_tax", icon: <Calculator size={16} />, labelKey: "sidebar.nav.income_tax" },
+      { id: "web_packages", icon: <Package size={16} />, labelKey: "sidebar.nav.web_packages" },
     ],
   },
   {
-    label: "HỆ THỐNG",
+    labelKey: "sidebar.groups.system",
     items: [
-      { id: "effects", icon: <Sparkles size={16} />, label: "Hiệu ứng rank" },
-      { id: "quests_events", icon: <Star size={16} />, label: "Nhiệm vụ & Sự kiện" },
-      { id: "notification_center", icon: <Bell size={16} />, label: "Trung tâm TB" },
-      { id: "settings", icon: <Settings size={16} />, label: "Cài đặt" },
+      { id: "effects", icon: <Sparkles size={16} />, labelKey: "sidebar.nav.effects" },
+      { id: "quests_events", icon: <Star size={16} />, labelKey: "sidebar.nav.quests_events" },
+      { id: "notification_center", icon: <Bell size={16} />, labelKey: "sidebar.nav.notification_center" },
+      { id: "settings", icon: <Settings size={16} />, labelKey: "sidebar.nav.settings" },
     ],
   },
 ];
@@ -98,6 +99,7 @@ export function AdminSidebar({ userName, userAvatar, userRole }: AdminSidebarPro
   const pathname = usePathname();
   const { role, department, user } = useAuthStore();
   const [isOpen, setIsOpen] = useState(false);
+  const { t } = useAdminTranslations();
 
   // Determine active tab from URL
   const activeTab = (pathname.split("/").pop() ?? "overview") as AdminTab;
@@ -152,55 +154,16 @@ export function AdminSidebar({ userName, userAvatar, userRole }: AdminSidebarPro
                 cursor: "pointer",
                 color: "var(--figma-text4, #64748B)",
                 padding: 4,
-                display: "none", // hidden on desktop, shown on mobile via CSS
+                display: "none",
               }}
             >
               <X size={18} />
             </button>
-            <motion.div
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: 10,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                background: "var(--figma-grd-primary)",
-                flexShrink: 0,
-              }}
-              animate={{
-                boxShadow: [
-                  "0 0 12px rgba(129,140,248,0.4)",
-                  "0 0 24px rgba(129,140,248,0.7)",
-                  "0 0 12px rgba(129,140,248,0.4)",
-                ],
-              }}
-              transition={{ duration: 3, repeat: Infinity }}
-            >
-              <svg width="20" height="20" viewBox="0 0 40 40" fill="none">
-                <path
-                  d="M20 2 L36 11 L36 29 L20 38 L4 29 L4 11 Z"
-                  stroke="rgba(255,255,255,0.8)"
-                  strokeWidth="1.5"
-                  fill="none"
-                />
-                <path
-                  d="M20 8 L30 13.5 L30 25 L20 30.5 L10 25 L10 13.5 Z"
-                  fill="rgba(255,255,255,0.12)"
-                />
-                <text
-                  x="20"
-                  y="25"
-                  textAnchor="middle"
-                  fontSize="14"
-                  fontWeight="900"
-                  fill="white"
-                  fontFamily="serif"
-                >
-                  ∞
-                </text>
-              </svg>
-            </motion.div>
+            <img
+              src="/logo.png"
+              alt="LOOP"
+              style={{ width: 36, height: 36, objectFit: "contain", borderRadius: 8, flexShrink: 0 }}
+            />
             <div>
               <div
                 style={{
@@ -221,7 +184,7 @@ export function AdminSidebar({ userName, userAvatar, userRole }: AdminSidebarPro
                   letterSpacing: "0.15em",
                 }}
               >
-                ADMIN PANEL
+                {t("sidebar.footer.adminPanel")}
               </div>
             </div>
           </div>
@@ -236,12 +199,12 @@ export function AdminSidebar({ userName, userAvatar, userRole }: AdminSidebarPro
           }}
           className="scrollbar-zen"
         >
-          {SIDEBAR_GROUPS.map((group) => {
+          {SIDEBAR_GROUPS_CONFIG.map((group) => {
             const accessibleItems = group.items.filter((item) => isAccessible(item.id));
             if (accessibleItems.length === 0) return null;
 
             return (
-              <div key={group.label} style={{ marginBottom: "1.25rem" }}>
+              <div key={group.labelKey} style={{ marginBottom: "1.25rem" }}>
                 <div
                   style={{
                     color: "var(--figma-text4, #64748B)",
@@ -252,7 +215,7 @@ export function AdminSidebar({ userName, userAvatar, userRole }: AdminSidebarPro
                     marginBottom: "0.375rem",
                   }}
                 >
-                  {group.label}
+                  {t(group.labelKey)}
                 </div>
                 {accessibleItems.map((item) => {
                   const isActive = activeTab === item.id;
@@ -295,7 +258,7 @@ export function AdminSidebar({ userName, userAvatar, userRole }: AdminSidebarPro
                       }}
                     >
                       <span style={{ opacity: isActive ? 1 : 0.7 }}>{item.icon}</span>
-                      <span style={{ flex: 1 }}>{item.label}</span>
+                      <span style={{ flex: 1 }}>{t(item.labelKey)}</span>
                       {isActive && <ChevronRight size={12} />}
                     </Link>
                   );

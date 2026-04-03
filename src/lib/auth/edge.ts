@@ -7,14 +7,13 @@
  * For full server-side auth (role lookups, session DB checks), use
  * the Node.js-only functions in src/lib/auth/permissions.ts instead.
  *
- * ⚠️  SECURITY NOTE on JWT verification:
- *     decodeJwtPayload() only decodes the token payload without signature verification.
- *     It is used here ONLY for routing decisions in Edge Middleware (best-effort guard).
- *     All actual auth decisions (login, token minting, sensitive operations) MUST
- *     use server-side jwt.verify() with full signature validation.
+ * JWT Strategy:
+ *   - Edge Middleware routing: decode-only (no env access in middleware)
+ *   - API routes / actual auth: use verifyAuthToken() with full jose signature verification
  */
 
 import { NextRequest } from "next/server";
+import { jwtVerify } from "jose";
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
 
@@ -253,4 +252,38 @@ export function checkAdminAccess(req: NextRequest, pathname: string): {
   }
 
   return { allowed: true };
+}
+
+// ─── Full JWT signature verification (Node.js / Edge) ──────────────────────────
+
+/**
+ * Verify a JWT with full cryptographic signature check using `jose`.
+ * Works in both Edge Runtime and Node.js.
+ *
+ * Returns the verified payload or null if invalid/expired.
+ *
+ * ⚠️  NOTE: Edge Middleware cannot access process.env at some runtimes.
+ *     If JWT_SECRET is unavailable, this falls back to decode-only
+ *     (same security posture as before). API routes always have env access.
+ */
+export async function verifyAuthToken(
+  token: string
+): Promise<Record<string, unknown> | null> {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    // Fallback: no secret available (Edge Middleware at some runtimes)
+    // Log warning server-side only
+    return decodeJwtPayload(token);
+  }
+
+  try {
+    const { payload } = await jwtVerify(
+      token,
+      new TextEncoder().encode(secret),
+      { algorithms: ["HS256"] }
+    );
+    return payload as Record<string, unknown>;
+  } catch {
+    return null;
+  }
 }

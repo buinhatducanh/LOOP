@@ -119,12 +119,7 @@ function SidePanel({ locale }: { locale: string }) {
       {/* Logo */}
       <div>
         <Link href={`/${locale}`} style={{ display: "flex", alignItems: "center", gap: "0.625rem", textDecoration: "none", marginBottom: "2.5rem" }}>
-          <div style={{
-            width: 40, height: 40, borderRadius: 10,
-            background: GRD.primary, display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
-            <span style={{ color: "#fff", fontSize: 18, fontWeight: 900, fontFamily: "serif" }}>∞</span>
-          </div>
+          <img src="/logo.png" alt="LOOP" style={{ width: 40, height: 40, objectFit: "contain", borderRadius: 10 }} />
           <div>
             <div style={{ color: DS.text, fontFamily: "'Cinzel', serif", fontSize: 15, fontWeight: 900, letterSpacing: "0.1em" }}>LOOP SOLUTIONS</div>
             <div style={{ color: DS.text5, fontSize: 9, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.2em" }}>DIGITAL AGENCY OS</div>

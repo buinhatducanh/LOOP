@@ -1,13 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   ChevronRight, ChevronLeft, Globe, Code2, BarChart3, TrendingUp,
   Users, Star, Rocket, Shield, Zap, ArrowRight, Check,
-  Sparkles, Target, Award, Heart, Play,
+  Sparkles, Target, Award, Heart, Play, Volume2, VolumeX,
 } from "lucide-react";
 import { DS, GRD } from "@/lib/design-tokens";
+import { useAudioStore } from "@/app/store/audioStore";
 
 type SlideProps = { direction: number };
 
@@ -59,36 +60,106 @@ function StarField() {
   );
 }
 
-function SlideWelcome({ direction }: SlideProps) {
+function SlideWelcome({ direction, onVideoEnd }: SlideProps & { onVideoEnd?: () => void }) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [showLogo, setShowLogo] = useState(false);
+
+  // Restart video each time this slide is shown
+  useEffect(() => {
+    setShowLogo(false);
+    if (videoRef.current) {
+      videoRef.current.currentTime = 0;
+      videoRef.current.play().catch(() => {});
+    }
+  }, [direction]);
+
+  // Show logo only after video ends — also trigger music
+  const handleVideoEnded = () => {
+    setShowLogo(true);
+    onVideoEnd?.();
+  };
+
   return (
     <SlideWrapper direction={direction}>
       <div className="flex flex-col items-center justify-center min-h-full text-center px-6">
-        <motion.div initial={{ scale: 0.7, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", stiffness: 120, damping: 14 }} className="mb-8">
-          <div style={{
-            width: 140,
-            height: 140,
-            borderRadius: "50%",
-            background: "radial-gradient(circle, rgba(129,140,248,0.35) 0%, rgba(59,130,246,0.18) 45%, transparent 80%)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            boxShadow: "0 0 60px rgba(129,140,248,0.35)",
-          }}>
-            <Rocket size={52} style={{ color: "#E0E7FF" }} />
-          </div>
+        {/* ── Logo Container ──────────────────────────────── */}
+        <motion.div
+          initial={{ scale: 0.5, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: "spring", stiffness: 80, damping: 14 }}
+          className="mb-8"
+          style={{ position: "relative" }}
+        >
+          {/* Glow ring pulsing behind */}
+          <motion.div
+            className="absolute rounded-full"
+            style={{
+              inset: "-12%",
+              background: "radial-gradient(circle, rgba(129,140,248,0.25) 0%, rgba(59,130,246,0.1) 45%, transparent 70%)",
+              filter: "blur(40px)",
+            }}
+            animate={{ scale: [1, 1.2, 1], opacity: [0.6, 1, 0.6] }}
+            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+          />
+
+          {/* Orbiting glow rings */}
+          {[1, 2, 3].map((ring) => (
+            <motion.div
+              key={ring}
+              className="absolute rounded-full"
+              style={{
+                inset: -8 * ring,
+                border: `1px solid rgba(129,140,248,${0.25 - ring * 0.06})`,
+              }}
+              animate={{ rotate: ring % 2 === 0 ? 360 : -360 }}
+              transition={{ duration: 10 + ring * 4, repeat: Infinity, ease: "linear" }}
+            />
+          ))}
+
+          {/* Logo image */}
+          <img
+            src="/logo.png"
+            alt="LOOP Solutions"
+            aria-hidden="true"
+            data-nosnippet
+            style={{
+              width: "min(75vw, 460px)",
+              position: "relative",
+              zIndex: 2,
+              borderRadius: 16,
+            }}
+          />
         </motion.div>
 
+        {/* ── Title ──────────────────────────────────────── */}
         <motion.h1
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          style={{ fontFamily: DS.heading, fontSize: "clamp(30px, 5vw, 56px)", letterSpacing: "0.06em", marginBottom: 14 }}
+          transition={{ delay: 0.4, duration: 0.7 }}
+          style={{
+            fontFamily: DS.heading,
+            fontSize: "clamp(28px, 5vw, 56px)",
+            letterSpacing: "0.07em",
+            marginBottom: 14,
+          }}
         >
-          <span style={{ background: "linear-gradient(135deg, #FFFFFF 0%, #818CF8 55%, #3B82F6 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-            CHÀO MỪNG ĐẾN
+          <span
+            style={{
+              background: "linear-gradient(135deg, #FFFFFF 0%, #818CF8 55%, #3B82F6 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+            }}
+          >
+            CHÀO MỪNG ĐẾN VỚI
           </span>
           <br />
-          <span style={{ background: "linear-gradient(135deg, #3B82F6, #818CF8, #7DD3FC)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+          <span
+            style={{
+              background: "linear-gradient(135deg, #3B82F6, #818CF8 40%, #7DD3FC 70%, #E0E7FF)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+            }}
+          >
             LOOP SOLUTIONS
           </span>
         </motion.h1>
@@ -96,10 +167,10 @@ function SlideWelcome({ direction }: SlideProps) {
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.55 }}
+          transition={{ delay: 0.7 }}
           style={{ color: DS.text3, fontSize: "clamp(14px, 2vw, 18px)", lineHeight: 1.8, maxWidth: 620 }}
         >
-          Hệ điều hành số cho Digital Agency — nơi công nghệ, thiết kế và tăng trưởng được kết nối thành một hệ sinh thái.
+          Hệ điều hành số cho Digital Agency — nơi công nghệ, thiết kế và tăng trưởng kết nối thành hệ sinh thái.
         </motion.p>
       </div>
     </SlideWrapper>
@@ -337,7 +408,26 @@ const LABELS = ["Chào mừng", "Về chúng tôi", "Dịch vụ", "Tăng trư�
 export function OnboardingClient({ onComplete }: { onComplete: () => void }) {
   const [current, setCurrent] = useState(0);
   const [direction, setDirection] = useState(1);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const total = 5;
+
+  const { muted, setMuted, toggleMuted, setAudioElement } = useAudioStore();
+  const musicOn = !muted;
+
+  // Pre-create audio element on mount and register with global store
+  useEffect(() => {
+    const audio = new Audio("/assets/design-company/bg-music.mp3");
+    audio.loop = true;
+    audio.volume = 0.6;
+    audio.muted = muted;
+    audioRef.current = audio;
+    setAudioElement(audio);
+    return () => {
+      audio.pause();
+      audioRef.current = null;
+      setAudioElement(null);
+    };
+  }, [setAudioElement, muted]);
 
   const goTo = (idx: number) => {
     if (idx < 0 || idx >= total || idx === current) return;
@@ -348,8 +438,22 @@ export function OnboardingClient({ onComplete }: { onComplete: () => void }) {
   const next = () => goTo(current + 1);
   const prev = () => goTo(current - 1);
 
+  // Auto-play music after video ends (user gesture detected by browser)
+  const handleVideoEnd = () => {
+    console.log("[Audio] Video ended, attempting to play music...");
+    audioRef.current?.play().then(() => {
+      console.log("[Audio] Music started playing!");
+    }).catch((err) => {
+      console.error("[Audio] Play failed:", err);
+    });
+  };
+
+  const toggleMusic = () => {
+    toggleMuted();
+  };
+
   const slides = [
-    <SlideWelcome key="welcome" direction={direction} />,
+    <SlideWelcome key="welcome" direction={direction} onVideoEnd={handleVideoEnd} />,
     <SlideAbout key="about" direction={direction} />,
     <SlideServices key="services" direction={direction} />,
     <SlideGrowth key="growth" direction={direction} />,
@@ -382,6 +486,21 @@ export function OnboardingClient({ onComplete }: { onComplete: () => void }) {
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Music toggle */}
+          <button
+            onClick={toggleMusic}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl cursor-pointer"
+            style={{
+              background: musicOn ? hexRgba(DS.purple, 0.12) : hexRgba(DS.blue, 0.06),
+              border: `1px solid ${musicOn ? hexRgba(DS.purple, 0.25) : hexRgba(DS.blue, 0.15)}`,
+              color: musicOn ? DS.purple : DS.text4,
+              fontSize: 13,
+            }}
+            title={musicOn ? "Tắt nhạc" : "Bật nhạc"}
+          >
+            {musicOn ? <Volume2 size={14} /> : <VolumeX size={14} />}
+          </button>
+
           {current > 0 && (
             <button onClick={prev} className="flex items-center gap-1.5 px-4 py-2 rounded-xl cursor-pointer" style={{ background: hexRgba(DS.blue, 0.06), border: `1px solid ${hexRgba(DS.blue, 0.15)}`, color: DS.text3, fontSize: 13 }}>
               <ChevronLeft size={14} /> Quay lại

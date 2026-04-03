@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useAdminTranslations } from "@/i18n/admin/useAdminTranslations";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "motion/react";
 import { qk } from "@/lib/query/provider";
@@ -25,6 +26,7 @@ type Project = {
 };
 
 function ProjectRow({ project, onEdit }: { project: Project; onEdit: (p: Project) => void }) {
+  const { t } = useAdminTranslations();
   const qc = useQueryClient();
 
   const togglePublish = useMutation({
@@ -113,6 +115,7 @@ function ProjectRow({ project, onEdit }: { project: Project; onEdit: (p: Project
 }
 
 export default function PortfolioTabPage() {
+  const { t } = useAdminTranslations();
   const qc = useQueryClient();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
@@ -139,9 +142,9 @@ export default function PortfolioTabPage() {
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
         <div>
-          <h2 style={{ fontFamily: DS.heading, fontSize: 20, fontWeight: 800, color: DS.text, marginBottom: 2 }}>Portfolio / Dự án</h2>
+          <h2 style={{ fontFamily: DS.heading, fontSize: 20, fontWeight: 800, color: DS.text, marginBottom: 2 }}>{t("portfolio.title")}</h2>
           <p style={{ color: DS.text4, fontSize: 12, fontFamily: DS.mono }}>
-            {pagination?.total ?? 0} dự án
+            {pagination?.total ?? 0} {t("portfolio.projectCount")}
           </p>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
@@ -149,13 +152,13 @@ export default function PortfolioTabPage() {
             onClick={() => qc.invalidateQueries({ queryKey: qk.adminProjects({ page }) })}
             style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 10, color: DS.text3, cursor: "pointer", fontSize: 12, fontFamily: DS.mono }}
           >
-            <RefreshCw size={13} className={isFetching ? "animate-spin" : ""} /> Làm mới
+            <RefreshCw size={13} className={isFetching ? "animate-spin" : ""} /> {t("common.refresh")}
           </button>
           <button
             onClick={() => setIsCreating(true)}
             style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", background: GRD.primary, color: "#fff", border: "none", borderRadius: 10, cursor: "pointer", fontSize: 13, fontWeight: 700 }}
           >
-            <Plus size={14} /> Thêm dự án
+            <Plus size={14} /> {t("portfolio.addNew")}
           </button>
         </div>
       </div>
@@ -204,7 +207,7 @@ export default function PortfolioTabPage() {
       {!isLoading && (
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {projects.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "3rem", color: DS.text4, fontSize: 14 }}>Chưa có dự án nào</div>
+            <div style={{ textAlign: "center", padding: "3rem", color: DS.text4, fontSize: 14 }}>{t("portfolio.empty")}</div>
           ) : (
             projects.map((p) => <ProjectRow key={p.id} project={p} onEdit={setEditProject} />)
           )}
@@ -226,6 +229,7 @@ export default function PortfolioTabPage() {
 }
 
 function EditProjectForm({ project, onClose, onUpdated }: { project: Project; onClose: () => void; onUpdated: () => void }) {
+  const { t } = useAdminTranslations();
   const qc = useQueryClient();
   const [title, setTitle] = useState(project.title || "");
   const [slug, setSlug] = useState(project.slug || "");
@@ -252,7 +256,7 @@ function EditProjectForm({ project, onClose, onUpdated }: { project: Project; on
       style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 12, padding: 20, marginBottom: 16 }}
     >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-        <h3 style={{ color: DS.text, fontWeight: 700, fontSize: 15 }}>Sửa dự án</h3>
+        <h3 style={{ color: DS.text, fontWeight: 700, fontSize: 15 }}>{t("portfolio.editTitle")}</h3>
         <button onClick={onClose} style={{ background: "none", border: "none", color: DS.text4, cursor: "pointer" }}>
           <X size={16} />
         </button>
@@ -281,10 +285,10 @@ function EditProjectForm({ project, onClose, onUpdated }: { project: Project; on
           disabled={!title || !slug || update.isPending}
           style={{ flex: 1, padding: "9px", background: GRD.primary, color: "#fff", border: "none", borderRadius: 10, cursor: "pointer", fontWeight: 700, fontSize: 13, opacity: (!title || !slug || update.isPending) ? 0.6 : 1 }}
         >
-          {update.isPending ? "Đang lưu..." : "Lưu thay đổi"}
+          {update.isPending ? t("common.saving") : t("common.save")}
         </button>
         <button onClick={onClose} style={{ padding: "9px 16px", background: "transparent", border: `1px solid ${DS.border}`, color: DS.text3, borderRadius: 10, cursor: "pointer", fontSize: 13 }}>
-          Hủy
+          {t("common.cancel")}
         </button>
       </div>
     </motion.div>
@@ -292,6 +296,7 @@ function EditProjectForm({ project, onClose, onUpdated }: { project: Project; on
 }
 
 function CreateProjectForm({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+  const { t } = useAdminTranslations();
   const qc = useQueryClient();
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
@@ -309,7 +314,7 @@ function CreateProjectForm({ onClose, onCreated }: { onClose: () => void; onCrea
   return (
     <div style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 12, padding: 20 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-        <h3 style={{ color: DS.text, fontWeight: 700, fontSize: 15 }}>Thêm dự án mới</h3>
+        <h3 style={{ color: DS.text, fontWeight: 700, fontSize: 15 }}>{t("portfolio.createTitle")}</h3>
         <button onClick={onClose} style={{ background: "none", border: "none", color: DS.text4, cursor: "pointer" }}><X size={16} /></button>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
@@ -333,9 +338,9 @@ function CreateProjectForm({ onClose, onCreated }: { onClose: () => void; onCrea
       </div>
       <div style={{ display: "flex", gap: 8 }}>
         <button onClick={() => create.mutate()} disabled={!title || !slug || create.isPending} style={{ flex: 1, padding: "9px", background: GRD.primary, color: "#fff", border: "none", borderRadius: 10, cursor: "pointer", fontWeight: 700, fontSize: 13, opacity: (!title || !slug || create.isPending) ? 0.6 : 1 }}>
-          {create.isPending ? "Đang tạo..." : "Tạo dự án"}
+          {create.isPending ? t("common.saving") : t("portfolio.create")}
         </button>
-        <button onClick={onClose} style={{ padding: "9px 16px", background: "transparent", border: `1px solid ${DS.border}`, color: DS.text3, borderRadius: 10, cursor: "pointer", fontSize: 13 }}>Hủy</button>
+        <button onClick={onClose} style={{ padding: "9px 16px", background: "transparent", border: `1px solid ${DS.border}`, color: DS.text3, borderRadius: 10, cursor: "pointer", fontSize: 13 }}>{t("common.cancel")}</button>
       </div>
     </div>
   );

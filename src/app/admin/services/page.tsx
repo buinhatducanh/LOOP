@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useAdminTranslations } from "@/i18n/admin/useAdminTranslations";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion } from "motion/react";
 import { qk } from "@/lib/query/provider";
@@ -32,6 +33,7 @@ function ServiceRow({
   service: Service;
   onEdit: (s: Service) => void;
 }) {
+  const { t } = useAdminTranslations();
   const qc = useQueryClient();
 
   const toggle = useMutation({
@@ -85,7 +87,7 @@ function ServiceRow({
       <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
         <div style={{ background: DS.bg, border: `1px solid ${DS.border}`, borderRadius: 8, padding: "4px 10px", textAlign: "center" }}>
           <p style={{ color: DS.blue, fontSize: 13, fontWeight: 700 }}>{service._count?.projects ?? 0}</p>
-          <p style={{ color: DS.text4, fontSize: 9, fontFamily: DS.mono }}>dự án</p>
+          <p style={{ color: DS.text4, fontSize: 9, fontFamily: DS.mono }}>{t("portfolio.projectCount")}</p>
         </div>
       </div>
 
@@ -117,6 +119,7 @@ function ServiceRow({
 }
 
 export default function ServicesTabPage() {
+  const { t } = useAdminTranslations();
   const qc = useQueryClient();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
@@ -143,9 +146,9 @@ export default function ServicesTabPage() {
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
         <div>
-          <h2 style={{ fontFamily: DS.heading, fontSize: 20, fontWeight: 800, color: DS.text, marginBottom: 2 }}>Dịch vụ</h2>
+          <h2 style={{ fontFamily: DS.heading, fontSize: 20, fontWeight: 800, color: DS.text, marginBottom: 2 }}>{t("services.title")}</h2>
           <p style={{ color: DS.text4, fontSize: 12, fontFamily: DS.mono }}>
-            {pagination?.total ?? 0} dịch vụ
+            {pagination?.total ?? 0} {t("services.serviceCount")}
           </p>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
@@ -153,13 +156,13 @@ export default function ServicesTabPage() {
             onClick={() => qc.invalidateQueries({ queryKey: qk.adminServices({ page }) })}
             style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 10, color: DS.text3, cursor: "pointer", fontSize: 12, fontFamily: DS.mono }}
           >
-            <RefreshCw size={13} className={isFetching ? "animate-spin" : ""} /> Làm mới
+            <RefreshCw size={13} className={isFetching ? "animate-spin" : ""} /> {t("common.refresh")}
           </button>
           <button
             onClick={() => setIsCreating(true)}
             style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", background: GRD.primary, color: "#fff", border: "none", borderRadius: 10, cursor: "pointer", fontSize: 13, fontWeight: 700 }}
           >
-            <Plus size={14} /> Thêm dịch vụ
+            <Plus size={14} /> {t("services.addNew")}
           </button>
         </div>
       </div>
@@ -212,7 +215,7 @@ export default function ServicesTabPage() {
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {services.length === 0 ? (
             <div style={{ textAlign: "center", padding: "3rem", color: DS.text4, fontSize: 14 }}>
-              Chưa có dịch vụ nào
+              {t("services.empty")}
             </div>
           ) : (
             services.map((s) => (
@@ -248,6 +251,7 @@ export default function ServicesTabPage() {
 
 // Inline edit form
 function EditServiceForm({ service, onClose, onUpdated }: { service: Service; onClose: () => void; onUpdated: () => void }) {
+  const { t } = useAdminTranslations();
   const qc = useQueryClient();
   const [title, setTitle] = useState(service.title || "");
   const [slug, setSlug] = useState(service.slug || "");
@@ -273,7 +277,7 @@ function EditServiceForm({ service, onClose, onUpdated }: { service: Service; on
       style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 12, padding: 20, marginBottom: 16 }}
     >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-        <h3 style={{ color: DS.text, fontWeight: 700, fontSize: 15 }}>Sửa dịch vụ</h3>
+        <h3 style={{ color: DS.text, fontWeight: 700, fontSize: 15 }}>{t("services.editTitle")}</h3>
         <button onClick={onClose} style={{ background: "none", border: "none", color: DS.text4, cursor: "pointer" }}>
           <X size={16} />
         </button>
@@ -303,10 +307,10 @@ function EditServiceForm({ service, onClose, onUpdated }: { service: Service; on
           disabled={!title || !slug || update.isPending}
           style={{ flex: 1, padding: "9px", background: GRD.primary, color: "#fff", border: "none", borderRadius: 10, cursor: "pointer", fontWeight: 700, fontSize: 13, opacity: (!title || !slug || update.isPending) ? 0.6 : 1 }}
         >
-          {update.isPending ? "Đang lưu..." : "Lưu thay đổi"}
+          {update.isPending ? t("common.saving") : t("common.save")}
         </button>
         <button onClick={onClose} style={{ padding: "9px 16px", background: "transparent", border: `1px solid ${DS.border}`, color: DS.text3, borderRadius: 10, cursor: "pointer", fontSize: 13 }}>
-          Hủy
+          {t("common.cancel")}
         </button>
       </div>
     </motion.div>
@@ -315,6 +319,7 @@ function EditServiceForm({ service, onClose, onUpdated }: { service: Service; on
 
 // Inline create form (simplified)
 function CreateServiceForm({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+  const { t } = useAdminTranslations();
   const qc = useQueryClient();
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
@@ -347,7 +352,7 @@ function CreateServiceForm({ onClose, onCreated }: { onClose: () => void; onCrea
       style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 12, padding: 20 }}
     >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-        <h3 style={{ color: DS.text, fontWeight: 700, fontSize: 15 }}>Thêm dịch vụ mới</h3>
+        <h3 style={{ color: DS.text, fontWeight: 700, fontSize: 15 }}>{t("services.createTitle")}</h3>
         <button onClick={onClose} style={{ background: "none", border: "none", color: DS.text4, cursor: "pointer" }}>
           <X size={16} />
         </button>
@@ -377,10 +382,10 @@ function CreateServiceForm({ onClose, onCreated }: { onClose: () => void; onCrea
           disabled={!title || !slug || create.isPending}
           style={{ flex: 1, padding: "9px", background: GRD.primary, color: "#fff", border: "none", borderRadius: 10, cursor: "pointer", fontWeight: 700, fontSize: 13, opacity: (!title || !slug || create.isPending) ? 0.6 : 1 }}
         >
-          {create.isPending ? "Đang tạo..." : "Tạo dịch vụ"}
+          {create.isPending ? t("common.saving") : t("services.create")}
         </button>
         <button onClick={onClose} style={{ padding: "9px 16px", background: "transparent", border: `1px solid ${DS.border}`, color: DS.text3, borderRadius: 10, cursor: "pointer", fontSize: 13 }}>
-          Hủy
+          {t("common.cancel")}
         </button>
       </div>
     </motion.div>

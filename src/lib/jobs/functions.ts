@@ -380,6 +380,155 @@ export const warmCache = inngest.createFunction(
   }
 );
 
+// ═══════════════════════════════════════════════════════════════════════════
+// CATEGORY 3: QUEST / EVENT CRON JOBS
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ─── Quest Frequency Reset ────────────────────────────────────────────────
+// Cron: daily at midnight — resets quest progress based on frequency
+export const questFrequencyReset = inngest.createFunction(
+  {
+    id: "quest-frequency-reset",
+    name: "Quest Frequency Reset",
+    triggers: [{ cron: "0 0 * * *" }],
+  },
+  async ({ step }) => {
+    const today = new Date();
+    const isMonday = today.getDay() === 1;
+    const isFirstOfMonth = today.getDate() === 1;
+
+    // Daily: reset daily quests (progress → 0, completed → false)
+    const dailyResult = await step.run("reset-daily-quests", async () => {
+      const { prisma } = await import("@/lib/prisma");
+      const result = await prisma.questParticipant.updateMany({
+        where: {
+          quest: { frequency: "daily" },
+          completed: false,
+        },
+        data: { progress: 0 },
+      });
+      return result.count;
+    });
+
+    // Weekly (Monday): reset weekly quests
+    const weeklyResult = isMonday
+      ? await step.run("reset-weekly-quests", async () => {
+          const { prisma } = await import("@/lib/prisma");
+          const result = await prisma.questParticipant.updateMany({
+            where: { quest: { frequency: "weekly" } },
+            data: { progress: 0, completed: false },
+          });
+          return result.count;
+        })
+      : 0;
+
+    // Monthly (1st): reset monthly quests
+    const monthlyResult = isFirstOfMonth
+      ? await step.run("reset-monthly-quests", async () => {
+          const { prisma } = await import("@/lib/prisma");
+          const result = await prisma.questParticipant.updateMany({
+            where: { quest: { frequency: "monthly" } },
+            data: { progress: 0, completed: false },
+          });
+          return result.count;
+        })
+      : 0;
+
+    return {
+      daily: dailyResult,
+      weekly: weeklyResult,
+      monthly: monthlyResult,
+      isMonday,
+      isFirstOfMonth,
+    };
+  }
+);
+
+// ─── Event LP Bonus Auto-Award ───────────────────────────────────────────
+// Cron: daily at 01:00 — awards lpBonus to participants of ended events
+export const eventLpBonusAward = inngest.createFunction(
+  {
+    id: "event-lp-bonus-award",
+    name: "Event LP Bonus Award",
+    triggers: [{ cron: "0 1 * * *" }],
+  },
+  async ({ step }) => {
+    // Find events that ended yesterday (endDate <= yesterday AND isActive=true)
+    const endedEvents = await step.run("find-ended-events", async () => {
+      const { prisma } = await import("@/lib/prisma");
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      yesterday.setHours(23, 59, 59, 999);
+
+      return prisma.companyEvent.findMany({
+        where: {
+          endDate: { lte: yesterday },
+          isActive: true,
+        },
+        select: { id: true, title: true, lpBonus: true },
+      });
+    });
+
+    let totalAwarded = 0;
+
+    for (const event of endedEvents) {
+      const awarded = await step.run(`award-event-bonus-${event.id}`, async () => {
+        if (!event.lpBonus || event.lpBonus <= 0) return 0;
+
+        const { prisma } = await import("@/lib/prisma");
+
+        // Get all participants who completed all quests for this event
+        const participants = await prisma.questParticipant.findMany({
+          where: { eventId: event.id, completed: true },
+          select: { userId: true },
+        });
+
+        let awardedCount = 0;
+
+        for (const p of participants) {
+          // Find member by userId
+          const member = await prisma.teamMember.findFirst({
+            where: { user: { id: p.userId } },
+            select: { id: true },
+          });
+          if (!member) continue;
+
+          // Award lpBonus to member
+          await prisma.lpAward.create({
+            data: {
+              memberId: member.id,
+              projectId: event.id, // LpAward.projectId is String, stores event id as reference
+              lpAmount: event.lpBonus,
+              expAmount: 0,
+              source: "event_bonus",
+              status: "approved", // auto-approved since it's a bonus
+            },
+          });
+
+          await prisma.teamMember.update({
+            where: { id: member.id },
+            data: { availableLp: { increment: event.lpBonus } },
+          });
+
+          awardedCount++;
+        }
+
+        // Deactivate the event
+        await prisma.companyEvent.update({
+          where: { id: event.id },
+          data: { isActive: false },
+        });
+
+        return awardedCount;
+      });
+
+      totalAwarded += awarded;
+    }
+
+    return { eventsProcessed: endedEvents.length, totalAwarded };
+  }
+);
+
 // ─── All Functions (export for Next.js handler) ────────────────────────────
 // Register all jobs here — src/app/api/inngest/route.ts imports this array.
 export const allJobs = [
@@ -393,4 +542,7 @@ export const allJobs = [
   lpMonthlyReport,
   pruneOldAuditLogs,
   warmCache,
+  // Quest/Event
+  questFrequencyReset,
+  eventLpBonusAward,
 ];

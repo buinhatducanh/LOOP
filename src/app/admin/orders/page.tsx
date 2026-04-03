@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useAdminTranslations } from "@/i18n/admin/useAdminTranslations";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "motion/react";
 import { qk } from "@/lib/query/provider";
@@ -8,7 +9,7 @@ import { adminApi } from "@/lib/api/client";
 import { DS, GRD } from "@/lib/design-tokens";
 import {
   X, CheckCircle2, Eye, ChevronRight, Search,
-  RefreshCw,
+  RefreshCw, Plus, Trash2, Edit2, AlertTriangle,
 } from "lucide-react";
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
@@ -32,17 +33,33 @@ type Order = {
   status: string;
   createdAt: string;
   package?: { title: string };
+  projectTitle?: string;
+  note?: string;
+};
+
+type OrderFormData = {
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  packageTitle: string;
+  totalAmount: string;
+  note: string;
 };
 
 function OrderRow({
   order,
   onTransition,
   onDetail,
+  onEdit,
+  onDelete,
 }: {
   order: Order;
   onTransition: (id: string, currentStatus: string) => void;
   onDetail: (order: Order) => void;
+  onEdit: (order: Order) => void;
+  onDelete: (order: Order) => void;
 }) {
+  const { t } = useAdminTranslations();
   const cfg = STATUS_CONFIG[order.status] ?? { label: order.status, color: DS.text4, bg: "transparent" };
 
   const fmt = (n: number | null | undefined) =>
@@ -86,6 +103,17 @@ function OrderRow({
 
       {/* Actions */}
       <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+        <button
+          onClick={() => onEdit(order)}
+          title="Sửa"
+          style={{
+            background: "rgba(129,140,248,0.1)", border: "1px solid rgba(129,140,248,0.3)",
+            borderRadius: 8, padding: "5px 8px", cursor: "pointer", color: DS.purple,
+            display: "flex", alignItems: "center",
+          }}
+        >
+          <Edit2 size={12} />
+        </button>
         {((): React.ReactNode => {
           const idx = STATUS_FLOW.indexOf(order.status);
           const next = STATUS_FLOW[idx + 1];
@@ -105,6 +133,17 @@ function OrderRow({
           );
         })()}
         <button
+          onClick={() => onDelete(order)}
+          title="Xóa"
+          style={{
+            background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)",
+            borderRadius: 8, padding: "5px 8px", cursor: "pointer", color: "#EF4444",
+            display: "flex", alignItems: "center",
+          }}
+        >
+          <Trash2 size={12} />
+        </button>
+        <button
           onClick={() => onDetail(order)}
           title="Chi tiết"
           style={{
@@ -120,7 +159,184 @@ function OrderRow({
   );
 }
 
+function OrderEditModal({
+  order,
+  onClose,
+  onSuccess,
+}: {
+  order: Order | null;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const { t } = useAdminTranslations();
+  const isEdit = !!order;
+  const [form, setForm] = useState<OrderFormData>({
+    customerName: order?.customerName ?? "",
+    customerEmail: order?.customerEmail ?? "",
+    customerPhone: order?.customerPhone ?? "",
+    packageTitle: order?.package?.title ?? "",
+    totalAmount: order?.totalAmount != null ? String(order.totalAmount) : "",
+    note: order?.note ?? "",
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.customerName.trim()) return setError("Tên khách hàng là bắt buộc");
+    if (!form.customerEmail.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.customerEmail)) {
+      return setError("Email không hợp lệ");
+    }
+    setSaving(true);
+    setError("");
+    try {
+      const payload = {
+        customerName: form.customerName.trim(),
+        customerEmail: form.customerEmail.trim(),
+        customerPhone: form.customerPhone.trim() || undefined,
+        packageTitle: form.packageTitle.trim() || undefined,
+        totalAmount: form.totalAmount ? Number(form.totalAmount) : undefined,
+        note: form.note.trim() || undefined,
+        ...(isEdit ? {} : { status: "pending_payment" }),
+      };
+      if (isEdit) {
+        await adminApi.put(`/api/admin/orders/${order!.id}`, payload);
+      } else {
+        await adminApi.post("/api/admin/orders", payload);
+      }
+      onSuccess();
+      onClose();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Lưu thất bại");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const inputStyle = {
+    width: "100%", background: DS.bg, border: `1px solid ${DS.border}`,
+    borderRadius: 10, padding: "9px 12px", color: DS.text, fontSize: 13,
+    outline: "none", boxSizing: "border-box" as const, fontFamily: DS.body,
+  };
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        onClick={onClose}
+        style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", backdropFilter: "blur(8px)", zIndex: 60, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
+      >
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
+          onClick={(e) => e.stopPropagation()}
+          style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 16, padding: 24, width: "100%", maxWidth: 480 }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+            <h3 style={{ color: DS.text, fontWeight: 700, fontSize: 18 }}>{isEdit ? t("orders.editTitle") : t("orders.createTitle")}</h3>
+            <button onClick={onClose} style={{ background: "none", border: "none", color: DS.text4, cursor: "pointer" }}>
+              <X size={18} />
+            </button>
+          </div>
+
+          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div>
+              <label style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.08em", display: "block", marginBottom: 4 }}>TÊN KHÁCH HÀNG *</label>
+              <input style={inputStyle} value={form.customerName} onChange={(e) => setForm(f => ({ ...f, customerName: e.target.value }))} placeholder="Nguyễn Văn A" required />
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div>
+                <label style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.08em", display: "block", marginBottom: 4 }}>EMAIL *</label>
+                <input style={inputStyle} type="email" value={form.customerEmail} onChange={(e) => setForm(f => ({ ...f, customerEmail: e.target.value }))} placeholder="khach@email.com" required />
+              </div>
+              <div>
+                <label style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.08em", display: "block", marginBottom: 4 }}>ĐIỆN THOẠI</label>
+                <input style={inputStyle} value={form.customerPhone} onChange={(e) => setForm(f => ({ ...f, customerPhone: e.target.value }))} placeholder="0901..." />
+              </div>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div>
+                <label style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.08em", display: "block", marginBottom: 4 }}>GÓI DỊCH VỤ</label>
+                <input style={inputStyle} value={form.packageTitle} onChange={(e) => setForm(f => ({ ...f, packageTitle: e.target.value }))} placeholder="Web Doanh Nghiệp" />
+              </div>
+              <div>
+                <label style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.08em", display: "block", marginBottom: 4 }}>TỔNG TIỀN (VNĐ)</label>
+                <input style={inputStyle} type="number" value={form.totalAmount} onChange={(e) => setForm(f => ({ ...f, totalAmount: e.target.value }))} placeholder="15000000" min="0" />
+              </div>
+            </div>
+            <div>
+              <label style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.08em", display: "block", marginBottom: 4 }}>GHI CHÚ</label>
+              <textarea style={{ ...inputStyle, resize: "vertical", minHeight: 72 }} value={form.note} onChange={(e) => setForm(f => ({ ...f, note: e.target.value }))} placeholder="Ghi chú thêm..." />
+            </div>
+
+            {error && (
+              <div style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8, padding: "8px 12px", color: "#EF4444", fontSize: 12 }}>
+                <AlertTriangle size={12} style={{ display: "inline", marginRight: 6 }} />{error}
+              </div>
+            )}
+
+            <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
+              <button type="button" onClick={onClose} style={{ flex: 1, padding: "10px", background: DS.bg, border: `1px solid ${DS.border}`, borderRadius: 10, color: DS.text3, cursor: "pointer", fontSize: 13 }}>
+                {t("common.cancel")}
+              </button>
+              <button type="submit" disabled={saving} style={{ flex: 1, padding: "10px", background: saving ? DS.text4 : GRD.primary, border: "none", borderRadius: 10, color: "#fff", fontWeight: 700, cursor: saving ? "not-allowed" : "pointer", fontSize: 13 }}>
+                {saving ? t("common.saving") : isEdit ? t("orders.saveChanges") : t("orders.createOrder")}
+              </button>
+            </div>
+          </form>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+function DeleteConfirmModal({
+  order,
+  onClose,
+  onConfirm,
+}: {
+  order: Order | null;
+  onClose: () => void;
+  onConfirm: () => void;
+}) {
+  const { t } = useAdminTranslations();
+  if (!order) return null;
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        onClick={onClose}
+        style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", backdropFilter: "blur(8px)", zIndex: 70, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
+      >
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+          onClick={(e) => e.stopPropagation()}
+          style={{ background: DS.bgCard, border: `1px solid rgba(239,68,68,0.3)`, borderRadius: 16, padding: 24, width: "100%", maxWidth: 380 }}
+        >
+          <div style={{ textAlign: "center", marginBottom: 16 }}>
+            <div style={{ width: 48, height: 48, borderRadius: "50%", background: "rgba(239,68,68,0.1)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px" }}>
+              <AlertTriangle size={24} style={{ color: "#EF4444" }} />
+            </div>
+            <h3 style={{ color: DS.text, fontWeight: 700, fontSize: 18, marginBottom: 6 }}>{t("orders.deleteTitle")}</h3>
+            <p style={{ color: DS.text4, fontSize: 13 }}>
+              {t("orders.deleteMsg", { name: order.customerName })}
+            </p>
+          </div>
+          <div style={{ display: "flex", gap: 10 }}>
+            <button onClick={onClose} style={{ flex: 1, padding: "10px", background: DS.bg, border: `1px solid ${DS.border}`, borderRadius: 10, color: DS.text3, cursor: "pointer", fontSize: 13 }}>
+              {t("common.cancel")}
+            </button>
+            <button onClick={onConfirm} style={{ flex: 1, padding: "10px", background: "#EF4444", border: "none", borderRadius: 10, color: "#fff", fontWeight: 700, cursor: "pointer", fontSize: 13 }}>
+              {t("common.delete")}
+            </button>
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
 function OrderDetailModal({ order, onClose }: { order: Order | null; onClose: () => void }) {
+  const { t } = useAdminTranslations();
   if (!order) return null;
   const cfg = STATUS_CONFIG[order.status] ?? { label: order.status, color: DS.text4, bg: "transparent" };
   const fmt = (n: number | null | undefined) =>
@@ -195,7 +411,7 @@ function OrderDetailModal({ order, onClose }: { order: Order | null; onClose: ()
             onClick={onClose}
             style={{ width: "100%", padding: "10px", background: GRD.primary, color: "#fff", border: "none", borderRadius: 10, fontWeight: 700, cursor: "pointer", fontSize: 13 }}
           >
-            Đóng
+            {t("common.close")}
           </button>
         </motion.div>
       </motion.div>
@@ -204,11 +420,14 @@ function OrderDetailModal({ order, onClose }: { order: Order | null; onClose: ()
 }
 
 export default function OrdersPage() {
+  const { t } = useAdminTranslations();
   const qc = useQueryClient();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [editOrder, setEditOrder] = useState<Order | null>(null);
+  const [deleteOrder, setDeleteOrder] = useState<Order | null>(null);
 
   const { data, isLoading, isFetching } = useQuery({
     queryKey: qk.orders({ page, limit: 20, search, status: statusFilter }),
@@ -231,6 +450,15 @@ export default function OrdersPage() {
       return res;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: qk.orders() }),
+    onError: (err: unknown) => { alert(err instanceof Error ? err.message : "Chuyển trạng thái thất bại"); },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await adminApi.delete(`/api/admin/orders/${id}`);
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: qk.orders() }); setDeleteOrder(null); },
+    onError: (err: unknown) => { alert(err instanceof Error ? err.message : "Xóa thất bại"); },
   });
 
   return (
@@ -238,17 +466,25 @@ export default function OrdersPage() {
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
         <div>
-          <h2 style={{ fontFamily: DS.heading, fontSize: 20, fontWeight: 800, color: DS.text, marginBottom: 2 }}>Quản lý đơn hàng</h2>
+          <h2 style={{ fontFamily: DS.heading, fontSize: 20, fontWeight: 800, color: DS.text, marginBottom: 2 }}>{t("orders.title")}</h2>
           <p style={{ color: DS.text4, fontSize: 12, fontFamily: DS.mono }}>
-            {pagination?.total ?? 0} đơn hàng
+            {pagination?.total ?? 0} {t("orders.orderCount")}
           </p>
         </div>
-        <button
-          onClick={() => qc.invalidateQueries({ queryKey: qk.orders({ page }) })}
-          style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 10, color: DS.text3, cursor: "pointer", fontSize: 12, fontFamily: DS.mono }}
-        >
-          <RefreshCw size={13} className={isFetching ? "animate-spin" : ""} /> Làm mới
-        </button>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button
+            onClick={() => setEditOrder({} as Order)}
+            style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", background: GRD.primary, border: "none", borderRadius: 10, color: "#fff", cursor: "pointer", fontSize: 12, fontFamily: DS.mono, fontWeight: 700 }}
+          >
+            <Plus size={13} /> {t("orders.create")}
+          </button>
+          <button
+            onClick={() => qc.invalidateQueries({ queryKey: qk.orders({ page }) })}
+            style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 10, color: DS.text3, cursor: "pointer", fontSize: 12, fontFamily: DS.mono }}
+          >
+            <RefreshCw size={13} className={isFetching ? "animate-spin" : ""} /> {t("common.refresh")}
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -268,7 +504,7 @@ export default function OrdersPage() {
           onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
           style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 10, padding: "8px 12px", color: DS.text3, fontSize: 13, outline: "none", cursor: "pointer", fontFamily: DS.mono }}
         >
-          <option value="">Tất cả trạng thái</option>
+          <option value="">{t("orders.allStatuses")}</option>
           {STATUS_FLOW.map((s) => (
             <option key={s} value={s}>{STATUS_CONFIG[s].label}</option>
           ))}
@@ -310,7 +546,7 @@ export default function OrdersPage() {
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {orders.length === 0 ? (
             <div style={{ textAlign: "center", padding: "3rem", color: DS.text4, fontSize: 14 }}>
-              Chưa có đơn hàng nào
+              {t("orders.empty")}
             </div>
           ) : (
             orders.map((order) => (
@@ -323,6 +559,8 @@ export default function OrdersPage() {
                   if (next) transition.mutate({ id, status: next });
                 }}
                 onDetail={setSelectedOrder}
+                onEdit={setEditOrder}
+                onDelete={setDeleteOrder}
               />
             ))
           )}
@@ -352,6 +590,20 @@ export default function OrdersPage() {
 
       {/* Detail modal */}
       <OrderDetailModal order={selectedOrder} onClose={() => setSelectedOrder(null)} />
+
+      {/* Edit/Create modal */}
+      <OrderEditModal
+        order={editOrder}
+        onClose={() => setEditOrder(null)}
+        onSuccess={() => qc.invalidateQueries({ queryKey: qk.orders() })}
+      />
+
+      {/* Delete confirm modal */}
+      <DeleteConfirmModal
+        order={deleteOrder}
+        onClose={() => setDeleteOrder(null)}
+        onConfirm={() => { if (deleteOrder) deleteMutation.mutate(deleteOrder.id); }}
+      />
     </div>
   );
 }

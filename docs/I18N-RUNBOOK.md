@@ -1,267 +1,311 @@
 # I18N Runbook — LOOP Solutions
 
-> **Mục đích:** Hướng dẫn vận hành i18n cho 5 ngôn ngữ (VI/EN/JA/KO/ZH).
-> **Cập nhật:** 2026-03-31 (All phases complete — docs aligned with FE-BE-INTEGRATION-STATUS.md)
+> **Version**: 1.1.0 · Updated: 2026-04-04
+> **Scope**: All 5 locales (`vi`, `en`, `ja`, `ko`, `zh`) · Public pages + Admin CMS
+> **Previous**: 2026-03-31 — v1.0 (Phases Fi–Fs complete)
 
 ---
 
-## 1) Tổng quan kiến trúc
+## Tổng quan
 
-### Ngôn ngữ được hỗ trợ
+LOOP có **2 hệ thống i18n riêng biệt**:
 
-| Locale | Code | Font | Strategy |
-|--------|------|------|----------|
-| Tiếng Việt | `vi` | default | pre-render |
-| English | `en` | default | pre-render |
-| 日本語 | `ja` | Noto Sans JP | SSR (lazy) |
-| 한국어 | `ko` | Noto Sans KR | SSR (lazy) |
-| 中文 | `zh` | Noto Sans SC | SSR (lazy) |
-
-### URL pattern
-- `/vi/...` — Tiếng Việt (mặc định)
-- `/en/...` — English
-- `/ja/...` — 日本語
-- `/ko/...` — 한국어
-- `/zh/...` — 中文
+| | Public Pages (`src/app/[locale]/`) | Admin CMS (`src/app/admin/`) |
+|---|---|---|
+| **Framework** | `next-intl` (`useTranslations`) | Custom React Context (`useAdminTranslations`) |
+| **Locale routing** | URL prefix `/vi/`, `/en/`, etc. | Cookie `NEXT_LOCALE` |
+| **Locale files** | `src/i18n/messages/{vi,en,ja,ko,zh}.json` | `src/i18n/admin/messages/{vi,en}.json` |
+| **Languages** | 5 (vi, en, ja, ko, zh) | 2 (vi, en) |
 
 ---
 
-## 2) Thêm ngôn ngữ mới (step-by-step)
+## 1. Cấu trúc thư mục
 
-### Bước 1 — Cập nhật routing
+```
+src/
+├── i18n/
+│   ├── messages/              # Public page translations (next-intl)
+│   │   ├── vi.json            # Vietnamese — source of truth
+│   │   ├── en.json            # English
+│   │   ├── ja.json           # Japanese
+│   │   ├── ko.json           # Korean
+│   │   └── zh.json           # Simplified Chinese
+│   ├── routing.ts             # next-intl locale config
+│   ├── request.ts             # next-intl server config
+│   └── admin/
+│       ├── AdminI18nProvider.tsx   # React context provider
+│       ├── useAdminTranslations.ts  # Hook export
+│       ├── admin-t.ts              # Server-side helper
+│       └── messages/
+│           ├── vi.json         # Vietnamese
+│           └── en.json         # English
+```
+
+---
+
+## 2. Thêm string mới (Public Pages)
+
+### 2.1 Luôn thêm vào `vi.json` TRƯỚC
+
+VI là source of truth — tất cả các locale khác phải match keys với VI.
+
+```json
+{
+  "newPage": {
+    "title": "Trang mới",
+    "subtitle": "Mô tả ngắn"
+  }
+}
+```
+
+### 2.2 Copy key → các locale khác
+
+Cùng key, khác value:
+
+| Key | vi | en | ja | ko | zh |
+|-----|----|----|----|----|----|
+| `common.save` | Lưu | Save | 保存 | 저장 | 保存 |
+| `common.yes` | Có | Yes | はい | 예 | 是 |
+
+### 2.3 Quy tắc ngôn ngữ
+
+| Ngôn ngữ | Charset | Font | Lưu ý |
+|-----------|---------|------|--------|
+| **VI** (Vietnamese) | Latin + diacritics | `Noto Serif JP` | Dùng `đ` thay vì `d`, `ơ` thay vì `o` |
+| **EN** (English) | Latin | `Inter`, `Cinzel` | Title Case cho menu labels |
+| **JA** (Japanese) | Hiragana + Katakana + Kanji | `Noto Serif JP`, `Cinzel` | ❌ KHÔNG Cyrillic, VN diacritics, Korean, Chinese |
+| **KO** (Korean) | Hangul | `Noto Serif JP`, `Inter` | ❌ KHÔNG Japanese Kanji, VN diacritics, Cyrillic |
+| **ZH** (Simplified Chinese) | Simplified Hanzi | `Noto Serif JP`, `Inter` | ✅ Dùng Simplified (简体) — không Traditional (繁體) |
+
+**Mixed-script bug phổ biến:**
+```json
+// ❌ SAI — mixed Japanese + Vietnamese
+"heroDesc": "IronからDiamondまでの27人のメンバー。全員헌신적인 전문가입니다."
+
+// ✅ ĐÚNG — pure Japanese
+"heroDesc": "IronからDiamondまでの27人のメンバー。全員，真摯なプロフェッショナルです。"
+```
+
+### 2.4 Dùng trong component (Public Pages)
+
 ```typescript
-// src/i18n/routing.ts
-export const locales = ['vi', 'en', 'ja', 'ko', 'zh'] as const;
-// Thêm locale mới vào đây
-export type Locale = (typeof locales)[number];
+// Public pages — dùng useTranslations từ next-intl
+import { useTranslations } from "next-intl";
+
+export default function MyPage() {
+  const t = useTranslations("newPage");
+  return <h1>{t("title")}</h1>;
+}
 ```
 
-### Bước 2 — Thêm message file
-```bash
-# Tạo file messages mới (copy từ en.json làm baseline)
-cp src/messages/en.json src/messages/THREE_LETTER_CODE.json
+### 2.5 Interpolation
+
+```json
+// vi.json
+"orderCount": "{n} đơn hàng"
 ```
 
-### Bước 3 — Cập nhật middleware
 ```typescript
-// src/middleware.ts
-// Thêm locale vào danh sách supported
+// Component
+t("orderCount", { n: 42 })  // → "42 đơn hàng"
 ```
 
-### Bước 4 — Cập nhật font loading
+---
+
+## 3. Thêm string mới (Admin CMS)
+
+Admin chỉ hỗ trợ **VI** và **EN** (2 locale).
+
+### 3.1 Thêm vào `src/i18n/admin/messages/vi.json`
+
+```json
+{
+  "orders": {
+    "title": "Quản lý đơn hàng",
+    "titleCount": "{n} đơn hàng",
+    "formBtnSave": "Lưu thay đổi"
+  }
+}
+```
+
+### 3.2 Copy key → `en.json`
+
+```json
+{
+  "orders": {
+    "title": "Order Management",
+    "titleCount": "{n} orders",
+    "formBtnSave": "Save Changes"
+  }
+}
+```
+
+### 3.3 Dùng trong component
+
 ```typescript
-// src/lib/fonts.ts
-// Thêm lazy load cho font mới
+// Admin pages — dùng custom hook
+"use client";
+import { useAdminTranslations } from "@/i18n/admin/useAdminTranslations";
+
+export default function OrdersPage() {
+  const { t } = useAdminTranslations();
+  return <h2>{t("orders.title")}</h2>;
+}
 ```
 
-### Bước 5 — Thêm font preload cho SEO
+### 3.4 Server Components (Admin)
+
 ```typescript
-// src/app/[locale]/layout.tsx
-// Thêm <link rel="preload"> cho font
-```
+import { getAdminTranslations } from "@/i18n/admin/admin-t";
 
-### Bước 6 — Cập nhật sitemap + hreflang
-- Sitemap tự động sinh cho tất cả locales
-- Kiểm tra `<link rel="alternate" hreflang>` trên mỗi page
-
-### Bước 7 — Cập nhật docs
-- [ ] CLAUDE.md — thêm locale vào danh sách
-- [ ] I18N-STATUS.md — cập nhật coverage
-- [ ] I18N-RUNBOOK.md — ghi nhận locale mới
-
----
-
-## 3) Cập nhật translation
-
-### Cập nhật UI strings (message files)
-```bash
-# Message files location
-src/messages/vi.json
-src/messages/en.json
-src/messages/ja.json
-src/messages/ko.json
-src/messages/zh.json
-```
-
-**Quy tắc:**
-- VI và EN là source of truth — cập nhật 2 file này trước
-- JA/KO/ZH: dùng AI-assisted translation → human review → merge
-- Không merge nếu thiếu key (Next-intl fallback về source locale)
-- Key mới = phải có value cho tất cả 5 locales trước khi release
-
-### Workflow khuyến nghị
-1. Thêm/chỉnh sửa key trong `vi.json` + `en.json`
-2. Chạy script extract → sync sang JA/KO/ZH (DeepL/Claude assisted)
-3. Human review JA/KO/ZH
-4. PR với diff đầy đủ 5 files
-
-### Kiểm tra translation coverage
-```bash
-# Build sẽ warn nếu có key không khớp
-npm run build
-
-# Hoặc check thủ công
-diff <(jq -r 'keys[]' src/messages/vi.json | sort) \
-     <(jq -r 'keys[]' src/messages/en.json | sort)
+export default async function SomePage() {
+  const { t } = await getAdminTranslations();
+  return <h2>{t("orders.title")}</h2>;
+}
 ```
 
 ---
 
-## 4) Quản lý content CMS (Admin)
+## 4. Namespace convention
 
-### Các trường i18n trong Admin
+### Public pages (`src/i18n/messages/`)
 
-#### Services (dịch vụ)
-- `title` — Tiếng Việt (source)
-- `titleEn`, `titleJa`, `titleKo`, `titleZh` — bản dịch
-- `shortDescription` / `shortDescriptionEn/Ja/Ko/Zh`
+```
+HomePage.*      → Home.tsx
+Academy.*       → AcademyPage
+BookingPage.*   → BookingWizard
+Navigation.*    → Navbar.tsx
+Footer.*        → Footer.tsx
+seo.*           → Meta tags
+landing.*       → LandingPage
+team.*          → Home.tsx (team section)
+errors.*        → Error boundaries
+```
 
-#### Portfolio (dự án)
-- `title` / `titleEn/Ja/Ko/Zh`
-- `tag` / `tagEn/Ja/Ko/Zh`
-- `description` (challenge) / `descriptionEn/Ja/Ko/Zh`
-- `results` / `resultsEn/Ja/Ko/Zh`
-- `solution` / `solutionEn/Ja/Ko/Zh`
+### Admin pages (`src/i18n/admin/messages/`)
 
-#### Blog Posts
-- `title` / `titleEn/Ja/Ko/Zh`
-- `content` / `contentEn/Ja/Ko/Zh`
+```
+sidebar.groups.* / sidebar.nav.*  → AdminSidebar.tsx
+common.*                      → Reusable across all admin pages
+kpis.*                        → Admin dashboard KPIs
+orders.* / services.* / blog.* / etc. → Page-specific
+topbar.*                      → AdminTopbar.tsx
+settings.*                    → Settings page
+```
 
-#### Team Members
-- `name` / `nameEn/Ja/Ko/Zh`
-- `role` / `roleEn/Ja/Ko/Zh`
-- `bio` / `bioEn/Ja/Ko/Zh`
-- `shortBio` / `shortBioEn/Ja/Ko/Zh`
+---
 
-### Fallback strategy
-Nếu trường dịch tương ứng để trống → hệ thống tự động hiển thị **Tiếng Việt** (vi).
+## 5. String interpolation pattern
 
-**Điều kiện trigger fallback:**
+### Count interpolation
+```json
+"titleCount": "{n} đơn hàng"
+```
+```tsx
+{t("orders.titleCount", { n: total })}
+```
+
+### Name interpolation
+```json
+"confirmDelete": "Xóa \"{name}\"?"
+```
+```tsx
+{t("orders.confirmDelete", { name: customerName })}
+```
+
+### KHÔNG interpolate
+- User input placeholders: `placeholder="Nhập email..."` — giữ nguyên hint
+- Internal IDs: `"Mã đơn: #12345"` — dynamic, không cần translate
+- Code/markdown content: code snippets, URLs, slugs
+
+---
+
+## 6. Translation workflow
+
+```
+Developer thêm feature
+  → vi.json → thêm key + value (VI)
+  → Dùng t("namespace.key") trong component
+  → npx tsc --noEmit ✅
+
+Translator thêm locale khác
+  → Mở locale file
+  → Copy key từ vi.json
+  → Translate VALUE giữ nguyên KEY
+  → Tuân thủ quy tắc ngôn ngữ (Section 2.3)
+
+Review
+  → npx tsc --noEmit ✅
+  → Kiểm tra mixed-script
+  → Verify locale switcher trên dev server
+```
+
+---
+
+## 7. Locale switcher
+
+### Public pages (next-intl)
+
 ```typescript
-// Backend: getLocalizedField() trong src/lib/i18n/localization.ts
-// Nếu field vi = null/undefined → fallback vào trường gốc
+import { useRouter, usePathname } from "next/navigation";
+import { routing } from "@/i18n/routing";
+
+// LocaleSwitcher component
+routing.locales.forEach(locale => {
+  router.replace(pathname, { locale }); // → /vi/..., /en/...
+});
 ```
 
-### Admin translate tab workflow
-1. Admin mở tab **Dịch thuật** trong modal chỉnh sửa
-2. Chọn locale (EN/JA/KO/ZH)
-3. Nhập bản dịch cho từng trường
-4. Click **Lưu bản dịch** → gọi `PUT /api/admin/{resource}/[id]`
-5. User website tự động nhận nội dung mới (không cần deploy)
+### Admin pages (AdminI18nProvider)
 
----
-
-## 5) Monitoring translation quality
-
-### Metrics cần theo dõi
-
-| Metric | Target | Alert threshold |
-|--------|--------|---------------|
-| Translation coverage (JA/KO/ZH) | >= 90% | < 70% |
-| Missing key count | 0 | > 5 |
-| Build warnings | 0 | any |
-
-### Công thức coverage
-```
-Coverage = (Số trường có nội dung / Tổng số trường i18n) × 100%
-```
-
-### Dashboard
-- Kiểm tra **Admin → Translate tab** → Coverage badge trên mỗi item
-- Coverage badge màu xanh = đã fill đầy đủ, màu cam = thiếu
-
----
-
-## 6) Xử lý missing translation
-
-### Khi user truy cập page không có translation
-1. **Backend fallback:** `getLocalizedField()` trả về giá trị VI
-2. **Frontend fallback:** UI strings fallback về `vi.json` key
-3. **Không crash** — site vẫn render được
-
-### Fast-fix missing translation (hotfix)
-1.定位 thiếu key: mở **Admin → Translate tab** của item liên quan
-2. Nhập nội dung cho locale thiếu
-3. Save → xác nhận user site cập nhật ngay
-
----
-
-## 7) API i18n reference
-
-### Public APIs với `?lang=` param
-```
-GET /api/services?lang=vi|en|ja|ko|zh
-GET /api/services/[slug]?lang=vi|en|ja|ko|zh
-GET /api/projects?lang=vi|en|ja|ko|zh
-GET /api/projects/[slug]?lang=vi|en|ja|ko|zh
-GET /api/team?lang=vi|en|ja|ko|zh
-GET /api/team/[slug]?lang=vi|en|ja|ko|zh
-GET /api/testimonials?lang=vi|en|ja|ko|zh
-GET /api/expertises?lang=vi|en|ja|ko|zh
-GET /api/blog-posts?lang=vi|en|ja|ko|zh
-```
-
-### Backend helpers
 ```typescript
-// src/lib/i18n/localization.ts
-getLocalizedField(record, fieldName, locale)
-// → Trả về localized field hoặc VI fallback
-
-parseLocaleParam(searchParams)
-// → Trích xuất locale từ query params, default = 'vi'
+const { locale, setLocale } = useAdminTranslations();
+setLocale("en"); // → document.cookie = "NEXT_LOCALE=en; path=/; max-age=31536000"
 ```
 
 ---
 
-## 8) Glossary (key terms)
+## 8. Known issues & fixes (2026-04-04)
 
-| VI | EN | JA | KO | ZH |
-|----|----|----|----|-----|
-| Dịch vụ | Services | サービス | 서비스 | 服务 |
-| Dự án | Projects | プロジェクト | 프로젝트 | 项目 |
-| Bài viết | Blog Posts | ブログ | 블로그 | 博客 |
-| Đội ngũ | Team | チーム | 팀 | 团队 |
-| Giá | Pricing | 料金 | 가격 | 价格 |
-| Liên hệ | Contact | お問い合わせ | 연락처 | 联系我们 |
-| Chính sách bảo mật | Privacy Policy | プライバシーポリシー | 개인정보 처리방침 | 隐私政策 |
-| Điều khoản sử dụng | Terms of Service | 利用規約 | 이용약관 | 服务条款 |
+| Issue | File | Fix |
+|-------|------|-----|
+| JA mixed VN (헌신적인) | `ja.json:654` | → 真摯な |
+| JA Chinese char (不接受) | `ja.json:668` | → 就業不可 |
+| JA "的人才" | `ja.json:663` | → 才能 |
+| JA "ホールオブ Fame" | `ja.json:632,660` | → ホール・オブ・フェーム |
+| KO "저희는" vs "우리는" | `ko.json:741` | → Polite form ✅ |
+| ZH all Simplified Chinese | `zh.json` | → Verified clean |
 
 ---
 
-## 9) Troubleshooting
+## 9. Thêm locale mới
 
-### Symptom: Page render tiếng Anh thay vì tiếng Việt
-- Nguyên nhân: Cookie `NEXT_LOCALE=en`
-- Fix: Xóa cookie → reload page
-
-### Symptom: Font CJK không load
-- Nguyên nhân: Font file chưa được generate hoặc lazy load chưa trigger
-- Fix: Kiểm tra `src/lib/fonts.ts` lazy loading config
-
-### Symptom: hreflang tags sai
-- Nguyên nhân: Middleware chưa detect đúng locale
-- Fix: Kiểm tra `src/middleware.ts` locale detection order
-
-### Symptom: Translation tab không hiển thị coverage đúng
-- Nguyên nhân: State chưa sync sau khi save
-- Fix: Refresh page → kiểm tra API response
+1. Tạo `src/i18n/messages/{new}.json` — copy structure từ `vi.json`
+2. Translate tất cả VALUE (giữ nguyên KEY)
+3. Thêm vào `src/i18n/routing.ts`: `locales: ["vi", "en", "ja", "ko", "zh", "{new}"]`
+4. Thêm locale switcher option trong Navbar
+5. Chạy `npx tsc --noEmit` ✅
 
 ---
 
-## 10) Quick reference commands
+## 10. Quick Reference
 
-```bash
-# Check build
-npm run build
+```
+Thêm text mới?
+  1. vi.json → key + value (VI)
+  2. en.json → cùng key, translate VALUE
+  3. ja/ko/zh → translate (script rules)
 
-# Type check
-npx tsc --noEmit
+Sửa text?
+  1. Tìm trong vi.json → sửa VI
+  2. Copy change sang EN, JA, KO, ZH
 
-# Verify all locales have same keys
-comm -12 <(jq -r 'keys[]' src/messages/vi.json | sort) \
-          <(jq -r 'keys[]' src/messages/en.json | sort) | wc -l
+Lỗi mixed-script?
+  JA: ❌ Cyrillic, VN diacritics, Korean, Chinese
+  KO: ❌ Japanese Kanji, VN diacritics, Cyrillic
+  ZH: ❌ Traditional (繁體)
 
-# Test API locale
-curl "http://localhost:3000/api/services?lang=ja"
-curl "http://localhost:3000/api/projects?lang=ko"
+Component mới?
+  Public → useTranslations("namespace")
+  Admin → useAdminTranslations() → t("namespace.key")
 ```

@@ -8,10 +8,11 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import { adminApi } from "@/lib/api/client";
-import { DS } from "@/lib/design-tokens";
-import { FileText, RefreshCw, Plus, Check, Clock, XCircle } from "lucide-react";
+import { DS, GRD } from "@/lib/design-tokens";
+import { useAdminTranslations } from "@/i18n/admin/useAdminTranslations";
+import { FileText, RefreshCw, Plus, Check, Clock, XCircle, X, AlertTriangle } from "lucide-react";
 
 const fmtVND = (n: number) =>
   new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(n);
@@ -62,8 +63,89 @@ type QuoteRequest = {
   createdAt: string;
 };
 
+const WORKFLOW_ACTIONS: Record<string, Record<string, string>> = {
+  draft:     { next: "pending", label: "Gửi duyệt" },
+  pending:   { next: "approved", label: "Duyệt" },
+  approved:  { next: "sent", label: "Gửi khách" },
+  sent:      { next: "signed", label: "Đã ký" },
+};
+
+function QuoteCreateModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
+  const { t } = useAdminTranslations();
+  const [form, setForm] = useState({
+    title: "", customerName: "", customerEmail: "", companyName: "",
+    phone: "", totalAmount: "", validUntil: "",
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const inp = { width: "100%", background: DS.bg, border: `1px solid ${DS.border}`, borderRadius: 8, padding: "8px 12px", color: DS.text, fontSize: 13, outline: "none", boxSizing: "border-box" as const, fontFamily: DS.body };
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.title.trim()) return setError(t("quotation.errTitleRequired"));
+    setSaving(true); setError("");
+    try {
+      await adminApi.post("/api/admin/quotes", {
+        title: form.title.trim(),
+        customerName: form.customerName.trim() || undefined,
+        customerEmail: form.customerEmail.trim() || undefined,
+        companyName: form.companyName.trim() || undefined,
+        phone: form.phone.trim() || undefined,
+        totalAmount: form.totalAmount ? Number(form.totalAmount) : 0,
+        validUntil: form.validUntil || undefined,
+        status: "draft",
+      });
+      onSuccess(); onClose();
+    } catch (err: unknown) { setError(err instanceof Error ? err.message : t("quotation.errCreateFailed")); }
+    finally { setSaving(false); }
+  };
+  return (
+    <AnimatePresence>
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}
+        style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", backdropFilter: "blur(8px)", zIndex: 60, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+        <motion.div initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
+          onClick={e => e.stopPropagation()}
+          style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 16, padding: 24, width: "100%", maxWidth: 460 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 20 }}>
+            <h3 style={{ color: DS.text, fontWeight: 700, fontSize: 18 }}>{t("quotation.formTitle")}</h3>
+            <button onClick={onClose} style={{ background: "none", border: "none", color: DS.text4, cursor: "pointer" }}><X size={18} /></button>
+          </div>
+          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div><label style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, display: "block", marginBottom: 4 }}>{t("quotation.formQuoteTitle")}</label>
+              <input style={inp} value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Báo giá website công ty ABC" /></div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              <div><label style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, display: "block", marginBottom: 4 }}>{t("quotation.formCustomerName")}</label>
+                <input style={inp} value={form.customerName} onChange={e => setForm(f => ({ ...f, customerName: e.target.value }))} placeholder="Nguyễn Văn A" /></div>
+              <div><label style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, display: "block", marginBottom: 4 }}>{t("quotation.formEmail")}</label>
+                <input style={inp} value={form.customerEmail} onChange={e => setForm(f => ({ ...f, customerEmail: e.target.value }))} placeholder="khach@company.vn" /></div>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              <div><label style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, display: "block", marginBottom: 4 }}>{t("quotation.formCompany")}</label>
+                <input style={inp} value={form.companyName} onChange={e => setForm(f => ({ ...f, companyName: e.target.value }))} placeholder="Công ty ABC" /></div>
+              <div><label style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, display: "block", marginBottom: 4 }}>{t("quotation.formPhone")}</label>
+                <input style={inp} value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} placeholder="0901..." /></div>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              <div><label style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, display: "block", marginBottom: 4 }}>{t("quotation.formValue")}</label>
+                <input style={inp} type="number" value={form.totalAmount} onChange={e => setForm(f => ({ ...f, totalAmount: e.target.value }))} placeholder="15000000" /></div>
+              <div><label style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, display: "block", marginBottom: 4 }}>{t("quotation.formDeadline")}</label>
+                <input style={inp} type="date" value={form.validUntil} onChange={e => setForm(f => ({ ...f, validUntil: e.target.value }))} /></div>
+            </div>
+            {error && <div style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8, padding: "8px 12px", color: "#EF4444", fontSize: 12 }}><AlertTriangle size={12} style={{ display: "inline", marginRight: 6 }} />{error}</div>}
+            <div style={{ display: "flex", gap: 10 }}>
+              <button type="button" onClick={onClose} style={{ flex: 1, padding: "10px", background: DS.bg, border: `1px solid ${DS.border}`, borderRadius: 10, color: DS.text3, cursor: "pointer", fontSize: 13 }}>{t("quotation.formBtnCancel")}</button>
+              <button type="submit" disabled={saving} style={{ flex: 1, padding: "10px", background: saving ? DS.text4 : GRD.primary, border: "none", borderRadius: 10, color: "#fff", fontWeight: 700, cursor: saving ? "not-allowed" : "pointer", fontSize: 13 }}>{saving ? t("quotation.formBtnCreating") : t("quotation.formBtnCreate")}</button>
+            </div>
+          </form>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
 export default function QuotationPage() {
+  const { t } = useAdminTranslations();
   const [tab, setTab] = useState<"quotes" | "requests">("quotes");
+  const [showCreate, setShowCreate] = useState(false);
   const qc = useQueryClient();
 
   const { data: quotesData, isLoading: quotesLoading, isFetching: quotesFetching } = useQuery({
@@ -85,16 +167,26 @@ export default function QuotationPage() {
   const pendingQuotes = quotes.filter(q => q.status === "pending" || q.status === "sent");
   const pendingValue = pendingQuotes.reduce((s, q) => s + (q.totalAmount ?? 0), 0);
 
+  const workflowMutation = useMutation({
+    mutationFn: async ({ id, nextStatus }: { id: string; nextStatus: string }) => {
+      await adminApi.put(`/api/admin/quotes/${id}`, { status: nextStatus });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin", "quotation", "quotes"] });
+    },
+    onError: (err: unknown) => { alert(err instanceof Error ? err.message : "Cập nhật thất bại"); },
+  });
+
   return (
     <div>
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
         <div>
           <h2 style={{ fontFamily: DS.heading, fontSize: 20, fontWeight: 800, color: DS.text, margin: "0 0 4px" }}>
-            Báo giá
+            {t("quotation.title")}
           </h2>
           <p style={{ color: DS.text4, fontSize: 12, fontFamily: DS.mono, margin: 0 }}>
-            {quotes.length} báo giá · {requests.length} yêu cầu
+            {quotes.length} {t("quotation.tabQuotes")} · {requests.length} {t("quotation.tabRequests")}
           </p>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
@@ -105,10 +197,13 @@ export default function QuotationPage() {
             }}
             style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 14px", background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 10, color: DS.text3, cursor: "pointer", fontSize: 12, fontFamily: DS.mono }}
           >
-            <RefreshCw size={13} className={quotesFetching ? "animate-spin" : ""} /> Làm mới
+            <RefreshCw size={13} className={quotesFetching ? "animate-spin" : ""} /> {t("quotation.refreshBtn")}
           </button>
-          <button style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 16px", background: DS.blue, color: "#fff", border: "none", borderRadius: 10, cursor: "pointer", fontSize: 12, fontWeight: 600, fontFamily: DS.mono }}>
-            <Plus size={13} /> Tạo báo giá
+          <button
+            onClick={() => setShowCreate(true)}
+            style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 16px", background: DS.blue, color: "#fff", border: "none", borderRadius: 10, cursor: "pointer", fontSize: 12, fontWeight: 600, fontFamily: DS.mono }}
+          >
+            <Plus size={13} /> {t("quotation.createBtn")}
           </button>
         </div>
       </div>
@@ -117,7 +212,7 @@ export default function QuotationPage() {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: "1rem", marginBottom: "1.5rem" }}>
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 12, padding: "1rem" }}>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.75rem" }}>
-            <span style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.1em", textTransform: "uppercase" }}>Tổng báo giá</span>
+            <span style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.1em", textTransform: "uppercase" }}>{t("quotation.kpiTotal")}</span>
             <FileText size={14} style={{ color: DS.blue }} />
           </div>
           <div style={{ color: DS.text, fontSize: "1.5rem", fontWeight: 700, fontFamily: DS.heading }}>{fmtB(totalQuoteValue)}</div>
@@ -125,50 +220,50 @@ export default function QuotationPage() {
         </motion.div>
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 12, padding: "1rem" }}>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.75rem" }}>
-            <span style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.1em", textTransform: "uppercase" }}>Đã ký</span>
+            <span style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.1em", textTransform: "uppercase" }}>{t("quotation.kpiSigned")}</span>
             <Check size={14} style={{ color: DS.green }} />
           </div>
           <div style={{ color: DS.green, fontSize: "1.5rem", fontWeight: 700, fontFamily: DS.heading }}>{fmtB(approvedValue)}</div>
-          <div style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono }}>{approvedQuotes.length} báo giá</div>
+          <div style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono }}>{approvedQuotes.length} {t("quotation.tabQuotes")}</div>
         </motion.div>
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 12, padding: "1rem" }}>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.75rem" }}>
-            <span style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.1em", textTransform: "uppercase" }}>Chờ duyệt</span>
+            <span style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.1em", textTransform: "uppercase" }}>{t("quotation.kpiPending")}</span>
             <Clock size={14} style={{ color: DS.amber }} />
           </div>
           <div style={{ color: DS.amber, fontSize: "1.5rem", fontWeight: 700, fontFamily: DS.heading }}>{fmtB(pendingValue)}</div>
-          <div style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono }}>{pendingQuotes.length} báo giá</div>
+          <div style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono }}>{pendingQuotes.length} {t("quotation.tabQuotes")}</div>
         </motion.div>
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 12, padding: "1rem" }}>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.75rem" }}>
-            <span style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.1em", textTransform: "uppercase" }}>Yêu cầu mới</span>
+            <span style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.1em", textTransform: "uppercase" }}>{t("quotation.kpiNewRequests")}</span>
             <XCircle size={14} style={{ color: DS.purple }} />
           </div>
           <div style={{ color: DS.purple, fontSize: "1.5rem", fontWeight: 700, fontFamily: DS.heading }}>{requests.length}</div>
-          <div style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono }}>từ khách hàng</div>
+          <div style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono }}>{t("quotation.kpiFrom")}</div>
         </motion.div>
       </div>
 
       {/* Tabs */}
       <div style={{ display: "flex", gap: 4, marginBottom: "1rem", borderBottom: `1px solid ${DS.border}` }}>
-        {([["quotes", "Báo giá"], ["requests", "Yêu cầu"]] as const).map(([t, label]) => (
+        {([["quotes", "quotes"], ["requests", "requests"]] as const).map(([tabKey, labelKey]) => (
           <button
-            key={t}
-            onClick={() => setTab(t)}
+            key={tabKey}
+            onClick={() => setTab(tabKey as "quotes" | "requests")}
             style={{
               padding: "8px 16px",
               background: "none",
               border: "none",
-              borderBottom: `2px solid ${tab === t ? DS.blue : "transparent"}`,
-              color: tab === t ? DS.blue : DS.text4,
+              borderBottom: `2px solid ${tab === tabKey ? DS.blue : "transparent"}`,
+              color: tab === tabKey ? DS.blue : DS.text4,
               fontSize: 13,
               fontFamily: DS.mono,
               cursor: "pointer",
               marginBottom: -1,
-              fontWeight: tab === t ? 600 : 400,
+              fontWeight: tab === tabKey ? 600 : 400,
             }}
           >
-            {label}
+            {t(`quotation.tab${labelKey.charAt(0).toUpperCase() + labelKey.slice(1) as "Quotes" | "Requests"}`)}
           </button>
         ))}
       </div>
@@ -181,13 +276,13 @@ export default function QuotationPage() {
               <div style={{ width: 32, height: 32, border: `2px solid ${DS.border}`, borderTop: `2px solid ${DS.blue}`, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
             </div>
           ) : quotes.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "3rem", color: DS.text4 }}>Chưa có báo giá</div>
+            <div style={{ textAlign: "center", padding: "3rem", color: DS.text4 }}>{t("quotation.emptyStateQuotes")}</div>
           ) : (
             <div style={{ overflowX: "auto" }}>
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr style={{ borderBottom: `1px solid ${DS.border}` }}>
-                    {["Mã BG", "Tiêu đề", "Khách hàng", "Giá trị", "Hạn", "Trạng thái"].map(h => (
+                    {[t("quotation.colId"), t("quotation.colTitle"), t("quotation.colCustomer"), t("quotation.colValue"), t("quotation.colDeadline"), t("quotation.colStatus")].map(h => (
                       <th key={h} style={{ textAlign: "left", padding: "10px 16px", color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.1em", textTransform: "uppercase" }}>{h}</th>
                     ))}
                   </tr>
@@ -195,6 +290,7 @@ export default function QuotationPage() {
                 <tbody>
                   {quotes.map(q => {
                     const cfg = STATUS_CFG[q.status] ?? { label: q.status, color: DS.text4, bg: "transparent" };
+                    const nextAction = WORKFLOW_ACTIONS[q.status];
                     return (
                       <tr key={q.id} style={{ borderBottom: `1px solid ${DS.border}` }}>
                         <td style={{ padding: "12px 16px", color: DS.blue, fontSize: 12, fontFamily: DS.mono, fontWeight: 600 }}>{q.quoteNumber}</td>
@@ -206,7 +302,16 @@ export default function QuotationPage() {
                         <td style={{ padding: "12px 16px", color: DS.green, fontSize: 12, fontFamily: DS.mono, fontWeight: 700 }}>{fmtVND(q.totalAmount)}</td>
                         <td style={{ padding: "12px 16px", color: DS.text4, fontSize: 12, fontFamily: DS.mono }}>{fmtDate(q.validUntil)}</td>
                         <td style={{ padding: "12px 16px" }}>
-                          <span style={{ background: cfg.bg, color: cfg.color, padding: "2px 10px", borderRadius: 9999, fontSize: 11, fontFamily: DS.mono, fontWeight: 600 }}>{cfg.label}</span>
+                          <span style={{ background: cfg.bg, color: cfg.color, padding: "2px 10px", borderRadius: 9999, fontSize: 11, fontFamily: DS.mono, fontWeight: 600 }}>{t(`quotation.status${q.status.charAt(0).toUpperCase() + q.status.slice(1)}` as `quotation.status${string}`)}</span>
+                          {nextAction && (
+                            <button
+                              onClick={() => workflowMutation.mutate({ id: q.id, nextStatus: nextAction.next })}
+                              disabled={workflowMutation.isPending}
+                              style={{ marginLeft: 6, padding: "2px 8px", background: "rgba(59,130,246,0.1)", border: "1px solid rgba(59,130,246,0.3)", borderRadius: 6, color: DS.blue, cursor: "pointer", fontSize: 10, fontFamily: DS.mono }}
+                            >
+                              {t(`quotation.action${nextAction.label.charAt(0).toUpperCase() + nextAction.label.slice(1).replace(/\s/g, "")}` as `quotation.action${string}`)}
+                            </button>
+                          )}
                         </td>
                       </tr>
                     );
@@ -226,13 +331,13 @@ export default function QuotationPage() {
               <div style={{ width: 32, height: 32, border: `2px solid ${DS.border}`, borderTop: `2px solid ${DS.blue}`, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
             </div>
           ) : requests.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "3rem", color: DS.text4 }}>Chưa có yêu cầu báo giá</div>
+            <div style={{ textAlign: "center", padding: "3rem", color: DS.text4 }}>{t("quotation.emptyStateRequests")}</div>
           ) : (
             <div style={{ overflowX: "auto" }}>
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr style={{ borderBottom: `1px solid ${DS.border}` }}>
-                    {["Khách hàng", "Email", "Công ty", "Dịch vụ", "Ngày", "Trạng thái"].map(h => (
+                    {[t("quotation.colCustomer"), t("quotation.colEmail"), t("quotation.colCompany"), t("quotation.colService"), t("quotation.colDate"), t("quotation.colStatus")].map(h => (
                       <th key={h} style={{ textAlign: "left", padding: "10px 16px", color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.1em", textTransform: "uppercase" }}>{h}</th>
                     ))}
                   </tr>
@@ -247,7 +352,7 @@ export default function QuotationPage() {
                       <td style={{ padding: "12px 16px", color: DS.text4, fontSize: 12, fontFamily: DS.mono }}>{fmtDate(r.createdAt)}</td>
                       <td style={{ padding: "12px 16px" }}>
                         <span style={{ background: STATUS_CFG[r.status]?.bg ?? "transparent", color: STATUS_CFG[r.status]?.color ?? DS.text4, padding: "2px 10px", borderRadius: 9999, fontSize: 11, fontFamily: DS.mono, fontWeight: 600 }}>
-                          {STATUS_CFG[r.status]?.label ?? r.status}
+                          {t(`quotation.status${r.status.charAt(0).toUpperCase() + r.status.slice(1)}` as `quotation.status${string}`)}
                         </span>
                       </td>
                     </tr>
@@ -257,6 +362,13 @@ export default function QuotationPage() {
             </div>
           )}
         </div>
+      )}
+
+      {showCreate && (
+        <QuoteCreateModal
+          onClose={() => setShowCreate(false)}
+          onSuccess={() => { qc.invalidateQueries({ queryKey: ["admin", "quotation", "quotes"] }); }}
+        />
       )}
     </div>
   );

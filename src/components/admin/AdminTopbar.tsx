@@ -9,6 +9,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/app/store/authStore";
+import { useAdminTranslations } from "@/i18n/admin/useAdminTranslations";
 import {
   Bell,
   LogOut,
@@ -23,6 +24,7 @@ interface AdminTopbarProps {
 }
 
 export function AdminTopbar({ userName, userEmail, userAvatar }: AdminTopbarProps) {
+  const { t } = useAdminTranslations();
   const router = useRouter();
   const { logout } = useAuthStore();
   const [showNotif, setShowNotif] = useState(false);
@@ -70,7 +72,7 @@ export function AdminTopbar({ userName, userEmail, userAvatar }: AdminTopbarProp
         />
         <input
           type="text"
-          placeholder="Tìm kiếm nhanh..."
+          placeholder={t("topbar.searchPlaceholder")}
           className="figma-input"
           style={{
             paddingLeft: "2rem",
@@ -234,7 +236,7 @@ export function AdminTopbar({ userName, userEmail, userAvatar }: AdminTopbarProp
               }}
             >
               <LogOut size={14} />
-              Đăng xuất
+              {t("topbar.logout")}
             </button>
           </div>
         )}

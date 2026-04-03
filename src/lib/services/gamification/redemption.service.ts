@@ -12,6 +12,7 @@
  */
 
 import { prisma } from "@/lib/prisma";
+import { syncRankFields } from "@/lib/rank/xp";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -134,6 +135,9 @@ export async function redeemLp(params: RedeemParams): Promise<RedeemResult> {
 
       return { redemption, newBalance };
     });
+
+    // P2-8: After LP spend, sync rank fields so level/XP are recalculated
+    await syncRankFields(memberId);
 
     return {
       ok: true,

@@ -8,6 +8,14 @@ const nextConfig: NextConfig = {
   // Vercel handles its own build system and doesn't need standalone output.
   // For Docker self-hosted, re-enable "standalone" and use the Dockerfile.
 
+  // Suppress Sentry/OpenTelemetry webpack warnings
+  webpack: (config) => {
+    config.ignoreWarnings = [
+      /Critical dependency: the request of a dependency is an expression/,
+    ];
+    return config;
+  },
+
   images: {
     formats: ['image/avif', 'image/webp'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
@@ -39,7 +47,8 @@ const nextConfig: NextConfig = {
           { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
         ],
       },
-      // CORS — allow cross-origin requests from localhost dev and any Vercel preview/prod FE
+      // CORS — allow cross-origin requests from any origin for public API endpoints
+      // Note: 'Access-Control-Allow-Credentials' cannot be 'true' when using '*' wildcard
       {
         source: '/api/:path*',
         headers: [

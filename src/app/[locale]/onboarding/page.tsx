@@ -14,7 +14,7 @@ import {
   Sparkles, Target, Award, Heart, Play, X
 } from 'lucide-react';
 import { DS, GRD } from '@/lib/design-tokens';
-const logoImg = "/loop-logo.png";
+const logoImg = "/logo.png";
 
 // ── hex → rgba helper ────────────────────────────────────────────────────
 function hexRgba(hex: string, alpha: number): string {

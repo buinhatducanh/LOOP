@@ -27,6 +27,7 @@ import { handleError, badRequest, notFound, conflict } from "@/lib/api/response"
 import { academyLogger } from "@/lib/logger";
 import { withIdempotency } from "@/lib/idempotency";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { syncRankFields } from "@/lib/rank/xp";
 
 const LP_VND_RATE = 20_000; // legacy — use @/lib/constants in new code
 const MAX_LP_PAYMENT_RATIO = 0.5; // max 50% of course price can be paid with LP
@@ -173,6 +174,11 @@ export const POST = withIdempotency(
           },
         });
       });
+
+      // P2-7: After LP deduction (member spending LP on education), sync rank fields
+      if (lpCost > 0 && memberId) {
+        await syncRankFields(memberId);
+      }
 
       academyLogger.info("Academy enrollment successful", {
         enrollmentId: enrollment.id,

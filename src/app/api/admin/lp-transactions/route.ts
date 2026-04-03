@@ -110,7 +110,7 @@ export async function POST(req: NextRequest) {
           referenceType: null,
           counterpartyId: null,
           fee: 0,
-          createdBy: session.userId,
+          createdBy: session.teamMemberId ?? null,
         },
       });
 

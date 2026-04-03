@@ -45,3 +45,10 @@ src/generated
 *.sw?
 .vercel
 .env*.local
+
+# Archived prototypes — NOT production code
+# These are Vite+React mock apps, NOT connected to /src/ (Next.js production)
+FE/
+FE-ARCHIVE/
+DESIGN LOOPS/
+DESIGN-LOOPS-ARCHIVE/

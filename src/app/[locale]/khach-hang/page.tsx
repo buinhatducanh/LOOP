@@ -527,9 +527,7 @@ export default function CustomerPortalPage({
         padding: "0 1.5rem", gap: "1rem",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: "0.625rem" }}>
-          <div style={{ width: 32, height: 32, borderRadius: 8, background: GRD.primary, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <span style={{ color: "#fff", fontWeight: 900, fontSize: 14 }}>∞</span>
-          </div>
+          <img src="/logo.png" alt="LOOP" style={{ width: 32, height: 32, objectFit: "contain", borderRadius: 8 }} />
           <div>
             <div style={{ color: DS.text, fontFamily: "'Cinzel', serif", fontSize: "0.875rem", fontWeight: 900, letterSpacing: "0.05em" }}>LOOP</div>
             <div style={{ color: DS.text4, fontSize: "0.5rem", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.15em" }}>CUSTOMER PORTAL</div>

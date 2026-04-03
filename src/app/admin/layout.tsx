@@ -14,6 +14,7 @@ import { QueryProvider } from "@/lib/query/provider";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { AdminTopbar } from "@/components/admin/AdminTopbar";
 import { AdminSessionInit } from "@/components/admin/AdminSessionInit";
+import { AdminI18nProvider } from "@/i18n/admin/AdminI18nProvider";
 import "@/styles/globals.css";
 
 export default async function AdminLayout({
@@ -43,6 +44,7 @@ export default async function AdminLayout({
         }}
       >
         <QueryProvider>
+          <AdminI18nProvider>
           {/* Sidebar */}
           <AdminSidebar
             userName={session.name}
@@ -71,6 +73,7 @@ export default async function AdminLayout({
               {children}
             </main>
           </div>
+          </AdminI18nProvider>
         </QueryProvider>
       </body>
     </html>

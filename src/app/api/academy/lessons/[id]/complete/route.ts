@@ -24,6 +24,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { handleError, badRequest, notFound } from "@/lib/api/response";
+import { syncRankFields } from "@/lib/rank/xp";
 
 const VIDEO_GATE_THRESHOLD = 0.35; // 35%
 
@@ -158,6 +159,11 @@ export async function POST(
             ]
           : []),
       ]);
+
+      // P2-7: After LP award, sync rank fields so level/XP are recalculated
+      if (memberId && enrollment.course.lpReward > 0) {
+        await syncRankFields(memberId);
+      }
     }
 
     // Get next lesson
