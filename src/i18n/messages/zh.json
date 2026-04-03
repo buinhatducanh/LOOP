@@ -482,6 +482,7 @@
     "roleManager": "Manager",
     "roleStaff": "Staff",
     "roleClient": "Client",
+    "roleGuest": "访客",
     "media": "Media",
     "bookNow": "Book Now"
   },

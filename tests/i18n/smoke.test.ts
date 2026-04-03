@@ -36,8 +36,8 @@ describe("i18n routing config", () => {
 describe("message file structure", () => {
   it("should have matching key namespaces in VI and EN", async () => {
     const [vi, en] = await Promise.all([
-      import("../../messages/vi.json"),
-      import("../../messages/en.json"),
+      import("../../src/i18n/messages/vi.json"),
+      import("../../src/i18n/messages/en.json"),
     ]);
 
     const viKeys = Object.keys(vi.default).sort();
@@ -47,7 +47,7 @@ describe("message file structure", () => {
   });
 
   it("should have all required namespace keys", async () => {
-    const vi = await import("../../messages/vi.json");
+    const vi = await import("../../src/i18n/messages/vi.json");
     const namespaces = Object.keys(vi.default);
 
     const required = ["nav", "home", "services", "portfolio", "blog", "team", "about", "contact", "common", "errors", "footer"];
@@ -57,7 +57,7 @@ describe("message file structure", () => {
   });
 
   it("should have seo, auth, and localeSwitcher namespaces", async () => {
-    const vi = await import("../../messages/vi.json");
+    const vi = await import("../../src/i18n/messages/vi.json");
     const namespaces = Object.keys(vi.default);
 
     expect(namespaces).toContain("seo");

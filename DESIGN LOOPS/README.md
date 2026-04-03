@@ -1,6 +1,6 @@
 # ⚠️ PROTOTYPE ONLY — NOT PRODUCTION
 
-This is a **standalone Vite+React mock/design prototype**.
+This is a **standalone Vite+React design reference app**.
 It is **NOT connected** to the production Next.js application.
 
 ## Production Code
@@ -11,16 +11,16 @@ It is **NOT connected** to the production Next.js application.
 
 ## What This Folder Is
 
-This folder (`FE/`) is a legacy frontend mock built with Vite + React 18.
-It was used during early phases (F0–F8) to prototype UI before the
-Next.js rewrite. It contains:
+This folder (`DESIGN LOOPS/`) is a design reference/operations doc sandbox
+built with Vite + React 18. It contains:
 
 - Full gaming/cyberpunk UI theme (Tailwind v4)
-- Mock Zustand stores with in-memory state
-- 22 page components (Landing, Services, Portfolio, Blog, Academy, Booking...)
-- 26 admin tab components (MembersTab 1,300L, OrdersTab, AcademyTab...)
-- 49 Shadcn/ui base components
+- Detailed admin tab designs (MembersTab 1,300L, OrdersTab, AcademyTab...)
+- 22 page components (Academy, Blog, Booking, Customer Dashboard...)
+- 49 Shadcn/ui base components (byte-for-byte identical to FE/ and /src/)
+- 26 admin tab components
 - Hardcoded mock data (no database)
+- `LOOP_OPERATIONS_DOC.tsx` — full system documentation embedded as JSX
 
 ## What This Folder Is NOT
 
@@ -40,7 +40,7 @@ Next.js rewrite. It contains:
 ## If You Need to Make Changes
 
 All production development happens in `/src/`.
-For UI design reference, also see `/DESIGN LOOPS/`.
+For legacy mock reference, also see `/FE/`.
 
 ## Last Sync
 

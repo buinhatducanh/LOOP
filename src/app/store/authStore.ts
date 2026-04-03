@@ -220,19 +220,10 @@ interface AuthStore {
   setLoading: (v: boolean) => void;
   clearError: () => void;
 
-  // Quest actions
+  // Quest actions (production uses BE API; these are for demo/local fallback)
   checkIn: () => void;
   updateQuestProgress: (questId: string, progress: number) => void;
   completeQuest: (questId: string) => void;
-  addQuest: (quest: Quest) => void;
-  updateQuest: (id: string, data: Partial<Quest>) => void;
-  deleteQuest: (id: string) => void;
-
-  // Event actions
-  addEvent: (event: CompanyEvent) => void;
-  updateEvent: (id: string, data: Partial<CompanyEvent>) => void;
-  deleteEvent: (id: string) => void;
-  joinEvent: (id: string) => void;
 
   // Helpers
   getQuestsForRole: (role: UserRole) => Quest[];
@@ -413,30 +404,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       ),
     })),
 
-  addQuest: (quest) => set((s) => ({ quests: [quest, ...s.quests] })),
-
-  updateQuest: (id, data) =>
-    set((s) => ({ quests: s.quests.map((q) => (q.id === id ? { ...q, ...data } : q)) })),
-
-  deleteQuest: (id) => set((s) => ({ quests: s.quests.filter((q) => q.id !== id) })),
-
-  // ── Event actions ─────────────────────────────────────────────────────────
-
-  addEvent: (event) => set((s) => ({ events: [event, ...s.events] })),
-
-  updateEvent: (id, data) =>
-    set((s) => ({ events: s.events.map((e) => (e.id === id ? { ...e, ...data } : e)) })),
-
-  deleteEvent: (id) => set((s) => ({ events: s.events.filter((e) => e.id !== id) })),
-
-  joinEvent: (id) =>
-    set((s) => ({
-      events: s.events.map((e) =>
-        e.id === id
-          ? { ...e, participants: Math.min(e.participants + 1, e.maxParticipants) }
-          : e
-      ),
-    })),
+  // ── Helpers ──────────────────────────────────────────────────────────────
 
   getQuestsForRole: (role) => get().quests.filter((q) => q.forRoles.includes(role)),
 

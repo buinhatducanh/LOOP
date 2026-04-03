@@ -1,10 +1,53 @@
 # LOOP Solutions — Claude Code Context
 
 > Project: LOOP Solutions Agency Platform — FE (Vite/React) + BE (Next.js 15 API)
-> Last Updated: 2026-03-31
+> Last Updated: 2026-04-03
 > Language: Vietnamese (code comments, docs), English (variable names, function names)
-> Status: ALL 8 PHASES COMPLETE ✅ (F0–F8) + Fi + Fs + R-seed ✅ — 224 route files, 99 models, ~90 i18n columns, 5 locales; infrastructure: slo.ts(221L) + logger.ts(265L) + scaleGate.ts(552L) + capacity.ts(377L) + Inngest (8 functions, 396L); cache: Cache-Control on 6 v1 GETs; idempotency: IdempotencyKey model + withIdempotency() on 6 mutations; observability: logger.withSLO() on 14 endpoints; rate-limit: applyRateLimit() on 5 public + auth/login; scale gate: 0 blocking, 4 non-critical warnings; 4/4 admin translate tabs ✅ (MembersTab done 2026-03-31); remaining: JA/KO/ZH translation (MEDIUM), I18N-RUNBOOK (MEDIUM), JSON migration (P2). Build ✅ tsc ✅ lint ✅.
+> Status: ALL 8 PHASES COMPLETE ✅ (F0–F8) + Fi + Fs + R-seed ✅ — 224 route files, 99 models, ~90 i18n columns, 5 locales; infrastructure: slo.ts(221L) + logger.ts(265L) + scaleGate.ts(552L) + capacity.ts(377L) + Inngest (8 functions, 396L); cache: Cache-Control on 6 v1 GETs; idempotency: IdempotencyKey model + withIdempotency() on 6 mutations; observability: logger.withSLO() on 14 endpoints; rate-limit: applyRateLimit() on 5 public + auth/login; scale gate: 0 blocking, 4 non-critical warnings; 4/4 admin translate tabs ✅ (MembersTab done 2026-03-31); process docs: CompanyProcessPage ✅ v3.1.0 + loop-business-logic.md ✅ (24 discrepancies fixed); remaining: JA/KO/ZH translation (MEDIUM), I18N-RUNBOOK (MEDIUM), JSON migration (P2). Build ✅ tsc ✅ lint ✅.
 > CI/CD: GitHub connected to Vercel, auto-deploy on push. Domain: loops.vn (production).
+
+---
+
+## ⚠️ CRITICAL — Prototype vs Production
+
+```
+/src/                    ✅ PRODUCTION — Next.js 15, live at loops.vn
+/FE/                    ⚠️ PROTOTYPE — Vite mock, NOT connected to production
+/DESIGN LOOPS/          ⚠️ PROTOTYPE — Design reference, NOT connected to production
+```
+
+### KHÔNG BAO GIỜ làm:
+
+- ❌ Copy/paste code từ `FE/` hoặc `DESIGN LOOPS/` vào `src/` — sẽ break production
+- ❌ Import components từ `FE/` hoặc `DESIGN LOOPS/` vào `src/`
+- ❌ Dùng mock data files (`src/data/*`) trong production pages
+- ❌ Chỉnh sửa production code dựa trên logic từ prototype folders
+
+### CHỈ dùng:
+
+- `src/app/` — production pages
+- `src/components/` — production shared components
+- `src/lib/` — production business logic
+- `src/app/api/admin/*` — production API endpoints
+
+---
+
+## Rules
+
+> Khi implement feature mới hoặc viết docs liên quan đến nghiệp vụ, ĐỌC file này TRƯỚC:
+
+| File | Mục đích |
+|------|-----------|
+| `.claude/rules/loop-business-logic.md` | **Source of truth** cho tất cả business facts đã verify vs code. LP rates, rank levels, order statuses, kanban columns, quest system. |
+| `.claude/rules/api-conventions.md` | API response shapes, HTTP status codes, endpoint naming, pagination |
+| `.claude/rules/code-style.md` | TypeScript conventions, naming, async/await, null handling |
+| `.claude/rules/database.md` | Prisma conventions, indexes, transactions |
+| `.claude/rules/error-handling.md` | Error classes, handleError(), retry logic |
+| `.claude/rules/security.md` | Auth, input validation, rate limiting |
+| `.claude/rules/fe-be-parity.md` | FE mock vs BE production — BE luôn thắng |
+| `.claude/rules/admin-design-parity.md` | Admin Dashboard parity: FE AdminDashboard vs BE AdminSidebar + pages. Sidebar width, tab labels, layout shell. P2 tasks cho admin. |
+| `.claude/rules/admin-rbac.md` | **⚠️ 2 hệ thống RBAC khác nhau**: (1) FE mock — 5 roles (admin/manager/staff/client/guest), (2) BE production — 7 roles + granular DB permissions. Role mapping, security rules, wire plan cho Members page. Đọc TRƯỚC khi sửa auth hoặc permissions. |
+| `.claude/rules/go-live-phase2.md` | P2 deferred tasks (non-blocking) |
 
 ---
 

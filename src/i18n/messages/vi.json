@@ -474,12 +474,15 @@
     "roleManager": "Manager",
     "roleStaff": "Staff",
     "roleClient": "Client",
+    "roleGuest": "Khách",
     "media": "Media",
     "bookNow": "Đặt lịch ngay"
   },
   "Footer": {
     "ctaTitle": "SẴN SẮNG NÂNG CẤP DIGITAL?",
     "ctaDesc": "Tư vấn miễn phí 30 phút. Nhận ngay 500 LP điểm thưởng khi đăng ký hôm nay.",
+    "ctaButton": "Đặt lịch tư vấn",
+    "ctaSecondary": "Xem portfolio",
     "getInTouch": "Liên hệ ngay",
     "description": "Hệ điều hành số cho Digital Agency. Kết hợp công nghệ tiên tiến với hệ thống LP gamified, biến công việc thành trải nghiệm đáng nhớ.",
     "services": "Dịch vụ",
@@ -491,29 +494,37 @@
     "highlightGlobal": "30+ quốc gia",
     "highlightQuality": "95+ Lighthouse",
     "highlightSupport": "Hỗ trợ 12 tháng",
-    "rights": "© 2026 LOOP. Đã đăng ký bản quyền.",
+    "rights": "© 2026 LOOP SOLUTIONS. All rights reserved.",
     "privacyPolicy": "Chính sách bảo mật",
     "termsOfService": "Điều khoản dịch vụ",
     "cookiePolicy": "Cookie Policy",
     "contactSection": "Liên hệ",
+    "contactEmail": "hello@loopsolutions.vn",
+    "contactPhone": "+84 (0) 901 234 567",
+    "contactAddress": "TP. Hồ Chí Minh, Việt Nam",
+    "newsletterLabel": "NHẬN CẬP NHẬT",
+    "newsletterPlaceholder": "email@company.vn",
+    "season": "SEASON III · 2026",
     "servicesLinks": {
       "webDesign": "Thiết kế Website",
       "appDev": "Phát triển App",
-      "saas": "SaaS",
+      "saas": "SaaS Platform",
       "seoMarketing": "SEO & Marketing",
       "bookConsultation": "Đặt lịch tư vấn"
     },
     "companyLinks": {
       "about": "Về chúng tôi",
       "careers": "Tuyển dụng",
-      "companyProcess": "Quy trình"
+      "companyProcess": "Quy trình công ty",
+      "terms": "Điều khoản",
+      "contact": "Liên hệ"
     },
-    "stayConnectedLinks": {
-      "portfolio": "Portfolio",
-      "blog": "Blog",
-      "academy": "Học viện",
+    "resourcesLinks": {
+      "portfolio": "Portfolio dự án",
+      "blog": "Blog & Insights",
+      "academy": "Học viện LOOP",
       "lpSystem": "Hệ thống LP",
-      "pricing": "Bảng giá"
+      "pricing": "Báo giá dịch vụ"
     }
   },
   "BookingPage": {

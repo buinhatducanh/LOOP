@@ -476,14 +476,17 @@
     "roleManager": "Manager",
     "roleStaff": "Staff",
     "roleClient": "Client",
+    "roleGuest": "Guest",
     "media": "Media",
     "bookNow": "Book Now"
   },
   "Footer": {
-    "ctaTitle": "Ready to start your project?",
-    "ctaDesc": "Let's build something amazing together.",
+    "ctaTitle": "READY TO LEVEL UP?",
+    "ctaDesc": "Book a free 30-min consultation. Get 500 LP points when you sign up today.",
+    "ctaButton": "Book Consultation",
+    "ctaSecondary": "View Portfolio",
     "getInTouch": "Get in Touch",
-    "description": "LOOP - We craft premium digital experiences for businesses worldwide.",
+    "description": "Digital OS for agencies. Cutting-edge tech meets gamified LP rewards.",
     "services": "Services",
     "company": "Company",
     "contact": "Contact",
@@ -493,29 +496,37 @@
     "highlightGlobal": "Serving clients in 30+ countries",
     "highlightQuality": "95+ Lighthouse score guarantee",
     "highlightSupport": "12-month technical support",
-    "rights": "© 2026 LOOP. All rights reserved.",
+    "rights": "© 2026 LOOP SOLUTIONS. All rights reserved.",
     "privacyPolicy": "Privacy Policy",
     "termsOfService": "Terms of Service",
     "cookiePolicy": "Cookie Policy",
     "contactSection": "Contact",
+    "contactEmail": "hello@loopsolutions.vn",
+    "contactPhone": "+84 (0) 901 234 567",
+    "contactAddress": "Ho Chi Minh City, Vietnam",
+    "newsletterLabel": "STAY UPDATED",
+    "newsletterPlaceholder": "email@company.vn",
+    "season": "SEASON III · 2026",
     "servicesLinks": {
       "webDesign": "Web Design",
       "appDev": "App Development",
-      "saas": "SaaS",
+      "saas": "SaaS Platform",
       "seoMarketing": "SEO & Marketing",
       "bookConsultation": "Book a Consultation"
     },
     "companyLinks": {
       "about": "About Us",
       "careers": "Careers",
-      "companyProcess": "Process"
+      "companyProcess": "Company Process",
+      "terms": "Terms",
+      "contact": "Contact"
     },
-    "stayConnectedLinks": {
-      "portfolio": "Portfolio",
-      "blog": "Blog",
-      "academy": "Academy",
+    "resourcesLinks": {
+      "portfolio": "Project Portfolio",
+      "blog": "Blog & Insights",
+      "academy": "LOOP Academy",
       "lpSystem": "LP System",
-      "pricing": "Pricing"
+      "pricing": "Service Pricing"
     }
   },
   "BookingPage": {
