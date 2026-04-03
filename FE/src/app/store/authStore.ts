@@ -1,9 +1,20 @@
 /**
  * Auth Store — Role-based access control for LOOP Solutions
  * Roles: admin | manager | staff | client | guest
+ *
+ * Session persistence: After real login/register, token is saved to localStorage.
+ * On app init, App.tsx calls fetchSession() to restore the session.
+ * Demo shortcuts (loginAs) bypass API and set state directly — for dev only.
  */
 import { create } from 'zustand';
 import { DS } from '../components/layout/ds';
+import {
+  apiClient,
+  setAuthToken,
+  clearAuthToken,
+  hasStoredSession,
+  type SessionUser,
+} from '../../lib/api/client';
 
 export type UserRole = 'admin' | 'manager' | 'staff' | 'client' | 'guest';
 
@@ -19,6 +30,27 @@ export interface AuthUser {
   rankColor?: string;
   lpBalance: number;
   level: number;
+}
+
+function toAuthUser(u: SessionUser): AuthUser {
+  const nameParts = (u.name ?? "User").split(" ");
+  const shortName = nameParts[nameParts.length - 1] || nameParts[0] || "User";
+  const role = u.role === "super_admin" ? "admin"
+    : (u.role === "project_manager" ? "manager" : u.role === "member" ? "staff"
+    : (u.role === "client" || u.accountType === "customer" ? "client" : "staff")) as UserRole;
+  return {
+    id: u.userId,
+    name: u.name ?? "User",
+    shortName,
+    email: u.email ?? "",
+    avatar: u.avatar ?? "",
+    role,
+    department: u.department,
+    rank: u.rank,
+    rankColor: u.rankColor,
+    lpBalance: u.lpBalance ?? 0,
+    level: u.level ?? 1,
+  };
 }
 
 // ── Permission matrix ────────────────────────────────────────────────────
@@ -59,7 +91,7 @@ export function canEdit(role: UserRole): boolean {
 }
 
 // ── Preset users for demo ─────────────────���──────────────────────────────
-const DEMO_USERS: Record<string, AuthUser> = {
+export const DEMO_USERS: Record<string, AuthUser> = {
   admin: {
     id: 'u-admin', name: 'Akira Sato', shortName: 'Akira', email: 'akira@loop.vn',
     avatar: 'https://images.unsplash.com/photo-1557862921-37829c790f19?auto=format&fit=crop&w=80&h=80&crop=faces',
@@ -176,10 +208,13 @@ interface AuthStore {
   isAuthenticated: boolean;
   isLoading: boolean;
 
-  // Auth actions
-  login: (preset: string) => void;
-  loginAs: (user: AuthUser) => void;
-  logout: () => void;
+  // Auth actions — real API
+  login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
+  register: (data: { name: string; email: string; password: string; company?: string }) => Promise<void>;
+  loginWithGoogle: () => void;
+  loginAs: (user: AuthUser) => void; // demo-only
+  logout: () => Promise<void>;
+  fetchSession: () => Promise<void>;
   setLoading: (v: boolean) => void;
 
   // Quest/Event data
@@ -208,8 +243,8 @@ interface AuthStore {
 }
 
 export const useAuthStore = create<AuthStore>((set, get) => ({
-  user: DEMO_USERS.admin, // Default logged in as admin for demo
-  isAuthenticated: true,
+  user: null,
+  isAuthenticated: false,
   isLoading: false,
 
   quests: INIT_QUESTS,
@@ -217,22 +252,60 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   dailyStreak: 12,
   lastCheckIn: null,
 
-  login: (preset) => {
+  // ── Real login via credentials ─────────────────────────────────────────
+  login: async (email, password, rememberMe = false) => {
     set({ isLoading: true });
-    setTimeout(() => {
-      const user = DEMO_USERS[preset] ?? DEMO_USERS.client;
+    try {
+      const res = await apiClient.login(email, password, rememberMe);
+      setAuthToken(res.token, rememberMe);
+      const user = toAuthUser(res.user);
       set({ user, isAuthenticated: true, isLoading: false });
-    }, 800);
+    } catch (err) {
+      set({ isLoading: false });
+      throw err;
+    }
   },
 
-  loginAs: (user) => {
+  // ── Real register ──────────────────────────────────────────────────────
+  register: async ({ name, email, password, company }) => {
     set({ isLoading: true });
-    setTimeout(() => set({ user, isAuthenticated: true, isLoading: false }), 800);
+    try {
+      const res = await apiClient.register({ name, email, password, company });
+      setAuthToken(res.token, true);
+      const user = toAuthUser(res.user);
+      set({ user, isAuthenticated: true, isLoading: false });
+    } catch (err) {
+      set({ isLoading: false });
+      throw err;
+    }
   },
 
-  logout: () => {
+  // ── Google OAuth — redirect to BE endpoint ──────────────────────────────
+  loginWithGoogle: () => {
+    localStorage.setItem("loop_auth_redirect", window.location.href);
+    apiClient.googleSignIn();
+  },
+
+  // ── Hydrate session from stored token on init ───────────────────────────
+  fetchSession: async () => {
+    if (!hasStoredSession()) return;
     set({ isLoading: true });
-    setTimeout(() => set({ user: null, isAuthenticated: false, isLoading: false }), 500);
+    try {
+      const res = await apiClient.getSession();
+      const user = toAuthUser(res.data);
+      set({ user, isAuthenticated: true, isLoading: false });
+    } catch {
+      clearAuthToken();
+      set({ user: null, isAuthenticated: false, isLoading: false });
+    }
+  },
+
+  loginAs: (user) => set({ user, isAuthenticated: true, isLoading: false }),
+
+  logout: async () => {
+    try { await apiClient.logout(); } catch { /* ignore */ }
+    clearAuthToken();
+    set({ user: null, isAuthenticated: false, isLoading: false });
   },
 
   setLoading: (v) => set({ isLoading: v }),

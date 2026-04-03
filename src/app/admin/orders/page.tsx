@@ -28,7 +28,7 @@ type Order = {
   customerName: string;
   customerEmail: string;
   customerPhone?: string;
-  total: number;
+  totalAmount: number | null | undefined;
   status: string;
   createdAt: string;
   package?: { title: string };
@@ -45,8 +45,10 @@ function OrderRow({
 }) {
   const cfg = STATUS_CONFIG[order.status] ?? { label: order.status, color: DS.text4, bg: "transparent" };
 
-  const fmt = (n: number) =>
-    new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(n);
+  const fmt = (n: number | null | undefined) =>
+    n != null
+      ? new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(n)
+      : "—";
 
   return (
     <motion.div
@@ -78,7 +80,7 @@ function OrderRow({
 
       {/* Amount */}
       <div style={{ textAlign: "right", flexShrink: 0 }}>
-        <p style={{ color: DS.text, fontWeight: 700, fontSize: 14 }}>{fmt(order.total)}</p>
+        <p style={{ color: DS.text, fontWeight: 700, fontSize: 14 }}>{fmt(order.totalAmount)}</p>
         <span style={{ color: cfg.color, fontSize: 11, fontFamily: DS.mono, fontWeight: 600 }}>{cfg.label}</span>
       </div>
 
@@ -121,8 +123,10 @@ function OrderRow({
 function OrderDetailModal({ order, onClose }: { order: Order | null; onClose: () => void }) {
   if (!order) return null;
   const cfg = STATUS_CONFIG[order.status] ?? { label: order.status, color: DS.text4, bg: "transparent" };
-  const fmt = (n: number) =>
-    new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(n);
+  const fmt = (n: number | null | undefined) =>
+    n != null
+      ? new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(n)
+      : "—";
 
   return (
     <AnimatePresence>
@@ -155,7 +159,7 @@ function OrderDetailModal({ order, onClose }: { order: Order | null; onClose: ()
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 20 }}>
             {[
               { label: "Gói dịch vụ", value: order.package?.title ?? "—" },
-              { label: "Tổng tiền", value: fmt(order.total) },
+              { label: "Tổng tiền", value: fmt(order.totalAmount) },
               { label: "Trạng thái", value: cfg.label, color: cfg.color },
               { label: "Ngày tạo", value: new Date(order.createdAt).toLocaleDateString("vi-VN") },
             ].map((item) => (

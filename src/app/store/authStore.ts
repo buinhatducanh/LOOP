@@ -341,17 +341,17 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
   fetchSession: async (): Promise<void> => {
     try {
-      const res = await apiClient.get<{ data: EnrichedSession } | ApiErrorResponse>(
+      const res = await apiClient.get<{ user: EnrichedSession } | ApiErrorResponse>(
         "/api/admin/auth/me",
         { throwOnError: false }
       );
 
-      if ("error" in res) {
+      if ("error" in res || !("user" in res)) {
         set({ isAuthenticated: false, user: null, role: "guest", accessibleTabs: [] });
         return;
       }
 
-      const session = res.data;
+      const session = res.user;
       const authUser = sessionToAuthUser(session);
       const role = mapRoleLevelToUserRole(session.roleLevel, session.accountType);
 

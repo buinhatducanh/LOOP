@@ -8,6 +8,9 @@
  * Uses real API data via React Query.
  */
 
+// Prevent static pre-rendering since this is a client component using React Query
+export const dynamic = "force-dynamic";
+
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "motion/react";
 import {
@@ -148,7 +151,7 @@ interface OrderRow {
   id: string;
   customerName: string;
   serviceName: string;
-  total: number;
+  totalAmount: number | null | undefined;
   status: string;
   createdAt: string;
 }
@@ -222,7 +225,7 @@ function OrderRow({ order }: { order: OrderRow }) {
             fontWeight: 600,
           }}
         >
-          {order.total != null ? order.total.toLocaleString("vi-VN") + "đ" : "—"}
+          {order.totalAmount ? order.totalAmount.toLocaleString("vi-VN") + "đ" : "—"}
         </div>
         <div
           style={{

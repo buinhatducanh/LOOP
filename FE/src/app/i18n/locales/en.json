@@ -803,7 +803,15 @@
       "client": "Client",
       "guest": "Guest",
       "loginNow": "Demo Login Now",
-      "loggingIn": "Logging in..."
+      "loggingIn": "Logging in...",
+      "rememberMe": "Remember me",
+      "errorRequired": "Please fill in all required fields.",
+      "errorPasswordLength": "Password must be at least 8 characters.",
+      "errorGeneric": "An error occurred. Please try again.",
+      "errorEmailExists": "This email is already registered.",
+      "errorGoogleUnavailable": "Google sign-in is unavailable. Please try again later.",
+      "registering": "Creating account...",
+      "otpNotImplemented": "OTP verification is not yet enabled. Please sign in with email/password."
     }
   },
   "booking": {
