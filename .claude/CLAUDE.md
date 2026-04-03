@@ -1,27 +1,26 @@
 # LOOP Solutions — Claude Code Context
 
-> Project: LOOP Solutions Agency Platform — FE (Vite/React) + BE (Next.js 15 API)
-> Last Updated: 2026-04-03
+> Project: LOOP Solutions Agency Platform — Next.js 15 Production
+> Last Updated: 2026-04-04
 > Language: Vietnamese (code comments, docs), English (variable names, function names)
-> Status: ALL 8 PHASES COMPLETE ✅ (F0–F8) + Fi + Fs + R-seed ✅ — 224 route files, 99 models, ~90 i18n columns, 5 locales; infrastructure: slo.ts(221L) + logger.ts(265L) + scaleGate.ts(552L) + capacity.ts(377L) + Inngest (8 functions, 396L); cache: Cache-Control on 6 v1 GETs; idempotency: IdempotencyKey model + withIdempotency() on 6 mutations; observability: logger.withSLO() on 14 endpoints; rate-limit: applyRateLimit() on 5 public + auth/login; scale gate: 0 blocking, 4 non-critical warnings; 4/4 admin translate tabs ✅ (MembersTab done 2026-03-31); process docs: CompanyProcessPage ✅ v3.1.0 + loop-business-logic.md ✅ (24 discrepancies fixed); remaining: JA/KO/ZH translation (MEDIUM), I18N-RUNBOOK (MEDIUM), JSON migration (P2). Build ✅ tsc ✅ lint ✅.
+> Status: ALL 8 PHASES COMPLETE ✅ (F0–F8) + Fi + Fs + R-seed ✅ — 224 route files, 99 models, ~90 i18n columns, 5 locales; infrastructure: slo.ts(221L) + logger.ts(265L) + scaleGate.ts(552L) + capacity.ts(377L) + Inngest (8 functions, 396L); cache: Cache-Control on 6 v1 GETs; idempotency: IdempotencyKey model + withIdempotency() on 6 mutations; observability: logger.withSLO() on 14 endpoints; rate-limit: applyRateLimit() on 5 public + auth/login; scale gate: 0 blocking, 4 non-critical warnings; 4/4 admin translate tabs ✅ (MembersTab done 2026-03-31); process docs: CompanyProcessPage ✅ v3.1.0 + loop-business-logic.md ✅ (24 discrepancies fixed); **RESTRUCTURE ✅ (2026-04-04): removed FE/ + DESIGN LOOPS/ (56K lines dead code), fixed logo.png middleware, deleted 10 duplicate directories/files**; remaining: JA/KO/ZH translation (MEDIUM), ChatWidget→real API (P2). Build ✅ tsc ✅ lint ✅.
 > CI/CD: GitHub connected to Vercel, auto-deploy on push. Domain: loops.vn (production).
 
 ---
 
-## ⚠️ CRITICAL — Prototype vs Production
+## ⚠️ CRITICAL — Production Codebase Only
 
 ```
-/src/                    ✅ PRODUCTION — Next.js 15, live at loops.vn
-/FE/                    ⚠️ PROTOTYPE — Vite mock, NOT connected to production
-/DESIGN LOOPS/          ⚠️ PROTOTYPE — Design reference, NOT connected to production
+/src/   ✅ PRODUCTION — Next.js 15, live at loops.vn
 ```
+
+All development happens in `/src/`. **FE/** and **DESIGN LOOPS/** prototype folders were archived (see `git log 38fa12e`) — not present in this repo.
 
 ### KHÔNG BAO GIỜ làm:
 
-- ❌ Copy/paste code từ `FE/` hoặc `DESIGN LOOPS/` vào `src/` — sẽ break production
-- ❌ Import components từ `FE/` hoặc `DESIGN LOOPS/` vào `src/`
-- ❌ Dùng mock data files (`src/data/*`) trong production pages
-- ❌ Chỉnh sửa production code dựa trên logic từ prototype folders
+- ❌ Copy/paste code từ archive branches vào `src/`
+- ❌ Import từ prototype folders (không còn trong repo)
+- ❌ Dùng mock data files trong production pages
 
 ### CHỈ dùng:
 
@@ -53,16 +52,22 @@
 
 ## Tổng quan dự án
 
-### Hai codebase song song
+### Codebase duy nhất
 
-| | FE Mock | BE API |
-|---|---|---|
-| **Thư mục** | `d:/LOOP_COMPANY/LOOP/FE/` | `d:/LOOP_COMPANY/LOOP/` |
-| **Framework** | Vite + React 18 + Tailwind v4 | Next.js 15 + Prisma 7 + PostgreSQL/Neon |
-| **Port dev** | `5173` / `5174` | `3000` |
-| **Trạng thái** | FE mock → BE thật, all 8 phases done | 224 route files, 99 models, seed đầy đủ (28 members, LP economy, quests, events) |
-| **Phong cách** | Gaming/Cyberpunk dark theme | Professional agency website |
-| **i18n** | useLocaleStore → 5 locale | 5 ngôn ngữ (VI/EN/JA/KO/ZH) |
+> **2026-04-04**: FE/ và DESIGN LOOPS/ đã được archive khỏi repo. Chỉ còn `/src/` là production.
+
+```
+/src/   ✅ PRODUCTION — Next.js 15 + Prisma 7 + PostgreSQL/Neon
+```
+
+| Metric | Value |
+|---|---|
+| **Route files** | 224 API routes |
+| **Models** | 99 Prisma models |
+| **i18n columns** | ~90 columns, 5 locales (VI/EN/JA/KO/ZH) |
+| **Seed data** | 28 members, LP economy, quests, events |
+| **Dev port** | `3000` |
+| **Production** | loops.vn (Vercel + Neon PostgreSQL) |
 
 ### Hạ tầng Production
 
@@ -209,91 +214,55 @@ Fonts: Cinzel (heading), Inter (body), JetBrains Mono (code)
 ## Cấu trúc thư mục FE
 
 ```
-FE/src/
+src/
 ├── app/
-│   ├── App.tsx                     # Entry: RouterProvider + OnboardingPage overlay
-│   ├── routes.ts                   # 21 routes (public + auth + dashboards)
-│   ├── Home.tsx                    # Team page (/doi-ngu) — MemberCard grid, HUD, HallOfFame
-│   ├── MemberDetailPage.tsx         # Member detail (/member/:id)
-│   ├── LOOP_OPERATIONS_DOC.tsx     # Full system documentation (JSdoc comment)
-│   ├── pages/
-│   │   ├── LandingPage.tsx         # Public home (/)
-│   │   ├── ServicesPage.tsx        # Services list
-│   │   ├── ServiceDetailPage.tsx   # Service detail
-│   │   ├── PortfolioPage.tsx       # Portfolio list
-│   │   ├── ProjectDetailPage.tsx   # Project detail
-│   │   ├── BlogPage.tsx            # Blog list
-│   │   ├── BlogDetailPage.tsx      # Blog detail
-│   │   ├── AcademyPage.tsx         # Academy list
-│   │   ├── CourseDetailPage.tsx    # Course player (Video Gate, Code Exercise, Certificate)
-│   │   ├── BookingWizardPage.tsx   # 8-step pricing wizard
-│   │   ├── MediaBookingPage.tsx   # Media booking
-│   │   ├── ContactPage.tsx         # Contact form
-│   │   ├── AuthPage.tsx            # Login/Register
-│   │   ├── AdminDashboard.tsx     # Admin portal (23 tabs)
-│   │   ├── CustomerDashboard.tsx   # Customer portal (8 tabs)
-│   │   ├── StaffPortal.tsx         # Staff portal
-│   │   ├── LeaderboardPage.tsx    # LP leaderboard
-│   │   ├── CompanyProcessPage.tsx # Company process
-│   │   └── OnboardingPage.tsx     # 5-slide onboarding (localStorage skip)
-│   ├── components/
-│   │   ├── admin/                  # 21 admin tab components
-│   │   │   ├── OverviewTab (inline in AdminDashboard)
-│   │   │   ├── OrdersTab.tsx       # Order pipeline + chat + send demo
-│   │   │   ├── MembersTab.tsx      # CRUD 27 members + rank/LP + translate tab
-│   │   │   ├── ServicesTab.tsx      # Service CRUD + demo links
-│   │   │   ├── PortfolioTab.tsx    # Portfolio CRUD + demo links
-│   │   │   ├── AcademyTab.tsx      # Courses + students + videos tabs
-│   │   │   ├── BlogTab.tsx          # Blog CRUD
-│   │   │   ├── EffectsTab.tsx       # Rank effects CRUD + global toggle
-│   │   │   ├── LPManagementTab.tsx  # LP distribution + transactions
-│   │   │   ├── QuestEventsTab.tsx  # Quests + Events CRUD
-│   │   │   ├── QuotationTab.tsx    # Wizard 8-step config
-│   │   │   ├── RevenueTab.tsx      # Revenue charts
-│   │   │   ├── ClientsTab.tsx       # CRM
-│   │   │   ├── KanbanBoard.tsx     # Task kanban
-│   │   │   ├── ProjectsCompletedTab.tsx
-│   │   │   ├── WebPackagesTab.tsx
-│   │   │   ├── IncomeTaxTab.tsx
-│   │   │   ├── AdminLeaderboardTab.tsx
-│   │   │   ├── AnalyticsTab.tsx
-│   │   │   ├── NotificationCenter.tsx
-│   │   │   └── DepartmentsTab.tsx
-│   │   ├── customer/
-│   │   │   ├── EffectsInventoryTab.tsx  # Customer equips effects
-│   │   │   └── QuestsTab.tsx           # Customer quests list
-│   │   ├── team/
-│   │   │   ├── memberData.ts         # 27 members + RANKS config
-│   │   │   ├── MemberCard.tsx        # Card với rank effects (particles, glow, aura...)
-│   │   │   ├── HUDPanel.tsx           # HUD overlay (radar chart, stats, missions)
-│   │   │   ├── HallOfFame.tsx        # MVP/BugSlayer/TopPerformer showcase
-│   │   │   ├── RoleFilters.tsx        # 9 role filter buttons
-│   │   │   └── SearchSortBar.tsx      # Search + sort dropdown
-│   │   ├── layout/
-│   │   │   ├── ds.ts              # Design tokens (DS, GRD, NAV_LINKS)
-│   │   │   ├── Navbar.tsx          # Navbar (auth state, user menu, search)
-│   │   │   ├── Footer.tsx           # Footer + CTA
-│   │   │   └── PublicLayout.tsx    # Navbar + Outlet + Footer
-│   │   ├── figma/
-│   │   │   └── ImageWithFallback.tsx
-│   │   └── ui/                    # 45 Radix UI components (shadcn-style)
-│   ├── store/
-│   │   ├── loopStore.ts            # Zustand: orders, services, portfolio, effects, notifs
-│   │   └── authStore.ts            # Zustand: auth, quests, events, dailyStreak
-│   └── hooks/
-│       └── useRealtimeNotifications.ts  # Simulated live notifications (setInterval)
-├── styles/
-│   ├── index.css                  # @import fonts + tailwind + theme
-│   ├── fonts.css                  # Google Fonts: Cinzel, Inter, JetBrains Mono, Noto Serif JP
-│   ├── tailwind.css              # Tailwind v4 config + CSS variables
-│   └── theme.css                 # Scrollbar zen styles
-└── assets/
-    └── 3de9c8bfb537946e3dd01b9dbae9004d9c921471.png  # Logo image
+│   ├── [locale]/                  # Public pages (/{locale}/...)
+│   │   ├── page.tsx               # Landing page
+│   │   ├── services/              # Services listing + detail
+│   │   ├── portfolio/             # Portfolio listing + detail
+│   │   ├── blog/                  # Blog listing + detail
+│   │   ├── academy/               # Academy listing + course detail
+│   │   ├── team/                  # Team listing + member detail
+│   │   ├── khach-hang/            # Customer dashboard (8 tabs)
+│   │   ├── dang-nhap/             # Login
+│   │   ├── dat-lich/              # Booking wizard
+│   │   └── components/            # SiteHeader, SiteFooter (shared)
+│   ├── admin/                     # Admin dashboard (23 tabs)
+│   │   ├── layout.tsx             # Dark admin shell (React Query + auth)
+│   │   ├── overview/page.tsx
+│   │   ├── members/page.tsx       # Member CRUD (1,988L)
+│   │   ├── orders/page.tsx
+│   │   ├── academy/page.tsx
+│   │   ├── effects/page.tsx       # ⚠️ READ-ONLY — driven by code
+│   │   ├── quest_events/page.tsx
+│   │   └── ... (20 more sections)
+│   ├── api/                        # API routes
+│   │   ├── v1/                    # Public read-only (localized, cached)
+│   │   ├── admin/                 # Protected CRUD (requirePermission)
+│   │   ├── academy/               # Education API
+│   │   └── auth/                  # JWT auth
+│   └── (root)                     # Onboarding, feed.xml
+├── components/
+│   ├── ui/                         # 49 Shadcn/ui base components
+│   ├── admin/                      # AdminSidebar, AdminTopbar, SessionInit
+│   ├── landing/                    # Page client components (OnboardingClient, etc.)
+│   └── layout/                     # ds.ts (design tokens)
+├── lib/
+│   ├── auth/                       # JWT, permissions, RBAC
+│   ├── api/                        # Response helpers (ok, list, handleError)
+│   ├── services/                   # Business logic (commerce, gamification, etc.)
+│   ├── jobs/                       # Inngest background jobs (8 functions)
+│   ├── pricing/                    # Quote calculator, order lifecycle
+│   └── ...                         # analytics, cache, logger, slo, etc.
+├── i18n/messages/                  # i18n JSON (5 locales — VI/EN/JA/KO/ZH)
+├── store/                           # Zustand (authStore, loopStore, audioStore)
+├── styles/                          # globals.css, figma-theme.css
+└── middleware.ts                    # i18n routing + admin auth + logo.png static
 ```
 
 ---
 
-## BE API hiện có (từ Next.js)
+## API Endpoints (key)
 
 ### Public APIs (v1)
 - `GET /api/v1/services?lang=` → Service list
@@ -336,9 +305,9 @@ FE/src/
 
 ---
 
-## BE Prisma Models (key)
+## Prisma Models (key)
 
-| Model | Mục đích FE |
+| Model | Dùng ở |
 |---|---|
 | Service | ServicesPage, ServiceDetailPage |
 | Project | PortfolioPage, ProjectDetailPage |
@@ -389,7 +358,7 @@ FE/src/
 
 ---
 
-## Admin RBAC (từ authStore.ts)
+## Admin RBAC
 
 ### Role Hierarchy
 `admin > manager > staff > client > guest`
@@ -427,7 +396,7 @@ Wizard 8 bước + Order lifecycle.
 27 members + Rank effects system.
 
 ### Phase F4 — Academy ✅
-Courses + Enrollment + Video Gate. BE endpoints: `courses/[id]`, `enroll`, `lessons/[id]/complete`, `progress`, `certificate`, admin `PUT/DELETE`. Academy seed: 6 instructors, 7 courses, lessons, enrollments. FE wiring: PaymentModal→enroll API, CoursePlayer→completeLesson API, AcademyTab→CRUD.
+Courses + Enrollment + Video Gate. BE endpoints: `courses/[id]`, `enroll`, `lessons/[id]/complete`, `progress`, `certificate`, admin `PUT/DELETE`. Academy seed: 6 instructors, 7 courses, lessons, enrollments. PaymentModal→enroll API, CoursePlayer→completeLesson API, AcademyTab→CRUD.
 
 ### Phase F5 — Customer Portal ✅
 Customer dashboard + LP wallet + quests.
@@ -455,15 +424,12 @@ Dynamic OG via /api/og, geo tags, JSON-LD (Organization+WebSite), manifest linke
 ## Development Workflow
 
 ```bash
-# Start BE (port 3000)
+# Start dev server (port 3000)
 cd d:/LOOP_COMPANY/LOOP && npm run dev
 
-# Start FE (port 5173/5174)
-cd d:/LOOP_COMPANY/LOOP/FE && npm run dev
-
 # Quality gates
-npm run lint    # FE: cd FE && npx eslint src/
-npx tsc --noEmit  # BE type check
+npm run lint
+npx tsc --noEmit
 
 # Deploy via Vercel CLI (manual, no GitHub Actions needed)
 npx vercel --prod=false          # Preview
