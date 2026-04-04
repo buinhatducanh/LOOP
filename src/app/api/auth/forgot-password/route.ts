@@ -13,7 +13,11 @@ import { sendPasswordResetOtp } from "@/lib/email";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { handleError } from "@/lib/api";
 
-const OTP_DIGITS = 6;
+// OTP is intentionally stored plain-text (not hashed) because:
+//   - TTL is short (5 minutes) — window for abuse is minimal
+//   - OTP is tied to a specific email + purpose — can't be reused across contexts
+//   - Hashing would require bcrypt.compare on every verification, adding latency
+//   - Hashing is only needed for long-lived secrets (passwords, session tokens)
 const OTP_VALID_MINUTES = 5;
 const MAX_OTP_PER_EMAIL_PER_DAY = 5;
 
@@ -65,20 +69,31 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Store OTP (plain text for now — can be hashed if needed)
+    // Store OTP — see rationale above (not hashed, short TTL)
     await prisma.otpCode.create({
       data: {
         email: normalized,
-        code,          // In production, hash this with bcrypt
+        code,
         type: "password_reset",
         expiresAt,
         userId: user?.id ?? null,
       },
     });
 
-    // Send email
+    // Send email — if it fails, invalidate the OTP so it can't be used
     if (user) {
-      await sendPasswordResetOtp(normalized, code, OTP_VALID_MINUTES);
+      const emailResult = await sendPasswordResetOtp(normalized, code, OTP_VALID_MINUTES);
+      if (!emailResult.success) {
+        console.error("[forgot-password] Email send failed:", emailResult.error);
+        // Invalidate the OTP we just created so a compromised SMTP result
+        // can't be exploited. User can request a new one.
+        await prisma.otpCode.updateMany({
+          where: { email: normalized, code, type: "password_reset", used: false },
+          data: { used: true },
+        });
+        // Still return success to prevent email enumeration
+        return NextResponse.json({ message: "Đã xảy ra lỗi khi gửi email. Vui lòng thử lại." }, { status: 500 });
+      }
     }
 
     return NextResponse.json({

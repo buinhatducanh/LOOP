@@ -213,7 +213,8 @@
       "Bash(certutil -hashfile \"d:/LOOP_COMPANY/LOOP/src/components/ui/button.tsx\" MD5)",
       "Bash(certutil -hashfile \"d:/LOOP_COMPANY/LOOP/FE/src/app/components/ui/button.tsx\" MD5)",
       "Bash(certutil -hashfile \"d:/LOOP_COMPANY/LOOP/DESIGN LOOPS/src/app/components/ui/button.tsx\" MD5)",
-      "Bash(xargs wc:*)"
+      "Bash(xargs wc:*)",
+      "Bash(tasklist //FI \"IMAGENAME eq node.exe\" //FO TABLE)"
     ],
     "additionalDirectories": [
       "D:\\LOOP_COMPANY\\LOOP\\src\\app\\api\\admin\\expertises",

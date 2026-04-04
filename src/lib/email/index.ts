@@ -1,34 +1,40 @@
 /**
  * Email Service — LOOP Solutions
  *
- * Sends transactional emails via Resend API.
+ * Sends transactional emails via SMTP (Brevo).
+ * Free: 300 emails/day, no domain verification needed.
  *
  * Setup:
- *   1. Create account: https://resend.com (free: 100 emails/day)
- *   2. Add & verify a domain (Settings → Domains)
- *      e.g. loops.vn or mg.loops.vn — requires DNS access
- *      OR use your Gmail address (free tier only sends TO that address)
- *   3. Add to Vercel env vars:
- *        RESEND_API_KEY   = re_xxxxx
- *        EMAIL_FROM       = LOOP Solutions <noreply@your-domain.com>
- *
- * Dev mode: logs emails to console, no external send.
+ *   1. Sign up: https://brevo.com (free tier available)
+ *   2. SMTP credentials in Settings → SMTP & SMS
+ *   3. Env vars in .env.local:
+ *        BREVO_HOST     = smtp-relay.brevo.com
+ *        BREVO_PORT     = 587
+ *        BREVO_USER     = your Brevo SMTP username
+ *        BREVO_PASS     = your Brevo SMTP password
+ *        EMAIL_FROM     = LOOP Solutions <your@email.com>
  */
 
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
 
-// ─── Resend client ────────────────────────────────────────────────────────────
+// ─── Transporter ────────────────────────────────────────────────────────────────
 
-function createResendClient() {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    console.warn("[EMAIL] RESEND_API_KEY not set — emails will be logged only");
-    return null;
-  }
-  return new Resend(apiKey);
+function buildTransport() {
+  return nodemailer.createTransport({
+    host: process.env.BREVO_HOST ?? "smtp-relay.brevo.com",
+    port: Number(process.env.BREVO_PORT ?? 587),
+    secure: false,
+    requireTLS: true,
+    auth: {
+      user: process.env.BREVO_USER,
+      pass: process.env.BREVO_PASS,
+    },
+    connectionTimeout: 10_000,
+    socketTimeout: 10_000,
+  });
 }
 
-const resend = createResendClient();
+const smtpTransport = buildTransport();
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -36,47 +42,89 @@ function stripHtml(html: string) {
   return html.replace(/<[^>]*>/g, "").trim();
 }
 
-function isDev() {
-  return process.env.NODE_ENV === "development" && !resend;
+function isSmtpConfigured() {
+  return !!process.env.BREVO_HOST && !!process.env.BREVO_PASS;
 }
+
+// ─── Brand Assets ───────────────────────────────────────────────────────────────
+
+const BRAND = {
+  logoUrl: "https://loops.vn/assets/design-company/logo.png",
+  websiteUrl: "https://loops.vn",
+  brandName: "LOOP Solutions",
+  primaryColor: "#3B82F6",
+  accentColor: "#818CF8",
+  bgDark: "#020617",
+  bgCard: "#0F172A",
+  textLight: "#E2E8F0",
+  textMuted: "#94A3B8",
+  success: "#22C55E",
+  warning: "#F59E0B",
+  year: new Date().getFullYear(),
+};
 
 // ─── Email Templates ────────────────────────────────────────────────────────────
 
-function baseTemplate(content: string) {
+function emailShell(title: string, content: string, accentColor = BRAND.primaryColor) {
   return `<!DOCTYPE html>
 <html lang="vi">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>LOOP Solutions</title>
-  <style>
-    body { margin: 0; padding: 0; background: #f4f4f8; font-family: 'Inter', Arial, sans-serif; }
-    .wrapper { max-width: 560px; margin: 40px auto; background: #020617; border-radius: 16px; overflow: hidden; box-shadow: 0 24px 80px rgba(0,0,0,0.4); }
-    .header { padding: 32px 40px 24px; border-bottom: 1px solid rgba(59,130,246,0.2); }
-    .logo { font-family: 'Cinzel', serif; font-size: 20px; font-weight: 900; color: #fff; letter-spacing: 0.1em; }
-    .logo span { color: #3B82F6; }
-    .content { padding: 32px 40px; color: #e2e8f0; font-size: 15px; line-height: 1.7; }
-    .otp-code { display: inline-block; background: rgba(59,130,246,0.15); border: 1px solid rgba(59,130,246,0.4); border-radius: 10px; padding: 14px 28px; font-family: 'JetBrains Mono', monospace; font-size: 32px; font-weight: 700; color: #3B82F6; letter-spacing: 0.2em; margin: 16px 0; }
-    .footer { padding: 20px 40px; border-top: 1px solid rgba(59,130,246,0.15); font-size: 12px; color: #64748b; text-align: center; }
-    .footer a { color: #3B82F6; text-decoration: none; }
-    .warn { color: #f59e0b; }
-  </style>
+  <title>${title}</title>
+  <!--[if mso]><style type="text/css">body,table,td{font-family:Arial,sans-serif!important}</style><![endif]-->
 </head>
-<body>
-  <div class="wrapper">
-    <div class="header">
-      <div class="logo">LOOP <span>SOLUTIONS</span></div>
-    </div>
-    <div class="content">
-      ${content}
-    </div>
-    <div class="footer">
-      © ${new Date().getFullYear()} LOOP Solutions · <a href="https://loops.vn">loops.vn</a>
-    </div>
-  </div>
+<body style="margin:0;padding:0;background:#0a0f1e;font-family:'Inter',Arial,sans-serif;-webkit-font-smoothing:antialiased">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#0a0f1e">
+    <tr><td align="center" style="padding:40px 16px">
+
+      <!-- Wrapper Card -->
+      <table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background:#020617;border-radius:20px;overflow:hidden;border:1px solid rgba(59,130,246,0.15);box-shadow:0 24px 80px rgba(0,0,0,0.6)">
+
+        <!-- Header Banner -->
+        <tr><td style="background:linear-gradient(135deg,#020617 0%,#0f1a3a 50%,#020617 100%);padding:40px 48px 32px;text-align:center;border-bottom:1px solid rgba(59,130,246,0.2)">
+          <!-- Logo -->
+          <img src="${BRAND.logoUrl}" alt="LOOP Solutions" width="72" height="72" style="display:inline-block;border-radius:16px;margin-bottom:16px" />
+          <!-- Brand Name -->
+          <div style="font-family:'Cinzel',Arial,serif;font-size:24px;font-weight:900;color:#ffffff;letter-spacing:0.15em;margin-bottom:4px">
+            <span style="color:${BRAND.primaryColor}">LOOP</span> <span style="color:#fff">SOLUTIONS</span>
+          </div>
+          <!-- Tagline -->
+          <div style="font-size:12px;color:#64748b;letter-spacing:0.1em;text-transform:uppercase">
+            Hệ điều hành số · loops.vn
+          </div>
+        </td></tr>
+
+        <!-- Accent Line -->
+        <tr><td style="height:3px;background:linear-gradient(90deg,${BRAND.primaryColor},${BRAND.accentColor},${BRAND.primaryColor})"></td></tr>
+
+        <!-- Content -->
+        <tr><td style="padding:40px 48px;color:#e2e8f0;font-size:15px;line-height:1.8">
+          ${content}
+        </td></tr>
+
+        <!-- CTA Button (if needed) -->
+        <!-- Footer -->
+        <tr><td style="padding:24px 48px 32px;border-top:1px solid rgba(59,130,246,0.12);text-align:center">
+          <div style="font-size:12px;color:#475569;margin-bottom:12px">
+            © ${BRAND.year} LOOP Solutions · <a href="${BRAND.websiteUrl}" style="color:${BRAND.primaryColor};text-decoration:none">loops.vn</a>
+          </div>
+          <div style="font-size:11px;color:#334155">
+            Email này được gửi tự động từ hệ thống LOOP Solutions.<br/>
+            Vui lòng không reply trực tiếp email này.
+          </div>
+        </td></tr>
+
+      </table>
+      <!-- /Wrapper Card -->
+
+    </td></tr>
+  </table>
 </body>
 </html>`;
 }
+
+// ─── OTP Template ─────────────────────────────────────────────────────────────
 
 function otpEmailTemplate(code: string, minutes: number, purpose: string) {
   const purposeLabel = purpose === "password_reset"
@@ -85,51 +133,73 @@ function otpEmailTemplate(code: string, minutes: number, purpose: string) {
     ? "xác thực email"
     : "đăng nhập";
 
-  return baseTemplate(`
-    <h2 style="color:#fff;font-family:Cinzel,serif;margin:0 0 12px;font-size:22px;">
-      Mã xác minh
-    </h2>
-    <p style="margin:0 0 20px;color:#94a3b8;">
-      Bạn yêu cầu mã OTP để <strong style="color:#e2e8f0">${purposeLabel}</strong>.
-      Mã của bạn:
-    </p>
-    <div style="text-align:center;">
-      <div class="otp-code">${code}</div>
-    </div>
-    <p style="color:#64748b;font-size:13px;margin:16px 0 0;">
-      ⏱ Mã có hiệu lực trong <strong style="color:#f59e0b">${minutes} phút</strong>.
-      Nếu bạn không yêu cầu, vui lòng bỏ qua email này.
-    </p>
-    <p class="warn" style="margin-top:24px;font-size:12px;">
-      ⚠ Không chia sẻ mã này với bất kỳ ai — kể cả nhân viên LOOP.
-    </p>
-  `);
+  const html = `
+  <!-- Title -->
+  <h1 style="margin:0 0 8px 0;font-size:22px;font-weight:700;color:#ffffff;text-align:center;font-family:'Cinzel',Arial,serif">
+    🔐 Mã xác minh
+  </h1>
+  <p style="margin:0 0 28px 0;color:#94a3b8;font-size:14px;text-align:center">
+    Yêu cầu mã OTP để <strong style="color:#e2e8f0">${purposeLabel}</strong>
+  </p>
+
+  <!-- OTP Box -->
+  <div style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.25);border-radius:16px;padding:28px;text-align:center;margin-bottom:28px">
+    <div style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:0.15em;margin-bottom:12px">Mã xác minh của bạn</div>
+    <div style="font-family:'JetBrains Mono','Courier New',monospace;font-size:40px;font-weight:700;color:${BRAND.primaryColor};letter-spacing:0.25em;text-shadow:0 0 30px rgba(59,130,246,0.5)">${code}</div>
+  </div>
+
+  <!-- Countdown + Warning -->
+  <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:10px;padding:16px 20px;margin-bottom:20px">
+    <div style="font-size:13px;color:#f59e0b;font-weight:600;margin-bottom:4px">⏱ Mã có hiệu lực trong ${minutes} phút</div>
+    <div style="font-size:12px;color:#94a3b8">Vui lòng sử dụng ngay. Không chia sẻ mã này với bất kỳ ai.</div>
+  </div>
+
+  <!-- Security Warning -->
+  <div style="background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.15);border-radius:10px;padding:14px 20px;margin-bottom:8px">
+    <div style="font-size:12px;color:#ef4444;font-weight:600;margin-bottom:4px">⚠️ Bảo mật</div>
+    <div style="font-size:12px;color:#94a3b8">Không chia sẻ mã này với bất kỳ ai — kể cả nhân viên LOOP. Nếu bạn không yêu cầu, hãy bỏ qua email này.</div>
+  </div>
+  `;
+
+  return emailShell("Mã xác minh — LOOP Solutions", html);
 }
 
+// ─── Password Reset Success Template ──────────────────────────────────────────
+
 function passwordResetSuccessTemplate() {
-  return baseTemplate(`
-    <h2 style="color:#22c55e;font-family:Cinzel,serif;margin:0 0 12px;font-size:22px;">
-      ✅ Đặt lại mật khẩu thành công
-    </h2>
-    <p style="margin:0 0 20px;color:#94a3b8;">
+  const html = `
+  <!-- Success Icon -->
+  <div style="text-align:center;margin-bottom:24px">
+    <div style="display:inline-flex;align-items:center;justify-content:center;width:64px;height:64px;background:rgba(34,197,94,0.1);border:2px solid rgba(34,197,94,0.3);border-radius:50%;margin-bottom:16px">
+      <span style="font-size:28px">✅</span>
+    </div>
+    <h1 style="margin:0 0 8px 0;font-size:22px;font-weight:700;color:#ffffff;text-align:center;font-family:'Cinzel',Arial,serif">
+      Đặt lại mật khẩu thành công
+    </h1>
+    <p style="margin:0;color:#94a3b8;font-size:14px">
       Mật khẩu của bạn đã được thay đổi thành công.
-      Nếu đây không phải bạn, hãy liên hệ <strong style="color:#e2e8f0">admin@loops.vn</strong> ngay.
     </p>
-    <a href="https://loops.vn/vi/dang-nhap"
-       style="display:inline-block;background:#3b82f6;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;margin-top:8px;">
+  </div>
+
+  <!-- CTA Button -->
+  <div style="text-align:center;margin:28px 0">
+    <a href="${BRAND.websiteUrl}/vi/dang-nhap"
+       style="display:inline-block;background:${BRAND.primaryColor};color:#ffffff;padding:14px 32px;border-radius:10px;text-decoration:none;font-weight:600;font-size:15px;box-shadow:0 4px 20px rgba(59,130,246,0.4)">
       Đăng nhập ngay
     </a>
-  `);
+  </div>
+
+  <!-- Security Notice -->
+  <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:10px;padding:14px 20px">
+    <div style="font-size:12px;color:#f59e0b;font-weight:600;margin-bottom:4px">🔒 Bảo mật</div>
+    <div style="font-size:12px;color:#94a3b8">Nếu đây không phải bạn, hãy liên hệ <a href="mailto:admin@loops.vn" style="color:${BRAND.primaryColor}">admin@loops.vn</a> ngay.</div>
+  </div>
+  `;
+
+  return emailShell("Đặt lại mật khẩu thành công — LOOP Solutions", html);
 }
 
 // ─── Core send function ────────────────────────────────────────────────────────
-
-function getFromAddress(): string {
-  return (
-    process.env.EMAIL_FROM ??
-    `LOOP Solutions <noreply@loops.vn>`
-  );
-}
 
 async function sendEmail(opts: {
   to: string;
@@ -138,8 +208,8 @@ async function sendEmail(opts: {
 }): Promise<{ success: boolean; error?: string }> {
   const { to, subject, html } = opts;
 
-  // Dev mode: log only
-  if (isDev()) {
+  // No SMTP configured: log only (dev fallback)
+  if (!isSmtpConfigured()) {
     console.log("\n📧 [DEV EMAIL] ─────────────────────────────");
     console.log("To:", to);
     console.log("Subject:", subject);
@@ -148,24 +218,14 @@ async function sendEmail(opts: {
     return { success: true };
   }
 
-  if (!resend) {
-    return { success: false, error: "Resend client not initialized" };
-  }
-
   try {
-    const { data, error } = await resend.emails.send({
-      from: getFromAddress(),
+    const info = await smtpTransport.sendMail({
+      from: process.env.EMAIL_FROM ?? `LOOP Solutions <noreply@loops.vn>`,
       to,
       subject,
       html,
     });
-
-    if (error) {
-      console.error(`[EMAIL] Resend error:`, error);
-      return { success: false, error: error.message };
-    }
-
-    console.log(`[EMAIL] Sent to ${to}: ${data?.id}`);
+    console.log(`[EMAIL] Sent to ${to}: ${info.messageId}`);
     return { success: true };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -176,7 +236,6 @@ async function sendEmail(opts: {
 
 // ─── Public API ────────────────────────────────────────────────────────────────
 
-/** Send OTP code for password reset */
 export async function sendPasswordResetOtp(
   email: string,
   code: string,
@@ -189,7 +248,6 @@ export async function sendPasswordResetOtp(
   });
 }
 
-/** Send OTP code for email verification */
 export async function sendEmailVerifyOtp(
   email: string,
   code: string,
@@ -202,7 +260,6 @@ export async function sendEmailVerifyOtp(
   });
 }
 
-/** Notify user that password was changed */
 export async function sendPasswordChangedNotification(
   email: string
 ): Promise<{ success: boolean; error?: string }> {
