@@ -2,29 +2,34 @@
  * Font Loading — LOOP Solutions
  *
  * Strategy: Tiered loading for optimal performance
- * - VI/EN: Geist (modern, premium, Vercel-quality)
+ * - VI/EN: DM Sans (body) + Plus Jakarta Sans (headings)
  * - JA (Japanese):  Noto Sans JP
  * - KO (Korean):    Noto Sans KR
- * - ZH (Chinese):    Noto Sans SC
+ * - ZH (Chinese):   Noto Sans SC
  *
  * next/font/google is used — fonts are auto-optimized by Next.js.
  * Only the active locale's font CSS class is applied to <body> per page render.
- * VI/EN users pay ZERO font overhead.
  */
 
 import {
-  Geist,
+  DM_Sans,
+  Plus_Jakarta_Sans,
   Noto_Sans_JP,
   Noto_Sans_KR,
   Noto_Sans_SC,
-  Cinzel,
 } from "next/font/google";
 
 // Singleton instances — created once at module load
-const geistFont = Geist({
+const bodyFont = DM_Sans({
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700", "800"],
-  variable: "--font-geist",
+  variable: "--font-dm-sans",
+});
+
+const headingFont = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+  variable: "--font-plus-jakarta",
 });
 
 const jpFont = Noto_Sans_JP({
@@ -45,12 +50,6 @@ const scFont = Noto_Sans_SC({
   variable: "--font-noto-sc",
 });
 
-const cinzelFont = Cinzel({
-  subsets: ["latin"],
-  weight: ["400", "600", "700", "900"],
-  variable: "--font-cinzel",
-});
-
 /**
  * Returns the next/font CSS class for the active locale's font.
  */
@@ -63,17 +62,17 @@ export function getFontClass(locale: string): string {
     case "zh":
       return scFont.className;
     default:
-      // VI and EN use Geist
-      return geistFont.className;
+      // VI and EN use DM Sans
+      return bodyFont.className;
   }
 }
 
-/** Returns the Cinzel font CSS class for heading elements. */
-export function getCinzelClass(): string {
-  return cinzelFont.className;
+/** Returns the heading font CSS class for heading elements. */
+export function getHeadingFontClass(): string {
+  return headingFont.className;
 }
 
 /** CSS variable name for the body font (used in DS.heading / DS.body tokens). */
-export const FONT_BODY = "Geist, var(--font-geist), system-ui, sans-serif";
+export const FONT_BODY = "DM Sans, var(--font-dm-sans), system-ui, sans-serif";
 export const FONT_MONO = "'JetBrains Mono', monospace";
-export const FONT_HEADING = "var(--font-cinzel), serif";
+export const FONT_HEADING = "Plus Jakarta Sans, var(--font-plus-jakarta), system-ui, sans-serif";

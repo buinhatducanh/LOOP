@@ -4,9 +4,8 @@
  * Booking Wizard Client Component — Next.js / BE
  * Route: /{locale}/booking
  *
- * 8-step wizard mirroring the FE mock UX:
- *   0 Services  1 Packages  2 Features  3 PM/Talent
- *   4 Schedule 5 Extras    6 Review    7 Payment
+ * 3-step wizard:
+ *   0 Services  1 Package + Add-ons  2 Contact + Payment
  *
  * Uses: DS/GRD/GLOW design tokens, motion/react, lucide-react, next-intl
  */
@@ -138,7 +137,7 @@ function ProgressBar({ step, stepLabels }: { step: number; stepLabels: string[] 
     <div style={{ padding: "20px 0" }}>
       <div className="flex items-center justify-between max-w-3xl mx-auto px-4">
         {stepLabels.map((label, i) => (
-          <div key={label} className="flex flex-col items-center" style={{ flex: i < 7 ? 1 : "none" }}>
+          <div key={label} className="flex flex-col items-center" style={{ flex: i < stepLabels.length - 1 ? 1 : "none" }}>
             <div className="flex items-center w-full">
               <div
                 className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-300"
@@ -154,11 +153,11 @@ function ProgressBar({ step, stepLabels }: { step: number; stepLabels: string[] 
                   <span style={{ color: i === step ? DS.blue : DS.text5, fontSize: 11, fontFamily: DS.mono, fontWeight: 700 }}>{i + 1}</span>
                 )}
               </div>
-              {i < 7 && (
+              {i < stepLabels.length - 1 && (
                 <div className="flex-1 h-0.5 mx-1" style={{ background: i < step ? GRD.primary : "rgba(255,255,255,0.06)" }} />
               )}
             </div>
-            <div style={{ color: i === step ? DS.blue : i < step ? DS.text4 : DS.text5, fontSize: 9, fontFamily: DS.mono, marginTop: 6, letterSpacing: "0.08em", textAlign: "center", maxWidth: 56 }}>
+            <div style={{ color: i === step ? DS.blue : i < step ? DS.text4 : DS.text5, fontSize: 9, fontFamily: DS.mono, marginTop: 6, letterSpacing: "0.08em", textAlign: "center", maxWidth: 72 }}>
               {label.toUpperCase()}
             </div>
           </div>
@@ -306,6 +305,145 @@ function StepService({ services, selected, onSelect }: { services: WizardService
           </motion.button>
         ))}
       </div>
+    </div>
+  );
+}
+
+// ── Step 1: Package + Add-ons (merged from StepPackage + StepFeatures + StepExtras) ──
+
+function StepAddons({
+  packages, service, pkgId, onSelectPkg,
+  featureOptions, selectedFeatures, onToggleFeature,
+  extraOptions, selectedExtras, onToggleExtra,
+}: {
+  packages: WizardPackage[]; service: WizardService | null;
+  pkgId: string; onSelectPkg: (id: string) => void;
+  featureOptions: WizardFeature[]; selectedFeatures: string[]; onToggleFeature: (id: string) => void;
+  extraOptions: WizardExtra[]; selectedExtras: string[]; onToggleExtra: (id: string) => void;
+}) {
+  const t = useTranslations("BookingPage");
+  const featureOpts = featureOptions;
+  const extraOpts = extraOptions;
+  const hasAnyAddon = featureOpts.length > 0 || extraOpts.length > 0;
+
+  return (
+    <div>
+      {/* Package section */}
+      <h3 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 22, fontWeight: 900, letterSpacing: "0.05em", marginBottom: 8 }}>{t("bookingPackage")}</h3>
+      <p style={{ color: DS.text3, fontSize: 14, marginBottom: 24 }}>{t("selectPackage")}</p>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {packages.map(pkg => {
+          const price = (service?.basePrice ?? 0) * pkg.multiplier;
+          return (
+            <motion.button
+              key={pkg.id}
+              onClick={() => onSelectPkg(pkg.id)}
+              className="text-left p-5 rounded-2xl relative overflow-hidden"
+              style={{
+                background: pkgId === pkg.id ? `${pkg.color}10` : "rgba(15,23,42,0.6)",
+                border: pkgId === pkg.id ? `1.5px solid ${pkg.color}60` : pkg.popular ? "1px solid rgba(59,130,246,0.3)" : `1px solid ${DS.border}`,
+                boxShadow: pkgId === pkg.id ? `0 0 24px ${pkg.color}15` : "none",
+                cursor: "pointer",
+              }}
+              whileHover={{ scale: 1.015 }}
+            >
+              {pkg.popular && (
+                <div className="absolute top-0 left-0 right-0 py-1 text-center" style={{ background: GRD.primary, fontSize: 9, color: "#fff", fontFamily: DS.mono, letterSpacing: "0.15em" }}>
+                  ★ {t("popularMost")}
+                </div>
+              )}
+              <div style={{ marginTop: pkg.popular ? 20 : 0 }}>
+                <div style={{ color: pkg.color, fontSize: 11, fontFamily: DS.mono, fontWeight: 700, letterSpacing: "0.12em", marginBottom: 8 }}>{pkg.name.toUpperCase()}</div>
+                <div style={{ color: DS.text, fontFamily: DS.heading, fontSize: 20, fontWeight: 900, marginBottom: 4 }}>{fmtVND(price)}</div>
+                {service?.perMonth && <div style={{ color: DS.text5, fontSize: 11, fontFamily: DS.mono, marginBottom: 8 }}>/tháng</div>}
+                <div style={{ color: DS.text3, fontSize: 12, marginBottom: 14 }}>{pkg.desc}</div>
+                <div className="space-y-2">
+                  {pkg.features.map(f => (
+                    <div key={f} className="flex items-center gap-2">
+                      <Check size={11} style={{ color: pkg.color, flexShrink: 0 }} />
+                      <span style={{ color: DS.text3, fontSize: 11 }}>{f}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-4 pt-3" style={{ borderTop: `1px solid ${DS.border}` }}>
+                  <span style={{ color: DS.purple, fontSize: 10, fontFamily: DS.mono }}>◈ +{pkg.lp} LP/tháng</span>
+                </div>
+              </div>
+              {pkgId === pkg.id && (
+                <div className="absolute top-3 right-3 w-6 h-6 rounded-full flex items-center justify-center" style={{ background: pkg.color }}>
+                  <Check size={12} style={{ color: "#fff" }} />
+                </div>
+              )}
+            </motion.button>
+          );
+        })}
+      </div>
+
+      {/* Optional add-ons section */}
+      {hasAnyAddon && (
+        <div style={{ marginTop: 40 }}>
+          <h4 style={{ color: DS.text2, fontSize: 14, fontFamily: DS.mono, letterSpacing: "0.1em", marginBottom: 6 }}>{t("addonsTitle").toUpperCase()}</h4>
+          <p style={{ color: DS.text4, fontSize: 12, marginBottom: 16 }}>{t("addonsDesc")}</p>
+          <div className="space-y-3">
+            {featureOpts.map(opt => (
+              <motion.button
+                key={opt.id}
+                onClick={() => onToggleFeature(opt.id)}
+                className="w-full text-left p-4 rounded-xl flex items-center gap-4"
+                style={{
+                  background: selectedFeatures.includes(opt.id) ? "rgba(59,130,246,0.1)" : "rgba(15,23,42,0.5)",
+                  border: selectedFeatures.includes(opt.id) ? "1.5px solid rgba(59,130,246,0.4)" : `1px solid ${DS.border}`,
+                  cursor: "pointer",
+                }}
+                whileHover={{ scale: 1.005 }}
+              >
+                <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: selectedFeatures.includes(opt.id) ? "rgba(59,130,246,0.2)" : "rgba(255,255,255,0.05)", color: selectedFeatures.includes(opt.id) ? DS.blue : DS.text4 }}>
+                  {selectedFeatures.includes(opt.id) ? <Check size={14} /> : <Plus size={12} />}
+                </div>
+                <div className="flex-1">
+                  <div style={{ color: DS.text, fontSize: 14, fontWeight: 600 }}>{opt.label}</div>
+                  {opt.labelEn && <div style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, marginTop: 2 }}>{opt.labelEn}</div>}
+                </div>
+                <div style={{ color: DS.blue, fontSize: 13, fontFamily: DS.mono, fontWeight: 700 }}>+{fmtVND(opt.price)}</div>
+              </motion.button>
+            ))}
+            {extraOpts.map(ext => {
+              const icons: Record<string, React.ReactNode> = {
+                hosting: <Globe size={16} />, maintenance: <Shield size={16} />,
+                "analytics-setup": <BarChart3 size={16} />, training: <Users size={16} />,
+                priority: <Sparkles size={16} />, "seo-basic": <Target size={16} />,
+              };
+              return (
+                <motion.button
+                  key={ext.id}
+                  onClick={() => onToggleExtra(ext.id)}
+                  className="w-full text-left p-4 rounded-xl flex items-center gap-3"
+                  style={{
+                    background: selectedExtras.includes(ext.id) ? `${ext.color}0C` : "rgba(15,23,42,0.5)",
+                    border: selectedExtras.includes(ext.id) ? `1.5px solid ${ext.color}50` : `1px solid ${DS.border}`,
+                    cursor: "pointer",
+                  }}
+                  whileHover={{ scale: 1.01 }}
+                >
+                  <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${ext.color}15`, color: ext.color }}>
+                    {selectedExtras.includes(ext.id) ? <Check size={12} /> : icons[ext.id] ?? <Plus size={11} />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div style={{ color: DS.text, fontSize: 13, fontWeight: 600 }}>{ext.label}</div>
+                    <div style={{ color: ext.color, fontSize: 12, fontFamily: DS.mono, marginTop: 2 }}>+{fmtVND(ext.price)}</div>
+                  </div>
+                  <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0" style={{
+                    background: selectedExtras.includes(ext.id) ? ext.color : "rgba(255,255,255,0.06)",
+                    border: selectedExtras.includes(ext.id) ? "none" : "1px solid rgba(255,255,255,0.1)",
+                  }}>
+                    {selectedExtras.includes(ext.id) ? <Check size={11} style={{ color: "#fff" }} /> : <Plus size={10} style={{ color: DS.text4 }} />}
+                  </div>
+                </motion.button>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -633,6 +771,266 @@ function StepReview({ service, pkg, talent, featureOptions, features, extraOptio
   );
 }
 
+// ── Step 3 — Contact + Payment (restructured from StepPayment) ─────────────────
+
+function StepContact({
+  lpBalance, maxLpRedeem, lpDiscount, setLpDiscount, lpRate,
+  name, setName, email, setEmail, phone, setPhone, company, setCompany,
+  startDate, setStartDate, duration, setDuration,
+  talentNote, setTalentNote,
+  service, pkg, features, extras,
+  submitted, orderId, submitError, setSubmitError, onSubmit, submitLoading,
+  onEditSelection,
+}: {
+  lpBalance: number; maxLpRedeem: number; lpDiscount: number; setLpDiscount: (n: number) => void; lpRate: LpRateConfig;
+  name: string; setName: (s: string) => void;
+  email: string; setEmail: (s: string) => void;
+  phone: string; setPhone: (s: string) => void;
+  company: string; setCompany: (s: string) => void;
+  startDate: string; setStartDate: (s: string) => void;
+  duration: string; setDuration: (s: string) => void;
+  talentNote: string; setTalentNote: (s: string) => void;
+  service: WizardService | null; pkg: WizardPackage | null;
+  features: WizardFeature[]; extras: WizardExtra[];
+  submitted: boolean; orderId: string; submitError: string; setSubmitError: (s: string) => void;
+  onSubmit: () => void; submitLoading: boolean;
+  onEditSelection: () => void;
+}) {
+  const t = useTranslations("BookingPage");
+  const payMethods = [
+    { id: "bank", label: t("bankTransfer"), icon: "🏦" },
+    { id: "vnpay", label: "VNPay QR", icon: "📱" },
+    { id: "momo", label: "Momo", icon: "💜" },
+  ];
+  const [payMethod, setPayMethod] = useState("bank");
+
+  const durations = [
+    { val: "2", label: "2 tuần" }, { val: "4", label: "1 tháng" },
+    { val: "8", label: "2 tháng" }, { val: "12", label: "3 tháng" },
+    { val: "24", label: "6 tháng" }, { val: "custom", label: t("custom") },
+  ];
+
+  if (submitError) {
+    return (
+      <div className="text-center py-8">
+        <div style={{ color: DS.red, fontSize: 13, marginBottom: 12, padding: "12px 16px", background: "rgba(239,68,68,0.1)", borderRadius: 10, border: "1px solid rgba(239,68,68,0.25)" }}>
+          {submitError}
+        </div>
+        <button onClick={() => setSubmitError("")} style={{ color: DS.text4, fontSize: 12, background: "none", border: "none", cursor: "pointer", fontFamily: DS.mono }}>
+          {t("closeAndRetry")}
+        </button>
+      </div>
+    );
+  }
+
+  if (submitted) {
+    return (
+      <motion.div className="text-center py-12" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
+        <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6" style={{ background: "rgba(34,197,94,0.15)", border: "2px solid rgba(34,197,94,0.4)" }}>
+          <Check size={36} style={{ color: DS.green }} />
+        </div>
+        <h3 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 24, fontWeight: 900, letterSpacing: "0.06em", marginBottom: 12 }}>
+          {t("successTitle")}
+        </h3>
+        {orderId && (
+          <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 rounded-xl" style={{ background: "rgba(59,130,246,0.1)", border: "1px solid rgba(59,130,246,0.25)" }}>
+            <span style={{ color: DS.text4, fontSize: 12 }}>{t("orderCode")}:</span>
+            <span style={{ color: DS.blue, fontFamily: DS.mono, fontSize: 14, fontWeight: 700 }}>{orderId}</span>
+          </div>
+        )}
+        <p style={{ color: DS.text3, fontSize: 15, lineHeight: 1.8, maxWidth: 400, margin: "0 auto 32px" }}>
+          {t("successMessage")}
+        </p>
+        <div className="inline-block px-5 py-3 rounded-xl mb-6" style={{ background: "rgba(129,140,248,0.1)", border: "1px solid rgba(129,140,248,0.3)" }}>
+          <div style={{ color: DS.purple, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.15em", marginBottom: 4 }}>LP ĐIỂM THƯỞNG ĐĂNG KÝ</div>
+          <div style={{ color: DS.purple, fontFamily: DS.heading, fontSize: 24, fontWeight: 900 }}>+500 LP</div>
+        </div>
+      </motion.div>
+    );
+  }
+
+  return (
+    <div>
+      <h3 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 22, fontWeight: 900, letterSpacing: "0.05em", marginBottom: 8 }}>{t("bookingContact")}</h3>
+      <p style={{ color: DS.text3, fontSize: 14, marginBottom: 24 }}>{t("step7Desc")}</p>
+
+      {/* Inline order summary */}
+      <div className="mb-6 p-4 rounded-xl" style={{ background: "rgba(59,130,246,0.06)", border: "1px solid rgba(59,130,246,0.15)" }}>
+        <div className="flex items-center justify-between mb-3">
+          <span style={{ color: DS.blue, fontSize: 12, fontFamily: DS.mono, letterSpacing: "0.1em" }}>{t("orderSummary").toUpperCase()}</span>
+          <button onClick={onEditSelection} style={{ background: "none", border: "none", cursor: "pointer", color: DS.blue, fontSize: 12, fontFamily: DS.mono }}>
+            {t("editSelection")} ←
+          </button>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {service && (
+            <span className="px-3 py-1 rounded-full text-xs font-mono" style={{ background: `${service.color}15`, color: service.color, border: `1px solid ${service.color}30` }}>
+              {service.title}
+            </span>
+          )}
+          {pkg && (
+            <span className="px-3 py-1 rounded-full text-xs font-mono" style={{ background: "rgba(59,130,246,0.1)", color: DS.blue, border: "1px solid rgba(59,130,246,0.25)" }}>
+              {pkg.name}
+            </span>
+          )}
+          {features.length > 0 && (
+            <span className="px-3 py-1 rounded-full text-xs font-mono" style={{ background: "rgba(20,184,166,0.1)", color: DS.cyan, border: "1px solid rgba(20,184,166,0.2)" }}>
+              +{features.length} tính năng
+            </span>
+          )}
+          {extras.length > 0 && (
+            <span className="px-3 py-1 rounded-full text-xs font-mono" style={{ background: "rgba(129,140,248,0.1)", color: DS.purple, border: "1px solid rgba(129,140,248,0.2)" }}>
+              +{extras.length} dịch vụ
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Contact fields */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+        {[
+          { label: t("fullName"), value: name, set: setName, placeholder: "Nguyễn Văn A" },
+          { label: t("companyEmail"), value: email, set: setEmail, placeholder: "name@company.vn" },
+          { label: t("phone"), value: phone, set: setPhone, placeholder: "0901 234 567" },
+          { label: t("companyName"), value: company, set: setCompany, placeholder: t("companyPlaceholder") },
+        ].map(f => (
+          <div key={f.label}>
+            <label style={{ color: DS.text3, fontSize: 12, fontFamily: DS.mono, letterSpacing: "0.1em", display: "block", marginBottom: 8 }}>{f.label}</label>
+            <input
+              value={f.value}
+              onChange={e => f.set(e.target.value)}
+              placeholder={f.placeholder}
+              style={{
+                width: "100%", background: "rgba(15,23,42,0.6)", border: `1px solid ${DS.border}`,
+                borderRadius: 10, padding: "11px 14px", color: DS.text, fontSize: 14,
+                outline: "none", fontFamily: DS.body, boxSizing: "border-box",
+              }}
+            />
+          </div>
+        ))}
+      </div>
+
+      {/* Schedule */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+        <div>
+          <label style={{ color: DS.text3, fontSize: 12, fontFamily: DS.mono, letterSpacing: "0.1em", display: "block", marginBottom: 8 }}>{t("startDate")}</label>
+          <input
+            type="date"
+            value={startDate}
+            onChange={e => setStartDate(e.target.value)}
+            style={{
+              background: "rgba(15,23,42,0.6)", border: `1px solid ${DS.border}`,
+              borderRadius: 10, padding: "11px 14px", color: DS.text, fontSize: 14,
+              outline: "none", fontFamily: DS.body, width: "100%", boxSizing: "border-box",
+            }}
+          />
+        </div>
+        <div>
+          <label style={{ color: DS.text3, fontSize: 12, fontFamily: DS.mono, letterSpacing: "0.1em", display: "block", marginBottom: 8 }}>{t("duration")}</label>
+          <div className="flex flex-wrap gap-2">
+            {durations.map(d => (
+              <button
+                key={d.val}
+                onClick={() => setDuration(d.val)}
+                style={{
+                  padding: "8px 14px", borderRadius: 8, fontSize: 12, fontFamily: DS.mono, cursor: "pointer",
+                  background: duration === d.val ? GRD.primary : "rgba(15,23,42,0.6)",
+                  border: duration === d.val ? "none" : `1px solid ${DS.border}`,
+                  color: duration === d.val ? "#fff" : DS.text3,
+                }}
+              >
+                {d.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Talent note */}
+      <div className="mb-5">
+        <label style={{ color: DS.text3, fontSize: 12, fontFamily: DS.mono, letterSpacing: "0.1em", display: "block", marginBottom: 8 }}>{t("talentNote")}</label>
+        <textarea
+          value={talentNote}
+          onChange={e => setTalentNote(e.target.value)}
+          placeholder={t("talentNotePlaceholder")}
+          rows={2}
+          style={{
+            width: "100%", background: "rgba(15,23,42,0.6)", border: `1px solid ${DS.border}`,
+            borderRadius: 10, padding: "11px 14px", color: DS.text, fontSize: 14,
+            outline: "none", fontFamily: DS.body, boxSizing: "border-box", resize: "vertical",
+          }}
+        />
+      </div>
+
+      {/* LP redemption */}
+      {lpBalance > 0 && (
+        <div className="mb-5 p-4 rounded-xl" style={{ background: "rgba(129,140,248,0.08)", border: "1px solid rgba(129,140,248,0.25)" }}>
+          <div className="flex items-center justify-between mb-2">
+            <div>
+              <div style={{ color: DS.purple, fontSize: 12, fontFamily: DS.mono, letterSpacing: "0.1em", marginBottom: 2 }}>◈ {t("useLpDiscount")}</div>
+              <div style={{ color: DS.text4, fontSize: 11 }}>{t("balance")}: {lpBalance.toLocaleString()} LP · {t("maxUse")}: {maxLpRedeem.toLocaleString()} LP (20%)</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <button onClick={() => setLpDiscount(Math.max(0, lpDiscount - 1000))} style={{ width: 28, height: 28, borderRadius: 7, background: "rgba(255,255,255,0.06)", border: `1px solid ${DS.border}`, color: DS.text3, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Minus size={12} />
+            </button>
+            <div style={{ color: DS.purple, fontFamily: DS.mono, fontSize: 15, fontWeight: 700, minWidth: 80, textAlign: "center" }}>
+              {lpDiscount.toLocaleString()} LP
+            </div>
+            <button onClick={() => setLpDiscount(Math.min(maxLpRedeem, lpDiscount + 1000))} style={{ width: 28, height: 28, borderRadius: 7, background: "rgba(255,255,255,0.06)", border: `1px solid ${DS.border}`, color: DS.text3, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Plus size={12} />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Payment method */}
+      <div className="mb-6">
+        <label style={{ color: DS.text3, fontSize: 12, fontFamily: DS.mono, letterSpacing: "0.1em", display: "block", marginBottom: 10 }}>{t("depositPayment")} (30%)</label>
+        <div className="flex gap-3 flex-wrap">
+          {payMethods.map(m => (
+            <button
+              key={m.id}
+              onClick={() => setPayMethod(m.id)}
+              style={{
+                padding: "10px 18px", borderRadius: 10, fontSize: 13, cursor: "pointer",
+                background: payMethod === m.id ? "rgba(59,130,246,0.15)" : "rgba(15,23,42,0.5)",
+                border: payMethod === m.id ? "1.5px solid rgba(59,130,246,0.5)" : `1px solid ${DS.border}`,
+                color: payMethod === m.id ? DS.blue : DS.text3,
+                display: "flex", alignItems: "center", gap: 8,
+              }}
+            >
+              <span>{m.icon}</span>
+              {m.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Submit */}
+      <button
+        onClick={onSubmit}
+        disabled={!name || !email || !phone || submitLoading}
+        style={{
+          background: (name && email && phone && !submitLoading) ? GRD.primary : "rgba(255,255,255,0.1)",
+          color: (name && email && phone && !submitLoading) ? "#fff" : DS.text4,
+          fontSize: 15, fontWeight: 700, padding: "14px 32px", borderRadius: 14, border: "none",
+          cursor: (name && email && phone && !submitLoading) ? "pointer" : "not-allowed",
+          display: "flex", alignItems: "center", gap: 10,
+          boxShadow: (name && email && phone && !submitLoading) ? "0 0 30px rgba(129,140,248,0.4)" : "none",
+          transition: "all 0.3s",
+        }}
+      >
+        <Shield size={16} />
+        {submitLoading ? t("submitting") : t("submitButton")}
+        {!submitLoading && <ArrowRight size={15} />}
+      </button>
+      <div style={{ color: DS.text5, fontSize: 11, marginTop: 10 }}>* {t("depositNote")}</div>
+    </div>
+  );
+}
+
 // ── Step 8 — Payment ──────────────────────────────────────────────────────────
 
 function StepPayment({
@@ -801,7 +1199,6 @@ export function BookingWizardClient({ locale }: Props) {
   const [serviceId, setServiceId] = useState("");
   const [pkgId, setPkgId] = useState("business");
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
-  const [talentId, setTalentId] = useState("");
   const [startDate, setStartDate] = useState("");
   const [duration, setDuration] = useState("");
   const [selectedExtras, setSelectedExtras] = useState<string[]>([]);
@@ -810,6 +1207,7 @@ export function BookingWizardClient({ locale }: Props) {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [company, setCompany] = useState("");
+  const [talentNote, setTalentNote] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [submitLoading, setSubmitLoading] = useState(false);
   const [submitError, setSubmitError] = useState("");
@@ -819,13 +1217,15 @@ export function BookingWizardClient({ locale }: Props) {
   const [services, setServices] = useState<WizardService[]>(FALLBACK_SERVICES);
   const [packages, setPackages] = useState<WizardPackage[]>(FALLBACK_PACKAGES);
   const [featureOptions, setFeatureOptions] = useState<Record<string, WizardFeature[]>>(FALLBACK_FEATURES);
-  const [talents] = useState<WizardTalent[]>(FALLBACK_TALENTS);
   const [extraOptions] = useState<WizardExtra[]>(FALLBACK_EXTRAS);
   const [lpRate, setLpRate] = useState<LpRateConfig>(DEFAULT_LP_RATE);
   const [maxLpRedeem, setMaxLpRedeem] = useState(0);
 
   // LP balance — 0 for anonymous users (auth needed for real balance)
   const lpBalance = 0;
+
+  // Filtered feature options for current service
+  const currentFeatureOptions: WizardFeature[] = featureOptions[serviceId] ?? [];
 
   useEffect(() => {
     let cancelled = false;
@@ -876,8 +1276,6 @@ export function BookingWizardClient({ locale }: Props) {
   // ── Derived values ────────────────────────────────────────────────────
   const service = services.find(s => s.id === serviceId) ?? null;
   const pkg = packages.find(p => p.id === pkgId) ?? null;
-  const talent = talents.find(t => t.id === talentId) ?? null;
-  const currentFeatureOptions: WizardFeature[] = featureOptions[serviceId] ?? [];
 
   const currentBasePrice = service ? service.basePrice * (pkg?.multiplier ?? 1) : 0;
   const currentFeaturePrice = currentFeatureOptions.filter(f => selectedFeatures.includes(f.id)).reduce((s, f) => s + f.price, 0);
@@ -900,8 +1298,6 @@ export function BookingWizardClient({ locale }: Props) {
   const canNext = () => {
     if (step === 0) return !!serviceId;
     if (step === 1) return !!pkgId;
-    if (step === 3) return !!talentId;
-    if (step === 4) return !!startDate && !!duration;
     return true;
   };
 
@@ -937,7 +1333,7 @@ export function BookingWizardClient({ locale }: Props) {
           companyName: company || undefined,
           selectedItems,
           totalAmount: total,
-          notes: `Dịch vụ: ${svc?.title ?? ""} | Gói: ${selectedPkg?.name ?? ""} | PM: ${talent?.name ?? ""} | Bắt đầu: ${startDate} | Thời gian: ${duration}`,
+          notes: `Dịch vụ: ${svc?.title ?? ""} | Gói: ${selectedPkg?.name ?? ""} | Ghi chú đội ngũ: ${talentNote || "—"} | Bắt đầu: ${startDate || "—"} | Thời gian: ${duration || "—"}`,
         }),
       });
       const data = await res.json();
@@ -953,8 +1349,9 @@ export function BookingWizardClient({ locale }: Props) {
 
   // ── i18n step labels ──────────────────────────────────────────────────
   const STEP_LABELS = [
-    t("step0Short"), t("step1Short"), t("step2Short"), t("step3Short"),
-    t("step4Short"), t("step5Short"), t("step6Short"), t("step7Short"),
+    t("step0Short"),
+    t("bookingPackage"),
+    t("bookingContact"),
   ];
 
   // ── Render ────────────────────────────────────────────────────────────
@@ -990,28 +1387,31 @@ export function BookingWizardClient({ locale }: Props) {
                   transition={{ duration: 0.2 }}
                 >
                   {step === 0 && <StepService services={services} selected={serviceId} onSelect={setServiceId} />}
-                  {step === 1 && <StepPackage packages={packages} service={service} selected={pkgId} onSelect={setPkgId} />}
-                  {step === 2 && <StepFeatures featureOptions={currentFeatureOptions} selected={selectedFeatures} onToggle={toggleFeature} />}
-                  {step === 3 && <StepTalent talents={talents} selected={talentId} onSelect={setTalentId} />}
-                  {step === 4 && <StepSchedule startDate={startDate} setStartDate={setStartDate} duration={duration} setDuration={setDuration} />}
-                  {step === 5 && <StepExtras extraOptions={extraOptions} selected={selectedExtras} onToggle={toggleExtra} />}
-                  {step === 6 && (
-                    <StepReview
-                      service={service} pkg={pkg} talent={talent}
-                      featureOptions={currentFeatureOptions} features={selectedFeatures}
-                      extraOptions={extraOptions} extras={selectedExtras}
-                      startDate={startDate} duration={duration}
+                  {step === 1 && (
+                    <StepAddons
+                      packages={packages} service={service}
+                      pkgId={pkgId} onSelectPkg={setPkgId}
+                      featureOptions={currentFeatureOptions}
+                      selectedFeatures={selectedFeatures} onToggleFeature={toggleFeature}
+                      extraOptions={extraOptions} selectedExtras={selectedExtras} onToggleExtra={toggleExtra}
                     />
                   )}
-                  {step === 7 && (
-                    <StepPayment
+                  {step === 2 && (
+                    <StepContact
                       lpBalance={lpBalance} maxLpRedeem={maxLpRedeem}
                       lpDiscount={lpDiscount} setLpDiscount={setLpDiscount} lpRate={lpRate}
                       name={name} setName={setName} email={email} setEmail={setEmail}
                       phone={phone} setPhone={setPhone} company={company} setCompany={setCompany}
+                      startDate={startDate} setStartDate={setStartDate}
+                      duration={duration} setDuration={setDuration}
+                      talentNote={talentNote} setTalentNote={setTalentNote}
+                      service={service} pkg={pkg}
+                      features={currentFeatureOptions.filter(f => selectedFeatures.includes(f.id))}
+                      extras={extraOptions.filter(e => selectedExtras.includes(e.id))}
                       submitted={submitted} orderId={newOrderId}
                       submitError={submitError} setSubmitError={setSubmitError}
                       onSubmit={handleSubmit} submitLoading={submitLoading}
+                      onEditSelection={() => setStep(1)}
                     />
                   )}
                 </motion.div>
@@ -1035,8 +1435,8 @@ export function BookingWizardClient({ locale }: Props) {
                     {t("back")}
                   </button>
                   <div className="flex items-center gap-2">
-                    <div style={{ color: DS.text4, fontSize: 12 }}>{step + 1} / 8</div>
-                    {step < 7 && (
+                    <div style={{ color: DS.text4, fontSize: 12 }}>{step + 1} / 3</div>
+                    {step < 2 && (
                       <button
                         onClick={() => setStep(s => s + 1)}
                         disabled={!canNext()}

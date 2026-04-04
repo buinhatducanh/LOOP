@@ -13,7 +13,7 @@
 
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
-import { Geist, Cinzel } from "next/font/google";
+import { DM_Sans, Plus_Jakarta_Sans } from "next/font/google";
 import { getSession } from "@/lib/auth/permissions";
 import { mapRoleLevelToUserRole } from "@/app/store/authStore";
 import { QueryProvider } from "@/lib/query/provider";
@@ -22,16 +22,16 @@ import { AdminTopbar } from "@/components/admin/AdminTopbar";
 import { AdminI18nProvider } from "@/i18n/admin/AdminI18nProvider";
 import "@/styles/globals.css";
 
-const geistFont = Geist({
+const dmSansFont = DM_Sans({
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700", "800"],
-  variable: "--font-geist",
+  variable: "--font-dm-sans",
 });
 
-const cinzelFont = Cinzel({
+const headingFont = Plus_Jakarta_Sans({
   subsets: ["latin"],
-  weight: ["400", "600", "700", "900"],
-  variable: "--font-cinzel",
+  weight: ["400", "500", "600", "700", "800"],
+  variable: "--font-plus-jakarta",
 });
 
 // Re-export so other admin pages can import this type
@@ -56,8 +56,7 @@ export default async function AdminLayout({
   const displayRole = mapRoleLevelToUserRole(roleLevel, accountType);
 
   return (
-    // "dark" class for Figma dark theme + Geist font class
-    <html lang="vi" suppressHydrationWarning className={`dark ${geistFont.className} ${cinzelFont.className}`}>
+    <html lang="vi" suppressHydrationWarning className={`dark ${dmSansFont.className} ${headingFont.className}`}>
       <body
         style={{
           margin: 0,
@@ -65,7 +64,7 @@ export default async function AdminLayout({
           minHeight: "100vh",
           background: "var(--figma-bg, #020617)",
           color: "var(--figma-text, #fff)",
-          fontFamily: "var(--font-geist), Geist, system-ui, sans-serif",
+          fontFamily: "var(--font-dm-sans), DM Sans, system-ui, sans-serif",
         }}
       >
         <QueryProvider>

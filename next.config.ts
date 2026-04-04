@@ -58,6 +58,15 @@ const nextConfig: NextConfig = {
           { key: 'Access-Control-Max-Age', value: '86400' },
         ],
       },
+      // CORS with credentials for v1 public GET endpoints (used by external clients)
+      {
+        source: '/api/v1/:path*',
+        headers: [
+          { key: 'Access-Control-Allow-Origin', value: '*' },
+          { key: 'Access-Control-Allow-Methods', value: 'GET, OPTIONS' },
+          { key: 'Access-Control-Allow-Headers', value: 'Content-Type, Accept-Language' },
+        ],
+      },
       {
         source: '/manifest.json',
         headers: [

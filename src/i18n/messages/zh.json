@@ -564,7 +564,20 @@
     "roleClient": "Client",
     "roleGuest": "访客",
     "media": "Media",
-    "bookNow": "Book Now"
+    "bookNow": "Book Now",
+    "servicesDropdown": "服务",
+    "marketingDropdown": "Marketing",
+    "serviceWebsite": "Website",
+    "serviceApp": "App / SaaS",
+    "serviceDashboard": "Dashboard",
+    "serviceSeo": "SEO / Marketing",
+    "mediaLabel": "Media",
+    "seoMarketingLabel": "SEO / Marketing",
+    "viewAll": "查看全部",
+    "webDropdown": "网页套餐",
+    "customServices": "定制服务",
+    "webCustomDesign": "定制页面设计",
+    "webCompleted": "已完成项目"
   },
   "Footer": {
     "ctaTitle": "准备好开始您的项目了吗？",
@@ -636,7 +649,7 @@
     "submit": "提交请求",
     "confirm": "确认订单",
     "heroTitle": "Book a Consultation",
-    "heroDesc": "8-step wizard to choose the right service",
+    "heroDesc": "3步向导选择合适的服务",
     "badge": "BOOK A CONSULTATION",
     "back": "Back",
     "next": "Continue",
@@ -649,7 +662,15 @@
     "step4Short": "Schedule",
     "step5Short": "Add-ons",
     "step6Short": "Review",
-    "step7Short": "Payment"
+    "step7Short": "Payment",
+    "bookingPackage": "服务套餐",
+    "bookingContact": "联系及支付",
+    "addonsTitle": "可选附加项",
+    "addonsDesc": "选择附加功能（可选）",
+    "talentNote": "团队备注",
+    "talentNotePlaceholder": "例如：我希望与Akira Sato合作...",
+    "orderSummary": "订单摘要",
+    "editSelection": "编辑"
   },
   "Errors": {
     "notFound": "页面未找到",

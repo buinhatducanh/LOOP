@@ -14,7 +14,7 @@ import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
 import SiteHeader from "./components/SiteHeader";
 import SiteFooter from "./components/SiteFooter";
-import { getFontClass, getCinzelClass } from "@/lib/fonts";
+import { getFontClass, getHeadingFontClass } from "@/lib/fonts";
 import { buildOrganizationJsonLd, buildWebSiteJsonLd } from "@/lib/json-ld";
 
 type Props = {
@@ -136,7 +136,7 @@ export default async function LocaleLayout({ children, params }: Props) {
     <html lang={locale} suppressHydrationWarning className="dark">
       <body
         style={{ margin: 0, display: "flex", flexDirection: "column", minHeight: "100vh" }}
-        className={`dark ${getFontClass(locale)} ${getCinzelClass()}`}
+        className={`dark ${getFontClass(locale)} ${getHeadingFontClass()}`}
       >
         <script
           type="application/ld+json"

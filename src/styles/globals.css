@@ -80,11 +80,10 @@
   --figma-glow-cyan: 0 0 20px rgba(20,184,166,0.4);
   --figma-glow-card: 0 8px 32px rgba(0,0,0,0.4);
 
-  /* Fonts — Geist for VI/EN, CJK fonts via next/font variables */
-  --font-cinzel: Geist, var(--font-geist), system-ui, sans-serif;
-  --font-inter: Geist, var(--font-geist), system-ui, sans-serif;
+  /* Fonts — DM Sans for VI/EN body, Plus Jakarta Sans for headings, CJK fonts via next/font variables */
+  --font-dm-sans: var(--font-dm-sans), system-ui, sans-serif;
+  --font-heading: var(--font-plus-jakarta), system-ui, sans-serif;
   --font-mono: "JetBrains Mono", monospace;
-  --font-serif: Geist, var(--font-geist), system-ui, sans-serif;
 }
 
 @theme inline {
@@ -135,10 +134,9 @@
   --color-text4: var(--text4);
   --color-text5: var(--text5);
   --color-border2: var(--border2);
-  --font-cinzel: var(--font-cinzel);
-  --font-inter: var(--font-inter);
+  --font-dm-sans: var(--font-dm-sans), system-ui, sans-serif;
+  --font-heading: var(--font-plus-jakarta), system-ui, sans-serif;
   --font-mono: var(--font-mono);
-  --font-serif: var(--font-serif);
 }
 
 @layer base {
@@ -149,7 +147,7 @@
   body {
     background-color: var(--background);
     color: var(--foreground);
-    font-family: var(--font-geist), system-ui, sans-serif;
+    font-family: var(--font-dm-sans), system-ui, sans-serif;
     min-height: 100vh;
   }
 
@@ -157,9 +155,9 @@
     scroll-behavior: smooth;
   }
 
-  /* Figma heading font — now Geist */
+  /* Heading font — Plus Jakarta Sans */
   .figma-heading {
-    font-family: var(--font-geist), system-ui, sans-serif;
+    font-family: var(--font-heading), system-ui, sans-serif;
   }
 
   .figma-mono {

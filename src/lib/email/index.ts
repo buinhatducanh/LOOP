@@ -74,7 +74,7 @@ function emailShell(title: string, content: string, accentColor = BRAND.primaryC
   <title>${title}</title>
   <!--[if mso]><style type="text/css">body,table,td{font-family:Arial,sans-serif!important}</style><![endif]-->
 </head>
-<body style="margin:0;padding:0;background:#0a0f1e;font-family:'Inter',Arial,sans-serif;-webkit-font-smoothing:antialiased">
+<body style="margin:0;padding:0;background:#0a0f1e;font-family:'DM Sans',Arial,sans-serif;-webkit-font-smoothing:antialiased">
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#0a0f1e">
     <tr><td align="center" style="padding:40px 16px">
 
@@ -86,7 +86,7 @@ function emailShell(title: string, content: string, accentColor = BRAND.primaryC
           <!-- Logo -->
           <img src="${BRAND.logoUrl}" alt="LOOP Solutions" width="72" height="72" style="display:inline-block;border-radius:16px;margin-bottom:16px" />
           <!-- Brand Name -->
-          <div style="font-family:'Cinzel',Arial,serif;font-size:24px;font-weight:900;color:#ffffff;letter-spacing:0.15em;margin-bottom:4px">
+          <div style="font-family:'Plus Jakarta Sans',Arial,sans-serif;font-size:24px;font-weight:800;color:#ffffff;letter-spacing:0.05em;margin-bottom:4px">
             <span style="color:${BRAND.primaryColor}">LOOP</span> <span style="color:#fff">SOLUTIONS</span>
           </div>
           <!-- Tagline -->
@@ -135,7 +135,7 @@ function otpEmailTemplate(code: string, minutes: number, purpose: string) {
 
   const html = `
   <!-- Title -->
-  <h1 style="margin:0 0 8px 0;font-size:22px;font-weight:700;color:#ffffff;text-align:center;font-family:'Cinzel',Arial,serif">
+  <h1 style="margin:0 0 8px 0;font-size:22px;font-weight:700;color:#ffffff;text-align:center;font-family:'Plus Jakarta Sans',Arial,sans-serif">
     🔐 Mã xác minh
   </h1>
   <p style="margin:0 0 28px 0;color:#94a3b8;font-size:14px;text-align:center">
@@ -173,7 +173,7 @@ function passwordResetSuccessTemplate() {
     <div style="display:inline-flex;align-items:center;justify-content:center;width:64px;height:64px;background:rgba(34,197,94,0.1);border:2px solid rgba(34,197,94,0.3);border-radius:50%;margin-bottom:16px">
       <span style="font-size:28px">✅</span>
     </div>
-    <h1 style="margin:0 0 8px 0;font-size:22px;font-weight:700;color:#ffffff;text-align:center;font-family:'Cinzel',Arial,serif">
+    <h1 style="margin:0 0 8px 0;font-size:22px;font-weight:700;color:#ffffff;text-align:center;font-family:'Plus Jakarta Sans',Arial,sans-serif">
       Đặt lại mật khẩu thành công
     </h1>
     <p style="margin:0;color:#94a3b8;font-size:14px">

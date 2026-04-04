@@ -646,7 +646,20 @@
     "roleClient": "Client",
     "roleGuest": "Guest",
     "media": "Media",
-    "bookNow": "Book Now"
+    "bookNow": "Book Now",
+    "servicesDropdown": "Services",
+    "marketingDropdown": "Marketing",
+    "serviceWebsite": "Website",
+    "serviceApp": "App / SaaS",
+    "serviceDashboard": "Dashboard",
+    "serviceSeo": "SEO / Marketing",
+    "mediaLabel": "Media",
+    "seoMarketingLabel": "SEO / Marketing",
+    "viewAll": "View all",
+    "webDropdown": "Web Packages",
+    "customServices": "Custom Services",
+    "webCustomDesign": "Custom Page Design",
+    "webCompleted": "Completed Projects"
   },
   "Footer": {
     "ctaTitle": "READY TO LEVEL UP?",
@@ -728,7 +741,7 @@
     "submit": "Submit Request",
     "confirm": "Confirm Order",
     "heroTitle": "Book a Consultation",
-    "heroDesc": "8-step wizard to choose the right service",
+    "heroDesc": "3-step wizard to choose the right service",
     "badge": "BOOK A CONSULTATION",
     "back": "Back",
     "next": "Continue",
@@ -741,7 +754,15 @@
     "step4Short": "Schedule",
     "step5Short": "Add-ons",
     "step6Short": "Review",
-    "step7Short": "Payment"
+    "step7Short": "Payment",
+    "bookingPackage": "Service Package",
+    "bookingContact": "Contact & Payment",
+    "addonsTitle": "Optional Add-ons",
+    "addonsDesc": "Choose additional features (optional)",
+    "talentNote": "Note for the team",
+    "talentNotePlaceholder": "E.g. I would like to work with Akira Sato...",
+    "orderSummary": "Order Summary",
+    "editSelection": "Edit"
   },
   "Errors": {
     "notFound": "Page not found",

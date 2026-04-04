@@ -421,6 +421,94 @@ function MobileAudioToggle({ onClose }: { onClose?: () => void }) {
   );
 }
 
+// ── Nav Dropdown ──────────────────────────────────────────────────────────────
+
+interface NavDropdownItem { label: string; href: string; icon: string }
+interface NavDropdownGroup { type: "dropdown"; labelKey: string; triggerLabel: string; items: NavDropdownItem[] }
+type NavItem = ({ type?: never; label: string; href: string } | NavDropdownGroup);
+
+function NavDropdown({
+  labelKey,
+  trigger,
+  items,
+  isOpen,
+  onToggle,
+  onSelect,
+}: {
+  labelKey: string;
+  trigger: React.ReactNode;
+  items: NavDropdownItem[];
+  isOpen: boolean;
+  onToggle: () => void;
+  onSelect: () => void;
+}) {
+  // Always render closed on server — only animate open on client to avoid hydration mismatch
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+
+  const isReallyOpen = mounted && isOpen;
+
+  return (
+    <div style={{ position: "relative" }}>
+      <button
+        onClick={onToggle}
+        onMouseEnter={onToggle}
+        style={{
+          display: "flex", alignItems: "center", gap: 4,
+          padding: "5px 10px", borderRadius: 7,
+          color: isReallyOpen ? DS.text : DS.text3,
+          background: isReallyOpen ? rgba(DS.blue, 0.1) : "transparent",
+          border: isReallyOpen ? `1px solid ${rgba(DS.blue, 0.2)}` : "1px solid transparent",
+          fontSize: 13, fontWeight: isReallyOpen ? 600 : 400,
+          cursor: "pointer", transition: "all 0.15s", whiteSpace: "nowrap",
+        }}
+      >
+        {trigger}
+        <ChevronDown size={10} style={{ transition: "transform 0.15s", transform: isReallyOpen ? "rotate(180deg)" : "none" }} />
+      </button>
+
+      <AnimatePresence>
+        {isReallyOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -6, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -6, scale: 0.97 }}
+            transition={{ duration: 0.15 }}
+            onMouseLeave={onToggle}
+            style={{
+              position: "absolute", top: "100%", left: 0, marginTop: 6,
+              minWidth: 220,
+              background: "rgba(2,6,23,0.96)",
+              border: `1px solid ${rgba(DS.blue, 0.15)}`,
+              borderRadius: 14,
+              backdropFilter: "blur(20px)",
+              boxShadow: "0 20px 60px rgba(0,0,0,0.6)",
+              overflow: "hidden", zIndex: 100, padding: "6px",
+            }}
+          >
+            {items.map((item) => (
+              <Link key={item.href} href={item.href} onClick={onSelect} style={{ textDecoration: "none" }}>
+                <div
+                  style={{
+                    display: "flex", alignItems: "center", gap: 12,
+                    padding: "10px 14px", borderRadius: 10, cursor: "pointer",
+                    transition: "background 0.1s",
+                  }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(59,130,246,0.08)"; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+                >
+                  <span style={{ fontSize: "1rem" }}>{item.icon}</span>
+                  <span style={{ color: DS.text2, fontSize: 13, fontWeight: 500 }}>{item.label}</span>
+                </div>
+              </Link>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 // ── Role labels ───────────────────────────────────────────────────────────────
 
 function getRoleLabels(t: ReturnType<typeof useTranslations<"Navigation">>) {
@@ -443,7 +531,10 @@ export default function SiteHeader({ locale }: { locale: string }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  // Single source of truth for dropdown open state (null = all closed)
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
+  const navRef = useRef<HTMLDivElement>(null);
   const roleLabels = getRoleLabels(t);
   const mounted = useMounted();
 
@@ -456,15 +547,49 @@ export default function SiteHeader({ locale }: { locale: string }) {
     }
   }, [mounted]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const navLinks = [
+  const navLinks: NavItem[] = [
     { label: t("home"), href: `/${locale}/` },
-    { label: t("services"), href: `/${locale}/services` },
-    { label: t("media"), href: `/${locale}/media` },
-    { label: t("portfolio"), href: `/${locale}/portfolio` },
-    { label: t("team"), href: `/${locale}/team` },
+
+    // Dịch vụ dropdown
+    {
+      type: "dropdown",
+      labelKey: "servicesDropdown",
+      triggerLabel: t("servicesDropdown"),
+      items: [
+        { label: t("serviceWebsite"),    href: `/${locale}/services?cat=web`,       icon: "🌐" },
+        { label: t("serviceApp"),        href: `/${locale}/services?cat=app`,        icon: "📱" },
+        { label: t("serviceDashboard"), href: `/${locale}/services?cat=dashboard`, icon: "📊" },
+        { label: t("serviceSeo"),       href: `/${locale}/services?cat=seo`,         icon: "🎯" },
+      ],
+    },
+
+    // Marketing dropdown
+    {
+      type: "dropdown",
+      labelKey: "marketingDropdown",
+      triggerLabel: t("marketingDropdown"),
+      items: [
+        { label: t("mediaLabel"), href: `/${locale}/media`, icon: "🎬" },
+      ],
+    },
+
+    // Gói Web dropdown
+    {
+      type: "dropdown",
+      labelKey: "webDropdown",
+      triggerLabel: t("webDropdown"),
+      items: [
+        { label: t("customServices"),  href: `/${locale}/services`,          icon: "🛠️" },
+        { label: t("pricing"),         href: `/${locale}/pricing`,            icon: "💰" },
+        { label: t("webCustomDesign"), href: `/${locale}/services?cat=web-custom`, icon: "✏️" },
+        { label: t("webCompleted"),   href: `/${locale}/du-an`,              icon: "✅" },
+      ],
+    },
+
+    // Standalone
+    { label: t("team"),    href: `/${locale}/team` },
     { label: t("academy"), href: `/${locale}/academy` },
-    { label: t("blog"), href: `/${locale}/blog` },
-    { label: t("pricing"), href: `/${locale}/pricing` },
+    { label: t("blog"),   href: `/${locale}/blog` },
     { label: t("contact"), href: `/${locale}/contact` },
   ];
 
@@ -488,16 +613,19 @@ export default function SiteHeader({ locale }: { locale: string }) {
     return () => window.removeEventListener("keydown", fn);
   }, []);
 
-  // Close user menu on outside click
+  // Close nav dropdowns and user menu on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
         setUserMenuOpen(false);
       }
+      if (navRef.current && !navRef.current.contains(e.target as Node)) {
+        setOpenDropdown(null);
+      }
     };
-    if (userMenuOpen) document.addEventListener("mousedown", handler);
+    if (userMenuOpen || openDropdown) document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
-  }, [userMenuOpen]);
+  }, [userMenuOpen, openDropdown]);
 
   const isMac = typeof navigator !== "undefined" && /Mac/i.test(navigator.userAgent);
 
@@ -543,8 +671,22 @@ export default function SiteHeader({ locale }: { locale: string }) {
           </Link>
 
           {/* Desktop Nav */}
-          <nav className="hide-mobile" style={{ display: "flex", alignItems: "center", gap: 4, marginLeft: "1.5rem", flex: 1 }}>
+          <nav ref={navRef} className="hide-mobile" style={{ display: "flex", alignItems: "center", gap: 4, marginLeft: "1.5rem", flex: 1 }}>
             {navLinks.map(link => {
+              if (link.type === "dropdown") {
+                // Always render NavDropdown to avoid SSR/hydration mismatch
+                return (
+                  <NavDropdown
+                    key={link.labelKey}
+                    labelKey={link.labelKey}
+                    trigger={<span>{link.triggerLabel}</span>}
+                    items={link.items}
+                    isOpen={openDropdown === link.labelKey}
+                    onToggle={() => setOpenDropdown(prev => prev === link.labelKey ? null : link.labelKey)}
+                    onSelect={() => setOpenDropdown(null)}
+                  />
+                );
+              }
               const active = isActive(link.href);
               return (
                 <Link
@@ -782,11 +924,52 @@ export default function SiteHeader({ locale }: { locale: string }) {
               style={{ overflow: "hidden", background: "rgba(2,6,23,0.98)", borderTop: `1px solid ${DS.border}` }}
             >
               <nav style={{ padding: "12px 1.5rem 20px", display: "flex", flexDirection: "column", gap: 4 }}>
-                {navLinks.map(link => {
+                {navLinks.map((link, idx) => {
+                  if (link.type === "dropdown") {
+                    const [subOpen, setSubOpen] = useState(false);
+                    return (
+                      <div key={`m-drop-${link.labelKey}-${idx}`}>
+                        <button
+                          onClick={() => setSubOpen(v => !v)}
+                          style={{
+                            display: "flex", justifyContent: "space-between", alignItems: "center",
+                            width: "100%", padding: "10px 14px", borderRadius: 8,
+                            color: DS.text3, background: "none", border: "none",
+                            cursor: "pointer", fontSize: 15,
+                          }}
+                        >
+                          <span>{link.triggerLabel}</span>
+                          <ChevronDown size={14} style={{ transform: subOpen ? "rotate(180deg)" : "none", transition: "transform 0.15s" }} />
+                        </button>
+                        <AnimatePresence>
+                          {subOpen && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: "auto", opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.2 }}
+                              style={{ overflow: "hidden", paddingLeft: 16 }}
+                            >
+                              {link.items.map(item => (
+                                <Link
+                                  key={`m-sub-${item.href}`}
+                                  href={item.href}
+                                  onClick={() => { setMobileOpen(false); setSubOpen(false); }}
+                                  style={{ display: "block", padding: "8px 14px", color: DS.text4, fontSize: 14, textDecoration: "none" }}
+                                >
+                                  <span style={{ marginRight: 8 }}>{item.icon}</span>{item.label}
+                                </Link>
+                              ))}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    );
+                  }
                   const active = isActive(link.href);
                   return (
                     <Link
-                      key={`m-${link.href}`}
+                      key={`m-${link.href}-${idx}`}
                       href={link.href}
                       onClick={() => setMobileOpen(false)}
                       style={{

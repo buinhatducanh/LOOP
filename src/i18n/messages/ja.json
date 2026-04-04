@@ -564,7 +564,20 @@
     "roleClient": "Client",
     "roleGuest": "ゲスト",
     "media": "Media",
-    "bookNow": "Book Now"
+    "bookNow": "Book Now",
+    "servicesDropdown": "サービス",
+    "marketingDropdown": "Marketing",
+    "serviceWebsite": "Website",
+    "serviceApp": "App / SaaS",
+    "serviceDashboard": "Dashboard",
+    "serviceSeo": "SEO / Marketing",
+    "mediaLabel": "Media",
+    "seoMarketingLabel": "SEO / Marketing",
+    "viewAll": "すべて表示",
+    "webDropdown": "Webパッケージ",
+    "customServices": "カスタムサービス",
+    "webCustomDesign": "カスタムページデザイン",
+    "webCompleted": "完了プロジェクト"
   },
   "Footer": {
     "ctaTitle": "プロジェクトを始めましょう？",
@@ -636,7 +649,7 @@
     "submit": "リクエストを送信",
     "confirm": "注文を確認",
     "heroTitle": "Book a Consultation",
-    "heroDesc": "8-step wizard to choose the right service",
+    "heroDesc": "3ステップのウィザードでサービスを選択",
     "badge": "BOOK A CONSULTATION",
     "back": "Back",
     "next": "Continue",
@@ -649,7 +662,15 @@
     "step4Short": "Schedule",
     "step5Short": "Add-ons",
     "step6Short": "Review",
-    "step7Short": "Payment"
+    "step7Short": "Payment",
+    "bookingPackage": "サービスパッケージ",
+    "bookingContact": "お問い合わせ＆お支払い",
+    "addonsTitle": "追加オプション",
+    "addonsDesc": "追加機能を選択（任意）",
+    "talentNote": "チームへのメモ",
+    "talentNotePlaceholder": "例：Akira Satoと作業りたい...",
+    "orderSummary": "注文概要",
+    "editSelection": "編集"
   },
   "Errors": {
     "notFound": "ページが見つかりません",

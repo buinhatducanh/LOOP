@@ -10,7 +10,7 @@
  */
 
 /* ── Google Fonts ─────────────────────────────────────────────────────────── */
-/* Geist loaded via next/font/google in src/lib/fonts.ts */
+/* DM Sans + Plus Jakarta Sans loaded via next/font/google in src/lib/fonts.ts */
 /* CJK fonts (JA/KO/ZH) loaded via next/font/google per locale */
 /* Only JetBrains Mono is manually loaded here */
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
@@ -76,7 +76,7 @@
 /* ── Figma dark theme base ─────────────────────────────────────────────────── */
 .dark,
 [data-theme="dark"] {
-  font-family: Geist, var(--font-geist), system-ui, sans-serif;
+  font-family: var(--font-dm-sans), DM Sans, system-ui, sans-serif;
   background-color: var(--figma-bg);
   color: var(--figma-text);
   min-height: 100vh;
@@ -84,7 +84,7 @@
 
 /* ── Figma typography helpers ───────────────────────────────────────────────── */
 .figma-heading {
-  font-family: Geist, var(--font-geist), system-ui, sans-serif;
+  font-family: var(--font-plus-jakarta), Plus Jakarta Sans, system-ui, sans-serif;
 }
 
 .figma-mono {

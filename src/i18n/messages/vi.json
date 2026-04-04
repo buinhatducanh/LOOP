@@ -644,7 +644,20 @@
     "roleClient": "Client",
     "roleGuest": "Khách",
     "media": "Media",
-    "bookNow": "Đặt lịch ngay"
+    "bookNow": "Đặt lịch ngay",
+    "servicesDropdown": "Dịch vụ",
+    "marketingDropdown": "Marketing",
+    "serviceWebsite": "Website",
+    "serviceApp": "App / SaaS",
+    "serviceDashboard": "Dashboard",
+    "serviceSeo": "SEO / Marketing",
+    "mediaLabel": "Media",
+    "seoMarketingLabel": "SEO / Marketing",
+    "viewAll": "Xem tất cả",
+    "webDropdown": "Gói Web",
+    "customServices": "Dịch vụ tùy chỉnh",
+    "webCustomDesign": "Thiết kế trang theo yêu cầu",
+    "webCompleted": "Dự án đã thực hiện"
   },
   "Footer": {
     "ctaTitle": "SẴN SẮNG NÂNG CẤP DIGITAL?",
@@ -726,7 +739,7 @@
     "submit": "Gửi yêu cầu",
     "confirm": "Xác nhận đặt hàng",
     "heroTitle": "Đặt lịch tư vấn",
-    "heroDesc": "Wizard 8 bước chọn dịch vụ phù hợp",
+    "heroDesc": "Wizard 3 bước chọn dịch vụ phù hợp",
     "badge": "ĐẶT LỊCH BÁO GIÁ",
     "back": "Quay lại",
     "next": "Tiếp tục",
@@ -739,7 +752,15 @@
     "step4Short": "Lịch",
     "step5Short": "Thêm",
     "step6Short": "Review",
-    "step7Short": "Thanh toán"
+    "step7Short": "Thanh toán",
+    "bookingPackage": "Gói dịch vụ",
+    "bookingContact": "Thông tin & Thanh toán",
+    "addonsTitle": "Tùy chọn thêm",
+    "addonsDesc": "Chọn các tính năng bổ sung (tùy chọn)",
+    "talentNote": "Ghi chú cho đội ngũ",
+    "talentNotePlaceholder": "Ví dụ: Tôi muốn làm việc với Akira Sato...",
+    "orderSummary": "Tóm tắt đơn hàng",
+    "editSelection": "Sửa lựa chọn"
   },
   "Errors": {
     "notFound": "Không tìm thấy trang",
