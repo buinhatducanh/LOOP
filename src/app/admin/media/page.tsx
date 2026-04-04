@@ -9,8 +9,14 @@ import { DS, GRD } from "@/lib/design-tokens";
 import { useAdminTranslations } from "@/i18n/admin/useAdminTranslations";
 import {
   X, Camera, CheckCircle2, Eye, ChevronRight, Search,
-  RefreshCw, Trash2, Plus, ChevronLeft, Upload, FileText,
+  RefreshCw, Trash2, Plus, ChevronLeft, Upload, FileText, TrendingUp,
+  Image, ZoomIn, ExternalLink, LayoutGrid, List, Calendar,
 } from "lucide-react";
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const fmtVND = (n: number) =>
+  new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(n);
 
 // ─── Status config ─────────────────────────────────────────────────────────────
 
@@ -59,11 +65,13 @@ type MediaBooking = {
   paymentStatus: string;
   totalAmount?: number;
   paidAmount: number;
-  deliveredAssets: string[];
+  deliveredAssets: (string | { url?: string; name?: string })[];
   revisionNotes?: string;
   deliveredAt?: string;
   approvedAt?: string;
   rejectedAt?: string;
+  approvedByUser?: { name: string };
+  rejectedByUser?: { name: string };
   teamMember?: { id: string; name: string };
   package?: { title: string };
   createdAt: string;
@@ -82,6 +90,21 @@ type BookingFormData = {
   deadline: string;
   totalAmount: string;
   teamMemberId: string;
+  paymentStatus: string;
+};
+
+// Portfolio item extracted from approved bookings with delivered assets
+type PortfolioItem = {
+  id: string;
+  bookingId: string;
+  bookingNumber: string;
+  title: string;
+  customerName: string;
+  bookingType: string;
+  teamMember?: { name: string };
+  package?: { title: string };
+  deliveredAt: string;
+  assetUrls: (string | { url?: string; name?: string })[];
 };
 
 // ─── Row component ─────────────────────────────────────────────────────────────
@@ -99,7 +122,7 @@ function BookingRow({
   onDelete: (id: string) => void;
   t: ReturnType<typeof useAdminTranslations>["t"];
 }) {
-  const cfgRaw = STATUS_CONFIG[booking.status] ?? { label: booking.status, color: DS.text4, bg: "transparent" };
+  const cfgRaw = STATUS_CONFIG[booking.status] ?? { label: booking.status, color: DS.blue, bg: "rgba(59,130,246,0.1)" };
   const cfg = { ...cfgRaw, label: t(`media.status${cfgRaw.label.charAt(0).toUpperCase() + cfgRaw.label.slice(1)}` as `media.status${string}`) };
   const payCfgRaw = PAYMENT_CONFIG[booking.paymentStatus] ?? { label: booking.paymentStatus, color: DS.text4 };
   const payCfg = { ...payCfgRaw, label: t(`media.payment${payCfgRaw.label.charAt(0).toUpperCase() + payCfgRaw.label.slice(1)}` as `media.payment${string}`) };
@@ -274,6 +297,8 @@ function DetailModal({
     { label: t("media.detailDeadline"), value: booking.deadline ? new Date(booking.deadline).toLocaleDateString("vi-VN") : "—" },
     { label: t("media.detailAssignee"), value: booking.teamMember?.name ?? "—" },
     { label: t("media.detailCreated"), value: new Date(booking.createdAt).toLocaleString("vi-VN") },
+    ...(booking.approvedAt ? [{ label: t("media.detailApprovedBy"), value: booking.approvedByUser?.name ?? "—", mono: false }] : []),
+    ...(booking.rejectedAt ? [{ label: t("media.detailRejectedBy"), value: booking.rejectedByUser?.name ?? "—", mono: false }] : []),
   ];
 
   return (
@@ -385,25 +410,32 @@ function DetailModal({
             <div style={{ marginBottom: 16 }}>
               <p style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.1em", marginBottom: 6 }}>{t("media.detailDocs")} ({booking.deliveredAssets.length})</p>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                {(booking.deliveredAssets as string[]).map((url, i) => (
-                  <a
-                    key={i}
-                    href={url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{
-                      padding: "6px 12px", borderRadius: 8,
-                      background: "rgba(139,92,246,0.1)",
-                      border: "1px solid rgba(139,92,246,0.3)",
-                      color: "#8B5CF6", fontSize: 12, fontFamily: DS.mono,
-                      display: "flex", alignItems: "center", gap: 4,
-                      textDecoration: "none",
-                    }}
-                  >
-                    <FileText size={12} />
-                    File {i + 1}
-                  </a>
-                ))}
+                {booking.deliveredAssets.map((item, i) => {
+                  const href = typeof item === "string" ? item : (item as { url?: string }).url ?? "#";
+                  const label = typeof item === "string"
+                    ? item.split("/").pop() ?? item
+                    : (item as { name?: string }).name ?? `File ${i + 1}`;
+                  return (
+                    <a
+                      key={i}
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        padding: "6px 12px", borderRadius: 8,
+                        background: "rgba(139,92,246,0.1)",
+                        border: "1px solid rgba(139,92,246,0.3)",
+                        color: "#8B5CF6", fontSize: 12, fontFamily: DS.mono,
+                        display: "flex", alignItems: "center", gap: 4,
+                        textDecoration: "none",
+                        maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                      }}
+                    >
+                      <FileText size={12} />
+                      {label}
+                    </a>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -463,6 +495,15 @@ function BookingFormModal({
   const { t } = useAdminTranslations();
   const isEdit = !!booking;
 
+  const { data: membersData } = useQuery({
+    queryKey: ["admin", "team-options"],
+    queryFn: async () => {
+      const res = await adminApi.get<{ data: Array<{ id: string; name: string }> }>("/api/admin/team", { params: { limit: 100 } });
+      return res;
+    },
+  });
+  const memberOptions = membersData?.data ?? [];
+
   const [form, setForm] = useState<BookingFormData>({
     customerName: booking?.customerName ?? "",
     customerEmail: booking?.customerEmail ?? "",
@@ -475,10 +516,11 @@ function BookingFormModal({
     deadline: booking?.deadline ?? "",
     totalAmount: booking?.totalAmount?.toString() ?? "",
     teamMemberId: booking?.teamMember?.id ?? "",
+    paymentStatus: (booking as MediaBooking | undefined)?.paymentStatus ?? "unpaid",
   });
 
-  const [deliveredAssets, setDeliveredAssets] = useState<string[]>(
-    Array.isArray(booking?.deliveredAssets) ? (booking.deliveredAssets as string[]) : []
+  const [deliveredAssets, setDeliveredAssets] = useState<(string | { url?: string; name?: string })[]>(
+    Array.isArray(booking?.deliveredAssets) ? booking.deliveredAssets : []
   );
   const [assetUrl, setAssetUrl] = useState("");
   const [error, setError] = useState("");
@@ -493,6 +535,7 @@ function BookingFormModal({
         totalAmount: form.totalAmount ? parseInt(form.totalAmount, 10) : null,
         teamMemberId: form.teamMemberId || null,
         deliveredAssets: deliveredAssets,
+        paymentStatus: form.paymentStatus,
       };
       if (isEdit && booking) {
         return adminApi.put(`/api/admin/media-bookings/${booking.id}`, payload);
@@ -516,19 +559,35 @@ function BookingFormModal({
       setError(t("media.errRequired"));
       return;
     }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.customerEmail.trim())) {
+      setError(t("media.errInvalidEmail"));
+      return;
+    }
     setSaving(true);
     mutation.mutate();
   };
 
   const addAsset = () => {
-    if (assetUrl.trim() && !deliveredAssets.includes(assetUrl.trim())) {
-      setDeliveredAssets((prev) => [...prev, assetUrl.trim()]);
-      setAssetUrl("");
+    const trimmed = assetUrl.trim();
+    if (!trimmed) return;
+    const newItem = trimmed.startsWith("{") ? JSON.parse(trimmed) : trimmed;
+    const key = typeof newItem === "string" ? newItem : JSON.stringify(newItem);
+    const alreadyExists = deliveredAssets.some((a) => {
+      const aKey = typeof a === "string" ? a : JSON.stringify(a);
+      return aKey === key;
+    });
+    if (!alreadyExists) {
+      setDeliveredAssets((prev) => [...prev, newItem]);
     }
+    setAssetUrl("");
   };
 
-  const removeAsset = (url: string) => {
-    setDeliveredAssets((prev) => prev.filter((a) => a !== url));
+  const removeAsset = (item: string | { url?: string; name?: string }) => {
+    const key = typeof item === "string" ? item : JSON.stringify(item);
+    setDeliveredAssets((prev) => prev.filter((a) => {
+      const aKey = typeof a === "string" ? a : JSON.stringify(a);
+      return aKey !== key;
+    }));
   };
 
   const fieldStyle = {
@@ -644,6 +703,30 @@ function BookingFormModal({
               </div>
             </div>
 
+            {/* Assignee + payment status */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, ...groupStyle }}>
+              <div>
+                <label style={labelStyle}>{t("media.formAssignee")}</label>
+                <select style={fieldStyle} value={form.teamMemberId}
+                  onChange={(e) => setForm((f) => ({ ...f, teamMemberId: e.target.value }))}>
+                  <option value="">— {t("media.formSelectAssignee")} —</option>
+                  {memberOptions.map((m) => (
+                    <option key={m.id} value={m.id}>{m.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label style={labelStyle}>{t("media.formPaymentStatus")}</label>
+                <select style={fieldStyle} value={form.paymentStatus}
+                  onChange={(e) => setForm((f) => ({ ...f, paymentStatus: e.target.value }))}>
+                  <option value="unpaid">{t("media.paymentUnpaid")}</option>
+                  <option value="partial">{t("media.paymentPartial")}</option>
+                  <option value="paid">{t("media.paymentPaid")}</option>
+                  <option value="refunded">{t("media.paymentRefunded")}</option>
+                </select>
+              </div>
+            </div>
+
             {/* Requirements */}
             <div style={groupStyle}>
               <label style={labelStyle}>{t("media.formRequirements")}</label>
@@ -681,22 +764,28 @@ function BookingFormModal({
                 </div>
                 {deliveredAssets.length > 0 && (
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                    {deliveredAssets.map((url) => (
-                      <div key={url} style={{
-                        display: "flex", alignItems: "center", gap: 4, padding: "4px 10px",
-                        borderRadius: 8, background: "rgba(139,92,246,0.1)",
-                        border: "1px solid rgba(139,92,246,0.3)",
-                      }}>
-                        <a href={url} target="_blank" rel="noopener noreferrer"
-                          style={{ color: "#8B5CF6", fontSize: 12, fontFamily: DS.mono, textDecoration: "none", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                          {url.split("/").pop() ?? url}
-                        </a>
-                        <button type="button" onClick={() => removeAsset(url)}
-                          style={{ background: "none", border: "none", color: "#EF4444", cursor: "pointer", padding: 0, display: "flex" }}>
-                          <X size={11} />
-                        </button>
-                      </div>
-                    ))}
+                    {deliveredAssets.map((item, i) => {
+                      const href = typeof item === "string" ? item : (item as { url?: string }).url ?? "#";
+                      const label = typeof item === "string"
+                        ? item.split("/").pop() ?? item
+                        : (item as { name?: string }).name ?? `File ${i + 1}`;
+                      return (
+                        <div key={i} style={{
+                          display: "flex", alignItems: "center", gap: 4, padding: "4px 10px",
+                          borderRadius: 8, background: "rgba(139,92,246,0.1)",
+                          border: "1px solid rgba(139,92,246,0.3)",
+                        }}>
+                          <a href={href} target="_blank" rel="noopener noreferrer"
+                            style={{ color: "#8B5CF6", fontSize: 12, fontFamily: DS.mono, textDecoration: "none", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {label}
+                          </a>
+                          <button type="button" onClick={() => removeAsset(item)}
+                            style={{ background: "none", border: "none", color: "#EF4444", cursor: "pointer", padding: 0, display: "flex" }}>
+                            <X size={11} />
+                          </button>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -731,6 +820,400 @@ function BookingFormModal({
   );
 }
 
+// ─── Lightbox Modal ────────────────────────────────────────────────────────────
+
+function LightboxModal({
+  items,
+  startIndex,
+  onClose,
+  title,
+  customer,
+  bookingNumber,
+  t,
+}: {
+  items: (string | { url?: string; name?: string })[];
+  startIndex: number;
+  onClose: () => void;
+  title: string;
+  customer: string;
+  bookingNumber: string;
+  t: ReturnType<typeof useAdminTranslations>["t"];
+}) {
+  const [idx, setIdx] = useState(startIndex);
+  const item = items[idx];
+  const src = typeof item === "string" ? item : (item as { url?: string }).url ?? "#";
+  const label = typeof item === "string"
+    ? item.split("/").pop() ?? item
+    : (item as { name?: string }).name ?? `File ${idx + 1}`;
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+        style={{
+          position: "fixed", inset: 0, background: "rgba(0,0,0,0.95)",
+          zIndex: 100, display: "flex", flexDirection: "column",
+        }}
+      >
+        {/* Header */}
+        <div style={{
+          display: "flex", justifyContent: "space-between", alignItems: "center",
+          padding: "16px 24px", borderBottom: `1px solid ${DS.border}`,
+        }}>
+          <div>
+            <p style={{ color: DS.text, fontWeight: 700, fontSize: 15 }}>{title}</p>
+            <p style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono }}>
+              {bookingNumber} · {customer} · {label}
+            </p>
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <a
+              href={src}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                padding: "6px 12px", borderRadius: 8,
+                background: "rgba(59,130,246,0.15)", border: `1px solid rgba(59,130,246,0.3)`,
+                color: DS.blue, fontSize: 12, fontWeight: 600, cursor: "pointer",
+                display: "flex", alignItems: "center", gap: 4, textDecoration: "none",
+              }}
+            >
+              <ExternalLink size={12} /> {t("media.portfolioOpenOriginal")}
+            </a>
+            <button
+              onClick={onClose}
+              style={{
+                padding: "6px 12px", borderRadius: 8, background: DS.bgCard,
+                border: `1px solid ${DS.border}`, color: DS.text3, cursor: "pointer",
+                display: "flex", alignItems: "center", fontSize: 12,
+              }}
+            >
+              <X size={13} /> {t("common.close")}
+            </button>
+          </div>
+        </div>
+
+        {/* Image */}
+        <div style={{
+          flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
+          padding: "0 24px", position: "relative",
+        }}>
+          {/* Prev */}
+          {idx > 0 && (
+            <button
+              onClick={() => setIdx((i) => i - 1)}
+              style={{
+                position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)",
+                width: 44, height: 44, borderRadius: "50%",
+                background: "rgba(255,255,255,0.1)", border: "none",
+                color: "#fff", cursor: "pointer", display: "flex", alignItems: "center",
+                justifyContent: "center", fontSize: 20,
+              }}
+            >
+              ‹
+            </button>
+          )}
+
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            key={idx}
+            src={src}
+            alt={label}
+            style={{
+              maxHeight: "80vh", maxWidth: "90vw", objectFit: "contain",
+              borderRadius: 12, boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
+            }}
+          />
+
+          {/* Next */}
+          {idx < items.length - 1 && (
+            <button
+              onClick={() => setIdx((i) => i + 1)}
+              style={{
+                position: "absolute", right: 16, top: "50%", transform: "translateY(-50%)",
+                width: 44, height: 44, borderRadius: "50%",
+                background: "rgba(255,255,255,0.1)", border: "none",
+                color: "#fff", cursor: "pointer", display: "flex", alignItems: "center",
+                justifyContent: "center", fontSize: 20,
+              }}
+            >
+              ›
+            </button>
+          )}
+        </div>
+
+        {/* Thumbnail strip */}
+        {items.length > 1 && (
+          <div style={{
+            display: "flex", gap: 8, padding: "12px 24px",
+            overflowX: "auto", borderTop: `1px solid ${DS.border}`,
+          }}>
+            {items.map((it, i) => {
+              const url = typeof it === "string" ? it : (it as { url?: string }).url ?? "#";
+              return (
+                <button
+                  key={i}
+                  onClick={() => setIdx(i)}
+                  style={{
+                    width: 56, height: 56, borderRadius: 8, flexShrink: 0,
+                    border: `2px solid ${i === idx ? DS.blue : "transparent"}`,
+                    overflow: "hidden", cursor: "pointer", padding: 0,
+                    opacity: i === idx ? 1 : 0.6,
+                    transition: "opacity 0.15s",
+                  }}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={url}
+                    alt=""
+                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  />
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Counter */}
+        <div style={{
+          textAlign: "center", padding: "8px 0 12px",
+          color: DS.text4, fontSize: 11, fontFamily: DS.mono,
+        }}>
+          {idx + 1} / {items.length}
+        </div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+// ─── Portfolio Gallery ──────────────────────────────────────────────────────────
+
+function PortfolioGallery({
+  onEditBooking,
+  t,
+}: {
+  onEditBooking: (booking: MediaBooking) => void;
+  t: ReturnType<typeof useAdminTranslations>["t"];
+}) {
+  const [lightbox, setLightbox] = useState<{
+    items: (string | { url?: string; name?: string })[];
+    index: number;
+    booking: MediaBooking;
+  } | null>(null);
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["admin", "media-bookings", "portfolio"],
+    queryFn: async () => {
+      const res = await adminApi.get<{ data: MediaBooking[] }>("/api/admin/media-bookings", {
+        params: { portfolio: "true", limit: 100 },
+      });
+      return res;
+    },
+  });
+
+  const bookings = data?.data ?? [];
+
+  const openLightbox = (booking: MediaBooking, itemIndex: number) => {
+    setLightbox({ items: booking.deliveredAssets as (string | { url?: string; name?: string })[], index: itemIndex, booking });
+  };
+
+  if (isLoading) {
+    return (
+      <div style={{ display: "flex", justifyContent: "center", padding: 60 }}>
+        <div style={{ width: 32, height: 32, border: `3px solid ${DS.border}`, borderTopColor: DS.blue, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+      </div>
+    );
+  }
+
+  if (bookings.length === 0) {
+    return (
+      <div style={{ textAlign: "center", padding: "60px 0", color: DS.text4 }}>
+        <Image size={40} style={{ margin: "0 auto 12px", opacity: 0.4 }} />
+        <p style={{ fontSize: 14, fontWeight: 600 }}>{t("media.portfolioEmpty")}</p>
+        <p style={{ fontSize: 12, marginTop: 4 }}>{t("media.portfolioEmptyHint")}</p>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div style={{ marginBottom: 16 }}>
+        <p style={{ color: DS.text4, fontSize: 12, fontFamily: DS.mono }}>
+          {t("media.portfolioCount", { n: bookings.length })}
+        </p>
+      </div>
+
+      {/* Grid */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}>
+        {bookings.map((booking) => {
+          const assets = (booking.deliveredAssets as (string | { url?: string; name?: string })[]);
+          const cover = assets[0];
+          const coverSrc = typeof cover === "string" ? cover : (cover as { url?: string }).url ?? "";
+
+          return (
+            <motion.div
+              key={booking.id}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              style={{
+                background: DS.bgCard, border: `1px solid ${DS.border}`,
+                borderRadius: 16, overflow: "hidden",
+                transition: "border-color 0.2s",
+              }}
+            >
+              {/* Cover image */}
+              <div
+                style={{
+                  height: 180, background: DS.bg, position: "relative",
+                  overflow: "hidden", cursor: "pointer",
+                }}
+                onClick={() => assets.length > 0 && openLightbox(booking, 0)}
+              >
+                {coverSrc ? (
+                  <>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={coverSrc}
+                      alt={booking.title}
+                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                    />
+                    <div style={{
+                      position: "absolute", inset: 0,
+                      background: "linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 50%)",
+                    }} />
+                  </>
+                ) : (
+                  <div style={{
+                    width: "100%", height: "100%", display: "flex",
+                    alignItems: "center", justifyContent: "center", color: DS.text4,
+                  }}>
+                    <Camera size={32} />
+                  </div>
+                )}
+                {/* Overlay icon */}
+                <div style={{
+                  position: "absolute", inset: 0, display: "flex",
+                  alignItems: "center", justifyContent: "center",
+                  background: "rgba(0,0,0,0.4)", opacity: 0,
+                  transition: "opacity 0.2s",
+                }}
+                  onMouseEnter={(e) => ((e.currentTarget as HTMLDivElement).style.opacity = "1")}
+                  onMouseLeave={(e) => ((e.currentTarget as HTMLDivElement).style.opacity = "0")}
+                >
+                  <div style={{
+                    width: 44, height: 44, borderRadius: "50%",
+                    background: "rgba(255,255,255,0.2)", backdropFilter: "blur(4px)",
+                    border: "1px solid rgba(255,255,255,0.3)",
+                    display: "flex", alignItems: "center", justifyContent: "center", color: "#fff",
+                  }}>
+                    <ZoomIn size={18} />
+                  </div>
+                </div>
+                {/* Asset count badge */}
+                {assets.length > 1 && (
+                  <div style={{
+                    position: "absolute", top: 8, right: 8,
+                    background: "rgba(0,0,0,0.7)", color: "#fff",
+                    fontSize: 10, fontFamily: DS.mono, fontWeight: 700,
+                    padding: "2px 8px", borderRadius: 99,
+                  }}>
+                    +{assets.length - 1}
+                  </div>
+                )}
+              </div>
+
+              {/* Info */}
+              <div style={{ padding: "12px 16px 16px" }}>
+                <p style={{
+                  color: DS.text, fontWeight: 700, fontSize: 14,
+                  marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}>
+                  {booking.title}
+                </p>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 8px", alignItems: "center", marginBottom: 8 }}>
+                  <span style={{
+                    fontSize: 10, padding: "1px 6px", borderRadius: 99,
+                    background: `${DS.purple}15`, color: DS.purple,
+                    fontFamily: DS.mono, fontWeight: 600,
+                  }}>
+                    {t(`media.${BOOKING_TYPE_OPTIONS.find((o) => o.value === booking.bookingType)?.labelKey ?? "typeCustom"}`)}
+                  </span>
+                  {booking.teamMember && (
+                    <span style={{
+                      fontSize: 10, padding: "1px 6px", borderRadius: 99,
+                      background: "rgba(139,92,246,0.1)", color: "#8B5CF6",
+                      fontFamily: DS.mono, fontWeight: 600,
+                    }}>
+                      {booking.teamMember.name}
+                    </span>
+                  )}
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div>
+                    <p style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono }}>
+                      {booking.customerName}
+                    </p>
+                    {booking.deliveredAt && (
+                      <p style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, marginTop: 2 }}>
+                        {new Date(booking.deliveredAt).toLocaleDateString("vi-VN")}
+                      </p>
+                    )}
+                  </div>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    {assets.length > 0 && (
+                      <button
+                        onClick={() => openLightbox(booking, 0)}
+                        title={t("media.portfolioViewAll")}
+                        style={{
+                          padding: "5px 8px", borderRadius: 8, cursor: "pointer",
+                          background: "rgba(59,130,246,0.1)",
+                          border: "1px solid rgba(59,130,246,0.3)",
+                          color: DS.blue, display: "flex", alignItems: "center",
+                        }}
+                      >
+                        <ZoomIn size={12} />
+                      </button>
+                    )}
+                    <button
+                      onClick={() => onEditBooking(booking)}
+                      title={t("btnEdit")}
+                      style={{
+                        padding: "5px 8px", borderRadius: 8, cursor: "pointer",
+                        background: "rgba(139,92,246,0.1)",
+                        border: "1px solid rgba(139,92,246,0.3)",
+                        color: "#8B5CF6", display: "flex", alignItems: "center",
+                      }}
+                    >
+                      <Eye size={12} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          );
+        })}
+      </div>
+
+      {/* Lightbox */}
+      {lightbox && (
+        <LightboxModal
+          items={lightbox.items}
+          startIndex={lightbox.index}
+          title={lightbox.booking.title}
+          customer={lightbox.booking.customerName}
+          bookingNumber={lightbox.booking.bookingNumber}
+          onClose={() => setLightbox(null)}
+          t={t}
+        />
+      )}
+    </>
+  );
+}
+
 // ─── Main page ─────────────────────────────────────────────────────────────────
 
 export default function MediaBookingsPage() {
@@ -742,6 +1225,7 @@ export default function MediaBookingsPage() {
   const [selectedBooking, setSelectedBooking] = useState<MediaBooking | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [editBooking, setEditBooking] = useState<MediaBooking | null>(null);
+  const [activeTab, setActiveTab] = useState<"bookings" | "portfolio">("bookings");
 
   const translatedStatuses = Object.fromEntries(
     Object.entries(STATUS_CONFIG).map(([k, v]) => [
@@ -803,7 +1287,13 @@ export default function MediaBookingsPage() {
         </div>
         <div style={{ display: "flex", gap: 8 }}>
           <button
-            onClick={() => qc.invalidateQueries({ queryKey: ["admin", "media-bookings"] })}
+            onClick={() => {
+              if (activeTab === "bookings") {
+                qc.invalidateQueries({ queryKey: ["admin", "media-bookings"] });
+              } else {
+                qc.invalidateQueries({ queryKey: ["admin", "media-bookings", "portfolio"] });
+              }
+            }}
             style={{
               display: "flex", alignItems: "center", gap: 6, padding: "8px 14px",
               background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 10,
@@ -824,6 +1314,45 @@ export default function MediaBookingsPage() {
           </button>
         </div>
       </div>
+
+      {/* Tab switcher */}
+      <div style={{
+        display: "flex", gap: 4, marginBottom: 20,
+        background: DS.bg, border: `1px solid ${DS.border}`,
+        borderRadius: 12, padding: 4, width: "fit-content",
+      }}>
+        {([
+          { key: "bookings", label: t("media.tabBookings"), icon: <List size={13} /> },
+          { key: "portfolio", label: t("media.tabPortfolio"), icon: <LayoutGrid size={13} /> },
+        ] as const).map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            style={{
+              display: "flex", alignItems: "center", gap: 6,
+              padding: "7px 16px", borderRadius: 9, cursor: "pointer",
+              fontSize: 12, fontFamily: DS.mono, fontWeight: 600,
+              border: "none", outline: "none",
+              background: activeTab === tab.key ? GRD.primary : "transparent",
+              color: activeTab === tab.key ? "#fff" : DS.text4,
+              transition: "all 0.15s",
+            }}
+          >
+            {tab.icon}
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Portfolio tab */}
+      {activeTab === "portfolio" ? (
+        <PortfolioGallery
+          onEditBooking={(booking) => setSelectedBooking(booking)}
+          t={t}
+        />
+      ) : (
+      /* Bookings tab */
+      <>
 
       {/* Filters */}
       <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
@@ -855,6 +1384,56 @@ export default function MediaBookingsPage() {
             <option key={s} value={s}>{translatedStatuses[s]?.label ?? s}</option>
           ))}
         </select>
+      </div>
+
+      {/* KPI MiniStats */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 10, marginBottom: 16 }}>
+        {[
+          {
+            label: t("media.kpiTotal"),
+            value: (pagination?.total ?? 0).toString(),
+            color: DS.blue,
+            icon: <Camera size={15} />,
+          },
+          {
+            label: t("media.kpiPending"),
+            value: bookings.filter((b) => b.status === "pending").length.toString(),
+            color: DS.amber,
+            icon: <RefreshCw size={15} />,
+          },
+          {
+            label: t("media.kpiInProgress"),
+            value: bookings.filter((b) => b.status === "in_progress").length.toString(),
+            color: DS.purple,
+            icon: <Camera size={15} />,
+          },
+          {
+            label: t("media.kpiRevenue"),
+            value: fmtVND(bookings.reduce((s, b) => s + (b.totalAmount ?? 0), 0)),
+            color: DS.green,
+            icon: <TrendingUp size={15} />,
+          },
+        ].map((kpi) => (
+          <div key={kpi.label} style={{
+            background: DS.bgCard, border: `1px solid ${DS.border}`,
+            borderRadius: 12, padding: "12px 16px", display: "flex", alignItems: "center", gap: 10,
+          }}>
+            <div style={{
+              width: 34, height: 34, borderRadius: 10,
+              background: `${kpi.color}15`, border: `1px solid ${kpi.color}30`,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              color: kpi.color, flexShrink: 0,
+            }}>
+              {kpi.icon}
+            </div>
+            <div>
+              <p style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.08em", marginBottom: 1 }}>
+                {kpi.label.toUpperCase()}
+              </p>
+              <p style={{ color: DS.text, fontWeight: 700, fontSize: 16 }}>{kpi.value}</p>
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* Status chips */}
@@ -942,6 +1521,7 @@ export default function MediaBookingsPage() {
           </button>
         </div>
       )}
+      </> /* end activeTab === "bookings" */)}
 
       {/* Detail Modal */}
       <DetailModal

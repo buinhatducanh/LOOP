@@ -4,6 +4,21 @@ import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
 
+type BookingWithRelations = Awaited<ReturnType<typeof prisma.mediaBooking.findUnique>>;
+
+// Resolve approvedBy/rejectedBy user names (schema stores IDs, not relations)
+async function resolveUserNames(booking: NonNullable<BookingWithRelations>) {
+  const [approvedByUser, rejectedByUser] = await Promise.all([
+    booking.approvedBy
+      ? prisma.user.findUnique({ where: { id: booking.approvedBy }, select: { name: true } })
+      : null,
+    booking.rejectedBy
+      ? prisma.user.findUnique({ where: { id: booking.rejectedBy }, select: { name: true } })
+      : null,
+  ]);
+  return { ...booking, approvedByUser, rejectedByUser };
+}
+
 // ─── GET /api/admin/media-bookings/[id] ───────────────────────────────────────
 
 export async function GET(
@@ -26,7 +41,8 @@ export async function GET(
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    return ok(booking);
+    const withNames = await resolveUserNames(booking);
+    return ok(withNames);
   } catch (error) {
     return handleError(error);
   }
@@ -110,7 +126,8 @@ export async function PUT(
       newValues: data,
     });
 
-    return ok(updated);
+    const withNames = await resolveUserNames(updated);
+    return ok(withNames);
   } catch (error) {
     return handleError(error);
   }

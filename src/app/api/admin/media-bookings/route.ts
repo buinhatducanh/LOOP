@@ -48,28 +48,57 @@ export async function GET(req: NextRequest) {
     const status = searchParams.get("status");
     const paymentStatus = searchParams.get("paymentStatus");
     const bookingType = searchParams.get("bookingType");
+    const portfolio = searchParams.get("portfolio"); // "true" = approved bookings with assets
 
     const fieldWhere: Record<string, unknown> = {};
     if (status) fieldWhere.status = status;
     if (paymentStatus) fieldWhere.paymentStatus = paymentStatus;
     if (bookingType) fieldWhere.bookingType = bookingType;
 
+    // Portfolio filter: only approved bookings that have delivered assets
+    if (portfolio === "true") {
+      fieldWhere.status = "approved";
+      // Prisma Json fields can't be filtered directly, so we fetch all approved
+      // and filter in JS — acceptable since approved set is small
+    }
+
     const where = { ...searchWhere, ...fieldWhere };
     const orderBy = { createdAt: "desc" as const };
 
-    const [bookings, total] = await Promise.all([
-      prisma.mediaBooking.findMany({
-        where,
-        orderBy,
-        skip,
-        take: limit,
-        include: {
-          package: { select: { title: true } },
-          teamMember: { select: { name: true } },
-        },
-      }),
+    const [allBookings, total] = await Promise.all([
+      portfolio === "true"
+        ? prisma.mediaBooking.findMany({
+            where: { ...searchWhere, status: "approved" },
+            orderBy,
+            include: {
+              package: { select: { title: true } },
+              teamMember: { select: { name: true } },
+            },
+          })
+        : prisma.mediaBooking.findMany({
+            where,
+            orderBy,
+            skip,
+            take: limit,
+            include: {
+              package: { select: { title: true } },
+              teamMember: { select: { name: true } },
+            },
+          }),
       prisma.mediaBooking.count({ where }),
     ]);
+
+    // Portfolio: filter bookings that actually have delivered assets (in memory)
+    const bookings = portfolio === "true"
+      ? (allBookings as Array<{ deliveredAssets: unknown }>).filter((b) =>
+          Array.isArray(b.deliveredAssets) && b.deliveredAssets.length > 0
+        )
+      : allBookings;
+
+    // Portfolio: no pagination, return all filtered bookings
+    if (portfolio === "true") {
+      return list(bookings, { page: 1, limit: bookings.length, total: bookings.length, totalPages: 1 });
+    }
 
     return list(bookings, {
       page,

@@ -115,7 +115,9 @@ export async function getSessionFromBearer(
       avatar: user.avatar,
       accountType: (user.accountType as "staff" | "customer") || "customer",
       teamMemberId: user.teamMemberId,
-      roleLevel: ROLE_LEVEL[user.role] ?? 99,
+      roleLevel: user.userRoles.length > 0
+        ? Math.min(...user.userRoles.map((ur) => ur.role.level ?? 99))
+        : ROLE_LEVEL[user.role] ?? 99,
       permissions,
       rank: user.teamMember?.rank,
       availableLp: user.teamMember?.availableLp,
@@ -132,7 +134,7 @@ export async function getSessionFromBearer(
       avatar: null,
       accountType: "staff",
       teamMemberId: null,
-      roleLevel: ROLE_LEVEL[payload.role ?? "user"] ?? 99,
+      roleLevel: payload.roleLevel ?? ROLE_LEVEL[payload.role ?? "user"] ?? 99,
       permissions: [],
     };
   }
@@ -187,7 +189,9 @@ export async function getSession(): Promise<SessionUser | null> {
         avatar: user.avatar,
         accountType: (user.accountType as "staff" | "customer") || "customer",
         teamMemberId: user.teamMemberId,
-        roleLevel: ROLE_LEVEL[user.role] ?? 99,
+        roleLevel: user.userRoles.length > 0
+          ? Math.min(...user.userRoles.map((ur) => ur.role.level ?? 99))
+          : ROLE_LEVEL[user.role] ?? 99,
         permissions,
         rank: user.teamMember?.rank,
         availableLp: user.teamMember?.availableLp,
@@ -205,7 +209,7 @@ export async function getSession(): Promise<SessionUser | null> {
           avatar: null,
           accountType: "staff" as const,
           teamMemberId: null,
-          roleLevel: ROLE_LEVEL[payload.role ?? "user"] ?? 99,
+          roleLevel: payload.roleLevel ?? ROLE_LEVEL[payload.role ?? "user"] ?? 99,
           permissions: [],
         };
       }
@@ -251,7 +255,9 @@ export async function getSession(): Promise<SessionUser | null> {
       avatar: user.avatar,
       accountType: (user.accountType as "staff" | "customer") || "customer",
       teamMemberId: user.teamMemberId,
-      roleLevel: ROLE_LEVEL[user.role] ?? 99,
+      roleLevel: user.userRoles.length > 0
+        ? Math.min(...user.userRoles.map((ur) => ur.role.level ?? 99))
+        : ROLE_LEVEL[user.role] ?? 99,
       permissions,
       rank: user.teamMember?.rank,
       availableLp: user.teamMember?.availableLp,

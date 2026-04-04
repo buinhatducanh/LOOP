@@ -3,20 +3,22 @@
 /**
  * AdminSidebar — LOOP Solutions
  * Dark-themed Figma admin sidebar.
- * Adapted from Figma OLD FE AdminDashboard.tsx Sidebar.
+ *
+ * Uses Zustand store for role/access data (read-only).
+ * Session is initialized by the server layout, stored in Zustand
+ * by AdminSessionInit on first mount.
  *
  * Props:
- *  - activeTab: currently selected tab
- *  - onSelectTab: called when user clicks a nav item
  *  - userName: current user display name
  *  - userAvatar: optional avatar URL
- *  - userRole: Figma role (admin|manager|staff|client)
+ *  - userRole: display role (passed from layout)
+ *  - userRank: team member rank
+ *  - userLpBalance: LP balance
  */
 
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { motion } from "motion/react";
 import {
   LayoutDashboard, Users, FolderKanban, Wallet, Settings,
   DollarSign, UserCheck, BookOpen, FileText, BarChart2,
@@ -41,7 +43,6 @@ type NavGroup = {
   items: NavItem[];
 };
 
-// Build SIDEBAR_GROUPS from i18n keys — labels come from hook at render time
 const SIDEBAR_GROUPS_CONFIG: NavGroup[] = [
   {
     labelKey: "sidebar.groups.management",
@@ -93,22 +94,36 @@ interface AdminSidebarProps {
   userName?: string;
   userAvatar?: string;
   userRole?: string;
+  userRank?: string;
+  userLpBalance?: number;
 }
 
-export function AdminSidebar({ userName, userAvatar, userRole }: AdminSidebarProps) {
+const RANK_COLORS: Record<string, string> = {
+  iron: "#9CA3AF",
+  bronze: "#CD7F32",
+  silver: "#CBD5E1",
+  gold: "#FFD700",
+  platinum: "#14B8A6",
+  ruby: "#EF4444",
+  diamond: "#818CF8",
+};
+
+export function AdminSidebar({ userName, userAvatar, userRole, userRank, userLpBalance }: AdminSidebarProps) {
   const pathname = usePathname();
-  const { role, department, user } = useAuthStore();
   const [isOpen, setIsOpen] = useState(false);
   const { t } = useAdminTranslations();
 
-  // Determine active tab from URL
+  // Read role from Zustand store (set by AdminSessionInit on mount)
+  // Falls back to prop value if store not yet initialized
+  const storeRole = useAuthStore((s) => s.role);
+  const role = storeRole !== "guest" ? storeRole : (userRole ?? "admin");
+
   const activeTab = (pathname.split("/").pop() ?? "overview") as AdminTab;
 
-  const isAccessible = (tab: AdminTab) => canAccessTab(role, department, tab);
+  const isAccessible = (tab: AdminTab) => canAccessTab(role as import("@/app/store/authStore").UserRole, undefined, tab);
 
   return (
     <>
-      {/* Mobile overlay */}
       {isOpen && (
         <div
           onClick={() => setIsOpen(false)}
@@ -121,7 +136,6 @@ export function AdminSidebar({ userName, userAvatar, userRole }: AdminSidebarPro
         />
       )}
 
-      {/* Sidebar */}
       <aside
         style={{
           position: "fixed",
@@ -327,23 +341,23 @@ export function AdminSidebar({ userName, userAvatar, userRole }: AdminSidebarPro
                   gap: 4,
                 }}
               >
-                {user?.rank && (
+                {userRank && (
                   <>
                     <span
                       style={{
                         width: 6,
                         height: 6,
                         borderRadius: "50%",
-                        background: user.rankColor ?? "var(--figma-purple, #818CF8)",
-                        boxShadow: `0 0 6px ${user.rankColor ?? "var(--figma-purple, #818CF8)"}`,
+                        background: RANK_COLORS[userRank.toLowerCase()] ?? "var(--figma-purple, #818CF8)",
+                        boxShadow: `0 0 6px ${RANK_COLORS[userRank.toLowerCase()] ?? "var(--figma-purple, #818CF8)"}`,
                         display: "inline-block",
                       }}
                     />
-                    <span>{user.rank}</span>
+                    <span>{userRank}</span>
                     <span style={{ color: "var(--figma-text4, #64748B)" }}>·</span>
                   </>
                 )}
-                <span>{fmtLP(user?.lpBalance ?? 0)} LP</span>
+                <span>{fmtLP(userLpBalance ?? 0)} LP</span>
               </div>
             </div>
           </div>

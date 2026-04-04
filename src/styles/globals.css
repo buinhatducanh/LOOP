@@ -80,11 +80,11 @@
   --figma-glow-cyan: 0 0 20px rgba(20,184,166,0.4);
   --figma-glow-card: 0 8px 32px rgba(0,0,0,0.4);
 
-  /* Fonts */
-  --font-cinzel: "Cinzel", serif;
-  --font-inter: "Inter", "Noto Serif JP", sans-serif;
+  /* Fonts — Geist for VI/EN, CJK fonts via next/font variables */
+  --font-cinzel: Geist, var(--font-geist), system-ui, sans-serif;
+  --font-inter: Geist, var(--font-geist), system-ui, sans-serif;
   --font-mono: "JetBrains Mono", monospace;
-  --font-serif: "Noto Serif JP", serif;
+  --font-serif: Geist, var(--font-geist), system-ui, sans-serif;
 }
 
 @theme inline {
@@ -149,7 +149,7 @@
   body {
     background-color: var(--background);
     color: var(--foreground);
-    font-family: var(--font-inter);
+    font-family: var(--font-geist), system-ui, sans-serif;
     min-height: 100vh;
   }
 
@@ -157,13 +157,21 @@
     scroll-behavior: smooth;
   }
 
-  /* Figma heading font */
+  /* Figma heading font — now Geist */
   .figma-heading {
-    font-family: var(--font-cinzel);
+    font-family: var(--font-geist), system-ui, sans-serif;
   }
 
   .figma-mono {
     font-family: var(--font-mono);
+  }
+
+  /* Spin animation (Tailwind v4 compatibility) */
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  .animate-spin {
+    animation: spin 1s linear infinite;
   }
 }
 

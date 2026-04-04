@@ -138,6 +138,7 @@ export async function POST(req: NextRequest) {
       email: user.email,
       role: user.role,
       roles,
+      roleLevel,
     });
 
     await createAuditLog({

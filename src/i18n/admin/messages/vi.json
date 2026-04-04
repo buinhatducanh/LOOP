@@ -514,7 +514,24 @@
     "confirmDelete": "Xóa booking này?",
     "confirmDeleteMsg": "Hành động này không thể hoàn tác.",
     "errGeneral": "Đã xảy ra lỗi",
-    "errRequired": "Tên và email khách hàng là bắt buộc"
+    "errRequired": "Tên và email khách hàng là bắt buộc",
+    "errInvalidEmail": "Email không hợp lệ",
+    "formAssignee": "NV PHỤ TRÁCH",
+    "formSelectAssignee": "Chọn nhân viên",
+    "formPaymentStatus": "THANH TOÁN",
+    "kpiTotal": "Tổng booking",
+    "kpiPending": "Chờ xác nhận",
+    "kpiInProgress": "Đang thực hiện",
+    "kpiRevenue": "Tổng doanh thu",
+    "detailApprovedBy": "Người duyệt",
+    "detailRejectedBy": "Người từ chối",
+    "tabBookings": "Danh sách Booking",
+    "tabPortfolio": "Portfolio",
+    "portfolioEmpty": "Chưa có sản phẩm nào",
+    "portfolioEmptyHint": "Duyệt booking và gắn tài liệu để hiển thị tại đây",
+    "portfolioCount": "{n} dự án portfolio",
+    "portfolioOpenOriginal": "Mở file gốc",
+    "portfolioViewAll": "Xem tất cả"
   },
 
   "academy": {

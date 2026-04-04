@@ -514,7 +514,24 @@
     "confirmDelete": "Delete this booking?",
     "confirmDeleteMsg": "This action cannot be undone.",
     "errGeneral": "An error occurred",
-    "errRequired": "Client name and email are required"
+    "errRequired": "Client name and email are required",
+    "errInvalidEmail": "Invalid email address",
+    "formAssignee": "ASSIGNEE",
+    "formSelectAssignee": "Select staff member",
+    "formPaymentStatus": "PAYMENT STATUS",
+    "kpiTotal": "Total Bookings",
+    "kpiPending": "Pending",
+    "kpiInProgress": "In Progress",
+    "kpiRevenue": "Total Revenue",
+    "detailApprovedBy": "Approved By",
+    "detailRejectedBy": "Rejected By",
+    "tabBookings": "Bookings",
+    "tabPortfolio": "Portfolio",
+    "portfolioEmpty": "No portfolio items yet",
+    "portfolioEmptyHint": "Approve bookings and attach deliverables to show them here",
+    "portfolioCount": "{n} portfolio projects",
+    "portfolioOpenOriginal": "Open original",
+    "portfolioViewAll": "View all"
   },
 
   "academy": {

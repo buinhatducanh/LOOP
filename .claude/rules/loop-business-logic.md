@@ -1,8 +1,8 @@
 # LOOP Business Logic — Source of Truth
 
-> **Version**: 3.1.0 · Updated: 2026-04-03
-> **Source**: Verified against `loopStore.ts`, `authStore.ts`, `memberData.ts`, `KanbanBoard.tsx`, `KanbanHub.tsx`, `useRealtimeNotifications.ts`
-> **Status**: Cập nhật sau audit 24 discrepancies giữa CompanyProcessPage và code thực tế
+> **Version**: 4.0.0 · Updated: 2026-04-04
+> **Source**: Verified against `loopStore.ts`, `authStore.ts`, `memberData.ts`, `KanbanBoard.tsx`, `KanbanHub.tsx`, `useRealtimeNotifications.ts`, `authStore.ts` v3 (7 roles)
+> **Status**: RBAC v3 + Member Onboarding workflow (CEO approval) added 2026-04-04
 
 ---
 
@@ -201,7 +201,52 @@ STAFF_TABS = ['overview', 'projects', 'notification_center'];
 
 ---
 
-## 8. Admin RBAC Tabs (23 tabs)
+## 8. Admin RBAC — 7 Staff Roles
+
+### 8.1 Role Hierarchy
+
+```typescript
+// roleLevel: lower = more privileged
+ceo: -1 → super_admin: 0 → admin: 1 → project_manager: 2 → media: 3 → qa: 4 → member: 5
+```
+
+### 8.2 Per-Role Admin Tabs
+
+| Role | Tabs | Domain |
+|------|------|--------|
+| admin (0-1) | all 23 | Toàn hệ thống |
+| project_manager (2) | orders, clients, quotation, services, revenue, projects, members, departments, lp_manage... | Kinh doanh, vận hành dự án |
+| media (3) | media, blog, orders, projects, clients, academy, services, portfolio... | Media, marketing, nội dung |
+| qa (4) | projects, notification_center, orders, clients, members, academy... | Testing, QA |
+| member (5) | overview, notification_center, leaderboard_admin, academy, quests_events | Cơ bản — mọi người đều xem Kanban |
+
+### 8.3 Member Onboarding — CEO Approval Workflow
+
+```
+HR tạo hồ sơ → Nhân viên đăng ký (pending) → CEO duyệt → Gán role + tags → Kích hoạt
+```
+
+**2 lớp quyền:**
+- System Role (1 cái): member, media, qa, pm — gán bởi CEO
+- Access Tags (nhiều cái): blog-post, seo-content, kanban... — gán bởi CEO
+
+**Default tags (cho mọi member, không revoke):**
+- `kanban`: Kanban Board
+- `order-basic`: Xem đơn hàng
+
+**Mới thêm (v4):**
+- `blog-post`: Quản trị bài viết (cho SEO, Media)
+- `project-content`: Nội dung dự án (cho SEO, Designer)
+- `seo-content`: Nội dung SEO (cho SEO Specialist)
+- `media-content`: Nội dung Media (cho Media team)
+- `salary`: Xem lương (CEO/Admin only)
+- `lp-manage`: Quản lý LP (CEO → Admin)
+- `finance-view`: Xem tài chính (cho Kế toán)
+- `hr-manage`: Quản lý nhân sự (cho HR)
+
+---
+
+## 9. Admin RBAC Tabs (23 tabs)
 
 ```typescript
 type AdminTab =

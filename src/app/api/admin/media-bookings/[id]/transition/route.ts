@@ -24,6 +24,22 @@ const VALID_TRANSITIONS: Record<string, string[]> = {
   cancelled:   [],       // terminal
 };
 
+// Resolve approvedBy/rejectedBy user names (schema stores IDs, not relations)
+async function resolveUserNames(
+  booking: Awaited<ReturnType<typeof prisma.mediaBooking.findUnique>>
+) {
+  if (!booking) return booking;
+  const [approvedByUser, rejectedByUser] = await Promise.all([
+    booking.approvedBy
+      ? prisma.user.findUnique({ where: { id: booking.approvedBy }, select: { name: true } })
+      : null,
+    booking.rejectedBy
+      ? prisma.user.findUnique({ where: { id: booking.rejectedBy }, select: { name: true } })
+      : null,
+  ]);
+  return { ...booking, approvedByUser, rejectedByUser };
+}
+
 // ─── POST /api/admin/media-bookings/[id]/transition ───────────────────────────
 
 export async function POST(
@@ -97,7 +113,8 @@ export async function POST(
       newValues: { status: toStatus, note },
     });
 
-    return ok(updated);
+    const withNames = await resolveUserNames(updated);
+    return ok(withNames);
   } catch (error) {
     return handleError(error);
   }

@@ -15,10 +15,20 @@ export interface JWTPayload {
   email: string;
   role: string;
   roles: string[];
+  roleLevel?: number;
 }
 
 export function signToken(payload: JWTPayload): string {
   return jwt.sign(payload, getSecret(), { expiresIn: EXPIRES_IN });
+}
+
+/** Sign a short-lived token for password reset. No userId/role needed. */
+export function signResetToken(email: string, otpId: string): string {
+  return jwt.sign(
+    { purpose: "password_reset", email, otpId },
+    getSecret(),
+    { expiresIn: "10m" }
+  );
 }
 
 export function verifyToken(token: string): JWTPayload | null {

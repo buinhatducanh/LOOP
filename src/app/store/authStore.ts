@@ -13,7 +13,18 @@ import { DS } from "@/lib/design-tokens";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
-export type UserRole = "admin" | "manager" | "staff" | "client" | "guest";
+/**
+ * 7 staff roles + 2 client/guest roles.
+ * Maps 1-to-1 with BE role levels (roleLevel 0-5) and accountType.
+ */
+export type UserRole =
+  | "admin"           // level 0-1: super_admin + admin
+  | "project_manager" // level 2: PM, orders + projects management
+  | "media"           // level 3: blog, media, social posts
+  | "qa"              // level 4: QA, testing, standups
+  | "member"          // level 5: basic staff, own tasks + standups
+  | "client"          // customer accountType
+  | "guest";          // unauthenticated
 
 export interface AuthUser {
   id: string;
@@ -27,6 +38,7 @@ export interface AuthUser {
   rankColor?: string;
   lpBalance: number;
   level: number;
+  beRoleLevel?: number; // original BE role level (0-5)
 }
 
 /** Enriched session from /api/admin/auth/me + LP data */
@@ -97,19 +109,19 @@ export interface CompanyEvent {
 
 const INIT_QUESTS: Quest[] = [
   // Daily
-  { id: "q-daily-1", title: "Điểm danh hằng ngày", description: "Đăng nhập vào hệ thống mỗi ngày", lpReward: 50, xpReward: 10, frequency: "daily", category: "engagement", icon: "☀️", color: DS.blue, target: 1, progress: 0, status: "available", forRoles: ["admin", "manager", "staff", "client"] },
-  { id: "q-daily-2", title: "Gửi 1 tin nhắn", description: "Nhắn tin với khách hàng hoặc đồng đội", lpReward: 30, xpReward: 5, frequency: "daily", category: "social", icon: "💬", color: DS.blue, target: 1, progress: 0, status: "available", forRoles: ["admin", "manager", "staff"] },
-  { id: "q-daily-3", title: "Xem 1 bài blog", description: "Đọc hoặc xem 1 bài viết trong Blog", lpReward: 20, xpReward: 5, frequency: "daily", category: "learning", icon: "📖", color: DS.cyan, target: 1, progress: 0, status: "available", forRoles: ["admin", "manager", "staff", "client"] },
+  { id: "q-daily-1", title: "Điểm danh hằng ngày", description: "Đăng nhập vào hệ thống mỗi ngày", lpReward: 50, xpReward: 10, frequency: "daily", category: "engagement", icon: "☀️", color: DS.blue, target: 1, progress: 0, status: "available", forRoles: ["admin", "project_manager", "media", "qa", "member", "client"] },
+  { id: "q-daily-2", title: "Gửi 1 tin nhắn", description: "Nhắn tin với khách hàng hoặc đồng đội", lpReward: 30, xpReward: 5, frequency: "daily", category: "social", icon: "💬", color: DS.blue, target: 1, progress: 0, status: "available", forRoles: ["admin", "project_manager", "media", "qa", "member"] },
+  { id: "q-daily-3", title: "Xem 1 bài blog", description: "Đọc hoặc xem 1 bài viết trong Blog", lpReward: 20, xpReward: 5, frequency: "daily", category: "learning", icon: "📖", color: DS.cyan, target: 1, progress: 0, status: "available", forRoles: ["admin", "project_manager", "media", "qa", "member", "client"] },
   // Weekly
-  { id: "q-week-1", title: "Hoàn thành 3 task Kanban", description: "Di chuyển 3 task sang cột 'Done'", lpReward: 200, xpReward: 50, frequency: "weekly", category: "project", icon: "✅", color: DS.green, target: 3, progress: 1, status: "in_progress", forRoles: ["admin", "manager", "staff"] },
-  { id: "q-week-2", title: "Viết 1 blog post", description: "Đăng 1 bài viết lên blog công ty", lpReward: 300, xpReward: 80, frequency: "weekly", category: "social", icon: "✍️", color: DS.purple, target: 1, progress: 0, status: "available", forRoles: ["admin", "manager", "staff"] },
-  { id: "q-week-3", title: "Hoàn thành 1 khóa học", description: "Complete 1 course trong Academy", lpReward: 500, xpReward: 100, frequency: "weekly", category: "learning", icon: "🎓", color: "#818CF8", target: 1, progress: 0, status: "available", forRoles: ["admin", "manager", "staff", "client"] },
+  { id: "q-week-1", title: "Hoàn thành 3 task Kanban", description: "Di chuyển 3 task sang cột 'Done'", lpReward: 200, xpReward: 50, frequency: "weekly", category: "project", icon: "✅", color: DS.green, target: 3, progress: 1, status: "in_progress", forRoles: ["admin", "project_manager", "media", "qa"] },
+  { id: "q-week-2", title: "Viết 1 blog post", description: "Đăng 1 bài viết lên blog công ty", lpReward: 300, xpReward: 80, frequency: "weekly", category: "social", icon: "✍️", color: DS.purple, target: 1, progress: 0, status: "available", forRoles: ["admin", "project_manager", "media"] },
+  { id: "q-week-3", title: "Hoàn thành 1 khóa học", description: "Complete 1 course trong Academy", lpReward: 500, xpReward: 100, frequency: "weekly", category: "learning", icon: "🎓", color: "#818CF8", target: 1, progress: 0, status: "available", forRoles: ["admin", "project_manager", "media", "qa", "member", "client"] },
   // Monthly
-  { id: "q-month-1", title: "Đánh giá 360°", description: "Hoàn thành đánh giá đồng nghiệp tháng", lpReward: 1000, xpReward: 200, frequency: "monthly", category: "social", icon: "🌟", color: DS.red, target: 1, progress: 0, status: "available", forRoles: ["admin", "manager", "staff"] },
-  { id: "q-month-2", title: "Giới thiệu 1 khách hàng", description: "Referral thành công 1 KH mới", lpReward: 2000, xpReward: 500, frequency: "monthly", category: "achievement", icon: "🤝", color: DS.amber, target: 1, progress: 0, status: "available", forRoles: ["admin", "manager", "staff", "client"] },
+  { id: "q-month-1", title: "Đánh giá 360°", description: "Hoàn thành đánh giá đồng nghiệp tháng", lpReward: 1000, xpReward: 200, frequency: "monthly", category: "social", icon: "🌟", color: DS.red, target: 1, progress: 0, status: "available", forRoles: ["admin", "project_manager"] },
+  { id: "q-month-2", title: "Giới thiệu 1 khách hàng", description: "Referral thành công 1 KH mới", lpReward: 2000, xpReward: 500, frequency: "monthly", category: "achievement", icon: "🤝", color: DS.amber, target: 1, progress: 0, status: "available", forRoles: ["admin", "project_manager", "media", "qa", "member", "client"] },
   // One-time achievements
-  { id: "q-ach-1", title: "First Blood", description: "Hoàn thành đơn hàng đầu tiên", lpReward: 500, xpReward: 100, frequency: "one_time", category: "achievement", icon: "🏆", color: DS.amber, target: 1, progress: 1, status: "completed", forRoles: ["admin", "manager", "staff"] },
-  { id: "q-ach-2", title: "Streak Master", description: "Điểm danh liên tục 30 ngày", lpReward: 3000, xpReward: 500, frequency: "one_time", category: "achievement", icon: "🔥", color: DS.red, target: 30, progress: 12, status: "in_progress", forRoles: ["admin", "manager", "staff", "client"] },
+  { id: "q-ach-1", title: "First Blood", description: "Hoàn thành đơn hàng đầu tiên", lpReward: 500, xpReward: 100, frequency: "one_time", category: "achievement", icon: "🏆", color: DS.amber, target: 1, progress: 1, status: "completed", forRoles: ["admin", "project_manager"] },
+  { id: "q-ach-2", title: "Streak Master", description: "Điểm danh liên tục 30 ngày", lpReward: 3000, xpReward: 500, frequency: "one_time", category: "achievement", icon: "🔥", color: DS.red, target: 30, progress: 12, status: "in_progress", forRoles: ["admin", "project_manager", "media", "qa", "member", "client"] },
   // Client quests
   { id: "q-cli-1", title: "Đặt dịch vụ đầu tiên", description: "Book 1 dịch vụ bất kỳ tại LOOP", lpReward: 500, xpReward: 100, frequency: "one_time", category: "achievement", icon: "🚀", color: DS.blue, target: 1, progress: 0, status: "available", forRoles: ["client"] },
   { id: "q-cli-2", title: "Đánh giá dịch vụ", description: "Để lại 1 review sau khi hoàn thành dự án", lpReward: 200, xpReward: 50, frequency: "one_time", category: "social", icon: "⭐", color: DS.amber, target: 1, progress: 0, status: "available", forRoles: ["client"] },
@@ -150,26 +162,65 @@ const INIT_EVENTS: CompanyEvent[] = [
   },
 ];
 
-// ── RBAC ───────────────────────────────────────────────────────────────────────
+// ── RBAC — Per-Role Admin Tab Access ──────────────────────────────────────────
 
-const DEPT_TABS: Record<string, AdminTab[]> = {
-  engineering: ["overview", "orders", "projects", "members", "notification_center"],
-  design: ["overview", "orders", "projects", "portfolio", "members", "notification_center"],
-  media: ["overview", "media", "orders", "projects", "members", "notification_center"],
-  marketing: ["overview", "blog", "academy", "clients", "services", "notification_center"],
-  sales: ["overview", "orders", "clients", "quotation", "services", "revenue", "notification_center"],
-  finance: ["overview", "revenue", "lp", "lp_manage", "income_tax", "web_packages", "orders", "notification_center"],
-  hr: ["overview", "members", "departments", "notification_center"],
-  management: ["overview", "orders", "members", "departments", "projects", "revenue", "clients", "notification_center", "quests_events"],
-};
+/**
+ * 7 role-specific tab sets. Each role sees only the tabs it needs.
+ *
+ * Admin (level 0-1): all 23 tabs
+ * Project Manager (level 2): orders, clients, quotation, services, revenue,
+ *   projects, members, departments, notification_center, leaderboard_admin, lp_manage, quests_events
+ * Media (level 3): media, blog, orders, projects, clients, notification_center,
+ *   academy, services, leaderboard_admin, quests_events
+ * QA (level 4): projects, notification_center, orders, clients, members,
+ *   academy, leaderboard_admin
+ * Member (level 5): overview, notification_center, leaderboard_admin,
+ *   academy (learn), quests_events
+ *
+ * Client (customer accountType): redirected to /khach-hang, no admin tabs
+ * Guest: no access
+ */
 
-const STAFF_TABS: AdminTab[] = ["overview", "projects", "notification_center"];
+// Exact tabs from AdminSidebar SIDEBAR_GROUPS_CONFIG
+const ADMIN_TABS: AdminTab[] = [
+  "overview", "orders", "members", "departments", "projects", "leaderboard_admin",
+  "services", "media", "quotation", "portfolio", "projects_completed",
+  "academy", "blog", "revenue", "analytics", "clients",
+  "lp", "lp_manage", "income_tax", "web_packages",
+  "effects", "quests_events", "notification_center", "settings",
+];
+
+const PM_TABS: AdminTab[] = [
+  "overview", "orders", "clients", "quotation", "services", "revenue",
+  "projects", "members", "departments", "notification_center",
+  "leaderboard_admin", "lp_manage", "quests_events",
+  "academy", "blog", "lp",
+];
+
+const MEDIA_TABS: AdminTab[] = [
+  "media", "blog", "orders", "projects", "clients", "notification_center",
+  "academy", "services", "leaderboard_admin", "quests_events",
+  "overview", "portfolio", "revenue",
+];
+
+const QA_TABS: AdminTab[] = [
+  "projects", "notification_center", "orders", "clients", "members",
+  "academy", "leaderboard_admin", "overview", "lp",
+];
+
+const MEMBER_TABS: AdminTab[] = [
+  "overview", "notification_center", "leaderboard_admin",
+  "academy", "quests_events",
+];
 
 export function getAccessibleTabs(role: UserRole, department?: string): AdminTab[] | "all" {
   if (role === "admin") return "all";
-  if (role === "manager" && department) return DEPT_TABS[department] ?? STAFF_TABS;
-  if (role === "staff") return STAFF_TABS;
-  return [];
+  if (role === "project_manager") return PM_TABS;
+  if (role === "media") return MEDIA_TABS;
+  if (role === "qa") return QA_TABS;
+  if (role === "member") return MEMBER_TABS;
+  if (role === "client") return []; // redirected to customer portal
+  return []; // guest
 }
 
 export function canAccessTab(role: UserRole, department: string | undefined, tab: AdminTab): boolean {
@@ -179,18 +230,20 @@ export function canAccessTab(role: UserRole, department: string | undefined, tab
 }
 
 export function canEdit(role: UserRole): boolean {
-  return role === "admin" || role === "manager";
+  return role === "admin";
 }
 
-/** Map Next.js roleLevel → UserRole */
+/** Map BE roleLevel → FE UserRole (1-to-1) */
 export function mapRoleLevelToUserRole(
   roleLevel: number,
   accountType: "staff" | "customer"
 ): UserRole {
   if (accountType === "customer") return "client";
   if (roleLevel <= 1) return "admin";
-  if (roleLevel === 2) return "manager";
-  if (roleLevel <= 4) return "staff";
+  if (roleLevel === 2) return "project_manager";
+  if (roleLevel === 3) return "media";
+  if (roleLevel === 4) return "qa";
+  if (roleLevel === 5) return "member";
   return "guest";
 }
 
@@ -233,7 +286,7 @@ interface AuthStore {
 // ── Private helpers ─────────────────────────────────────────────────────────────
 
 function extractShortName(name: string): string {
-  const parts = name.trim().split(" ");
+  const parts = name.trim().split(/\s+/);
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
@@ -254,6 +307,7 @@ function sessionToAuthUser(session: EnrichedSession): AuthUser {
     rankColor: session.rankColor,
     lpBalance: session.lpBalance ?? 0,
     level: session.level ?? 1,
+    beRoleLevel: session.roleLevel,
   };
 }
 
@@ -278,7 +332,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   login: async (email: string, password: string): Promise<boolean> => {
     set({ isLoading: true, error: null });
     try {
-      const res = await apiClient.post<{ data: { token: string } } | ApiErrorResponse>(
+      const res = await apiClient.post<{ user: EnrichedSession; token: string } | ApiErrorResponse>(
         "/api/admin/auth/login",
         { email, password },
         { throwOnError: false }
@@ -289,7 +343,21 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         return false;
       }
 
-      await get().fetchSession();
+      // Update store immediately from login response (no extra /me call)
+      // AdminSessionInit will be a no-op since session is already set
+      const session = (res as { user: EnrichedSession; token: string }).user;
+      const authUser = sessionToAuthUser(session);
+      const role = mapRoleLevelToUserRole(session.roleLevel, session.accountType);
+
+      set({
+        user: authUser,
+        isAuthenticated: true,
+        isLoading: false,
+        error: null,
+        role,
+        department: session.department,
+        accessibleTabs: getAccessibleTabs(role, session.department),
+      });
       return true;
     } catch (err) {
       const message = err instanceof Error ? err.message : "Đăng nhập thất bại";
@@ -299,7 +367,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   },
 
   loginAs: (user) => {
-    const role = user.role ?? mapRoleLevelToUserRole(2, "staff");
+    const role = user.role;
     set({
       user,
       isAuthenticated: true,

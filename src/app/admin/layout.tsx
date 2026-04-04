@@ -5,17 +5,37 @@
  * Provides React Query context, auth session, and Figma dark nav layout.
  *
  * Auth guard: redirects to /{locale}/dang-nhap if no session.
+ *
+ * Session pattern: server layout reads session (server-side),
+ * passes it down as props. No Zustand store needed for admin auth —
+ * this avoids "setState during render" issues from AdminSessionInit.
  */
 
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
+import { Geist, Cinzel } from "next/font/google";
 import { getSession } from "@/lib/auth/permissions";
+import { mapRoleLevelToUserRole } from "@/app/store/authStore";
 import { QueryProvider } from "@/lib/query/provider";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { AdminTopbar } from "@/components/admin/AdminTopbar";
-import { AdminSessionInit } from "@/components/admin/AdminSessionInit";
 import { AdminI18nProvider } from "@/i18n/admin/AdminI18nProvider";
 import "@/styles/globals.css";
+
+const geistFont = Geist({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700", "800"],
+  variable: "--font-geist",
+});
+
+const cinzelFont = Cinzel({
+  subsets: ["latin"],
+  weight: ["400", "600", "700", "900"],
+  variable: "--font-cinzel",
+});
+
+// Re-export so other admin pages can import this type
+export type { SessionUser } from "@/lib/auth/permissions";
 
 export default async function AdminLayout({
   children,
@@ -30,9 +50,14 @@ export default async function AdminLayout({
     redirect(`/${locale}/dang-nhap`);
   }
 
+  // Derive display role from roleLevel (1-to-1 mapping)
+  const roleLevel = session.roleLevel ?? 1;
+  const accountType = session.accountType ?? "staff";
+  const displayRole = mapRoleLevelToUserRole(roleLevel, accountType);
+
   return (
-    // "dark" class for Figma dark theme
-    <html lang="vi" suppressHydrationWarning className="dark">
+    // "dark" class for Figma dark theme + Geist font class
+    <html lang="vi" suppressHydrationWarning className={`dark ${geistFont.className} ${cinzelFont.className}`}>
       <body
         style={{
           margin: 0,
@@ -40,16 +65,18 @@ export default async function AdminLayout({
           minHeight: "100vh",
           background: "var(--figma-bg, #020617)",
           color: "var(--figma-text, #fff)",
-          fontFamily: "'Inter', sans-serif",
+          fontFamily: "var(--font-geist), Geist, system-ui, sans-serif",
         }}
       >
         <QueryProvider>
           <AdminI18nProvider>
-          {/* Sidebar */}
+          {/* Sidebar — receives session data as props, no Zustand store needed */}
           <AdminSidebar
             userName={session.name}
             userAvatar={session.avatar ?? undefined}
-            userRole={session.role}
+            userRole={displayRole}
+            userRank={session.rank}
+            userLpBalance={session.availableLp}
           />
           {/* Main area */}
           <div
@@ -67,9 +94,8 @@ export default async function AdminLayout({
               userEmail={session.email}
               userAvatar={session.avatar ?? undefined}
             />
-            {/* Page content */}
+            {/* Page content — pass session to pages that need it */}
             <main style={{ flex: 1, padding: "1.5rem", overflowY: "auto" }}>
-              <AdminSessionInit session={session} />
               {children}
             </main>
           </div>

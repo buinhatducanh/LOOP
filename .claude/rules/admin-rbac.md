@@ -1,9 +1,10 @@
 # Admin RBAC — Source of Truth
 
-> **Version**: 2.0.0 · Updated: 2026-04-04
+> **Version**: 3.0.0 · Updated: 2026-04-04
 > **Source**: `src/lib/auth/roles.ts` + `src/lib/auth/permissions.ts` + `src/app/store/authStore.ts` + `src/app/admin/members/page.tsx` (1,988L)
 > **Note**: `FE/` and `DESIGN LOOPS/` were archived (commit `38fa12e`).
-> **Status**: ⚠️ 2 HỆ THỐNG PHÂN QUYỀN — (1) Zustand store (5 roles, client-side) và (2) BE API (7 roles, DB-backed). Xem Section 6.
+> **Status**: ⚠️ 2 HỆ THỐNG PHÂN QUYỀN — (1) Zustand store (7 roles, client-side) và (2) BE API (7 roles, DB-backed). Xem Section 2.
+> **NEW (v3.0)**: Member Onboarding CEO Approval Workflow + Access Tags. Xem Section 8.
 
 ---
 
@@ -28,31 +29,31 @@ Có **hai hệ thống phân quyền hoàn toàn khác nhau** trong codebase:
 
 ### 1.1 Role Hierarchy
 
-> Lower number = higher privilege
+> Lower number = higher privilege. Each role = a business domain owner.
 
 ```typescript
 // src/lib/auth/roles.ts
 const ROLE_LEVEL: Record<string, number> = {
-  ceo:           -1,  // Special — bypasses everything
-  super_admin:     0,  // Can manage all roles + permissions
-  admin:           1,  // Full operational access
-  project_manager:  2,  // Project + team management
-  media:            3,  // Media + marketing
-  qa:               4,  // QA + testing
-  member:            5,  // Basic access (read-only)
+  ceo:              -1,  // Special — bypasses everything, approves member onboarding
+  super_admin:        0,  // Can manage all roles + permissions
+  admin:              1,  // Full operational access
+  project_manager:     2,  // Projects + orders + clients + revenue
+  media:               3,  // Media + blog + social posts + academy
+  qa:                  4,  // QA + testing + bug tracking
+  member:               5,  // Basic access + default tags (kanban, order-basic)
 };
 ```
 
-| Role | Level | Staff? | Dashboard Access | Notes |
-|------|-------|---------|----------------|-------|
-| `ceo` | -1 | ✅ | All | Special — bypasses ALL checks |
-| `super_admin` | 0 | ✅ | All | Bypass all except role management |
-| `admin` | 1 | ✅ | All | Full operational access |
-| `project_manager` | 2 | ✅ | Partial | Projects, team, orders, sales |
-| `media` | 3 | ✅ | Partial | Media, orders, projects |
-| `qa` | 4 | ✅ | Limited | Standups, blog, orders |
-| `member` | 5 | ✅ | Limited | Tasks, standups only |
-| `client` | — | ❌ | Customer Portal | Không điều hành, chỉ portal khách hàng |
+| Role | Level | Dashboard Access | Key Responsibilities |
+|------|-------|----------------|---------------------|
+| `ceo` | -1 | All | Approves all member onboarding + role assignments |
+| `super_admin` | 0 | All | System config, manages roles/permissions |
+| `admin` | 1 | All | Operations management, day-to-day running |
+| `project_manager` | 2 | PM tabs | Orders, clients, quotation, services, projects, revenue |
+| `media` | 3 | Media tabs | Media bookings, blog posts, social posts, academy |
+| `qa` | 4 | QA tabs | Bug tracking, testing, standups |
+| `member` | 5 | Member tabs | Kanban + order-basic (default for ALL members) |
+| `client` | — | Customer Portal | No admin access |
 
 ### 1.2 Granular Permission Model
 
@@ -181,11 +182,18 @@ hasAllPermissions(permissions, requirements): boolean   // every
 
 > Production uses BE API RBAC for all server operations. This Zustand store handles client-side tab visibility and role mapping.
 
-### 2.1 Simple Role Model
+### 2.1 Role Model (7 roles, maps 1:1 with BE roleLevel)
 
 ```typescript
 // src/app/store/authStore.ts
-type UserRole = "admin" | "manager" | "staff" | "client" | "guest";
+type UserRole =
+  | "admin"            // level 0-1: super_admin + admin
+  | "project_manager"   // level 2: PM — orders, clients, projects, revenue
+  | "media"            // level 3: Media — blog, media, social posts
+  | "qa"               // level 4: QA — testing, bug tracking
+  | "member"           // level 5: Basic staff — kanban, order-basic
+  | "client"           // customer accountType
+  | "guest";          // unauthenticated
 
 type AdminTab =
   | "overview" | "orders" | "members" | "departments" | "projects"
@@ -196,27 +204,35 @@ type AdminTab =
   | "quests_events" | "leaderboard_admin" | "analytics";
 ```
 
-### 2.2 Department Tab Access (Manager only)
+### 2.2 Per-Role Tab Access
 
 ```typescript
-const DEPT_TABS: Record<string, AdminTab[]> = {
-  engineering:  ["overview", "orders", "projects", "members", "notification_center"],
-  design:      ["overview", "orders", "projects", "portfolio", "members", "notification_center"],
-  media:       ["overview", "media", "orders", "projects", "members", "notification_center"],
-  marketing:   ["overview", "blog", "academy", "clients", "services", "notification_center"],
-  sales:       ["overview", "orders", "clients", "quotation", "services", "revenue", "notification_center"],
-  finance:     ["overview", "revenue", "lp", "lp_manage", "income_tax", "web_packages", "orders", "notification_center"],
-  hr:          ["overview", "members", "departments", "notification_center"],
-  management:  ["overview", "orders", "members", "departments", "projects", "revenue", "clients", "notification_center", "quests_events"],
-};
+// Each role gets its own domain dashboard — no department grouping
+const ADMIN_TABS   = "all";                            // 23 tabs
+const PM_TABS      = ["overview","orders","clients","quotation","services","revenue","projects","members","departments","notification_center","leaderboard_admin","lp_manage","quests_events","academy","blog","lp"];
+const MEDIA_TABS   = ["media","blog","orders","projects","clients","notification_center","academy","services","leaderboard_admin","quests_events","overview","portfolio","revenue"];
+const QA_TABS      = ["projects","notification_center","orders","clients","members","academy","leaderboard_admin","overview","lp"];
+const MEMBER_TABS  = ["overview","notification_center","leaderboard_admin","academy","quests_events"];
 
-const STAFF_TABS: AdminTab[] = ["overview", "projects", "notification_center"];
+getAccessibleTabs(role, department?): AdminTab[] | "all"
+  → admin           → "all"
+  → project_manager → PM_TABS
+  → media           → MEDIA_TABS
+  → qa              → QA_TABS
+  → member          → MEMBER_TABS
+  → client/guest    → []
+```
 
-getAccessibleTabs(role, department): AdminTab[] | "all"
-  → admin → "all"
-  → manager + department → DEPT_TABS[department] ?? STAFF_TABS
-  → staff → STAFF_TABS
-  → else → []
+### 2.3 roleLevel → UserRole Mapping
+
+```typescript
+// mapRoleLevelToUserRole(roleLevel, accountType)
+roleLevel 0-1 + staff → "admin"
+roleLevel 2           → "project_manager"
+roleLevel 3           → "media"
+roleLevel 4           → "qa"
+roleLevel 5           → "member"
+any + customer        → "client"
 ```
 
 ### 2.3 Members Page (src/app/admin/members/page.tsx — 1,988L)
@@ -435,3 +451,155 @@ requirePermissionFast(session, "team", "delete"); // delete
 requirePermissionFast(session, "lp-awards", "create"); // award LP
 requirePermissionFast(session, "lp-redemptions", "update"); // deduct LP
 ```
+
+---
+
+## 8. Member Onboarding — CEO Approval Workflow (v3.0)
+
+> **Status**: Phase 1 planned — Data Model + Seed
+> **Owner**: HR + CEO
+
+### 8.1 Luồng tổng quan
+
+```
+[HR tạo hồ sơ]
+       ↓
+[Nhân viên nhận email đăng ký]
+       ↓
+[Nhân viên đăng ký → status: PENDING]
+       ↓
+[CEO nhận notification → Duyệt trong Admin Members Tab]
+       ↓                    ↓
+              ┌──────────┴──────────┐
+        [APPROVED]            [REJECTED]
+              ↓                    ↓
+   → Gán role + tags       → Gửi email từ chối
+   → Gửi email chào mừng   → Account deactive
+   → Gửi notification HR
+```
+
+**Mỗi nhân viên có 2 lớp quyền:**
+
+| Layer | Ví dụ | Ai gán |
+|-------|--------|--------|
+| **System Role** (1 cái) | member, media, qa, pm | CEO duyệt |
+| **Access Tags** (nhiều cái) | `blog-post`, `project-content`, `salary`, `kanban` | CEO gán kèm |
+
+### 8.2 Default Tags (cho mọi member)
+
+| Tag | Label | Ai có |
+|-----|-------|--------|
+| `kanban` | Kanban Board | **TẤT CẢ** member (không revoke được) |
+| `order-basic` | Xem đơn hàng | **TẤT CẢ** member |
+
+### 8.3 Access Tags chi tiết
+
+| Tag | Label | Ai gán |
+|-----|-------|--------|
+| `blog-post` | Quản trị bài viết | CEO → cho SEO, Media |
+| `project-content` | Nội dung dự án | CEO → cho SEO, Designer |
+| `seo-content` | Nội dung SEO | CEO → cho SEO Specialist |
+| `media-content` | Nội dung Media | CEO → cho Media team |
+| `order-manage` | Quản lý đơn hàng | CEO → cho PM |
+| `salary` | Xem lương | CEO/Admin only (không gán cho member) |
+| `lp-manage` | Quản lý LP | CEO → cho Admin |
+| `finance-view` | Xem tài chính | CEO → cho Kế toán |
+| `hr-manage` | Quản lý nhân sự | CEO → cho HR |
+
+### 8.4 Data Models
+
+```prisma
+// Member onboarding request — HR tạo, CEO duyệt
+model MemberRequest {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String
+  department    String   // engineering/design/media/marketing/sales/finance/hr/management
+  proposedRole  String   // member/media/qa/project_manager
+  proposedTags  String[] // ["blog-post", "kanban"]
+  status        String   @default("pending") // pending/approved/rejected
+  rejectReason  String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  approvedBy    String?  // userId của người duyệt
+  approvedAt    DateTime?
+}
+
+// Tags tự do — HR/Admin tạo, CEO gán cho member
+model AccessTag {
+  id          String   @id @default(cuid())
+  slug        String   @unique  // "blog-post", "kanban", "salary"
+  label       String            // "Quản trị bài viết"
+  description String?
+  color       String   @default("#3B82F6")
+  createdAt   DateTime @default(now())
+}
+
+// UserRoleApproval — ghi nhận ai duyệt role cho ai (audit trail)
+model UserRoleApproval {
+  id         String   @id @default(cuid())
+  userId     String
+  roleId     String
+  approvedBy String   // userId người duyệt (CEO/super_admin)
+  approvedAt DateTime @default(now())
+  notes      String?
+  @@unique([userId, roleId])
+}
+```
+
+### 8.5 API Routes
+
+| Route | Method | Mô tả | Ai gọi |
+|-------|--------|--------|--------|
+| `POST /api/admin/team/members/pending` | POST | HR tạo request | HR Tab |
+| `GET /api/admin/team/members/pending` | GET | CEO xem danh sách chờ duyệt | CEO Dashboard |
+| `POST /api/admin/team/members/pending/:id/approve` | POST | CEO duyệt + gán role + tags | CEO Action |
+| `POST /api/admin/team/members/pending/:id/reject` | POST | CEO từ chối + lý do | CEO Action |
+| `GET /api/admin/access-tags` | GET | List all tags | Members Tab |
+| `POST /api/admin/access-tags` | POST | HR/Admin tạo tag mới | Admin |
+
+### 8.6 Luồng HR (Chi tiết)
+
+```
+1. HR → Members Tab → [+ Thêm nhân viên]
+   → Nhập: name, email, department, proposedRole, proposedTags
+   → System: tạo User (isActive: false) + MemberRequest (pending)
+   → Gửi email invite link với token
+
+2. Nhân viên → email → link /register-with-token?token=xxx
+   → Đặt password
+   → Account: isActive = true (nhưng chờ duyệt)
+
+3. CEO → Notification "3 nhân viên chờ duyệt"
+   → Click → Approval Modal
+   → Gán final role + final tags
+   → Submit
+   → System:
+     a. UserRoleApproval tạo record
+     b. TeamMember.requestStatus = "approved"
+     c. TeamMember.accessTags = [selected tags + default kanban + order-basic]
+     d. Gửi email chào mừng
+     e. Notification cho HR
+```
+
+### 8.7 Permission Check mới
+
+```typescript
+// src/lib/auth/permissions.ts
+
+// Check access tag (bổ sung cho role-level permissions)
+export function hasAccessTag(user: SessionUser, tag: string): boolean {
+  if (isSuperAdmin(user) || isAdmin(user)) return true;
+  // Default tags: kanban + order-basic luôn có cho mọi member
+  if (tag === "kanban" || tag === "order-basic") return true;
+  return user.accessTags?.includes(tag) ?? false;
+}
+```
+
+### 8.8 Phases triển khai
+
+| Phase | Nội dung | Priority |
+|-------|---------|---------|
+| P2-A | Data models (MemberRequest, AccessTag, UserRoleApproval) | HIGH |
+| P2-B | API Routes + CEO Approval UI | HIGH |
+| P2-C | HR Invite Flow + Email templates | MEDIUM |

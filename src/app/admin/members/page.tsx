@@ -11,7 +11,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "motion/react";
 import { qk } from "@/lib/query/provider";
 import { adminApi } from "@/lib/api/client";
-import { useAuthStore, canEdit } from "@/app/store/authStore";
+import { useAuthStore, canEdit, type AuthUser } from "@/app/store/authStore";
 import { DS, GRD } from "@/lib/design-tokens";
 import {
   Search, Plus, Trash2, Edit2, Award, Users, TrendingUp,
@@ -19,6 +19,7 @@ import {
   Crown, Zap, BookOpen, Calendar, BarChart2, Grid3x3, List,
   UserMinus, Clock, AlertTriangle, CheckCircle2, DollarSign,
   ArrowUpDown, SlidersHorizontal, Eye, Minus, Info, Loader2,
+  Bell, UserCheck, ShieldCheck, Clock3, CheckCircle,
 } from "lucide-react";
 import {
   RANKS,
@@ -32,6 +33,30 @@ import {
 // =============================================================================
 // Types & Interfaces
 // =============================================================================
+
+/** Member request pending CEO approval */
+interface PendingRequest {
+  id: string;
+  email: string;
+  name: string;
+  department: string;
+  proposedRole: string;
+  proposedTags: string[];
+  status: "pending" | "approved" | "rejected";
+  rejectReason?: string | null;
+  createdAt: string;
+  processedAt?: string | null;
+}
+
+/** Access tag from /api/admin/access-tags */
+interface AccessTag {
+  id: string;
+  slug: string;
+  label: string;
+  description?: string | null;
+  color: string;
+  isDefault: boolean;
+}
 
 /** Partial shape of BE TeamMember from GET /api/admin/team */
 interface TeamMemberBE {
@@ -172,6 +197,13 @@ export default function AdminMembersPage() {
   const [bulkMembers, setBulkMembers] = useState<MemberExt[]>([]);
   const [formMember, setFormMember] = useState<MemberExt | null>(null); // null = add mode
   const [deleteMember, setDeleteMember] = useState<MemberExt | null>(null);
+  // Pending requests state (CEO/Admin only)
+  const [pendingRequest, setPendingRequest] = useState<PendingRequest | null>(null);
+  const [showApprovalModal, setShowApprovalModal] = useState(false);
+  const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
+  const [selectedRole, setSelectedRole] = useState<string>("member");
+  const [rejectReason, setRejectReason] = useState("");
+  const [approvalNotes, setApprovalNotes] = useState("");
 
   // Toast
   const [toasts, setToasts] = useState<ToastItem[]>([]);
@@ -311,6 +343,72 @@ export default function AdminMembersPage() {
   const isMutating =
     createMutation.isPending || updateMutation.isPending ||
     deleteMutation.isPending || lpMutation.isPending || bulkLpMutation.isPending;
+
+  // ── Pending requests ─────────────────────────────────────────────────────────
+  // admin/super_admin (maps to FE role "admin") can approve pending requests
+  const canApprove = role === "admin";
+
+  const pendingQuery = useQuery({
+    queryKey: ["admin", "pending-requests"],
+    queryFn: () => adminApi.get<{ data: PendingRequest[] }>("/api/admin/team/members/pending?status=pending"),
+    enabled: editing,
+  });
+
+  const accessTagsQuery = useQuery({
+    queryKey: ["admin", "access-tags"],
+    queryFn: () => adminApi.get<{ data: AccessTag[] }>("/api/admin/access-tags"),
+    enabled: editing,
+  });
+
+  const approveMutation = useMutation({
+    mutationFn: ({ id, finalRole, finalTags }: { id: string; finalRole?: string; finalTags?: string[] }) =>
+      adminApi.post(`/api/admin/team/members/pending/${id}/approve`, { finalRole, finalTags }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: qk.adminMembers() });
+      queryClient.invalidateQueries({ queryKey: ["admin", "pending-requests"] });
+      showToast("Đã duyệt nhân viên thành công");
+      setShowApprovalModal(false);
+      setPendingRequest(null);
+    },
+    onError: () => showToast("Duyệt thất bại", "error"),
+  });
+
+  const rejectMutation = useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason: string }) =>
+      adminApi.post(`/api/admin/team/members/pending/${id}/reject`, { reason }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "pending-requests"] });
+      showToast("Đã từ chối");
+      setShowApprovalModal(false);
+      setPendingRequest(null);
+    },
+    onError: () => showToast("Từ chối thất bại", "error"),
+  });
+
+  const pendingCount = pendingQuery.data && "data" in pendingQuery.data
+    ? (pendingQuery.data as { data: PendingRequest[] }).data.length
+    : 0;
+
+  const allTags: AccessTag[] = accessTagsQuery.data && "data" in accessTagsQuery.data
+    ? (accessTagsQuery.data as { data: AccessTag[] }).data
+    : [];
+
+  function openApprovalModal(req: PendingRequest) {
+    setPendingRequest(req);
+    setSelectedRole(req.proposedRole);
+    setSelectedTags(new Set(req.proposedTags));
+    setRejectReason("");
+    setApprovalNotes("");
+    setShowApprovalModal(true);
+  }
+
+  function toggleTag(slug: string) {
+    setSelectedTags((prev) => {
+      const n = new Set(prev);
+      n.has(slug) ? n.delete(slug) : n.add(slug);
+      return n;
+    });
+  }
 
   // ── Toggle select ───────────────────────────────────────────────────────────
   const toggleSelect = useCallback((id: string) => {
@@ -1505,6 +1603,247 @@ export default function AdminMembersPage() {
   }
 
   // =============================================================================
+  // ApprovalModal — CEO duyệt nhân viên mới
+  // =============================================================================
+
+  function ApprovalModal_() {
+    if (!pendingRequest) return null;
+    const req = pendingRequest;
+    const isProcessing = approveMutation.isPending || rejectMutation.isPending;
+
+    const defaultTags = allTags.filter((t) => t.isDefault).map((t) => t.slug);
+    const customTags = allTags.filter((t) => !t.isDefault);
+
+    return (
+      <ModalWrapper onClose={() => !isProcessing && setShowApprovalModal(false)} title="Phê duyệt nhân sự">
+        <div style={{ maxWidth: 560 }}>
+          {/* Header icon */}
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+            <div style={{
+              width: 44, height: 44, borderRadius: 10,
+              background: "rgba(34,197,94,0.15)",
+              border: "1px solid rgba(34,197,94,0.3)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              <ShieldCheck size={22} color={DS.green} />
+            </div>
+            <div>
+              <h2 style={{ fontFamily: DS.heading, fontSize: 16, color: DS.text, margin: 0 }}>
+                Phê duyệt nhân sự
+              </h2>
+              <p style={{ fontFamily: DS.mono, fontSize: 11, color: DS.text3, margin: "2px 0 0" }}>
+                Xem xét hồ sơ và gán quyền truy cập
+              </p>
+            </div>
+          </div>
+
+          {/* Member info */}
+          <div style={{
+            background: DS.bg, borderRadius: 10,
+            border: `1px solid ${DS.border}`,
+            padding: "12px 16px", marginBottom: 20,
+          }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px 16px" }}>
+              <InfoRow label="Họ tên" value={req.name} />
+              <InfoRow label="Email" value={req.email} />
+              <InfoRow label="Phòng ban" value={capitalize(req.department)} />
+              <InfoRow label="Dự kiến" value={capitalize(req.proposedRole)} />
+            </div>
+            {req.proposedTags.length > 0 && (
+              <div style={{ marginTop: 10, display: "flex", flexWrap: "wrap", gap: 4 }}>
+                {req.proposedTags.map((t) => (
+                  <span key={t} style={{
+                    padding: "2px 8px", borderRadius: 20,
+                    background: "rgba(59,130,246,0.1)",
+                    border: "1px solid rgba(59,130,246,0.3)",
+                    fontFamily: DS.mono, fontSize: 10, color: DS.blue,
+                  }}>
+                    {t}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* System Role selector */}
+          <div style={{ marginBottom: 20 }}>
+            <label style={{
+              display: "block", fontFamily: DS.mono, fontSize: 11,
+              color: DS.text3, letterSpacing: "0.08em",
+              marginBottom: 8, textTransform: "uppercase",
+            }}>
+              Gán System Role
+            </label>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+              {["member", "media", "qa", "project_manager", "admin", "super_admin"].map((r) => (
+                <button
+                  key={r}
+                  onClick={() => setSelectedRole(r)}
+                  disabled={isProcessing}
+                  style={{
+                    padding: "8px 10px", borderRadius: 8, border: "none",
+                    background: selectedRole === r ? DS.blue : DS.bgCard,
+                    color: selectedRole === r ? "#fff" : DS.text3,
+                    fontFamily: DS.mono, fontSize: 11, cursor: "pointer",
+                    transition: "all 0.15s",
+                    opacity: isProcessing ? 0.5 : 1,
+                  }}
+                >
+                  {capitalize(r)}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Access Tags */}
+          <div style={{ marginBottom: 20 }}>
+            <label style={{
+              display: "block", fontFamily: DS.mono, fontSize: 11,
+              color: DS.text3, letterSpacing: "0.08em",
+              marginBottom: 8, textTransform: "uppercase",
+            }}>
+              Access Tags
+            </label>
+            {/* Default tags (always included) */}
+            {customTags.length > 0 && (
+              <div style={{ marginBottom: 8 }}>
+                <div style={{ fontFamily: DS.mono, fontSize: 10, color: DS.text4, marginBottom: 6 }}>
+                  Tags tuỳ chỉnh (CEO gán)
+                </div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {customTags.map((t) => {
+                    const isSelected = selectedTags.has(t.slug) || defaultTags.includes(t.slug);
+                    return (
+                      <button
+                        key={t.slug}
+                        onClick={() => !defaultTags.includes(t.slug) && toggleTag(t.slug)}
+                        disabled={isProcessing || defaultTags.includes(t.slug)}
+                        style={{
+                          padding: "5px 10px", borderRadius: 20,
+                          border: `1.5px solid ${isSelected ? t.color : DS.border}`,
+                          background: isSelected ? `${t.color}18` : "transparent",
+                          color: isSelected ? t.color : DS.text4,
+                          fontFamily: DS.mono, fontSize: 11, cursor: "pointer",
+                          display: "flex", alignItems: "center", gap: 4,
+                          transition: "all 0.15s",
+                          opacity: isProcessing ? 0.5 : 1,
+                        }}
+                      >
+                        {isSelected && <Check size={10} />}
+                        {defaultTags.includes(t.slug) && <span style={{ opacity: 0.6, fontSize: 9 }}>🔒</span>}
+                        {t.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+            {/* Default tags summary */}
+            <div style={{
+              padding: "8px 12px", borderRadius: 8,
+              background: "rgba(20,184,166,0.08)",
+              border: "1px solid rgba(20,184,166,0.2)",
+              fontFamily: DS.mono, fontSize: 11, color: "#14B8A6",
+            }}>
+              🔒 Mặc định: {defaultTags.join(", ")} (tự động cấp cho mọi member)
+            </div>
+          </div>
+
+          {/* Notes */}
+          <div style={{ marginBottom: 20 }}>
+            <label style={{
+              display: "block", fontFamily: DS.mono, fontSize: 11,
+              color: DS.text3, letterSpacing: "0.08em",
+              marginBottom: 8, textTransform: "uppercase",
+            }}>
+              Ghi chú (tuỳ chọn)
+            </label>
+            <textarea
+              value={approvalNotes}
+              onChange={(e) => setApprovalNotes(e.target.value)}
+              placeholder="VD: Onboarding tháng 4/2026..."
+              disabled={isProcessing}
+              style={{
+                width: "100%", minHeight: 60,
+                background: DS.bg, border: `1px solid ${DS.border}`,
+                borderRadius: 8, padding: "8px 12px",
+                color: DS.text, fontFamily: DS.mono, fontSize: 12,
+                resize: "vertical", outline: "none",
+              }}
+            />
+          </div>
+
+          {/* Actions */}
+          <div style={{ display: "flex", gap: 10 }}>
+            {/* Reject */}
+            <div style={{ flex: 1 }}>
+              <button
+                onClick={() => {
+                  const reason = prompt("Lý do từ chối (bắt buộc):");
+                  if (!reason) return;
+                  setRejectReason(reason);
+                  rejectMutation.mutate({ id: req.id, reason });
+                }}
+                disabled={isProcessing}
+                style={{
+                  width: "100%", padding: "10px",
+                  borderRadius: 10, border: `1px solid rgba(239,68,68,0.4)`,
+                  background: "rgba(239,68,68,0.08)",
+                  color: DS.red, fontFamily: DS.mono, fontSize: 13,
+                  cursor: isProcessing ? "not-allowed" : "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                  opacity: isProcessing ? 0.5 : 1,
+                }}
+              >
+                {isProcessing && rejectMutation.isPending ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : <X size={14} />}
+                Từ chối
+              </button>
+            </div>
+            {/* Approve */}
+            <div style={{ flex: 2 }}>
+              <button
+                onClick={() => {
+                  approveMutation.mutate({
+                    id: req.id,
+                    finalRole: selectedRole,
+                    finalTags: Array.from(selectedTags),
+                  });
+                }}
+                disabled={isProcessing}
+                style={{
+                  width: "100%", padding: "10px",
+                  borderRadius: 10, border: "none",
+                  background: isProcessing ? "rgba(34,197,94,0.6)" : DS.green,
+                  color: "#fff", fontFamily: DS.mono, fontSize: 13,
+                  fontWeight: 700,
+                  cursor: isProcessing ? "not-allowed" : "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                }}
+              >
+                {isProcessing && approveMutation.isPending ? (
+                  <><Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> Đang xử lý...</>
+                ) : (
+                  <><CheckCircle size={14} /> Duyệt &amp; Kích hoạt</>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      </ModalWrapper>
+    );
+  }
+
+  // Helper
+  function InfoRow({ label, value }: { label: string; value: string }) {
+    return (
+      <div>
+        <div style={{ fontFamily: DS.mono, fontSize: 9, color: DS.text4, textTransform: "uppercase", letterSpacing: "0.08em" }}>{label}</div>
+        <div style={{ fontFamily: DS.mono, fontSize: 12, color: DS.text2, marginTop: 2 }}>{value}</div>
+      </div>
+    );
+  }
+
+  // =============================================================================
   // DeleteConfirmModal
   // =============================================================================
 
@@ -1792,6 +2131,64 @@ export default function AdminMembersPage() {
       {/* Rank Distribution */}
       <RankBar_ />
 
+      {/* Pending Approvals Banner (CEO/Admin only) */}
+      {canApprove && (
+        <div style={{
+          background: "rgba(234,179,8,0.08)",
+          border: "1px solid rgba(234,179,8,0.3)",
+          borderRadius: 12,
+          padding: "14px 18px",
+          marginTop: 12,
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+        }}>
+          <div style={{
+            width: 36, height: 36, borderRadius: 8,
+            background: "rgba(234,179,8,0.15)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            <UserCheck size={18} color={DS.amber} />
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontFamily: DS.mono, fontSize: 11, color: DS.amber, fontWeight: 700, letterSpacing: "0.08em" }}>
+              NHÂN SỰ CHỜ DUYỆT
+            </div>
+            <div style={{ fontFamily: DS.mono, fontSize: 12, color: DS.text2, marginTop: 2 }}>
+              {pendingQuery.isLoading
+                ? "Đang tải..."
+                : pendingCount > 0
+                  ? `${pendingCount} nhân viên đang chờ bạn phê duyệt`
+                  : "Không có nhân viên nào chờ duyệt"}
+            </div>
+          </div>
+          {pendingCount > 0 && (
+            <button
+              onClick={() => {
+                const pending = pendingQuery.data && "data" in pendingQuery.data
+                  ? (pendingQuery.data as { data: PendingRequest[] }).data
+                  : [];
+                if (pending.length > 0) openApprovalModal(pending[0]);
+              }}
+              disabled={pendingQuery.isLoading}
+              style={{
+                display: "flex", alignItems: "center", gap: 6,
+                padding: "8px 16px", borderRadius: 8,
+                border: "none",
+                background: DS.amber,
+                color: "#000",
+                fontFamily: DS.mono, fontSize: 12, fontWeight: 700,
+                cursor: pendingQuery.isLoading ? "not-allowed" : "pointer",
+                opacity: pendingQuery.isLoading ? 0.6 : 1,
+              }}
+            >
+              {pendingQuery.isLoading ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : <ShieldCheck size={14} />}
+              Duyệt ngay
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Controls */}
       <div style={{
         background: DS.bgCard, borderRadius: 12,
@@ -1980,10 +2377,11 @@ export default function AdminMembersPage() {
 
       {/* Modals */}
       <AnimatePresence>
+        {showApprovalModal && <ApprovalModal_ />}
         {detailMember && <MemberDetailModal_ m={detailMember} />}
         {lpMember && <LPAwardModal_ m={lpMember} />}
         {bulkMembers.length > 0 && <BulkLPModal_ />}
-        {formMember !== undefined && <MemberFormModal_ />}
+        {formMember !== null && <MemberFormModal_ />}
         {deleteMember && <DeleteConfirmModal_ m={deleteMember} />}
       </AnimatePresence>
 

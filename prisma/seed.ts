@@ -29,15 +29,36 @@ const prisma = new PrismaClient({
 async function seedRBAC() {
   console.log("\n[RBAC] Seeding roles & permissions...");
 
+  // super_admin (level 0): bypasses ALL permission checks
+  const superAdminRole = await prisma.role.upsert({
+    where: { name: "super_admin" },
+    update: { level: 0, description: "Full system access — bypasses all permission checks" },
+    create: {
+      name: "super_admin",
+      displayName: "Quản trị tối cao",
+      description: "Full system access — bypasses all permission checks",
+      color: "red",
+      level: 0,
+      isSystem: true,
+    },
+  });
+
+  // Clear + grant wildcard permission to super_admin (bypass everything)
+  await prisma.permission.deleteMany({ where: { roleId: superAdminRole.id } });
+  await prisma.permission.create({
+    data: { roleId: superAdminRole.id, resource: "*", action: "*", scope: "all" },
+  });
+
+  // admin (level 1): full operational access
   const adminRole = await prisma.role.upsert({
     where: { name: "admin" },
     update: {},
     create: {
       name: "admin",
       displayName: "Administrator",
-      description: "Full system access",
-      color: "red",
-      level: 100,
+      description: "Full operational access",
+      color: "indigo",
+      level: 1,
       isSystem: true,
     },
   });
@@ -68,31 +89,34 @@ async function seedRBAC() {
     },
   });
 
-  console.log("  ✓ Roles:", adminRole.name, editorRole.name, viewerRole.name);
+  console.log("  ✓ Roles:", superAdminRole.name, adminRole.name, editorRole.name, viewerRole.name);
 
-  // Admin permissions
-  const adminPermissions = [
-    { resource: "team", action: "create" },
-    { resource: "team", action: "read" },
-    { resource: "team", action: "update" },
-    { resource: "team", action: "delete" },
-    { resource: "expertises", action: "create" },
-    { resource: "expertises", action: "read" },
-    { resource: "expertises", action: "update" },
-    { resource: "expertises", action: "delete" },
-    { resource: "users", action: "create" },
-    { resource: "users", action: "read" },
-    { resource: "users", action: "update" },
-    { resource: "users", action: "delete" },
+  // super_admin: wildcard permission (bypass everything — handled in code)
+  // admin: grant ALL resource permissions so they can access all tabs
+  // Note: requirePermissionFast() in permissions.ts bypasses admin via isAdmin() check,
+  // but we seed explicit permissions for completeness
+  const allResources = [
+    "team", "services", "projects", "orders", "blog-posts", "academy",
+    "figma-demos", "lp-awards", "lp-redemptions", "edu", "backlogs",
+    "tasks", "standups", "deployments", "env-files", "git-commits",
+    "social-posts", "handover", "sales-leads", "quotes",
+    "web-templates", "service-attributes", "addon-services", "packages",
+    "hosting-plans", "domain-prices", "pricing-features", "quote-requests",
+    "customer-points", "users", "roles", "audit-log", "settings",
+    "home-sliders", "landing-pages", "expertises", "testimonials",
+    "messages", "websites", "points", "reward-tiers",
   ];
+  const allActions = ["create", "read", "update", "delete", "export", "approve"] as const;
 
   await prisma.permission.deleteMany({ where: { roleId: adminRole.id } });
-  for (const perm of adminPermissions) {
-    await prisma.permission.create({
-      data: { roleId: adminRole.id, resource: perm.resource, action: perm.action, scope: "all" },
-    });
+  for (const resource of allResources) {
+    for (const action of allActions) {
+      await prisma.permission.create({
+        data: { roleId: adminRole.id, resource, action, scope: "all" },
+      });
+    }
   }
-  console.log("  ✓ Admin permissions created");
+  console.log(`  ✓ Admin permissions: ${allResources.length} resources × ${allActions.length} actions`);
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -102,33 +126,129 @@ async function seedRBAC() {
 async function seedAdmin() {
   console.log("\n[Admin] Seeding admin user...");
 
-  const existing = await prisma.user.findUnique({ where: { email: "admin@loop.vn" } });
-  if (existing) {
-    console.log("  ✓ Admin user already exists — skipping");
-    return existing;
-  }
-
   const passwordHash = await hashPassword("admin123");
-  const admin = await prisma.user.create({
-    data: {
+
+  // upsert: create if not exists, or update accountType if it already does
+  const admin = await prisma.user.upsert({
+    where: { email: "admin@loop.vn" },
+    update: {
+      name: "Admin",
+      passwordHash,
+      role: "super_admin",
+      accountType: "staff",
+      isActive: true,
+    },
+    create: {
       email: "admin@loop.vn",
       name: "Admin",
       passwordHash,
-      role: "admin",
+      role: "super_admin",
+      accountType: "staff",
       isActive: true,
     },
   });
-  console.log(`  ✓ Admin created: ${admin.email} / admin123`);
+  console.log(`  ✓ Admin upserted: ${admin.email} / admin123`);
 
-  // Assign admin role
+  // Assign super_admin role (level 0) — bypasses ALL permission checks
+  const superAdminRole = await prisma.role.findUnique({ where: { name: "super_admin" } });
   const adminRole = await prisma.role.findUnique({ where: { name: "admin" } });
-  if (adminRole) {
-    await prisma.userRole.deleteMany({ where: { userId: admin.id } });
-    await prisma.userRole.create({ data: { userId: admin.id, roleId: adminRole.id } });
-    console.log("  ✓ Admin role assigned");
+
+  await prisma.userRole.deleteMany({ where: { userId: admin.id } });
+
+  if (superAdminRole) {
+    await prisma.userRole.create({ data: { userId: admin.id, roleId: superAdminRole.id, isActive: true } });
+    console.log("  ✓ super_admin role assigned (level 0 — bypasses everything)");
+  } else {
+    // Fallback to admin role
+    if (adminRole) {
+      await prisma.userRole.create({ data: { userId: admin.id, roleId: adminRole.id, isActive: true } });
+      console.log("  ✓ admin role assigned (fallback — level 1)");
+    }
   }
 
   return admin;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// 2b. Access Tags (Member Onboarding v3)
+async function seedAccessTags() {
+  console.log("\n[AccessTags] Seeding member onboarding tags...");
+
+  const tags = [
+    // Default tags — all members get these automatically (cannot revoke)
+    { slug: "kanban",       label: "Kanban Board",    description: "Truy cập Kanban Board và xem công việc",   color: "#14B8A6", isDefault: true  },
+    { slug: "order-basic",  label: "Xem đơn hàng",   description: "Chỉ xem đơn hàng, không chỉnh sửa",         color: "#64748B", isDefault: true  },
+
+    // Content management
+    { slug: "blog-post",          label: "Quản trị bài viết",  description: "Tạo / sửa / xóa blog công ty",            color: "#8B5CF6", isDefault: false },
+    { slug: "project-content",     label: "Nội dung dự án",    description: "Quản lý nội dung dự án, demo links",         color: "#6366F1", isDefault: false },
+    { slug: "seo-content",         label: "Nội dung SEO",       description: "Quản lý SEO tags, GSC data, meta",          color: "#22C55E", isDefault: false },
+    { slug: "media-content",       label: "Nội dung Media",     description: "Upload / quản lý hình ảnh và video",        color: "#EC4899", isDefault: false },
+    { slug: "portfolio-manage",     label: "Quản lý Portfolio", description: "CRUD dự án portfolio và demo links",        color: "#F59E0B", isDefault: false },
+
+    // Operations
+    { slug: "order-manage",        label: "Quản lý đơn hàng",  description: "CRUD đơn hàng, gán PM, chat với khách",  color: "#3B82F6", isDefault: false },
+    { slug: "client-manage",       label: "Quản lý khách hàng",description: "CRM, profiles, referral codes",           color: "#10B981", isDefault: false },
+    { slug: "quotation-manage",    label: "Quản lý báo giá",   description: "Cấu hình pricing wizard và quotes",       color: "#F97316", isDefault: false },
+
+    // HR / Finance
+    { slug: "hr-manage",           label: "Quản lý nhân sự",   description: "CRUD members, departments, invitation",      color: "#A855F7", isDefault: false },
+    { slug: "salary",              label: "Xem lương",          description: "Truy cập thông tin lương (threshold)",      color: "#EF4444", isDefault: false },
+    { slug: "lp-manage",          label: "Quản lý LP",        description: "Duyệt LP awards, xem LP transactions",     color: "#EAB308", isDefault: false },
+    { slug: "finance-view",        label: "Xem tài chính",     description: "Xem revenue, báo cáo tài chính",          color: "#84CC16", isDefault: false },
+    { slug: "finance-manage",      label: "Quản lý tài chính", description: "CRUD financial data, thuế, web packages",  color: "#0EA5E9", isDefault: false },
+
+    // Academy / QA
+    { slug: "academy-manage",      label: "Quản lý học viện",  description: "CRUD courses, enrollments, instructors",   color: "#818CF8", isDefault: false },
+    { slug: "qa-manage",           label: "Quản lý QA",        description: "Bug tracking, testing, test cases",        color: "#22D3EE", isDefault: false },
+  ];
+
+  let count = 0;
+  for (const tag of tags) {
+    await prisma.accessTag.upsert({
+      where: { slug: tag.slug },
+      update: {},
+      create: tag,
+    });
+    count++;
+  }
+  console.log(`  ✓ ${count} access tags seeded`);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// 2c. Sample Pending Member Request (demo)
+async function seedMemberRequests() {
+  console.log("\n[MemberRequests] Seeding sample pending requests...");
+
+  // SEO Specialist pending approval
+  await prisma.memberRequest.upsert({
+    where: { email: "seo@loop.vn" },
+    update: { status: "pending" },
+    create: {
+      email: "seo@loop.vn",
+      name: "Nguyễn Văn SEO",
+      department: "marketing",
+      proposedRole: "member",
+      proposedTags: ["blog-post", "seo-content", "kanban", "order-basic"],
+      status: "pending",
+    },
+  });
+
+  // Media Designer pending approval
+  await prisma.memberRequest.upsert({
+    where: { email: "media@loop.vn" },
+    update: { status: "pending" },
+    create: {
+      email: "media@loop.vn",
+      name: "Trần Thị Media",
+      department: "media",
+      proposedRole: "member",
+      proposedTags: ["blog-post", "media-content", "kanban", "order-basic"],
+      status: "pending",
+    },
+  });
+
+  console.log("  ✓ 2 pending member requests seeded");
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -2233,6 +2353,8 @@ async function main() {
   try {
     await seedRBAC();
     await seedAdmin();
+    await seedAccessTags();
+    await seedMemberRequests();
     await seedCEO();
     await seedServiceAttributes();
     await seedPricing();
@@ -2248,7 +2370,7 @@ async function main() {
     await seedR2(); // <-- NEW: R2 unified demo data
 
     // Verify counts
-    const [tm, us, pr, ord, pm, ef, ov, lp, tx, qp, ec, tsk, q, ev, exp, me, svc] = await Promise.all([
+    const [tm, us, pr, ord, pm, ef, ov, lp, tx, qp, ec, tsk, q, ev, exp, me, svc, at, mr] = await Promise.all([
       prisma.teamMember.count(),
       prisma.user.count(),
       prisma.project.count(),
@@ -2267,9 +2389,11 @@ async function main() {
       prisma.expertise.count(),
       prisma.memberExpertise.count(),
       prisma.service.count(),
+      prisma.accessTag.count(),
+      prisma.memberRequest.count(),
     ]);
-    console.log("\n[VERIFY] TM=%d US=%d PR=%d OR=%d PM=%d | LP=%d TX=%d QP=%d | EC=%d TS=%d Q=%d EV=%d | EXP=%d ME=%d | SVC=%d",
-      tm, us, pr, ord, pm, lp, tx, qp, ec, tsk, q, ev, exp, me, svc);
+    console.log("\n[VERIFY] TM=%d US=%d PR=%d OR=%d PM=%d | LP=%d TX=%d QP=%d | EC=%d TS=%d Q=%d EV=%d | EXP=%d ME=%d | SVC=%d | AT=%d MR=%d",
+      tm, us, pr, ord, pm, lp, tx, qp, ec, tsk, q, ev, exp, me, svc, at, mr);
     console.log("  (EF=%d OV=%d — effects in code, not DB)", ef, ov);
 
     console.log("\n" + "=".repeat(50));

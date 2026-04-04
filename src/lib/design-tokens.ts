@@ -42,8 +42,8 @@ export const DS = {
 
   // Fonts
   mono: "'JetBrains Mono', monospace",
-  heading: "'Cinzel', serif",
-  body: "'Inter', 'Noto Serif JP', sans-serif",
+  heading: "Geist, var(--font-geist), system-ui, sans-serif",
+  body: "Geist, var(--font-geist), system-ui, sans-serif",
 } as const;
 
 export const GRD = {
