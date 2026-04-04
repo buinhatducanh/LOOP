@@ -181,15 +181,6 @@ const INIT_EVENTS: CompanyEvent[] = [
  * Guest: no access
  */
 
-// Exact tabs from AdminSidebar SIDEBAR_GROUPS_CONFIG
-const ADMIN_TABS: AdminTab[] = [
-  "overview", "orders", "members", "departments", "projects", "leaderboard_admin",
-  "services", "media", "quotation", "portfolio", "projects_completed",
-  "academy", "blog", "revenue", "analytics", "clients",
-  "lp", "lp_manage", "income_tax", "web_packages",
-  "effects", "quests_events", "notification_center", "settings",
-];
-
 const PM_TABS: AdminTab[] = [
   "overview", "orders", "clients", "quotation", "services", "revenue",
   "projects", "members", "departments", "notification_center",

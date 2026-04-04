@@ -34,37 +34,35 @@ export const redis =
 
 // ─── Rate Limiting ─────────────────────────────────────────────────────────────
 
+/**
+ * Guard: Ratelimit requires a live Redis client.
+ * If UPSTASH_REDIS_REST_URL is missing, rate limiting is silently disabled
+ * (the applyRateLimit() helper handles null ratelimit gracefully).
+ */
+function makeRatelimit(window: number, prefix: string) {
+  if (!redis) {
+    console.warn(`[RateLimit] Redis unavailable — rate limiting disabled (prefix: ${prefix})`);
+    return null;
+  }
+  return new Ratelimit({
+    redis,
+    limiter: Ratelimit.slidingWindow(window, "1 m"),
+    analytics: true,
+    prefix,
+  });
+}
+
 /** 100 requests per minute per IP — public API routes */
-export const publicApiRateLimit = new Ratelimit({
-  redis: redis!,
-  limiter: Ratelimit.slidingWindow(100, "1 m"),
-  analytics: true,
-  prefix: "rl:public",
-});
+export const publicApiRateLimit = makeRatelimit(100, "rl:public");
 
 /** 20 requests per minute per IP — auth routes */
-export const authRateLimit = new Ratelimit({
-  redis: redis!,
-  limiter: Ratelimit.slidingWindow(20, "1 m"),
-  analytics: true,
-  prefix: "rl:auth",
-});
+export const authRateLimit = makeRatelimit(20, "rl:auth");
 
 /** 10 requests per minute per IP — contact form */
-export const contactRateLimit = new Ratelimit({
-  redis: redis!,
-  limiter: Ratelimit.slidingWindow(10, "1 m"),
-  analytics: true,
-  prefix: "rl:contact",
-});
+export const contactRateLimit = makeRatelimit(10, "rl:contact");
 
 /** 30 requests per minute per IP — search */
-export const searchRateLimit = new Ratelimit({
-  redis: redis!,
-  limiter: Ratelimit.slidingWindow(30, "1 m"),
-  analytics: true,
-  prefix: "rl:search",
-});
+export const searchRateLimit = makeRatelimit(30, "rl:search");
 
 // ─── Cache-Fetch Helper ───────────────────────────────────────────────────────
 

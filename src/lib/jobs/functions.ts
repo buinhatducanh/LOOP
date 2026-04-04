@@ -366,10 +366,13 @@ export const warmCache = inngest.createFunction(
     await step.run("fetch-all-pages", async () => {
       for (const url of urls) {
         try {
+          // Abort after 10s — compatible with Node.js 18+ (AbortSignal.timeout is Node 20+)
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 10_000);
           await fetch(url, {
             headers: { "User-Agent": "LOOP-CacheWarmer/1.0" },
-            signal: AbortSignal.timeout(10_000),
-          });
+            signal: controller.signal as AbortSignal,
+          }).finally(() => clearTimeout(timeout));
         } catch (err) {
           console.warn(`[CacheWarmer] Failed to warm: ${url}`, err);
         }

@@ -7,7 +7,25 @@ import { Resend } from "resend";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+/**
+ * Lazy Resend client — only instantiated when RESEND_API_KEY is present.
+ * Module-level `new Resend(undefined)` would throw at startup,
+ * crashing the app in environments where email is optional (dev, CI).
+ */
+let _resend: Resend | null = null;
+
+function getResend(): Resend {
+  if (!_resend) {
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) {
+      throw new Error(
+        "[EMAIL] RESEND_API_KEY is not set. Set it in Vercel Dashboard → Environment Variables."
+      );
+    }
+    _resend = new Resend(apiKey);
+  }
+  return _resend;
+}
 
 const FROM = "LOOP <hello@loop.vn>";
 const FROM_ALERTS = "LOOP Alerts <alerts@loop.vn>";
@@ -135,7 +153,7 @@ export async function sendStandupReminder(data: StandupReminderEmailData) {
     </p>`
   );
 
-  const { error } = await resend.emails.send({
+  const { error } = await getResend().emails.send({
     from: FROM_ALERTS,
     to: data.memberEmail,
     subject: `⏰ Nhắc nhở Standup — ${data.projectOrderNumber} — ${dateStr}`,
@@ -173,7 +191,7 @@ export async function sendSlaViolationAlert(data: SlaViolationEmailData) {
     "#EF4444"
   );
 
-  const { error } = await resend.emails.send({
+  const { error } = await getResend().emails.send({
     from: FROM_ALERTS,
     to: recipients,
     subject: `🚨 SLA Violation — ${data.taskTitle} — ${data.projectOrderNumber}`,
@@ -208,7 +226,7 @@ export async function sendSlaWarning(data: SlaWarningEmailData) {
     "#F59E0B"
   );
 
-  const { error } = await resend.emails.send({
+  const { error } = await getResend().emails.send({
     from: FROM_ALERTS,
     to: data.assigneeEmail,
     subject: `⚠️ Warning — ${data.taskTitle} sắp quá hạn (${data.hoursRemaining}h)`,
@@ -242,7 +260,7 @@ export async function sendSocialPublishNotification(data: SocialPublishEmailData
     </p>`
   );
 
-  const { error } = await resend.emails.send({
+  const { error } = await getResend().emails.send({
     from: FROM,
     to: process.env.ADMIN_EMAIL ?? "alerts@loop.vn",
     subject: `${platformIcon} Social Post scheduled — ${data.projectOrderNumber} — ${timeStr}`,
@@ -280,7 +298,7 @@ export async function sendLpMonthlyReport(data: LpMonthlyReportEmailData, toEmai
     </p>`
   );
 
-  const { error } = await resend.emails.send({
+  const { error } = await getResend().emails.send({
     from: FROM_ALERTS,
     to: toEmail,
     subject: `📊 LP Report — ${data.period} — ${data.totalLp} LP awarded`,
@@ -309,7 +327,7 @@ export async function sendContactConfirmation(data: ContactConfirmationEmailData
     </p>`
   );
 
-  const { error } = await resend.emails.send({
+  const { error } = await getResend().emails.send({
     from: FROM,
     to: data.email,
     subject: `Cảm ơn ${data.name} đã liên hệ với LOOP Studio!`,
@@ -345,7 +363,7 @@ export async function sendAdminContactNotification(data: ContactConfirmationEmai
   );
 
   const adminEmail = process.env.ADMIN_EMAIL ?? "alerts@loop.vn";
-  const { error } = await resend.emails.send({
+  const { error } = await getResend().emails.send({
     from: FROM_ALERTS,
     to: adminEmail,
     subject: `📩 Yêu cầu mới — ${data.name} — ${data.email}`,
@@ -382,7 +400,7 @@ export async function sendOrderConfirmation(data: OrderConfirmationEmailData) {
     </p>`
   );
 
-  const { error } = await resend.emails.send({
+  const { error } = await getResend().emails.send({
     from: FROM,
     to: data.customerEmail,
     subject: `✅ Đơn hàng ${data.orderNumber} đã được tiếp nhận — LOOP Studio`,

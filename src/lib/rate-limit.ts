@@ -146,6 +146,9 @@ export async function applyRateLimit(
   const limiter = getRateLimiter(limiterKey);
   const ip = extractClientIp(req);
 
+  // Redis unavailable → rate limiting is disabled (fail open for availability)
+  if (!limiter) return { allowed: true };
+
   try {
     const { success, remaining, reset } = await limiter.limit(ip);
 

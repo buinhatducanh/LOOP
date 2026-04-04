@@ -10,7 +10,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendPasswordResetOtp } from "@/lib/email";
-import { applyRateLimit, extractClientIp } from "@/lib/rate-limit";
+import { applyRateLimit } from "@/lib/rate-limit";
 import { handleError } from "@/lib/api";
 
 const OTP_DIGITS = 6;

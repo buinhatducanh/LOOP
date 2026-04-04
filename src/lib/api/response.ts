@@ -145,12 +145,11 @@ export function handleError(error: unknown) {
   }
 
   // Known string messages → typed responses
+  // ⚠️  Only match errors that are OUR own classes.
+  //      Third-party errors (DB driver, external APIs) may carry generic messages
+  //      like "Not found" or "Unauthorized" that should NOT map to 4xx.
   if (error instanceof Error) {
-    if (error.message === "Unauthorized") return unauthorized();
-    if (error.message === "Forbidden") return forbidden();
-    if (error.message === "Not found" || error.message === "Not Found")
-      return notFound();
-    return serverError(error.message);
+    return serverError();
   }
 
   return serverError();
@@ -164,11 +163,7 @@ export function handleErrorWithFallback(
   fallbackMessage = "Server error"
 ) {
   if (error instanceof Error) {
-    if (error.message === "Unauthorized") return unauthorized();
-    if (error.message === "Forbidden") return forbidden();
-    if (error.message === "Not found" || error.message === "Not Found")
-      return notFound();
-    return serverError(error.message);
+    return serverError(fallbackMessage);
   }
   return serverError(fallbackMessage);
 }

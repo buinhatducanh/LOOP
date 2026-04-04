@@ -1,45 +1,34 @@
 /**
  * Email Service — LOOP Solutions
  *
- * Sends transactional emails via nodemailer.
- * Uses SMTP configured via environment variables.
+ * Sends transactional emails via Resend API.
  *
- * Env vars required:
- *   SMTP_HOST     — e.g. smtp.gmail.com, smtp.mailgun.org
- *   SMTP_PORT     — e.g. 587 (TLS), 465 (SSL)
- *   SMTP_USER     — sender email address
- *   SMTP_PASS     — sender password / app password
- *   SMTP_SECURE   — "true" for port 465, "false" for 587 (default TLS)
- *   EMAIL_FROM    — display name, e.g. "LOOP Solutions <noreply@loops.vn>"
+ * Setup:
+ *   1. Create account: https://resend.com (free: 100 emails/day)
+ *   2. Add & verify a domain (Settings → Domains)
+ *      e.g. loops.vn or mg.loops.vn — requires DNS access
+ *      OR use your Gmail address (free tier only sends TO that address)
+ *   3. Add to Vercel env vars:
+ *        RESEND_API_KEY   = re_xxxxx
+ *        EMAIL_FROM       = LOOP Solutions <noreply@your-domain.com>
  *
- * For development / demo, logs emails to console instead of sending.
+ * Dev mode: logs emails to console, no external send.
  */
 
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 
-// ─── Transporter ────────────────────────────────────────────────────────────────
+// ─── Resend client ────────────────────────────────────────────────────────────
 
-function createTransporter() {
-  // Development: log to console
-  if (process.env.NODE_ENV === "development" && !process.env.SMTP_HOST) {
-    return nodemailer.createTransport({
-      jsonTransport: true, // outputs JSON to console
-    });
+function createResendClient() {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    console.warn("[EMAIL] RESEND_API_KEY not set — emails will be logged only");
+    return null;
   }
-
-  // Production / configured SMTP
-  return nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: Number(process.env.SMTP_PORT ?? 587),
-    secure: process.env.SMTP_SECURE === "true",
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-  });
+  return new Resend(apiKey);
 }
 
-const transporter = createTransporter();
+const resend = createResendClient();
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -48,16 +37,10 @@ function stripHtml(html: string) {
 }
 
 function isDev() {
-  return process.env.NODE_ENV === "development" && !process.env.SMTP_HOST;
+  return process.env.NODE_ENV === "development" && !resend;
 }
 
 // ─── Email Templates ────────────────────────────────────────────────────────────
-
-const LOOP_BRAND = {
-  name: "LOOP Solutions",
-  email: "noreply@loops.vn",
-  url: "https://loops.vn",
-};
 
 function baseTemplate(content: string) {
   return `<!DOCTYPE html>
@@ -141,6 +124,13 @@ function passwordResetSuccessTemplate() {
 
 // ─── Core send function ────────────────────────────────────────────────────────
 
+function getFromAddress(): string {
+  return (
+    process.env.EMAIL_FROM ??
+    `LOOP Solutions <noreply@loops.vn>`
+  );
+}
+
 async function sendEmail(opts: {
   to: string;
   subject: string;
@@ -148,6 +138,7 @@ async function sendEmail(opts: {
 }): Promise<{ success: boolean; error?: string }> {
   const { to, subject, html } = opts;
 
+  // Dev mode: log only
   if (isDev()) {
     console.log("\n📧 [DEV EMAIL] ─────────────────────────────");
     console.log("To:", to);
@@ -157,14 +148,24 @@ async function sendEmail(opts: {
     return { success: true };
   }
 
+  if (!resend) {
+    return { success: false, error: "Resend client not initialized" };
+  }
+
   try {
-    const info = await transporter.sendMail({
-      from: process.env.EMAIL_FROM ?? `${LOOP_BRAND.name} <${LOOP_BRAND.email}>`,
+    const { data, error } = await resend.emails.send({
+      from: getFromAddress(),
       to,
       subject,
       html,
     });
-    console.log(`[EMAIL] Sent to ${to}: ${info.messageId}`);
+
+    if (error) {
+      console.error(`[EMAIL] Resend error:`, error);
+      return { success: false, error: error.message };
+    }
+
+    console.log(`[EMAIL] Sent to ${to}: ${data?.id}`);
     return { success: true };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);

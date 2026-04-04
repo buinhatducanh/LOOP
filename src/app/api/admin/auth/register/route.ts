@@ -46,16 +46,16 @@ export async function POST(req: NextRequest) {
         name: name.trim(),
         email: email.toLowerCase().trim(),
         passwordHash,
-        role: "user",
+        role: "member",
         accountType: "customer",
         // Link to TeamMember if email matches an active member
         ...(await linkTeamMember(email.toLowerCase())),
       },
     });
 
-    await createAuditLog({ userId: user.id, action: "register", resource: "auth" });
+    await createAuditLog({ userId: user.id, action: "register", resource: "auth", resourceId: user.id });
 
-    const token = signToken({ userId: user.id, email: user.email, role: user.role, roles: [] });
+    const token = signToken({ userId: user.id, email: user.email, role: user.role, roles: ["member"], roleLevel: 5 });
 
     authLogger.withSLO("POST /api/admin/auth/register success", {
       endpoint: "/api/admin/auth/register",

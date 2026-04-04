@@ -263,13 +263,13 @@ export function checkAdminAccess(req: NextRequest, pathname: string): {
  * Returns the verified payload or null if invalid/expired.
  *
  * ⚠️  NOTE: Edge Middleware cannot access process.env at some runtimes.
- *     If JWT_SECRET is unavailable, this falls back to decode-only
+ *     If AUTH_SECRET is unavailable, this falls back to decode-only
  *     (same security posture as before). API routes always have env access.
  */
 export async function verifyAuthToken(
   token: string
 ): Promise<Record<string, unknown> | null> {
-  const secret = process.env.JWT_SECRET;
+  const secret = process.env.AUTH_SECRET;
   if (!secret) {
     // Fallback: no secret available (Edge Middleware at some runtimes)
     // Log warning server-side only

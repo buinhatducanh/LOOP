@@ -15,6 +15,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { signToken } from "@/lib/auth/jwt";
 import { authLogger } from "@/lib/logger";
+import { prisma } from "@/lib/prisma";
+import { ROLE_LEVEL } from "@/lib/auth/roles";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
@@ -35,21 +37,32 @@ export async function GET(req: NextRequest) {
       role?: string;
     };
 
-    // Create custom JWT token matching what /api/admin/auth/login issues
-    const jwtToken = signToken({
-      userId: oauthUser.id,
-      email: oauthUser.email,
-      role: oauthUser.role ?? "user",
-      roles: [],
+    // Resolve authoritative role from DB (authoritative over NextAuth raw role field)
+    const dbUser = await prisma.user.findUnique({
+      where: { id: oauthUser.id },
+      select: { role: true, accountType: true },
     });
 
-    // Destination: respect callbackUrl, but role-aware as fallback
+    const primaryRole = dbUser?.role ?? "member";
+    const accountType = dbUser?.accountType ?? "customer";
+    const roleLevel = ROLE_LEVEL[primaryRole] ?? 5;
+
+    // Determine redirect destination: staff → admin, customer → khach-hang
     const dest =
       callbackUrl && callbackUrl !== "/vi/khach-hang"
         ? callbackUrl
-        : oauthUser.role === "staff" || oauthUser.role === "admin" || oauthUser.role === "manager"
+        : accountType === "staff"
           ? "/admin/overview"
           : `/${locale}/khach-hang`;
+
+    // Create custom JWT token with authoritative DB roleLevel
+    const jwtToken = signToken({
+      userId: oauthUser.id,
+      email: oauthUser.email,
+      role: primaryRole,
+      roles: [primaryRole],
+      roleLevel,
+    });
 
     const response = NextResponse.redirect(new URL(dest, req.url));
 
