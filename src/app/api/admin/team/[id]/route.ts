@@ -76,8 +76,8 @@ export async function PUT(
         data: cleanedData,
       });
     } catch (prismaError) {
-      console.error("Prisma error:", prismaError);
-      return NextResponse.json({ error: `Prisma error: ${prismaError}` }, { status: 500 });
+      console.error("Prisma update error:", prismaError);
+      return NextResponse.json({ error: "Cập nhật thất bại" }, { status: 500 });
     }
 
     // Update expertise relations if explicitly provided (even if empty array)

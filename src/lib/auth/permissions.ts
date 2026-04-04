@@ -338,11 +338,6 @@ export function hasAllPermissions(
   );
 }
 
-/** Check role level: userRole ≤ requiredLevel means user is high enough */
-export function hasMinRoleLevel(userRole: string, minLevel: number): boolean {
-  const level = ROLE_LEVEL[userRole] ?? 99;
-  return level <= minLevel;
-}
 
 /** Super admin or admin check */
 export function isSuperAdmin(session: SessionUser): boolean {

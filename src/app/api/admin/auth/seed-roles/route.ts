@@ -44,7 +44,7 @@
 
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/lib/auth/permissions";
+import { requireMinRole } from "@/lib/auth/permissions";
 
 export const dynamic = "force-dynamic";
 
@@ -216,7 +216,9 @@ const PERMISSIONS: Array<{ role: string; resource: string; action: string }> = [
 
 export async function POST() {
   try {
-    await requireAuth();
+    // Only super_admin (level 0) can reset the entire RBAC system.
+    // requireAuth() alone is insufficient — any authenticated user would qualify.
+    await requireMinRole(0);
 
     // 1. Upsert all system roles
     const roleIds: Record<string, string> = {};
@@ -275,14 +277,17 @@ export async function POST() {
       })),
     });
   } catch (error) {
-    const msg = error instanceof Error ? error.message : "Server error";
-    const status = msg === "Unauthorized" ? 401 : msg === "Forbidden" ? 403 : 500;
-    return NextResponse.json({ error: msg }, { status });
+    // Use handleError — avoid manual status code classification which
+    // misroutes third-party errors with common message strings.
+    const { handleError } = await import("@/lib/api/response");
+    return handleError(error);
   }
 }
 
 export async function GET() {
-  // Public: just list roles (no auth needed to see what's available)
+  // Only super_admin (level 0) can see the full RBAC blueprint.
+  // Public exposure leaks role names, levels, and user counts.
+  await requireMinRole(0);
   const roles = await prisma.role.findMany({
     select: {
       name: true,
