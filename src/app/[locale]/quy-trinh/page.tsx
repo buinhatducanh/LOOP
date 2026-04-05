@@ -275,7 +275,7 @@ Animation:    motion/react (Framer Motion v11+)
 Icons:        lucide-react
 Charts:       100% pure-SVG (không dùng recharts/d3)
 Images:       Unsplash + figma:asset scheme
-Fonts:        Cinzel (heading) · JetBrains Mono · Inter · Noto Serif JP`} />
+Fonts:        Plus Jakarta Sans (heading) · JetBrains Mono · DM Sans · Noto Sans JP/KR/SC`} />
 
             <div style={{ color: DS.text3, fontSize: 12, marginBottom: 8 }}>Cấu trúc thư mục:</div>
             <CodeBlock code={`src/app/
@@ -838,8 +838,8 @@ Each rank segment = (count/total) * circumference`} />
                   color: DS.cyan,
                 },
                 {
-                  title: 'Fonts — Cinzel + JetBrains Mono',
-                  content: 'fontFamily: DS.heading (Cinzel) cho title lớn. DS.mono (JetBrains Mono) cho số, code, badge, label kỹ thuật. DS.body (Inter) cho body text. Font import chỉ trong /src/styles/fonts.css.',
+                  title: 'Fonts — Plus Jakarta Sans + JetBrains Mono',
+                  content: 'fontFamily: DS.heading (Plus Jakarta Sans) cho title lớn. DS.mono (JetBrains Mono) cho số, code, badge, label kỹ thuật. DS.body (DM Sans) cho body text. Font import chỉ trong /src/styles/fonts.css.',
                   color: DS.amber,
                 },
                 {

@@ -9,6 +9,7 @@ import { motion } from "motion/react";
 import Link from "next/link";
 import { Trophy, Zap, Target } from "lucide-react";
 import { RANKS, normalizeRank, formatLP, type RankKey } from "./guildMemberData";
+import { DS } from "@/lib/design-tokens";
 
 type MemberRecord = Record<string, unknown>;
 
@@ -349,7 +350,7 @@ function HolographicCard({
             <div className="text-center mb-2">
               <div
                 style={{
-                  fontFamily: "'Cinzel', serif",
+                  fontFamily: DS.heading,
                   color: "#FFFFFF",
                   fontSize: 15,
                   fontWeight: 700,
@@ -377,7 +378,7 @@ function HolographicCard({
               <div className="text-center">
                 <div
                   style={{
-                    fontFamily: "'Cinzel', serif",
+                    fontFamily: DS.heading,
                     color: cfg.color,
                     fontSize: 18,
                     fontWeight: 700,
@@ -537,7 +538,7 @@ export function HallOfFame({ mvp, bugSlayer, topPerformer, locale }: HallOfFameP
 
           <h3
             style={{
-              fontFamily: "'Cinzel', serif",
+              fontFamily: DS.heading,
               fontSize: 26,
               fontWeight: 900,
               letterSpacing: "0.12em",

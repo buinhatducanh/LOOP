@@ -1,10 +1,9 @@
 import { PrismaClient } from "@/generated/prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
-import { Pool } from "pg";
+import { PrismaNeonHttp } from "@prisma/adapter-neon";
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined };
 
-// Lazy initialization — do NOT call neon()/PrismaClient at module load time.
+// Lazy initialization — do NOT call PrismaClient at module load time.
 // Next.js loads env vars AFTER module initialization, so any top-level code
 // that runs during import will see undefined process.env values in some setups.
 function createPrismaClient(): PrismaClient {
@@ -15,10 +14,10 @@ function createPrismaClient(): PrismaClient {
       "and restart the dev server: npm run dev"
     );
   }
-  // Use pg Pool — standard driver, no timing issues with env vars
-  const pool = new Pool({ connectionString });
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const adapter = new PrismaPg(pool as any);
+  // @prisma/adapter-neon v7.4.2 — PrismaNeonHttp uses direct HTTP connection string
+  // No pg Pool needed — ~50ms cold start vs pg Pool's ~500ms
+  // Works with Neon direct compute endpoint (no pooler required)
+  const adapter = new PrismaNeonHttp(connectionString, { fullResults: false });
   return new PrismaClient({ adapter });
 }
 
@@ -26,8 +25,7 @@ export const prisma: PrismaClient =
   globalForPrisma.prisma ?? createPrismaClient();
 
 // In development, share a single PrismaClient instance across hot reloads.
-// In production (Vercel), each serverless invocation gets its own instance,
-// so global caching is not needed (and is ignored).
+// In production (Vercel), each serverless invocation gets its own instance.
 if (process.env.NODE_ENV !== "production") {
   globalForPrisma.prisma = prisma;
 }

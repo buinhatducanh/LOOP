@@ -24,6 +24,7 @@ import { SearchSortBar, type SortOption } from "./SearchSortBar";
 import { GuildAnimations } from "./GuildAnimations";
 import { RANKS, normalizeRank, formatLP, type RankKey } from "./guildMemberData";
 import { Shield, Users, Zap, Trophy, ChevronRight, ArrowRight } from "lucide-react";
+import { DS } from "@/lib/design-tokens";
 
 type MemberRecord = Record<string, unknown>;
 
@@ -117,7 +118,7 @@ function CTABanner({ locale }: { locale: string }) {
           <Trophy size={14} style={{ color: "#F59E0B" }} />
           <div style={{ height: 1, width: 50, background: "linear-gradient(90deg, rgba(129,140,248,0.5), transparent)" }} />
         </div>
-        <h2 style={{ fontFamily: "'Cinzel', serif", fontSize: "clamp(22px, 3vw, 36px)", fontWeight: 900, background: "linear-gradient(135deg, #FFFFFF, #94A3B8)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", marginBottom: 12 }}>
+        <h2 style={{ fontFamily: DS.heading, fontSize: "clamp(22px, 3vw, 36px)", fontWeight: 900, background: "linear-gradient(135deg, #FFFFFF, #94A3B8)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", marginBottom: 12 }}>
           Sẵn sàng làm việc cùng đội ngũ đỉnh cao?
         </h2>
         <p style={{ color: "#64748B", fontSize: 15, lineHeight: 1.8, maxWidth: 500, margin: "0 auto 28px" }}>
@@ -125,7 +126,7 @@ function CTABanner({ locale }: { locale: string }) {
         </p>
         <div className="flex items-center justify-center gap-4 flex-wrap">
           <Link
-            href={`/${locale}/dat-lich`}
+            href={`/${locale}/booking`}
             style={{ background: "linear-gradient(135deg, #3B82F6, #6366F1)", color: "#fff", fontSize: 14, fontWeight: 700, padding: "12px 28px", borderRadius: 12, textDecoration: "none", boxShadow: "0 0 28px rgba(129,140,248,0.4)", display: "flex", alignItems: "center", gap: 8 }}
           >
             Đặt lịch tư vấn <ChevronRight size={15} />
@@ -189,7 +190,7 @@ function RankStrip({ members, active, onChange }: { members: MemberRecord[]; act
             >
               <div style={{ color: cfg.color, fontSize: 18, lineHeight: 1, textShadow: isActive ? `0 0 12px ${cfg.glowColor}` : "none", marginBottom: 4 }}>{cfg.symbol}</div>
               <div style={{ color: isActive ? cfg.color : "#64748B", fontSize: 9, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.1em", fontWeight: 700, marginBottom: 6 }}>{cfg.label}</div>
-              <div style={{ color: "#FFFFFF", fontFamily: "'Cinzel', serif", fontSize: 20, fontWeight: 700, lineHeight: 1, textShadow: isActive ? `0 0 10px ${cfg.glowColor}` : "none" }}>{countPerRank[rk]}</div>
+              <div style={{ color: "#FFFFFF", fontFamily: DS.heading, fontSize: 20, fontWeight: 700, lineHeight: 1, textShadow: isActive ? `0 0 10px ${cfg.glowColor}` : "none" }}>{countPerRank[rk]}</div>
               <div style={{ color: "#64748B", fontSize: 8, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.08em", marginBottom: 6 }}>thành viên</div>
               <div style={{ color: cfg.color, fontSize: 10, fontFamily: "'JetBrains Mono', monospace", fontWeight: 600, opacity: 0.85 }}>{fmtLP(lpPerRank[rk])}</div>
               <div style={{ color: "#64748B", fontSize: 8, fontFamily: "'JetBrains Mono', monospace" }}>LP earned</div>
@@ -280,7 +281,7 @@ function HeroSection({ members, hero, locale }: HeroSectionProps) {
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-            style={{ fontFamily: "'Cinzel', serif", letterSpacing: "0.04em", lineHeight: 1.1, marginBottom: 20 }}
+            style={{ fontFamily: DS.heading, letterSpacing: "0.04em", lineHeight: 1.1, marginBottom: 20 }}
           >
             <span style={{ display: "block", fontSize: "clamp(32px, 5vw, 58px)", fontWeight: 900, background: "linear-gradient(135deg, #FFFFFF 0%, #CBD5E1 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
               {hero.heroTitle1}
@@ -308,7 +309,7 @@ function HeroSection({ members, hero, locale }: HeroSectionProps) {
             className="flex items-center justify-center gap-4 flex-wrap"
           >
             <Link
-              href={`/${locale}/dat-lich`}
+              href={`/${locale}/booking`}
               style={{ background: "linear-gradient(135deg, #3B82F6, #6366F1)", color: "#fff", fontSize: 14, fontWeight: 700, padding: "12px 28px", borderRadius: 12, textDecoration: "none", boxShadow: "0 0 32px rgba(129,140,248,0.45)", display: "flex", alignItems: "center", gap: 8 }}
             >
               Làm việc cùng chúng tôi <ArrowRight size={15} />
@@ -338,7 +339,7 @@ function HeroSection({ members, hero, locale }: HeroSectionProps) {
               style={{ background: "rgba(15,23,42,0.7)", border: `1px solid ${k.color}20`, backdropFilter: "blur(12px)" }}
             >
               <div style={{ position: "absolute", inset: 0, background: `radial-gradient(circle at 50% 0%, ${k.color}06, transparent 60%)`, pointerEvents: "none" }} />
-              <div style={{ color: k.color, fontFamily: "'Cinzel', serif", fontSize: 28, fontWeight: 700, textShadow: `0 0 16px ${k.color}50`, lineHeight: 1 }}>
+              <div style={{ color: k.color, fontFamily: DS.heading, fontSize: 28, fontWeight: 700, textShadow: `0 0 16px ${k.color}50`, lineHeight: 1 }}>
                 {k.value}<span style={{ fontSize: 12 }}>{k.suffix}</span>
               </div>
               <div style={{ color: "#475569", fontSize: 11, marginTop: 6, lineHeight: 1.4 }}>{k.label}</div>

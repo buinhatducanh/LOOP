@@ -661,7 +661,7 @@ export default function SiteHeader({ locale }: { locale: string }) {
               style={{ width: 36, height: 36, objectFit: "contain", borderRadius: 8 }}
             />
             <div>
-              <div style={{ color: DS.text, fontFamily: "'Cinzel', serif", fontSize: 14, fontWeight: 900, letterSpacing: "0.06em", lineHeight: 1 }}>
+              <div style={{ color: DS.text, fontFamily: DS.heading, fontSize: 14, fontWeight: 900, letterSpacing: "0.06em", lineHeight: 1 }}>
                 LOOP
               </div>
               <div style={{ color: DS.text4, fontSize: 7, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.2em", marginTop: 2 }}>

@@ -24,6 +24,7 @@ import {
 } from "./guildMemberData";
 import { LEDRunner } from "./LEDRunner";
 import { Counter } from "./Counter";
+import { DS } from "@/lib/design-tokens";
 
 type MemberRecord = Record<string, unknown>;
 
@@ -480,7 +481,7 @@ export function MemberCard({ member, index, locale }: MemberCardProps) {
             <div className="absolute bottom-3 left-3 z-20 flex items-baseline gap-1">
               <span
                 style={{
-                  fontFamily: "'Cinzel', serif",
+                  fontFamily: DS.heading,
                   color: cfg.color,
                   fontSize: 20,
                   fontWeight: 700,
@@ -533,7 +534,7 @@ export function MemberCard({ member, index, locale }: MemberCardProps) {
             <div
               style={{
                 color: "#FFFFFF",
-                fontFamily: "'Cinzel', serif",
+                fontFamily: DS.heading,
                 fontSize: 13,
                 fontWeight: 600,
                 letterSpacing: "0.04em",

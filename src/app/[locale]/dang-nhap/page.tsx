@@ -149,12 +149,12 @@ function SidePanel({ locale }: { locale: string }) {
         <Link href={`/${locale}`} style={{ display: "flex", alignItems: "center", gap: "0.625rem", textDecoration: "none", marginBottom: "2.5rem" }}>
           <img src="/logo.png" alt="LOOP" style={{ width: 40, height: 40, objectFit: "contain", borderRadius: 10 }} />
           <div>
-            <div style={{ color: DS.text, fontFamily: "'Cinzel', serif", fontSize: 15, fontWeight: 900, letterSpacing: "0.1em" }}>LOOP SOLUTIONS</div>
+            <div style={{ color: DS.text, fontFamily: DS.heading, fontSize: 15, fontWeight: 900, letterSpacing: "0.1em" }}>LOOP SOLUTIONS</div>
             <div style={{ color: DS.text5, fontSize: 9, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.2em" }}>DIGITAL AGENCY OS</div>
           </div>
         </Link>
 
-        <h2 style={{ fontFamily: "'Cinzel', serif", fontSize: "1.75rem", fontWeight: 900, color: DS.text, lineHeight: 1.3, marginBottom: "1rem", letterSpacing: "0.04em" }}>
+        <h2 style={{ fontFamily: DS.heading, fontSize: "1.75rem", fontWeight: 900, color: DS.text, lineHeight: 1.3, marginBottom: "1rem", letterSpacing: "0.04em" }}>
           Xây dựng<br />Tương lai số
         </h2>
         <p style={{ color: DS.text3, fontSize: "0.875rem", lineHeight: 1.8, marginBottom: "1.75rem" }}>
@@ -187,7 +187,7 @@ function SidePanel({ locale }: { locale: string }) {
         <div style={{ color: DS.text4, fontSize: "0.625rem", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.15em", marginBottom: "0.375rem" }}>
           {t("sidePanel.welcomeNewMember").toUpperCase()}
         </div>
-        <div style={{ color: DS.blue, fontFamily: "'Cinzel', serif", fontSize: "1.5rem", fontWeight: 900, textShadow: "0 0 12px rgba(59,130,246,0.5)" }}>
+        <div style={{ color: DS.blue, fontFamily: DS.heading, fontSize: "1.5rem", fontWeight: 900, textShadow: "0 0 12px rgba(59,130,246,0.5)" }}>
           500 LP
         </div>
         <div style={{ color: DS.text3, fontSize: "0.75rem" }}>
@@ -235,7 +235,7 @@ function LoginForm({ locale, onSwitch }: { locale: string; onSwitch: (m: AuthMod
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }}>
       <div style={{ textAlign: "center", marginBottom: "2rem" }}>
-        <h1 style={{ fontFamily: "'Cinzel', serif", fontSize: "1.625rem", fontWeight: 900, letterSpacing: "0.06em", background: GRD.primary, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", marginBottom: "0.375rem" }}>
+        <h1 style={{ fontFamily: DS.heading, fontSize: "1.625rem", fontWeight: 900, letterSpacing: "0.06em", background: GRD.primary, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", marginBottom: "0.375rem" }}>
           {t("login").toUpperCase()}
         </h1>
         <p style={{ color: DS.text3, fontSize: "0.8125rem" }}>{t("loginSubtitle")}</p>
@@ -336,7 +336,7 @@ function RegisterForm({ onSwitch }: { onSwitch: (m: AuthMode) => void }) {
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }}>
       <div style={{ textAlign: "center", marginBottom: "1.75rem" }}>
-        <h1 style={{ fontFamily: "'Cinzel', serif", fontSize: "1.5rem", fontWeight: 900, letterSpacing: "0.06em", background: GRD.primary, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", marginBottom: "0.375rem" }}>
+        <h1 style={{ fontFamily: DS.heading, fontSize: "1.5rem", fontWeight: 900, letterSpacing: "0.06em", background: GRD.primary, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", marginBottom: "0.375rem" }}>
           {t("register").toUpperCase()}
         </h1>
         <p style={{ color: DS.text3, fontSize: "0.8125rem" }}>{t("registerSubtitle")}</p>
@@ -539,7 +539,7 @@ function OTPForm({ onSwitch, onBack }: { onSwitch: (m: AuthMode) => void; onBack
         <button onClick={onBack} style={{ background: "none", border: "none", cursor: "pointer", color: DS.text3, padding: 0 }}>
           <ArrowLeft size={18} />
         </button>
-        <h2 style={{ fontFamily: "'Cinzel', serif", fontSize: "1.25rem", fontWeight: 900, color: DS.text, margin: 0 }}>
+        <h2 style={{ fontFamily: DS.heading, fontSize: "1.25rem", fontWeight: 900, color: DS.text, margin: 0 }}>
           Quên mật khẩu
         </h2>
       </div>

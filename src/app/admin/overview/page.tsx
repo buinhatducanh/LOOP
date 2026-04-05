@@ -13,6 +13,7 @@ export const dynamic = "force-dynamic";
 
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "motion/react";
+import { DS } from "@/lib/design-tokens";
 import {
   ShoppingCart,
   DollarSign,
@@ -363,7 +364,7 @@ export default function AdminOverviewPage() {
         <h1
           style={{
             color: "var(--figma-text, #fff)",
-            fontFamily: "'Cinzel', serif",
+            fontFamily: DS.heading,
             fontSize: "1.5rem",
             fontWeight: 700,
             margin: "0 0 0.25rem",

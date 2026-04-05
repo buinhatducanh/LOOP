@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { useAuthStore, canAccessTab, type AdminTab } from "@/app/store/authStore";
 import { useAdminTranslations } from "@/i18n/admin/useAdminTranslations";
+import { DS } from "@/lib/design-tokens";
 
 const fmtLP = (n: number) =>
   n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M` : n >= 1_000 ? `${(n / 1_000).toFixed(0)}K` : String(n);
@@ -182,7 +183,7 @@ export function AdminSidebar({ userName, userAvatar, userRole, userRank, userLpB
               <div
                 style={{
                   color: "var(--figma-text, #fff)",
-                  fontFamily: "'Cinzel', serif",
+                  fontFamily: DS.heading,
                   fontSize: 12,
                   fontWeight: 900,
                   letterSpacing: "0.08em",

@@ -143,7 +143,7 @@ export default function SiteFooter({ locale = "vi" }: { locale?: string }) {
 
           <h2
             style={{
-              fontFamily: "'Cinzel', serif",
+              fontFamily: DS.heading,
               fontSize: "clamp(1.5rem, 4vw, 2rem)",
               fontWeight: 900, letterSpacing: "0.06em",
               background: "linear-gradient(135deg, #FFFFFF, #94A3B8)",
@@ -223,7 +223,7 @@ export default function SiteFooter({ locale = "vi" }: { locale?: string }) {
                 </svg>
               </div>
               <div>
-                <div style={{ color: DS.text, fontFamily: "'Cinzel', serif", fontSize: "1rem", fontWeight: 900, letterSpacing: "0.06em" }}>
+                <div style={{ color: DS.text, fontFamily: DS.heading, fontSize: "1rem", fontWeight: 900, letterSpacing: "0.06em" }}>
                   LOOP SOLUTIONS
                 </div>
                 <div style={{ color: DS.text4, fontSize: "0.5625rem", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.2em" }}>

@@ -343,7 +343,7 @@ function SlideGetStarted({ direction, onComplete }: SlideProps & { onComplete: (
 
   const quickActions = [
     { label: "Khám phá Dịch vụ", href: "/dich-vu", icon: <Globe size={16} />, color: DS.blue },
-    { label: "Đặt lịch Tư vấn", href: "/dat-lich", icon: <Play size={16} />, color: DS.green },
+    { label: "Đặt lịch Tư vấn", href: "/booking", icon: <Play size={16} />, color: DS.green },
     { label: "Xem Portfolio", href: "/du-an", icon: <Star size={16} />, color: DS.amber },
     { label: "Gặp đội ngũ", href: "/doi-ngu", icon: <Users size={16} />, color: DS.purple },
   ];

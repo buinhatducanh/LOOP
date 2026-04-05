@@ -138,7 +138,7 @@ function OverviewTab({ locale, orders }: { locale: string; orders: CustomerOrder
             <div style={{ color: DS.text4, fontSize: "0.6875rem", fontFamily: "'JetBrains Mono', monospace", marginBottom: "0.5rem" }}>
               {kpi.label.toUpperCase()}
             </div>
-            <div style={{ color: kpi.color, fontSize: "1.75rem", fontWeight: 900, fontFamily: "'Cinzel', serif" }}>
+            <div style={{ color: kpi.color, fontSize: "1.75rem", fontWeight: 900, fontFamily: DS.heading }}>
               {kpi.value}
             </div>
           </div>
@@ -146,7 +146,7 @@ function OverviewTab({ locale, orders }: { locale: string; orders: CustomerOrder
       </div>
 
       {/* Recent orders */}
-      <h3 style={{ color: DS.text, fontFamily: "'Cinzel', serif", fontSize: "1rem", marginBottom: "1rem" }}>
+      <h3 style={{ color: DS.text, fontFamily: DS.heading, fontSize: "1rem", marginBottom: "1rem" }}>
         {t("recentOrders")}
       </h3>
       <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
@@ -200,7 +200,7 @@ function ProjectsTab({ locale, orders }: { locale: string; orders: CustomerOrder
     <div>
       {active.length > 0 && (
         <>
-          <h3 style={{ color: DS.text, fontFamily: "'Cinzel', serif", fontSize: "0.9375rem", marginBottom: "1rem" }}>
+          <h3 style={{ color: DS.text, fontFamily: DS.heading, fontSize: "0.9375rem", marginBottom: "1rem" }}>
             Đang thực hiện ({active.length})
           </h3>
           <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", marginBottom: "1.5rem" }}>
@@ -224,7 +224,7 @@ function ProjectsTab({ locale, orders }: { locale: string; orders: CustomerOrder
         </>
       )}
 
-      <h3 style={{ color: DS.text, fontFamily: "'Cinzel', serif", fontSize: "0.9375rem", marginBottom: "1rem" }}>
+      <h3 style={{ color: DS.text, fontFamily: DS.heading, fontSize: "0.9375rem", marginBottom: "1rem" }}>
         Hoàn thành ({done.length})
       </h3>
       <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
@@ -260,7 +260,7 @@ function CoursesTab({ enrollments }: { enrollments: CustomerEnrollment[] }) {
     return (
       <div style={{ textAlign: "center", padding: "3rem 1rem" }}>
         <BookOpen size={40} style={{ color: DS.text4, margin: "0 auto 1rem" }} />
-        <h3 style={{ color: DS.text, marginBottom: "0.5rem", fontFamily: "'Cinzel', serif" }}>Chưa có khóa học</h3>
+        <h3 style={{ color: DS.text, marginBottom: "0.5rem", fontFamily: DS.heading }}>Chưa có khóa học</h3>
         <p style={{ color: DS.text3, fontSize: "0.875rem" }}>Đăng ký khóa học tại LOOP Academy để bắt đầu học</p>
       </div>
     );
@@ -323,7 +323,7 @@ function WalletTab({ pointData }: { pointData: PointData | null }) {
           color: DS.purple,
           fontSize: "3rem",
           fontWeight: 900,
-          fontFamily: "'Cinzel', serif",
+          fontFamily: DS.heading,
           textShadow: "0 0 24px rgba(129,140,248,0.6)",
           marginBottom: "0.5rem",
         }}>
@@ -347,7 +347,7 @@ function WalletTab({ pointData }: { pointData: PointData | null }) {
       </div>
 
       {/* Transaction history */}
-      <h3 style={{ color: DS.text, fontFamily: "'Cinzel', serif", fontSize: "0.9375rem", marginBottom: "0.75rem" }}>
+      <h3 style={{ color: DS.text, fontFamily: DS.heading, fontSize: "0.9375rem", marginBottom: "0.75rem" }}>
         Lịch sử giao dịch
       </h3>
       <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
@@ -384,7 +384,7 @@ function SupportTab() {
         border: `1px solid ${DS.border}`,
         marginBottom: "1rem",
       }}>
-        <h3 style={{ color: DS.text, fontFamily: "'Cinzel', serif", marginBottom: "0.75rem" }}>Liên hệ hỗ trợ</h3>
+        <h3 style={{ color: DS.text, fontFamily: DS.heading, marginBottom: "0.75rem" }}>Liên hệ hỗ trợ</h3>
         <p style={{ color: DS.text3, fontSize: "0.875rem", marginBottom: "1rem" }}>
           Đội ngũ LOOP luôn sẵn sàng hỗ trợ bạn 24/7.
         </p>
@@ -420,7 +420,7 @@ function ReferralTab() {
         marginBottom: "1rem",
       }}>
         <div style={{ fontSize: "2.5rem", marginBottom: "1rem" }}>🎁</div>
-        <h3 style={{ color: DS.text, fontFamily: "'Cinzel', serif", marginBottom: "0.5rem" }}>Giới thiệu bạn bè</h3>
+        <h3 style={{ color: DS.text, fontFamily: DS.heading, marginBottom: "0.5rem" }}>Giới thiệu bạn bè</h3>
         <p style={{ color: DS.text3, fontSize: "0.875rem", marginBottom: "1.5rem" }}>
           Giới thiệu khách hàng mới, nhận <strong style={{ color: DS.purple }}>500–2,000 LP</strong> cho mỗi khách thành công!
         </p>
@@ -529,7 +529,7 @@ export default function CustomerPortalPage({
         <div style={{ display: "flex", alignItems: "center", gap: "0.625rem" }}>
           <img src="/logo.png" alt="LOOP" style={{ width: 32, height: 32, objectFit: "contain", borderRadius: 8 }} />
           <div>
-            <div style={{ color: DS.text, fontFamily: "'Cinzel', serif", fontSize: "0.875rem", fontWeight: 900, letterSpacing: "0.05em" }}>LOOP</div>
+            <div style={{ color: DS.text, fontFamily: DS.heading, fontSize: "0.875rem", fontWeight: 900, letterSpacing: "0.05em" }}>LOOP</div>
             <div style={{ color: DS.text4, fontSize: "0.5rem", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.15em" }}>CUSTOMER PORTAL</div>
           </div>
         </div>

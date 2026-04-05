@@ -148,7 +148,7 @@ function HeroSection({ locale }: { locale: string }) {
           {/* Headline */}
           <h1
             style={{
-              fontFamily: "'Cinzel', serif", letterSpacing: "0.04em",
+              fontFamily: DS.heading, letterSpacing: "0.04em",
               lineHeight: 1.1, marginBottom: "1.5rem",
             }}
           >
@@ -225,7 +225,7 @@ function HeroSection({ locale }: { locale: string }) {
               <div key={m.labelKey} style={{ opacity: i === activeMetric ? 1 : 0.35, transition: "opacity 0.4s ease" }}>
                 <div
                   style={{
-                    color: m.color, fontFamily: "'Cinzel', serif",
+                    color: m.color, fontFamily: DS.heading,
                     fontSize: "1.5rem", fontWeight: 900, textShadow: `0 0 16px ${m.color}60`,
                   }}
                 >
@@ -307,7 +307,7 @@ function HeroSection({ locale }: { locale: string }) {
                       <span style={{ color: s.color, opacity: 0.7 }}>{s.icon}</span>
                       <span style={{ color: DS.text5, fontSize: "0.5625rem", fontFamily: "'JetBrains Mono', monospace" }}>{t(s.labelKey)}</span>
                     </div>
-                    <div style={{ color: s.color, fontFamily: "'Cinzel', serif", fontSize: "1.125rem", fontWeight: 700 }}>{s.value}</div>
+                    <div style={{ color: s.color, fontFamily: DS.heading, fontSize: "1.125rem", fontWeight: 700 }}>{s.value}</div>
                   </div>
                 ))}
               </div>
@@ -376,7 +376,7 @@ function HeroSection({ locale }: { locale: string }) {
             <div style={{ color: DS.text5, fontSize: "0.5625rem", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.15em", marginBottom: "0.25rem" }}>{t("lpBadge")}</div>
             <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
               <Zap size={14} style={{ color: DS.purple }} />
-              <span style={{ color: DS.purple, fontFamily: "'Cinzel', serif", fontSize: "1.125rem", fontWeight: 700, textShadow: "0 0 12px rgba(129,140,248,0.7)" }}>+2,450 LP</span>
+              <span style={{ color: DS.purple, fontFamily: DS.heading, fontSize: "1.125rem", fontWeight: 700, textShadow: "0 0 12px rgba(129,140,248,0.7)" }}>+2,450 LP</span>
             </div>
           </motion.div>
 
@@ -394,10 +394,10 @@ function HeroSection({ locale }: { locale: string }) {
             <div style={{ color: DS.text5, fontSize: "0.5625rem", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.15em", marginBottom: "0.25rem" }}>{t("rankBoardYou")}</div>
             <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
               <span style={{ color: "#FFD700", fontSize: "1rem" }}>★</span>
-              <span style={{ color: "#FFD700", fontFamily: "'Cinzel', serif", fontSize: "0.875rem", fontWeight: 700 }}>GOLD</span>
+              <span style={{ color: "#FFD700", fontFamily: DS.heading, fontSize: "0.875rem", fontWeight: 700 }}>GOLD</span>
               <span style={{ color: DS.text5, fontSize: "0.625rem", fontFamily: "'JetBrains Mono', monospace" }}>Lv.12</span>
               <ArrowRight size={12} style={{ color: DS.text5 }} />
-              <span style={{ color: DS.cyan, fontFamily: "'Cinzel', serif", fontSize: "0.875rem", fontWeight: 700 }}>PLATINUM</span>
+              <span style={{ color: DS.cyan, fontFamily: DS.heading, fontSize: "0.875rem", fontWeight: 700 }}>PLATINUM</span>
             </div>
           </motion.div>
         </motion.div>
@@ -514,7 +514,7 @@ function StatsSection() {
               </div>
               <div
                 style={{
-                  color: s.color, fontFamily: "'Cinzel', serif",
+                  color: s.color, fontFamily: DS.heading,
                   fontSize: "1.625rem", fontWeight: 900, textShadow: `0 0 16px ${s.color}50`,
                 }}
               >
@@ -566,7 +566,7 @@ function LPSystemSection({ locale }: { locale: string }) {
             <Badge label={t("lpSectionBadge")} color={DS.purple} />
             <h2
               style={{
-                fontFamily: "'Cinzel', serif", fontSize: "clamp(1.5rem, 3.5vw, 2.5rem)",
+                fontFamily: DS.heading, fontSize: "clamp(1.5rem, 3.5vw, 2.5rem)",
                 fontWeight: 900, letterSpacing: "0.05em",
                 background: "linear-gradient(135deg, #FFFFFF, #94A3B8)",
                 WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
@@ -714,7 +714,7 @@ function CTASection({ locale }: { locale: string }) {
         <Badge label={t("ctaBadge")} color={DS.cyan} />
         <h2
           style={{
-            fontFamily: "'Cinzel', serif", fontSize: "clamp(1.5rem, 3.5vw, 2.5rem)",
+            fontFamily: DS.heading, fontSize: "clamp(1.5rem, 3.5vw, 2.5rem)",
             fontWeight: 900, letterSpacing: "0.04em", color: DS.text, marginBottom: "1rem",
           }}
         >

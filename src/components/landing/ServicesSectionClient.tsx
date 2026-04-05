@@ -143,7 +143,7 @@ function ServicesSectionInner({ locale }: { locale: string }) {
           <Badge label={t("servicesSectionBadge")} />
           <h2
             style={{
-              fontFamily: "'Cinzel', serif",
+              fontFamily: DS.heading,
               fontSize: "clamp(1.75rem, 4vw, 2.75rem)",
               fontWeight: 900,
               letterSpacing: "0.05em",
@@ -325,7 +325,7 @@ function ServicesSectionInner({ locale }: { locale: string }) {
 
         <div style={{ textAlign: "center", marginTop: "2.5rem" }}>
           <Link
-            href={`/${locale}/dat-lich`}
+            href={`/${locale}/booking`}
             style={{
               display: "inline-flex",
               alignItems: "center",

@@ -41,79 +41,72 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.id = user.id as string;
       }
 
-      // If signing in with Google, get or create user in database
+      // If signing in with Google, get or create user in a SINGLE transaction
       if (account?.provider === "google" && account?.providerAccountId) {
         try {
           const email = profile?.email?.toLowerCase();
 
-          // Try to find existing user by googleId
-          let dbUser = await prisma.user.findUnique({
-            where: { googleId: account.providerAccountId },
+          // Single transaction: find + update/create in one roundtrip to Neon
+          const result = await prisma.$transaction(async (tx) => {
+            // 1. Find by googleId
+            let dbUser = await tx.user.findUnique({
+              where: { googleId: account.providerAccountId },
+            });
+
+            // 2. Fallback: find by email if googleId miss
+            if (!dbUser && email) {
+              dbUser = await tx.user.findUnique({ where: { email } });
+            }
+
+            // 3. Check team member email match (parallel, non-blocking reads)
+            let teamMemberId: string | null = null;
+            let accountType = "customer";
+
+            if (email) {
+              const teamMember = await tx.teamMember.findFirst({
+                where: { email: { mode: "insensitive", equals: email }, isActive: true },
+                select: { id: true },
+              });
+              if (teamMember) {
+                teamMemberId = teamMember.id;
+                accountType = "staff";
+              }
+            }
+
+            if (!dbUser && email) {
+              // 4a. Create new user
+              dbUser = await tx.user.create({
+                data: {
+                  email,
+                  name: user?.name || profile?.name || "Google User",
+                  googleId: account.providerAccountId,
+                  avatar: (profile?.image as string) || (user?.image as string) || null,
+                  role: "user",
+                  accountType,
+                  teamMemberId,
+                },
+              });
+            } else if (dbUser) {
+              // 4b. Backfill googleId if missing
+              if (!dbUser.googleId) {
+                await tx.user.update({ where: { id: dbUser.id }, data: { googleId: account.providerAccountId } });
+              }
+              // 4c. Auto-link to team member
+              if (!dbUser.teamMemberId && teamMemberId) {
+                await tx.user.update({ where: { id: dbUser.id }, data: { teamMemberId, accountType: "staff" } });
+                dbUser.teamMemberId = teamMemberId;
+                dbUser.accountType = "staff";
+              }
+            }
+
+            return dbUser;
           });
 
-          // If no user by googleId, try email match (in case googleId was lost/recreated)
-          if (!dbUser && email) {
-            dbUser = await prisma.user.findUnique({
-              where: { email },
-            });
-          }
-
-          // Auto-link: check if this email belongs to a team member
-          let teamMemberId: string | null = null;
-          let accountType = "customer";
-
-          if (email) {
-            const teamMember = await prisma.teamMember.findFirst({
-              where: {
-                email: { mode: "insensitive", equals: email },
-                isActive: true,
-              },
-              select: { id: true },
-            });
-            if (teamMember) {
-              teamMemberId = teamMember.id;
-              accountType = "staff";
-            }
-          }
-
-          // If user doesn't exist, create them
-          if (!dbUser && email) {
-            dbUser = await prisma.user.create({
-              data: {
-                email,
-                name: user?.name || profile?.name || "Google User",
-                googleId: account.providerAccountId,
-                avatar: (profile?.image as string) || (user?.image as string) || null,
-                role: "user",
-                accountType,
-                teamMemberId,
-              },
-            });
-          } else if (dbUser) {
-            // Update googleId if missing
-            if (!dbUser.googleId) {
-              await prisma.user.update({
-                where: { id: dbUser.id },
-                data: { googleId: account.providerAccountId },
-              });
-            }
-
-            // Auto-link to team member if not already linked
-            if (!dbUser.teamMemberId && teamMemberId) {
-              await prisma.user.update({
-                where: { id: dbUser.id },
-                data: { teamMemberId, accountType: "staff" },
-              });
-              dbUser.teamMemberId = teamMemberId;
-              dbUser.accountType = "staff";
-            }
-          }
-
-          if (dbUser) {
-            token.id = dbUser.id;
-            token.role = dbUser.role;
-            token.teamMemberId = dbUser.teamMemberId;
-            token.accountType = dbUser.accountType;
+          if (result) {
+            token.id = result.id;
+            token.role = result.role;
+            token.teamMemberId = result.teamMemberId;
+            token.accountType = result.accountType;
           }
         } catch (error) {
           console.error("Error in Google auth:", error);
