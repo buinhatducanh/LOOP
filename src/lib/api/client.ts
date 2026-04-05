@@ -14,9 +14,7 @@
  */
 
 const BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL
-  ?? (process.env.NODE_ENV === "development" ? "http://localhost:3000" : process.env.NEXT_PUBLIC_SITE_URL)
-  ?? "http://localhost:3000";
+  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3000";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -70,6 +68,15 @@ async function apiFetch<T>(
     ...fetchOptions.headers,
   };
 
+  // Attach Bearer token from localStorage (set by login response).
+  // This survives cross-origin redirects better than cookies alone.
+  if (typeof window !== "undefined") {
+    const storedToken = localStorage.getItem("loop-auth-token");
+    if (storedToken) {
+      (headers as Record<string, string>)["Authorization"] = `Bearer ${storedToken}`;
+    }
+  }
+
   const init: RequestInit = {
     ...fetchOptions,
     headers,
@@ -96,6 +103,8 @@ async function apiFetch<T>(
       throw err;
     }
 
+    // IMPORTANT: return the parsed error object so callers can read error details.
+    // Do NOT call res.json() again — the body is already consumed.
     return { error: errorPayload.error, code: errorPayload.code } as T;
   }
 

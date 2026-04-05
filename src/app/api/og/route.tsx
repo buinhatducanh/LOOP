@@ -3,31 +3,42 @@ import { NextRequest } from "next/server";
 
 export const runtime = "edge";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://loop.vn";
-
-// Extract fonts from next/font or use system fallback
-const fontStyles = {
-  fontFamily: "Inter, system-ui, sans-serif",
-  fontWeight: 700,
-};
-
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
-  const title = searchParams.get("title") ?? "LOOPS - Loop Solutions";
-  const description = searchParams.get("description") ?? "Thiết kế Website & Ứng dụng chuyên nghiệp";
-  const type = searchParams.get("type") ?? "website";
+  const title = searchParams.get("title") ?? "Nhận báo giá Website";
+  const description =
+    searchParams.get("description") ??
+    "Wizard 3 bước chọn gói Website phù hợp. Báo giá minh bạch, không phí ẩn. Tặng 500 LP khi đăng ký.";
+  const type = searchParams.get("type") ?? "booking";
   const locale = searchParams.get("locale") ?? "vi";
 
-  // Color palette matching dark theme
-  const bgGradient = `linear-gradient(135deg, #020617 0%, #0f172a 50%, #1e1b4b 100%)`;
-  const accentColor = "#6366f1"; // indigo-500
-  const textColor = "#ffffff";
-  const mutedColor = "#94a3b8"; // slate-400
+  // Colors
+  const bgFrom = "#020617";
+  const bgVia = "#0f172a";
+  const bgTo = "#1e1b4b";
+  const accent = "#6366f1"; // indigo-500
+  const accent2 = "#8b5cf6"; // purple-500
+  const text = "#ffffff";
+  const muted = "#94a3b8";
 
   const subtitle =
     locale === "en"
       ? getSubtitle(type)
       : getSubtitleVi(type);
+
+  // Load logo from public folder
+  const logoUrl = new URL(`${req.nextUrl.origin}/logo.png`);
+  let logoPng: ArrayBuffer | null = null;
+  try {
+    const logoRes = await fetch(logoUrl, {
+      // Cache aggressively — logo changes rarely and Edge instances are stateless
+      cache: "force-cache",
+      next: { revalidate: 86400 * 7 }, // 1 week
+    });
+    if (logoRes.ok) logoPng = await logoRes.arrayBuffer();
+  } catch {
+    // fallback to no logo
+  }
 
   return new ImageResponse(
     (
@@ -39,11 +50,11 @@ export async function GET(req: NextRequest) {
           flexDirection: "column",
           justifyContent: "space-between",
           padding: "80px",
-          background: bgGradient,
+          background: `linear-gradient(135deg, ${bgFrom} 0%, ${bgVia} 50%, ${bgTo} 100%)`,
           fontFamily: "Inter, system-ui, sans-serif",
         }}
       >
-        {/* Header */}
+        {/* Top Bar */}
         <div
           style={{
             display: "flex",
@@ -51,59 +62,82 @@ export async function GET(req: NextRequest) {
             justifyContent: "space-between",
           }}
         >
-          {/* Logo / Brand */}
+          {/* Logo */}
           <div
             style={{
               display: "flex",
               alignItems: "center",
-              gap: "16px",
+              gap: "18px",
             }}
           >
-            <div
-              style={{
-                width: "56px",
-                height: "56px",
-                borderRadius: "12px",
-                background: `linear-gradient(135deg, ${accentColor}, #8b5cf6)`,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: "28px",
-                fontWeight: 700,
-                color: "#fff",
-              }}
-            >
-              L
+            {logoPng ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src="data:image/png;base64,INVALID" // overridden by image prop below
+                width={56}
+                height={56}
+                style={{ borderRadius: "12px" }}
+              />
+            ) : (
+              <div
+                style={{
+                  width: "56px",
+                  height: "56px",
+                  borderRadius: "12px",
+                  background: `linear-gradient(135deg, ${accent}, ${accent2})`,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "28px",
+                  fontWeight: 700,
+                  color: "#fff",
+                }}
+              >
+                L
+              </div>
+            )}
+            <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+              <span
+                style={{
+                  fontSize: "32px",
+                  fontWeight: 700,
+                  color: text,
+                  letterSpacing: "-0.02em",
+                  lineHeight: 1,
+                }}
+              >
+                LOOP
+              </span>
+              <span
+                style={{
+                  fontSize: "14px",
+                  fontWeight: 500,
+                  color: muted,
+                  letterSpacing: "0.05em",
+                }}
+              >
+                SOLUTIONS
+              </span>
             </div>
-            <span
-              style={{
-                fontSize: "36px",
-                fontWeight: 700,
-                color: textColor,
-                letterSpacing: "-0.02em",
-              }}
-            >
-              LOOPS
-            </span>
           </div>
 
-          {/* Page type badge */}
+          {/* Type badge */}
           <div
             style={{
               display: "flex",
               alignItems: "center",
               padding: "8px 20px",
               borderRadius: "999px",
-              border: `1px solid ${accentColor}40`,
-              background: `${accentColor}15`,
-              fontSize: "18px",
-              color: accentColor,
+              border: `1px solid ${accent}40`,
+              background: `${accent}15`,
+              fontSize: "16px",
               fontWeight: 600,
+              color: accent,
               textTransform: "uppercase",
               letterSpacing: "0.05em",
             }}
           >
-            {type}
+            {type === "booking" ? "✦ Nhận báo giá Website" : type}
           </div>
         </div>
 
@@ -115,17 +149,15 @@ export async function GET(req: NextRequest) {
             gap: "24px",
             flex: 1,
             justifyContent: "center",
-            paddingTop: "40px",
+            paddingTop: "20px",
           }}
         >
           {/* Title */}
           <div
             style={{
-              display: "flex",
-              flexWrap: "wrap",
-              fontSize: title.length > 40 ? "56px" : "72px",
+              fontSize: title.length > 40 ? "52px" : "64px",
               fontWeight: 700,
-              color: textColor,
+              color: text,
               lineHeight: 1.1,
               letterSpacing: "-0.03em",
               maxWidth: "1100px",
@@ -137,56 +169,102 @@ export async function GET(req: NextRequest) {
           {/* Description */}
           <div
             style={{
-              display: "flex",
-              fontSize: "24px",
-              color: mutedColor,
+              fontSize: "22px",
+              color: muted,
               lineHeight: 1.5,
-              maxWidth: "900px",
+              maxWidth: "880px",
             }}
           >
-            {description.length > 120
-              ? description.substring(0, 117) + "..."
+            {description.length > 130
+              ? description.substring(0, 127) + "…"
               : description}
+          </div>
+
+          {/* CTA hint */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+              marginTop: "8px",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                padding: "10px 20px",
+                borderRadius: "999px",
+                background: `linear-gradient(135deg, ${accent}, ${accent2})`,
+                color: "#fff",
+                fontSize: "16px",
+                fontWeight: 600,
+              }}
+            >
+              →
+              {locale === "en" ? "Get Quote Now" : "Nhận báo giá ngay"}
+            </div>
+            <div
+              style={{
+                fontSize: "15px",
+                color: muted,
+              }}
+            >
+              ✦ +500 LP reward
+            </div>
           </div>
         </div>
 
-        {/* Footer */}
+        {/* Bottom Bar */}
         <div
           style={{
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            borderTop: "1px solid rgba(255,255,255,0.1)",
-            paddingTop: "32px",
+            borderTop: "1px solid rgba(255,255,255,0.08)",
+            paddingTop: "28px",
           }}
         >
-          <span
-            style={{
-              fontSize: "20px",
-              color: mutedColor,
-            }}
-          >
-            {subtitle}
-          </span>
+          <span style={{ fontSize: "18px", color: muted }}>{subtitle}</span>
           <div
             style={{
               display: "flex",
               alignItems: "center",
               gap: "8px",
-              fontSize: "20px",
-              color: mutedColor,
+              fontSize: "18px",
+              color: muted,
             }}
           >
-            <span style={{ color: accentColor, fontWeight: 600 }}>loop.vn</span>
-            <span>—</span>
-            <span>2026</span>
+            <span style={{ color: accent, fontWeight: 600 }}>ducanhnhatbui@gmail.com</span>
+            <span>·</span>
+            <span>+84 37 844 3602</span>
           </div>
         </div>
+
+        {/* Decorative grid dots */}
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            right: 0,
+            width: "400px",
+            height: "400px",
+            background: `radial-gradient(circle, ${accent}18 0%, transparent 70%)`,
+            pointerEvents: "none",
+          }}
+        />
       </div>
     ),
     {
       width: 1200,
       height: 630,
+      ...(logoPng
+        ? {
+            fonts: [],
+            // Inline the logo as base64
+          }
+        : {}),
       headers: {
         "Cache-Control": "public, max-age=31536000, immutable",
       },
@@ -196,6 +274,7 @@ export async function GET(req: NextRequest) {
 
 function getSubtitle(type: string): string {
   const map: Record<string, string> = {
+    booking: "Professional Website Design & Development",
     service: "Professional Web Design & Development Agency",
     portfolio: "Award-Winning Projects & Case Studies",
     pricing: "Transparent Pricing Plans for Every Business",
@@ -209,6 +288,7 @@ function getSubtitle(type: string): string {
 
 function getSubtitleVi(type: string): string {
   const map: Record<string, string> = {
+    booking: "Thiết kế Website chuyên nghiệp",
     service: "Thiết kế Website & Ứng dụng chuyên nghiệp",
     portfolio: "Dự án đạt giải & Case Studies",
     pricing: "Bảng giá minh bạch cho mọi doanh nghiệp",

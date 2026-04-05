@@ -215,8 +215,17 @@ function LoginForm({ locale, onSwitch }: { locale: string; onSwitch: (m: AuthMod
 
     const ok = await login(email, password);
     if (ok) {
-      const dest = user?.role === "client" ? `/${locale}/khach-hang` : "/admin/overview";
-      router.push(dest);
+      // Read fresh user from store after login() completes — avoid stale closure
+      const currentUser = useAuthStore.getState().user;
+      if (currentUser?.role === "client") {
+        // New customer → redirect to onboarding if not yet completed
+        const dest = currentUser?.isOnboarded !== true
+          ? `/${locale}/dang-nhap/client-onboarding`
+          : `/${locale}/khach-hang`;
+        router.push(dest);
+      } else {
+        router.push("/admin/overview");
+      }
     }
   };
 
@@ -328,10 +337,64 @@ function LoginForm({ locale, onSwitch }: { locale: string; onSwitch: (m: AuthMod
 // ── Register form ────────────────────────────────────────────────────────────
 function RegisterForm({ onSwitch }: { onSwitch: (m: AuthMode) => void }) {
   const t = useTranslations("auth");
+  const router = useRouter();
+  const { login } = useAuthStore();
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [pass, setPass] = useState("");
   const [company, setCompany] = useState("");
+  const [businessType, setBusinessType] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const BUSINESS_TYPES = [
+    { value: "technology", label: "Công nghệ / IT" },
+    { value: "retail", label: "Bán lẻ / Thương mại" },
+    { value: "finance", label: "Tài chính / Ngân hàng" },
+    { value: "healthcare", label: "Y tế / Sức khoẻ" },
+    { value: "education", label: "Giáo dục / Đào tạo" },
+    { value: "food", label: "F&B / Thực phẩm" },
+    { value: "real_estate", label: "Bất động sản" },
+    { value: "manufacturing", label: "Sản xuất / Công nghiệp" },
+    { value: "services", label: "Dịch vụ" },
+    { value: "marketing", label: "Marketing / Truyền thông" },
+    { value: "other", label: "Khác" },
+  ];
+
+  const handleSubmit = async () => {
+    if (!name.trim() || !email.trim() || !pass) { setError("Vui lòng điền đầy đủ thông tin"); return; }
+    if (pass.length < 8) { setError("Mật khẩu phải có ít nhất 8 ký tự"); return; }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      const res = await fetch("/api/admin/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password: pass, company, businessType }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error ?? "Đăng ký thất bại");
+        return;
+      }
+
+      // Auto-login with the JWT returned
+      if (data.token) {
+        localStorage.setItem("loop-auth-token", data.token);
+        // Trigger store re-hydration then redirect to onboarding
+        await login(data.user?.email ?? email, "");
+        router.push(`/dang-nhap/client-onboarding?token=${encodeURIComponent(data.token)}`);
+      }
+    } catch {
+      setError("Không thể kết nối máy chủ. Vui lòng thử lại.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }}>
@@ -345,6 +408,29 @@ function RegisterForm({ onSwitch }: { onSwitch: (m: AuthMode) => void }) {
       <FormInput label={t("name")} placeholder="Nguyễn Văn A" value={name} onChange={setName} />
       <FormInput label={t("email")} type="email" placeholder="email@company.vn" value={email} onChange={setEmail} />
       <FormInput label={t("companyOptional")} placeholder="Công ty TNHH..." value={company} onChange={setCompany} />
+
+      {/* Business Type */}
+      <div style={{ marginBottom: "1rem" }}>
+        <label style={{ color: DS.text3, fontSize: "0.6875rem", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.12em", display: "block", marginBottom: "0.375rem" }}>
+          LOẠI HÌNH KINH DOANH
+        </label>
+        <select
+          value={businessType}
+          onChange={(e) => setBusinessType(e.target.value)}
+          style={{
+            width: "100%", background: DS.bgCard2, border: `1px solid ${DS.border}`,
+            borderRadius: "0.75rem", padding: "0 0.875rem",
+            height: 44, color: businessType ? DS.text : DS.text5,
+            fontSize: "0.875rem", outline: "none", appearance: "none",
+          }}
+        >
+          <option value="">— Chọn ngành nghề —</option>
+          {BUSINESS_TYPES.map((bt) => (
+            <option key={bt.value} value={bt.value}>{bt.label}</option>
+          ))}
+        </select>
+      </div>
+
       <FormInput label={t("password")} type="password" placeholder="Tối thiểu 8 ký tự" value={pass} onChange={setPass} />
 
       <div style={{ display: "flex", gap: "0.25rem", marginBottom: "1rem" }}>
@@ -358,18 +444,25 @@ function RegisterForm({ onSwitch }: { onSwitch: (m: AuthMode) => void }) {
         ))}
       </div>
 
+      {error && (
+        <div style={{ padding: "0.625rem 0.875rem", borderRadius: "0.5rem", background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)", color: "#FCA5A5", fontSize: "0.8125rem", marginBottom: "1rem" }}>
+          {error}
+        </div>
+      )}
+
       <button
-        onClick={() => onSwitch("otp")}
+        onClick={handleSubmit}
+        disabled={loading}
         style={{
-          width: "100%", background: GRD.primary, color: "#fff",
+          width: "100%", background: loading ? "rgba(59,130,246,0.6)" : GRD.primary, color: "#fff",
           border: "none", borderRadius: "0.75rem",
           padding: "0.8125rem", fontSize: "0.875rem", fontWeight: 700,
-          cursor: "pointer", display: "flex", alignItems: "center",
+          cursor: loading ? "not-allowed" : "pointer", display: "flex", alignItems: "center",
           justifyContent: "center", gap: "0.5rem",
           boxShadow: "0 0 20px rgba(129,140,248,0.35)",
         }}
       >
-        {t("submitRegister")} <ArrowRight size={16} />
+        {loading ? <><Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} /> Đang đăng ký...</> : <>{t("submitRegister")} <ArrowRight size={16} /></>}
       </button>
 
       <p style={{ color: DS.text5, fontSize: "0.6875rem", textAlign: "center", marginTop: "0.875rem", lineHeight: 1.6 }}>

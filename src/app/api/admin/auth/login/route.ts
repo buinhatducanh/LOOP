@@ -41,6 +41,9 @@ export async function POST(req: NextRequest) {
     avatar: string | null;
     role: string;
     isActive: boolean;
+    accountType: string;
+    teamMemberId: string | null;
+    isOnboarded: boolean;
     userRoles: {
       role: {
         name: string;
@@ -48,6 +51,9 @@ export async function POST(req: NextRequest) {
         permissions: { resource: string; action: string; scope: string }[];
       };
     }[];
+    teamMember: {
+      accessTags: string[];
+    } | null;
   };
 
   let user: LoginUser | null = null;
@@ -72,6 +78,9 @@ export async function POST(req: NextRequest) {
         avatar: true,
         role: true,
         isActive: true,
+        accountType: true,
+        teamMemberId: true,
+        isOnboarded: true,
         userRoles: {
           select: {
             role: {
@@ -84,6 +93,9 @@ export async function POST(req: NextRequest) {
               },
             },
           },
+        },
+        teamMember: {
+          select: { accessTags: true },
         },
       },
     });
@@ -113,6 +125,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // ── Track loginCount + lastLogin ─────────────────────────────────────────────
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        loginCount: { increment: 1 },
+        lastLogin: new Date(),
+      },
+    });
+
     const roles = user.userRoles.map((ur) => ur.role.name);
 
     // Build granular permissions from role-permission join table
@@ -139,6 +160,9 @@ export async function POST(req: NextRequest) {
       role: user.role,
       roles,
       roleLevel,
+      teamMemberId: user.teamMemberId,
+      accountType: user.accountType,
+      accessTags: user.teamMember?.accessTags ?? [],
     });
 
     await createAuditLog({
@@ -164,6 +188,10 @@ export async function POST(req: NextRequest) {
         roles,
         permissions,
         roleLevel,
+        accountType: user.accountType,
+        teamMemberId: user.teamMemberId,
+        accessTags: user.teamMember?.accessTags ?? [],
+        isOnboarded: user.isOnboarded ?? false,
       },
       // Return token in body so FE can store it in localStorage.
       // HttpOnly cookie is set separately for server-side session validation.

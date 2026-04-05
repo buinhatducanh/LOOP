@@ -74,7 +74,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             }
 
             if (!dbUser && email) {
-              // 4a. Create new user
+              // 4a. Create new user (customer onboarding: isOnboarded=false, loginCount=1)
               dbUser = await tx.user.create({
                 data: {
                   email,
@@ -84,6 +84,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                   role: "user",
                   accountType,
                   teamMemberId,
+                  isOnboarded: false,
+                  loginCount: 1,
+                  lastLogin: new Date(),
                 },
               });
             } else if (dbUser) {
@@ -97,6 +100,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 dbUser.teamMemberId = teamMemberId;
                 dbUser.accountType = "staff";
               }
+              // 4d. Track every Google login
+              await tx.user.update({
+                where: { id: dbUser.id },
+                data: {
+                  loginCount: { increment: 1 },
+                  lastLogin: new Date(),
+                },
+              });
             }
 
             return dbUser;
@@ -107,6 +118,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             token.role = result.role;
             token.teamMemberId = result.teamMemberId;
             token.accountType = result.accountType;
+            // Expose isOnboarded on JWT token for downstream use
+            (token as Record<string, unknown>).isOnboarded = result.isOnboarded ?? false;
           }
         } catch (error) {
           console.error("Error in Google auth:", error);

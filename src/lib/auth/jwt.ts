@@ -16,6 +16,10 @@ export interface JWTPayload {
   role: string;
   roles: string[];
   roleLevel?: number;
+  teamMemberId?: string | null;
+  accountType?: string;
+  accessTags?: string[];
+  isOnboarded?: boolean;
 }
 
 export function signToken(payload: JWTPayload): string {

@@ -51,7 +51,7 @@ export async function generateMetadata({ params }: DetailProps): Promise<Metadat
       card: "summary_large_image",
       title: pageTitle,
       description: pageDescription,
-      images: ["/og-cover.jpg"],
+      images: [`/api/og?type=service&locale=${locale}`],
     },
   };
 }

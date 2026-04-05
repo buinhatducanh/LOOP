@@ -39,6 +39,9 @@ export interface AuthUser {
   lpBalance: number;
   level: number;
   beRoleLevel?: number; // original BE role level (0-5)
+  teamMemberId?: string | null;
+  accessTags?: string[];
+  isOnboarded?: boolean;
 }
 
 /** Enriched session from /api/admin/auth/me + LP data */
@@ -57,6 +60,8 @@ export interface EnrichedSession {
   rankColor?: string;
   lpBalance?: number;
   level?: number;
+  accessTags?: string[];
+  isOnboarded?: boolean;
 }
 
 export type AdminTab =
@@ -86,6 +91,9 @@ export interface Quest {
   status: QuestStatus;
   expiresAt?: string;
   forRoles: UserRole[];
+  /** Set by BE on daily-login quest completion */
+  lpEarned?: number;
+  xpEarned?: number;
 }
 
 export interface CompanyEvent {
@@ -299,6 +307,9 @@ function sessionToAuthUser(session: EnrichedSession): AuthUser {
     lpBalance: session.lpBalance ?? 0,
     level: session.level ?? 1,
     beRoleLevel: session.roleLevel,
+    isOnboarded: session.isOnboarded,
+    teamMemberId: session.teamMemberId,
+    accessTags: session.accessTags,
   };
 }
 
@@ -336,7 +347,14 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
       // Update store immediately from login response (no extra /me call)
       // AdminSessionInit will be a no-op since session is already set
-      const session = (res as { user: EnrichedSession; token: string }).user;
+      const successPayload = res as { user: EnrichedSession; token: string };
+      const session = successPayload.user;
+
+      // Persist JWT token in localStorage so apiClient can attach Bearer header
+      // on subsequent requests (cookies alone can be stripped on cross-origin redirects)
+      if (typeof window !== "undefined" && successPayload.token) {
+        localStorage.setItem("loop-auth-token", successPayload.token);
+      }
       const authUser = sessionToAuthUser(session);
       const role = mapRoleLevelToUserRole(session.roleLevel, session.accountType);
 
@@ -351,7 +369,10 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       });
       return true;
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Đăng nhập thất bại";
+      const isAbort = err instanceof Error && (err.name === "AbortError" || err.name === "TimeoutError");
+      const message = isAbort
+        ? "Yêu cầu bị timeout. Vui lòng thử lại sau."
+        : err instanceof Error ? err.message : "Đăng nhập thất bại";
       set({ isLoading: false, error: message });
       return false;
     }
@@ -373,10 +394,32 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   logout: async (): Promise<void> => {
     set({ isLoading: true });
     try {
-      await apiClient.post("/api/admin/auth/logout", undefined, { throwOnError: false });
+      // Capture token synchronously — must read BEFORE any async call so it's
+      // available for the fetch (apiClient reads localStorage at call time).
+      const token =
+        typeof window !== "undefined" ? localStorage.getItem("loop-auth-token") : null;
+
+      const doLogout = async () => {
+        const headers: Record<string, string> = { "Content-Type": "application/json" };
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+        const res = await fetch("/api/admin/auth/logout", {
+          method: "POST",
+          headers,
+          credentials: "include",
+        });
+        return res.json();
+      };
+
+      const timeout = new Promise<null>((_, reject) =>
+        setTimeout(() => reject(new Error("timeout")), 8_000)
+      );
+      await Promise.race([doLogout(), timeout]);
     } catch {
-      // Ignore
+      // Ignore network errors — always clear session client-side
     } finally {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("loop-auth-token");
+      }
       set({
         user: null,
         isAuthenticated: false,
@@ -414,8 +457,12 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         department: session.department,
         accessibleTabs: getAccessibleTabs(role, session.department),
       });
-    } catch {
-      set({ isAuthenticated: false, user: null, isLoading: false });
+    } catch (err) {
+      // Log but don't swallow silently — network/parse errors should surface
+      if (err instanceof Error) {
+        console.warn("[AuthStore] fetchSession failed:", err.message);
+      }
+      set({ isAuthenticated: false, user: null, role: "guest", accessibleTabs: [] });
     }
   },
 
@@ -425,14 +472,16 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
   // ── Quest actions ──────────────────────────────────────────────────────────
 
-  checkIn: () => {
+  checkIn: async () => {
     const today = new Date().toDateString();
     const { lastCheckIn, dailyStreak, quests } = get();
     if (lastCheckIn === today) return;
+
     const newStreak =
       lastCheckIn === new Date(Date.now() - 86400000).toDateString()
         ? dailyStreak + 1
         : 1;
+
     set({
       lastCheckIn: today,
       dailyStreak: newStreak,
@@ -440,6 +489,24 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         q.id === "q-daily-1" ? { ...q, progress: 1, status: "completed" as QuestStatus } : q
       ),
     });
+
+    // Call BE to award LP + XP for staff (silent — FE state already updated optimistically)
+    const dailyQuest = quests.find((q) => q.id === "q-daily-1");
+    try {
+      const res = await apiClient.post<{
+        data: { lpEarned: number; xpEarned: number; loginStreak: number };
+      }>("/api/admin/quests/daily-login", { questId: dailyQuest?.id });
+      // Update quest with actual rewards from BE
+      set((s) => ({
+        quests: s.quests.map((q) =>
+          q.id === "q-daily-1"
+            ? { ...q, lpEarned: res.data.lpEarned, xpEarned: res.data.xpEarned }
+            : q
+        ),
+      }));
+    } catch {
+      // Silently ignore — FE state already reflects successful check-in
+    }
   },
 
   updateQuestProgress: (questId, progress) =>

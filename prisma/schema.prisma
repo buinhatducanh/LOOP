@@ -153,6 +153,21 @@ model User {
   googleId             String?            @unique @map("google_id")
   isActive             Boolean            @default(true) @map("is_active")
   accountType          String             @default("customer") @map("account_type")
+  /// Tracks whether customer has completed onboarding profile
+  isOnboarded          Boolean            @default(false) @map("is_onboarded")
+  /// Customer profile fields (used when accountType = "customer")
+  phone                String?            @map("phone")
+  dateOfBirth          DateTime?          @map("date_of_birth")
+  companyName          String?            @map("company_name")
+  /// e.g. "technology" | "retail" | "finance" | "healthcare" | "education" | "food" | "real_estate" | "manufacturing" | "services" | "other"
+  businessType         String?            @map("business_type")
+  address              String?            @map("address")
+  taxCode              String?            @map("tax_code")
+  /// Login tracking
+  loginCount           Int                @default(0) @map("login_count")
+  lastLogin            DateTime?          @map("last_login")
+  /// Daily login streak for staff (resets to 1 if a day is missed)
+  loginStreak          Int                @default(0) @map("login_streak")
   createdAt            DateTime           @default(now()) @map("created_at")
   updatedAt            DateTime           @updatedAt @map("updated_at")
   teamMemberId         String?            @unique @map("team_member_id")
@@ -2489,7 +2504,7 @@ model MemberRequest {
   /// Reason for rejection (shown to the member)
   rejectReason    String?   @map("reject_reason")
   /// Link token sent to member for registration (short-lived, 48h)
-  inviteToken     String?   @map("invite_token")
+  inviteToken     String?   @unique @map("invite_token")
   /// Token expires at
   inviteExpiresAt DateTime? @map("invite_expires_at")
   /// Linked User account (null until member registers)

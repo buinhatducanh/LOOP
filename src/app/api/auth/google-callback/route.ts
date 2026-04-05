@@ -40,28 +40,49 @@ export async function GET(req: NextRequest) {
     // Resolve authoritative role from DB (authoritative over NextAuth raw role field)
     const dbUser = await prisma.user.findUnique({
       where: { id: oauthUser.id },
-      select: { role: true, accountType: true },
+      select: {
+        role: true,
+        accountType: true,
+        isOnboarded: true,
+        teamMemberId: true,
+      },
     });
 
     const primaryRole = dbUser?.role ?? "member";
     const accountType = dbUser?.accountType ?? "customer";
+    const isOnboarded = dbUser?.isOnboarded ?? false;
     const roleLevel = ROLE_LEVEL[primaryRole] ?? 5;
 
-    // Determine redirect destination: staff → admin, customer → khach-hang
-    const dest =
-      callbackUrl && callbackUrl !== "/vi/khach-hang"
-        ? callbackUrl
-        : accountType === "staff"
-          ? "/admin/overview"
-          : `/${locale}/khach-hang`;
+    // Track loginCount + lastLogin for Google OAuth users
+    await prisma.user.update({
+      where: { id: oauthUser.id },
+      data: {
+        loginCount: { increment: 1 },
+        lastLogin: new Date(),
+      },
+    }).catch(() => {/* ignore if user doesn't exist yet */});
 
-    // Create custom JWT token with authoritative DB roleLevel
+    // Determine redirect destination
+    let dest: string;
+    if (accountType === "staff") {
+      dest = "/admin/overview";
+    } else if (isOnboarded) {
+      dest = `/${locale}/khach-hang`;
+    } else {
+      // New customer via Google — redirect to onboarding
+      dest = `/${locale}/dang-nhap/client-onboarding`;
+    }
+
+    // Create custom JWT token with authoritative DB roleLevel + isOnboarded
     const jwtToken = signToken({
       userId: oauthUser.id,
       email: oauthUser.email,
       role: primaryRole,
       roles: [primaryRole],
       roleLevel,
+      accountType,
+      teamMemberId: dbUser?.teamMemberId ?? null,
+      isOnboarded,
     });
 
     const response = NextResponse.redirect(new URL(dest, req.url));

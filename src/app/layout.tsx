@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://loop.vn",
     images: [
       {
-        url: "/og-cover.jpg",
+        url: `/api/og?type=home&locale=vi`,
         width: 1200,
         height: 630,
         alt: "LOOP Solutions",
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "LOOP Solutions",
     description: "Professional Web & App Development — SEO-optimized, 95+ performance, 150+ projects delivered.",
-    images: ["/og-cover.jpg"],
+    images: [`/api/og?type=home&locale=vi`],
   },
   icons: {
     icon: [

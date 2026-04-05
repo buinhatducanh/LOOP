@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
   const start = Date.now();
 
   try {
-    const { name, email, password, company } = await req.json();
+    const { name, email, password, company, businessType, phone } = await req.json();
 
     if (!name?.trim() || !email?.trim() || !password) {
       return NextResponse.json({ error: "Họ tên, email và mật khẩu là bắt buộc" }, { status: 400 });
@@ -41,21 +41,37 @@ export async function POST(req: NextRequest) {
 
     const passwordHash = await hashPassword(password);
 
+    // Resolve async teamMember link before spreading into create data
+    const teamMemberLink = await linkTeamMember(email.toLowerCase());
+
     const user = await prisma.user.create({
       data: {
         name: name.trim(),
         email: email.toLowerCase().trim(),
         passwordHash,
+        phone: phone?.trim() || null,
+        companyName: company?.trim() || null,
+        businessType: businessType?.trim() || null,
         role: "member",
         accountType: "customer",
-        // Link to TeamMember if email matches an active member
-        ...(await linkTeamMember(email.toLowerCase())),
+        isOnboarded: false,
+        loginCount: 1, // first "login" = registration
+        lastLogin: new Date(),
+        ...teamMemberLink,
       },
     });
 
     await createAuditLog({ userId: user.id, action: "register", resource: "auth", resourceId: user.id });
 
-    const token = signToken({ userId: user.id, email: user.email, role: user.role, roles: ["member"], roleLevel: 5 });
+    const token = signToken({
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+      roles: ["member"],
+      roleLevel: 5,
+      accountType: "customer",
+      isOnboarded: false,
+    });
 
     authLogger.withSLO("POST /api/admin/auth/register success", {
       endpoint: "/api/admin/auth/register",
@@ -72,6 +88,7 @@ export async function POST(req: NextRequest) {
           name: user.name,
           avatar: user.avatar,
           role: user.role,
+          isOnboarded: user.isOnboarded,
         },
         token,
       },

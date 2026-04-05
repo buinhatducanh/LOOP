@@ -34,12 +34,16 @@ export function ImageUpload({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
+  /** Local blob preview — shown immediately after file pick, before Cloudinary upload finishes */
+  const [localPreview, setLocalPreview] = useState<string | null>(null);
 
-  const displayUrl = value || currentImage;
+  const displayUrl = localPreview || value || currentImage;
 
   const upload = async (file: File) => {
     setLoading(true);
     setError(null);
+    const blobUrl = URL.createObjectURL(file);
+    setLocalPreview(blobUrl); // show local preview immediately
     try {
       const fd = new FormData();
       fd.append("file", file);
@@ -47,10 +51,14 @@ export function ImageUpload({
       const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
       const json = await res.json();
       if (!res.ok) throw new Error(json?.error || "Upload failed");
-      onChange(json.data.url as string);
+      // ok() wraps result in { data } — extract the upload result from it
+      const uploadData = json?.data ?? json;
+      onChange((uploadData.url ?? uploadData.secure_url) as string);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Upload failed");
+      setLocalPreview(null); // clear preview on error
     } finally {
+      URL.revokeObjectURL(blobUrl);
       setLoading(false);
     }
   };
@@ -132,7 +140,7 @@ export function ImageUpload({
             {/* Remove button */}
             <button
               type="button"
-              onClick={() => onChange("")}
+              onClick={() => { onChange(""); setLocalPreview(null); }}
               disabled={loading}
               style={{
                 padding: "5px 10px", borderRadius: 7, fontSize: 11,

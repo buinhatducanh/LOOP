@@ -53,6 +53,10 @@ export interface SessionUser {
   availableLp?: number;
   /** Locked LP */
   lockedLp?: number;
+  /** Access tags (e.g. kanban, blog-post) from TeamMember */
+  accessTags?: string[];
+  /** Whether customer has completed onboarding profile */
+  isOnboarded?: boolean;
 }
 
 /** RANK → display color map */
@@ -92,7 +96,7 @@ export async function getSessionFromBearer(
             OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
           },
         },
-        teamMember: { select: { rank: true, availableLp: true, lockedLp: true } },
+        teamMember: { select: { rank: true, availableLp: true, lockedLp: true, accessTags: true } },
       },
     });
 
@@ -107,7 +111,7 @@ export async function getSessionFromBearer(
     );
 
     return {
-      userId: user.id,
+      userId: payload.userId,
       email: user.email,
       name: user.name,
       role: user.role,
@@ -122,6 +126,8 @@ export async function getSessionFromBearer(
       rank: user.teamMember?.rank,
       availableLp: user.teamMember?.availableLp,
       lockedLp: user.teamMember?.lockedLp,
+      accessTags: user.teamMember?.accessTags ?? [],
+      isOnboarded: user.isOnboarded,
     };
   } catch {
     // DB unavailable — return minimal session from JWT payload only
@@ -136,6 +142,8 @@ export async function getSessionFromBearer(
       teamMemberId: null,
       roleLevel: payload.roleLevel ?? ROLE_LEVEL[payload.role ?? "user"] ?? 99,
       permissions: [],
+      accessTags: [],
+      isOnboarded: undefined,
     };
   }
 }
@@ -166,7 +174,7 @@ export async function getSession(): Promise<SessionUser | null> {
               OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
             },
           },
-          teamMember: { select: { rank: true, availableLp: true, lockedLp: true } },
+          teamMember: { select: { rank: true, availableLp: true, lockedLp: true, accessTags: true } },
         },
       });
 
@@ -196,6 +204,8 @@ export async function getSession(): Promise<SessionUser | null> {
         rank: user.teamMember?.rank,
         availableLp: user.teamMember?.availableLp,
         lockedLp: user.teamMember?.lockedLp,
+        accessTags: user.teamMember?.accessTags ?? [],
+        isOnboarded: user.isOnboarded,
       };
     } catch {
       // DB unavailable — return minimal session from JWT payload (graceful degradation)
@@ -211,6 +221,8 @@ export async function getSession(): Promise<SessionUser | null> {
           teamMemberId: null,
           roleLevel: payload.roleLevel ?? ROLE_LEVEL[payload.role ?? "user"] ?? 99,
           permissions: [],
+          accessTags: [],
+          isOnboarded: undefined,
         };
       }
       return null;
@@ -232,7 +244,7 @@ export async function getSession(): Promise<SessionUser | null> {
             OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
           },
         },
-        teamMember: { select: { rank: true, availableLp: true, lockedLp: true } },
+        teamMember: { select: { rank: true, availableLp: true, lockedLp: true, accessTags: true } },
       },
     });
 
@@ -262,6 +274,8 @@ export async function getSession(): Promise<SessionUser | null> {
       rank: user.teamMember?.rank,
       availableLp: user.teamMember?.availableLp,
       lockedLp: user.teamMember?.lockedLp,
+      accessTags: user.teamMember?.accessTags ?? [],
+      isOnboarded: user.isOnboarded,
     };
   } catch {
     return null;

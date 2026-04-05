@@ -254,13 +254,25 @@
       "Bash(sed -n '457,465p' src/app/[locale]/khach-hang/page.tsx)",
       "Bash(sed -n '88,100p' src/components/ui/ImageUpload.tsx)",
       "Bash(sed -n '114,120p' src/components/ui/ImageUpload.tsx)",
-      "Bash(node -e \"require\\(''''./src/app/api/auth/google-callback/route.ts''''\\)\")"
+      "Bash(node -e \"require\\(''''./src/app/api/auth/google-callback/route.ts''''\\)\")",
+      "Bash(tasklist /FI 'IMAGENAME node.exe')",
+      "Bash(ping -n 1 loops.vn)",
+      "Bash(tasklist:*)",
+      "Bash(powershell -Command \"Get-Process -Id 8372 -ErrorAction SilentlyContinue | Select-Object ProcessName, Id, Path\")",
+      "Bash(powershell -Command \"Stop-Process -Id 8372 -Force -ErrorAction SilentlyContinue; Start-Sleep -Seconds 1; Write-Host 'Killed PID 8372'\")",
+      "Bash(powershell -Command \"Get-Process -Id 4840,16740 -ErrorAction SilentlyContinue | Select-Object ProcessName, Id, Path\" 2>&1)",
+      "Bash(powershell -Command \"Start-Process -FilePath 'npm.cmd' -ArgumentList 'run','dev' -WorkingDirectory 'D:\\\\LOOP_COMPANY\\\\LOOP' -WindowStyle Hidden; Start-Sleep -Seconds 10; Write-Host 'Started'\")",
+      "Bash(grep -n json.datab D:LOOP_COMPANYLOOPsrcapp\\\\\\(public\\\\\\)figmareview[token]page.tsx)",
+      "Bash(powershell -Command \"Stop-Process -Id 2708 -Force -ErrorAction SilentlyContinue; Write-Host 'Killed PID 2708'\")",
+      "Bash(powershell -Command \"Stop-Process -Id 4840,16740 -Force -ErrorAction SilentlyContinue; Write-Host 'Killed all'\")",
+      "Bash(powershell -Command \"Start-Process -FilePath 'npm.cmd' -ArgumentList 'run','dev' -WorkingDirectory 'D:\\\\LOOP_COMPANY\\\\LOOP' -WindowStyle Hidden; Start-Sleep -Seconds 12; netstat -ano | grep ':3000 ' | grep LISTENING\")"
     ],
     "additionalDirectories": [
       "D:\\LOOP_COMPANY\\LOOP\\src\\app\\api\\admin\\expertises",
       "C:\\Users\\MSI\\.claude\\plans",
       "d:\\LOOP_COMPANY\\LOOP\\src\\app\\[locale]",
-      "d:\\LOOP_COMPANY\\LOOP\\FE"
+      "d:\\LOOP_COMPANY\\LOOP\\FE",
+      "d:\\LOOP_COMPANY\\LOOP\\src\\app\\[locale]\\dang-nhap"
     ]
   }
 }

@@ -14,12 +14,14 @@ type Props = { params: Promise<{ locale: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations("seo");
+  const tBooking = await getTranslations("BookingPage");
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://loop.vn";
   const title = t("bookingTitle") || "Nhận báo giá Website";
-  const description = t("bookingDescription") || "Nhận báo giá chi tiết cho thiết kế website. Wizard 3 bước chọn gói phù hợp.";
+  const description = tBooking("heroDesc") || "Wizard 3 bước chọn gói Website phù hợp. Báo giá minh bạch, không phí ẩn. Tặng 500 LP khi đăng ký.";
   const ogImage = t("ogImage");
   const brandMetaTitle = t("brandMetaTitle");
   const canonical = `${baseUrl}/${locale}/booking`;
+  const dynamicOgImage = `/api/og?title=${encodeURIComponent(title)}&description=${encodeURIComponent(description)}&type=booking&locale=${locale}`;
 
   return {
     title,
@@ -39,13 +41,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title: `${title} — ${brandMetaTitle}`,
       description,
       url: canonical,
-      images: [{ url: ogImage || "/og-cover.jpg", width: 1200, height: 630, alt: "LOOP Solutions Booking" }],
+      images: [{ url: dynamicOgImage, width: 1200, height: 630, alt: "LOOP Solutions Booking" }],
     },
     twitter: {
       card: "summary_large_image",
       title: `${title} — ${brandMetaTitle}`,
       description,
-      images: [ogImage || "/og-cover.jpg"],
+      images: [dynamicOgImage],
     },
   };
 }
