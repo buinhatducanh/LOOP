@@ -135,8 +135,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Cache Next.js build
+        uses: actions/cache@v4
+        with:
+          path: .next
+          key: next-build-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
       - name: Build Next.js app
-        run: npm run build
+        run: npx tsc --noEmit && npm run build:ci
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/loop_ci
           AUTH_SECRET: ci_dummy_secret_please_override

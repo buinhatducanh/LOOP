@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:ci": "npx tsc --noEmit && next build",
     "start": "next start",
     "lint": "next lint",
     "i18n:check": "npx tsx src/i18n/missing-keys.ts",

@@ -1,49 +1,40 @@
 "use client";
 
 /**
- * SessionHydrator — verifies auth session with server once Zustand is ready.
+ * SessionHydrator — hydrates Zustand authStore from localStorage on admin mount.
  *
- * Flow (with persist middleware):
- *   1. Page loads → Zustand begins rehydration from localStorage
- *   2. SessionHydrator mounts → waits for rehydration to complete
- *   3. Once rehydrated:
- *      - If isAuthenticated=true → verify JWT with server via fetchSession()
- *      - If isAuthenticated=false → do nothing (not logged in)
- *   4. fetchSession() result:
- *      - JWT valid  → store updated with fresh server data
- *      - JWT expired → store reset to guest (redirect to login)
+ * Behavior:
+ *   - If store already has isAuthenticated=true (e.g. just logged in, redirected)
+ *     → do nothing — store already has the valid session, no need to re-fetch.
+ *   - If store is empty (direct navigation to /admin) → fetch session from server.
+ *     → Server uses HttpOnly cookie to validate JWT.
+ *     → fetchSession() handles expired/invalid tokens by resetting store to guest.
  *
- * Run order is critical:
- *   Zustand rehydration → SessionHydrator fires → fetchSession() → store updated
+ * This prevents the bug where just-logged-in users got logged out because
+ * fetchSession() ran immediately and the token wasn't sent correctly yet.
  *
- * Ref guard: fires exactly once per full page load (not HMR).
+ * Run order:
+ *   Zustand rehydration from localStorage → SessionHydrator reads store
+ *   → decides whether to call fetchSession()
  */
-import { useEffect, useRef } from "react";
+import { useLayoutEffect, useRef } from "react";
 import { useAuthStore } from "@/app/store/authStore";
 
 export function SessionHydrator() {
   const fetchSession = useAuthStore((s) => s.fetchSession);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const initialized = useRef(false);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (initialized.current) return;
     initialized.current = true;
 
-    // Give Zustand one tick to rehydrate from localStorage.
-    // The persist middleware sets _rehydrated=true in onRehydrateStorage callback.
-    const timer = setTimeout(() => {
-      const state = useAuthStore.getState() as unknown as { _rehydrated?: boolean };
-      if (state._rehydrated) {
-        fetchSession();
-      } else {
-        // Fallback: Zustand has no _rehydrated flag yet; just call fetchSession.
-        // If not authenticated it will be a no-op; if authenticated it verifies.
-        fetchSession();
-      }
-    }, 50);
-
-    return () => clearTimeout(timer);
-  }, [fetchSession]);
+    // Only fetch session if store is empty (direct navigation).
+    // If isAuthenticated=true, user just logged in — store already has valid data.
+    if (!isAuthenticated) {
+      fetchSession();
+    }
+  }, [fetchSession, isAuthenticated]);
 
   return null;
 }

@@ -14,6 +14,7 @@ import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
 import SiteHeader from "./components/SiteHeader";
 import SiteFooter from "./components/SiteFooter";
+import { Toaster } from "@/components/ui/sonner";
 import { getFontClass, getHeadingFontClass } from "@/lib/fonts";
 import { buildOrganizationJsonLd, buildWebSiteJsonLd } from "@/lib/json-ld";
 
@@ -164,6 +165,7 @@ export default async function LocaleLayout({ children, params }: Props) {
             {children}
           </div>
           <SiteFooter locale={locale} />
+          <Toaster position="top-right" richColors closeButton />
         </NextIntlClientProvider>
       </body>
     </html>

@@ -19,6 +19,7 @@ import {
   Loader2, ArrowLeft, ShieldCheck, Mail,
 } from "lucide-react";
 import { signIn } from "next-auth/react";
+import { toast } from "sonner";
 import { DS, GRD } from "@/lib/design-tokens";
 import { useAuthStore } from "@/app/store/authStore";
 
@@ -215,15 +216,26 @@ function LoginForm({ locale, onSwitch }: { locale: string; onSwitch: (m: AuthMod
 
     const ok = await login(email, password);
     if (ok) {
-      // Read fresh user from store after login() completes — avoid stale closure
       const currentUser = useAuthStore.getState().user;
-      if (currentUser?.role === "client") {
-        // New customer → redirect to onboarding if not yet completed
-        const dest = currentUser?.isOnboarded !== true
-          ? `/${locale}/dang-nhap/client-onboarding`
-          : `/${locale}/khach-hang`;
-        router.push(dest);
+      if (!currentUser) return;
+
+      if (currentUser.role === "client") {
+        // Khách hàng → landing page
+        toast.success("Đăng nhập thành công!", {
+          description: `Chào mừng ${currentUser.name}`,
+        });
+        router.push(`/${locale}`);
+      } else if (currentUser.isOnboarded !== true) {
+        // Thành viên lần đầu → bắt buộc onboarding
+        toast.success("Đăng nhập thành công!", {
+          description: "Vui lòng hoàn tất hồ sơ trước khi sử dụng.",
+        });
+        router.push(`/${locale}/dang-nhap/client-onboarding`);
       } else {
+        // Thành viên → admin dashboard
+        toast.success("Đăng nhập thành công!", {
+          description: `Chào mừng ${currentUser.name}`,
+        });
         router.push("/admin/overview");
       }
     }

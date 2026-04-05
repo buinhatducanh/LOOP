@@ -51,8 +51,13 @@ async function apiFetch<T>(
 ): Promise<T> {
   const { params, throwOnError = true, withCredentials = false, ...fetchOptions } = options;
 
-  // Build URL with query params
-  let url = endpoint.startsWith("http") ? endpoint : `${BASE_URL}${endpoint}`;
+  // Use relative URL so it always matches the current server port.
+  // External URLs (starts with http) are used for cross-origin calls only.
+  let url = endpoint.startsWith("http")
+    ? endpoint
+    : endpoint.startsWith("/")
+      ? endpoint
+      : `/${endpoint}`;
   if (params) {
     const searchParams = new URLSearchParams();
     for (const [key, value] of Object.entries(params)) {
