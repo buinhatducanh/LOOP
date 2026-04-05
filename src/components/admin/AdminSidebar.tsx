@@ -5,8 +5,7 @@
  * Dark-themed Figma admin sidebar.
  *
  * Uses Zustand store for role/access data (read-only).
- * Session is initialized by the server layout, stored in Zustand
- * by AdminSessionInit on first mount.
+ * Session is populated by SessionHydrator after initial mount.
  *
  * Props:
  *  - userName: current user display name
@@ -116,7 +115,7 @@ export function AdminSidebar({ userName, userAvatar, userRole, userRank, userLpB
   const [isOpen, setIsOpen] = useState(false);
   const { t } = useAdminTranslations();
 
-  // Read role from Zustand store (set by AdminSessionInit on mount)
+  // Read role from Zustand store (set by SessionHydrator on mount)
   // Falls back to prop value if store not yet initialized
   const storeRole = useAuthStore((s) => s.role);
   const role = storeRole !== "guest" ? storeRole : (userRole ?? "admin");

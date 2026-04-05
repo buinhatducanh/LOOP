@@ -1,25 +1,38 @@
 "use client";
 
 /**
- * AdminSessionInit — admin auth session bridge
+ * AdminSessionInit — re-hydrates auth session from server on every mount.
  *
- * IMPORTANT: This component no longer calls loginAs() because that
- * causes "Cannot update a component while rendering" warnings and
- * potential infinite loops when combined with LoginForm.login().
+ * Flow:
+ *   1. App loads → Zustand re-hydrates from localStorage (user, role, isAuthenticated)
+ *   2. AdminSessionInit mounts → calls /api/admin/auth/me to verify token validity
+ *   3. If token valid  → store stays populated (no change needed)
+ *      If token invalid → /me returns error → fetchSession() resets store to guest
+ *   4. Admin layout sees isAuthenticated=true → renders admin shell
  *
- * Session initialization flow:
- *   Login page: login() in authStore → sets Zustand store
- *   Admin pages: Zustand store already populated by login() — no re-init needed
- *
- * AdminSessionInit is kept (but does nothing) so that:
- *   1. If a user navigates directly to /admin/overview without logging in,
- *      the server layout redirects to login before this component renders.
- *   2. Layout renders this = user IS authenticated → store is already set.
- *
- * If Zustand store is empty on direct navigation (rare edge case),
- * AdminSidebar falls back to userRole prop from layout.
+ * This ensures:
+ *   - User stays logged in across page refreshes (localStorage persistence)
+ *   - If JWT expired, they are logged out (not stuck in ghost session)
+ *   - Quests/Events always re-fetched from BE (not stale from localStorage)
  */
+import { useEffect, useRef } from "react";
+import { useAuthStore } from "@/app/store/authStore";
+
 export function AdminSessionInit() {
-  // No-op: session is initialized by authStore.login() before redirect
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const fetchSession = useAuthStore((s) => s.fetchSession);
+  const initialized = useRef(false);
+
+  useEffect(() => {
+    // Run once per full page load (not on HMR)
+    if (initialized.current) return;
+    initialized.current = true;
+
+    if (isAuthenticated) {
+      // Re-verify session with server; fetchSession handles invalid/expired tokens
+      fetchSession();
+    }
+  }, []);
+
   return null;
 }

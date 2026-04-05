@@ -8,6 +8,7 @@
  * Roles: admin | manager | staff | client | guest
  */
 import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
 import { apiClient, type ApiErrorResponse } from "@/lib/api/client";
 import { DS } from "@/lib/design-tokens";
 
@@ -316,23 +317,27 @@ function sessionToAuthUser(session: EnrichedSession): AuthUser {
 
 // ── Store ───────────────────────────────────────────────────────────────────────
 
-export const useAuthStore = create<AuthStore>((set, get) => ({
-  // Session (default: logged out)
-  user: null,
-  isAuthenticated: false,
-  isLoading: false,
-  error: null,
-  role: "guest",
-  department: undefined,
-  accessibleTabs: [],
+const PERSIST_KEY = "loop-auth";
 
-  // Gamification
-  quests: INIT_QUESTS,
-  events: INIT_EVENTS,
-  dailyStreak: 0,
-  lastCheckIn: null,
+export const useAuthStore = create<AuthStore>()(
+  persist(
+    (set, get) => ({
+      // Session (default: logged out)
+      user: null,
+      isAuthenticated: false,
+      isLoading: false,
+      error: null,
+      role: "guest",
+      department: undefined,
+      accessibleTabs: [],
 
-  login: async (email: string, password: string): Promise<boolean> => {
+      // Gamification (NOT persisted — re-fetched from BE on each session)
+      quests: INIT_QUESTS,
+      events: INIT_EVENTS,
+      dailyStreak: 0,
+      lastCheckIn: null,
+
+      login: async (email: string, password: string): Promise<boolean> => {
     set({ isLoading: true, error: null });
     try {
       const res = await apiClient.post<{ user: EnrichedSession; token: string } | ApiErrorResponse>(
@@ -541,7 +546,28 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   getQuestsForRole: (role) => get().quests.filter((q) => q.forRoles.includes(role)),
 
   getActiveEvents: () => get().events.filter((e) => e.active),
-}));
+    }),
+    {
+      name: PERSIST_KEY,
+      storage: createJSONStorage(() => {
+        if (typeof window === "undefined") return { getItem: () => null, setItem: () => {}, removeItem: () => {} };
+        return localStorage;
+      }),
+      partialize: (state) => ({
+        user: state.user,
+        isAuthenticated: state.isAuthenticated,
+        role: state.role,
+        department: state.department,
+        accessibleTabs: state.accessibleTabs,
+      }),
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          (state as unknown as { _rehydrated: boolean })._rehydrated = true;
+        }
+      },
+    }
+  )
+);
 
 // ── Selector hooks ─────────────────────────────────────────────────────────────
 

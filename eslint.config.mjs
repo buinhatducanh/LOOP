@@ -15,7 +15,7 @@ export default [
       parser: tsParser,
     },
     rules: {
-      "@typescript-eslint/no-unused-vars": ["warn", { "varsIgnorePattern": "^_", "argsIgnorePattern": "^_" }],
+      "@typescript-eslint/no-unused-vars": ["warn", { "varsIgnorePattern": "^_|^persist$|^createJSONStorage$", "argsIgnorePattern": "^_" }],
       "@typescript-eslint/no-explicit-any": "warn",
       "no-console": "off",
       "no-undef": "off",

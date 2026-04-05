@@ -266,7 +266,8 @@
       "Bash(powershell -Command \"Stop-Process -Id 2708 -Force -ErrorAction SilentlyContinue; Write-Host 'Killed PID 2708'\")",
       "Bash(powershell -Command \"Stop-Process -Id 4840,16740 -Force -ErrorAction SilentlyContinue; Write-Host 'Killed all'\")",
       "Bash(powershell -Command \"Start-Process -FilePath 'npm.cmd' -ArgumentList 'run','dev' -WorkingDirectory 'D:\\\\LOOP_COMPANY\\\\LOOP' -WindowStyle Hidden; Start-Sleep -Seconds 12; netstat -ano | grep ':3000 ' | grep LISTENING\")",
-      "Bash(powershell -Command \"Stop-Process -Id 14692 -Force; Write-Host '✅ Port 3000 freed'\")"
+      "Bash(powershell -Command \"Stop-Process -Id 14692 -Force; Write-Host '✅ Port 3000 freed'\")",
+      "Bash(rd /s /q .next)"
     ],
     "additionalDirectories": [
       "D:\\LOOP_COMPANY\\LOOP\\src\\app\\api\\admin\\expertises",
