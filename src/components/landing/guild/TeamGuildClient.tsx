@@ -129,7 +129,7 @@ function CTABanner({ locale }: { locale: string }) {
             href={`/${locale}/booking`}
             style={{ background: "linear-gradient(135deg, #3B82F6, #6366F1)", color: "#fff", fontSize: 14, fontWeight: 700, padding: "12px 28px", borderRadius: 12, textDecoration: "none", boxShadow: "0 0 28px rgba(129,140,248,0.4)", display: "flex", alignItems: "center", gap: 8 }}
           >
-            Đặt lịch tư vấn <ChevronRight size={15} />
+            Nhận báo giá Website <ChevronRight size={15} />
           </Link>
           <Link
             href={`/${locale}/contact`}

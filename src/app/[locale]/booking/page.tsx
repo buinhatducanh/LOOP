@@ -1,5 +1,5 @@
 /**
- * Booking / Đặt lịch Page — LOOP Solutions
+ * Booking / Nhận báo giá Website — LOOP Solutions
  * Route: /vi/booking, /en/booking, /ja/booking, /ko/booking, /zh/booking
  */
 import type { Metadata } from "next";
@@ -15,8 +15,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations("seo");
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://loop.vn";
-  const title = t("bookingTitle") || "Đặt lịch tư vấn";
-  const description = t("bookingDescription") || "Đặt lịch tư vấn miễn phí với đội ngũ kỹ thuật LOOP Solutions. Wizard 8 bước giúp bạn chọn dịch vụ phù hợp.";
+  const title = t("bookingTitle") || "Nhận báo giá Website";
+  const description = t("bookingDescription") || "Nhận báo giá chi tiết cho thiết kế website. Wizard 3 bước chọn gói phù hợp.";
   const ogImage = t("ogImage");
   const brandMetaTitle = t("brandMetaTitle");
   const canonical = `${baseUrl}/${locale}/booking`;

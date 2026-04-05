@@ -192,7 +192,7 @@ export function CustomerDashboardClient() {
           {/* Quick actions */}
           <div style={{ marginTop: 16, display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 10 }}>
             {[
-              { icon: <Calendar size={14} />, label: "Đặt lịch tư vấn", href: "/vi/contact", color: DS.blue },
+              { icon: <Calendar size={14} />, label: "Nhận báo giá Website", href: "/vi/contact", color: DS.blue },
               { icon: <FileText size={14} />, label: "Xem hợp đồng", href: "#", color: DS.purple },
               { icon: <TrendingUp size={14} />, label: "Tiến độ dự án", href: "#", color: DS.cyan },
               { icon: <ArrowRight size={14} />, label: "Khám phá thêm", href: "/vi/services", color: DS.green },

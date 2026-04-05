@@ -253,7 +253,8 @@
       "Bash(sed -n '255,262p' src/app/[locale]/khach-hang/page.tsx)",
       "Bash(sed -n '457,465p' src/app/[locale]/khach-hang/page.tsx)",
       "Bash(sed -n '88,100p' src/components/ui/ImageUpload.tsx)",
-      "Bash(sed -n '114,120p' src/components/ui/ImageUpload.tsx)"
+      "Bash(sed -n '114,120p' src/components/ui/ImageUpload.tsx)",
+      "Bash(node -e \"require\\(''''./src/app/api/auth/google-callback/route.ts''''\\)\")"
     ],
     "additionalDirectories": [
       "D:\\LOOP_COMPANY\\LOOP\\src\\app\\api\\admin\\expertises",

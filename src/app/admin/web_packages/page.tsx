@@ -371,13 +371,13 @@ function AddPackageModal({
 
           <Field label="TÍNH NĂNG (mỗi dòng 1 tính năng)">
             <textarea value={form.features} onChange={e => setForm(f => ({ ...f, features: e.target.value }))}
-              rows={3} placeholder={"Website demo\nĐặt lịch online\nQuản lý khách hàng..."}
+              rows={3} placeholder={"Báo giá Website\nNhận báo giá online\nQuản lý khách hàng..."}
               style={{ ...inputStyle, resize: "vertical", fontFamily: DS.mono, fontSize: 12 }} />
           </Field>
 
           <Field label="TÍNH NĂNG DEMO (tối đa 3 dòng, hiển thị trên card)">
             <textarea value={form.demoFeatures} onChange={e => setForm(f => ({ ...f, demoFeatures: e.target.value }))}
-              rows={2} placeholder={"Đặt lịch\nQuản lý\nBáo cáo"}
+              rows={2} placeholder={"Nhận báo giá\nQuản lý\nBáo cáo"}
               style={{ ...inputStyle, resize: "none", fontFamily: DS.mono, fontSize: 12 }} />
           </Field>
         </div>
