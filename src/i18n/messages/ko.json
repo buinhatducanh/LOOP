@@ -597,26 +597,37 @@
     "privacyPolicy": "개인정보 보호정책",
     "termsOfService": "이용약관",
     "cookiePolicy": "Cookie Policy",
-    "contactSection": "Contact",
+    "contactSection": "문의하기",
+    "ctaButton": "무료 견적 받기",
+    "ctaSecondary": "포트폴리오 보기",
+    "contactEmail": "ducanhnhatbui@gmail.com",
+    "contactPhone": "+84 37 844 3602",
+    "contactAddress": "베트남 캄토(Vĩnh Long)",
+    "newsletterLabel": "최신 소식 받기",
+    "newsletterPlaceholder": "email@company.vn",
+    "season": "SEASON III · 2026",
     "servicesLinks": {
-      "webDesign": "Web Design",
-      "appDev": "App Development",
+      "webDesign": "웹사이트 디자인",
+      "appDev": "앱 개발",
       "saas": "SaaS",
-      "seoMarketing": "SEO & Marketing",
-      "bookConsultation": "Book a Consultation"
+      "seoMarketing": "SEO & 마케팅",
+      "bookConsultation": "컨설팅 예약"
     },
     "companyLinks": {
-      "about": "About Us",
-      "careers": "Careers",
-      "companyProcess": "Process"
+      "about": "회사 소개",
+      "careers": "채용",
+      "companyProcess": "프로세스",
+      "terms": "이용약관",
+      "contact": "문의하기"
     },
-    "stayConnectedLinks": {
-      "portfolio": "Portfolio",
-      "blog": "Blog",
-      "academy": "Academy",
-      "lpSystem": "LP System",
-      "pricing": "Pricing"
-    }
+    "resourcesLinks": {
+      "portfolio": "포트폴리오",
+      "blog": "블로그",
+      "academy": "LOOP 아카데미",
+      "lpSystem": "LP 시스템",
+      "pricing": "가격표"
+    },
+    "workingHours": "월〜금 · 09:00–18:00"
   },
   "BookingPage": {
     "title": "웹사이트 견적 받기",

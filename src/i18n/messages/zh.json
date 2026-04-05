@@ -597,26 +597,37 @@
     "privacyPolicy": "隐私政策",
     "termsOfService": "服务条款",
     "cookiePolicy": "Cookie Policy",
-    "contactSection": "Contact",
+    "contactSection": "联系我们",
+    "ctaButton": "获取免费报价",
+    "ctaSecondary": "查看作品集",
+    "contactEmail": "ducanhnhatbui@gmail.com",
+    "contactPhone": "+84 37 844 3602",
+    "contactAddress": "越南芹苴市",
+    "newsletterLabel": "获取最新资讯",
+    "newsletterPlaceholder": "email@company.vn",
+    "season": "SEASON III · 2026",
     "servicesLinks": {
-      "webDesign": "Web Design",
-      "appDev": "App Development",
+      "webDesign": "网站设计",
+      "appDev": "应用开发",
       "saas": "SaaS",
-      "seoMarketing": "SEO & Marketing",
-      "bookConsultation": "Book a Consultation"
+      "seoMarketing": "SEO与营销",
+      "bookConsultation": "预约咨询"
     },
     "companyLinks": {
-      "about": "About Us",
-      "careers": "Careers",
-      "companyProcess": "Process"
+      "about": "关于我们",
+      "careers": "招聘",
+      "companyProcess": "流程",
+      "terms": "服务条款",
+      "contact": "联系我们"
     },
-    "stayConnectedLinks": {
-      "portfolio": "Portfolio",
-      "blog": "Blog",
-      "academy": "Academy",
-      "lpSystem": "LP System",
-      "pricing": "Pricing"
-    }
+    "resourcesLinks": {
+      "portfolio": "作品集",
+      "blog": "博客",
+      "academy": "LOOP学院",
+      "lpSystem": "LP系统",
+      "pricing": "价格表"
+    },
+    "workingHours": "周一至周五 · 09:00–18:00"
   },
   "BookingPage": {
     "title": "获取网站报价",

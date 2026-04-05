@@ -15,7 +15,7 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { DS, GRD } from "@/lib/design-tokens";
-import { Mail, Phone, MapPin, Zap, Rocket, Globe, Shield, BookOpen, Settings, Send } from "lucide-react";
+import { Mail, Phone, MapPin, Clock, Zap, Rocket, Globe, Shield, BookOpen, Settings, Send } from "lucide-react";
 
 interface FooterCol {
   title: string;
@@ -241,6 +241,7 @@ export default function SiteFooter({ locale = "vi" }: { locale?: string }) {
                 { icon: <Mail size={12} />, text: t("contactEmail") },
                 { icon: <Phone size={12} />, text: t("contactPhone") },
                 { icon: <MapPin size={12} />, text: t("contactAddress") },
+                { icon: <Clock size={12} />, text: t("workingHours") },
               ].map(item => (
                 <div key={item.text} style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: DS.text4, fontSize: "0.8125rem" }}>
                   <span style={{ color: DS.blue }}>{item.icon}</span>

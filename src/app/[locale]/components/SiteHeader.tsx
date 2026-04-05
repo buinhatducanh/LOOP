@@ -22,12 +22,11 @@ import { motion, AnimatePresence } from "motion/react";
 import {
   Menu, X, LogIn, LogOut, Zap,
   ChevronDown, Globe, Rocket, Check,
-  Search, ArrowRight, Volume2, VolumeX,
+  Search, ArrowRight,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { DS, GRD } from "@/lib/design-tokens";
 import { useAuthStore } from "@/app/store/authStore";
-import { useAudioStore } from "@/app/store/audioStore";
 import { routing } from "@/i18n/routing";
 import { useMounted } from "@/app/hooks/useMounted";
 
@@ -351,74 +350,6 @@ function LocaleSwitcher({ locale }: { locale: string }) {
   );
 }
 
-// ── Audio toggle ───────────────────────────────────────────────────────────────
-
-function AudioToggle() {
-  const { muted, toggleMuted } = useAudioStore();
-  return (
-    <button
-      onClick={toggleMuted}
-      title={muted ? "Bật âm thanh" : "Tắt âm thanh"}
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        width: 32,
-        height: 32,
-        borderRadius: 8,
-        background: muted ? rgba(DS.text, 0.04) : rgba(DS.purple, 0.1),
-        border: `1px solid ${muted ? rgba(DS.text, 0.08) : rgba(DS.purple, 0.25)}`,
-        color: muted ? DS.text5 : DS.purple,
-        cursor: "pointer",
-        transition: "all 0.15s ease",
-        flexShrink: 0,
-      }}
-      onMouseEnter={e => {
-        (e.currentTarget as HTMLButtonElement).style.background = muted
-          ? rgba(DS.text, 0.07)
-          : rgba(DS.purple, 0.16);
-      }}
-      onMouseLeave={e => {
-        (e.currentTarget as HTMLButtonElement).style.background = muted
-          ? rgba(DS.text, 0.04)
-          : rgba(DS.purple, 0.1);
-      }}
-    >
-      {muted ? <VolumeX size={13} /> : <Volume2 size={13} />}
-    </button>
-  );
-}
-
-// ── Mobile Audio toggle ─────────────────────────────────────────────────────────
-
-function MobileAudioToggle({ onClose }: { onClose?: () => void }) {
-  const { muted, toggleMuted } = useAudioStore();
-  return (
-    <button
-      onClick={() => { toggleMuted(); onClose?.(); }}
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 8,
-        padding: "10px 14px",
-        borderRadius: 8,
-        background: muted ? rgba(DS.text, 0.03) : rgba(DS.purple, 0.08),
-        border: `1px solid ${muted ? rgba(DS.text, 0.06) : rgba(DS.purple, 0.2)}`,
-        color: muted ? DS.text4 : DS.purple,
-        fontSize: 14,
-        cursor: "pointer",
-        marginTop: 4,
-        width: "100%",
-      }}
-    >
-      {muted ? <VolumeX size={14} /> : <Volume2 size={14} />}
-      <span style={{ flex: 1, textAlign: "left" }}>
-        {muted ? "Bật âm thanh" : "Tắt âm thanh"}
-      </span>
-    </button>
-  );
-}
-
 // ── Nav Dropdown ──────────────────────────────────────────────────────────────
 
 interface NavDropdownItem { label: string; href: string; icon: string }
@@ -538,15 +469,6 @@ export default function SiteHeader({ locale }: { locale: string }) {
   const roleLabels = getRoleLabels(t);
   const mounted = useMounted();
 
-  // Sync audio muted state from localStorage after mount to avoid hydration mismatch
-  const { setMuted, muted } = useAudioStore();
-  useEffect(() => {
-    if (mounted) {
-      const stored = localStorage.getItem("loop-audio-muted") === "true";
-      if (stored !== muted) setMuted(stored);
-    }
-  }, [mounted]);
-
   const navLinks: NavItem[] = [
     { label: t("home"), href: `/${locale}/` },
 
@@ -570,19 +492,6 @@ export default function SiteHeader({ locale }: { locale: string }) {
       triggerLabel: t("marketingDropdown"),
       items: [
         { label: t("mediaLabel"), href: `/${locale}/media`, icon: "🎬" },
-      ],
-    },
-
-    // Gói Web dropdown
-    {
-      type: "dropdown",
-      labelKey: "webDropdown",
-      triggerLabel: t("webDropdown"),
-      items: [
-        { label: t("webCustomDesign"), href: `/${locale}/services?tab=tabCustom`,  icon: "✏️" },
-        { label: t("customServices"),  href: `/${locale}/services?tab=tabWebPackage`, icon: "🛠️" },
-        { label: t("pricing"),         href: `/${locale}/services?tab=tabPricing`,  icon: "💰" },
-        { label: t("webCompleted"),   href: `/${locale}/du-an`,              icon: "✅" },
       ],
     },
 
@@ -753,9 +662,6 @@ export default function SiteHeader({ locale }: { locale: string }) {
 
             {/* Locale Switcher */}
             <LocaleSwitcher locale={locale} />
-
-            {/* Audio toggle */}
-            <AudioToggle />
 
             {/* User menu — guarded by mounted to prevent hydration mismatch */}
             {mounted && isAuthenticated && user ? (
@@ -997,8 +903,6 @@ export default function SiteHeader({ locale }: { locale: string }) {
                   <Search size={14} /> <span style={{ flex: 1, textAlign: "left" }}>Tìm kiếm...</span>
                   <kbd style={{ fontSize: 9, fontFamily: DS.mono, color: DS.text5, background: rgba(DS.text, 0.04), borderRadius: 3, padding: "1px 4px" }}>⌘K</kbd>
                 </button>
-                {/* Mobile audio toggle */}
-                <MobileAudioToggle onClose={() => setMobileOpen(false)} />
                 <Link
                   href={`/${locale}/booking`}
                   onClick={() => setMobileOpen(false)}

@@ -5,10 +5,9 @@ import { motion, AnimatePresence } from "motion/react";
 import {
   ChevronRight, ChevronLeft, Globe, Code2, BarChart3, TrendingUp,
   Users, Star, Rocket, Shield, Zap, ArrowRight, Check,
-  Sparkles, Target, Award, Heart, Play, Volume2, VolumeX,
+  Sparkles, Target, Award, Heart, Play,
 } from "lucide-react";
 import { DS, GRD } from "@/lib/design-tokens";
-import { useAudioStore } from "@/app/store/audioStore";
 
 type SlideProps = { direction: number };
 
@@ -60,7 +59,7 @@ function StarField() {
   );
 }
 
-function SlideWelcome({ direction, onVideoEnd }: SlideProps & { onVideoEnd?: () => void }) {
+function SlideWelcome({ direction }: SlideProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [showLogo, setShowLogo] = useState(false);
 
@@ -73,10 +72,8 @@ function SlideWelcome({ direction, onVideoEnd }: SlideProps & { onVideoEnd?: () 
     }
   }, [direction]);
 
-  // Show logo only after video ends — also trigger music
   const handleVideoEnded = () => {
     setShowLogo(true);
-    onVideoEnd?.();
   };
 
   return (
@@ -408,26 +405,7 @@ const LABELS = ["Chào mừng", "Về chúng tôi", "Dịch vụ", "Tăng trư�
 export function OnboardingClient({ onComplete }: { onComplete: () => void }) {
   const [current, setCurrent] = useState(0);
   const [direction, setDirection] = useState(1);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   const total = 5;
-
-  const { muted, setMuted, toggleMuted, setAudioElement } = useAudioStore();
-  const musicOn = !muted;
-
-  // Pre-create audio element on mount and register with global store
-  useEffect(() => {
-    const audio = new Audio("/assets/design-company/bg-music.mp3");
-    audio.loop = true;
-    audio.volume = 0.6;
-    audio.muted = muted;
-    audioRef.current = audio;
-    setAudioElement(audio);
-    return () => {
-      audio.pause();
-      audioRef.current = null;
-      setAudioElement(null);
-    };
-  }, [setAudioElement, muted]);
 
   const goTo = (idx: number) => {
     if (idx < 0 || idx >= total || idx === current) return;
@@ -438,22 +416,8 @@ export function OnboardingClient({ onComplete }: { onComplete: () => void }) {
   const next = () => goTo(current + 1);
   const prev = () => goTo(current - 1);
 
-  // Auto-play music after video ends (user gesture detected by browser)
-  const handleVideoEnd = () => {
-    console.log("[Audio] Video ended, attempting to play music...");
-    audioRef.current?.play().then(() => {
-      console.log("[Audio] Music started playing!");
-    }).catch((err) => {
-      console.error("[Audio] Play failed:", err);
-    });
-  };
-
-  const toggleMusic = () => {
-    toggleMuted();
-  };
-
   const slides = [
-    <SlideWelcome key="welcome" direction={direction} onVideoEnd={handleVideoEnd} />,
+    <SlideWelcome key="welcome" direction={direction} />,
     <SlideAbout key="about" direction={direction} />,
     <SlideServices key="services" direction={direction} />,
     <SlideGrowth key="growth" direction={direction} />,
@@ -486,21 +450,6 @@ export function OnboardingClient({ onComplete }: { onComplete: () => void }) {
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Music toggle */}
-          <button
-            onClick={toggleMusic}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl cursor-pointer"
-            style={{
-              background: musicOn ? hexRgba(DS.purple, 0.12) : hexRgba(DS.blue, 0.06),
-              border: `1px solid ${musicOn ? hexRgba(DS.purple, 0.25) : hexRgba(DS.blue, 0.15)}`,
-              color: musicOn ? DS.purple : DS.text4,
-              fontSize: 13,
-            }}
-            title={musicOn ? "Tắt nhạc" : "Bật nhạc"}
-          >
-            {musicOn ? <Volume2 size={14} /> : <VolumeX size={14} />}
-          </button>
-
           {current > 0 && (
             <button onClick={prev} className="flex items-center gap-1.5 px-4 py-2 rounded-xl cursor-pointer" style={{ background: hexRgba(DS.blue, 0.06), border: `1px solid ${hexRgba(DS.blue, 0.15)}`, color: DS.text3, fontSize: 13 }}>
               <ChevronLeft size={14} /> Quay lại

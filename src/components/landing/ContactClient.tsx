@@ -144,7 +144,7 @@ export function ContactClient({ locale: _locale }: { locale: string }) {
           <aside className="lg:col-span-2 rounded-3xl p-7" style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, height: "fit-content" }}>
             <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.18em", marginBottom: 20 }}>── THÔNG TIN LIÊN HỆ</div>
             <div style={{ display: "grid", gap: 14 }}>
-              {[{ icon: <Mail size={14} />, label: "Email", val: "hello@loop.vn" }, { icon: <Phone size={14} />, label: "Hotline", val: "+84 28 7100 1234" }, { icon: <MapPin size={14} />, label: "Địa chỉ", val: "Q.1, TP.HCM" }, { icon: <Clock size={14} />, label: "Giờ làm việc", val: "T2-T6 · 09:00-18:00" }].map((it) => (
+              {[{ icon: <Mail size={14} />, label: "Email", val: "ducanhnhatbui@gmail.com" }, { icon: <Phone size={14} />, label: "Hotline", val: "+84 37 844 3602" }, { icon: <MapPin size={14} />, label: "Địa chỉ", val: "Cái Răng, Cần Thơ" }, { icon: <Clock size={14} />, label: "Giờ làm việc", val: "T2–T6 · 09:00–18:00" }].map((it) => (
                 <div key={it.label} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
                   <div style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(59,130,246,0.12)", border: "1px solid rgba(59,130,246,0.3)", display: "grid", placeItems: "center", color: DS.blue }}>{it.icon}</div>
                   <div>

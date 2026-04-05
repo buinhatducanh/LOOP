@@ -597,26 +597,37 @@
     "privacyPolicy": "プライバシーポリシー",
     "termsOfService": "利用規約",
     "cookiePolicy": "Cookie Policy",
-    "contactSection": "Contact",
+    "contactSection": "お問い合わせ",
+    "ctaButton": "無料見積もりを受け取る",
+    "ctaSecondary": "Portfolioを見る",
+    "contactEmail": "ducanhnhatbui@gmail.com",
+    "contactPhone": "+84 37 844 3602",
+    "contactAddress": "ベトナム・カントー市",
+    "newsletterLabel": "最新情報を受け取る",
+    "newsletterPlaceholder": "email@company.vn",
+    "season": "SEASON III · 2026",
     "servicesLinks": {
-      "webDesign": "Web Design",
-      "appDev": "App Development",
+      "webDesign": "ウェブサイトデザイン",
+      "appDev": "アプリ開発",
       "saas": "SaaS",
-      "seoMarketing": "SEO & Marketing",
-      "bookConsultation": "Book a Consultation"
+      "seoMarketing": "SEO & マーケティング",
+      "bookConsultation": "コンサルテーションを予約"
     },
     "companyLinks": {
-      "about": "About Us",
-      "careers": "Careers",
-      "companyProcess": "Process"
+      "about": "私たちについて",
+      "careers": "採用情報",
+      "companyProcess": "プロセス",
+      "terms": "利用規約",
+      "contact": "お問い合わせ"
     },
-    "stayConnectedLinks": {
-      "portfolio": "Portfolio",
-      "blog": "Blog",
-      "academy": "Academy",
-      "lpSystem": "LP System",
-      "pricing": "Pricing"
-    }
+    "resourcesLinks": {
+      "portfolio": "ポートフォリオ",
+      "blog": "ブログ",
+      "academy": "LOOPアカデミー",
+      "lpSystem": "LPシステム",
+      "pricing": "料金表"
+    },
+    "workingHours": "月〜金 · 09:00–18:00"
   },
   "BookingPage": {
     "title": "ウェブサイト見積もり",
