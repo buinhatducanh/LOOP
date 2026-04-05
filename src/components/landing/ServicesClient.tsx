@@ -6,7 +6,8 @@
  * PackageModal with trial/buy flow
  */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -841,7 +842,7 @@ function PackageCardList({
 
 const CUSTOM_SERVICES: CustomService[] = [
   {
-    id: "thiet-ke-web",
+    id: "web",
     icon: <Globe size={28} />,
     title: "Thiết kế & Phát triển Website",
     desc: "Từ landing page đến e-commerce platform cao cấp. Thiết kế riêng theo thương hiệu, đảm bảo performance và UX tốt nhất.",
@@ -859,7 +860,7 @@ const CUSTOM_SERVICES: CustomService[] = [
     tags: ["React", "Next.js", "TypeScript", "Tailwind CSS"],
   },
   {
-    id: "phat-trien-app",
+    id: "app",
     icon: <Code2 size={28} />,
     title: "Phát triển App & SaaS Platform",
     desc: "Mobile app, web app và nền tảng SaaS enterprise. Từ MVP đến sản phẩm với hàng triệu người dùng.",
@@ -1050,13 +1051,26 @@ export function ServicesClient({
   customServices,
   webPackages,
   ui,
+  defaultTab = "tabWebPackage",
 }: {
   locale: string;
   customServices: Record<string, unknown>[];
   webPackages: ServicesPackage[];
   ui: ServicesUI;
+  /** Tab khởi tạo — từ query param (?tab=custom|web-pricing|pricing) */
+  defaultTab?: TabKey;
 }) {
-  const [activeTab, setActiveTab] = useState<TabKey>("tabWebPackage");
+  const [activeTab, setActiveTab] = useState<TabKey>(defaultTab);
+  const searchParams = useSearchParams();
+
+  // Sync tab khi URL ?tab= thay đổi (e.g. user navigate từ dropdown nav)
+  useEffect(() => {
+    const tabParam = searchParams.get("tab") as TabKey | null;
+    if (tabParam && ["tabWebPackage", "tabCustom", "tabPricing"].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
+
   const [category, setCategory] = useState<Category | "all">("all");
   const [layout, setLayout] = useState<LayoutMode>("grid");
   const [sortBy, setSortBy] = useState<SortBy>("popular");
@@ -1581,7 +1595,7 @@ export function ServicesClient({
                         </div>
                       </div>
                       <Link
-                        href={`/${locale}/contact`}
+                        href={`/${locale}/booking?service=${svc.id}`}
                         style={{
                           display: "flex", alignItems: "center", gap: 7,
                           background: GRD.primary, color: "#fff",

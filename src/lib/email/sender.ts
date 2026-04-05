@@ -309,6 +309,49 @@ export async function sendLpMonthlyReport(data: LpMonthlyReportEmailData, toEmai
   return { error };
 }
 
+// ─── Demo Ready Email ──────────────────────────────────────────────────────────
+
+export interface DemoReadyEmailData {
+  customerName: string;
+  customerEmail: string;
+  orderNumber: string;
+  maskedUrl: string;
+  note?: string;
+}
+
+/** Demo ready — sent to the customer when designer sends a Figma demo */
+export async function sendDemoReadyEmail(data: DemoReadyEmailData) {
+  const html = htmlShell(
+    `✨ Demo cho đơn hàng ${data.orderNumber} đã sẵn sàng!`,
+    `<p style="margin:0 0 20px 0;font-size:15px;color:rgba(209,213,219,0.8)">
+      Chào <strong style="color:#fff">${data.customerName}</strong>, demo thiết kế cho đơn hàng <strong style="color:#8B5CF6">${data.orderNumber}</strong> đã sẵn sàng để bạn xem.
+    </p>
+    <div style="background:rgba(59,130,246,0.1);border-radius:12px;border:1px solid rgba(59,130,246,0.2);padding:20px;margin:0 0 20px 0;text-align:center">
+      <p style="margin:0 0 8px 0;font-size:11px;color:rgba(209,213,219,0.5);font-family:monospace;letter-spacing:0.1em">XEM DEMO TẠI</p>
+      <a href="https://${data.maskedUrl}" style="font-size:16px;font-weight:700;color:#3B82F6;text-decoration:none;word-break:break-all">${data.maskedUrl}</a>
+    </div>
+    ${data.note ? `<p style="margin:0 0 20px 0;font-size:14px;color:rgba(209,213,219,0.7)">${data.note}</p>` : ""}
+    <p style="margin:0 0 20px 0;font-size:13px;color:rgba(209,213,219,0.5)">
+      Bạn có thể phản hồi trực tiếp trên dashboard hoặc liên hệ LOOP qua <a href="mailto:hello@loop.vn" style="color:#8B5CF6">hello@loop.vn</a>.
+    </p>
+    <div style="background:rgba(139,92,246,0.08);border-radius:10px;padding:16px;margin:0">
+      <p style="margin:0;font-size:12px;color:rgba(209,213,219,0.6)">
+        💡 <strong style="color:#fff">Lưu ý:</strong> Bạn có thể yêu cầu <strong style="color:#fff">1 lần revision</strong> miễn phí trong vòng <strong style="color:#fff">1 tuần</strong> sau khi nhận demo.
+      </p>
+    </div>`
+  );
+
+  const { error } = await getResend().emails.send({
+    from: "LOOP Studio <hello@loop.vn>",
+    to: data.customerEmail,
+    subject: `✨ Demo "${data.orderNumber}" đã sẵn sàng — LOOP Studio`,
+    html,
+  });
+
+  if (error) console.error("[Email] Demo ready failed:", error);
+  return { error };
+}
+
 /** Contact form confirmation — sent to the customer */
 export async function sendContactConfirmation(data: ContactConfirmationEmailData) {
   const html = htmlShell(

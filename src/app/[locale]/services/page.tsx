@@ -13,7 +13,7 @@ import { parseLocaleParam, mapLocalizedService } from "@/lib/i18n/localization";
 import type { Metadata } from "next";
 import { ServicesClient } from "@/components/landing/ServicesClient";
 
-type Props = { params: Promise<{ locale: string }> };
+type Props = { params: Promise<{ locale: string }>; searchParams: Promise<{ tab?: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
@@ -46,8 +46,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function ServicesPage({ params }: Props) {
+export default async function ServicesPage({ params, searchParams }: Props) {
   const { locale } = await params;
+  const sp = await searchParams;
+  const tabParam = sp.tab;
+
+  // Map ?tab= param → tab key (fallback: tabWebPackage)
+  const defaultTab =
+    tabParam === "tabCustom"     ? "tabCustom"
+    : tabParam === "tabPricing"   ? "tabPricing"
+    : tabParam === "tabWebPackage" ? "tabWebPackage"
+    : "tabWebPackage";
 
   if (!routing.locales.includes(locale as (typeof routing.locales)[number])) notFound();
   setRequestLocale(locale);
@@ -223,6 +232,7 @@ export default async function ServicesPage({ params }: Props) {
       customServices={customServices}
       webPackages={webPackages}
       ui={ui}
+      defaultTab={defaultTab}
     />
   );
 }

@@ -42,8 +42,10 @@
     "node_modules",
     "_legacy_spa",
     "FE",
+    "FE-ARCHIVE",
     "FIGMA OLD FE",
     "DESIGN LOOPS",
+    "CHECKING FE",
     "tests/e2e/**",
     "playwright.config.ts"
   ]

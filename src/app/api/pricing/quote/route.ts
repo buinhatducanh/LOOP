@@ -18,6 +18,7 @@ const quoteSchema = z.object({
     })
   ).min(1, "Vui lòng chọn ít nhất 1 tính năng"),
   totalAmount: z.number().min(0),
+  paymentPlan: z.enum(["50", "100"]).optional(),
   notes: z.string().optional(),
 });
 
@@ -34,6 +35,7 @@ export async function POST(req: NextRequest) {
         companyName: validated.companyName || null,
         selectedItems: validated.selectedItems,
         totalAmount: validated.totalAmount,
+        paymentPlan: validated.paymentPlan || null,
         notes: validated.notes || null,
       },
     });

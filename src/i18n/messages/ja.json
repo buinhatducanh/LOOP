@@ -670,7 +670,15 @@
     "talentNote": "チームへのメモ",
     "talentNotePlaceholder": "例：Akira Satoと作業りたい...",
     "orderSummary": "注文概要",
-    "editSelection": "編集"
+    "editSelection": "編集",
+    "popularMost": "人気 No.1",
+    "paymentPlan": "お支払い方法",
+    "paymentPlan50": "頭金 50%",
+    "paymentPlan50Desc": "納品時に残額を支払い",
+    "paymentPlan100": "全額前払い",
+    "paymentPlan100Desc": "前払いでお得 5% オフ",
+    "depositPayment": "お支払い方法",
+    "depositNote": "お支払い完了後に注文が処理されます。"
   },
   "Errors": {
     "notFound": "ページが見つかりません",

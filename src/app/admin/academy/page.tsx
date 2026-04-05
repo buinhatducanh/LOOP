@@ -16,6 +16,7 @@ import {
   BookOpen, Users, RefreshCw, Plus, Play, BookText, Star,
   Edit2, Trash2, X, AlertTriangle, Image as ImageIcon, Save,
 } from "lucide-react";
+import { ImageUpload } from "@/components/ui/ImageUpload";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -209,7 +210,7 @@ function CourseEditModal({
             </div>
             <div>
               <label style={labelStyle}>{t("academy.formCourseThumbnail")}</label>
-              <input style={inp} value={form.thumbnail} onChange={(e) => setForm(f => ({ ...f, thumbnail: e.target.value }))} placeholder="https://..." />
+              <ImageUpload value={form.thumbnail} onChange={url => setForm(f => ({ ...f, thumbnail: url }))} folder="loop-courses" aspectRatio="video" />
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
               <div>
@@ -364,7 +365,7 @@ function InstructorEditModal({
             </div>
             <div>
               <label style={labelStyle}>{t("academy.formInstructorAvatar")}</label>
-              <input style={inp} value={form.avatar} onChange={(e) => setForm(f => ({ ...f, avatar: e.target.value }))} placeholder="https://..." />
+              <ImageUpload value={form.avatar} onChange={url => setForm(f => ({ ...f, avatar: url }))} folder="loop-instructors" aspectRatio="square" />
             </div>
             <div>
               <label style={labelStyle}>{t("academy.formInstructorBio")}</label>

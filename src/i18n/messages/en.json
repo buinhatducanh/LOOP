@@ -762,7 +762,15 @@
     "talentNote": "Note for the team",
     "talentNotePlaceholder": "E.g. I would like to work with Akira Sato...",
     "orderSummary": "Order Summary",
-    "editSelection": "Edit"
+    "editSelection": "Edit",
+    "popularMost": "Most Popular",
+    "paymentPlan": "Payment Plan",
+    "paymentPlan50": "Deposit 50%",
+    "paymentPlan50Desc": "Pay the remainder on delivery",
+    "paymentPlan100": "Pay in Full",
+    "paymentPlan100Desc": "Get 5% discount for paying upfront",
+    "depositPayment": "Payment Method",
+    "depositNote": "Order will be processed after payment."
   },
   "Errors": {
     "notFound": "Page not found",

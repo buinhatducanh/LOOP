@@ -40,14 +40,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if ((payload as Record<string, unknown>).purpose !== "password_reset") {
+    if ((payload as unknown as Record<string, unknown>).purpose !== "password_reset") {
       return NextResponse.json(
         { error: "Token không hợp lệ cho thao tác này" },
         { status: 401 }
       );
     }
 
-    const { email, otpId } = payload as { email: string; otpId: string; purpose: string };
+    const { email, otpId } = payload as unknown as { email: string; otpId: string; purpose: string };
 
     // Double-check: OTP record must be marked as used
     const otpRecord = await prisma.otpCode.findUnique({ where: { id: otpId } });

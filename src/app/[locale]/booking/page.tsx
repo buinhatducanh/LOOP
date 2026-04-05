@@ -6,6 +6,7 @@ import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { setRequestLocale } from "next-intl/server";
 import { routing } from "@/i18n/routing";
+import { Suspense } from "react";
 import { BookingWizardClient } from "@/components/landing/BookingWizardClient";
 
 type Props = { params: Promise<{ locale: string }> };
@@ -56,5 +57,9 @@ export function generateStaticParams() {
 export default async function BookingPage({ params }: Props) {
   const { locale } = await params;
   setRequestLocale(locale);
-  return <BookingWizardClient locale={locale} />;
+  return (
+    <Suspense fallback={<div style={{ minHeight: "100vh", background: "#020617" }} />}>
+      <BookingWizardClient locale={locale} />
+    </Suspense>
+  );
 }

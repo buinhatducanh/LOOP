@@ -10,6 +10,7 @@ import { DS, GRD } from "@/lib/design-tokens";
 import {
   X, CheckCircle2, Eye, ChevronRight, Search,
   RefreshCw, Plus, Trash2, Edit2, AlertTriangle,
+  Monitor,
 } from "lucide-react";
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
@@ -52,12 +53,14 @@ function OrderRow({
   onDetail,
   onEdit,
   onDelete,
+  onSendDemo,
 }: {
   order: Order;
   onTransition: (id: string, currentStatus: string) => void;
   onDetail: (order: Order) => void;
   onEdit: (order: Order) => void;
   onDelete: (order: Order) => void;
+  onSendDemo?: (order: Order) => void;
 }) {
   const { t } = useAdminTranslations();
   const cfg = STATUS_CONFIG[order.status] ?? { label: order.status, color: DS.text4, bg: "transparent" };
@@ -114,6 +117,20 @@ function OrderRow({
         >
           <Edit2 size={12} />
         </button>
+        {/* Gửi Demo — hiện khi order đang ở trạng thái in_progress */}
+        {onSendDemo && order.status === "in_progress" && (
+          <button
+            onClick={() => onSendDemo(order)}
+            title="Gửi Demo cho khách"
+            style={{
+              background: "rgba(59,130,246,0.15)", border: "1px solid rgba(59,130,246,0.35)",
+              borderRadius: 8, padding: "5px 8px", cursor: "pointer", color: DS.blue,
+              display: "flex", alignItems: "center",
+            }}
+          >
+            <Monitor size={12} />
+          </button>
+        )}
         {((): React.ReactNode => {
           const idx = STATUS_FLOW.indexOf(order.status);
           const next = STATUS_FLOW[idx + 1];
@@ -419,6 +436,123 @@ function OrderDetailModal({ order, onClose }: { order: Order | null; onClose: ()
   );
 }
 
+type SendDemoFormData = {
+  title: string;
+  figmaUrl: string;
+  clientEmail: string;
+};
+
+function SendDemoModal({
+  order,
+  onClose,
+  onSuccess,
+}: {
+  order: Order | null;
+  onClose: () => void;
+  onSuccess: (data: { orderId: string; title: string; figmaUrl: string; clientEmail: string }) => void;
+}) {
+  const { t } = useAdminTranslations();
+  if (!order) return null;
+
+  const [form, setForm] = useState<SendDemoFormData>({
+    title: `${order.package?.title ?? "Website"} — Demo v1`,
+    figmaUrl: "",
+    clientEmail: order.customerEmail ?? "",
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.figmaUrl.trim()) return setError("Link Monitor/Prototype là bắt buộc");
+    if (!form.title.trim()) return setError("Tiêu đề demo là bắt buộc");
+    setSaving(true);
+    setError("");
+    try {
+      await onSuccess({ orderId: order.id, ...form });
+      onClose();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Gửi demo thất bại");
+      setSaving(false);
+    }
+  };
+
+  const inputStyle = {
+    width: "100%", background: DS.bg, border: `1px solid ${DS.border}`,
+    borderRadius: 10, padding: "9px 12px", color: DS.text, fontSize: 13,
+    outline: "none", boxSizing: "border-box" as const, fontFamily: DS.body,
+  };
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        onClick={onClose}
+        style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", backdropFilter: "blur(8px)", zIndex: 70, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
+      >
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
+          onClick={(e) => e.stopPropagation()}
+          style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 16, padding: 24, width: "100%", maxWidth: 480 }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(59,130,246,0.15)", border: "1px solid rgba(59,130,246,0.3)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Monitor size={18} style={{ color: DS.blue }} />
+              </div>
+              <div>
+                <h3 style={{ color: DS.text, fontWeight: 700, fontSize: 18, margin: 0 }}>Gửi Demo</h3>
+                <p style={{ color: DS.text4, fontSize: 11, margin: 0 }}>{order.customerName}</p>
+              </div>
+            </div>
+            <button onClick={onClose} style={{ background: "none", border: "none", color: DS.text4, cursor: "pointer" }}>
+              <X size={18} />
+            </button>
+          </div>
+
+          <div style={{ background: "rgba(59,130,246,0.06)", border: "1px solid rgba(59,130,246,0.2)", borderRadius: 10, padding: "10px 14px", marginBottom: 16 }}>
+            <p style={{ color: DS.text4, fontSize: 11, lineHeight: 1.6, margin: 0 }}>
+              Demo sẽ được gửi đến <strong style={{ color: DS.blue }}>{order.customerEmail}</strong>. Khách sẽ nhận notification trong Customer Portal.
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div>
+              <label style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.08em", display: "block", marginBottom: 4 }}>TIÊU ĐỀ DEMO *</label>
+              <input style={inputStyle} value={form.title} onChange={(e) => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Website Landing Page — Demo v1" required />
+            </div>
+            <div>
+              <label style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.08em", display: "block", marginBottom: 4 }}>LINK FIGMA / PROTOTYPE *</label>
+              <input style={inputStyle} value={form.figmaUrl} onChange={(e) => setForm(f => ({ ...f, figmaUrl: e.target.value }))} placeholder="https://figma.com/proto/..." required />
+            </div>
+            <div>
+              <label style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.08em", display: "block", marginBottom: 4 }}>EMAIL KHÁCH HÀNG</label>
+              <input style={{...inputStyle}} type="email" value={form.clientEmail} onChange={(e) => setForm(f => ({ ...f, clientEmail: e.target.value }))} placeholder={order.customerEmail ?? ""} />
+            </div>
+
+            {error && (
+              <div style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8, padding: "8px 12px", color: "#EF4444", fontSize: 12 }}>
+                <AlertTriangle size={12} style={{ display: "inline", marginRight: 6 }} />{error}
+              </div>
+            )}
+
+            <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
+              <button type="button" onClick={onClose} style={{ flex: 1, padding: "10px", background: DS.bg, border: `1px solid ${DS.border}`, borderRadius: 10, color: DS.text3, cursor: "pointer", fontSize: 13 }}>
+                {t("common.cancel")}
+              </button>
+              <button type="submit" disabled={saving} style={{ flex: 1, padding: "10px", background: saving ? DS.text4 : DS.blue, border: "none", borderRadius: 10, color: "#fff", fontWeight: 700, cursor: saving ? "not-allowed" : "pointer", fontSize: 13 }}>
+                {saving ? t("common.saving") : "Gửi Demo"}
+              </button>
+            </div>
+          </form>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+
+
 export default function OrdersPage() {
   const { t } = useAdminTranslations();
   const qc = useQueryClient();
@@ -428,6 +562,7 @@ export default function OrdersPage() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [editOrder, setEditOrder] = useState<Order | null>(null);
   const [deleteOrder, setDeleteOrder] = useState<Order | null>(null);
+  const [sendDemoOrder, setSendDemoOrder] = useState<Order | null>(null);
 
   const { data, isLoading, isFetching } = useQuery({
     queryKey: qk.orders({ page, limit: 20, search, status: statusFilter }),
@@ -459,6 +594,22 @@ export default function OrdersPage() {
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: qk.orders() }); setDeleteOrder(null); },
     onError: (err: unknown) => { alert(err instanceof Error ? err.message : "Xóa thất bại"); },
+  });
+
+  // Gửi demo cho khách hàng — tạo FigmaDemo record + notification (backend tự chuyển status)
+  const sendDemoMutation = useMutation({
+    mutationFn: async ({ orderId, title, figmaUrl, clientEmail }: { orderId: string; title: string; figmaUrl: string; clientEmail: string }) => {
+      const res = await adminApi.post(`/api/admin/orders/${orderId}/demo`, {
+        figmaUrl,
+        note: `Demo "${title}" đã được gửi từ admin.`,
+      });
+      return res;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.orders() });
+      setSendDemoOrder(null);
+    },
+    onError: (err: unknown) => { alert(err instanceof Error ? err.message : "Gửi demo thất bại"); },
   });
 
   return (
@@ -561,6 +712,7 @@ export default function OrdersPage() {
                 onDetail={setSelectedOrder}
                 onEdit={setEditOrder}
                 onDelete={setDeleteOrder}
+                onSendDemo={setSendDemoOrder}
               />
             ))
           )}
@@ -603,6 +755,13 @@ export default function OrdersPage() {
         order={deleteOrder}
         onClose={() => setDeleteOrder(null)}
         onConfirm={() => { if (deleteOrder) deleteMutation.mutate(deleteOrder.id); }}
+      />
+
+      {/* Send Demo modal */}
+      <SendDemoModal
+        order={sendDemoOrder}
+        onClose={() => setSendDemoOrder(null)}
+        onSuccess={(data) => sendDemoMutation.mutate(data)}
       />
     </div>
   );

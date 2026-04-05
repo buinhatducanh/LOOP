@@ -147,7 +147,6 @@ function Lightbox({
           </button>
         )}
 
-        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={src}
           alt={title}
@@ -192,7 +191,6 @@ function Lightbox({
                 transition: "opacity 0.15s",
               }}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             </button>
           ))}
@@ -328,7 +326,6 @@ export function MediaClient({ locale, projects }: { locale: string; projects: Me
                   >
                     {cover ? (
                       <>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={cover}
                           alt={project.title}

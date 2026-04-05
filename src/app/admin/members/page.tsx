@@ -13,6 +13,7 @@ import { qk } from "@/lib/query/provider";
 import { adminApi } from "@/lib/api/client";
 import { useAuthStore, canEdit, type AuthUser } from "@/app/store/authStore";
 import { DS, GRD } from "@/lib/design-tokens";
+import { ImageUpload } from "@/components/ui/ImageUpload";
 import {
   Search, Plus, Trash2, Edit2, Award, Users, TrendingUp,
   ChevronUp, ChevronDown, X, Check, ChevronLeft, ChevronRight,
@@ -1428,8 +1429,13 @@ export default function AdminMembersPage() {
                 ))}
               </select>
             </FormField>
-            <FormField label="Avatar URL">
-              <input value={avatar} onChange={(e) => setAvatar(e.target.value)} style={inputStyle} placeholder="https://..." />
+            <FormField label="Avatar">
+              <ImageUpload
+                value={avatar}
+                onChange={url => setAvatar(url)}
+                folder="loop-avatars"
+                aspectRatio="square"
+              />
             </FormField>
             <FormField label="Trạng thái">
               <select value={status} onChange={(e) => setStatus(e.target.value as MemberStatus)} style={inputStyle}>

@@ -917,7 +917,6 @@ function LightboxModal({
             </button>
           )}
 
-          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             key={idx}
             src={src}
@@ -965,7 +964,6 @@ function LightboxModal({
                     transition: "opacity 0.15s",
                   }}
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={url}
                     alt=""
@@ -1074,7 +1072,6 @@ function PortfolioGallery({
               >
                 {coverSrc ? (
                   <>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={coverSrc}
                       alt={booking.title}

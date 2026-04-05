@@ -11,12 +11,13 @@
  */
 
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { motion, AnimatePresence } from "motion/react";
 import { DS, GRD } from "@/lib/design-tokens";
 import {
   Globe, Code2, BarChart3, Target, Check, ArrowRight, ArrowLeft,
-  Users, Calendar, Layers, Sparkles, Shield, X, Plus, Minus,
+  Users, Calendar, Layers, Sparkles, Shield, Plus, Minus,
 } from "lucide-react";
 import type { PricingConfig } from "@/lib/types/booking";
 
@@ -774,10 +775,11 @@ function StepReview({ service, pkg, talent, featureOptions, features, extraOptio
 // ── Step 3 — Contact + Payment (restructured from StepPayment) ─────────────────
 
 function StepContact({
-  lpBalance, maxLpRedeem, lpDiscount, setLpDiscount, lpRate,
+  lpBalance, maxLpRedeem, lpDiscount, setLpDiscount,
   name, setName, email, setEmail, phone, setPhone, company, setCompany,
   startDate, setStartDate, duration, setDuration,
   talentNote, setTalentNote,
+  paymentPlan, setPaymentPlan,
   service, pkg, features, extras,
   submitted, orderId, submitError, setSubmitError, onSubmit, submitLoading,
   onEditSelection,
@@ -790,6 +792,7 @@ function StepContact({
   startDate: string; setStartDate: (s: string) => void;
   duration: string; setDuration: (s: string) => void;
   talentNote: string; setTalentNote: (s: string) => void;
+  paymentPlan: "50" | "100"; setPaymentPlan: (p: "50" | "100") => void;
   service: WizardService | null; pkg: WizardPackage | null;
   features: WizardFeature[]; extras: WizardExtra[];
   submitted: boolean; orderId: string; submitError: string; setSubmitError: (s: string) => void;
@@ -985,9 +988,53 @@ function StepContact({
         </div>
       )}
 
+      {/* Payment Plan selector */}
+      <div className="mb-6">
+        <label style={{ color: DS.text3, fontSize: 12, fontFamily: DS.mono, letterSpacing: "0.1em", display: "block", marginBottom: 10 }}>{t("paymentPlan")}</label>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <button
+            onClick={() => setPaymentPlan("50")}
+            style={{
+              padding: "14px 16px", borderRadius: 12, fontSize: 13, cursor: "pointer", textAlign: "left",
+              background: paymentPlan === "50" ? "rgba(59,130,246,0.12)" : "rgba(15,23,42,0.5)",
+              border: paymentPlan === "50" ? "1.5px solid rgba(59,130,246,0.5)" : `1px solid ${DS.border}`,
+              color: paymentPlan === "50" ? DS.text : DS.text3,
+              display: "flex", flexDirection: "column", gap: 4,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ width: 16, height: 16, borderRadius: "50%", border: `2px solid ${paymentPlan === "50" ? DS.blue : DS.text4}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                {paymentPlan === "50" && <div style={{ width: 8, height: 8, borderRadius: "50%", background: DS.blue }} />}
+              </div>
+              <span style={{ fontFamily: DS.mono, fontWeight: 600 }}>{t("paymentPlan50")}</span>
+            </div>
+            <div style={{ color: paymentPlan === "50" ? DS.text3 : DS.text5, fontSize: 11, marginLeft: 24 }}>{t("paymentPlan50Desc")}</div>
+          </button>
+          <button
+            onClick={() => setPaymentPlan("100")}
+            style={{
+              padding: "14px 16px", borderRadius: 12, fontSize: 13, cursor: "pointer", textAlign: "left",
+              background: paymentPlan === "100" ? "rgba(34,197,94,0.12)" : "rgba(15,23,42,0.5)",
+              border: paymentPlan === "100" ? "1.5px solid rgba(34,197,94,0.5)" : `1px solid ${DS.border}`,
+              color: paymentPlan === "100" ? DS.text : DS.text3,
+              display: "flex", flexDirection: "column", gap: 4,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ width: 16, height: 16, borderRadius: "50%", border: `2px solid ${paymentPlan === "100" ? DS.green : DS.text4}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                {paymentPlan === "100" && <div style={{ width: 8, height: 8, borderRadius: "50%", background: DS.green }} />}
+              </div>
+              <span style={{ fontFamily: DS.mono, fontWeight: 600 }}>{t("paymentPlan100")}</span>
+              <span style={{ fontSize: 10, padding: "2px 6px", borderRadius: 6, background: "rgba(34,197,94,0.15)", color: DS.green, fontFamily: DS.mono }}>−5%</span>
+            </div>
+            <div style={{ color: paymentPlan === "100" ? DS.text3 : DS.text5, fontSize: 11, marginLeft: 24 }}>{t("paymentPlan100Desc")}</div>
+          </button>
+        </div>
+      </div>
+
       {/* Payment method */}
       <div className="mb-6">
-        <label style={{ color: DS.text3, fontSize: 12, fontFamily: DS.mono, letterSpacing: "0.1em", display: "block", marginBottom: 10 }}>{t("depositPayment")} (30%)</label>
+        <label style={{ color: DS.text3, fontSize: 12, fontFamily: DS.mono, letterSpacing: "0.1em", display: "block", marginBottom: 10 }}>{t("depositPayment")}</label>
         <div className="flex gap-3 flex-wrap">
           {payMethods.map(m => (
             <button
@@ -1026,7 +1073,7 @@ function StepContact({
         {submitLoading ? t("submitting") : t("submitButton")}
         {!submitLoading && <ArrowRight size={15} />}
       </button>
-      <div style={{ color: DS.text5, fontSize: 11, marginTop: 10 }}>* {t("depositNote")}</div>
+      <div style={{ color: DS.text5, fontSize: 11, marginTop: 10 }}>* {paymentPlan === "100" ? "Thanh toán 100% ngay — giảm 5%." : t("depositNote")}</div>
     </div>
   );
 }
@@ -1196,7 +1243,13 @@ export function BookingWizardClient({ locale }: Props) {
 
   // ── Wizard state ────────────────────────────────────────────────────────────
   const [step, setStep] = useState(0);
-  const [serviceId, setServiceId] = useState("");
+  const [paymentPlan, setPaymentPlan] = useState<"50" | "100">("50");
+  const searchParams = useSearchParams();
+  const [serviceId, setServiceId] = useState(() => {
+    // Pre-select service from ?service= URL param (e.g. from /services?tab=tabCustom)
+    const s = searchParams.get("service");
+    return s && FALLBACK_SERVICES.some((svc) => svc.id === s) ? s : "";
+  });
   const [pkgId, setPkgId] = useState("business");
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
   const [startDate, setStartDate] = useState("");
@@ -1273,6 +1326,13 @@ export function BookingWizardClient({ locale }: Props) {
     return () => { cancelled = true; };
   }, [locale]);
 
+  // Auto-skip to Step 1 when serviceId is pre-selected from URL (?service=web)
+  useEffect(() => {
+    if (serviceId && step === 0) {
+      setStep(1);
+    }
+  }, [serviceId]);
+
   // ── Derived values ────────────────────────────────────────────────────
   const service = services.find(s => s.id === serviceId) ?? null;
   const pkg = packages.find(p => p.id === pkgId) ?? null;
@@ -1333,6 +1393,7 @@ export function BookingWizardClient({ locale }: Props) {
           companyName: company || undefined,
           selectedItems,
           totalAmount: total,
+          paymentPlan,
           notes: `Dịch vụ: ${svc?.title ?? ""} | Gói: ${selectedPkg?.name ?? ""} | Ghi chú đội ngũ: ${talentNote || "—"} | Bắt đầu: ${startDate || "—"} | Thời gian: ${duration || "—"}`,
         }),
       });
@@ -1405,6 +1466,7 @@ export function BookingWizardClient({ locale }: Props) {
                       startDate={startDate} setStartDate={setStartDate}
                       duration={duration} setDuration={setDuration}
                       talentNote={talentNote} setTalentNote={setTalentNote}
+                      paymentPlan={paymentPlan} setPaymentPlan={setPaymentPlan}
                       service={service} pkg={pkg}
                       features={currentFeatureOptions.filter(f => selectedFeatures.includes(f.id))}
                       extras={extraOptions.filter(e => selectedExtras.includes(e.id))}

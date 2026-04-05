@@ -37,6 +37,7 @@ export const EVENTS = {
   CONTACT_SUBMITTED: "contact/submitted",
   ORDER_CREATED: "order/created",
   ORDER_UPDATED: "order/updated",
+  DEMO_READY: "demo/ready",
   USER_SIGNED_UP: "user/signed_up",
   CACHE_INVALIDATED: "cache/invalidated",
 } as const;
@@ -70,6 +71,17 @@ export interface OrderUpdatedPayload {
   customerEmail: string;
   previousStatus: string;
   newStatus: string;
+  timestamp: string;
+}
+
+export interface DemoReadyPayload {
+  demoId: string;
+  orderId: string;
+  orderNumber: string;
+  customerEmail: string;
+  customerName: string;
+  figmaUrl: string;
+  maskedUrl: string;
   timestamp: string;
 }
 

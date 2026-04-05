@@ -233,21 +233,25 @@ export async function GET(request: NextRequest) {
   const ip = extractClientIp(request);
 
   try {
-    const { success, remaining, reset } = await publicApiRateLimit.limit(ip);
-    if (!success) {
-      const retryAfter = Math.ceil((reset - Date.now()) / 1000);
-      rateLimitResponse = NextResponse.json(
-        { error: "Too many requests. Please slow down." },
-        {
-          status: 429,
-          headers: {
-            "Retry-After": String(retryAfter),
-            "X-RateLimit-Remaining": String(remaining),
-            "X-RateLimit-Reset": String(reset),
-          },
-        }
-      );
-      rateLimitAllowed = false;
+    if (!publicApiRateLimit) {
+      rateLimitAllowed = true;
+    } else {
+      const { success, remaining, reset } = await publicApiRateLimit.limit(ip);
+      if (!success) {
+        const retryAfter = Math.ceil((reset - Date.now()) / 1000);
+        rateLimitResponse = NextResponse.json(
+          { error: "Too many requests. Please slow down." },
+          {
+            status: 429,
+            headers: {
+              "Retry-After": String(retryAfter),
+              "X-RateLimit-Remaining": String(remaining),
+              "X-RateLimit-Reset": String(reset),
+            },
+          }
+        );
+        rateLimitAllowed = false;
+      }
     }
   } catch {
     // Redis unavailable — fail open (allow request to avoid service disruption)

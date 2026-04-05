@@ -7,6 +7,7 @@ import { adminApi } from "@/lib/api/client";
 import { DS, GRD } from "@/lib/design-tokens";
 import { useAdminTranslations } from "@/i18n/admin/useAdminTranslations";
 import { Plus, Edit2, Trash2, Search, RefreshCw, Calendar, X, AlertTriangle } from "lucide-react";
+import { ImageUpload } from "@/components/ui/ImageUpload";
 
 type BlogPost = {
   id: string;
@@ -144,7 +145,13 @@ function BlogPostEditModal({
             </div>
             <div>
               <label style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.08em", display: "block", marginBottom: 4 }}>{t("blog.formThumbnail")}</label>
-              <input style={inp} value={form.coverImage} onChange={(e) => setForm(f => ({ ...f, coverImage: e.target.value }))} placeholder="https://..." />
+              <ImageUpload
+                value={form.coverImage}
+                onChange={url => setForm(f => ({ ...f, coverImage: url }))}
+                folder="loop-blog"
+                aspectRatio="video"
+                label=""
+              />
             </div>
             <div>
               <label style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.08em", display: "block", marginBottom: 4 }}>{t("blog.formContent")}</label>

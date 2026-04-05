@@ -29,13 +29,16 @@ const fmtDate = (d: string | Date | null | undefined) => {
 const STATUS_COLS: Record<string, { label: string; color: string; bg: string }> = {
   backlog:      { label: "Backlog",      color: "#94A3B8", bg: "rgba(148,163,184,0.1)" },
   epic:          { label: "Epic",          color: "#8B5CF6", bg: "rgba(139,92,246,0.1)" },
-  in_progress:   { label: "In Progress",  color: "#3B82F6", bg: "rgba(59,130,246,0.1)" },
-  review:        { label: "Review",        color: "#F59E0B", bg: "rgba(245,158,11,0.1)" },
+  todo:          { label: "Todo",          color: "#3B82F6", bg: "rgba(59,130,246,0.1)" },
+  in_progress:   { label: "Doing",          color: "#F59E0B", bg: "rgba(245,158,11,0.1)" },
+  qa:            { label: "QA",            color: "#818CF8", bg: "rgba(129,140,248,0.1)" },
   done:          { label: "Done",          color: "#22C55E", bg: "rgba(34,197,94,0.1)" },
   cancelled:     { label: "Cancelled",    color: "#EF4444", bg: "rgba(239,68,68,0.1)" },
 };
 
-const BOARD_COLS = ["backlog", "epic", "in_progress", "review", "done"] as const;
+// 5 cột chuẩn cho website design: Backlog → Todo → Doing → QA → Done
+// "epic" được giữ trong STATUS_COLS để filter nhưng không hiển thị trên Kanban board
+const BOARD_COLS = ["backlog", "todo", "in_progress", "qa", "done"] as const;
 
 type Project = {
   id: string;
@@ -247,9 +250,9 @@ function ProjectModal({
                   style={{ ...inp, cursor: "pointer" }}
                 >
                   <option value="backlog">Backlog</option>
-                  <option value="epic">Epic</option>
-                  <option value="in_progress">In Progress</option>
-                  <option value="review">Review</option>
+                  <option value="todo">Todo</option>
+                  <option value="in_progress">Doing</option>
+                  <option value="qa">QA</option>
                   <option value="done">Done</option>
                   <option value="cancelled">Cancelled</option>
                 </select>

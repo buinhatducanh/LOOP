@@ -445,23 +445,27 @@ interface Member {
 // Rank phân bổ: Iron(3) · Bronze(6) · Silver(6) · Gold(6) · Platinum(3) · Ruby(2) · Diamond(1)`} />
           </Section>
 
-          {/* ── 04 Order Flow ── */}
-          <Section id="order_flow" icon={<CreditCard size={16} />} title="04 · Luồng đơn hàng" badge="7 trạng thái: pending_payment → done">
+          {/* ── 04 Website Design Flow ── */}
+          <Section id="order_flow" icon={<CreditCard size={16} />} title="04 · Luồng thiết kế Website" badge="Thiết kế → Demo → Dev → QA → SEO → Bàn giao">
             <div style={{ color: DS.text3, fontSize: 12, lineHeight: 1.7, marginBottom: 16 }}>
-              Luồng đơn hàng bắt đầu từ khi khách hàng đặt dịch vụ đến khi hoàn thành và nhận LP thưởng.
+              Luồng thiết kế website từ khi khách đặt dịch vụ đến bàn giao hoàn chỉnh. Bao gồm: booking, demo, dev, QA, SEO content và bàn giao.
             </div>
-            <FlowStep step="01" label="PENDING_PAYMENT · Chờ thanh toán" color={DS.text4}
-              desc="Khách xác nhận đặt dịch vụ qua BookingWizard. Hệ thống tạo Order + Invoice. Chờ khách thanh toán (chuyển khoản / VNPAY / Momo)." />
-            <FlowStep step="02" label="PAID · Đã thanh toán — Chờ phân công" color={DS.blue}
-              desc="Nhận thanh toán → tạo AdminNotification (type: payment, priority: high, dept: finance). Badge đỏ xuất hiện ở tab Đơn hàng trong sidebar admin." />
-            <FlowStep step="03" label="IN_PROGRESS · Đang thực hiện" color={DS.purple}
-              desc="Admin phân công PM → updateOrderStatus(orderId, 'in_progress', pmName). PM cập nhật progress (0→100%) qua updateOrderProgress(). Kanban tasks được tạo và assign cho team members." />
-            <FlowStep step="04" label="DEMO_READY · Demo sẵn sàng" color={DS.cyan}
-              desc="PM gửi link demo qua sendDemoLink(orderId, realUrl, maskedUrl). Demo URL được mask để bảo vệ (hiện maskedUrl, ẩn realUrl). ClientNotification (type: demo_ready) được tạo tự động." />
-            <FlowStep step="05" label="CLIENT_REVIEW · Khách đang review" color={DS.amber}
-              desc="Khách xem demo trong Customer Portal qua DemoViewer component. Khách gửi feedback qua sendClientMessage(). Tin nhắn hiển thị trong thread 2 chiều." />
-            <FlowStep step="06" label="DONE · Hoàn thành" color={DS.green}
-              desc="Admin xác nhận done → LP reward được ghi nhận cho cả khách (lpReward) và team. Invoice cuối được xuất. Review 5 sao được invite." last={true} />
+            <FlowStep step="01" label="Khách đặt dịch vụ — BookingWizard" color={DS.blue}
+              desc="Khách chọn dịch vụ website → chọn tính năng (CMS, i18n, E-commerce...) → chọn thanh toán (50% trước HOẶC 100%). Hệ thống tạo Order (status: pending_payment)." />
+            <FlowStep step="02" label="Thanh toán thành công" color={DS.green}
+              desc="Khách thanh toán 50% hoặc 100%. AdminNotification (type: payment, priority: high) được tạo. Designer nhận notification để bắt đầu thiết kế." />
+            <FlowStep step="03" label="Designer gửi Demo" color={DS.cyan}
+              desc="Designer nhận notification → thực hiện thiết kế → gửi demo qua nút 'Gửi Demo' trong tab Đơn hàng. Demo URL được mask bảo vệ. Khách nhận ClientNotification (type: demo_ready)." />
+            <FlowStep step="04" label="Khách Review Demo" color={DS.amber}
+              desc="Khách xem demo trong Customer Portal qua DemoViewer. Khách CHỐT (approve) HOẶC gửi PHẢN HỒI để revision. Số lần revision: tối đa 1 lần. Deadline revision: 1 tuần." />
+            <FlowStep step="05" label="PM tạo Kanban — Chia task cho Dev" color={DS.purple}
+              desc="PM nhận notification khi khách approve demo → vào tab Đơn hàng → tạo Kanban project từ đơn hàng. PM chia task: Backlog → Todo → Doing → QA → Done." />
+            <FlowStep step="06" label="Dev nhận task — Làm và gửi" color={DS.text4}
+              desc="Dev tự nhận task từ cột Todo, di chuyển sang Doing khi làm, gửi lên QA khi xong. Mỗi task có: title, description, priority, assignee, deadline, LP reward." />
+            <FlowStep step="07" label="QA kiểm thử" color={DS.cyan}
+              desc="QA nhận task từ cột Doing → kiểm thử → CHỐT (chuyển sang Done) HOẶC tạo Bug task quay lại cho dev. Bug task được tạo trong cùng Kanban project." />
+            <FlowStep step="08" label="PM chốt — Giao SEO & Bàn giao" color={DS.green}
+              desc="PM xác nhận tất cả task qua QA → chốt dự án → giao cho SEO viết bài (gói 10 bài/tháng hoặc 30 bài/tháng, gói tháng/năm). Admin quản lý gói SEO. Bàn giao cho khách hàng." last={true} />
 
             <div className="mt-4 p-4 rounded-xl" style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)' }}>
               <div style={{ color: DS.red, fontSize: 11, fontFamily: DS.mono, marginBottom: 6 }}>⚠ CANCELLED — Hủy đơn</div>
@@ -471,78 +475,70 @@ interface Member {
             </div>
 
             <div style={{ color: DS.text3, fontSize: 12, marginTop: 16 }}>
-              <strong style={{ color: DS.text2 }}>Dual currency trong Order:</strong>
+              <strong style={{ color: DS.text2 }}>Thanh toán:</strong> 2 phương án
             </div>
             <DocTable
-              headers={['Field', 'Loại tiền', 'Chiều', 'Mô tả']}
+              headers={['Phương thức', 'Thanh toán', 'Còn lại', 'Khi nào']}
               rows={[
-                ['budget', <Tag label="VNĐ" color={DS.green} />, 'Khách → LOOP', 'Giá trị hợp đồng bằng tiền thật'],
-                ['lpUsed', <Tag label="LP" color={DS.purple} />, 'Khách → Order', 'Khách dùng LP để giảm giá (max 20% budget)'],
-                ['lpReward', <Tag label="LP" color={DS.purple} />, 'LOOP → Khách', 'LP thưởng sau khi hoàn thành (thường = budget/20K LP)'],
+                ['50% trước', '50% giá trị', '50% sau khi hoàn thành', 'Phổ biến — giảm rủi ro cho khách'],
+                ['100% trước', '100% giá trị', 'Không', 'Khách tin tưởng hoặc dự án nhỏ'],
               ]}
             />
           </Section>
 
-          {/* ── 05 Project Flow ── */}
-          <Section id="project_flow" icon={<FolderKanban size={16} />} title="05 · Luồng quản lý dự án" badge="Portfolio + Orders tích hợp">
+          {/* ── 05 Project & Kanban Management ── */}
+          <Section id="project_flow" icon={<FolderKanban size={16} />} title="05 · Quản lý Dự án & Kanban" badge="Active Order + Portfolio + SEO Phase">
             <div style={{ color: DS.text3, fontSize: 12, lineHeight: 1.7, marginBottom: 12 }}>
-              Dự án tồn tại ở 2 dạng: <Tag label="Order đang chạy" color={DS.blue} /> và <Tag label="Portfolio project đã hoàn thành" color={DS.green} />. Sau khi Order chuyển sang DONE, admin có thể tạo PortfolioProject tương ứng.
+              Mỗi dự án website tồn tại 3 giai đoạn: <Tag label="Design Phase" color={DS.cyan} /> (demo) → <Tag label="Dev Phase" color={DS.purple} /> (Kanban) → <Tag label="SEO Phase" color={DS.green} /> (content). Sau khi DONE, admin tạo PortfolioProject công khai.
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-              <div className="p-4 rounded-xl" style={{ background: DS.bgCard2, border: `1px solid ${DS.blue}20` }}>
-                <div style={{ color: DS.blue, fontSize: 11, fontFamily: DS.mono, marginBottom: 8 }}>ACTIVE ORDER</div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+              <div className="p-4 rounded-xl" style={{ background: DS.bgCard2, border: "1px solid " + DS.cyan + "20" }}>
+                <div style={{ color: DS.cyan, fontSize: 11, fontFamily: DS.mono, marginBottom: 8 }}>DESIGN PHASE</div>
                 <div style={{ color: DS.text4, fontSize: 11, lineHeight: 1.7 }}>
-                  • PM được assign qua Admin → Kanban<br />
-                  • Progress tracking 0→100%<br />
-                  • Demo link với masking<br />
-                  • Thread tin nhắn admin↔client<br />
-                  • Deadline monitoring
+                  Designer nhận notification → thiết kế → gửi demo → khách approve hoặc revision (1 lần, 1 tuần)<br />
+                  • FigmaDemo model<br />• DemoViewer component<br />• ClientNotification demo_ready
                 </div>
               </div>
-              <div className="p-4 rounded-xl" style={{ background: DS.bgCard2, border: `1px solid ${DS.green}20` }}>
-                <div style={{ color: DS.green, fontSize: 11, fontFamily: DS.mono, marginBottom: 8 }}>PORTFOLIO PROJECT</div>
+              <div className="p-4 rounded-xl" style={{ background: DS.bgCard2, border: "1px solid " + DS.purple + "20" }}>
+                <div style={{ color: DS.purple, fontSize: 11, fontFamily: DS.mono, marginBottom: 8 }}>DEV PHASE — KANBAN</div>
                 <div style={{ color: DS.text4, fontSize: 11, lineHeight: 1.7 }}>
-                  • Hiển thị công khai tại /du-an<br />
-                  • Có metrics (x3 KPI numbers)<br />
-                  • Challenge/Solution/Result<br />
-                  • LP gắn theo (project value / 20K)<br />
-                  • Featured projects ưu tiên hiển thị
+                  PM tạo Kanban project từ đơn hàng sau khi khách approve demo.<br />
+                  5 cột: Backlog → Todo → Doing → QA → Done<br />
+                  • Dev nhận task từ Todo<br />• QA kiểm thử → Done hoặc Bug task
+                </div>
+              </div>
+              <div className="p-4 rounded-xl" style={{ background: DS.bgCard2, border: "1px solid " + DS.green + "20" }}>
+                <div style={{ color: DS.green, fontSize: 11, fontFamily: DS.mono, marginBottom: 8 }}>SEO PHASE</div>
+                <div style={{ color: DS.text4, fontSize: 11, lineHeight: 1.7 }}>
+                  PM chốt dự án → giao cho SEO viết bài.<br />
+                  Gói SEO: 10 bài/tháng hoặc 30 bài/tháng. Billing: tháng hoặc năm.<br />
+                  • BlogPost model auto-queue
                 </div>
               </div>
             </div>
             <div style={{ color: DS.text4, fontSize: 11, lineHeight: 1.7 }}>
-              <strong style={{ color: DS.text3 }}>LP từ dự án:</strong> Portfolio project có field <code style={{ color: DS.cyan, fontFamily: DS.mono }}>lp</code> = budgetNum / 20,000 (làm tròn). Ví dụ: dự án 350M VNĐ → 17,500 LP. Đây là LP display (hiển thị thành tích), không phải LP được credit trực tiếp.
+              <strong style={{ color: DS.text3 }}>LP từ dự án:</strong> Portfolio project có field <code style={{ color: DS.cyan, fontFamily: DS.mono }}>lp</code> = budgetNum / 20,000. Ví dụ: dự án 350M VNĐ → 17,500 LP. Đây là LP display (hiển thị thành tích), không phải LP được credit trực tiếp.
             </div>
           </Section>
-
-          {/* ── 06 Kanban ── */}
-          <Section id="kanban_flow" icon={<Settings size={16} />} title="06 · Kanban & Task Flow" badge="Admin KanbanHub + Staff mini-Kanban">
+          {/* ── 06 Kanban & Bug Tracking ── */}
+          <Section id="kanban_flow" icon={<Settings size={16} />} title="06 · Kanban & Bug Tracking" badge="5 cột: Backlog → Todo → Doing → QA → Done">
             <div style={{ color: DS.text3, fontSize: 12, lineHeight: 1.7, marginBottom: 12 }}>
-              Hệ thống Kanban hoạt động ở 2 cấp độ:
+              Hệ thống Kanban hoạt động ở 2 cấp độ. <strong style={{ color: DS.text }}>Dev Phase</strong> dùng 5 cột có QA riêng biệt.
             </div>
-            <div className="space-y-3">
-              <div className="p-4 rounded-xl" style={{ background: DS.bgCard2, border: `1px solid ${DS.purple}20` }}>
-                <div style={{ color: DS.purple, fontSize: 11, fontFamily: DS.mono, marginBottom: 6 }}>ADMIN — KanbanHub (/admin → tab Kanban)</div>
-                <div style={{ color: DS.text4, fontSize: 11, lineHeight: 1.7 }}>
-                  Board toàn công ty. 3 cột: <strong style={{ color: DS.text3 }}>Todo / In Progress / Done</strong>. Admin có thể assign task cho bất kỳ thành viên nào. Drag & drop (motion animation). Hiển thị avatar PM và deadline. Filter theo dự án / thành viên.
-                </div>
-              </div>
-              <div className="p-4 rounded-xl" style={{ background: DS.bgCard2, border: `1px solid ${DS.cyan}20` }}>
-                <div style={{ color: DS.cyan, fontSize: 11, fontFamily: DS.mono, marginBottom: 6 }}>STAFF — Mini Kanban (Staff Portal → tab Dự án)</div>
-                <div style={{ color: DS.text4, fontSize: 11, lineHeight: 1.7 }}>
-                  Board cá nhân. Chỉ hiển thị task được assign cho user đang đăng nhập (lọc theo useAuthStore user). 3 cột: Todo → Doing → Done. Di chuyển task sang Done → trigger LP reward (+lp theo task). Priority badge: high/medium/low theo màu đỏ/vàng/xanh.
-                </div>
-              </div>
+            <DocTable
+              headers={["Cột", "Màu", "Mô tả"]}
+              rows={[
+                ["Backlog", <Tag label="#475569" color="#475569" />, "Task mới được tạo bởi PM, chưa assign"],
+                ["Todo", <Tag label="#3B82F6" color="#3B82F6" />, "Task đã assign, dev tự nhận từ cột này"],
+                ["Doing", <Tag label="#F59E0B" color="#F59E0B" />, "Dev đang làm task"],
+                ["QA", <Tag label="#818CF8" color="#818CF8" />, "Dev gửi lên QA. QA kiểm thử → Done HOẶC tạo Bug task quay lại"],
+                ["Done", <Tag label="#22C55E" color="#22C55E" />, "QA chốt xong. Task hoàn thành, LP được tính"],
+              ]}
+            />
+            <div style={{ color: DS.text3, fontSize: 12, marginTop: 12 }}>
+              <strong style={{ color: DS.text2 }}>Bug Task:</strong> Khi QA phát hiện bug, QA tạo Bug task trong cùng Kanban project. Bug task quay về cột Todo của dev ban đầu. Mỗi task có: title, description, priority (high/medium/low), assignee, deadline, LP reward.
             </div>
-            <CodeBlock code={`// Task structure (Staff Kanban)
-{ id: string; title: string; col: 'todo'|'doing'|'done';
-  priority: 'high'|'medium'|'low'; tag: string; lp: number }
-
-// LP reward khi hoàn thành task:
-// Task lp trung bình: 100~500 LP
-// Tổng LP từ kanban tasks: ~2,000-5,000 LP/tháng/nhân viên`} />
           </Section>
-
           {/* ── 07 Media Flow ── */}
           <Section id="media_flow" icon={<Camera size={16} />} title="07 · Media Booking Flow" badge="Chụp ảnh · Quay phim · Content">
             <FlowStep step="01" label="Khách đặt lịch qua /media" color={DS.amber}

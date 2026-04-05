@@ -15,7 +15,7 @@
  *  - Active route highlighting
  */
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
@@ -29,8 +29,6 @@ import { DS, GRD } from "@/lib/design-tokens";
 import { useAuthStore } from "@/app/store/authStore";
 import { useAudioStore } from "@/app/store/audioStore";
 import { routing } from "@/i18n/routing";
-import { useSearchParams } from "next/navigation";
-import { Suspense } from "react";
 import { useMounted } from "@/app/hooks/useMounted";
 
 const rgba = (hex: string, a: number) => {
@@ -514,8 +512,10 @@ function NavDropdown({
 function getRoleLabels(t: ReturnType<typeof useTranslations<"Navigation">>) {
   return {
     admin: { label: t("roleAdmin"), color: "#818CF8" },
-    manager: { label: t("roleManager"), color: "#F59E0B" },
-    staff: { label: t("roleStaff"), color: "#14B8A6" },
+    project_manager: { label: t("roleManager"), color: "#F59E0B" },
+    media: { label: "Media", color: "#14B8A6" },
+    qa: { label: "QA", color: "#14B8A6" },
+    member: { label: t("roleStaff"), color: "#14B8A6" },
     client: { label: t("roleClient"), color: DS.blue },
     guest: { label: t("roleGuest") ?? "Khách", color: DS.text4 },
   };
@@ -545,7 +545,7 @@ export default function SiteHeader({ locale }: { locale: string }) {
       const stored = localStorage.getItem("loop-audio-muted") === "true";
       if (stored !== muted) setMuted(stored);
     }
-  }, [mounted]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [mounted]);
 
   const navLinks: NavItem[] = [
     { label: t("home"), href: `/${locale}/` },
@@ -579,9 +579,9 @@ export default function SiteHeader({ locale }: { locale: string }) {
       labelKey: "webDropdown",
       triggerLabel: t("webDropdown"),
       items: [
-        { label: t("customServices"),  href: `/${locale}/services`,          icon: "🛠️" },
-        { label: t("pricing"),         href: `/${locale}/pricing`,            icon: "💰" },
-        { label: t("webCustomDesign"), href: `/${locale}/services?cat=web-custom`, icon: "✏️" },
+        { label: t("webCustomDesign"), href: `/${locale}/services?tab=tabCustom`,  icon: "✏️" },
+        { label: t("customServices"),  href: `/${locale}/services?tab=tabWebPackage`, icon: "🛠️" },
+        { label: t("pricing"),         href: `/${locale}/services?tab=tabPricing`,  icon: "💰" },
         { label: t("webCompleted"),   href: `/${locale}/du-an`,              icon: "✅" },
       ],
     },

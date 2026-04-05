@@ -15,6 +15,8 @@ import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
 import { randomBytes } from "crypto";
+import { inngest } from "@/lib/jobs/client";
+import { EVENTS } from "@/lib/jobs/client";
 
 export async function POST(
   req: NextRequest,
@@ -63,8 +65,21 @@ export async function POST(
       },
     });
 
+    // Create AdminNotification cho designer (type: design_request) — PM/admin nhận notification để làm demo
+    await prisma.adminNotification.createMany({
+      data: [
+        {
+          type: "design_request",
+          title: "Yêu cầu gửi Demo",
+          message: `Đơn hàng ${order.orderNumber} — ${order.customerName} cần gửi demo.`,
+          link: `/admin/orders`,
+          priority: "high",
+          isRead: false,
+        },
+      ],
+    });
+
     // Create in-app notification for the customer
-    if (order.customerEmail) {
       const customerUser = await prisma.user.findUnique({
         where: { email: order.customerEmail },
         select: { id: true },
@@ -82,7 +97,6 @@ export async function POST(
           },
         });
       }
-    }
 
     await createAuditLog({
       userId: session.userId,
@@ -90,6 +104,21 @@ export async function POST(
       resource: "orders",
       resourceId: orderId,
       newValues: { action: "send_demo", demoId: demo.id, maskedUrl: displayUrl },
+    });
+
+    // Fire demo/ready event — Inngest sends email to customer + triggers downstream workflows
+    await inngest.send({
+      name: EVENTS.DEMO_READY,
+      data: {
+        demoId: demo.id,
+        orderId,
+        orderNumber: order.orderNumber,
+        customerEmail: order.customerEmail,
+        customerName: order.customerName,
+        figmaUrl,
+        maskedUrl: displayUrl,
+        timestamp: new Date().toISOString(),
+      },
     });
 
     return ok(

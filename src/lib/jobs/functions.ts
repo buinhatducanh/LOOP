@@ -23,6 +23,7 @@ import {
   sendContactConfirmation as emailSendContact,
   sendAdminContactNotification as emailSendAdminContact,
   sendOrderConfirmation as emailSendOrder,
+  sendDemoReadyEmail,
   sendStandupReminder,
   sendSlaViolationAlert,
   sendSlaWarning,
@@ -31,12 +32,13 @@ import {
 import type {
   ContactSubmittedPayload,
   OrderCreatedPayload,
+  DemoReadyPayload,
 } from "./client";
 
 // ─── Event Types ─────────────────────────────────────────────────────────────
 // (Re-exported from client.ts for convenience)
 export { EVENTS };
-export type { ContactSubmittedPayload, OrderCreatedPayload };
+export type { ContactSubmittedPayload, OrderCreatedPayload, DemoReadyPayload };
 
 // ═══════════════════════════════════════════════════════════════════════════
 // CATEGORY 1: EVENT-DRIVEN JOBS
@@ -92,6 +94,30 @@ export const orderConfirmationJob = inngest.createFunction(
     });
 
     return { sent: true, orderNumber: payload.orderNumber };
+  }
+);
+
+// ─── Demo Ready Email ─────────────────────────────────────────────────────────
+export const demoReadyJob = inngest.createFunction(
+  {
+    id: "demo-ready-job",
+    name: "Demo Ready",
+    triggers: [{ event: EVENTS.DEMO_READY }],
+  },
+  async ({ event }) => {
+    const payload = event.data as DemoReadyPayload;
+
+    // Only send email if customer has an email
+    if (payload.customerEmail) {
+      await sendDemoReadyEmail({
+        customerName: payload.customerName,
+        customerEmail: payload.customerEmail,
+        orderNumber: payload.orderNumber,
+        maskedUrl: payload.maskedUrl,
+      });
+    }
+
+    return { sent: !!payload.customerEmail, demoId: payload.demoId };
   }
 );
 
@@ -538,6 +564,7 @@ export const allJobs = [
   // Event-driven
   contactConfirmationJob,
   orderConfirmationJob,
+  demoReadyJob,
   // Cron-scheduled
   dailyStandupReminder,
   slaViolationCheck,

@@ -12,12 +12,14 @@ import {
   X, Globe,
 } from "lucide-react";
 import { AnimatePresence } from "motion/react";
+import { ImageUpload } from "@/components/ui/ImageUpload";
 
 type Service = {
   id: string;
   slug: string;
   title: string;
   shortDescription?: string;
+  icon?: string;
   category?: string;
   startingPrice?: string;
   deliveryTime?: string;
@@ -256,10 +258,11 @@ function EditServiceForm({ service, onClose, onUpdated }: { service: Service; on
   const [title, setTitle] = useState(service.title || "");
   const [slug, setSlug] = useState(service.slug || "");
   const [category, setCategory] = useState(service.category || "");
+  const [icon, setIcon] = useState(service.icon || "");
 
   const update = useMutation({
     mutationFn: async () => {
-      await adminApi.put<{ data: Service }>(`/api/admin/services/${service.id}`, { title, slug, category });
+      await adminApi.put<{ data: Service }>(`/api/admin/services/${service.id}`, { title, slug, category, icon: icon || undefined });
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: qk.adminServices() }); onUpdated(); },
     onError: (err) => { alert(err instanceof Error ? err.message : "Cập nhật thất bại"); },
@@ -301,6 +304,10 @@ function EditServiceForm({ service, onClose, onUpdated }: { service: Service; on
           ))}
         </select>
       </div>
+      <div style={{ marginBottom: 12 }}>
+        <label style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, display: "block", marginBottom: 4 }}>ICON / HÌNH ẢNH</label>
+        <ImageUpload value={icon} onChange={url => setIcon(url)} folder="loop-services" aspectRatio="square" />
+      </div>
       <div style={{ display: "flex", gap: 8 }}>
         <button
           onClick={() => update.mutate()}
@@ -324,6 +331,7 @@ function CreateServiceForm({ onClose, onCreated }: { onClose: () => void; onCrea
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
   const [category, setCategory] = useState("");
+  const [icon, setIcon] = useState("");
 
   const create = useMutation({
     mutationFn: async () => {
@@ -331,6 +339,7 @@ function CreateServiceForm({ onClose, onCreated }: { onClose: () => void; onCrea
         title, slug, category,
         shortDescription: "",
         isActive: true,
+        icon: icon || undefined,
       });
       return res;
     },
@@ -376,6 +385,10 @@ function CreateServiceForm({ onClose, onCreated }: { onClose: () => void; onCrea
           ))}
         </select>
       </div>
+      <div style={{ marginBottom: 12 }}>
+        <label style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, display: "block", marginBottom: 4 }}>ICON / HÌNH ẢNH</label>
+        <ImageUpload value={icon} onChange={url => setIcon(url)} folder="loop-services" aspectRatio="square" />
+      </div>
       <div style={{ display: "flex", gap: 8 }}>
         <button
           onClick={() => create.mutate()}
@@ -391,3 +404,5 @@ function CreateServiceForm({ onClose, onCreated }: { onClose: () => void; onCrea
     </motion.div>
   );
 }
+
+// Inline create form (simplified)

@@ -11,6 +11,7 @@ import {
   Plus, Edit2, Trash2, Search, RefreshCw, X,
   Star,
 } from "lucide-react";
+import { ImageUpload } from "@/components/ui/ImageUpload";
 
 type Project = {
   id: string;
@@ -235,10 +236,11 @@ function EditProjectForm({ project, onClose, onUpdated }: { project: Project; on
   const [slug, setSlug] = useState(project.slug || "");
   const [category, setCategory] = useState(project.category || "");
   const [client, setClient] = useState(project.client || "");
+  const [image, setImage] = useState(project.image || "");
 
   const update = useMutation({
     mutationFn: async () => {
-      await adminApi.put(`/api/admin/projects/${project.id}`, { title, slug, category, client });
+      await adminApi.put(`/api/admin/projects/${project.id}`, { title, slug, category, client, image: image || undefined });
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: qk.adminProjects() }); onUpdated(); },
     onError: (err) => { alert(err instanceof Error ? err.message : "Cập nhật thất bại"); },
@@ -279,6 +281,10 @@ function EditProjectForm({ project, onClose, onUpdated }: { project: Project; on
           <input value={client} onChange={(e) => setClient(e.target.value)} style={inputStyle} placeholder="Công ty ABC" />
         </div>
       </div>
+      <div style={{ marginBottom: 12 }}>
+        <label style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, display: "block", marginBottom: 4 }}>HÌNH ẢNH DỰ ÁN</label>
+        <ImageUpload value={image} onChange={url => setImage(url)} folder="loop-portfolio" aspectRatio="video" />
+      </div>
       <div style={{ display: "flex", gap: 8 }}>
         <button
           onClick={() => update.mutate()}
@@ -301,10 +307,11 @@ function CreateProjectForm({ onClose, onCreated }: { onClose: () => void; onCrea
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
   const [category, setCategory] = useState("");
+  const [image, setImage] = useState("");
 
   const create = useMutation({
     mutationFn: async () => {
-      await adminApi.post("/api/admin/projects", { title, slug, category, isPublished: false, isFeatured: false });
+      await adminApi.post("/api/admin/projects", { title, slug, category, image: image || undefined, isPublished: false, isFeatured: false });
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: qk.adminProjects() }); onCreated(); },
   });
@@ -336,6 +343,10 @@ function CreateProjectForm({ onClose, onCreated }: { onClose: () => void; onCrea
           ))}
         </select>
       </div>
+      <div style={{ marginBottom: 12 }}>
+        <label style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, display: "block", marginBottom: 4 }}>HÌNH ẢNH DỰ ÁN</label>
+        <ImageUpload value={image} onChange={url => setImage(url)} folder="loop-portfolio" aspectRatio="video" />
+      </div>
       <div style={{ display: "flex", gap: 8 }}>
         <button onClick={() => create.mutate()} disabled={!title || !slug || create.isPending} style={{ flex: 1, padding: "9px", background: GRD.primary, color: "#fff", border: "none", borderRadius: 10, cursor: "pointer", fontWeight: 700, fontSize: 13, opacity: (!title || !slug || create.isPending) ? 0.6 : 1 }}>
           {create.isPending ? t("common.saving") : t("portfolio.create")}
@@ -345,3 +356,5 @@ function CreateProjectForm({ onClose, onCreated }: { onClose: () => void; onCrea
     </div>
   );
 }
+
+// Inline create form (simplified)

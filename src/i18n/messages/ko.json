@@ -670,7 +670,15 @@
     "talentNote": "팀 메모",
     "talentNotePlaceholder": "예: Akira Sato와 작업하고 싶습니다...",
     "orderSummary": "주문 요약",
-    "editSelection": "편집"
+    "editSelection": "편집",
+    "popularMost": "가장 인기",
+    "paymentPlan": "결제 방식",
+    "paymentPlan50": "보증금 50%",
+    "paymentPlan50Desc": "인도 시 잔금 결제",
+    "paymentPlan100": "전액 결제",
+    "paymentPlan100Desc": "선불 결제 시 5% 할인",
+    "depositPayment": "결제 방식",
+    "depositNote": "결제 완료 후 주문이 처리됩니다."
   },
   "Errors": {
     "notFound": "페이지를 찾을 수 없습니다",

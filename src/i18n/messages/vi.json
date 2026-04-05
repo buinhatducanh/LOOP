@@ -760,7 +760,15 @@
     "talentNote": "Ghi chú cho đội ngũ",
     "talentNotePlaceholder": "Ví dụ: Tôi muốn làm việc với Akira Sato...",
     "orderSummary": "Tóm tắt đơn hàng",
-    "editSelection": "Sửa lựa chọn"
+    "editSelection": "Sửa lựa chọn",
+    "popularMost": "Phổ biến nhất",
+    "paymentPlan": "Hình thức thanh toán",
+    "paymentPlan50": "Cọc 50%",
+    "paymentPlan50Desc": "Thanh toán nốt khi bàn giao",
+    "paymentPlan100": "Thanh toán 100%",
+    "paymentPlan100Desc": "Giảm 5% khi thanh toán trước",
+    "depositPayment": "Hình thức thanh toán",
+    "depositNote": "Đơn hàng sẽ được xử lý sau khi thanh toán."
   },
   "Errors": {
     "notFound": "Không tìm thấy trang",

@@ -670,7 +670,15 @@
     "talentNote": "团队备注",
     "talentNotePlaceholder": "例如：我希望与Akira Sato合作...",
     "orderSummary": "订单摘要",
-    "editSelection": "编辑"
+    "editSelection": "编辑",
+    "popularMost": "最受欢迎",
+    "paymentPlan": "付款方式",
+    "paymentPlan50": "定金 50%",
+    "paymentPlan50Desc": "交付时支付余款",
+    "paymentPlan100": "全额付款",
+    "paymentPlan100Desc": "预付可享 5% 折扣",
+    "depositPayment": "付款方式",
+    "depositNote": "付款完成后订单将进行处理。"
   },
   "Errors": {
     "notFound": "页面未找到",
