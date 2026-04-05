@@ -1,8 +1,9 @@
-import { ok, notFound, forbidden, serverError } from "@/lib/api/response";
+import { ok, notFound, forbidden, handleError } from "@/lib/api/response";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { listRedeemableItems } from "@/lib/services/gamification/redemption.service";
+import { addAvatar } from "@/lib/api/mappings";
 
 // GET /api/growth-loop/[memberId]
 // Returns the full "Growth Loop" view for a staff member:
@@ -128,10 +129,7 @@ export async function GET(
 
     return ok({
       member: {
-        id: member.id,
-        name: member.name,
-        role: member.role,
-        image: member.image ?? null,
+        ...addAvatar(member),
         availableLp: member.availableLp,
         lockedLp: member.lockedLp,
         totalLp: member.availableLp + member.lockedLp,
@@ -143,10 +141,6 @@ export async function GET(
       referralCodes: codesWithStats,
     });
   } catch (error) {
-    console.error("Growth loop error:", error);
-    if (error instanceof Error) {
-      if (error.message === "Unauthorized") return forbidden();
-    }
-    return serverError();
+    return handleError(error);
   }
 }

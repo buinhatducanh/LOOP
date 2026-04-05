@@ -24,7 +24,7 @@ import {
   DollarSign, UserCheck, BookOpen, FileText, BarChart2,
   Briefcase, Camera, Receipt, Package, FolderCheck,
   Sparkles, Star, Bell, Zap, Calculator, Building2, ShoppingCart,
-  X, ChevronRight,
+  Monitor, X, ChevronRight,
 } from "lucide-react";
 import { useAuthStore, canAccessTab, type AdminTab } from "@/app/store/authStore";
 import { useAdminTranslations } from "@/i18n/admin/useAdminTranslations";
@@ -66,6 +66,7 @@ const SIDEBAR_GROUPS_CONFIG: NavGroup[] = [
       { id: "projects_completed", icon: <FolderCheck size={16} />, labelKey: "sidebar.nav.projects_completed" },
       { id: "academy", icon: <BookOpen size={16} />, labelKey: "sidebar.nav.academy" },
       { id: "blog", icon: <FileText size={16} />, labelKey: "sidebar.nav.blog" },
+      { id: "figma-demos", icon: <Monitor size={16} />, labelKey: "sidebar.nav.figma_demos" },
     ],
   },
   {

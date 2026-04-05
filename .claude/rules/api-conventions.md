@@ -89,3 +89,30 @@ export async function GET(req: Request) {
   }
 }
 ```
+
+## Field Mapping — avatar / image
+
+> Prisma uses `image` for avatar URLs (TeamMember, Instructor). FE reads `avatar`.
+> Every API route that returns TeamMember/Instructor data MUST expose `avatar`.
+
+### Helpers (`@/lib/api/mappings`)
+
+```typescript
+import { addAvatar, addAvatarToList, addInstructorAvatar } from "@/lib/api/mappings";
+
+// TeamMember (image → avatar)
+return ok(addAvatar(member));
+return list(addAvatarToList(members), pagination);
+
+// Instructor (member.image → avatar)
+return ok(addInstructorAvatar(instructor));
+```
+
+### Rules
+
+| Situation | Use |
+|---|---|
+| API returns `TeamMember` | `addAvatar(member)` — maps Prisma `image` → FE `avatar` |
+| API returns `Instructor` | `addInstructorAvatar(inst)` — maps `inst.member.image` → `inst.avatar` |
+| POST creates member, FE sends `avatar` | Extract `avatar` from body, map to `image` in Prisma data |
+| Audit log | Log actual DB values (`member`), not cleaned input |

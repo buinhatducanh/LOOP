@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
+import { addInstructorAvatar } from "@/lib/api/mappings";
 
 export async function GET(
   req: NextRequest,
@@ -24,7 +25,9 @@ export async function GET(
       },
     });
     if (!instructor) return NextResponse.json({ error: "Not found" }, { status: 404 });
-    return NextResponse.json({ data: instructor });
+    return NextResponse.json({
+      data: addInstructorAvatar(instructor as unknown as Record<string, unknown>),
+    });
   } catch (error) {
     return handleError(error);
   }
@@ -59,7 +62,7 @@ export async function PATCH(
         ...(memberId !== undefined && { memberId: memberId || null }),
         ...(userId !== undefined && { userId: userId || null }),
       },
-      include: { member: { select: { id: true, name: true } } },
+      include: { member: { select: { id: true, name: true, image: true } } },
     });
 
     await createAuditLog({
@@ -71,7 +74,9 @@ export async function PATCH(
       newValues: body,
     });
 
-    return NextResponse.json({ data: instructor });
+    return NextResponse.json({
+      data: addInstructorAvatar(instructor as unknown as Record<string, unknown>),
+    });
   } catch (error) {
     return handleError(error);
   }

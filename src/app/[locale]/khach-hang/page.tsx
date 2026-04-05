@@ -16,7 +16,7 @@ import {
   Receipt, Wallet, UserPlus, Headphones,
   Settings, LogOut, ChevronRight, Zap,
   CheckCircle2, Clock, XCircle,
-  BookOpen, Award, ArrowUpRight,
+  BookOpen, Award, ArrowUpRight, Monitor, ExternalLink,
 } from "lucide-react";
 import { DS, GRD } from "@/lib/design-tokens";
 import { useAuthStore } from "@/app/store/authStore";
@@ -25,7 +25,7 @@ import { apiClient } from "@/lib/api/client";
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type Tab =
-  | "overview" | "projects" | "courses" | "invoices"
+  | "overview" | "projects" | "demos" | "courses" | "invoices"
   | "wallet" | "referral" | "support" | "settings";
 
 interface CustomerOrder {
@@ -36,6 +36,25 @@ interface CustomerOrder {
   updatedAt?: Date | string;
   package: { title: string } | null;
   statusHistory: Array<{ fromStatus: string; toStatus: string; note: string | null; createdAt: Date | string }>;
+}
+
+interface CustomerDemo {
+  id: string;
+  title: string;
+  figmaUrl: string;
+  clientToken: string;
+  status: string;
+  versionHash: string | null;
+  rejectionNote: string | null;
+  approvedAt: string | null;
+  sentAt: string | null;
+  createdAt: string;
+  reviewUrl: string;
+  order: {
+    id: string;
+    orderNumber: string;
+    package: { title: string } | null;
+  } | null;
 }
 
 interface CustomerEnrollment {
@@ -85,6 +104,7 @@ function TabIcon({ tab, size = 16 }: { tab: Tab; size?: number }) {
   const icons: Record<Tab, React.ReactNode> = {
     overview: <LayoutDashboard size={size} />,
     projects: <FolderKanban size={size} />,
+    demos: <Monitor size={size} />,
     courses: <GraduationCap size={size} />,
     invoices: <Receipt size={size} />,
     wallet: <Wallet size={size} />,
@@ -252,6 +272,141 @@ function ProjectsTab({ locale, orders }: { locale: string; orders: CustomerOrder
 }
 
 // ── Courses tab ───────────────────────────────────────────────────────────────
+
+function DemosTab({ demos }: { demos: CustomerDemo[] }) {
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+
+  const STATUS_CONFIG_DEMO: Record<string, { label: string; color: string }> = {
+    pending:           { label: "Chờ duyệt", color: "#F59E0B" },
+    approved:          { label: "Đã duyệt",   color: "#22C55E" },
+    rejected:          { label: "Từ chối",   color: "#EF4444" },
+    approved_by_client:{ label: "Hoàn tất",  color: "#3B82F6" },
+  };
+
+  if (demos.length === 0) {
+    return (
+      <div style={{ textAlign: "center", padding: "3rem 1rem" }}>
+        <Monitor size={40} style={{ color: DS.text4, margin: "0 auto 1rem" }} />
+        <h3 style={{ color: DS.text, marginBottom: "0.5rem", fontFamily: DS.heading }}>Chưa có demo nào</h3>
+        <p style={{ color: DS.text3, fontSize: "0.875rem" }}>Demo thiết kế sẽ xuất hiện tại đây khi đội ngũ LOOP gửi cho bạn.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+      {demos.map((demo) => {
+        const cfg = STATUS_CONFIG_DEMO[demo.status] ?? STATUS_CONFIG_DEMO.pending;
+        const isOpen = !!expanded[demo.id];
+        return (
+          <div
+            key={demo.id}
+            style={{
+              borderRadius: "1rem",
+              background: "rgba(15,23,42,0.6)",
+              border: `1px solid ${isOpen ? cfg.color + "40" : DS.border}`,
+              overflow: "hidden",
+              transition: "border-color 0.2s",
+            }}
+          >
+            <button
+              onClick={() => setExpanded(prev => ({ ...prev, [demo.id]: !prev[demo.id] }))}
+              style={{
+                width: "100%", padding: "1rem", background: "none", border: "none",
+                display: "flex", alignItems: "center", gap: "0.75rem", cursor: "pointer", textAlign: "left",
+              }}
+            >
+              <div style={{ width: 10, height: 10, borderRadius: "50%", background: cfg.color, flexShrink: 0 }} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ color: DS.text, fontWeight: 600, fontSize: "0.875rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {demo.title}
+                </div>
+                <div style={{ color: DS.text4, fontSize: "0.6875rem", fontFamily: "'JetBrains Mono', monospace" }}>
+                  {demo.order?.package?.title ?? demo.order?.orderNumber ?? "—"}
+                </div>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <span style={{ padding: "3px 10px", borderRadius: 20, background: `${cfg.color}15`, color: cfg.color, fontSize: "0.625rem", fontFamily: "'JetBrains Mono', monospace", fontWeight: 600 }}>
+                  {cfg.label}
+                </span>
+                {demo.versionHash && (
+                  <span style={{ color: DS.amber, fontSize: "0.625rem", fontFamily: "'JetBrains Mono', monospace" }}>{demo.versionHash}</span>
+                )}
+                <span style={{ color: DS.text5, fontSize: "0.75rem" }}>
+                  {isOpen ? "▲" : "▼"}
+                </span>
+              </div>
+            </button>
+
+            {isOpen && (
+              <div style={{ padding: "0 1rem 1rem", borderTop: `1px solid ${DS.border}` }}>
+                <div style={{ paddingTop: "0.75rem", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                    <span style={{ color: DS.text4, fontSize: "0.625rem", fontFamily: "'JetBrains Mono', monospace" }}>NGÀY GỬI:</span>
+                    <span style={{ color: DS.text3, fontSize: "0.75rem" }}>
+                      {demo.sentAt ? new Date(demo.sentAt).toLocaleDateString("vi-VN") : "—"}
+                    </span>
+                    {demo.approvedAt && (
+                      <>
+                        <span style={{ color: DS.text4, fontSize: "0.625rem", fontFamily: "'JetBrains Mono', monospace", marginLeft: "1rem" }}>DUYỆT:</span>
+                        <span style={{ color: DS.green, fontSize: "0.75rem" }}>
+                          {new Date(demo.approvedAt).toLocaleDateString("vi-VN")}
+                        </span>
+                      </>
+                    )}
+                  </div>
+
+                  {demo.rejectionNote && (
+                    <div style={{ background: "rgba(239,68,68,0.08)", border: `1px solid rgba(239,68,68,0.2)`, borderRadius: 10, padding: "0.625rem" }}>
+                      <div style={{ color: DS.red, fontSize: "0.625rem", fontFamily: "'JetBrains Mono', monospace", marginBottom: "0.25rem" }}>GHI CHÚ TỪ CHỐI</div>
+                      <p style={{ color: DS.text3, fontSize: "0.8125rem" }}>{demo.rejectionNote}</p>
+                    </div>
+                  )}
+
+                  <div style={{ display: "flex", gap: "0.5rem" }}>
+                    <a
+                      href={demo.figmaUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        flex: 1, padding: "0.625rem", borderRadius: "0.75rem",
+                        background: `rgba(59,130,246,0.1)`, border: `1px solid rgba(59,130,246,0.3)`,
+                        color: DS.blue, fontSize: "0.8125rem", fontWeight: 600,
+                        textDecoration: "none", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.375rem",
+                      }}
+                    >
+                      <ExternalLink size={13} /> Mở Figma
+                    </a>
+                    {demo.status === "approved" && (
+                      <a
+                        href={demo.reviewUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          flex: 1, padding: "0.625rem", borderRadius: "0.75rem",
+                          background: GRD.primary, border: "none",
+                          color: "#fff", fontSize: "0.8125rem", fontWeight: 700,
+                          textDecoration: "none", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.375rem",
+                        }}
+                      >
+                        <Monitor size={13} /> Xem Demo
+                      </a>
+                    )}
+                    {demo.status === "pending" && (
+                      <div style={{ flex: 1, padding: "0.625rem", borderRadius: "0.75rem", background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.2)", color: DS.amber, fontSize: "0.75rem", textAlign: "center", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        Đang chờ designer gửi
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 function CoursesTab({ enrollments }: { enrollments: CustomerEnrollment[] }) {
   const t = useTranslations("customer");
@@ -452,6 +607,7 @@ export default function CustomerPortalPage({
   const [orders, setOrders] = useState<CustomerOrder[]>([]);
   const [enrollments, setEnrollments] = useState<CustomerEnrollment[]>([]);
   const [pointData, setPointData] = useState<PointData | null>(null);
+  const [demos, setDemos] = useState<CustomerDemo[]>([]);
   const [loading, setLoading] = useState(true);
 
   const router = useRouter();
@@ -481,14 +637,16 @@ export default function CustomerPortalPage({
 
     async function load() {
       try {
-        const [oRes, eRes, pRes] = await Promise.all([
+        const [oRes, eRes, pRes, dRes] = await Promise.all([
           apiClient.get<{ data: CustomerOrder[] }>("/api/portal/orders", { params: { limit: 20 }, throwOnError: false }),
           apiClient.get<{ data: CustomerEnrollment[] }>("/api/portal/enrollments", { params: { limit: 10 }, throwOnError: false }),
           apiClient.get<{ data: PointData }>("/api/portal/points", { throwOnError: false }),
+          apiClient.get<{ data: CustomerDemo[] }>("/api/portal/demos", { throwOnError: false }),
         ]);
         if (!("error" in oRes)) setOrders((oRes as any).data?.data ?? []);
         if (!("error" in eRes)) setEnrollments((eRes as any).data?.data ?? []);
         if (!("error" in pRes)) setPointData((pRes as any).data?.data ?? null);
+        if (!("error" in dRes)) setDemos((dRes as any).data?.data ?? []);
       } catch {
         // Silent fail — show empty state
       } finally {
@@ -503,11 +661,12 @@ export default function CustomerPortalPage({
     router.push(`/${locale}/dang-nhap`);
   };
 
-  const tabs: Tab[] = ["overview", "projects", "courses", "invoices", "wallet", "referral", "support", "settings"];
+  const tabs: Tab[] = ["overview", "projects", "demos", "courses", "invoices", "wallet", "referral", "support", "settings"];
 
   const tabLabels: Record<Tab, string> = {
     overview: "Tổng quan",
     projects: "Dự án",
+    demos: "Demo",
     courses: "Khóa học",
     invoices: "Hóa đơn",
     wallet: "Ví LP",
@@ -597,6 +756,7 @@ export default function CustomerPortalPage({
               >
                 {activeTab === "overview" && <OverviewTab locale={locale} orders={orders} />}
                 {activeTab === "projects" && <ProjectsTab locale={locale} orders={orders} />}
+                {activeTab === "demos" && <DemosTab demos={demos} />}
                 {activeTab === "courses" && <CoursesTab enrollments={enrollments} />}
                 {activeTab === "wallet" && <WalletTab pointData={pointData} />}
                 {activeTab === "support" && <SupportTab />}

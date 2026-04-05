@@ -7,7 +7,8 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth/permissions";
-import { ok, handleError, badRequest, notFound } from "@/lib/api";
+import { ok, handleError, badRequest, notFound } from "@/lib/api/response";
+import { addAvatar } from "@/lib/api/mappings";
 import { prisma } from "@/lib/prisma";
 
 /** Fields a member can update on their own profile */
@@ -47,7 +48,7 @@ export async function GET(_req: NextRequest) {
       return notFound("Không tìm thấy hồ sơ nhân viên");
     }
 
-    return ok(member);
+    return ok(addAvatar(member));
   } catch (err) {
     return handleError(err);
   }
@@ -113,7 +114,7 @@ export async function PUT(req: NextRequest) {
       },
     });
 
-    return ok(updated);
+    return ok(addAvatar(updated));
   } catch (err) {
     return handleError(err);
   }

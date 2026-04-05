@@ -15,9 +15,12 @@ export default [
       parser: tsParser,
     },
     rules: {
-      "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
+      "@typescript-eslint/no-unused-vars": ["warn", { "varsIgnorePattern": "^_", "argsIgnorePattern": "^_" }],
       "@typescript-eslint/no-explicit-any": "warn",
       "no-console": "off",
+      "no-undef": "off",
+      // Suppress @next/next rules that may be referenced but not installed (e.g. no-img-element)
+      "@next/next/no-img-element": "off",
     },
   },
 ];

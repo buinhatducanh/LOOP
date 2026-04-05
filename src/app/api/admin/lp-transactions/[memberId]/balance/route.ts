@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { computeAvailableLp, reconcileBalance } from "@/lib/services/gamification/transaction.service";
+import { addAvatar } from "@/lib/api/mappings";
 
 // GET /api/admin/lp-transactions/[memberId]/balance
 // Returns LP balance snapshot (locked, available, ledger total) for a member.
@@ -72,10 +73,7 @@ export async function GET(
 
     return NextResponse.json({
       data: {
-        memberId: member.id,
-        name: member.name,
-        role: member.role,
-        image: member.image ?? null,
+        ...addAvatar(member),
         // Denormalized balances (authoritative)
         lockedLp: member.lockedLp,
         availableLp: member.availableLp,

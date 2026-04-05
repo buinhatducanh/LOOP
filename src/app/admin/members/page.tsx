@@ -86,7 +86,7 @@ interface TeamMemberBE {
 
 type MemberStatus = "active" | "inactive" | "on-leave" | "probation";
 type ViewMode = "table" | "grid";
-type SortKey = "name" | "level" | "lpBalance" | "missions" | "rank";
+type SortKey = "name" | "level" | "lpBalance" | "missions" | "rank" | "role" | "team";
 type ToastType = "success" | "error" | "info" | "warning";
 
 interface ToastItem { id: number; msg: string; type: ToastType; }
@@ -114,7 +114,8 @@ const STATUS_CFG: Record<MemberStatus, { label: string; color: string; icon: Rea
   probation: { label: "Thử việc", color: DS.purple, icon: <AlertTriangle size={11} /> },
 };
 
-const TEAMS = ["All", "Alpha", "Sigma", "Omega"] as const;
+const DEPARTMENTS = ["All", "Engineering", "Design", "Media", "Marketing", "Sales", "Finance", "HR"] as const;
+const TEAMS = DEPARTMENTS; // alias for form/modal use
 const RANK_FILTERS: (RankKey | "All")[] = ["All", "iron", "bronze", "silver", "gold", "platinum", "ruby", "diamond"];
 
 const fmtLP = (n?: number) => {
@@ -151,7 +152,7 @@ function toMemberExt(raw: TeamMemberBE): MemberExt {
     lockedLp: raw.lockedLp ?? 0,
     isActive: raw.isActive ?? true,
     status: raw.isActive ? "active" : "inactive",
-    team: raw.department ? capitalize(raw.department) : "Alpha",
+    team: raw.department ? capitalize(raw.department) : "Engineering",
     joinedDate: raw.joinedDate ?? raw.createdAt,
     missionsCompleted: raw.missionsCompleted ?? Math.floor(Math.random() * 50),
     topSkill: raw.memberExpertise?.[0]?.name ?? "Design",
@@ -185,7 +186,7 @@ export default function AdminMembersPage() {
   // ── State ──────────────────────────────────────────────────────────────────
   const [viewMode, setViewMode] = useState<ViewMode>("table");
   const [search, setSearch] = useState("");
-  const [teamFilter, setTeamFilter] = useState<typeof TEAMS[number]>("All");
+  const [teamFilter, setTeamFilter] = useState<typeof DEPARTMENTS[number]>("All");
   const [statusFilter, setStatusFilter] = useState<MemberStatus | "all">("all");
   const [rankFilter, setRankFilter] = useState<RankKey | "All">("All");
   const [sortKey, setSortKey] = useState<SortKey>("name");
@@ -252,9 +253,10 @@ export default function AdminMembersPage() {
       else if (sortKey === "lpBalance") cmp = (a.availableLp ?? 0) - (b.availableLp ?? 0);
       else if (sortKey === "missions") cmp = a.missionsCompleted - b.missionsCompleted;
       else if (sortKey === "rank") {
-        const rankOrder: RankKey[] = ["iron","bronze","silver","gold","platinum","ruby","diamond"];
+        const rankOrder = ["iron","bronze","silver","gold","platinum","ruby","diamond"];
         cmp = rankOrder.indexOf(getRankFromLevel(a.level ?? 1)) - rankOrder.indexOf(getRankFromLevel(b.level ?? 1));
-      }
+      } else if (sortKey === "role") cmp = (a.role ?? "").localeCompare(b.role ?? "");
+      else if (sortKey === "team") cmp = (a.team ?? "").localeCompare(b.team ?? "");
       return sortAsc ? cmp : -cmp;
     });
   }, [members, search, teamFilter, statusFilter, rankFilter, sortKey, sortAsc]);
@@ -299,8 +301,21 @@ export default function AdminMembersPage() {
 
   const updateMutation = useMutation({
     mutationFn: ({ id, body }: { id: string; body: Record<string, unknown> }) =>
-      adminApi.put(`/api/admin/team/${id}`, body),
-    onSuccess: () => {
+      adminApi.put<{ data: TeamMemberBE }>(`/api/admin/team/${id}`, body),
+    onSuccess: (res) => {
+      // Patch cache with fresh data from API (includes updated avatar)
+      queryClient.setQueryData<{ data: TeamMemberBE[] }>(
+        qk.adminMembers(),
+        (old) => {
+          if (!old?.data) return old;
+          const updated = res && "data" in res ? (res as { data: TeamMemberBE }).data : null;
+          if (!updated) return old;
+          return {
+            ...old,
+            data: old.data.map((m) => (m.id === updated.id ? toMemberExt(updated) : m)),
+          };
+        }
+      );
       queryClient.invalidateQueries({ queryKey: qk.adminMembers() });
       showToast("Cập nhật thành viên thành công");
       setFormMember(null);
@@ -664,16 +679,19 @@ export default function AdminMembersPage() {
           <div style={{ fontFamily: DS.mono, fontSize: 9, color: DS.text3 }}>LP</div>
         </div>
 
-        {/* Missions + Top Skill */}
+        {/* Role + Team */}
         <div style={{ padding: "0 8px" }}>
-          <div style={{ fontFamily: DS.mono, fontSize: 13, color: DS.text }}>
-            {m.missionsCompleted}
+          <div style={{
+            fontFamily: DS.mono, fontSize: 12, color: DS.text,
+            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 100,
+          }}>
+            {m.role || "—"}
           </div>
           <div style={{
-            fontFamily: DS.mono, fontSize: 9, color: DS.text3,
-            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 80,
+            fontFamily: DS.mono, fontSize: 9, color: DS.blue,
+            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 100,
           }}>
-            {m.topSkill}
+            {m.team}
           </div>
         </div>
 
@@ -787,8 +805,17 @@ export default function AdminMembersPage() {
         <div style={{ fontFamily: DS.heading, fontSize: 14, color: DS.text, marginBottom: 2 }}>
           {m.name}
         </div>
-        <div style={{ fontFamily: DS.mono, fontSize: 10, color: DS.text3, marginBottom: 8 }}>
+        <div style={{ fontFamily: DS.mono, fontSize: 10, color: DS.text3, marginBottom: 2 }}>
           {m.email}
+        </div>
+        <div style={{
+          fontFamily: DS.mono, fontSize: 10, color: DS.blue,
+          backgroundColor: DS.blue + "15",
+          border: `1px solid ${DS.blue}33`,
+          borderRadius: 8, padding: "1px 6px",
+          display: "inline-block", marginBottom: 8,
+        }}>
+          {m.role || "—"} · {m.team}
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 6 }}>
@@ -1336,7 +1363,7 @@ export default function AdminMembersPage() {
     const [name, setName] = useState(formMember?.name ?? "");
     const [email, setEmail] = useState(formMember?.email ?? "");
     const [phone, setPhone] = useState(formMember?.phone ?? "");
-    const [team, setTeam] = useState(formMember?.team ?? "Alpha");
+    const [team, setTeam] = useState(formMember?.team ?? "Engineering");
     const [avatar, setAvatar] = useState(formMember?.avatar ?? "");
     const [bio, setBio] = useState(formMember?.bio ?? "");
     const [roleInput, setRoleInput] = useState(formMember?.role ?? "");
@@ -1372,7 +1399,8 @@ export default function AdminMembersPage() {
         phone: phone.trim() || null,
         bio: bio.trim() || null,
         avatar: avatar.trim() || null,
-        // department/team — not in Prisma schema; stored as isActive sortOrder via role
+        department: team, // maps to Prisma TeamMember.department
+        // level/XP — BE computes from LP, but form sends these for reference
         level: lvl,
         currentXp: xpVal,
         isActive: status === "active",
@@ -2344,8 +2372,8 @@ export default function AdminMembersPage() {
               </div>
               <SortHeader_ col="name" sk="name" style={{ padding: "0 8px" }}>Thành viên</SortHeader_>
               <SortHeader_ col="rank" sk="rank">Hạng</SortHeader_>
+              <SortHeader_ col="role" sk="role">Vai trò</SortHeader_>
               <SortHeader_ col="lp" sk="lpBalance">LP</SortHeader_>
-              <SortHeader_ col="missions" sk="missions">Nhiệm vụ</SortHeader_>
               <SortHeader_ col="join" sk="name">Ngày vào</SortHeader_>
               <SortHeader_ col="status" sk="name">Trạng thái</SortHeader_>
               <div style={{ padding: "0 8px", textAlign: "right", fontFamily: DS.mono, fontSize: 10, color: DS.text3, textTransform: "uppercase", letterSpacing: "0.08em" }}>Thao tác</div>

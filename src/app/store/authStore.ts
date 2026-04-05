@@ -69,7 +69,8 @@ export type AdminTab =
   | "services" | "media" | "quotation" | "portfolio" | "projects_completed"
   | "academy" | "blog" | "revenue" | "clients" | "lp" | "lp_manage"
   | "income_tax" | "web_packages" | "pricing" | "effects" | "notification_center"
-  | "settings" | "quests_events" | "leaderboard_admin" | "analytics";
+  | "settings" | "quests_events" | "leaderboard_admin" | "analytics"
+  | "figma-demos";
 
 // ── Quest / Event Types (from FE gamification system) ────────────────────────────
 
@@ -193,18 +194,18 @@ const PM_TABS: AdminTab[] = [
   "overview", "orders", "clients", "quotation", "services", "revenue",
   "projects", "members", "departments", "notification_center",
   "leaderboard_admin", "lp_manage", "quests_events",
-  "academy", "blog", "lp", "pricing",
+  "academy", "blog", "lp", "pricing", "figma-demos",
 ];
 
 const MEDIA_TABS: AdminTab[] = [
   "media", "blog", "orders", "projects", "clients", "notification_center",
   "academy", "services", "leaderboard_admin", "quests_events",
-  "overview", "portfolio", "revenue",
+  "overview", "portfolio", "revenue", "figma-demos",
 ];
 
 const QA_TABS: AdminTab[] = [
   "projects", "notification_center", "orders", "clients", "members",
-  "academy", "leaderboard_admin", "overview", "lp",
+  "academy", "leaderboard_admin", "overview", "lp", "figma-demos",
 ];
 
 const MEMBER_TABS: AdminTab[] = [
@@ -352,8 +353,13 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
       // Persist JWT token in localStorage so apiClient can attach Bearer header
       // on subsequent requests (cookies alone can be stripped on cross-origin redirects)
+      // Guard with try/catch — may fail in private browsing or quota exceeded
       if (typeof window !== "undefined" && successPayload.token) {
-        localStorage.setItem("loop-auth-token", successPayload.token);
+        try {
+          localStorage.setItem("loop-auth-token", successPayload.token);
+        } catch {
+          // Storage unavailable (private browsing, quota) — cookie will still work
+        }
       }
       const authUser = sessionToAuthUser(session);
       const role = mapRoleLevelToUserRole(session.roleLevel, session.accountType);

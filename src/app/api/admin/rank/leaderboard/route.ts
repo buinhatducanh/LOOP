@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { computeRankFieldsFromLp } from "@/lib/rank/xp";
 import { RANKS } from "@/lib/rank/ranks";
+import { addAvatar } from "@/lib/api/mappings";
 
 // GET /api/admin/rank/leaderboard
 // Returns all active team members with real rank data derived from approved LpAwards.
@@ -76,23 +77,21 @@ export async function GET(req: NextRequest) {
       // otherwise fall back to computed values.
       const level = m.level > 1 || m.currentXp > 0 ? m.level : computed.level;
       const currentXp = m.currentXp > 0 ? m.currentXp : computed.currentXp;
-      const maxXp = m.maxXp > 100 || m.maxXp > computed.maxXp ? m.maxXp : computed.maxXp;
+      // Use persisted maxXp only if member has meaningful XP (>= 100 = past Bronze).
+      // Otherwise fall back to computed value for the current rank.
+      const maxXp = m.maxXp >= 100 ? m.maxXp : computed.maxXp;
       const rank = (m.rank && m.rank !== "iron") ? m.rank : computed.rank;
 
       const cfg = RANKS[rank as keyof typeof RANKS];
 
       return {
-        id: m.id,
-        name: m.name,
-        role: m.role,
-        image: m.image ?? null,
+        ...addAvatar(m),
         slug: m.slug,
-        // Rank fields
+        // rank field already from addAvatar(m)
         level,
         currentXp,
         maxXp,
         rank,
-        rankKey: rank,
         tier: cfg?.tier ?? 1,
         color: cfg?.color ?? "#9CA3AF",
         symbol: cfg?.symbol ?? "⬡",

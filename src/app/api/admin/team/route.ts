@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import type { TeamMemberCreateInput } from "@/generated/prisma/models/TeamMember";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
+import { addAvatar, addAvatarToList } from "@/lib/api/mappings";
 import {
   buildQueryFromParams,
   parsePagination,
@@ -52,7 +53,7 @@ export async function GET(req: NextRequest) {
     const enriched = members.map((m) => {
       const totalApprovedLp = lpMap.get(m.id) ?? 0;
       const { level, currentXp, maxXp, rank } = computeRankFieldsFromLp(totalApprovedLp);
-      return {
+      return addAvatar({
         ...m,
         // Override level/XP/rank with computed values (reflect real LP)
         level,
@@ -63,7 +64,7 @@ export async function GET(req: NextRequest) {
         // LP balances (denormalized on TeamMember)
         lockedLp: m.lockedLp,
         availableLp: m.availableLp,
-      };
+      });
     });
 
     return NextResponse.json({
@@ -88,7 +89,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Extract memberExpertise array if present (it's a relation, not a direct field)
-    const { memberExpertise, ...memberData } = data;
+    const { memberExpertise, avatar, ...memberData } = data;
 
     // Convert empty strings to null for optional fields (except required fields)
     // Also convert date strings (dd/mm/yyyy) to proper ISO format
@@ -116,18 +117,40 @@ export async function POST(req: NextRequest) {
     );
 
     const member = await prisma.teamMember.create({
-      data: cleanedData as TeamMemberCreateInput,
+      data: {
+        ...(cleanedData as TeamMemberCreateInput),
+        // Map FE field name "avatar" → Prisma "image" if provided
+        ...(avatar !== undefined && { image: avatar }),
+      },
     });
 
-    // Create member expertise relations with level if provided and not empty
+    // Create member expertise relations with level if provided and not empty.
+    // FE sends: { name: "React" }[] or { expertiseId, level }[].
+    // Resolve expertise names → IDs by querying/upserting the Expertise table.
     if (Array.isArray(memberExpertise) && memberExpertise.length > 0) {
-      await prisma.memberExpertise.createMany({
-        data: memberExpertise.map((exp: { expertiseId: string; level: number }) => ({
-          memberId: member.id,
-          expertiseId: exp.expertiseId,
-          level: exp.level || 5, // Default to 5 if not provided
-        })),
-      });
+      const records = await Promise.all(
+        memberExpertise.map(async (exp: { name?: string; expertiseId?: string; level?: number }) => {
+          let resolvedExpertiseId = exp.expertiseId;
+          // Resolve by name if FE sends { name } instead of { expertiseId }
+          if (!resolvedExpertiseId && exp.name) {
+            let expertise = await prisma.expertise.findFirst({
+              where: { name: exp.name as string },
+            });
+            if (!expertise) {
+              expertise = await prisma.expertise.create({
+                data: { name: exp.name as string, category: "General" },
+              });
+            }
+            resolvedExpertiseId = expertise.id;
+          }
+          return {
+            memberId: member.id,
+            expertiseId: resolvedExpertiseId,
+            level: (exp.level as number) || 5,
+          };
+        })
+      );
+      await prisma.memberExpertise.createMany({ data: records as { memberId: string; expertiseId: string; level: number }[] });
     }
 
     await createAuditLog({
@@ -135,10 +158,11 @@ export async function POST(req: NextRequest) {
       action: "create",
       resource: "team",
       resourceId: member.id,
-      newValues: cleanedData,
+      // Log actual DB values (not cleanedData which has avatar stripped)
+      newValues: member,
     });
 
-    return NextResponse.json({ data: member }, { status: 201 });
+    return NextResponse.json({ data: addAvatar(member) }, { status: 201 });
   } catch (error) {
     console.error("POST /api/admin/team error:", error);
     return handleError(error);

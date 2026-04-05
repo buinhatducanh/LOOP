@@ -148,12 +148,17 @@ export async function POST(req: NextRequest) {
     // Derive roleLevel from the junction table (UserRole → Role),
     // NOT from User.role (which is a denormalized default field).
     // Use the MOST PRIVILEGED role level (lowest number) among all assigned roles.
-    const roleLevel = user.userRoles.reduce(
-      (min, ur) => Math.min(min, ur.role.level ?? 99),
-      99
-    );
+    // Fall back to ROLE_LEVEL[user.role] if userRoles is empty.
+    const roleLevel = user.userRoles.length > 0
+      ? user.userRoles.reduce((min, ur) => Math.min(min, ur.role.level ?? 99), 99)
+      : ROLE_LEVEL[user.role] ?? 99;
 
     // Create JWT token for custom auth
+    // Infer accountType from roleLevel: ≤ 5 means staff (loop.vn employee),
+    // otherwise customer (external client). DB field user.accountType is unreliable.
+    const accountType: "staff" | "customer" =
+      roleLevel <= 5 ? "staff" : "customer";
+
     const token = signToken({
       userId: user.id,
       email: user.email,
@@ -161,7 +166,7 @@ export async function POST(req: NextRequest) {
       roles,
       roleLevel,
       teamMemberId: user.teamMemberId,
-      accountType: user.accountType,
+      accountType,
       accessTags: user.teamMember?.accessTags ?? [],
     });
 
@@ -188,7 +193,7 @@ export async function POST(req: NextRequest) {
         roles,
         permissions,
         roleLevel,
-        accountType: user.accountType,
+        accountType,
         teamMemberId: user.teamMemberId,
         accessTags: user.teamMember?.accessTags ?? [],
         isOnboarded: user.isOnboarded ?? false,

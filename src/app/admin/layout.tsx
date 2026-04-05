@@ -20,6 +20,7 @@ import { QueryProvider } from "@/lib/query/provider";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { AdminTopbar } from "@/components/admin/AdminTopbar";
 import { AdminI18nProvider } from "@/i18n/admin/AdminI18nProvider";
+import { SessionHydrator } from "./SessionHydrator";
 import "@/styles/globals.css";
 
 const dmSansFont = DM_Sans({
@@ -69,6 +70,7 @@ export default async function AdminLayout({
       >
         <QueryProvider>
           <AdminI18nProvider>
+          <SessionHydrator />
           {/* Sidebar — receives session data as props, no Zustand store needed */}
           <AdminSidebar
             userName={session.name}

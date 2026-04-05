@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
+import { addAvatar } from "@/lib/api/mappings";
 
 export async function GET(
   req: NextRequest,
@@ -20,7 +21,7 @@ export async function GET(
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    return NextResponse.json({ data: member });
+    return NextResponse.json({ data: addAvatar(member) });
   } catch (error) {
     return handleError(error);
   }
@@ -41,14 +42,22 @@ export async function PUT(
     }
 
     // Extract memberExpertise array if present (it's a relation, not a direct field)
-    const { memberExpertise, ...memberData } = data;
+    // Also rename avatar → image (Prisma field is "image", not "avatar")
+    const { memberExpertise, avatar, ...memberData } = data;
 
     // Convert empty strings to null for optional fields (except required fields)
     // Also convert date strings (dd/mm/yyyy) to proper ISO format
     const requiredFields = ['name', 'slug', 'role'];
     const dateFields = ['birthDate', 'contractStart'];
+    const entries = Object.entries(memberData);
+
+    // Map avatar → image if present
+    if (avatar !== undefined) {
+      entries.push(['image', avatar]);
+    }
+
     const cleanedData = Object.fromEntries(
-      Object.entries(memberData).map(([key, value]) => {
+      entries.map(([key, value]) => {
         if (requiredFields.includes(key)) {
           return [key, value];
         }
@@ -87,15 +96,32 @@ export async function PUT(
         where: { memberId: id },
       });
 
-      // Create new expertise relations with level (only if not empty)
+      // Create new expertise relations with level (only if not empty).
+      // FE sends: { name: "React" }[] or { expertiseId, level }[].
+      // Resolve expertise names → IDs by querying/upserting the Expertise table.
       if (Array.isArray(memberExpertise) && memberExpertise.length > 0) {
-        await prisma.memberExpertise.createMany({
-          data: memberExpertise.map((exp: { expertiseId: string; level: number }) => ({
-            memberId: id,
-            expertiseId: exp.expertiseId,
-            level: exp.level || 5, // Default to 5 if not provided
-          })),
-        });
+        const records = await Promise.all(
+          memberExpertise.map(async (exp: { name?: string; expertiseId?: string; level?: number }) => {
+            let resolvedExpertiseId = exp.expertiseId;
+            if (!resolvedExpertiseId && exp.name) {
+              let expertise = await prisma.expertise.findFirst({
+                where: { name: exp.name as string },
+              });
+              if (!expertise) {
+                expertise = await prisma.expertise.create({
+                  data: { name: exp.name as string, category: "General" },
+                });
+              }
+              resolvedExpertiseId = expertise.id;
+            }
+            return {
+              memberId: id,
+              expertiseId: resolvedExpertiseId,
+              level: (exp.level as number) || 5,
+            };
+          })
+        );
+        await prisma.memberExpertise.createMany({ data: records as { memberId: string; expertiseId: string; level: number }[] });
       }
     }
 
@@ -105,10 +131,10 @@ export async function PUT(
       resource: "team",
       resourceId: id,
       oldValues: existing as unknown as Record<string, unknown>,
-      newValues: cleanedData,
+      newValues: member,
     });
 
-    return NextResponse.json({ data: member });
+    return NextResponse.json({ data: addAvatar(member) });
   } catch (error) {
     return handleError(error);
   }

@@ -110,6 +110,12 @@ export async function getSessionFromBearer(
       }))
     );
 
+    // Derive accountType from roleLevel: ≤ 5 = staff (LOOP employee), otherwise = customer
+    const effectiveRoleLevel = user.userRoles.length > 0
+      ? Math.min(...user.userRoles.map((ur) => ur.role.level ?? 99))
+      : ROLE_LEVEL[user.role] ?? 99;
+    const accountType: "staff" | "customer" = effectiveRoleLevel <= 5 ? "staff" : "customer";
+
     return {
       userId: payload.userId,
       email: user.email,
@@ -117,11 +123,9 @@ export async function getSessionFromBearer(
       role: user.role,
       roles: user.userRoles.map((ur) => ur.role.name),
       avatar: user.avatar,
-      accountType: (user.accountType as "staff" | "customer") || "customer",
+      accountType,
       teamMemberId: user.teamMemberId,
-      roleLevel: user.userRoles.length > 0
-        ? Math.min(...user.userRoles.map((ur) => ur.role.level ?? 99))
-        : ROLE_LEVEL[user.role] ?? 99,
+      roleLevel: effectiveRoleLevel,
       permissions,
       rank: user.teamMember?.rank,
       availableLp: user.teamMember?.availableLp,
@@ -130,7 +134,8 @@ export async function getSessionFromBearer(
       isOnboarded: user.isOnboarded,
     };
   } catch {
-    // DB unavailable — return minimal session from JWT payload only
+    // DB unavailable — derive accountType from JWT payload roleLevel
+    const fallbackRoleLevel = payload.roleLevel ?? ROLE_LEVEL[payload.role ?? "user"] ?? 99;
     return {
       userId: payload.userId,
       email: payload.email ?? "",
@@ -138,9 +143,9 @@ export async function getSessionFromBearer(
       role: payload.role ?? "user",
       roles: payload.roles ?? [],
       avatar: null,
-      accountType: "staff",
+      accountType: fallbackRoleLevel <= 5 ? "staff" : "customer",
       teamMemberId: null,
-      roleLevel: payload.roleLevel ?? ROLE_LEVEL[payload.role ?? "user"] ?? 99,
+      roleLevel: fallbackRoleLevel,
       permissions: [],
       accessTags: [],
       isOnboarded: undefined,
@@ -188,6 +193,12 @@ export async function getSession(): Promise<SessionUser | null> {
         }))
       );
 
+      // Derive accountType from roleLevel: ≤ 5 = staff (LOOP employee), otherwise = customer
+      const effectiveRoleLevel = user.userRoles.length > 0
+        ? Math.min(...user.userRoles.map((ur) => ur.role.level ?? 99))
+        : ROLE_LEVEL[user.role] ?? 99;
+      const accountType: "staff" | "customer" = effectiveRoleLevel <= 5 ? "staff" : "customer";
+
       return {
         userId: user.id,
         email: user.email,
@@ -195,11 +206,9 @@ export async function getSession(): Promise<SessionUser | null> {
         role: user.role,
         roles: user.userRoles.map((ur) => ur.role.name),
         avatar: user.avatar,
-        accountType: (user.accountType as "staff" | "customer") || "customer",
+        accountType,
         teamMemberId: user.teamMemberId,
-        roleLevel: user.userRoles.length > 0
-          ? Math.min(...user.userRoles.map((ur) => ur.role.level ?? 99))
-          : ROLE_LEVEL[user.role] ?? 99,
+        roleLevel: effectiveRoleLevel,
         permissions,
         rank: user.teamMember?.rank,
         availableLp: user.teamMember?.availableLp,
@@ -208,24 +217,22 @@ export async function getSession(): Promise<SessionUser | null> {
         isOnboarded: user.isOnboarded,
       };
     } catch {
-      // DB unavailable — return minimal session from JWT payload (graceful degradation)
-      if (payload.userId) {
-        return {
-          userId: payload.userId,
-          email: payload.email ?? "",
-          name: "",
-          role: payload.role ?? "user",
-          roles: payload.roles ?? [],
-          avatar: null,
-          accountType: "staff" as const,
-          teamMemberId: null,
-          roleLevel: payload.roleLevel ?? ROLE_LEVEL[payload.role ?? "user"] ?? 99,
-          permissions: [],
-          accessTags: [],
-          isOnboarded: undefined,
-        };
-      }
-      return null;
+      // DB unavailable — derive accountType from JWT payload roleLevel
+      const fallbackRoleLevel = payload.roleLevel ?? ROLE_LEVEL[payload.role ?? "user"] ?? 99;
+      return {
+        userId: payload.userId,
+        email: payload.email ?? "",
+        name: "",
+        role: payload.role ?? "user",
+        roles: payload.roles ?? [],
+        avatar: null,
+        accountType: fallbackRoleLevel <= 5 ? "staff" : "customer",
+        teamMemberId: null,
+        roleLevel: fallbackRoleLevel,
+        permissions: [],
+        accessTags: [],
+        isOnboarded: undefined,
+      };
     }
   }
 
@@ -258,6 +265,12 @@ export async function getSession(): Promise<SessionUser | null> {
       }))
     );
 
+    // Derive accountType from roleLevel: ≤ 5 = staff (LOOP employee), otherwise = customer
+    const effectiveRoleLevel = user.userRoles.length > 0
+      ? Math.min(...user.userRoles.map((ur) => ur.role.level ?? 99))
+      : ROLE_LEVEL[user.role] ?? 99;
+    const accountType: "staff" | "customer" = effectiveRoleLevel <= 5 ? "staff" : "customer";
+
     return {
       userId: user.id,
       email: user.email,
@@ -265,11 +278,9 @@ export async function getSession(): Promise<SessionUser | null> {
       role: user.role,
       roles: user.userRoles.map((ur) => ur.role.name),
       avatar: user.avatar,
-      accountType: (user.accountType as "staff" | "customer") || "customer",
+      accountType,
       teamMemberId: user.teamMemberId,
-      roleLevel: user.userRoles.length > 0
-        ? Math.min(...user.userRoles.map((ur) => ur.role.level ?? 99))
-        : ROLE_LEVEL[user.role] ?? 99,
+      roleLevel: effectiveRoleLevel,
       permissions,
       rank: user.teamMember?.rank,
       availableLp: user.teamMember?.availableLp,

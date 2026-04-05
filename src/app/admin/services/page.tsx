@@ -259,10 +259,14 @@ function EditServiceForm({ service, onClose, onUpdated }: { service: Service; on
   const [slug, setSlug] = useState(service.slug || "");
   const [category, setCategory] = useState(service.category || "");
   const [icon, setIcon] = useState(service.icon || "");
+  const [startingPrice, setStartingPrice] = useState(service.startingPrice || "");
+  const [deliveryTime, setDeliveryTime] = useState(service.deliveryTime || "");
 
   const update = useMutation({
     mutationFn: async () => {
-      await adminApi.put<{ data: Service }>(`/api/admin/services/${service.id}`, { title, slug, category, icon: icon || undefined });
+      await adminApi.put<{ data: Service }>(`/api/admin/services/${service.id}`, {
+        title, slug, category, icon: icon || undefined, startingPrice: startingPrice || undefined, deliveryTime: deliveryTime || undefined,
+      });
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: qk.adminServices() }); onUpdated(); },
     onError: (err) => { alert(err instanceof Error ? err.message : "Cập nhật thất bại"); },
@@ -293,6 +297,16 @@ function EditServiceForm({ service, onClose, onUpdated }: { service: Service; on
         <div>
           <label style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, display: "block", marginBottom: 4 }}>SLUG *</label>
           <input value={slug} onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/\s+/g, "-"))} style={inputStyle} placeholder="thiet-ke-website" />
+        </div>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+        <div>
+          <label style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, display: "block", marginBottom: 4 }}>GIÁ BẮT ĐẦU</label>
+          <input value={startingPrice} onChange={(e) => setStartingPrice(e.target.value)} style={inputStyle} placeholder="Từ 5,000,000 VNĐ" />
+        </div>
+        <div>
+          <label style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, display: "block", marginBottom: 4 }}>THỜI GIAN GIAO</label>
+          <input value={deliveryTime} onChange={(e) => setDeliveryTime(e.target.value)} style={inputStyle} placeholder="2-4 tuần" />
         </div>
       </div>
       <div style={{ marginBottom: 12 }}>
@@ -332,6 +346,8 @@ function CreateServiceForm({ onClose, onCreated }: { onClose: () => void; onCrea
   const [slug, setSlug] = useState("");
   const [category, setCategory] = useState("");
   const [icon, setIcon] = useState("");
+  const [startingPrice, setStartingPrice] = useState("");
+  const [deliveryTime, setDeliveryTime] = useState("");
 
   const create = useMutation({
     mutationFn: async () => {
@@ -340,6 +356,8 @@ function CreateServiceForm({ onClose, onCreated }: { onClose: () => void; onCrea
         shortDescription: "",
         isActive: true,
         icon: icon || undefined,
+        startingPrice: startingPrice || undefined,
+        deliveryTime: deliveryTime || undefined,
       });
       return res;
     },
@@ -374,6 +392,16 @@ function CreateServiceForm({ onClose, onCreated }: { onClose: () => void; onCrea
         <div>
           <label style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, display: "block", marginBottom: 4 }}>SLUG *</label>
           <input value={slug} onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/\s+/g, "-"))} style={inputStyle} placeholder="thiet-ke-website" />
+        </div>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+        <div>
+          <label style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, display: "block", marginBottom: 4 }}>GIÁ BẮT ĐẦU</label>
+          <input value={startingPrice} onChange={(e) => setStartingPrice(e.target.value)} style={inputStyle} placeholder="Từ 5,000,000 VNĐ" />
+        </div>
+        <div>
+          <label style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, display: "block", marginBottom: 4 }}>THỜI GIAN GIAO</label>
+          <input value={deliveryTime} onChange={(e) => setDeliveryTime(e.target.value)} style={inputStyle} placeholder="2-4 tuần" />
         </div>
       </div>
       <div style={{ marginBottom: 12 }}>

@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
+import { addInstructorAvatar, addInstructorAvatarToList } from "@/lib/api/mappings";
 
 // GET /api/admin/edu/instructors
 export async function GET(req: NextRequest) {
@@ -29,7 +30,7 @@ export async function GET(req: NextRequest) {
     ]);
 
     return NextResponse.json({
-      data: instructors,
+      data: addInstructorAvatarToList(instructors as unknown as Record<string, unknown>[]),
       pagination: { page, limit, total, pages: Math.ceil(total / limit) },
     });
   } catch (error) {
@@ -46,6 +47,11 @@ export async function POST(req: NextRequest) {
 
     if (!name?.trim()) {
       return NextResponse.json({ error: "name is required" }, { status: 400 });
+    }
+
+    // Validate specialties is array if provided
+    if (specialties !== undefined && !Array.isArray(specialties)) {
+      return NextResponse.json({ error: "specialties must be an array" }, { status: 400 });
     }
 
     // Validate memberId and userId are not both set
@@ -65,7 +71,7 @@ export async function POST(req: NextRequest) {
         userId: userId ?? null,
       },
       include: {
-        member: { select: { id: true, name: true, role: true } },
+        member: { select: { id: true, name: true, role: true, image: true } },
       },
     });
 
@@ -77,7 +83,9 @@ export async function POST(req: NextRequest) {
       newValues: { name, memberId, userId },
     });
 
-    return NextResponse.json({ data: instructor }, { status: 201 });
+    return NextResponse.json({
+      data: addInstructorAvatar(instructor as unknown as Record<string, unknown>),
+    }, { status: 201 });
   } catch (error) {
     return handleError(error);
   }

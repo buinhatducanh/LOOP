@@ -62,7 +62,6 @@ export async function GET(req: NextRequest) {
           >
             {/* @vercel/og fetches remote <img> src URLs automatically.
                 If logo.png is missing, the image slot stays blank — acceptable. */}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={logoUrl}
               width={56}
