@@ -22,6 +22,8 @@ export interface QuoteApprovalResult {
   finalPrice?: number;
   infraTier?: { slug: string; name: string; monthlyCost: number; setupCost: number } | null;
   lpAllocation?: Record<string, number>;
+  /** Customer's LP discount captured from QuoteRequest (for audit trail) */
+  lpUsed?: number;
   error?: string;
 }
 
@@ -83,6 +85,9 @@ export async function approveQuoteAndCreateOrder(
     );
   }
 
+  // ── Capture customer's LP spend for audit trail ──────────────────────
+  const lpUsed = quote.lpUsed ?? 0;
+
   // ── Run pricing engine ───────────────────────────────────────────
   const priceResult = await calculateOrderPrice({
     selectedFeatureIds,
@@ -110,6 +115,8 @@ export async function approveQuoteAndCreateOrder(
         // LP allocation from quote (distribued when paid)
         // Stored as JSON on Order so recordPayment can read it
         lpAllocation: lpAllocation,
+        // Customer's LP spend from QuoteRequest (captured for audit trail)
+        lpUsed: lpUsed,
       },
     });
 
@@ -134,6 +141,7 @@ export async function approveQuoteAndCreateOrder(
     finalPrice: priceResult.finalPrice,
     infraTier: priceResult.infraTier ?? null,
     lpAllocation,
+    lpUsed,
   };
 }
 
@@ -148,9 +156,8 @@ export async function approveQuoteAndCreateOrder(
  *   1. Find the TeamMember(s) with that role in the project
  *   2. Create LpAward records for each member
  *
- * NOTE: This is a stub — actual team assignment depends on project members.
- * For now it logs the allocation for the order. Full implementation
- * requires knowing which project members hold each role.
+ * NOTE: Unassigned role LP (no members with that projectRole) is logged as a warning
+ * so ops can rebalance manually — it is NOT silently dropped.
  */
 export async function distributeLpFromOrder(
   orderId: string,
@@ -183,7 +190,11 @@ export async function distributeLpFromOrder(
   // Distribute LP for each role that has a percentage
   for (const [role, percent] of Object.entries(allocation)) {
     const memberIds = membersByRole.get(role) ?? [];
-    if (memberIds.length === 0) continue;
+    if (memberIds.length === 0) {
+      // Log warning so ops knows this role's LP share was not distributed
+      console.warn(`[LP Distribution] Order ${orderId}: role "${role}" has ${percent}% allocation but no assigned members. LP not distributed for this share.`);
+      continue;
+    }
 
     const totalLpForRole = Math.floor(paidAmount * (percent / 100));
     const lpPerMember = Math.floor(totalLpForRole / memberIds.length);

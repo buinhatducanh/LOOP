@@ -9,7 +9,7 @@ export async function GET(
   { params }: { params: Promise<{ projectId: string }> },
 ) {
   try {
-    await requirePermission("backlogs", "read");
+    await requirePermission("lp-redemptions", "read");
     const { projectId } = await params;
 
     // 1. Get project members with their member info

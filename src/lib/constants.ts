@@ -26,7 +26,7 @@ export const REFERRAL_LP_TIERS = {
 /**
  * Maximum LP an admin can adjust in a single manual transaction.
  */
-export const ADMIN_LP_ADJUST_CAP = 10_000;
+export const ADMIN_LP_ADJUST_CAP = 100_000;
 
 /**
  * Order LP allocation for team members (percentage of LP distributed per order).

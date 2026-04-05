@@ -2,6 +2,8 @@ import { prisma } from "@/lib/prisma";
 import { awardCustomerLpOnPayment } from "@/lib/services/customer/lp.service";
 import { awardReferralLpOnPayment, awardReferralLpOnCompletion } from "@/lib/services/customer/referral.service";
 import { distributeLpFromOrder } from "@/lib/pricing/quote-to-order";
+import { vndToLp } from "@/lib/services/customer/lp.service";
+import { LP_VND_RATE } from "@/lib/constants";
 
 /**
  * Trạng thái hợp lệ cho đơn hàng Custom
@@ -105,7 +107,10 @@ export async function transitionOrderStatus(
 ): Promise<{ success: boolean; error?: string }> {
   const order = await prisma.order.findUnique({
     where: { id: orderId },
-    select: { status: true, orderType: true, orderNumber: true, paidAmount: true },
+    select: {
+      status: true, orderType: true, orderNumber: true,
+      paidAmount: true, finalPrice: true, lpUsed: true, customerEmail: true,
+    },
   });
 
   if (!order) {
@@ -121,12 +126,28 @@ export async function transitionOrderStatus(
 
   const isCompletion = toStatus === "completed" || toStatus === "delivered";
 
-  // Atomic: update status + history
+  // ── Calculate lpReward on order completion ──────────────────────────────
+  // Formula: ceil(remainingAmount × 1/LP_VND_RATE × 0.10)
+  // remainingAmount = max(0, finalPrice - paidAmount - lpUsedVndDiscount)
+  let lpRewardToSet: number | null = null;
+  if (isCompletion && order.finalPrice) {
+    const lpUsedVndDiscount = (order.lpUsed ?? 0) * LP_VND_RATE;
+    const remainingAmount = Math.max(0, order.finalPrice - order.paidAmount - lpUsedVndDiscount);
+    if (remainingAmount > 0) {
+      lpRewardToSet = vndToLp(remainingAmount);
+    }
+  }
+
+  // Atomic: update status + history + lpReward
   await prisma.$transaction(async (tx) => {
-    await tx.order.update({
-      where: { id: orderId },
-      data: { status: toStatus },
-    });
+    const updateData: Record<string, unknown> = { status: toStatus };
+    if (isCompletion) {
+      updateData.completedAt = new Date();
+      if (lpRewardToSet !== null) {
+        updateData.lpReward = lpRewardToSet;
+      }
+    }
+    await tx.order.update({ where: { id: orderId }, data: updateData });
     await tx.orderStatusHistory.create({
       data: { orderId, fromStatus: order.status, toStatus, changedBy, note },
     });
@@ -134,7 +155,6 @@ export async function transitionOrderStatus(
 
   // ── Award referral LP on order completion ────────────────────────────────────
   if (isCompletion && order.paidAmount > 0) {
-    // Await non-critically — don't block the status transition response
     awardReferralLpOnCompletion(orderId, order.orderNumber, order.paidAmount).catch(() => {/* silent */});
   }
 

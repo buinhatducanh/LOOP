@@ -554,6 +554,10 @@ model Order {
   /// *
   ///    * LP allocation from quote (% per role) — used to distribute LP when order is paid
   lpAllocation          Json?                 @map("lp_allocation")
+  /// LP used by customer to offset totalAmount (captured from QuoteRequest)
+  lpUsed                Int                   @default(0) @map("lp_used")
+  /// LP reward to customer on order completion (manual entry by admin/PM)
+  lpReward              Int                   @default(0) @map("lp_reward")
   backlogs              Backlog[]
   blogPosts             BlogPost[]
   customerWebsites      CustomerWebsite[]
@@ -913,6 +917,8 @@ model Quote {
   /// *
   ///    * Selected advanced feature IDs for auto-pricing
   selectedFeatureIds     Json?               @default("[]") @map("selected_feature_ids")
+  /// LP used by customer to offset totalAmount (copied from QuoteRequest at quote creation)
+  lpUsed                Int                   @default(0) @map("lp_used")
   infrastructureTier     InfrastructureTier? @relation(fields: [infrastructureTierId], references: [id])
   order                  Order?              @relation(fields: [orderId], references: [id])
   salesLead              SalesLead           @relation(fields: [salesLeadId], references: [id])
@@ -978,6 +984,8 @@ model QuoteRequest {
   companyName   String?  @map("company_name")
   selectedItems Json     @map("selected_items")
   totalAmount   Int      @map("total_amount")
+  /// LP used by customer to offset totalAmount (max 20% enforced server-side)
+  lpUsed        Int      @default(0) @map("lp_used")
   paymentPlan   String?  @map("payment_plan")
   notes         String?
   status        String   @default("new")

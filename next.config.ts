@@ -47,8 +47,7 @@ const nextConfig: NextConfig = {
           { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
         ],
       },
-      // CORS — allow cross-origin requests from any origin for public API endpoints
-      // Note: 'Access-Control-Allow-Credentials' cannot be 'true' when using '*' wildcard
+      // CORS for public API — * wildcard works because apiClient uses credentials:"omit"
       {
         source: '/api/:path*',
         headers: [
@@ -58,7 +57,7 @@ const nextConfig: NextConfig = {
           { key: 'Access-Control-Max-Age', value: '86400' },
         ],
       },
-      // CORS with credentials for v1 public GET endpoints (used by external clients)
+      // CORS for public v1 GET endpoints
       {
         source: '/api/v1/:path*',
         headers: [

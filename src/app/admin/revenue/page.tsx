@@ -21,7 +21,7 @@ import { adminApi } from "@/lib/api/client";
 import { DS, GRD } from "@/lib/design-tokens";
 import {
   TrendingUp, ArrowUpRight, ArrowDownRight, DollarSign, Zap,
-  FolderKanban, Download,
+  FolderKanban,
 } from "lucide-react";
 
 // ── Formatters ────────────────────────────────────────────────────────────────
@@ -36,62 +36,12 @@ const fmtB = (n: number) => {
 const fmtVND = (n: number) =>
   new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(n);
 
-// ── Mock data (fallback when API unavailable) ─────────────────────────────────
-
-const MONTHLY_REVENUE = [
-  { month: "T4/25", revenue: 85_000_000, profit: 53_000_000 },
-  { month: "T5/25", revenue: 120_000_000, profit: 76_000_000 },
-  { month: "T6/25", revenue: 95_000_000, profit: 57_000_000 },
-  { month: "T7/25", revenue: 145_000_000, profit: 93_000_000 },
-  { month: "T8/25", revenue: 168_000_000, profit: 108_000_000 },
-  { month: "T9/25", revenue: 132_000_000, profit: 84_000_000 },
-  { month: "T10/25", revenue: 195_000_000, profit: 127_000_000 },
-  { month: "T11/25", revenue: 225_000_000, profit: 147_000_000 },
-  { month: "T12/25", revenue: 280_000_000, profit: 185_000_000 },
-  { month: "T1/26", revenue: 210_000_000, profit: 138_000_000 },
-  { month: "T2/26", revenue: 248_000_000, profit: 163_000_000 },
-  { month: "T3/26", revenue: 310_000_000, profit: 208_000_000 },
-];
-
-const MONTHLY_LP = [
-  { month: "T7", lp: 12_500 },
-  { month: "T8", lp: 18_200 },
-  { month: "T9", lp: 14_800 },
-  { month: "T10", lp: 22_400 },
-  { month: "T11", lp: 26_000 },
-  { month: "T12", lp: 31_000 },
-  { month: "T1", lp: 24_500 },
-  { month: "T2", lp: 28_800 },
-  { month: "T3", lp: 35_200 },
-];
-
-const BY_SERVICE = [
-  { name: "Website Dev", value: 620_000_000, color: DS.blue },
-  { name: "App & SaaS", value: 850_000_000, color: DS.purple },
-  { name: "Analytics", value: 380_000_000, color: DS.cyan },
-  { name: "SEO & Mkt", value: 220_000_000, color: DS.green },
-  { name: "Academy", value: 145_000_000, color: DS.amber },
-];
-
-const TOP_CLIENTS = [
-  { name: "FinCorp Vietnam", spend: 500_000_000, projects: 1, color: DS.red },
-  { name: "VNRetail JSC", spend: 350_000_000, projects: 2, color: DS.blue },
-  { name: "HealthTech VN", spend: 180_000_000, projects: 1, color: DS.purple },
-  { name: "DataViet Corp", spend: 120_000_000, projects: 1, color: DS.cyan },
-  { name: "EduViet Foundation", spend: 75_000_000, projects: 1, color: DS.green },
-];
-
-const INVOICES = [
-  { id: "INV-2603", client: "FinCorp Vietnam", service: "FinDash Enterprise", amount: 500_000_000, status: "paid", date: "15/03/2026" },
-  { id: "INV-2602", client: "VNRetail JSC", service: "VNRetail Platform v3", amount: 175_000_000, status: "paid", date: "08/03/2026" },
-  { id: "INV-2601", client: "HealthTech VN", service: "MedApp Vietnam", amount: 90_000_000, status: "pending", date: "20/03/2026" },
-  { id: "INV-2599", client: "DataViet Corp", service: "AnalyticsPro Dashboard", amount: 120_000_000, status: "paid", date: "01/03/2026" },
-  { id: "INV-2598", client: "StartupHub VN", service: "Landing Page", amount: 25_000_000, status: "overdue", date: "10/02/2026" },
-  { id: "INV-2597", client: "EduViet Foundation", service: "EduViet Portal", amount: 75_000_000, status: "paid", date: "25/02/2026" },
-];
+// ── Status config ────────────────────────────────────────────────────────────
 
 const STATUS_CFG: Record<string, { label: string; color: string }> = {
   paid: { label: "Đã thanh toán", color: DS.green },
+  partial: { label: "Thanh toán 1 phần", color: DS.amber },
+  unpaid: { label: "Chưa thanh toán", color: DS.text4 },
   pending: { label: "Chờ thanh toán", color: DS.amber },
   overdue: { label: "Quá hạn", color: DS.red },
 };
@@ -312,22 +262,122 @@ function MetricCard({ label, value, sub, color, icon, trend, trendUp }: {
 
 // ── Main Page ────────────────────────────────────────────────────────────────
 
+const PERIOD_MONTHS: Record<string, number> = { "3m": 3, "6m": 6, "12m": 12 };
+
 export default function RevenuePage() {
   const [period, setPeriod] = useState<"3m" | "6m" | "12m">("12m");
 
-  const periods = {
-    "3m": MONTHLY_REVENUE.slice(-3),
-    "6m": MONTHLY_REVENUE.slice(-6),
-    "12m": MONTHLY_REVENUE,
-  };
-  const revData = periods[period];
-  const totalRevenue = revData.reduce((s, d) => s + d.revenue, 0);
-  const totalProfit = revData.reduce((s, d) => s + d.profit, 0);
-  const avgMargin = Math.round((totalProfit / totalRevenue) * 100);
-  const maxService = Math.max(...BY_SERVICE.map(s => s.value));
+  // ── Real data from API ───────────────────────────────────────────────────
+  const { data: ordersData, isLoading } = useQuery({
+    queryKey: ["admin", "revenue", "orders"],
+    queryFn: () => adminApi.get<{
+      data: Array<{
+        id: string; orderNumber: string; customerName: string; companyName: string | null;
+        finalPrice: number | null; totalAmount: number | null;
+        status: string; paymentStatus: string; createdAt: string;
+        package: { title: string } | null;
+      }>;
+      total: number; totalPages: number;
+    }>("/api/admin/orders", { params: { limit: 500 } }),
+    staleTime: 60_000,
+  });
 
-  const totalRevAll = MONTHLY_REVENUE.reduce((s, d) => s + d.revenue, 0);
-  const totalProfitAll = MONTHLY_REVENUE.reduce((s, d) => s + d.profit, 0);
+  // ── LP award trend (from approved awards) ─────────────────────────────
+  const { data: lpAwardsData } = useQuery({
+    queryKey: ["admin", "revenue", "lp-awards"],
+    queryFn: () => adminApi.get<{
+      data: Array<{ id: string; lpAmount: number; status: string; approvedAt: string | null; createdAt: string }>;
+    }>("/api/admin/lp-awards", { params: { limit: 500, status: "approved" } }),
+    staleTime: 60_000,
+  });
+
+  const orders = ordersData?.data ?? [];
+
+  // ── Computed financials from real orders ──────────────────────────────────
+  const cutoff = new Date();
+  cutoff.setMonth(cutoff.getMonth() - PERIOD_MONTHS[period]);
+
+  const recentOrders = orders.filter(o => new Date(o.createdAt) >= cutoff);
+
+  // Revenue: only paid / contracted / done orders
+  const paidOrders = recentOrders.filter(o =>
+    ["done", "paid_partial", "paid_full", "contracted", "designing", "developing", "reviewing", "delivered"].includes(o.status)
+  );
+
+  const totalRevenue = paidOrders.reduce((s, o) => s + (o.finalPrice ?? o.totalAmount ?? 0), 0);
+  const avgOrderValue = paidOrders.length > 0 ? Math.round(totalRevenue / paidOrders.length) : 0;
+  const margin = 0.62; // 62% margin approximation
+  const totalProfit = Math.round(totalRevenue * margin);
+
+  // Monthly revenue grouping
+  const monthlyMap = new Map<string, number>();
+  for (const o of paidOrders) {
+    const d = new Date(o.createdAt);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    monthlyMap.set(key, (monthlyMap.get(key) ?? 0) + (o.finalPrice ?? o.totalAmount ?? 0));
+  }
+
+  const revData = Array.from(monthlyMap.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .slice(-(period === "3m" ? 3 : period === "6m" ? 6 : 12))
+    .map(([key, revenue]) => {
+      const [y, m] = key.split("-");
+      return {
+        month: `T${m}/${String(y).slice(-2)}`,
+        revenue,
+        profit: Math.round(revenue * margin),
+      };
+    });
+
+  const totalRevAll = orders
+    .filter(o => ["done", "paid_partial", "paid_full", "contracted", "designing", "developing", "reviewing", "delivered"].includes(o.status))
+    .reduce((s, o) => s + (o.finalPrice ?? o.totalAmount ?? 0), 0);
+  const totalProfitAll = Math.round(totalRevAll * margin);
+
+  // Invoice table from real orders
+  const invoices = orders
+    .filter(o => o.finalPrice || o.totalAmount)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 20)
+    .map(o => ({
+      id: o.orderNumber,
+      client: o.customerName + (o.companyName ? ` (${o.companyName})` : ""),
+      service: o.package?.title ?? "Custom Web",
+      amount: o.finalPrice ?? o.totalAmount ?? 0,
+      status: o.paymentStatus === "paid" ? "paid" : o.paymentStatus === "partial" ? "pending" : "pending",
+      date: new Date(o.createdAt).toLocaleDateString("vi-VN"),
+    }));
+
+  // Top clients by revenue
+  const clientMap = new Map<string, { spend: number; name: string; color: string }>();
+  const CLIENT_COLORS = [DS.blue, DS.purple, DS.cyan, DS.green, DS.amber, DS.red];
+  for (const o of paidOrders) {
+    const key = o.companyName ?? o.customerName;
+    const prev = clientMap.get(key);
+    const val = o.finalPrice ?? o.totalAmount ?? 0;
+    clientMap.set(key, { spend: (prev?.spend ?? 0) + val, name: key, color: CLIENT_COLORS[clientMap.size % CLIENT_COLORS.length] });
+  }
+  const topClients = Array.from(clientMap.values())
+    .sort((a, b) => b.spend - a.spend)
+    .slice(0, 5);
+
+  // ── LP awards monthly trend ──────────────────────────────────────────────
+  const lpAwards = lpAwardsData?.data ?? [];
+  const lpMonthlyMap = new Map<string, number>();
+  for (const a of lpAwards) {
+    const d = new Date(a.approvedAt ?? a.createdAt);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    lpMonthlyMap.set(key, (lpMonthlyMap.get(key) ?? 0) + a.lpAmount);
+  }
+  const lpMonthlyData = Array.from(lpMonthlyMap.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .slice(-9)
+    .map(([key, lp]) => {
+      const [y, m] = key.split("-");
+      return { month: `T${m}/${String(y).slice(-2)}`, lp };
+    });
+
+  const maxService = topClients[0]?.spend ?? 1;
 
   return (
     <div>
@@ -344,12 +394,18 @@ export default function RevenuePage() {
       </div>
 
       {/* Metrics */}
+      {isLoading ? (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "1rem", marginBottom: "1.5rem" }}>
+          {[0,1,2,3].map(i => <div key={i} style={{ height: 120, background: DS.bgCard, borderRadius: 16 }} />)}
+        </div>
+      ) : (
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "1rem", marginBottom: "1.5rem" }}>
-        <MetricCard label="Doanh thu Q1/2026" value={fmtB(totalRevAll)} sub="VNĐ tổng 12 tháng" color={DS.blue} icon={<DollarSign size={18} />} trend="+28%" trendUp />
-        <MetricCard label="Lợi nhuận ròng" value={fmtB(totalProfitAll)} sub={`Margin ${avgMargin}%`} color={DS.green} icon={<TrendingUp size={18} />} trend="+35%" trendUp />
-        <MetricCard label="LP Phát hành (T3)" value="35.2K" sub="Điểm thưởng nội bộ" color={DS.purple} icon={<Zap size={18} />} trend="+22%" trendUp />
-        <MetricCard label="Dự án hoàn thành" value="24" sub="Q1/2026" color={DS.cyan} icon={<FolderKanban size={18} />} trend="+3" trendUp />
+        <MetricCard label="Doanh thu" value={fmtB(totalRevAll)} sub="VNĐ tổng (12 tháng)" color={DS.blue} icon={<DollarSign size={18} />} trend="Live data" trendUp />
+        <MetricCard label="Lợi nhuận ròng" value={fmtB(totalProfitAll)} sub={`Margin ${Math.round(margin * 100)}%`} color={DS.green} icon={<TrendingUp size={18} />} trend="Live data" trendUp />
+        <MetricCard label="Đơn hàng" value={String(paidOrders.length)} sub={`${recentOrders.length} đơn thuộc kỳ`} color={DS.purple} icon={<Zap size={18} />} trend="Live data" trendUp />
+        <MetricCard label="Giá trị TB/đơn" value={fmtB(avgOrderValue)} sub="VNĐ / đơn" color={DS.cyan} icon={<FolderKanban size={18} />} trend="Live data" trendUp />
       </div>
+      )}
 
       {/* Area chart */}
       <div style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 16, padding: "1.25rem", marginBottom: "1.5rem" }}>
@@ -382,26 +438,29 @@ export default function RevenuePage() {
 
       {/* Two-column: service breakdown + LP chart */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", marginBottom: "1.5rem", flexWrap: "wrap" }}>
-        {/* Revenue by service */}
+        {/* Revenue by service (top clients from real data) */}
         <div style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 16, padding: "1.25rem" }}>
-          <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.15em", marginBottom: 16 }}>── DOANH THU THEO DỊCH VỤ</div>
+          <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.15em", marginBottom: 16 }}>── DOANH THU THEO KHÁCH HÀNG</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {BY_SERVICE.map(s => (
-              <div key={s.name}>
+            {topClients.length === 0 && (
+              <div style={{ color: DS.text5, fontSize: 12, textAlign: "center", padding: "1rem" }}>Chưa có doanh thu</div>
+            )}
+            {topClients.map((c) => (
+              <div key={c.name}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-                  <span style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono }}>{s.name}</span>
-                  <span style={{ color: s.color, fontSize: 11, fontFamily: DS.mono, fontWeight: 700 }}>{fmtB(s.value)} VNĐ</span>
+                  <span style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono }}>{c.name}</span>
+                  <span style={{ color: c.color, fontSize: 11, fontFamily: DS.mono, fontWeight: 700 }}>{fmtB(c.spend)} VNĐ</span>
                 </div>
                 <div style={{ height: 20, background: "rgba(255,255,255,0.04)", borderRadius: 4, overflow: "hidden" }}>
                   <motion.div
                     initial={{ width: 0 }}
-                    animate={{ width: `${(s.value / maxService) * 100}%` }}
+                    animate={{ width: `${(c.spend / maxService) * 100}%` }}
                     transition={{ duration: 0.8, ease: "easeOut" }}
                     style={{
                       height: "100%",
-                      background: `linear-gradient(90deg, ${s.color}99, ${s.color})`,
+                      background: `linear-gradient(90deg, ${c.color}99, ${c.color})`,
                       borderRadius: 4,
-                      boxShadow: `0 0 8px ${s.color}50`,
+                      boxShadow: `0 0 8px ${c.color}50`,
                     }}
                   />
                 </div>
@@ -410,62 +469,36 @@ export default function RevenuePage() {
           </div>
         </div>
 
-        {/* LP issuance line chart */}
+        {/* LP awards monthly trend (from real approved awards) */}
         <div style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 16, padding: "1.25rem" }}>
           <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.15em", marginBottom: 16 }}>── LP PHÁT HÀNH THEO THÁNG</div>
-          <LineChartSVG data={MONTHLY_LP} color={DS.purple} />
+          {lpMonthlyData.length > 0 ? (
+            <LineChartSVG data={lpMonthlyData} color={DS.purple} />
+          ) : (
+            <div style={{ color: DS.text5, fontSize: 12, textAlign: "center", padding: "2rem" }}>Chưa có dữ liệu LP</div>
+          )}
         </div>
       </div>
 
-      {/* Top clients */}
-      <div style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 16, padding: "1.25rem", marginBottom: "1.5rem" }}>
-        <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.15em", marginBottom: 16 }}>── TOP KHÁCH HÀNG THEO DOANH THU</div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          {TOP_CLIENTS.map((c, i) => {
-            const maxSpend = TOP_CLIENTS[0].spend;
-            return (
-              <div key={c.name} style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                <span style={{ color: DS.text5, fontSize: 11, fontFamily: DS.mono, width: 20 }}>#{i + 1}</span>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-                    <span style={{ color: DS.text2, fontSize: 13, fontWeight: 600 }}>{c.name}</span>
-                    <span style={{ color: c.color, fontSize: 12, fontFamily: DS.mono, fontWeight: 700 }}>{fmtB(c.spend)} VNĐ</span>
-                  </div>
-                  <div style={{ height: 4, background: DS.border, borderRadius: 2 }}>
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${(c.spend / maxSpend) * 100}%` }}
-                      transition={{ duration: 0.6, ease: "easeOut" }}
-                      style={{ height: "100%", background: c.color, borderRadius: 2, boxShadow: `0 0 6px ${c.color}50` }}
-                    />
-                  </div>
-                </div>
-                <span style={{ color: DS.text5, fontSize: 11, whiteSpace: "nowrap" }}>{c.projects} dự án</span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Invoice table */}
+      {/* Invoice table from real orders */}
       <div style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 16, overflow: "hidden" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "1.25rem", borderBottom: `1px solid ${DS.border}` }}>
-          <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.15em" }}>── LỊCH SỬ HÓA ĐƠN</div>
-          <button style={{ display: "flex", alignItems: "center", gap: 5, color: DS.blue, fontSize: 12, background: "rgba(59,130,246,0.08)", border: "1px solid rgba(59,130,246,0.2)", borderRadius: 8, padding: "6px 12px", cursor: "pointer" }}>
-            <Download size={13} /> Xuất Excel
-          </button>
+          <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.15em" }}>── LỊCH SỬ ĐƠN HÀNG</div>
         </div>
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ background: DS.bgCard2 }}>
-                {["Mã HĐ", "Khách hàng", "Dịch vụ", "Số tiền (VNĐ)", "Trạng thái", "Ngày"].map(h => (
+                {["Mã đơn", "Khách hàng", "Dịch vụ", "Giá trị (VNĐ)", "Trạng thái", "Ngày tạo"].map(h => (
                   <th key={h} style={{ textAlign: "left", padding: "10px 16px", color: DS.text5, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.1em", borderBottom: `1px solid ${DS.border}` }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {INVOICES.map((inv, i) => {
+              {invoices.length === 0 && (
+                <tr><td colSpan={6} style={{ padding: "2rem", textAlign: "center", color: DS.text5, fontSize: 12 }}>Chưa có đơn hàng nào</td></tr>
+              )}
+              {invoices.map((inv, i) => {
                 const sc = STATUS_CFG[inv.status] ?? { label: inv.status, color: DS.text4 };
                 return (
                   <tr key={inv.id} style={{ borderBottom: `1px solid ${DS.border}`, background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)" }}>

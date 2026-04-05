@@ -77,6 +77,7 @@ const SIDEBAR_GROUPS_CONFIG: NavGroup[] = [
       { id: "lp", icon: <Wallet size={16} />, labelKey: "sidebar.nav.lp" },
       { id: "lp_manage", icon: <Zap size={16} />, labelKey: "sidebar.nav.lp_manage" },
       { id: "income_tax", icon: <Calculator size={16} />, labelKey: "sidebar.nav.income_tax" },
+      { id: "pricing", icon: <Receipt size={16} />, labelKey: "sidebar.nav.pricing" },
       { id: "web_packages", icon: <Package size={16} />, labelKey: "sidebar.nav.web_packages" },
     ],
   },

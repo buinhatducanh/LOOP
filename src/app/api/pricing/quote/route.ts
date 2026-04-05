@@ -14,10 +14,12 @@ const quoteSchema = z.object({
       featureName: z.string(),
       variantId: z.string(),
       variantName: z.string(),
-      price: z.number(),
+      price: z.number().int().min(0),
     })
   ).min(1, "Vui lòng chọn ít nhất 1 tính năng"),
   totalAmount: z.number().min(0),
+  /** LP used by customer to offset totalAmount (max 20% enforced server-side) */
+  lpUsed: z.number().int().min(0).default(0),
   paymentPlan: z.enum(["50", "100"]).optional(),
   notes: z.string().optional(),
 });
@@ -27,6 +29,10 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const validated = quoteSchema.parse(body);
 
+    // Cap lpUsed at 20% of totalAmount (enforced server-side even if client bypasses)
+    const maxLpAllowed = Math.floor(validated.totalAmount * 0.20);
+    const lpUsed = Math.min(validated.lpUsed, maxLpAllowed);
+
     const quoteRequest = await prisma.quoteRequest.create({
       data: {
         customerName: validated.customerName,
@@ -35,6 +41,7 @@ export async function POST(req: NextRequest) {
         companyName: validated.companyName || null,
         selectedItems: validated.selectedItems,
         totalAmount: validated.totalAmount,
+        lpUsed,                          // stored for downstream approval flow
         paymentPlan: validated.paymentPlan || null,
         notes: validated.notes || null,
       },

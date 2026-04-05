@@ -11,6 +11,10 @@ const createSchema = z.object({
   title: z.string().min(1, "Tiêu đề bắt buộc"),
   totalAmount: z.number().int().min(0),
   lpAllocation: z.record(z.string(), z.number()).default({}),
+  /** LP used by customer (copied from QuoteRequest.lpUsed) */
+  lpUsed: z.number().int().min(0).default(0),
+  /** Optional: link Quote to its originating QuoteRequest */
+  quoteRequestId: z.string().optional(),
   milestones: z.array(z.object({
     name: z.string(),
     amount: z.number(),
@@ -105,6 +109,7 @@ export async function POST(req: NextRequest) {
         title: parsed.data.title,
         totalAmount: parsed.data.totalAmount,
         lpAllocation: lp,
+        lpUsed: parsed.data.lpUsed,
         milestones: parsed.data.milestones ?? undefined,
         validUntil: parsed.data.validUntil,
         note: parsed.data.note ?? null,

@@ -26,19 +26,9 @@ export async function GET(req: NextRequest) {
       ? getSubtitle(type)
       : getSubtitleVi(type);
 
-  // Load logo from public folder
-  const logoUrl = new URL(`${req.nextUrl.origin}/logo.png`);
-  let logoPng: ArrayBuffer | null = null;
-  try {
-    const logoRes = await fetch(logoUrl, {
-      // Cache aggressively — logo changes rarely and Edge instances are stateless
-      cache: "force-cache",
-      next: { revalidate: 86400 * 7 }, // 1 week
-    });
-    if (logoRes.ok) logoPng = await logoRes.arrayBuffer();
-  } catch {
-    // fallback to no logo
-  }
+  // Logo URL — @vercel/og fetches remote <img> URLs automatically inside ImageResponse.
+  // Cache at CDN layer (1 week) so Edge cold-starts don't pay the fetch cost.
+  const logoUrl = `${req.nextUrl.origin}/logo.png`;
 
   return new ImageResponse(
     (
@@ -70,32 +60,15 @@ export async function GET(req: NextRequest) {
               gap: "18px",
             }}
           >
-            {logoPng ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src="data:image/png;base64,INVALID" // overridden by image prop below
-                width={56}
-                height={56}
-                style={{ borderRadius: "12px" }}
-              />
-            ) : (
-              <div
-                style={{
-                  width: "56px",
-                  height: "56px",
-                  borderRadius: "12px",
-                  background: `linear-gradient(135deg, ${accent}, ${accent2})`,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: "28px",
-                  fontWeight: 700,
-                  color: "#fff",
-                }}
-              >
-                L
-              </div>
-            )}
+            {/* @vercel/og fetches remote <img> src URLs automatically.
+                If logo.png is missing, the image slot stays blank — acceptable. */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={logoUrl}
+              width={56}
+              height={56}
+              style={{ borderRadius: "12px" }}
+            />
             <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
               <span
                 style={{
@@ -259,12 +232,6 @@ export async function GET(req: NextRequest) {
     {
       width: 1200,
       height: 630,
-      ...(logoPng
-        ? {
-            fonts: [],
-            // Inline the logo as base64
-          }
-        : {}),
       headers: {
         "Cache-Control": "public, max-age=31536000, immutable",
       },

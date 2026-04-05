@@ -1369,7 +1369,10 @@ export function BookingWizardClient({ locale }: Props) {
     const basePrice = svc ? svc.basePrice * (selectedPkg?.multiplier ?? 1) : 0;
     const featPrices = featOpts.filter(f => selectedFeatures.includes(f.id)).reduce((s, f) => s + f.price, 0);
     const extraPricesTotal = extraOptions.filter(e => selectedExtras.includes(e.id)).reduce((s, e) => s + e.price, 0);
-    const total = Math.round((basePrice + featPrices + extraPricesTotal) * 1.1);
+    const subtotal = basePrice + featPrices + extraPricesTotal;
+    // Deduct LP discount from total (lpDiscount already capped at 20% in useEffect)
+    const vndDiscount = Math.round(lpDiscount * lpRate.lpPerVnd);
+    const total = Math.round((subtotal - vndDiscount) * 1.1);
     const selectedItems = [
       { featureId: svc?.id ?? serviceId, featureName: svc?.title ?? "", variantId: selectedPkg?.id ?? "", variantName: selectedPkg?.name ?? "", price: basePrice },
       ...featOpts.filter(f => selectedFeatures.includes(f.id)).map(f => ({
@@ -1393,6 +1396,7 @@ export function BookingWizardClient({ locale }: Props) {
           companyName: company || undefined,
           selectedItems,
           totalAmount: total,
+          lpUsed: lpDiscount,  // LP discount applied by customer
           paymentPlan,
           notes: `Dịch vụ: ${svc?.title ?? ""} | Gói: ${selectedPkg?.name ?? ""} | Ghi chú đội ngũ: ${talentNote || "—"} | Bắt đầu: ${startDate || "—"} | Thời gian: ${duration || "—"}`,
         }),

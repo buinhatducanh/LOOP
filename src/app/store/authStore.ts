@@ -68,7 +68,7 @@ export type AdminTab =
   | "overview" | "orders" | "members" | "departments" | "projects"
   | "services" | "media" | "quotation" | "portfolio" | "projects_completed"
   | "academy" | "blog" | "revenue" | "clients" | "lp" | "lp_manage"
-  | "income_tax" | "web_packages" | "effects" | "notification_center"
+  | "income_tax" | "web_packages" | "pricing" | "effects" | "notification_center"
   | "settings" | "quests_events" | "leaderboard_admin" | "analytics";
 
 // ── Quest / Event Types (from FE gamification system) ────────────────────────────
@@ -193,7 +193,7 @@ const PM_TABS: AdminTab[] = [
   "overview", "orders", "clients", "quotation", "services", "revenue",
   "projects", "members", "departments", "notification_center",
   "leaderboard_admin", "lp_manage", "quests_events",
-  "academy", "blog", "lp",
+  "academy", "blog", "lp", "pricing",
 ];
 
 const MEDIA_TABS: AdminTab[] = [

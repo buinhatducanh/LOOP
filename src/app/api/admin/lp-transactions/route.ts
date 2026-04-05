@@ -74,9 +74,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (amount > 10_000 || amount < -10_000) {
+    if (amount > 100_000 || amount < -100_000) {
       return NextResponse.json(
-        { error: "Single adjustment cannot exceed ±10,000 LP" },
+        { error: "Single adjustment cannot exceed ±100,000 LP" },
         { status: 400 }
       );
     }

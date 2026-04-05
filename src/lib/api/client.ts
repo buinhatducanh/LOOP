@@ -39,7 +39,7 @@ export interface ApiClientOptions extends RequestInit {
   params?: Record<string, string | number | boolean | undefined>;
   /** Throw on non-2xx instead of returning error response */
   throwOnError?: boolean;
-  /** Credentials (cookies) sent with request. Default: true for all */
+  /** Credentials (cookies) sent with request. Default: false for apiClient (public), true for adminApi */
   withCredentials?: boolean;
 }
 
@@ -49,7 +49,7 @@ async function apiFetch<T>(
   endpoint: string,
   options: ApiClientOptions = {}
 ): Promise<T> {
-  const { params, throwOnError = true, withCredentials = true, ...fetchOptions } = options;
+  const { params, throwOnError = true, withCredentials = false, ...fetchOptions } = options;
 
   // Build URL with query params
   let url = endpoint.startsWith("http") ? endpoint : `${BASE_URL}${endpoint}`;
