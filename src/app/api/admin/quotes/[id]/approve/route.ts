@@ -39,15 +39,28 @@ export async function POST(
 
     // ── Send quote ────────────────────────────────────────────────────────────
     if (action === "send") {
-      const updated = await prisma.quote.update({
-        where: { id },
-        data: { status: "sent", sentAt: new Date() },
-      });
-      return NextResponse.json({ data: updated });
+      // P0-3: Also update lead status when quote is sent to customer
+      if (quote.salesLead?.id) {
+        await prisma.$transaction([
+          prisma.quote.update({ where: { id }, data: { status: "sent", sentAt: new Date() } }),
+          prisma.salesLead.update({ where: { id: quote.salesLead.id }, data: { status: "quoted" } }),
+        ]);
+      } else {
+        await prisma.quote.update({ where: { id }, data: { status: "sent", sentAt: new Date() } });
+      }
+      return NextResponse.json({ data: { status: "sent" } });
     }
 
     // ── Reject quote ──────────────────────────────────────────────────────
     if (action === "reject") {
+      // P0-3: Add audit log for rejection (was missing)
+      await createAuditLog({
+        userId: session.userId,
+        action: "reject",
+        resource: "quotes",
+        resourceId: id,
+        newValues: { reason: data.reason ?? null },
+      });
       const updated = await prisma.quote.update({
         where: { id },
         data: { status: "rejected" },
@@ -57,6 +70,14 @@ export async function POST(
 
     // ── Approve quote — auto-create Order with pricing ───────────────────
     if (action === "approve") {
+      // P0-2: Check quote expiry before approval
+      if (quote.validUntil && new Date(quote.validUntil) < new Date()) {
+        return NextResponse.json(
+          { error: "Quote đã hết hạn. Vui lòng gia hạn trước khi duyệt." },
+          { status: 400 }
+        );
+      }
+
       const result = await approveQuoteAndCreateOrder(id, adminOverridePrice ?? null);
 
       if (!result.ok) {

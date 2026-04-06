@@ -186,12 +186,13 @@ export async function recordPayment(
   const totalExpected = order.finalPrice ?? order.totalAmount ?? 0;
   const newPaidAmount = order.paidAmount + amount;
 
-  // Determine payment status
+  // Determine payment status — use consistent values matching business semantics
+  // Valid: "unpaid" | "paid_partial" | "paid_full"
   let paymentStatus: string;
   if (newPaidAmount >= totalExpected) {
-    paymentStatus = "paid";
+    paymentStatus = "paid_full";
   } else if (newPaidAmount > 0) {
-    paymentStatus = "partial";
+    paymentStatus = "paid_partial";
   } else {
     paymentStatus = "unpaid";
   }

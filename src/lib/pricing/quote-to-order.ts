@@ -100,16 +100,23 @@ export async function approveQuoteAndCreateOrder(
   const order = await prisma.$transaction(async (tx) => {
     const created = await tx.order.create({
       data: {
-        orderNumber: `ORD-${Date.now()}`,
+        // P1: Use crypto.randomUUID() to prevent collision (Date.now() could duplicate)
+        orderNumber: `ORD-${crypto.randomUUID().replace(/-/g, "").slice(0, 12).toUpperCase()}`,
+        // P0-1: Link order back to lead — was missing, orphans entire lead→order lineage
+        salesLeadId: quote.salesLead?.id ?? null,
         customerName: quote.salesLead?.customerName ?? "Unknown",
         customerEmail: quote.salesLead?.customerEmail ?? "",
         customerPhone: quote.salesLead?.customerPhone ?? null,
         companyName: quote.salesLead?.companyName ?? null,
+        // P0-6: Set orderType = "custom" so CUSTOM_TRANSITIONS apply (was defaulting to "package")
+        orderType: "custom",
         // Pricing
         totalAmount: priceResult.finalPrice,
         basePrice: priceResult.basePrice,
         systemCalculatedPrice: priceResult.systemPrice,
         finalPrice: priceResult.finalPrice,
+        // P0-6: Capture rewardLevel from pricing engine (was never saved to Order)
+        rewardLevel: priceResult.rewardLevel,
         // Infrastructure
         infrastructureTierId: priceResult.infraTier?.id ?? null,
         // LP allocation from quote (distribued when paid)
@@ -125,7 +132,8 @@ export async function approveQuoteAndCreateOrder(
       data: {
         status: "approved",
         approvedAt: new Date(),
-        signedAt: new Date(),
+        // P0-2: Do NOT set signedAt here — customer signature is a SEPARATE step.
+        // signedAt is set only when POST /api/admin/quotes/[id]/sign is called.
         orderId: created.id,
       },
     });

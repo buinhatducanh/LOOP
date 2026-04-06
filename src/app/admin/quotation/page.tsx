@@ -66,11 +66,11 @@ type QuoteRequest = {
 const WORKFLOW_ACTIONS: Record<string, Record<string, string>> = {
   draft:     { next: "pending", label: "Gửi duyệt" },
   pending:   { next: "approved", label: "Duyệt" },
-  approved:  { next: "sent", label: "Gửi khách" },
+  approved:  { next: "signed", label: "Khách ký" },   // P0: "Gửi khách" → "Khách ký" (sign = separate step)
   sent:      { next: "signed", label: "Đã ký" },
 };
 
-function QuoteCreateModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
+function QuoteCreateModal({ onClose, onSuccess, salesLeadId }: { onClose: () => void; onSuccess: () => void; salesLeadId?: string }) {
   const { t } = useAdminTranslations();
   const [form, setForm] = useState({
     title: "", customerName: "", customerEmail: "", companyName: "",
@@ -82,9 +82,18 @@ function QuoteCreateModal({ onClose, onSuccess }: { onClose: () => void; onSucce
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.title.trim()) return setError(t("quotation.errTitleRequired"));
+    // P1: salesLeadId is required — quote must be linked to a lead
+    if (!salesLeadId) return setError("Vui lòng chọn khách hàng trước khi tạo báo giá");
     setSaving(true); setError("");
     try {
+      // Auto-generate quoteNumber client-side (format: QT-YYYYMM-XXXX)
+      const now = new Date();
+      const ym = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}`;
+      const seq = Math.random().toString(36).substring(2, 6).toUpperCase();
+      const quoteNumber = `QT-${ym}-${seq}`;
       await adminApi.post("/api/admin/quotes", {
+        salesLeadId,                                              // P0: Link quote to lead
+        quoteNumber,                                             // P1: Auto-generated quote number
         title: form.title.trim(),
         customerName: form.customerName.trim() || undefined,
         customerEmail: form.customerEmail.trim() || undefined,
@@ -168,8 +177,20 @@ export default function QuotationPage() {
   const pendingValue = pendingQuotes.reduce((s, q) => s + (q.totalAmount ?? 0), 0);
 
   const workflowMutation = useMutation({
+    // P0: Use dedicated /approve endpoint with correct action payloads instead of raw PUT
     mutationFn: async ({ id, nextStatus }: { id: string; nextStatus: string }) => {
-      await adminApi.put(`/api/admin/quotes/${id}`, { status: nextStatus });
+      // signed → use dedicated /sign endpoint (separate from approve)
+      if (nextStatus === "signed") {
+        await adminApi.post(`/api/admin/quotes/${id}/sign`, {});
+        return;
+      }
+      // Map status → action for the /approve endpoint
+      const actionMap: Record<string, "send" | "approve" | "reject"> = {
+        pending: "send",     // draft → pending = send
+        approved: "approve", // pending → approved = approve
+      };
+      const action = actionMap[nextStatus] ?? "send";
+      await adminApi.post(`/api/admin/quotes/${id}/approve`, { action });
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin", "quotation", "quotes"] });

@@ -1,4 +1,4 @@
-import { ok, handleError } from "@/lib/api/response";
+import { handleError } from "@/lib/api/response";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";

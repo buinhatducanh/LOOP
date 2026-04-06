@@ -17,6 +17,8 @@ const createSchema = z.object({
   note: z.string().optional(),
   estimatedBudget: z.number().int().positive().optional(),
   assignedTo: z.string().optional(),
+  // P1: referralCodeId was missing — leads created via referral link cannot be attributed
+  referralCodeId: z.string().optional(),
 });
 
 export async function GET(req: NextRequest) {
@@ -104,6 +106,7 @@ export async function POST(req: NextRequest) {
         note: parsed.data.note ?? null,
         estimatedBudget: parsed.data.estimatedBudget ?? null,
         assignedTo: parsed.data.assignedTo ?? null,
+        referralCodeId: parsed.data.referralCodeId ?? null,   // P1: was missing
       },
     });
 
