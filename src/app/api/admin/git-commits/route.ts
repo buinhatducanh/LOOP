@@ -1,4 +1,4 @@
-import { handleError } from "@/lib/api/response";
+import { handleError, ok } from "@/lib/api";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
@@ -28,7 +28,7 @@ export async function GET(_req: NextRequest) {
       take: 200,
     });
 
-    return NextResponse.json({ data });
+    return ok(data);
   } catch (error) {
     return handleError(error);
   }

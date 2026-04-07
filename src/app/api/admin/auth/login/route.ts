@@ -75,7 +75,7 @@ type LoginUser = {
   } | null;
 };
 
-export async function POST(_req: NextRequest) {
+export async function POST(req: NextRequest) {
   const start = Date.now();
   const ipAddress = extractClientIp(req);
 

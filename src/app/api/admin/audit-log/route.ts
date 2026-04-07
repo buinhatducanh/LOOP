@@ -1,4 +1,5 @@
 import { handleError } from "@/lib/api/response";
+import { buildPagination } from "@/lib/api";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
@@ -27,10 +28,7 @@ export async function GET(_req: NextRequest) {
       prisma.auditLog.count({ where }),
     ]);
 
-    return NextResponse.json({
-      data: logs,
-      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
-    });
+    return list(logs, buildPagination(page, limit, total));
   } catch (error) {
     return handleError(error);
   }

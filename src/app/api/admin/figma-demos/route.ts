@@ -1,9 +1,9 @@
-import { handleError } from "@/lib/api/response";
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
+import { handleError, ok, list, badRequest } from "@/lib/api";
 
 const createSchema = z.object({
   projectId: z.string().min(1),
@@ -42,7 +42,7 @@ export async function GET(_req: NextRequest) {
       prisma.figmaDemo.count({ where }),
     ]);
 
-    return NextResponse.json({ data: demos, total, page, limit, totalPages: Math.ceil(total / limit) });
+    return list(demos, { page, limit, total, totalPages: Math.ceil(total / limit) });
   } catch (error) {
     return handleError(error);
   }
@@ -50,13 +50,13 @@ export async function GET(_req: NextRequest) {
 
 export async function POST(_req: NextRequest) {
   try {
-    const _session = await requirePermission("figmas", "create");
+    const session = await requirePermission("figmas", "create");
     const body = await req.json();
 
     // Accept orderId from frontend, normalise to projectId
     const normalized = { ...body, projectId: body.projectId ?? body.orderId };
     const parsed = createSchema.safeParse(normalized);
-    if (!parsed.success) return NextResponse.json({ error: parsed.error.message }, { status: 400 });
+    if (!parsed.success) return badRequest(parsed.error.message);
 
     const { clientEmail, versionHash } = parsed.data;
 
@@ -88,7 +88,7 @@ export async function POST(_req: NextRequest) {
       newValues: { title: demo.title, projectId: demo.projectId },
     });
 
-    return NextResponse.json({ data: demo }, { status: 201 });
+    return ok(demo, 201);
   } catch (error) {
     return handleError(error);
   }

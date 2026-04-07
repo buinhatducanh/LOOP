@@ -290,7 +290,8 @@
       "Bash(powershell -Command \"Get-Item ''d:\\\\LOOP_COMPANY\\\\LOOP\\\\public\\\\assets\\\\design-company\\\\icon tab.png'' | Select-Object Name,Length,LastWriteTime\")",
       "Bash(powershell -Command \"Get-ChildItem -Path 'D:\\\\LOOP_COMPANY\\\\LOOP\\\\src\\\\app\\\\api\\\\admin' -Recurse -Filter route.ts -File | Select -Expand FullName\")",
       "Bash(powershell -Command \"Get-ChildItem -Path 'D:\\\\LOOP_COMPANY\\\\LOOP\\\\src\\\\app\\\\api' -Recurse -Filter route.ts -File | Where-Object { $_.FullName -notmatch '\\\\\\\\admin\\\\\\\\' -and $_.FullName -notmatch '\\\\\\\\v1\\\\\\\\' } | Select -Expand FullName\")",
-      "Bash(powershell -NoProfile -Command \"Get-ChildItem -Path 'D:\\\\LOOP_COMPANY\\\\LOOP\\\\src\\\\app\\\\api' -Recurse -Filter 'route.ts' -File | Where-Object { $_.FullName -notmatch 'admin' -and $_.FullName -notmatch 'v1' } | ForEach-Object { $_.FullName }\")"
+      "Bash(powershell -NoProfile -Command \"Get-ChildItem -Path 'D:\\\\LOOP_COMPANY\\\\LOOP\\\\src\\\\app\\\\api' -Recurse -Filter 'route.ts' -File | Where-Object { $_.FullName -notmatch 'admin' -and $_.FullName -notmatch 'v1' } | ForEach-Object { $_.FullName }\")",
+      "Bash(find /d/LOOP_COMPANY/LOOP/src -type f \\\\\\(-iname *.png -o -iname *.svg -o -iname *.jpg -o -iname *.jpeg -o -iname *.gif -o -iname *.webp -o -iname *.ico -o -iname *.mp4 -o -iname *.webm -o -iname *.woff2 -o -iname *.woff -o -iname *.ttf -o -iname *.otf \\\\\\))"
     ],
     "additionalDirectories": [
       "D:\\LOOP_COMPANY\\LOOP\\src\\app\\api\\admin\\expertises",
