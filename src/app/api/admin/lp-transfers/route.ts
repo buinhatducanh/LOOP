@@ -1,5 +1,5 @@
 import { handleError } from "@/lib/api/response";
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
@@ -13,9 +13,9 @@ import {
 // GET /api/admin/lp-transfers
 // Get transfer history and transfer limit status for the authenticated member.
 
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
-    const _session = await requirePermission("team", "read");
+    const session = await requirePermission("team", "read");
     const { searchParams } = new URL(req.url);
     const memberId = searchParams.get("memberId") ?? session.teamMemberId;
 
@@ -73,9 +73,9 @@ export async function GET(_req: NextRequest) {
 // Execute a peer-to-peer LP transfer.
 // Body: { fromMemberId, toMemberId, amount, description? }
 
-export async function POST(_req: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
-    const _session = await requirePermission("team", "update");
+    const session = await requirePermission("team", "update");
 
     const { fromMemberId, toMemberId, amount, description } = await req.json();
 

@@ -16,7 +16,7 @@ export async function GET(
   { params }: { params: Promise<{ memberId: string }> }
 ) {
   try {
-    const _session = await requirePermission("team", "read");
+    const session = await requirePermission("team", "read");
     const { memberId } = await params;
     const { searchParams } = new URL(req.url);
     const limit = Math.min(50, parseInt(searchParams.get("limit") ?? "10", 10));

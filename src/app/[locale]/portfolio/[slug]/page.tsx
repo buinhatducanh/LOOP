@@ -36,7 +36,7 @@ export async function generateMetadata({ params }: DetailProps): Promise<Metadat
   const pageTitle = `${metaProject.title} | LOOP Solutions`;
   const pageDescription = metaProject.description ?? "Server-first + AI-driven + Edge-ready digital case studies.";
   const canonical = `${baseUrl}/${locale}/portfolio/${slug}`;
-  const ogImage = metaProject.image ?? "/og-cover.jpg";
+  const ogImage = metaProject.image ?? "/og-cover.svg";
 
   return {
     title: pageTitle,

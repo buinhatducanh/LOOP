@@ -293,28 +293,45 @@ export default function RevenuePage() {
 
   const orders = ordersData?.data ?? [];
 
+  // ── Off-system payments ─────────────────────────────────────────────────────
+  const { data: offSystemData } = useQuery({
+    queryKey: ["admin", "revenue", "off-system-payments"],
+    queryFn: () => adminApi.get<{
+      data: Array<{ id: string; amountVnd: number; createdAt: string }>;
+    }>("/api/admin/off-system-payments", { params: { limit: 500 } }),
+    staleTime: 60_000,
+  });
+
+  const offSystemPayments = offSystemData?.data ?? [];
+
   // ── Computed financials from real orders ──────────────────────────────────
   const cutoff = new Date();
   cutoff.setMonth(cutoff.getMonth() - PERIOD_MONTHS[period]);
 
   const recentOrders = orders.filter(o => new Date(o.createdAt) >= cutoff);
+  const recentOffSystem = offSystemPayments.filter(o => new Date(o.createdAt) >= cutoff);
 
   // Revenue: only paid / contracted / done orders
   const paidOrders = recentOrders.filter(o =>
     ["done", "paid_partial", "paid_full", "contracted", "designing", "developing", "reviewing", "delivered"].includes(o.status)
   );
 
-  const totalRevenue = paidOrders.reduce((s, o) => s + (o.finalPrice ?? o.totalAmount ?? 0), 0);
-  const avgOrderValue = paidOrders.length > 0 ? Math.round(totalRevenue / paidOrders.length) : 0;
+  const orderRevenue = paidOrders.reduce((s, o) => s + (o.finalPrice ?? o.totalAmount ?? 0), 0);
+  const offSystemRevenue = recentOffSystem.reduce((s, p) => s + p.amountVnd, 0);
+  const totalRevenue = orderRevenue + offSystemRevenue;
+  const avgOrderValue = paidOrders.length > 0 ? Math.round(orderRevenue / paidOrders.length) : 0;
   const margin = 0.62; // 62% margin approximation
   const _totalProfit = Math.round(totalRevenue * margin);
 
   // Monthly revenue grouping
   const monthlyMap = new Map<string, number>();
   for (const o of paidOrders) {
-    const d = new Date(o.createdAt);
-    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const key = new Date(o.createdAt).toLocaleString("vi-VN", { month: "short", year: "numeric" });
     monthlyMap.set(key, (monthlyMap.get(key) ?? 0) + (o.finalPrice ?? o.totalAmount ?? 0));
+  }
+  for (const p of recentOffSystem) {
+    const key = new Date(p.createdAt).toLocaleString("vi-VN", { month: "short", year: "numeric" });
+    monthlyMap.set(key, (monthlyMap.get(key) ?? 0) + p.amountVnd);
   }
 
   const revData = Array.from(monthlyMap.entries())

@@ -440,6 +440,7 @@ model TeamMember {
   referralCodes          ReferralCode[]
   assignedTasks          Task[]                 @relation("TaskAssignee")
   user                   User?
+  offSystemSplits        OffSystemSplit[]
 
   @@map("team_members")
 }
@@ -587,6 +588,7 @@ model Order {
   quotes                Quote[]
   slaRules              SlaRule[]
   socialPosts           SocialPost[]
+  offSystemPayments     OffSystemPayment[]
 
   @@index([status, createdAt])
   @@index([orderType, status])
@@ -920,7 +922,7 @@ model Quote {
   ///    * Selected advanced feature IDs for auto-pricing
   selectedFeatureIds     Json?               @default("[]") @map("selected_feature_ids")
   /// LP used by customer to offset totalAmount (copied from QuoteRequest at quote creation)
-  lpUsed                Int                   @default(0) @map("lp_used")
+  lpUsed                 Int                 @default(0) @map("lp_used")
   infrastructureTier     InfrastructureTier? @relation(fields: [infrastructureTierId], references: [id])
   order                  Order?              @relation(fields: [orderId], references: [id])
   salesLead              SalesLead           @relation(fields: [salesLeadId], references: [id])
@@ -2595,4 +2597,74 @@ model LoginAttempt {
   @@index([email, lastAttempt])
   @@index([ipAddress, lastAttempt])
   @@map("login_attempts")
+}
+
+// ── Revenue Split Config ───────────────────────────────────────────────────────
+
+/// Admin-configurable revenue split percentages per role.
+/// Example: pm=35%, dev=25%, qa=15%, design=15%, seo=10%.
+/// Used by OffSystemPayment to auto-calculate LP splits.
+model RevenueSplitConfig {
+  id         String   @id @default(cuid())
+  /// Unique key: "pm" | "dev" | "qa" | "design" | "seo" | "sales" | "company"
+  key        String   @unique @map("key")
+  label      String   @map("label")
+  percentage Float    @default(0) @map("percentage")
+  isActive   Boolean  @default(true) @map("is_active")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@map("revenue_split_configs")
+}
+
+// ── Off-System Payments ───────────────────────────────────────────────────────
+
+/// Records payments received outside the standard order system.
+/// Auto-generates OffSystemSplit records based on RevenueSplitConfig.
+model OffSystemPayment {
+  id          String   @id @default(cuid())
+  /// Optional link to an existing Order
+  orderId     String?  @map("order_id")
+  /// Amount in VNĐ
+  amountVnd   Float    @map("amount_vnd")
+  /// LP-to-VND rate at time of recording (e.g. 1000 = 1 LP = 1000 VND)
+  lpRate      Float    @map("lp_rate")
+  /// Computed total LP: amountVnd / lpRate
+  totalLp     Int      @map("total_lp")
+  description String?  @map("description")
+  note        String?  @map("note")
+  createdBy   String   @map("created_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  order  Order?           @relation(fields: [orderId], references: [id])
+  splits OffSystemSplit[]
+
+  @@index([orderId])
+  @@index([createdAt])
+  @@map("off_system_payments")
+}
+
+/// Per-role LP split for an OffSystemPayment.
+/// Status: pending → approved (LP credited) or rejected.
+model OffSystemSplit {
+  id                 String    @id @default(cuid())
+  offSystemPaymentId String    @map("off_system_payment_id")
+  /// TeamMember who receives this LP share
+  memberId           String    @map("member_id")
+  /// Role this split belongs to: "pm" | "dev" | "qa" | etc.
+  projectRole        String    @map("project_role")
+  percentage         Float     @default(0) @map("percentage")
+  lpAmount           Int       @default(0) @map("lp_amount")
+  status             String    @default("pending") @map("status")
+  approvedBy         String?   @map("approved_by")
+  approvedAt         DateTime? @map("approved_at")
+  createdAt          DateTime  @default(now()) @map("created_at")
+
+  offSystemPayment OffSystemPayment @relation(fields: [offSystemPaymentId], references: [id], onDelete: Cascade)
+  member           TeamMember       @relation(fields: [memberId], references: [id])
+
+  @@index([offSystemPaymentId])
+  @@index([memberId])
+  @@index([status])
+  @@map("off_system_splits")
 }

@@ -41,7 +41,7 @@ const SEARCH_SUGGESTIONS = [
   { label: "Thiết kế Website", href: "/services", color: DS.blue },
   { label: "Phát triển App", href: "/services", color: DS.purple },
   { label: "SEO & Marketing", href: "/services", color: DS.green },
-  { label: "Dashboard Analytics", href: "/services", color: DS.cyan },
+  { label: "Phần mềm hỗ trợ kỹ thuật", href: "/services", color: DS.cyan },
   { label: "Khóa học Digital Marketing", href: "/academy", color: DS.purple },
   { label: "Portfolio dự án", href: "/portfolio", color: DS.amber },
   { label: "Đội ngũ LOOP", href: "/team", color: DS.cyan },

@@ -1,15 +1,16 @@
 import { NextRequest } from "next/server";
 import { serverError, unauthorized, forbidden } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
-import { isAdmin } from "@/lib/auth/permissions";
+import { isAdmin, requireAuth } from "@/lib/auth/permissions";
+import { ok } from "@/lib/api/response";
 
 /**
  * POST /api/pricing/seed — Seed pricing feature data (admin only)
  * DELETES existing FeatureVariant, Feature, FeatureGroup records first.
  */
-export async function POST(_req: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
-    const _session = await requireAuth();
+    const session = await requireAuth();
     if (!isAdmin(session)) {
       return forbidden("Admin access required");
     }

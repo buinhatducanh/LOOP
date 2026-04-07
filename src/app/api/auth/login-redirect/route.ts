@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyPassword } from "@/lib/auth/password";
 import { createSession } from "@/lib/auth/session";
@@ -8,7 +8,7 @@ import { createAuditLog } from "@/lib/auth/audit";
 
 const DUMMY_HASH = "$2a$12$LJ3m4ys3Rl3hPcyFSevMnuGHvZw7KLEqKl6.s8EWYFONbJdRe0Gu2";
 
-export async function POST(_req: NextRequest) {
+export async function POST(req: NextRequest) {
   const rateLimitResult = await applyRateLimit(req, "auth");
   if (!rateLimitResult.allowed) return rateLimitResult.response!;
 

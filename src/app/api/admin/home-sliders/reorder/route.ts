@@ -1,5 +1,5 @@
-import { NextRequest } from "next/server";
-import { handleError } from "@/lib/api/response";
+import { NextRequest, NextResponse } from "next/server";
+import { handleError, ok } from "@/lib/api/response";
 import { prisma } from "@/lib/prisma";
 
 export async function POST(request: NextRequest) {

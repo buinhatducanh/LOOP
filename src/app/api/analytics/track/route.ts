@@ -11,7 +11,7 @@
  * CORS: open for any origin (client-side fetch)
  */
 
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 /* ─── Types ───────────────────────────────────────────────────────────── */

@@ -1,4 +1,4 @@
-import { handleError } from "@/lib/api/response";
+import { handleError, ok } from "@/lib/api/response";
 import { NextRequest } from "next/server";
 import { requirePermission } from "@/lib/auth/permissions";
 
@@ -6,7 +6,7 @@ import { requirePermission } from "@/lib/auth/permissions";
  * GET /api/admin/rank-effects/mock-reference
  * Frozen FE mock reference to verify DB migration accuracy against original FE data.
  */
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
     await requirePermission("effects", "read");
 

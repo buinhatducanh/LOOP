@@ -32,7 +32,9 @@
       "effects": "Rank Effects",
       "quests_events": "Quests & Events",
       "notification_center": "Notifications",
-      "settings": "Settings"
+      "settings": "Settings",
+      "revenue_split": "Revenue Split",
+      "off_system_payments": "Off-System Payments"
     },
     "footer": {
       "adminPanel": "ADMIN PANEL"

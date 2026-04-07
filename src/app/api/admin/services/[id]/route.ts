@@ -1,5 +1,5 @@
-import { handleError } from "@/lib/api/response";
-import { NextRequest } from "next/server";
+import { handleError, ok } from "@/lib/api/response";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
@@ -32,7 +32,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const _session = await requirePermission("services", "update");
+    const session = await requirePermission("services", "update");
     const { id } = await params;
     const data = await req.json();
 
@@ -63,7 +63,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const _session = await requirePermission("services", "delete");
+    const session = await requirePermission("services", "delete");
     const { id } = await params;
 
     const existing = await prisma.service.findUnique({ where: { id } });

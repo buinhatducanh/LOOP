@@ -7,7 +7,7 @@
  * 3. Instructor receives LP via TeamMember.availableLp + LpTransaction (teaching source)
  */
 
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { handleError } from "@/lib/api/response";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
@@ -27,7 +27,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const _session = await requirePermission("edu", "update");
+    const session = await requirePermission("edu", "update");
     const { id } = await params;
     const body = await req.json();
     const { amount, method, note } = body;

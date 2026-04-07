@@ -7,14 +7,14 @@
  *
  * Anti-brute-force: max 5 wrong attempts per code, then invalidate it.
  */
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { signResetToken } from "@/lib/auth/jwt";
 import { handleError } from "@/lib/api";
 
 const MAX_ATTEMPTS = 5;
 
-export async function POST(_req: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
     const { email, code } = await req.json();
 

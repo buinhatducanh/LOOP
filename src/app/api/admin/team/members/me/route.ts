@@ -5,7 +5,7 @@
  * Self-service: member can edit their name, avatar, phone, bio, social links.
  * Fields protected (admin-only): role, department, rank, level, LP, accessTags.
  */
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth/permissions";
 import { ok, handleError, badRequest, notFound } from "@/lib/api/response";
 import { addAvatar } from "@/lib/api/mappings";
@@ -23,9 +23,9 @@ const PROTECTED_FIELDS = [
   "availableLp", "lockedLp", "totalXp", "isActive", "slug",
 ];
 
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
-    const _session = await requireAuth();
+    const session = await requireAuth();
 
     if (!session.teamMemberId) {
       return NextResponse.json(
@@ -54,9 +54,9 @@ export async function GET(_req: NextRequest) {
   }
 }
 
-export async function PUT(_req: NextRequest) {
+export async function PUT(req: NextRequest) {
   try {
-    const _session = await requireAuth();
+    const session = await requireAuth();
 
     if (!session.teamMemberId) {
       return NextResponse.json(

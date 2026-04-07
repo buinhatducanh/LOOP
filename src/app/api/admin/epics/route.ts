@@ -1,12 +1,12 @@
 import { handleError } from "@/lib/api/response";
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
 
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
-    const _session = await requirePermission("backlogs", "read");
+    const session = await requirePermission("backlogs", "read");
     const { searchParams } = new URL(req.url);
     // Support both orderId and projectId for backward compat
     const projectId = searchParams.get("projectId") ?? searchParams.get("orderId");
@@ -40,9 +40,9 @@ export async function GET(_req: NextRequest) {
   }
 }
 
-export async function POST(_req: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
-    const _session = await requirePermission("backlogs", "create");
+    const session = await requirePermission("backlogs", "create");
     const data = await req.json();
 
     // Support both orderId and projectId

@@ -1,5 +1,5 @@
 import { handleError } from "@/lib/api/response";
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
 import { calculateOrderPrice } from "@/lib/pricing/calculate-order-price";
@@ -9,7 +9,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const _session = await requirePermission("orders", "update");
+    const session = await requirePermission("orders", "update");
     const { id } = await params;
     const body = await req.json();
     const { selectedFeatureIds, infraTierSlug, infraTierId, adminOverridePrice } = body;

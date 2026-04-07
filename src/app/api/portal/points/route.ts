@@ -6,10 +6,11 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth/permissions";
 import { handleError } from "@/lib/api";
+import { ok } from "@/lib/api/response";
 
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
-    const _session = await requireAuth();
+    const session = await requireAuth();
 
     const customerPoint = await prisma.customerPoint.findUnique({
       where: { userEmail: session.email },

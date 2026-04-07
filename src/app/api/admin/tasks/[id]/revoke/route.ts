@@ -1,5 +1,5 @@
 import { handleError } from "@/lib/api/response";
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
@@ -8,7 +8,7 @@ import { createAuditLog } from "@/lib/auth/audit";
 // Kỷ luật kép: PM thu hồi LP + reassign task
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const _session = await requirePermission("tasks", "update");
+    const session = await requirePermission("tasks", "update");
     const { id } = await params;
     const { type, description, revokedLp, assigneeId, note } = await req.json();
 

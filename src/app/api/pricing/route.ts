@@ -1,4 +1,4 @@
-import { serverError } from "@/lib/api/response";
+import { serverError, ok } from "@/lib/api/response";
 import { getPricingPlans } from "@/lib/db/queries";
 
 export async function GET() {

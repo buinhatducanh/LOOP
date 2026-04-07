@@ -8,11 +8,12 @@
  */
 
 import { NextRequest } from "next/server";
+import { ok } from "@/lib/api/response";
 import { requireAuth } from "@/lib/auth/permissions";
 import { getActiveSessions } from "@/lib/auth/session";
 import { handleError } from "@/lib/api";
 
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
     const session = await requireAuth(req);
 

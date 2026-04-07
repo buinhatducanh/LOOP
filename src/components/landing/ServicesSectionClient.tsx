@@ -29,32 +29,32 @@ const SERVICE_ICONS: Record<string, React.ReactNode> = {
 
 const FALLBACK_SERVICES = [
   {
-    id: "1", slug: "web-design", title: "Thiết kế & Phát triển Web",
+    id: "1", slug: "web-design", title: "Thiết kế Website",
     description: "Website cao cấp, tối ưu chuyển đổi với React/Next.js. Từ landing page đến e-commerce phức tạp.",
     color: DS.blue,
-    priceFrom: "15,000,000 VNĐ",
+    priceFrom: "1,980,000 VNĐ",
     tags: ["React", "Next.js", "TypeScript"],
   },
   {
     id: "2", slug: "app-saas", title: "Phát triển App & SaaS",
     description: "Từ MVP đến enterprise. Mobile app, web app và nền tảng SaaS scalable cho hàng triệu người dùng.",
     color: DS.purple,
-    priceFrom: "80,000,000 VNĐ",
+    priceFrom: "19,980,000 VNĐ",
     tags: ["React Native", "Node.js", "AWS"],
   },
   {
-    id: "3", slug: "dashboard", title: "Dashboard & Analytics",
-    description: "Biến dữ liệu thành insight. Real-time dashboard, báo cáo tự động và data visualization.",
+    id: "3", slug: "tech-support", title: "Phần mềm hỗ trợ kỹ thuật",
+    description: "Công cụ hỗ trợ nội bộ, quản lý dữ liệu, tự động hóa quy trình cho doanh nghiệp.",
     color: DS.cyan,
-    priceFrom: "25,000,000 VNĐ",
-    tags: ["React", "D3.js", "BigQuery"],
+    priceFrom: "200,000 VNĐ/tháng",
+    tags: ["Automation", "API", "Cloud"],
   },
   {
     id: "4", slug: "seo-marketing", title: "SEO & Digital Marketing",
     description: "Tăng trưởng organic bền vững. Technical SEO, content strategy và quảng cáo hiệu suất cao.",
     color: DS.green,
-    priceFrom: "8,000,000 VNĐ/tháng",
-    tags: ["SEO", "Google Ads", "Analytics"],
+    priceFrom: "200,000 VNĐ",
+    tags: ["SEO", "Google Ads", "Content"],
   },
 ];
 

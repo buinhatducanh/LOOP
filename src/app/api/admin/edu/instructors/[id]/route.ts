@@ -1,5 +1,5 @@
-import { handleError } from "@/lib/api/response";
-import { NextRequest } from "next/server";
+import { handleError, ok } from "@/lib/api/response";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
@@ -38,7 +38,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const _session = await requirePermission("edu", "update");
+    const session = await requirePermission("edu", "update");
     const { id } = await params;
     const body = await req.json();
     const { name, bio, email, phone, specialties, isActive, memberId, userId } = body;
@@ -87,7 +87,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const _session = await requirePermission("edu", "delete");
+    const session = await requirePermission("edu", "delete");
     const { id } = await params;
     const existing = await prisma.instructor.findUnique({ where: { id } });
     if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });

@@ -1,10 +1,10 @@
-import { handleError } from "@/lib/api/response";
+import { handleError, list } from "@/lib/api/response";
 import { buildPagination } from "@/lib/api";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
     await requirePermission("audit_logs", "read");
     const { searchParams } = new URL(req.url);

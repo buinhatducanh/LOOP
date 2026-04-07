@@ -1,5 +1,5 @@
 import { handleError } from "@/lib/api/response";
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
@@ -48,7 +48,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const _session = await requirePermission("edu", "update");
+    const session = await requirePermission("edu", "update");
     const { id } = await params;
     const body = await req.json();
     const {
@@ -108,7 +108,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const _session = await requirePermission("edu", "delete");
+    const session = await requirePermission("edu", "delete");
     const { id } = await params;
 
     const existing = await prisma.course.findUnique({

@@ -24,7 +24,7 @@ const quoteSchema = z.object({
   notes: z.string().optional(),
 });
 
-export async function POST(_req: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const validated = quoteSchema.parse(body);

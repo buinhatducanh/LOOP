@@ -21,7 +21,7 @@
 
 export const dynamic = "force-dynamic";
 
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { handleError, badRequest, notFound, conflict } from "@/lib/api/response";
 import { academyLogger } from "@/lib/logger";
@@ -33,7 +33,7 @@ const LP_VND_RATE = 20_000; // legacy — use @/lib/constants in new code
 const MAX_LP_PAYMENT_RATIO = 0.5; // max 50% of course price can be paid with LP
 
 // GET /api/academy/enroll — get user's enrollments
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const userId = searchParams.get("userId");

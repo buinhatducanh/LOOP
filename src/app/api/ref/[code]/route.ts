@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { ok, notFound, serverError, badRequest } from "@/lib/api/response";
 import { createHash } from "crypto";

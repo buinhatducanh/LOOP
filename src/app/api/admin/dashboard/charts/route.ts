@@ -1,10 +1,11 @@
 
 import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";;
 import { handleError } from "@/lib/api/response";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth/permissions";
 
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
     await requireAuth(req);
 

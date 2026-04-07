@@ -8,7 +8,7 @@ import { requirePermission } from "@/lib/auth/permissions";
  * Returns member effect overrides for one team member.
  */
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {

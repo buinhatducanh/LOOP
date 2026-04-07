@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { v2 as cloudinary } from "cloudinary";
 import { requireAuth } from "@/lib/auth/permissions";
-import { handleError, ok } from "@/lib/api";
+import { handleError, ok, badRequest } from "@/lib/api";
 
 cloudinary.config({
   cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
@@ -10,7 +10,7 @@ cloudinary.config({
 });
 
 // Require authentication for upload
-export async function POST(_req: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
     const _authUser = await requireAuth(req);
 
@@ -19,25 +19,19 @@ export async function POST(_req: NextRequest) {
     const folder = formData.get("folder") as string | null;
 
     if (!file) {
-      return NextResponse.json({ error: "No file provided" }, { status: 400 });
+      return badRequest("No file provided");
     }
 
     // Validate file type
     const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml"];
     if (!allowedTypes.includes(file.type)) {
-      return NextResponse.json(
-        { error: "Invalid file type. Only JPEG, PNG, GIF, WebP, and SVG are allowed." },
-        { status: 400 }
-      );
+      return badRequest("Invalid file type. Only JPEG, PNG, GIF, WebP, and SVG are allowed.");
     }
 
     // Validate file size (max 10MB)
     const maxSize = 10 * 1024 * 1024; // 10MB
     if (file.size > maxSize) {
-      return NextResponse.json(
-        { error: "File too large. Maximum size is 10MB." },
-        { status: 400 }
-      );
+      return badRequest("File too large. Maximum size is 10MB.");
     }
 
     // Convert file to buffer
@@ -87,7 +81,7 @@ export async function POST(_req: NextRequest) {
   }
 }
 
-export async function DELETE(_req: NextRequest) {
+export async function DELETE(req: NextRequest) {
   try {
     await requireAuth(req);
 
@@ -95,7 +89,7 @@ export async function DELETE(_req: NextRequest) {
     const publicId = searchParams.get("publicId");
 
     if (!publicId) {
-      return NextResponse.json({ error: "No publicId provided" }, { status: 400 });
+      return badRequest("No publicId provided");
     }
 
     const deleteResult = await cloudinary.uploader.destroy(publicId);

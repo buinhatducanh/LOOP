@@ -1,5 +1,5 @@
 import { handleError } from "@/lib/api/response";
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
@@ -12,9 +12,9 @@ const _VALID_TRANSITIONS: Record<string, string[]> = {
   done: ["in_progress"], // Allow reopening
 };
 
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
-    const _session = await requirePermission("tasks", "read");
+    const session = await requirePermission("tasks", "read");
     const { searchParams } = new URL(req.url);
 
     const where: Record<string, unknown> = {};
@@ -73,9 +73,9 @@ export async function GET(_req: NextRequest) {
   }
 }
 
-export async function POST(_req: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
-    const _session = await requirePermission("tasks", "create");
+    const session = await requirePermission("tasks", "create");
     const data = await req.json();
 
     if (!data.backlogId || !data.title) {

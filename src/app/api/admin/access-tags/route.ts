@@ -2,14 +2,15 @@
  * GET  /api/admin/access-tags   — List all access tags
  * POST /api/admin/access-tags   — Create a new access tag (admin/HR only)
  */
-import { NextRequest } from "next/server";
-import { requirePermissionFast } from "@/lib/auth/permissions";
+import { NextRequest, NextResponse } from "next/server";
+import { ok } from "@/lib/api/response";
+import { requireAuth, requirePermissionFast } from "@/lib/auth/permissions"
 import { handleError } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
-    await requireAuth();
+    const session = await requireAuth(req);
 
     const tags = await prisma.accessTag.findMany({
       orderBy: [{ isDefault: "desc" }, { slug: "asc" }],
@@ -21,9 +22,9 @@ export async function GET(_req: NextRequest) {
   }
 }
 
-export async function POST(_req: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
-    const _session = await requireAuth();
+    const session = await requireAuth(req);
     requirePermissionFast(session, "access-tags", "create");
 
     const body = await req.json();

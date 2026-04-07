@@ -7,7 +7,7 @@
  *
  * Rate limited: 3 requests per IP per 15 minutes.
  */
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendPasswordResetOtp } from "@/lib/email";
 import { applyRateLimit } from "@/lib/rate-limit";
@@ -25,7 +25,7 @@ function generateCode() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-export async function POST(_req: NextRequest) {
+export async function POST(req: NextRequest) {
   // Rate limit
   const rateLimit = await applyRateLimit(req, "auth");
   if (!rateLimit.allowed) return rateLimit.response!;

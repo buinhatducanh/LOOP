@@ -8,7 +8,7 @@
  *  4. Send rejection notification
  */
 import { NextRequest } from "next/server";
-import { requirePermissionFast, isSuperAdmin } from "@/lib/auth/permissions";
+import { requirePermissionFast, isSuperAdmin, requireAuth } from "@/lib/auth/permissions";
 import { ok, handleError, notFound, badRequest } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 
@@ -17,7 +17,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const _session = await requireAuth();
+    const session = await requireAuth();
 
     // Only CEO or super_admin can reject
     if (!isSuperAdmin(session)) {
@@ -75,7 +75,7 @@ export async function POST(
         },
       });
 
-      return updated;
+      return _updated;
     });
 
     return ok(result);

@@ -4,7 +4,7 @@ import { getSession } from "@/lib/auth/permissions";
 import { handleError, list, buildPagination } from "@/lib/api";
 
 // GET — List customer points
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
     await getSession(); // auth check only — uses getSession for broad access
 

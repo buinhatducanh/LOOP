@@ -99,7 +99,7 @@ export function ContactClient({ locale: _locale }: { locale: string }) {
                         <option value="">Chọn dịch vụ</option>
                         <option value="Web Development">Web Development</option>
                         <option value="Mobile App">Mobile App</option>
-                        <option value="Dashboard / Analytics">Dashboard / Analytics</option>
+                        <option value="Phần mềm hỗ trợ kỹ thuật">Phần mềm hỗ trợ kỹ thuật</option>
                         <option value="SEO / Marketing">SEO / Marketing</option>
                       </select>
                     </div>

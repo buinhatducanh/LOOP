@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { handleError } from "@/lib/api/response";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
@@ -28,7 +28,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const _session = await requirePermission("edu", "create");
+    const session = await requirePermission("edu", "create");
     const { id: courseId } = await params;
     const body = await req.json();
     const { title, titleVi, orderIndex, content, durationMinutes, isPublished } = body;

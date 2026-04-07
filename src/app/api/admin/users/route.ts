@@ -1,5 +1,5 @@
 import { handleError } from "@/lib/api/response";
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import type { UserModel } from "@/generated/prisma/models/User";
 import { requirePermission } from "@/lib/auth/permissions";
@@ -12,7 +12,7 @@ import {
   USER_FILTER_CONFIG,
 } from "@/lib/api/search-utils";
 
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
     await requirePermission("users", "read");
     const { searchParams } = new URL(req.url);
@@ -52,9 +52,9 @@ export async function GET(_req: NextRequest) {
   }
 }
 
-export async function POST(_req: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
-    const _session = await requirePermission("users", "create");
+    const session = await requirePermission("users", "create");
     const { name, email, password, role, roleIds, teamMemberId, accountType } = await req.json();
 
     if (!name || !email || !password) {

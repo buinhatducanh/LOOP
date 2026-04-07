@@ -5,7 +5,7 @@ import type { NextRequest } from "next/server";
 
 // GET /api/public/figma-review/[token]
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ token: string }> }
 ) {
   try {

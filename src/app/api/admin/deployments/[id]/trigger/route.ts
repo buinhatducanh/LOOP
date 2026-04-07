@@ -1,5 +1,5 @@
 import { handleError } from "@/lib/api/response";
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 
@@ -15,7 +15,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const _session = await requirePermission("projects", "update");
+    const session = await requirePermission("projects", "update");
     const { id } = await params;
 
     const deployment = await prisma.deployment.findUnique({ where: { id } });
@@ -24,7 +24,7 @@ export async function POST(
     // Mark as running immediately
     await prisma.deployment.update({
       where: { id },
-      data: { status: "running", deployedAt: new Date(), deployedBy: _session.userId },
+      data: { status: "running", deployedAt: new Date(), deployedBy: session.userId },
     });
 
     // Call deploy hook if configured

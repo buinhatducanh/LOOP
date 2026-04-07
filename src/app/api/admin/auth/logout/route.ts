@@ -19,13 +19,13 @@ import { verifyAccessToken } from "@/lib/auth/token";
  * Does NOT require authentication — clears whatever session exists.
  * This ensures logout works even if the session is partially expired.
  */
-export async function POST(_req: NextRequest) {
+export async function POST(req: NextRequest) {
   // Step 1: Try to get session for audit log and revocation
   let sessionId: string | null = null;
   let userId: string | null = null;
 
   // Try Bearer token first (FE sends from localStorage)
-  const bearer = _req.headers.get("Authorization");
+  const bearer = req.headers.get("Authorization");
   if (bearer?.startsWith("Bearer ")) {
     try {
       const payload = await verifyAccessToken(bearer.slice(7));

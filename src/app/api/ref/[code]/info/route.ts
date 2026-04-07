@@ -3,11 +3,12 @@ import { ok, notFound, serverError } from "@/lib/api/response";
 import { prisma } from "@/lib/prisma";
 import { getTierLpRate } from "@/lib/services/customer/referral.service";
 import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";;
 
 // GET /api/ref/[code]/info
 // Returns public referral info for the landing page (member name, tier, stats)
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ code: string }> }
 ) {
   try {

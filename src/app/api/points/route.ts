@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 
@@ -16,9 +16,9 @@ import { auth } from "@/auth";
 
 // ── GET: List redeemable catalog ─────────────────────────────────────────────
 
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
-    const _session = await auth();
+    const session = await auth();
     const { searchParams } = new URL(req.url);
     const _email = searchParams.get("email");
     const catalog = searchParams.get("catalog") === "1";
@@ -52,7 +52,7 @@ export async function GET(_req: NextRequest) {
     }
 
     // ── Customer account (requires email) ─────────────────────────────────
-    const userEmail = session?.user?.email || email;
+    const userEmail = session?.user?.email || _email;
     if (!userEmail) {
       return NextResponse.json({ error: "Email không hợp lệ" }, { status: 400 });
     }
@@ -170,9 +170,9 @@ export async function GET(_req: NextRequest) {
 
 // ── POST: Earn or Redeem ────────────────────────────────────────────────────
 
-export async function POST(_req: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
-    const _session = await auth();
+    const session = await auth();
     if (!session?.user?.email) {
       return NextResponse.json({ error: "Vui lòng đăng nhập" }, { status: 401 });
     }

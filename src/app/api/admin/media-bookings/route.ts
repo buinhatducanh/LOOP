@@ -1,12 +1,12 @@
-import { list, handleError } from "@/lib/api/response";
-import { NextRequest } from "next/server";
+import { list, handleError, ok } from "@/lib/api/response";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
 
 // ─── GET /api/admin/media-bookings ────────────────────────────────────────────
 
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
     await requirePermission("media-bookings", "read");
     const { searchParams } = new URL(req.url);
@@ -98,7 +98,7 @@ export async function GET(_req: NextRequest) {
 
 // ─── POST /api/admin/media-bookings ──────────────────────────────────────────
 
-export async function POST(_req: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
     await requirePermission("media-bookings", "create");
     const data = await req.json();

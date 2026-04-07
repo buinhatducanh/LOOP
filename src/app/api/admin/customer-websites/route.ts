@@ -3,14 +3,14 @@ import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth/permissions";
 
 // GET - Lấy danh sách website
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
     const session = await getSession();
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { searchParams } = new URL(_req.url);
+    const { searchParams } = new URL(req.url);
     const status = searchParams.get("status");
     const search = searchParams.get("search");
     const page = parseInt(searchParams.get("page") || "1");
@@ -59,14 +59,14 @@ export async function GET(_req: NextRequest) {
 }
 
 // POST - Tạo website mới
-export async function POST(_req: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
     const session = await getSession();
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await _req.json();
+    const body = await req.json();
     const {
       domain,
       subdomain,

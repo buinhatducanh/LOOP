@@ -1,8 +1,8 @@
 # LOOP Business Logic — Source of Truth
 
-> **Version**: 4.0.0 · Updated: 2026-04-04
+> **Version**: 5.0.0 · Updated: 2026-04-07
 > **Source**: Verified against `loopStore.ts`, `authStore.ts`, `memberData.ts`, `KanbanBoard.tsx`, `KanbanHub.tsx`, `useRealtimeNotifications.ts`, `authStore.ts` v3 (7 roles)
-> **Status**: RBAC v3 + Member Onboarding workflow (CEO approval) added 2026-04-04
+> **Status**: v5 — Revenue Split Config + Off-System Payment (2026-04-07): LP Rate Persist, RevenueSplitConfig, OffSystemPayment + OffSystemSplit models, auto-split workflow, approve flow.
 
 ---
 
@@ -246,7 +246,7 @@ HR tạo hồ sơ → Nhân viên đăng ký (pending) → CEO duyệt → Gán 
 
 ---
 
-## 9. Admin RBAC Tabs (23 tabs)
+## 9. Admin RBAC Tabs (25 tabs)
 
 ```typescript
 type AdminTab =
@@ -255,7 +255,8 @@ type AdminTab =
   | 'academy' | 'blog'
   | 'revenue' | 'clients' | 'lp' | 'lp_manage' | 'income_tax' | 'web_packages'
   | 'effects' | 'notification_center' | 'settings' | 'quests_events'
-  | 'leaderboard_admin' | 'analytics';
+  | 'leaderboard_admin' | 'analytics' | 'figma-demos' | 'kanban'
+  | 'revenue_split' | 'off_system_payments'; // v5 (2026-04-07)
 ```
 
 ---
@@ -274,3 +275,168 @@ Các file sau **KHÔNG được chỉnh sửa thủ công**:
 - Màu: dùng `rgba(hex, alpha)` inline style, không dùng Tailwind opacity classes
 - Charts: **100% Pure SVG** — không dùng recharts, d3, chart.js
 - Fonts: `DS.heading` (Cinzel), `DS.mono` (JetBrains Mono), `DS.body` (Inter)
+
+---
+
+## 11. Revenue Split + Off-System Payment (v5 — 2026-04-07)
+
+### 11.1 Mô hình dữ liệu
+
+**Prisma Models mới (tạo 2026-04-07):**
+
+```prisma
+// Cấu hình % chia doanh thu theo role — seed 6 rows
+model RevenueSplitConfig {
+  id         String   @id @default(cuid())
+  key        String   @unique   // "pm" | "dev" | "qa" | "design" | "seo" | "company"
+  label      String             // "Project Manager" | "Developer"...
+  percentage Float              // 10.0 = 10%
+  isActive   Boolean @default(true)
+}
+
+// Ghi nhận chi phí/thu ngoài hệ thống Order
+model OffSystemPayment {
+  id          String   @id @default(cuid())
+  orderId     String?            // gắn Order nếu có (optional)
+  amountVnd  Float              // số tiền VNĐ
+  lpRate     Float              // tỷ giá tại thời điểm ghi nhận (e.g. 1000)
+  totalLp    Int                // amountVnd / lpRate
+  description String?
+  note       String?
+  createdBy  String
+  splits     OffSystemSplit[]
+}
+
+// LP chia cho từng role — approve bởi PM/Admin/CEO
+model OffSystemSplit {
+  id                  String    @id @default(cuid())
+  offSystemPaymentId  String
+  memberId            String              // TeamMember nhận LP
+  projectRole         String              // "pm" | "dev" | "qa"...
+  percentage          Float              // % từ RevenueSplitConfig tại thời điểm tạo
+  lpAmount            Int               // totalLp × percentage / 100
+  status              String @default("pending")  // pending | approved | rejected
+  approvedBy          String?
+  approvedAt          DateTime?
+}
+```
+
+**Seed RevenueSplitConfig (6 rows):**
+
+| Key | Label | % | Ghi chú |
+|-----|-------|---|---------|
+| `pm` | Project Manager | 35% | Đầu tiên để chia |
+| `dev` | Developer | 25% | |
+| `qa` | QA Engineer | 15% | |
+| `design` | Designer | 15% | |
+| `seo` | SEO Specialist | 10% | |
+| `company` | Công ty | 0% | Phần còn lại (không tạo split) |
+
+### 11.2 Luồng nghiệp vụ hoàn chỉnh
+
+```
+Admin → /admin/off_system_payments
+    │
+    ├── Nhập số tiền (VD: 3,000,000 VND)
+    ├── Tỷ giá: lấy từ SiteSetting "lp_rate_config" (mặc định: 1 LP = 1,000 VND)
+    ├── Tổng LP = 3,000,000 ÷ 1,000 = 3,000 LP
+    ├── (Optional) Gắn Order
+    │
+    ▼
+POST /api/admin/off-system-payments
+    │
+    ├── Load RevenueSplitConfig active (key ≠ "company", percentage > 0)
+    │
+    ▼ Auto tạo OffSystemSplit rows:
+    ┌──────────────────────────────────────────────────────────┐
+    │ pm      │ 35% │ 3,000 × 35% = 1,050 LP │ pending   │
+    │ dev     │ 25% │ 3,000 × 25% =   750 LP │ pending   │
+    │ qa      │ 15% │ 3,000 × 15% =   450 LP │ pending   │
+    │ design  │ 15% │ 3,000 × 15% =   450 LP │ pending   │
+    │ seo     │ 10% │ 3,000 × 10% =   300 LP │ pending   │
+    └──────────────────────────────────────────────────────────┘
+    │
+    ▼
+PM/Admin/CEO → Duyệt từng split
+    │
+    ▼ POST /api/admin/off-system-payments/:id/splits/:splitId/approve
+    │
+    ├── Credit LP cho member (TeamMember.availableLp += lpAmount)
+    ├── Tạo LpTransaction (source: "award", referenceType: "off_system_split")
+    ├── syncRankFields(memberId) → cập nhật rank/level/XP
+    └── Status: pending → approved
+```
+
+### 11.3 LP Rate Config — Persist
+
+**Key**: `SiteSetting` với `key = "lp_rate_config"`, `group = "lp"`
+**Value**: JSON string
+
+```json
+{
+  "lp_to_vnd": 1000,
+  "salary_iron": 500,      "salary_bronze": 1200,
+  "salary_silver": 2500,   "salary_gold": 5000,
+  "salary_platinum": 10000, "salary_ruby": 22000,
+  "salary_diamond": 50000,
+  "perf_bonus_pct": 20,    "tet_bonus_months": 1.5,
+  "service_per_unit": 300,
+  "project_small": 500,     "project_medium": 1500,
+  "project_large": 4000
+}
+```
+
+**API**:
+- `GET /api/admin/settings/lp-rate` → load config (fallback defaults)
+- `POST /api/admin/settings/lp-rate` → upsert SiteSetting
+
+**UI**: `RateConfigModal` trong `lp_manage/page.tsx` — đã persist thay vì chỉ local state.
+
+### 11.4 Revenue Page tích hợp
+
+`/admin/revenue` cộng OffSystemPayment vào tổng doanh thu:
+
+```typescript
+totalRevenue = orderRevenue (Order.paidAmount) + offSystemRevenue (OffSystemPayment.amountVnd)
+```
+
+Monthly chart cũng bao gồm off-system payments.
+
+### 11.5 Files mới (2026-04-07)
+
+| File | Mô tả |
+|------|--------|
+| `src/app/api/admin/settings/lp-rate/route.ts` | LP rate GET/POST |
+| `src/app/api/admin/revenue-split-configs/route.ts` | CRUD list |
+| `src/app/api/admin/revenue-split-configs/[id]/route.ts` | CRUD single |
+| `src/app/api/admin/off-system-payments/route.ts` | POST + auto-split |
+| `src/app/api/admin/off-system-payments/[id]/route.ts` | GET/PATCH/DELETE |
+| `src/app/api/admin/off-system-payments/[id]/splits/[splitId]/approve/route.ts` | Approve → credit LP |
+| `src/app/admin/revenue_split/page.tsx` | Config % chia |
+| `src/app/admin/off_system_payments/page.tsx` | Form + list payments |
+| `prisma/schema.prisma` | 3 models mới |
+
+### 11.6 RBAC Tabs mới
+
+Thêm 2 tab vào `AdminTab` type và `PM_TABS`:
+- `revenue_split` — cấu hình % chia doanh thu
+- `off_system_payments` — nhập chi phí ngoài + duyệt splits
+
+---
+
+## 12. LP System — Bổ sung nguồn LP
+
+**Thêm vào bảng nguồn LP (Section 3):**
+
+| Nguồn | Staff | Client | Trigger | Ghi chú |
+|-------|-------|--------|---------|---------|
+| **OffSystemPayment** | **✅ (member nhận split)** | — | PM/Admin approve OffSystemSplit | `OffSystemSplit.approvedAt` → credit LP |
+
+**Logic approve OffSystemSplit:**
+```typescript
+// POST /api/admin/off-system-payments/:id/splits/:splitId/approve
+// 1. TeamMember.availableLp += lpAmount
+// 2. LpTransaction (type: award, source: award, referenceType: off_system_split)
+// 3. syncRankFields(memberId)
+// 4. OffSystemSplit.status = "approved"
+```

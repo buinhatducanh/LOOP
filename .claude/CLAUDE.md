@@ -1,9 +1,9 @@
 # LOOP Solutions — Claude Code Context
 
 > Project: LOOP Solutions Agency Platform — Next.js 15 Production
-> Last Updated: 2026-04-04
+> Last Updated: 2026-04-07
 > Language: Vietnamese (code comments, docs), English (variable names, function names)
-> Status: ALL 8 PHASES COMPLETE ✅ (F0–F8) + Fi + Fs + R-seed ✅ — 224 route files, 99 models, ~90 i18n columns, 5 locales; infrastructure: slo.ts(221L) + logger.ts(265L) + scaleGate.ts(552L) + capacity.ts(377L) + Inngest (8 functions, 396L); cache: Cache-Control on 6 v1 GETs; idempotency: IdempotencyKey model + withIdempotency() on 6 mutations; observability: logger.withSLO() on 14 endpoints; rate-limit: applyRateLimit() on 5 public + auth/login; scale gate: 0 blocking, 4 non-critical warnings; **RBAC REDESIGN ✅ (2026-04-04): 7 roles (ceo/super_admin/admin/pm/media/qa/member), per-role tab sets, admin@loop.vn → super_admin level 0, JWT includes roleLevel**; **MEMBER ONBOARDING PLANNED (P2-A/B/C): CEO approval workflow + Access Tags**. Build ✅ tsc ✅ lint ✅.
+> Status: ALL 8 PHASES COMPLETE ✅ (F0–F8) + Fi + Fs + R-seed ✅ — 224 route files, 99 models, ~90 i18n columns, 5 locales; infrastructure: slo.ts(221L) + logger.ts(265L) + scaleGate.ts(552L) + capacity.ts(377L) + Inngest (8 functions, 396L); cache: Cache-Control on 6 v1 GETs; idempotency: IdempotencyKey model + withIdempotency() on 6 mutations; observability: logger.withSLO() on 14 endpoints; rate-limit: applyRateLimit() on 5 public + auth/login; scale gate: 0 blocking, 4 non-critical warnings; **RBAC REDESIGN ✅ (2026-04-04): 7 roles (ceo/super_admin/admin/pm/media/qa/member), per-role tab sets, admin@loop.vn → super_admin level 0, JWT includes roleLevel**; **MEMBER ONBOARDING PLANNED (P2-A/B/C): CEO approval workflow + Access Tags**. **REVENUE SPLIT ✅ (2026-04-07): Off-System Payment → LP auto-split theo RevenueSplitConfig % → approve → credit LP. 3 Prisma models (RevenueSplitConfig + OffSystemPayment + OffSystemSplit). 4 API routes + 2 admin pages. LP rate persist via SiteSetting. Revenue page incorporates off-system revenue. Build ✅ tsc ✅ lint ✅.
 > CI/CD: GitHub connected to Vercel, auto-deploy on push. Domain: loops.vn (production).
 
 ---
@@ -83,7 +83,7 @@ All development happens in `/src/`. **FE/** and **DESIGN LOOPS/** prototype fold
 | **Vercel project** | `prj_T3kS2kTcAF38IuhMtqGRRlINOSR5` · `team_zgpVFIa6a7Y9QE4H4yTHe3Bv` | |
 
 ### Mục tiêu hiện tại
-All 8 phases hoàn thành. Remaining: JA/KO/ZH professional translation (MEDIUM), I18N-RUNBOOK done ✅. Deferred P2: JSON Translation migration, SupportedLocale model, TTFB audit, GSC verify, bundle opt. Chi tiết: `docs/FE-BE-INTEGRATION-STATUS.md`.
+All 8 phases hoàn thành. **Revenue Split + Off-System Payment ✅ (2026-04-07)** — LP Rate persist, RevenueSplitConfig CRUD, OffSystemPayment auto-split, approve → credit LP. Remaining: JA/KO/ZH professional translation (MEDIUM), I18N-RUNBOOK done ✅. Deferred P2: JSON Translation migration, SupportedLocale model, TTFB audit, GSC verify, bundle opt. Chi tiết: `docs/FE-BE-INTEGRATION-STATUS.md`.
 
 ---
 
@@ -297,6 +297,11 @@ src/
 - `GET/POST /api/admin/quote` → Pricing wizard
 - `GET /api/admin/dashboard` → KPI overview
 - `GET /api/admin/dashboard/charts` → Analytics charts
+- `GET/POST /api/admin/settings/lp-rate` → LP rate config (persist)
+- `GET/POST/PUT/DELETE /api/admin/revenue-split-configs` → RevenueSplitConfig CRUD
+- `GET/POST /api/admin/off-system-payments` → OffSystemPayment + auto-split
+- `GET/PATCH/DELETE /api/admin/off-system-payments/[id]` → OffSystemPayment single
+- `POST /api/admin/off-system-payments/[id]/splits/[splitId]/approve` → Credit LP to member
 
 ### Auth
 - `POST /api/admin/auth/login` → JWT login
@@ -355,6 +360,9 @@ src/
 | CompanyEvent | QuestEventsTab CRUD |
 | QuestParticipant | Quest participation tracking (15 team members) |
 | User (Team) | User accounts for team members (QuestParticipant FK) |
+| **RevenueSplitConfig** | Revenue split % per role (2026-04-07) |
+| **OffSystemPayment** | Chi phí/thu ngoài hệ thống (2026-04-07) |
+| **OffSystemSplit** | LP split per role, approve workflow (2026-04-07) |
 
 ---
 
@@ -376,8 +384,8 @@ src/
 | management | overview, orders, members, departments, projects, revenue, clients, notification_center, quests_events |
 | admin | **TẤT CẢ 23 tabs** |
 
-### 23 Admin Tabs
-`overview | orders | members | departments | projects | services | media | quotation | portfolio | projects_completed | academy | blog | revenue | clients | lp | lp_manage | income_tax | web_packages | effects | notification_center | settings | quests_events | leaderboard_admin | analytics`
+### 25 Admin Tabs
+`overview | orders | members | departments | projects | services | media | quotation | portfolio | projects_completed | academy | blog | revenue | clients | lp | lp_manage | income_tax | web_packages | effects | notification_center | settings | quests_events | leaderboard_admin | analytics | figma-demos | kanban | revenue_split | off_system_payments`
 
 ---
 

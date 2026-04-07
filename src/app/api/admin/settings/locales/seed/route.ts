@@ -2,10 +2,11 @@
  * POST /api/admin/settings/locales/seed
  * Seed initial supported locales. Safe to run multiple times.
  */
+import { NextResponse } from "next/server";
+import { ok } from "@/lib/api/response";
 
 
-import { requirePermissionFast } from "@/lib/auth/permissions";
-import { getSession } from "@/lib/auth/permissions";
+import { requirePermissionFast, getSession } from "@/lib/auth/permissions";
 import { prisma } from "@/lib/prisma";
 import { handleError } from "@/lib/api";
 
@@ -19,7 +20,7 @@ const SEED_LOCALES = [
 
 export async function POST() {
   try {
-    const _session = await getSession();
+    const session = await getSession();
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     requirePermissionFast(session, "settings", "update");
 

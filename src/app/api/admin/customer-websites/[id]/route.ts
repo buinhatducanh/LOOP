@@ -1,5 +1,5 @@
-import { NextRequest } from "next/server";
-import { handleError } from "@/lib/api/response";
+import { NextRequest, NextResponse } from "next/server";
+import { handleError, ok } from "@/lib/api/response";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth/permissions";
 
@@ -9,7 +9,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const _session = await getSession();
+    const session = await getSession();
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -84,7 +84,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const _session = await getSession();
+    const session = await getSession();
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -110,7 +110,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const _session = await getSession();
+    const session = await getSession();
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

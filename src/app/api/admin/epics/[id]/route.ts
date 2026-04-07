@@ -1,12 +1,12 @@
-import { handleError } from "@/lib/api/response";
-import { NextRequest } from "next/server";
+import { handleError, ok } from "@/lib/api/response";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const _session = await requirePermission("backlogs", "read");
+    const session = await requirePermission("backlogs", "read");
     const { id } = await params;
     const epic = await prisma.epic.findUnique({
       where: { id },
@@ -28,7 +28,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const _session = await requirePermission("backlogs", "update");
+    const session = await requirePermission("backlogs", "update");
     const { id } = await params;
     const data = await req.json();
     const existing = await prisma.epic.findUnique({ where: { id } });
@@ -60,7 +60,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const _session = await requirePermission("backlogs", "delete");
+    const session = await requirePermission("backlogs", "delete");
     const { id } = await params;
     await prisma.epic.delete({ where: { id } });
     await createAuditLog({ userId: session.userId, action: "delete", resource: "backlogs", resourceId: id });

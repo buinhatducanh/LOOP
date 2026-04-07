@@ -5,7 +5,7 @@
  * Supports ?lang=vi|en|ja|ko|zh (default: vi).
  */
 
-import { handleError } from "@/lib/api/response";
+import { handleError, ok } from "@/lib/api/response";
 import { getTestimonials } from "@/lib/db/queries";
 import { parseLocaleParam, getLocalizedField } from "@/lib/i18n/localization";
 

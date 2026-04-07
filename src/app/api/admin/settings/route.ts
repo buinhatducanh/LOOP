@@ -1,12 +1,12 @@
 import { handleError } from "@/lib/api/response";
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
 
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
-    const _session = await requirePermission("settings", "read");
+    const session = await requirePermission("settings", "read");
 
     const settings = await prisma.siteSetting.findMany({
       orderBy: { key: "asc" },
@@ -27,9 +27,9 @@ export async function GET(_req: NextRequest) {
   }
 }
 
-export async function POST(_req: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
-    const _session = await requirePermission("settings", "update");
+    const session = await requirePermission("settings", "update");
     const { settings } = await req.json();
 
     if (!Array.isArray(settings)) {

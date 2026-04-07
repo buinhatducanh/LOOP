@@ -291,7 +291,21 @@
       "Bash(powershell -Command \"Get-ChildItem -Path 'D:\\\\LOOP_COMPANY\\\\LOOP\\\\src\\\\app\\\\api\\\\admin' -Recurse -Filter route.ts -File | Select -Expand FullName\")",
       "Bash(powershell -Command \"Get-ChildItem -Path 'D:\\\\LOOP_COMPANY\\\\LOOP\\\\src\\\\app\\\\api' -Recurse -Filter route.ts -File | Where-Object { $_.FullName -notmatch '\\\\\\\\admin\\\\\\\\' -and $_.FullName -notmatch '\\\\\\\\v1\\\\\\\\' } | Select -Expand FullName\")",
       "Bash(powershell -NoProfile -Command \"Get-ChildItem -Path 'D:\\\\LOOP_COMPANY\\\\LOOP\\\\src\\\\app\\\\api' -Recurse -Filter 'route.ts' -File | Where-Object { $_.FullName -notmatch 'admin' -and $_.FullName -notmatch 'v1' } | ForEach-Object { $_.FullName }\")",
-      "Bash(find /d/LOOP_COMPANY/LOOP/src -type f \\\\\\(-iname *.png -o -iname *.svg -o -iname *.jpg -o -iname *.jpeg -o -iname *.gif -o -iname *.webp -o -iname *.ico -o -iname *.mp4 -o -iname *.webm -o -iname *.woff2 -o -iname *.woff -o -iname *.ttf -o -iname *.otf \\\\\\))"
+      "Bash(find /d/LOOP_COMPANY/LOOP/src -type f \\\\\\(-iname *.png -o -iname *.svg -o -iname *.jpg -o -iname *.jpeg -o -iname *.gif -o -iname *.webp -o -iname *.ico -o -iname *.mp4 -o -iname *.webm -o -iname *.woff2 -o -iname *.woff -o -iname *.ttf -o -iname *.otf \\\\\\))",
+      "Bash(sed -i 's/\"\"service3\"\": \"\"Dashboard & Analytics\"\"/\"\"service3\"\": \"\"Technical Support Software\"\"/g' \"D:/LOOP_COMPANY/LOOP/src/i18n/messages/en.json\")",
+      "Bash(sed -i 's/\"\"service3\"\": \"\"Dashboard & Analytics\"\"/\"\"service3\"\": \"\"技術サポートソフトウェア\"\"/g' \"D:/LOOP_COMPANY/LOOP/src/i18n/messages/ja.json\")",
+      "Bash(sed -i 's/\"\"service3\"\": \"\"Dashboard & Analytics\"\"/\"\"service3\"\": \"\"기술 지원 소프트웨어\"\"/g' \"D:/LOOP_COMPANY/LOOP/src/i18n/messages/ko.json\")",
+      "Bash(sed -i 's/\"\"service3\"\": \"\"Dashboard & Analytics\"\"/\"\"service3\"\": \"\"技术支持软件\"\"/g' \"D:/LOOP_COMPANY/LOOP/src/i18n/messages/zh.json\")",
+      "Bash(head -10 src/app/api/academy/certificate/[courseId]/route.ts)",
+      "Bash(xargs -I{} node -e \"const fs=require\\(''''fs''''\\);const p=process.argv[1];let c=fs.readFileSync\\(p,''''utf8''''\\);const n=c.replace\\(/const _session = await requirePermission\\\\\\(/g,''''const session = await requirePermission\\(''''\\);if\\(n!==c\\){fs.writeFileSync\\(p,n\\);console.log\\(''''Fixed:'''',p\\)}\" {})",
+      "Bash(xargs -I{} node -e \"const fs=require\\(''''fs''''\\);const p=process.argv[1];let c=fs.readFileSync\\(p,''''utf8''''\\);const n=c.replace\\(/_req: NextRequest/g,''''req: NextRequest''''\\);if\\(n!==c\\){fs.writeFileSync\\(p,n\\);console.log\\(''''Fixed:'''',p\\)}\" {})",
+      "Bash(do node:*)",
+      "Bash(sed -n '14,18p' src/app/api/admin/settings/locales/route.ts)",
+      "Bash(sed -n '29,33p' src/app/api/admin/settings/locales/route.ts)",
+      "Bash(head -5 src/app/api/admin/customer-websites/[id]/route.ts)",
+      "Bash(sed -n '126,130p' src/app/api/admin/customer-points/route.ts)",
+      "Bash(sed -n '174,178p' src/app/api/admin/team/members/pending/[id]/approve/route.ts)",
+      "Bash(sed -n '53,57p' src/app/api/points/route.ts)"
     ],
     "additionalDirectories": [
       "D:\\LOOP_COMPANY\\LOOP\\src\\app\\api\\admin\\expertises",

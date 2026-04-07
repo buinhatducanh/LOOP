@@ -1,5 +1,5 @@
-import { handleError } from "@/lib/api/response";
-import { NextRequest } from "next/server";
+import { handleError, ok } from "@/lib/api/response";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
@@ -22,7 +22,7 @@ async function resolveUserNames(booking: NonNullable<BookingWithRelations>) {
 // ─── GET /api/admin/media-bookings/[id] ───────────────────────────────────────
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -55,7 +55,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const _session = await requirePermission("media-bookings", "update");
+    const session = await requirePermission("media-bookings", "update");
     const { id } = await params;
     const data = await req.json();
 
@@ -136,11 +136,11 @@ export async function PUT(
 // ─── DELETE /api/admin/media-bookings/[id] ────────────────────────────────────
 
 export async function DELETE(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const _session = await requirePermission("media-bookings", "delete");
+    const session = await requirePermission("media-bookings", "delete");
     const { id } = await params;
 
     const existing = await prisma.mediaBooking.findUnique({ where: { id } });

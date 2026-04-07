@@ -31,7 +31,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const pageTitle = `${mapped.name ?? ""} - ${mapped.role ?? ""} | LOOP Solutions`;
   const pageDescription = (mapped.shortBio as string | undefined) ?? (mapped.bio as string | undefined) ?? `${mapped.name} - LOOP Solutions`;
   const canonical = `${baseUrl}/${locale}/team/${slug}`;
-  const ogImage = (mapped.image as string | undefined) ?? "/og-cover.jpg";
+  const ogImage = (mapped.image as string | undefined) ?? "/og-cover.svg";
 
   return {
     title: pageTitle,

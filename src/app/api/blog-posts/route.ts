@@ -6,6 +6,7 @@
  */
 
 import { handleError } from "@/lib/api";
+import { ok } from "@/lib/api/response";
 import { prisma } from "@/lib/prisma";
 import { parseLocaleParam, getLocalizedField } from "@/lib/i18n/localization";
 

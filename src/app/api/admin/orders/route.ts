@@ -1,5 +1,5 @@
-import { handleError } from "@/lib/api/response";
-import { NextRequest } from "next/server";
+import { handleError, ok } from "@/lib/api/response";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
@@ -12,9 +12,9 @@ import {
 import { orderLogger } from "@/lib/logger";
 import { withIdempotency } from "@/lib/idempotency";
 
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
-    const _session = await requirePermission("orders", "read");
+    const session = await requirePermission("orders", "read");
     const { searchParams } = new URL(req.url);
     const { where, orderBy } = buildQueryFromParams(searchParams, ORDER_FILTER_CONFIG);
     const { page, limit } = parsePagination(searchParams);
@@ -82,7 +82,7 @@ export const POST = withIdempotency(
   "create_order_admin",
   async (req: NextRequest) => {
     try {
-      const _session = await requirePermission("orders", "create");
+      const session = await requirePermission("orders", "create");
       const data = await req.json();
 
       if (!data.packageId || !data.customerName || !data.customerEmail) {

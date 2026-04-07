@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { handleError, ok } from "@/lib/api";
 import { globalSearch } from "@/lib/services/content/search.service";
 import { applyRateLimit } from "@/lib/rate-limit";
@@ -8,7 +8,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
  *
  * Response: { data: { services: [], team: [], projects: [], total: number } }
  */
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
   // Rate limit check
   const rateLimit = await applyRateLimit(req, "search");
   if (!rateLimit.allowed && rateLimit.response) {

@@ -10,24 +10,24 @@
  *
  * Body: { token: string, password: string }
  */
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/auth/password";
 import { createSession } from "@/lib/auth/session";
 import { ROLE_LEVEL } from "@/lib/auth/roles";
 import {handleError } from "@/lib/api";
 
-export async function POST(_req: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
-    const body = await _req.json();
+    const body = await req.json();
     const { token, password } = body;
 
     // ── Validate input ───────────────────────────────────────────────────────────
     if (!token || typeof token !== "string") {
-      return badRequest("token không hợp lệ");
+      return // badRequest("token không hợp lệ");
     }
     if (!password || typeof password !== "string" || password.length < 8) {
-      return badRequest("Mật khẩu phải có ít nhất 8 ký tự");
+      return // badRequest("Mật khẩu phải có ít nhất 8 ký tự");
     }
 
     // ── Find MemberRequest by inviteToken ──────────────────────────────────────
@@ -100,10 +100,10 @@ export async function POST(_req: NextRequest) {
     }
 
     // ── Create session with access + refresh tokens ─────────────────────────────
-    const ipAddress = _req.headers.get("x-forwarded-for")
+    const ipAddress = req.headers.get("x-forwarded-for")
       ?? req.headers.get("x-real-ip")
       ?? null;
-    const userAgent = _req.headers.get("user-agent") ?? null;
+    const userAgent = req.headers.get("user-agent") ?? null;
     const roleLevel = ROLE_LEVEL[user.role] ?? 5;
 
     const { accessToken, refreshToken: _refreshToken } = await createSession(

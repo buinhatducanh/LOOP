@@ -13,7 +13,7 @@ const createSchema = z.object({
   versionHash: z.string().optional().nullable(),
 });
 
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
     await requirePermission("figmas", "read");
     const { searchParams } = new URL(req.url);
@@ -48,7 +48,7 @@ export async function GET(_req: NextRequest) {
   }
 }
 
-export async function POST(_req: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
     const session = await requirePermission("figmas", "create");
     const body = await req.json();

@@ -1,21 +1,21 @@
-import { handleError } from "@/lib/api/response";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
+import { handleError, ok, notFound, badRequest } from "@/lib/api";
 
 // POST /api/admin/figma-demos/[id]/reject
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const _session = await requirePermission("figmas", "update");
+    const session = await requirePermission("figmas", "update");
     const { id } = await params;
     const { reason } = await req.json().catch(() => ({ reason: "Rejected by PM" }));
 
     const demo = await prisma.figmaDemo.findUnique({ where: { id } });
-    if (!demo) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    if (!demo) return notFound("Demo not found");
 
     if (demo.status !== "pending") {
-      return NextResponse.json({ error: "Already processed" }, { status: 400 });
+      return badRequest("Demo already processed");
     }
 
     const updated = await prisma.figmaDemo.update({
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       newValues: { status: "rejected", rejectionNote: reason },
     });
 
-    return NextResponse.json({ data: updated });
+    return ok(updated);
   } catch (error) {
     return handleError(error);
   }

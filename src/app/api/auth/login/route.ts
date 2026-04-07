@@ -13,7 +13,7 @@
  * Staff login uses POST /api/admin/auth/login instead.
  */
 
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyPassword } from "@/lib/auth/password";
 import {
@@ -45,7 +45,7 @@ function isDbUnavailableError(err: unknown): boolean {
   return false;
 }
 
-export async function POST(_req: NextRequest) {
+export async function POST(req: NextRequest) {
   const start = Date.now();
   const ipAddress = extractClientIp(req);
 

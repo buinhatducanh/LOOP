@@ -79,6 +79,8 @@ const SIDEBAR_GROUPS_CONFIG: NavGroup[] = [
       { id: "income_tax", icon: <Calculator size={16} />, labelKey: "sidebar.nav.income_tax" },
       { id: "pricing", icon: <Receipt size={16} />, labelKey: "sidebar.nav.pricing" },
       { id: "web_packages", icon: <Package size={16} />, labelKey: "sidebar.nav.web_packages" },
+      { id: "revenue_split", icon: <Calculator size={16} />, labelKey: "sidebar.nav.revenue_split" },
+      { id: "off_system_payments", icon: <Wallet size={16} />, labelKey: "sidebar.nav.off_system_payments" },
     ],
   },
   {

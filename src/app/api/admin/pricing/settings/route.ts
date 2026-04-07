@@ -15,7 +15,7 @@ import { requirePermission } from "@/lib/auth/permissions";
 import { ok, handleError, badRequest } from "@/lib/api";
 import { createAuditLog } from "@/lib/auth/audit";
 
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
     await requirePermission("settings", "read");
 
@@ -60,9 +60,9 @@ export async function GET(_req: NextRequest) {
   }
 }
 
-export async function PUT(_req: NextRequest) {
+export async function PUT(req: NextRequest) {
   try {
-    const _session = await requirePermission("settings", "update");
+    const session = await requirePermission("settings", "update");
     const body = await req.json();
     const { settings } = body as { settings: { key: string; value: string }[] };
 

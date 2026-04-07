@@ -41,6 +41,7 @@
  *   websites         → /admin/websites
  *   points           → /admin/points
  */
+import { NextResponse } from "next/server";
 
 
 import { prisma } from "@/lib/prisma";

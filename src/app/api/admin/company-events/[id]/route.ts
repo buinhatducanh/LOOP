@@ -1,14 +1,14 @@
-import { handleError } from "@/lib/api/response";
+import { handleError, ok } from "@/lib/api/response";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const _session = await requirePermission("quests", "read");
+    const session = await requirePermission("quests", "read");
     const { id } = await params;
     const event = await prisma.companyEvent.findUnique({
       where: { id },
@@ -26,7 +26,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const _session = await requirePermission("quests", "update");
+    const session = await requirePermission("quests", "update");
     const { id } = await params;
     const data = await req.json();
     const existing = await prisma.companyEvent.findUnique({ where: { id } });
@@ -54,11 +54,11 @@ export async function PUT(
 }
 
 export async function DELETE(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const _session = await requirePermission("quests", "delete");
+    const session = await requirePermission("quests", "delete");
     const { id } = await params;
     await prisma.companyEvent.delete({ where: { id } });
     return ok({ success: true });

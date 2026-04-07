@@ -1,5 +1,5 @@
-import { NextRequest } from "next/server";
-import { handleError } from "@/lib/api/response";
+import { NextRequest, NextResponse } from "next/server";
+import { handleError, ok } from "@/lib/api/response";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
@@ -9,7 +9,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const _session = await requirePermission("messages", "update");
+    const session = await requirePermission("messages", "update");
     const { id } = await params;
     const { status } = await req.json();
 
@@ -37,7 +37,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const _session = await requirePermission("messages", "delete");
+    const session = await requirePermission("messages", "delete");
     const { id } = await params;
 
     await prisma.contactMessage.delete({ where: { id } });

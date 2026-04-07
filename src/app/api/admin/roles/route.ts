@@ -1,4 +1,5 @@
 import { handleError } from "@/lib/api/response";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 

@@ -32,7 +32,9 @@
       "effects": "Hiệu ứng rank",
       "quests_events": "Nhiệm vụ & Sự kiện",
       "notification_center": "Trung tâm TB",
-      "settings": "Cài đặt"
+      "settings": "Cài đặt",
+      "revenue_split": "Chia doanh thu",
+      "off_system_payments": "Chi phí ngoài"
     },
     "footer": {
       "adminPanel": "ADMIN PANEL"

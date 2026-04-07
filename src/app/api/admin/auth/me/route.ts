@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth/permissions";
 import { authLogger } from "@/lib/logger";
 
@@ -41,11 +41,11 @@ async function withRetry<T>(fn: () => Promise<T>): Promise<T | null> {
   return null;
 }
 
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
   const start = Date.now();
 
   try {
-    const _session = await withRetry(() => requireAuth(req));
+    const session = await withRetry(() => requireAuth(req));
 
     if (!session) {
       // DB unavailable — return 401 so client clears session gracefully

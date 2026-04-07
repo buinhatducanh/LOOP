@@ -10,7 +10,7 @@
 
 export const dynamic = "force-dynamic";
 
-import { serverError } from "@/lib/api/response";
+import { ok, serverError } from "@/lib/api/response";
 import { prisma } from "@/lib/prisma";
 import { calculateOrderPrice } from "@/lib/pricing/calculate-order-price";
 

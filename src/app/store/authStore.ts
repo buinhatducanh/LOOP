@@ -72,7 +72,8 @@ export type AdminTab =
   | "academy" | "blog" | "revenue" | "clients" | "lp" | "lp_manage"
   | "income_tax" | "web_packages" | "pricing" | "effects" | "notification_center"
   | "settings" | "quests_events" | "leaderboard_admin" | "analytics"
-  | "figma-demos" | "kanban";
+  | "figma-demos" | "kanban"
+  | "revenue_split" | "off_system_payments";
 
 // ── Quest / Event Types (from FE gamification system) ────────────────────────────
 
@@ -197,6 +198,7 @@ const PM_TABS: AdminTab[] = [
   "projects", "members", "departments", "notification_center",
   "leaderboard_admin", "lp_manage", "quests_events",
   "academy", "blog", "lp", "pricing", "figma-demos",
+  "revenue_split", "off_system_payments",
 ];
 
 const MEDIA_TABS: AdminTab[] = [

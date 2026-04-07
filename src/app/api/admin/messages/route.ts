@@ -1,5 +1,5 @@
 import { handleError } from "@/lib/api/response";
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import {
@@ -9,7 +9,7 @@ import {
   MESSAGE_FILTER_CONFIG,
 } from "@/lib/api/search-utils";
 
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
     await requirePermission("messages", "read");
     const { searchParams } = new URL(req.url);

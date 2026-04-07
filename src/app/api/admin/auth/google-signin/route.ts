@@ -5,9 +5,9 @@
  * NextAuth handles the full OAuth callback → sets session cookie.
  * After OAuth completes, FE can call /api/admin/auth/me to get session.
  */
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
   const callbackUrl = req.nextUrl.searchParams.get("callbackUrl") ?? "/vi/dang-nhap";
 
   // Redirect to NextAuth Google sign-in handler

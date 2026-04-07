@@ -13,12 +13,12 @@ import { requirePermission } from "@/lib/auth/permissions";
 import { ok, list, handleError, badRequest } from "@/lib/api";
 import { createAuditLog } from "@/lib/auth/audit";
 
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
     await requirePermission("settings", "read");
 
-    const page = parseInt(_req.nextUrl.searchParams.get("page") ?? "1", 10);
-    const limit = parseInt(_req.nextUrl.searchParams.get("limit") ?? "50", 10);
+    const page = parseInt(req.nextUrl.searchParams.get("page") ?? "1", 10);
+    const limit = parseInt(req.nextUrl.searchParams.get("limit") ?? "50", 10);
     const offset = (page - 1) * limit;
 
     const [items, total] = await Promise.all([
@@ -41,9 +41,9 @@ export async function GET(_req: NextRequest) {
   }
 }
 
-export async function POST(_req: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
-    const _session = await requirePermission("settings", "update");
+    const session = await requirePermission("settings", "update");
     const body = await req.json();
 
     const {
@@ -92,9 +92,9 @@ export async function POST(_req: NextRequest) {
   }
 }
 
-export async function PUT(_req: NextRequest) {
+export async function PUT(req: NextRequest) {
   try {
-    const _session = await requirePermission("settings", "update");
+    const session = await requirePermission("settings", "update");
     const body = await req.json();
     const { id, ...data } = body as { id: string } & Record<string, unknown>;
 
@@ -138,9 +138,9 @@ export async function PUT(_req: NextRequest) {
   }
 }
 
-export async function DELETE(_req: NextRequest) {
+export async function DELETE(req: NextRequest) {
   try {
-    const _session = await requirePermission("settings", "update");
+    const session = await requirePermission("settings", "update");
     const { searchParams } = req.nextUrl;
     const id = searchParams.get("id");
 

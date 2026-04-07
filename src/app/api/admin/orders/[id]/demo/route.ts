@@ -23,7 +23,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const _session = await requirePermission("orders", "update");
+    const session = await requirePermission("orders", "update");
     const { id: orderId } = await params;
     const body = await req.json();
     const { figmaUrl, note, maskedUrl } = body;

@@ -23,7 +23,7 @@
  *   - HTML view for crawlers that prefer text/html
  */
 
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 

@@ -45,7 +45,7 @@ export async function generateMetadata({ params }: DetailProps): Promise<Metadat
       title: pageTitle,
       description: pageDescription,
       url: canonical,
-      images: [{ url: "/og-cover.jpg", width: 1200, height: 630, alt: metaService.title }],
+      images: [{ url: "/og-cover.svg", width: 1200, height: 630, alt: metaService.title }],
     },
     twitter: {
       card: "summary_large_image",

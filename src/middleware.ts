@@ -60,8 +60,8 @@ export async function middleware(req: NextRequest) {
     pathname.startsWith("/icon-") ||
     pathname === "/loop-logo.png" ||
     pathname === "/loop-logo.webp" ||
-    pathname === "/og-cover.jpg" ||
-    pathname === "/og-home.png" ||
+    pathname === "/og-cover.svg" ||
+    pathname === "/og-home.svg" ||
     pathname === "/logo.png"
   ) {
     return NextResponse.next();
@@ -193,6 +193,6 @@ function detectAcceptLanguage(req: NextRequest): string | undefined {
 export const config = {
   matcher: [
     // Exclude API routes, static files, and Next.js internals
-    "/((?!api/|_next/static|_next/image|assets/|loop-logo|logo.png|favicon.ico|favicon.svg|og-cover.jpg|og-home.png).*)",
+    "/((?!api/|_next/static|_next/image|assets/|loop-logo|logo.png|favicon.ico|favicon.svg|og-cover.svg|og-home.svg).*)",
   ],
 };

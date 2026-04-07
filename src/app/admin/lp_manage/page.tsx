@@ -13,8 +13,8 @@
  * - Per-member source breakdown
  */
 
-import { useState, useMemo } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState, useMemo, useEffect } from "react";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "motion/react";
 import { adminApi } from "@/lib/api/client";
 import { DS, GRD } from "@/lib/design-tokens";
@@ -150,8 +150,11 @@ const fmtVND = (n: number) => n >= 1_000_000_000 ? `${(n / 1_000_000_000).toFixe
 
 // ── Rate Config Modal ─────────────────────────────────────────────────────────
 
-function RateConfigModal({ rate, onClose, onSave }: {
-  rate: LPRateConfig; onClose: () => void; onSave: (r: LPRateConfig) => void;
+function RateConfigModal({ rate, onClose, onSave, isSaving }: {
+  rate: LPRateConfig;
+  onClose: () => void;
+  onSave: (r: LPRateConfig) => void;
+  isSaving: boolean;
 }) {
   const [draft, setDraft] = useState<LPRateConfig>({ ...rate });
   const inputStyle: React.CSSProperties = {
@@ -248,7 +251,7 @@ function RateConfigModal({ rate, onClose, onSave }: {
           </button>
           <button onClick={() => { onSave(draft); onClose(); }}
             style={{ flex: 2, background: GRD.primary, color: "#fff", border: "none", borderRadius: 10, padding: "10px", cursor: "pointer", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-            <Save size={14} /> Lưu cấu hình
+            {isSaving ? <RefreshCw size={14} className="animate-spin" /> : <Save size={14} />} {isSaving ? "Đang lưu..." : "Lưu cấu hình"}
           </button>
         </div>
       </motion.div>
@@ -463,8 +466,47 @@ export default function LpManagePage() {
   const [filterMember, setFilterMember] = useState<number | "all">("all");
   const [filterPeriod, setFilterPeriod] = useState<string>("all");
   const [activeView, setActiveView] = useState<"transactions" | "summary">("transactions");
+  const [isSavingRate, setIsSavingRate] = useState(false);
 
   const qc = useQueryClient();
+
+  // Load persisted rate config from SiteSetting
+  const { data: rateData } = useQuery({
+    queryKey: ["admin", "settings", "lp-rate"],
+    queryFn: () => adminApi.get<{ data: LPRateConfig }>("/api/admin/settings/lp-rate"),
+  });
+
+  // Sync rate from API when data loads
+  useEffect(() => {
+    if (rateData?.data) {
+      setRate(rateData.data);
+    }
+  }, [rateData]);
+
+  // Save rate config mutation
+  const saveRateMutation = useMutation({
+    mutationFn: (config: LPRateConfig) =>
+      adminApi.post("/api/admin/settings/lp-rate", config),
+    onSuccess: (_res) => {
+      qc.invalidateQueries({ queryKey: ["admin", "settings", "lp-rate"] });
+    },
+    onError: () => {
+      alert("Lỗi lưu cấu hình LP rate. Vui lòng thử lại.");
+    },
+  });
+
+  const qc2 = qc;
+
+  // Persist rate config → API
+  const handleSaveRate = async (draft: LPRateConfig) => {
+    setIsSavingRate(true);
+    try {
+      await saveRateMutation.mutateAsync(draft);
+      setRate(draft); // update local state
+    } finally {
+      setIsSavingRate(false);
+    }
+  };
 
   const { data: txData, isLoading: txLoading, isFetching: txFetching } = useQuery({
     queryKey: ["admin", "lp", "transactions-manage"],
@@ -776,7 +818,7 @@ export default function LpManagePage() {
 
       {/* Modals */}
       <AnimatePresence>
-        {showConfig && <RateConfigModal rate={rate} onClose={() => setShowConfig(false)} onSave={setRate} />}
+        {showConfig && <RateConfigModal rate={rate} onClose={() => setShowConfig(false)} onSave={handleSaveRate} isSaving={isSavingRate} />}
         {showAddLP && <AddLPModal rate={rate} onClose={() => setShowAddLP(false)} onSave={addTx} />}
       </AnimatePresence>
     </div>

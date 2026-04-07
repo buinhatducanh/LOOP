@@ -8,9 +8,9 @@ import { requireAuth } from "@/lib/auth/permissions";
 import { list, handleError } from "@/lib/api";
 import { buildPagination } from "@/lib/api";
 
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
-    const _session = await requireAuth();
+    const session = await requireAuth();
 
     const { searchParams } = new URL(req.url);
     const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10));

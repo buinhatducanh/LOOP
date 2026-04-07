@@ -1,11 +1,11 @@
-import { list, handleError } from "@/lib/api/response";
+import { list, handleError, ok } from "@/lib/api/response";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
-    const _session = await requirePermission("quests", "read");
+    const session = await requirePermission("quests", "read");
     const { searchParams } = new URL(req.url);
     const page = parseInt(searchParams.get("page") ?? "1");
     const limit = parseInt(searchParams.get("limit") ?? "50");
@@ -37,9 +37,9 @@ export async function GET(_req: NextRequest) {
   }
 }
 
-export async function POST(_req: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
-    const _session = await requirePermission("quests", "create");
+    const session = await requirePermission("quests", "create");
     const data = await req.json();
 
     if (!data.title || !data.startDate || !data.endDate) {

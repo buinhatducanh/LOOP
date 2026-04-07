@@ -1,12 +1,12 @@
 import { handleError } from "@/lib/api/response";
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
 import { addInstructorAvatar, addInstructorAvatarToList } from "@/lib/api/mappings";
 
 // GET /api/admin/edu/instructors
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
     await requirePermission("edu", "read");
     const { searchParams } = new URL(req.url);
@@ -39,9 +39,9 @@ export async function GET(_req: NextRequest) {
 }
 
 // POST /api/admin/edu/instructors
-export async function POST(_req: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
-    const _session = await requirePermission("edu", "create");
+    const session = await requirePermission("edu", "create");
     const body = await req.json();
     const { name, bio, email, phone, specialties, isActive, memberId, userId } = body;
 

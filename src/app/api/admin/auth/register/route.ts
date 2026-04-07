@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/auth/password";
 import { createSession } from "@/lib/auth/session";
@@ -7,7 +7,7 @@ import { createAuditLog } from "@/lib/auth/audit";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { authLogger } from "@/lib/logger";
 
-export async function POST(_req: NextRequest) {
+export async function POST(req: NextRequest) {
   const rateLimitResult = await applyRateLimit(req, "auth");
   if (!rateLimitResult.allowed) return rateLimitResult.response!;
 
