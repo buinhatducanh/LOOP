@@ -1,11 +1,15 @@
 /**
  * Admin Login Page — DEPRECATED
  *
- * Unified login now lives at: /{locale}/dang-nhap
+ * Staff login now lives at: /{locale}/nhan-vien
  * This page redirects there to preserve any direct bookmarks.
+ *
+ * Note: The footer StaffLoginSection logs in via API directly
+ * and navigates to /admin/overview — this page is only a fallback
+ * for direct /admin/login URL access.
  */
 import { redirect } from "next/navigation";
 
 export default function AdminLoginPage() {
-  redirect("/vi/dang-nhap");
+  redirect("/vi/nhan-vien");
 }

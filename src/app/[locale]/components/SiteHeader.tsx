@@ -384,12 +384,12 @@ function NavDropdown({
         onMouseEnter={onToggle}
         style={{
           display: "flex", alignItems: "center", gap: 4,
-          padding: "5px 10px", borderRadius: 7,
-          color: isReallyOpen ? DS.text : DS.text3,
-          background: isReallyOpen ? rgba(DS.blue, 0.1) : "transparent",
-          border: isReallyOpen ? `1px solid ${rgba(DS.blue, 0.2)}` : "1px solid transparent",
-          fontSize: 13, fontWeight: isReallyOpen ? 600 : 400,
-          cursor: "pointer", transition: "all 0.15s", whiteSpace: "nowrap",
+          padding: "8px 14px", borderRadius: 8,
+          color: isReallyOpen ? DS.text : DS.text2,
+          background: isReallyOpen ? "rgba(107,61,245,0.15)" : "transparent",
+          border: isReallyOpen ? "1px solid rgba(107,61,245,0.35)" : "1px solid transparent",
+          fontSize: 14, fontWeight: isReallyOpen ? 600 : 500,
+          cursor: "pointer", transition: "all 0.18s", whiteSpace: "nowrap",
         }}
       >
         {trigger}
@@ -406,12 +406,12 @@ function NavDropdown({
             onMouseLeave={onToggle}
             style={{
               position: "absolute", top: "100%", left: 0, marginTop: 6,
-              minWidth: 220,
-              background: "rgba(2,6,23,0.96)",
-              border: `1px solid ${rgba(DS.blue, 0.15)}`,
+              minWidth: 240,
+              background: "rgba(12,12,20,0.97)",
+              border: "1px solid rgba(107,61,245,0.25)",
               borderRadius: 14,
               backdropFilter: "blur(20px)",
-              boxShadow: "0 20px 60px rgba(0,0,0,0.6)",
+              boxShadow: "0 20px 60px rgba(0,0,0,0.6), 0 0 30px rgba(107,61,245,0.08)",
               overflow: "hidden", zIndex: 100, padding: "6px",
             }}
           >
@@ -486,11 +486,11 @@ export default function SiteHeader({ locale }: { locale: string }) {
       ],
     },
 
-    // Marketing dropdown
+    // Quay chụp Thương mại (formerly Marketing/Media)
     {
       type: "dropdown",
-      labelKey: "marketingDropdown",
-      triggerLabel: t("marketingDropdown"),
+      labelKey: "quayChupDropdown",
+      triggerLabel: t("quayChupDropdown"),
       items: [
         { label: t("mediaLabel"), href: `/${locale}/media`, icon: "🎬" },
       ],
@@ -553,15 +553,15 @@ export default function SiteHeader({ locale }: { locale: string }) {
         suppressHydrationWarning
         style={{
           position: "fixed", top: 2, left: 0, right: 0, zIndex: 50,
-          background: "rgba(2,6,23,0.92)", backdropFilter: "blur(20px)",
+          background: "rgba(12,12,20,0.94)", backdropFilter: "blur(20px)",
           WebkitBackdropFilter: "blur(20px)",
-          borderBottom: `1px solid ${rgba(DS.border, 0.6)}`,
+          borderBottom: `1px solid rgba(107,61,245,0.20)`,
         }}
       >
         <div
           style={{
             maxWidth: 1280, margin: "0 auto", padding: "0 1.5rem",
-            height: 60, display: "flex", alignItems: "center", gap: "1rem",
+            height: 68, display: "flex", alignItems: "center", gap: "1.25rem",
           }}
         >
           {/* Logo */}
@@ -599,7 +599,7 @@ export default function SiteHeader({ locale }: { locale: string }) {
           </Link>
 
           {/* Desktop Nav */}
-          <nav ref={navRef} className="hide-mobile" style={{ display: "flex", alignItems: "center", gap: 4, marginLeft: "1.5rem", flex: 1 }}>
+          <nav ref={navRef} className="hide-mobile" style={{ display: "flex", alignItems: "center", gap: 6, marginLeft: "1.5rem", flex: 1 }}>
             {navLinks.map(link => {
               if (link.type === "dropdown") {
                 // Always render NavDropdown to avoid SSR/hydration mismatch
@@ -621,23 +621,23 @@ export default function SiteHeader({ locale }: { locale: string }) {
                   key={link.href}
                   href={link.href}
                   style={{
-                    padding: "5px 10px", borderRadius: 7,
-                    color: active ? DS.text : DS.text3,
-                    background: active ? rgba(DS.blue, 0.1) : "transparent",
-                    border: active ? `1px solid ${rgba(DS.blue, 0.2)}` : "1px solid transparent",
-                    fontSize: 13, fontWeight: active ? 600 : 400,
-                    textDecoration: "none", transition: "all 0.15s", whiteSpace: "nowrap",
+                    padding: "8px 14px", borderRadius: 8,
+                    color: active ? DS.text : DS.text2,
+                    background: active ? "rgba(107,61,245,0.15)" : "transparent",
+                    border: active ? "1px solid rgba(107,61,245,0.35)" : "1px solid transparent",
+                    fontSize: 14, fontWeight: active ? 600 : 500,
+                    textDecoration: "none", transition: "all 0.18s", whiteSpace: "nowrap",
                   }}
                   onMouseEnter={e => {
                     if (!active) {
-                      (e.currentTarget as HTMLElement).style.background = rgba(DS.border, 0.3);
-                      (e.currentTarget as HTMLElement).style.color = DS.text2;
+                      (e.currentTarget as HTMLElement).style.background = "rgba(107,61,245,0.08)";
+                      (e.currentTarget as HTMLElement).style.color = DS.text;
                     }
                   }}
                   onMouseLeave={e => {
                     if (!active) {
                       (e.currentTarget as HTMLElement).style.background = "transparent";
-                      (e.currentTarget as HTMLElement).style.color = DS.text3;
+                      (e.currentTarget as HTMLElement).style.color = DS.text2;
                     }
                   }}
                 >
