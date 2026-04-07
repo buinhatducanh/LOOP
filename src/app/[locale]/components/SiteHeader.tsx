@@ -1077,32 +1077,62 @@ export default function SiteHeader({ locale }: { locale: string }) {
                           </div>
                         )}
                       </div>
-                      {[
-                        ...(user.role === "client"
-                          ? [{ href: `/${locale}/khach-hang`, label: t("customer"), icon: "🏠" }]
-                          : [{ href: "/admin/overview", label: t("dashboardAdmin"), icon: "⚙️" }]),
-                        { href: `/${locale}/khach-hang`, label: t("myLpWallet"), icon: "💎" },
-                      ].map(item => (
-                        <Link
-                          key={`${item.href}-${item.label}`}
-                          href={item.href}
-                          onClick={() => setUserMenuOpen(false)}
-                          style={{
-                            display: "flex", alignItems: "center", gap: 10, padding: "10px 16px",
-                            color: DS.text3, fontSize: 13, textDecoration: "none", transition: "background 0.1s",
-                          }}
-                          onMouseEnter={e => {
-                            (e.currentTarget as HTMLElement).style.background = rgba(DS.blue, 0.06);
-                            (e.currentTarget as HTMLElement).style.color = DS.text;
-                          }}
-                          onMouseLeave={e => {
-                            (e.currentTarget as HTMLElement).style.background = "none";
-                            (e.currentTarget as HTMLElement).style.color = DS.text3;
-                          }}
-                        >
-                          <span>{item.icon}</span> {item.label}
-                        </Link>
-                      ))}
+                      {/* ── Menu items ── */}
+                      {/* Client-only items */}
+                      {user.role === "client" && (
+                        <>
+                          <Link
+                            href={`/${locale}/khach-hang`}
+                            onClick={() => setUserMenuOpen(false)}
+                            style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", color: DS.text3, fontSize: 13, textDecoration: "none", transition: "background 0.1s" }}
+                            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = rgba(DS.blue, 0.06); (e.currentTarget as HTMLElement).style.color = DS.text; }}
+                            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "none"; (e.currentTarget as HTMLElement).style.color = DS.text3; }}
+                          >
+                            <span>🏠</span> Trang khách hàng
+                          </Link>
+                          <Link
+                            href={`/${locale}/khach-hang`}
+                            onClick={() => setUserMenuOpen(false)}
+                            style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", color: DS.text3, fontSize: 13, textDecoration: "none", transition: "background 0.1s" }}
+                            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = rgba(DS.blue, 0.06); (e.currentTarget as HTMLElement).style.color = DS.text; }}
+                            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "none"; (e.currentTarget as HTMLElement).style.color = DS.text3; }}
+                          >
+                            <span>💎</span> Ví LP của tôi
+                          </Link>
+                        </>
+                      )}
+                      {/* Staff/admin items */}
+                      {user.role !== "client" && (
+                        <>
+                          <Link
+                            href="/admin/overview"
+                            onClick={() => setUserMenuOpen(false)}
+                            style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", color: DS.text3, fontSize: 13, textDecoration: "none", transition: "background 0.1s" }}
+                            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = rgba(DS.blue, 0.06); (e.currentTarget as HTMLElement).style.color = DS.text; }}
+                            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "none"; (e.currentTarget as HTMLElement).style.color = DS.text3; }}
+                          >
+                            <span>⚙️</span> Quản trị
+                          </Link>
+                          <Link
+                            href={`/${locale}/khach-hang`}
+                            onClick={() => setUserMenuOpen(false)}
+                            style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", color: DS.text3, fontSize: 13, textDecoration: "none", transition: "background 0.1s" }}
+                            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = rgba(DS.blue, 0.06); (e.currentTarget as HTMLElement).style.color = DS.text; }}
+                            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "none"; (e.currentTarget as HTMLElement).style.color = DS.text3; }}
+                          >
+                            <span>💎</span> Ví LP của tôi
+                          </Link>
+                          <Link
+                            href={`/${locale}`}
+                            onClick={() => setUserMenuOpen(false)}
+                            style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", color: DS.text3, fontSize: 13, textDecoration: "none", transition: "background 0.1s" }}
+                            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = rgba(DS.blue, 0.06); (e.currentTarget as HTMLElement).style.color = DS.text; }}
+                            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "none"; (e.currentTarget as HTMLElement).style.color = DS.text3; }}
+                          >
+                            <span>👤</span> Hồ sơ cá nhân
+                          </Link>
+                        </>
+                      )}
                       <button
                         onClick={handleLogout}
                         style={{

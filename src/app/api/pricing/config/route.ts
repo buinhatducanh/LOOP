@@ -190,7 +190,7 @@ export async function GET(request: Request) {
     const locale = normalizeLocale(searchParams.get("lang"));
 
     // Run all DB queries in parallel
-    const [packages, features, addons, infraTiers, basePriceSetting] = await Promise.all([
+    const [packages, features, addons, infraTiers, basePriceSetting, vatSetting] = await Promise.all([
       // Service packages
       prisma.servicePackage.findMany({
         where: { isActive: true },
@@ -299,9 +299,16 @@ export async function GET(request: Request) {
         where: { key: "custom_web_base_price" },
         select: { value: true },
       }),
+
+      // VAT rate setting
+      prisma.siteSetting.findUnique({
+        where: { key: "vat_rate" },
+        select: { value: true },
+      }),
     ]);
 
     const basePrice = basePriceSetting ? parseInt(basePriceSetting.value, 10) : 3_000_000;
+    const vatRate = vatSetting ? parseFloat(vatSetting.value) : 0.10;
 
     // Sample calculation for reference (no features selected)
     const sampleCalc = await calculateOrderPrice({ selectedFeatureIds: [] });
@@ -348,6 +355,7 @@ export async function GET(request: Request) {
           acc[p.slug] = p.isSubscription ? 30 : 50;
           return acc;
         }, {}),
+        vatRate,
         meta: {
           locale,
           cached: true,

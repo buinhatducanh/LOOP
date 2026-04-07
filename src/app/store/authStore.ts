@@ -370,10 +370,14 @@ export const useAuthStore = create<AuthStore>()(
 
       // Persist JWT token in localStorage — split auth: Option C
       // Staff token: "loop-staff-token" | Customer token: "loop-customer-token"
-      // Guard with try/catch — may fail in private browsing or quota exceeded
+      // Use the accountType from the API response to store in the correct key.
+      // This ensures /api/portal/* calls find the correct token for customers.
       if (typeof window !== "undefined" && successPayload.token) {
         try {
-          localStorage.setItem("loop-staff-token", successPayload.token);
+          const tokenKey = session.accountType === "customer"
+            ? "loop-customer-token"
+            : "loop-staff-token";
+          localStorage.setItem(tokenKey, successPayload.token);
         } catch {
           // Storage unavailable (private browsing, quota) — cookie will still work
         }
@@ -423,12 +427,15 @@ export const useAuthStore = create<AuthStore>()(
 
   logout: async (): Promise<void> => {
     set({ isLoading: true });
-    try {
-      // Capture token synchronously — must read BEFORE any async call so it's
-      // available for the fetch. Split auth: clear loop-staff-token.
-      const token =
-        typeof window !== "undefined" ? localStorage.getItem("loop-staff-token") : null;
 
+    // Read both tokens so we can clear the right one based on accountType
+    const store = useAuthStore.getState();
+    const isStaff = store.accountType === "staff";
+    const tokenKey = isStaff ? "loop-staff-token" : "loop-customer-token";
+    const token =
+      typeof window !== "undefined" ? localStorage.getItem(tokenKey) : null;
+
+    try {
       const doLogout = async () => {
         const headers: Record<string, string> = { "Content-Type": "application/json" };
         if (token) headers["Authorization"] = `Bearer ${token}`;
@@ -448,7 +455,9 @@ export const useAuthStore = create<AuthStore>()(
       // Ignore network errors — always clear session client-side
     } finally {
       if (typeof window !== "undefined") {
+        // Clear BOTH token keys to ensure no cross-account state
         localStorage.removeItem("loop-staff-token");
+        localStorage.removeItem("loop-customer-token");
       }
       set({
         user: null,
@@ -459,8 +468,8 @@ export const useAuthStore = create<AuthStore>()(
         accountType: null,
         _department: undefined,
         accessibleTabs: [],
-        sessionHydrated: false, // R2: reset hydration flag
-        tokenExpiry: null,      // R2: no expiry
+        sessionHydrated: false,
+        tokenExpiry: null,
       });
     }
   },

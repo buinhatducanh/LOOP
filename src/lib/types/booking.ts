@@ -97,6 +97,8 @@ export interface PricingConfig {
   infraTiers: WizardInfraTier[];
   lpRate: LpRateConfig;
   packageLps: Record<string, number>;
+  /** VAT rate (e.g. 0.10 = 10%). Falls back to 0.10 if SiteSetting not set. */
+  vatRate: number;
   meta: {
     locale: string;
     cached: boolean;

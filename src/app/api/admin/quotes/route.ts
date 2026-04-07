@@ -6,14 +6,15 @@ import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
 
 const createSchema = z.object({
-  salesLeadId: z.string().min(1, "salesLeadId bắt buộc"),
+  /** Required unless quoteRequestId is provided (API auto-creates SalesLead). */
+  salesLeadId: z.string().optional(),
   quoteNumber: z.string().min(1, "quoteNumber bắt buộc"),
   title: z.string().min(1, "Tiêu đề bắt buộc"),
   totalAmount: z.number().int().min(0),
   lpAllocation: z.record(z.string(), z.number()).default({}),
   /** LP used by customer (copied from QuoteRequest.lpUsed) */
   lpUsed: z.number().int().min(0).default(0),
-  /** Optional: link Quote to its originating QuoteRequest */
+  /** Optional: link Quote to its originating QuoteRequest — API auto-creates SalesLead if missing */
   quoteRequestId: z.string().optional(),
   milestones: z.array(z.object({
     name: z.string(),
@@ -66,6 +67,9 @@ export async function GET(req: NextRequest) {
               companyName: true,
             },
           },
+          quoteRequest: {
+            select: { id: true, customerName: true, customerEmail: true, companyName: true, totalAmount: true, status: true },
+          },
         },
       }),
       prisma.quote.count({ where }),
@@ -102,9 +106,62 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // ── Resolve salesLeadId ──────────────────────────────────────────────────
+    // If quoteRequestId is provided but no salesLeadId, auto-create a SalesLead
+    // from the QuoteRequest customer data so the quote can be linked.
+    let salesLeadId = parsed.data.salesLeadId;
+    if (parsed.data.quoteRequestId && !salesLeadId) {
+      const qr = await prisma.quoteRequest.findUnique({
+        where: { id: parsed.data.quoteRequestId },
+      });
+      if (qr) {
+        // Upsert SalesLead by customerEmail — find existing or create new
+        const existingLead = qr.customerEmail
+          ? await prisma.salesLead.findFirst({ where: { customerEmail: qr.customerEmail } })
+          : null;
+        if (existingLead) {
+          salesLeadId = existingLead.id;
+        } else {
+          const newLead = await prisma.salesLead.create({
+            data: {
+              customerName: qr.customerName,
+              customerEmail: qr.customerEmail ?? undefined,
+              customerPhone: qr.customerPhone ?? undefined,
+              companyName: qr.companyName ?? undefined,
+              source: "website",
+              status: "new",
+            },
+          });
+          salesLeadId = newLead.id;
+        }
+      }
+    }
+
+    if (!salesLeadId) {
+      return NextResponse.json(
+        { error: "salesLeadId bắt buộc khi không có quoteRequestId" },
+        { status: 400 }
+      );
+    }
+
+    // ── Parse selectedFeatureIds from QuoteRequest.selectedItems ─────────────
+    let selectedFeatureIds: string[] = [];
+    if (parsed.data.quoteRequestId) {
+      const qr = await prisma.quoteRequest.findUnique({
+        where: { id: parsed.data.quoteRequestId },
+        select: { selectedItems: true },
+      });
+      if (qr?.selectedItems && Array.isArray(qr.selectedItems)) {
+        selectedFeatureIds = (qr.selectedItems as Array<{ featureId?: string }>)
+          .filter(item => item?.featureId)
+          .map(item => item.featureId as string);
+      }
+    }
+
+    // ── Create quote ────────────────────────────────────────────────────────
     const quote = await prisma.quote.create({
       data: {
-        salesLeadId: parsed.data.salesLeadId,
+        salesLeadId,
         quoteNumber: parsed.data.quoteNumber,
         title: parsed.data.title,
         totalAmount: parsed.data.totalAmount,
@@ -113,11 +170,23 @@ export async function POST(req: NextRequest) {
         milestones: parsed.data.milestones ?? undefined,
         validUntil: parsed.data.validUntil,
         note: parsed.data.note ?? null,
+        // Wire QuoteRequest → Quote
+        quoteRequestId: parsed.data.quoteRequestId ?? undefined,
+        // Populate pricing fields from QuoteRequest selectedItems
+        selectedFeatureIds,
       },
       include: {
         salesLead: { select: { id: true, customerName: true, customerEmail: true } },
       },
     });
+
+    // ── Update QuoteRequest status ──────────────────────────────────────────
+    if (parsed.data.quoteRequestId) {
+      await prisma.quoteRequest.update({
+        where: { id: parsed.data.quoteRequestId },
+        data: { status: "quoted" },
+      });
+    }
 
     await createAuditLog({
       userId: session.userId,

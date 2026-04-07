@@ -171,20 +171,27 @@ function ProgressBar({ step, stepLabels }: { step: number; stepLabels: string[] 
 // ── Price Sidebar ────────────────────────────────────────────────────────────
 
 function PriceSidebar({
-  service, pkg, featureOptions, features, extras, extraOptions, lpDiscount, lpBalance, lpRate,
+  service, pkg, featureOptions, features, extras, extraOptions, lpDiscount, lpBalance, lpRate, vatRate,
 }: {
   service: WizardService | null; pkg: WizardPackage | null;
   featureOptions: WizardFeature[]; features: string[];
   extraOptions: WizardExtra[]; extras: string[];
   lpDiscount: number; lpBalance: number; lpRate: LpRateConfig;
+  /** VAT rate from pricing config (e.g. 0.10 = 10%). Used for grand total display. */
+  vatRate?: number;
 }) {
   const basePrice = service ? service.basePrice * (pkg?.multiplier ?? 1) : 0;
   const featurePrices = featureOptions.filter(f => features.includes(f.id)).reduce((s, f) => s + f.price, 0);
   const extraPrices = extraOptions.filter(e => extras.includes(e.id)).reduce((s, e) => s + e.price, 0);
   const subtotal = basePrice + featurePrices + extraPrices;
   const lpApplied = calcLpDiscount(subtotal, lpDiscount, lpBalance, lpRate);
-  const total = subtotal - lpApplied.vndDiscount;
-  const lpEarned = Math.floor(total / 1_000_000) * lpRate.lpEarnPerMillion;
+  const totalBeforeVat = subtotal - lpApplied.vndDiscount;
+  // VAT is always set (defaults to 0.10 from API config or component state)
+  const effectiveVatRate = vatRate ?? 0.10;
+  const vatAmount = Math.round(totalBeforeVat * effectiveVatRate);
+  const grandTotal = totalBeforeVat + vatAmount;
+  const lpEarned = Math.floor(grandTotal / 1_000_000) * lpRate.lpEarnPerMillion;
+  const VAT_PCT = (effectiveVatRate * 100).toFixed(0);
 
   return (
     <div className="rounded-2xl overflow-hidden sticky top-6">
@@ -192,7 +199,7 @@ function PriceSidebar({
         <div className="px-5 py-4" style={{ background: GRD.primary }}>
           <div style={{ color: "#fff", fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.15em", marginBottom: 2 }}>TỔNG GIÁ ƯỚC TÍNH</div>
           <div style={{ color: "#fff", fontFamily: DS.heading, fontSize: 28, fontWeight: 900 }}>
-            {fmtVND(total)}
+            {fmtVND(grandTotal)}
           </div>
           {service?.perMonth && <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 11, fontFamily: DS.mono }}>/tháng</div>}
         </div>
@@ -234,10 +241,16 @@ function PriceSidebar({
               <span style={{ color: DS.purple, fontSize: 12, fontFamily: DS.mono }}>-{fmtVND(lpApplied.vndDiscount)}</span>
             </div>
           )}
-          {total > 0 && (
+          {totalBeforeVat > 0 && (
             <div className="flex justify-between pt-2" style={{ borderTop: `1px solid ${DS.border}` }}>
               <span style={{ color: DS.text, fontSize: 13, fontWeight: 700 }}>TỔNG CỘNG</span>
-              <span style={{ color: DS.blue, fontSize: 13, fontFamily: DS.mono, fontWeight: 700 }}>{fmtVND(total)}</span>
+              <span style={{ color: DS.blue, fontSize: 13, fontFamily: DS.mono, fontWeight: 700 }}>{fmtVND(grandTotal)}</span>
+            </div>
+          )}
+          {effectiveVatRate > 0 && totalBeforeVat > 0 && (
+            <div className="flex justify-between" style={{ marginTop: 4 }}>
+              <span style={{ color: DS.text4, fontSize: 11 }}>(+ VAT {VAT_PCT}%)</span>
+              <span style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono }}>+{fmtVND(vatAmount)}</span>
             </div>
           )}
         </div>
@@ -775,6 +788,7 @@ function _StepReview({ service, pkg, talent, featureOptions, features, extraOpti
 // ── Step 3 — Contact + Payment (restructured from StepPayment) ─────────────────
 
 function StepContact({
+  vatRate,
   lpBalance, maxLpRedeem, lpDiscount, setLpDiscount,
   name, setName, email, setEmail, phone, setPhone, company, setCompany,
   startDate, setStartDate, duration, setDuration,
@@ -784,6 +798,7 @@ function StepContact({
   submitted, orderId, submitError, setSubmitError, onSubmit, submitLoading,
   onEditSelection,
 }: {
+  vatRate: number;
   lpBalance: number; maxLpRedeem: number; lpDiscount: number; setLpDiscount: (n: number) => void; lpRate: LpRateConfig;
   name: string; setName: (s: string) => void;
   email: string; setEmail: (s: string) => void;
@@ -1272,6 +1287,7 @@ export function BookingWizardClient({ locale }: Props) {
   const [featureOptions, setFeatureOptions] = useState<Record<string, WizardFeature[]>>(FALLBACK_FEATURES);
   const [extraOptions] = useState<WizardExtra[]>(FALLBACK_EXTRAS);
   const [lpRate, setLpRate] = useState<LpRateConfig>(DEFAULT_LP_RATE);
+  const [vatRate, setVatRate] = useState(0.10);
   const [maxLpRedeem, setMaxLpRedeem] = useState(0);
 
   // LP balance — 0 for anonymous users (auth needed for real balance)
@@ -1321,6 +1337,7 @@ export function BookingWizardClient({ locale }: Props) {
         }
 
         if (cfg.lpRate) setLpRate(cfg.lpRate);
+        if (cfg.vatRate !== undefined) setVatRate(cfg.vatRate);
       })
       .catch(() => { /* keep fallback */ });
     return () => { cancelled = true; };
@@ -1372,7 +1389,7 @@ export function BookingWizardClient({ locale }: Props) {
     const subtotal = basePrice + featPrices + extraPricesTotal;
     // Deduct LP discount from total (lpDiscount already capped at 20% in useEffect)
     const vndDiscount = Math.round(lpDiscount * lpRate.lpPerVnd);
-    const total = Math.round((subtotal - vndDiscount) * 1.1);
+    const total = Math.round((subtotal - vndDiscount) * (1 + vatRate));
     const selectedItems = [
       { featureId: svc?.id ?? serviceId, featureName: svc?.title ?? "", variantId: selectedPkg?.id ?? "", variantName: selectedPkg?.name ?? "", price: basePrice },
       ...featOpts.filter(f => selectedFeatures.includes(f.id)).map(f => ({
@@ -1403,7 +1420,8 @@ export function BookingWizardClient({ locale }: Props) {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "submission failed");
-      setNewOrderId(data?.data?.orderNumber ?? data?.orderNumber ?? "");
+      // QuoteRequest has no orderNumber — use the created row's id as reference
+      setNewOrderId(data?.data?.id ?? data?.data?.orderNumber ?? "");
       setSubmitted(true);
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : "Đã có lỗi xảy ra");
@@ -1463,6 +1481,7 @@ export function BookingWizardClient({ locale }: Props) {
                   )}
                   {step === 2 && (
                     <StepContact
+                      vatRate={vatRate}
                       lpBalance={lpBalance} maxLpRedeem={maxLpRedeem}
                       lpDiscount={lpDiscount} setLpDiscount={setLpDiscount} lpRate={lpRate}
                       name={name} setName={setName} email={email} setEmail={setEmail}
@@ -1532,6 +1551,7 @@ export function BookingWizardClient({ locale }: Props) {
                   featureOptions={currentFeatureOptions} features={selectedFeatures}
                   extraOptions={extraOptions} extras={selectedExtras}
                   lpDiscount={lpDiscount} lpBalance={lpBalance} lpRate={lpRate}
+                  vatRate={vatRate}
                 />
               </div>
             )}

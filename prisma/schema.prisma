@@ -923,14 +923,18 @@ model Quote {
   selectedFeatureIds     Json?               @default("[]") @map("selected_feature_ids")
   /// LP used by customer to offset totalAmount (copied from QuoteRequest at quote creation)
   lpUsed                 Int                 @default(0) @map("lp_used")
+  /// Links this quote to the originating QuoteRequest (set when admin creates quote from a wizard submission)
+  quoteRequestId         String?             @unique @map("quote_request_id")
   infrastructureTier     InfrastructureTier? @relation(fields: [infrastructureTierId], references: [id])
   order                  Order?              @relation(fields: [orderId], references: [id])
   salesLead              SalesLead           @relation(fields: [salesLeadId], references: [id])
+  quoteRequest           QuoteRequest?       @relation(fields: [quoteRequestId], references: [id])
 
   @@index([salesLeadId])
   @@index([orderId])
   @@index([status])
   @@index([infrastructureTierId])
+  @@index([quoteRequestId])
   @@map("quotes")
 }
 
@@ -995,6 +999,8 @@ model QuoteRequest {
   status        String   @default("new")
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
+  /// Links to Quotes created from this request (reverse of Quote.quoteRequest)
+  quotes        Quote[]
 
   @@map("quote_requests")
 }

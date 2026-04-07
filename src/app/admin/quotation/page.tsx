@@ -55,10 +55,12 @@ type QuoteRequest = {
   id: string;
   customerName: string;
   customerEmail: string;
+  customerPhone?: string;
   companyName?: string;
-  phone?: string;
-  service?: string;
-  message?: string;
+  selectedItems?: unknown[];
+  totalAmount?: number;
+  lpUsed?: number;
+  notes?: string;
   status: string;
   createdAt: string;
 };
@@ -70,11 +72,31 @@ const WORKFLOW_ACTIONS: Record<string, Record<string, string>> = {
   sent:      { next: "signed", label: "Đã ký" },
 };
 
-function QuoteCreateModal({ onClose, onSuccess, salesLeadId }: { onClose: () => void; onSuccess: () => void; salesLeadId?: string }) {
+function QuoteCreateModal({
+  onClose, onSuccess,
+  salesLeadId,
+  quoteRequest,
+}: {
+  onClose: () => void; onSuccess: () => void;
+  salesLeadId?: string;
+  /** Pre-fill from a QuoteRequest row so admin doesn't have to re-enter customer data */
+  quoteRequest?: QuoteRequest | null;
+}) {
   const { t } = useAdminTranslations();
+
+  // Derive title from quoteRequest if available
+  const derivedTitle = quoteRequest
+    ? `Báo giá cho ${quoteRequest.customerName}${quoteRequest.companyName ? ` — ${quoteRequest.companyName}` : ""}`
+    : "";
+
   const [form, setForm] = useState({
-    title: "", customerName: "", customerEmail: "", companyName: "",
-    phone: "", totalAmount: "", validUntil: "",
+    title: derivedTitle || "",
+    customerName: quoteRequest?.customerName ?? "",
+    customerEmail: quoteRequest?.customerEmail ?? "",
+    companyName: quoteRequest?.companyName ?? "",
+    phone: quoteRequest?.customerPhone ?? "",
+    totalAmount: quoteRequest?.totalAmount ? String(quoteRequest.totalAmount) : "",
+    validUntil: "",
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -82,8 +104,11 @@ function QuoteCreateModal({ onClose, onSuccess, salesLeadId }: { onClose: () => 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.title.trim()) return setError(t("quotation.errTitleRequired"));
-    // P1: salesLeadId is required — quote must be linked to a lead
-    if (!salesLeadId) return setError("Vui lòng chọn khách hàng trước khi tạo báo giá");
+    // salesLeadId required when opening modal from scratch (no quoteRequest);
+    // when opening from a QuoteRequest, the API auto-creates the SalesLead.
+    if (!salesLeadId && !quoteRequest) {
+      return setError("Vui lòng chọn khách hàng trước khi tạo báo giá");
+    }
     setSaving(true); setError("");
     try {
       // Auto-generate quoteNumber client-side (format: QT-YYYYMM-XXXX)
@@ -92,8 +117,11 @@ function QuoteCreateModal({ onClose, onSuccess, salesLeadId }: { onClose: () => 
       const seq = Math.random().toString(36).substring(2, 6).toUpperCase();
       const quoteNumber = `QT-${ym}-${seq}`;
       await adminApi.post("/api/admin/quotes", {
-        salesLeadId,                                              // P0: Link quote to lead
-        quoteNumber,                                             // P1: Auto-generated quote number
+        // Link to SalesLead if pre-selected; otherwise API auto-creates one from QuoteRequest
+        salesLeadId: salesLeadId || undefined,
+        // Pass quoteRequestId so the API wires Quote → QuoteRequest and auto-creates SalesLead
+        quoteRequestId: quoteRequest?.id,
+        quoteNumber,
         title: form.title.trim(),
         customerName: form.customerName.trim() || undefined,
         customerEmail: form.customerEmail.trim() || undefined,
@@ -114,8 +142,18 @@ function QuoteCreateModal({ onClose, onSuccess, salesLeadId }: { onClose: () => 
         <motion.div initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
           onClick={e => e.stopPropagation()}
           style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 16, padding: 24, width: "100%", maxWidth: 460 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 20 }}>
-            <h3 style={{ color: DS.text, fontWeight: 700, fontSize: 18 }}>{t("quotation.formTitle")}</h3>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
+            <div>
+              <h3 style={{ color: DS.text, fontWeight: 700, fontSize: 18, margin: 0 }}>{t("quotation.formTitle")}</h3>
+              {quoteRequest && (
+                <div style={{ marginTop: 4, display: "flex", alignItems: "center", gap: 6 }}>
+                  <span style={{ background: "rgba(59,130,246,0.15)", color: DS.blue, padding: "2px 8px", borderRadius: 9999, fontSize: 10, fontFamily: DS.mono, fontWeight: 600, letterSpacing: "0.05em" }}>
+                    Từ yêu cầu báo giá
+                  </span>
+                  <span style={{ color: DS.text4, fontSize: 11 }}>{quoteRequest.customerEmail}</span>
+                </div>
+              )}
+            </div>
             <button onClick={onClose} style={{ background: "none", border: "none", color: DS.text4, cursor: "pointer" }}><X size={18} /></button>
           </div>
           <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -155,6 +193,8 @@ export default function QuotationPage() {
   const { t } = useAdminTranslations();
   const [tab, setTab] = useState<"quotes" | "requests">("quotes");
   const [showCreate, setShowCreate] = useState(false);
+  /** Pre-filled data when opening modal from a QuoteRequest row */
+  const [quoteRequestForModal, setQuoteRequestForModal] = useState<QuoteRequest | null>(null);
   const qc = useQueryClient();
 
   const { data: quotesData, isLoading: quotesLoading, isFetching: quotesFetching } = useQuery({
@@ -358,7 +398,7 @@ export default function QuotationPage() {
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr style={{ borderBottom: `1px solid ${DS.border}` }}>
-                    {[t("quotation.colCustomer"), t("quotation.colEmail"), t("quotation.colCompany"), t("quotation.colService"), t("quotation.colDate"), t("quotation.colStatus")].map(h => (
+                    {[t("quotation.colCustomer"), t("quotation.colEmail"), t("quotation.colCompany"), t("quotation.colDate"), t("quotation.colStatus"), t("quotation.colActions")].map(h => (
                       <th key={h} style={{ textAlign: "left", padding: "10px 16px", color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.1em", textTransform: "uppercase" }}>{h}</th>
                     ))}
                   </tr>
@@ -369,12 +409,25 @@ export default function QuotationPage() {
                       <td style={{ padding: "12px 16px", color: DS.text, fontSize: 13, fontWeight: 600 }}>{r.customerName}</td>
                       <td style={{ padding: "12px 16px", color: DS.blue, fontSize: 12, fontFamily: DS.mono }}>{r.customerEmail}</td>
                       <td style={{ padding: "12px 16px", color: DS.text3, fontSize: 12 }}>{r.companyName ?? "—"}</td>
-                      <td style={{ padding: "12px 16px", color: DS.text3, fontSize: 12 }}>{r.service ?? "—"}</td>
                       <td style={{ padding: "12px 16px", color: DS.text4, fontSize: 12, fontFamily: DS.mono }}>{fmtDate(r.createdAt)}</td>
                       <td style={{ padding: "12px 16px" }}>
                         <span style={{ background: STATUS_CFG[r.status]?.bg ?? "transparent", color: STATUS_CFG[r.status]?.color ?? DS.text4, padding: "2px 10px", borderRadius: 9999, fontSize: 11, fontFamily: DS.mono, fontWeight: 600 }}>
                           {t(`quotation.status${r.status.charAt(0).toUpperCase() + r.status.slice(1)}` as `quotation.status${string}`)}
                         </span>
+                      </td>
+                      <td style={{ padding: "12px 16px" }}>
+                        {r.status !== "quoted" && (
+                          <button
+                            onClick={() => {
+                              setQuoteRequestForModal(r);
+                              setShowCreate(true);
+                            }}
+                            style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 10px", background: "rgba(59,130,246,0.1)", border: "1px solid rgba(59,130,246,0.3)", borderRadius: 8, color: DS.blue, cursor: "pointer", fontSize: 11, fontFamily: DS.mono, fontWeight: 600 }}
+                          >
+                            <Plus size={11} />
+                            Tạo báo giá
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -387,8 +440,13 @@ export default function QuotationPage() {
 
       {showCreate && (
         <QuoteCreateModal
-          onClose={() => setShowCreate(false)}
-          onSuccess={() => { qc.invalidateQueries({ queryKey: ["admin", "quotation", "quotes"] }); }}
+          onClose={() => { setShowCreate(false); setQuoteRequestForModal(null); }}
+          onSuccess={() => {
+            qc.invalidateQueries({ queryKey: ["admin", "quotation", "quotes"] });
+            qc.invalidateQueries({ queryKey: ["admin", "quotation", "requests"] });
+            setQuoteRequestForModal(null);
+          }}
+          quoteRequest={quoteRequestForModal}
         />
       )}
     </div>

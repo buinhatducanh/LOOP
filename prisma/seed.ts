@@ -883,6 +883,7 @@ async function seedContent() {
     { key: "company_email", value: "contact@loop.vn", group: "general" },
     { key: "company_phone", value: "0378443602", group: "general" },
     { key: "company_address", value: "Ho Chi Minh City, Vietnam", group: "general" },
+    { key: "vat_rate", value: "0.1", group: "pricing" },  // 10% VAT — used by /api/pricing/config
   ];
 
   for (const setting of settings) {
