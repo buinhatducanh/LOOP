@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 import { DS, GRD } from "@/lib/design-tokens";
-import { ArrowRight, Camera, X, ChevronLeft, ChevronRight, ExternalLink, Image } from "lucide-react";
+import { ArrowRight, Camera, X, ExternalLink, Image } from "lucide-react";
 
 type MediaProject = {
   id: string;
@@ -35,7 +35,7 @@ function getAssetSrc(item: unknown): string {
   return "";
 }
 
-function getAssetLabel(item: unknown, index: number): string {
+function _getAssetLabel(item: unknown, index: number): string {
   if (typeof item === "string") {
     return item.split("/").pop() ?? `File ${index + 1}`;
   }

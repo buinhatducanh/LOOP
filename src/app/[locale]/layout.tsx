@@ -1,10 +1,11 @@
 /**
- * [locale] Root Layout — LOOP Solutions
- * Wraps all locale-prefixed pages with next-intl provider,
+ * [locale] Layout — LOOP Solutions
+ *
+ * Wraps all locale-prefixed FE pages with next-intl provider,
  * shared SiteHeader + SiteFooter, and locale-aware metadata.
  *
- * NOTE: This layout is for FE pages. The backend API-only app
- * does NOT use this layout. API routes remain at /api/* without locale prefix.
+ * NOTE: This layout renders INSIDE app/layout.tsx <body>.
+ * It must NOT include <html> or <body> tags — those are in the root layout only.
  */
 
 import type { Metadata } from "next";
@@ -12,10 +13,8 @@ import { NextIntlClientProvider } from "next-intl";
 import { getMessages, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
-import SiteHeader from "./components/SiteHeader";
-import SiteFooter from "./components/SiteFooter";
+import { Shell } from "./components/Shell";
 import { Toaster } from "@/components/ui/sonner";
-import { getFontClass, getHeadingFontClass } from "@/lib/fonts";
 import { buildOrganizationJsonLd, buildWebSiteJsonLd } from "@/lib/json-ld";
 
 type Props = {
@@ -43,7 +42,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       ? "http://localhost:3000"
       : (process.env.NEXT_PUBLIC_SITE_URL ?? "https://loop.vn");
   const ogImage = `/api/og?title=${encodeURIComponent(title)}&description=${encodeURIComponent(description)}&locale=${locale}`;
-  const gaId = process.env.NEXT_PUBLIC_GA_ID ?? "";
+  const _gaId = process.env.NEXT_PUBLIC_GA_ID ?? "";
   const gscVerification = process.env.NEXT_PUBLIC_GSC_VERIFICATION ?? "";
 
   return {
@@ -133,41 +132,36 @@ export default async function LocaleLayout({ children, params }: Props) {
   const gaId = process.env.NEXT_PUBLIC_GA_ID ?? "";
 
   return (
-    // "dark" class activates Figma dark theme CSS variables from figma-theme.css
-    <html lang={locale} suppressHydrationWarning className="dark">
-      <body
-        style={{ margin: 0, display: "flex", flexDirection: "column", minHeight: "100vh" }}
-        className={`dark ${getFontClass(locale)} ${getHeadingFontClass()}`}
-      >
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
-        />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
-        />
-        {/* Google Analytics 4 */}
-        {gaId && (
-          <>
-            <script async src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`} />
-            <script
-              dangerouslySetInnerHTML={{
-                __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','${gaId}',{page_path:window.location.pathname});`,
-              }}
-            />
-          </>
-        )}
+    // "dark" class on body (not html) — avoids hydration mismatch from next/font
+    // className hashes differing between SSR and client in development.
+    // NOTE: <html> and <body> are in the root app/layout.tsx — do NOT include them here.
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+      />
+      {/* Google Analytics 4 */}
+      {gaId && (
+        <>
+          <script async src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`} />
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','${gaId}',{page_path:window.location.pathname});`,
+            }}
+          />
+        </>
+      )}
 
-        <NextIntlClientProvider messages={messages}>
-          <SiteHeader locale={locale} />
-          <div style={{ flex: 1 }}>
-            {children}
-          </div>
-          <SiteFooter locale={locale} />
-          <Toaster position="top-right" richColors closeButton />
-        </NextIntlClientProvider>
-      </body>
-    </html>
+      <NextIntlClientProvider messages={messages}>
+        <Shell locale={locale}>
+          {children}
+        </Shell>
+        <Toaster position="top-right" richColors closeButton />
+      </NextIntlClientProvider>
+    </>
   );
 }

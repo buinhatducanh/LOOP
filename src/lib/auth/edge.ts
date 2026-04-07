@@ -88,10 +88,13 @@ export const PUBLIC_PREFIXES = ["/vi/dang-nhap", "/en/dang-nhap", "/ja/dang-nhap
 // ─── Cookie Keys ───────────────────────────────────────────────────────────────
 
 export const COOKIES = {
-  AUTH_TOKEN: "auth-token",
-  NEXT_AUTH_SESSION: "next-auth.session-token",
-  NEXT_AUTH_CSRF: "__Host-next-auth.csrf-token",
+  STAFF_TOKEN: "loop-staff-token",        // Staff JWT (HttpOnly)
+  CUSTOMER_TOKEN: "loop-customer-token", // Customer JWT (HttpOnly)
+  REFRESH_TOKEN: "refresh-token",
   AUTH_METHOD: "auth-method",
+  AUTH_LOGGED_IN: "auth-logged-in",
+  // Legacy — kept for backward compat during migration
+  AUTH_TOKEN_LEGACY: "auth-token",
 } as const;
 
 // ─── Edge-safe JWT decode ─────────────────────────────────────────────────────
@@ -130,6 +133,26 @@ export function decodeJwtPayload(token: string): Record<string, unknown> | null 
 // ─── Auth check (Edge-compatible) ───────────────────────────────────────────────
 
 /**
+ * Get the staff auth token from cookies.
+ * Returns the token value if present, null otherwise.
+ */
+export function getStaffToken(req: NextRequest): string | null {
+  return (
+    req.cookies.get(COOKIES.STAFF_TOKEN)?.value ??
+    // Legacy fallback
+    req.cookies.get(COOKIES.AUTH_TOKEN_LEGACY)?.value ??
+    null
+  );
+}
+
+/**
+ * Get the customer auth token from cookies.
+ */
+export function getCustomerToken(req: NextRequest): string | null {
+  return req.cookies.get(COOKIES.CUSTOMER_TOKEN)?.value ?? null;
+}
+
+/**
  * Check if a request has any auth token present (JWT or NextAuth session).
  * This is fast (no DB call) and suitable for Edge Middleware.
  *
@@ -139,13 +162,24 @@ export function getAuthStatus(req: NextRequest): {
   authenticated: boolean;
   method: "jwt" | "nextauth" | null;
 } {
-  const authToken = req.cookies.get(COOKIES.AUTH_TOKEN)?.value;
-  const nextAuthToken = req.cookies.get(COOKIES.NEXT_AUTH_SESSION)?.value;
-  const csrfToken = req.cookies.get(COOKIES.NEXT_AUTH_CSRF)?.value;
-
-  if (authToken) {
+  // Check staff token first (new cookie name)
+  const staffToken = getStaffToken(req);
+  if (staffToken) {
     return { authenticated: true, method: "jwt" };
   }
+  // Check customer token
+  const customerToken = getCustomerToken(req);
+  if (customerToken) {
+    return { authenticated: true, method: "jwt" };
+  }
+  // Legacy: check old cookie name
+  const legacyToken = req.cookies.get(COOKIES.AUTH_TOKEN_LEGACY)?.value;
+  if (legacyToken) {
+    return { authenticated: true, method: "jwt" };
+  }
+  // NextAuth cookie names (not part of our COOKIES constant — hardcoded here)
+  const nextAuthToken = req.cookies.get("next-auth.session-token")?.value;
+  const csrfToken = req.cookies.get("__Host-next-auth.csrf-token")?.value;
   if (nextAuthToken || csrfToken) {
     return { authenticated: true, method: "nextauth" };
   }
@@ -155,20 +189,43 @@ export function getAuthStatus(req: NextRequest): {
 // ─── Role extraction (Edge-compatible) ─────────────────────────────────────────
 
 /**
- * Get the user's role level from the JWT auth token.
+ * Get the user's role level from the staff JWT auth token.
  * Returns 99 (lowest) if no valid token is found.
  *
  * This runs in Edge and does NOT hit the database.
  */
 export function getUserRoleLevel(req: NextRequest): number {
-  const authToken = req.cookies.get(COOKIES.AUTH_TOKEN)?.value;
-  if (!authToken) return 99;
+  const staffToken = getStaffToken(req);
+  if (!staffToken) return 99;
 
-  const payload = decodeJwtPayload(authToken);
+  const payload = decodeJwtPayload(staffToken);
   if (!payload?.userId) return 99;
 
   const role = String(payload.role ?? "");
   return ROLE_LEVEL[role] ?? 99;
+}
+
+/**
+ * Check the accountType from the JWT payload.
+ * Returns "staff" | "customer" | null (if no valid token).
+ */
+export function getAccountType(req: NextRequest): "staff" | "customer" | null {
+  const staffToken = getStaffToken(req);
+  const customerToken = getCustomerToken(req);
+
+  if (customerToken) {
+    const payload = decodeJwtPayload(customerToken);
+    if (payload?.acc === "customer") return "customer";
+  }
+
+  if (staffToken) {
+    const payload = decodeJwtPayload(staffToken);
+    if (payload?.acc === "staff") return "staff";
+    // Legacy: if has staff token but no acc field, treat as staff
+    if (payload?.userId) return "staff";
+  }
+
+  return null;
 }
 
 /**
@@ -231,19 +288,14 @@ export function checkAdminAccess(req: NextRequest, pathname: string): {
     return { allowed: false, reason: "unauthenticated" };
   }
 
+  // Reject customer tokens — only staff can access admin routes
+  const accountType = getAccountType(req);
+  if (accountType === "customer") {
+    return { allowed: false, reason: "forbidden" };
+  }
+
   const requiredLevel = getRequiredLevel(pathname);
 
-  /*
-   * Routes with requiredLevel >= 5: any authenticated user qualifies.
-   * We skip the role check here because ROLE_LEVEL values for actual roles
-   * are all <= 5, so all real users can access level-5 routes regardless.
-   * (getRequiredLevel returns 5 as the default for unlisted paths, meaning
-   * "any staff member" — not a restricted role.)
-   *
-   * Routes with requiredLevel < 5: enforce role hierarchy.
-   * A user can access the route if their level is <= the required level
-   * (i.e. more-privileged users can access less-privileged routes).
-   */
   if (requiredLevel < 5) {
     const userLevel = getUserRoleLevel(req);
     if (userLevel > requiredLevel) {
@@ -252,6 +304,39 @@ export function checkAdminAccess(req: NextRequest, pathname: string): {
   }
 
   return { allowed: true };
+}
+
+/**
+ * Edge-compatible auth check for customer portal routes.
+ * Returns { allowed: true } or { allowed: false, reason: string }
+ */
+export function checkCustomerAccess(req: NextRequest, pathname: string): {
+  allowed: boolean;
+  reason?: string;
+} {
+  if (isPublicPath(pathname)) {
+    return { allowed: true };
+  }
+
+  const accountType = getAccountType(req);
+
+  // Staff trying to access customer portal → redirect to admin
+  if (accountType === "staff") {
+    return { allowed: false, reason: "staff_forbidden" };
+  }
+
+  // Has customer token → allow
+  const customerToken = getCustomerToken(req);
+  if (customerToken) {
+    return { allowed: true };
+  }
+
+  // Legacy token with customer accountType
+  if (accountType === "customer") {
+    return { allowed: true };
+  }
+
+  return { allowed: false, reason: "unauthenticated" };
 }
 
 // ─── Full JWT signature verification (Node.js / Edge) ──────────────────────────

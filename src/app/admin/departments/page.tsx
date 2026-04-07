@@ -17,7 +17,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { DS, GRD } from "@/lib/design-tokens";
 import {
   Building2, Users, Crown, ChevronRight, ChevronDown, ChevronUp,
-  X, Save, Search, BarChart3, UserPlus, Plus, Layers,
+  X, Save, Search, BarChart3, UserPlus, Layers,
   CheckSquare, Square,
 } from "lucide-react";
 
@@ -133,7 +133,7 @@ const INIT_DEPTS: DeptConfig[] = [
 
 // ── MiniAvatar ───────────────────────────────────────────────────────────────
 
-function MiniAvatar({ id, size = 32, tooltip = true }: { id: number; size?: number; tooltip?: boolean }) {
+function _MiniAvatar({ id, size = 32, tooltip = true }: { id: number; size?: number; tooltip?: boolean }) {
   const m = MOCK_MEMBERS.find(x => x.id === id);
   const [showTip, setShowTip] = useState(false);
   if (!m) return null;

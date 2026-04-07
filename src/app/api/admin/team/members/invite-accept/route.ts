@@ -5,20 +5,21 @@
  *   1. Validate invite token (MemberRequest + User)
  *   2. Set password
  *   3. Activate account
- *   4. Return JWT + redirect info
+ *   4. Create session with access + refresh tokens
+ *   5. Return JWT + redirect info
  *
  * Body: { token: string, password: string }
  */
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/auth/password";
-import { signToken } from "@/lib/auth/jwt";
-import { badRequest, handleError } from "@/lib/api";
+import { createSession } from "@/lib/auth/session";
 import { ROLE_LEVEL } from "@/lib/auth/roles";
+import {handleError } from "@/lib/api";
 
-export async function POST(req: NextRequest) {
+export async function POST(_req: NextRequest) {
   try {
-    const body = await req.json();
+    const body = await _req.json();
     const { token, password } = body;
 
     // ── Validate input ───────────────────────────────────────────────────────────
@@ -30,7 +31,6 @@ export async function POST(req: NextRequest) {
     }
 
     // ── Find MemberRequest by inviteToken ──────────────────────────────────────
-    // inviteToken is @unique in schema — use findUnique for type safety
     const memberRequest = await prisma.memberRequest.findUnique({
       where: { inviteToken: token },
     });
@@ -87,7 +87,6 @@ export async function POST(req: NextRequest) {
         },
       });
     } else {
-      // Create new user (shouldn't happen in normal flow, but handle gracefully)
       user = await prisma.user.create({
         data: {
           email: memberRequest.email,
@@ -100,19 +99,31 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // ── Sign JWT for auto-login ──────────────────────────────────────────────────
-    const jwtToken = signToken({
-      userId: user.id,
-      email: user.email,
-      role: user.role,
-      roles: [user.role],
-      roleLevel: ROLE_LEVEL[user.role] ?? 5,
-      accountType: "staff",
-    });
+    // ── Create session with access + refresh tokens ─────────────────────────────
+    const ipAddress = _req.headers.get("x-forwarded-for")
+      ?? req.headers.get("x-real-ip")
+      ?? null;
+    const userAgent = _req.headers.get("user-agent") ?? null;
+    const roleLevel = ROLE_LEVEL[user.role] ?? 5;
+
+    const { accessToken, refreshToken: _refreshToken } = await createSession(
+      user.id,
+      {
+        roleLevel,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        roles: [user.role],
+        accessTags: [],
+        accountType: "staff",
+        isOnboarded: true,
+      },
+      { ipAddress: ipAddress ?? undefined, userAgent: userAgent ?? undefined }
+    );
 
     return NextResponse.json({
       message: "Tài khoản đã được kích hoạt",
-      token: jwtToken,
+      token: accessToken,
       user: {
         userId: user.id,
         email: user.email,
@@ -120,7 +131,7 @@ export async function POST(req: NextRequest) {
         role: user.role,
         accountType: "staff",
       },
-    });
+    }, { status: 200 });
   } catch (err) {
     return handleError(err);
   }

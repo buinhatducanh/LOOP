@@ -1,4 +1,4 @@
-import { ok, handleError } from "@/lib/api/response";
+import { handleError } from "@/lib/api/response";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
@@ -8,7 +8,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const session = await requirePermission("effects", "read");
+    const _session = await requirePermission("effects", "read");
     const { id } = await params;
     const effect = await prisma.rankEffect.findUnique({ where: { id } });
     if (!effect) return ok({ error: "not found" }, 404);
@@ -23,7 +23,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const session = await requirePermission("effects", "update");
+    const _session = await requirePermission("effects", "update");
     const { id } = await params;
     const data = await req.json();
     const existing = await prisma.rankEffect.findUnique({ where: { id } });
@@ -55,7 +55,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const session = await requirePermission("effects", "delete");
+    const _session = await requirePermission("effects", "delete");
     const { id } = await params;
     await prisma.rankEffect.delete({ where: { id } });
     return ok({ success: true });

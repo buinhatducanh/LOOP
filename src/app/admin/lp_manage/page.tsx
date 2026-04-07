@@ -14,14 +14,14 @@
  */
 
 import { useState, useMemo } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "motion/react";
 import { adminApi } from "@/lib/api/client";
 import { DS, GRD } from "@/lib/design-tokens";
 import {
-  Wallet, Plus, Save, X, Search, BarChart3, Users, Zap,
+  Wallet, Plus, Save, X, BarChart3, Users,
   FolderKanban, Trophy, Briefcase, DollarSign, Gift, Star,
-  Settings, RefreshCw, Send, ChevronDown,
+  Settings, RefreshCw, Send,
 } from "lucide-react";
 
 // ── Types ─────────────────────────────────────────────────────────────────────

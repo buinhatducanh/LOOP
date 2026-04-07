@@ -11,7 +11,7 @@ import { useQuery } from "@tanstack/react-query";
 import { motion } from "motion/react";
 import { adminApi } from "@/lib/api/client";
 import { DS } from "@/lib/design-tokens";
-import { Zap, TrendingUp, RefreshCw, Award, History, ArrowDown } from "lucide-react";
+import { TrendingUp, RefreshCw, Award, History, ArrowDown } from "lucide-react";
 
 const fmtLP = (n: number) => {
   if (typeof n === "bigint") n = Number(n);

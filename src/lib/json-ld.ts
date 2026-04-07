@@ -17,18 +17,6 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://loop.vn";
 // ─── Base Types ────────────────────────────────────────────────────────────────
 
 type JsonLdContext = "https://schema.org";
-type JsonLdType =
-  | "Organization"
-  | "WebSite"
-  | "Service"
-  | "CreativeWork"
-  | "Article"
-  | "Person"
-  | "BreadcrumbList"
-  | "Product"
-  | "Offer"
-  | "FAQPage"
-  | "LocalBusiness";
 
 interface BaseJsonLd {
   "@context": JsonLdContext;

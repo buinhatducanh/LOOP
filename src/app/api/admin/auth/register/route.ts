@@ -1,12 +1,13 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/auth/password";
-import { signToken } from "@/lib/auth/jwt";
+import { createSession } from "@/lib/auth/session";
+import { AUTH_COOKIES } from "@/lib/auth/roles";
 import { createAuditLog } from "@/lib/auth/audit";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { authLogger } from "@/lib/logger";
 
-export async function POST(req: NextRequest) {
+export async function POST(_req: NextRequest) {
   const rateLimitResult = await applyRateLimit(req, "auth");
   if (!rateLimitResult.allowed) return rateLimitResult.response!;
 
@@ -63,15 +64,29 @@ export async function POST(req: NextRequest) {
 
     await createAuditLog({ userId: user.id, action: "register", resource: "auth", resourceId: user.id });
 
-    const token = signToken({
-      userId: user.id,
-      email: user.email,
-      role: user.role,
-      roles: ["member"],
-      roleLevel: 5,
-      accountType: "customer",
-      isOnboarded: false,
-    });
+    // Determine actual accountType after teamMember link resolution
+    const finalAccountType: "staff" | "customer" =
+      teamMemberLink.teamMemberId ? "staff" : "customer";
+
+    const ipAddress = req.headers.get("x-forwarded-for")
+      ?? req.headers.get("x-real-ip")
+      ?? null;
+    const userAgent = req.headers.get("user-agent") ?? null;
+
+    const { accessToken, refreshToken } = await createSession(
+      user.id,
+      {
+        roleLevel: 5,
+        email: user.email,
+        name: user.name,
+        role: "member",
+        roles: ["member"],
+        accessTags: [],
+        accountType: finalAccountType,
+        isOnboarded: false,
+      },
+      { ipAddress: ipAddress ?? undefined, userAgent: userAgent ?? undefined }
+    );
 
     authLogger.withSLO("POST /api/admin/auth/register success", {
       endpoint: "/api/admin/auth/register",
@@ -90,23 +105,30 @@ export async function POST(req: NextRequest) {
           role: user.role,
           isOnboarded: user.isOnboarded,
         },
-        token,
+        token: accessToken,
       },
       { status: 201 }
     );
 
-    response.cookies.set("auth-token", token, {
+    response.cookies.set(AUTH_COOKIES.ACCESS_TOKEN, accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 8 * 60 * 60,
+      maxAge: 15 * 60,
       path: "/",
     });
-    response.cookies.set("auth-method", "credentials", {
+    response.cookies.set(AUTH_COOKIES.REFRESH_TOKEN, refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60,
+      path: "/",
+    });
+    response.cookies.set(AUTH_COOKIES.AUTH_METHOD, "credentials", {
       httpOnly: false,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 8 * 60 * 60,
+      maxAge: 7 * 24 * 60 * 60,
       path: "/",
     });
 

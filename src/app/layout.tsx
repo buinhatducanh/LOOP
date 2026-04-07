@@ -1,9 +1,14 @@
 /**
  * Root Layout — LOOP Solutions
  *
- * API-only app: minimal layout with no i18n.
- * The [locale] layout in app/[locale]/ handles FE pages with i18n.
- * Admin routes use their own minimal layout.
+ * The ONE layout in the tree that provides <html> and <body>.
+ * All other layouts (app/[locale]/layout.tsx, app/admin/layout.tsx) render
+ * their content inside {children} here and must NOT include <html>/<body>.
+ *
+ * Route groups:
+ *   (root)          → renders inside this layout's <body>
+ *   [locale]/       → public FE pages (with i18n)
+ *   admin/          → dark admin dashboard
  */
 import type { Metadata } from "next";
 import "@/styles/globals.css";
@@ -43,8 +48,10 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-// Root layout for API-only routes.
-// FE pages use app/[locale]/layout.tsx which has NextIntlClientProvider.
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  return children;
+  return (
+    <html lang="vi" suppressHydrationWarning>
+      <body>{children}</body>
+    </html>
+  );
 }

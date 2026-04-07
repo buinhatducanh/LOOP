@@ -88,7 +88,7 @@ export function BlogDetailClient({
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            style={{ background: "rgba(59,130,246,0.05)", border: `1px solid rgba(59,130,246,0.2)`, borderLeft: "4px solid #3B82F6", borderRadius: 12, padding: "20px 24px", marginBottom: 32 }}
+            style={{ background: `${DS.blue}15`, border: `${DS.blue}30`, borderLeft: `4px solid ${DS.blue}`, borderRadius: 12, padding: "20px 24px", marginBottom: 32 }}
           >
             <p style={{ color: DS.text3, fontSize: 16, lineHeight: 1.75, fontStyle: "italic" }}>{excerpt}</p>
           </motion.div>

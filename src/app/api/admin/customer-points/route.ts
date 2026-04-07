@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { handleError } from "@/lib/api/response";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
@@ -8,7 +8,7 @@ import { createAuditLog } from "@/lib/auth/audit";
 // List all customer points with optional filters.
 // Query: ?email=&page=&limit=
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
     await requirePermission("customer-points", "read");
 
@@ -70,9 +70,9 @@ export async function GET(req: NextRequest) {
 // Manual LP adjustment for a customer (admin bonus/penalty).
 // Body: { email, amount, description }
 
-export async function POST(req: NextRequest) {
+export async function POST(_req: NextRequest) {
   try {
-    const session = await requirePermission("customer-points", "update");
+    const _session = await requirePermission("customer-points", "update");
     const { email, amount, description } = await req.json();
 
     if (!email || typeof amount !== "number" || amount === 0) {
@@ -104,7 +104,7 @@ export async function POST(req: NextRequest) {
         throw new Error("Cannot reduce balance below zero");
       }
 
-      const updated = await tx.customerPoint.update({
+      const _updated = await tx.customerPoint.update({
         where: { id: point.id },
         data: {
           balance: newBalance,

@@ -27,7 +27,7 @@
 
 export const dynamic = "force-dynamic";
 
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { handleError, badRequest, notFound, ok, list, buildPagination } from "@/lib/api/response";
 

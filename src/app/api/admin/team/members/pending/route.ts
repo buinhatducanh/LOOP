@@ -2,14 +2,14 @@
  * GET  /api/admin/team/members/pending   — List pending member requests (CEO/Admin)
  * POST /api/admin/team/members/pending   — HR creates a new member request
  */
-import { NextRequest, NextResponse } from "next/server";
-import { requireAuth, requirePermissionFast } from "@/lib/auth/permissions";
+import { NextRequest } from "next/server";
+import { requirePermissionFast } from "@/lib/auth/permissions";
 import { ok, list, handleError, badRequest, buildPagination } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
-    const session = await requireAuth();
+    const _session = await requireAuth();
     requirePermissionFast(session, "users", "read");
 
     const { searchParams } = req.nextUrl;
@@ -41,9 +41,9 @@ export async function GET(req: NextRequest) {
   }
 }
 
-export async function POST(req: NextRequest) {
+export async function POST(_req: NextRequest) {
   try {
-    const session = await requireAuth();
+    const _session = await requireAuth();
     requirePermissionFast(session, "users", "create");
 
     const body = await req.json();

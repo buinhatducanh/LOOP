@@ -3,13 +3,11 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "motion/react";
-import { qk } from "@/lib/query/provider";
-import { adminApi } from "@/lib/api/client";
-import { DS, GRD } from "@/lib/design-tokens";
+import { DS } from "@/lib/design-tokens";
 import {
-  X, Trophy, Crown, Zap, Star, ChevronDown,
-  RefreshCw, Plus, ChevronUp, TrendingUp, Award,
-  Medal, Shield,
+  X, Trophy, Crown, Star, ChevronDown,
+  RefreshCw, TrendingUp, Award,
+ Shield,
 } from "lucide-react";
 
 // ─── Rank config (mirrors lib/rank/ranks.ts) ──────────────────────────────────
@@ -98,7 +96,7 @@ function Podium({
       marginBottom: 32,
       padding: "24px 0 0",
     }}>
-      {ordered.map((member, idx) => {
+      {ordered.map((member, _idx) => {
         const rank = ordered.indexOf(member) + 1;
         const cfg = getRank(member.rank);
         const h = podiumHeights[rank - 1];
@@ -203,7 +201,7 @@ function LeaderboardRow({
   onAward: (e: LeaderboardEntry) => void;
 }) {
   const cfg = getRank(entry.rank);
-  const xpPct = entry.maxXp > 0 ? Math.min((entry.currentXp / entry.maxXp) * 100, 100) : 0;
+   entry.maxXp > 0 ? Math.min((entry.currentXp / entry.maxXp) * 100, 100) : 0;
 
   return (
     <motion.div
@@ -330,7 +328,7 @@ function AwardModal({
   entry: LeaderboardEntry;
   onClose: () => void;
 }) {
-  const qc = useQueryClient();
+   useQueryClient();
   const [form, setForm] = useState<AwardForm>({
     memberId: entry.id,
     projectId: "",

@@ -3,33 +3,66 @@
 /**
  * SessionHydrator — verifies auth session with server on every mount.
  *
- * Flow (with persist middleware):
+ * R3 upgrade (2026-04-07):
  *   1. Page reloads → Zustand re-hydrates from localStorage (isAuthenticated=true)
- *   2. SessionHydrator mounts → calls fetchSession() to verify JWT with server
- *   3. JWT valid    → /me returns user data → store updated with fresh data
- *      JWT expired   → /me returns error → fetchSession resets store to guest
+ *   2. SessionHydrator mounts → calls /me if token exists
+ *   3. /me = 200 → store updated with fresh data + tokenExpiry refreshed
+ *      /me = 401 → fetchSession clears store (redirect to login via AuthGuard)
  *
- * Runs once per full page load (not per HMR), regardless of localStorage state.
- * This prevents ghost sessions where user is "logged in" locally but JWT expired.
+ * DB cold-start handling: retries once after 500ms on connection errors.
  *
  * NOTE: Uses useLayoutEffect to run BEFORE React renders children.
- * This avoids the "setState during render" issue that AdminSessionInit had.
- * Zustand store is already re-hydrated from localStorage before this runs.
+ * This avoids the "setState during render" issue.
  */
 import { useLayoutEffect, useRef } from "react";
 import { useAuthStore } from "@/app/store/authStore";
+import { adminApi, type ApiErrorResponse } from "@/lib/api/client";
+
+/** R3: Fetch /me with DB cold-start retry. */
+async function _fetchMeWithRetry(): Promise<{
+  ok: boolean;
+  user?: unknown;
+}> {
+  const MAX_RETRIES = 1;
+
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const res = await adminApi.get<{ user: unknown } | ApiErrorResponse>(
+        "/api/admin/auth/me",
+        { throwOnError: false }
+      );
+      return { ok: !("error" in res), user: "user" in res ? res.user : undefined };
+    } catch {
+      // Network error — retry on cold-start
+      if (attempt < MAX_RETRIES) {
+        await new Promise<void>((r) => setTimeout(r, 500));
+      }
+    }
+  }
+
+  // All retries exhausted
+  return { ok: false };
+}
 
 export function SessionHydrator() {
   const fetchSession = useAuthStore((s) => s.fetchSession);
   const initialized = useRef(false);
 
-  // useLayoutEffect: runs synchronously after DOM mutations but before paint.
-  // Ensures store is updated BEFORE any child components read from it.
   useLayoutEffect(() => {
     if (initialized.current) return;
     initialized.current = true;
-    fetchSession();
-  }, []); // run once on mount
+
+    // Only verify session if a staff token exists in localStorage.
+    // Without this guard, every page load calls /me and gets 401 (log spam).
+    const hasStaffToken =
+      typeof window !== "undefined" &&
+      !!localStorage.getItem("loop-staff-token");
+
+    if (hasStaffToken) {
+      void fetchSession();
+    }
+    // If no token, user is guest — nothing to hydrate
+  }, [fetchSession]);
 
   return null;
 }

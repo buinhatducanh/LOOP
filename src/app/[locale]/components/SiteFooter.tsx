@@ -13,9 +13,13 @@
  */
 
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { useState } from "react";
 import { DS, GRD } from "@/lib/design-tokens";
-import { Mail, Phone, MapPin, Clock, Zap, Rocket, Globe, Shield, BookOpen, Settings, Send } from "lucide-react";
+import { Mail, Phone, MapPin, Clock, Zap, Rocket, Globe, Shield, BookOpen, Settings, Send, Eye, EyeOff, Loader2 } from "lucide-react";
+import { useAuthStore } from "@/app/store/authStore";
+import { toast } from "sonner";
 
 interface FooterCol {
   title: string;
@@ -68,9 +72,138 @@ const RANK_COLORS = [
   { key: "diamond", color: "#818CF8" },
 ];
 
+// ── Staff Login Section — compact form in footer ────────────────────────────────
+function StaffLoginSection({ locale }: { locale: string }) {
+  const router = useRouter();
+  const { login, isLoading } = useAuthStore();
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [show, setShow] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !password) return;
+    setError("");
+    const ok = await login(email, password);
+    if (ok) {
+      const user = useAuthStore.getState().user;
+      toast.success("Đăng nhập thành công!", {
+        description: user ? `Chào mừng ${user.name}` : undefined,
+      });
+      router.push("/admin/overview");
+    } else {
+      setError(useAuthStore.getState().error ?? "Đăng nhập thất bại");
+    }
+  };
+
+  return (
+    <div
+      style={{
+        display: "flex", flexDirection: "column",
+        background: "rgba(15,23,42,0.6)",
+        border: "1px solid rgba(59,130,246,0.2)",
+        borderRadius: 10, padding: "0.875rem 1rem",
+        minWidth: 260, gap: "0.5rem",
+      }}
+    >
+      <div style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}>
+          <Settings size={11} color={DS.blue} />
+          <span style={{
+            color: DS.blue, fontSize: "0.6875rem",
+            fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.12em",
+          }}>
+            NHÂN VIÊN
+          </span>
+        </div>
+        <Link
+          href={`/${locale}/nhan-vien`}
+          style={{
+            color: DS.text4, fontSize: "0.6875rem",
+            textDecoration: "none",
+            fontFamily: "'JetBrains Mono', monospace",
+          }}
+          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = DS.purple; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = DS.text4; }}
+        >
+          Đăng nhập →
+        </Link>
+      </div>
+
+      <form onSubmit={handleSubmit} style={{ display: "flex", gap: "0.375rem" }}>
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          style={{
+            flex: 1, background: DS.bgCard2, border: `1px solid ${DS.border}`,
+            borderRadius: 7, padding: "6px 10px",
+            color: DS.text, fontSize: 12, outline: "none", minWidth: 0,
+          }}
+        />
+        <input
+          type={show ? "text" : "password"}
+          placeholder="Mật khẩu"
+          value={password}
+          onChange={e => setPassword(e.target.value)}
+          style={{
+            width: 90, background: DS.bgCard2, border: `1px solid ${DS.border}`,
+            borderRadius: 7, padding: "6px 8px",
+            color: DS.text, fontSize: 12, outline: "none",
+          }}
+        />
+        <button
+          type="submit"
+          disabled={isLoading}
+          style={{
+            background: GRD.primary, border: "none", borderRadius: 7,
+            padding: "6px 10px", cursor: isLoading ? "not-allowed" : "pointer",
+            display: "flex", alignItems: "center",
+            color: "#fff", flexShrink: 0,
+          }}
+        >
+          {isLoading ? (
+            <Loader2 size={12} style={{ animation: "spin 1s linear infinite" }} />
+          ) : (
+            <Eye size={12} />
+          )}
+        </button>
+        <button
+          type="button"
+          onClick={() => { void setShow(v => !v); }}
+          style={{
+            background: "rgba(255,255,255,0.04)", border: `1px solid ${DS.border}`,
+            borderRadius: 7, padding: "6px 8px", cursor: "pointer",
+            display: "flex", alignItems: "center", color: DS.text4, flexShrink: 0,
+          }}
+        >
+          {show ? <EyeOff size={12} /> : <Eye size={12} />}
+        </button>
+      </form>
+
+      {error && (
+        <div style={{
+          fontSize: "0.625rem", color: "#FCA5A5",
+          fontFamily: "'JetBrains Mono', monospace",
+        }}>
+          {error}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function SiteFooter({ locale = "vi" }: { locale?: string }) {
   const t = useTranslations("Footer");
   const tNav = useTranslations("Navigation");
+  const pathname = usePathname();
+
+  if (pathname.includes('/onboarding')) return null;
 
   const cols: FooterCol[] = [
     {
@@ -112,7 +245,7 @@ export default function SiteFooter({ locale = "vi" }: { locale?: string }) {
   return (
     <footer
       style={{
-        background: "#010410",
+        background: DS.bgCosmic,
         borderTop: `1px solid ${DS.border}`,
         marginTop: "auto",
       }}
@@ -121,7 +254,7 @@ export default function SiteFooter({ locale = "vi" }: { locale?: string }) {
       <div
         style={{
           padding: "4rem 1.5rem",
-          background: "linear-gradient(135deg, rgba(29,78,216,0.15) 0%, rgba(129,140,248,0.08) 100%)",
+          background: "linear-gradient(135deg, rgba(107,61,245,0.15) 0%, rgba(79,125,243,0.08) 100%)",
           borderBottom: `1px solid ${DS.border}`,
         }}
       >
@@ -292,58 +425,40 @@ export default function SiteFooter({ locale = "vi" }: { locale?: string }) {
           style={{
             paddingTop: "1.5rem", borderTop: `1px solid ${DS.border}`,
             display: "flex", flexWrap: "wrap",
-            justifyContent: "space-between", alignItems: "center", gap: "1rem",
+            justifyContent: "space-between", alignItems: "center", gap: "0.75rem",
           }}
         >
-          <p style={{ color: DS.text4, fontSize: "0.75rem", margin: 0, fontFamily: "'JetBrains Mono', monospace" }}>
-            {t("rights")}
-          </p>
+          {/* Left: copyright + rank dots + season */}
+          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.75rem" }}>
+            <p style={{ color: DS.text4, fontSize: "0.75rem", margin: 0, fontFamily: "'JetBrains Mono', monospace" }}>
+              {t("rights")}
+            </p>
 
-          {/* Rank color dots */}
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            {RANK_COLORS.map(r => (
-              <div
-                key={r.key}
-                style={{
-                  width: 6, height: 6, borderRadius: "50%",
-                  background: r.color,
-                  boxShadow: `0 0 4px ${r.color}`,
-                }}
-              />
-            ))}
-          </div>
+            {/* Rank color dots */}
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+              {RANK_COLORS.map(r => (
+                <div
+                  key={r.key}
+                  style={{
+                    width: 6, height: 6, borderRadius: "50%",
+                    background: r.color,
+                    boxShadow: `0 0 4px ${r.color}`,
+                  }}
+                />
+              ))}
+            </div>
 
-          {/* ADMIN link */}
-          <Link
-            href="/admin/overview"
-            style={{
-              display: "flex", alignItems: "center", gap: "0.375rem",
+            {/* SEASON badge */}
+            <div style={{
               color: DS.text4, fontSize: "0.6875rem",
-              fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.12em",
-              textDecoration: "none", padding: "4px 10px", borderRadius: 6,
-              border: "1px solid rgba(255,255,255,0.06)",
-              transition: "all 0.2s",
-            }}
-            onMouseEnter={e => {
-              (e.currentTarget as HTMLElement).style.color = DS.blue;
-              (e.currentTarget as HTMLElement).style.borderColor = "rgba(59,130,246,0.3)";
-            }}
-            onMouseLeave={e => {
-              (e.currentTarget as HTMLElement).style.color = DS.text4;
-              (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.06)";
-            }}
-          >
-            <Settings size={11} />
-            ADMIN
-          </Link>
-
-          {/* SEASON badge */}
-          <div style={{
-            color: DS.text4, fontSize: "0.6875rem",
-            fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.15em",
-          }}>
-            {t("season")}
+              fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.15em",
+            }}>
+              {t("season")}
+            </div>
           </div>
+
+          {/* Right: staff login section — compact inline form */}
+          <StaffLoginSection locale={locale} />
         </div>
       </div>
     </footer>

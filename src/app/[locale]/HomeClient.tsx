@@ -23,7 +23,13 @@ import { DS, GRD } from "@/lib/design-tokens";
 import ServicesSection from "@/components/landing/ServicesSectionClient";
 import { OnboardingClient } from "@/components/landing/OnboardingClient";
 
-// ── Shared sub-components ───────────────────────────────────────────────────────
+/* ── Galaxy keyframes ── */
+const GALAXY_KEYFRAMES = `
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 0.9; transform: scale(1.03); }
+}
+`;
 
 /** Animated counter using motion values */
 function AnimatedCounter({ to, suffix = "" }: { to: number; suffix?: string }) {
@@ -95,6 +101,8 @@ function HeroSection({ locale }: { locale: string }) {
   }, []);
 
   return (
+    <>
+      <style dangerouslySetInnerHTML={{ __html: GALAXY_KEYFRAMES }} />
     <section
       style={{
         position: "relative", minHeight: "100vh", display: "flex",
@@ -102,34 +110,127 @@ function HeroSection({ locale }: { locale: string }) {
         paddingLeft: "1.5rem", paddingRight: "1.5rem", overflow: "hidden",
       }}
     >
-      {/* Background */}
-      <div style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 0 }}>
+      {/* ── GALAXY BACKGROUND (from color_2.png palette) ── */}
+      <div style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 0, overflow: "hidden" }}>
+        {/* Deep space base: #0C0C14 → #1A1A2E */}
+        <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at 15% 50%, #1A1A2E 0%, #0C0C14 45%, #080810 100%)" }} />
+
+        {/* Nebula cloud 1 — purple #6B3DF5 (top-left, dominant) */}
         <motion.div
           style={{
-            position: "absolute", top: "-15%", left: "-5%",
-            width: "55%", height: "55%", borderRadius: "50%",
-            background: "radial-gradient(circle, rgba(29,78,216,0.12) 0%, transparent 70%)",
+            position: "absolute", top: "-10%", left: "-5%",
+            width: "70%", height: "70%", borderRadius: "50%",
+            background: "radial-gradient(circle, rgba(107,61,245,0.28) 0%, rgba(79,125,243,0.12) 40%, transparent 70%)",
+            filter: "blur(45px)",
           }}
-          animate={{ x: [0, 40, 0], y: [0, -20, 0] }}
-          transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
+          animate={{ x: [0, 80, 0], y: [0, -30, 0], opacity: [0.7, 1, 0.7] }}
+          transition={{ duration: 28, repeat: Infinity, ease: "easeInOut" }}
         />
+        {/* Nebula cloud 2 — red #CC3344 (bottom-right) */}
         <motion.div
           style={{
-            position: "absolute", top: "40%", right: "-10%",
-            width: "50%", height: "50%", borderRadius: "50%",
-            background: "radial-gradient(circle, rgba(129,140,248,0.09) 0%, transparent 70%)",
+            position: "absolute", bottom: "-10%", right: "-5%",
+            width: "60%", height: "60%", borderRadius: "50%",
+            background: "radial-gradient(circle, rgba(204,51,68,0.22) 0%, rgba(107,61,245,0.08) 50%, transparent 70%)",
+            filter: "blur(55px)",
           }}
-          animate={{ x: [0, -30, 0], y: [0, 30, 0] }}
-          transition={{ duration: 22, repeat: Infinity, ease: "easeInOut", delay: 3 }}
+          animate={{ x: [0, -60, 0], y: [0, 30, 0], opacity: [0.5, 0.9, 0.5] }}
+          transition={{ duration: 35, repeat: Infinity, ease: "easeInOut", delay: 6 }}
         />
-        <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", opacity: 0.025 }}>
-          <defs>
-            <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
-              <path d="M 60 0 L 0 0 0 60" fill="none" stroke={DS.blue} strokeWidth="0.5" />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#grid)" />
+        {/* Nebula cloud 3 — blue #4F7DF3 (center-right) */}
+        <motion.div
+          style={{
+            position: "absolute", top: "30%", right: "5%",
+            width: "45%", height: "45%", borderRadius: "50%",
+            background: "radial-gradient(circle, rgba(79,125,243,0.18) 0%, rgba(107,61,245,0.06) 60%, transparent 70%)",
+            filter: "blur(40px)",
+          }}
+          animate={{ x: [0, -40, 0], y: [0, -50, 0], opacity: [0.5, 0.85, 0.5] }}
+          transition={{ duration: 22, repeat: Infinity, ease: "easeInOut", delay: 10 }}
+        />
+
+        {/* Star field */}
+        <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}>
+          {/* Large stars */}
+          {[
+            { cx: 8, cy: 12, r: 2, op: 0.9 }, { cx: 15, cy: 25, r: 1.5, op: 0.7 },
+            { cx: 22, cy: 8, r: 1, op: 0.8 }, { cx: 35, cy: 18, r: 2, op: 0.6 },
+            { cx: 42, cy: 5, r: 1.5, op: 0.9 }, { cx: 55, cy: 22, r: 1, op: 0.7 },
+            { cx: 62, cy: 10, r: 2, op: 0.8 }, { cx: 70, cy: 30, r: 1.5, op: 0.6 },
+            { cx: 78, cy: 15, r: 1, op: 0.9 }, { cx: 85, cy: 40, r: 2, op: 0.7 },
+            { cx: 90, cy: 8, r: 1.5, op: 0.8 }, { cx: 5, cy: 55, r: 1, op: 0.6 },
+            { cx: 25, cy: 60, r: 2, op: 0.9 }, { cx: 40, cy: 50, r: 1.5, op: 0.7 },
+            { cx: 58, cy: 65, r: 1, op: 0.8 }, { cx: 72, cy: 55, r: 2, op: 0.6 },
+            { cx: 88, cy: 70, r: 1.5, op: 0.9 }, { cx: 12, cy: 80, r: 1, op: 0.7 },
+            { cx: 30, cy: 88, r: 2, op: 0.8 }, { cx: 50, cy: 75, r: 1.5, op: 0.6 },
+          ].map((s, i) => (
+            <circle key={i} cx={`${s.cx}%`} cy={`${s.cy}%`} r={s.r} fill="white" opacity={s.op} />
+          ))}
+          {/* Tiny stars */}
+          {Array.from({ length: 60 }, (_, i) => {
+            const x = (i * 17.3) % 100;
+            const y = (i * 23.7 + 7) % 100;
+            return <circle key={`tiny-${i}`} cx={`${x}%`} cy={`${y}%`} r={0.5} fill="white" opacity={0.3 + (i % 5) * 0.1} />;
+          })}
+          {/* Twinkling stars */}
+          {[
+            { cx: 10, cy: 30 }, { cx: 30, cy: 15 }, { cx: 60, cy: 35 },
+            { cx: 80, cy: 20 }, { cx: 45, cy: 70 }, { cx: 20, cy: 45 },
+            { cx: 75, cy: 65 }, { cx: 55, cy: 10 },
+          ].map((s, i) => (
+            <motion.circle
+              key={`twinkle-${i}`}
+              cx={`${s.cx}%`} cy={`${s.cy}%`} r={1.2} fill="white"
+              animate={{ opacity: [0.2, 1, 0.2], scale: [0.8, 1.2, 0.8] }}
+              transition={{ duration: 2 + i * 0.3, repeat: Infinity, ease: "easeInOut" }}
+            />
+          ))}
         </svg>
+
+        {/* Shooting stars (purple/blue tint from palette) */}
+        <motion.div
+          style={{
+            position: "absolute", top: "15%", left: "-5%",
+            width: 130, height: 2, borderRadius: 2,
+            background: "linear-gradient(90deg, transparent, rgba(107,61,245,0.9), rgba(255,255,255,0.7))",
+            transformOrigin: "left center",
+          }}
+          animate={{ x: [0, 800], y: [0, 200], opacity: [0, 1, 0] }}
+          transition={{ duration: 1.2, repeat: Infinity, repeatDelay: 9, ease: "easeOut" }}
+        />
+        <motion.div
+          style={{
+            position: "absolute", top: "40%", left: "-5%",
+            width: 80, height: 1.5, borderRadius: 2,
+            background: "linear-gradient(90deg, transparent, rgba(79,125,243,0.8), rgba(230,199,95,0.4))",
+            transformOrigin: "left center",
+          }}
+          animate={{ x: [0, 600], y: [0, 150], opacity: [0, 1, 0] }}
+          transition={{ duration: 1, repeat: Infinity, repeatDelay: 15, ease: "easeOut", delay: 5 }}
+        />
+        <motion.div
+          style={{
+            position: "absolute", top: "5%", left: "30%",
+            width: 100, height: 1, borderRadius: 2,
+            background: "linear-gradient(90deg, transparent, rgba(204,51,68,0.7), rgba(255,255,255,0.5))",
+            transformOrigin: "left center",
+          }}
+          animate={{ x: [0, 500], y: [0, 120], opacity: [0, 0.8, 0] }}
+          transition={{ duration: 0.9, repeat: Infinity, repeatDelay: 22, ease: "easeOut", delay: 12 }}
+        />
+
+        {/* Subtle grid overlay */}
+        <div style={{
+          position: "absolute", inset: 0,
+          backgroundImage: "linear-gradient(rgba(255,255,255,0.012) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.012) 1px, transparent 1px)",
+          backgroundSize: "60px 60px",
+        }} />
+
+        {/* Foreground dark overlay — darkens the nebula edges for readability, matching space palette */}
+        <div style={{
+          position: "absolute", inset: 0,
+          background: "linear-gradient(135deg, rgba(12,12,20,0.90) 0%, rgba(12,12,20,0.55) 40%, rgba(12,12,20,0.30) 100%)",
+        }} />
       </div>
 
       <div
@@ -244,119 +345,101 @@ function HeroSection({ locale }: { locale: string }) {
           </motion.div>
         </div>
 
-        {/* RIGHT: Platform mockup */}
+        {/* RIGHT: Banner_2k Card — featured showcase */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1, delay: 0.2 }}
+          initial={{ opacity: 0, scale: 0.92, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ duration: 1.2, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
           style={{ position: "relative" }}
         >
+          {/* Outer glow ring — purple/blue from palette */}
+          <div style={{
+            position: "absolute", inset: "-3px",
+            borderRadius: "1.75rem",
+            background: "linear-gradient(135deg, rgba(107,61,245,0.5), rgba(79,125,243,0.4), rgba(204,51,68,0.25))",
+            filter: "blur(14px)",
+            animation: "pulse-glow 4s ease-in-out infinite",
+          }} />
+
+          {/* Card frame */}
           <div
             style={{
-              borderRadius: "1.5rem", overflow: "hidden",
-              border: "1px solid rgba(59,130,246,0.2)",
-              boxShadow: "0 0 80px rgba(59,130,246,0.12), 0 40px 80px rgba(0,0,0,0.6)",
-              background: "#0A1628",
+              position: "relative", borderRadius: "1.5rem", overflow: "hidden",
+              border: "1px solid rgba(59,130,246,0.3)",
+              boxShadow: "0 0 100px rgba(107,61,245,0.18), 0 40px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05) inset",
             }}
           >
-            {/* Top bar */}
-            <div
-              style={{
-                display: "flex", alignItems: "center", gap: "0.5rem",
-                padding: "0.875rem 1.25rem",
-                borderBottom: "1px solid rgba(255,255,255,0.06)",
-                background: "rgba(15,23,42,0.8)",
-              }}
-            >
-              {["#EF4444", "#F59E0B", "#22C55E"].map((c) => (
-                <div key={c} style={{ width: 12, height: 12, borderRadius: "50%", background: c }} />
-              ))}
-              <div
+            {/* Banner image — full bleed */}
+            <div style={{ position: "relative", aspectRatio: "16/9", overflow: "hidden" }}>
+              <img
+                src="/assets/design-company/Banner_2k.png"
+                alt="LOOP Solutions Agency Platform"
                 style={{
-                  flex: 1, marginLeft: "1rem", height: 24, borderRadius: 6,
-                  padding: "0 0.75rem", display: "flex", alignItems: "center",
-                  background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)",
+                  width: "100%", height: "100%", objectFit: "cover",
+                  display: "block",
                 }}
-              >
-                <span style={{ color: DS.text5, fontSize: "0.6875rem", fontFamily: "'JetBrains Mono', monospace" }}>
-                  loop.solutions/dashboard
-                </span>
+              />
+              {/* Bottom gradient for text readability */}
+              <div style={{
+                position: "absolute", inset: 0,
+                background: "linear-gradient(to top, rgba(12,12,20,0.9) 0%, rgba(12,12,20,0.3) 40%, transparent 70%)",
+              }} />
+              {/* Brand overlay */}
+              <div style={{
+                position: "absolute", bottom: "1rem", left: "1.25rem",
+                display: "flex", alignItems: "center", gap: "0.5rem",
+              }}>
+                <div style={{
+                  width: 36, height: 36, borderRadius: 10,
+                  background: "rgba(12,12,20,0.8)", backdropFilter: "blur(10px)",
+                  border: "1px solid rgba(107,61,245,0.5)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  boxShadow: "0 0 16px rgba(107,61,245,0.5)",
+                }}>
+                  <img src="/logo.png" alt="" style={{ width: 24, height: 24, objectFit: "contain" }} />
+                </div>
+                <div>
+                  <div style={{ color: "#fff", fontFamily: DS.heading, fontSize: "0.875rem", fontWeight: 900, letterSpacing: "0.08em", textShadow: "0 2px 12px rgba(107,61,245,0.7)" }}>LOOP SOLUTIONS</div>
+                  <div style={{ color: "rgba(147,197,253,0.8)", fontSize: "0.5625rem", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.2em" }}>DIGITAL AGENCY OS</div>
+                </div>
               </div>
-              <span style={{ color: DS.green, fontSize: "0.625rem", fontFamily: "'JetBrains Mono', monospace", display: "flex", alignItems: "center", gap: 4 }}>
-                <span style={{ width: 8, height: 8, borderRadius: "50%", background: DS.green, boxShadow: `0 0 6px ${DS.green}` }} />
-                LIVE
-              </span>
+              {/* Live badge */}
+              <div style={{
+                position: "absolute", top: "0.75rem", right: "0.75rem",
+                display: "flex", alignItems: "center", gap: 4,
+                background: "rgba(2,6,23,0.8)", backdropFilter: "blur(8px)",
+                padding: "0.25rem 0.625rem", borderRadius: 20,
+                border: "1px solid rgba(34,197,94,0.3)",
+              }}>
+                <div style={{ width: 6, height: 6, borderRadius: "50%", background: DS.green, boxShadow: `0 0 6px ${DS.green}` }} />
+                <span style={{ color: DS.green, fontSize: "0.5625rem", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.1em" }}>LIVE</span>
+              </div>
             </div>
 
-            {/* Dashboard content */}
-            <div style={{ padding: "1.25rem", background: "linear-gradient(160deg, #0A1628 0%, #060D1A 100%)" }}>
-              {/* Stats row */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "0.75rem", marginBottom: "1rem" }}>
-                {[
-                  { labelKey: "dashboardProjects", value: "24", color: DS.blue, icon: <Layers size={13} /> },
-                  { labelKey: "dashboardRevenue", value: "2.4B", color: DS.green, icon: <TrendingUp size={13} /> },
-                  { labelKey: "dashboardLP", value: "820K", color: DS.purple, icon: <Zap size={13} /> },
-                ].map((s) => (
-                  <div
-                    key={s.labelKey}
-                    style={{
-                      borderRadius: "0.75rem", padding: "0.75rem",
-                      background: "rgba(255,255,255,0.04)", border: `1px solid ${s.color}20`,
-                    }}
-                  >
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.5rem" }}>
-                      <span style={{ color: s.color, opacity: 0.7 }}>{s.icon}</span>
-                      <span style={{ color: DS.text5, fontSize: "0.5625rem", fontFamily: "'JetBrains Mono', monospace" }}>{t(s.labelKey)}</span>
-                    </div>
-                    <div style={{ color: s.color, fontFamily: DS.heading, fontSize: "1.125rem", fontWeight: 700 }}>{s.value}</div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Chart area */}
-              <div
-                style={{
-                  borderRadius: "0.75rem", padding: "1rem", marginBottom: "1rem",
-                  background: "rgba(255,255,255,0.03)", border: "1px solid rgba(59,130,246,0.1)",
-                }}
-              >
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "1rem" }}>
-                  <span style={{ color: DS.text3, fontSize: "0.75rem", fontFamily: "'JetBrains Mono', monospace" }}>{t("dashboardChartLabel")}</span>
-                  <span style={{ color: DS.green, fontSize: "0.6875rem", fontFamily: "'JetBrains Mono', monospace" }}>+28.4% ↑</span>
-                </div>
-                <svg width="100%" height="70" viewBox="0 0 300 70">
-                  <defs>
-                    <linearGradient id="chart-grad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#3B82F6" stopOpacity="0.4" />
-                      <stop offset="100%" stopColor="#3B82F6" stopOpacity="0" />
-                    </linearGradient>
-                  </defs>
-                  <path d="M0,55 C30,45 60,60 90,40 C120,20 150,30 180,15 C210,5 240,20 270,10 L270,70 L0,70 Z" fill="url(#chart-grad)" />
-                  <path d="M0,55 C30,45 60,60 90,40 C120,20 150,30 180,15 C210,5 240,20 270,10" fill="none" stroke="#3B82F6" strokeWidth="2" />
-                  {[{ x: 0, y: 55 }, { x: 90, y: 40 }, { x: 180, y: 15 }, { x: 270, y: 10 }].map((p, i) => (
-                    <circle key={i} cx={p.x} cy={p.y} r="3" fill="#3B82F6" />
-                  ))}
-                </svg>
-              </div>
-
-              {/* Project list */}
+            {/* Stats bar */}
+            <div style={{
+              display: "grid", gridTemplateColumns: "repeat(3, 1fr)",
+              gap: "0.5rem", padding: "0.875rem 1rem",
+              background: "rgba(12,12,20,0.9)",
+              borderTop: "1px solid rgba(59,130,246,0.1)",
+            }}>
               {[
-                { name: "VNRetail Platform", statusKey: "statusInProgress", prog: 72, color: DS.blue },
-                { name: "MedApp v3.0", statusKey: "statusReview", prog: 91, color: DS.amber },
-                { name: "FinDash Enterprise", statusKey: "statusCompleted", prog: 100, color: DS.green },
-              ].map((p) => (
-                <div key={p.name} style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.625rem" }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.25rem" }}>
-                      <span style={{ color: DS.text2, fontSize: "0.6875rem" }}>{p.name}</span>
-                      <span style={{ color: p.color, fontSize: "0.625rem", fontFamily: "'JetBrains Mono', monospace" }}>{p.prog}%</span>
-                    </div>
-                    <div style={{ width: "100%", height: 6, borderRadius: 3, background: "rgba(255,255,255,0.06)" }}>
-                      <div style={{ height: 6, borderRadius: 3, width: `${p.prog}%`, background: p.color, boxShadow: `0 0 6px ${p.color}` }} />
-                    </div>
+                { label: "PROJECTS", value: "120+", color: DS.blue, icon: <Layers size={11} /> },
+                { label: "CLIENTS", value: "98%", color: DS.green, icon: <TrendingUp size={11} /> },
+                { label: "LP REWARD", value: "500K", color: DS.purple, icon: <Zap size={11} /> },
+              ].map((s) => (
+                <div key={s.label} style={{
+                  display: "flex", alignItems: "center", gap: "0.5rem",
+                  padding: "0.5rem 0.625rem",
+                  borderRadius: "0.5rem",
+                  background: "rgba(255,255,255,0.04)",
+                  border: `1px solid ${s.color}30`,
+                }}>
+                  <span style={{ color: s.color, opacity: 0.8 }}>{s.icon}</span>
+                  <div>
+                    <div style={{ color: s.color, fontFamily: DS.heading, fontSize: "0.75rem", fontWeight: 700 }}>{s.value}</div>
+                    <div style={{ color: DS.text5, fontSize: "0.4375rem", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.08em" }}>{s.label}</div>
                   </div>
-                  <span style={{ color: p.color, fontSize: "0.5625rem", fontFamily: "'JetBrains Mono', monospace", flexShrink: 0 }}>
-                    {t(p.statusKey)}
-                  </span>
                 </div>
               ))}
             </div>
@@ -365,39 +448,38 @@ function HeroSection({ locale }: { locale: string }) {
           {/* Floating LP badge */}
           <motion.div
             style={{
-              position: "absolute", top: "-1.5rem", right: "-1rem",
-              padding: "0.75rem 1rem", borderRadius: "1.25rem",
-              background: "rgba(15,23,42,0.96)", border: "1px solid rgba(129,140,248,0.35)",
-              backdropFilter: "blur(20px)", boxShadow: "0 8px 32px rgba(0,0,0,0.5), 0 0 20px rgba(129,140,248,0.15)",
+              position: "absolute", top: "-1rem", right: "-0.75rem",
+              padding: "0.625rem 0.875rem", borderRadius: "1rem",
+              background: "rgba(12,12,20,0.95)", border: "1px solid rgba(107,61,245,0.45)",
+              backdropFilter: "blur(20px)",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.5), 0 0 20px rgba(139,92,246,0.2)",
             }}
-            animate={{ y: [0, -8, 0] }}
+            animate={{ y: [0, -8, 0], opacity: [0.9, 1, 0.9] }}
             transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
           >
-            <div style={{ color: DS.text5, fontSize: "0.5625rem", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.15em", marginBottom: "0.25rem" }}>{t("lpBadge")}</div>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-              <Zap size={14} style={{ color: DS.purple }} />
-              <span style={{ color: DS.purple, fontFamily: DS.heading, fontSize: "1.125rem", fontWeight: 700, textShadow: "0 0 12px rgba(129,140,248,0.7)" }}>+2,450 LP</span>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}>
+              <Zap size={13} style={{ color: DS.purple }} />
+              <span style={{ color: DS.purple, fontFamily: DS.heading, fontSize: "0.875rem", fontWeight: 700 }}>+500 LP</span>
             </div>
           </motion.div>
 
           {/* Floating rank card */}
           <motion.div
             style={{
-              position: "absolute", bottom: "-1.25rem", left: "-1rem",
-              padding: "0.75rem 1rem", borderRadius: "1.25rem",
-              background: "rgba(15,23,42,0.96)", border: "1px solid rgba(255,215,0,0.25)",
-              backdropFilter: "blur(20px)", boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+              position: "absolute", bottom: "-0.75rem", left: "-0.75rem",
+              padding: "0.625rem 0.875rem", borderRadius: "1rem",
+              background: "rgba(12,12,20,0.95)", border: "1px solid rgba(230,199,95,0.25)",
+              backdropFilter: "blur(20px)",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
             }}
-            animate={{ y: [0, 8, 0] }}
+            animate={{ y: [0, 6, 0] }}
             transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
           >
-            <div style={{ color: DS.text5, fontSize: "0.5625rem", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.15em", marginBottom: "0.25rem" }}>{t("rankBoardYou")}</div>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-              <span style={{ color: "#FFD700", fontSize: "1rem" }}>★</span>
-              <span style={{ color: "#FFD700", fontFamily: DS.heading, fontSize: "0.875rem", fontWeight: 700 }}>GOLD</span>
-              <span style={{ color: DS.text5, fontSize: "0.625rem", fontFamily: "'JetBrains Mono', monospace" }}>Lv.12</span>
-              <ArrowRight size={12} style={{ color: DS.text5 }} />
-              <span style={{ color: DS.cyan, fontFamily: DS.heading, fontSize: "0.875rem", fontWeight: 700 }}>PLATINUM</span>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}>
+              <span style={{ color: "#E6C75F", fontSize: "0.75rem" }}>★</span>
+              <span style={{ color: "#E6C75F", fontFamily: DS.heading, fontSize: "0.75rem", fontWeight: 700 }}>GOLD</span>
+              <ArrowRight size={10} style={{ color: DS.text5 }} />
+              <span style={{ color: DS.cyan, fontFamily: DS.heading, fontSize: "0.75rem", fontWeight: 700 }}>PLATINUM</span>
             </div>
           </motion.div>
         </motion.div>
@@ -419,6 +501,7 @@ function HeroSection({ locale }: { locale: string }) {
         </div>
       </motion.div>
     </section>
+    </>
   );
 }
 

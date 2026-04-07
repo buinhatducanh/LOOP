@@ -11,9 +11,9 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 import {
-  ArrowRight, Rocket, Star, MousePointer,
+  ArrowRight,
   ChevronRight, ChevronDown, ChevronUp, CheckCircle2, Sparkles,
-  Zap as ZapAlt, Clock as ClockAlt, X, Play, ShoppingCart,
+  Zap as ZapAlt, X, Play, ShoppingCart,
   Globe, Code2, BarChart3, TrendingUp,
   LayoutGrid, List, CalendarClock, Eye,
   Phone,
@@ -24,7 +24,7 @@ import type { ServicesPackage } from "@/app/data/locales/services-vi";
 const fmtVND = (n: number | null | undefined, fallbackLabel = "—") =>
   n == null ? fallbackLabel : new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(n);
 
-const fmtLP = (n: number) =>
+const _fmtLP = (n: number) =>
   n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M` : n >= 1_000 ? `${(n / 1_000).toFixed(0)}K` : String(n);
 
 const CAT_ICONS: Record<string, string> = {
@@ -1048,13 +1048,13 @@ type ServicesUI = {
 
 export function ServicesClient({
   locale,
-  customServices,
+  _customServices,
   webPackages,
   ui,
   defaultTab = "tabWebPackage",
 }: {
   locale: string;
-  customServices: Record<string, unknown>[];
+  _customServices: Record<string, unknown>[];
   webPackages: ServicesPackage[];
   ui: ServicesUI;
   /** Tab khởi tạo — từ query param (?tab=custom|web-pricing|pricing) */

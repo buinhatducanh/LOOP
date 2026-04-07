@@ -1,5 +1,5 @@
-import { ok, handleError } from "@/lib/api/response";
-import { NextRequest, NextResponse } from "next/server";
+import { handleError } from "@/lib/api/response";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
@@ -9,7 +9,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const session = await requirePermission("lp-awards", "read");
+    const _session = await requirePermission("lp-awards", "read");
     const { id } = await params;
     const award = await prisma.lpAward.findUnique({
       where: { id },
@@ -32,7 +32,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const session = await requirePermission("lp-awards", "update");
+    const _session = await requirePermission("lp-awards", "update");
     const { id } = await params;
     const data = await req.json();
     const existing = await prisma.lpAward.findUnique({ where: { id } });
@@ -90,7 +90,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const session = await requirePermission("lp-awards", "delete");
+    const _session = await requirePermission("lp-awards", "delete");
     const { id } = await params;
 
     // Load first so we know status before deleting

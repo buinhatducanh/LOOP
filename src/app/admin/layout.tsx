@@ -4,32 +4,35 @@
  * Dark-themed admin shell wrapping all /admin/* pages.
  * Provides React Query context, auth session, and Figma dark nav layout.
  *
- * Auth guard: redirects to /{locale}/dang-nhap if no session.
+ * NOTE: This layout renders INSIDE the root app/layout.tsx <body>.
+ * It must NOT include <html> or <body> tags — those are in the root layout only.
  *
- * Session pattern: server layout reads session (server-side),
- * passes it down as props. No Zustand store needed for admin auth —
- * this avoids "setState during render" issues from AdminSessionInit.
+ * Auth guard: AuthGuard client component reads Zustand store (localStorage-backed).
+ * We deliberately do NOT call getSession() here — it runs server-side and fails
+ * on soft navigations (sidebar Link clicks) because HttpOnly cookies aren't
+ * reliably forwarded. AuthGuard handles auth client-side instead.
+ *
+ * Session flow:
+ *   Full page load: Middleware validates cookie server-side → AdminLayout renders
+ *   Soft navigation: AuthGuard checks Zustand store → allows or redirects
  */
 
-import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
 import { DM_Sans, Plus_Jakarta_Sans } from "next/font/google";
-import { getSession } from "@/lib/auth/permissions";
-import { mapRoleLevelToUserRole } from "@/app/store/authStore";
 import { QueryProvider } from "@/lib/query/provider";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { AdminTopbar } from "@/components/admin/AdminTopbar";
 import { AdminI18nProvider } from "@/i18n/admin/AdminI18nProvider";
+import { AuthGuard } from "@/components/admin/AuthGuard";
 import { SessionHydrator } from "./SessionHydrator";
 import "@/styles/globals.css";
 
-const dmSansFont = DM_Sans({
+ DM_Sans({
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700", "800"],
   variable: "--font-dm-sans",
 });
 
-const headingFont = Plus_Jakarta_Sans({
+ Plus_Jakarta_Sans({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800"],
   variable: "--font-plus-jakarta",
@@ -38,71 +41,38 @@ const headingFont = Plus_Jakarta_Sans({
 // Re-export so other admin pages can import this type
 export type { SessionUser } from "@/lib/auth/permissions";
 
-export default async function AdminLayout({
+export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const session = await getSession();
-
-  if (!session) {
-    const cookieStore = await cookies();
-    const locale = cookieStore.get("NEXT_LOCALE")?.value ?? "vi";
-    redirect(`/${locale}/dang-nhap`);
-  }
-
-  // Derive display role from roleLevel (1-to-1 mapping)
-  const roleLevel = session.roleLevel ?? 1;
-  const accountType = session.accountType ?? "staff";
-  const displayRole = mapRoleLevelToUserRole(roleLevel, accountType);
-
   return (
-    <html lang="vi" suppressHydrationWarning className={`dark ${dmSansFont.className} ${headingFont.className}`}>
-      <body
-        style={{
-          margin: 0,
-          display: "flex",
-          minHeight: "100vh",
-          background: "var(--figma-bg, #020617)",
-          color: "var(--figma-text, #fff)",
-          fontFamily: "var(--font-dm-sans), DM Sans, system-ui, sans-serif",
-        }}
-      >
-        <QueryProvider>
-          <AdminI18nProvider>
+    <QueryProvider>
+      <AdminI18nProvider>
+        <AuthGuard>
           <SessionHydrator />
-          {/* Sidebar — receives session data as props, no Zustand store needed */}
-          <AdminSidebar
-            userName={session.name}
-            userAvatar={session.avatar ?? undefined}
-            userRole={displayRole}
-            userRank={session.rank}
-            userLpBalance={session.availableLp}
-          />
+          {/* Sidebar + Topbar read session from Zustand store */}
+          <AdminSidebar userName="" userRole="admin" />
           {/* Main area */}
           <div
             style={{
               flex: 1,
               display: "flex",
               flexDirection: "column",
-              marginLeft: 260, // sidebar width
+              marginLeft: 260,
               minHeight: "100vh",
+              background: "var(--figma-bg, #020617)",
+              color: "var(--figma-text, #fff)",
+              fontFamily: "var(--font-dm-sans, 'DM Sans', system-ui, sans-serif)",
             }}
           >
-            {/* Topbar */}
-            <AdminTopbar
-              userName={session.name}
-              userEmail={session.email}
-              userAvatar={session.avatar ?? undefined}
-            />
-            {/* Page content — pass session to pages that need it */}
+            <AdminTopbar userName="" userEmail="" />
             <main style={{ flex: 1, padding: "1.5rem", overflowY: "auto" }}>
               {children}
             </main>
           </div>
-          </AdminI18nProvider>
-        </QueryProvider>
-      </body>
-    </html>
+        </AuthGuard>
+      </AdminI18nProvider>
+    </QueryProvider>
   );
 }

@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { v2 as cloudinary } from "cloudinary";
 import { requireAuth } from "@/lib/auth/permissions";
-import { ok, handleError } from "@/lib/api/response";
+import { handleError } from "@/lib/api/response";
 
 cloudinary.config({
   cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
@@ -10,9 +10,9 @@ cloudinary.config({
 });
 
 // Require authentication for upload
-export async function POST(req: NextRequest) {
+export async function POST(_req: NextRequest) {
   try {
-    const authUser = await requireAuth(req);
+    const _authUser = await requireAuth(req);
 
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    const uploadPromise = new Promise<any>((resolve, reject) => {
+    const uploadPromise = new Promise<Record<string, unknown>>((resolve, reject) => {
       const timeout = setTimeout(() => {
         reject(new Error("Upload timeout - please try again"));
       }, 60000); // 60 second timeout
@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export async function DELETE(req: NextRequest) {
+export async function DELETE(_req: NextRequest) {
   try {
     await requireAuth(req);
 

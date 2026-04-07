@@ -1,10 +1,10 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth/permissions";
-import { handleError, ok, list, buildPagination } from "@/lib/api";
+import { handleError, list, buildPagination } from "@/lib/api";
 
 // GET — List customer points
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
     await getSession(); // auth check only — uses getSession for broad access
 

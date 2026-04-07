@@ -16,7 +16,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "motion/react";
 import {
-  Eye, EyeOff, ArrowRight, Loader2, Check, ArrowLeft,
+  Eye, EyeOff, ArrowRight, Loader2, Check,
   UserCheck, ShieldCheck, AlertTriangle, Mail,
 } from "lucide-react";
 import { DS, GRD } from "@/lib/design-tokens";
@@ -84,17 +84,26 @@ function FormInput({
   );
 }
 
-export default function RegisterWithTokenPage() {
+export default function RegisterWithTokenPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token") ?? "";
+  const [locale, setLocale] = useState("vi");
   const [step, setStep] = useState<Step>("validating");
-  const [tokenInfo, setTokenInfo] = useState<TokenInfo | null>(null);
+  const [_tokenInfo, setTokenInfo] = useState<TokenInfo | null>(null);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [passwordScore, setPasswordScore] = useState(0);
+
+  useEffect(() => {
+    params.then((p) => setLocale(p.locale));
+  }, [params]);
 
   // ── Validate token on mount ─────────────────────────────────────────────────
   useEffect(() => {
@@ -189,14 +198,14 @@ export default function RegisterWithTokenPage() {
 
       // Auto-login with the returned JWT token directly
       if (data.token) {
-        localStorage.setItem("loop-auth-token", data.token);
+        localStorage.setItem("auth-token", data.token);
         // Reload so authStore re-hydrates session from the new token
         window.location.href = "/admin/overview";
         return;
       }
 
       setStep("success");
-      setTimeout(() => { router.push("/vi/dang-nhap"); }, 2000);
+      setTimeout(() => { router.push(`/${locale}/dang-nhap`); }, 2000);
     } catch {
       setError("Không thể kích hoạt tài khoản. Vui lòng thử lại.");
     } finally {
@@ -213,7 +222,7 @@ export default function RegisterWithTokenPage() {
 
       <div style={{ width: "100%", maxWidth: "28rem", position: "relative", zIndex: 1 }}>
         {/* Logo */}
-        <Link href="/vi" style={{ display: "flex", alignItems: "center", gap: "0.625rem", textDecoration: "none", marginBottom: "2rem", justifyContent: "center" }}>
+        <Link href={`/${locale}`} style={{ display: "flex", alignItems: "center", gap: "0.625rem", textDecoration: "none", marginBottom: "2rem", justifyContent: "center" }}>
           <img src="/logo.png" alt="LOOP" style={{ width: 40, height: 40, objectFit: "contain", borderRadius: 10 }} />
           <div>
             <div style={{ color: DS.text, fontFamily: DS.heading, fontSize: 15, fontWeight: 900, letterSpacing: "0.1em" }}>LOOP SOLUTIONS</div>
@@ -329,7 +338,7 @@ export default function RegisterWithTokenPage() {
                 {error || "Link mời không hợp lệ hoặc đã hết hạn."}
               </p>
               <Link
-                href="/vi/dang-nhap"
+                href={`/${locale}/dang-nhap`}
                 style={{
                   display: "inline-flex", alignItems: "center", gap: "0.5rem",
                   padding: "0.625rem 1.25rem", background: GRD.primary,

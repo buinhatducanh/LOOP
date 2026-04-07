@@ -1,11 +1,11 @@
-import { ok, handleError } from "@/lib/api/response";
-import { NextRequest, NextResponse } from "next/server";
+import { handleError } from "@/lib/api/response";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
 import { revalidatePath } from "next/cache";
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
     await requirePermission("packages", "read");
     const { searchParams } = new URL(req.url);
@@ -26,9 +26,9 @@ export async function GET(req: NextRequest) {
   }
 }
 
-export async function POST(req: NextRequest) {
+export async function POST(_req: NextRequest) {
   try {
-    const session = await requirePermission("packages", "create");
+    const _session = await requirePermission("packages", "create");
     const data = await req.json();
 
     const pkg = await prisma.pricingWebPackage.create({

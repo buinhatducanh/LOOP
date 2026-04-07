@@ -6,14 +6,14 @@
  *
  * Body: { resetToken: string; newPassword: string }
  */
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyToken } from "@/lib/auth/jwt";
 import { hashPassword } from "@/lib/auth/password";
 import { sendPasswordChangedNotification } from "@/lib/email";
 import { handleError } from "@/lib/api";
 
-export async function POST(req: NextRequest) {
+export async function POST(_req: NextRequest) {
   try {
     const { resetToken, newPassword } = await req.json();
 

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import { RateLimiter } from "@/lib/rate-limit";
 
 // Test the in-memory fallback RateLimiter class

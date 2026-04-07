@@ -1,11 +1,11 @@
 import { handleError } from "@/lib/api/response";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
 
 // GET - List all landing pages
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
     await requireAuth(req);
     const { searchParams } = new URL(req.url);
@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
 }
 
 // POST - Create new landing page
-export async function POST(req: NextRequest) {
+export async function POST(_req: NextRequest) {
   try {
     const session = await requireAuth(req);
     const data = await req.json();

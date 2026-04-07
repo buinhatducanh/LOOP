@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const description = t("servicesDescription");
   const brandMetaTitle = t("brandMetaTitle");
   const brandMetaDescription = t("brandMetaDescription");
-  const ogImage = t("ogImage");
+  const _ogImage = t("ogImage");
   const canonical = `${baseUrl}/${locale}/services`;
 
   return {

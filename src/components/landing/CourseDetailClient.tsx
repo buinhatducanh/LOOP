@@ -87,7 +87,7 @@ export function CourseDetailClient({ locale, course }: { locale: string; course:
               style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 16, padding: 22, height: "fit-content" }}
             >
               {course.image && (
-                <div style={{ height: 170, borderRadius: 10, overflow: "hidden", marginBottom: 12, background: "#111827" }}>
+                <div style={{ height: 170, borderRadius: 10, overflow: "hidden", marginBottom: 12, background: DS.bgCard2 }}>
                   <img src={course.image} alt={course.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                 </div>
               )}

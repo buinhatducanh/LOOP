@@ -51,10 +51,10 @@ interface LpRateConfig {
 // ── Fallback data (same as FE mock) ─────────────────────────────────────────
 
 const FALLBACK_SERVICES: WizardService[] = [
-  { id: "web", title: "Thiết kế & Phát triển Website", desc: "Landing page, corporate site, e-commerce — chuẩn React/Next.js, tốc độ cao.", color: "#3B82F6", basePrice: 15_000_000 },
-  { id: "app", title: "Phát triển App & SaaS Platform", desc: "Mobile app (React Native), web app, nền tảng SaaS cho doanh nghiệp.", color: "#818CF8", basePrice: 80_000_000 },
-  { id: "dashboard", title: "Dashboard & Data Analytics", desc: "Real-time dashboard, báo cáo tự động, data visualization chuyên nghiệp.", color: "#14B8A6", basePrice: 25_000_000 },
-  { id: "seo", title: "SEO & Digital Marketing", desc: "Tăng trưởng organic, Google Ads, content strategy — gói tháng linh hoạt.", color: "#22C55E", basePrice: 8_000_000, perMonth: true },
+  { id: "web", title: "Thiết kế & Phát triển Website", desc: "Landing page, corporate site, e-commerce — chuẩn React/Next.js, tốc độ cao.", color: DS.blue, basePrice: 15_000_000 },
+  { id: "app", title: "Phát triển App & SaaS Platform", desc: "Mobile app (React Native), web app, nền tảng SaaS cho doanh nghiệp.", color: DS.purple, basePrice: 80_000_000 },
+  { id: "dashboard", title: "Dashboard & Data Analytics", desc: "Real-time dashboard, báo cáo tự động, data visualization chuyên nghiệp.", color: DS.cyan, basePrice: 25_000_000 },
+  { id: "seo", title: "SEO & Digital Marketing", desc: "Tăng trưởng organic, Google Ads, content strategy — gói tháng linh hoạt.", color: DS.green, basePrice: 8_000_000, perMonth: true },
 ];
 
 const FALLBACK_PACKAGES: WizardPackage[] = [
@@ -93,7 +93,7 @@ const FALLBACK_FEATURES: Record<string, WizardFeature[]> = {
   ],
 };
 
-const FALLBACK_TALENTS: WizardTalent[] = [
+const _FALLBACK_TALENTS: WizardTalent[] = [
   { id: "akira", name: "Akira Sato", role: "Lead Full-stack Dev", rank: "DIAMOND", rankColor: "#818CF8", rankSymbol: "✦", img: "https://images.unsplash.com/photo-1557862921-37829c790f19?auto=format&fit=crop&w=80&h=80&crop=faces", specialty: "React, Node.js, AWS" },
   { id: "yuna", name: "Yuna Park", role: "UI/UX Design Lead", rank: "RUBY", rankColor: "#EF4444", rankSymbol: "♦", img: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?auto=format&fit=crop&w=80&h=80&crop=faces", specialty: "Figma, Design Systems" },
   { id: "shin", name: "Shin Watanabe", role: "DevOps & Backend", rank: "DIAMOND", rankColor: "#818CF8", rankSymbol: "✦", img: "https://images.unsplash.com/photo-1547425260-76bcadfb4f2c?auto=format&fit=crop&w=80&h=80&crop=faces", specialty: "Docker, K8s, Rust" },
@@ -143,9 +143,9 @@ function ProgressBar({ step, stepLabels }: { step: number; stepLabels: string[] 
               <div
                 className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-300"
                 style={{
-                  background: i < step ? GRD.primary : i === step ? "rgba(59,130,246,0.2)" : "rgba(255,255,255,0.06)",
-                  border: i === step ? "2px solid #3B82F6" : i < step ? "none" : "1px solid rgba(255,255,255,0.12)",
-                  boxShadow: i === step ? "0 0 16px rgba(59,130,246,0.5)" : "none",
+                  background: i < step ? GRD.primary : i === step ? `${DS.blue}30` : "rgba(255,255,255,0.06)",
+                  border: i === step ? `2px solid ${DS.blue}` : i < step ? "none" : "1px solid rgba(255,255,255,0.12)",
+                  boxShadow: i === step ? `0 0 16px ${DS.blue}80` : "none",
                 }}
               >
                 {i < step ? (
@@ -449,7 +449,7 @@ function StepAddons({
   );
 }
 
-function StepPackage({ packages, service, selected, onSelect }: { packages: WizardPackage[]; service: WizardService | null; selected: string; onSelect: (id: string) => void }) {
+function _StepPackage({ packages, service, selected, onSelect }: { packages: WizardPackage[]; service: WizardService | null; selected: string; onSelect: (id: string) => void }) {
   const t = useTranslations("BookingPage");
   return (
     <div>
@@ -506,7 +506,7 @@ function StepPackage({ packages, service, selected, onSelect }: { packages: Wiza
   );
 }
 
-function StepFeatures({ featureOptions, selected, onToggle }: { featureOptions: WizardFeature[]; selected: string[]; onToggle: (id: string) => void }) {
+function _StepFeatures({ featureOptions, selected, onToggle }: { featureOptions: WizardFeature[]; selected: string[]; onToggle: (id: string) => void }) {
   const t = useTranslations("BookingPage");
   return (
     <div>
@@ -546,7 +546,7 @@ function StepFeatures({ featureOptions, selected, onToggle }: { featureOptions: 
   );
 }
 
-function StepTalent({ talents, selected, onSelect }: { talents: WizardTalent[]; selected: string; onSelect: (id: string) => void }) {
+function _StepTalent({ talents, selected, onSelect }: { talents: WizardTalent[]; selected: string; onSelect: (id: string) => void }) {
   const t = useTranslations("BookingPage");
   return (
     <div>
@@ -589,7 +589,7 @@ function StepTalent({ talents, selected, onSelect }: { talents: WizardTalent[]; 
   );
 }
 
-function StepSchedule({ startDate, setStartDate, duration, setDuration }: {
+function _StepSchedule({ startDate, setStartDate, duration, setDuration }: {
   startDate: string; setStartDate: (v: string) => void;
   duration: string; setDuration: (v: string) => void;
 }) {
@@ -659,7 +659,7 @@ function StepSchedule({ startDate, setStartDate, duration, setDuration }: {
   );
 }
 
-function StepExtras({ extraOptions, selected, onToggle }: { extraOptions: WizardExtra[]; selected: string[]; onToggle: (id: string) => void }) {
+function _StepExtras({ extraOptions, selected, onToggle }: { extraOptions: WizardExtra[]; selected: string[]; onToggle: (id: string) => void }) {
   const t = useTranslations("BookingPage");
   const icons: Record<string, React.ReactNode> = {
     hosting: <Globe size={16} />, maintenance: <Shield size={16} />,
@@ -703,7 +703,7 @@ function StepExtras({ extraOptions, selected, onToggle }: { extraOptions: Wizard
   );
 }
 
-function StepReview({ service, pkg, talent, featureOptions, features, extraOptions, extras, startDate, duration }: {
+function _StepReview({ service, pkg, talent, featureOptions, features, extraOptions, extras, startDate, duration }: {
   service: WizardService | null; pkg: WizardPackage | null; talent: WizardTalent | null;
   featureOptions: WizardFeature[]; features: string[];
   extraOptions: WizardExtra[]; extras: string[];
@@ -1080,7 +1080,7 @@ function StepContact({
 
 // ── Step 8 — Payment ──────────────────────────────────────────────────────────
 
-function StepPayment({
+function _StepPayment({
   lpBalance, maxLpRedeem, lpDiscount, setLpDiscount, lpRate,
   name, setName, email, setEmail, phone, setPhone, company, setCompany,
   submitted, orderId, submitError, setSubmitError, onSubmit, submitLoading,
@@ -1093,7 +1093,7 @@ function StepPayment({
   submitted: boolean; orderId: string; submitError: string; setSubmitError: (s: string) => void;
   onSubmit: () => void; submitLoading: boolean;
 }) {
-  const t = useTranslations("BookingPage");
+  const _t = useTranslations("BookingPage");
   const payMethods = [
     { id: "bank", label: t("bankTransfer"), icon: "🏦" },
     { id: "vnpay", label: "VNPay QR", icon: "📱" },

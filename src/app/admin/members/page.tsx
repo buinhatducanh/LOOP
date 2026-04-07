@@ -6,28 +6,24 @@
 // Target: ~1,200 lines | Completed sections noted inline
 // =============================================================================
 
-import { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { useState, useMemo, useCallback, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "motion/react";
 import { qk } from "@/lib/query/provider";
-import { adminApi } from "@/lib/api/client";
+
 import { useAuthStore, canEdit, type AuthUser } from "@/app/store/authStore";
-import { DS, GRD } from "@/lib/design-tokens";
+import { DS } from "@/lib/design-tokens";
 import { ImageUpload } from "@/components/ui/ImageUpload";
 import {
-  Search, Plus, Trash2, Edit2, Award, Users, TrendingUp,
-  ChevronUp, ChevronDown, X, Check, ChevronLeft, ChevronRight,
-  Crown, Zap, BookOpen, Calendar, BarChart2, Grid3x3, List,
-  UserMinus, Clock, AlertTriangle, CheckCircle2, DollarSign,
-  ArrowUpDown, SlidersHorizontal, Eye, Minus, Info, Loader2,
-  Bell, UserCheck, ShieldCheck, Clock3, CheckCircle,
+ Plus, Trash2, Edit2, Award, Users, TrendingUp,
+ ChevronDown, X, Check,   Crown, Zap, Grid3x3, List,
+  UserMinus, Clock, AlertTriangle, CheckCircle2,   ArrowUpDown, Eye, Info, Loader2,
+ UserCheck, ShieldCheck, CheckCircle,
 } from "lucide-react";
 import {
   RANKS,
   getRankFromLevel,
-  getRankColor,
   getRankLabel,
-  getRankSymbol,
   type RankKey,
 } from "@/lib/rank/ranks";
 
@@ -116,16 +112,14 @@ const STATUS_CFG: Record<MemberStatus, { label: string; color: string; icon: Rea
 
 const DEPARTMENTS = ["All", "Engineering", "Design", "Media", "Marketing", "Sales", "Finance", "HR"] as const;
 const TEAMS = DEPARTMENTS; // alias for form/modal use
-const RANK_FILTERS: (RankKey | "All")[] = ["All", "iron", "bronze", "silver", "gold", "platinum", "ruby", "diamond"];
-
-const fmtLP = (n?: number) => {
+(n?: number) => {
   const v = n ?? 0;
   if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(2)}M`;
   if (v >= 1_000) return `${(v / 1_000).toFixed(1)}K`;
   return String(v);
 };
 
-const fmtDate = (iso: string) => {
+ (iso: string) => {
   const d = new Date(iso);
   return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
 };
@@ -138,8 +132,8 @@ function toMemberExt(raw: TeamMemberBE): MemberExt {
   const level = raw.level ?? 1;
   const rankKey = getRankFromLevel(level);
   const rankLabel = getRankLabel(rankKey);
-  const xpPct = raw.maxXp && raw.maxXp > 0 ? Math.min((raw.currentXp ?? 0) / raw.maxXp, 1) : 0;
-  const lpBalance = raw.availableLp ?? raw.totalApprovedLp ?? 0;
+  const _xpPct = raw.maxXp && raw.maxXp > 0 ? Math.min((raw.currentXp ?? 0) / raw.maxXp, 1) : 0;
+  const _lpBalance = raw.availableLp ?? raw.totalApprovedLp ?? 0;
 
   return {
     ...raw,
@@ -180,7 +174,7 @@ function toNumber(v?: string | number | null) {
 
 export default function AdminMembersPage() {
   const queryClient = useQueryClient();
-  const { user, role } = useAuthStore();
+  const { role } = useAuthStore();
   const editing = canEdit(role);
 
   // ── State ──────────────────────────────────────────────────────────────────
@@ -204,7 +198,7 @@ export default function AdminMembersPage() {
   const [showApprovalModal, setShowApprovalModal] = useState(false);
   const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
   const [selectedRole, setSelectedRole] = useState<string>("member");
-  const [rejectReason, setRejectReason] = useState("");
+  
   const [approvalNotes, setApprovalNotes] = useState("");
 
   // Toast
@@ -450,7 +444,7 @@ export default function AdminMembersPage() {
   // JSX Helpers
   // =============================================================================
 
-  function SortHeader_({ col, sk, children, style }: { col: string; sk: SortKey; children: React.ReactNode; style?: React.CSSProperties }) {
+  function SortHeader_({ col: _col, sk, children, style }: { col: string; sk: SortKey; children: React.ReactNode; style?: React.CSSProperties }) {
     const active = sortKey === sk;
     return (
       <div
@@ -543,7 +537,7 @@ export default function AdminMembersPage() {
           {ranks.map((rk) => {
             const count = rankDist.get(rk) ?? 0;
             const pct = Math.round((count / total) * 100);
-            const rCfg = RANKS[rk];
+            const _rCfg = RANKS[rk];
             const active = rankFilter === rk;
             return (
               <button
@@ -597,8 +591,8 @@ export default function AdminMembersPage() {
 
   function MemberRow_({ m }: { m: MemberExt }) {
     const rankKey = getRankFromLevel(m.level ?? 1);
-    const rCfg = RANKS[rankKey];
-    const xpPct = m.maxXp && m.maxXp > 0 ? Math.min((m.currentXp ?? 0) / m.maxXp, 1) : 0;
+     RANKS[rankKey];
+     m.maxXp && m.maxXp > 0 ? Math.min((m.currentXp ?? 0) / m.maxXp, 1) : 0;
     const checked = selectedIds.has(m.id);
 
     return (
@@ -752,8 +746,8 @@ export default function AdminMembersPage() {
   // Grid card
   function MemberCard_({ m }: { m: MemberExt }) {
     const rankKey = getRankFromLevel(m.level ?? 1);
-    const rCfg = RANKS[rankKey];
-    const xpPct = m.maxXp && m.maxXp > 0 ? Math.min((m.currentXp ?? 0) / m.maxXp, 1) : 0;
+     RANKS[rankKey];
+     m.maxXp && m.maxXp > 0 ? Math.min((m.currentXp ?? 0) / m.maxXp, 1) : 0;
     const checked = selectedIds.has(m.id);
 
     return (
@@ -867,8 +861,8 @@ export default function AdminMembersPage() {
 
   function MemberDetailModal_({ m }: { m: MemberExt }) {
     const rankKey = getRankFromLevel(m.level ?? 1);
-    const rCfg = RANKS[rankKey];
-    const xpPct = m.maxXp && m.maxXp > 0 ? Math.min((m.currentXp ?? 0) / m.maxXp, 1) : 0;
+     RANKS[rankKey];
+     m.maxXp && m.maxXp > 0 ? Math.min((m.currentXp ?? 0) / m.maxXp, 1) : 0;
 
     const skills = m.memberExpertise?.map((e) => e.name) ?? [m.topSkill, "React", "TypeScript", "Design"];
     const skills2 = ["Design", "Frontend", "React", "Communication"];
@@ -1517,7 +1511,7 @@ export default function AdminMembersPage() {
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                 {(Object.keys(RANKS) as RankKey[]).map((rk) => {
-                  const rCfg = RANKS[rk];
+                   RANKS[rk];
                   const active = rankKey === rk;
                   return (
                     <button
@@ -1883,7 +1877,7 @@ export default function AdminMembersPage() {
 
   function DeleteConfirmModal_({ m }: { m: MemberExt }) {
     const rankKey = getRankFromLevel(m.level ?? 1);
-    const rCfg = RANKS[rankKey];
+     RANKS[rankKey];
 
     return (
       <ModalWrapper onClose={() => setDeleteMember(null)} title="Xác nhận xóa">
@@ -2020,7 +2014,7 @@ export default function AdminMembersPage() {
   // Shared style helpers
   // =============================================================================
 
-  function iconBtn(hoverColor: string, accentColor: string): React.CSSProperties {
+  function iconBtn(hoverColor: string, ): React.CSSProperties {
     return {
       width: 28, height: 28, borderRadius: 6, border: "none", cursor: "pointer",
       backgroundColor: "transparent", color: hoverColor,

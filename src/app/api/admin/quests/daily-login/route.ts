@@ -15,14 +15,14 @@
  *
  * Body: { questId?: string }
  */
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth/permissions";
 import { handleError, ok } from "@/lib/api";
 
-export async function POST(req: NextRequest) {
+export async function POST(_req: NextRequest) {
   try {
-    const session = await requireAuth();
+    const _session = await requireAuth();
 
     // Staff only — customers use /api/points with action: "daily_login"
     if (session.accountType !== "staff") {

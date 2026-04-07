@@ -41,7 +41,7 @@ export function BlogClient({ locale, posts }: { locale: string; posts: BlogRecor
                 whileHover={{ y: -3, borderColor: `${DS.blue}40` }}
               >
                 <Link href={`/${locale}/blog/${slug}`} style={{ textDecoration: "none", color: "inherit", display: "block" }}>
-                  <div style={{ height: 180, background: "#111827", overflow: "hidden" }}>
+                  <div style={{ height: 180, background: DS.bgCard2, overflow: "hidden" }}>
                     {cover ? (
                       <img src={cover} alt={title} className="w-full h-full object-cover transition-transform duration-500 hover:scale-105" />
                     ) : (

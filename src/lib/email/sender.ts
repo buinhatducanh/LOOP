@@ -35,7 +35,7 @@ const FROM_ALERTS = "LOOP Alerts <alerts@loop.vn>";
 const fmtVND = (n: number) =>
   Intl.NumberFormat("vi-VN").format(n) + " ₫";
 
-const htmlShell = (title: string, body: string, accent = "#8B5CF6") => `
+const htmlShell = (title: string, body: string, __accent = "#8B5CF6") => `
 <!DOCTYPE html>
 <html>
 <head>

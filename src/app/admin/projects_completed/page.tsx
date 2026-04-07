@@ -13,8 +13,8 @@ import { motion, AnimatePresence } from "motion/react";
 import { adminApi } from "@/lib/api/client";
 import { DS, GRD } from "@/lib/design-tokens";
 import {
-  Plus, Edit3, Trash2, X, Save, Eye, Star, ExternalLink,
-  Globe, Users, Clock, DollarSign, Check, Image,
+  Plus, Edit3, Trash2, X, Save, Star,
+  Users, Clock, DollarSign, Check,
   ToggleLeft, ToggleRight, RefreshCw, Search,
 } from "lucide-react";
 
@@ -56,14 +56,14 @@ type PortfolioProject = {
 
 // ── Formatters ────────────────────────────────────────────────────────
 
-const fmtVND = (n: number) =>
+const _fmtVND = (n: number) =>
   new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 0 }).format(n);
 
-const fmtB = (n: number) =>
+const _fmtB = (n: number) =>
   n >= 1_000_000 ? `${(n / 1_000_000).toFixed(0)}M` :
   n >= 1_000 ? `${(n / 1_000).toFixed(0)}K` : String(n);
 
-const fmtDate = (d: string | Date | null | undefined) => {
+const _fmtDate = (d: string | Date | null | undefined) => {
   if (!d) return "—";
   try { return new Date(d).toLocaleDateString("vi-VN"); }
   catch { return String(d); }

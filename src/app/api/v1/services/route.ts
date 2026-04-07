@@ -9,7 +9,7 @@
 
 export const dynamic = "force-dynamic";
 
-import { NextResponse } from "next/server";
+
 import { prisma } from "@/lib/prisma";
 import { parseLocaleParam, getLocalizedField, getLocalizedArray } from "@/lib/i18n/localization";
 import { handleError } from "@/lib/api/response";

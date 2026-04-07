@@ -1,5 +1,5 @@
 import { handleError } from "@/lib/api/response";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
@@ -13,7 +13,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await requirePermission("quotes", "update");
+    const _session = await requirePermission("quotes", "update");
     const { id } = await params;
     const _data = await req.json().catch(() => ({}));
 

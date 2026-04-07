@@ -1,12 +1,12 @@
 import { handleError } from "@/lib/api/response";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
 
 // GET /api/admin/referral-codes
 // Query: ?memberId=&campaign=&isActive=&page=&limit=
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
     await requirePermission("team", "read");
     const { searchParams } = new URL(req.url);
@@ -91,9 +91,9 @@ export async function GET(req: NextRequest) {
 
 // POST /api/admin/referral-codes
 // Body: { code, name, memberId, campaign?, lpRate?, minRevenue?, maxUses?, expiresAt? }
-export async function POST(req: NextRequest) {
+export async function POST(_req: NextRequest) {
   try {
-    const session = await requirePermission("team", "create");
+    const _session = await requirePermission("team", "create");
     const body = await req.json();
 
     const { code, name, memberId, campaign, lpRate, minRevenue, maxUses, expiresAt } = body;

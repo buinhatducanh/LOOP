@@ -1,5 +1,5 @@
 import { ok, notFound, serverError } from "@/lib/api/response";
-import { NextResponse } from "next/server";
+
 import { prisma } from "@/lib/prisma";
 import { getTierLpRate } from "@/lib/services/customer/referral.service";
 import type { NextRequest } from "next/server";

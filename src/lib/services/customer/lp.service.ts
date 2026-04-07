@@ -84,7 +84,7 @@ export interface AwardCustomerLpResult {
 export async function awardCustomerLpOnPayment(
   params: AwardCustomerLpParams
 ): Promise<AwardCustomerLpResult> {
-  const { orderId, orderNumber, customerEmail, customerName, paidAmount, paymentId } = params;
+  const { orderId: _orderId, orderNumber, customerEmail, customerName, paidAmount, paymentId } = params;
 
   if (paidAmount <= 0) {
     return { ok: true, lpAwarded: 0 }; // nothing to award

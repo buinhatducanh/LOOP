@@ -1,44 +1,47 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
   <defs>
     <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0a1628"/>
-      <stop offset="100%" stop-color="#0f0f23"/>
+      <stop offset="0%" stop-color="#0C0C14"/>
+      <stop offset="100%" stop-color="#1A1A2E"/>
     </linearGradient>
-    <linearGradient id="textGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#06B6D4"/>
-      <stop offset="50%" stop-color="#8B5CF6"/>
-      <stop offset="100%" stop-color="#6366F1"/>
+    <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6B3DF5"/>
+      <stop offset="50%" stop-color="#4F7DF3"/>
+      <stop offset="100%" stop-color="#CC3344"/>
     </linearGradient>
     <filter id="glow">
-      <feGaussianBlur stdDeviation="1.5" result="blur"/>
+      <feGaussianBlur stdDeviation="2" result="blur"/>
       <feMerge>
         <feMergeNode in="blur"/>
         <feMergeNode in="SourceGraphic"/>
       </feMerge>
     </filter>
-    <filter id="textShadow">
-      <feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-color="#06B6D4" flood-opacity="0.5"/>
-    </filter>
+    <clipPath id="logoClip">
+      <rect width="64" height="64" rx="14"/>
+    </clipPath>
   </defs>
 
   <!-- Background -->
   <rect width="64" height="64" rx="14" fill="url(#bgGrad)"/>
 
-  <!-- Top accent line -->
-  <rect x="14" y="12" width="36" height="2" rx="1" fill="url(#textGrad)" opacity="0.7"/>
+  <!-- Glow ring -->
+  <rect width="64" height="64" rx="14" fill="url(#logoGrad)" opacity="0.3" filter="url(#glow)"/>
 
-  <!-- "LOOP" text -->
-  <text
-    x="32" y="46"
-    font-family="'Inter', 'Segoe UI', system-ui, sans-serif"
-    font-size="26"
-    font-weight="800"
-    text-anchor="middle"
-    fill="url(#textGrad)"
-    filter="url(#textShadow)"
-    letter-spacing="-1"
-  >LOOP</text>
-
-  <!-- Bottom accent line -->
-  <rect x="14" y="50" width="36" height="2" rx="1" fill="url(#textGrad)" opacity="0.7"/>
+  <!-- Infinity logo centered, scaled to ~38x38 -->
+  <g transform="translate(32,32) scale(0.59)" filter="url(#glow)">
+    <path
+      d="M16,0 C16,0 22,0 22,8 C22,16 10,16 10,24 C10,32 22,32 22,40 C22,48 16,48 16,48 L-16,48 C-16,48 -22,48 -22,40 C-22,32 -10,32 -10,24 C-10,16 -22,16 -22,8 C-22,0 -16,0 -16,0 Z"
+      fill="none"
+      stroke="url(#logoGrad)"
+      stroke-width="5"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+    <!-- Center diamond -->
+    <circle cx="0" cy="24" r="3.5" fill="url(#logoGrad)"/>
+    <!-- Glow dot left -->
+    <circle cx="-10" cy="8" r="2.5" fill="#6B3DF5" opacity="0.8"/>
+    <!-- Glow dot right -->
+    <circle cx="10" cy="40" r="2.5" fill="#CC3344" opacity="0.8"/>
+  </g>
 </svg>

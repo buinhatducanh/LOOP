@@ -1,5 +1,5 @@
 import { handleError } from "@/lib/api/response";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { computeRankFieldsFromLp } from "@/lib/rank/xp";
@@ -10,7 +10,7 @@ import { addAvatar } from "@/lib/api/mappings";
 // Returns all active team members with real rank data derived from approved LpAwards.
 // Supports ?sort=rank|level|lp&order=asc|desc&limit=N&memberId=xxx
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
     await requirePermission("team", "read");
 

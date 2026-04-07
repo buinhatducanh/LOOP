@@ -1,5 +1,5 @@
-import { ok, notFound, handleError, badRequest } from "@/lib/api/response";
-import { NextRequest, NextResponse } from "next/server";
+import { ok, notFound, handleError } from "@/lib/api/response";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 
@@ -12,7 +12,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await requirePermission("notifications", "read");
+    const _session = await requirePermission("notifications", "read");
     const { id } = await params;
 
     const notification = await prisma.notification.findUnique({ where: { id } });
@@ -43,7 +43,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await requirePermission("notifications", "read");
+    const _session = await requirePermission("notifications", "read");
     const { id } = await params;
 
     const notification = await prisma.notification.findUnique({ where: { id } });

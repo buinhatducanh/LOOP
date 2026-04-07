@@ -23,7 +23,7 @@ import { RoleFilters, type RoleFilter } from "./RoleFilters";
 import { SearchSortBar, type SortOption } from "./SearchSortBar";
 import { GuildAnimations } from "./GuildAnimations";
 import { RANKS, normalizeRank, formatLP, type RankKey } from "./guildMemberData";
-import { Shield, Users, Zap, Trophy, ChevronRight, ArrowRight } from "lucide-react";
+import { Shield, Users, Trophy, ChevronRight, ArrowRight } from "lucide-react";
 import { DS } from "@/lib/design-tokens";
 
 type MemberRecord = Record<string, unknown>;
@@ -99,7 +99,6 @@ function RankLegend() {
 
 // ── CTA Banner ─────────────────────────────────────────────────────────────
 function CTABanner({ locale }: { locale: string }) {
-  const t = useTranslations("TeamPage");
   return (
     <div
       className="relative rounded-2xl overflow-hidden p-10 text-center mt-20"

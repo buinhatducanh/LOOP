@@ -61,7 +61,7 @@ function StarField() {
 
 function SlideWelcome({ direction }: SlideProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [showLogo, setShowLogo] = useState(false);
+  const [_showLogo, setShowLogo] = useState(false);
 
   // Restart video each time this slide is shown
   useEffect(() => {
@@ -72,7 +72,7 @@ function SlideWelcome({ direction }: SlideProps) {
     }
   }, [direction]);
 
-  const handleVideoEnded = () => {
+  const _handleVideoEnded = () => {
     setShowLogo(true);
   };
 
@@ -115,7 +115,7 @@ function SlideWelcome({ direction }: SlideProps) {
 
           {/* Logo image */}
           <img
-            src="/logo.png"
+            src="/assets/design-company/logo-cosmic-infinity.png"
             alt="LOOP Solutions"
             aria-hidden="true"
             data-nosnippet

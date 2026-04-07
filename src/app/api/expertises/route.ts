@@ -5,7 +5,7 @@
  * Supports ?lang=vi|en|ja|ko|zh (default: vi).
  */
 
-import { ok, handleError } from "@/lib/api/response";
+import { handleError } from "@/lib/api/response";
 import { prisma } from "@/lib/prisma";
 import { parseLocaleParam, getLocalizedField } from "@/lib/i18n/localization";
 

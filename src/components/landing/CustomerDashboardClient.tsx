@@ -6,7 +6,7 @@ import { motion } from "motion/react";
 import { DS, GRD } from "@/lib/design-tokens";
 import {
   FolderOpen, FileText, Coins, Bell, Calendar,
-  Clock, CheckCircle2, AlertCircle, TrendingUp,
+  TrendingUp,
   ArrowRight, MessageSquare,
 } from "lucide-react";
 

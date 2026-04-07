@@ -2,8 +2,13 @@
  * API Client — LOOP Solutions
  *
  * Typed fetch wrapper for FE → BE API calls.
- * Reads auth-token cookie automatically and attaches it as Authorization header.
- * Re-uses the @/lib/api response shape conventions ({ data }, { data, pagination }, { error }).
+ *
+ * Token strategy:
+ *   - Public routes (/api/v1/*, /api/admin/auth/login, etc.): NO auth header.
+ *     Cookies are set server-side via POST response.
+ *   - Authenticated routes: use adminApi which sends cookies via withCredentials.
+ *     The Bearer token from localStorage is intentionally NOT used by default —
+ *     it can carry a stale/expired token and cause 401 on fresh logins.
  *
  * Usage:
  *   import { apiClient } from "@/lib/api/client"
@@ -11,12 +16,14 @@
  *   const { data } = await apiClient.post("/api/admin/auth/login", { email, password })
  *   const { data } = await apiClient.put(`/api/admin/services/${id}`, payload)
  *   const { data } = await apiClient.delete(`/api/admin/services/${id}`)
+ *
+ * For authenticated admin calls, prefer adminApi (uses cookies).
  */
 
-const BASE_URL =
+const _BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3000";
 
-// ── Types ────────────────────────────────────────────────────────────────────
+// ── Types ───────────────────────────────────────────────────────────────────
 
 export type ApiErrorResponse = {
   error: string;
@@ -45,6 +52,40 @@ export interface ApiClientOptions extends RequestInit {
 
 // ── Core fetch ───────────────────────────────────────────────────────────────
 
+/**
+ * Skip Bearer token on these public/auth endpoints to avoid stale token 401s
+ * on fresh login attempts when localStorage still holds an old expired token.
+ */
+const AUTH_SKIP_PATTERNS = [
+  "/api/admin/auth/login",
+  "/api/admin/auth/register",
+  "/api/auth/login",
+  "/api/auth/verify-otp",
+  "/api/auth/reset-password",
+  "/api/auth/forgot-password",
+  "/api/auth/google-signin",
+  "/api/auth/google-callback",
+];
+
+/**
+ * Get the correct localStorage token key based on the API endpoint.
+ * Split auth: staff routes → loop-staff-token, customer routes → loop-customer-token.
+ */
+function getTokenKey(endpoint: string): "loop-staff-token" | "loop-customer-token" | null {
+  // Staff routes: /api/admin/* and /api/portal/staff-* (if any)
+  if (endpoint.startsWith("/api/admin/")) return "loop-staff-token";
+  // Customer routes: /api/portal/* (excl. staff-specific)
+  if (endpoint.startsWith("/api/portal/")) return "loop-customer-token";
+  // Default: try staff token first (most common case)
+  return "loop-staff-token";
+}
+
+function shouldAttachBearer(endpoint: string): boolean {
+  // Skip Bearer for auth endpoints — they should not receive the stale token
+  if (AUTH_SKIP_PATTERNS.some((p) => endpoint.includes(p))) return false;
+  return true;
+}
+
 async function apiFetch<T>(
   endpoint: string,
   options: ApiClientOptions = {}
@@ -52,7 +93,6 @@ async function apiFetch<T>(
   const { params, throwOnError = true, withCredentials = false, ...fetchOptions } = options;
 
   // Use relative URL so it always matches the current server port.
-  // External URLs (starts with http) are used for cross-origin calls only.
   let url = endpoint.startsWith("http")
     ? endpoint
     : endpoint.startsWith("/")
@@ -73,12 +113,16 @@ async function apiFetch<T>(
     ...fetchOptions.headers,
   };
 
-  // Attach Bearer token from localStorage (set by login response).
-  // This survives cross-origin redirects better than cookies alone.
-  if (typeof window !== "undefined") {
-    const storedToken = localStorage.getItem("loop-auth-token");
-    if (storedToken) {
-      (headers as Record<string, string>)["Authorization"] = `Bearer ${storedToken}`;
+  // Attach Bearer token from localStorage for authenticated routes.
+  // Split auth: choose correct key per endpoint type (Option C).
+  // Skip for auth endpoints to prevent stale-token 401 on fresh login attempts.
+  if (shouldAttachBearer(endpoint) && typeof window !== "undefined") {
+    const key = getTokenKey(endpoint);
+    if (key) {
+      const storedToken = localStorage.getItem(key);
+      if (storedToken) {
+        (headers as Record<string, string>)["Authorization"] = `Bearer ${storedToken}`;
+      }
     }
   }
 
@@ -170,7 +214,7 @@ export const apiClient = {
   },
 };
 
-// ── Admin API client (always authenticated) ───────────────────────────────────
+// ── Admin API client (always authenticated — uses cookies) ──────────────────
 
 export const adminApi = {
   async get<T>(

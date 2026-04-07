@@ -21,8 +21,7 @@ import { DS, GRD } from "@/lib/design-tokens";
 import { useAdminTranslations } from "@/i18n/admin/useAdminTranslations";
 import {
   Settings, Layers, Server, Package as PackageIcon, PlusCircle,
-  Edit3, Save, X, Trash2, RefreshCw, Loader2, CheckCircle2,
-  ChevronRight, Search, ToggleRight, ToggleLeft,
+  Save, Trash2, RefreshCw, Loader2,
 } from "lucide-react";
 
 // ── Types ───────────────────────────────────────────────────────────────────────
@@ -121,8 +120,8 @@ function Toggle({ checked, onChange, size = 20 }: { checked: boolean; onChange: 
 // ── Tab 1: Settings ───────────────────────────────────────────────────────────
 
 function SettingsTab() {
-  const { t } = useAdminTranslations();
-  const qc = useQueryClient();
+  const _t = useAdminTranslations();
+  const _qc = useQueryClient();
 
   const { data, isLoading, isFetching } = useQuery<{ data: PricingSetting[] }>({
     queryKey: ["admin", "pricing", "settings"],
@@ -252,7 +251,7 @@ function SettingsTab() {
 // ── Tab 2: Features ────────────────────────────────────────────────────────────
 
 function FeaturesTab() {
-  const qc = useQueryClient();
+  const _qc = useQueryClient();
 
   const { data, isLoading } = useQuery<{ data: Feature[]; pagination: { total: number } }>({
     queryKey: ["admin", "pricing", "features"],
@@ -343,7 +342,7 @@ function FeaturesTab() {
 // ── Tab 3: Infra Tiers ────────────────────────────────────────────────────────
 
 function InfraTiersTab() {
-  const qc = useQueryClient();
+  const _qc = useQueryClient();
 
   const { data, isLoading } = useQuery<{ data: InfraTier[]; pagination: { total: number } }>({
     queryKey: ["admin", "pricing", "infra-tiers"],
@@ -411,7 +410,7 @@ function InfraTiersTab() {
 // ── Tab 4: Packages ────────────────────────────────────────────────────────────
 
 function PackagesTab() {
-  const qc = useQueryClient();
+  const _qc = useQueryClient();
 
   const { data, isLoading } = useQuery<{ data: Package[]; pagination: { total: number } }>({
     queryKey: ["admin", "pricing", "packages"],
@@ -512,7 +511,7 @@ function PackagesTab() {
 // ── Tab 5: Add-ons ──────────────────────────────────────────────────────────────
 
 function AddonsTab() {
-  const qc = useQueryClient();
+  const _qc = useQueryClient();
 
   const { data, isLoading } = useQuery<{ data: Addon[]; pagination: { total: number } }>({
     queryKey: ["admin", "pricing", "addons"],
@@ -602,7 +601,7 @@ function AddonsTab() {
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function PricingPage() {
-  const { t } = useAdminTranslations();
+  const _t = useAdminTranslations();
   const [tab, setTab] = useState("settings");
 
   const tabs = TABS;

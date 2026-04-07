@@ -31,8 +31,7 @@ const REQUIRED_JSON_FIELDS: Record<string, string[]> = {
 };
 
 /** All optional JSON fields mapped by model */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const OPTIONAL_JSON_VALIDATORS: Record<string, (data: unknown) => any> = {
+const _OPTIONAL_JSON_VALIDATORS: Record<string, (data: unknown) => unknown> = {
   TeamMember: (data) => validateTeamMemberSocial(data),
   FeatureVariant: (data) => validateResourceUsage(data),
   LandingSection: (data) => validateSectionContent(data),
@@ -41,13 +40,13 @@ const OPTIONAL_JSON_VALIDATORS: Record<string, (data: unknown) => any> = {
 };
 
 /** Maps LandingSection JSON fields to their validators */
-const LANDING_SECTION_VALIDATORS = {
+const _LANDING_SECTION_VALIDATORS = {
   content: validateSectionContent,
   styles: validateSectionStyles,
 };
 
 /** Maps AuditLog JSON fields to their validators */
-const AUDIT_VALIDATORS = {
+const _AUDIT_VALIDATORS = {
   oldValues: (data: unknown) => validateAuditValue(data, 'AuditLog.oldValues'),
   newValues: (data: unknown) => validateAuditValue(data, 'AuditLog.newValues'),
 };
@@ -246,7 +245,7 @@ export function createJsonValidationMiddleware(): Middleware {
 // ---------------------------------------------------------------------------
 
 /** Sentinel value to detect uninitialized JSON fields */
-const SENTINEL = Symbol('JSON_VALIDATION_SENTINEL');
+const _SENTINEL = Symbol('JSON_VALIDATION_SENTINEL');
 
 /**
  * Result of validating a single JSON field during a read operation.
@@ -455,7 +454,7 @@ function wrapValidator<T>(
 }
 
 /** Stub validator for required fields on read (always pass — already thrown on write) */
-function stubValidator(value: unknown): FieldValidationResult {
+function _stubValidator(_value: unknown): FieldValidationResult {
   return { field: '', ok: true };
 }
 

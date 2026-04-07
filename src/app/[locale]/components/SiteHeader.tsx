@@ -38,24 +38,24 @@ const rgba = (hex: string, a: number) => {
 // ── Search overlay ─────────────────────────────────────────────────────────────
 
 const SEARCH_SUGGESTIONS = [
-  { label: "Thiết kế Website", href: "/services", color: "#3B82F6" },
-  { label: "Phát triển App", href: "/services", color: "#818CF8" },
-  { label: "SEO & Marketing", href: "/services", color: "#22C55E" },
-  { label: "Dashboard Analytics", href: "/services", color: "#14B8A6" },
-  { label: "Khóa học Digital Marketing", href: "/academy", color: "#818CF8" },
-  { label: "Portfolio dự án", href: "/portfolio", color: "#F59E0B" },
-  { label: "Đội ngũ LOOP", href: "/team", color: "#14B8A6" },
+  { label: "Thiết kế Website", href: "/services", color: DS.blue },
+  { label: "Phát triển App", href: "/services", color: DS.purple },
+  { label: "SEO & Marketing", href: "/services", color: DS.green },
+  { label: "Dashboard Analytics", href: "/services", color: DS.cyan },
+  { label: "Khóa học Digital Marketing", href: "/academy", color: DS.purple },
+  { label: "Portfolio dự án", href: "/portfolio", color: DS.amber },
+  { label: "Đội ngũ LOOP", href: "/team", color: DS.cyan },
 ];
 
 const SEARCH_PILLS = [
-  { label: "Thiết kế web", color: "#3B82F6" },
-  { label: "Nhận tư vấn", color: "#22C55E" },
-  { label: "Khóa học", color: "#818CF8" },
-  { label: "Web nhà hàng", color: "#F59E0B" },
-  { label: "SEO Google", color: "#22C55E" },
-  { label: "Web khách sạn", color: "#60A5FA" },
-  { label: "Dashboard", color: "#06B6D4" },
-  { label: "Portfolio", color: "#818CF8" },
+  { label: "Thiết kế web", color: DS.blue },
+  { label: "Nhận tư vấn", color: DS.green },
+  { label: "Khóa học", color: DS.purple },
+  { label: "Web nhà hàng", color: DS.amber },
+  { label: "SEO Google", color: DS.green },
+  { label: "Web khách sạn", color: DS.blue },
+  { label: "Dashboard", color: DS.cyan },
+  { label: "Portfolio", color: DS.purple },
 ];
 
 function hexRgba(hex: string, alpha: number): string {
@@ -191,7 +191,7 @@ function SearchOverlay({ locale, onClose }: { locale: string; onClose: () => voi
               ── GỢI Ý TÌM KIẾM
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 8 }}>
-              {SEARCH_PILLS.map((pill, i) => (
+              {SEARCH_PILLS.map((pill, _i) => (
                 <button
                   key={pill.label}
                   onClick={() => setQuery(pill.label)}
@@ -357,7 +357,7 @@ interface NavDropdownGroup { type: "dropdown"; labelKey: string; triggerLabel: s
 type NavItem = ({ type?: never; label: string; href: string } | NavDropdownGroup);
 
 function NavDropdown({
-  labelKey,
+  labelKey: _labelKey,
   trigger,
   items,
   isOpen,
@@ -456,6 +456,7 @@ function getRoleLabels(t: ReturnType<typeof useTranslations<"Navigation">>) {
 
 export default function SiteHeader({ locale }: { locale: string }) {
   const pathname = usePathname();
+  if (pathname.includes('/onboarding')) return null;
   const router = useRouter();
   const { user, isAuthenticated, logout } = useAuthStore();
   const t = useTranslations("Navigation");
@@ -549,6 +550,7 @@ export default function SiteHeader({ locale }: { locale: string }) {
 
       {/* Header */}
       <header
+        suppressHydrationWarning
         style={{
           position: "fixed", top: 2, left: 0, right: 0, zIndex: 50,
           background: "rgba(2,6,23,0.92)", backdropFilter: "blur(20px)",
@@ -563,14 +565,31 @@ export default function SiteHeader({ locale }: { locale: string }) {
           }}
         >
           {/* Logo */}
-          <Link href={`/${locale}/`} style={{ display: "flex", alignItems: "center", gap: "0.75rem", textDecoration: "none", flexShrink: 0 }}>
-            <img
-              src="/logo.png"
-              alt="LOOP Solutions"
-              style={{ width: 36, height: 36, objectFit: "contain", borderRadius: 8 }}
-            />
+          <Link href={`/${locale}/`} style={{ display: "flex", alignItems: "center", gap: "0.625rem", textDecoration: "none", flexShrink: 0 }}>
+            {/* Cosmic glow ring */}
+            <div style={{
+              position: "relative",
+              width: 48, height: 48,
+              borderRadius: 12,
+              background: "linear-gradient(135deg, rgba(59,130,246,0.15), rgba(139,92,246,0.15))",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              boxShadow: "0 0 20px rgba(59,130,246,0.3), 0 0 40px rgba(139,92,246,0.15)",
+            }}>
+              <img
+                src="/logo.png"
+                alt="LOOP Solutions"
+                style={{ width: 40, height: 40, objectFit: "contain", borderRadius: 6 }}
+              />
+            </div>
             <div>
-              <div style={{ color: DS.text, fontFamily: DS.heading, fontSize: 14, fontWeight: 900, letterSpacing: "0.06em", lineHeight: 1 }}>
+              <div style={{
+                fontFamily: DS.heading, fontSize: 15, fontWeight: 900,
+                letterSpacing: "0.06em", lineHeight: 1,
+                background: GRD.primary,
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                filter: "drop-shadow(0 0 8px rgba(59,130,246,0.4))",
+              }}>
                 LOOP
               </div>
               <div style={{ color: DS.text4, fontSize: 7, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.2em", marginTop: 2 }}>

@@ -5,7 +5,7 @@
  * Create or update supported locales (bulk upsert).
  */
 
-import { NextResponse } from "next/server";
+
 import { requirePermissionFast } from "@/lib/auth/permissions";
 import { getSession } from "@/lib/auth/permissions";
 import { prisma } from "@/lib/prisma";
@@ -13,7 +13,7 @@ import { ok, badRequest, handleError } from "@/lib/api";
 
 export async function GET() {
   try {
-    const session = await getSession();
+    const _session = await getSession();
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     requirePermissionFast(session, "settings", "read");
 
@@ -28,7 +28,7 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    const session = await getSession();
+    const _session = await getSession();
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     requirePermissionFast(session, "settings", "update");
 

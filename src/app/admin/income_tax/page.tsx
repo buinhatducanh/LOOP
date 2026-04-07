@@ -16,7 +16,7 @@
 
 import { useState, useMemo } from "react";
 import { motion } from "motion/react";
-import { DS, GRD } from "@/lib/design-tokens";
+import { DS } from "@/lib/design-tokens";
 import {
   Calculator, DollarSign, Users, Shield, BarChart3,
   ChevronRight, Search, Printer,
@@ -172,7 +172,7 @@ const MONTHS_VI = ["Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5", "
 
 function TaxCalcPanel({ member, dependants }: { member: MockMember; dependants: number }) {
   const [selectedMonth, setSelectedMonth] = useState<number | "year">("year");
-  const rc = RANKS[member.rank];
+   RANKS[member.rank];
 
   const monthlyData = useMemo(
     () => Array.from({ length: 12 }, (_, i) => genMonthlyIncome(member, i + 1)),

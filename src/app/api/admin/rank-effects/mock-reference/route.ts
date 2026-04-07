@@ -1,4 +1,4 @@
-import { ok, handleError } from "@/lib/api/response";
+import { handleError } from "@/lib/api/response";
 import { NextRequest } from "next/server";
 import { requirePermission } from "@/lib/auth/permissions";
 

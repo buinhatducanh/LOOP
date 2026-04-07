@@ -1,5 +1,5 @@
 import { handleError } from "@/lib/api/response";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 // GET /api/portal/[token] — public endpoint, returns project data for client portal

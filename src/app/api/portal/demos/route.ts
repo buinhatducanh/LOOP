@@ -3,14 +3,14 @@
  * Requires customer auth (JWT cookie).
  * Returns FigmaDemo records linked to the customer's orders.
  */
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth/permissions";
-import { ok, handleError } from "@/lib/api";
+import { handleError } from "@/lib/api";
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
-    const session = await requireAuth();
+    const _session = await requireAuth();
 
     // Get all order IDs for this customer
     const orders = await prisma.order.findMany({

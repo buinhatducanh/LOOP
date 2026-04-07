@@ -1,14 +1,14 @@
 import { handleError } from "@/lib/api/response";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
 import { lpLogger } from "@/lib/logger";
 import { withIdempotency } from "@/lib/idempotency";
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
-    const session = await requirePermission("lp-awards", "read");
+    const _session = await requirePermission("lp-awards", "read");
     const { searchParams } = new URL(req.url);
 
     const where: Record<string, unknown> = {};
@@ -66,7 +66,7 @@ export const POST = withIdempotency(
   "create_lp_award",
   async (req: NextRequest) => {
     try {
-      const session = await requirePermission("lp-awards", "create");
+      const _session = await requirePermission("lp-awards", "create");
       const data = await req.json();
 
       const projectId = data.projectId ?? data.orderId;

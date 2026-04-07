@@ -9,8 +9,8 @@ interface LandingSection {
   type: string;
   title: string | null;
   subtitle: string | null;
-  content: any;
-  styles: any;
+  content: Record<string, unknown>;
+  styles: Record<string, unknown>;
   sortOrder: number;
   isActive: boolean;
 }

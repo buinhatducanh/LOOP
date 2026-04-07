@@ -134,8 +134,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.id = token.id as string;
         session.user.role = token.role as string;
         // Attach team member ID and account type to session
-        (session.user as any).teamMemberId = token.teamMemberId as string | null;
-        (session.user as any).accountType = (token.accountType as string) || "customer";
+        session.user.teamMemberId = (token.teamMemberId as string | null) ?? undefined;
+        session.user.accountType = ((token.accountType as string) || "customer") as "staff" | "customer";
       }
       return session;
     },

@@ -10,7 +10,7 @@
 
 export const dynamic = "force-dynamic";
 
-import { NextResponse } from "next/server";
+
 import { parseLocaleParam } from "@/lib/i18n/localization";
 import { getServicesPackages } from "@/app/data/locales";
 

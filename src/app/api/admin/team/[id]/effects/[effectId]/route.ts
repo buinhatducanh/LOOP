@@ -19,7 +19,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string; effectId: string }> },
 ) {
   try {
-    const session = await requirePermission("effects", "update");
+    const _session = await requirePermission("effects", "update");
     const { id, effectId } = await params;
 
     const payload = (await req.json()) as UpsertPayload;
@@ -114,7 +114,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string; effectId: string }> },
 ) {
   try {
-    const session = await requirePermission("effects", "delete");
+    const _session = await requirePermission("effects", "delete");
     const { id, effectId } = await params;
 
     const existing = await prisma.memberEffectOverride.findUnique({

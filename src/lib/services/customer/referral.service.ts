@@ -68,7 +68,7 @@ export interface AwardReferralLpResult {
 export async function awardReferralLpOnPayment(
   params: AwardReferralLpParams
 ): Promise<AwardReferralLpResult> {
-  const { orderId, orderNumber, paidAmount, paymentId } = params;
+  const { orderId, orderNumber, paidAmount, paymentId: _paymentId } = params;
 
   if (paidAmount <= 0) return { ok: true, lpAwarded: 0 };
 

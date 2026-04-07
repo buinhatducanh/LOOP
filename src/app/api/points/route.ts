@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 
@@ -16,11 +16,11 @@ import { auth } from "@/auth";
 
 // ── GET: List redeemable catalog ─────────────────────────────────────────────
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
-    const session = await auth();
+    const _session = await auth();
     const { searchParams } = new URL(req.url);
-    const email = searchParams.get("email");
+    const _email = searchParams.get("email");
     const catalog = searchParams.get("catalog") === "1";
 
     // ── Redeemable catalog (public, no auth needed) ─────────────────────────
@@ -170,15 +170,15 @@ export async function GET(req: NextRequest) {
 
 // ── POST: Earn or Redeem ────────────────────────────────────────────────────
 
-export async function POST(req: NextRequest) {
+export async function POST(_req: NextRequest) {
   try {
-    const session = await auth();
+    const _session = await auth();
     if (!session?.user?.email) {
       return NextResponse.json({ error: "Vui lòng đăng nhập" }, { status: 401 });
     }
 
     const body = await req.json();
-    const { action, adId, addonId, quantity, email } = body;
+    const { action, adId, addonId, quantity } = body;
     const userEmail = session.user.email;
 
     // ── Get or create customer point account ────────────────────────────────

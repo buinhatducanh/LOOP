@@ -1,4 +1,4 @@
-import { ok, serverError } from "@/lib/api/response";
+import { serverError } from "@/lib/api/response";
 import { prisma } from "@/lib/prisma";
 
 // Public API for pricing calculator

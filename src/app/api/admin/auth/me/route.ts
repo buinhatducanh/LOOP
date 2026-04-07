@@ -1,24 +1,27 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getSession, getSessionFromBearer } from "@/lib/auth/permissions";
+import { NextRequest } from "next/server";
+import { requireAuth } from "@/lib/auth/permissions";
 import { authLogger } from "@/lib/logger";
 
 /**
  * GET /api/admin/auth/me
+ *
  * Returns the current authenticated admin user.
  *
  * Session source (in priority order):
  *  1. Authorization: Bearer <token> — FE API client sends JWT from localStorage
  *  2. HttpOnly auth-token cookie — server-side session (SSR, curl)
  *
- * Performance notes:
- * - Neon cold-start: retries once after 500ms if connection fails.
- * - DB unavailable: returns 401 (graceful degradation, client clears session).
+ * Uses requireAuth() which:
+ *   - Reads Bearer token first (from FE API calls)
+ *   - Falls back to cookie session (server-side)
+ *   - Throws AuthError(401) if neither is valid
+ *
+ * Neon cold-start: retries once after 500ms if DB connection fails.
  */
-
-async function getSessionWithRetry(): Promise<ReturnType<typeof getSession> | null> {
+async function withRetry<T>(fn: () => Promise<T>): Promise<T | null> {
   for (let i = 0; i < 2; i++) {
     try {
-      return await getSession();
+      return await fn();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       const isConnErr =
@@ -38,59 +41,41 @@ async function getSessionWithRetry(): Promise<ReturnType<typeof getSession> | nu
   return null;
 }
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   const start = Date.now();
+
   try {
-    // Priority 1: Authorization header (FE sends Bearer token from localStorage)
-    const bearer = req.headers.get("Authorization");
-    if (bearer?.startsWith("Bearer ")) {
-      const token = bearer.slice(7);
-      const session = await getSessionFromBearer(token);
-      if (session) {
-        authLogger.withSLO("GET /api/admin/auth/me success", {
-          endpoint: "/api/admin/auth/me",
-          method: "GET",
-          statusCode: 200,
-          latencyMs: Date.now() - start,
-        });
-        return NextResponse.json({ user: session });
-      }
-      // Bearer token invalid — 401 (do not fall through to cookie path)
-      authLogger.withSLO("GET /api/admin/auth/me unauthorized", {
-        endpoint: "/api/admin/auth/me",
-        method: "GET",
-        statusCode: 401,
-        latencyMs: Date.now() - start,
-      });
+    const _session = await withRetry(() => requireAuth(req));
+
+    if (!session) {
+      // DB unavailable — return 401 so client clears session gracefully
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Priority 2: Cookie-based session (server-side SSR)
-    const session = await getSessionWithRetry();
-    if (!session) {
-      authLogger.withSLO("GET /api/admin/auth/me no session", {
-        endpoint: "/api/admin/auth/me",
-        method: "GET",
-        statusCode: 401,
-        latencyMs: Date.now() - start,
-      });
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
     authLogger.withSLO("GET /api/admin/auth/me success", {
       endpoint: "/api/admin/auth/me",
       method: "GET",
       statusCode: 200,
       latencyMs: Date.now() - start,
     });
+
+    // Return full session user (now includes sessionId, permissions, accessTags, etc.)
     return NextResponse.json({ user: session });
-  } catch (err) {
+  } catch (err: unknown) {
+    const statusCode =
+      (err as { statusCode?: number }).statusCode ?? 401;
+
     authLogger.withSLO("GET /api/admin/auth/me failed", {
       endpoint: "/api/admin/auth/me",
       method: "GET",
-      statusCode: 401,
+      statusCode,
       latencyMs: Date.now() - start,
       error: err instanceof Error ? err.message : String(err),
     });
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    return NextResponse.json(
+      { error: statusCode === 401 ? "Unauthorized" : "Server error" },
+      { status: statusCode }
+    );
   }
 }

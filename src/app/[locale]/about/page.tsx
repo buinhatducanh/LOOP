@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const description = tSeo("aboutDescription");
   const brandMetaTitle = tSeo("brandMetaTitle");
   const brandMetaDescription = tSeo("brandMetaDescription");
-  const ogImage = tSeo("ogImage");
+  const _ogImage = tSeo("ogImage");
   const canonical = `${baseUrl}/${locale}/about`;
 
   return {

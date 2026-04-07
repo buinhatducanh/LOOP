@@ -1,5 +1,5 @@
-import { ok, handleError } from "@/lib/api/response";
-import { NextRequest, NextResponse } from "next/server";
+import { handleError } from "@/lib/api/response";
+import { NextRequest } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
@@ -36,7 +36,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const session = await requirePermission("figmas", "update");
+    const _session = await requirePermission("figmas", "update");
     const { id } = await params;
     const body = await req.json();
     const parsed = updateSchema.safeParse(body);
@@ -78,7 +78,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const session = await requirePermission("figmas", "delete");
+    const _session = await requirePermission("figmas", "delete");
     const { id } = await params;
     await prisma.figmaDemo.delete({ where: { id } });
     await createAuditLog({ userId: session.userId, action: "delete", resource: "figmas", resourceId: id });

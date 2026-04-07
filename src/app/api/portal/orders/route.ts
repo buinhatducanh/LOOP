@@ -2,15 +2,15 @@
  * GET /api/portal/orders — Customer's own orders
  * Requires customer auth (JWT cookie).
  */
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth/permissions";
-import { ok, list, handleError } from "@/lib/api";
+import { list, handleError } from "@/lib/api";
 import { buildPagination } from "@/lib/api";
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
-    const session = await requireAuth();
+    const _session = await requireAuth();
 
     const { searchParams } = new URL(req.url);
     const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10));

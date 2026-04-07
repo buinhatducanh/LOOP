@@ -307,7 +307,7 @@ export default function RevenuePage() {
   const totalRevenue = paidOrders.reduce((s, o) => s + (o.finalPrice ?? o.totalAmount ?? 0), 0);
   const avgOrderValue = paidOrders.length > 0 ? Math.round(totalRevenue / paidOrders.length) : 0;
   const margin = 0.62; // 62% margin approximation
-  const totalProfit = Math.round(totalRevenue * margin);
+  const _totalProfit = Math.round(totalRevenue * margin);
 
   // Monthly revenue grouping
   const monthlyMap = new Map<string, number>();

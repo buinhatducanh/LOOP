@@ -512,3 +512,173 @@ export function getRoleLevelLabel(level: number): { vi: string; en: string } {
   if (level <= 0) return { vi: "Quản trị tối cao", en: "Super Admin" };
   return { vi: `Cấp ${level}`, en: `Level ${level}` };
 }
+
+// ─── Role Predicate Helpers ─────────────────────────────────────────────────────
+
+/** Check if role is CEO */
+export function isCeo(role: string): boolean {
+  return role === "ceo";
+}
+
+/** Check if role is super_admin (level 0) */
+export function isSuperAdminRole(role: string): boolean {
+  return role === "super_admin";
+}
+
+/** Check if role is admin (level 0 or 1) */
+export function isAdminRole(role: string): boolean {
+  return role === "super_admin" || role === "admin";
+}
+
+/** Check if role is project_manager (level 2) */
+export function isPMRole(role: string): boolean {
+  return role === "project_manager";
+}
+
+/** Check if role is media (level 3) */
+export function isMediaRole(role: string): boolean {
+  return role === "media";
+}
+
+/** Check if role is qa (level 4) */
+export function isQARole(role: string): boolean {
+  return role === "qa";
+}
+
+/** Check if role is member (level 5) */
+export function isMemberRole(role: string): boolean {
+  return role === "member";
+}
+
+/**
+ * Check if a role is a privileged system role (CEO or super_admin).
+ * Used for operations that bypass normal permission checks.
+ */
+export function isPrivilegedRole(role: string): boolean {
+  return role === "ceo" || role === "super_admin";
+}
+
+// ─── Default Access Tags per Role ───────────────────────────────────────────────
+
+/**
+ * Default access tags automatically granted to all members in each role.
+ * CEO assigns additional tags individually during onboarding.
+ * Tags "kanban" and "order-basic" are system defaults — cannot be revoked.
+ */
+export const DEFAULT_ACCESS_TAGS: Record<string, string[]> = {
+  ceo: [],
+  super_admin: ["kanban", "order-basic", "blog-post", "seo-content", "media-content", "order-manage", "salary", "lp-manage", "finance-view", "hr-manage"],
+  admin: ["kanban", "order-basic", "blog-post", "seo-content", "media-content", "order-manage", "lp-manage"],
+  project_manager: ["kanban", "order-basic", "order-manage"],
+  media: ["kanban", "order-basic", "blog-post", "media-content"],
+  qa: ["kanban", "order-basic"],
+  member: ["kanban", "order-basic"],
+  client: [],
+  guest: [],
+};
+
+// ─── Default Permissions per Role (static, DB can override) ────────────────────
+
+/**
+ * Static permission defaults per role.
+ * These are embedded in tokens for fast edge checks.
+ * DB-based Permission table takes precedence in requirePermission().
+ */
+export const DEFAULT_PERMISSIONS: Record<string, Array<{ resource: string; actions: string[] }>> = {
+  ceo: [{ resource: "*", actions: ["*"] }],
+  super_admin: [{ resource: "*", actions: ["*"] }],
+  admin: [
+    { resource: "team", actions: ["read", "create", "update", "delete"] },
+    { resource: "orders", actions: ["read", "update", "approve"] },
+    { resource: "lp-awards", actions: ["read", "create", "update", "approve"] },
+    { resource: "lp-redemptions", actions: ["read", "update"] },
+    { resource: "blog-posts", actions: ["read", "create", "update", "delete"] },
+    { resource: "services", actions: ["read", "create", "update", "delete"] },
+    { resource: "projects", actions: ["read", "create", "update"] },
+    { resource: "edu", actions: ["read", "create", "update"] },
+    { resource: "audit-log", actions: ["read", "export"] },
+    { resource: "settings", actions: ["read", "update"] },
+    { resource: "roles", actions: ["read", "create", "update", "delete"] },
+  ],
+  project_manager: [
+    { resource: "orders", actions: ["read", "update"] },
+    { resource: "quotes", actions: ["read", "create", "update"] },
+    { resource: "clients", actions: ["read", "create", "update"] },
+    { resource: "projects", actions: ["read", "create", "update"] },
+    { resource: "figma-demos", actions: ["read", "create", "update"] },
+    { resource: "lp-awards", actions: ["read", "create"] },
+    { resource: "edu", actions: ["read"] },
+  ],
+  media: [
+    { resource: "blog-posts", actions: ["read", "create", "update"] },
+    { resource: "social-posts", actions: ["read", "create", "update"] },
+    { resource: "edu", actions: ["read", "create", "update"] },
+    { resource: "projects", actions: ["read"] },
+    { resource: "orders", actions: ["read"] },
+  ],
+  qa: [
+    { resource: "tasks", actions: ["read", "update"] },
+    { resource: "standups", actions: ["read", "create"] },
+    { resource: "projects", actions: ["read"] },
+    { resource: "edu", actions: ["read"] },
+  ],
+  member: [
+    { resource: "standups", actions: ["read", "create"] },
+    { resource: "edu", actions: ["read"] },
+    { resource: "tasks", actions: ["read", "update"] },
+  ],
+};
+
+// ─── Middleware Path Helpers (Edge-compatible) ───────────────────────────────────
+
+export const PUBLIC_PATHS = [
+  "/api/auth/",
+  "/api/admin/auth/",
+  "/api/health",
+  "/api/contact",
+  "/api/search",
+  "/api/services",
+  "/api/projects",
+  "/api/team",
+  "/api/testimonials",
+  "/api/pricing",
+  "/api/v1/",
+] as const;
+
+export const PUBLIC_LOGIN_PATHS = [
+  "/vi/dang-nhap",
+  "/en/dang-nhap",
+  "/ja/dang-nhap",
+  "/ko/dang-nhap",
+  "/zh/dang-nhap",
+] as const;
+
+/**
+ * Check if a request path is public (no auth required at edge).
+ */
+export function isPublicPath(pathname: string): boolean {
+  if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) return true;
+  if (PUBLIC_LOGIN_PATHS.some((p) => pathname.startsWith(p))) return true;
+  return false;
+}
+
+/** Get minimum role level for an admin path (lower = more privileged) */
+export function getRequiredLevel(pathname: string): number {
+  const config = NAV_PERMISSIONS[pathname];
+  if (config?.minRoleLevel !== undefined) return config.minRoleLevel;
+  // Prefix match for dynamic paths like /admin/projects/[id]
+  for (const [prefix, cfg] of Object.entries(NAV_PERMISSIONS)) {
+    if (prefix.endsWith("/") && pathname.startsWith(prefix)) {
+      return cfg.minRoleLevel ?? 5;
+    }
+  }
+  return 5; // Default: any authenticated staff
+}
+
+/** Cookie key constants (used by middleware and auth routes) */
+export const AUTH_COOKIES = {
+  ACCESS_TOKEN: "auth-token",
+  REFRESH_TOKEN: "refresh-token",
+  AUTH_METHOD: "auth-method",
+  LOGGED_IN: "auth-logged-in",
+} as const;

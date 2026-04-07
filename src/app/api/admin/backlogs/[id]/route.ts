@@ -1,12 +1,12 @@
-import { ok, handleError } from "@/lib/api/response";
-import { NextRequest, NextResponse } from "next/server";
+import { handleError } from "@/lib/api/response";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const session = await requirePermission("backlogs", "read");
+    const _session = await requirePermission("backlogs", "read");
     const { id } = await params;
     const backlog = await prisma.backlog.findUnique({
       where: { id },
@@ -28,7 +28,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const session = await requirePermission("backlogs", "update");
+    const _session = await requirePermission("backlogs", "update");
     const { id } = await params;
     const data = await req.json();
     const existing = await prisma.backlog.findUnique({ where: { id } });
@@ -63,7 +63,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const session = await requirePermission("backlogs", "delete");
+    const _session = await requirePermission("backlogs", "delete");
     const { id } = await params;
     await prisma.backlog.delete({ where: { id } });
     await createAuditLog({ userId: session.userId, action: "delete", resource: "backlogs", resourceId: id });

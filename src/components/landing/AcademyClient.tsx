@@ -6,8 +6,8 @@ import { motion, AnimatePresence } from "motion/react";
 import { DS, GRD } from "@/lib/design-tokens";
 import {
   Search, Star, Users, Play, BookOpen, Check, ChevronDown, Award, Zap,
-  Clock, Code2, Palette, Server, TrendingUp, GraduationCap,
-  CheckCircle2, X, ArrowRight, Sparkles
+  Clock, Code2, Palette, Server, GraduationCap,
+  CheckCircle2, X, ArrowRight,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 
@@ -63,11 +63,11 @@ const PATHS = [
     slug: "design",
     title: "UI/UX Design",
     description: "Thiết kế giao diện chuyên nghiệp với Figma và Tailwind",
-    color: "#E879F9",
+    color: DS.cosmicPurple,
     icon: Palette,
     courses: ["figma-tailwind-design-system", "seo-marketing"],
-    gradient: "linear-gradient(135deg, rgba(232,121,249,0.1) 0%, rgba(232,121,249,0.02) 100%)",
-    border: "#E879F940",
+    gradient: `linear-gradient(135deg, ${DS.cosmicPurple}1A 0%, ${DS.cosmicPurple}05 100%)`,
+    border: `${DS.cosmicPurple}40`,
   },
   {
     slug: "devops",
@@ -529,7 +529,7 @@ function CourseCard({
       style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 16, overflow: "hidden" }}
     >
       <Link href={`/${locale}/academy/${course.slug}`} style={{ textDecoration: "none", color: "inherit", display: "block" }}>
-        <div style={{ position: "relative", height: 160, overflow: "hidden", background: "#111827" }}>
+        <div style={{ position: "relative", height: 160, overflow: "hidden", background: DS.bgCard2 }}>
           {course.image ? (
             <img src={course.image} alt={course.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           ) : (
@@ -799,7 +799,7 @@ export function AcademyClient({ locale }: { locale: string }) {
                 style={{ background: GRD.primary, borderRadius: 20, overflow: "hidden", display: "flex", minHeight: 220 }}
               >
                 {featured.image && (
-                  <div style={{ width: 360, flexShrink: 0, overflow: "hidden", background: "#111827" }}>
+                  <div style={{ width: 360, flexShrink: 0, overflow: "hidden", background: DS.bgCard2 }}>
                     <img src={featured.image} alt={featured.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   </div>
                 )}

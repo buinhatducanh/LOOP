@@ -1,12 +1,12 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { handleError, ok } from "@/lib/api";
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
     await requirePermission("expertises", "read");
-    const { searchParams } = new URL(req.url);
+    const { searchParams } = new URL(_req.url);
     const activeOnly = searchParams.get("active") === "true";
     const where = activeOnly ? { isActive: true } : {};
 
@@ -21,22 +21,10 @@ export async function GET(req: NextRequest) {
   }
 }
 
-export async function POST(req: NextRequest) {
+export async function POST(_req: NextRequest) {
   try {
     await requirePermission("expertises", "create");
-    const data = await req.json();
-
-    const categories: Record<string, string> = {
-      frontend: "Frontend",
-      backend: "Backend",
-      design: "Thiết kế",
-      management: "Quản lý",
-      marketing: "Marketing",
-      data: "Data/AI",
-      devops: "DevOps",
-      mobile: "Di động",
-      other: "Khác",
-    };
+    const data = await _req.json();
 
     const expertise = await prisma.expertise.create({
       data: {

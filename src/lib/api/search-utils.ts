@@ -52,8 +52,8 @@ export function buildQueryFromParams(
 ): { where: Record<string, unknown>; orderBy: Record<string, "asc" | "desc"> } {
   const where: Record<string, unknown> = {};
   const search = params.get("search")?.trim() ?? "";
-  const page = parseInt(params.get("page") ?? "1", 10);
-  const limit = parseInt(params.get("limit") ?? "20", 10);
+  const _page = parseInt(params.get("page") ?? "1", 10);
+  const _limit = parseInt(params.get("limit") ?? "20", 10);
 
   // ── Text search (OR across configured fields) ──────────────────────────
   if (search && config.searchFields && config.searchFields.length > 0) {
@@ -132,12 +132,12 @@ export function parsePagination(params: URLSearchParams): {
   page: number;
   limit: number;
 } {
-  const page = Math.max(1, parseInt(params.get("page") ?? "1", 10));
-  const limit = Math.min(100, Math.max(1, parseInt(params.get("limit") ?? "20", 10)));
+  const _page = Math.max(1, parseInt(params.get("page") ?? "1", 10));
+  const _limit = Math.min(100, Math.max(1, parseInt(params.get("limit") ?? "20", 10)));
   return {
-    pagination: { page, limit, skip: (page - 1) * limit, totalPages: 0 },
-    page,
-    limit,
+    pagination: { page: _page, limit: _limit, skip: (_page - 1) * _limit, totalPages: 0 },
+    page: _page,
+    limit: _limit,
   };
 }
 

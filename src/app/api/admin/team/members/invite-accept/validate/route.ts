@@ -6,11 +6,11 @@
  *
  * Body: none (token via query param)
  */
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { handleError } from "@/lib/api";
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
     const { searchParams } = req.nextUrl;
     const token = searchParams.get("token");

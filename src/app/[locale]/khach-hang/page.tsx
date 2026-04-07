@@ -14,9 +14,9 @@ import { motion } from "motion/react";
 import {
   LayoutDashboard, FolderKanban, GraduationCap,
   Receipt, Wallet, UserPlus, Headphones,
-  Settings, LogOut, ChevronRight, Zap,
+  Settings, LogOut,
   CheckCircle2, Clock, XCircle,
-  BookOpen, Award, ArrowUpRight, Monitor, ExternalLink,
+  BookOpen, Award, Monitor, ExternalLink,
 } from "lucide-react";
 import { DS, GRD } from "@/lib/design-tokens";
 import { useAuthStore } from "@/app/store/authStore";
@@ -117,7 +117,7 @@ function TabIcon({ tab, size = 16 }: { tab: Tab; size?: number }) {
 
 // ── Overview tab ─────────────────────────────────────────────────────────────
 
-function OverviewTab({ locale, orders }: { locale: string; orders: CustomerOrder[] }) {
+function OverviewTab({ orders }: { locale: string; orders: CustomerOrder[] }) {
   const t = useTranslations("customer");
 
   const activeOrders = orders.filter(
@@ -212,7 +212,7 @@ function OverviewTab({ locale, orders }: { locale: string; orders: CustomerOrder
 
 // ── Projects tab ───────────────────────────────────────────────────────────────
 
-function ProjectsTab({ locale, orders }: { locale: string; orders: CustomerOrder[] }) {
+function ProjectsTab({ orders }: { locale: string; orders: CustomerOrder[] }) {
   const done = orders.filter((o) => o.status === "done");
   const active = orders.filter((o) => o.status !== "done" && o.status !== "cancelled");
 
@@ -409,7 +409,7 @@ function DemosTab({ demos }: { demos: CustomerDemo[] }) {
 }
 
 function CoursesTab({ enrollments }: { enrollments: CustomerEnrollment[] }) {
-  const t = useTranslations("customer");
+  const _t = useTranslations("customer");
 
   if (enrollments.length === 0) {
     return (
@@ -612,7 +612,6 @@ export default function CustomerPortalPage({
 
   const router = useRouter();
   const { user, isAuthenticated, logout } = useAuthStore();
-  const tNav = useTranslations("Navigation");
 
   // Resolve locale from params
   useEffect(() => {
@@ -643,10 +642,10 @@ export default function CustomerPortalPage({
           apiClient.get<{ data: PointData }>("/api/portal/points", { throwOnError: false }),
           apiClient.get<{ data: CustomerDemo[] }>("/api/portal/demos", { throwOnError: false }),
         ]);
-        if (!("error" in oRes)) setOrders((oRes as any).data?.data ?? []);
-        if (!("error" in eRes)) setEnrollments((eRes as any).data?.data ?? []);
-        if (!("error" in pRes)) setPointData((pRes as any).data?.data ?? null);
-        if (!("error" in dRes)) setDemos((dRes as any).data?.data ?? []);
+        if (!("error" in oRes)) setOrders((oRes as unknown as { data: { data: CustomerOrder[] } }).data?.data ?? []);
+        if (!("error" in eRes)) setEnrollments((eRes as unknown as { data: { data: CustomerEnrollment[] } }).data?.data ?? []);
+        if (!("error" in pRes)) setPointData((pRes as unknown as { data: { data: PointData } }).data?.data ?? null);
+        if (!("error" in dRes)) setDemos((dRes as unknown as { data: { data: CustomerDemo[] } }).data?.data ?? []);
       } catch {
         // Silent fail — show empty state
       } finally {

@@ -7,8 +7,8 @@
  *  3. Deactivate user if exists
  *  4. Send rejection notification
  */
-import { NextRequest, NextResponse } from "next/server";
-import { requireAuth, requirePermissionFast, isSuperAdmin } from "@/lib/auth/permissions";
+import { NextRequest } from "next/server";
+import { requirePermissionFast, isSuperAdmin } from "@/lib/auth/permissions";
 import { ok, handleError, notFound, badRequest } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 
@@ -17,7 +17,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await requireAuth();
+    const _session = await requireAuth();
 
     // Only CEO or super_admin can reject
     if (!isSuperAdmin(session)) {
@@ -47,7 +47,7 @@ export async function POST(
 
     const result = await prisma.$transaction(async (tx) => {
       // Update request status
-      const updated = await tx.memberRequest.update({
+      const _updated = await tx.memberRequest.update({
         where: { id },
         data: {
           status: "rejected",

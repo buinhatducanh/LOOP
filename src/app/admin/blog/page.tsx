@@ -281,7 +281,7 @@ export default function BlogTabPage() {
   const statusLabel = (key: string) => t(`blog.status${key.charAt(0).toUpperCase() + key.slice(1)}` as `blog.status${string}`);
 
   // Render-time translated status labels
-  const translatedStatuses = {
+  const _translatedStatuses = {
     published: { ...STATUS_CONFIG.published, label: statusLabel("published") },
     draft:     { ...STATUS_CONFIG.draft,     label: statusLabel("draft") },
     archived:  { ...STATUS_CONFIG.archived,  label: statusLabel("archived") },

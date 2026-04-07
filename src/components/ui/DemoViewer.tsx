@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import {
   Monitor, RefreshCw, X, Maximize2, Minimize2,
   ChevronLeft, ChevronRight, Lock, Shield, Loader,
-  ExternalLink, Eye,
+  Eye,
 } from 'lucide-react';
 import { DS, GRD } from '../layout/ds';
 
@@ -149,7 +149,7 @@ export function DemoViewer({
   );
 
   // ── Iframe Viewport ─────────────────────────────────────────────────────
-  const IframeViewport = ({ h }: { h: number }) => (
+  const _IframeViewport = ({ h }: { h: number }) => (
     <div className="relative" style={{ height: h, overflow: 'hidden' }} onContextMenu={preventContext}>
       {/* Loading overlay */}
       <AnimatePresence>

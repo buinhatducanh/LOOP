@@ -7,7 +7,7 @@
  * 3. Instructor receives LP via TeamMember.availableLp + LpTransaction (teaching source)
  */
 
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { handleError } from "@/lib/api/response";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
@@ -27,7 +27,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await requirePermission("edu", "update");
+    const _session = await requirePermission("edu", "update");
     const { id } = await params;
     const body = await req.json();
     const { amount, method, note } = body;
@@ -67,9 +67,8 @@ export async function POST(
     const studentLpEarned = vndToLp(amount);
     const instructorLp = Math.floor(studentLpEarned * (enrollment.assigneeLpPercent / 100));
 
-    // Capture instructorMemberId before the transaction so we can call
-    // syncRankFields() after the atomic block commits
-    let instructorIdForRankSync: string | null =
+    // Capture instructor ID before tx for rank sync after commit
+    let _instructorIdForRankSync: string | null =
       instructorMember && instructorLp > 0 ? instructorMember.id : null;
 
     // ── Atomic transaction ─────────────────────────────────────────
@@ -143,9 +142,7 @@ export async function POST(
       }
 
       // 4. Instructor LP (TeamMember.availableLp + LpTransaction)
-      let instructorMemberId: string | null = null;
       if (instructorMember && instructorLp > 0) {
-        instructorMemberId = instructorMember.id;
         const newAvailable = instructorMember.availableLp + instructorLp;
         await tx.teamMember.update({
           where: { id: instructorMember.id },
@@ -171,8 +168,8 @@ export async function POST(
     });
 
     // ── Rank sync (outside tx — reads committed state, writes to TeamMember) ──
-    if (instructorIdForRankSync) {
-      await syncRankFields(instructorIdForRankSync);
+    if (_instructorIdForRankSync) {
+      await syncRankFields(_instructorIdForRankSync);
     }
 
     await createAuditLog({

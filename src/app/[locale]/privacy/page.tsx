@@ -20,7 +20,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const description = t("privacyDescription");
   const brandMetaTitle = t("brandMetaTitle");
   const brandMetaDescription = t("brandMetaDescription");
-  const ogImage = t("ogImage");
+  const _ogImage = t("ogImage");
   const canonical = `${baseUrl}/${locale}/privacy`;
 
   return {

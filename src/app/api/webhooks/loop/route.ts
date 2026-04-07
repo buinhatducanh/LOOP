@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import crypto from "crypto";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
@@ -68,7 +68,7 @@ function isFreshTimestamp(timestampHeader?: string | null): boolean {
   return Math.abs(nowSec - ts) <= 300;
 }
 
-export async function POST(req: NextRequest) {
+export async function POST(_req: NextRequest) {
   const rawBody = await req.text();
   const signature = req.headers.get("x-loop-signature") ?? "";
   const timestamp = req.headers.get("x-loop-timestamp");

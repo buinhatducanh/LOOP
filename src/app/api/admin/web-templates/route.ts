@@ -1,5 +1,5 @@
-import { ok, handleError } from "@/lib/api/response";
-import { NextRequest, NextResponse } from "next/server";
+import { handleError } from "@/lib/api/response";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
@@ -11,7 +11,7 @@ import {
   WEB_TEMPLATE_FILTER_CONFIG,
 } from "@/lib/api/search-utils";
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
     await requirePermission("services", "read");
     const { searchParams } = new URL(req.url);
@@ -45,9 +45,9 @@ export async function GET(req: NextRequest) {
   }
 }
 
-export async function POST(req: NextRequest) {
+export async function POST(_req: NextRequest) {
   try {
-    const session = await requirePermission("services", "create");
+    const _session = await requirePermission("services", "create");
     const data = await req.json();
 
     const template = await prisma.webTemplate.create({

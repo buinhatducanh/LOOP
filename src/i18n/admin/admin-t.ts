@@ -11,8 +11,6 @@
  */
 
 import { cookies } from "next/headers";
-import type { Metadata } from "next";
-
 import viMessages from "./messages/vi.json";
 import enMessages from "./messages/en.json";
 

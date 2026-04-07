@@ -709,7 +709,7 @@ async function queryEventsByDay(
     const rows = await prisma.serverAnalyticsEvent.groupBy({
       by: ["createdAt"],
       _count: { event: true },
-      where: where as any,
+      where: where as Record<string, unknown>,
       orderBy: { createdAt: "asc" },
     });
 
@@ -733,7 +733,7 @@ async function calculateBounceRate(where: EventWhereInput): Promise<number> {
     const sessions = await prisma.serverAnalyticsEvent.groupBy({
       by: ["sessionId"],
       _count: { event: true },
-      where: { ...(where as any), sessionId: { not: null } },
+      where: { ...(where as Record<string, unknown>), sessionId: { not: null } },
     });
 
     const totalSessions = sessions.filter((s) => s.sessionId !== null).length;

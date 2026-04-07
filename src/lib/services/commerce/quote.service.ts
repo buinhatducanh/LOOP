@@ -3,7 +3,7 @@
  */
 
 import { prisma } from "@/lib/prisma";
-import type { Prisma } from "@/generated/prisma";
+
 
 // ─── Create Quote ─────────────────────────────────────────────────────────────
 
@@ -20,7 +20,7 @@ export type CreateQuoteInput = {
 
 export async function createQuote(
   input: CreateQuoteInput,
-  userId: string
+  _userId: string
 ) {
   const lp = input.lpAllocation ?? {};
   const lpSum = Object.values(lp).reduce((s, v) => s + v, 0);
@@ -47,7 +47,7 @@ export async function createQuote(
 
 // ─── Approve Quote ────────────────────────────────────────────────────────────
 
-export async function approveQuote(quoteId: string, userId: string) {
+export async function approveQuote(quoteId: string, _userId: string) {
   const quote = await prisma.quote.findUnique({ where: { id: quoteId } });
   if (!quote) throw new Error("Not found");
 

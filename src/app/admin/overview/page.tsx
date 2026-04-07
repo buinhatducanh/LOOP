@@ -11,20 +11,19 @@
 // Prevent static pre-rendering since this is a client component using React Query
 export const dynamic = "force-dynamic";
 
-import { useQuery } from "@tanstack/react-query";
+
 import { motion } from "motion/react";
 import { DS } from "@/lib/design-tokens";
 import {
   ShoppingCart,
-  DollarSign,
+
   Clock,
-  CheckCircle2,
+
   ArrowUpRight,
   ArrowDownRight,
-  Users,
-} from "lucide-react";
+  } from "lucide-react";
 import { qk } from "@/lib/query/provider";
-import { adminApi } from "@/lib/api/client";
+
 import { useAuthStore } from "@/app/store/authStore";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

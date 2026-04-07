@@ -23,12 +23,11 @@
  *   - HTML view for crawlers that prefer text/html
  */
 
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSiteSettings } from "@/lib/db/queries";
-import { applyRateLimit } from "@/lib/rate-limit";
+
+
 import { publicApiRateLimit } from "@/lib/redis";
-import { Ratelimit } from "@upstash/ratelimit";
 
 /* ─── Types ───────────────────────────────────────────────────────────── */
 

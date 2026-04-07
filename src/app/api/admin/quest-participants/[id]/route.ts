@@ -1,5 +1,5 @@
 import { ok, handleError, notFound, badRequest } from "@/lib/api/response";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { syncRankFields } from "@/lib/rank/xp";

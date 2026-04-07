@@ -23,18 +23,21 @@ interface AdminTopbarProps {
   userAvatar?: string;
 }
 
-export function AdminTopbar({ userName, userEmail, userAvatar }: AdminTopbarProps) {
+export function AdminTopbar({ userName: propName, userEmail: propEmail, userAvatar: propAvatar }: AdminTopbarProps) {
   const { t } = useAdminTranslations();
-  const router = useRouter();
-  const { logout } = useAuthStore();
+  const _router = useRouter();
+  const { logout, user } = useAuthStore();
+  // Prefer Zustand store (persisted), fall back to props for initial SSR render
+  const userName = user?.name ?? propName ?? "Admin";
+  const userEmail = propEmail ?? user?.email ?? "";
+  const userAvatar = user?.avatar ?? propAvatar ?? "";
   const [showNotif, setShowNotif] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
 
   const handleLogout = async () => {
     await logout();
-    // Redirect to unified login (preserve locale from cookie)
-    const locale = document.cookie.match(/NEXT_LOCALE=([^;]+)/)?.[1] ?? "vi";
-    router.push(`/${locale}/dang-nhap`);
+    // Full page reload to clear all client state and redirect to login
+    window.location.href = "/vi/dang-nhap";
   };
 
   return (

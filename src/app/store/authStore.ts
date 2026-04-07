@@ -9,7 +9,7 @@
  */
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import { apiClient, type ApiErrorResponse } from "@/lib/api/client";
+import { apiClient, adminApi, type ApiErrorResponse } from "@/lib/api/client";
 import { DS } from "@/lib/design-tokens";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -34,7 +34,8 @@ export interface AuthUser {
   email: string;
   avatar: string;
   role: UserRole;
-  department?: string;
+  accountType: "staff" | "customer"; // Split auth: determines which portal they belong to
+  _department?: string;
   rank?: string;
   rankColor?: string;
   lpBalance: number;
@@ -56,7 +57,7 @@ export interface EnrichedSession {
   accountType: "staff" | "customer";
   teamMemberId: string | null;
   roleLevel: number;
-  department?: string;
+  _department?: string;
   rank?: string;
   rankColor?: string;
   lpBalance?: number;
@@ -71,7 +72,7 @@ export type AdminTab =
   | "academy" | "blog" | "revenue" | "clients" | "lp" | "lp_manage"
   | "income_tax" | "web_packages" | "pricing" | "effects" | "notification_center"
   | "settings" | "quests_events" | "leaderboard_admin" | "analytics"
-  | "figma-demos";
+  | "figma-demos" | "kanban";
 
 // ── Quest / Event Types (from FE gamification system) ────────────────────────────
 
@@ -214,7 +215,7 @@ const MEMBER_TABS: AdminTab[] = [
   "academy", "quests_events",
 ];
 
-export function getAccessibleTabs(role: UserRole, department?: string): AdminTab[] | "all" {
+export function getAccessibleTabs(role: UserRole, _department?: string): AdminTab[] | "all" {
   if (role === "admin") return "all";
   if (role === "project_manager") return PM_TABS;
   if (role === "media") return MEDIA_TABS;
@@ -257,8 +258,14 @@ interface AuthStore {
   isLoading: boolean;
   error: string | null;
   role: UserRole;
-  department?: string;
+  accountType: "staff" | "customer" | null; // Split auth: Option C
+  _department?: string;
   accessibleTabs: AdminTab[] | "all";
+
+  /** R2: Server-session verified flag — set true after /me returns 200. Prevents stale cache. */
+  sessionHydrated: boolean;
+  /** R2: UTC ms timestamp when the HttpOnly cookie token expires (15 min from login). */
+  tokenExpiry: number | null;
 
   // Gamification (from FE)
   quests: Quest[];
@@ -303,6 +310,7 @@ function sessionToAuthUser(session: EnrichedSession): AuthUser {
       session.avatar ??
       `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(session.name || session.email)}`,
     role,
+    accountType: session.accountType,
     department: session.department,
     rank: session.rank,
     rankColor: session.rankColor,
@@ -328,8 +336,15 @@ export const useAuthStore = create<AuthStore>()(
       isLoading: false,
       error: null,
       role: "guest",
+      accountType: null,
       department: undefined,
       accessibleTabs: [],
+      sessionHydrated: false, // R2: not yet verified by server
+      tokenExpiry: null,      // R2: no token expiry yet
+
+      // Zustand persist hydration helpers (provided by persist middleware)
+      hasHydrated: () => false,
+      onFinishHydration: () => () => {},
 
       // Gamification (NOT persisted — re-fetched from BE on each session)
       quests: INIT_QUESTS,
@@ -343,7 +358,7 @@ export const useAuthStore = create<AuthStore>()(
       const res = await apiClient.post<{ user: EnrichedSession; token: string } | ApiErrorResponse>(
         "/api/admin/auth/login",
         { email, password },
-        { throwOnError: false }
+        { throwOnError: false, withCredentials: true }
       );
 
       if ("error" in res) {
@@ -352,20 +367,20 @@ export const useAuthStore = create<AuthStore>()(
       }
 
       // Update store immediately from login response (no extra /me call)
-      // AdminSessionInit will be a no-op since session is already set
       const successPayload = res as { user: EnrichedSession; token: string };
       const session = successPayload.user;
 
-      // Persist JWT token in localStorage so apiClient can attach Bearer header
-      // on subsequent requests (cookies alone can be stripped on cross-origin redirects)
+      // Persist JWT token in localStorage — split auth: Option C
+      // Staff token: "loop-staff-token" | Customer token: "loop-customer-token"
       // Guard with try/catch — may fail in private browsing or quota exceeded
       if (typeof window !== "undefined" && successPayload.token) {
         try {
-          localStorage.setItem("loop-auth-token", successPayload.token);
+          localStorage.setItem("loop-staff-token", successPayload.token);
         } catch {
           // Storage unavailable (private browsing, quota) — cookie will still work
         }
       }
+
       const authUser = sessionToAuthUser(session);
       const role = mapRoleLevelToUserRole(session.roleLevel, session.accountType);
 
@@ -375,15 +390,18 @@ export const useAuthStore = create<AuthStore>()(
         isLoading: false,
         error: null,
         role,
+        accountType: session.accountType,
         department: session.department,
         accessibleTabs: getAccessibleTabs(role, session.department),
+        sessionHydrated: true,       // R2: login payload IS the server session — mark hydrated
+        tokenExpiry: Date.now() + 15 * 60 * 1000, // R2: access token TTL = 15 min
       });
       return true;
     } catch (err) {
       const isAbort = err instanceof Error && (err.name === "AbortError" || err.name === "TimeoutError");
       const message = isAbort
         ? "Yêu cầu bị timeout. Vui lòng thử lại sau."
-        : err instanceof Error ? err.message : "Đăng nhập thất bại";
+        : err instanceof Error ? err.message : "�ăng nhập thất bại";
       set({ isLoading: false, error: message });
       return false;
     }
@@ -397,8 +415,11 @@ export const useAuthStore = create<AuthStore>()(
       isLoading: false,
       error: null,
       role,
+      accountType: user.accountType,
       department: user.department,
       accessibleTabs: getAccessibleTabs(role, user.department),
+      sessionHydrated: true,    // R2: programmatic login — trust the caller
+      tokenExpiry: Date.now() + 15 * 60 * 1000, // R2: default 15-min TTL
     });
   },
 
@@ -406,9 +427,9 @@ export const useAuthStore = create<AuthStore>()(
     set({ isLoading: true });
     try {
       // Capture token synchronously — must read BEFORE any async call so it's
-      // available for the fetch (apiClient reads localStorage at call time).
+      // available for the fetch. Split auth: clear loop-staff-token.
       const token =
-        typeof window !== "undefined" ? localStorage.getItem("loop-auth-token") : null;
+        typeof window !== "undefined" ? localStorage.getItem("loop-staff-token") : null;
 
       const doLogout = async () => {
         const headers: Record<string, string> = { "Content-Type": "application/json" };
@@ -429,7 +450,7 @@ export const useAuthStore = create<AuthStore>()(
       // Ignore network errors — always clear session client-side
     } finally {
       if (typeof window !== "undefined") {
-        localStorage.removeItem("loop-auth-token");
+        localStorage.removeItem("loop-staff-token");
       }
       set({
         user: null,
@@ -437,21 +458,28 @@ export const useAuthStore = create<AuthStore>()(
         isLoading: false,
         error: null,
         role: "guest",
+        accountType: null,
         department: undefined,
         accessibleTabs: [],
+        sessionHydrated: false, // R2: reset hydration flag
+        tokenExpiry: null,      // R2: no expiry
       });
     }
   },
 
   fetchSession: async (): Promise<void> => {
     try {
-      const res = await apiClient.get<{ user: EnrichedSession } | ApiErrorResponse>(
+      const res = await adminApi.get<{ user: EnrichedSession } | ApiErrorResponse>(
         "/api/admin/auth/me",
         { throwOnError: false }
       );
 
       if ("error" in res || !("user" in res)) {
-        set({ isAuthenticated: false, user: null, role: "guest", accessibleTabs: [] });
+        // R2: /me failed → clear session + mark NOT hydrated
+        set({
+          isAuthenticated: false, user: null, role: "guest",
+          accountType: null, accessibleTabs: [], sessionHydrated: true,
+        });
         return;
       }
 
@@ -459,21 +487,25 @@ export const useAuthStore = create<AuthStore>()(
       const authUser = sessionToAuthUser(session);
       const role = mapRoleLevelToUserRole(session.roleLevel, session.accountType);
 
+      // R2: sync token expiry on every successful /me response
       set({
         user: authUser,
         isAuthenticated: true,
         isLoading: false,
         error: null,
         role,
+        accountType: session.accountType,
         department: session.department,
         accessibleTabs: getAccessibleTabs(role, session.department),
+        sessionHydrated: true,         // R2: server confirmed valid session
+        tokenExpiry: Date.now() + 15 * 60 * 1000, // R2: refresh expiry on each /me
       });
     } catch (err) {
-      // Log but don't swallow silently — network/parse errors should surface
       if (err instanceof Error) {
         console.warn("[AuthStore] fetchSession failed:", err.message);
       }
-      set({ isAuthenticated: false, user: null, role: "guest", accessibleTabs: [] });
+      // R2: on error → keep cached auth but mark NOT hydrated (will retry)
+      set({ sessionHydrated: true });
     }
   },
 
@@ -557,8 +589,11 @@ export const useAuthStore = create<AuthStore>()(
         user: state.user,
         isAuthenticated: state.isAuthenticated,
         role: state.role,
+        accountType: state.accountType,
         department: state.department,
         accessibleTabs: state.accessibleTabs,
+        sessionHydrated: state.sessionHydrated, // R2: preserve hydration state
+        tokenExpiry: state.tokenExpiry,        // R2: preserve token expiry
       }),
       onRehydrateStorage: () => (state) => {
         if (state) {

@@ -1,5 +1,5 @@
 import { handleError } from "@/lib/api/response";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
@@ -21,7 +21,7 @@ const createSchema = z.object({
   publishedAt: z.string().transform(s => new Date(s)).optional(),
 });
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
     await requirePermission("blogs", "read");
     const { searchParams } = new URL(req.url);
@@ -54,10 +54,10 @@ export async function GET(req: NextRequest) {
   }
 }
 
-export async function POST(req: NextRequest) {
+export async function POST(_req: NextRequest) {
   try {
     // Auth FIRST — before any body parsing or DB queries
-    const session = await requirePermission("blogs", "create");
+    const _session = await requirePermission("blogs", "create");
 
     const body = await req.json();
 

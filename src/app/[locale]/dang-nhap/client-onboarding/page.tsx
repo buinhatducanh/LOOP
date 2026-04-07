@@ -9,7 +9,8 @@
  *   Step 2: Thông tin cá nhân         (phone, dateOfBirth, address)
  *   Step 3: Xác nhận → hoàn tất
  *
- * Auth: JWT token passed via URL query param (set by RegisterForm after registration).
+ * Auth: reads accountType from Zustand store (set on login).
+ * Redirects staff/team members directly to admin dashboard.
  */
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -20,6 +21,7 @@ import {
   Loader2, Check, AlertTriangle, Phone,
 } from "lucide-react";
 import { DS, GRD } from "@/lib/design-tokens";
+import { useAuthStore } from "@/app/store/authStore";
 
 const STEPS = [
   { key: "business",  label: "Doanh nghiệp", icon: <Building2 size={16} /> },
@@ -116,10 +118,31 @@ function Field({
   );
 }
 
-export default function ClientOnboardingPage() {
+export default function ClientOnboardingPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token") ?? "";
+  const [locale, setLocale] = useState("vi");
+
+  useEffect(() => {
+    params.then((p) => setLocale(p.locale));
+  }, [params]);
+
+  // Staff/team members are redirected to admin — onboarding is for customers only
+  useEffect(() => {
+    // Wait for Zustand rehydration before checking
+    const timer = setTimeout(() => {
+      const { user, isAuthenticated } = useAuthStore.getState();
+      if (isAuthenticated && user?.role !== "client") {
+        router.replace("/admin/overview");
+      }
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [router]);
 
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -180,10 +203,10 @@ export default function ClientOnboardingPage() {
 
       // Store new JWT (with isOnboarded=true)
       if (data.token) {
-        localStorage.setItem("loop-auth-token", data.token);
+        localStorage.setItem("auth-token", data.token);
       }
 
-      router.push("/khach-hang");
+      router.push(`/${locale}/khach-hang`);
     } catch {
       setError("Không thể kết nối máy chủ. Vui lòng thử lại.");
     } finally {
@@ -443,7 +466,7 @@ export default function ClientOnboardingPage() {
         </div>
 
         <div style={{ textAlign: "center", marginTop: "1rem" }}>
-          <Link href="/vi/khach-hang" style={{ color: DS.text4, fontSize: "0.75rem", textDecoration: "none" }}>
+          <Link href={`/${locale}/khach-hang`} style={{ color: DS.text4, fontSize: "0.75rem", textDecoration: "none" }}>
             Bỏ qua — vào Dashboard ngay
           </Link>
         </div>

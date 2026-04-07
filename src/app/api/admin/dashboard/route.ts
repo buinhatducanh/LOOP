@@ -1,11 +1,11 @@
 import { handleError } from "@/lib/api/response";
-import { NextResponse } from "next/server";
+
 import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth/permissions";
 import { orderLogger } from "@/lib/logger";
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   const start = Date.now();
   try {
     await requireAuth(req);

@@ -3,14 +3,13 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "motion/react";
-import { qk } from "@/lib/query/provider";
 import { adminApi } from "@/lib/api/client";
-import { DS, GRD } from "@/lib/design-tokens";
+import { DS } from "@/lib/design-tokens";
 import { useAdminTranslations } from "@/i18n/admin/useAdminTranslations";
 import {
   X, Camera, CheckCircle2, Eye, ChevronRight, Search,
   RefreshCw, Trash2, Plus, ChevronLeft, Upload, FileText, TrendingUp,
-  Image, ZoomIn, ExternalLink, LayoutGrid, List, Calendar,
+  Image, ZoomIn, ExternalLink, LayoutGrid, List,
 } from "lucide-react";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -91,20 +90,6 @@ type BookingFormData = {
   totalAmount: string;
   teamMemberId: string;
   paymentStatus: string;
-};
-
-// Portfolio item extracted from approved bookings with delivered assets
-type PortfolioItem = {
-  id: string;
-  bookingId: string;
-  bookingNumber: string;
-  title: string;
-  customerName: string;
-  bookingType: string;
-  teamMember?: { name: string };
-  package?: { title: string };
-  deliveredAt: string;
-  assetUrls: (string | { url?: string; name?: string })[];
 };
 
 // ─── Row component ─────────────────────────────────────────────────────────────
@@ -266,9 +251,8 @@ function DetailModal({
   if (!booking) return null;
 
   const cfg = STATUS_CONFIG[booking.status] ?? { label: booking.status, color: DS.text4, bg: "transparent" };
-  const payCfg = PAYMENT_CONFIG[booking.paymentStatus] ?? { label: booking.paymentStatus, color: DS.text4 };
+  const _payCfg = PAYMENT_CONFIG[booking.paymentStatus] ?? { label: booking.paymentStatus, color: DS.text4 };
   const statusLabel = (raw: string) => t(`media.status${raw.charAt(0).toUpperCase() + raw.slice(1)}` as `media.status${string}`);
-  const paymentLabel = (raw: string) => t(`media.payment${raw.charAt(0).toUpperCase() + raw.slice(1)}` as `media.payment${string}`);
   const fmt = (n?: number) =>
     n != null
       ? new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(n)
@@ -1230,17 +1214,6 @@ export default function MediaBookingsPage() {
       { ...v, label: t(`media.status${k.charAt(0).toUpperCase() + k.slice(1)}` as `media.status${string}`) },
     ])
   );
-  const translatedPayments = Object.fromEntries(
-    Object.entries(PAYMENT_CONFIG).map(([k, v]) => [
-      k,
-      { ...v, label: t(`media.payment${k.charAt(0).toUpperCase() + k.slice(1)}` as `media.payment${string}`) },
-    ])
-  );
-  const translatedBookingTypes = BOOKING_TYPE_OPTIONS.map((opt) => ({
-    ...opt,
-    label: t(`media.${opt.labelKey}`),
-  }));
-
   const { data, isLoading, isFetching } = useQuery({
     queryKey: ["admin", "media-bookings", { page, limit: 20, search, status: statusFilter }],
     queryFn: async () => {

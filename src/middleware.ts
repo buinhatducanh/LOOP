@@ -1,18 +1,40 @@
 /**
  * Edge Middleware — LOOP Solutions
- * Handles i18n locale routing and admin auth.
  *
- * i18n routing strategy: subdirectory (/vi, /en)
- * - First visit: detect locale from Accept-Language → redirect to /{locale}
- * - Return visit: use locale from cookie (persisted by locale switcher)
- * - /api/*, /admin/*, /auth/* → pass through (no locale prefix)
- * - /vi/*, /en/* → pass through to app
- * - /* (no locale) → redirect to /{defaultLocale} or detected locale
+ * SPLIT AUTH ARCHITECTURE (Option C):
+ *
+ * Two completely separate auth flows:
+ *
+ * 1) Staff auth:
+ *    POST /api/admin/auth/login
+ *    → HttpOnly cookie "loop-staff-token"
+ *    → localStorage "loop-staff-token"
+ *    → Access: /admin/*, /api/admin/*
+ *
+ * 2) Customer auth:
+ *    POST /api/auth/login  (or NextAuth OAuth)
+ *    → HttpOnly cookie "loop-customer-token"
+ *    → localStorage "loop-customer-token"
+ *    → Access: /khach-hang/*, /api/portal/*
+ *
+ * Middleware routing:
+ *   /admin/*    → checkAdminAccess()   — staff only
+ *   /khach-hang/* → checkCustomerAccess() — customer only
+ *   /api/admin/* → staff token required (API routes verify server-side)
+ *   /api/portal/* → customer token required
+ *   /api/auth/*  → public
+ *   /api/v1/*    → public (read-only public APIs)
+ *
+ * i18n: everything else (/vi/*, /en/*, etc.) passes through to App Router.
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { routing } from "./i18n/routing";
-import { checkAdminAccess } from "./lib/auth/edge";
+import {
+  checkAdminAccess,
+  checkCustomerAccess,
+  getAccountType,
+} from "./lib/auth/edge";
 
 // Supported locale prefixes (extracted from routing.ts)
 const LOCALE_PREFIXES = routing.locales as unknown as string[];
@@ -24,31 +46,7 @@ export async function middleware(req: NextRequest) {
     pathname = pathname.slice(0, -1);
   }
 
-  // ─── 1) API routes → pass through ──────────────────────────────────────────
-  if (pathname.startsWith("/api/") || pathname.startsWith("/_next/")) {
-    return NextResponse.next();
-  }
-
-  // ─── 2) Admin page auth ────────────────────────────────────────────────────
-  if (pathname === "/admin" || pathname.startsWith("/admin/")) {
-    // /admin/login is always public — skip auth check to avoid redirect loop
-    if (pathname === "/admin/login") {
-      return NextResponse.next();
-    }
-    const result = checkAdminAccess(req, pathname);
-    if (!result.allowed) {
-      if (result.reason === "unauthenticated") {
-        // Redirect to unified login page (locale-aware)
-        const locale =
-          req.cookies.get("NEXT_LOCALE")?.value ?? routing.defaultLocale;
-        return NextResponse.redirect(new URL(`/${locale}/dang-nhap`, req.url));
-      }
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-    return NextResponse.next();
-  }
-
-  // ─── 3) Static assets + manifest + sitemap + robots ──────────────────────
+  // ─── 1) Static assets + manifest + sitemap + robots ──────────────────────
   if (
     pathname === "/favicon.ico" ||
     pathname === "/favicon.svg" ||
@@ -69,20 +67,90 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // ─── 4) i18n locale-prefixed routes → pass through ────────────────────────
+  // ─── 2) /admin/* — Staff-only routes ──────────────────────────────────────
+  if (pathname === "/admin" || pathname.startsWith("/admin/")) {
+    // /admin/login is always public
+    if (pathname === "/admin/login") {
+      return NextResponse.next();
+    }
+
+    const result = checkAdminAccess(req, pathname);
+
+    if (!result.allowed) {
+      if (result.reason === "unauthenticated") {
+        // No staff token → redirect to dedicated admin login page
+        return NextResponse.redirect(new URL("/admin/login", req.url));
+      }
+      // Customer token present or forbidden → 403
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    return NextResponse.next();
+  }
+
+  // ─── 3) /khach-hang/* — Customer-only routes ──────────────────────────────
+  if (pathname === "/khach-hang" || pathname.startsWith("/khach-hang/")) {
+    const result = checkCustomerAccess(req, pathname);
+
+    if (!result.allowed) {
+      if (result.reason === "staff_forbidden") {
+        // Staff trying to access customer portal → redirect to admin
+        return NextResponse.redirect(new URL("/admin/overview", req.url));
+      }
+      // Not authenticated → redirect to login (locale-aware)
+      const locale =
+        req.cookies.get("NEXT_LOCALE")?.value ?? routing.defaultLocale;
+      return NextResponse.redirect(new URL(`/${locale}/dang-nhap`, req.url));
+    }
+
+    return NextResponse.next();
+  }
+
+  // ─── 4) /api/* routes — pass through to API handlers ──────────────────────
+  // API routes themselves verify tokens server-side with full jwt.verify().
+  // We only need to check for extreme cases here (e.g. staff trying portal API).
+  if (pathname.startsWith("/api/")) {
+    // /api/admin/* requires staff token (belt-and-suspenders — API also checks)
+    if (pathname.startsWith("/api/admin/")) {
+      const accountType = getAccountType(req);
+      // Reject customer tokens at the edge
+      if (accountType === "customer") {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+      // If no token at all, let the API return 401 (not our job to redirect)
+      return NextResponse.next();
+    }
+
+    // /api/portal/* requires customer token
+    if (pathname.startsWith("/api/portal/")) {
+      const accountType = getAccountType(req);
+      if (accountType === "staff") {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+      if (!accountType) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+      return NextResponse.next();
+    }
+
+    // All other /api/* pass through (auth, v1, webhooks, etc.)
+    return NextResponse.next();
+  }
+
+  // ─── 5) i18n locale-prefixed routes → pass through ───────────────────────
   // E.g. /vi/about, /en/services → let Next.js App Router handle
   const firstSegment = pathname.split("/")[1];
   if (LOCALE_PREFIXES.includes(firstSegment)) {
     return NextResponse.next();
   }
 
-  // ─── 5) Root /{locale} bare paths → pass through ─────────────────────────
+  // ─── 6) Root /{locale} bare paths → pass through ─────────────────────────
   // E.g. /vi, /en, /ja, /ko, /zh → pass through to app/layout
   if (LOCALE_PREFIXES.includes(firstSegment) && pathname.split("/").length === 2) {
     return NextResponse.next();
   }
 
-  // ─── 6) Redirect to locale-prefixed path ───────────────────────────────────
+  // ─── 7) Redirect everything else to locale-prefixed path ──────────────────
   // E.g. /about → /vi/about
   // Priority: cookie → Accept-Language → default (vi)
   const locale =

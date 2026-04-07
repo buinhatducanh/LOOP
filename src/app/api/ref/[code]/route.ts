@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { ok, notFound, serverError, badRequest } from "@/lib/api/response";
 import { createHash } from "crypto";
@@ -65,7 +65,7 @@ export async function GET(
 
 // POST /api/ref/[code] — Record a conversion event (signup, lead, order)
 const validEvents = ["signup", "lead", "order"] as const;
-type ReferralEvent = typeof validEvents[number];
+// ReferralEvent type removed - not currently used
 
 export async function POST(
   req: NextRequest,

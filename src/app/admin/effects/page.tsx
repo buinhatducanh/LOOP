@@ -14,9 +14,9 @@ import { adminApi } from "@/lib/api/client";
 import { DS, GRD } from "@/lib/design-tokens";
 import {
   Sparkles, Info, RefreshCw, ToggleLeft, ToggleRight,
-  Cpu, Layers, BookOpen, Users, Edit3, Trash2, Save,
-  Plus, X, SparklesIcon as SparkIcon, Eye, EyeOff,
-  Code2, Copy, Check, Monitor,
+  Cpu, Layers, BookOpen,  Edit3, Trash2, Save,
+  Plus, X, SparklesIcon as SparkIcon, Eye, 
+  Code2, Copy, Check, 
 } from "lucide-react";
 
 // ── Shared configs ────────────────────────────────────────────────────────────
@@ -174,7 +174,7 @@ type RankEffect = {
 
 // ── Formatters ────────────────────────────────────────────────────────────────
 
-const fmtLP = (n: number) =>
+const _fmtLP = (n: number) =>
   n >= 1_000_000 ? `${(n / 1_000_000).toFixed(2)}M` :
   n >= 1_000 ? `${(n / 1_000).toFixed(1)}K` : String(n);
 

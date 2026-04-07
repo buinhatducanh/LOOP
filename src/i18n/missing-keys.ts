@@ -50,8 +50,8 @@ function flattenMessages(
 function findMissingKeys(
   source: Map<string, string>,
   target: Map<string, string>,
-  sourceLocale: string,
-  targetLocale: string
+  _sourceLocale: string,
+  _targetLocale: string
 ): string[] {
   const missing: string[] = [];
 

@@ -10,12 +10,12 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion } from "motion/react";
 import { adminApi } from "@/lib/api/client";
-import { DS, GRD } from "@/lib/design-tokens";
+import { DS } from "@/lib/design-tokens";
 import { useAdminTranslations } from "@/i18n/admin/useAdminTranslations";
 import { useAuthStore } from "@/app/store/authStore";
 import {
   Settings, RefreshCw, Check, Shield, Globe, Bell, Database,
-  AlertTriangle, Languages, User, Save, Loader2, CheckCircle2, X,
+  Languages, User, Save, Loader2, CheckCircle2,
 } from "lucide-react";
 
 type Setting = {
@@ -398,7 +398,7 @@ export default function SettingsPage() {
 // ── My Account Section ─────────────────────────────────────────────────────────
 
 function MyAccountSection() {
-  const { t } = useAdminTranslations();
+  const _t = useAdminTranslations();
   const { user } = useAuthStore();
   const qc = useQueryClient();
 

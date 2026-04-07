@@ -16,7 +16,8 @@
  */
 
 import { prisma } from "@/lib/prisma";
-import { verifyToken } from "./jwt";
+import { verifyAccessToken } from "./token";
+import { verifyToken } from "./jwt"; // backward compat wrapper — tokens signed with old jwt.ts still work
 import { cookies, headers } from "next/headers";
 import { ROLE_LEVEL, type NavPermission } from "./roles";
 import { auth } from "@/auth";
@@ -45,6 +46,8 @@ export interface SessionUser {
   teamMemberId: string | null;
   /** Role level (CEO=-1, super_admin=0, admin=1, pm=2, media=3, qa=4, member=5) */
   roleLevel: number;
+  /** Session ID — links to RefreshToken DB row for revocation */
+  sessionId?: string | null;
   /** Cached permission list for the active role */
   permissions?: UserPermission[];
   /** Team member rank (from TeamMember.rank) */
@@ -76,18 +79,43 @@ export const RANK_COLORS: Record<string, string> = {
  * Get session from Authorization: Bearer <token> header.
  * Used by FE API client (FE stores JWT in localStorage, sends as Bearer).
  * Falls back to cookie-based session if no Bearer token is present.
+ *
+ * Backward compatibility:
+ *   - New tokens (signed with token.ts / jose): verified with verifyAccessToken()
+ *   - Old tokens (signed with jwt.ts / jsonwebtoken): verified with verifyToken()
  */
 export async function getSessionFromBearer(
   bearerToken: string | null
 ): Promise<SessionUser | null> {
   if (!bearerToken) return null;
 
-  const payload = verifyToken(bearerToken);
-  if (!payload || !payload.userId) return null;
+  // ── Try new token format first (jose / token.ts) ──────────────────────────
+  let payload: Record<string, unknown> | null = null;
+  let isNewToken = false;
+
+  try {
+    const newPayload = await verifyAccessToken(bearerToken);
+    if (newPayload?.sub) {
+      payload = newPayload as unknown as Record<string, unknown>;
+      isNewToken = true;
+    }
+  } catch {
+    // Not a new token — fall through to old jwt.ts verification
+  }
+
+  // ── Fall back to old token format (jsonwebtoken / jwt.ts) ──────────────────
+  if (!isNewToken) {
+    const oldPayload = verifyToken(bearerToken);
+    if (!oldPayload || !oldPayload.userId) return null;
+    payload = oldPayload as unknown as Record<string, unknown>;
+  }
+
+  const userId = (payload?.sub as string | undefined) ?? (payload?.userId as string | undefined);
+  if (!userId) return null;
 
   try {
     const user = await prisma.user.findUnique({
-      where: { id: payload.userId, isActive: true },
+      where: { id: userId, isActive: true },
       include: {
         userRoles: {
           include: { role: { include: { permissions: true } } },
@@ -110,14 +138,13 @@ export async function getSessionFromBearer(
       }))
     );
 
-    // Derive accountType from roleLevel: ≤ 5 = staff (LOOP employee), otherwise = customer
     const effectiveRoleLevel = user.userRoles.length > 0
       ? Math.min(...user.userRoles.map((ur) => ur.role.level ?? 99))
       : ROLE_LEVEL[user.role] ?? 99;
     const accountType: "staff" | "customer" = effectiveRoleLevel <= 5 ? "staff" : "customer";
 
     return {
-      userId: payload.userId,
+      userId,
       email: user.email,
       name: user.name,
       role: user.role,
@@ -134,21 +161,25 @@ export async function getSessionFromBearer(
       isOnboarded: user.isOnboarded,
     };
   } catch {
-    // DB unavailable — derive accountType from JWT payload roleLevel
-    const fallbackRoleLevel = payload.roleLevel ?? ROLE_LEVEL[payload.role ?? "user"] ?? 99;
+    // DB unavailable — derive from JWT payload
+    const fallbackRoleLevel =
+      (payload?.rl as number | undefined) ??
+      (payload?.roleLevel as number | undefined) ??
+      ROLE_LEVEL[(payload?.rol as string | undefined) ?? (payload?.role as string | undefined) ?? ""] ??
+      99;
     return {
-      userId: payload.userId,
-      email: payload.email ?? "",
-      name: "",
-      role: payload.role ?? "user",
-      roles: payload.roles ?? [],
+      userId,
+      email: (payload?.eml as string | undefined) ?? (payload?.email as string | undefined) ?? "",
+      name: (payload?.nam as string | undefined) ?? "",
+      role: (payload?.rol as string | undefined) ?? (payload?.role as string | undefined) ?? "user",
+      roles: (payload?.rls as string[] | undefined) ?? (payload?.roles as string[] | undefined) ?? [],
       avatar: null,
       accountType: fallbackRoleLevel <= 5 ? "staff" : "customer",
-      teamMemberId: null,
+      teamMemberId: (payload?.sid as string | undefined) ?? null,
       roleLevel: fallbackRoleLevel,
       permissions: [],
-      accessTags: [],
-      isOnboarded: undefined,
+      accessTags: (payload?.ats as string[] | undefined) ?? [],
+      isOnboarded: payload?.onb as boolean | undefined,
     };
   }
 }
@@ -161,16 +192,43 @@ export async function getSession(): Promise<SessionUser | null> {
   const authMethod = cookieStore.get("auth-method")?.value;
 
   // ── Credentials login: use custom JWT only (skip NextAuth entirely) ──
-  if (authMethod === "credentials") {
+  if (authMethod === "credentials" || authMethod === "google") {
     const token = cookieStore.get("auth-token")?.value;
     if (!token) return null;
 
-    const payload = verifyToken(token);
-    if (!payload) return null;
+    // ── Try new token format (jose / token.ts) ──────────────────────────────────
+    let payload: Record<string, unknown> | null = null;
+    let isNewToken = false;
+
+    try {
+      const newPayload = await verifyAccessToken(token);
+      if (newPayload?.sub) {
+        payload = newPayload as unknown as Record<string, unknown>;
+        isNewToken = true;
+      }
+    } catch {
+      // fall through to old jwt.ts
+    }
+
+    // ── Fall back to old token format (jsonwebtoken) ────────────────────────────
+    if (!isNewToken) {
+      const oldPayload = verifyToken(token);
+      if (!oldPayload) return null;
+      payload = oldPayload as unknown as Record<string, unknown>;
+    }
+
+    const userId =
+      (payload?.sub as string | undefined) ??
+      (payload?.userId as string | undefined);
+    if (!userId) return null;
+
+    const sessionId = isNewToken
+      ? (payload?.sid as string | undefined) ?? null
+      : null;
 
     try {
       const user = await prisma.user.findUnique({
-        where: { id: payload.userId, isActive: true },
+        where: { id: userId, isActive: true },
         include: {
           userRoles: {
             include: { role: { include: { permissions: true } } },
@@ -193,14 +251,13 @@ export async function getSession(): Promise<SessionUser | null> {
         }))
       );
 
-      // Derive accountType from roleLevel: ≤ 5 = staff (LOOP employee), otherwise = customer
       const effectiveRoleLevel = user.userRoles.length > 0
         ? Math.min(...user.userRoles.map((ur) => ur.role.level ?? 99))
         : ROLE_LEVEL[user.role] ?? 99;
       const accountType: "staff" | "customer" = effectiveRoleLevel <= 5 ? "staff" : "customer";
 
       return {
-        userId: user.id,
+        userId,
         email: user.email,
         name: user.name,
         role: user.role,
@@ -209,6 +266,7 @@ export async function getSession(): Promise<SessionUser | null> {
         accountType,
         teamMemberId: user.teamMemberId,
         roleLevel: effectiveRoleLevel,
+        sessionId,
         permissions,
         rank: user.teamMember?.rank,
         availableLp: user.teamMember?.availableLp,
@@ -217,21 +275,26 @@ export async function getSession(): Promise<SessionUser | null> {
         isOnboarded: user.isOnboarded,
       };
     } catch {
-      // DB unavailable — derive accountType from JWT payload roleLevel
-      const fallbackRoleLevel = payload.roleLevel ?? ROLE_LEVEL[payload.role ?? "user"] ?? 99;
+      // DB unavailable — derive from JWT payload
+      const fallbackRoleLevel =
+        (payload?.rl as number | undefined) ??
+        (payload?.roleLevel as number | undefined) ??
+        ROLE_LEVEL[(payload?.rol as string | undefined) ?? (payload?.role as string | undefined) ?? ""] ??
+        99;
       return {
-        userId: payload.userId,
-        email: payload.email ?? "",
-        name: "",
-        role: payload.role ?? "user",
-        roles: payload.roles ?? [],
+        userId,
+        email: (payload?.eml as string | undefined) ?? (payload?.email as string | undefined) ?? "",
+        name: (payload?.nam as string | undefined) ?? "",
+        role: (payload?.rol as string | undefined) ?? (payload?.role as string | undefined) ?? "user",
+        roles: (payload?.rls as string[] | undefined) ?? (payload?.roles as string[] | undefined) ?? [],
         avatar: null,
         accountType: fallbackRoleLevel <= 5 ? "staff" : "customer",
         teamMemberId: null,
         roleLevel: fallbackRoleLevel,
+        sessionId,
         permissions: [],
-        accessTags: [],
-        isOnboarded: undefined,
+        accessTags: (payload?.ats as string[] | undefined) ?? [],
+        isOnboarded: payload?.onb as boolean | undefined,
       };
     }
   }
@@ -348,7 +411,8 @@ export function hasAnyPermission(
   permissions: UserPermission[] | undefined,
   requirements: Array<{ resource: string; action: PermissionAction }>
 ): boolean {
-  return requirements.every(({ resource, action }) =>
+  // "any" = at least ONE requirement is satisfied (OR semantics)
+  return requirements.some(({ resource, action }) =>
     hasPermission(permissions, resource, action)
   );
 }

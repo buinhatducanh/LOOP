@@ -1,16 +1,17 @@
-import { NextRequest, NextResponse } from "next/server";
-import { ok, handleError } from "@/lib/api/response";
+import { NextRequest } from "next/server";
+import { handleError } from "@/lib/api/response";
 import { prisma } from "@/lib/prisma";
 
-export async function GET(request: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
     const videos = await prisma.homeVideo.findMany({
       orderBy: { sortOrder: "asc" },
     });
     return NextResponse.json({ data: videos });
-  } catch (e: any) {
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
     console.error("Error fetching videos:", e);
-    return NextResponse.json({ error: "Lỗi lấy dữ liệu", details: e.message }, { status: 500 });
+    return NextResponse.json({ error: "Lỗi lấy dữ liệu", details: msg }, { status: 500 });
   }
 }
 

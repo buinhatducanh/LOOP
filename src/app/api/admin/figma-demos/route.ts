@@ -1,5 +1,5 @@
 import { handleError } from "@/lib/api/response";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
@@ -13,7 +13,7 @@ const createSchema = z.object({
   versionHash: z.string().optional().nullable(),
 });
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
     await requirePermission("figmas", "read");
     const { searchParams } = new URL(req.url);
@@ -48,9 +48,9 @@ export async function GET(req: NextRequest) {
   }
 }
 
-export async function POST(req: NextRequest) {
+export async function POST(_req: NextRequest) {
   try {
-    const session = await requirePermission("figmas", "create");
+    const _session = await requirePermission("figmas", "create");
     const body = await req.json();
 
     // Accept orderId from frontend, normalise to projectId

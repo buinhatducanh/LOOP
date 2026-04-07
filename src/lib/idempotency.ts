@@ -47,7 +47,7 @@ export type IdempotencyOperation =
   | "create_lp_award"
   | "create_lp_redemption";
 
-const REGISTERED_OPERATIONS: IdempotencyOperation[] = [
+const _REGISTERED_OPERATIONS: IdempotencyOperation[] = [
   "create_order",
   "create_order_admin",
   "create_enrollment",
@@ -64,7 +64,7 @@ export interface IdempotencyContext {
 
 export type IdempotentHandler = (
   req: NextRequest,
-  ctx: IdempotencyContext
+  _ctx: IdempotencyContext
 ) => Promise<NextResponse>;
 
 // ─── Core logic ─────────────────────────────────────────────────────────────
@@ -113,7 +113,7 @@ async function getExistingRecord(
 async function storeIdempotencyRecord(
   key: string,
   operation: IdempotencyOperation,
-  ctx: IdempotencyContext,
+  _ctx: IdempotencyContext,
   statusCode: number,
   responseBody: Prisma.InputJsonValue
 ): Promise<void> {
@@ -121,7 +121,7 @@ async function storeIdempotencyRecord(
   try {
     await prisma.idempotencyKey.upsert({
       where: { key },
-      create: { key, operation, userId: ctx.userId, memberId: ctx.memberId, statusCode, responseBody: responseBody as Prisma.InputJsonValue, expiresAt },
+      create: { key, operation, userId: _ctx.userId, memberId: _ctx.memberId, statusCode, responseBody: responseBody as Prisma.InputJsonValue, expiresAt },
       update: { statusCode, responseBody: responseBody as Prisma.InputJsonValue, expiresAt },
     });
   } catch (err) {
@@ -224,7 +224,7 @@ export function withIdempotency(
 export async function checkAndStoreIdempotency(
   req: NextRequest,
   operation: IdempotencyOperation,
-  ctx: IdempotencyContext
+  _ctx: IdempotencyContext
 ): Promise<{ alreadyProcessed: false } | { alreadyProcessed: true; response: NextResponse }> {
   const key = extractIdempotencyKey(req);
   if (!key) return { alreadyProcessed: false };

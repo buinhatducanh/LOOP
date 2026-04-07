@@ -9,7 +9,7 @@
 
 export const dynamic = "force-dynamic";
 
-import { NextResponse } from "next/server";
+
 import { client } from "@/sanity/client";
 import { postsQuery } from "@/sanity/queries";
 import { handleError } from "@/lib/api/response";

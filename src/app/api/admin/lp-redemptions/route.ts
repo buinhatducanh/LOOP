@@ -1,5 +1,5 @@
 import { handleError } from "@/lib/api/response";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
@@ -12,7 +12,7 @@ import { withIdempotency } from "@/lib/idempotency";
 //   ?items=1           → return list of LP-redeemable AddonServices
 //   ?memberId=&page=&limit=  → redemption history (admin view)
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   const start = Date.now();
   try {
     await requirePermission("lp-redemptions", "read");
@@ -82,7 +82,7 @@ export const POST = withIdempotency(
   "create_lp_redemption",
   async (req: NextRequest) => {
     try {
-      const session = await requirePermission("lp-redemptions", "update");
+      const _session = await requirePermission("lp-redemptions", "update");
       const { memberId, addonId, quantity } = await req.json();
 
       if (!memberId || !addonId) {

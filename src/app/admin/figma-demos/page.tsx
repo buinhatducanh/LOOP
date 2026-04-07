@@ -17,9 +17,9 @@ import { motion, AnimatePresence } from "motion/react";
 import { adminApi } from "@/lib/api/client";
 import { DS, GRD } from "@/lib/design-tokens";
 import {
-  X, Eye, Send, CheckCircle2, XCircle, Clock,
+  X,   CheckCircle2, XCircle, Clock,
   RefreshCw, Plus, ExternalLink, Copy, Search,
-  Monitor, Trash2, ChevronDown, ChevronUp,
+  Monitor,  ChevronDown, ChevronUp,
 } from "lucide-react";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -365,7 +365,7 @@ export default function FigmaDemosPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "figma-demos"] }),
   });
 
-  const deleteMutation = useMutation({
+  const _deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       await adminApi.delete(`/api/admin/figma-demos/${id}`);
     },

@@ -9,17 +9,11 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Shield, Lock, ChevronDown, ChevronUp, Zap,
-  Users, FolderKanban, BarChart3,
-  CheckCircle2, Settings, Database, Code,
+  Users, FolderKanban, Settings, Database, Code,
   TrendingUp, Award, Bell, CreditCard, Globe,
   Camera, Star, Package,
 } from 'lucide-react';
 import { DS, GRD } from '@/lib/design-tokens';
-
-const fmtLP = (n: number) =>
-  n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M`
-  : n >= 1_000 ? `${(n / 1_000).toFixed(1)}K`
-  : String(n);
 
 type SectionId =
   | 'intro' | 'architecture' | 'roles' | 'lp_system' | 'rank_system'

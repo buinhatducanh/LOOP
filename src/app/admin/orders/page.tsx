@@ -5,7 +5,7 @@ import { useAdminTranslations } from "@/i18n/admin/useAdminTranslations";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "motion/react";
 import { qk } from "@/lib/query/provider";
-import { adminApi } from "@/lib/api/client";
+
 import { DS, GRD } from "@/lib/design-tokens";
 import {
   X, CheckCircle2, Eye, ChevronRight, Search,
@@ -62,7 +62,7 @@ function OrderRow({
   onDelete: (order: Order) => void;
   onSendDemo?: (order: Order) => void;
 }) {
-  const { t } = useAdminTranslations();
+  const {  } = useAdminTranslations();
   const cfg = STATUS_CONFIG[order.status] ?? { label: order.status, color: DS.text4, bg: "transparent" };
 
   const fmt = (n: number | null | undefined) =>
@@ -185,7 +185,7 @@ function OrderEditModal({
   onClose: () => void;
   onSuccess: () => void;
 }) {
-  const { t } = useAdminTranslations();
+  const {  } = useAdminTranslations();
   const isEdit = !!order;
   const [form, setForm] = useState<OrderFormData>({
     customerName: order?.customerName ?? "",
@@ -315,7 +315,7 @@ function DeleteConfirmModal({
   onClose: () => void;
   onConfirm: () => void;
 }) {
-  const { t } = useAdminTranslations();
+  const {  } = useAdminTranslations();
   if (!order) return null;
   return (
     <AnimatePresence>
@@ -353,7 +353,7 @@ function DeleteConfirmModal({
 }
 
 function OrderDetailModal({ order, onClose }: { order: Order | null; onClose: () => void }) {
-  const { t } = useAdminTranslations();
+  const {  } = useAdminTranslations();
   if (!order) return null;
   const cfg = STATUS_CONFIG[order.status] ?? { label: order.status, color: DS.text4, bg: "transparent" };
   const fmt = (n: number | null | undefined) =>
@@ -439,7 +439,7 @@ function OrderDetailModal({ order, onClose }: { order: Order | null; onClose: ()
 type SendDemoFormData = {
   title: string;
   figmaUrl: string;
-  clientEmail: string;
+  _;
 };
 
 function SendDemoModal({
@@ -449,9 +449,9 @@ function SendDemoModal({
 }: {
   order: Order | null;
   onClose: () => void;
-  onSuccess: (data: { orderId: string; title: string; figmaUrl: string; clientEmail: string }) => void;
+  onSuccess: (data: { orderId: string; title: string; figmaUrl: string;  }) => void;
 }) {
-  const { t } = useAdminTranslations();
+  const {  } = useAdminTranslations();
   if (!order) return null;
 
   const [form, setForm] = useState<SendDemoFormData>({
@@ -554,8 +554,8 @@ function SendDemoModal({
 
 
 export default function OrdersPage() {
-  const { t } = useAdminTranslations();
-  const qc = useQueryClient();
+  const {  } = useAdminTranslations();
+   useQueryClient();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -598,7 +598,7 @@ export default function OrdersPage() {
 
   // Gửi demo cho khách hàng — tạo FigmaDemo record + notification (backend tự chuyển status)
   const sendDemoMutation = useMutation({
-    mutationFn: async ({ orderId, title, figmaUrl, clientEmail }: { orderId: string; title: string; figmaUrl: string; clientEmail: string }) => {
+    mutationFn: async ({ orderId, title, figmaUrl }: { orderId: string; title: string; figmaUrl: string;  }) => {
       const res = await adminApi.post(`/api/admin/orders/${orderId}/demo`, {
         figmaUrl,
         note: `Demo "${title}" đã được gửi từ admin.`,

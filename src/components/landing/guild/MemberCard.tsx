@@ -29,14 +29,14 @@ import { DS } from "@/lib/design-tokens";
 type MemberRecord = Record<string, unknown>;
 
 // ── Avatar fallback SVG ─────────────────────────────────────────────────────────
-const AVATAR_FALLBACK =
+const _AVATAR_FALLBACK =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' fill='%230F172A'/%3E%3Ctext x='100' y='118' font-family='system-ui' font-size='72' font-weight='700' text-anchor='middle' fill='%233B82F6'%3E%E2%9C%A8%3C/text%3E%3C/svg%3E";
 
 /**
  * Avatar — renders an <img> with graceful onError fallback to a styled initial.
  * Props match common patterns used across TeamClient, HallOfFame, MemberCard.
  */
-function Avatar({
+function _Avatar({
   src,
   name,
   size = 80,

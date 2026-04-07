@@ -1,17 +1,19 @@
 "use client";
 
 /**
- * Public Login Page — LOOP Solutions
- * Route: /vi/dang-nhap, /en/login, /ja/login, /ko/login, /zh/login
+ * Customer Login Page — /vi/dang-nhap, /en/login, /ja/login, /ko/login, /zh/login
  *
- * Auth flows:
- *   1. Login credentials → POST /api/admin/auth/login
- *   2. Google OAuth → signIn("google")
- *   3. Forgot password → /api/auth/forgot-password → /api/auth/verify-otp → /api/auth/reset-password
+ * For customers / clients of LOOP Solutions.
+ * Staff login is at /nhan-vien.
+ *
+ * Split Auth Architecture (Option C):
+ *   Customer: → POST /api/auth/login → loop-customer-token cookie → /khach-hang
+ *   Google OAuth: signIn("google") → handled by /api/auth/google-callback
+ *   Forgot password: /api/auth/forgot-password → /api/auth/verify-otp → /api/auth/reset-password
  */
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -23,7 +25,7 @@ import { toast } from "sonner";
 import { DS, GRD } from "@/lib/design-tokens";
 import { useAuthStore } from "@/app/store/authStore";
 
-type AuthMode = "login" | "register" | "otp" | "reset-password" | "onboarding";
+type AuthMode = "login" | "register" | "otp" | "reset-password";
 
 // ── API helpers ───────────────────────────────────────────────────────────────
 
@@ -54,7 +56,7 @@ const API = {
   },
 };
 
-// ── Input component ────────────────────────────────────────────────────────────
+// ── Input component ───────────────────────────────────────────────────────────
 function FormInput({
   label, type = "text", placeholder, value, onChange,
 }: {
@@ -80,7 +82,7 @@ function FormInput({
           background: DS.bgCard2,
           border: `1px solid ${focused ? DS.blue : DS.border}`,
           borderRadius: "0.75rem",
-          boxShadow: focused ? `0 0 0 3px rgba(59,130,246,0.12)` : "none",
+          boxShadow: focused ? `0 0 0 3px ${DS.blue}1f` : "none",
           height: 44,
         }}
       >
@@ -110,33 +112,36 @@ function FormInput({
   );
 }
 
-// ── Background ────────────────────────────────────────────────────────────────
+// ── Background ───────────────────────────────────────────────────────────────
 function AuthBg() {
   return (
-    <div style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 0 }}>
+    <div style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none", zIndex: 0 }}>
+      <div style={{
+        position: "absolute", top: "-20%", right: "-10%", width: 600, height: 600,
+        borderRadius: "50%",
+        background: "radial-gradient(circle, ${DS.blue}14 0%, transparent 70%)",
+      }} />
+      <div style={{
+        position: "absolute", bottom: "-20%", left: "-10%", width: 500, height: 500,
+        borderRadius: "50%",
+        background: "radial-gradient(circle, ${DS.purple}0f 0%, transparent 70%)",
+      }} />
       <div style={{
         position: "absolute", inset: 0,
-        background: "radial-gradient(ellipse at 30% 30%, rgba(29,78,216,0.15) 0%, transparent 55%), radial-gradient(ellipse at 80% 80%, rgba(129,140,248,0.1) 0%, transparent 55%)",
+        backgroundImage: "radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px)",
+        backgroundSize: "40px 40px",
       }} />
-      <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", opacity: 0.02 }}>
-        <defs>
-          <pattern id="hex-auth" width="40" height="46" patternUnits="userSpaceOnUse">
-            <path d="M20 2 L36 11 L36 29 L20 38 L4 29 L4 11 Z" fill="none" stroke="#3B82F6" strokeWidth="0.8" />
-          </pattern>
-        </defs>
-        <rect width="100%" height="100%" fill="url(#hex-auth)" />
-      </svg>
     </div>
   );
 }
 
-// ── Side panel info ───────────────────────────────────────────────────────────
+// ── Side panel info — customer theme ─────────────────────────────────────────
 function SidePanel({ locale }: { locale: string }) {
   const t = useTranslations("auth");
-  const ranks = [
-    { label: "IRON", color: "#9CA3AF", symbol: "⬡" },
-    { label: "GOLD", color: "#FFD700", symbol: "★" },
-    { label: "DIAMOND", color: "#818CF8", symbol: "✦" },
+  const benefits = [
+    { label: "500 LP tích lũy", color: DS.blue, icon: "✦" },
+    { label: "Giảm giá 20%", color: DS.green, icon: "★" },
+    { label: "Học viên ưu tiên", color: DS.amber, icon: "◈" },
   ];
 
   return (
@@ -144,7 +149,7 @@ function SidePanel({ locale }: { locale: string }) {
       display: "flex", flexDirection: "column", justifyContent: "space-between",
       height: "100%", padding: "2.5rem",
       background: "linear-gradient(135deg, rgba(29,78,216,0.2) 0%, rgba(129,140,248,0.12) 100%)",
-      borderRight: "1px solid rgba(59,130,246,0.15)",
+      borderRight: "1px solid ${DS.blue}26",
     }}>
       <div>
         <Link href={`/${locale}`} style={{ display: "flex", alignItems: "center", gap: "0.625rem", textDecoration: "none", marginBottom: "2.5rem" }}>
@@ -155,6 +160,18 @@ function SidePanel({ locale }: { locale: string }) {
           </div>
         </Link>
 
+        <div style={{
+          display: "inline-flex", alignItems: "center", gap: "0.5rem",
+          marginBottom: "1.25rem", padding: "0.375rem 0.875rem",
+          borderRadius: "9999px",
+          background: "${DS.green}1a",
+          border: "1px solid ${DS.green}40",
+        }}>
+          <span style={{ color: DS.green, fontSize: "0.625rem", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.15em" }}>
+            KHÁCH HÀNG
+          </span>
+        </div>
+
         <h2 style={{ fontFamily: DS.heading, fontSize: "1.75rem", fontWeight: 900, color: DS.text, lineHeight: 1.3, marginBottom: "1rem", letterSpacing: "0.04em" }}>
           Xây dựng<br />Tương lai số
         </h2>
@@ -163,18 +180,15 @@ function SidePanel({ locale }: { locale: string }) {
         </p>
 
         <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-          {ranks.map((r) => (
-            <div key={r.label} style={{
+          {benefits.map((b) => (
+            <div key={b.label} style={{
               display: "flex", alignItems: "center", gap: "0.75rem",
               padding: "0.75rem 1rem", borderRadius: "0.75rem",
               background: "rgba(15,23,42,0.5)",
-              border: `1px solid ${r.color}30`,
+              border: `1px solid ${b.color}30`,
             }}>
-              <span style={{ color: r.color, fontSize: 18, textShadow: `0 0 10px ${r.color}60` }}>{r.symbol}</span>
-              <div>
-                <div style={{ color: r.color, fontSize: "0.6875rem", fontFamily: "'JetBrains Mono', monospace", fontWeight: 700 }}>{r.label}</div>
-                <div style={{ color: DS.text5, fontSize: "0.625rem", fontFamily: "'JetBrains Mono', monospace" }}>{t("sidePanel.rankTier")}</div>
-              </div>
+              <span style={{ color: b.color, fontSize: 18 }}>{b.icon}</span>
+              <span style={{ color: DS.text3, fontSize: "0.8125rem" }}>{b.label}</span>
             </div>
           ))}
         </div>
@@ -183,7 +197,7 @@ function SidePanel({ locale }: { locale: string }) {
       <div style={{
         padding: "1rem", borderRadius: "1rem",
         background: "rgba(15,23,42,0.6)",
-        border: "1px solid rgba(59,130,246,0.2)",
+        border: "1px solid ${DS.blue}33",
       }}>
         <div style={{ color: DS.text4, fontSize: "0.625rem", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.15em", marginBottom: "0.375rem" }}>
           {t("sidePanel.welcomeNewMember").toUpperCase()}
@@ -199,63 +213,91 @@ function SidePanel({ locale }: { locale: string }) {
   );
 }
 
-// ── Login form ────────────────────────────────────────────────────────────────
+// ── Login form ───────────────────────────────────────────────────────────────
 function LoginForm({ locale, onSwitch }: { locale: string; onSwitch: (m: AuthMode) => void }) {
   const t = useTranslations("auth");
   const router = useRouter();
-  const { login, isLoading, error, clearError, user } = useAuthStore();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const [googleLoading, setGoogleLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) return;
-    clearError();
+    setLoading(true);
+    setError("");
 
-    const ok = await login(email, password);
-    if (ok) {
-      const currentUser = useAuthStore.getState().user;
-      if (!currentUser) return;
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+        credentials: "include",
+      });
+      const data = await res.json();
 
-      if (currentUser.role === "client") {
-        // Khách hàng → landing page
-        toast.success("Đăng nhập thành công!", {
-          description: `Chào mừng ${currentUser.name}`,
-        });
-        router.push(`/${locale}`);
-      } else if (currentUser.isOnboarded !== true) {
-        // Thành viên lần đầu → bắt buộc onboarding
-        toast.success("Đăng nhập thành công!", {
-          description: "Vui lòng hoàn tất hồ sơ trước khi sử dụng.",
-        });
-        router.push(`/${locale}/dang-nhap/client-onboarding`);
-      } else {
-        // Thành viên → admin dashboard
-        toast.success("Đăng nhập thành công!", {
-          description: `Chào mừng ${currentUser.name}`,
-        });
-        router.push("/admin/overview");
+      if (!res.ok || data.error) {
+        setError(data.error ?? "Email hoặc mật khẩu không đúng");
+        return;
       }
+
+      if (data.token && typeof window !== "undefined") {
+        try { localStorage.setItem("loop-customer-token", data.token); } catch { /* storage unavailable */ }
+      }
+
+      const { loginAs } = useAuthStore.getState();
+      loginAs({
+        id: data.user?.userId ?? "",
+        name: data.user?.name ?? email,
+        shortName: (data.user?.name ?? email).slice(0, 2).toUpperCase(),
+        email: data.user?.email ?? email,
+        avatar: data.user?.avatar ?? "",
+        role: "client",
+        accountType: "customer",
+        lpBalance: 0,
+        level: 1,
+      });
+
+      toast.success("Đăng nhập thành công!", {
+        description: `Chào mừng ${data.user?.name ?? "bạn"}`,
+      });
+      router.push(`/${locale}/khach-hang`);
+    } catch {
+      setError("Không thể kết nối máy chủ. Vui lòng thử lại.");
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
-    clearError();
+    setError("");
     await signIn("google", {
       callbackUrl: `/api/auth/google-callback?locale=${locale}`,
       redirect: true,
     }).catch(() => {
       setGoogleLoading(false);
-      clearError();
+      setError("");
     });
   };
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }}>
       <div style={{ textAlign: "center", marginBottom: "2rem" }}>
+        <div style={{
+          display: "inline-flex", alignItems: "center", gap: "0.5rem",
+          marginBottom: "0.875rem", padding: "0.375rem 0.875rem",
+          borderRadius: "9999px",
+          background: "${DS.green}1a",
+          border: "1px solid ${DS.green}40",
+        }}>
+          <span style={{ color: DS.green, fontSize: "0.625rem", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.15em" }}>
+            KHÁCH HÀNG LOOP
+          </span>
+        </div>
         <h1 style={{ fontFamily: DS.heading, fontSize: "1.625rem", fontWeight: 900, letterSpacing: "0.06em", background: GRD.primary, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", marginBottom: "0.375rem" }}>
           {t("login").toUpperCase()}
         </h1>
@@ -263,7 +305,7 @@ function LoginForm({ locale, onSwitch }: { locale: string; onSwitch: (m: AuthMod
       </div>
 
       <form onSubmit={handleSubmit}>
-        <FormInput label={t("email")} type="email" placeholder="email@company.vn" value={email} onChange={setEmail} />
+        <FormInput label={t("email")} type="email" placeholder="email@example.com" value={email} onChange={setEmail} />
         <FormInput label={t("password")} type="password" placeholder="••••••••" value={password} onChange={setPassword} />
 
         <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "1.25rem" }}>
@@ -277,24 +319,24 @@ function LoginForm({ locale, onSwitch }: { locale: string; onSwitch: (m: AuthMod
         </div>
 
         {error && (
-          <div style={{ padding: "0.625rem 0.875rem", borderRadius: "0.5rem", background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)", color: "#FCA5A5", fontSize: "0.8125rem", marginBottom: "1rem" }}>
+          <div style={{ padding: "0.625rem 0.875rem", borderRadius: "0.5rem", background: "${DS.red}14", border: "1px solid ${DS.red}40", color: "#FCA5A5", fontSize: "0.8125rem", marginBottom: "1rem" }}>
             {error}
           </div>
         )}
 
         <button
           type="submit"
-          disabled={isLoading}
+          disabled={loading}
           style={{
-            width: "100%", background: isLoading ? "rgba(59,130,246,0.6)" : GRD.primary,
+            width: "100%", background: loading ? "${DS.blue}99" : GRD.primary,
             color: "#fff", border: "none", borderRadius: "0.75rem",
             padding: "0.8125rem", fontSize: "0.875rem",
-            fontWeight: 700, cursor: isLoading ? "not-allowed" : "pointer",
+            fontWeight: 700, cursor: loading ? "not-allowed" : "pointer",
             display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem",
             boxShadow: "0 0 20px rgba(129,140,248,0.35)",
           }}
         >
-          {isLoading ? <><Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} /> {t("login")}...</> : <>{t("login")} <ArrowRight size={16} /></>}
+          {loading ? <><Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} /> {t("login")}...</> : <>{t("login")} <ArrowRight size={16} /></>}
         </button>
       </form>
 
@@ -326,12 +368,7 @@ function LoginForm({ locale, onSwitch }: { locale: string; onSwitch: (m: AuthMod
         {googleLoading ? (
           <Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} />
         ) : (
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-          </svg>
+          <img src="/assets/design-company/logo-cosmic-infinity.png" alt="LOOP" style={{ width: 18, height: 18, objectFit: "contain" }} />
         )}
         {googleLoading ? `${t("continueWithGoogle")}...` : t("continueWithGoogle")}
       </button>
@@ -342,11 +379,18 @@ function LoginForm({ locale, onSwitch }: { locale: string; onSwitch: (m: AuthMod
           {t("registerCta")}
         </button>
       </p>
+
+      <p style={{ color: DS.text3, fontSize: "0.75rem", textAlign: "center", marginTop: "1rem" }}>
+        Nhân viên LOOP?{" "}
+        <Link href={`/${locale}/nhan-vien`} style={{ color: DS.purple, textDecoration: "none", fontWeight: 600 }}>
+          Đăng nhập tại đây
+        </Link>
+      </p>
     </motion.div>
   );
 }
 
-// ── Register form ────────────────────────────────────────────────────────────
+// ── Register form ───────────────────────────────────────────────────────────
 function RegisterForm({ onSwitch }: { onSwitch: (m: AuthMode) => void }) {
   const t = useTranslations("auth");
   const router = useRouter();
@@ -394,10 +438,8 @@ function RegisterForm({ onSwitch }: { onSwitch: (m: AuthMode) => void }) {
         return;
       }
 
-      // Auto-login with the JWT returned
       if (data.token) {
-        localStorage.setItem("loop-auth-token", data.token);
-        // Trigger store re-hydration then redirect to onboarding
+        localStorage.setItem("loop-customer-token", data.token);
         await login(data.user?.email ?? email, "");
         router.push(`/dang-nhap/client-onboarding?token=${encodeURIComponent(data.token)}`);
       }
@@ -421,7 +463,6 @@ function RegisterForm({ onSwitch }: { onSwitch: (m: AuthMode) => void }) {
       <FormInput label={t("email")} type="email" placeholder="email@company.vn" value={email} onChange={setEmail} />
       <FormInput label={t("companyOptional")} placeholder="Công ty TNHH..." value={company} onChange={setCompany} />
 
-      {/* Business Type */}
       <div style={{ marginBottom: "1rem" }}>
         <label style={{ color: DS.text3, fontSize: "0.6875rem", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.12em", display: "block", marginBottom: "0.375rem" }}>
           LOẠI HÌNH KINH DOANH
@@ -457,7 +498,7 @@ function RegisterForm({ onSwitch }: { onSwitch: (m: AuthMode) => void }) {
       </div>
 
       {error && (
-        <div style={{ padding: "0.625rem 0.875rem", borderRadius: "0.5rem", background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)", color: "#FCA5A5", fontSize: "0.8125rem", marginBottom: "1rem" }}>
+        <div style={{ padding: "0.625rem 0.875rem", borderRadius: "0.5rem", background: "${DS.red}14", border: "1px solid ${DS.red}40", color: "#FCA5A5", fontSize: "0.8125rem", marginBottom: "1rem" }}>
           {error}
         </div>
       )}
@@ -466,7 +507,7 @@ function RegisterForm({ onSwitch }: { onSwitch: (m: AuthMode) => void }) {
         onClick={handleSubmit}
         disabled={loading}
         style={{
-          width: "100%", background: loading ? "rgba(59,130,246,0.6)" : GRD.primary, color: "#fff",
+          width: "100%", background: loading ? "${DS.blue}99" : GRD.primary, color: "#fff",
           border: "none", borderRadius: "0.75rem",
           padding: "0.8125rem", fontSize: "0.875rem", fontWeight: 700,
           cursor: loading ? "not-allowed" : "pointer", display: "flex", alignItems: "center",
@@ -491,11 +532,8 @@ function RegisterForm({ onSwitch }: { onSwitch: (m: AuthMode) => void }) {
   );
 }
 
-// ── Forgot Password flow (OTP) form ──────────────────────────────────────────
+// ── OTP form ─────────────────────────────────────────────────────────────────
 function OTPForm({ onSwitch, onBack }: { onSwitch: (m: AuthMode) => void; onBack: () => void }) {
-  const t = useTranslations("auth");
-  const router = useRouter();
-
   const [step, setStep] = useState<"email" | "otp" | "reset">("email");
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
@@ -504,7 +542,7 @@ function OTPForm({ onSwitch, onBack }: { onSwitch: (m: AuthMode) => void; onBack
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [devCode, setDevCode] = useState(""); // DEV only: show code
+  const [devCode, setDevCode] = useState("");
   const [resetToken, setResetToken] = useState("");
   const [countdown, setCountdown] = useState(0);
   const [resendCooldown, setResendCooldown] = useState(0);
@@ -512,15 +550,11 @@ function OTPForm({ onSwitch, onBack }: { onSwitch: (m: AuthMode) => void; onBack
   const resendRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  // Countdown timer
   useEffect(() => {
     if (countdown > 0) {
       countdownRef.current = setInterval(() => {
         setCountdown((c) => {
-          if (c <= 1) {
-            clearInterval(countdownRef.current!);
-            return 0;
-          }
+          if (c <= 1) { clearInterval(countdownRef.current!); return 0; }
           return c - 1;
         });
       }, 1000);
@@ -528,7 +562,6 @@ function OTPForm({ onSwitch, onBack }: { onSwitch: (m: AuthMode) => void; onBack
     return () => { if (countdownRef.current) clearInterval(countdownRef.current); };
   }, [countdown > 0]);
 
-  // Resend cooldown
   useEffect(() => {
     if (resendCooldown > 0) {
       resendRef.current = setInterval(() => {
@@ -541,71 +574,44 @@ function OTPForm({ onSwitch, onBack }: { onSwitch: (m: AuthMode) => void; onBack
     return () => { if (resendRef.current) clearInterval(resendRef.current); };
   }, [resendCooldown > 0]);
 
-  // ── Step 1: request OTP ────────────────────────────────────────────────
   const handleRequestOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim() || !email.includes("@")) {
-      setError("Vui lòng nhập email hợp lệ"); return;
-    }
+    if (!email.trim() || !email.includes("@")) { setError("Vui lòng nhập email hợp lệ"); return; }
     setLoading(true);
     setError("");
-
     const res = await API.forgotPassword(email.trim());
     setLoading(false);
-
-    if (res.error) {
-      setError(res.error);
-      return;
-    }
-
-    // DEV: show OTP in console (or in devCode state)
-    if (res._dev_code) {
-      setDevCode(`Mã DEV: ${res._dev_code}`);
-    }
-
+    if (res.error) { setError(res.error); return; }
+    if (res._dev_code) setDevCode(`Mã DEV: ${res._dev_code}`);
     setStep("otp");
-    setCountdown(5 * 60); // 5 minutes
-    setResendCooldown(60); // 1 min resend cooldown
+    setCountdown(5 * 60);
+    setResendCooldown(60);
   };
 
-  // ── Step 2: verify OTP ──────────────────────────────────────────────
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     const code = otp.join("").trim();
     if (code.length !== 6) { setError("Vui lòng nhập đủ 6 chữ số"); return; }
-
     setLoading(true);
     setError("");
     const res = await API.verifyOtp(email, code);
     setLoading(false);
-
     if (res.error) { setError(res.error); return; }
-
-    if (res.resetToken) {
-      setResetToken(res.resetToken);
-      setStep("reset");
-      setCountdown(10 * 60); // 10 min to reset
-    }
+    if (res.resetToken) { setResetToken(res.resetToken); setStep("reset"); setCountdown(10 * 60); }
   };
 
-  // ── Step 3: reset password ───────────────────────────────────────
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newPassword.length < 8) { setError("Mật khẩu phải có ít nhất 8 ký tự"); return; }
     if (newPassword !== confirmPassword) { setError("Mật khẩu xác nhận không khớp"); return; }
-
     setLoading(true);
     setError("");
     const res = await API.resetPassword(resetToken, newPassword);
     setLoading(false);
-
     if (res.error) { setError(res.error); return; }
-
-    // Success → go back to login
     onSwitch("login");
   };
 
-  // ── Resend ─────────────────────────────────────────────────────────
   const handleResend = async () => {
     if (resendCooldown > 0) return;
     setLoading(true);
@@ -619,7 +625,6 @@ function OTPForm({ onSwitch, onBack }: { onSwitch: (m: AuthMode) => void; onBack
     setResendCooldown(60);
   };
 
-  // ── OTP input change ────────────────────────────────────────────────
   const handleOtpChange = (i: number, v: string) => {
     const val = v.replace(/\D/g, "").slice(-1);
     const next = [...otp];
@@ -629,9 +634,7 @@ function OTPForm({ onSwitch, onBack }: { onSwitch: (m: AuthMode) => void; onBack
   };
 
   const handleOtpKey = (i: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Backspace" && !otp[i] && i > 0) {
-      otpRefs.current[i - 1]?.focus();
-    }
+    if (e.key === "Backspace" && !otp[i] && i > 0) otpRefs.current[i - 1]?.focus();
   };
 
   const fmtCountdown = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
@@ -639,7 +642,6 @@ function OTPForm({ onSwitch, onBack }: { onSwitch: (m: AuthMode) => void; onBack
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }}>
 
-      {/* Header */}
       <div style={{ display: "flex", alignItems: "center", marginBottom: "1.5rem", gap: "0.75rem" }}>
         <button onClick={onBack} style={{ background: "none", border: "none", cursor: "pointer", color: DS.text3, padding: 0 }}>
           <ArrowLeft size={18} />
@@ -649,45 +651,37 @@ function OTPForm({ onSwitch, onBack }: { onSwitch: (m: AuthMode) => void; onBack
         </h2>
       </div>
 
-      {/* ── Step: Email input ── */}
+      {/* Step: Email */}
       {step === "email" && (
         <form onSubmit={handleRequestOtp}>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.625rem", padding: "0.875rem", background: "rgba(59,130,246,0.08)", border: "1px solid rgba(59,130,246,0.2)", borderRadius: "0.75rem", marginBottom: "1.25rem" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.625rem", padding: "0.875rem", background: "${DS.blue}14", border: "1px solid ${DS.blue}33", borderRadius: "0.75rem", marginBottom: "1.25rem" }}>
             <Mail size={16} color={DS.blue} />
             <span style={{ color: DS.text3, fontSize: "0.8125rem", lineHeight: 1.5 }}>
               Nhập email đã đăng ký. Chúng tôi sẽ gửi mã OTP 6 chữ số.
             </span>
           </div>
-
           <FormInput label="EMAIL" type="email" placeholder="email@company.vn" value={email} onChange={setEmail} />
-
           {error && (
-            <div style={{ padding: "0.5rem 0.75rem", borderRadius: "0.5rem", background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)", color: "#FCA5A5", fontSize: "0.8125rem", marginBottom: "1rem" }}>
+            <div style={{ padding: "0.5rem 0.75rem", borderRadius: "0.5rem", background: "${DS.red}14", border: "1px solid ${DS.red}40", color: "#FCA5A5", fontSize: "0.8125rem", marginBottom: "1rem" }}>
               {error}
             </div>
           )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              width: "100%", background: loading ? "rgba(59,130,246,0.6)" : GRD.primary,
-              color: "#fff", border: "none", borderRadius: "0.75rem",
-              padding: "0.8125rem", fontSize: "0.875rem", fontWeight: 700,
-              cursor: loading ? "not-allowed" : "pointer",
-              display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem",
-              boxShadow: "0 0 20px rgba(129,140,248,0.35)",
-            }}
-          >
+          <button type="submit" disabled={loading} style={{
+            width: "100%", background: loading ? "${DS.blue}99" : GRD.primary,
+            color: "#fff", border: "none", borderRadius: "0.75rem",
+            padding: "0.8125rem", fontSize: "0.875rem", fontWeight: 700,
+            cursor: loading ? "not-allowed" : "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem",
+            boxShadow: "0 0 20px rgba(129,140,248,0.35)",
+          }}>
             {loading ? <><Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} /> Đang gửi...</> : <><Mail size={16} /> Gửi mã OTP</>}
           </button>
         </form>
       )}
 
-      {/* ── Step: OTP verify ── */}
+      {/* Step: OTP verify */}
       {step === "otp" && (
         <form onSubmit={handleVerifyOtp}>
-          {/* Email recap + countdown */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.25rem" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
               <Mail size={14} color={DS.blue} />
@@ -700,9 +694,8 @@ function OTPForm({ onSwitch, onBack }: { onSwitch: (m: AuthMode) => void; onBack
             )}
           </div>
 
-          {/* DEV code banner */}
           {devCode && (
-            <div style={{ padding: "0.5rem 0.875rem", borderRadius: "0.5rem", background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.3)", color: DS.green, fontSize: "0.75rem", fontFamily: "'JetBrains Mono', monospace", marginBottom: "1rem", textAlign: "center" }}>
+            <div style={{ padding: "0.5rem 0.875rem", borderRadius: "0.5rem", background: "${DS.green}14", border: "1px solid ${DS.green}4d", color: DS.green, fontSize: "0.75rem", fontFamily: "'JetBrains Mono', monospace", marginBottom: "1rem", textAlign: "center" }}>
               ✅ {devCode}
             </div>
           )}
@@ -711,7 +704,6 @@ function OTPForm({ onSwitch, onBack }: { onSwitch: (m: AuthMode) => void; onBack
             Nhập mã 6 chữ số đã gửi đến email của bạn.
           </p>
 
-          {/* OTP inputs */}
           <div style={{ display: "flex", gap: "0.5rem", justifyContent: "center", marginBottom: "1.25rem" }}>
             {otp.map((digit, i) => (
               <input
@@ -728,7 +720,7 @@ function OTPForm({ onSwitch, onBack }: { onSwitch: (m: AuthMode) => void; onBack
                   background: DS.bgCard2,
                   border: `1.5px solid ${digit ? DS.blue : DS.border}`,
                   borderRadius: 10, color: DS.blue, outline: "none",
-                  boxShadow: digit ? "0 0 10px rgba(59,130,246,0.2)" : "none",
+                  boxShadow: digit ? "0 0 10px ${DS.blue}33" : "none",
                   transition: "all 0.2s",
                 }}
               />
@@ -736,51 +728,40 @@ function OTPForm({ onSwitch, onBack }: { onSwitch: (m: AuthMode) => void; onBack
           </div>
 
           {error && (
-            <div style={{ padding: "0.5rem 0.75rem", borderRadius: "0.5rem", background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)", color: "#FCA5A5", fontSize: "0.8125rem", marginBottom: "1rem" }}>
+            <div style={{ padding: "0.5rem 0.75rem", borderRadius: "0.5rem", background: "${DS.red}14", border: "1px solid ${DS.red}40", color: "#FCA5A5", fontSize: "0.8125rem", marginBottom: "1rem" }}>
               {error}
             </div>
           )}
 
-          <button
-            type="submit"
-            disabled={loading || otp.join("").length < 6}
-            style={{
-              width: "100%", background: loading || otp.join("").length < 6 ? "rgba(59,130,246,0.6)" : GRD.primary,
-              color: "#fff", border: "none", borderRadius: "0.75rem",
-              padding: "0.8125rem", fontSize: "0.875rem", fontWeight: 700,
-              cursor: loading || otp.join("").length < 6 ? "not-allowed" : "pointer",
-              display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem",
-              boxShadow: "0 0 20px rgba(129,140,248,0.35)",
-            }}
-          >
+          <button type="submit" disabled={loading || otp.join("").length < 6} style={{
+            width: "100%", background: loading || otp.join("").length < 6 ? "${DS.blue}99" : GRD.primary,
+            color: "#fff", border: "none", borderRadius: "0.75rem",
+            padding: "0.8125rem", fontSize: "0.875rem", fontWeight: 700,
+            cursor: loading || otp.join("").length < 6 ? "not-allowed" : "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem",
+            boxShadow: "0 0 20px rgba(129,140,248,0.35)",
+          }}>
             {loading ? <><Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} /> Đang xác minh...</> : <><ShieldCheck size={16} /> Xác minh OTP</>}
           </button>
 
           <div style={{ textAlign: "center", marginTop: "1rem" }}>
-            <button
-              type="button"
-              onClick={handleResend}
-              disabled={resendCooldown > 0}
-              style={{
-                color: resendCooldown > 0 ? DS.text4 : DS.blue,
-                background: "none", border: "none",
-                fontSize: "0.8125rem", cursor: resendCooldown > 0 ? "not-allowed" : "pointer",
-              }}
-            >
+            <button type="button" onClick={handleResend} disabled={resendCooldown > 0} style={{
+              color: resendCooldown > 0 ? DS.text4 : DS.blue,
+              background: "none", border: "none",
+              fontSize: "0.8125rem", cursor: resendCooldown > 0 ? "not-allowed" : "pointer",
+            }}>
               {resendCooldown > 0 ? `Gửi lại sau ${resendCooldown}s` : "Gửi lại mã OTP"}
             </button>
           </div>
         </form>
       )}
 
-      {/* ── Step: Set new password ── */}
+      {/* Step: Reset password */}
       {step === "reset" && (
         <form onSubmit={handleResetPassword}>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.625rem", padding: "0.875rem", background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.2)", borderRadius: "0.75rem", marginBottom: "1.25rem" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.625rem", padding: "0.875rem", background: "${DS.green}14", border: "1px solid ${DS.green}33", borderRadius: "0.75rem", marginBottom: "1.25rem" }}>
             <ShieldCheck size={16} color={DS.green} />
-            <span style={{ color: DS.text3, fontSize: "0.8125rem" }}>
-              ✅ Mã OTP đã xác minh. Đặt mật khẩu mới.
-            </span>
+            <span style={{ color: DS.text3, fontSize: "0.8125rem" }}>✅ Mã OTP đã xác minh. Đặt mật khẩu mới.</span>
           </div>
 
           {countdown > 0 && (
@@ -789,7 +770,6 @@ function OTPForm({ onSwitch, onBack }: { onSwitch: (m: AuthMode) => void; onBack
             </div>
           )}
 
-          {/* New password */}
           <div style={{ marginBottom: "1rem" }}>
             <label style={{ color: DS.text3, fontSize: "0.6875rem", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.12em", display: "block", marginBottom: "0.375rem" }}>
               MẬT KHẨU MỚI
@@ -808,7 +788,6 @@ function OTPForm({ onSwitch, onBack }: { onSwitch: (m: AuthMode) => void; onBack
             </div>
           </div>
 
-          {/* Confirm password */}
           <div style={{ marginBottom: "1rem" }}>
             <label style={{ color: DS.text3, fontSize: "0.6875rem", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.12em", display: "block", marginBottom: "0.375rem" }}>
               XÁC NHẬN MẬT KHẨU
@@ -830,23 +809,19 @@ function OTPForm({ onSwitch, onBack }: { onSwitch: (m: AuthMode) => void; onBack
           </div>
 
           {error && (
-            <div style={{ padding: "0.5rem 0.75rem", borderRadius: "0.5rem", background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)", color: "#FCA5A5", fontSize: "0.8125rem", marginBottom: "1rem" }}>
+            <div style={{ padding: "0.5rem 0.75rem", borderRadius: "0.5rem", background: "${DS.red}14", border: "1px solid ${DS.red}40", color: "#FCA5A5", fontSize: "0.8125rem", marginBottom: "1rem" }}>
               {error}
             </div>
           )}
 
-          <button
-            type="submit"
-            disabled={loading || newPassword.length < 8 || newPassword !== confirmPassword}
-            style={{
-              width: "100%", background: loading || newPassword.length < 8 || newPassword !== confirmPassword ? "rgba(59,130,246,0.6)" : GRD.primary,
-              color: "#fff", border: "none", borderRadius: "0.75rem",
-              padding: "0.8125rem", fontSize: "0.875rem", fontWeight: 700,
-              cursor: loading || newPassword.length < 8 || newPassword !== confirmPassword ? "not-allowed" : "pointer",
-              display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem",
-              boxShadow: "0 0 20px rgba(129,140,248,0.35)",
-            }}
-          >
+          <button type="submit" disabled={loading || newPassword.length < 8 || newPassword !== confirmPassword} style={{
+            width: "100%", background: loading || newPassword.length < 8 || newPassword !== confirmPassword ? "${DS.blue}99" : GRD.primary,
+            color: "#fff", border: "none", borderRadius: "0.75rem",
+            padding: "0.8125rem", fontSize: "0.875rem", fontWeight: 700,
+            cursor: loading || newPassword.length < 8 || newPassword !== confirmPassword ? "not-allowed" : "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem",
+            boxShadow: "0 0 20px rgba(129,140,248,0.35)",
+          }}>
             {loading ? <><Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} /> Đang đặt lại...</> : <><ShieldCheck size={16} /> Đặt lại mật khẩu</>}
           </button>
 
@@ -862,31 +837,30 @@ function OTPForm({ onSwitch, onBack }: { onSwitch: (m: AuthMode) => void; onBack
   );
 }
 
-// ── Main Page ────────────────────────────────────────────────────────────────
-export default function LoginPage({ params }: { params: Promise<{ locale: string }> }) {
+// ── Main Page ───────────────────────────────────────────────────────────────
+export default function LoginPage() {
   const [mode, setMode] = useState<AuthMode>("login");
-  const [locale, setLocale] = useState("vi");
-
-  useEffect(() => {
-    params.then((p) => setLocale(p.locale));
-  }, [params]);
+  const params = useParams();
+  const locale = (params.locale as string) ?? "vi";
 
   return (
     <div style={{ background: DS.bg, minHeight: "100vh", display: "flex", position: "relative", fontFamily: "'Inter', sans-serif" }}>
       <AuthBg />
 
       <div style={{ display: "flex", width: "100%", position: "relative", zIndex: 1 }}>
-        <div style={{ display: "none" }} className="lg:flex lg:flex-col lg:w-1/2">
+        {/* Side panel — customer theme */}
+        <div suppressHydrationWarning style={{ display: "none" }} className="lg:flex lg:flex-col lg:w-1/2">
           <SidePanel locale={locale} />
         </div>
 
+        {/* Form area */}
         <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "1.5rem" }}>
           <div style={{ width: "100%", maxWidth: "28rem" }}>
             <div style={{
               borderRadius: "1.5rem", padding: "2rem",
               background: "rgba(15,23,42,0.8)",
               backdropFilter: "blur(20px)",
-              border: "1px solid rgba(59,130,246,0.15)",
+              border: "1px solid ${DS.blue}26",
               boxShadow: "0 24px 64px rgba(0,0,0,0.4)",
             }}>
               <AnimatePresence mode="wait">
@@ -897,11 +871,7 @@ export default function LoginPage({ params }: { params: Promise<{ locale: string
                   <RegisterForm key="register" onSwitch={setMode} />
                 )}
                 {(mode === "otp" || mode === "reset-password") && (
-                  <OTPForm
-                    key="otp"
-                    onSwitch={setMode}
-                    onBack={() => setMode("login")}
-                  />
+                  <OTPForm key="otp" onSwitch={setMode} onBack={() => setMode("login")} />
                 )}
               </AnimatePresence>
             </div>

@@ -62,7 +62,7 @@ export class JsonValidationError extends Error {
 export const jsonValidationErr = (
   field: string,
   message: string,
-  value?: unknown,
+  _value?: unknown,
 ): Err => ({ ok: false, error: message, field });
 
 // ---------------------------------------------------------------------------

@@ -19,7 +19,7 @@
  */
 
 import { prisma } from "@/lib/prisma";
-import { RANKS, getRankFromLevel, RankKey } from "@/lib/rank/ranks";
+import { getRankFromLevel, RankKey } from "@/lib/rank/ranks";
 
 export const XP_PER_LP = 10;
 

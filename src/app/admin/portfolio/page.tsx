@@ -5,11 +5,10 @@ import { useAdminTranslations } from "@/i18n/admin/useAdminTranslations";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "motion/react";
 import { qk } from "@/lib/query/provider";
-import { adminApi } from "@/lib/api/client";
+
 import { DS, GRD } from "@/lib/design-tokens";
 import {
-  Plus, Edit2, Trash2, Search, RefreshCw, X,
-  Star,
+ Edit2, Trash2, RefreshCw, Star,
 } from "lucide-react";
 import { ImageUpload } from "@/components/ui/ImageUpload";
 
@@ -27,8 +26,7 @@ type Project = {
 };
 
 function ProjectRow({ project, onEdit }: { project: Project; onEdit: (p: Project) => void }) {
-  const { t } = useAdminTranslations();
-  const qc = useQueryClient();
+   useQueryClient();
 
   const togglePublish = useMutation({
     mutationFn: async () => {
@@ -117,7 +115,7 @@ function ProjectRow({ project, onEdit }: { project: Project; onEdit: (p: Project
 
 export default function PortfolioTabPage() {
   const { t } = useAdminTranslations();
-  const qc = useQueryClient();
+   useQueryClient();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [isCreating, setIsCreating] = useState(false);
@@ -231,7 +229,7 @@ export default function PortfolioTabPage() {
 
 function EditProjectForm({ project, onClose, onUpdated }: { project: Project; onClose: () => void; onUpdated: () => void }) {
   const { t } = useAdminTranslations();
-  const qc = useQueryClient();
+   useQueryClient();
   const [title, setTitle] = useState(project.title || "");
   const [slug, setSlug] = useState(project.slug || "");
   const [category, setCategory] = useState(project.category || "");
@@ -303,7 +301,7 @@ function EditProjectForm({ project, onClose, onUpdated }: { project: Project; on
 
 function CreateProjectForm({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
   const { t } = useAdminTranslations();
-  const qc = useQueryClient();
+   useQueryClient();
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
   const [category, setCategory] = useState("");

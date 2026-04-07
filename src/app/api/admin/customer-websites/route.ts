@@ -3,20 +3,20 @@ import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth/permissions";
 
 // GET - Lấy danh sách website
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
     const session = await getSession();
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { searchParams } = new URL(req.url);
+    const { searchParams } = new URL(_req.url);
     const status = searchParams.get("status");
     const search = searchParams.get("search");
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "20");
 
-    const where: any = {};
+    const where: Record<string, unknown> = {};
     if (status) where.status = status;
     if (search) {
       where.OR = [
@@ -59,14 +59,14 @@ export async function GET(req: NextRequest) {
 }
 
 // POST - Tạo website mới
-export async function POST(req: NextRequest) {
+export async function POST(_req: NextRequest) {
   try {
     const session = await getSession();
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await req.json();
+    const body = await _req.json();
     const {
       domain,
       subdomain,

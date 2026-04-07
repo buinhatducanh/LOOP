@@ -9,7 +9,7 @@
 
 export const dynamic = "force-dynamic";
 
-import { NextResponse } from "next/server";
+
 import { getPricingPlans } from "@/lib/db/queries";
 import { handleError } from "@/lib/api/response";
 import { logger } from "@/lib/logger";

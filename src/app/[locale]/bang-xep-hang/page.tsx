@@ -10,9 +10,9 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
 import {
-  Trophy, Zap, Users, TrendingUp, Filter, Crown,
-  Star, ChevronRight, ArrowUpRight, Flame, Search,
-  BarChart3, Award, Target,
+  Trophy, Zap, Users, TrendingUp, Crown,
+  ChevronRight, ArrowUpRight, Flame, Search,
+  Target,
 } from 'lucide-react';
 import { DS, GRD } from '@/lib/design-tokens';
 import { members, RANKS, type RankKey } from '@/components/landing/guild/memberData';
@@ -621,7 +621,7 @@ export default function LeaderboardPage() {
           </div>
           <div className="p-3 md:p-4 space-y-2" style={{ background: DS.bgCard }}>
             <AnimatePresence mode="popLayout">
-              {sorted.map((m, i) => {
+              {sorted.map((m, _i) => {
                 const globalRank = allSorted.findIndex(mm => mm.id === m.id) + 1;
                 return (
                   <MemberRow

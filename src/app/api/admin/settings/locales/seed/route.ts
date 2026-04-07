@@ -3,11 +3,11 @@
  * Seed initial supported locales. Safe to run multiple times.
  */
 
-import { NextResponse } from "next/server";
+
 import { requirePermissionFast } from "@/lib/auth/permissions";
 import { getSession } from "@/lib/auth/permissions";
 import { prisma } from "@/lib/prisma";
-import { ok, handleError } from "@/lib/api";
+import { handleError } from "@/lib/api";
 
 const SEED_LOCALES = [
   { code: "vi", name: "Vietnamese", nativeName: "Tiếng Việt",  isEnabled: true,  isDefault: true,  order: 1 },
@@ -19,7 +19,7 @@ const SEED_LOCALES = [
 
 export async function POST() {
   try {
-    const session = await getSession();
+    const _session = await getSession();
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     requirePermissionFast(session, "settings", "update");
 

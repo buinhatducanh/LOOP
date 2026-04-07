@@ -4,9 +4,9 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
-    const session = await requirePermission("effects", "read");
+    const _session = await requirePermission("effects", "read");
     const { searchParams } = new URL(req.url);
     const page = parseInt(searchParams.get("page") ?? "1");
     const limit = parseInt(searchParams.get("limit") ?? "50");
@@ -27,9 +27,9 @@ export async function GET(req: NextRequest) {
   }
 }
 
-export async function POST(req: NextRequest) {
+export async function POST(_req: NextRequest) {
   try {
-    const session = await requirePermission("effects", "create");
+    const _session = await requirePermission("effects", "create");
     const data = await req.json();
 
     if (!data.name || !data.type || !data.minRank) {

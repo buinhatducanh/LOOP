@@ -20,7 +20,7 @@ export async function GET() {
 }
 
 // POST — Create a new advertisement
-export async function POST(req: NextRequest) {
+export async function POST(_req: NextRequest) {
   try {
     await getSession();
 

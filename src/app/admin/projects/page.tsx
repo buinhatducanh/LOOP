@@ -16,11 +16,11 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "motion/react";
-import { adminApi } from "@/lib/api/client";
-import { DS, GRD } from "@/lib/design-tokens";
-import { FolderKanban, Plus, RefreshCw, Search, GripVertical, Calendar, X, Edit2, Trash2, AlertTriangle } from "lucide-react";
 
-const fmtDate = (d: string | Date | null | undefined) => {
+import { DS } from "@/lib/design-tokens";
+import { Plus, RefreshCw, Search, GripVertical, Calendar, X, Edit2, Trash2, AlertTriangle } from "lucide-react";
+
+ (d: string | Date | null | undefined) => {
   if (!d) return "—";
   try { return new Date(d).toLocaleDateString("vi-VN"); }
   catch { return String(d); }
@@ -326,7 +326,7 @@ function ProjectCard({
   project: Project;
   onEdit: (project: Project) => void;
 }) {
-  const qc = useQueryClient();
+   useQueryClient();
 
   const delete_ = useMutation({
     mutationFn: async () => {
@@ -481,7 +481,7 @@ export default function ProjectsPage() {
   const [page] = useState(1);
   const [search, setSearch] = useState("");
   const [editProject, setEditProject] = useState<Project | null>(null);
-  const qc = useQueryClient();
+   useQueryClient();
 
   const { data, isLoading, isFetching } = useQuery({
     queryKey: (["admin", "projects", { page, limit: 100, ...(search ? { search } : {}) }] as const),
@@ -526,7 +526,7 @@ export default function ProjectsPage() {
     statusMut.mutate({ id: projectId, status: targetStatus });
   };
 
-  const handleDragStart = (e: React.DragEvent<HTMLDivElement>, projectId: string) => {
+  const _handleDragStart = (e: React.DragEvent<HTMLDivElement>, projectId: string) => {
     e.dataTransfer.setData("projectId", projectId);
     e.dataTransfer.effectAllowed = "move";
   };

@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 import { DS, GRD } from "@/lib/design-tokens";
-import { Check, ArrowRight, ArrowLeft, Clock, Zap, Monitor, Eye, X } from "lucide-react";
+import { Check, ArrowRight, ArrowLeft, Clock, Zap, Monitor, X } from "lucide-react";
 
 type ServiceRecord = Record<string, unknown>;
 
@@ -52,7 +52,7 @@ interface DetailLabels {
   lpPerMillion: string;
 }
 
-const DEFAULT_LABELS: DetailLabels = {
+const _DEFAULT_LABELS: DetailLabels = {
   backLink: "← Quay lại dịch vụ",
   badge: "DỊCH VỤ",
   priceFrom: "TỪ",

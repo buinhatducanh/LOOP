@@ -8,8 +8,8 @@
  *  4. Update request status
  *  5. Send welcome notification
  */
-import { NextRequest, NextResponse } from "next/server";
-import { requireAuth, requirePermissionFast, isSuperAdmin } from "@/lib/auth/permissions";
+import { NextRequest } from "next/server";
+import { requirePermissionFast, isSuperAdmin } from "@/lib/auth/permissions";
 import { ok, handleError, notFound, badRequest } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 
@@ -18,7 +18,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await requireAuth();
+    const _session = await requireAuth();
 
     // Only CEO or super_admin can approve
     if (!isSuperAdmin(session)) {
@@ -153,7 +153,7 @@ export async function POST(
       });
 
       // Update request status
-      const updated = await tx.memberRequest.update({
+      const _updated = await tx.memberRequest.update({
         where: { id },
         data: {
           status: "approved",

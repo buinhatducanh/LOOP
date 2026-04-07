@@ -28,7 +28,7 @@
 
 export const dynamic = "force-dynamic";
 
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { handleError, badRequest, notFound, ok } from "@/lib/api/response";
 
@@ -45,7 +45,7 @@ function runSandbox(code: string, language: string): { output: string; passed: b
 
   try {
     // vm is a built-in Node.js module — safe for controlled code execution
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+     
     const vm = require("vm") as typeof import("vm");
 
     const sandbox = {

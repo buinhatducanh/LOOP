@@ -1,5 +1,5 @@
 import { handleError } from "@/lib/api/response";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
@@ -25,9 +25,9 @@ export async function GET() {
 // POST /api/admin/infrastructure-tiers
 // Create a new infrastructure tier.
 
-export async function POST(req: NextRequest) {
+export async function POST(_req: NextRequest) {
   try {
-    const session = await requirePermission("services", "create");
+    const _session = await requirePermission("services", "create");
     const body = await req.json();
 
     const { slug, name, nameVi, monthlyCost, setupCost, description, descriptionVi, icon, color, sortOrder } = body;

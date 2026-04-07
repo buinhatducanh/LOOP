@@ -1,27 +1,12 @@
-import { ok, list, handleError } from "@/lib/api/response";
-import { NextRequest, NextResponse } from "next/server";
+import { list, handleError } from "@/lib/api/response";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
 
-// ─── Filter config ───────────────────────────────────────────────────────────
-
-const MEDIA_BOOKING_FILTER_CONFIG = {
-  searchFields: [
-    { field: "bookingNumber" },
-    { field: "customerName" },
-    { field: "customerEmail" },
-    { field: "title" },
-    { field: "companyName" },
-  ],
-  eqFields: ["status", "paymentStatus", "bookingType"],
-  dateFields: ["createdAt", "deadline"],
-  defaultSort: { field: "createdAt", dir: "desc" as const },
-};
-
 // ─── GET /api/admin/media-bookings ────────────────────────────────────────────
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
     await requirePermission("media-bookings", "read");
     const { searchParams } = new URL(req.url);
@@ -113,7 +98,7 @@ export async function GET(req: NextRequest) {
 
 // ─── POST /api/admin/media-bookings ──────────────────────────────────────────
 
-export async function POST(req: NextRequest) {
+export async function POST(_req: NextRequest) {
   try {
     await requirePermission("media-bookings", "create");
     const data = await req.json();

@@ -9,7 +9,7 @@
 
 export const dynamic = "force-dynamic";
 
-import { NextResponse } from "next/server";
+
 import { prisma } from "@/lib/prisma";
 import { parseLocaleParam, getLocalizedField } from "@/lib/i18n/localization";
 import { handleError } from "@/lib/api/response";
@@ -50,12 +50,7 @@ export async function GET(req: Request) {
     // Derive coverImage from the first lesson's video thumbnail if available
     const localized = await Promise.all(
       courses.map(async (c) => {
-        const firstLesson = await prisma.lesson.findFirst({
-          where: { courseId: c.id, isPublished: true },
-          select: { id: true },
-          orderBy: { orderIndex: "asc" },
-        });
-
+        // coverImage: TODO - add to Course model
         return {
           id: c.id,
           slug: c.id, // Course uses id as slug for public URLs

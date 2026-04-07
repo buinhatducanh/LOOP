@@ -8,18 +8,16 @@
  * No third-party chart libraries.
  */
 import { useState, useRef, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { motion } from "motion/react";
-import { adminApi } from "@/lib/api/client";
-import { DS, GRD } from "@/lib/design-tokens";
+
+import { DS } from "@/lib/design-tokens";
 import {
-  TrendingUp, TrendingDown, BarChart3, Users, Zap,
+  TrendingUp, Users, Zap,
   ArrowUpRight, ArrowDownRight, DollarSign, FolderKanban,
-  Activity, Filter, RefreshCw,
 } from "lucide-react";
 
 // ── Formatters ──────────────────────────────────────────────────────────────
-const fmtB = (n: number) => {
+const _fmtB = (n: number) => {
   if (typeof n === "bigint") n = Number(n);
   if (n >= 1_000_000_000) return `${(n / 1_000_000_000).toFixed(1)}B`;
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(0)}M`;
@@ -275,7 +273,7 @@ function DonutChart({
 }) {
   const [hovered, setHovered] = useState<number | null>(null);
   const total = slices.reduce((s, sl) => s + sl.value, 0);
-  const cx = size / 2, cy = size / 2, r = size * 0.38, strokeW = size * 0.13;
+  const cx = size / 2, cy = size / 2, r = size * 0.38;
   const gap = 0.025;
 
   let cumAngle = -Math.PI / 2;
@@ -437,7 +435,6 @@ export default function AnalyticsPage() {
   const lpESlice    = LP_EARN_DATA.slice(-displayMonths);
   const lpSSlice    = LP_SPEND_DATA.slice(-displayMonths);
   const labSlice    = MONTHS.slice(-displayMonths);
-  const maxLPBar    = Math.max(...lpESlice);
 
   // KPI counts with count-up
   const totalRev = REVENUE_DATA.reduce((s, v) => s + v, 0) * 1_000_000;

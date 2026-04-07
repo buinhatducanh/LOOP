@@ -1,8 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { handleError } from "@/lib/api/response";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
-import { createTransaction } from "@/lib/services/gamification/transaction.service";
 import { createAuditLog } from "@/lib/auth/audit";
 import { computeRankFieldsFromLp } from "@/lib/rank/xp";
 
@@ -10,7 +9,7 @@ import { computeRankFieldsFromLp } from "@/lib/rank/xp";
 // List LP transactions with optional filters.
 // Query params: ?memberId=&type=&status=&from=&to=&page=&limit=
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
     await requirePermission("team", "read");
 
@@ -61,9 +60,9 @@ export async function GET(req: NextRequest) {
 // Manual LP adjustment by admin (bonus / penalty).
 // Body: { memberId, amount, description, reason? }
 
-export async function POST(req: NextRequest) {
+export async function POST(_req: NextRequest) {
   try {
-    const session = await requirePermission("team", "update");
+    const _session = await requirePermission("team", "update");
 
     const { memberId, amount, description } = await req.json();
 

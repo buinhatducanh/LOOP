@@ -65,7 +65,7 @@ const BRAND = {
 
 // ─── Email Templates ────────────────────────────────────────────────────────────
 
-function emailShell(title: string, content: string, accentColor = BRAND.primaryColor) {
+function emailShell(title: string, content: string, __accentColor = BRAND.primaryColor) {
   return `<!DOCTYPE html>
 <html lang="vi">
 <head>

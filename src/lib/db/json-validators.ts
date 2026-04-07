@@ -3,7 +3,7 @@
 // =============================================================================
 
 import { z } from 'zod';
-import { Result, ok, err, jsonValidationErr } from './errors';
+import { Result, ok, jsonValidationErr } from './errors';
 
 // ---------------------------------------------------------------------------
 // Schema definitions

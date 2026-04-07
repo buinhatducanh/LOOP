@@ -31,7 +31,7 @@ import type {
   ScaleGateWarning,
   ScaleGateError,
 } from "@/types/slo";
-import { METRICS } from "./slo";
+
 
 // ─── Gate Rules ───────────────────────────────────────────────────────────────
 

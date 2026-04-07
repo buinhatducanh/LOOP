@@ -267,7 +267,17 @@
       "Bash(powershell -Command \"Stop-Process -Id 4840,16740 -Force -ErrorAction SilentlyContinue; Write-Host 'Killed all'\")",
       "Bash(powershell -Command \"Start-Process -FilePath 'npm.cmd' -ArgumentList 'run','dev' -WorkingDirectory 'D:\\\\LOOP_COMPANY\\\\LOOP' -WindowStyle Hidden; Start-Sleep -Seconds 12; netstat -ano | grep ':3000 ' | grep LISTENING\")",
       "Bash(powershell -Command \"Stop-Process -Id 14692 -Force; Write-Host '✅ Port 3000 freed'\")",
-      "Bash(rd /s /q .next)"
+      "Bash(rd /s /q .next)",
+      "Bash(set -a)",
+      "Bash(. ./.env.local)",
+      "Bash(set +a)",
+      "Bash(find D:LOOP_COMPANYLOOPpublicassets -type f \\\\\\(-name *.png -o -name *.jpg -o -name *.webp -o -name *.svg \\\\\\))",
+      "Bash(grep -n \"#[0-9A-Fa-f]\\\\{6\\\\}\" D:/LOOP_COMPANY/LOOP/src/app/[locale]/HomeClient.tsx)",
+      "Bash(wc -l D:/LOOP_COMPANY/LOOP/src/app/[locale]/dang-nhap/page.tsx)",
+      "Bash(sed -i 's/const authUser = await requireAuth\\(req\\);/const _authUser = await requireAuth\\(req\\);/' src/app/api/admin/upload/route.ts)",
+      "Bash(sed -i \"s/new Promise<any>/new Promise<Record<string, unknown>>/\" src/app/api/admin/upload/route.ts)",
+      "Bash(__NEW_LINE_85efe4393d4f3516__ node -e \":*)",
+      "Bash(while read:*)"
     ],
     "additionalDirectories": [
       "D:\\LOOP_COMPANY\\LOOP\\src\\app\\api\\admin\\expertises",

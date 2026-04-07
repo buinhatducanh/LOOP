@@ -2,14 +2,14 @@
  * GET /api/portal/points — Customer's LP point balance
  * Requires customer auth (JWT cookie).
  */
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth/permissions";
-import { ok, handleError } from "@/lib/api";
+import { handleError } from "@/lib/api";
 
 export async function GET(_req: NextRequest) {
   try {
-    const session = await requireAuth();
+    const _session = await requireAuth();
 
     const customerPoint = await prisma.customerPoint.findUnique({
       where: { userEmail: session.email },

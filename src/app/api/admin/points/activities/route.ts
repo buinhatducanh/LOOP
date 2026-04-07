@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth/permissions";
-import { handleError, ok, badRequest } from "@/lib/api";
+import { handleError, ok } from "@/lib/api";
 
 // GET — List point activities
 export async function GET() {
@@ -20,7 +20,7 @@ export async function GET() {
 }
 
 // POST — Create a new point activity
-export async function POST(req: NextRequest) {
+export async function POST(_req: NextRequest) {
   try {
     await getSession();
 

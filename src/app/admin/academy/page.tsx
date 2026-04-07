@@ -14,7 +14,7 @@ import { DS, GRD } from "@/lib/design-tokens";
 import { useAdminTranslations } from "@/i18n/admin/useAdminTranslations";
 import {
   BookOpen, Users, RefreshCw, Plus, Play, BookText, Star,
-  Edit2, Trash2, X, AlertTriangle, Image as ImageIcon, Save,
+  Edit2, Trash2, X, AlertTriangle, Save,
 } from "lucide-react";
 import { ImageUpload } from "@/components/ui/ImageUpload";
 

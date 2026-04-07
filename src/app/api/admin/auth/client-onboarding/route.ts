@@ -4,16 +4,17 @@
  * Completes customer onboarding profile:
  *   - Sets isOnboarded = true
  *   - Updates profile fields: phone, dateOfBirth, companyName, businessType, address, taxCode
- *   - Returns updated JWT with isOnboarded flag
+ *   - Returns updated JWT with isOnboarded flag + sets refresh-token cookie
  *
  * Auth: Bearer token (customer's own JWT)
  * Guard: Only customers (accountType = "customer") can call this.
  */
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { requireAuth } from "@/lib/auth/permissions";
 import { ok, handleError, badRequest } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
-import { signToken } from "@/lib/auth/jwt";
+import { createSession } from "@/lib/auth/session";
+import { AUTH_COOKIES } from "@/lib/auth/roles";
 
 const VALID_BUSINESS_TYPES = [
   "technology", "retail", "finance", "healthcare",
@@ -21,9 +22,9 @@ const VALID_BUSINESS_TYPES = [
   "services", "marketing", "other",
 ];
 
-export async function POST(req: NextRequest) {
+export async function POST(_req: NextRequest) {
   try {
-    const session = await requireAuth();
+    const _session = await requireAuth();
 
     // ── Only customers can use this endpoint ─────────────────────────────────────
     if (session.accountType !== "customer") {
@@ -53,7 +54,6 @@ export async function POST(req: NextRequest) {
 
     // ── Validation ───────────────────────────────────────────────────────────────
     if (phone !== undefined && typeof phone === "string" && phone.length > 0) {
-      // Basic phone: digits, spaces, dashes, + prefix, 8-15 chars
       const phoneRegex = /^[+\d][\d\s\-]{7,14}$/;
       if (!phoneRegex.test(phone.trim())) {
         return badRequest("Số điện thoại không hợp lệ");
@@ -96,30 +96,76 @@ export async function POST(req: NextRequest) {
     if (address !== undefined) updateData.address = address?.trim() || null;
     if (taxCode !== undefined) updateData.taxCode = taxCode?.trim() || null;
 
-    const updated = await prisma.user.update({
-      where: { id: session.userId },
-      data: updateData,
-      select: {
-        id: true, email: true, name: true, phone: true, companyName: true,
-        businessType: true, dateOfBirth: true, address: true, taxCode: true,
+    // Re-fetch user to get full session data (roles, teamMember)
+    const [updated, freshUser] = await Promise.all([
+      prisma.user.update({
+        where: { id: session.userId },
+        data: updateData,
+        select: {
+          id: true, email: true, name: true, phone: true, companyName: true,
+          businessType: true, dateOfBirth: true, address: true, taxCode: true,
+          isOnboarded: true,
+        },
+      }),
+      prisma.user.findUnique({
+        where: { id: session.userId },
+        select: {
+          role: true, accountType: true, teamMemberId: true,
+          userRoles: {
+            select: { role: { select: { name: true, level: true } } },
+          },
+          teamMember: { select: { accessTags: true, rank: true, availableLp: true } },
+        },
+      }),
+    ]);
+
+    if (!freshUser) return handleError(new Error("User not found"));
+
+    const roles = freshUser.userRoles.map((ur) => ur.role.name);
+    const roleLevel = freshUser.userRoles.length > 0
+      ? Math.min(...freshUser.userRoles.map((ur) => ur.role.level ?? 99))
+      : 5;
+
+    const ipAddress = req.headers.get("x-forwarded-for")
+      ?? req.headers.get("x-real-ip")
+      ?? null;
+    const userAgent = req.headers.get("user-agent") ?? null;
+
+    const { accessToken, refreshToken } = await createSession(
+      updated.id,
+      {
+        roleLevel,
+        email: updated.email,
+        name: updated.name,
+        role: freshUser.role,
+        roles,
+        accessTags: freshUser.teamMember?.accessTags ?? [],
+        accountType: freshUser.accountType as "staff" | "customer",
         isOnboarded: true,
+        rank: freshUser.teamMember?.rank,
+        availableLp: freshUser.teamMember?.availableLp,
       },
+      { ipAddress: ipAddress ?? undefined, userAgent: userAgent ?? undefined }
+    );
+
+    const response = ok({ user: updated, token: accessToken });
+
+    response.cookies.set(AUTH_COOKIES.ACCESS_TOKEN, accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 15 * 60,
+      path: "/",
+    });
+    response.cookies.set(AUTH_COOKIES.REFRESH_TOKEN, refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60,
+      path: "/",
     });
 
-    // ── Issue new JWT with isOnboarded = true ──────────────────────────────────
-    // Preserve the user's actual role from the session — do not hardcode.
-    // The accountType guard above already ensures only customers reach this.
-    const token = signToken({
-      userId: updated.id,
-      email: updated.email,
-      role: session.role,
-      roles: session.roles,
-      roleLevel: session.roleLevel,
-      accountType: "customer",
-      isOnboarded: true,
-    });
-
-    return ok({ user: updated, token });
+    return response;
   } catch (err) {
     return handleError(err);
   }

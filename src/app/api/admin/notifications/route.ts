@@ -7,7 +7,7 @@ import { handleError, list, buildPagination } from "@/lib/api";
  * GET /api/admin/notifications
  * Returns notifications for current authenticated user.
  */
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
     const session = await requireAuth(req);
 

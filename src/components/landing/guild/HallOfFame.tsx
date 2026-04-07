@@ -8,7 +8,7 @@ import { useState } from "react";
 import { motion } from "motion/react";
 import Link from "next/link";
 import { Trophy, Zap, Target } from "lucide-react";
-import { RANKS, normalizeRank, formatLP, type RankKey } from "./guildMemberData";
+import { RANKS, normalizeRank, formatLP } from "./guildMemberData";
 import { DS } from "@/lib/design-tokens";
 
 type MemberRecord = Record<string, unknown>;
@@ -22,29 +22,29 @@ interface HallOfFameProps {
 
 // ── Prismatic beams config ────────────────────────────────────────────────
 const PRISM_BEAMS = [
-  { left: "-8%", width: "38%", color: "#818CF8", angle: "14deg",  delay: "0s",   dur: "14s", opacity: 0.10 },
-  { left: "15%", width: "28%", color: "#7DD3FC", angle: "-9deg",  delay: "2.5s", dur: "11s", opacity: 0.08 },
-  { left: "38%", width: "32%", color: "#F0ABFC", angle: "22deg",  delay: "5s",   dur: "13s", opacity: 0.09 },
+  { left: "-8%", width: "38%", color: DS.purple, angle: "14deg",  delay: "0s",   dur: "14s", opacity: 0.10 },
+  { left: "15%", width: "28%", color: DS.sky,   angle: "-9deg",  delay: "2.5s", dur: "11s", opacity: 0.08 },
+  { left: "38%", width: "32%", color: DS.lavender, angle: "22deg",  delay: "5s",   dur: "13s", opacity: 0.09 },
   { left: "60%", width: "26%", color: "#FFFFFF", angle: "-15deg", delay: "1.2s", dur: "9s",  opacity: 0.06 },
-  { left: "78%", width: "34%", color: "#818CF8", angle: "11deg",  delay: "3.8s", dur: "12s", opacity: 0.08 },
-  { left: "92%", width: "22%", color: "#7DD3FC", angle: "-18deg", delay: "0.6s", dur: "10s", opacity: 0.07 },
+  { left: "78%", width: "34%", color: DS.purple, angle: "11deg",  delay: "3.8s", dur: "12s", opacity: 0.08 },
+  { left: "92%", width: "22%", color: DS.sky,   angle: "-18deg", delay: "0.6s", dur: "10s", opacity: 0.07 },
 ];
 
 const PRISM_FLARES = [
-  { top: "12%", left: "18%", size: 160, color: "#818CF8", delay: "0s",   dur: "8s"  },
-  { top: "55%", left: "70%", size: 200, color: "#7DD3FC", delay: "3s",   dur: "10s" },
-  { top: "80%", left: "38%", size: 140, color: "#F0ABFC", delay: "1.5s", dur: "7s"  },
+  { top: "12%", left: "18%", size: 160, color: DS.purple,    delay: "0s",   dur: "8s"  },
+  { top: "55%", left: "70%", size: 200, color: DS.sky,       delay: "3s",   dur: "10s" },
+  { top: "80%", left: "38%", size: 140, color: DS.lavender,  delay: "1.5s", dur: "7s"  },
 ];
 
 const CRYSTAL_SPARKS = [
-  { left: "5%",   delay: "0s",   dur: "7s",  size: 2.5, color: "#818CF8" },
+  { left: "5%",   delay: "0s",   dur: "7s",  size: 2.5, color: DS.purple },
   { left: "14%",  delay: "2.2s", dur: "6s",  size: 1.5, color: "#FFFFFF" },
-  { left: "26%",  delay: "1s",   dur: "8s",  size: 2.0, color: "#7DD3FC" },
-  { left: "40%",  delay: "3.5s", dur: "5.5s",size: 1.5, color: "#F0ABFC" },
-  { left: "54%",  delay: "0.7s", dur: "7.5s",size: 2.0, color: "#818CF8" },
-  { left: "67%",  delay: "2.8s", dur: "6.5s",size: 1.5, color: "#7DD3FC" },
+  { left: "26%",  delay: "1s",   dur: "8s",  size: 2.0, color: DS.sky },
+  { left: "40%",  delay: "3.5s", dur: "5.5s",size: 1.5, color: DS.lavender },
+  { left: "54%",  delay: "0.7s", dur: "7.5s",size: 2.0, color: DS.purple },
+  { left: "67%",  delay: "2.8s", dur: "6.5s",size: 1.5, color: DS.sky },
   { left: "79%",  delay: "1.4s", dur: "9s",  size: 2.5, color: "#FFFFFF" },
-  { left: "91%",  delay: "4s",   dur: "6s",  size: 1.5, color: "#F0ABFC" },
+  { left: "91%",  delay: "4s",   dur: "6s",  size: 1.5, color: DS.lavender },
 ];
 
 function toHexOpacity(opacity: number): string {

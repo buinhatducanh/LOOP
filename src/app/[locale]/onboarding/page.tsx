@@ -14,7 +14,6 @@ import {
   Sparkles, Target, Award, Heart, Play, X
 } from 'lucide-react';
 import { DS, GRD } from '@/lib/design-tokens';
-const logoImg = "/logo.png";
 
 // ── hex → rgba helper ────────────────────────────────────────────────────
 function hexRgba(hex: string, alpha: number): string {
@@ -25,7 +24,21 @@ function hexRgba(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-// ── Star field background ────────────────────────────────────────────────
+// ── Galaxy Background — bảng màu mới từ design team ──────────────────────
+// 10 màu: 3 primary (3B82F6, 818CF8, 6366F1) + 7 secondary
+const GALAXY_COLORS = [
+  '#3B82F6', // Blue
+  '#818CF8', // Purple
+  '#6366F1', // Indigo
+  '#06B6D4', // Cyan
+  '#A855F7', // Violet
+  '#C084FC', // Lavender
+  '#E879F9', // Pink
+  '#7DD3FC', // Sky
+  '#14B8A6', // Teal
+  '#22D3EE', // Electric Cyan
+];
+
 function StarField() {
   const stars = useRef(
     Array.from({ length: 120 }, (_, i) => ({
@@ -36,6 +49,8 @@ function StarField() {
       opacity: Math.random() * 0.7 + 0.3,
       delay: Math.random() * 5,
       duration: Math.random() * 3 + 2,
+      // 30% màu đặc biệt, 70% trắng
+      color: Math.random() < 0.3 ? GALAXY_COLORS[Math.floor(Math.random() * GALAXY_COLORS.length)] : '#FFFFFF',
     }))
   ).current;
 
@@ -50,7 +65,7 @@ function StarField() {
             top: `${s.y}%`,
             width: s.size,
             height: s.size,
-            backgroundColor: s.size > 2 ? '#818CF8' : '#FFFFFF',
+            backgroundColor: s.color,
           }}
           animate={{ opacity: [s.opacity, s.opacity * 0.3, s.opacity] }}
           transition={{ duration: s.duration, repeat: Infinity, delay: s.delay, ease: 'easeInOut' }}
@@ -60,82 +75,386 @@ function StarField() {
   );
 }
 
-// ── Nebula Orbs ──────────────────────────────────────────────────────────
-function NebulaOrbs() {
+// ── Galaxy Nebula ──────────────────────────────────────────────────────────
+function GalaxyNebula() {
+  // 6 nebula blob sử dụng 6 màu chính
+  const nebulas = [
+    { color: '#3B82F6', top: '-20%', left: '-10%', w: '65%', h: '60%', dx: 60, dy: -30, dur: 22, delay: 0 },
+    { color: '#A855F7', top: '20%', right: '-15%', w: '55%', h: '55%', dx: -50, dy: 40, dur: 26, delay: 5 },
+    { color: '#06B6D4', bottom: '-10%', left: '15%', w: '50%', h: '50%', dx: 40, dy: -25, dur: 19, delay: 10 },
+    { color: '#818CF8', top: '40%', left: '30%', w: '40%', h: '40%', dx: -30, dy: 30, dur: 28, delay: 3 },
+    { color: '#E879F9', top: '-5%', right: '20%', w: '35%', h: '35%', dx: 25, dy: 50, dur: 23, delay: 7 },
+    { color: '#14B8A6', bottom: '20%', right: '5%', w: '30%', h: '30%', dx: -20, dy: -40, dur: 20, delay: 12 },
+  ];
+
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      <motion.div
-        className="absolute"
-        style={{
-          top: '-20%', left: '-10%', width: '60%', height: '60%',
-          background: 'radial-gradient(circle, rgba(29,78,216,0.15) 0%, transparent 70%)',
-          borderRadius: '50%', filter: 'blur(60px)',
-        }}
-        animate={{ x: [0, 50, 0], y: [0, -30, 0], scale: [1, 1.1, 1] }}
-        transition={{ duration: 20, repeat: Infinity, ease: 'easeInOut' }}
-      />
-      <motion.div
-        className="absolute"
-        style={{
-          top: '30%', right: '-15%', width: '55%', height: '55%',
-          background: 'radial-gradient(circle, rgba(129,140,248,0.12) 0%, transparent 70%)',
-          borderRadius: '50%', filter: 'blur(50px)',
-        }}
-        animate={{ x: [0, -40, 0], y: [0, 40, 0], scale: [1, 1.15, 1] }}
-        transition={{ duration: 24, repeat: Infinity, ease: 'easeInOut', delay: 4 }}
-      />
-      <motion.div
-        className="absolute"
-        style={{
-          bottom: '-15%', left: '20%', width: '50%', height: '50%',
-          background: 'radial-gradient(circle, rgba(20,184,166,0.1) 0%, transparent 70%)',
-          borderRadius: '50%', filter: 'blur(50px)',
-        }}
-        animate={{ x: [0, 30, 0], y: [0, -20, 0] }}
-        transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut', delay: 8 }}
-      />
+      {nebulas.map((n, i) => (
+        <motion.div
+          key={i}
+          className="absolute"
+          style={{
+            background: `radial-gradient(circle, ${n.color}22 0%, transparent 70%)`,
+            borderRadius: '50%',
+            filter: 'blur(55px)',
+            ...(n.top !== undefined ? { top: n.top } : { bottom: n.bottom }),
+            ...(n.left !== undefined ? { left: n.left } : {}),
+            ...(n.right !== undefined ? { right: n.right } : {}),
+            width: n.w,
+            height: n.h,
+          }}
+          animate={{
+            x: [0, n.dx, 0],
+            y: [0, n.dy, 0],
+            scale: [1, 1.12, 1],
+            opacity: [0.6, 0.9, 0.6],
+          }}
+          transition={{ duration: n.dur, repeat: Infinity, ease: 'easeInOut', delay: n.delay }}
+        />
+      ))}
     </div>
   );
 }
 
-// ── Infinity Logo SVG ────────────────────────────────────────────────────
-function InfinityLogo({ size = 80 }: { size?: number }) {
+// ── Galaxy Dust Particles ──────────────────────────────────────────────────
+function GalaxyDust() {
+  const particles = useRef(
+    Array.from({ length: 40 }, (_, i) => ({
+      id: i,
+      x: Math.random() * 100,
+      y: Math.random() * 100,
+      size: Math.random() * 1.5 + 0.3,
+      color: GALAXY_COLORS[Math.floor(Math.random() * GALAXY_COLORS.length)],
+      duration: Math.random() * 6 + 4,
+      delay: Math.random() * 8,
+    }))
+  ).current;
+
   return (
-    <svg width={size} height={size * 0.5} viewBox="0 0 200 100" fill="none">
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {particles.map(p => (
+        <motion.div
+          key={p.id}
+          className="absolute rounded-full"
+          style={{
+            left: `${p.x}%`,
+            top: `${p.y}%`,
+            width: p.size,
+            height: p.size,
+            backgroundColor: p.color,
+            boxShadow: `0 0 ${p.size * 3}px ${p.color}`,
+          }}
+          animate={{
+            opacity: [0.1, 0.8, 0.1],
+            scale: [0.8, 1.4, 0.8],
+          }}
+          transition={{
+            duration: p.duration,
+            repeat: Infinity,
+            delay: p.delay,
+            ease: 'easeInOut',
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+// ── Spiral Galaxy Arms ─────────────────────────────────────────────────────
+function GalaxySpirals() {
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      <svg
+        className="absolute inset-0 w-full h-full"
+        style={{ opacity: 0.06 }}
+        viewBox="0 0 1440 900"
+        preserveAspectRatio="xMidYMid slice"
+      >
+        <defs>
+          <linearGradient id="spiral-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#3B82F6" />
+            <stop offset="33%" stopColor="#818CF8" />
+            <stop offset="66%" stopColor="#A855F7" />
+            <stop offset="100%" stopColor="#06B6D4" />
+          </linearGradient>
+        </defs>
+        {/* Spiral arm 1 */}
+        <path
+          d="M 720 450 C 800 350 900 200 800 100 C 700 0 500 50 400 200 C 300 350 350 550 450 650 C 550 750 750 700 800 600"
+          fill="none"
+          stroke="url(#spiral-grad)"
+          strokeWidth="80"
+          strokeLinecap="round"
+        />
+        {/* Spiral arm 2 */}
+        <path
+          d="M 720 450 C 640 550 540 700 640 800 C 740 900 940 850 1040 700 C 1140 550 1090 350 990 250 C 890 150 690 200 640 300"
+          fill="none"
+          stroke="url(#spiral-grad)"
+          strokeWidth="60"
+          strokeLinecap="round"
+        />
+        {/* Center glow */}
+        <circle cx="720" cy="450" r="120" fill="url(#spiral-grad)" opacity="0.15" />
+      </svg>
+    </div>
+  );
+}
+
+// ── Shooting Stars ──────────────────────────────────────────────────────────
+function ShootingStars() {
+  const stars = useRef(
+    Array.from({ length: 4 }, (_, i) => ({
+      id: i,
+      startX: Math.random() * 80,
+      startY: Math.random() * 30,
+      angle: Math.random() * 30 + 15,
+      delay: Math.random() * 15,
+      duration: Math.random() * 1.5 + 1,
+    }))
+  ).current;
+
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {stars.map(s => (
+        <motion.div
+          key={s.id}
+          style={{
+            position: 'absolute',
+            top: `${s.startY}%`,
+            left: `${s.startX}%`,
+            width: 80,
+            height: 1,
+            background: 'linear-gradient(to right, transparent, #818CF8, #FFFFFF)',
+            transformOrigin: 'left center',
+            rotate: s.angle,
+            borderRadius: 1,
+          }}
+          initial={{ opacity: 0, x: 0, y: 0, scale: 0 }}
+          animate={{
+            opacity: [0, 1, 0],
+            x: [0, 200],
+            y: [0, s.angle * 3],
+            scale: [0, 1, 0],
+          }}
+          transition={{
+            duration: s.duration,
+            repeat: Infinity,
+            delay: s.delay,
+            ease: 'easeOut',
+            times: [0, 0.1, 1],
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+// ── Composed Galaxy Background ──────────────────────────────────────────────
+function GalaxyBackground() {
+  return (
+    <>
+      <StarField />
+      <GalaxyNebula />
+      <GalaxyDust />
+      <GalaxySpirals />
+      <ShootingStars />
+    </>
+  );
+}
+
+// ── Infinity Logo SVG — Cosmic Lemniscate ─────────────────────────────────
+// Aspect ratio 360×280 (≈ 9:7) — matches the hero graphic's rounded-rectangle frame.
+// viewBox center = (180, 140). Loop center node = (180, 140).
+// Container: InfinityLogo wrapped in a flex-1 div to fill its parent.
+function InfinityLogo({ size = 360 }: { size?: number }) {
+  const vbW = 360;
+  const vbH = 280;
+  const cx = vbW / 2; // 180
+  const cy = vbH / 2; // 140
+
+  // helper — percentage → SVG coordinate
+  const _svg = (fx: number, fy: number) => ({ x: vbW * fx, y: vbH * fy });
+
+  return (
+    <svg
+      width={size}
+      height={size * (vbH / vbW)}
+      viewBox={`0 0 ${vbW} ${vbH}`}
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
       <defs>
-        <linearGradient id="inf-grad" x1="0" y1="0" x2="200" y2="100" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#3B82F6" />
-          <stop offset="40%" stopColor="#818CF8" />
-          <stop offset="70%" stopColor="#7DD3FC" />
-          <stop offset="100%" stopColor="#14B8A6" />
+        {/* Left loop — cyan / blue / turquoise */}
+        <linearGradient id="lg-left" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#06B6D4" />
+          <stop offset="35%" stopColor="#0EA5E9" />
+          <stop offset="65%" stopColor="#3B82F6" />
+          <stop offset="100%" stopColor="#818CF8" />
         </linearGradient>
-        <filter id="inf-glow">
-          <feGaussianBlur stdDeviation="4" result="blur" />
-          <feMerge>
-            <feMergeNode in="blur" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
+
+        {/* Right loop — purple / violet / pink */}
+        <linearGradient id="lg-right" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#A855F7" />
+          <stop offset="40%" stopColor="#C084FC" />
+          <stop offset="70%" stopColor="#E879F9" />
+          <stop offset="100%" stopColor="#7DD3FC" />
+        </linearGradient>
+
+        {/* Ambient glow blobs */}
+        <radialGradient id="glow-left" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#3B82F6" stopOpacity="0.35" />
+          <stop offset="100%" stopColor="#3B82F6" stopOpacity="0" />
+        </radialGradient>
+        <radialGradient id="glow-right" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#A855F7" stopOpacity="0.35" />
+          <stop offset="100%" stopColor="#A855F7" stopOpacity="0" />
+        </radialGradient>
+
+        {/* Filters */}
+        <filter id="soft-glow" x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur stdDeviation="5" result="blur" />
+          <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+        <filter id="tight-glow" x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="2.5" result="blur" />
+          <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
         </filter>
       </defs>
+
+      {/* Ambient glow blobs — pulsing */}
+      <ellipse cx={cx * 0.75} cy={cy} rx={vbW * 0.18} ry={vbH * 0.16}
+        fill="url(#glow-left)" opacity="0.7">
+        <animate attributeName="opacity" values="0.7;0.35;0.7" dur="4s" repeatCount="indefinite" />
+      </ellipse>
+      <ellipse cx={cx * 1.25} cy={cy} rx={vbW * 0.18} ry={vbH * 0.16}
+        fill="url(#glow-right)" opacity="0.7">
+        <animate attributeName="opacity" values="0.7;0.35;0.7" dur="4s" repeatCount="indefinite" begin="1.5s" />
+      </ellipse>
+
+      {/* Left infinity loop — lemniscate of Bernoulli */}
+      {/* Loop center at (cx, cy). Left lobe: top ~y=0.15, bottom ~y=0.85. */}
       <path
-        d="M50 50 C50 25, 20 15, 15 40 C10 65, 40 80, 50 50 C60 20, 90 15, 95 40 C100 65, 75 80, 50 50 Z"
-        stroke="url(#inf-grad)"
-        strokeWidth="4"
-        fill="none"
-        filter="url(#inf-glow)"
-        strokeLinecap="round"
+        d={`M ${cx} ${cy}
+           C ${cx} ${cy * 0.3},
+             ${cx * 0.22} ${cy * 0.05},
+             ${cx * 0.12} ${cy * 0.25}
+           C ${cx * 0.02} ${cy * 0.5},
+             ${cx * 0.12} ${cy * 0.75},
+             ${cx * 0.38} ${cy * 0.55}
+           C ${cx * 0.48} ${cy * 0.62},
+             ${cx * 0.6} ${cy * 0.58},
+             ${cx} ${cy}`}
+        stroke="url(#lg-left)" strokeWidth="2.5" fill="none" strokeLinecap="round"
+        filter="url(#soft-glow)" opacity="0.95"
       />
-      {/* Additional stroke for depth */}
+      {/* Inner highlight for glassy depth */}
       <path
-        d="M100 50 C100 25, 130 15, 150 35 C170 55, 160 80, 140 65 C120 50, 110 30, 100 50 Z"
-        stroke="url(#inf-grad)"
-        strokeWidth="4"
-        fill="none"
-        filter="url(#inf-glow)"
-        strokeLinecap="round"
-        opacity="0.8"
-        transform="translate(-50, 0)"
+        d={`M ${cx} ${cy}
+           C ${cx} ${cy * 0.3},
+             ${cx * 0.22} ${cy * 0.05},
+             ${cx * 0.12} ${cy * 0.25}
+           C ${cx * 0.02} ${cy * 0.5},
+             ${cx * 0.12} ${cy * 0.75},
+             ${cx * 0.38} ${cy * 0.55}
+           C ${cx * 0.48} ${cy * 0.62},
+             ${cx * 0.6} ${cy * 0.58},
+             ${cx} ${cy}`}
+        stroke="rgba(255,255,255,0.3)" strokeWidth="1" fill="none"
+        strokeLinecap="round" opacity="0.7"
       />
+
+      {/* Right infinity loop */}
+      <path
+        d={`M ${cx} ${cy}
+           C ${cx} ${cy * 1.7},
+             ${cx * 1.78} ${cy * 1.95},
+             ${cx * 1.88} ${cy * 1.75}
+           C ${cx * 1.98} ${cy * 1.5},
+             ${cx * 1.88} ${cy * 1.25},
+             ${cx * 1.62} ${cy * 1.45}
+           C ${cx * 1.52} ${cy * 1.38},
+             ${cx * 1.4} ${cy * 1.42},
+             ${cx} ${cy}`}
+        stroke="url(#lg-right)" strokeWidth="2.5" fill="none" strokeLinecap="round"
+        filter="url(#soft-glow)" opacity="0.95"
+      />
+      {/* Inner highlight */}
+      <path
+        d={`M ${cx} ${cy}
+           C ${cx} ${cy * 1.7},
+             ${cx * 1.78} ${cy * 1.95},
+             ${cx * 1.88} ${cy * 1.75}
+           C ${cx * 1.98} ${cy * 1.5},
+             ${cx * 1.88} ${cy * 1.25},
+             ${cx * 1.62} ${cy * 1.45}
+           C ${cx * 1.52} ${cy * 1.38},
+             ${cx * 1.4} ${cy * 1.42},
+             ${cx} ${cy}`}
+        stroke="rgba(255,255,255,0.2)" strokeWidth="1" fill="none"
+        strokeLinecap="round" opacity="0.6"
+      />
+
+      {/* Center node — pulsing bright dot */}
+      <circle cx={cx} cy={cy} r="3.5" fill="white" opacity="0.9" filter="url(#tight-glow)">
+        <animate attributeName="r" values="3.5;5;3.5" dur="3s" repeatCount="indefinite" />
+        <animate attributeName="opacity" values="0.9;1;0.9" dur="3s" repeatCount="indefinite" />
+      </circle>
+
+      {/* Floating sparkle particles */}
+      {[
+        { cx: 0.28, cy: 0.28, r: 1.8, color: '#06B6D4', delay: 0 },
+        { cx: 0.2,  cy: 0.45, r: 1.2, color: '#3B82F6', delay: 0.8 },
+        { cx: 0.12, cy: 0.65, r: 1.5, color: '#818CF8', delay: 0.4 },
+        { cx: 0.3,  cy: 0.78, r: 1.0, color: '#0EA5E9', delay: 2.0 },
+        { cx: 1.72, cy: 0.72, r: 1.8, color: '#A855F7', delay: 1.2 },
+        { cx: 1.8,  cy: 0.52, r: 1.2, color: '#E879F9', delay: 0.6 },
+        { cx: 1.7,  cy: 0.28, r: 1.5, color: '#C084FC', delay: 1.8 },
+        { cx: 1.55, cy: 0.8,  r: 1.0, color: '#7DD3FC', delay: 1.0 },
+        { cx: 0.38, cy: 0.38, r: 0.9, color: '#22D3EE', delay: 0.3 },
+        { cx: 1.62, cy: 0.62, r: 0.9, color: '#E879F9', delay: 1.5 },
+      ].map((p, i) => (
+        <circle key={i} cx={cx * p.cx} cy={cy * p.cy} r={p.r} fill={p.color} opacity="0.7">
+          <animate attributeName="opacity"
+            values="0.7;0.2;0.7"
+            dur={`${2.5 + p.delay}s`}
+            repeatCount="indefinite"
+            begin={`${p.delay}s`}
+          />
+          <animate attributeName="cy"
+            values={`${cy * p.cy};${cy * (p.cy - 0.05)};${cy * p.cy}`}
+            dur={`${3 + p.delay}s`}
+            repeatCount="indefinite"
+            begin={`${p.delay}s`}
+          />
+        </circle>
+      ))}
+
+      {/* Cross-shaped star bursts */}
+      {[
+        { cx: 0.18, cy: 0.3,  size: 4.5, color: '#06B6D4', delay: 0.5 },
+        { cx: 1.82, cy: 0.7,  size: 4.5, color: '#A855F7', delay: 1.0 },
+        { cx: 1.0,  cy: 0.12, size: 3.5, color: '#818CF8', delay: 0.2 },
+        { cx: 1.0,  cy: 1.88, size: 3.5, color: '#7DD3FC', delay: 1.4 },
+      ].map((s, i) => (
+        <g key={`star-${i}`}>
+          <line
+            x1={cx * s.cx - s.size} y1={cy * s.cy}
+            x2={cx * s.cx + s.size} y2={cy * s.cy}
+            stroke={s.color} strokeWidth="1" opacity="0.5"
+          />
+          <line
+            x1={cx * s.cx} y1={cy * s.cy - s.size}
+            x2={cx * s.cx} y2={cy * s.cy + s.size}
+            stroke={s.color} strokeWidth="1" opacity="0.5"
+          />
+          <animate attributeName="opacity"
+            values="0.5;0.1;0.5"
+            dur="3s" repeatCount="indefinite"
+            begin={`${s.delay}s`}
+          />
+        </g>
+      ))}
     </svg>
   );
 }
@@ -237,22 +556,21 @@ function SlideWelcome({ direction }: SlideProps) {
   return (
     <SlideWrapper direction={direction}>
       <div className="flex flex-col items-center justify-center min-h-full text-center px-6">
-        {/* Logo image */}
+        {/* Animated logo — PNG from design team */}
         <motion.div
           initial={{ scale: 0.5, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ type: 'spring', stiffness: 100, damping: 15, delay: 0.2 }}
           className="mb-8"
+          style={{ width: 'min(65vw, 380px)', height: 'min(65vw, 235px)' }}
         >
-          <div className="relative">
-            <motion.div
-              className="absolute inset-0 rounded-full"
-              style={{ filter: 'blur(60px)', background: 'radial-gradient(circle, rgba(129,140,248,0.3), rgba(59,130,246,0.15), transparent)' }}
-              animate={{ scale: [1, 1.3, 1], opacity: [0.5, 0.8, 0.5] }}
-              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-            />
-            <img src={logoImg} alt="LOOP Solutions" style={{ width: 'min(80vw, 480px)', position: 'relative', zIndex: 1 }} />
-          </div>
+          <img
+            src="/assets/design-company/logo-cosmic-infinity.png"
+            alt="LOOP Solutions"
+            width={380}
+            height={235}
+            style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
+          />
         </motion.div>
 
         {/* Title */}
@@ -761,8 +1079,7 @@ export default function OnboardingPage() {
   return (
     <div className="fixed inset-0 z-[200] overflow-hidden" style={{ background: DS.bg }}>
       {/* Background */}
-      <StarField />
-      <NebulaOrbs />
+      <GalaxyBackground />
 
       {/* Grid overlay */}
       <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ opacity: 0.02 }}>

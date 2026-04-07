@@ -1,4 +1,4 @@
-import { ok, handleError } from "@/lib/api/response";
+import { handleError } from "@/lib/api/response";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
@@ -9,7 +9,7 @@ import { requirePermission } from "@/lib/auth/permissions";
  */
 export async function GET() {
   try {
-    const session = await requirePermission("effects", "read");
+    const _session = await requirePermission("effects", "read");
 
     // If ANY effect is disabled → global toggle is OFF
     // If ALL effects are enabled → global toggle is ON
@@ -27,9 +27,9 @@ export async function GET() {
  * Body: { isEnabled: boolean }
  * Enables or disables ALL rank effects globally.
  */
-export async function PUT(req: NextRequest) {
+export async function PUT(_req: NextRequest) {
   try {
-    const session = await requirePermission("effects", "update");
+    const _session = await requirePermission("effects", "update");
     const { isEnabled } = await req.json();
 
     if (typeof isEnabled !== "boolean") {

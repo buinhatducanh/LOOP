@@ -22,7 +22,7 @@ const LOCALE_SUFFIX: Record<Locale | string, string> = {
 };
 
 // Priority fallback chain: requested → VI (default)
-const FALLBACK_CHAIN: Locale[] = ["vi", "en"];
+const _FALLBACK_CHAIN: Locale[] = ["vi", "en"];
 
 type LocalizedRecord = Record<string, unknown>;
 

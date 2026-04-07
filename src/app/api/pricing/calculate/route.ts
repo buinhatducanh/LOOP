@@ -1,10 +1,10 @@
-import { ok, serverError } from "@/lib/api/response";
+import { serverError } from "@/lib/api/response";
 import { calculateOrderPrice } from "@/lib/pricing/calculate-order-price";
 import type { NextRequest } from "next/server";
 
 // Public API cho Pricing Calculator
 // Body: { selectedFeatureIds: string[], infraTierSlug?: string }
-export async function POST(req: NextRequest) {
+export async function POST(_req: NextRequest) {
   try {
     const body = await req.json();
     const selectedFeatureIds = Array.isArray(body.selectedFeatureIds)

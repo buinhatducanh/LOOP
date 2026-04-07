@@ -1,10 +1,10 @@
-import { ok, handleError } from "@/lib/api/response";
-import { NextRequest, NextResponse } from "next/server";
+import { handleError } from "@/lib/api/response";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import type { TeamMemberCreateInput } from "@/generated/prisma/models/TeamMember";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
-import { addAvatar, addAvatarToList } from "@/lib/api/mappings";
+import { addAvatar } from "@/lib/api/mappings";
 import {
   buildQueryFromParams,
   parsePagination,
@@ -13,7 +13,7 @@ import {
 } from "@/lib/api/search-utils";
 import { computeRankFieldsFromLp } from "@/lib/rank/xp";
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
     await requirePermission("team", "read");
     const { searchParams } = new URL(req.url);
@@ -76,9 +76,9 @@ export async function GET(req: NextRequest) {
   }
 }
 
-export async function POST(req: NextRequest) {
+export async function POST(_req: NextRequest) {
   try {
-    const session = await requirePermission("team", "create");
+    const _session = await requirePermission("team", "create");
     const data = await req.json();
 
     if (!data.name || !data.role || !data.slug) {

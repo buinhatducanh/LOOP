@@ -60,9 +60,9 @@ export async function GET(_req: NextRequest) {
   }
 }
 
-export async function PUT(req: NextRequest) {
+export async function PUT(_req: NextRequest) {
   try {
-    const session = await requirePermission("settings", "update");
+    const _session = await requirePermission("settings", "update");
     const body = await req.json();
     const { settings } = body as { settings: { key: string; value: string }[] };
 
