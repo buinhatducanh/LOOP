@@ -26,13 +26,13 @@ import { AuthGuard } from "@/components/admin/AuthGuard";
 import { SessionHydrator } from "./SessionHydrator";
 import "@/styles/globals.css";
 
- DM_Sans({
+const dmSans = DM_Sans({
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700", "800"],
   variable: "--font-dm-sans",
 });
 
- Plus_Jakarta_Sans({
+const plusJakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800"],
   variable: "--font-plus-jakarta",
