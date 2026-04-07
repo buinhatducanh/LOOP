@@ -13,7 +13,7 @@ import { motion } from "motion/react";
 import { DS } from "@/lib/design-tokens";
 import {
   TrendingUp, Users, Zap,
-  ArrowUpRight, ArrowDownRight, DollarSign, FolderKanban,
+  ArrowUpRight, ArrowDownRight, DollarSign, FolderKanban, Activity,
 } from "lucide-react";
 
 // ── Formatters ──────────────────────────────────────────────────────────────
