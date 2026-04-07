@@ -466,8 +466,8 @@ function WalletTab({ pointData }: { pointData: PointData | null }) {
       <div style={{
         padding: "2rem",
         borderRadius: "1.5rem",
-        background: "linear-gradient(135deg, rgba(59,130,246,0.15) 0%, rgba(129,140,248,0.1) 100%)",
-        border: `1px solid rgba(129,140,248,0.2)`,
+        background: `linear-gradient(135deg, rgba(79,125,243,0.15) 0%, rgba(236,72,153,0.1) 100%)`,
+        border: `1px solid rgba(236,72,153,0.2)`,
         textAlign: "center",
         marginBottom: "1.5rem",
       }}>
@@ -569,8 +569,8 @@ function ReferralTab() {
       <div style={{
         padding: "2rem",
         borderRadius: "1.5rem",
-        background: "linear-gradient(135deg, rgba(129,140,248,0.1) 0%, rgba(59,130,246,0.1) 100%)",
-        border: `1px solid rgba(129,140,248,0.2)`,
+        background: `linear-gradient(135deg, rgba(236,72,153,0.1) 0%, rgba(79,125,243,0.1) 100%)`,
+        border: `1px solid rgba(236,72,153,0.2)`,
         textAlign: "center",
         marginBottom: "1rem",
       }}>

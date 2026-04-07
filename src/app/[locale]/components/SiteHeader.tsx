@@ -544,7 +544,7 @@ export default function SiteHeader({ locale }: { locale: string }) {
       {/* Gradient top line */}
       <div style={{
         position: "fixed", top: 0, left: 0, right: 0, zIndex: 60, height: 2,
-        background: "linear-gradient(90deg, transparent, #3B82F6 30%, #818CF8 70%, transparent)",
+        background: `linear-gradient(90deg, transparent, ${DS.blue} 30%, ${DS.pink} 70%, transparent)`,
         pointerEvents: "none",
       }} />
 

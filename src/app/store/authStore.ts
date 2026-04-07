@@ -225,8 +225,8 @@ export function getAccessibleTabs(role: UserRole, _department?: string): AdminTa
   return []; // guest
 }
 
-export function canAccessTab(role: UserRole, department: string | undefined, tab: AdminTab): boolean {
-  const tabs = getAccessibleTabs(role, department);
+export function canAccessTab(role: UserRole, _department: string | undefined, tab: AdminTab): boolean {
+  const tabs = getAccessibleTabs(role, _department);
   if (tabs === "all") return true;
   return tabs.includes(tab);
 }
@@ -311,7 +311,7 @@ function sessionToAuthUser(session: EnrichedSession): AuthUser {
       `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(session.name || session.email)}`,
     role,
     accountType: session.accountType,
-    department: session.department,
+    _department: session._department,
     rank: session.rank,
     rankColor: session.rankColor,
     lpBalance: session.lpBalance ?? 0,
@@ -337,14 +337,10 @@ export const useAuthStore = create<AuthStore>()(
       error: null,
       role: "guest",
       accountType: null,
-      department: undefined,
+      _department: undefined,
       accessibleTabs: [],
       sessionHydrated: false, // R2: not yet verified by server
       tokenExpiry: null,      // R2: no token expiry yet
-
-      // Zustand persist hydration helpers (provided by persist middleware)
-      hasHydrated: () => false,
-      onFinishHydration: () => () => {},
 
       // Gamification (NOT persisted — re-fetched from BE on each session)
       quests: INIT_QUESTS,
@@ -391,8 +387,8 @@ export const useAuthStore = create<AuthStore>()(
         error: null,
         role,
         accountType: session.accountType,
-        department: session.department,
-        accessibleTabs: getAccessibleTabs(role, session.department),
+        _department: session._department,
+        accessibleTabs: getAccessibleTabs(role, session._department),
         sessionHydrated: true,       // R2: login payload IS the server session — mark hydrated
         tokenExpiry: Date.now() + 15 * 60 * 1000, // R2: access token TTL = 15 min
       });
@@ -401,7 +397,7 @@ export const useAuthStore = create<AuthStore>()(
       const isAbort = err instanceof Error && (err.name === "AbortError" || err.name === "TimeoutError");
       const message = isAbort
         ? "Yêu cầu bị timeout. Vui lòng thử lại sau."
-        : err instanceof Error ? err.message : "�ăng nhập thất bại";
+        : err instanceof Error ? err.message : "Đăng nhập thất bại";
       set({ isLoading: false, error: message });
       return false;
     }
@@ -416,8 +412,8 @@ export const useAuthStore = create<AuthStore>()(
       error: null,
       role,
       accountType: user.accountType,
-      department: user.department,
-      accessibleTabs: getAccessibleTabs(role, user.department),
+      _department: user._department,
+      accessibleTabs: getAccessibleTabs(role, user._department),
       sessionHydrated: true,    // R2: programmatic login — trust the caller
       tokenExpiry: Date.now() + 15 * 60 * 1000, // R2: default 15-min TTL
     });
@@ -459,7 +455,7 @@ export const useAuthStore = create<AuthStore>()(
         error: null,
         role: "guest",
         accountType: null,
-        department: undefined,
+        _department: undefined,
         accessibleTabs: [],
         sessionHydrated: false, // R2: reset hydration flag
         tokenExpiry: null,      // R2: no expiry
@@ -495,8 +491,8 @@ export const useAuthStore = create<AuthStore>()(
         error: null,
         role,
         accountType: session.accountType,
-        department: session.department,
-        accessibleTabs: getAccessibleTabs(role, session.department),
+        _department: session._department,
+        accessibleTabs: getAccessibleTabs(role, session._department),
         sessionHydrated: true,         // R2: server confirmed valid session
         tokenExpiry: Date.now() + 15 * 60 * 1000, // R2: refresh expiry on each /me
       });
@@ -515,6 +511,11 @@ export const useAuthStore = create<AuthStore>()(
 
   // ── Quest actions ──────────────────────────────────────────────────────────
 
+  /**
+   * Daily check-in quest — marks q-daily-1 as complete.
+   * Async fire-and-forget: calls BE to award LP + XP; errors handled silently.
+   * Callers do NOT need to await — state is updated optimistically on the FE.
+   */
   checkIn: async () => {
     const today = new Date().toDateString();
     const { lastCheckIn, dailyStreak, quests } = get();
@@ -590,7 +591,7 @@ export const useAuthStore = create<AuthStore>()(
         isAuthenticated: state.isAuthenticated,
         role: state.role,
         accountType: state.accountType,
-        department: state.department,
+        _department: state._department,
         accessibleTabs: state.accessibleTabs,
         sessionHydrated: state.sessionHydrated, // R2: preserve hydration state
         tokenExpiry: state.tokenExpiry,        // R2: preserve token expiry

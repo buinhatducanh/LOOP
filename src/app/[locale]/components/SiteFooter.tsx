@@ -279,7 +279,7 @@ export default function SiteFooter({ locale = "vi" }: { locale?: string }) {
               fontFamily: DS.heading,
               fontSize: "clamp(1.5rem, 4vw, 2rem)",
               fontWeight: 900, letterSpacing: "0.06em",
-              background: "linear-gradient(135deg, #FFFFFF, #94A3B8)",
+              background: `linear-gradient(135deg, #FFFFFF 0%, ${DS.pink} 60%, ${DS.pinkLight} 100%)`,
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
               backgroundClip: "text",

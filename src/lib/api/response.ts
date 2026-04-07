@@ -38,8 +38,8 @@ export function list<T>(data: T[], pagination: Pagination, status = 200) {
  * Use only when the standard { data } or { data, pagination } wrappers
  * don't fit the endpoint's contract.
  */
-export function json<T>(payload: T, status = 200) {
-  return NextResponse.json(payload, { status });
+export function json<T>(payload: T, status = 200, headers?: Record<string, string>) {
+  return NextResponse.json(payload, { status, headers });
 }
 
 /**

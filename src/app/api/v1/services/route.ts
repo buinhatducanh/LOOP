@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 
 import { prisma } from "@/lib/prisma";
 import { parseLocaleParam, getLocalizedField, getLocalizedArray } from "@/lib/i18n/localization";
-import { handleError } from "@/lib/api/response";
+import { json, handleError } from "@/lib/api";
 import { logger } from "@/lib/logger";
 
 export async function GET(req: Request) {
@@ -57,18 +57,17 @@ export async function GET(req: Request) {
       statusCode: 200,
       latencyMs: Date.now() - start,
     });
-    return NextResponse.json(
+    return json(
       {
         version: "v1",
         data: { services: localized, grouped, categories: Object.keys(grouped) },
         meta: { count: localized.length, locale },
       },
+      200,
       {
-        headers: {
-          "X-API-Version": "v1",
-          "Cache-Control": "public, s-maxage=60, stale-while-revalidate=120",
-        },
-      }
+        "X-API-Version": "v1",
+        "Cache-Control": "public, s-maxage=60, stale-while-revalidate=120",
+      },
     );
   } catch (error) {
     logger.withSLO("GET /api/v1/services failed", { endpoint: "/api/v1/services", latencyMs: 0, statusCode: 500 });

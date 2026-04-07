@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import crypto from "crypto";
@@ -32,7 +32,10 @@ const vercelPayloadSchema = z.object({
 });
 
 function verifySignature(payload: string, signature: string): boolean {
-  if (!VERCEL_SIGNING_SECRET) return true; // Skip in dev if no secret set
+  if (!VERCEL_SIGNING_SECRET) {
+    console.warn("[Vercel Webhook] VERCEL_WEBHOOK_SECRET not set — signature verification skipped");
+    return process.env.NODE_ENV !== "production"; // only bypass in development
+  }
   const hmac = crypto.createHmac("sha256", VERCEL_SIGNING_SECRET);
   hmac.update(payload);
   const expected = `sha256=${hmac.digest("hex")}`;

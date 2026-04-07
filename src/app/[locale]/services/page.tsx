@@ -229,7 +229,7 @@ export default async function ServicesPage({ params, searchParams }: Props) {
   return (
     <ServicesClient
       locale={locale}
-      customServices={customServices}
+      _customServices={customServices}
       webPackages={webPackages}
       ui={ui}
       defaultTab={defaultTab}

@@ -1,98 +1,28 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="192" height="192">
   <defs>
-    <linearGradient id="ribbonGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#1e2a4a"/>
-      <stop offset="100%" stop-color="#060a12"/>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6B3DF5"/>
+      <stop offset="100%" stop-color="#EC4899"/>
     </linearGradient>
-    <linearGradient id="infOuter" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0a0f1e"/>
-      <stop offset="100%" stop-color="#050810"/>
-    </linearGradient>
-    <linearGradient id="infInner" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#06B6D4"/>
-      <stop offset="50%" stop-color="#8B5CF6"/>
-      <stop offset="100%" stop-color="#6366F1"/>
-    </linearGradient>
-    <linearGradient id="highlight" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#BAE6FD" stop-opacity="0.9"/>
-      <stop offset="100%" stop-color="#67E8F9" stop-opacity="0.3"/>
-    </linearGradient>
-    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="2" dy="4" stdDeviation="4" flood-color="#000" flood-opacity="0.6"/>
-    </filter>
-    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
-      <feGaussianBlur stdDeviation="3" result="blur"/>
-      <feMerge>
-        <feMergeNode in="blur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
-    <radialGradient id="bg" cx="50%" cy="40%" r="60%">
-      <stop offset="0%" stop-color="#1a1040"/>
-      <stop offset="100%" stop-color="#0a0d1a"/>
-    </radialGradient>
   </defs>
 
-  <rect width="192" height="192" rx="42" fill="url(#bg)"/>
+  <!-- Bold hexagon background -->
+  <polygon
+    points="32,3 57,17.5 57,46.5 32,61 7,46.5 7,17.5"
+    fill="url(#bg)"
+  />
 
-  <!-- L vertical stem -->
-  <rect x="42" y="42" width="30" height="84" rx="12"
-        fill="url(#ribbonGrad)" filter="url(#shadow)"/>
-  <rect x="42" y="42" width="10" height="84" rx="6"
-        fill="#2a3f6e" opacity="0.7"/>
+  <!-- Infinity symbol — thick white strokes -->
+  <path
+    d="M32 32 C24 20, 10 20, 10 32 C10 44, 24 44, 32 32"
+    fill="none" stroke="white" stroke-width="5.5" stroke-linecap="round"
+  />
+  <path
+    d="M32 32 C40 44, 54 44, 54 32 C54 20, 40 20, 32 32"
+    fill="none" stroke="white" stroke-width="5.5" stroke-linecap="round"
+  />
+  <line x1="28" y1="28" x2="36" y2="36" stroke="white" stroke-width="5.5" stroke-linecap="round"/>
 
-  <!-- L ribbon base -->
-  <path d="M 42 108
-           C 60 108, 78 102, 90 108
-           L 168 108
-           C 174 108, 174 108, 168 102
-           L 90 84
-           C 78 90, 60 84, 42 84 Z"
-        fill="url(#ribbonGrad)" filter="url(#shadow)"/>
-  <path d="M 48 108 C 63 108, 79 103.5, 93 108 L 163 108 L 93 87 C 79 92, 63 87.5, 48 84 Z"
-        fill="#1e2f5e" opacity="0.6"/>
-  <path d="M 51 108 C 66 107.8, 80 103.5, 93 108 L 159 108 L 93 105.2 C 80 100.8, 66 107.5, 51 108 Z"
-        fill="url(#highlight)" opacity="0.25"/>
-  <path d="M 156 108 L 180 84 L 168 102 Z" fill="#040810"/>
-  <path d="M 159 108 L 177 87 L 168 102 Z" fill="#1e2a4a" opacity="0.5"/>
-
-  <!-- Left infinity loop outer -->
-  <path d="M 102 96
-           C 102 75, 87 60, 69 60
-           C 51 60, 36 75, 36 96
-           C 36 117, 51 132, 69 132
-           C 87 132, 102 117, 102 96"
-        fill="none" stroke="url(#infOuter)" stroke-width="27" stroke-linecap="round" filter="url(#shadow)"/>
-  <!-- Left infinity inner -->
-  <path d="M 102 96
-           C 102 75, 87 60, 69 60
-           C 51 60, 36 75, 36 96
-           C 36 117, 51 132, 69 132
-           C 87 132, 102 117, 102 96"
-        fill="none" stroke="url(#infInner)" stroke-width="13.5" stroke-linecap="round" filter="url(#glow)"/>
-  <!-- Left loop gloss -->
-  <path d="M 69 60 C 51 60, 36 75, 36 96 C 36 78, 49.5 64.5, 69 63"
-        fill="none" stroke="#7DD3FC" stroke-width="5" stroke-linecap="round" opacity="0.75"/>
-
-  <!-- Right infinity loop outer -->
-  <path d="M 90 96
-           C 90 75, 105 60, 123 60
-           C 141 60, 156 75, 156 96
-           C 156 117, 141 132, 123 132
-           C 105 132, 90 117, 90 96"
-        fill="none" stroke="url(#infOuter)" stroke-width="27" stroke-linecap="round"/>
-  <!-- Right infinity inner -->
-  <path d="M 90 96
-           C 90 75, 105 60, 123 60
-           C 141 60, 156 75, 156 96
-           C 156 117, 141 132, 123 132
-           C 105 132, 90 117, 90 96"
-        fill="none" stroke="url(#infInner)" stroke-width="13.5" stroke-linecap="round" filter="url(#glow)"/>
-  <!-- Right loop gloss -->
-  <path d="M 123 60 C 141 60, 156 75, 156 96 C 156 78, 142.5 64.5, 123 63"
-        fill="none" stroke="#7DD3FC" stroke-width="5" stroke-linecap="round" opacity="0.75"/>
-
-  <!-- Shadow under L over infinity -->
-  <path d="M 42 108 C 60 108, 78 102, 90 108 L 102 96"
-        fill="none" stroke="#000" stroke-width="3" opacity="0.35"/>
+  <circle cx="12" cy="20" r="2" fill="#EC4899" opacity="0.8"/>
+  <circle cx="52" cy="44" r="2" fill="#4F7DF3" opacity="0.8"/>
 </svg>

@@ -280,7 +280,7 @@ function LoginForm({ locale, onSwitch }: { locale: string; onSwitch: (m: AuthMod
       redirect: true,
     }).catch(() => {
       setGoogleLoading(false);
-      setError("");
+      setError("Đăng nhập Google thất bại. Vui lòng thử lại.");
     });
   };
 
@@ -391,7 +391,7 @@ function LoginForm({ locale, onSwitch }: { locale: string; onSwitch: (m: AuthMod
 }
 
 // ── Register form ───────────────────────────────────────────────────────────
-function RegisterForm({ onSwitch }: { onSwitch: (m: AuthMode) => void }) {
+function RegisterForm({ onSwitch, locale }: { onSwitch: (m: AuthMode) => void; locale: string }) {
   const t = useTranslations("auth");
   const router = useRouter();
   const { login } = useAuthStore();
@@ -441,10 +441,10 @@ function RegisterForm({ onSwitch }: { onSwitch: (m: AuthMode) => void }) {
       if (data.token) {
         localStorage.setItem("loop-customer-token", data.token);
         await login(data.user?.email ?? email, "");
-        router.push(`/dang-nhap/client-onboarding?token=${encodeURIComponent(data.token)}`);
+        router.push(`/${locale}/dang-nhap/client-onboarding?token=${encodeURIComponent(data.token)}`);
       }
     } catch {
-      setError("Không thể kết nối máy chủ. Vui lòng thử lại.");
+      setError("Không thể kết nếu máy chủ. Vui lòng thử lại.");
     } finally {
       setLoading(false);
     }
@@ -868,7 +868,7 @@ export default function LoginPage() {
                   <LoginForm key="login" locale={locale} onSwitch={setMode} />
                 )}
                 {mode === "register" && (
-                  <RegisterForm key="register" onSwitch={setMode} />
+                  <RegisterForm key="register" onSwitch={setMode} locale={locale} />
                 )}
                 {(mode === "otp" || mode === "reset-password") && (
                   <OTPForm key="otp" onSwitch={setMode} onBack={() => setMode("login")} />

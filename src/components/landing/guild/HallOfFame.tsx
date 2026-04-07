@@ -271,8 +271,8 @@ function HolographicCard({
         <div
           className="relative overflow-hidden rounded-xl"
           style={{
-            backgroundColor: "#0F172A",
-            backgroundImage: "linear-gradient(135deg, #0F172A, #1E293B)",
+            backgroundColor: DS.bgCard,
+            backgroundImage: `linear-gradient(135deg, ${DS.bgCard}, ${DS.bgDeep})`,
             border: `1.5px solid ${accentColor}60`,
             boxShadow: `0 0 30px ${accentColor}40, 0 8px 32px rgba(0,0,0,0.4)`,
           }}
@@ -362,7 +362,7 @@ function HolographicCard({
               </div>
               <div
                 style={{
-                  color: "#64748B",
+                  color: DS.text4,
                   fontSize: 10,
                   fontFamily: "'JetBrains Mono', monospace",
                   letterSpacing: "0.08em",
@@ -389,7 +389,7 @@ function HolographicCard({
                 </div>
                 <div
                   style={{
-                    color: "#475569",
+                    color: DS.text4,
                     fontSize: 8,
                     fontFamily: "'JetBrains Mono', monospace",
                     letterSpacing: "0.1em",
@@ -402,7 +402,7 @@ function HolographicCard({
                 style={{
                   width: 1,
                   height: 24,
-                  background: "linear-gradient(180deg, transparent, #1F2937, transparent)",
+                  background: `linear-gradient(180deg, transparent, ${DS.bgDeep}, transparent)`,
                 }}
               />
               <div className="text-center">
@@ -419,7 +419,7 @@ function HolographicCard({
                 </div>
                 <div
                   style={{
-                    color: "#475569",
+                    color: DS.text4,
                     fontSize: 8,
                     fontFamily: "'JetBrains Mono', monospace",
                     letterSpacing: "0.1em",
@@ -438,7 +438,7 @@ function HolographicCard({
                 border: `1px solid ${accentColor}25`,
               }}
             >
-              <div style={{ color: "#475569", fontSize: 9, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.1em" }}>
+              <div style={{ color: DS.text4, fontSize: 9, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.1em" }}>
                 ◈ LP BALANCE
               </div>
               <div
@@ -542,7 +542,7 @@ export function HallOfFame({ mvp, bugSlayer, topPerformer, locale }: HallOfFameP
               fontSize: 26,
               fontWeight: 900,
               letterSpacing: "0.12em",
-              background: "linear-gradient(135deg, #818CF8 0%, #7DD3FC 35%, #F0ABFC 65%, #FFFFFF 85%, #818CF8 100%)",
+              background: `linear-gradient(135deg, ${DS.pink} 0%, ${DS.pinkLight} 35%, ${DS.purple} 65%, #FFFFFF 85%, ${DS.pink} 100%)`,
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
               backgroundSize: "200% 100%",

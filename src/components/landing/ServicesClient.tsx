@@ -1196,7 +1196,7 @@ export function ServicesClient({
               fontFamily: DS.heading,
               fontSize: "clamp(2rem, 5vw, 3.25rem)",
               fontWeight: 900, letterSpacing: "0.04em",
-              background: "linear-gradient(135deg, #3B82F6, #818CF8, #14B8A6)",
+              background: `linear-gradient(135deg, ${DS.blue}, ${DS.purple}, ${DS.pink})`,
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
               backgroundClip: "text",

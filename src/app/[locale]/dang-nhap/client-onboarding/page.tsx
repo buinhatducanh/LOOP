@@ -464,12 +464,6 @@ export default function ClientOnboardingPage({
             )}
           </AnimatePresence>
         </div>
-
-        <div style={{ textAlign: "center", marginTop: "1rem" }}>
-          <Link href={`/${locale}/khach-hang`} style={{ color: DS.text4, fontSize: "0.75rem", textDecoration: "none" }}>
-            Bỏ qua — vào Dashboard ngay
-          </Link>
-        </div>
       </div>
 
       <style>{`

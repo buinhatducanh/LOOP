@@ -580,11 +580,11 @@ function SlideWelcome({ direction }: SlideProps) {
           transition={{ delay: 0.6 }}
           style={{ fontFamily: DS.heading, fontSize: 'clamp(28px, 5vw, 52px)', letterSpacing: '0.06em', marginBottom: 16 }}
         >
-          <span style={{ background: 'linear-gradient(135deg, #FFFFFF 0%, #818CF8 50%, #3B82F6 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+          <span style={{ background: `linear-gradient(135deg, #FFFFFF 0%, #818CF8 40%, ${DS.pink} 70%, #3B82F6 100%)`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
             CHÀO MỪNG ĐẾN VỚI
           </span>
           <br />
-          <span style={{ background: 'linear-gradient(135deg, #3B82F6, #818CF8, #7DD3FC)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+          <span style={{ background: `linear-gradient(135deg, #3B82F6, #818CF8 30%, ${DS.pink} 60%, #7DD3FC)`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
             LOOP SOLUTIONS
           </span>
         </motion.h1>

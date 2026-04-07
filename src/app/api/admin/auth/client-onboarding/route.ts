@@ -9,9 +9,9 @@
  * Auth: Bearer token (customer's own JWT)
  * Guard: Only customers (accountType = "customer") can call this.
  */
-import { NextRequest } from "next/server";
-import { requireAuth } from "@/lib/auth/permissions";
-import { ok, handleError, badRequest } from "@/lib/api";
+import { NextRequest, NextResponse } from "next/server";
+import { requireAuth, authErrorToResponse } from "@/lib/auth/permissions";
+import { ok, badRequest } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 import { createSession } from "@/lib/auth/session";
 import { AUTH_COOKIES } from "@/lib/auth/roles";
@@ -22,9 +22,9 @@ const VALID_BUSINESS_TYPES = [
   "services", "marketing", "other",
 ];
 
-export async function POST(_req: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
-    const _session = await requireAuth();
+    const session = await requireAuth();
 
     // ── Only customers can use this endpoint ─────────────────────────────────────
     if (session.accountType !== "customer") {
@@ -119,7 +119,7 @@ export async function POST(_req: NextRequest) {
       }),
     ]);
 
-    if (!freshUser) return handleError(new Error("User not found"));
+    if (!freshUser) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
     const roles = freshUser.userRoles.map((ur) => ur.role.name);
     const roleLevel = freshUser.userRoles.length > 0
@@ -167,6 +167,6 @@ export async function POST(_req: NextRequest) {
 
     return response;
   } catch (err) {
-    return handleError(err);
+    return authErrorToResponse(err);
   }
 }

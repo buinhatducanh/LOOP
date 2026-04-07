@@ -11,26 +11,26 @@
  *   5. This route reads NextAuth session via auth(), creates our JWT cookie + refresh token
  *   6. Redirects to destination
  */
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { createSession } from "@/lib/auth/session";
 import { ROLE_LEVEL, AUTH_COOKIES } from "@/lib/auth/roles";
 import { authLogger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
   const _callbackUrl = searchParams.get("callbackUrl") ?? "/vi/khach-hang";
   const locale = searchParams.get("locale") ?? "vi";
 
   try {
-    const _session = await auth();
+    const oauthSession = await auth();
 
-    if (!session?.user?.email) {
+    if (!oauthSession?.user?.email) {
       return NextResponse.redirect(new URL(`/${locale}/dang-nhap?error=google_failed`, req.url));
     }
 
-    const oauthUser = session.user as {
+    const oauthUser = oauthSession.user as {
       id: string;
       email: string;
       name?: string | null;
@@ -59,15 +59,6 @@ export async function GET(_req: NextRequest) {
     const roleLevel = dbUser?.userRoles.length
       ? Math.min(...dbUser.userRoles.map((ur) => ur.role.level ?? 99))
       : ROLE_LEVEL[primaryRole] ?? 5;
-
-    // Track loginCount + lastLogin for Google OAuth users
-    await prisma.user.update({
-      where: { id: oauthUser.id },
-      data: {
-        loginCount: { increment: 1 },
-        lastLogin: new Date(),
-      },
-    }).catch(() => {/* ignore if user doesn't exist yet */});
 
     const ipAddress = req.headers.get("x-forwarded-for")
       ?? req.headers.get("x-real-ip")
@@ -98,8 +89,8 @@ export async function GET(_req: NextRequest) {
     } else if (isOnboarded) {
       dest = `/${locale}/khach-hang`;
     } else {
-      // New customer via Google — redirect to onboarding
-      dest = `/${locale}/dang-nhap/client-onboarding`;
+      // New customer via Google — redirect to onboarding WITH token
+      dest = `/${locale}/dang-nhap/client-onboarding?token=${encodeURIComponent(accessToken)}`;
     }
 
     const response = NextResponse.redirect(new URL(dest, req.url));

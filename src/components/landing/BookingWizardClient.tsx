@@ -1093,7 +1093,7 @@ function _StepPayment({
   submitted: boolean; orderId: string; submitError: string; setSubmitError: (s: string) => void;
   onSubmit: () => void; submitLoading: boolean;
 }) {
-  const _t = useTranslations("BookingPage");
+  const t = useTranslations("BookingPage");
   const payMethods = [
     { id: "bank", label: t("bankTransfer"), icon: "🏦" },
     { id: "vnpay", label: "VNPay QR", icon: "📱" },

@@ -277,7 +277,20 @@
       "Bash(sed -i 's/const authUser = await requireAuth\\(req\\);/const _authUser = await requireAuth\\(req\\);/' src/app/api/admin/upload/route.ts)",
       "Bash(sed -i \"s/new Promise<any>/new Promise<Record<string, unknown>>/\" src/app/api/admin/upload/route.ts)",
       "Bash(__NEW_LINE_85efe4393d4f3516__ node -e \":*)",
-      "Bash(while read:*)"
+      "Bash(while read:*)",
+      "Bash(sed -n '312,320p' src/app/store/authStore.ts)",
+      "Bash(sed -n '392,398p' src/app/store/authStore.ts)",
+      "Bash(sed -n '395,402p' src/app/store/authStore.ts)",
+      "Bash(sed -n '417,422p' src/app/store/authStore.ts)",
+      "Bash(sed -n '460,466p' src/app/store/authStore.ts)",
+      "Bash(sed -n '496,502p' src/app/store/authStore.ts)",
+      "Bash(sed -n '591,595p' src/app/store/authStore.ts)",
+      "Bash(sed -i '' '419s/department: user._department/_department: user._department/' src/app/store/authStore.ts)",
+      "Bash(sed -n '418,420p' src/app/store/authStore.ts)",
+      "Bash(powershell -Command \"Get-Item ''d:\\\\LOOP_COMPANY\\\\LOOP\\\\public\\\\assets\\\\design-company\\\\icon tab.png'' | Select-Object Name,Length,LastWriteTime\")",
+      "Bash(powershell -Command \"Get-ChildItem -Path 'D:\\\\LOOP_COMPANY\\\\LOOP\\\\src\\\\app\\\\api\\\\admin' -Recurse -Filter route.ts -File | Select -Expand FullName\")",
+      "Bash(powershell -Command \"Get-ChildItem -Path 'D:\\\\LOOP_COMPANY\\\\LOOP\\\\src\\\\app\\\\api' -Recurse -Filter route.ts -File | Where-Object { $_.FullName -notmatch '\\\\\\\\admin\\\\\\\\' -and $_.FullName -notmatch '\\\\\\\\v1\\\\\\\\' } | Select -Expand FullName\")",
+      "Bash(powershell -NoProfile -Command \"Get-ChildItem -Path 'D:\\\\LOOP_COMPANY\\\\LOOP\\\\src\\\\app\\\\api' -Recurse -Filter 'route.ts' -File | Where-Object { $_.FullName -notmatch 'admin' -and $_.FullName -notmatch 'v1' } | ForEach-Object { $_.FullName }\")"
     ],
     "additionalDirectories": [
       "D:\\LOOP_COMPANY\\LOOP\\src\\app\\api\\admin\\expertises",

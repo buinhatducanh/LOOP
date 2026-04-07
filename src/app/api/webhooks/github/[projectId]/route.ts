@@ -32,7 +32,10 @@ async function verifySignature(projectId: string, payload: string, signature: st
   });
   const secret = project?.gitWebhookSecret ?? process.env.GITHUB_WEBHOOK_SECRET ?? "";
 
-  if (!secret) return true; // skip verification if no secret configured
+  if (!secret) {
+    console.warn(`[GitHub Webhook] GITHUB_WEBHOOK_SECRET not set — signature verification skipped`);
+    return process.env.NODE_ENV !== "production"; // only bypass in development
+  }
 
   const hmac = crypto.createHmac("sha256", secret);
   hmac.update(payload);

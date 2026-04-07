@@ -651,7 +651,7 @@ function LPSystemSection({ locale }: { locale: string }) {
               style={{
                 fontFamily: DS.heading, fontSize: "clamp(1.5rem, 3.5vw, 2.5rem)",
                 fontWeight: 900, letterSpacing: "0.05em",
-                background: "linear-gradient(135deg, #FFFFFF, #94A3B8)",
+                background: `linear-gradient(135deg, #FFFFFF 0%, ${DS.pink} 60%, ${DS.pinkLight} 100%)`,
                 WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                 backgroundClip: "text", marginBottom: "1rem",
               }}

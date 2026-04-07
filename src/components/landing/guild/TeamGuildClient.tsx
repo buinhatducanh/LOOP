@@ -282,10 +282,10 @@ function HeroSection({ members, hero, locale }: HeroSectionProps) {
             transition={{ duration: 0.7, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
             style={{ fontFamily: DS.heading, letterSpacing: "0.04em", lineHeight: 1.1, marginBottom: 20 }}
           >
-            <span style={{ display: "block", fontSize: "clamp(32px, 5vw, 58px)", fontWeight: 900, background: "linear-gradient(135deg, #FFFFFF 0%, #CBD5E1 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+            <span style={{ display: "block", fontSize: "clamp(32px, 5vw, 58px)", fontWeight: 900, background: `linear-gradient(135deg, #FFFFFF 0%, ${DS.pink} 70%, ${DS.pinkLight} 100%)`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
               {hero.heroTitle1}
             </span>
-            <span style={{ display: "block", fontSize: "clamp(32px, 5vw, 58px)", fontWeight: 900, background: "linear-gradient(135deg, #3B82F6, #818CF8)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+            <span style={{ display: "block", fontSize: "clamp(32px, 5vw, 58px)", fontWeight: 900, background: `linear-gradient(135deg, ${DS.blue}, ${DS.pink})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
               {hero.heroHighlight}{hero.heroTitle2}
             </span>
           </motion.h1>
