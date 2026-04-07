@@ -1,4 +1,4 @@
-import { handleError } from "@/lib/api/response";
+import { handleError, ok, badRequest } from "@/lib/api/response";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
       },
       orderBy: { createdAt: "desc" },
     });
-    return NextResponse.json({ data });
+    return ok(data);
   } catch (error) {
     return handleError(error);
   }
@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
     // Support projectId or orderId from frontend
     const data = { ...body, projectId: body.projectId ?? body.orderId };
     const parsed = createSchema.safeParse(data);
-    if (!parsed.success) return NextResponse.json({ error: parsed.error.message }, { status: 400 });
+    if (!parsed.success) return badRequest(parsed.error.message);
 
     // Resolve authorId: use provided, or find by name/email
     let authorId = parsed.data.authorId;
@@ -77,13 +77,13 @@ export async function POST(req: NextRequest) {
         select: { id: true },
       });
       if (!member) {
-        return NextResponse.json({ error: "Author not found. Please create the team member first." }, { status: 400 });
+        return badRequest("Author not found. Please create the team member first.");
       }
       authorId = member.id;
     }
 
     if (!authorId) {
-      return NextResponse.json({ error: "authorId, authorName, or authorEmail is required" }, { status: 400 });
+      return badRequest("authorId, authorName, or authorEmail is required");
     }
     const result = await prisma.blogPost.create({
       data: {
@@ -108,7 +108,7 @@ export async function POST(req: NextRequest) {
       resourceId: result.id,
       newValues: { title: result.title, slug: result.slug, authorId },
     });
-    return NextResponse.json({ data: result }, { status: 201 });
+    return ok(result, 201);
   } catch (error) {
     return handleError(error);
   }

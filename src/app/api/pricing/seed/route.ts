@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { serverError, unauthorized, forbidden } from "@/lib/api";
+import { handleError, forbidden } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 import { isAdmin, requireAuth } from "@/lib/auth/permissions";
 import { ok } from "@/lib/api/response";
@@ -9,13 +9,9 @@ import { ok } from "@/lib/api/response";
  * DELETES existing FeatureVariant, Feature, FeatureGroup records first.
  */
 export async function POST(req: NextRequest) {
-  try {
-    const session = await requireAuth();
-    if (!isAdmin(session)) {
-      return forbidden("Admin access required");
-    }
-  } catch {
-    return unauthorized();
+  const session = await requireAuth(req);
+  if (!isAdmin(session)) {
+    return forbidden("Admin access required");
   }
 
   try {
@@ -55,9 +51,8 @@ export async function POST(req: NextRequest) {
     }
 
     return ok({ success: true, message: "Data seeded successfully." });
-  } catch (error) {
-    console.error("Failed to seed data:", error);
-    return serverError("Failed to seed data");
+  } catch (err) {
+    return handleError(err);
   }
 }
 

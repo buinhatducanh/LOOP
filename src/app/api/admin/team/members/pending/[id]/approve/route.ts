@@ -18,7 +18,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await requireAuth();
+    const session = await requireAuth(req);
 
     // Only CEO or super_admin can approve
     if (!isSuperAdmin(session)) {

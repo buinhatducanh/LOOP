@@ -201,7 +201,7 @@ function LeaderboardRow({
   onAward: (e: LeaderboardEntry) => void;
 }) {
   const cfg = getRank(entry.rank);
-   entry.maxXp > 0 ? Math.min((entry.currentXp / entry.maxXp) * 100, 100) : 0;
+  const xpPct = entry.maxXp > 0 ? Math.min((entry.currentXp / entry.maxXp) * 100, 100) : 0;
 
   return (
     <motion.div

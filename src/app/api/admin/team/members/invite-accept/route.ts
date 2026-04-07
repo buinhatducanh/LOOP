@@ -15,7 +15,7 @@ import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/auth/password";
 import { createSession } from "@/lib/auth/session";
 import { ROLE_LEVEL } from "@/lib/auth/roles";
-import {handleError } from "@/lib/api";
+import { handleError } from "@/lib/api";
 
 export async function POST(req: NextRequest) {
   try {
@@ -24,10 +24,10 @@ export async function POST(req: NextRequest) {
 
     // ── Validate input ───────────────────────────────────────────────────────────
     if (!token || typeof token !== "string") {
-      return // badRequest("token không hợp lệ");
+      return NextResponse.json({ error: "token không hợp lệ" }, { status: 400 });
     }
     if (!password || typeof password !== "string" || password.length < 8) {
-      return // badRequest("Mật khẩu phải có ít nhất 8 ký tự");
+      return NextResponse.json({ error: "Mật khẩu phải có ít nhất 8 ký tự" }, { status: 400 });
     }
 
     // ── Find MemberRequest by inviteToken ──────────────────────────────────────

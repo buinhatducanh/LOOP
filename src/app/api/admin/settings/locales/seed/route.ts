@@ -4,8 +4,6 @@
  */
 import { NextResponse } from "next/server";
 import { ok } from "@/lib/api/response";
-
-
 import { requirePermissionFast, getSession } from "@/lib/auth/permissions";
 import { prisma } from "@/lib/prisma";
 import { handleError } from "@/lib/api";
