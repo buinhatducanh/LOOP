@@ -305,7 +305,11 @@
       "Bash(head -5 src/app/api/admin/customer-websites/[id]/route.ts)",
       "Bash(sed -n '126,130p' src/app/api/admin/customer-points/route.ts)",
       "Bash(sed -n '174,178p' src/app/api/admin/team/members/pending/[id]/approve/route.ts)",
-      "Bash(sed -n '53,57p' src/app/api/points/route.ts)"
+      "Bash(sed -n '53,57p' src/app/api/points/route.ts)",
+      "Bash(grep '\"\"build\"\"' package.json)",
+      "Bash(sed -n '557,562p' src/app/admin/orders/page.tsx)",
+      "Bash(sed -n '619,626p' src/app/admin/orders/page.tsx)",
+      "Bash(awk 'NR==621' src/app/admin/orders/page.tsx)"
     ],
     "additionalDirectories": [
       "D:\\LOOP_COMPANY\\LOOP\\src\\app\\api\\admin\\expertises",
