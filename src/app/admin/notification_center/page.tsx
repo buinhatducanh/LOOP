@@ -12,10 +12,12 @@ import { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "motion/react";
 
+import { adminApi } from "@/lib/api/client";
 import { DS, GRD } from "@/lib/design-tokens";
 import {
  RefreshCw, CheckCheck, Trash2, MessageSquare, Zap, AlertTriangle,
- Search, X, Check, Archive, Eye, ChevronRight,
+ Search, X, Check, Archive, Eye, ChevronRight, ChevronLeft, Bell,
+ ChevronDown,
   ShoppingCart, DollarSign, Users, Camera, Settings, Building2,
   ArrowUpRight, BarChart3, Star,
 } from "lucide-react";
@@ -120,7 +122,7 @@ const rgba = (hex: string, a: number) => {
 // ── Main Component ───────────────────────────────────────────────────────
 
 export default function NotificationCenterPage() {
-   useQueryClient();
+  const qc = useQueryClient();
 
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");

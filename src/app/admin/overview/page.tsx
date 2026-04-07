@@ -13,15 +13,17 @@ export const dynamic = "force-dynamic";
 
 
 import { motion } from "motion/react";
+import { useQuery } from "@tanstack/react-query";
 import { DS } from "@/lib/design-tokens";
+import { adminApi } from "@/lib/api/client";
 import {
   ShoppingCart,
-
   Clock,
-
+  CheckCircle2,
+  DollarSign,
   ArrowUpRight,
   ArrowDownRight,
-  } from "lucide-react";
+} from "lucide-react";
 import { qk } from "@/lib/query/provider";
 
 import { useAuthStore } from "@/app/store/authStore";
@@ -344,7 +346,7 @@ export default function AdminOverviewPage() {
   const inProgressCount = orders.filter((o: OrderRow) => o.status === "in_progress").length;
 
   // Status counts from all fetched orders (not just 5)
-  const statusCounts = orders.reduce<Record<string, number>>((acc, o: OrderRow) => {
+  const statusCounts = orders.reduce<Record<string, number>>((acc: Record<string, number>, o: OrderRow) => {
     acc[o.status] = (acc[o.status] ?? 0) + 1;
     return acc;
   }, {});

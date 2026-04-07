@@ -121,7 +121,7 @@ function Toggle({ checked, onChange, size = 20 }: { checked: boolean; onChange: 
 
 function SettingsTab() {
   const _t = useAdminTranslations();
-  const _qc = useQueryClient();
+  const qc = useQueryClient();
 
   const { data, isLoading, isFetching } = useQuery<{ data: PricingSetting[] }>({
     queryKey: ["admin", "pricing", "settings"],
@@ -251,7 +251,7 @@ function SettingsTab() {
 // ── Tab 2: Features ────────────────────────────────────────────────────────────
 
 function FeaturesTab() {
-  const _qc = useQueryClient();
+  const qc = useQueryClient();
 
   const { data, isLoading } = useQuery<{ data: Feature[]; pagination: { total: number } }>({
     queryKey: ["admin", "pricing", "features"],
@@ -410,7 +410,7 @@ function InfraTiersTab() {
 // ── Tab 4: Packages ────────────────────────────────────────────────────────────
 
 function PackagesTab() {
-  const _qc = useQueryClient();
+  const qc = useQueryClient();
 
   const { data, isLoading } = useQuery<{ data: Package[]; pagination: { total: number } }>({
     queryKey: ["admin", "pricing", "packages"],
@@ -511,7 +511,7 @@ function PackagesTab() {
 // ── Tab 5: Add-ons ──────────────────────────────────────────────────────────────
 
 function AddonsTab() {
-  const _qc = useQueryClient();
+  const qc = useQueryClient();
 
   const { data, isLoading } = useQuery<{ data: Addon[]; pagination: { total: number } }>({
     queryKey: ["admin", "pricing", "addons"],

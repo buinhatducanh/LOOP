@@ -12,11 +12,12 @@ import { motion, AnimatePresence } from "motion/react";
 import { qk } from "@/lib/query/provider";
 
 import { useAuthStore, canEdit, type AuthUser } from "@/app/store/authStore";
+import { adminApi } from "@/lib/api/client";
 import { DS } from "@/lib/design-tokens";
 import { ImageUpload } from "@/components/ui/ImageUpload";
 import {
  Plus, Trash2, Edit2, Award, Users, TrendingUp,
- ChevronDown, X, Check,   Crown, Zap, Grid3x3, List,
+ ChevronDown, ChevronUp, X, Check,   Crown, Zap, Grid3x3, List, Search,
   UserMinus, Clock, AlertTriangle, CheckCircle2,   ArrowUpDown, Eye, Info, Loader2,
  UserCheck, ShieldCheck, CheckCircle,
 } from "lucide-react";
@@ -112,14 +113,15 @@ const STATUS_CFG: Record<MemberStatus, { label: string; color: string; icon: Rea
 
 const DEPARTMENTS = ["All", "Engineering", "Design", "Media", "Marketing", "Sales", "Finance", "HR"] as const;
 const TEAMS = DEPARTMENTS; // alias for form/modal use
-(n?: number) => {
+
+const fmtLP = (n?: number) => {
   const v = n ?? 0;
   if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(2)}M`;
   if (v >= 1_000) return `${(v / 1_000).toFixed(1)}K`;
   return String(v);
 };
 
- (iso: string) => {
+const fmtDate = (iso: string) => {
   const d = new Date(iso);
   return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
 };
@@ -127,6 +129,16 @@ const TEAMS = DEPARTMENTS; // alias for form/modal use
 // =============================================================================
 // Helpers
 // =============================================================================
+
+/** XP progress percentage 0–100 (for template strings like `${xpPct}%`) */
+const xpPct = (currentXp?: number, maxXp?: number) => {
+  const cur = currentXp ?? 0;
+  const max = maxXp ?? 100;
+  return max > 0 ? Math.min((cur / max) * 100, 100) : 0;
+};
+
+/** Rank shorthand used inside map callbacks — 'cfg' local in each block */
+const rCfg = (rank: string) => RANKS[rank as RankKey] ?? RANKS.iron;
 
 function toMemberExt(raw: TeamMemberBE): MemberExt {
   const level = raw.level ?? 1;
@@ -200,6 +212,7 @@ export default function AdminMembersPage() {
   const [selectedRole, setSelectedRole] = useState<string>("member");
   
   const [approvalNotes, setApprovalNotes] = useState("");
+  const [rejectReason, setRejectReason] = useState("");
 
   // Toast
   const [toasts, setToasts] = useState<ToastItem[]>([]);
@@ -537,7 +550,7 @@ export default function AdminMembersPage() {
           {ranks.map((rk) => {
             const count = rankDist.get(rk) ?? 0;
             const pct = Math.round((count / total) * 100);
-            const _rCfg = RANKS[rk];
+            const cfg = RANKS[rk];
             const active = rankFilter === rk;
             return (
               <button
@@ -546,16 +559,16 @@ export default function AdminMembersPage() {
                 style={{
                   display: "flex", alignItems: "center", gap: 5,
                   padding: "4px 10px", borderRadius: 20,
-                  border: active ? `1px solid ${rCfg.color}` : `1px solid ${DS.border}`,
-                  backgroundColor: active ? rCfg.color + "22" : "transparent",
+                  border: active ? `1px solid ${cfg.color}` : `1px solid ${DS.border}`,
+                  backgroundColor: active ? cfg.color + "22" : "transparent",
                   cursor: "pointer", transition: "all 0.2s",
                 }}
               >
-                <span style={{ fontSize: 12 }}>{rCfg.symbol}</span>
+                <span style={{ fontSize: 12 }}>{cfg.symbol}</span>
                 <span style={{
-                  fontFamily: DS.mono, fontSize: 10, color: active ? rCfg.color : DS.text3,
+                  fontFamily: DS.mono, fontSize: 10, color: active ? cfg.color : DS.text3,
                 }}>
-                  {rCfg.label} {count}
+                  {cfg.label} {count}
                 </span>
                 <span style={{
                   fontFamily: DS.mono, fontSize: 9, color: DS.text3,
@@ -591,8 +604,8 @@ export default function AdminMembersPage() {
 
   function MemberRow_({ m }: { m: MemberExt }) {
     const rankKey = getRankFromLevel(m.level ?? 1);
-     RANKS[rankKey];
-     m.maxXp && m.maxXp > 0 ? Math.min((m.currentXp ?? 0) / m.maxXp, 1) : 0;
+    const cfg = RANKS[rankKey];
+    const pct = (m.maxXp && m.maxXp > 0 ? (m.currentXp ?? 0) / m.maxXp : 0) * 100;
     const checked = selectedIds.has(m.id);
 
     return (
@@ -617,10 +630,10 @@ export default function AdminMembersPage() {
         <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "0 8px", minWidth: 0 }}>
           <div style={{
             width: 36, height: 36, borderRadius: "50%",
-            backgroundColor: rCfg.color + "33",
-            border: `2px solid ${rCfg.color}`,
+            backgroundColor: cfg.color + "33",
+            border: `2px solid ${cfg.color}`,
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontFamily: DS.heading, fontSize: 13, color: rCfg.color,
+            fontFamily: DS.heading, fontSize: 13, color: cfg.color,
             flexShrink: 0, overflow: "hidden",
           }}>
             {m.avatar ? (
@@ -648,9 +661,9 @@ export default function AdminMembersPage() {
         {/* Rank + XP bar */}
         <div style={{ padding: "0 8px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 4 }}>
-            <span style={{ fontSize: 12 }}>{rCfg.symbol}</span>
-            <span style={{ fontFamily: DS.mono, fontSize: 10, color: rCfg.color }}>
-              {rCfg.label} · Lv.{m.level}
+            <span style={{ fontSize: 12 }}>{cfg.symbol}</span>
+            <span style={{ fontFamily: DS.mono, fontSize: 10, color: cfg.color }}>
+              {cfg.label} · Lv.{m.level}
             </span>
           </div>
           <div style={{
@@ -658,8 +671,8 @@ export default function AdminMembersPage() {
             backgroundColor: DS.border, overflow: "hidden",
           }}>
             <div style={{
-              height: "100%", width: `${xpPct * 100}%`,
-              background: `linear-gradient(90deg, ${rCfg.color}88, ${rCfg.color})`,
+              height: "100%", width: `${pct}%`,
+              background: `linear-gradient(90deg, ${cfg.color}88, ${cfg.color})`,
               borderRadius: 2, transition: "width 0.4s ease",
             }} />
           </div>
@@ -746,8 +759,8 @@ export default function AdminMembersPage() {
   // Grid card
   function MemberCard_({ m }: { m: MemberExt }) {
     const rankKey = getRankFromLevel(m.level ?? 1);
-     RANKS[rankKey];
-     m.maxXp && m.maxXp > 0 ? Math.min((m.currentXp ?? 0) / m.maxXp, 1) : 0;
+    const cfg = RANKS[rankKey];
+    const pct = (m.maxXp && m.maxXp > 0 ? (m.currentXp ?? 0) / m.maxXp : 0) * 100;
     const checked = selectedIds.has(m.id);
 
     return (
@@ -766,16 +779,16 @@ export default function AdminMembersPage() {
         {/* Rank stripe */}
         <div style={{
           position: "absolute", top: 0, left: 0, right: 0, height: 3,
-          background: `linear-gradient(90deg, ${rCfg.color}, ${rCfg.color}88)`,
+          background: `linear-gradient(90deg, ${cfg.color}, ${cfg.color}88)`,
         }} />
 
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
           <div style={{
             width: 48, height: 48, borderRadius: "50%",
-            backgroundColor: rCfg.color + "33",
-            border: `2px solid ${rCfg.color}`,
+            backgroundColor: cfg.color + "33",
+            border: `2px solid ${cfg.color}`,
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontFamily: DS.heading, fontSize: 16, color: rCfg.color,
+            fontFamily: DS.heading, fontSize: 16, color: cfg.color,
             overflow: "hidden",
           }}>
             {m.avatar ? (
@@ -813,16 +826,16 @@ export default function AdminMembersPage() {
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 6 }}>
-          <span style={{ fontSize: 13 }}>{rCfg.symbol}</span>
-          <span style={{ fontFamily: DS.mono, fontSize: 11, color: rCfg.color }}>{rCfg.label}</span>
+          <span style={{ fontSize: 13 }}>{cfg.symbol}</span>
+          <span style={{ fontFamily: DS.mono, fontSize: 11, color: cfg.color }}>{cfg.label}</span>
           <span style={{ fontFamily: DS.mono, fontSize: 10, color: DS.text3 }}>· Lv.{m.level}</span>
         </div>
 
         {/* XP bar */}
         <div style={{ height: 4, borderRadius: 2, backgroundColor: DS.border, marginBottom: 8, overflow: "hidden" }}>
           <div style={{
-            height: "100%", width: `${xpPct * 100}%`,
-            background: `linear-gradient(90deg, ${rCfg.color}88, ${rCfg.color})`,
+            height: "100%", width: `${pct}%`,
+            background: `linear-gradient(90deg, ${cfg.color}88, ${cfg.color})`,
             borderRadius: 2,
           }} />
         </div>
@@ -861,8 +874,8 @@ export default function AdminMembersPage() {
 
   function MemberDetailModal_({ m }: { m: MemberExt }) {
     const rankKey = getRankFromLevel(m.level ?? 1);
-     RANKS[rankKey];
-     m.maxXp && m.maxXp > 0 ? Math.min((m.currentXp ?? 0) / m.maxXp, 1) : 0;
+    const cfg = RANKS[rankKey];
+    const pct = (m.maxXp && m.maxXp > 0 ? (m.currentXp ?? 0) / m.maxXp : 0) * 100;
 
     const skills = m.memberExpertise?.map((e) => e.name) ?? [m.topSkill, "React", "TypeScript", "Design"];
     const skills2 = ["Design", "Frontend", "React", "Communication"];
@@ -898,22 +911,22 @@ export default function AdminMembersPage() {
           {/* Banner */}
           <div style={{
             height: 120, borderRadius: "16px 16px 0 0",
-            background: `linear-gradient(135deg, ${rCfg.color}33, ${rCfg.color}11)`,
-            borderBottom: `1px solid ${rCfg.color}33`,
+            background: `linear-gradient(135deg, ${cfg.color}33, ${cfg.color}11)`,
+            borderBottom: `1px solid ${cfg.color}33`,
             position: "relative",
           }}>
             {/* Banner blur accent */}
             <div style={{
               position: "absolute", top: -20, right: -20, width: 200, height: 200,
-              borderRadius: "50%", background: `${rCfg.color}22`, filter: "blur(40px)",
+              borderRadius: "50%", background: `${cfg.color}22`, filter: "blur(40px)",
             }} />
             <div style={{
               position: "absolute", bottom: -32, left: 24,
               width: 72, height: 72, borderRadius: "50%",
-              backgroundColor: rCfg.color + "33",
-              border: `3px solid ${rCfg.color}`,
+              backgroundColor: cfg.color + "33",
+              border: `3px solid ${cfg.color}`,
               display: "flex", alignItems: "center", justifyContent: "center",
-              fontFamily: DS.heading, fontSize: 22, color: rCfg.color,
+              fontFamily: DS.heading, fontSize: 22, color: cfg.color,
               overflow: "hidden", zIndex: 1,
             }}>
               {m.avatar ? (
@@ -945,9 +958,9 @@ export default function AdminMembersPage() {
                   {m.email}
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6 }}>
-                  <span style={{ fontSize: 14 }}>{rCfg.symbol}</span>
-                  <span style={{ fontFamily: DS.mono, fontSize: 12, color: rCfg.color }}>
-                    {rCfg.label} · Level {m.level}
+                  <span style={{ fontSize: 14 }}>{cfg.symbol}</span>
+                  <span style={{ fontFamily: DS.mono, fontSize: 12, color: cfg.color }}>
+                    {cfg.label} · Level {m.level}
                   </span>
                   <StatusBadge_ status={m.status} />
                 </div>
@@ -971,8 +984,8 @@ export default function AdminMembersPage() {
               </div>
               <div style={{ height: 8, borderRadius: 4, backgroundColor: DS.border, overflow: "hidden" }}>
                 <div style={{
-                  height: "100%", width: `${xpPct * 100}%`,
-                  background: `linear-gradient(90deg, ${rCfg.color}88, ${rCfg.color})`,
+                  height: "100%", width: `${pct}%`,
+                  background: `linear-gradient(90deg, ${cfg.color}88, ${cfg.color})`,
                   borderRadius: 4, transition: "width 0.5s ease",
                 }} />
               </div>
@@ -1511,29 +1524,29 @@ export default function AdminMembersPage() {
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                 {(Object.keys(RANKS) as RankKey[]).map((rk) => {
-                   RANKS[rk];
                   const active = rankKey === rk;
+                  const cfg = RANKS[rk];
                   return (
                     <button
                       key={rk}
                       onClick={() => {
                         setRankKey(rk);
-                        setLevel(String(rCfg.minLevel));
+                        setLevel(String(cfg.minLevel));
                       }}
                       style={{
                         display: "flex", alignItems: "center", gap: 5,
                         padding: "6px 12px", borderRadius: 20,
-                        border: `1px solid ${active ? rCfg.color : DS.border}`,
-                        backgroundColor: active ? rCfg.color + "22" : "transparent",
+                        border: `1px solid ${active ? cfg.color : DS.border}`,
+                        backgroundColor: active ? cfg.color + "22" : "transparent",
                         cursor: "pointer", transition: "all 0.15s",
                       }}
                     >
-                      <span style={{ fontSize: 14 }}>{rCfg.symbol}</span>
-                      <span style={{ fontFamily: DS.mono, fontSize: 11, color: active ? rCfg.color : DS.text3 }}>
-                        {rCfg.label}
+                      <span style={{ fontSize: 14 }}>{cfg.symbol}</span>
+                      <span style={{ fontFamily: DS.mono, fontSize: 11, color: active ? cfg.color : DS.text3 }}>
+                        {cfg.label}
                       </span>
                       <span style={{ fontFamily: DS.mono, fontSize: 9, color: DS.text3 }}>
-                        Lv.{rCfg.minLevel}
+                        Lv.{cfg.minLevel}
                       </span>
                     </button>
                   );
@@ -2014,7 +2027,7 @@ export default function AdminMembersPage() {
   // Shared style helpers
   // =============================================================================
 
-  function iconBtn(hoverColor: string, ): React.CSSProperties {
+  function iconBtn(hoverColor: string, _fillColor?: string): React.CSSProperties {
     return {
       width: 28, height: 28, borderRadius: 6, border: "none", cursor: "pointer",
       backgroundColor: "transparent", color: hoverColor,

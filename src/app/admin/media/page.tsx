@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "motion/react";
 import { adminApi } from "@/lib/api/client";
-import { DS } from "@/lib/design-tokens";
+import { DS, GRD } from "@/lib/design-tokens";
 import { useAdminTranslations } from "@/i18n/admin/useAdminTranslations";
 import {
   X, Camera, CheckCircle2, Eye, ChevronRight, Search,

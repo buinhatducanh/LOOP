@@ -17,10 +17,11 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "motion/react";
 
+import { adminApi } from "@/lib/api/client";
 import { DS } from "@/lib/design-tokens";
 import { Plus, RefreshCw, Search, GripVertical, Calendar, X, Edit2, Trash2, AlertTriangle } from "lucide-react";
 
- (d: string | Date | null | undefined) => {
+const fmtDate = (d: string | Date | null | undefined) => {
   if (!d) return "—";
   try { return new Date(d).toLocaleDateString("vi-VN"); }
   catch { return String(d); }
@@ -326,7 +327,7 @@ function ProjectCard({
   project: Project;
   onEdit: (project: Project) => void;
 }) {
-   useQueryClient();
+  const qc = useQueryClient();
 
   const delete_ = useMutation({
     mutationFn: async () => {
@@ -481,7 +482,7 @@ export default function ProjectsPage() {
   const [page] = useState(1);
   const [search, setSearch] = useState("");
   const [editProject, setEditProject] = useState<Project | null>(null);
-   useQueryClient();
+  const qc = useQueryClient();
 
   const { data, isLoading, isFetching } = useQuery({
     queryKey: (["admin", "projects", { page, limit: 100, ...(search ? { search } : {}) }] as const),
@@ -500,11 +501,11 @@ export default function ProjectsPage() {
       // Optimistic update
       await qc.cancelQueries({ queryKey: ["admin", "projects"] });
       const prev = qc.getQueryData<{ data: Project[] }>(["admin", "projects"]);
-      qc.setQueryData<{ data: Project[] }>(["admin", "projects"], (old) => {
+      qc.setQueryData<{ data: Project[] }>(["admin", "projects"], (old: { data: Project[] } | undefined) => {
         if (!old) return old;
         return {
           ...old,
-          data: old.data.map(p => p.id === id ? { ...p, status } : p),
+          data: old.data.map((p: Project) => p.id === id ? { ...p, status } : p),
         };
       });
       return { prev };
@@ -521,7 +522,7 @@ export default function ProjectsPage() {
   const handleDragEnd = (e: React.DragEvent<HTMLDivElement>, targetStatus: string) => {
     const projectId = e.dataTransfer.getData("projectId");
     if (!projectId) return;
-    const project = (data?.data ?? []).find(p => p.id === projectId);
+    const project = (data?.data ?? []).find((p: Project) => p.id === projectId);
     if (!project || project.status === targetStatus) return;
     statusMut.mutate({ id: projectId, status: targetStatus });
   };
@@ -594,7 +595,7 @@ export default function ProjectsPage() {
       {!isLoading && (
         <div style={{ marginTop: "1rem", display: "flex", gap: "1rem", flexWrap: "wrap" }}>
           {Object.entries(STATUS_COLS).map(([key, cfg]) => {
-            const count = projects.filter(p => p.status === key).length;
+            const count = projects.filter((p: Project) => p.status === key).length;
             return (
               <div key={key} style={{ display: "flex", alignItems: "center", gap: 6, background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 8, padding: "4px 12px" }}>
                 <div style={{ width: 6, height: 6, borderRadius: "50%", background: cfg.color }} />

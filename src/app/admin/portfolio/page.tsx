@@ -7,8 +7,9 @@ import { motion, AnimatePresence } from "motion/react";
 import { qk } from "@/lib/query/provider";
 
 import { DS, GRD } from "@/lib/design-tokens";
+import { adminApi } from "@/lib/api/client";
 import {
- Edit2, Trash2, RefreshCw, Star,
+ Edit2, Trash2, RefreshCw, Star, Plus, Search, X,
 } from "lucide-react";
 import { ImageUpload } from "@/components/ui/ImageUpload";
 
@@ -26,7 +27,7 @@ type Project = {
 };
 
 function ProjectRow({ project, onEdit }: { project: Project; onEdit: (p: Project) => void }) {
-   useQueryClient();
+  const qc = useQueryClient();
 
   const togglePublish = useMutation({
     mutationFn: async () => {
@@ -115,7 +116,7 @@ function ProjectRow({ project, onEdit }: { project: Project; onEdit: (p: Project
 
 export default function PortfolioTabPage() {
   const { t } = useAdminTranslations();
-   useQueryClient();
+  const qc = useQueryClient();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [isCreating, setIsCreating] = useState(false);
@@ -229,7 +230,7 @@ export default function PortfolioTabPage() {
 
 function EditProjectForm({ project, onClose, onUpdated }: { project: Project; onClose: () => void; onUpdated: () => void }) {
   const { t } = useAdminTranslations();
-   useQueryClient();
+  const qc = useQueryClient();
   const [title, setTitle] = useState(project.title || "");
   const [slug, setSlug] = useState(project.slug || "");
   const [category, setCategory] = useState(project.category || "");
@@ -301,7 +302,7 @@ function EditProjectForm({ project, onClose, onUpdated }: { project: Project; on
 
 function CreateProjectForm({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
   const { t } = useAdminTranslations();
-   useQueryClient();
+  const qc = useQueryClient();
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
   const [category, setCategory] = useState("");

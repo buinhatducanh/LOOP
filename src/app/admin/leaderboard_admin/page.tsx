@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "motion/react";
+import { adminApi } from "@/lib/api/client";
 import { DS } from "@/lib/design-tokens";
 import {
   X, Trophy, Crown, Star, ChevronDown,
@@ -25,6 +26,12 @@ const RANKS = {
 type RankKey = keyof typeof RANKS;
 
 const RANK_ORDER = ["diamond", "ruby", "platinum", "gold", "silver", "bronze", "iron"];
+
+// ─── Inline helpers ────────────────────────────────────────────────────────────
+
+const xpPct = (currentXp: number, maxXp: number) => {
+  return maxXp > 0 ? Math.min((currentXp / maxXp) * 100, 100) : 0;
+};
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -328,7 +335,7 @@ function AwardModal({
   entry: LeaderboardEntry;
   onClose: () => void;
 }) {
-   useQueryClient();
+  const qc = useQueryClient();
   const [form, setForm] = useState<AwardForm>({
     memberId: entry.id,
     projectId: "",

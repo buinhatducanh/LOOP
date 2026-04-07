@@ -15,7 +15,7 @@ import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "motion/react";
 import { adminApi } from "@/lib/api/client";
-import { DS } from "@/lib/design-tokens";
+import { DS, GRD } from "@/lib/design-tokens";
 import {
   Plus, Edit3, Save, X, Search, ToggleRight, ToggleLeft,
   CheckCircle2, ArrowUpDown, Package, DollarSign, CalendarClock,
