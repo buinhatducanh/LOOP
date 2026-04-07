@@ -19,7 +19,7 @@ export function Shell({ children, locale }: { children: React.ReactNode; locale:
   return (
     <>
       {showHeader && <SiteHeader locale={locale} />}
-      <div style={{ flex: 1 }}>
+      <div style={{ flex: 1, overflowX: "hidden" }}>
         {children}
       </div>
       {showHeader && <SiteFooter locale={locale} />}

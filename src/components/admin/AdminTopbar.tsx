@@ -1,249 +1,94 @@
 "use client";
 
-/**
- * AdminTopbar — LOOP Solutions
- * Dark-themed top navigation bar for the admin panel.
- * Adapted from Figma OLD FE AdminDashboard.tsx topbar section.
- */
-
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/app/store/authStore";
 import { useAdminTranslations } from "@/i18n/admin/useAdminTranslations";
-import {
-  Bell,
-  LogOut,
-  Search,
-  ChevronDown,
-} from "lucide-react";
 
-interface AdminTopbarProps {
-  userName?: string;
-  userEmail?: string;
-  userAvatar?: string;
-}
-
-export function AdminTopbar({ userName: propName, userEmail: propEmail, userAvatar: propAvatar }: AdminTopbarProps) {
+export function AdminTopbar() {
   const { t } = useAdminTranslations();
-  const _router = useRouter();
-  const { logout, user } = useAuthStore();
-  // Prefer Zustand store (persisted), fall back to props for initial SSR render
-  const userName = user?.name ?? propName ?? "Admin";
-  const userEmail = propEmail ?? user?.email ?? "";
-  const userAvatar = user?.avatar ?? propAvatar ?? "";
-  const [showNotif, setShowNotif] = useState(false);
-  const [showUserMenu, setShowUserMenu] = useState(false);
-
-  const handleLogout = async () => {
-    await logout();
-    // Full page reload to clear all client state and redirect to login
-    window.location.href = "/vi/dang-nhap";
-  };
 
   return (
     <header
       style={{
-        height: 60,
+        height: 48,
         borderBottom: "1px solid var(--figma-border, #1F2937)",
         display: "flex",
         alignItems: "center",
-        padding: "0 1.5rem",
-        gap: "1rem",
+        justifyContent: "flex-end",
+        padding: "0 1rem",
+        gap: "0.375rem",
         background: "var(--figma-bg, #020617)",
         position: "sticky",
         top: 0,
         zIndex: 30,
       }}
     >
-      {/* Search bar */}
-      <div
+      {/* Home */}
+      <a
+        href="/"
+        title={t("sidebar.nav.goHome")}
         style={{
-          flex: 1,
-          maxWidth: 400,
-          position: "relative",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: 28,
+          height: 28,
+          borderRadius: 6,
+          background: "rgba(255,255,255,0.04)",
+          color: "var(--figma-text3, #94A3B8)",
+          textDecoration: "none",
+          transition: "all 0.15s ease",
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = "rgba(255,255,255,0.08)";
+          e.currentTarget.style.color = "var(--figma-text2, #E2E8F0)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = "rgba(255,255,255,0.04)";
+          e.currentTarget.style.color = "var(--figma-text3, #94A3B8)";
         }}
       >
-        <Search
-          size={14}
-          style={{
-            position: "absolute",
-            left: 10,
-            top: "50%",
-            transform: "translateY(-50%)",
-            color: "var(--figma-text4, #64748B)",
-          }}
-        />
-        <input
-          type="text"
-          placeholder={t("topbar.searchPlaceholder")}
-          className="figma-input"
-          style={{
-            paddingLeft: "2rem",
-            fontSize: "0.8125rem",
-            height: 34,
-            maxWidth: 360,
-          }}
-        />
-      </div>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+          <polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+      </a>
 
-      {/* Right actions */}
-      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginLeft: "auto" }}>
-        {/* Notifications */}
-        <button
-          onClick={() => setShowNotif(!showNotif)}
-          style={{
-            position: "relative",
-            background: "none",
-            border: "1px solid var(--figma-border, #1F2937)",
-            borderRadius: 8,
-            padding: "0.375rem",
-            cursor: "pointer",
-            color: "var(--figma-text3, #94A3B8)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            transition: "all 0.15s ease",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = "var(--figma-blue, #3B82F6)";
-            e.currentTarget.style.color = "var(--figma-blue, #3B82F6)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = "var(--figma-border, #1F2937)";
-            e.currentTarget.style.color = "var(--figma-text3, #94A3B8)";
-          }}
-        >
-          <Bell size={16} />
-          {/* Unread indicator */}
-          <span
-            style={{
-              position: "absolute",
-              top: 4,
-              right: 4,
-              width: 7,
-              height: 7,
-              borderRadius: "50%",
-              background: "var(--figma-red, #EF4444)",
-              border: "1.5px solid var(--figma-bg, #020617)",
-            }}
-          />
-        </button>
-
-        {/* User menu */}
-        <button
-          onClick={() => setShowUserMenu(!showUserMenu)}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "0.5rem",
-            background: "none",
-            border: "1px solid var(--figma-border, #1F2937)",
-            borderRadius: 8,
-            padding: "0.25rem 0.625rem 0.25rem 0.375rem",
-            cursor: "pointer",
-            color: "var(--figma-text2, #E2E8F0)",
-            transition: "all 0.15s ease",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = "var(--figma-border2, #374151)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = "var(--figma-border, #1F2937)";
-          }}
-        >
-          {userAvatar ? (
-            <img
-              src={userAvatar}
-              alt={userName ?? "User"}
-              style={{
-                width: 26,
-                height: 26,
-                borderRadius: "50%",
-                objectFit: "cover",
-              }}
-            />
-          ) : (
-            <div
-              style={{
-                width: 26,
-                height: 26,
-                borderRadius: "50%",
-                background: "var(--figma-grd-primary)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "#fff",
-                fontSize: 10,
-                fontWeight: 700,
-              }}
-            >
-              {(userName ?? "U").slice(0, 2).toUpperCase()}
-            </div>
-          )}
-          <span style={{ fontSize: "0.8125rem", fontWeight: 500 }}>
-            {userName ?? "Admin"}
-          </span>
-          <ChevronDown size={12} style={{ color: "var(--figma-text4, #64748B)" }} />
-        </button>
-
-        {/* User dropdown */}
-        {showUserMenu && (
-          <div
-            style={{
-              position: "absolute",
-              top: 60,
-              right: "1.5rem",
-              width: 200,
-              background: "var(--figma-bg-card2, #111827)",
-              border: "1px solid var(--figma-border2, #374151)",
-              borderRadius: 10,
-              boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
-              overflow: "hidden",
-              zIndex: 100,
-            }}
-          >
-            <div
-              style={{
-                padding: "0.75rem 1rem",
-                borderBottom: "1px solid var(--figma-border, #1F2937)",
-              }}
-            >
-              <div style={{ color: "var(--figma-text2, #E2E8F0)", fontSize: "0.875rem", fontWeight: 500 }}>
-                {userName}
-              </div>
-              <div style={{ color: "var(--figma-text4, #64748B)", fontSize: "0.75rem" }}>
-                {userEmail}
-              </div>
-            </div>
-            <button
-              onClick={handleLogout}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "0.5rem",
-                width: "100%",
-                padding: "0.625rem 1rem",
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                color: "var(--figma-red, #EF4444)",
-                fontSize: "0.875rem",
-                textAlign: "left",
-                transition: "background 0.15s ease",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = "rgba(239,68,68,0.08)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "none";
-              }}
-            >
-              <LogOut size={14} />
-              {t("topbar.logout")}
-            </button>
-          </div>
-        )}
-      </div>
+      {/* Language toggle */}
+      <button
+        onClick={() => {
+          const current = document.cookie.match(/NEXT_LOCALE=([^;]+)/)?.[1];
+          const next = current === "en" ? "vi" : "en";
+          document.cookie = `NEXT_LOCALE=${next}; path=/; max-age=31536000; SameSite=Lax`;
+          window.location.href = `/${next}/`;
+        }}
+        title="Toggle language"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: 28,
+          height: 28,
+          borderRadius: 6,
+          background: "rgba(255,255,255,0.04)",
+          color: "var(--figma-text3, #94A3B8)",
+          border: "none",
+          cursor: "pointer",
+          fontSize: "0.625rem",
+          fontWeight: 700,
+          fontFamily: "'JetBrains Mono', monospace",
+          letterSpacing: "0.05em",
+          transition: "all 0.15s ease",
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = "rgba(255,255,255,0.08)";
+          e.currentTarget.style.color = "var(--figma-text2, #E2E8F0)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = "rgba(255,255,255,0.04)";
+          e.currentTarget.style.color = "var(--figma-text3, #94A3B8)";
+        }}
+      >
+        EN
+      </button>
     </header>
   );
 }

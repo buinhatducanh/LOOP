@@ -231,19 +231,22 @@ function SearchOverlay({ locale, onClose }: { locale: string; onClose: () => voi
 
 // ── Locale Switcher ────────────────────────────────────────────────────────────
 
-const LOCALE_LABELS: Record<string, { short: string; long: string; flag: string }> = {
-  vi: { short: "VI", long: "Tiếng Việt", flag: "🇻🇳" },
-  en: { short: "EN", long: "English", flag: "🇺🇸" },
-  ja: { short: "JA", long: "日本語", flag: "🇯🇵" },
-  ko: { short: "KO", long: "한국어", flag: "🇰🇷" },
-  zh: { short: "ZH", long: "中文", flag: "🇨🇳" },
+const LOCALE_LABELS: Record<string, { short: string; long: string; flag: string; accent: string }> = {
+  vi: { short: "VI", long: "Tiếng Việt", flag: "🇻🇳", accent: DS.pink },
+  en: { short: "EN", long: "English", flag: "🇺🇸", accent: DS.cosmicBlue },
+  ja: { short: "JA", long: "日本語", flag: "🇯🇵", accent: "#E74C3C" },
+  ko: { short: "KO", long: "한국어", flag: "🇰🇷", accent: "#2ECC71" },
+  zh: { short: "ZH", long: "中文", flag: "🇨🇳", accent: DS.amber },
 };
 
 function LocaleSwitcher({ locale }: { locale: string }) {
   const router = useRouter();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -262,49 +265,67 @@ function LocaleSwitcher({ locale }: { locale: string }) {
   }
 
   const current = LOCALE_LABELS[locale] ?? LOCALE_LABELS.vi;
+  const isReallyOpen = mounted && open;
 
   return (
     <div style={{ position: "relative" }} ref={ref}>
       <button
         onClick={() => setOpen(!open)}
         style={{
-          display: "flex", alignItems: "center", gap: 6,
-          background: rgba(DS.text, 0.03),
-          border: `1px solid ${rgba(DS.text, 0.08)}`,
-          borderRadius: 10, padding: "5px 10px",
+          display: "flex", alignItems: "center", gap: 5,
+          background: isReallyOpen ? "rgba(107,61,245,0.15)" : "rgba(255,255,255,0.03)",
+          border: `1px solid ${isReallyOpen ? "rgba(107,61,245,0.4)" : "rgba(255,255,255,0.08)"}`,
+          borderRadius: 9, padding: "5px 10px",
           cursor: "pointer", color: DS.text3,
-          fontSize: 12, fontFamily: DS.mono, fontWeight: 600,
-          transition: "border-color 0.15s",
+          fontSize: 12, fontFamily: DS.mono, fontWeight: 700,
+          letterSpacing: "0.05em",
+          transition: "all 0.2s",
         }}
         onMouseEnter={e => {
-          (e.currentTarget as HTMLButtonElement).style.borderColor = rgba(DS.blue, 0.3);
+          (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(107,61,245,0.4)";
           (e.currentTarget as HTMLButtonElement).style.color = DS.text;
+          (e.currentTarget as HTMLButtonElement).style.background = "rgba(107,61,245,0.12)";
         }}
         onMouseLeave={e => {
-          (e.currentTarget as HTMLButtonElement).style.borderColor = rgba(DS.text, 0.08);
-          (e.currentTarget as HTMLButtonElement).style.color = DS.text3;
+          if (!isReallyOpen) {
+            (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.08)";
+            (e.currentTarget as HTMLButtonElement).style.color = DS.text3;
+            (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.03)";
+          }
         }}
       >
-        <Globe size={13} style={{ color: DS.blue }} />
+        <Globe size={13} style={{ color: DS.pink, transition: "color 0.2s" }} />
         <span>{current.short}</span>
-        <ChevronDown size={10} style={{ transition: "transform 0.15s", transform: open ? "rotate(180deg)" : "none" }} />
+        <ChevronDown size={9} style={{ transition: "transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)", transform: isReallyOpen ? "rotate(180deg)" : "none", opacity: 0.7 }} />
       </button>
 
       <AnimatePresence>
-        {open && (
+        {isReallyOpen && (
           <motion.div
-            initial={{ opacity: 0, y: -6, scale: 0.97 }}
+            initial={{ opacity: 0, y: -10, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -6, scale: 0.97 }}
-            transition={{ duration: 0.15 }}
+            exit={{ opacity: 0, y: -10, scale: 0.95 }}
+            transition={{ type: "spring", stiffness: 320, damping: 26 }}
             style={{
-              position: "absolute", top: "100%", right: 0, marginTop: 6,
-              minWidth: 160, background: rgba(DS.bgCard, 0.98),
-              border: `1px solid ${rgba(DS.blue, 0.15)}`, borderRadius: 12,
-              backdropFilter: "blur(20px)",
-              boxShadow: "0 16px 48px rgba(0,0,0,0.55)", overflow: "hidden", zIndex: 100,
+              position: "absolute", top: "calc(100% + 8px)", right: 0,
+              width: 180,
+              background: "rgba(10,10,18,0.98)",
+              border: "1px solid rgba(107,61,245,0.30)",
+              borderRadius: 14,
+              backdropFilter: "blur(24px)",
+              WebkitBackdropFilter: "blur(24px)",
+              boxShadow: "0 20px 60px rgba(0,0,0,0.6), 0 0 30px rgba(107,61,245,0.12), inset 0 1px 0 rgba(255,255,255,0.05)",
+              zIndex: 110,
+              padding: "6px",
+              overflow: "hidden",
             }}
           >
+            {/* Top accent line */}
+            <div style={{
+              height: 2, borderRadius: "2px 2px 0 0",
+              background: `linear-gradient(90deg, ${DS.pink} 0%, ${DS.blue} 100%)`,
+              marginBottom: 6,
+            }} />
             {routing.locales.map(loc => {
               const info = LOCALE_LABELS[loc] ?? LOCALE_LABELS.vi;
               const active = loc === locale;
@@ -314,12 +335,14 @@ function LocaleSwitcher({ locale }: { locale: string }) {
                   onClick={() => switchLocale(loc)}
                   style={{
                     display: "flex", alignItems: "center", gap: 10,
-                    width: "100%", padding: "8px 12px",
-                    borderRadius: 8, background: active ? "rgba(59,130,246,0.1)" : "none",
-                    border: "none", cursor: "pointer",
-                    color: active ? DS.blue : DS.text3,
+                    width: "100%", padding: "9px 12px",
+                    borderRadius: 10, background: active ? `rgba(107,61,245,0.15)` : "none",
+                    border: active ? `1px solid rgba(107,61,245,0.3)` : "1px solid transparent",
+                    cursor: "pointer",
+                    color: active ? DS.text : DS.text4,
                     fontSize: 13, fontWeight: active ? 600 : 400, textAlign: "left",
-                    transition: "background 0.1s, color 0.1s",
+                    transition: "all 0.18s",
+                    marginBottom: 2,
                   }}
                   onMouseEnter={e => {
                     if (!active) {
@@ -330,14 +353,20 @@ function LocaleSwitcher({ locale }: { locale: string }) {
                   onMouseLeave={e => {
                     if (!active) {
                       (e.currentTarget as HTMLButtonElement).style.background = "none";
-                      (e.currentTarget as HTMLButtonElement).style.color = DS.text3;
+                      (e.currentTarget as HTMLButtonElement).style.color = DS.text4;
                     }
                   }}
                 >
-                  <span style={{ fontSize: "1rem" }}>{info.flag}</span>
+                  <span style={{ fontSize: "1rem", filter: active ? "none" : "grayscale(30%)" }}>{info.flag}</span>
                   <span style={{ flex: 1 }}>{info.long}</span>
-                  {active && <Check size={12} style={{ color: DS.blue }} />}
-                  <span style={{ fontSize: "0.625rem", fontFamily: DS.mono, color: active ? DS.blue : DS.text4, opacity: active ? 1 : 0.6 }}>
+                  {active && (
+                    <div style={{
+                      width: 6, height: 6, borderRadius: "50%",
+                      background: DS.pink,
+                      boxShadow: `0 0 6px ${DS.pink}`,
+                    }} />
+                  )}
+                  <span style={{ fontSize: "0.625rem", fontFamily: DS.mono, color: active ? DS.pink : DS.text5, opacity: active ? 1 : 0.5 }}>
                     {info.short}
                   </span>
                 </button>
@@ -350,11 +379,237 @@ function LocaleSwitcher({ locale }: { locale: string }) {
   );
 }
 
-// ── Nav Dropdown ──────────────────────────────────────────────────────────────
+// ── Mega Dropdown ─────────────────────────────────────────────────────────────
+// Wide 2-column panel with icon + label + description for rich nav experience.
 
-interface NavDropdownItem { label: string; href: string; icon: string }
+interface MegaItem {
+  label: string;
+  href: string;
+  icon: string;
+  description: string;
+  color: string;
+}
+
+interface MegaDropdownGroup {
+  type: "mega";
+  labelKey: string;
+  triggerLabel: string;
+  items: MegaItem[];
+  badge?: string;
+}
+
+function MegaDropdown({
+  triggerLabel,
+  trigger,
+  items,
+  isOpen,
+  onToggle,
+  onSelect,
+  locale,
+  t,
+}: {
+  triggerLabel: string;
+  trigger: React.ReactNode;
+  items: MegaItem[];
+  isOpen: boolean;
+  onToggle: () => void;
+  onSelect: () => void;
+  locale: string;
+  t: ReturnType<typeof useTranslations<"Navigation">>;
+}) {
+  const [mounted, setMounted] = useState(false);
+  const [panelLeft, setPanelLeft] = useState(0);
+  const triggerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => { setMounted(true); }, []);
+  const isReallyOpen = mounted && isOpen;
+
+  useEffect(() => {
+    if (isReallyOpen && triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      const panelWidth = 600;
+      const viewportWidth = window.innerWidth;
+      // Center panel under trigger; clamp to viewport edges
+      let left = rect.left + rect.width / 2 - panelWidth / 2;
+      left = Math.max(16, Math.min(left, viewportWidth - panelWidth - 16));
+      setPanelLeft(left);
+    }
+  }, [isReallyOpen]);
+
+  return (
+    <div style={{ position: "relative" }}>
+      <button
+        onClick={onToggle}
+        onMouseEnter={onToggle}
+        style={{
+          display: "flex", alignItems: "center", gap: 4,
+          padding: "8px 14px", borderRadius: 8,
+          color: isReallyOpen ? DS.text : DS.text2,
+          background: isReallyOpen ? "rgba(107,61,245,0.15)" : "transparent",
+          border: isReallyOpen ? "1px solid rgba(107,61,245,0.35)" : "1px solid transparent",
+          fontSize: 14, fontWeight: isReallyOpen ? 600 : 500,
+          cursor: "pointer", transition: "all 0.18s", whiteSpace: "nowrap",
+        }}
+      >
+        {trigger}
+        <ChevronDown size={10} style={{ transition: "transform 0.15s", transform: isReallyOpen ? "rotate(180deg)" : "none" }} />
+      </button>
+
+      <AnimatePresence>
+        {isReallyOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -8, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8, scale: 0.97 }}
+            transition={{ type: "spring", stiffness: 350, damping: 28 }}
+            onMouseLeave={onSelect}
+            style={{
+              position: "fixed",
+              top: "calc(2px + 68px + 8px)",
+              left: panelLeft,
+              width: 600,
+              background: "rgba(11,14,23,0.97)",
+              border: "1px solid rgba(107,61,245,0.30)",
+              borderRadius: 16,
+              backdropFilter: "blur(24px)",
+              WebkitBackdropFilter: "blur(24px)",
+              boxShadow: "0 24px 80px rgba(0,0,0,0.7), 0 0 40px rgba(107,61,245,0.10)",
+              overflow: "hidden", zIndex: 100,
+            }}
+          >
+            {/* Top gradient accent */}
+            <div style={{
+              height: 2,
+              background: `linear-gradient(90deg, transparent, ${DS.pink} 40%, ${DS.blue} 70%, transparent)`,
+            }} />
+
+            {/* Header label */}
+            <div style={{
+              padding: "14px 20px 8px",
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+            }}>
+              <span style={{
+                color: DS.text4, fontSize: 10,
+                fontFamily: DS.mono, letterSpacing: "0.2em",
+                textTransform: "uppercase",
+              }}>
+                {triggerLabel}
+              </span>
+              <Link href={`/${locale}/services`} onClick={onSelect} style={{
+                color: DS.text4, fontSize: 11, textDecoration: "none",
+                display: "flex", alignItems: "center", gap: 4,
+                fontFamily: DS.mono, transition: "color 0.15s",
+              }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = DS.pink; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = DS.text4; }}
+              >
+                {t("viewAll")} <ArrowRight size={10} />
+              </Link>
+            </div>
+
+            {/* 2-column grid */}
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: 4,
+              padding: "4px 12px 16px",
+            }}>
+              {items.map((item, i) => (
+                <Link key={item.href} href={item.href} onClick={onSelect} style={{ textDecoration: "none" }}>
+                  <motion.div
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.04, duration: 0.2 }}
+                    style={{
+                      display: "flex", alignItems: "flex-start", gap: 12,
+                      padding: "12px 14px", borderRadius: 12,
+                      cursor: "pointer",
+                      transition: "background 0.15s",
+                      border: "1px solid transparent",
+                    }}
+                    onMouseEnter={e => {
+                      (e.currentTarget as HTMLElement).style.background = `${item.color}10`;
+                      (e.currentTarget as HTMLElement).style.borderColor = `${item.color}25`;
+                    }}
+                    onMouseLeave={e => {
+                      (e.currentTarget as HTMLElement).style.background = "transparent";
+                      (e.currentTarget as HTMLElement).style.borderColor = "transparent";
+                    }}
+                  >
+                    {/* Icon */}
+                    <div style={{
+                      width: 38, height: 38, flexShrink: 0,
+                      borderRadius: 10,
+                      background: `${item.color}15`,
+                      border: `1px solid ${item.color}30`,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: 16,
+                    }}>
+                      {item.icon}
+                    </div>
+                    {/* Text */}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{
+                        color: DS.text, fontSize: 13, fontWeight: 600,
+                        marginBottom: 3, lineHeight: 1.3,
+                      }}>
+                        {item.label}
+                      </div>
+                      <div style={{
+                        color: DS.text4, fontSize: 11, lineHeight: 1.4,
+                        display: "-webkit-box",
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: "vertical",
+                        overflow: "hidden",
+                      }}>
+                        {item.description}
+                      </div>
+                    </div>
+                  </motion.div>
+                </Link>
+              ))}
+            </div>
+
+            {/* CTA strip */}
+            <div style={{
+              padding: "10px 20px 16px",
+              borderTop: "1px solid rgba(107,61,245,0.12)",
+            }}>
+              <Link href={`/${locale}/dat-lich`} onClick={onSelect} style={{ textDecoration: "none" }}>
+                <div style={{
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                  padding: "9px 16px", borderRadius: 10,
+                  background: "linear-gradient(135deg, rgba(107,61,245,0.20), rgba(236,72,153,0.15))",
+                  border: "1px solid rgba(107,61,245,0.35)",
+                  cursor: "pointer", transition: "all 0.15s",
+                }}
+                  onMouseEnter={e => {
+                    (e.currentTarget as HTMLElement).style.background = "linear-gradient(135deg, rgba(107,61,245,0.30), rgba(236,72,153,0.25))";
+                    (e.currentTarget as HTMLElement).style.borderColor = "rgba(236,72,153,0.55)";
+                  }}
+                  onMouseLeave={e => {
+                    (e.currentTarget as HTMLElement).style.background = "linear-gradient(135deg, rgba(107,61,245,0.20), rgba(236,72,153,0.15))";
+                    (e.currentTarget as HTMLElement).style.borderColor = "rgba(107,61,245,0.35)";
+                  }}
+                >
+                  <Rocket size={13} style={{ color: DS.pink }} />
+                  <span style={{ color: DS.text, fontSize: 12, fontWeight: 600 }}>
+                    {t("getQuote")}
+                  </span>
+                </div>
+              </Link>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// ── Nav Dropdown (simple, single-column) ────────────────────────────────────────
+
+interface NavDropdownItem { label: string; href: string; icon: string; description?: string; color?: string }
 interface NavDropdownGroup { type: "dropdown"; labelKey: string; triggerLabel: string; items: NavDropdownItem[] }
-type NavItem = ({ type?: never; label: string; href: string } | NavDropdownGroup);
+type NavItem = ({ type?: never; label: string; href: string } | { type: "linkIcon"; label: string; href: string } | NavDropdownGroup | MegaDropdownGroup);
 
 function NavDropdown({
   labelKey: _labelKey,
@@ -402,10 +657,13 @@ function NavDropdown({
             initial={{ opacity: 0, y: -6, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -6, scale: 0.97 }}
-            transition={{ duration: 0.15 }}
+            transition={{ type: "spring", stiffness: 350, damping: 28 }}
             onMouseLeave={onToggle}
             style={{
-              position: "absolute", top: "100%", left: 0, marginTop: 6,
+              position: "absolute",
+              top: "100%",
+              left: 0,
+              marginTop: 6,
               minWidth: 240,
               background: "rgba(12,12,20,0.97)",
               border: "1px solid rgba(107,61,245,0.25)",
@@ -471,28 +729,54 @@ export default function SiteHeader({ locale }: { locale: string }) {
   const mounted = useMounted();
 
   const navLinks: NavItem[] = [
-    { label: t("home"), href: `/${locale}/` },
-
-    // Dịch vụ dropdown
+    // Home icon link
     {
-      type: "dropdown",
+      type: "linkIcon",
+      label: t("home"),
+      href: `/${locale}/`,
+    },
+
+    // Mega dropdown — Dịch vụ (gộp cả Quay chụp Media)
+    {
+      type: "mega",
       labelKey: "servicesDropdown",
       triggerLabel: t("servicesDropdown"),
       items: [
-        { label: t("serviceWebsite"),    href: `/${locale}/services?cat=web`,       icon: "🌐" },
-        { label: t("serviceApp"),        href: `/${locale}/services?cat=app`,        icon: "📱" },
-        { label: t("serviceDashboard"), href: `/${locale}/services?cat=dashboard`, icon: "📊" },
-        { label: t("serviceSeo"),       href: `/${locale}/services?cat=seo`,         icon: "🎯" },
-      ],
-    },
-
-    // Quay chụp Thương mại (formerly Marketing/Media)
-    {
-      type: "dropdown",
-      labelKey: "quayChupDropdown",
-      triggerLabel: t("quayChupDropdown"),
-      items: [
-        { label: t("mediaLabel"), href: `/${locale}/media`, icon: "🎬" },
+        {
+          label: t("serviceWebsite"),
+          href: `/${locale}/services?cat=web`,
+          icon: "🌐",
+          description: "Thiết kế & phát triển website chuyên nghiệp, tối ưu SEO, responsive trên mọi thiết bị.",
+          color: DS.blue,
+        },
+        {
+          label: t("serviceApp"),
+          href: `/${locale}/services?cat=app`,
+          icon: "📱",
+          description: "Xây dựng ứng dụng di động & phần mềm SaaS với trải nghiệm người dùng hiện đại.",
+          color: DS.purple,
+        },
+        {
+          label: t("serviceDashboard"),
+          href: `/${locale}/services?cat=dashboard`,
+          icon: "📊",
+          description: "Hệ thống dashboard quản trị, phân tích dữ liệu trực quan, báo cáo thông minh.",
+          color: DS.cyan,
+        },
+        {
+          label: t("serviceSeo"),
+          href: `/${locale}/services?cat=seo`,
+          icon: "🎯",
+          description: "Tối ưu hóa công cụ tìm kiếm, quảng cáo Google & TikTok, tăng trưởng doanh thu bền vững.",
+          color: DS.gold,
+        },
+        {
+          label: t("quayChupDropdown"),
+          href: `/${locale}/media`,
+          icon: "🎬",
+          description: "Quay phim, chụp ảnh sản phẩm & quảng cáo thương mại chất lượng cao cho doanh nghiệp.",
+          color: DS.rose,
+        },
       ],
     },
 
@@ -556,6 +840,7 @@ export default function SiteHeader({ locale }: { locale: string }) {
           background: "rgba(12,12,20,0.94)", backdropFilter: "blur(20px)",
           WebkitBackdropFilter: "blur(20px)",
           borderBottom: `1px solid rgba(107,61,245,0.20)`,
+          overflow: "visible",
         }}
       >
         <div
@@ -599,10 +884,24 @@ export default function SiteHeader({ locale }: { locale: string }) {
           </Link>
 
           {/* Desktop Nav */}
-          <nav ref={navRef} className="hide-mobile" style={{ display: "flex", alignItems: "center", gap: 6, marginLeft: "1.5rem", flex: 1 }}>
+          <nav ref={navRef} className="hide-mobile" style={{ display: "flex", alignItems: "center", gap: 6, marginLeft: "1rem", flex: 1 }}>
             {navLinks.map(link => {
+              if (link.type === "mega") {
+                return (
+                  <MegaDropdown
+                    key={link.labelKey}
+                    triggerLabel={link.triggerLabel}
+                    trigger={<span>{link.triggerLabel}</span>}
+                    items={link.items}
+                    isOpen={openDropdown === link.labelKey}
+                    onToggle={() => setOpenDropdown(prev => prev === link.labelKey ? null : link.labelKey)}
+                    onSelect={() => setOpenDropdown(null)}
+                    locale={locale}
+                    t={t}
+                  />
+                );
+              }
               if (link.type === "dropdown") {
-                // Always render NavDropdown to avoid SSR/hydration mismatch
                 return (
                   <NavDropdown
                     key={link.labelKey}
@@ -613,6 +912,42 @@ export default function SiteHeader({ locale }: { locale: string }) {
                     onToggle={() => setOpenDropdown(prev => prev === link.labelKey ? null : link.labelKey)}
                     onSelect={() => setOpenDropdown(null)}
                   />
+                );
+              }
+              if (link.type === "linkIcon") {
+                const active = isActive(link.href);
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    title={link.label}
+                    style={{
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      width: 34, height: 34,
+                      borderRadius: 8,
+                      color: active ? DS.text : DS.text3,
+                      background: active ? "rgba(107,61,245,0.15)" : "transparent",
+                      border: active ? "1px solid rgba(107,61,245,0.35)" : "1px solid transparent",
+                      textDecoration: "none", transition: "all 0.18s",
+                    }}
+                    onMouseEnter={e => {
+                      if (!active) {
+                        (e.currentTarget as HTMLElement).style.background = "rgba(107,61,245,0.08)";
+                        (e.currentTarget as HTMLElement).style.color = DS.text;
+                      }
+                    }}
+                    onMouseLeave={e => {
+                      if (!active) {
+                        (e.currentTarget as HTMLElement).style.background = "transparent";
+                        (e.currentTarget as HTMLElement).style.color = DS.text3;
+                      }
+                    }}
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                      <polyline points="9 22 9 12 15 12 15 22"/>
+                    </svg>
+                  </Link>
                 );
               }
               const active = isActive(link.href);
@@ -648,7 +983,7 @@ export default function SiteHeader({ locale }: { locale: string }) {
           </nav>
 
           {/* Right actions */}
-          <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0, marginLeft: "auto" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0, marginLeft: "auto", minWidth: 0 }}>
             {/* Search */}
             <button
               onClick={() => setSearchOpen(true)}
@@ -682,15 +1017,18 @@ export default function SiteHeader({ locale }: { locale: string }) {
             {/* Locale Switcher */}
             <LocaleSwitcher locale={locale} />
 
-            {/* User menu — guarded by mounted to prevent hydration mismatch */}
+            {/* User menu — icon only */}
             {mounted && isAuthenticated && user ? (
               <div style={{ position: "relative" }} ref={userMenuRef}>
                 <button
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
+                  title={user.name}
                   style={{
-                    display: "flex", alignItems: "center", gap: 8,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    width: 34, height: 34,
                     background: rgba(DS.text, 0.03), border: `1px solid ${rgba(DS.text, 0.08)}`,
-                    borderRadius: 10, padding: "4px 10px 4px 4px", cursor: "pointer",
+                    borderRadius: 9, cursor: "pointer",
+                    transition: "border-color 0.15s",
                   }}
                   onMouseEnter={e => {
                     const rl = roleLabels[user.role] ?? { color: DS.text4 };
@@ -700,32 +1038,33 @@ export default function SiteHeader({ locale }: { locale: string }) {
                     (e.currentTarget as HTMLButtonElement).style.borderColor = rgba(DS.text, 0.08);
                   }}
                 >
-                  <img
-                    src={user.avatar}
-                    alt={user.name}
-                    style={{ width: 28, height: 28, borderRadius: 7, objectFit: "cover", border: `1.5px solid ${rgba(DS.purple, 0.5)}` }}
-                  />
-                  <div className="hide-mobile" style={{ textAlign: "left", lineHeight: 1.2 }}>
-                    <div style={{ color: DS.text, fontSize: 11, fontWeight: 600 }}>{user.shortName}</div>
-                    <div style={{ color: (roleLabels[user.role] ?? { color: DS.text4 }).color, fontSize: 8, fontFamily: DS.mono, letterSpacing: "0.08em" }}>
-                      {(roleLabels[user.role] ?? { label: user.role }).label}
-                    </div>
-                  </div>
-                  <ChevronDown size={11} style={{ color: DS.text5, transition: "transform 0.15s", transform: userMenuOpen ? "rotate(180deg)" : "none" }} />
+                  {user.avatar ? (
+                    <img src={user.avatar} alt={user.name} style={{ width: 24, height: 24, borderRadius: 6, objectFit: "cover" }} />
+                  ) : (
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={DS.text3} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                      <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                  )}
                 </button>
 
                 <AnimatePresence>
                   {userMenuOpen && (
                     <motion.div
-                      initial={{ opacity: 0, y: -8, scale: 0.97 }}
+                      initial={{ opacity: 0, y: -12, scale: 0.95 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -8, scale: 0.97 }}
+                      exit={{ opacity: 0, y: -12, scale: 0.95 }}
+                      transition={{ type: "spring", stiffness: 350, damping: 28 }}
                       style={{
-                        position: "absolute", top: "100%", right: 0, marginTop: 8,
-                        width: 240, background: rgba(DS.bgCard, 0.98),
-                        border: `1px solid ${rgba(DS.blue, 0.12)}`, borderRadius: 12,
-                        backdropFilter: "blur(20px)",
-                        boxShadow: "0 16px 48px rgba(0,0,0,0.55)", overflow: "hidden", zIndex: 100,
+                        position: "absolute", top: "calc(100% + 8px)", right: 0,
+                        width: 220,
+                        background: "rgba(10,10,18,0.98)",
+                        border: "1px solid rgba(107,61,245,0.25)",
+                        borderRadius: 14,
+                        backdropFilter: "blur(24px)",
+                        WebkitBackdropFilter: "blur(24px)",
+                        boxShadow: "0 20px 60px rgba(0,0,0,0.6), 0 0 30px rgba(107,61,245,0.10)",
+                        overflow: "hidden", zIndex: 110,
                       }}
                     >
                       <div style={{ padding: "12px 16px", borderBottom: `1px solid ${DS.border}` }}>
@@ -745,7 +1084,7 @@ export default function SiteHeader({ locale }: { locale: string }) {
                         { href: `/${locale}/khach-hang`, label: t("myLpWallet"), icon: "💎" },
                       ].map(item => (
                         <Link
-                          key={item.href}
+                          key={`${item.href}-${item.label}`}
                           href={item.href}
                           onClick={() => setUserMenuOpen(false)}
                           style={{
@@ -785,11 +1124,12 @@ export default function SiteHeader({ locale }: { locale: string }) {
               <Link
                 href={`/${locale}/dang-nhap`}
                 className="hide-mobile"
+                title={t("login")}
                 style={{
-                  display: "flex", alignItems: "center", gap: 6,
-                  color: DS.text4, fontSize: 12, padding: "5px 12px",
-                  borderRadius: 8, border: `1px solid ${rgba(DS.text, 0.08)}`,
-                  textDecoration: "none", transition: "all 0.15s",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  width: 34, height: 34,
+                  borderRadius: 9, border: `1px solid ${rgba(DS.text, 0.08)}`,
+                  color: DS.text4, textDecoration: "none", transition: "all 0.15s",
                 }}
                 onMouseEnter={e => {
                   (e.currentTarget as HTMLElement).style.color = DS.text;
@@ -800,8 +1140,10 @@ export default function SiteHeader({ locale }: { locale: string }) {
                   (e.currentTarget as HTMLElement).style.borderColor = rgba(DS.text, 0.08);
                 }}
               >
-                <LogIn size={14} />
-                <span>{t("login")}</span>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                  <circle cx="12" cy="7" r="4"/>
+                </svg>
               </Link>
             )}
 
@@ -850,7 +1192,8 @@ export default function SiteHeader({ locale }: { locale: string }) {
             >
               <nav style={{ padding: "12px 1.5rem 20px", display: "flex", flexDirection: "column", gap: 4 }}>
                 {navLinks.map((link, idx) => {
-                  if (link.type === "dropdown") {
+                  // Mega dropdown on mobile — treat same as simple dropdown (accordion)
+                  if (link.type === "mega" || link.type === "dropdown") {
                     const [subOpen, setSubOpen] = useState(false);
                     return (
                       <div key={`m-drop-${link.labelKey}-${idx}`}>

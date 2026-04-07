@@ -196,9 +196,15 @@ export async function POST(req: NextRequest) {
     );
 
     const effectiveRoleLevel =
-      user.userRoles.length > 0
-        ? Math.min(...user.userRoles.map((ur) => ur.role.level ?? 99))
-        : ROLE_LEVEL[user.role] ?? 99;
+      // ── R3 fix: if teamMemberId exists → user is definitely staff ─────────────────
+      // This handles staff accounts that have NO UserRole records in the DB.
+      // User.role field (e.g. "admin", "member") maps to a valid ROLE_LEVEL.
+      // teamMemberId is only set for staff accounts, so it's a reliable signal.
+      user.teamMemberId !== null
+        ? ROLE_LEVEL[user.role] ?? 1 // staff: use User.role field, default to admin level
+        : user.userRoles.length > 0
+          ? Math.min(...user.userRoles.map((ur) => ur.role.level ?? 99))
+          : ROLE_LEVEL[user.role] ?? 99;
 
     const accountType: "staff" | "customer" =
       effectiveRoleLevel <= 5 ? "staff" : "customer";

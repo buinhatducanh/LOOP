@@ -72,15 +72,12 @@ const SIDEBAR_GROUPS_CONFIG: NavGroup[] = [
     labelKey: "sidebar.groups.finance",
     items: [
       { id: "revenue", icon: <DollarSign size={16} />, labelKey: "sidebar.nav.revenue" },
-      { id: "analytics", icon: <BarChart2 size={16} />, labelKey: "sidebar.nav.analytics" },
       { id: "clients", icon: <UserCheck size={16} />, labelKey: "sidebar.nav.clients" },
+      { id: "revenue_split", icon: <Calculator size={16} />, labelKey: "sidebar.nav.revenue_split" },
+      { id: "off_system_payments", icon: <Wallet size={16} />, labelKey: "sidebar.nav.off_system_payments" },
       { id: "lp", icon: <Wallet size={16} />, labelKey: "sidebar.nav.lp" },
       { id: "lp_manage", icon: <Zap size={16} />, labelKey: "sidebar.nav.lp_manage" },
       { id: "income_tax", icon: <Calculator size={16} />, labelKey: "sidebar.nav.income_tax" },
-      { id: "pricing", icon: <Receipt size={16} />, labelKey: "sidebar.nav.pricing" },
-      { id: "web_packages", icon: <Package size={16} />, labelKey: "sidebar.nav.web_packages" },
-      { id: "revenue_split", icon: <Calculator size={16} />, labelKey: "sidebar.nav.revenue_split" },
-      { id: "off_system_payments", icon: <Wallet size={16} />, labelKey: "sidebar.nav.off_system_payments" },
     ],
   },
   {
@@ -226,11 +223,12 @@ export function AdminSidebar({ userName, userAvatar, userRole, userRank, userLpB
                 <div
                   style={{
                     color: "var(--figma-text4, #64748B)",
-                    fontSize: 9,
+                    fontSize: 8,
                     fontFamily: "'JetBrains Mono', monospace",
                     letterSpacing: "0.2em",
                     padding: "0 0.5rem",
-                    marginBottom: "0.375rem",
+                    marginBottom: "0.25rem",
+                    textTransform: "uppercase",
                   }}
                 >
                   {t(group.labelKey)}
@@ -244,9 +242,9 @@ export function AdminSidebar({ userName, userAvatar, userRole, userRank, userLpB
                       style={{
                         display: "flex",
                         alignItems: "center",
-                        gap: "0.625rem",
-                        padding: "0.5rem 0.625rem",
-                        borderRadius: 8,
+                        gap: "0.5rem",
+                        padding: "0.375rem 0.5rem",
+                        borderRadius: 6,
                         color: isActive
                           ? "var(--figma-blue, #3B82F6)"
                           : "var(--figma-text3, #94A3B8)",
@@ -257,9 +255,9 @@ export function AdminSidebar({ userName, userAvatar, userRole, userRank, userLpB
                           ? "1px solid rgba(59,130,246,0.3)"
                           : "1px solid transparent",
                         textDecoration: "none",
-                        fontSize: "0.8125rem",
+                        fontSize: "0.75rem",
                         fontWeight: isActive ? 600 : 400,
-                        marginBottom: 2,
+                        marginBottom: 1,
                         transition: "all 0.15s ease",
                       }}
                       onMouseEnter={(e) => {
@@ -289,82 +287,80 @@ export function AdminSidebar({ userName, userAvatar, userRole, userRank, userLpB
         {/* User info footer */}
         <div
           style={{
-            padding: "1rem 1.25rem",
+            padding: "0.75rem 1rem",
             borderTop: "1px solid var(--figma-border, #1F2937)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: "0.625rem" }}>
-            {userAvatar ? (
-              <img
-                src={userAvatar}
-                alt={userName ?? "Avatar"}
-                style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: "50%",
-                  objectFit: "cover",
-                }}
-              />
-            ) : (
-              <div
-                style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: "50%",
-                  background: "var(--figma-grd-primary)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "#fff",
-                  fontSize: 11,
-                  fontWeight: 700,
-                }}
-              >
-                {(userName ?? "U").slice(0, 2).toUpperCase()}
-              </div>
-            )}
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div
-                style={{
-                  color: "var(--figma-text2, #E2E8F0)",
-                  fontSize: "0.8125rem",
-                  fontWeight: 500,
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {userName ?? "Admin"}
-              </div>
-              <div
-                style={{
-                  color: "var(--figma-text5, #475569)",
-                  fontSize: "0.6875rem",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 4,
-                }}
-              >
-                {userRank && (
-                  <>
-                    <span
-                      style={{
-                        width: 6,
-                        height: 6,
-                        borderRadius: "50%",
-                        background: RANK_COLORS[userRank.toLowerCase()] ?? "var(--figma-purple, #818CF8)",
-                        boxShadow: `0 0 6px ${RANK_COLORS[userRank.toLowerCase()] ?? "var(--figma-purple, #818CF8)"}`,
-                        display: "inline-block",
-                      }}
-                    />
-                    <span>{userRank}</span>
-                    <span style={{ color: "var(--figma-text4, #64748B)" }}>·</span>
-                  </>
-                )}
-                <span>{fmtLP(userLpBalance ?? 0)} LP</span>
-              </div>
-            </div>
-          </div>
+          {/* Home link */}
+          <a
+            href="/"
+            title={t("sidebar.nav.goHome") ?? "Go to home"}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 32,
+              height: 32,
+              borderRadius: 8,
+              background: "rgba(255,255,255,0.04)",
+              color: "var(--figma-text4, #64748B)",
+              textDecoration: "none",
+              transition: "all 0.15s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "rgba(255,255,255,0.08)";
+              e.currentTarget.style.color = "var(--figma-text2, #E2E8F0)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "rgba(255,255,255,0.04)";
+              e.currentTarget.style.color = "var(--figma-text4, #64748B)";
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+              <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+          </a>
+
+          {/* Language switcher */}
+          <button
+            onClick={() => {
+              const current = document.cookie.match(/NEXT_LOCALE=([^;]+)/)?.[1];
+              const next = current === "en" ? "vi" : "en";
+              document.cookie = `NEXT_LOCALE=${next}; path=/; max-age=31536000; SameSite=Lax`;
+              window.location.href = `/${next}/`;
+            }}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 32,
+              height: 32,
+              borderRadius: 8,
+              background: "rgba(255,255,255,0.04)",
+              color: "var(--figma-text4, #64748B)",
+              border: "none",
+              cursor: "pointer",
+              fontSize: "0.6875rem",
+              fontWeight: 700,
+              fontFamily: "'JetBrains Mono', monospace",
+              letterSpacing: "0.05em",
+              transition: "all 0.15s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "rgba(255,255,255,0.08)";
+              e.currentTarget.style.color = "var(--figma-text2, #E2E8F0)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "rgba(255,255,255,0.04)";
+              e.currentTarget.style.color = "var(--figma-text4, #64748B)";
+            }}
+          >
+            EN
+          </button>
         </div>
       </aside>
     </>

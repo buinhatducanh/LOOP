@@ -34,7 +34,8 @@
       "notification_center": "Notifications",
       "settings": "Settings",
       "revenue_split": "Revenue Split",
-      "off_system_payments": "Off-System Payments"
+      "off_system_payments": "Off-System Payments",
+      "goHome": "Go to Home"
     },
     "footer": {
       "adminPanel": "ADMIN PANEL"

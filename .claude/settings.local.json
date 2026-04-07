@@ -309,7 +309,9 @@
       "Bash(grep '\"\"build\"\"' package.json)",
       "Bash(sed -n '557,562p' src/app/admin/orders/page.tsx)",
       "Bash(sed -n '619,626p' src/app/admin/orders/page.tsx)",
-      "Bash(awk 'NR==621' src/app/admin/orders/page.tsx)"
+      "Bash(awk 'NR==621' src/app/admin/orders/page.tsx)",
+      "Bash(Select-String \"AdminSidebar\" -SimpleMatch)",
+      "Bash(Select-Object -First 5)"
     ],
     "additionalDirectories": [
       "D:\\LOOP_COMPANY\\LOOP\\src\\app\\api\\admin\\expertises",

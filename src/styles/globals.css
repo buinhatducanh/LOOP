@@ -5,85 +5,85 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: #020617;
+  --background: #0C0C14;
   --foreground: #ffffff;
   --card: #0F172A;
   --card-foreground: #ffffff;
   --popover: #0F172A;
   --popover-foreground: #ffffff;
-  --primary: #3B82F6;
+  --primary: #4F7DF3;
   --primary-foreground: #ffffff;
   --secondary: #1F2937;
   --secondary-foreground: #E2E8F0;
   --muted: #1F2937;
-  --muted-foreground: #94A3B8;
-  --accent: #818CF8;
+  --muted-foreground: #B8C4D4;
+  --accent: #6B3DF5;
   --accent-foreground: #ffffff;
-  --destructive: #EF4444;
+  --destructive: #CC3344;
   --destructive-foreground: #ffffff;
   --border: #1F2937;
   --input: #1F2937;
-  --ring: #3B82F6;
-  --chart-1: #3B82F6;
-  --chart-2: #818CF8;
-  --chart-3: #14B8A6;
-  --chart-4: #F59E0B;
-  --chart-5: #22C55E;
+  --ring: #4F7DF3;
+  --chart-1: #4F7DF3;
+  --chart-2: #6B3DF5;
+  --chart-3: #6EB1A8;
+  --chart-4: #E6C75F;
+  --chart-5: #7CB5A0;
   --radius: 0.625rem;
 
-  /* FE Gaming/Cyberpunk dark palette */
-  --bg: #020617;
+  /* FE Gaming/Cyberpunk dark palette — synced with DS cosmic palette (2026-04-07) */
+  --bg: #0C0C14;
   --bg-card: #0F172A;
   --bg-card2: #111827;
   --bg-card3: #0D1526;
-  --blue: #3B82F6;
-  --blue-dark: #1D4ED8;
-  --purple: #818CF8;
-  --cyan: #14B8A6;
-  --green: #22C55E;
-  --amber: #F59E0B;
-  --red: #EF4444;
+  --blue: #4F7DF3;
+  --blue-dark: #6B3DF5;
+  --purple: #6B3DF5;
+  --cyan: #6EB1A8;
+  --green: #7CB5A0;
+  --amber: #E6C75F;
+  --red: #CC3344;
   --text: #ffffff;
   --text2: #E2E8F0;
-  --text3: #94A3B8;
-  --text4: #64748B;
-  --text5: #475569;
+  --text3: #B8C4D4;
+  --text4: #7A8A9E;
+  --text5: #5A6A7E;
   --border2: #374151;
 
-  /* Figma tokens (alias) */
-  --figma-bg: #020617;
+  /* Figma tokens (alias) — synced with DS cosmic palette */
+  --figma-bg: #0C0C14;
   --figma-bg-card: #0F172A;
   --figma-bg-card2: #111827;
   --figma-bg-card3: #0D1526;
   --figma-border: #1F2937;
   --figma-border2: #374151;
-  --figma-blue: #3B82F6;
-  --figma-blue-dark: #1D4ED8;
-  --figma-purple: #818CF8;
-  --figma-cyan: #14B8A6;
-  --figma-green: #22C55E;
-  --figma-amber: #F59E0B;
-  --figma-red: #EF4444;
+  --figma-blue: #4F7DF3;
+  --figma-blue-dark: #6B3DF5;
+  --figma-purple: #6B3DF5;
+  --figma-cyan: #6EB1A8;
+  --figma-green: #7CB5A0;
+  --figma-amber: #E6C75F;
+  --figma-red: #CC3344;
   --figma-text: #ffffff;
   --figma-text2: #E2E8F0;
-  --figma-text3: #94A3B8;
-  --figma-text4: #64748B;
-  --figma-text5: #475569;
-  --figma-grd-primary: linear-gradient(135deg, #1D4ED8, #818CF8);
-  --figma-grd-blue: linear-gradient(135deg, #1D4ED8, #3B82F6);
-  --figma-grd-purple: linear-gradient(135deg, #818CF8, #7DD3FC);
-  --figma-grd-cyan: linear-gradient(135deg, #14B8A6, #818CF8);
-  --figma-grd-gold: linear-gradient(135deg, #F59E0B, #FDE68A);
-  --figma-grd-hero: linear-gradient(135deg, rgba(29,78,216,0.15), rgba(129,140,248,0.08));
-  --figma-glow-blue: 0 0 20px rgba(59,130,246,0.4);
-  --figma-glow-purple: 0 0 20px rgba(129,140,248,0.4);
-  --figma-glow-cyan: 0 0 20px rgba(20,184,166,0.4);
+  --figma-text3: #B8C4D4;
+  --figma-text4: #7A8A9E;
+  --figma-text5: #5A6A7E;
+  --figma-grd-primary: linear-gradient(135deg, #6B3DF5, #EC4899);
+  --figma-grd-blue: linear-gradient(135deg, #6B3DF5, #4F7DF3);
+  --figma-grd-purple: linear-gradient(135deg, #6B3DF5, #62C5EB);
+  --figma-grd-cyan: linear-gradient(135deg, #6EB1A8, #6B3DF5);
+  --figma-grd-gold: linear-gradient(135deg, #E6C75F, #FFD700);
+  --figma-grd-hero: linear-gradient(135deg, rgba(107,61,245,0.15), rgba(236,72,153,0.08));
+  --figma-glow-blue: 0 0 20px rgba(79,125,243,0.4);
+  --figma-glow-purple: 0 0 20px rgba(107,61,245,0.4);
+  --figma-glow-cyan: 0 0 20px rgba(110,177,168,0.4);
   --figma-glow-card: 0 8px 32px rgba(0,0,0,0.4);
 
   /* Fonts — DM Sans for VI/EN body, Plus Jakarta Sans for headings, CJK fonts via next/font variables */
   --font-dm-sans: var(--font-dm-sans), system-ui, sans-serif;
   --font-heading: var(--font-plus-jakarta), system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", monospace;
+  --font-mono: var(--font-mono);
 }
 
 @theme inline {
@@ -149,10 +149,12 @@
     color: var(--foreground);
     font-family: var(--font-dm-sans), system-ui, sans-serif;
     min-height: 100vh;
+    overflow-x: hidden;
   }
 
   html {
     scroll-behavior: smooth;
+    overflow-x: hidden;
   }
 
   /* Heading font — Plus Jakarta Sans */
@@ -295,3 +297,47 @@
   border-radius: 9999px;
   box-shadow: 0 0 6px rgba(0, 245, 255, 0.3), 0 0 12px rgba(59, 130, 246, 0.15);
 }
+
+/* ── Galaxy Star Animations ─────────────────────────────────────────────── */
+@keyframes twinkle-glow-1 {
+  0%, 100% { opacity: 0.15; }
+  50% { opacity: 1; }
+}
+@keyframes twinkle-glow-2 {
+  0%, 100% { opacity: 0.20; }
+  50% { opacity: 0.95; }
+}
+@keyframes twinkle-glow-3 {
+  0%, 100% { opacity: 0.10; }
+  50% { opacity: 0.90; }
+}
+@keyframes twinkle-core-1 {
+  0%, 100% { opacity: 0.30; }
+  50% { opacity: 1; }
+}
+@keyframes twinkle-core-2 {
+  0%, 100% { opacity: 0.25; }
+  50% { opacity: 0.95; }
+}
+@keyframes twinkle-core-3 {
+  0%, 100% { opacity: 0.20; }
+  50% { opacity: 0.90; }
+}
+@keyframes dust-glow {
+  0% { opacity: 0; }
+  40% { opacity: 0.9; }
+  100% { opacity: 0; }
+}
+@keyframes dust-core {
+  0% { opacity: 0; }
+  40% { opacity: 1; }
+  100% { opacity: 0; }
+}
+@keyframes constellation-pulse {
+  0%, 100% { opacity: 0.08; }
+  50% { opacity: 0.30; }
+}
+.constellation-lines {
+  animation: constellation-pulse 8s ease-in-out infinite;
+}
+

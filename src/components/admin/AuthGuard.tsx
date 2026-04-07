@@ -174,6 +174,28 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     };
 
     if (!checkHydration()) {
+      // Zustand not yet hydrated — check localStorage as fallback.
+      // This prevents race condition when opening /admin in a new tab.
+      const storedToken = localStorage.getItem("loop-staff-token");
+      if (storedToken) {
+        const exp = getTokenExpiry(storedToken);
+        if (!exp || !isTokenExpired(exp)) {
+          // Token exists and not expired → allow immediately
+          setStatus("allowed");
+          void (async () => {
+            const valid = await verifySessionWithServer();
+            if (!valid) {
+              localStorage.removeItem("loop-staff-token");
+              setStatus("blocked");
+            }
+          })();
+          return;
+        }
+        // Token expired → clear and wait for hydration
+        localStorage.removeItem("loop-staff-token");
+      }
+
+      // No localStorage token → poll Zustand hydration
       const interval = setInterval(() => {
         if (checkHydration()) {
           clearInterval(interval);
@@ -182,28 +204,11 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
       }, 50);
 
       // Safety: if Zustand hydration never fires (e.g. SSR edge case),
-      // fall back to localStorage token check after a short delay.
+      // don't block — the only way to be here without a token is truly no session.
       const timeout = setTimeout(() => {
         clearInterval(interval);
-        // Even without Zustand hydration, allow if localStorage has a valid token
-        const storedToken = localStorage.getItem("loop-staff-token");
-        if (storedToken) {
-          const exp = getTokenExpiry(storedToken);
-          if (!exp || !isTokenExpired(exp)) {
-            setStatus("allowed");
-            void (async () => {
-              const valid = await verifySessionWithServer();
-              if (!valid) {
-                localStorage.removeItem("loop-staff-token");
-                setStatus("blocked");
-              }
-            })();
-            return;
-          }
-        }
-        // No localStorage token — block
         setStatus("blocked");
-      }, 3000);
+      }, 5000);
 
       return () => {
         clearInterval(interval);
@@ -218,7 +223,12 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (status === "blocked" && !redirectFired.current) {
       redirectFired.current = true;
-      router.replace("/admin/login");
+      // Redirect to /admin/login which renders the footer login modal.
+      // The page is already /admin/login so no navigation actually occurs —
+      // the modal just needs to be opened by the page itself.
+      if (!window.location.pathname.includes("/admin/login")) {
+        router.replace("/admin/login");
+      }
     }
   }, [status, router]);
 

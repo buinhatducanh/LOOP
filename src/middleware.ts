@@ -74,21 +74,36 @@ export async function middleware(req: NextRequest) {
       return NextResponse.next();
     }
 
+    // /admin/overview — always pass through to client-side AuthGuard.
+    // AuthGuard reads localStorage (not cookie) so it always sees the token
+    // after login. Middleware's cookie-based check can miss the token on
+    // the first request after login due to cookie sync delay.
+    if (pathname === "/admin/overview") {
+      return NextResponse.next();
+    }
+
     const result = checkAdminAccess(req, pathname);
 
     if (!result.allowed) {
       if (result.reason === "unauthenticated") {
-        // No staff token → redirect to dedicated admin login page
+        // No staff token → go to admin login page.
+        // AuthGuard is NOT in the /admin/login page, so we must redirect here.
         return NextResponse.redirect(new URL("/admin/login", req.url));
       }
-      // Customer token present or forbidden → 403
+      // Customer token present trying to access admin → redirect to customer portal
+      const accountType = getAccountType(req);
+      if (accountType === "customer") {
+        const locale = req.cookies.get("NEXT_LOCALE")?.value ?? "vi";
+        return NextResponse.redirect(new URL(`/${locale}/khach-hang`, req.url));
+      }
+      // Forbidden role → 403
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     return NextResponse.next();
   }
 
-  // ─── 3) /khach-hang/* — Customer-only routes ──────────────────────────────
+  // ─── 3a) /khach-hang/* — Customer-only routes (no locale prefix) ──────────
   if (pathname === "/khach-hang" || pathname.startsWith("/khach-hang/")) {
     const result = checkCustomerAccess(req, pathname);
 
@@ -104,6 +119,21 @@ export async function middleware(req: NextRequest) {
     }
 
     return NextResponse.next();
+  }
+
+  // ─── 3b) /{locale}/khach-hang/* — Customer-only routes (locale-prefixed) ──
+  // Staff trying to access via /vi/khach-hang, /en/khach-hang, etc.
+  for (const locale of LOCALE_PREFIXES) {
+    const prefixed = `/${locale}/khach-hang`;
+    if (pathname === prefixed || pathname.startsWith(`${prefixed}/`)) {
+      const accountType = getAccountType(req);
+      if (accountType === "staff") {
+        // Staff trying to access customer portal → redirect to admin
+        return NextResponse.redirect(new URL("/admin/overview", req.url));
+      }
+      // Allow customers and unauthenticated through — page-level guard handles auth
+      return NextResponse.next();
+    }
   }
 
   // ─── 4) /api/* routes — pass through to API handlers ──────────────────────

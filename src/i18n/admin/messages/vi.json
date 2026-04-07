@@ -34,7 +34,8 @@
       "notification_center": "Trung tâm TB",
       "settings": "Cài đặt",
       "revenue_split": "Chia doanh thu",
-      "off_system_payments": "Chi phí ngoài"
+      "off_system_payments": "Chi phí ngoài",
+      "goHome": "Về trang chủ"
     },
     "footer": {
       "adminPanel": "ADMIN PANEL"

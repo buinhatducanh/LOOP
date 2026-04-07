@@ -5,9 +5,9 @@
  *
  * R3 upgrade (2026-04-07):
  *   1. Page reloads → Zustand re-hydrates from localStorage (isAuthenticated=true)
- *   2. SessionHydrator mounts → calls /me if token exists
+ *   2. SessionHydrator mounts → calls /me if Zustand says staff + authenticated
  *   3. /me = 200 → store updated with fresh data + tokenExpiry refreshed
- *      /me = 401 → fetchSession clears store (redirect to login via AuthGuard)
+ *      /me = 401 → fetchSession clears store → AuthGuard redirects to login
  *
  * DB cold-start handling: retries once after 500ms on connection errors.
  *
@@ -16,53 +16,71 @@
  */
 import { useLayoutEffect, useRef } from "react";
 import { useAuthStore } from "@/app/store/authStore";
-import { adminApi, type ApiErrorResponse } from "@/lib/api/client";
-
-/** R3: Fetch /me with DB cold-start retry. */
-async function _fetchMeWithRetry(): Promise<{
-  ok: boolean;
-  user?: unknown;
-}> {
-  const MAX_RETRIES = 1;
-
-  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-    try {
-      const res = await adminApi.get<{ user: unknown } | ApiErrorResponse>(
-        "/api/admin/auth/me",
-        { throwOnError: false }
-      );
-      return { ok: !("error" in res), user: "user" in res ? res.user : undefined };
-    } catch {
-      // Network error — retry on cold-start
-      if (attempt < MAX_RETRIES) {
-        await new Promise<void>((r) => setTimeout(r, 500));
-      }
-    }
-  }
-
-  // All retries exhausted
-  return { ok: false };
-}
 
 export function SessionHydrator() {
-  const fetchSession = useAuthStore((s) => s.fetchSession);
   const initialized = useRef(false);
 
   useLayoutEffect(() => {
     if (initialized.current) return;
     initialized.current = true;
 
-    // Only verify session if a staff token exists in localStorage.
-    // Without this guard, every page load calls /me and gets 401 (log spam).
-    const hasStaffToken =
-      typeof window !== "undefined" &&
-      !!localStorage.getItem("loop-staff-token");
+    // ── R3 fix: read from Zustand state, NOT localStorage directly ───────────────
+    // Zustand is set synchronously by login() — it won't "disappear" mid-render.
+    // It is also populated from localStorage on page load (persist middleware).
+    // This avoids the race condition where AuthGuard clears the token before
+    // SessionHydrator can call /me for verification.
+    //
+    // Decision tree:
+    //   Zustand says authenticated + staff → verify with /me
+    //   Zustand says not authenticated   → do nothing (AuthGuard handles redirect)
+    //   Zustand not yet hydrated         → poll until it is
+    //
+    // R2 note: fetchSession() handles DB cold-start retry internally (1 retry).
+    // R3 note: We only call fetchSession() when Zustand believes we are authenticated.
+    //          If the cached session is stale (e.g. server-side session revoked),
+    //          /me = 401 → fetchSession() clears Zustand → AuthGuard redirects.
+    const store = useAuthStore.getState();
+    if (!store.sessionHydrated) {
+      // Zustand not yet rehydrated from localStorage — wait for it
+      const interval = setInterval(() => {
+        const s = useAuthStore.getState();
+        if (s.sessionHydrated) {
+          clearInterval(interval);
+          // Now check Zustand state
+          if (s.isAuthenticated && s.accountType === "staff") {
+            void s.fetchSession();
+          }
+          // else: not authenticated — AuthGuard will redirect
+        }
+      }, 50);
 
-    if (hasStaffToken) {
-      void fetchSession();
+      // Safety: if hydration never fires (SSR edge), don't block
+      const timeout = setTimeout(() => {
+        clearInterval(interval);
+        // If we still have a staff token in localStorage but Zustand failed to
+        // hydrate, fall back to direct /me call as a last resort
+        const storedToken =
+          typeof window !== "undefined"
+            ? localStorage.getItem("loop-staff-token")
+            : null;
+        if (storedToken) {
+          const s = useAuthStore.getState();
+          void s.fetchSession();
+        }
+      }, 5000);
+
+      return () => {
+        clearInterval(interval);
+        clearTimeout(timeout);
+      };
     }
-    // If no token, user is guest — nothing to hydrate
-  }, [fetchSession]);
+
+    // Zustand hydrated — verify session if we believe we be authenticated
+    if (store.isAuthenticated && store.accountType === "staff") {
+      void store.fetchSession();
+    }
+    // else: not authenticated — AuthGuard handles redirect
+  }, []);
 
   return null;
 }

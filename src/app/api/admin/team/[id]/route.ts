@@ -1,9 +1,9 @@
-import { handleError, ok } from "@/lib/api/response";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
 import { addAvatar } from "@/lib/api/mappings";
+import { handleError, ok } from "@/lib/api/response";
 
 export async function GET(
   req: NextRequest,
@@ -13,9 +13,7 @@ export async function GET(
     await requirePermission("team", "read");
     const { id } = await params;
 
-    const member = await prisma.teamMember.findUnique({
-      where: { id },
-    });
+    const member = await prisma.teamMember.findUnique({ where: { id } });
 
     if (!member) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -27,6 +25,17 @@ export async function GET(
   }
 }
 
+/**
+ * PUT /api/admin/team/[id]
+ *
+ * Update strategy:
+ *   - If avatar-only change: update ONLY image field → never slug conflict
+ *   - If name/slug/role changes: update those fields + defensive pre-check
+ *
+ * Prisma fields vs FE field names:
+ *   avatar (FE) → image (Prisma)
+ *   team      (FE) → department (Prisma)
+ */
 export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -34,94 +43,163 @@ export async function PUT(
   try {
     const session = await requirePermission("team", "update");
     const { id } = await params;
-    const data = await req.json();
+    const body = await req.json();
 
     const existing = await prisma.teamMember.findUnique({ where: { id } });
     if (!existing) {
-      return NextResponse.json({ error: "Not found" }, { status: 404 });
+      return NextResponse.json({ error: "Không tìm thấy thành viên" }, { status: 404 });
     }
 
-    // Extract memberExpertise array if present (it's a relation, not a direct field)
-    // Also rename avatar → image (Prisma field is "image", not "avatar")
-    const { memberExpertise, avatar, ...memberData } = data;
+    // Determine what fields are being changed
+    const nameChanged   = body.name   !== undefined && body.name   !== existing.name;
+    const slugChanged   = body.slug   !== undefined && body.slug   !== existing.slug;
+    const roleChanged   = body.role   !== undefined && body.role   !== existing.role;
+    const avatarChanged = body.avatar !== undefined && body.avatar !== existing.image;
 
-    // Convert empty strings to null for optional fields (except required fields)
-    // Also convert date strings (dd/mm/yyyy) to proper ISO format
-    const requiredFields = ['name', 'slug', 'role'];
-    const dateFields = ['birthDate', 'contractStart'];
-    const entries = Object.entries(memberData);
+    // ── Avatar-only update ──────────────────────────────────────────────────────
+    // When only avatar is changed, update ONLY the image field.
+    // This avoids touching slug/name/role and eliminates all slug-conflict risk.
+    if (!nameChanged && !slugChanged && !roleChanged && avatarChanged) {
+      let member;
+      try {
+        member = await prisma.teamMember.update({
+          where: { id },
+          data: { image: body.avatar ?? null },
+        });
+      } catch (prismaErr: unknown) {
+        console.error("[PUT /api/admin/team] avatar-only update error:", prismaErr);
+        return NextResponse.json({ error: "Cập nhật ảnh thất bại" }, { status: 500 });
+      }
+      await createAuditLog({
+        userId: session.userId,
+        action: "update",
+        resource: "team",
+        resourceId: id,
+        oldValues: { image: existing.image },
+        newValues: { image: member.image },
+      });
+      return NextResponse.json({ data: addAvatar(member) });
+    }
 
-    // Map avatar → image if present
+    // ── Full update (name/slug/role or other fields) ───────────────────────────
+    const { memberExpertise, avatar, ...memberData } = body;
+
+    // Map FE field names → Prisma field names
+    const fieldMap: Record<string, string> = {
+      avatar:   "image",
+      team:     "department",
+    };
+
+    // Build update payload: only fields that are present in the request body.
+    // Required fields: only include if explicitly sent by FE (FE always sends them).
+    // Do NOT spread existing values — FE sends everything, missing fields mean "no change".
+    const updateData: Record<string, unknown> = {};
+
+    for (const [key, value] of Object.entries(memberData)) {
+      const prismaKey = fieldMap[key] ?? key;
+
+      // Skip auto-managed fields
+      if (prismaKey === "id" || prismaKey === "createdAt" || prismaKey === "updatedAt") continue;
+
+      // Empty string → null for optional fields
+      if (value === "") {
+        updateData[prismaKey] = null;
+        continue;
+      }
+
+      // Date fields: parse dd/mm/yyyy → Date
+      if ((prismaKey === "birthDate" || prismaKey === "contractStart") && typeof value === "string") {
+        const parts = value.split("/");
+        if (parts.length === 3) {
+          const [day, month, year] = parts;
+          updateData[prismaKey] = new Date(`${year}-${month}-${day}T00:00:00.000Z`);
+        } else {
+          updateData[prismaKey] = new Date(value);
+        }
+        continue;
+      }
+
+      updateData[prismaKey] = value;
+    }
+
+    // Override avatar → image if present
     if (avatar !== undefined) {
-      entries.push(['image', avatar]);
+      updateData.image = avatar === "" ? null : avatar;
     }
 
-    const cleanedData = Object.fromEntries(
-      entries.map(([key, value]) => {
-        if (requiredFields.includes(key)) {
-          return [key, value];
-        }
-        if (value === "") return [key, null];
-        // Convert date string to ISO format (supports both dd/mm/yyyy and yyyy-mm-dd)
-        if (dateFields.includes(key) && value && typeof value === 'string') {
-          // Try to parse dd/mm/yyyy format
-          const parts = value.split('/');
-          if (parts.length === 3) {
-            const [day, month, year] = parts;
-            return [key, new Date(`${year}-${month}-${day}T00:00:00.000Z`).toISOString()];
-          }
-          // Try standard ISO format
-          return [key, new Date(value).toISOString()];
-        }
-        return [key, value];
-      })
-    );
+    // ── Slug uniqueness check (only when slug is changing to a non-empty value) ─
+    if (slugChanged && updateData.slug && String(updateData.slug).trim() !== "") {
+      const conflict = await prisma.teamMember.findFirst({
+        where: { slug: updateData.slug as string, id: { not: id } },
+        select: { id: true, name: true },
+      });
+      if (conflict) {
+        return NextResponse.json(
+          { error: `Slug "${updateData.slug}" đã được dùng bởi "${conflict.name}". Vui lòng chọn slug khác.` },
+          { status: 409 }
+        );
+      }
+    }
 
-    // Update member data
+    // ── Email uniqueness check (only when email is changing to a non-empty value) ─
+    if (body.email !== undefined && body.email !== existing.email && String(body.email).trim() !== "") {
+      const conflict = await prisma.teamMember.findFirst({
+        where: { email: body.email, id: { not: id } },
+        select: { id: true, name: true },
+      });
+      if (conflict) {
+        return NextResponse.json(
+          { error: `Email "${body.email}" đã được dùng bởi "${conflict.name}".` },
+          { status: 409 }
+        );
+      }
+    }
+
+    // ── Execute update ─────────────────────────────────────────────────────────
     let member;
     try {
       member = await prisma.teamMember.update({
         where: { id },
-        data: cleanedData,
+        data: updateData,
       });
-    } catch (prismaError) {
-      console.error("Prisma update error:", prismaError);
+    } catch (prismaErr: unknown) {
+      console.error("[PUT /api/admin/team] Prisma error:", prismaErr);
+      const code = (prismaErr as { code?: string })?.code;
+      if (code === "P2002") {
+        const target = ((prismaErr as { meta?: { target?: string[] } })?.meta?.target as string[] | undefined) ?? [];
+        return NextResponse.json(
+          { error: `Trùng lặp: ${target.join(", ") || "field"} đã tồn tại.` },
+          { status: 409 }
+        );
+      }
       return NextResponse.json({ error: "Cập nhật thất bại" }, { status: 500 });
     }
 
-    // Update expertise relations if explicitly provided (even if empty array)
-    if (data.hasOwnProperty('memberExpertise')) {
-      // Delete existing expertise relations
-      await prisma.memberExpertise.deleteMany({
-        where: { memberId: id },
-      });
+    // ── Update expertise relations ──────────────────────────────────────────────
+    if (body.hasOwnProperty("memberExpertise")) {
+      await prisma.memberExpertise.deleteMany({ where: { memberId: id } });
 
-      // Create new expertise relations with level (only if not empty).
-      // FE sends: { name: "React" }[] or { expertiseId, level }[].
-      // Resolve expertise names → IDs by querying/upserting the Expertise table.
       if (Array.isArray(memberExpertise) && memberExpertise.length > 0) {
         const records = await Promise.all(
           memberExpertise.map(async (exp: { name?: string; expertiseId?: string; level?: number }) => {
-            let resolvedExpertiseId = exp.expertiseId;
-            if (!resolvedExpertiseId && exp.name) {
-              let expertise = await prisma.expertise.findFirst({
-                where: { name: exp.name as string },
-              });
-              if (!expertise) {
-                expertise = await prisma.expertise.create({
-                  data: { name: exp.name as string, category: "General" },
-                });
+            let resolvedId = exp.expertiseId;
+            if (!resolvedId && exp.name) {
+              let expRecord = await prisma.expertise.findFirst({ where: { name: exp.name } });
+              if (!expRecord) {
+                expRecord = await prisma.expertise.create({ data: { name: exp.name, category: "General" } });
               }
-              resolvedExpertiseId = expertise.id;
+              resolvedId = expRecord.id;
             }
             return {
               memberId: id,
-              expertiseId: resolvedExpertiseId,
+              expertiseId: resolvedId,
               level: (exp.level as number) || 5,
             };
           })
         );
-        await prisma.memberExpertise.createMany({ data: records as { memberId: string; expertiseId: string; level: number }[] });
+        await prisma.memberExpertise.createMany({
+          data: records as { memberId: string; expertiseId: string; level: number }[],
+        });
       }
     }
 
@@ -135,6 +213,7 @@ export async function PUT(
     });
 
     return NextResponse.json({ data: addAvatar(member) });
+
   } catch (error) {
     return handleError(error);
   }
@@ -150,7 +229,7 @@ export async function DELETE(
 
     const existing = await prisma.teamMember.findUnique({ where: { id } });
     if (!existing) {
-      return NextResponse.json({ error: "Not found" }, { status: 404 });
+      return NextResponse.json({ error: "Không tìm thấy thành viên" }, { status: 404 });
     }
 
     await prisma.teamMember.delete({ where: { id } });

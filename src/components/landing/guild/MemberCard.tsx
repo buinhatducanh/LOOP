@@ -30,7 +30,7 @@ type MemberRecord = Record<string, unknown>;
 
 // ── Avatar fallback SVG ─────────────────────────────────────────────────────────
 const _AVATAR_FALLBACK =
-  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' fill='%230F172A'/%3E%3Ctext x='100' y='118' font-family='system-ui' font-size='72' font-weight='700' text-anchor='middle' fill='%233B82F6'%3E%E2%9C%A8%3C/text%3E%3C/svg%3E";
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' fill='%230F172A'/%3E%3Ctext x='100' y='118' font-family='system-ui' font-size='72' font-weight='700' text-anchor='middle' fill='%234F7DF3'%3E%E2%9C%A8%3C/text%3E%3C/svg%3E";
 
 /**
  * Avatar — renders an <img> with graceful onError fallback to a styled initial.
@@ -41,8 +41,8 @@ function _Avatar({
   name,
   size = 80,
   radius = 10,
-  bg = "#111827",
-  color = "#374151",
+  bg = DS.bgCard,
+  color = DS.border2,
   fontSize,
   objectFit = "cover",
 }: {
@@ -126,7 +126,7 @@ function RankBadge({ rank }: { rank: RankKey }) {
           color: cfg.color,
           fontSize: 9,
           letterSpacing: "0.15em",
-          fontFamily: "'JetBrains Mono', monospace",
+          fontFamily: DS.mono,
           fontWeight: 600,
         }}
       >
@@ -374,7 +374,7 @@ export function MemberCard({ member, index, locale }: MemberCardProps) {
   const hasDiamondFX = rankKey === "diamond";
 
   const cardStyle: CSSProperties = {
-    backgroundColor: "#0F172A",
+    backgroundColor: DS.bgCard,
     border: `1px solid ${cfg.color}40`,
     borderRadius: 12,
     animation: BOX_SHADOW_ANIM[rankKey],
@@ -427,11 +427,11 @@ export function MemberCard({ member, index, locale }: MemberCardProps) {
             ) : (
               <div
                 className="absolute inset-0 flex items-center justify-center"
-                style={{ background: "#111827", borderRadius: "10px 10px 0 0" }}
+                style={{ background: DS.bgCard, borderRadius: "10px 10px 0 0" }}
               >
                 <span
                   style={{
-                    color: "#374151",
+                    color: DS.border2,
                     fontSize: "3rem",
                     fontWeight: 900,
                   }}
@@ -460,17 +460,17 @@ export function MemberCard({ member, index, locale }: MemberCardProps) {
             <div
               className="absolute top-2.5 left-2.5 z-20 px-2 py-0.5 rounded-sm"
               style={{
-                backgroundColor: "rgba(2,6,23,0.72)",
-                border: "1px solid #1F2937",
+                backgroundColor: "rgba(12,12,20,0.72)",
+                border: "1px solid " + DS.border,
                 backdropFilter: "blur(4px)",
               }}
             >
               <span
                 style={{
-                  color: "#64748B",
+                  color: DS.text4,
                   fontSize: 9,
                   letterSpacing: "0.12em",
-                  fontFamily: "'JetBrains Mono', monospace",
+                  fontFamily: DS.mono,
                 }}
               >
                 ⬡ {team}
@@ -493,9 +493,9 @@ export function MemberCard({ member, index, locale }: MemberCardProps) {
               </span>
               <span
                 style={{
-                  color: "#64748B",
+                  color: DS.text4,
                   fontSize: 9,
-                  fontFamily: "'JetBrains Mono', monospace",
+                  fontFamily: DS.mono,
                   letterSpacing: "0.1em",
                   marginBottom: 2,
                 }}
@@ -518,7 +518,7 @@ export function MemberCard({ member, index, locale }: MemberCardProps) {
                   style={{
                     color: cfg.color,
                     fontSize: 8,
-                    fontFamily: "'JetBrains Mono', monospace",
+                    fontFamily: DS.mono,
                     letterSpacing: "0.1em",
                   }}
                 >
@@ -533,7 +533,7 @@ export function MemberCard({ member, index, locale }: MemberCardProps) {
             {/* Name */}
             <div
               style={{
-                color: "#FFFFFF",
+                color: DS.text,
                 fontFamily: DS.heading,
                 fontSize: 13,
                 fontWeight: 600,
@@ -551,9 +551,9 @@ export function MemberCard({ member, index, locale }: MemberCardProps) {
             <div
               className="mt-0.5"
               style={{
-                color: "#64748B",
+                color: DS.text4,
                 fontSize: 10,
-                fontFamily: "'JetBrains Mono', monospace",
+                fontFamily: DS.mono,
                 letterSpacing: "0.08em",
               }}
             >
@@ -564,7 +564,7 @@ export function MemberCard({ member, index, locale }: MemberCardProps) {
             <div className="mt-2.5">
               <div
                 className="flex justify-between mb-1"
-                style={{ color: "#475569", fontSize: 9, fontFamily: "'JetBrains Mono', monospace" }}
+                style={{ color: DS.text5, fontSize: 9, fontFamily: DS.mono }}
               >
                 <span style={{ color: cfg.color }}>
                   XP{" "}
@@ -577,7 +577,7 @@ export function MemberCard({ member, index, locale }: MemberCardProps) {
               </div>
               <div
                 className="rounded-full overflow-hidden"
-                style={{ height: 3, backgroundColor: "#1F2937" }}
+                style={{ height: 3, backgroundColor: DS.border2 }}
               >
                 <div
                   className="h-full rounded-full"
@@ -603,9 +603,9 @@ export function MemberCard({ member, index, locale }: MemberCardProps) {
                 <span style={{ color: cfg.color, fontSize: 8 }}>◈</span>
                 <span
                   style={{
-                    color: "#475569",
+                    color: DS.text5,
                     fontSize: 8,
-                    fontFamily: "'JetBrains Mono', monospace",
+                    fontFamily: DS.mono,
                     letterSpacing: "0.06em",
                   }}
                 >
@@ -616,7 +616,7 @@ export function MemberCard({ member, index, locale }: MemberCardProps) {
                 style={{
                   color: cfg.color,
                   fontSize: 11,
-                  fontFamily: "'JetBrains Mono', monospace",
+                  fontFamily: DS.mono,
                   fontWeight: 700,
                   letterSpacing: "0.04em",
                   textShadow: `0 0 8px ${cfg.glowColor}`,
@@ -635,9 +635,9 @@ export function MemberCard({ member, index, locale }: MemberCardProps) {
                   : `linear-gradient(135deg, ${cfg.gradientFrom}15, ${cfg.gradientTo}15)`,
                 backgroundColor: "transparent",
                 border: `1px solid ${hovered ? cfg.color + "70" : cfg.color + "30"}`,
-                color: hovered ? cfg.color : "#64748B",
+                color: hovered ? cfg.color : DS.text4,
                 fontSize: 9,
-                fontFamily: "'JetBrains Mono', monospace",
+                fontFamily: DS.mono,
                 letterSpacing: "0.15em",
                 fontWeight: 600,
                 cursor: "pointer",

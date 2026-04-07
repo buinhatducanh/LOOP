@@ -24,7 +24,7 @@ import { SearchSortBar, type SortOption } from "./SearchSortBar";
 import { GuildAnimations } from "./GuildAnimations";
 import { RANKS, normalizeRank, formatLP, type RankKey } from "./guildMemberData";
 import { Shield, Users, Trophy, ChevronRight, ArrowRight } from "lucide-react";
-import { DS } from "@/lib/design-tokens";
+import { DS, GRD, GLOW } from "@/lib/design-tokens";
 
 type MemberRecord = Record<string, unknown>;
 
@@ -52,13 +52,13 @@ function getRoleCategory(m: MemberRecord): RoleFilter {
 function SectionDivider({ label }: { label: string }) {
   return (
     <div className="flex items-center gap-4 mb-10">
-      <div style={{ flex: 1, height: 1, background: "linear-gradient(90deg, transparent, #1F2937)" }} />
+      <div style={{ flex: 1, height: 1, background: "linear-gradient(90deg, transparent, " + DS.border2 + ")" }} />
       <div className="flex items-center gap-2">
-        <span style={{ color: "#3B82F6", fontSize: 8 }}>◈</span>
-        <span style={{ color: "#64748B", fontSize: 9, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.25em" }}>{label}</span>
-        <span style={{ color: "#3B82F6", fontSize: 8 }}>◈</span>
+        <span style={{ color: DS.blue, fontSize: 8 }}>◈</span>
+        <span style={{ color: DS.text4, fontSize: 9, fontFamily: DS.mono, letterSpacing: "0.25em" }}>{label}</span>
+        <span style={{ color: DS.blue, fontSize: 8 }}>◈</span>
       </div>
-      <div style={{ flex: 1, height: 1, background: "linear-gradient(90deg, #1F2937, transparent)" }} />
+      <div style={{ flex: 1, height: 1, background: "linear-gradient(90deg, " + DS.border2 + ", transparent)" }} />
     </div>
   );
 }
@@ -76,16 +76,16 @@ function RankLegend() {
             <div
               key={r}
               className="flex flex-col gap-1.5 px-4 py-3 rounded-xl"
-              style={{ background: "#0F172A", border: `1px solid ${cfg.color}22`, minWidth: 100 }}
+              style={{ background: DS.bgCard, border: `1px solid ${cfg.color}22`, minWidth: 100 }}
             >
               <div className="flex items-center gap-2">
                 <span style={{ color: cfg.color, fontSize: 14, textShadow: `0 0 8px ${cfg.glowColor}` }}>{cfg.symbol}</span>
-                <span style={{ color: cfg.color, fontSize: 10, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.12em", fontWeight: 700 }}>{cfg.label}</span>
+                <span style={{ color: cfg.color, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.12em", fontWeight: 700 }}>{cfg.label}</span>
               </div>
-              <div style={{ color: "#64748B", fontSize: 9, fontFamily: "'JetBrains Mono', monospace" }}>
+              <div style={{ color: DS.text4, fontSize: 9, fontFamily: DS.mono }}>
                 Lv {cfg.minLevel}–{cfg.uncapped ? `${cfg.maxLevel}+` : cfg.maxLevel}
               </div>
-              <div style={{ color: "#64748B", fontSize: 8, fontFamily: "'JetBrains Mono', monospace" }}>
+              <div style={{ color: DS.text4, fontSize: 8, fontFamily: DS.mono }}>
                 {formatLP(cfg.lpPerLevel)} LP/cấp
               </div>
               <div className="h-px rounded-full mt-1" style={{ background: `linear-gradient(90deg, ${cfg.gradientFrom}, ${cfg.gradientTo})` }} />
@@ -102,37 +102,37 @@ function CTABanner({ locale }: { locale: string }) {
   return (
     <div
       className="relative rounded-2xl overflow-hidden p-10 text-center mt-20"
-      style={{ background: "linear-gradient(135deg, rgba(29,78,216,0.15), rgba(129,140,248,0.1))", border: "1px solid rgba(129,140,248,0.2)" }}
+      style={{ background: GRD.cosmicPurple, border: "1px solid rgba(107,61,245,0.2)" }}
     >
       <div
         style={{
           position: "absolute", top: "-30%", left: "20%", width: "60%", height: "160%",
-          background: "radial-gradient(ellipse, rgba(129,140,248,0.07) 0%, transparent 70%)",
+          background: "radial-gradient(ellipse, rgba(107,61,245,0.07) 0%, transparent 70%)",
           pointerEvents: "none",
         }}
       />
       <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }}>
         <div className="flex items-center justify-center gap-2 mb-4">
-          <div style={{ height: 1, width: 50, background: "linear-gradient(90deg, transparent, rgba(129,140,248,0.5)" }} />
-          <Trophy size={14} style={{ color: "#F59E0B" }} />
-          <div style={{ height: 1, width: 50, background: "linear-gradient(90deg, rgba(129,140,248,0.5), transparent)" }} />
+          <div style={{ height: 1, width: 50, background: "linear-gradient(90deg, transparent, rgba(107,61,245,0.5)" }} />
+          <Trophy size={14} style={{ color: DS.amber }} />
+          <div style={{ height: 1, width: 50, background: "linear-gradient(90deg, rgba(107,61,245,0.5), transparent)" }} />
         </div>
-        <h2 style={{ fontFamily: DS.heading, fontSize: "clamp(22px, 3vw, 36px)", fontWeight: 900, background: "linear-gradient(135deg, #FFFFFF, #94A3B8)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", marginBottom: 12 }}>
+        <h2 style={{ fontFamily: DS.heading, fontSize: "clamp(22px, 3vw, 36px)", fontWeight: 900, background: "linear-gradient(135deg, #FFFFFF, " + DS.text3 + ")", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", marginBottom: 12 }}>
           Sẵn sàng làm việc cùng đội ngũ đỉnh cao?
         </h2>
-        <p style={{ color: "#64748B", fontSize: 15, lineHeight: 1.8, maxWidth: 500, margin: "0 auto 28px" }}>
+        <p style={{ color: DS.text4, fontSize: 15, lineHeight: 1.8, maxWidth: 500, margin: "0 auto 28px" }}>
           Dù bạn là khách hàng hay nhân tài muốn gia nhập — LOOP Solutions luôn chào đón những người cùng chí hướng.
         </p>
         <div className="flex items-center justify-center gap-4 flex-wrap">
           <Link
             href={`/${locale}/booking`}
-            style={{ background: "linear-gradient(135deg, #3B82F6, #6366F1)", color: "#fff", fontSize: 14, fontWeight: 700, padding: "12px 28px", borderRadius: 12, textDecoration: "none", boxShadow: "0 0 28px rgba(129,140,248,0.4)", display: "flex", alignItems: "center", gap: 8 }}
+            style={{ background: GRD.primary, color: DS.text, fontSize: 14, fontWeight: 700, padding: "12px 28px", borderRadius: 12, textDecoration: "none", boxShadow: GLOW.purple, display: "flex", alignItems: "center", gap: 8 }}
           >
             Nhận báo giá Website <ChevronRight size={15} />
           </Link>
           <Link
             href={`/${locale}/contact`}
-            style={{ color: "#64748B", fontSize: 14, padding: "11px 24px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.12)", textDecoration: "none" }}
+            style={{ color: DS.text4, fontSize: 14, padding: "11px 24px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.12)", textDecoration: "none" }}
           >
             Liên hệ ngay
           </Link>
@@ -152,16 +152,16 @@ function RankStrip({ members, active, onChange }: { members: MemberRecord[]; act
 
   return (
     <div className="mb-12">
-      <div className="flex items-center gap-3 mb-5" style={{ color: "#64748B", fontSize: 10, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.2em" }}>
-        <div style={{ width: 24, height: 1, background: "#1F2937" }} />
+      <div className="flex items-center gap-3 mb-5" style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.2em" }}>
+        <div style={{ width: 24, height: 1, background: DS.border2 }} />
         PHÂN BỔ RANK · BẤM ĐỂ LỌC
-        <div style={{ flex: 1, height: 1, background: "linear-gradient(90deg, #1F2937, transparent)" }} />
+        <div style={{ flex: 1, height: 1, background: "linear-gradient(90deg, " + DS.border2 + ", transparent)" }} />
         {active !== "all" && (
           <button
             onClick={() => onChange("all")}
-            style={{ color: "#64748B", background: "none", border: "none", cursor: "pointer", fontSize: 10, fontFamily: "'JetBrains Mono', monospace", display: "flex", alignItems: "center", gap: 4 }}
+            style={{ color: DS.text4, background: "none", border: "none", cursor: "pointer", fontSize: 10, fontFamily: DS.mono, display: "flex", alignItems: "center", gap: 4 }}
           >
-            <span style={{ color: "#3B82F6" }}>×</span> Bỏ lọc
+            <span style={{ color: DS.blue }}>×</span> Bỏ lọc
           </button>
         )}
       </div>
@@ -188,13 +188,13 @@ function RankStrip({ members, active, onChange }: { members: MemberRecord[]; act
               }}
             >
               <div style={{ color: cfg.color, fontSize: 18, lineHeight: 1, textShadow: isActive ? `0 0 12px ${cfg.glowColor}` : "none", marginBottom: 4 }}>{cfg.symbol}</div>
-              <div style={{ color: isActive ? cfg.color : "#64748B", fontSize: 9, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.1em", fontWeight: 700, marginBottom: 6 }}>{cfg.label}</div>
-              <div style={{ color: "#FFFFFF", fontFamily: DS.heading, fontSize: 20, fontWeight: 700, lineHeight: 1, textShadow: isActive ? `0 0 10px ${cfg.glowColor}` : "none" }}>{countPerRank[rk]}</div>
-              <div style={{ color: "#64748B", fontSize: 8, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.08em", marginBottom: 6 }}>thành viên</div>
-              <div style={{ color: cfg.color, fontSize: 10, fontFamily: "'JetBrains Mono', monospace", fontWeight: 600, opacity: 0.85 }}>{fmtLP(lpPerRank[rk])}</div>
-              <div style={{ color: "#64748B", fontSize: 8, fontFamily: "'JetBrains Mono', monospace" }}>LP earned</div>
+              <div style={{ color: isActive ? cfg.color : DS.text4, fontSize: 9, fontFamily: DS.mono, letterSpacing: "0.1em", fontWeight: 700, marginBottom: 6 }}>{cfg.label}</div>
+              <div style={{ color: DS.text, fontFamily: DS.heading, fontSize: 20, fontWeight: 700, lineHeight: 1, textShadow: isActive ? `0 0 10px ${cfg.glowColor}` : "none" }}>{countPerRank[rk]}</div>
+              <div style={{ color: DS.text4, fontSize: 8, fontFamily: DS.mono, letterSpacing: "0.08em", marginBottom: 6 }}>thành viên</div>
+              <div style={{ color: cfg.color, fontSize: 10, fontFamily: DS.mono, fontWeight: 600, opacity: 0.85 }}>{fmtLP(lpPerRank[rk])}</div>
+              <div style={{ color: DS.text4, fontSize: 8, fontFamily: DS.mono }}>LP earned</div>
               <div className="mt-2 pt-2" style={{ borderTop: `1px solid ${cfg.color}15` }}>
-                <div style={{ color: "#64748B", fontSize: 8, fontFamily: "'JetBrains Mono', monospace" }}>
+                <div style={{ color: DS.text4, fontSize: 8, fontFamily: DS.mono }}>
                   Lv {cfg.minLevel}–{cfg.uncapped ? `${cfg.maxLevel}+` : cfg.maxLevel}
                 </div>
               </div>
@@ -219,7 +219,7 @@ function HexPattern() {
     <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ opacity: 0.02 }}>
       <defs>
         <pattern id="hexTeam" width="40" height="46" patternUnits="userSpaceOnUse">
-          <path d="M20 2 L36 11 L36 29 L20 38 L4 29 L4 11 Z" fill="none" stroke="#3B82F6" strokeWidth="0.8" />
+          <path d="M20 2 L36 11 L36 29 L20 38 L4 29 L4 11 Z" fill="none" stroke={DS.blue} strokeWidth="0.8" />
         </pattern>
       </defs>
       <rect width="100%" height="100%" fill="url(#hexTeam)" />
@@ -239,22 +239,22 @@ function HeroSection({ members, hero, locale }: HeroSectionProps) {
   const totalAchievements = members.reduce((s, m) => s + ((m.achievements as string[])?.length ?? 0), 0);
 
   const kpis = [
-    { label: "Thành viên đang hoạt động", value: `${members.length}`, suffix: " operative", color: "#3B82F6" },
-    { label: "Tổng LP lưu thông", value: fmtLP(totalLP), suffix: " LP", color: "#818CF8" },
-    { label: "Thành tích guild", value: String(totalAchievements), suffix: " trophy", color: "#F59E0B" },
-    { label: "Thành viên Diamond", value: String(members.filter(m => normalizeRank(m.rank as string) === "diamond").length), suffix: " star", color: "#06B6D4" },
+    { label: "Thành viên đang hoạt động", value: `${members.length}`, suffix: " operative", color: DS.blue },
+    { label: "Tổng LP lưu thông", value: fmtLP(totalLP), suffix: " LP", color: DS.purple },
+    { label: "Thành tích guild", value: String(totalAchievements), suffix: " trophy", color: DS.amber },
+    { label: "Thành viên Diamond", value: String(members.filter(m => normalizeRank(m.rank as string) === "diamond").length), suffix: " star", color: DS.cyan },
   ];
 
   return (
     <section className="relative pt-28 pb-20 px-6 overflow-hidden">
       {/* Gradient orbs */}
       <motion.div
-        style={{ position: "absolute", top: "-10%", left: "-8%", width: "55%", height: "55%", background: "radial-gradient(circle, rgba(29,78,216,0.1) 0%, transparent 70%)", borderRadius: "50%", pointerEvents: "none" }}
+        style={{ position: "absolute", top: "-10%", left: "-8%", width: "55%", height: "55%", background: "radial-gradient(circle, rgba(79,125,243,0.1) 0%, transparent 70%)", borderRadius: "50%", pointerEvents: "none" }}
         animate={{ x: [0, 30, 0], y: [0, -20, 0] }}
         transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
       />
       <motion.div
-        style={{ position: "absolute", top: "30%", right: "-5%", width: "45%", height: "45%", background: "radial-gradient(circle, rgba(129,140,248,0.08) 0%, transparent 70%)", borderRadius: "50%", pointerEvents: "none" }}
+        style={{ position: "absolute", top: "30%", right: "-5%", width: "45%", height: "45%", background: "radial-gradient(circle, rgba(107,61,245,0.08) 0%, transparent 70%)", borderRadius: "50%", pointerEvents: "none" }}
         animate={{ x: [0, -20, 0], y: [0, 20, 0] }}
         transition={{ duration: 16, repeat: Infinity, ease: "easeInOut", delay: 4 }}
       />
@@ -267,10 +267,10 @@ function HeroSection({ members, hero, locale }: HeroSectionProps) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
             className="inline-flex items-center gap-2 mb-5 px-4 py-1.5 rounded-full"
-            style={{ background: "rgba(59,130,246,0.08)", border: "1px solid rgba(59,130,246,0.25)" }}
+            style={{ background: "rgba(79,125,243,0.08)", border: "1px solid rgba(79,125,243,0.25)" }}
           >
-            <div className="w-1.5 h-1.5 rounded-full" style={{ background: "#3B82F6", boxShadow: "0 0 6px #3B82F6" }} />
-            <span style={{ color: "#3B82F6", fontSize: 10, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.25em" }}>
+            <div className="w-1.5 h-1.5 rounded-full" style={{ background: DS.blue, boxShadow: "0 0 6px " + DS.blue }} />
+            <span style={{ color: DS.blue, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.25em" }}>
               OPERATIVE GUILD · SEASON III · Q1/2026
             </span>
           </motion.div>
@@ -295,7 +295,7 @@ function HeroSection({ members, hero, locale }: HeroSectionProps) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3 }}
-            style={{ color: "#64748B", fontSize: 16, lineHeight: 1.8, maxWidth: 560, margin: "0 auto 40px" }}
+            style={{ color: DS.text4, fontSize: 16, lineHeight: 1.8, maxWidth: 560, margin: "0 auto 40px" }}
           >
             {hero.heroDesc}
           </motion.p>
@@ -309,15 +309,15 @@ function HeroSection({ members, hero, locale }: HeroSectionProps) {
           >
             <Link
               href={`/${locale}/booking`}
-              style={{ background: "linear-gradient(135deg, #3B82F6, #6366F1)", color: "#fff", fontSize: 14, fontWeight: 700, padding: "12px 28px", borderRadius: 12, textDecoration: "none", boxShadow: "0 0 32px rgba(129,140,248,0.45)", display: "flex", alignItems: "center", gap: 8 }}
+              style={{ background: GRD.primary, color: DS.text, fontSize: 14, fontWeight: 700, padding: "12px 28px", borderRadius: 12, textDecoration: "none", boxShadow: GLOW.purple, display: "flex", alignItems: "center", gap: 8 }}
             >
               Làm việc cùng chúng tôi <ArrowRight size={15} />
             </Link>
             <Link
               href={`/${locale}/admin`}
-              style={{ color: "#64748B", fontSize: 13, padding: "11px 22px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.1)", textDecoration: "none", display: "flex", alignItems: "center", gap: 6, backdropFilter: "blur(8px)" }}
+              style={{ color: DS.text4, fontSize: 13, padding: "11px 22px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.1)", textDecoration: "none", display: "flex", alignItems: "center", gap: 6, backdropFilter: "blur(8px)" }}
             >
-              <Shield size={13} style={{ color: "#64748B" }} /> Admin Panel
+              <Shield size={13} style={{ color: DS.text4 }} /> Admin Panel
             </Link>
           </motion.div>
         </div>
@@ -341,7 +341,7 @@ function HeroSection({ members, hero, locale }: HeroSectionProps) {
               <div style={{ color: k.color, fontFamily: DS.heading, fontSize: 28, fontWeight: 700, textShadow: `0 0 16px ${k.color}50`, lineHeight: 1 }}>
                 {k.value}<span style={{ fontSize: 12 }}>{k.suffix}</span>
               </div>
-              <div style={{ color: "#475569", fontSize: 11, marginTop: 6, lineHeight: 1.4 }}>{k.label}</div>
+              <div style={{ color: DS.text5, fontSize: 11, marginTop: 6, lineHeight: 1.4 }}>{k.label}</div>
             </motion.div>
           ))}
         </motion.div>
@@ -470,7 +470,7 @@ export function TeamGuildClient({ locale, members, hero }: TeamGuildClientProps)
             left: "-15%",
             width: "60%",
             height: "70%",
-            background: "radial-gradient(circle, rgba(29,78,216,0.09) 0%, transparent 65%)",
+            background: "radial-gradient(circle, rgba(107,61,245,0.09) 0%, transparent 65%)",
             borderRadius: "50%",
             pointerEvents: "none",
           }}
@@ -483,7 +483,7 @@ export function TeamGuildClient({ locale, members, hero }: TeamGuildClientProps)
             right: "-10%",
             width: "55%",
             height: "65%",
-            background: "radial-gradient(circle, rgba(129,140,248,0.07) 0%, transparent 65%)",
+            background: "radial-gradient(circle, rgba(107,61,245,0.07) 0%, transparent 65%)",
             borderRadius: "50%",
             pointerEvents: "none",
           }}
@@ -495,7 +495,7 @@ export function TeamGuildClient({ locale, members, hero }: TeamGuildClientProps)
         style={{
           background: "transparent",
           minHeight: "100vh",
-          fontFamily: "'Inter', sans-serif",
+          fontFamily: DS.body,
           position: "relative",
           zIndex: 1,
         }}

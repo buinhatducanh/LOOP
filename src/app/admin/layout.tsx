@@ -66,7 +66,7 @@ export default function AdminLayout({
               fontFamily: "var(--font-dm-sans, 'DM Sans', system-ui, sans-serif)",
             }}
           >
-            <AdminTopbar userName="" userEmail="" />
+            <AdminTopbar />
             <main style={{ flex: 1, padding: "1.5rem", overflowY: "auto" }}>
               {children}
             </main>

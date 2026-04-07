@@ -618,17 +618,31 @@ export default function CustomerPortalPage({
     params.then((p) => setLocale(p.locale));
   }, [params]);
 
-  // Auth guard
+  // Auth guard — redirect staff/admin back to admin dashboard
   useEffect(() => {
     if (!isAuthenticated || !user) {
       router.push(`/${locale}/dang-nhap`);
       return;
     }
+    // user.role is "client" → allowed in customer portal
+    // user.role is NOT "client" (admin/pm/media/qa/member) → redirect to admin
     if (user.role !== "client") {
       router.push("/admin/overview");
       return;
     }
+    // Also check accountType — admin accounts have accountType="staff"
+    if (user.accountType === "staff") {
+      router.push("/admin/overview");
+      return;
+    }
   }, [isAuthenticated, user, locale, router]);
+
+  // Block rendering staff/admin — prevents portal UI flash before redirect fires.
+  // Customers: user.role === "client" AND accountType === "customer"
+  // Staff: user.accountType === "staff" (even if role === "member")
+  if (user && user.accountType === "staff") {
+    return null;
+  }
 
   // Load portal data
   useEffect(() => {
@@ -701,7 +715,7 @@ export default function CustomerPortalPage({
             <div style={{ color: DS.blue, fontSize: "0.625rem", fontFamily: "'JetBrains Mono', monospace" }}>Client</div>
           </div>
           <img
-            src={user?.avatar ?? ""}
+            src={user?.avatar || undefined}
             alt={user?.name ?? ""}
             style={{ width: 32, height: 32, borderRadius: 8, border: `1.5px solid rgba(59,130,246,0.5)`, objectFit: "cover" }}
           />

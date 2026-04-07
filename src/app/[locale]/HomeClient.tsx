@@ -23,11 +23,16 @@ import { DS, GRD } from "@/lib/design-tokens";
 import ServicesSection from "@/components/landing/ServicesSectionClient";
 import { OnboardingClient } from "@/components/landing/OnboardingClient";
 
-/* ── Galaxy keyframes ── */
+/* ── Galaxy keyframes (motion.div only — nebula clouds + aurora) ── */
 const GALAXY_KEYFRAMES = `
 @keyframes pulse-glow {
   0%, 100% { opacity: 0.5; transform: scale(1); }
   50% { opacity: 0.9; transform: scale(1.03); }
+}
+@keyframes aurora-wave {
+  0% { transform: translateX(-60%) skewX(-8deg); opacity: 0.15; }
+  50% { transform: translateX(0%) skewX(-3deg); opacity: 0.30; }
+  100% { transform: translateX(60%) skewX(-8deg); opacity: 0.15; }
 }
 `;
 
@@ -110,126 +115,217 @@ function HeroSection({ locale }: { locale: string }) {
         paddingLeft: "1.5rem", paddingRight: "1.5rem", overflow: "hidden",
       }}
     >
-      {/* ── GALAXY BACKGROUND (from color_2.png palette) ── */}
+      {/* ── GALAXY BACKGROUND (enhanced cosmic depth) ── */}
       <div style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 0, overflow: "hidden" }}>
-        {/* Deep space base: #0C0C14 → #1A1A2E */}
-        <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at 15% 50%, #1A1A2E 0%, #0C0C14 45%, #080810 100%)" }} />
+        {/* Layer 1 — Deep space base with layered radial depth */}
+        <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at 20% 40%, #1A1A2E 0%, #0C0C14 40%, #080810 70%, #04040C 100%)" }} />
+        {/* Layer 2 — Cosmic horizon glow (bottom horizon light bleed) */}
+        <div style={{ position: "absolute", bottom: "-20%", left: "10%", right: "10%", height: "40%", background: "radial-gradient(ellipse at 50% 100%, rgba(107,61,245,0.12) 0%, rgba(79,125,243,0.06) 40%, transparent 70%)", filter: "blur(30px)" }} />
 
+        {/* Layer 3 — Aurora ribbons (drifting horizontal light bands) */}
+        <motion.div
+          style={{
+            position: "absolute", top: "18%", left: "-60%",
+            width: "200%", height: "12%",
+            background: "linear-gradient(90deg, transparent 0%, rgba(107,61,245,0.20) 20%, rgba(236,72,153,0.12) 45%, rgba(79,125,243,0.18) 65%, rgba(107,61,245,0.08) 80%, transparent 100%)",
+            filter: "blur(18px)",
+          }}
+          animate={{ x: ["-60%", "60%", "-60%"], opacity: [0.15, 0.30, 0.15] }}
+          transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.div
+          style={{
+            position: "absolute", top: "55%", left: "60%",
+            width: "180%", height: "8%",
+            background: "linear-gradient(90deg, transparent 0%, rgba(79,125,243,0.18) 25%, rgba(236,72,153,0.10) 50%, rgba(98,197,235,0.14) 75%, transparent 100%)",
+            filter: "blur(22px)",
+          }}
+          animate={{ x: ["60%", "-60%", "60%"], opacity: [0.12, 0.25, 0.12] }}
+          transition={{ duration: 28, repeat: Infinity, ease: "easeInOut", delay: 8 }}
+        />
+
+        {/* Layer 4 — Nebula clouds with rotation + scale pulse */}
         {/* Nebula cloud 1 — purple #6B3DF5 (top-left, dominant) */}
         <motion.div
           style={{
-            position: "absolute", top: "-10%", left: "-5%",
-            width: "70%", height: "70%", borderRadius: "50%",
-            background: "radial-gradient(circle, rgba(107,61,245,0.28) 0%, rgba(79,125,243,0.12) 40%, transparent 70%)",
+            position: "absolute", top: "-15%", left: "-8%",
+            width: "75%", height: "75%", borderRadius: "50%",
+            background: "radial-gradient(circle, rgba(107,61,245,0.32) 0%, rgba(79,125,243,0.14) 35%, rgba(207,83,182,0.06) 60%, transparent 75%)",
+            filter: "blur(50px)",
+          }}
+          animate={{ x: [0, 90, 0], y: [0, -35, 0], scale: [1, 1.1, 1], opacity: [0.75, 1, 0.75] }}
+          transition={{ duration: 30, repeat: Infinity, ease: "easeInOut" }}
+        />
+        {/* Nebula cloud 2 — red #CC3344 (bottom-right, magenta tint) */}
+        <motion.div
+          style={{
+            position: "absolute", bottom: "-12%", right: "-8%",
+            width: "65%", height: "65%", borderRadius: "50%",
+            background: "radial-gradient(circle, rgba(204,51,68,0.26) 0%, rgba(207,83,182,0.10) 45%, rgba(107,61,245,0.05) 65%, transparent 75%)",
+            filter: "blur(60px)",
+          }}
+          animate={{ x: [0, -70, 0], y: [0, 35, 0], scale: [1, 1.06, 1], opacity: [0.55, 0.95, 0.55] }}
+          transition={{ duration: 36, repeat: Infinity, ease: "easeInOut", delay: 7 }}
+        />
+        {/* Nebula cloud 3 — blue #4F7DF3 (center-right, cyan tint) */}
+        <motion.div
+          style={{
+            position: "absolute", top: "25%", right: "2%",
+            width: "50%", height: "50%", borderRadius: "50%",
+            background: "radial-gradient(circle, rgba(79,125,243,0.22) 0%, rgba(98,197,235,0.08) 50%, rgba(107,61,245,0.04) 70%, transparent 80%)",
             filter: "blur(45px)",
           }}
-          animate={{ x: [0, 80, 0], y: [0, -30, 0], opacity: [0.7, 1, 0.7] }}
-          transition={{ duration: 28, repeat: Infinity, ease: "easeInOut" }}
+          animate={{ x: [0, -50, 0], y: [0, -55, 0], scale: [1, 1.12, 1], opacity: [0.5, 0.90, 0.5] }}
+          transition={{ duration: 24, repeat: Infinity, ease: "easeInOut", delay: 12 }}
         />
-        {/* Nebula cloud 2 — red #CC3344 (bottom-right) */}
+        {/* Nebula cloud 4 — deep magenta (top-right accent) */}
         <motion.div
           style={{
-            position: "absolute", bottom: "-10%", right: "-5%",
-            width: "60%", height: "60%", borderRadius: "50%",
-            background: "radial-gradient(circle, rgba(204,51,68,0.22) 0%, rgba(107,61,245,0.08) 50%, transparent 70%)",
-            filter: "blur(55px)",
+            position: "absolute", top: "5%", right: "20%",
+            width: "35%", height: "35%", borderRadius: "50%",
+            background: "radial-gradient(circle, rgba(207,83,182,0.18) 0%, rgba(95,60,153,0.08) 55%, transparent 75%)",
+            filter: "blur(35px)",
           }}
-          animate={{ x: [0, -60, 0], y: [0, 30, 0], opacity: [0.5, 0.9, 0.5] }}
-          transition={{ duration: 35, repeat: Infinity, ease: "easeInOut", delay: 6 }}
-        />
-        {/* Nebula cloud 3 — blue #4F7DF3 (center-right) */}
-        <motion.div
-          style={{
-            position: "absolute", top: "30%", right: "5%",
-            width: "45%", height: "45%", borderRadius: "50%",
-            background: "radial-gradient(circle, rgba(79,125,243,0.18) 0%, rgba(107,61,245,0.06) 60%, transparent 70%)",
-            filter: "blur(40px)",
-          }}
-          animate={{ x: [0, -40, 0], y: [0, -50, 0], opacity: [0.5, 0.85, 0.5] }}
-          transition={{ duration: 22, repeat: Infinity, ease: "easeInOut", delay: 10 }}
+          animate={{ x: [0, 30, 0], y: [0, -25, 0], opacity: [0.4, 0.75, 0.4] }}
+          transition={{ duration: 18, repeat: Infinity, ease: "easeInOut", delay: 4 }}
         />
 
-        {/* Star field */}
+        {/* Layer 5 — Star field with depth layers */}
         <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}>
-          {/* Large stars */}
-          {[
-            { cx: 8, cy: 12, r: 2, op: 0.9 }, { cx: 15, cy: 25, r: 1.5, op: 0.7 },
-            { cx: 22, cy: 8, r: 1, op: 0.8 }, { cx: 35, cy: 18, r: 2, op: 0.6 },
-            { cx: 42, cy: 5, r: 1.5, op: 0.9 }, { cx: 55, cy: 22, r: 1, op: 0.7 },
-            { cx: 62, cy: 10, r: 2, op: 0.8 }, { cx: 70, cy: 30, r: 1.5, op: 0.6 },
-            { cx: 78, cy: 15, r: 1, op: 0.9 }, { cx: 85, cy: 40, r: 2, op: 0.7 },
-            { cx: 90, cy: 8, r: 1.5, op: 0.8 }, { cx: 5, cy: 55, r: 1, op: 0.6 },
-            { cx: 25, cy: 60, r: 2, op: 0.9 }, { cx: 40, cy: 50, r: 1.5, op: 0.7 },
-            { cx: 58, cy: 65, r: 1, op: 0.8 }, { cx: 72, cy: 55, r: 2, op: 0.6 },
-            { cx: 88, cy: 70, r: 1.5, op: 0.9 }, { cx: 12, cy: 80, r: 1, op: 0.7 },
-            { cx: 30, cy: 88, r: 2, op: 0.8 }, { cx: 50, cy: 75, r: 1.5, op: 0.6 },
-          ].map((s, i) => (
-            <circle key={i} cx={`${s.cx}%`} cy={`${s.cy}%`} r={s.r} fill="white" opacity={s.op} />
-          ))}
-          {/* Tiny stars */}
-          {Array.from({ length: 60 }, (_, i) => {
-            const x = (i * 17.3) % 100;
-            const y = (i * 23.7 + 7) % 100;
-            return <circle key={`tiny-${i}`} cx={`${x}%`} cy={`${y}%`} r={0.5} fill="white" opacity={0.3 + (i % 5) * 0.1} />;
+          {/* Background stars (far/dim, bigger + brighter) */}
+          {Array.from({ length: 80 }, (_, i) => {
+            const x = (i * 13.7) % 100;
+            const y = (i * 19.1 + 11) % 100;
+            return <circle key={`bg-${i}`} cx={`${x}%`} cy={`${y}%`} r={0.7} fill="white" opacity={0.30 + (i % 5) * 0.08} />;
           })}
-          {/* Twinkling stars */}
+          {/* Mid-ground stars (bright with glow halos) */}
           {[
-            { cx: 10, cy: 30 }, { cx: 30, cy: 15 }, { cx: 60, cy: 35 },
-            { cx: 80, cy: 20 }, { cx: 45, cy: 70 }, { cx: 20, cy: 45 },
-            { cx: 75, cy: 65 }, { cx: 55, cy: 10 },
+            { cx: 8, cy: 12, r: 1.8 }, { cx: 15, cy: 25, r: 1.4 },
+            { cx: 22, cy: 8, r: 1.2 }, { cx: 35, cy: 18, r: 2.0 },
+            { cx: 42, cy: 5, r: 1.6 }, { cx: 55, cy: 22, r: 1.2 },
+            { cx: 62, cy: 10, r: 2.0 }, { cx: 70, cy: 30, r: 1.4 },
+            { cx: 78, cy: 15, r: 1.2 }, { cx: 85, cy: 40, r: 2.0 },
+            { cx: 90, cy: 8, r: 1.6 }, { cx: 5, cy: 55, r: 1.2 },
+            { cx: 25, cy: 60, r: 2.0 }, { cx: 40, cy: 50, r: 1.4 },
+            { cx: 58, cy: 65, r: 1.2 }, { cx: 72, cy: 55, r: 2.0 },
+            { cx: 88, cy: 70, r: 1.6 }, { cx: 12, cy: 80, r: 1.2 },
+            { cx: 30, cy: 88, r: 2.0 }, { cx: 50, cy: 75, r: 1.4 },
+            { cx: 18, cy: 38, r: 1.8 }, { cx: 65, cy: 75, r: 1.6 },
+            { cx: 33, cy: 42, r: 1.4 }, { cx: 82, cy: 28, r: 1.8 },
           ].map((s, i) => (
-            <motion.circle
-              key={`twinkle-${i}`}
-              cx={`${s.cx}%`} cy={`${s.cy}%`} r={1.2} fill="white"
-              animate={{ opacity: [0.2, 1, 0.2], scale: [0.8, 1.2, 0.8] }}
-              transition={{ duration: 2 + i * 0.3, repeat: Infinity, ease: "easeInOut" }}
-            />
+            <g key={`mid-${i}`}>
+              <circle cx={`${s.cx}%`} cy={`${s.cy}%`} r={s.r * 2.2} fill="rgba(180,200,255,0.18)" />
+              <circle cx={`${s.cx}%`} cy={`${s.cy}%`} r={s.r} fill="white" opacity={0.95} />
+            </g>
           ))}
+          {/* Twinkling stars — CSS class + inline style for max browser compatibility */}
+          {[
+            { cx: 10, cy: 30, dur: 2.0, del: 0.0, gC: 1, cC: 1 },
+            { cx: 30, cy: 15, dur: 2.8, del: 0.4, gC: 2, cC: 2 },
+            { cx: 60, cy: 35, dur: 2.4, del: 0.8, gC: 3, cC: 3 },
+            { cx: 80, cy: 20, dur: 1.8, del: 1.2, gC: 1, cC: 1 },
+            { cx: 45, cy: 70, dur: 3.2, del: 0.2, gC: 2, cC: 2 },
+            { cx: 20, cy: 45, dur: 2.6, del: 0.6, gC: 3, cC: 3 },
+            { cx: 75, cy: 65, dur: 2.0, del: 1.6, gC: 1, cC: 1 },
+            { cx: 55, cy: 10, dur: 2.8, del: 1.0, gC: 2, cC: 2 },
+            { cx: 68, cy: 48, dur: 2.4, del: 1.4, gC: 3, cC: 3 },
+            { cx: 38, cy: 82, dur: 1.8, del: 1.8, gC: 1, cC: 1 },
+            { cx: 92, cy: 58, dur: 3.2, del: 2.0, gC: 2, cC: 2 },
+            { cx: 15, cy: 92, dur: 2.6, del: 0.9, gC: 3, cC: 3 },
+            { cx: 52, cy: 28, dur: 2.2, del: 0.3, gC: 1, cC: 1 },
+            { cx: 83, cy: 72, dur: 3.0, del: 1.5, gC: 2, cC: 2 },
+            { cx: 25, cy: 18, dur: 2.6, del: 2.2, gC: 3, cC: 3 },
+            { cx: 70, cy: 42, dur: 1.9, del: 0.7, gC: 1, cC: 1 },
+          ].map((s, i) => {
+            const accentColor = i % 4 === 0 ? "#EC4899" : i % 4 === 1 ? "#6B3DF5" : i % 4 === 2 ? "#4F7DF3" : "#62C5EB";
+            return (
+              <g key={`twinkle-${i}`}>
+                {/* Outer glow halo */}
+                <circle cx={`${s.cx}%`} cy={`${s.cy}%`} r={6} fill={accentColor} opacity={0.3}
+                  style={{ animation: `twinkle-glow-${s.gC} ${s.dur}s ease-in-out ${s.del}s infinite` }}
+                />
+                {/* Mid glow */}
+                <circle cx={`${s.cx}%`} cy={`${s.cy}%`} r={3.5} fill="white" opacity={0.4}
+                  style={{ animation: `twinkle-glow-${s.gC} ${s.dur}s ease-in-out ${s.del}s infinite` }}
+                />
+                {/* Bright core */}
+                <circle cx={`${s.cx}%`} cy={`${s.cy}%`} r={2} fill="white" opacity={0.9}
+                  style={{ animation: `twinkle-core-${s.cC} ${s.dur}s ease-in-out ${s.del}s infinite` }}
+                />
+                {/* Color accent */}
+                <circle cx={`${s.cx}%`} cy={`${s.cy}%`} r={1.2} fill={accentColor} opacity={0.85}
+                  style={{ animation: `twinkle-core-${s.cC} ${s.dur * 1.4}s ease-in-out ${s.del + 0.15}s infinite` }}
+                />
+              </g>
+            );
+          })}
+          {/* Constellation connector lines (style-based to avoid hydration) */}
+          <g style={{ animation: "constellation-pulse 8s ease-in-out infinite" }}>
+            <line x1="10%" y1="30%" x2="30%" y2="15%" stroke="#6B3DF5" strokeWidth="0.7" />
+            <line x1="30%" y1="15%" x2="55%" y2="10%" stroke="#4F7DF3" strokeWidth="0.7" />
+            <line x1="60%" y1="35%" x2="80%" y2="20%" stroke="#EC4899" strokeWidth="0.7" />
+            <line x1="45%" y1="70%" x2="75%" y2="65%" stroke="#62C5EB" strokeWidth="0.7" />
+            <line x1="20%" y1="45%" x2="45%" y2="70%" stroke="#6B3DF5" strokeWidth="0.6" />
+            <line x1="55%" y1="10%" x2="80%" y2="20%" stroke="#4F7DF3" strokeWidth="0.6" />
+          </g>
+          {/* Cosmic dust particles (CSS class) */}
+          {Array.from({ length: 12 }, (_, i) => {
+            const x = 5 + (i * 8.1) % 90;
+            const y = 10 + (i * 7.3) % 80;
+            const colors = ["#EC4899", "#6B3DF5", "#4F7DF3", "#62C5EB"];
+            const dur = 7 + (i % 5);
+            return (
+              <g key={`dust-${i}`}>
+                <circle cx={`${x}%`} cy={`${y}%`} r={4} fill={colors[i % 4]} opacity={0.6}
+                  style={{ animation: `dust-glow ${dur}s ease-in-out ${i * 1.5}s infinite` }}
+                />
+                <circle cx={`${x}%`} cy={`${y}%`} r={1.5} fill="white" opacity={0.9}
+                  style={{ animation: `dust-core ${dur}s ease-in-out ${i * 1.5}s infinite` }}
+                />
+              </g>
+            );
+          })}
         </svg>
 
-        {/* Shooting stars (purple/blue tint from palette) */}
+        {/* Layer 6 — Shooting stars (purple/pink/gold tinted) */}
         <motion.div
-          style={{
-            position: "absolute", top: "15%", left: "-5%",
-            width: 130, height: 2, borderRadius: 2,
-            background: "linear-gradient(90deg, transparent, rgba(107,61,245,0.9), rgba(255,255,255,0.7))",
-            transformOrigin: "left center",
-          }}
-          animate={{ x: [0, 800], y: [0, 200], opacity: [0, 1, 0] }}
-          transition={{ duration: 1.2, repeat: Infinity, repeatDelay: 9, ease: "easeOut" }}
+          style={{ position: "absolute", top: "12%", left: "-5%", width: "150px", height: "2px", borderRadius: "2px", transform: "rotate(15deg)", transformOrigin: "left center", background: "linear-gradient(90deg, transparent, rgba(107,61,245,0.9), rgba(255,255,255,0.75))" }}
+          animate={{ x: [0, 900], y: [0, 220], opacity: [0, 1, 0] }}
+          transition={{ duration: 1.3, repeat: Infinity, repeatDelay: 11, ease: "easeOut" }}
         />
         <motion.div
-          style={{
-            position: "absolute", top: "40%", left: "-5%",
-            width: 80, height: 1.5, borderRadius: 2,
-            background: "linear-gradient(90deg, transparent, rgba(79,125,243,0.8), rgba(230,199,95,0.4))",
-            transformOrigin: "left center",
-          }}
-          animate={{ x: [0, 600], y: [0, 150], opacity: [0, 1, 0] }}
-          transition={{ duration: 1, repeat: Infinity, repeatDelay: 15, ease: "easeOut", delay: 5 }}
+          style={{ position: "absolute", top: "42%", left: "-5%", width: "90px", height: "2px", borderRadius: "2px", transform: "rotate(12deg)", transformOrigin: "left center", background: "linear-gradient(90deg, transparent, rgba(79,125,243,0.8), rgba(230,199,95,0.45))" }}
+          animate={{ x: [0, 700], y: [0, 165], opacity: [0, 1, 0] }}
+          transition={{ duration: 1.1, repeat: Infinity, repeatDelay: 18, ease: "easeOut", delay: 6 }}
         />
         <motion.div
-          style={{
-            position: "absolute", top: "5%", left: "30%",
-            width: 100, height: 1, borderRadius: 2,
-            background: "linear-gradient(90deg, transparent, rgba(204,51,68,0.7), rgba(255,255,255,0.5))",
-            transformOrigin: "left center",
-          }}
-          animate={{ x: [0, 500], y: [0, 120], opacity: [0, 0.8, 0] }}
-          transition={{ duration: 0.9, repeat: Infinity, repeatDelay: 22, ease: "easeOut", delay: 12 }}
+          style={{ position: "absolute", top: "6%", left: "32%", width: "110px", height: "1px", borderRadius: "2px", transform: "rotate(8deg)", transformOrigin: "left center", background: "linear-gradient(90deg, transparent, rgba(236,72,153,0.75), rgba(255,255,255,0.55))" }}
+          animate={{ x: [0, 550], y: [0, 130], opacity: [0, 0.85, 0] }}
+          transition={{ duration: 1.0, repeat: Infinity, repeatDelay: 25, ease: "easeOut", delay: 14 }}
+        />
+        <motion.div
+          style={{ position: "absolute", top: "70%", left: "-5%", width: "70px", height: "2px", borderRadius: "2px", transform: "rotate(20deg)", transformOrigin: "left center", background: "linear-gradient(90deg, transparent, rgba(98,197,235,0.7), rgba(255,255,255,0.4))" }}
+          animate={{ x: [0, 480], y: [0, 110], opacity: [0, 0.7, 0] }}
+          transition={{ duration: 0.9, repeat: Infinity, repeatDelay: 33, ease: "easeOut", delay: 20 }}
         />
 
-        {/* Subtle grid overlay */}
+        {/* Layer 7 — Depth vignette overlay */}
         <div style={{
           position: "absolute", inset: 0,
-          backgroundImage: "linear-gradient(rgba(255,255,255,0.012) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.012) 1px, transparent 1px)",
+          background: "radial-gradient(ellipse at 50% 50%, transparent 30%, rgba(4,4,12,0.35) 70%, rgba(4,4,12,0.70) 100%)",
+        }} />
+
+        {/* Layer 8 — Subtle grid (parallax-ready, very faint) */}
+        <div style={{
+          position: "absolute", inset: 0,
+          backgroundImage: "linear-gradient(rgba(255,255,255,0.009) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.009) 1px, transparent 1px)",
           backgroundSize: "60px 60px",
         }} />
 
-        {/* Foreground dark overlay — darkens the nebula edges for readability, matching space palette */}
+        {/* Layer 9 — Foreground dark gradient for text readability */}
         <div style={{
           position: "absolute", inset: 0,
-          background: "linear-gradient(135deg, rgba(12,12,20,0.90) 0%, rgba(12,12,20,0.55) 40%, rgba(12,12,20,0.30) 100%)",
+          background: "linear-gradient(135deg, rgba(12,12,20,0.92) 0%, rgba(12,12,20,0.60) 38%, rgba(12,12,20,0.35) 100%)",
         }} />
       </div>
 

@@ -13,13 +13,12 @@
  */
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useState } from "react";
 import { DS, GRD } from "@/lib/design-tokens";
-import { Mail, Phone, MapPin, Clock, Zap, Rocket, Globe, Shield, BookOpen, Settings, Send, Eye, EyeOff, Loader2 } from "lucide-react";
+import { Mail, Phone, MapPin, Clock, Zap, Rocket, Globe, Shield, BookOpen, Settings, Send, LogIn } from "lucide-react";
+import { AdminLoginModal } from "@/components/admin/AdminLoginModal";
 import { useAuthStore } from "@/app/store/authStore";
-import { toast } from "sonner";
 
 interface FooterCol {
   title: string;
@@ -72,129 +71,47 @@ const RANK_COLORS = [
   { key: "diamond", color: "#818CF8" },
 ];
 
-// ── Staff Login Section — compact form in footer ────────────────────────────────
-function StaffLoginSection({ locale }: { locale: string }) {
-  const router = useRouter();
-  const { login, isLoading } = useAuthStore();
+// ── Admin Login Button — show only when NOT logged in ─────────────────────────
+function AdminLoginButton() {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const accountType = useAuthStore((s) => s.accountType);
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [show, setShow] = useState(false);
-  const [error, setError] = useState("");
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email || !password) return;
-    setError("");
-    const ok = await login(email, password);
-    if (ok) {
-      const user = useAuthStore.getState().user;
-      toast.success("Đăng nhập thành công!", {
-        description: user ? `Chào mừng ${user.name}` : undefined,
-      });
-      router.push("/admin/overview");
-    } else {
-      setError(useAuthStore.getState().error ?? "Đăng nhập thất bại");
-    }
-  };
+  // Hide button once logged in (as staff OR customer)
+  if (isAuthenticated) return null;
 
   return (
-    <div
-      style={{
-        display: "flex", flexDirection: "column",
-        background: "rgba(15,23,42,0.6)",
-        border: "1px solid rgba(59,130,246,0.2)",
-        borderRadius: 10, padding: "0.875rem 1rem",
-        minWidth: 260, gap: "0.5rem",
-      }}
-    >
-      <div style={{
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}>
-          <Settings size={11} color={DS.blue} />
-          <span style={{
-            color: DS.blue, fontSize: "0.6875rem",
-            fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.12em",
-          }}>
-            NHÂN VIÊN
-          </span>
-        </div>
-        <Link
-          href={`/${locale}/nhan-vien`}
-          style={{
-            color: DS.text4, fontSize: "0.6875rem",
-            textDecoration: "none",
-            fontFamily: "'JetBrains Mono', monospace",
-          }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = DS.purple; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = DS.text4; }}
-        >
-          Đăng nhập →
-        </Link>
-      </div>
-
-      <form onSubmit={handleSubmit} style={{ display: "flex", gap: "0.375rem" }}>
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={e => setEmail(e.target.value)}
-          style={{
-            flex: 1, background: DS.bgCard2, border: `1px solid ${DS.border}`,
-            borderRadius: 7, padding: "6px 10px",
-            color: DS.text, fontSize: 12, outline: "none", minWidth: 0,
-          }}
-        />
-        <input
-          type={show ? "text" : "password"}
-          placeholder="Mật khẩu"
-          value={password}
-          onChange={e => setPassword(e.target.value)}
-          style={{
-            width: 90, background: DS.bgCard2, border: `1px solid ${DS.border}`,
-            borderRadius: 7, padding: "6px 8px",
-            color: DS.text, fontSize: 12, outline: "none",
-          }}
-        />
+    <AdminLoginModal
+      children={
         <button
-          type="submit"
-          disabled={isLoading}
           style={{
-            background: GRD.primary, border: "none", borderRadius: 7,
-            padding: "6px 10px", cursor: isLoading ? "not-allowed" : "pointer",
-            display: "flex", alignItems: "center",
-            color: "#fff", flexShrink: 0,
+            display: "flex", alignItems: "center", gap: "0.5rem",
+            background: "rgba(59,130,246,0.1)",
+            border: "1px solid rgba(59,130,246,0.3)",
+            borderRadius: 8, padding: "7px 14px",
+            cursor: "pointer", color: DS.text3,
+            fontSize: "0.75rem", fontFamily: "'JetBrains Mono', monospace",
+            letterSpacing: "0.08em",
+            transition: "all 0.15s ease",
+            whiteSpace: "nowrap",
+          }}
+          onMouseEnter={e => {
+            const el = e.currentTarget as HTMLElement;
+            el.style.background = GRD.primary;
+            el.style.color = "#fff";
+            el.style.borderColor = "transparent";
+          }}
+          onMouseLeave={e => {
+            const el = e.currentTarget as HTMLElement;
+            el.style.background = "rgba(59,130,246,0.1)";
+            el.style.color = DS.text3;
+            el.style.borderColor = "rgba(59,130,246,0.3)";
           }}
         >
-          {isLoading ? (
-            <Loader2 size={12} style={{ animation: "spin 1s linear infinite" }} />
-          ) : (
-            <Eye size={12} />
-          )}
+          <Settings size={12} />
+          Đăng nhập nhân viên
         </button>
-        <button
-          type="button"
-          onClick={() => { void setShow(v => !v); }}
-          style={{
-            background: "rgba(255,255,255,0.04)", border: `1px solid ${DS.border}`,
-            borderRadius: 7, padding: "6px 8px", cursor: "pointer",
-            display: "flex", alignItems: "center", color: DS.text4, flexShrink: 0,
-          }}
-        >
-          {show ? <EyeOff size={12} /> : <Eye size={12} />}
-        </button>
-      </form>
-
-      {error && (
-        <div style={{
-          fontSize: "0.625rem", color: "#FCA5A5",
-          fontFamily: "'JetBrains Mono', monospace",
-        }}>
-          {error}
-        </div>
-      )}
-    </div>
+      }
+    />
   );
 }
 
@@ -457,8 +374,8 @@ export default function SiteFooter({ locale = "vi" }: { locale?: string }) {
             </div>
           </div>
 
-          {/* Right: staff login section — compact inline form */}
-          <StaffLoginSection locale={locale} />
+          {/* Right: admin login button — opens modal */}
+          <AdminLoginButton />
         </div>
       </div>
     </footer>

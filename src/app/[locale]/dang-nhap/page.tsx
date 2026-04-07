@@ -298,6 +298,7 @@ export default function LoginPage() {
 
           {/* Google login — minimal */}
           <button
+            onClick={() => window.location.href = "/api/admin/auth/google-signin"}
             style={{
               width: "100%",
               background: "rgba(17,24,39,0.6)",

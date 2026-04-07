@@ -25,7 +25,7 @@ const PRISM_BEAMS = [
   { left: "-8%", width: "38%", color: DS.purple, angle: "14deg",  delay: "0s",   dur: "14s", opacity: 0.10 },
   { left: "15%", width: "28%", color: DS.sky,   angle: "-9deg",  delay: "2.5s", dur: "11s", opacity: 0.08 },
   { left: "38%", width: "32%", color: DS.lavender, angle: "22deg",  delay: "5s",   dur: "13s", opacity: 0.09 },
-  { left: "60%", width: "26%", color: "#FFFFFF", angle: "-15deg", delay: "1.2s", dur: "9s",  opacity: 0.06 },
+  { left: "60%", width: "26%", color: DS.text, angle: "-15deg", delay: "1.2s", dur: "9s",  opacity: 0.06 },
   { left: "78%", width: "34%", color: DS.purple, angle: "11deg",  delay: "3.8s", dur: "12s", opacity: 0.08 },
   { left: "92%", width: "22%", color: DS.sky,   angle: "-18deg", delay: "0.6s", dur: "10s", opacity: 0.07 },
 ];
@@ -38,12 +38,12 @@ const PRISM_FLARES = [
 
 const CRYSTAL_SPARKS = [
   { left: "5%",   delay: "0s",   dur: "7s",  size: 2.5, color: DS.purple },
-  { left: "14%",  delay: "2.2s", dur: "6s",  size: 1.5, color: "#FFFFFF" },
+  { left: "14%",  delay: "2.2s", dur: "6s",  size: 1.5, color: DS.text },
   { left: "26%",  delay: "1s",   dur: "8s",  size: 2.0, color: DS.sky },
   { left: "40%",  delay: "3.5s", dur: "5.5s",size: 1.5, color: DS.lavender },
   { left: "54%",  delay: "0.7s", dur: "7.5s",size: 2.0, color: DS.purple },
   { left: "67%",  delay: "2.8s", dur: "6.5s",size: 1.5, color: DS.sky },
-  { left: "79%",  delay: "1.4s", dur: "9s",  size: 2.5, color: "#FFFFFF" },
+  { left: "79%",  delay: "1.4s", dur: "9s",  size: 2.5, color: DS.text },
   { left: "91%",  delay: "4s",   dur: "6s",  size: 1.5, color: DS.lavender },
 ];
 
@@ -134,12 +134,12 @@ function PrismBackground() {
         >
           <defs>
             <pattern id="hofCrystalGrid" x="0" y="0" width="72" height="72" patternUnits="userSpaceOnUse">
-              <path d="M36 0 L72 36 L36 72 L0 36 Z" fill="none" stroke="#818CF8" strokeWidth="0.4" opacity="0.8" />
-              <path d="M36 12 L60 36 L36 60 L12 36 Z" fill="none" stroke="#7DD3FC" strokeWidth="0.3" opacity="0.5" />
-              <circle cx="36" cy="0"  r="1.5" fill="#818CF8" opacity="0.5" />
-              <circle cx="72" cy="36" r="1.5" fill="#7DD3FC" opacity="0.5" />
-              <circle cx="36" cy="72" r="1.5" fill="#F0ABFC" opacity="0.5" />
-              <circle cx="0"  cy="36" r="1.5" fill="#FFFFFF"  opacity="0.4" />
+              <path d="M36 0 L72 36 L36 72 L0 36 Z" fill="none" stroke={DS.cosmicPurple} strokeWidth="0.4" opacity="0.8" />
+              <path d="M36 12 L60 36 L36 60 L12 36 Z" fill="none" stroke={DS.cosmicCyan} strokeWidth="0.3" opacity="0.5" />
+              <circle cx="36" cy="0"  r="1.5" fill={DS.cosmicPurple} opacity="0.5" />
+              <circle cx="72" cy="36" r="1.5" fill={DS.cosmicCyan} opacity="0.5" />
+              <circle cx="36" cy="72" r="1.5" fill={DS.cosmicMagenta} opacity="0.5" />
+              <circle cx="0"  cy="36" r="1.5" fill={DS.text}  opacity="0.4" />
             </pattern>
           </defs>
           <rect width="100%" height="100%" fill="url(#hofCrystalGrid)" />
@@ -326,7 +326,7 @@ function HolographicCard({
                   {image && !imgError ? (
                     <img src={image} alt={name} className="w-full h-full object-cover" onError={() => setImgError(true)} />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-[#111827]" style={{ color: cfg.color }}>
+                    <div className="w-full h-full flex items-center justify-center" style={{ color: cfg.color, background: DS.bgCard }}>
                       {name.charAt(0)}
                     </div>
                   )}
@@ -351,7 +351,7 @@ function HolographicCard({
               <div
                 style={{
                   fontFamily: DS.heading,
-                  color: "#FFFFFF",
+                  color: DS.text,
                   fontSize: 15,
                   fontWeight: 700,
                   letterSpacing: "0.05em",
@@ -515,16 +515,16 @@ export function HallOfFame({ mvp, bugSlayer, topPerformer, locale }: HallOfFameP
             <svg width="20" height="17" viewBox="0 0 20 17" fill="none">
               <defs>
                 <linearGradient id="hofCrownGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%"   stopColor="#818CF8" />
-                  <stop offset="50%"  stopColor="#7DD3FC" />
-                  <stop offset="100%" stopColor="#F0ABFC" />
+                  <stop offset="0%"   stopColor={DS.cosmicPurple} />
+                  <stop offset="50%"  stopColor={DS.cosmicCyan} />
+                  <stop offset="100%" stopColor={DS.cosmicMagenta} />
                 </linearGradient>
               </defs>
               <path d="M1 16 L4 6 L8 11 L10 1 L12 11 L16 6 L19 16 Z" fill="none" stroke="url(#hofCrownGrad)" strokeWidth="1.4" strokeLinejoin="round"/>
               <line x1="1" y1="16" x2="19" y2="16" stroke="url(#hofCrownGrad)" strokeWidth="1.6" strokeLinecap="round"/>
-              <circle cx="1"  cy="16" r="1.5" fill="#F0ABFC" />
-              <circle cx="10" cy="1"  r="1.5" fill="#7DD3FC" />
-              <circle cx="19" cy="16" r="1.5" fill="#818CF8" />
+              <circle cx="1"  cy="16" r="1.5" fill={DS.cosmicMagenta} />
+              <circle cx="10" cy="1"  r="1.5" fill={DS.cosmicCyan} />
+              <circle cx="19" cy="16" r="1.5" fill={DS.cosmicPurple} />
             </svg>
             <div
               style={{
@@ -542,7 +542,7 @@ export function HallOfFame({ mvp, bugSlayer, topPerformer, locale }: HallOfFameP
               fontSize: 26,
               fontWeight: 900,
               letterSpacing: "0.12em",
-              background: `linear-gradient(135deg, ${DS.pink} 0%, ${DS.pinkLight} 35%, ${DS.purple} 65%, #FFFFFF 85%, ${DS.pink} 100%)`,
+              background: `linear-gradient(135deg, ${DS.pink} 0%, ${DS.pinkLight} 35%, ${DS.purple} 65%, ${DS.text} 85%, ${DS.pink} 100%)`,
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
               backgroundSize: "200% 100%",
@@ -557,7 +557,7 @@ export function HallOfFame({ mvp, bugSlayer, topPerformer, locale }: HallOfFameP
               fontSize: 11,
               fontFamily: "'JetBrains Mono', monospace",
               letterSpacing: "0.18em",
-              background: "linear-gradient(90deg, #818CF8, #7DD3FC, #F0ABFC)",
+              background: `linear-gradient(90deg, ${DS.cosmicPurple}, ${DS.cosmicCyan}, ${DS.cosmicMagenta})`,
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
             }}
@@ -567,9 +567,9 @@ export function HallOfFame({ mvp, bugSlayer, topPerformer, locale }: HallOfFameP
           <p
             className="mt-1"
             style={{
-              color: "#334155",
+              color: DS.text5,
               fontSize: 9,
-              fontFamily: "'JetBrains Mono', monospace",
+              fontFamily: DS.mono,
               letterSpacing: "0.2em",
             }}
           >
@@ -583,7 +583,7 @@ export function HallOfFame({ mvp, bugSlayer, topPerformer, locale }: HallOfFameP
             member={mvp}
             award="MVP LEGEND"
             icon={<Trophy size={12} />}
-            accentColor="#F59E0B"
+            accentColor={DS.amber}
             delay={0.1}
             locale={locale}
           />
@@ -591,7 +591,7 @@ export function HallOfFame({ mvp, bugSlayer, topPerformer, locale }: HallOfFameP
             member={bugSlayer}
             award="BUG SLAYER"
             icon={<Zap size={12} />}
-            accentColor="#EF4444"
+            accentColor={DS.red}
             delay={0.25}
             locale={locale}
           />
@@ -599,7 +599,7 @@ export function HallOfFame({ mvp, bugSlayer, topPerformer, locale }: HallOfFameP
             member={topPerformer}
             award="TOP PERFORMER"
             icon={<Target size={12} />}
-            accentColor="#22D3EE"
+            accentColor={DS.cosmicCyan}
             delay={0.4}
             locale={locale}
           />
@@ -615,7 +615,7 @@ export function HallOfFame({ mvp, bugSlayer, topPerformer, locale }: HallOfFameP
               backgroundImage: "linear-gradient(90deg, transparent, rgba(129,140,248,0.4))",
             }}
           />
-          {["#818CF8", "#7DD3FC", "#F0ABFC", "#FFFFFF", "#F0ABFC", "#7DD3FC", "#818CF8"].map((c, i) => (
+          {[DS.cosmicPurple, DS.cosmicCyan, DS.cosmicMagenta, DS.text, DS.cosmicMagenta, DS.cosmicCyan, DS.cosmicPurple].map((c, i) => (
             <div
               key={i}
               style={{
