@@ -7,6 +7,7 @@
 import { usePathname } from "next/navigation";
 import SiteHeader from "./SiteHeader";
 import SiteFooter from "./SiteFooter";
+import { FloatingSocialButtons } from "@/components/landing/FloatingSocialButtons";
 
 const HIDE_HEADER_PATHS = [
   "/dang-nhap/client-onboarding",
@@ -23,6 +24,7 @@ export function Shell({ children, locale }: { children: React.ReactNode; locale:
         {children}
       </div>
       {showHeader && <SiteFooter locale={locale} />}
+      <FloatingSocialButtons />
     </>
   );
 }

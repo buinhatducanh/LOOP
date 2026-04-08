@@ -104,7 +104,7 @@ export const RANKS: Record<RankKey, RankConfig> = {
     symbol: '✦',
     particleColor: '#7DD3FC',
     minLevel: 115,
-    maxLevel: 135,
+    maxLevel: Infinity,
     uncapped: true,
     lpPerLevel: 30000,
   },

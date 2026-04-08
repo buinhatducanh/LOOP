@@ -311,7 +311,14 @@
       "Bash(sed -n '619,626p' src/app/admin/orders/page.tsx)",
       "Bash(awk 'NR==621' src/app/admin/orders/page.tsx)",
       "Bash(Select-String \"AdminSidebar\" -SimpleMatch)",
-      "Bash(Select-Object -First 5)"
+      "Bash(Select-Object -First 5)",
+      "Bash(Select-String -Pattern \"FloatingSocialButtons|Shell|error\")",
+      "Bash(Select-Object -First 20)",
+      "WebFetch(domain:simpleicons.org)",
+      "WebSearch",
+      "WebFetch(domain:upload.wikimedia.org)",
+      "WebFetch(domain:commons.wikimedia.org)",
+      "WebFetch(domain:cdn.jsdelivr.net)"
     ],
     "additionalDirectories": [
       "D:\\LOOP_COMPANY\\LOOP\\src\\app\\api\\admin\\expertises",

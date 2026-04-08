@@ -17,6 +17,9 @@ const updateSchema = z.object({
   status: z.enum(["draft", "published", "archived"]).optional(),
   authorId: z.string().optional(),
   publishedAt: z.string().transform(s => new Date(s)).optional().nullable(),
+  videoUrl: z.string().optional().nullable(),
+  canonicalUrl: z.string().optional().nullable(),
+  backlinks: z.string().optional().nullable(), // JSON string [{url, label}]
   // i18n fields
   titleEn: z.string().optional().nullable(),
   titleJa: z.string().optional().nullable(),
@@ -26,6 +29,18 @@ const updateSchema = z.object({
   contentJa: z.string().optional().nullable(),
   contentKo: z.string().optional().nullable(),
   contentZh: z.string().optional().nullable(),
+  excerptEn: z.string().optional().nullable(),
+  excerptJa: z.string().optional().nullable(),
+  excerptKo: z.string().optional().nullable(),
+  excerptZh: z.string().optional().nullable(),
+  seoTitleEn: z.string().optional().nullable(),
+  seoTitleJa: z.string().optional().nullable(),
+  seoTitleKo: z.string().optional().nullable(),
+  seoTitleZh: z.string().optional().nullable(),
+  seoDescEn: z.string().optional().nullable(),
+  seoDescJa: z.string().optional().nullable(),
+  seoDescKo: z.string().optional().nullable(),
+  seoDescZh: z.string().optional().nullable(),
 });
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {

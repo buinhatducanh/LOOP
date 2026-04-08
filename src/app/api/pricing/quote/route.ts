@@ -13,7 +13,7 @@ const quoteSchema = z.object({
       featureId: z.string(),
       featureName: z.string(),
       variantId: z.string(),
-      variantName: z.string(),
+      variantName: z.string().default(""),
       price: z.number().int().min(0),
     })
   ).min(1, "Vui lòng chọn ít nhất 1 tính năng"),

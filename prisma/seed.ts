@@ -105,6 +105,7 @@ async function seedRBAC() {
     "customer-points", "users", "roles", "audit-log", "settings",
     "home-sliders", "landing-pages", "expertises", "testimonials",
     "messages", "websites", "points", "reward-tiers",
+    "task-kanban", "project-members", "handover", "customer-websites", "events-stream",
   ];
   const allActions = ["create", "read", "update", "delete", "export", "approve"] as const;
 
@@ -2015,20 +2016,20 @@ async function seedProjectMembers(memberCUIDs: Record<string, string>) {
   const orderMap: Record<string, string> = {};
   for (const o of orders) orderMap[o.orderNumber] = o.id;
 
-  // VNRetail (ORD-2601): Yuna (PM), Ryo (dev), Akira (consultant)
+  // VNRetail (ORD-2601): Yuna (PM), Ryo (dev), Akira (seo consultant)
   const vnRetail = [
-    { slug: "yuna-park",        projectRole: "PM",       assignedLp: 3000 },
-    { slug: "ryo-hashimoto",    projectRole: "DEVELOPER", assignedLp: 2500 },
-    { slug: "akira-sato",       projectRole: "CONSULTANT", assignedLp: 1500 },
+    { slug: "yuna-park",        projectRoleKey: "pm",       assignedLp: 3000 },
+    { slug: "ryo-hashimoto",    projectRoleKey: "dev",      assignedLp: 2500 },
+    { slug: "akira-sato",       projectRoleKey: "seo",      assignedLp: 1500 },
   ];
-  // MedApp (ORD-2602): Mei Lin (PM), Haru (media)
+  // MedApp (ORD-2602): Mei Lin (PM), Haru (designer)
   const medApp = [
-    { slug: "mei-lin",         projectRole: "PM",       assignedLp: 2000 },
-    { slug: "haru-tanaka",     projectRole: "DESIGNER",  assignedLp: 1500 },
+    { slug: "mei-lin",         projectRoleKey: "pm",       assignedLp: 2000 },
+    { slug: "haru-tanaka",     projectRoleKey: "designer", assignedLp: 1500 },
   ];
   // EduViet SEO (ORD-2505): Yuna (PM)
   const eduViet = [
-    { slug: "yuna-park",       projectRole: "PM",       assignedLp: 4000 },
+    { slug: "yuna-park",       projectRoleKey: "pm",       assignedLp: 4000 },
   ];
 
   const allLinks = [
@@ -2047,10 +2048,10 @@ async function seedProjectMembers(memberCUIDs: Record<string, string>) {
       await prisma.projectMember.upsert({
         where: { projectId_memberId: { projectId, memberId } },
         create: {
-          memberId, projectId, projectRole: link.projectRole,
+          memberId, projectId, projectRoleKey: link.projectRoleKey,
           assignedLp: link.assignedLp, joinedAt: new Date("2026-03-10T08:00:00Z"),
         },
-        update: { projectRole: link.projectRole, assignedLp: link.assignedLp },
+        update: { projectRoleKey: link.projectRoleKey, assignedLp: link.assignedLp },
       });
       linkCount++;
     }
@@ -2353,6 +2354,17 @@ async function main() {
 
   try {
     await seedRBAC();
+    // Seed project roles before seedR2 (which may use them)
+    const projectRoleKeys = ["pm", "designer", "dev", "qa", "seo"] as const;
+    for (const key of projectRoleKeys) {
+      const labels: Record<string, string> = { pm: "Project Manager", designer: "Designer", dev: "Developer", qa: "QA Engineer", seo: "SEO Specialist" };
+      const colors: Record<string, string> = { pm: "#EC4899", designer: "#8B5CF6", dev: "#3B82F6", qa: "#22C55E", seo: "#F59E0B" };
+      await prisma.projectRole.upsert({
+        where: { key },
+        update: {},
+        create: { key, label: labels[key], color: colors[key], sortOrder: projectRoleKeys.indexOf(key) + 1 },
+      });
+    }
     await seedAdmin();
     await seedAccessTags();
     await seedMemberRequests();

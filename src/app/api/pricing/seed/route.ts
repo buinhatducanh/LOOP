@@ -58,23 +58,42 @@ export async function POST(req: NextRequest) {
 
 const data = [
   {
-    groupName: "Giao diện & Trải nghiệm",
-    slug: "giao-dien-trai-nghiem",
+    groupName: "Gói dịch vụ",
+    slug: "goi-dich-vu",
     sortOrder: 1,
     isActive: true,
     features: [
       {
-        featureName: "Loại giao diện & Phản hồi",
-        description: "Phong cách thiết kế và khả năng tương thích thiết bị",
+        featureName: "Gói Cơ bản",
+        description: "Thiết kế chuẩn responsive, phù hợp landing page & website giới thiệu doanh nghiệp nhỏ",
         logicLevel: "Low",
         isRequired: true,
         sortOrder: 1,
         isActive: true,
         variants: [
-          { variantName: "Mẫu tiêu chuẩn, chuẩn Responsive", description: "Giao diện theo mẫu có sẵn, hiển thị tốt trên mọi thiết bị", price: 2890000, sortOrder: 1 },
-          { variantName: "Tùy chỉnh màu sắc, bộ lọc cơ bản", description: "Thay đổi màu thương hiệu, tích hợp bộ lọc sản phẩm đơn giản", price: 4890000, sortOrder: 2 },
-          { variantName: "Tối ưu UX các bước Checkout, Animation mượt mà, Mega Menu", description: "Trải nghiệm mua hàng tối ưu, hiệu ứng chuyển động, menu lớn", price: 6890000, sortOrder: 3 },
-          { variantName: "Giao diện độc quyền, Tối ưu tốc độ tải trang bằng NextJS (SSR/SSG)", description: "Thiết kế riêng biệt, công nghệ NextJS siêu nhanh", price: 10890000, sortOrder: 4 },
+          { variantName: "Cơ bản — 3,890,000 VND", description: "Giao diện chuẩn responsive, tối đa 5 trang, SEO cơ bản, hỗ trợ 1 tháng", price: 3890000, sortOrder: 1 },
+        ],
+      },
+      {
+        featureName: "Gói Doanh nghiệp",
+        description: "Thiết kế tùy chỉnh theo thương hiệu, tối ưu UX, phù hợp doanh nghiệp vừa và lớn",
+        logicLevel: "Medium",
+        isRequired: true,
+        sortOrder: 2,
+        isActive: true,
+        variants: [
+          { variantName: "Doanh nghiệp — 6,890,000 VND", description: "Thiết kế tùy chỉnh, tối đa 15 trang, SEO nâng cao, animation, hỗ trợ 3 tháng", price: 6890000, sortOrder: 1 },
+        ],
+      },
+      {
+        featureName: "Gói Experience",
+        description: "Thiết kế độc quyền NextJS, tối ưu tốc độ cao, phù hợp dự án lớn, thương hiệu cao cấp",
+        logicLevel: "High",
+        isRequired: true,
+        sortOrder: 3,
+        isActive: true,
+        variants: [
+          { variantName: "Experience — 10,890,000 VND", description: "Giao diện độc quyền NextJS (SSR/SSG), không giới hạn trang, SEO toàn diện, hỗ trợ 6 tháng", price: 10890000, sortOrder: 1 },
         ],
       },
     ],

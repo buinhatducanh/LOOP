@@ -22,11 +22,20 @@ import React, {
 
 import viMessages from "./messages/vi.json";
 import enMessages from "./messages/en.json";
+import jaMessages from "./messages/ja.json";
+import koMessages from "./messages/ko.json";
+import zhMessages from "./messages/zh.json";
 
 type Messages = typeof viMessages;
-type Locale = "vi" | "en";
+type Locale = "vi" | "en" | "ja" | "ko" | "zh";
 
-const MESSAGES: Record<Locale, Messages> = { vi: viMessages, en: enMessages };
+const MESSAGES: Record<Locale, Messages> = {
+  vi: viMessages,
+  en: enMessages,
+  ja: jaMessages,
+  ko: koMessages,
+  zh: zhMessages,
+};
 
 interface AdminI18nContextValue {
   locale: Locale;
@@ -64,12 +73,13 @@ export function AdminI18nProvider({ children }: { children: React.ReactNode }) {
         new RegExp("(^| )NEXT_LOCALE=([^;]+)")
       );
       const saved = match?.[2] as Locale | undefined;
-      if (saved && (saved === "vi" || saved === "en")) {
+      const allLocales: Locale[] = ["vi", "en", "ja", "ko", "zh"];
+      if (saved && allLocales.includes(saved)) {
         setLocaleState(saved);
       } else {
         // fallback: try localStorage
         const stored = localStorage.getItem("NEXT_LOCALE") as Locale | null;
-        if (stored === "vi" || stored === "en") setLocaleState(stored);
+        if (stored && allLocales.includes(stored)) setLocaleState(stored);
       }
     } catch {
       // SSR or cookies unavailable

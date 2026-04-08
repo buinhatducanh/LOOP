@@ -1,8 +1,8 @@
 # LOOP Business Logic — Source of Truth
 
-> **Version**: 5.0.0 · Updated: 2026-04-07
-> **Source**: Verified against `loopStore.ts`, `authStore.ts`, `memberData.ts`, `KanbanBoard.tsx`, `KanbanHub.tsx`, `useRealtimeNotifications.ts`, `authStore.ts` v3 (7 roles)
-> **Status**: v5 — Revenue Split Config + Off-System Payment (2026-04-07): LP Rate Persist, RevenueSplitConfig, OffSystemPayment + OffSystemSplit models, auto-split workflow, approve flow.
+> **Version**: 6.0.0 · Updated: 2026-04-08
+> **Source**: Verified vs `loopStore.ts`, `authStore.ts`, `KanbanBoard.tsx`, `useRealtimeNotifications.ts`, authStore v3 (7 roles)
+> **Status**: v6 — Full E2E Simulation (2026-04-08): ProjectRole model, TaskKanban task-level board, SSE notifications (replaced fake), HandoverPackage extended, CustomerWebsite + eKYC, FigmaDemo token approval API, domain purchase flow, automation tests scaffold.
 
 ---
 
@@ -440,3 +440,180 @@ Thêm 2 tab vào `AdminTab` type và `PM_TABS`:
 // 3. syncRankFields(memberId)
 // 4. OffSystemSplit.status = "approved"
 ```
+
+---
+
+## 13. Full Project Lifecycle (E2E — 2026-04-08)
+
+### 13.1 Luồng đầy đủ (từ khách hàng → bàn giao)
+
+```
+[KHÁCH HÀNG]
+  ├── Đăng nhập Google OAuth → Hoàn tất hồ sơ (client-onboarding)
+  ├── Chọn báo giá → Wizard 8 bước → Thanh toán 50% deposit
+  │
+[CEO / ADMIN]
+  ├── Nhận notification "Thanh toán 50%"
+  ├── Xác nhận thanh toán thủ công (bank transfer)
+  ├── Gán Designer + PM + Dev + QA vào project
+  │
+[DESIGNER]
+  ├── Nhận notification được assign
+  ├── Thiết kế → gửi Figma link (FigmaDemo)
+  │
+[KHÁCH HÀNG]
+  ├── Nhận notification demo ready
+  ├── Review → comments/reject/approve (FigmaDemo token approval API)
+  │
+[DESIGNER]
+  ├── Sửa → gửi lại (FigmaDemo cycles)
+  │
+[KHÁCH HÀNG]
+  ├── Approve cuối cùng → HandoverPackage tự tạo với Figma gốc
+  │
+[PM]
+  ├── Nhận notification → TaskKanban project riêng của Order
+  ├── Gán task cho Dev + QA, gắn GitHub branch + .env
+  │
+[DEV]
+  ├── Làm task → push branch "task-{id}-{name}" → Kéo sang "In Review"
+  │
+[QA]
+  ├── Nhận notification → Test → Done → LP auto-awarded
+  │
+[PM]
+  ├── Review → merge vào main → Đóng dự án
+  ├── notification CEO duyệt
+  │
+[CEO]
+  ├── Duyệt → notification KH
+  │
+[KHÁCH HÀNG]
+  ├── Xem HandoverPackage (Figma gốc + scope + deployment URL)
+  ├── Thanh toán 50% còn lại
+  ├── Mua domain + hosting (PricingWebPackage + eKYC form)
+  │
+[ADMIN/PM]
+  ├── Xác nhận thanh toán
+  ├── Cấu hình website
+  ├── CustomerWebsite.configStatus → "configured"
+  │
+[KHÁCH HÀNG]
+  ├── Xác nhận → Đóng dự án hoàn tất
+```
+
+### 13.2 Order Statuses — Luồng Custom đầy đủ
+
+| Status | Actor | Trigger | Side Effects |
+|--------|-------|---------|------------|
+| draft | customer | Wizard submit → Quote created | — |
+| pending | sales | Quote sent to customer | — |
+| quoted | customer | Customer accepts quote | → creates Order (accepted) |
+| accepted | system | Auto on quote accept | — |
+| paid_partial | admin | Record 50% payment | → notification CEO |
+| contracted | admin | Confirm bank transfer | → assign PM/designer/dev/qa |
+| designing | designer | Start design work | → FigmaDemo created |
+| developing | dev | Start dev | → TaskKanban tasks |
+| reviewing | pm | Dev merge to main | → PM review |
+| delivered | pm | PM marks delivered | → notification KH |
+| completed | customer | Customer confirms handover | → LP reward credited |
+
+### 13.3 TaskKanban — Task Lifecycle
+
+**Columns:** `backlog → todo → in_progress → in_review → done`
+
+| Column | Ai chuyển | Trigger |
+|--------|-----------|---------|
+| backlog | PM/Admin | Tạo task mới |
+| todo | PM | Gán dev cho task |
+| in_progress | Dev | Bắt đầu làm |
+| in_review | Dev | Push branch → auto (GitHub webhook) |
+| done | PM | Merge to main → LP auto-awarded |
+
+**Transition rules:**
+- `backlog → todo`
+- `todo → backlog | in_progress`
+- `in_progress → backlog | in_review`
+- `in_review → in_progress | done`
+- `done → in_progress` (allow reopen)
+
+**On "in_review":** creates `AdminNotification` → assigned QA
+**On "done":** auto-creates pending `LpAward` for assignee (if `lp > 0`)
+
+### 13.4 Notification Types
+
+| Type | Trigger | Recipient | Priority |
+|------|---------|---------|---------|
+| new_order | Quote accepted | admin | high |
+| payment_received | 50% payment recorded | ceo | urgent |
+| design_request | Order → contracted | designer | high |
+| demo_ready | FigmaDemo sent | customer | high |
+| demo_feedback | Customer comments/rejects | designer | normal |
+| design_approved | Customer approves final FigmaDemo | pm, designer | normal |
+| task_assigned | TaskKanban assigned to member | dev/qa | normal |
+| task_in_review | Task moved to in_review | qa | normal |
+| task_done | Task moved to done | pm | normal |
+| project_delivered | Order status → delivered | customer | high |
+| handover_pending | Final 50% payment recorded | admin | high |
+| domain_purchase | CustomerWebsite created | admin | normal |
+| ekyc_submitted | eKYC data submitted | admin | normal |
+| website_configured | CustomerWebsite.configStatus → configured | customer | normal |
+
+### 13.5 Domain & Hosting Purchase Flow
+
+```
+Customer → Purchase domain + hosting (PricingWebPackage)
+        → Submit eKYC (name, ID number, DOB, address)
+        → Order.projectStatus = "pending_config"
+        → CustomerWebsite.configStatus = "pending_config"
+        → Admin reviews + configures website
+        → Admin sets CustomerWebsite.configStatus = "configured"
+        → Customer confirms
+        → Project closed
+```
+
+**eKYC fields:** `ekycName`, `ekycIdNumber`, `ekycDob`, `ekycAddress` — stored in `CustomerWebsite`. Application-level encryption recommended for production.
+
+### 13.6 LP Distribution Timeline
+
+| Sự kiện | Ai nhận LP | Công thức |
+|---------|-----------|---------|
+| Thanh toán 50%/100% | customer | `ceil(VND × 0.00005 × 0.10)` |
+| Thanh toán (referral) | referrer | `floor(VND × tierPct / 20000)` |
+| Task done (TaskKanban) | dev assignee | `TaskKanban.lp` field |
+| FigmaDemo approved | designer | từ `Order.lpAllocation` |
+| OffSystemPayment | dev/pm/qa/designer/seo | `RevenueSplitConfig %` |
+
+### 13.7 Project Members & Roles
+
+**ProjectRole keys:** `pm | designer | dev | qa | seo`
+**Model:** `ProjectMember` (FK: `memberId → TeamMember`, `projectRoleKey → ProjectRole.key`)
+
+| Action | Ai được làm |
+|--------|------------|
+| Assign member to project | admin, pm |
+| Remove member from project | admin |
+| Create TaskKanban | pm, admin |
+| Move task column | assignee, pm, admin |
+| Approve task (done) | pm, admin |
+| Send FigmaDemo | designer, admin |
+| Approve FigmaDemo (client) | customer |
+| Create HandoverPackage | pm, admin |
+| Record payment | admin, ceo |
+| Purchase domain/hosting | customer |
+| Submit eKYC | customer |
+| Configure website | admin, pm |
+
+### 13.8 SSE Notification System
+
+Real-time notifications via SSE (Server-Sent Events):
+- **Endpoint:** `GET /api/admin/events/stream`
+- **Events:** `connected`, `notification`, `ping` (heartbeat every 25s)
+- **Hook:** `useRealtimeNotifications()` in admin layout
+- **Fallback:** polling every 30s if SSE unavailable
+
+### 13.9 Protected Files
+
+- ❌ `src/app/components/ui/DemoViewer.tsx` — KHÔNG chỉnh sửa thủ công
+- ❌ `src/app/components/layout/AdvancedSearch.tsx` — KHÔNG chỉnh sửa thủ công
+- ❌ `src/app/api/admin/orders/[id]/transition/route.ts` — KHÔNG bypass transition rules

@@ -1,28 +1,12 @@
 /**
  * Integration tests: Quotation Workflow
- * Uses vi.mock + vi.mocked() — same pattern as tests/integration/
+ * Tests QuoteRequest + Quote + SalesLead wiring (2026-04-08)
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NextRequest } from "next/server";
 
-// Reset all mocks before each test
-beforeEach(() => {
-  vi.clearAllMocks();
-  // Default: no vat_setting key → falls back to 0.10
-  mockPrisma.siteSetting.findUnique.mockResolvedValue(null);
-  mockPrisma.servicePackage.findMany.mockResolvedValue([]);
-  mockPrisma.serviceAttribute.findMany.mockResolvedValue([]);
-  mockPrisma.addonService.findMany.mockResolvedValue([]);
-  mockPrisma.infrastructureTier.findMany.mockResolvedValue([]);
-  mockPrisma.quoteRequest.findUnique.mockResolvedValue(null);
-  mockPrisma.quoteRequest.create.mockResolvedValue(null);
-  mockPrisma.quoteRequest.update.mockResolvedValue(null);
-  mockPrisma.salesLead.findFirst.mockResolvedValue(null);
-  mockPrisma.salesLead.create.mockResolvedValue(null);
-  mockPrisma.quote.create.mockResolvedValue(null);
-});
+// ── Mock Prisma ────────────────────────────────────────────────────────────────
 
-// ── Stable module-level mock (avoids require() alias issues) ──────────────────
 const mockPrisma = {
   siteSetting: { findUnique: vi.fn() },
   servicePackage: { findMany: vi.fn() },
@@ -41,26 +25,31 @@ vi.mock("@/lib/auth/permissions", () => ({
 vi.mock("@/lib/auth/audit", () => ({
   createAuditLog: vi.fn(),
 }));
-
-// Stub calculateOrderPrice to avoid calling real DB inside config GET
 vi.mock("@/lib/pricing/calculate-order-price", () => ({
   calculateOrderPrice: vi.fn().mockResolvedValue({ totalXp: 0, rewardLevel: 1 }),
 }));
 
+// Reset all mocks before each test
+beforeEach(() => {
+  vi.clearAllMocks();
+  mockPrisma.siteSetting.findUnique.mockResolvedValue(null);
+  mockPrisma.servicePackage.findMany.mockResolvedValue([]);
+  mockPrisma.serviceAttribute.findMany.mockResolvedValue([]);
+  mockPrisma.addonService.findMany.mockResolvedValue([]);
+  mockPrisma.infrastructureTier.findMany.mockResolvedValue([]);
+  mockPrisma.quoteRequest.findUnique.mockResolvedValue(null);
+  mockPrisma.quoteRequest.create.mockResolvedValue(null);
+  mockPrisma.quoteRequest.update.mockResolvedValue(null);
+  mockPrisma.salesLead.findFirst.mockResolvedValue(null);
+  mockPrisma.salesLead.create.mockResolvedValue(null);
+  mockPrisma.quote.create.mockResolvedValue(null);
+});
+
 // ─── VAT Config ───────────────────────────────────────────────────────────────
 
 describe("GET /api/pricing/config — vatRate", () => {
-  beforeEach(() => {
-    // Reset all mocks to default (empty) responses
-    // Reset all mocks to default (empty) responses
-    mockPrisma.siteSetting.findUnique.mockResolvedValue(null);
-    mockPrisma.servicePackage.findMany.mockResolvedValue([]);
-    mockPrisma.serviceAttribute.findMany.mockResolvedValue([]);
-    mockPrisma.addonService.findMany.mockResolvedValue([]);
-    mockPrisma.infrastructureTier.findMany.mockResolvedValue([]);
-  });
 
-  it("returns vatRate 0.10 when SiteSetting has no vat_rate key", async () => {
+  it("defaults to vatRate 0.10 when SiteSetting has no vat_rate key", async () => {
     const { GET } = await import("@/app/api/pricing/config/route");
     const req = new NextRequest("http://localhost:3000/api/pricing/config?lang=vi");
     const res = await GET(req);
@@ -89,6 +78,7 @@ describe("GET /api/pricing/config — vatRate", () => {
 // ─── QuoteRequest creation ───────────────────────────────────────────────────
 
 describe("POST /api/pricing/quote — QuoteRequest creation", () => {
+
   it("creates QuoteRequest with status=new", async () => {
     mockPrisma.quoteRequest.create.mockResolvedValue({
       id: "qr_test_001",
@@ -128,11 +118,11 @@ describe("POST /api/pricing/quote — QuoteRequest creation", () => {
   });
 });
 
-// ─── Quote creation from QuoteRequest ──────────────────────────────────────
+// ─── Quote creation from QuoteRequest ───────────────────────────────────────
 
 describe("POST /api/admin/quotes — QuoteRequest wiring", () => {
 
-  it("auto-creates SalesLead when quoteRequestId provided (no salesLeadId)", async () => {
+  it("auto-creates SalesLead when quoteRequestId provided without salesLeadId", async () => {
     mockPrisma.quoteRequest.findUnique.mockResolvedValue({
       id: "qr_001",
       customerName: "Khách Auto Lead",
@@ -143,11 +133,8 @@ describe("POST /api/admin/quotes — QuoteRequest wiring", () => {
         { featureId: "app", featureName: "App SaaS", variantId: "enterprise", price: 80000000 },
       ],
     });
-
-    // No existing salesLead
     mockPrisma.salesLead.findFirst.mockResolvedValue(null);
     mockPrisma.salesLead.create.mockResolvedValue({ id: "sl_new_001" });
-
     mockPrisma.quote.create.mockResolvedValue({
       id: "q_001",
       salesLeadId: "sl_new_001",
@@ -178,7 +165,6 @@ describe("POST /api/admin/quotes — QuoteRequest wiring", () => {
     expect(res.status).toBe(201);
     expect(json.data?.salesLeadId).toBe("sl_new_001");
     expect(json.data?.quoteRequestId).toBe("qr_001");
-    // Verify SalesLead was auto-created (not reused)
     expect(mockPrisma.salesLead.create).toHaveBeenCalled();
     expect(mockPrisma.salesLead.create).toHaveBeenCalledWith({
       data: expect.objectContaining({ customerName: "Khách Auto Lead" }),
@@ -192,10 +178,7 @@ describe("POST /api/admin/quotes — QuoteRequest wiring", () => {
       customerEmail: "existing@example.com",
       selectedItems: [],
     });
-
-    // Existing lead found
     mockPrisma.salesLead.findFirst.mockResolvedValue({ id: "sl_existing_001" });
-
     mockPrisma.quote.create.mockResolvedValue({
       id: "q_002",
       salesLeadId: "sl_existing_001",
@@ -223,7 +206,6 @@ describe("POST /api/admin/quotes — QuoteRequest wiring", () => {
 
     expect(res.status).toBe(201);
     expect(json.data?.salesLeadId).toBe("sl_existing_001");
-    // Did NOT create a new SalesLead
     expect(mockPrisma.salesLead.create).not.toHaveBeenCalled();
   });
 
@@ -259,6 +241,7 @@ describe("POST /api/admin/quotes — QuoteRequest wiring", () => {
     });
 
     const res = await POST(req);
+
     expect(res.status).toBe(201);
     expect(mockPrisma.quoteRequest.update).toHaveBeenCalledWith({
       where: { id: "qr_003" },
@@ -267,7 +250,7 @@ describe("POST /api/admin/quotes — QuoteRequest wiring", () => {
   });
 
   it("extracts selectedFeatureIds from QuoteRequest.selectedItems JSON", async () => {
-    const qrData = {
+    mockPrisma.quoteRequest.findUnique.mockResolvedValue({
       id: "qr_004",
       customerName: "Khách Feature",
       customerEmail: "feature@example.com",
@@ -276,12 +259,9 @@ describe("POST /api/admin/quotes — QuoteRequest wiring", () => {
         { featureId: "feat_lang", featureName: "Đa ngôn ngữ", variantId: "", price: 500000 },
         { featureId: "feat_cart", featureName: "Giỏ hàng", variantId: "", price: 2000000 },
       ],
-    };
-    // findUnique called twice: first for SalesLead upsert, second for selectedFeatureIds parse
-    mockPrisma.quoteRequest.findUnique.mockResolvedValue(qrData as never);
+    });
     mockPrisma.salesLead.findFirst.mockResolvedValue({ id: "sl_004" });
     mockPrisma.salesLead.create.mockResolvedValue({ id: "sl_004" });
-    // Return expected data in quote.create — verify the handler passes selectedFeatureIds
     mockPrisma.quote.create.mockResolvedValue({
       id: "q_004",
       salesLeadId: "sl_004",
@@ -289,10 +269,8 @@ describe("POST /api/admin/quotes — QuoteRequest wiring", () => {
       quoteNumber: "QT-TEST-004",
       title: "Báo giá Feature",
       totalAmount: 17500000,
-      // Handler extracts these from QuoteRequest.selectedItems and passes to create
       selectedFeatureIds: ["web", "feat_lang", "feat_cart"],
       status: "draft",
-      salesLead: { id: "sl_004", customerName: "Khách Feature", customerEmail: "feature@example.com" },
     });
 
     const { POST } = await import("@/app/api/admin/quotes/route");
@@ -311,7 +289,6 @@ describe("POST /api/admin/quotes — QuoteRequest wiring", () => {
     const json = await res.json();
 
     expect(res.status).toBe(201);
-    // selectedFeatureIds returned in response proves handler extracted them
     expect(json.data?.selectedFeatureIds).toBeDefined();
     expect(Array.isArray(json.data?.selectedFeatureIds)).toBe(true);
     expect(json.data?.selectedFeatureIds.sort()).toEqual(["feat_cart", "feat_lang", "web"].sort());
@@ -348,7 +325,7 @@ describe("POST /api/admin/quotes — QuoteRequest wiring", () => {
         quoteNumber: "QT-TEST-006",
         title: "LP Test",
         totalAmount: 1000000,
-        lpAllocation: { pm: 30, dev: 30, qa: 30 }, // sum = 90 → invalid
+        lpAllocation: { pm: 30, dev: 30, qa: 30 },
       }),
     });
 

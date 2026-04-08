@@ -1,56 +1,47 @@
-import { NextRequest, NextResponse } from "next/server";
 import { handleError, ok } from "@/lib/api/response";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSession } from "@/lib/auth/permissions";
+import { requirePermission } from "@/lib/auth/permissions";
+import { createAuditLog } from "@/lib/auth/audit";
 
-// GET - Lấy chi tiết website
+// GET — single CustomerWebsite with relations
 export async function GET(
-  req: NextRequest,
+  _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getSession();
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
+    await requirePermission("customer-websites", "read");
     const { id } = await params;
 
     const website = await prisma.customerWebsite.findUnique({
       where: { id },
       include: {
-        websiteStats: {
-          orderBy: { date: "desc" },
-          take: 30, // 30 ngày gần nhất
-        },
-        pageViews: {
-          orderBy: { date: "desc" },
-          take: 50,
-        },
-        order: true,
+        order: { select: { id: true, orderNumber: true, customerName: true } },
+        websiteStats: { orderBy: { date: "desc" }, take: 30 },
+        pageViews: { orderBy: { date: "desc" }, take: 50 },
       },
     });
 
     if (!website) {
-      return NextResponse.json({ error: "Website không tồn tại" }, { status: 404 });
+      return NextResponse.json({ error: "Customer website not found" }, { status: 404 });
     }
 
-    // Tính toán thống kê
+    // Compute summary stats
     const stats = website.websiteStats;
     const totalVisitors = stats.reduce((sum, s) => sum + s.visitors, 0);
     const totalPageViews = stats.reduce((sum, s) => sum + s.pageViews, 0);
-    const avgUptime = stats.length > 0
-      ? stats.reduce((sum, s) => sum + s.uptime, 0) / stats.length
-      : 100;
-    const avgResponseTime = stats.filter(s => s.responseTime).length > 0
-      ? stats.filter(s => s.responseTime).reduce((sum, s) => sum + (s.responseTime || 0), 0) / stats.filter(s => s.responseTime).length
-      : 0;
+    const avgUptime =
+      stats.length > 0 ? stats.reduce((sum, s) => sum + s.uptime, 0) / stats.length : 100;
+    const responseTimeStats = stats.filter((s) => s.responseTime != null);
+    const avgResponseTime =
+      responseTimeStats.length > 0
+        ? responseTimeStats.reduce((sum, s) => sum + (s.responseTime ?? 0), 0) /
+          responseTimeStats.length
+        : 0;
 
     // Top pages
     const pageViewsByUrl = website.pageViews.reduce((acc, pv) => {
-      if (!acc[pv.pageUrl]) {
-        acc[pv.pageUrl] = { pageUrl: pv.pageUrl, pageTitle: pv.pageTitle, views: 0 };
-      }
+      if (!acc[pv.pageUrl]) acc[pv.pageUrl] = { pageUrl: pv.pageUrl, pageTitle: pv.pageTitle, views: 0 };
       acc[pv.pageUrl].views += pv.views;
       return acc;
     }, {} as Record<string, { pageUrl: string; pageTitle: string | null; views: number }>);
@@ -61,7 +52,32 @@ export async function GET(
 
     return NextResponse.json({
       data: {
-        ...website,
+        id: website.id,
+        orderId: website.orderId,
+        packageId: website.packageId,
+        domain: website.domain,
+        subdomain: website.subdomain,
+        name: website.name,
+        description: website.description,
+        hostingProvider: website.hostingProvider,
+        hostingUrl: website.hostingUrl,
+        customerId: website.customerId,
+        customerName: website.customerName,
+        customerEmail: website.customerEmail,
+        customerPhone: website.customerPhone,
+        status: website.status,
+        configStatus: website.configStatus,
+        isMonitored: website.isMonitored,
+        deployedAt: website.deployedAt,
+        deployedUrl: website.deployedUrl,
+        expiresAt: website.expiresAt,
+        ekycName: website.ekycName,
+        ekycIdNumber: website.ekycIdNumber,
+        ekycDob: website.ekycDob,
+        ekycAddress: website.ekycAddress,
+        createdAt: website.createdAt,
+        updatedAt: website.updatedAt,
+        order: website.order,
         summary: {
           totalVisitors,
           totalPageViews,
@@ -73,52 +89,95 @@ export async function GET(
       },
     });
   } catch (error) {
-    console.error("Error fetching website:", error);
-    return NextResponse.json({ error: "Lỗi server" }, { status: 500 });
+    return handleError(error);
   }
 }
 
-// PUT - Cập nhật website
-export async function PUT(
+// PATCH — update fields
+export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getSession();
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
+    const session = await requirePermission("customer-websites", "update");
     const { id } = await params;
     const body = await req.json();
 
+    const existing = await prisma.customerWebsite.findUnique({ where: { id } });
+    if (!existing) {
+      return NextResponse.json({ error: "Customer website not found" }, { status: 404 });
+    }
+
+    // Whitelist allowed update fields
+    const updateData: Record<string, unknown> = {};
+    const allowedFields = [
+      "configStatus",
+      "deployedUrl",
+      "deployedAt",
+      "status",
+      "domain",
+      "subdomain",
+      "hostingProvider",
+      "hostingUrl",
+      "ekycName",
+      "ekycIdNumber",
+      "ekycDob",
+      "ekycAddress",
+      "isMonitored",
+      "expiresAt",
+      "customerName",
+      "customerEmail",
+      "customerPhone",
+    ];
+    for (const field of allowedFields) {
+      if (field in body) updateData[field] = body[field];
+    }
+
     const website = await prisma.customerWebsite.update({
       where: { id },
-      data: body,
+      data: updateData,
     });
 
-    return NextResponse.json({ data: website });
+    await createAuditLog({
+      userId: session.userId,
+      action: "update",
+      resource: "customer-websites",
+      resourceId: id,
+      oldValues: existing as unknown as Record<string, unknown>,
+      newValues: updateData,
+    });
+
+    return ok(website);
   } catch (error) {
-    console.error("Error updating website:", error);
-    return NextResponse.json({ error: "Lỗi server" }, { status: 500 });
+    return handleError(error);
   }
 }
 
-// DELETE - Xóa website
+// DELETE — soft delete by setting status = "cancelled"
 export async function DELETE(
-  req: NextRequest,
+  _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getSession();
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
+    const session = await requirePermission("customer-websites", "delete");
     const { id } = await params;
 
-    await prisma.customerWebsite.delete({
+    const existing = await prisma.customerWebsite.findUnique({ where: { id } });
+    if (!existing) {
+      return NextResponse.json({ error: "Customer website not found" }, { status: 404 });
+    }
+
+    await prisma.customerWebsite.update({
       where: { id },
+      data: { status: "cancelled" },
+    });
+
+    await createAuditLog({
+      userId: session.userId,
+      action: "delete",
+      resource: "customer-websites",
+      resourceId: id,
+      oldValues: existing as unknown as Record<string, unknown>,
     });
 
     return ok({ success: true });

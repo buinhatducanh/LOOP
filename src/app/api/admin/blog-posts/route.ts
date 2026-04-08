@@ -6,7 +6,7 @@ import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
 
 const createSchema = z.object({
-  projectId: z.string(),   // FK → Order.id (supports both projectId and orderId from frontend)
+  projectId: z.string().optional(),   // FK → Order.id (optional — will auto-resolve from author session if missing)
   title: z.string().min(1),
   slug: z.string().min(1),
   content: z.string().optional(),
@@ -14,11 +14,23 @@ const createSchema = z.object({
   coverImage: z.string().optional(),
   seoTitle: z.string().optional(),
   seoDesc: z.string().optional(),
-  authorId: z.string().optional(),   // TeamMember.id — if not provided, resolve from authorName/authorEmail
+  videoUrl: z.string().optional(),
+  canonicalUrl: z.string().optional(),
+  backlinks: z.string().optional(), // JSON: [{url, label}]
+  authorId: z.string().optional(),   // TeamMember.id — if not provided, resolve from authorName/authorEmail or session
   authorName: z.string().optional(), // fallback if authorId not given
   authorEmail: z.string().optional(),
   status: z.enum(["draft", "published"]).optional().default("draft"),
   publishedAt: z.string().transform(s => new Date(s)).optional(),
+  // i18n fields
+  titleEn: z.string().optional(),
+  titleJa: z.string().optional(),
+  titleKo: z.string().optional(),
+  titleZh: z.string().optional(),
+  contentEn: z.string().optional(),
+  contentJa: z.string().optional(),
+  contentKo: z.string().optional(),
+  contentZh: z.string().optional(),
 });
 
 export async function GET(req: NextRequest) {
@@ -66,7 +78,18 @@ export async function POST(req: NextRequest) {
     const parsed = createSchema.safeParse(data);
     if (!parsed.success) return badRequest(parsed.error.message);
 
-    // Resolve authorId: use provided, or find by name/email
+    // Resolve projectId: use provided, or find any active order
+    let resolvedProjectId = parsed.data.projectId;
+    if (!resolvedProjectId) {
+      const fallbackOrder = await prisma.order.findFirst({
+        where: { status: { not: "cancelled" } },
+        select: { id: true },
+        orderBy: { createdAt: "desc" },
+      });
+      resolvedProjectId = fallbackOrder?.id;
+    }
+
+    // Resolve authorId: use provided, or find by name/email, or use session teamMemberId
     let authorId = parsed.data.authorId;
     if (!authorId && (parsed.data.authorName || parsed.data.authorEmail)) {
       const member = await prisma.teamMember.findFirst({
@@ -85,9 +108,14 @@ export async function POST(req: NextRequest) {
     if (!authorId) {
       return badRequest("authorId, authorName, or authorEmail is required");
     }
+
+    if (!resolvedProjectId) {
+      return badRequest("projectId is required. No active order found to assign this post to.");
+    }
+
     const result = await prisma.blogPost.create({
       data: {
-        projectId: parsed.data.projectId,
+        projectId: resolvedProjectId,
         title: parsed.data.title,
         slug: parsed.data.slug,
         content: parsed.data.content,
@@ -98,6 +126,15 @@ export async function POST(req: NextRequest) {
         authorId,
         status: parsed.data.status,
         publishedAt: parsed.data.publishedAt,
+        // i18n
+        titleEn: parsed.data.titleEn,
+        titleJa: parsed.data.titleJa,
+        titleKo: parsed.data.titleKo,
+        titleZh: parsed.data.titleZh,
+        contentEn: parsed.data.contentEn,
+        contentJa: parsed.data.contentJa,
+        contentKo: parsed.data.contentKo,
+        contentZh: parsed.data.contentZh,
       },
     });
 

@@ -51,16 +51,16 @@ interface LpRateConfig {
 // ── Fallback data (same as FE mock) ─────────────────────────────────────────
 
 const FALLBACK_SERVICES: WizardService[] = [
-  { id: "web", title: "Thiết kế & Phát triển Website", desc: "Landing page, corporate site, e-commerce — chuẩn React/Next.js, tốc độ cao.", color: DS.blue, basePrice: 15_000_000 },
+  { id: "web", title: "Thiết kế & Phát triển Website", desc: "Landing page, corporate site, e-commerce — chuẩn React/Next.js, tốc độ cao.", color: DS.blue, basePrice: 1 },
   { id: "app", title: "Phát triển App & SaaS Platform", desc: "Mobile app (React Native), web app, nền tảng SaaS cho doanh nghiệp.", color: DS.purple, basePrice: 80_000_000 },
   { id: "dashboard", title: "Dashboard & Data Analytics", desc: "Real-time dashboard, báo cáo tự động, data visualization chuyên nghiệp.", color: DS.cyan, basePrice: 25_000_000 },
   { id: "seo", title: "SEO & Digital Marketing", desc: "Tăng trưởng organic, Google Ads, content strategy — gói tháng linh hoạt.", color: DS.green, basePrice: 8_000_000, perMonth: true },
 ];
 
 const FALLBACK_PACKAGES: WizardPackage[] = [
-  { id: "starter", name: "Starter", multiplier: 1, color: DS.text3, desc: "Phù hợp cá nhân, startup giai đoạn đầu", features: ["Thiết kế cơ bản", "Responsive design", "SEO cơ bản", "Bảo hành 3 tháng"], lp: 50 },
-  { id: "business", name: "Business", multiplier: 2.2, color: DS.blue, desc: "Doanh nghiệp vừa, sản phẩm cần scale", features: ["Thiết kế độc quyền", "CMS tích hợp", "Analytics dashboard", "Bảo hành 6 tháng", "Không giới hạn sửa"], lp: 120, popular: true },
-  { id: "enterprise", name: "Enterprise", multiplier: 3.8, color: DS.purple, desc: "Doanh nghiệp lớn, yêu cầu cao về tính năng", features: ["Tùy chỉnh hoàn toàn", "API & Integrations", "SLA 99.9%", "Dedicated PM", "Support 24/7", "Bảo hành 12 tháng"], lp: 250 },
+  { id: "basic", name: "Cơ bản", multiplier: 1, color: DS.text3, desc: "Thiết kế chuẩn responsive, phù hợp website giới thiệu doanh nghiệp nhỏ", features: ["Giao diện chuẩn responsive", "Tối đa 5 trang", "SEO cơ bản", "Bảo hành 1 tháng", "Hỗ trợ qua email"], lp: 100 },
+  { id: "business", name: "Doanh nghiệp", multiplier: 1, color: DS.blue, desc: "Thiết kế tùy chỉnh theo thương hiệu, tối ưu UX, doanh nghiệp vừa và lớn", features: ["Thiết kế tùy chỉnh", "Tối đa 15 trang", "SEO nâng cao", "Animation & Mega Menu", "Bảo hành 3 tháng", "Không giới hạn chỉnh sửa"], lp: 180, popular: true },
+  { id: "experience", name: "Experience", multiplier: 1, color: DS.purple, desc: "Giao diện độc quyền NextJS, tối ưu tốc độ cao, thương hiệu cao cấp", features: ["Giao diện độc quyền NextJS (SSR/SSG)", "Không giới hạn trang", "SEO toàn diện", "Dedicated PM", "Bảo hành 6 tháng", "Support 24/7"], lp: 280 },
 ];
 
 const FALLBACK_FEATURES: Record<string, WizardFeature[]> = {

@@ -56,3 +56,23 @@ if (!body.email || typeof body.email !== "string") {
 - Use `.env.example` with all keys except actual values
 - Access via `process.env.VARIABLE_NAME` (server-side only)
 - Prefix client-safe vars with `NEXT_PUBLIC_`
+
+## Project Member Assignment
+
+- Only admin/ceo can assign PM role (`projectRoleKey: "pm"`)
+- Only admin/ceo/pm can assign dev/qa/designer roles
+- PM cannot remove themselves from a project
+- GitHub branch naming convention: `task-{taskId}-{slug}`
+
+## eKYC Data
+
+- eKYC fields (`ekycName`, `ekycIdNumber`, `ekycDob`, `ekycAddress`) are PII — do NOT log them
+- Store in `CustomerWebsite.ekyc*` fields; application-level encryption recommended for production
+- CustomerWebsite access: customer owns their own record; admin sees all
+
+## SSE Endpoint Security
+
+- `/api/admin/events/stream` requires valid Bearer token (requireAuth)
+- Each SSE connection validated before event stream starts
+- 5-minute server-side timeout prevents orphaned streams
+- Heartbeat (`ping` event) every 25s keeps proxies from closing idle connections

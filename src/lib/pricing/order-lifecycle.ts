@@ -3,6 +3,28 @@ import { awardCustomerLpOnPayment } from "@/lib/services/customer/lp.service";
 import { awardReferralLpOnPayment, awardReferralLpOnCompletion } from "@/lib/services/customer/referral.service";
 import { distributeLpFromOrder } from "@/lib/pricing/quote-to-order";
 import { vndToLp } from "@/lib/services/customer/lp.service";
+
+// ── Notification helper ───────────────────────────────────────────────────────
+
+type NotifData = {
+  type: string;
+  title: string;
+  message: string;
+  link?: string;
+  priority?: string;
+};
+
+/**
+ * Fire-and-forget admin notification creation.
+ * Silently ignores errors so notification failures never break the parent transaction.
+ */
+async function fireNotif(data: NotifData): Promise<void> {
+  try {
+    await prisma.adminNotification.create({ data: { ...data, priority: data.priority ?? "normal" } });
+  } catch {
+    // silent — do not break the caller
+  }
+}
 import { LP_VND_RATE } from "@/lib/constants";
 
 /**
@@ -157,6 +179,17 @@ export async function transitionOrderStatus(
   if (isCompletion && order.paidAmount > 0) {
     awardReferralLpOnCompletion(orderId, order.orderNumber, order.paidAmount).catch(() => {/* silent */});
   }
+
+  // ── Fire admin notification on key status transitions ─────────────────────────
+  const priority = toStatus === "delivered" ? "high" : "normal";
+  const notifType = toStatus === "delivered" ? "project_delivered" : "new_order";
+  fireNotif({
+    type: notifType,
+    title: `Đơn #${order.orderNumber} → ${toStatus}`,
+    message: `Trạng thái đơn ${order.orderNumber}: ${order.status} → ${toStatus}`,
+    link: `/admin/orders`,
+    priority,
+  }).catch(() => {/* silent */});
 
   return { success: true };
 }

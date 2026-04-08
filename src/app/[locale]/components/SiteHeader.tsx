@@ -429,7 +429,7 @@ function MegaDropdown({
       const panelWidth = 600;
       const viewportWidth = window.innerWidth;
       // Center panel under trigger; clamp to viewport edges
-      let left = rect.left + rect.width / 2 - panelWidth / 2;
+      let left = rect.right - panelWidth;
       left = Math.max(16, Math.min(left, viewportWidth - panelWidth - 16));
       setPanelLeft(left);
     }

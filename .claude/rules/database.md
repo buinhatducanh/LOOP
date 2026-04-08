@@ -83,3 +83,32 @@ await prisma.$transaction([
 - Always test migrations on a backup before applying to production
 - Document schema changes in `CHANGELOG.md`
 - Neon (production): use `npx prisma migrate deploy` — no `migrate prod`
+
+---
+
+## Project-Specific Conventions
+
+### TaskKanban
+- Always index `[orderId, column]` and `[assigneeId]`
+- `column` is a string: `backlog | todo | in_progress | in_review | done`
+- LP is set on task creation by PM; auto-awarded on "done" transition
+- Always cascade delete from Order
+
+### ProjectMember
+- FK: `memberId → TeamMember`, `projectRoleKey → ProjectRole.key`
+- Unique constraint on `[projectId, memberId]`
+- `projectRoleKey` values seeded: `pm | designer | dev | qa | seo`
+
+### CustomerWebsite
+- `configStatus`: `pending_config → configured → delivered → cancelled`
+- eKYC fields (`ekycName`, `ekycIdNumber`, `ekycDob`, `ekycAddress`) are PII — application-level encryption recommended
+- `domain` field was previously `@unique`, now nullable (multiple sites per customer allowed)
+
+### HandoverPackage
+- `figmaUrl` saved when client approves final FigmaDemo
+- `scope` JSON: `{ features: string[], pointCount: number, customRequests: string[] }`
+- Lookup by `projectId` (not by id)
+
+### Shadow Database
+- `prisma.config.ts` must NOT set `shadowDatabaseUrl` equal to the main URL — Prisma v7 rejects this
+- If `prisma migrate dev` fails with shadow DB errors, use `prisma db push` + manual migration SQL file

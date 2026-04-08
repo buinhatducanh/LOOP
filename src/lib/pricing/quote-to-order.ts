@@ -173,7 +173,7 @@ export async function distributeLpFromOrder(
 ): Promise<void> {
   const order = await prisma.order.findUnique({
     where: { id: orderId },
-    select: { lpAllocation: true, projectMembers: { select: { id: true, projectRole: true, memberId: true } } },
+    select: { lpAllocation: true, projectMembers: { select: { id: true, projectRoleKey: true, memberId: true } } },
   });
 
   if (!order?.lpAllocation) return;
@@ -190,7 +190,7 @@ export async function distributeLpFromOrder(
   // Group project members by project role
   const membersByRole = new Map<string, string[]>();
   for (const pm of order.projectMembers ?? []) {
-    const role = pm.projectRole.toLowerCase();
+    const role = pm.projectRoleKey.toLowerCase();
     if (!membersByRole.has(role)) membersByRole.set(role, []);
     membersByRole.get(role)!.push(pm.memberId);
   }

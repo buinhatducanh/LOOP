@@ -106,11 +106,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // ── Resolve salesLeadId ──────────────────────────────────────────────────
-    // If quoteRequestId is provided but no salesLeadId, auto-create a SalesLead
-    // from the QuoteRequest customer data so the quote can be linked.
+    // Resolve salesLeadId + parse selectedFeatureIds — single DB call
     let salesLeadId = parsed.data.salesLeadId;
-    if (parsed.data.quoteRequestId && !salesLeadId) {
+    let selectedFeatureIds: string[] = [];
+    if (parsed.data.quoteRequestId) {
       const qr = await prisma.quoteRequest.findUnique({
         where: { id: parsed.data.quoteRequestId },
       });
@@ -134,6 +133,12 @@ export async function POST(req: NextRequest) {
           });
           salesLeadId = newLead.id;
         }
+        // Parse selectedFeatureIds from the same qr we already fetched
+        if (qr.selectedItems && Array.isArray(qr.selectedItems)) {
+          selectedFeatureIds = (qr.selectedItems as Array<{ featureId?: string }>)
+            .filter(item => item?.featureId)
+            .map(item => item.featureId as string);
+        }
       }
     }
 
@@ -144,21 +149,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // ── Parse selectedFeatureIds from QuoteRequest.selectedItems ─────────────
-    let selectedFeatureIds: string[] = [];
-    if (parsed.data.quoteRequestId) {
-      const qr = await prisma.quoteRequest.findUnique({
-        where: { id: parsed.data.quoteRequestId },
-        select: { selectedItems: true },
-      });
-      if (qr?.selectedItems && Array.isArray(qr.selectedItems)) {
-        selectedFeatureIds = (qr.selectedItems as Array<{ featureId?: string }>)
-          .filter(item => item?.featureId)
-          .map(item => item.featureId as string);
-      }
-    }
-
-    // ── Create quote ────────────────────────────────────────────────────────
     const quote = await prisma.quote.create({
       data: {
         salesLeadId,
@@ -170,9 +160,7 @@ export async function POST(req: NextRequest) {
         milestones: parsed.data.milestones ?? undefined,
         validUntil: parsed.data.validUntil,
         note: parsed.data.note ?? null,
-        // Wire QuoteRequest → Quote
         quoteRequestId: parsed.data.quoteRequestId ?? undefined,
-        // Populate pricing fields from QuoteRequest selectedItems
         selectedFeatureIds,
       },
       include: {
@@ -180,7 +168,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // ── Update QuoteRequest status ──────────────────────────────────────────
+    // Update QuoteRequest status
     if (parsed.data.quoteRequestId) {
       await prisma.quoteRequest.update({
         where: { id: parsed.data.quoteRequestId },
@@ -188,12 +176,20 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // Audit log: log only explicitly accepted fields — never raw request body
     await createAuditLog({
       userId: session.userId,
       action: "create",
       resource: "quotes",
       resourceId: quote.id,
-      newValues: body,
+      newValues: {
+        quoteNumber: parsed.data.quoteNumber,
+        title: parsed.data.title,
+        totalAmount: parsed.data.totalAmount,
+        salesLeadId,
+        quoteRequestId: parsed.data.quoteRequestId ?? null,
+        selectedFeatureIds,
+      },
     });
 
     return NextResponse.json({ data: quote }, { status: 201 });

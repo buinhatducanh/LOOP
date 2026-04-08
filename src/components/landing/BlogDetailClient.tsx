@@ -3,24 +3,62 @@
 import Link from "next/link";
 import { motion } from "motion/react";
 import { DS, GRD } from "@/lib/design-tokens";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ExternalLink, Video } from "lucide-react";
 
 type PostRecord = Record<string, unknown>;
 
+type BacklinkEntry = { url: string; label: string };
+
 export function BlogDetailClient({
   locale, post, authorName, related, tNav,
+  videoUrl, backlinks,
 }: {
   locale: string;
   post: PostRecord;
   authorName: string | null;
   related: PostRecord[];
   tNav: Record<string, string>;
+  videoUrl?: string | null;
+  backlinks?: string | null;
 }) {
   const title = (post.title as string) ?? "Bài viết";
   const excerpt = (post.excerpt as string) ?? "";
   const content = (post.content as string) ?? "";
   const coverImage = (post.coverImage as string) ?? "";
   const publishedAt = post.publishedAt ? new Date(post.publishedAt as string) : null;
+
+  // Video embed helper
+  const getEmbedUrl = (url: string): string => {
+    if (url.includes("youtube.com/watch")) {
+      const id = new URL(url).searchParams.get("v");
+      return id ? `https://www.youtube.com/embed/${id}` : url;
+    }
+    if (url.includes("youtu.be/")) {
+      const id = url.split("youtu.be/")[1]?.split("?")[0];
+      return id ? `https://www.youtube.com/embed/${id}` : url;
+    }
+    if (url.includes("player.vimeo.com/video/")) {
+      return url; // Already an embed URL
+    }
+    if (url.includes("vimeo.com/")) {
+      const id = url.split("vimeo.com/")[1]?.split("?")[0];
+      return id ? `https://player.vimeo.com/video/${id}` : url;
+    }
+    return url;
+  };
+
+  const embedUrl = videoUrl ? getEmbedUrl(videoUrl) : null;
+  const isYoutube = embedUrl?.includes("youtube.com/embed") || embedUrl?.includes("player.vimeo.com");
+
+  // Parse backlinks
+  let backlinkList: BacklinkEntry[] = [];
+  if (backlinks) {
+    try { backlinkList = JSON.parse(backlinks); } catch { /* ignore */ }
+  }
+
+  // Word count + reading time
+  const words = content.trim() ? content.trim().split(/\s+/).filter(Boolean).length : 0;
+  const readTime = Math.ceil(words / 200);
 
   const formattedDate = publishedAt
     ? publishedAt.toLocaleDateString("vi-VN", { year: "numeric", month: "long", day: "numeric" })
@@ -61,6 +99,12 @@ export function BlogDetailClient({
                 <span style={{ fontFamily: DS.mono, color: DS.text3 }}>{formattedDate}</span>
               </span>
             )}
+            {words > 0 && (
+              <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <span style={{ color: DS.teal, fontFamily: DS.mono }}>📝</span>
+                <span style={{ fontFamily: DS.mono, color: DS.text3 }}>{words.toLocaleString()} từ · {readTime} phút đọc</span>
+              </span>
+            )}
           </div>
         </div>
       </section>
@@ -76,6 +120,29 @@ export function BlogDetailClient({
           <div className="max-w-4xl mx-auto">
             <div style={{ borderRadius: 16, overflow: "hidden", border: `1px solid ${DS.border}`, maxHeight: 480 }}>
               <img src={coverImage} alt={title} style={{ width: "100%", height: "100%", objectFit: "cover", maxHeight: 480, display: "block" }} />
+            </div>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Video embed */}
+      {embedUrl && isYoutube && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.15 }}
+          className="px-6 pb-10"
+        >
+          <div className="max-w-4xl mx-auto">
+            <div style={{ borderRadius: 16, overflow: "hidden", border: `1px solid ${DS.border}` }}>
+              <div style={{ position: "relative", paddingBottom: "56.25%", height: 0 }}>
+                <iframe
+                  src={embedUrl}
+                  title={title}
+                  style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", border: "none" }}
+                  allowFullScreen
+                />
+              </div>
             </div>
           </div>
         </motion.div>
@@ -143,6 +210,43 @@ export function BlogDetailClient({
                 </Link>
               ))}
             </div>
+          </motion.section>
+        )}
+
+        {/* Backlinks / Sources */}
+        {backlinkList.length > 0 && (
+          <motion.section
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.22 }}
+            style={{ marginTop: 40, paddingTop: 24, borderTop: `1px solid ${DS.border}` }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+              <div style={{ width: 4, height: 20, background: GRD.teal, borderRadius: 2 }} />
+              <h2 style={{ fontFamily: DS.heading, fontSize: 16, fontWeight: 800, color: DS.text }}>Nguồn tham khảo</h2>
+            </div>
+            <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 8 }}>
+              {backlinkList.map((link: BacklinkEntry, i: number) => (
+                <li key={i}>
+                  <a
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      display: "inline-flex", alignItems: "center", gap: 6,
+                      padding: "8px 14px", background: DS.bgCard,
+                      border: `1px solid ${DS.border}`, borderRadius: 10,
+                      color: DS.teal, fontSize: 13, fontFamily: DS.mono,
+                      textDecoration: "none",
+                      transition: "border-color 0.2s",
+                    }}
+                  >
+                    <ExternalLink size={12} />
+                    {link.label || link.url}
+                  </a>
+                </li>
+              ))}
+            </ul>
           </motion.section>
         )}
 

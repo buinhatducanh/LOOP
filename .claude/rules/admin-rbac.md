@@ -603,3 +603,56 @@ export function hasAccessTag(user: SessionUser, tag: string): boolean {
 | P2-A | Data models (MemberRequest, AccessTag, UserRoleApproval) | HIGH |
 | P2-B | API Routes + CEO Approval UI | HIGH |
 | P2-C | HR Invite Flow + Email templates | MEDIUM |
+
+---
+
+## 9. Project Roles (v3.0)
+
+### 9.1 ProjectRole Keys
+
+Project-level roles for TeamMembers assigned to Order projects:
+
+| Key | Label | Color | Ai gán |
+|-----|-------|-------|--------|
+| `pm` | Project Manager | `#EC4899` | CEO/Admin |
+| `designer` | Designer | `#8B5CF6` | Admin, PM |
+| `dev` | Developer | `#3B82F6` | Admin, PM |
+| `qa` | QA Engineer | `#22C55E` | Admin, PM |
+| `seo` | SEO Specialist | `#F59E0B` | Admin, PM |
+
+**Model:** `ProjectRole` (seeded, `key` unique), `ProjectMember.projectRoleKey → ProjectRole.key`
+
+### 9.2 Admin Tabs mới
+
+| Tab | RBAC | API Resource |
+|-----|------|-------------|
+| `projects/[id]/kanban` | pm, admin | task-kanban |
+| `customer_websites` | admin | customer-websites |
+| `handover` | pm, admin | handover |
+
+---
+
+## 10. TaskKanban vs Task (Distinction)
+
+| | `Task` (Epic/Backlog) | `TaskKanban` |
+|---|------|---------|
+| Container | Backlog (LP budget) | Order project |
+| Use case | Sprint planning, epic grouping | Real-time task board per project |
+| UI | `/admin/projects` (JIRA-like) | `/admin/projects/[orderId]/kanban` |
+| LP award | On merge to main | On column → "done" |
+| Roles | PM/Admin | PM/Admin creates, Dev moves |
+
+`Task` is for sprint/PM planning. `TaskKanban` is for live project tracking.
+
+---
+
+## 11. API Resources mới (v3.0)
+
+| Resource | Permissions | Description |
+|----------|-------------|-------------|
+| `task-kanban` | read, create, update, delete | Task-level Kanban per order |
+| `project-members` | read, create, update, delete | Assign member to project with role |
+| `handover` | read, create, update | HandoverPackage per order |
+| `customer-websites` | read, create, update, delete | Domain purchase + eKYC |
+| `notifications` | read, create | AdminNotification CRUD |
+| `events-stream` | read | SSE real-time notifications |

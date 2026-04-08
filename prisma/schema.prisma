@@ -589,6 +589,7 @@ model Order {
   slaRules              SlaRule[]
   socialPosts           SocialPost[]
   offSystemPayments     OffSystemPayment[]
+  taskKanbans          TaskKanban[]
 
   @@index([status, createdAt])
   @@index([orderType, status])
@@ -648,6 +649,72 @@ model SiteSetting {
   type  String @default("string") @map("type")
 
   @@map("site_settings")
+}
+
+/// Project-level role for a TeamMember assigned to an Order project.
+/// Keys: pm | designer | dev | qa | seo
+/// Seeded on first run. FK used by ProjectMember.projectRoleKey.
+model ProjectRole {
+  id        String   @id @default(cuid())
+  key       String   @unique @map("key")
+  label     String
+  color     String   @default("#3B82F6")
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  members   ProjectMember[]
+
+  @@index([key])
+  @@map("project_roles")
+}
+
+/// A TeamMember assigned to an Order project with a specific projectRoleKey.
+model ProjectMember {
+  id             String      @id @default(cuid())
+  memberId       String      @map("member_id")
+  projectRoleKey String      @map("project_role_key")
+  assignedLp     Int         @default(0) @map("assigned_lp")
+  earnedLp       Int         @default(0) @map("earned_lp")
+  joinedAt       DateTime    @default(now()) @map("joined_at")
+  exp            Int         @default(0)
+  projectId      String      @map("project_id")
+  member         TeamMember  @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  project        Order       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectRole    ProjectRole @relation(fields: [projectRoleKey], references: [key])
+
+  @@unique([projectId, memberId])
+  @@index([projectId])
+  @@index([memberId])
+  @@index([projectRoleKey])
+  @@map("project_members")
+}
+
+/// Task-level Kanban board per Order project.
+/// Mirrors the 5-column flow: backlog → todo → in_progress → in_review → done.
+/// Auto-awards LP on "done" transition. Linked to GitHub branch via branchName.
+model TaskKanban {
+  id          String    @id @default(cuid())
+  orderId     String    @map("order_id")
+  column      String    @default("backlog") @map("column")
+  title       String
+  description String?   @map("description")
+  priority    String    @default("medium") @map("priority")
+  lp          Int       @default(0) @map("lp")
+  branchName  String?   @map("branch_name")
+  githubLink  String?   @map("github_link")
+  assigneeId  String?   @map("assignee_id")
+  qaId        String?   @map("qa_id")
+  envFileId   String?   @map("env_file_id")
+  completedAt DateTime? @map("completed_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  order       Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId, column])
+  @@index([assigneeId])
+  @@index([qaId])
+  @@map("task_kanban")
 }
 
 model HomeSlider {
@@ -1026,6 +1093,7 @@ model PricingWebPackage {
   isActive    Boolean  @default(true) @map("is_active")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
+  websites    CustomerWebsite[]
 
   @@map("pricing_web_packages")
 }
@@ -1260,7 +1328,8 @@ model LandingSection {
 model CustomerWebsite {
   id              String            @id @default(cuid())
   orderId         String?           @map("order_id")
-  domain          String            @unique
+  packageId       String?           @map("package_id")
+  domain          String?
   subdomain       String?           @map("subdomain")
   name            String
   description     String?
@@ -1271,12 +1340,20 @@ model CustomerWebsite {
   customerEmail   String?           @map("customer_email")
   customerPhone   String?           @map("customer_phone")
   status          String            @default("active")
+  configStatus    String            @default("pending_config") @map("config_status")
   isMonitored     Boolean           @default(true) @map("is_monitored")
   deployedAt      DateTime?         @map("deployed_at")
+  deployedUrl     String?           @map("deployed_url")
   expiresAt       DateTime?         @map("expires_at")
   createdAt       DateTime          @default(now()) @map("created_at")
   updatedAt       DateTime          @updatedAt @map("updated_at")
+  /// eKYC fields — stored unencrypted; application-level encryption recommended for PII
+  ekycName        String?           @map("ekyc_name")
+  ekycIdNumber    String?           @map("ekyc_id_number")
+  ekycDob         String?           @map("ekyc_dob")
+  ekycAddress     String?           @map("ekyc_address")
   order           Order?            @relation(fields: [orderId], references: [id])
+  package         PricingWebPackage? @relation(fields: [packageId], references: [id])
   pageViews       WebsitePageView[]
   websiteStats    WebsiteStats[]
 
@@ -1467,24 +1544,6 @@ model ServerAnalyticsEvent {
   @@index([createdAt])
   @@index([sessionId])
   @@map("server_analytics_events")
-}
-
-/// Links a TeamMember to an Order (project) with a project-specific role and LP tracking.
-model ProjectMember {
-  id          String     @id @default(cuid())
-  memberId    String     @map("member_id")
-  projectRole String     @default("MEMBER") @map("project_role")
-  assignedLp  Int        @default(0) @map("assigned_lp")
-  earnedLp    Int        @default(0) @map("earned_lp")
-  joinedAt    DateTime   @default(now()) @map("joined_at")
-  exp         Int        @default(0)
-  projectId   String     @map("project_id")
-  member      TeamMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
-  project     Order      @relation(fields: [projectId], references: [id], onDelete: Cascade)
-
-  @@unique([projectId, memberId])
-  @@index([projectId])
-  @@map("project_members")
 }
 
 /// Groups backlogs within a project. Coloured by PM for visual grouping.
@@ -1763,6 +1822,12 @@ model BlogPost {
   titleJa     String?    @map("title_ja")
   titleKo     String?    @map("title_ko")
   titleZh     String?    @map("title_zh")
+  /// YouTube / Vimeo embed URL for video posts
+  videoUrl    String?    @map("video_url")
+  /// Canonical URL for duplicate content (SEO)
+  canonicalUrl String?   @map("canonical_url")
+  /// External links cited in the article (JSON: [{url, label}])
+  backlinks   String?    @map("backlinks")
   author      TeamMember @relation(fields: [authorId], references: [id])
   project     Order      @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
@@ -1856,8 +1921,21 @@ model HandoverPackage {
   handoverDate DateTime? @map("handover_date")
   items        Json      @default("[]") @map("items")
   notes        String?
+  /// Figma source file URL saved when client approves final design
+  figmaUrl     String?   @map("figma_url")
+  /// GitHub repository URL with source code
+  githubUrl    String?   @map("github_url")
+  /// Deployed website URL
+  deploymentUrl String?  @map("deployment_url")
+  /// Scope summary: { features: string[], pointCount: number, customRequests: string[] }
+  scope        Json?    @map("scope")
+  /// Customer notes submitted during handover review
+  customerNotes String?  @map("customer_notes")
+  /// Internal admin/PM notes
+  adminNotes   String?  @map("admin_notes")
   deliveredBy  String?   @map("delivered_by")
   createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
   project      Order     @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@index([projectId])
