@@ -20,10 +20,11 @@ import { DS } from "@/lib/design-tokens";
  */
 export type UserRole =
   | "admin"           // level 0-1: super_admin + admin
-  | "project_manager" // level 2: PM, orders + projects management
-  | "media"           // level 3: blog, media, social posts
-  | "qa"              // level 4: QA, testing, standups
-  | "member"          // level 5: basic staff, own tasks + standups
+  | "hr"              // level 2: HR — add members only, no delete/approve/lp
+  | "project_manager" // level 3: PM, orders + projects management
+  | "media"           // level 4: blog, media, social posts
+  | "qa"              // level 5: QA, testing, standups
+  | "member"          // level 6: basic staff, own tasks + standups
   | "client"          // customer accountType
   | "guest";          // unauthenticated
 
@@ -234,7 +235,8 @@ export function canAccessTab(role: UserRole, _department: string | undefined, ta
 }
 
 export function canEdit(role: UserRole): boolean {
-  return role === "admin";
+  // admin+ can add members (HR); member+ cannot edit
+  return role === "admin" || role === "hr";
 }
 
 /** Map BE roleLevel → FE UserRole (1-to-1) */
@@ -243,11 +245,12 @@ export function mapRoleLevelToUserRole(
   accountType: "staff" | "customer"
 ): UserRole {
   if (accountType === "customer") return "client";
-  if (roleLevel <= 1) return "admin";
-  if (roleLevel === 2) return "project_manager";
-  if (roleLevel === 3) return "media";
-  if (roleLevel === 4) return "qa";
-  if (roleLevel === 5) return "member";
+  if (roleLevel <= 1) return "admin";  // ceo=-1, super_admin=0, admin=1
+  if (roleLevel === 2) return "hr";              // hr
+  if (roleLevel === 3) return "project_manager";  // pm
+  if (roleLevel === 4) return "media";           // media
+  if (roleLevel === 5) return "qa";             // qa
+  if (roleLevel === 6) return "member";         // member
   return "guest";
 }
 

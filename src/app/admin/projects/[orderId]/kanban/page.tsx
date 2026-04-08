@@ -253,7 +253,7 @@ export default function ProjectKanbanPage({
       {/* Content */}
       <div className="flex">
         {/* Members sidebar */}
-        <aside className="w-64 flex-shrink-0 p-4" style={{ borderRight: "1px solid rgba(255,255,255,0.06)" }}>
+        <aside className="hidden lg:block w-64 flex-shrink-0 p-4" style={{ borderRight: "1px solid rgba(255,255,255,0.06)" }}>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Users size={16} style={{ color: DS.cosmicCyan }} />

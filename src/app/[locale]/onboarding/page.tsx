@@ -24,6 +24,8 @@ function hexRgba(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
+// ── Extra bottom padding so floating social buttons don't cover nav ────────────
+
 // ── Galaxy Background — bảng màu mới từ design team ──────────────────────
 // 10 màu: 3 primary (3B82F6, 818CF8, 6366F1) + 7 secondary
 const GALAXY_COLORS = [
@@ -1046,6 +1048,7 @@ export default function OnboardingPage() {
   const handleComplete = useCallback(() => {
     if (typeof window !== "undefined") {
       localStorage.setItem("loop_onboarding_done", "true");
+      window.dispatchEvent(new Event("loop_onboarding_done"));
     }
   }, []);
 
@@ -1091,8 +1094,8 @@ export default function OnboardingPage() {
         <rect width="100%" height="100%" fill="url(#onb-grid)" />
       </svg>
 
-      {/* Slide content */}
-      <div className="relative w-full h-full" style={{ zIndex: 1 }}>
+      {/* Slide content — extra bottom padding so floating social buttons don't cover nav */}
+      <div className="relative w-full h-full pb-48" style={{ zIndex: 1 }}>
         <AnimatePresence mode="wait" initial={false}>
           {slides[current]}
         </AnimatePresence>

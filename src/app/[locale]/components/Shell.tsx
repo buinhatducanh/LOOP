@@ -14,7 +14,7 @@ const HIDE_HEADER_PATHS = [
 ];
 
 export function Shell({ children, locale }: { children: React.ReactNode; locale: string }) {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
   const showHeader = !HIDE_HEADER_PATHS.some((p) => pathname.endsWith(p));
 
   return (
@@ -24,6 +24,7 @@ export function Shell({ children, locale }: { children: React.ReactNode; locale:
         {children}
       </div>
       {showHeader && <SiteFooter locale={locale} />}
+      {/* FloatingSocialButtons hides itself when onboarding is active via localStorage */}
       <FloatingSocialButtons />
     </>
   );

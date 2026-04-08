@@ -1,7 +1,19 @@
 /**
- * Shared constants for the LP economy.
- * Single source of truth — import from here everywhere LP rates are used.
+ * Shared constants for the LP economy and company contact info.
+ * Single source of truth — import from here everywhere these values are used.
  */
+
+/**
+ * CEO Contact Information — LOOP Solutions
+ * Used across: FloatingSocialButtons, SiteHeader, SiteFooter, ContactClient
+ */
+export const CEO_CONTACT = {
+  phone: "0378443602",
+  phoneDisplay: "037 844 3602",
+  zaloUrl: "https://zalo.me/0378443602",
+  facebookUrl: "https://www.facebook.com/tarun.ducanh/",
+  email: "ducanhnhatbui@gmail.com",
+} as const;
 
 /** 1 LP = 20,000 VND (used for redemption calculation) */
 export const LP_VND_RATE = 20_000;

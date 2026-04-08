@@ -22,10 +22,11 @@ import { motion, AnimatePresence } from "motion/react";
 import {
   Menu, X, LogIn, LogOut, Zap,
   ChevronDown, Globe, Rocket, Check,
-  Search, ArrowRight,
+  Search, ArrowRight, Phone, Mail, MapPin, Clock, MessageCircle,
 } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { CEO_CONTACT } from "@/lib/constants";
 import { DS, GRD } from "@/lib/design-tokens";
+import { useTranslations } from "next-intl";
 import { useAuthStore } from "@/app/store/authStore";
 import { routing } from "@/i18n/routing";
 import { useMounted } from "@/app/hooks/useMounted";
@@ -419,19 +420,23 @@ function MegaDropdown({
 }) {
   const [mounted, setMounted] = useState(false);
   const [panelLeft, setPanelLeft] = useState(0);
-  const triggerRef = useRef<HTMLDivElement>(null);
   useEffect(() => { setMounted(true); }, []);
   const isReallyOpen = mounted && isOpen;
 
   useEffect(() => {
-    if (isReallyOpen && triggerRef.current) {
-      const rect = triggerRef.current.getBoundingClientRect();
-      const panelWidth = 600;
-      const viewportWidth = window.innerWidth;
-      // Center panel under trigger; clamp to viewport edges
-      let left = rect.right - panelWidth;
-      left = Math.max(16, Math.min(left, viewportWidth - panelWidth - 16));
-      setPanelLeft(left);
+    if (isReallyOpen) {
+      // Find the "Dịch vụ" button inside the desktop nav
+      const nav = document.querySelector(".site-nav-desktop");
+      const btn = nav?.querySelector("button");
+      if (btn) {
+        const rect = btn.getBoundingClientRect();
+        const panelWidth = 600;
+        const viewportWidth = window.innerWidth;
+        // Panel left edge aligns with button right edge + gap
+        let left = rect.right - 120;
+        left = Math.max(16, Math.min(left, viewportWidth - panelWidth - 16));
+        setPanelLeft(left);
+      }
     }
   }, [isReallyOpen]);
 
@@ -464,7 +469,7 @@ function MegaDropdown({
             onMouseLeave={onSelect}
             style={{
               position: "fixed",
-              top: "calc(2px + 68px + 8px)",
+              top: 70,
               left: panelLeft,
               width: 600,
               background: "rgba(11,14,23,0.97)",
@@ -702,6 +707,7 @@ function getRoleLabels(t: ReturnType<typeof useTranslations<"Navigation">>) {
   return {
     admin: { label: t("roleAdmin"), color: "#818CF8" },
     project_manager: { label: t("roleManager"), color: "#F59E0B" },
+    hr: { label: "HR", color: "#14B8A6" },
     media: { label: "Media", color: "#14B8A6" },
     qa: { label: "QA", color: "#14B8A6" },
     member: { label: t("roleStaff"), color: "#14B8A6" },
@@ -832,11 +838,124 @@ export default function SiteHeader({ locale }: { locale: string }) {
         pointerEvents: "none",
       }} />
 
+      {/* ── Top contact bar ───────────────────────────────────────────────────── */}
+      <div style={{
+        position: "fixed", top: 2, left: 0, right: 0, zIndex: 51,
+        background: "rgba(12,12,20,0.97)",
+        borderBottom: `1px solid rgba(107,61,245,0.12)`,
+        overflow: "hidden",
+      }}>
+        <div style={{
+          maxWidth: 1280, margin: "0 auto", padding: "0 1.5rem",
+          height: 36, display: "flex", alignItems: "center", justifyContent: "space-between",
+          gap: "1rem",
+        }}>
+          {/* Info chips */}
+          <div style={{ display: "flex", alignItems: "center", gap: "1.25rem", flex: 1, overflow: "hidden" }}>
+            {[
+              { label: "HOTLINE", value: `+84 ${CEO_CONTACT.phone.replace(/^0/, "")}`, href: `tel:${CEO_CONTACT.phone}`, icon: <Phone size={11} /> },
+              { label: "EMAIL", value: CEO_CONTACT.email, href: `mailto:${CEO_CONTACT.email}`, icon: <Mail size={11} /> },
+              { label: "ĐỊA CHỈ", value: "Cái Răng, Cần Thơ", href: null, icon: <MapPin size={11} /> },
+              { label: "GIỜ LÀM VIỆC", value: "T2–T6 · 09:00–18:00", href: null, icon: <Clock size={11} /> },
+            ].map((item) => (
+              item.href ? (
+                <a
+                  key={item.label}
+                  href={item.href}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 5,
+                    textDecoration: "none", whiteSpace: "nowrap",
+                    color: DS.text4, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.04em",
+                    transition: "color 0.15s",
+                  }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = DS.text2; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = DS.text4; }}
+                >
+                  <span style={{ color: DS.pink }}>{item.icon}</span>
+                  <span style={{ color: DS.text5, fontWeight: 600 }}>{item.label}</span>
+                  <span>{item.value}</span>
+                </a>
+              ) : (
+                <div
+                  key={item.label}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 5,
+                    color: DS.text4, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.04em", whiteSpace: "nowrap",
+                  }}
+                >
+                  <span style={{ color: DS.text5 }}>{item.icon}</span>
+                  <span style={{ color: DS.text5, fontWeight: 600 }}>{item.label}</span>
+                  <span>{item.value}</span>
+                </div>
+              )
+            ))}
+          </div>
+
+          {/* Action buttons */}
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexShrink: 0 }}>
+            <a
+              href={`tel:${CEO_CONTACT.phone}`}
+              title="Gọi ngay"
+              style={{
+                display: "flex", alignItems: "center", gap: 5,
+                padding: "3px 10px", borderRadius: 6,
+                background: "rgba(236,72,153,0.12)",
+                border: "1px solid rgba(236,72,153,0.30)",
+                color: DS.pink, fontSize: 11, fontWeight: 700,
+                textDecoration: "none", letterSpacing: "0.03em",
+                transition: "all 0.15s",
+              }}
+              onMouseEnter={e => {
+                const el = e.currentTarget as HTMLElement;
+                el.style.background = "rgba(236,72,153,0.22)";
+                el.style.borderColor = "rgba(236,72,153,0.55)";
+              }}
+              onMouseLeave={e => {
+                const el = e.currentTarget as HTMLElement;
+                el.style.background = "rgba(236,72,153,0.12)";
+                el.style.borderColor = "rgba(236,72,153,0.30)";
+              }}
+            >
+              <Phone size={11} />
+              Gọi ngay
+            </a>
+            <a
+              href={CEO_CONTACT.zaloUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Liên hệ Zalo"
+              style={{
+                display: "flex", alignItems: "center", gap: 5,
+                padding: "3px 10px", borderRadius: 6,
+                background: "rgba(0,104,255,0.12)",
+                border: "1px solid rgba(0,104,255,0.30)",
+                color: "#4D9FFF", fontSize: 11, fontWeight: 700,
+                textDecoration: "none", letterSpacing: "0.03em",
+                transition: "all 0.15s",
+              }}
+              onMouseEnter={e => {
+                const el = e.currentTarget as HTMLElement;
+                el.style.background = "rgba(0,104,255,0.22)";
+                el.style.borderColor = "rgba(0,104,255,0.55)";
+              }}
+              onMouseLeave={e => {
+                const el = e.currentTarget as HTMLElement;
+                el.style.background = "rgba(0,104,255,0.12)";
+                el.style.borderColor = "rgba(0,104,255,0.30)";
+              }}
+            >
+              <MessageCircle size={11} />
+              Zalo
+            </a>
+          </div>
+        </div>
+      </div>
+
       {/* Header */}
       <header
         suppressHydrationWarning
         style={{
-          position: "fixed", top: 2, left: 0, right: 0, zIndex: 50,
+          position: "fixed", top: 38, left: 0, right: 0, zIndex: 50,
           background: "rgba(12,12,20,0.94)", backdropFilter: "blur(20px)",
           WebkitBackdropFilter: "blur(20px)",
           borderBottom: `1px solid rgba(107,61,245,0.20)`,
@@ -884,7 +1003,7 @@ export default function SiteHeader({ locale }: { locale: string }) {
           </Link>
 
           {/* Desktop Nav */}
-          <nav ref={navRef} className="hide-mobile" style={{ display: "flex", alignItems: "center", gap: 6, marginLeft: "1rem", flex: 1 }}>
+          <nav ref={navRef} className="hide-mobile site-nav-desktop" style={{ display: "flex", alignItems: "center", gap: 6, marginLeft: "1rem", flex: 1 }}>
             {navLinks.map(link => {
               if (link.type === "mega") {
                 return (
@@ -1196,6 +1315,44 @@ export default function SiteHeader({ locale }: { locale: string }) {
               {t("bookNow")}
             </Link>
 
+            {/* Call Now Button */}
+            <a
+              href={`tel:${CEO_CONTACT.phone}`}
+              className="hide-mobile"
+              title="Gọi ngay: 037 844 3602"
+              style={{
+                display: "flex", alignItems: "center", gap: 6,
+                background: "rgba(236,72,153,0.10)",
+                border: "1px solid rgba(236,72,153,0.35)",
+                color: DS.pink,
+                fontSize: 13, fontWeight: 700,
+                padding: "7px 14px", borderRadius: 8,
+                textDecoration: "none",
+                boxShadow: "0 0 16px rgba(236,72,153,0.18), inset 0 1px 0 rgba(255,255,255,0.04)",
+                transition: "all 0.18s ease",
+                whiteSpace: "nowrap",
+                letterSpacing: "0.01em",
+                fontFamily: "'Inter', sans-serif",
+              }}
+              onMouseEnter={e => {
+                const el = e.currentTarget as HTMLElement;
+                el.style.background = "rgba(236,72,153,0.18)";
+                el.style.borderColor = "rgba(236,72,153,0.65)";
+                el.style.boxShadow = "0 0 28px rgba(236,72,153,0.35), inset 0 1px 0 rgba(255,255,255,0.08)";
+                el.style.transform = "translateY(-1px)";
+              }}
+              onMouseLeave={e => {
+                const el = e.currentTarget as HTMLElement;
+                el.style.background = "rgba(236,72,153,0.10)";
+                el.style.borderColor = "rgba(236,72,153,0.35)";
+                el.style.boxShadow = "0 0 16px rgba(236,72,153,0.18), inset 0 1px 0 rgba(255,255,255,0.04)";
+                el.style.transform = "translateY(0)";
+              }}
+            >
+              <Phone size={13} style={{ animation: "pulse-ring 2s ease-in-out infinite" }} />
+              <span>037 844 3602</span>
+            </a>
+
             {/* Mobile hamburger */}
             <button
               className="show-mobile"
@@ -1295,6 +1452,20 @@ export default function SiteHeader({ locale }: { locale: string }) {
                   <Search size={14} /> <span style={{ flex: 1, textAlign: "left" }}>Tìm kiếm...</span>
                   <kbd style={{ fontSize: 9, fontFamily: DS.mono, color: DS.text5, background: rgba(DS.text, 0.04), borderRadius: 3, padding: "1px 4px" }}>⌘K</kbd>
                 </button>
+                {/* Mobile Call button */}
+                <a
+                  href={`tel:${CEO_CONTACT.phone}`}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 8, padding: "12px",
+                    borderRadius: 10, background: "rgba(236,72,153,0.10)",
+                    border: "1px solid rgba(236,72,153,0.30)",
+                    color: DS.pink, fontSize: 15, fontWeight: 700,
+                    textDecoration: "none",
+                    boxShadow: "0 0 16px rgba(236,72,153,0.12)",
+                  }}
+                >
+                  <Phone size={16} /> Gọi ngay: 037 844 3602
+                </a>
                 <Link
                   href={`/${locale}/booking`}
                   onClick={() => setMobileOpen(false)}
@@ -1313,8 +1484,8 @@ export default function SiteHeader({ locale }: { locale: string }) {
         </AnimatePresence>
       </header>
 
-      {/* Spacer for fixed header (height: 60px + 2px gradient line) */}
-      <div style={{ height: 62 }} />
+      {/* Spacer for fixed header (2px gradient + 36px top bar + 70px nav) */}
+      <div style={{ height: 108 }} />
 
       {/* Search overlay */}
       <AnimatePresence>
@@ -1325,6 +1496,12 @@ export default function SiteHeader({ locale }: { locale: string }) {
       <style>{`
         @media (min-width: 768px) { .hide-mobile { display: flex !important; } .show-mobile { display: none !important; } }
         @media (max-width: 767px) { .hide-mobile { display: none !important; } .show-mobile { display: flex !important; } }
+
+        /* Call button pulse animation */
+        @keyframes pulse-ring {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.55; }
+        }
       `}</style>
     </>
   );

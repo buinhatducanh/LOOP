@@ -13,13 +13,34 @@ export async function GET(
     await requirePermission("team", "read");
     const { id } = await params;
 
-    const member = await prisma.teamMember.findUnique({ where: { id } });
+    const [member, user] = await Promise.all([
+      prisma.teamMember.findUnique({ where: { id } }),
+      prisma.user.findFirst({
+        where: { teamMemberId: id },
+        include: {
+          userRoles: {
+            where: { isActive: true },
+            include: { role: { select: { name: true, level: true } } },
+          },
+        },
+      }),
+    ]);
 
     if (!member) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    return NextResponse.json({ data: addAvatar(member) });
+    const junctionRoles = (user?.userRoles ?? [])
+      .filter((ur) => ur.role != null)
+      .map((ur) => ur.role.name);
+
+    return NextResponse.json({
+      data: addAvatar({
+        ...member,
+        systemRole: user?.role ?? member.role ?? null,
+        roles: junctionRoles,
+      }),
+    });
   } catch (error) {
     return handleError(error);
   }
@@ -155,12 +176,19 @@ export async function PUT(
       }
     }
 
+    // ── Extract systemRole before TeamMember update (User.role is updated separately) ─
+    const systemRole = updateData.systemRole as string | undefined;
+    const teamUpdateData = Object.fromEntries(
+      Object.entries(updateData).filter(([k]) => k !== "systemRole")
+    ) as Record<string, unknown>;
+
     // ── Execute update ─────────────────────────────────────────────────────────
     let member;
     try {
       member = await prisma.teamMember.update({
         where: { id },
-        data: updateData,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        data: teamUpdateData as any,
       });
     } catch (prismaErr: unknown) {
       console.error("[PUT /api/admin/team] Prisma error:", prismaErr);
@@ -173,6 +201,42 @@ export async function PUT(
         );
       }
       return NextResponse.json({ error: "Cập nhật thất bại" }, { status: 500 });
+    }
+
+    // ── Update User.systemRole (User.role scalar) + UserRole junction ──────────
+    // systemRole: the PRIMARY role shown in the UI (User.role field)
+    // roles:      ALL roles from the junction table — supports multi-role assignment
+    if (systemRole !== undefined || (body as { roles?: string[] }).roles !== undefined) {
+      const roleNames = (body as { roles?: string[] }).roles;
+      // Update User.role scalar (primary display role)
+      if (systemRole !== undefined) {
+        await prisma.user.updateMany({
+          where: { teamMemberId: id },
+          data: { role: systemRole },
+        });
+      }
+      // Sync UserRole junction table (multi-role support)
+      if (roleNames !== undefined) {
+        const user = await prisma.user.findFirst({ where: { teamMemberId: id } });
+        if (user) {
+          // Remove all existing role assignments
+          await prisma.userRole.deleteMany({ where: { userId: user.id } });
+          // Assign each role from the array
+          if (roleNames.length > 0) {
+            const roles = await prisma.role.findMany({
+              where: { name: { in: roleNames } },
+            });
+            await prisma.userRole.createMany({
+              data: roles.map((r) => ({
+                userId: user.id,
+                roleId: r.id,
+                isActive: true,
+                assignedBy: session.userId,
+              })),
+            });
+          }
+        }
+      }
     }
 
     // ── Update expertise relations ──────────────────────────────────────────────

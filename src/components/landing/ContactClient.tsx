@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { CEO_CONTACT } from "@/lib/constants";
 import { DS, GRD } from "@/lib/design-tokens";
 import { Mail, Phone, MapPin, Send, Check, Clock } from "lucide-react";
 
@@ -83,7 +84,7 @@ export function ContactClient({ locale: _locale }: { locale: string }) {
           <div className="lg:col-span-3">
             <AnimatePresence mode="wait">
               {!submitted ? (
-                <motion.form key="form" onSubmit={submitForm} className="rounded-3xl p-8" style={{ background: DS.bgCard, border: `1px solid ${DS.border}` }} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}>
+                <motion.form key="form" onSubmit={submitForm} className="rounded-3xl p-4 sm:p-8" style={{ background: DS.bgCard, border: `1px solid ${DS.border}` }} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}>
                   <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.18em", marginBottom: 24 }}>── FORM LIÊN HỆ</div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
@@ -129,7 +130,7 @@ export function ContactClient({ locale: _locale }: { locale: string }) {
                   </button>
                 </motion.form>
               ) : (
-                <motion.div key="ok" className="rounded-3xl p-8 text-center" style={{ background: DS.bgCard, border: `1px solid ${DS.border}` }} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+                <motion.div key="ok" className="rounded-3xl p-4 sm:p-8 text-center" style={{ background: DS.bgCard, border: `1px solid ${DS.border}` }} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
                   <div style={{ width: 64, height: 64, borderRadius: "50%", background: "rgba(34,197,94,0.15)", display: "grid", placeItems: "center", margin: "0 auto 14px", border: "1px solid rgba(34,197,94,0.3)" }}>
                     <Check size={26} style={{ color: DS.green }} />
                   </div>
@@ -141,10 +142,46 @@ export function ContactClient({ locale: _locale }: { locale: string }) {
             </AnimatePresence>
           </div>
 
-          <aside className="lg:col-span-2 rounded-3xl p-7" style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, height: "fit-content" }}>
+          <aside className="lg:col-span-2 rounded-3xl p-4 sm:p-7" style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, height: "fit-content" }}>
             <div style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.18em", marginBottom: 20 }}>── THÔNG TIN LIÊN HỆ</div>
+
+            {/* Call to action button */}
+            <a
+              href={`tel:${CEO_CONTACT.phone}`}
+              style={{
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+                width: "100%", padding: "14px 16px", borderRadius: 12,
+                background: "linear-gradient(135deg, rgba(236,72,153,0.18) 0%, rgba(107,61,245,0.14) 100%)",
+                border: "1px solid rgba(236,72,153,0.45)",
+                boxShadow: "0 0 24px rgba(236,72,153,0.22), 0 4px 16px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.08)",
+                textDecoration: "none",
+                marginBottom: 18,
+                transition: "all 0.2s ease",
+              }}
+              onMouseEnter={e => {
+                const el = e.currentTarget as HTMLElement;
+                el.style.background = "linear-gradient(135deg, rgba(236,72,153,0.28) 0%, rgba(107,61,245,0.22) 100%)";
+                el.style.borderColor = "rgba(236,72,153,0.75)";
+                el.style.boxShadow = "0 0 36px rgba(236,72,153,0.40), 0 6px 20px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.12)";
+                el.style.transform = "translateY(-2px)";
+              }}
+              onMouseLeave={e => {
+                const el = e.currentTarget as HTMLElement;
+                el.style.background = "linear-gradient(135deg, rgba(236,72,153,0.18) 0%, rgba(107,61,245,0.14) 100%)";
+                el.style.borderColor = "rgba(236,72,153,0.45)";
+                el.style.boxShadow = "0 0 24px rgba(236,72,153,0.22), 0 4px 16px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.08)";
+                el.style.transform = "translateY(0)";
+              }}
+            >
+              <Phone size={18} style={{ color: DS.pink }} />
+              <div>
+                <div style={{ color: DS.text, fontSize: 12, fontFamily: DS.mono, letterSpacing: "0.12em", marginBottom: 2 }}>GỌI NGAY</div>
+                <div style={{ color: "#fff", fontSize: 18, fontWeight: 800, letterSpacing: "0.04em", fontFamily: "'Inter', sans-serif" }}>{CEO_CONTACT.phoneDisplay}</div>
+              </div>
+            </a>
+
             <div style={{ display: "grid", gap: 14 }}>
-              {[{ icon: <Mail size={14} />, label: "Email", val: "ducanhnhatbui@gmail.com" }, { icon: <Phone size={14} />, label: "Hotline", val: "+84 37 844 3602" }, { icon: <MapPin size={14} />, label: "Địa chỉ", val: "Cái Răng, Cần Thơ" }, { icon: <Clock size={14} />, label: "Giờ làm việc", val: "T2–T6 · 09:00–18:00" }].map((it) => (
+              {[{ icon: <Mail size={14} />, label: "Email", val: "ducanhnhatbui@gmail.com" }, { icon: <MapPin size={14} />, label: "Địa chỉ", val: "Cái Răng, Cần Thơ" }, { icon: <Clock size={14} />, label: "Giờ làm việc", val: "T2–T6 · 09:00–18:00" }].map((it) => (
                 <div key={it.label} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
                   <div style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(59,130,246,0.12)", border: "1px solid rgba(59,130,246,0.3)", display: "grid", placeItems: "center", color: DS.blue }}>{it.icon}</div>
                   <div>

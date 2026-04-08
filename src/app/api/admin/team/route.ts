@@ -40,19 +40,44 @@ export async function GET(req: NextRequest) {
     // ── Aggregate approved LP per member and compute rank fields ───────────
     const memberIds = members.map((m) => m.id);
 
-    const lpAggregates = await prisma.lpAward.groupBy({
-      by: ["memberId"],
-      where: { memberId: { in: memberIds }, status: "approved" },
-      _sum: { lpAmount: true },
-    });
+    const [lpAggregates, users] = await Promise.all([
+      prisma.lpAward.groupBy({
+        by: ["memberId"],
+        where: { memberId: { in: memberIds }, status: "approved" },
+        _sum: { lpAmount: true },
+      }),
+      // Join User to get system role + ALL junction roles (UserRole junction table)
+      prisma.user.findMany({
+        where: { teamMemberId: { in: memberIds } },
+        include: {
+          userRoles: {
+            where: { isActive: true },
+            include: { role: { select: { name: true, level: true } } },
+          },
+        },
+      }),
+    ]);
 
     const lpMap = new Map<string, number>(
       lpAggregates.map((a) => [a.memberId, a._sum.lpAmount ?? 0])
     );
 
+    // userMap: teamMemberId → { role, roles[] }
+    const userMap = new Map<string, { role: string; roles: string[] }>();
+    for (const u of users) {
+      const junctionRoles = u.userRoles
+        .filter((ur) => ur.role != null)
+        .map((ur) => ur.role.name);
+      userMap.set(u.teamMemberId!, {
+        role: u.role,          // User.role scalar (primary display role)
+        roles: junctionRoles,    // ALL junction role names from UserRole table
+      });
+    }
+
     const enriched = members.map((m) => {
       const totalApprovedLp = lpMap.get(m.id) ?? 0;
       const { level, currentXp, maxXp, rank } = computeRankFieldsFromLp(totalApprovedLp);
+      const userInfo = userMap.get(m.id);
       return addAvatar({
         ...m,
         // Override level/XP/rank with computed values (reflect real LP)
@@ -64,6 +89,10 @@ export async function GET(req: NextRequest) {
         // LP balances (denormalized on TeamMember)
         lockedLp: m.lockedLp,
         availableLp: m.availableLp,
+        // User.role scalar (primary display role)
+        systemRole: userInfo?.role ?? m.role ?? null,
+        // ALL junction roles from UserRole table (multi-role support)
+        roles: userInfo?.roles ?? [],
       });
     });
 

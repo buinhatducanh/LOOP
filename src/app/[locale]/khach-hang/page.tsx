@@ -729,7 +729,7 @@ export default function CustomerPortalPage({
       <div style={{ paddingTop: 80, maxWidth: "80rem", margin: "0 auto", padding: "80px 1.5rem 4rem" }}>
         <div style={{ display: "flex", gap: "2rem" }}>
           {/* Sidebar */}
-          <nav style={{
+          <nav className="hidden lg:block" style={{
             width: 220, flexShrink: 0,
             position: "sticky", top: 80, height: "fit-content",
           }}>

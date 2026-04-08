@@ -69,7 +69,9 @@ interface TeamMemberBE {
   totalApprovedLp?: number;
   availableLp?: number;
   lockedLp?: number;
-  role?: string;
+  role?: string;      // TeamMember.role — job title (e.g. "Frontend Dev")
+  systemRole?: string | null; // User.role — system role (e.g. "member", "pm", "admin")
+  roles?: string[];             // All roles from UserRole junction table (multi-role)
   department?: string;
   phone?: string | null;
   bio?: string | null;
@@ -187,7 +189,10 @@ function toNumber(v?: string | number | null) {
 export default function AdminMembersPage() {
   const queryClient = useQueryClient();
   const { role } = useAuthStore();
-  const editing = canEdit(role);
+  const editing = canEdit(role); // admin or hr — can add/edit members
+  const canDelete = role === "admin";        // only admin — can delete members
+  const canAwardLP = role === "admin";       // only admin — can award LP
+  const canApprove = role === "admin";       // only admin — can approve pending requests
 
   // ── State ──────────────────────────────────────────────────────────────────
   const [viewMode, setViewMode] = useState<ViewMode>("table");
@@ -203,7 +208,7 @@ export default function AdminMembersPage() {
   const [detailMember, setDetailMember] = useState<MemberExt | null>(null);
   const [lpMember, setLpMember] = useState<MemberExt | null>(null);
   const [bulkMembers, setBulkMembers] = useState<MemberExt[]>([]);
-  const [formMember, setFormMember] = useState<MemberExt | null>(null); // null = add mode
+  const [formMember, setFormMember] = useState<MemberExt | undefined>(undefined); // undefined = add mode
   const [deleteMember, setDeleteMember] = useState<MemberExt | null>(null);
   // Pending requests state (CEO/Admin only)
   const [pendingRequest, setPendingRequest] = useState<PendingRequest | null>(null);
@@ -262,7 +267,11 @@ export default function AdminMembersPage() {
       else if (sortKey === "rank") {
         const rankOrder = ["iron","bronze","silver","gold","platinum","ruby","diamond"];
         cmp = rankOrder.indexOf(getRankFromLevel(a.level ?? 1)) - rankOrder.indexOf(getRankFromLevel(b.level ?? 1));
-      } else if (sortKey === "role") cmp = (a.role ?? "").localeCompare(b.role ?? "");
+      } else if (sortKey === "role") {
+        const aRoles = (a.roles && a.roles.length > 0 ? a.roles : [a.systemRole ?? a.role ?? ""]).sort();
+        const bRoles = (b.roles && b.roles.length > 0 ? b.roles : [b.systemRole ?? b.role ?? ""]).sort();
+        cmp = aRoles[0].localeCompare(bRoles[0]);
+      }
       else if (sortKey === "team") cmp = (a.team ?? "").localeCompare(b.team ?? "");
       return sortAsc ? cmp : -cmp;
     });
@@ -301,7 +310,7 @@ export default function AdminMembersPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: qk.adminMembers() });
       showToast("Thêm thành viên thành công");
-      setFormMember(null);
+      setFormMember(undefined);
     },
     onError: () => showToast("Thêm thành viên thất bại", "error"),
   });
@@ -325,7 +334,7 @@ export default function AdminMembersPage() {
       );
       queryClient.invalidateQueries({ queryKey: qk.adminMembers() });
       showToast("Cập nhật thành viên thành công");
-      setFormMember(null);
+      setFormMember(undefined);
     },
     onError: () => showToast("Cập nhật thất bại", "error"),
   });
@@ -368,8 +377,7 @@ export default function AdminMembersPage() {
     deleteMutation.isPending || lpMutation.isPending || bulkLpMutation.isPending;
 
   // ── Pending requests ─────────────────────────────────────────────────────────
-  // admin/super_admin (maps to FE role "admin") can approve pending requests
-  const canApprove = role === "admin";
+  // canApprove already declared at top-level (role === "admin")
 
   const pendingQuery = useQuery({
     queryKey: ["admin", "pending-requests"],
@@ -686,19 +694,34 @@ export default function AdminMembersPage() {
           <div style={{ fontFamily: DS.mono, fontSize: 9, color: DS.text3 }}>LP</div>
         </div>
 
-        {/* Role + Team */}
-        <div style={{ padding: "0 8px" }}>
-          <div style={{
-            fontFamily: DS.mono, fontSize: 12, color: DS.text,
-            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 100,
-          }}>
-            {m.role || "—"}
+        {/* Role badges (multi-role) + Job title */}
+        <div style={{ padding: "0 8px", display: "flex", flexDirection: "column", gap: 2 }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
+            {(m.roles && m.roles.length > 0 ? m.roles : (m.systemRole ? [m.systemRole] : [])).map((r) => {
+              const roleColors: Record<string, string> = {
+                ceo: "#FFD700", super_admin: "#6B3DF5", admin: DS.blue,
+                hr: "#14B8A6", project_manager: "#EC4899", media: "#F59E0B",
+                qa: "#22C55E", member: DS.text3,
+              };
+              const color = roleColors[r] ?? DS.text3;
+              return (
+                <span key={r} style={{
+                  fontFamily: DS.mono, fontSize: 9, color,
+                  backgroundColor: color + "22",
+                  border: `1px solid ${color}55`,
+                  borderRadius: 4, padding: "0 4px",
+                  whiteSpace: "nowrap",
+                }}>
+                  {capitalize(r)}
+                </span>
+              );
+            })}
           </div>
           <div style={{
-            fontFamily: DS.mono, fontSize: 9, color: DS.blue,
-            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 100,
+            fontFamily: DS.mono, fontSize: 9, color: DS.text4,
+            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
           }}>
-            {m.team}
+            {m.role || m.team}
           </div>
         </div>
 
@@ -726,30 +749,32 @@ export default function AdminMembersPage() {
           >
             <Eye size={14} />
           </button>
+          {canAwardLP && (
+            <button
+              onClick={() => setLpMember(m)}
+              title="Award LP"
+              style={iconBtn(DS.text3, DS.amber)}
+            >
+              <Award size={14} />
+            </button>
+          )}
           {editing && (
-            <>
-              <button
-                onClick={() => setLpMember(m)}
-                title="Award LP"
-                style={iconBtn(DS.text3, DS.amber)}
-              >
-                <Award size={14} />
-              </button>
-              <button
-                onClick={() => setFormMember(m)}
-                title="Sửa"
-                style={iconBtn(DS.text3, DS.purple)}
-              >
-                <Edit2 size={14} />
-              </button>
-              <button
-                onClick={() => setDeleteMember(m)}
-                title="Xóa"
-                style={iconBtn(DS.text3, DS.red)}
-              >
-                <Trash2 size={14} />
-              </button>
-            </>
+            <button
+              onClick={() => setFormMember(m)}
+              title="Sửa"
+              style={iconBtn(DS.text3, DS.purple)}
+            >
+              <Edit2 size={14} />
+            </button>
+          )}
+          {canDelete && (
+            <button
+              onClick={() => setDeleteMember(m)}
+              title="Xóa"
+              style={iconBtn(DS.text3, DS.red)}
+            >
+              <Trash2 size={14} />
+            </button>
           )}
         </div>
       </>
@@ -820,9 +845,26 @@ export default function AdminMembersPage() {
           backgroundColor: DS.blue + "15",
           border: `1px solid ${DS.blue}33`,
           borderRadius: 8, padding: "1px 6px",
-          display: "inline-block", marginBottom: 8,
+          display: "flex", flexWrap: "wrap", gap: 2, marginBottom: 8,
         }}>
-          {m.role || "—"} · {m.team}
+          {(m.roles && m.roles.length > 0 ? m.roles : (m.systemRole ? [m.systemRole] : [])).map((r) => {
+            const roleColors: Record<string, string> = {
+              ceo: "#FFD700", super_admin: "#6B3DF5", admin: DS.blue,
+              hr: "#14B8A6", project_manager: "#EC4899", media: "#F59E0B",
+              qa: "#22C55E", member: DS.text3,
+            };
+            const color = roleColors[r] ?? DS.text3;
+            return (
+              <span key={r} style={{
+                fontFamily: DS.mono, fontSize: 9, color,
+                backgroundColor: color + "22",
+                border: `1px solid ${color}55`,
+                borderRadius: 4, padding: "0 4px",
+              }}>
+                {capitalize(r)}
+              </span>
+            );
+          })}
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 6 }}>
@@ -853,15 +895,15 @@ export default function AdminMembersPage() {
           <button onClick={() => setDetailMember(m)} style={smallBtn(DS.blue)}>
             <Eye size={12} /> Chi tiết
           </button>
+          {canAwardLP && (
+            <button onClick={() => setLpMember(m)} style={smallBtn(DS.amber)}>
+              <Award size={12} /> LP
+            </button>
+          )}
           {editing && (
-            <>
-              <button onClick={() => setLpMember(m)} style={smallBtn(DS.amber)}>
-                <Award size={12} /> LP
-              </button>
-              <button onClick={() => setFormMember(m)} style={smallBtn(DS.purple)}>
-                <Edit2 size={12} /> Sửa
-              </button>
-            </>
+            <button onClick={() => setFormMember(m)} style={smallBtn(DS.purple)}>
+              <Edit2 size={12} /> Sửa
+            </button>
           )}
         </div>
       </motion.div>
@@ -1364,8 +1406,19 @@ export default function AdminMembersPage() {
   // MemberFormModal (3 tabs)
   // =============================================================================
 
+  // System role options (from User.role — permission-based)
+  const SYSTEM_ROLES = [
+    { value: "member",           label: "Member",       desc: "Nhân viên thường" },
+    { value: "hr",               label: "HR",            desc: "Nhân sự — chỉ thêm thành viên" },
+    { value: "qa",              label: "QA",             desc: "QA Engineer" },
+    { value: "media",           label: "Media",          desc: "Media Team" },
+    { value: "project_manager",  label: "PM",            desc: "Project Manager" },
+    { value: "admin",           label: "Admin",           desc: "Quản trị viên" },
+    { value: "super_admin",    label: "Super Admin",     desc: "Quản trị tối cao" },
+  ];
+
   function MemberFormModal_() {
-    const isEdit = formMember !== null;
+    const isEdit = formMember !== undefined;
     const [tab, setTab] = useState<0 | 1 | 2>(0);
     const [name, setName] = useState(formMember?.name ?? "");
     const [email, setEmail] = useState(formMember?.email ?? "");
@@ -1373,7 +1426,13 @@ export default function AdminMembersPage() {
     const [team, setTeam] = useState(formMember?.team ?? "Engineering");
     const [avatar, setAvatar] = useState(formMember?.avatar ?? "");
     const [bio, setBio] = useState(formMember?.bio ?? "");
-    const [roleInput, setRoleInput] = useState(formMember?.role ?? "");
+    const [roleInput, setRoleInput] = useState(formMember?.role ?? ""); // job title
+    // Multi-role: array from UserRole junction table. Primary = first item (User.role scalar)
+    const [rolesInput, setRolesInput] = useState<string[]>(
+      formMember?.roles && formMember.roles.length > 0
+        ? formMember.roles
+        : formMember?.systemRole ? [formMember.systemRole] : ["member"]
+    );
     const [level, setLevel] = useState(String(formMember?.level ?? 1));
     const [currentXp, setCurrentXp] = useState(String(formMember?.currentXp ?? 0));
     const [rankKey, setRankKey] = useState<RankKey>(formMember ? getRankFromLevel(formMember.level ?? 1) : "iron");
@@ -1401,13 +1460,13 @@ export default function AdminMembersPage() {
       const body: Record<string, unknown> = {
         name: name.trim(),
         email: email.trim(),
-        role: roleInput.trim(),
+        role: roleInput.trim(),         // TeamMember.role — job title
+        roles: rolesInput,              // UserRole junction table — multi-role
         slug,
         phone: phone.trim() || null,
         bio: bio.trim() || null,
         avatar: avatar.trim() || null,
-        department: team, // maps to Prisma TeamMember.department
-        // level/XP — BE computes from LP, but form sends these for reference
+        department: team,
         level: lvl,
         currentXp: xpVal,
         isActive: status === "active",
@@ -1422,7 +1481,7 @@ export default function AdminMembersPage() {
     };
 
     return (
-      <ModalWrapper onClose={() => setFormMember(null)} title={isEdit ? `Sửa: ${formMember?.name}` : "Thêm thành viên"} wide>
+      <ModalWrapper onClose={() => setFormMember(undefined)} title={isEdit ? `Sửa: ${formMember?.name}` : "Thêm thành viên"} wide>
         {/* Tab bar */}
         <div style={{ display: "flex", gap: 4, marginBottom: 20, borderBottom: `1px solid ${DS.border}` }}>
           {TABS.map((t, i) => (
@@ -1451,8 +1510,58 @@ export default function AdminMembersPage() {
             <FormField label="Email *">
               <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} style={inputStyle} />
             </FormField>
-            <FormField label="Vai trò *">
-              <input value={roleInput} onChange={(e) => setRoleInput(e.target.value)} style={inputStyle} placeholder="VD: Designer, Developer, PM" />
+            <FormField label="Chức vụ *">
+              <input value={roleInput} onChange={(e) => setRoleInput(e.target.value)} style={inputStyle} placeholder="VD: Frontend Dev, Designer, PM" />
+            </FormField>
+            <FormField label="System Roles (multi-select)">
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 4 }}>
+                {SYSTEM_ROLES.map((r) => {
+                  const checked = rolesInput.includes(r.value);
+                  const roleColors: Record<string, string> = {
+                    ceo: "#FFD700", super_admin: "#6B3DF5", admin: DS.blue,
+                    hr: "#14B8A6", project_manager: "#EC4899", media: "#F59E0B",
+                    qa: "#22C55E", member: DS.text3,
+                  };
+                  const color = roleColors[r.value] ?? DS.text3;
+                  return (
+                    <label
+                      key={r.value}
+                      style={{
+                        display: "flex", alignItems: "center", gap: 4,
+                        cursor: "pointer",
+                        fontFamily: DS.mono, fontSize: 11,
+                        color: checked ? color : DS.text3,
+                        backgroundColor: checked ? color + "1A" : "transparent",
+                        border: `1px solid ${checked ? color + "66" : DS.border}`,
+                        borderRadius: 6, padding: "4px 8px",
+                        transition: "all 0.15s",
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => {
+                          if (checked) {
+                            // Don't allow removing the last role
+                            if (rolesInput.length === 1) return;
+                            setRolesInput(rolesInput.filter((x) => x !== r.value));
+                          } else {
+                            setRolesInput([...rolesInput, r.value]);
+                          }
+                        }}
+                        style={{ display: "none" }}
+                      />
+                      <span style={{ color, fontWeight: checked ? 600 : 400 }}>{r.label}</span>
+                      <span style={{ fontSize: 9, color: DS.text4 }}>{r.desc}</span>
+                    </label>
+                  );
+                })}
+              </div>
+              {rolesInput.length === 0 && (
+                <div style={{ color: DS.red, fontFamily: DS.mono, fontSize: 10, marginTop: 4 }}>
+                  Phải chọn ít nhất 1 vai trò
+                </div>
+              )}
             </FormField>
             <FormField label="Điện thoại">
               <input value={phone} onChange={(e) => setPhone(e.target.value)} style={inputStyle} />
@@ -1615,7 +1724,7 @@ export default function AdminMembersPage() {
         {/* Submit */}
         <div style={{ display: "flex", gap: 8, marginTop: 20 }}>
           <button
-            onClick={() => setFormMember(null)}
+            onClick={() => setFormMember(undefined)}
             style={{
               flex: 1, padding: "10px", borderRadius: 8,
               border: `1px solid ${DS.border}`, background: "transparent",
@@ -2123,7 +2232,7 @@ export default function AdminMembersPage() {
         </div>
         {editing && (
           <button
-            onClick={() => setFormMember(null)}
+            onClick={() => setFormMember(undefined)}
             style={{
               display: "flex", alignItems: "center", gap: 6,
               padding: "10px 18px", borderRadius: 10, border: "none",
@@ -2315,8 +2424,8 @@ export default function AdminMembersPage() {
           </button>
         </div>
 
-        {/* Bulk LP */}
-        {selectedIds.size > 0 && (
+        {/* Bulk LP — admin only */}
+        {canAwardLP && selectedIds.size > 0 && (
           <button
             onClick={() => {
               const sel = members.filter((m) => selectedIds.has(m.id));
@@ -2379,7 +2488,7 @@ export default function AdminMembersPage() {
               </div>
               <SortHeader_ col="name" sk="name" style={{ padding: "0 8px" }}>Thành viên</SortHeader_>
               <SortHeader_ col="rank" sk="rank">Hạng</SortHeader_>
-              <SortHeader_ col="role" sk="role">Vai trò</SortHeader_>
+              <SortHeader_ col="role" sk="role">Hệ thống</SortHeader_>
               <SortHeader_ col="lp" sk="lpBalance">LP</SortHeader_>
               <SortHeader_ col="join" sk="name">Ngày vào</SortHeader_>
               <SortHeader_ col="status" sk="name">Trạng thái</SortHeader_>
@@ -2422,7 +2531,7 @@ export default function AdminMembersPage() {
         {detailMember && <MemberDetailModal_ m={detailMember} />}
         {lpMember && <LPAwardModal_ m={lpMember} />}
         {bulkMembers.length > 0 && <BulkLPModal_ />}
-        {formMember !== null && <MemberFormModal_ />}
+        {formMember !== undefined && <MemberFormModal_ />}
         {deleteMember && <DeleteConfirmModal_ m={deleteMember} />}
       </AnimatePresence>
 

@@ -494,7 +494,12 @@ function PaymentModal({
                 )}
               </button>
 
-              <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+              <style>{`
+                @keyframes spin { to { transform: rotate(360deg); } }
+                @media (max-width: 767px) {
+                  .featured-img-wrap { width: 100% !important; flex: none !important; }
+                }
+              `}</style>
             </div>
           </>
         )}
@@ -799,7 +804,7 @@ export function AcademyClient({ locale }: { locale: string }) {
                 style={{ background: GRD.primary, borderRadius: 20, overflow: "hidden", display: "flex", minHeight: 220 }}
               >
                 {featured.image && (
-                  <div style={{ width: 360, flexShrink: 0, overflow: "hidden", background: DS.bgCard2 }}>
+                  <div className="featured-img-wrap" style={{ width: 360, flexShrink: 0, overflow: "hidden", background: DS.bgCard2 }}>
                     <img src={featured.image} alt={featured.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   </div>
                 )}

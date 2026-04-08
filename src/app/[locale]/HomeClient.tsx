@@ -948,6 +948,8 @@ export function HomeClient({ locale }: { locale: string }) {
   const completeOnboarding = useCallback(() => {
     localStorage.setItem("loop_onboarding_done", "1");
     setShowOnboarding(false);
+    // Tell FloatingSocialButtons to re-appear without requiring F5
+    window.dispatchEvent(new Event("loop_onboarding_done"));
   }, []);
 
   return (

@@ -41,13 +41,21 @@ export async function POST(
 
     const body = await req.json().catch(() => ({}));
     const {
-      finalRole,       // Override role chosen by CEO (optional)
-      finalTags = [],  // Tags chosen by CEO (optional override)
+      finalRoles = [],  // Array of role names chosen by CEO (multi-role support)
+      finalTags = [],   // Tags chosen by CEO (optional override)
       notes,
     } = body;
 
     // Use CEO-chosen values, or fall back to proposed values
-    const approvedRole = finalRole ?? memberRequest.proposedRole;
+    // Support both legacy `finalRole` (single) and `finalRoles` (array)
+    const legacyRole = body.finalRole as string | undefined;
+    const approvedRoleNames: string[] =
+      finalRoles.length > 0
+        ? finalRoles
+        : legacyRole
+        ? [legacyRole]
+        : [memberRequest.proposedRole];
+
     const approvedTags = finalTags.length > 0
       ? finalTags
       : memberRequest.proposedTags;
@@ -61,13 +69,16 @@ export async function POST(
       where: { email: memberRequest.email },
     });
 
+    // Primary role = first in array (used for User.role scalar)
+    const primaryRole = approvedRoleNames[0];
+
     if (!user) {
       // Create user with pending password set — they must set it via invite link
       user = await prisma.user.create({
         data: {
           email: memberRequest.email,
           name: memberRequest.name,
-          role: approvedRole,
+          role: primaryRole,
           accountType: "staff",
           isActive: true, // active but role limited until onboarding done
         },
@@ -77,42 +88,49 @@ export async function POST(
       user = await prisma.user.update({
         where: { id: user.id },
         data: {
-          role: approvedRole,
+          role: primaryRole,
           accountType: "staff",
           isActive: true,
         },
       });
     }
 
-    // Find the Role in DB
-    const role = await prisma.role.findUnique({ where: { name: approvedRole } });
+    // Find all roles in DB
+    const roles = await prisma.role.findMany({
+      where: { name: { in: approvedRoleNames } },
+    });
 
-    // Transaction: assign role + update request + create audit trail
+    // Transaction: assign all roles + update request + create audit trail
     const result = await prisma.$transaction(async (tx) => {
-      // Remove existing role assignments
+      // Remove all existing role assignments
       await tx.userRole.deleteMany({ where: { userId: user.id } });
 
-      // Assign new role
-      if (role) {
-        await tx.userRole.create({
-          data: {
+      // Assign ALL roles from the array (multi-role support)
+      if (roles.length > 0) {
+        await tx.userRole.createMany({
+          data: roles.map((r) => ({
             userId: user.id,
-            roleId: role.id,
+            roleId: r.id,
             isActive: true,
-          },
+            assignedBy: session.userId,
+          })),
         });
       }
 
-      // Audit trail: who approved what
-      await tx.userRoleApproval.create({
-        data: {
-          userId: user.id,
-          roleId: role?.id ?? "",
-          approvedBy: session.userId,
-          approvedAt: new Date(),
-          notes: notes ?? `CEO approved: ${approvedRole}`,
-        },
-      });
+      // Audit trail: one entry per role
+      await Promise.all(
+        roles.map((r) =>
+          tx.userRoleApproval.create({
+            data: {
+              userId: user.id,
+              roleId: r.id,
+              approvedBy: session.userId,
+              approvedAt: new Date(),
+              notes: notes ?? `CEO approved multi-role: ${approvedRoleNames.join(", ")}`,
+            },
+          })
+        )
+      );
 
       // Create TeamMember if not exists
       const slug = memberRequest.name
@@ -128,7 +146,7 @@ export async function POST(
           data: {
             slug,
             name: memberRequest.name,
-            role: approvedRole,
+            role: primaryRole,
             department: memberRequest.department,
             accessTags: allTags,
             requestStatus: "approved",
@@ -168,7 +186,7 @@ export async function POST(
         data: {
           userId: session.userId, // sent by
           title: "Phê duyệt nhân sự",
-          message: `Đã duyệt nhân viên: ${memberRequest.name} (${memberRequest.email}) — Role: ${approvedRole}`,
+          message: `Đã duyệt nhân viên: ${memberRequest.name} (${memberRequest.email}) — Roles: ${approvedRoleNames.join(", ")}`,
           type: "member_approved",
         },
       });
@@ -179,7 +197,7 @@ export async function POST(
     return ok({
       request: result,
       user,
-      role: approvedRole,
+      roles: approvedRoleNames,
       tags: allTags,
     });
   } catch (err) {

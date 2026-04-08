@@ -9,18 +9,20 @@ import { resolve } from "path";
 config({ path: resolve(process.cwd(), ".env.local") });
 
 import { PrismaClient } from "@/generated/prisma/client";
+import type { Prisma } from "@/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { hashPassword } from "@/lib/auth/password";
 
-const connectionString = process.env.DATABASE_URL;
-if (!connectionString) {
+const rawUrl = process.env.DATABASE_URL ?? "";
+if (!rawUrl) {
   console.error("❌ DATABASE_URL not found in .env.local");
   process.exit(1);
 }
 
-const prisma = new PrismaClient({
-  adapter: new PrismaPg({ connectionString }),
-});
+// Use PrismaPg with a Pool config object — supports transactions unlike PrismaNeonHttp (direct HTTP).
+// Pass PoolConfig directly instead of a Pool instance to avoid @types/pg version mismatch.
+const adapter = new PrismaPg({ connectionString: rawUrl });
+const prisma = new PrismaClient({ adapter });
 
 // ══════════════════════════════════════════════════════════════════
 // 1. RBAC — Roles & Permissions
@@ -43,10 +45,12 @@ async function seedRBAC() {
     },
   });
 
-  // Clear + grant wildcard permission to super_admin (bypass everything)
-  await prisma.permission.deleteMany({ where: { roleId: superAdminRole.id } });
-  await prisma.permission.create({
-    data: { roleId: superAdminRole.id, resource: "*", action: "*", scope: "all" },
+  // Grant wildcard permission to super_admin (bypass everything)
+  // NOTE: upsert is idempotent — safe for re-runs without deleteMany
+  await prisma.permission.upsert({
+    where: { roleId_resource_action: { roleId: superAdminRole.id, resource: "*", action: "*" } },
+    update: {},
+    create: { roleId: superAdminRole.id, resource: "*", action: "*", scope: "all" },
   });
 
   // admin (level 1): full operational access
@@ -62,6 +66,34 @@ async function seedRBAC() {
       isSystem: true,
     },
   });
+
+  // hr (level 2): can only create/add members — cannot delete/approve/lp-award
+  const hrRole = await prisma.role.upsert({
+    where: { name: "hr" },
+    update: { level: 2, description: "HR — add members only, no delete/approve/lp-award" },
+    create: {
+      name: "hr",
+      displayName: "Nhân sự (HR)",
+      description: "HR — add members only, no delete/approve/lp-award",
+      color: "purple",
+      level: 2,
+      isSystem: true,
+    },
+  });
+
+  // Grant team read+create+update to hr role (no delete/approve)
+  const hrResources = ["team", "member-requests"] as const;
+  const hrActions = ["create", "read", "update"] as const;
+  for (const resource of hrResources) {
+    for (const action of hrActions) {
+      await prisma.permission.upsert({
+        where: { roleId_resource_action: { roleId: hrRole.id, resource, action } },
+        update: { scope: "all" },
+        create: { roleId: hrRole.id, resource, action, scope: "all" },
+      });
+    }
+  }
+  console.log(`  ✓ HR role: ${hrRole.name} (level ${hrRole.level}) — team: create/read/update only`);
 
   const editorRole = await prisma.role.upsert({
     where: { name: "editor" },
@@ -109,11 +141,15 @@ async function seedRBAC() {
   ];
   const allActions = ["create", "read", "update", "delete", "export", "approve"] as const;
 
-  await prisma.permission.deleteMany({ where: { roleId: adminRole.id } });
+  // Idempotent: upsert each permission (handles re-runs + partial seed state)
+  // NOTE: Sequential for-loops — Neon HTTP adapter does NOT support transactions.
+  // NOTE: No deleteMany (uses implicit transaction) — upsert is atomic at DB level.
   for (const resource of allResources) {
     for (const action of allActions) {
-      await prisma.permission.create({
-        data: { roleId: adminRole.id, resource, action, scope: "all" },
+      await prisma.permission.upsert({
+        where: { roleId_resource_action: { roleId: adminRole.id, resource, action } },
+        update: { scope: "all" },
+        create: { roleId: adminRole.id, resource, action, scope: "all" },
       });
     }
   }
@@ -151,27 +187,110 @@ async function seedAdmin() {
   console.log(`  ✓ Admin upserted: ${admin.email} / admin123`);
 
   // Assign super_admin role (level 0) — bypasses ALL permission checks
+  // NOTE: upsert replaces deleteMany+create (which uses implicit transactions)
   const superAdminRole = await prisma.role.findUnique({ where: { name: "super_admin" } });
   const adminRole = await prisma.role.findUnique({ where: { name: "admin" } });
 
-  await prisma.userRole.deleteMany({ where: { userId: admin.id } });
-
   if (superAdminRole) {
-    await prisma.userRole.create({ data: { userId: admin.id, roleId: superAdminRole.id, isActive: true } });
+    await prisma.userRole.upsert({
+      where: { userId_roleId: { userId: admin.id, roleId: superAdminRole.id } },
+      update: { isActive: true },
+      create: { userId: admin.id, roleId: superAdminRole.id, isActive: true },
+    });
     console.log("  ✓ super_admin role assigned (level 0 — bypasses everything)");
-  } else {
-    // Fallback to admin role
-    if (adminRole) {
-      await prisma.userRole.create({ data: { userId: admin.id, roleId: adminRole.id, isActive: true } });
-      console.log("  ✓ admin role assigned (fallback — level 1)");
-    }
+  } else if (adminRole) {
+    await prisma.userRole.upsert({
+      where: { userId_roleId: { userId: admin.id, roleId: adminRole.id } },
+      update: { isActive: true },
+      create: { userId: admin.id, roleId: adminRole.id, isActive: true },
+    });
+    console.log("  ✓ admin role assigned (fallback — level 1)");
   }
 
   return admin;
 }
 
 // ══════════════════════════════════════════════════════════════════
-// 2b. Access Tags (Member Onboarding v3)
+// 2b. HR User (quynh@loop.vn)
+// ══════════════════════════════════════════════════════════════════
+
+async function seedHR() {
+  console.log("\n[HR] Seeding HR account...");
+
+  const passwordHash = await hashPassword("hr123456");
+
+  // upsert: create if not exists, or update role if it already does
+  const hr = await prisma.user.upsert({
+    where: { email: "quynh@loop.vn" },
+    update: {
+      name: "Quỳnh HR",
+      passwordHash,
+      role: "hr",
+      accountType: "staff",
+      isActive: true,
+    },
+    create: {
+      email: "quynh@loop.vn",
+      name: "Quỳnh HR",
+      passwordHash,
+      role: "hr",
+      accountType: "staff",
+      isActive: true,
+    },
+  });
+  console.log(`  ✓ HR upserted: ${hr.email} / hr123456`);
+
+  // Assign hr role (level 2) — can only add members, no delete/approve/lp
+  const hrRole = await prisma.role.findUnique({ where: { name: "hr" } });
+
+  if (hrRole) {
+    await prisma.userRole.upsert({
+      where: { userId_roleId: { userId: hr.id, roleId: hrRole.id } },
+      update: { isActive: true },
+      create: { userId: hr.id, roleId: hrRole.id, isActive: true },
+    });
+    console.log("  ✓ hr role assigned (level 2 — add members only)");
+
+    // Create TeamMember for HR user (no LP, basic rank)
+    const hrMember = await prisma.teamMember.upsert({
+      where: { slug: "quynh-hr" },
+      update: {
+        name: "Quỳnh HR",
+        role: "HR Manager",
+        department: "hr",
+        accessTags: ["kanban", "order-basic", "hr-manage"],
+        isActive: true,
+      },
+      create: {
+        slug: "quynh-hr",
+        name: "Quỳnh HR",
+        role: "HR Manager",
+        department: "hr",
+        accessTags: ["kanban", "order-basic", "hr-manage"],
+        isActive: true,
+        level: 1,
+        currentXp: 0,
+        maxXp: 100,
+        availableLp: 0,
+        lockedLp: 0,
+      },
+    });
+
+    // Link User → TeamMember
+    await prisma.user.update({
+      where: { id: hr.id },
+      data: { teamMemberId: hrMember.id },
+    });
+    console.log(`  ✓ HR TeamMember: ${hrMember.name} (${hrMember.id})`);
+  } else {
+    console.warn("  ⚠ hr role not found — skipping HR user setup");
+  }
+
+  return hr;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// 2b. (continued) Access Tags (Member Onboarding v3)
 async function seedAccessTags() {
   console.log("\n[AccessTags] Seeding member onboarding tags...");
 
@@ -298,41 +417,69 @@ Chính vì vậy, tôi quyết định thành lập LOOP. Đây không chỉ là
 async function seedServiceAttributes() {
   console.log("\n[ServiceAttributes] Seeding...");
 
-  await prisma.serviceAttribute.deleteMany({});
+  // NOTE: No deleteMany (uses implicit transaction) — upsert is idempotent.
+  // NOTE: ServiceAttribute.slug is @unique — upsert is safe.
+
+  // Helper: upsert a service attribute by slug (ServiceAttribute.slug is @unique)
+  // Accepts parentId as scalar FK — converts to nested relation connect internally.
+  const upsertAttr = async (data: {
+    slug: string;
+    name: string; nameVi: string;
+    nameEn?: string | null; nameJa?: string | null; nameKo?: string | null; nameZh?: string | null;
+    description?: string | null; descriptionVi?: string | null;
+    category: string; categoryVi: string;
+    categoryEn?: string | null; categoryJa?: string | null; categoryKo?: string | null; categoryZh?: string | null;
+    icon?: string | null; price?: number; isRequired?: boolean; sortOrder?: number;
+    isActive?: boolean; tier?: string; xpPoints?: number;
+    parentId?: string | null;
+  }) => {
+    const { parentId, ...rest } = data;
+    await prisma.serviceAttribute.upsert({
+      where: { slug: data.slug },
+      update: rest,
+      create: {
+        ...rest,
+        ...(parentId ? { parent: { connect: { id: parentId } } } : {}),
+      },
+    });
+  };
 
   // Parent groups
-  const ecommerce = await prisma.serviceAttribute.create({
-    data: { slug: "shopping-cart", name: "Shopping Cart", nameVi: "Giỏ hàng", category: "Ecommerce", categoryVi: "Thương mại điện tử", price: 0, isRequired: false, tier: "basic", sortOrder: 1 },
-  });
+  const ecommerce = { slug: "shopping-cart", name: "Shopping Cart", nameVi: "Giỏ hàng", category: "Ecommerce", categoryVi: "Thương mại điện tử", price: 0, isRequired: false, tier: "basic", sortOrder: 1 };
+  const seo = { slug: "seo", name: "SEO", nameVi: "SEO", category: "Marketing", categoryVi: "Marketing", price: 0, isRequired: false, tier: "basic", sortOrder: 10 };
+  const security = { slug: "security", name: "Security", nameVi: "Bảo mật", category: "Security", categoryVi: "Bảo mật", price: 0, isRequired: false, tier: "basic", sortOrder: 20 };
 
-  const seo = await prisma.serviceAttribute.create({
-    data: { slug: "seo", name: "SEO", nameVi: "SEO", category: "Marketing", categoryVi: "Marketing", price: 0, isRequired: false, tier: "basic", sortOrder: 10 },
-  });
+  await upsertAttr(ecommerce);
+  await upsertAttr(seo);
+  await upsertAttr(security);
 
-  const security = await prisma.serviceAttribute.create({
-    data: { slug: "security", name: "Security", nameVi: "Bảo mật", category: "Security", categoryVi: "Bảo mật", price: 0, isRequired: false, tier: "basic", sortOrder: 20 },
-  });
+  // Fetch actual parent IDs for children
+  const parentMap: Record<string, string> = {};
+  for (const s of [ecommerce, seo, security]) {
+    const found = await prisma.serviceAttribute.findUnique({ where: { slug: s.slug }, select: { id: true } });
+    parentMap[s.slug] = found!.id;
+  }
 
   // Children — Ecommerce
-  await prisma.serviceAttribute.create({ data: { slug: "basic-cart", name: "Basic Cart", nameVi: "Giỏ hàng cơ bản", description: "Chức năng giỏ hàng cơ bản - thêm/sửa/xóa sản phẩm", descriptionVi: "Chức năng giỏ hàng cơ bản - thêm/sửa/xóa sản phẩm", category: "Ecommerce", categoryVi: "Thương mại điện tử", price: 500000, isRequired: false, tier: "basic", parentId: ecommerce.id, sortOrder: 2 } });
-  await prisma.serviceAttribute.create({ data: { slug: "advanced-cart", name: "Advanced Cart", nameVi: "Giỏ hàng nâng cao", description: "Giỏ hàng nâng cao với so sánh sản phẩm, wishlist, notify giá giảm", descriptionVi: "Giỏ hàng nâng cao với so sánh sản phẩm, wishlist, notify giá giảm", category: "Ecommerce", categoryVi: "Thương mại điện tử", price: 2000000, isRequired: false, tier: "advanced", parentId: ecommerce.id, sortOrder: 3 } });
+  await upsertAttr({ slug: "basic-cart", name: "Basic Cart", nameVi: "Giỏ hàng cơ bản", description: "Chức năng giỏ hàng cơ bản - thêm/sửa/xóa sản phẩm", descriptionVi: "Chức năng giỏ hàng cơ bản - thêm/sửa/xóa sản phẩm", category: "Ecommerce", categoryVi: "Thương mại điện tử", price: 500000, isRequired: false, tier: "basic", sortOrder: 2, parentId: parentMap["shopping-cart"] });
+  await upsertAttr({ slug: "advanced-cart", name: "Advanced Cart", nameVi: "Giỏ hàng nâng cao", description: "Giỏ hàng nâng cao với so sánh sản phẩm, wishlist, notify giá giảm", descriptionVi: "Giỏ hàng nâng cao với so sánh sản phẩm, wishlist, notify giá giảm", category: "Ecommerce", categoryVi: "Thương mại điện tử", price: 2000000, isRequired: false, tier: "advanced", sortOrder: 3, parentId: parentMap["shopping-cart"] });
 
   // Children — SEO
-  await prisma.serviceAttribute.create({ data: { slug: "basic-seo", name: "Basic SEO", nameVi: "SEO cơ bản", description: "Meta tags, sitemap, schema markup cơ bản", descriptionVi: "Meta tags, sitemap, schema markup cơ bản", category: "Marketing", categoryVi: "Marketing", price: 300000, isRequired: false, tier: "basic", parentId: seo.id, sortOrder: 11 } });
-  await prisma.serviceAttribute.create({ data: { slug: "advanced-seo", name: "Advanced SEO", nameVi: "SEO nâng cao", description: "Audit SEO toàn diện, tối ưu tốc độ, backlink strategy", descriptionVi: "Audit SEO toàn diện, tối ưu tốc độ, backlink strategy", category: "Marketing", categoryVi: "Marketing", price: 1000000, isRequired: false, tier: "advanced", parentId: seo.id, sortOrder: 12 } });
+  await upsertAttr({ slug: "basic-seo", name: "Basic SEO", nameVi: "SEO cơ bản", description: "Meta tags, sitemap, schema markup cơ bản", descriptionVi: "Meta tags, sitemap, schema markup cơ bản", category: "Marketing", categoryVi: "Marketing", price: 300000, isRequired: false, tier: "basic", sortOrder: 11, parentId: parentMap["seo"] });
+  await upsertAttr({ slug: "advanced-seo", name: "Advanced SEO", nameVi: "SEO nâng cao", description: "Audit SEO toàn diện, tối ưu tốc độ, backlink strategy", descriptionVi: "Audit SEO toàn diện, tối ưu tốc độ, backlink strategy", category: "Marketing", categoryVi: "Marketing", price: 1000000, isRequired: false, tier: "advanced", sortOrder: 12, parentId: parentMap["seo"] });
 
   // Children — Security
-  await prisma.serviceAttribute.create({ data: { slug: "basic-ssl", name: "Basic SSL", nameVi: "SSL cơ bản", description: "Chứng chỉ SSL miễn phí Let's Encrypt", descriptionVi: "Chứng chỉ SSL miễn phí Let's Encrypt", category: "Security", categoryVi: "Bảo mật", price: 0, isRequired: false, tier: "basic", parentId: security.id, sortOrder: 21 } });
-  await prisma.serviceAttribute.create({ data: { slug: "advanced-ssl", name: "Advanced SSL", nameVi: "SSL nâng cao", description: "Chứng chỉ SSL cao cấp với bảo hiểm bảo mật", descriptionVi: "Chứng chỉ SSL cao cấp với bảo hiểm bảo mật", category: "Security", categoryVi: "Bảo mật", price: 500000, isRequired: false, tier: "advanced", parentId: security.id, sortOrder: 22 } });
+  await upsertAttr({ slug: "basic-ssl", name: "Basic SSL", nameVi: "SSL cơ bản", description: "Chứng chỉ SSL miễn phí Let's Encrypt", descriptionVi: "Chứng chỉ SSL miễn phí Let's Encrypt", category: "Security", categoryVi: "Bảo mật", price: 0, isRequired: false, tier: "basic", sortOrder: 21, parentId: parentMap["security"] });
+  await upsertAttr({ slug: "advanced-ssl", name: "Advanced SSL", nameVi: "SSL nâng cao", description: "Chứng chỉ SSL cao cấp với bảo hiểm bảo mật", descriptionVi: "Chứng chỉ SSL cao cấp với bảo hiểm bảo mật", category: "Security", categoryVi: "Bảo mật", price: 500000, isRequired: false, tier: "advanced", sortOrder: 22, parentId: parentMap["security"] });
 
   // Standalone features
-  await prisma.serviceAttribute.createMany({
-    data: [
-      { slug: "menu", name: "Navigation Menu", nameVi: "Menu điều hướng", description: "Menu điều hướng responsive", descriptionVi: "Menu điều hướng responsive", category: "Core", categoryVi: "Cốt lõi", price: 0, isRequired: true, tier: "basic", sortOrder: 30 },
-      { slug: "responsive", name: "Responsive Design", nameVi: "Thiết kế responsive", description: "Tương thích mọi thiết bị", descriptionVi: "Tương thích mọi thiết bị", category: "Core", categoryVi: "Cốt lõi", price: 0, isRequired: true, tier: "basic", sortOrder: 31 },
-      { slug: "multilang", name: "Multi-language", nameVi: "Đa ngôn ngữ", description: "Hỗ trợ nhiều ngôn ngữ", descriptionVi: "Hỗ trợ nhiều ngôn ngữ", category: "Core", categoryVi: "Cốt lõi", price: 500000, isRequired: false, tier: "basic", sortOrder: 32 },
-    ],
-  });
+  for (const s of [
+    { slug: "menu", name: "Navigation Menu", nameVi: "Menu điều hướng", description: "Menu điều hướng responsive", descriptionVi: "Menu điều hướng responsive", category: "Core", categoryVi: "Cốt lõi", price: 0, isRequired: true, tier: "basic", sortOrder: 30 },
+    { slug: "responsive", name: "Responsive Design", nameVi: "Thiết kế responsive", description: "Tương thích mọi thiết bị", descriptionVi: "Tương thích mọi thiết bị", category: "Core", categoryVi: "Cốt lõi", price: 0, isRequired: true, tier: "basic", sortOrder: 31 },
+    { slug: "multilang", name: "Multi-language", nameVi: "Đa ngôn ngữ", description: "Hỗ trợ nhiều ngôn ngữ", descriptionVi: "Hỗ trợ nhiều ngôn ngữ", category: "Core", categoryVi: "Cốt lõi", price: 500000, isRequired: false, tier: "basic", sortOrder: 32 },
+  ]) {
+    await upsertAttr(s);
+  }
 
   console.log("  ✓ Service attributes seeded");
 }
@@ -344,25 +491,22 @@ async function seedServiceAttributes() {
 async function seedPricing() {
   console.log("\n[Pricing] Seeding...");
 
-  await prisma.pricingComparisonFeature.deleteMany();
-  await prisma.pricingFeatureCategory.deleteMany();
-  await prisma.pricingWebPackage.deleteMany();
-  await prisma.pricingHostingPlan.deleteMany();
-  await prisma.pricingDomainPrice.deleteMany();
-  await prisma.pricingDeploymentItem.deleteMany();
+  // NOTE: No deleteMany (uses implicit transaction) — upsert is idempotent.
+  // NOTE: All createMany replaced with upsert — Neon HTTP adapter doesn't support batch writes.
 
-  // Web Packages
-  await prisma.pricingWebPackage.createMany({
-    data: [
-      { slug: "starter", name: "Starter", nameVi: "Khởi Đầu", tagline: "Perfect for landing pages & startups", taglineVi: "Phù hợp landing page & startup", price: 2980000, currency: "VND", period: "one-time", periodVi: "trọn gói", highlighted: false, cta: "Get Started", ctaVi: "Bắt Đầu", color: "#3B82F6", pages: "1-3 pages", pagesVi: "1-3 trang", sortOrder: 1 },
-      { slug: "business", name: "Business", nameVi: "Doanh Nghiệp", tagline: "Best for growing businesses", taglineVi: "Tốt nhất cho doanh nghiệp đang phát triển", price: 4980000, currency: "VND", period: "one-time", periodVi: "trọn gói", highlighted: true, cta: "Get Started", ctaVi: "Bắt Đầu", color: "#6366F1", pages: "5-10 pages", pagesVi: "5-10 trang", sortOrder: 2 },
-      { slug: "professional", name: "Professional", nameVi: "Chuyên Nghiệp", tagline: "Full-featured for established brands", taglineVi: "Đầy đủ tính năng cho thương hiệu lớn", price: 6980000, currency: "VND", period: "one-time", periodVi: "trọn gói", highlighted: false, cta: "Get Started", ctaVi: "Bắt Đầu", color: "#8B5CF6", pages: "15-30 pages", pagesVi: "15-30 trang", sortOrder: 3 },
-      { slug: "enterprise", name: "Enterprise", nameVi: "Tập Đoàn", tagline: "Comprehensive solution for large organizations", taglineVi: "Giải pháp toàn diện cho tổ chức lớn", price: 8980000, currency: "VND", period: "one-time", periodVi: "trọn gói", highlighted: false, cta: "Contact Us", ctaVi: "Liên Hệ", color: "#EC4899", pages: "Unlimited", pagesVi: "Không giới hạn", sortOrder: 4 },
-    ],
-  });
+  // ── Web Packages ───────────────────────────────────────────────────────────────
+  const webPackages = [
+    { slug: "starter", name: "Starter", nameVi: "Khởi Đầu", tagline: "Perfect for landing pages & startups", taglineVi: "Phù hợp landing page & startup", price: 2980000, currency: "VND", period: "one-time", periodVi: "trọn gói", highlighted: false, cta: "Get Started", ctaVi: "Bắt Đầu", color: "#3B82F6", pages: "1-3 pages", pagesVi: "1-3 trang", sortOrder: 1 },
+    { slug: "business", name: "Business", nameVi: "Doanh Nghiệp", tagline: "Best for growing businesses", taglineVi: "Tốt nhất cho doanh nghiệp đang phát triển", price: 4980000, currency: "VND", period: "one-time", periodVi: "trọn gói", highlighted: true, cta: "Get Started", ctaVi: "Bắt Đầu", color: "#6366F1", pages: "5-10 pages", pagesVi: "5-10 trang", sortOrder: 2 },
+    { slug: "professional", name: "Professional", nameVi: "Chuyên Nghiệp", tagline: "Full-featured for established brands", taglineVi: "Đầy đủ tính năng cho thương hiệu lớn", price: 6980000, currency: "VND", period: "one-time", periodVi: "trọn gói", highlighted: false, cta: "Get Started", ctaVi: "Bắt Đầu", color: "#8B5CF6", pages: "15-30 pages", pagesVi: "15-30 trang", sortOrder: 3 },
+    { slug: "enterprise", name: "Enterprise", nameVi: "Tập Đoàn", tagline: "Comprehensive solution for large organizations", taglineVi: "Giải pháp toàn diện cho tổ chức lớn", price: 8980000, currency: "VND", period: "one-time", periodVi: "trọn gói", highlighted: false, cta: "Contact Us", ctaVi: "Liên Hệ", color: "#EC4899", pages: "Unlimited", pagesVi: "Không giới hạn", sortOrder: 4 },
+  ];
+  for (const p of webPackages) {
+    await prisma.pricingWebPackage.upsert({ where: { slug: p.slug }, update: p, create: p });
+  }
   console.log("  ✓ Web Packages");
 
-  // Feature Categories
+  // ── Feature Categories ───────────────────────────────────────────────────────
   const categoryMap: Record<string, string> = {};
   const categoryData = [
     { slug: "design", name: "Design", nameVi: "Thiết Kế", sortOrder: 1 },
@@ -372,12 +516,12 @@ async function seedPricing() {
     { slug: "support", name: "Support", nameVi: "Hỗ Trợ", sortOrder: 5 },
   ];
   for (const cat of categoryData) {
-    const created = await prisma.pricingFeatureCategory.create({ data: cat });
+    const created = await prisma.pricingFeatureCategory.upsert({ where: { slug: cat.slug }, update: cat, create: cat });
     categoryMap[cat.slug] = created.id;
   }
   console.log("  ✓ Feature Categories");
 
-  // Comparison Features
+  // ── Comparison Features ────────────────────────────────────────────────────────
   const features = [
     { categorySlug: "design", slug: "responsive", name: "Responsive Design", nameVi: "Thiết kế responsive", values: { starter: true, business: true, professional: true, enterprise: true }, sortOrder: 1 },
     { categorySlug: "design", slug: "custom-design", name: "Custom Design", nameVi: "Thiết kế tùy chỉnh", values: { starter: "Template", business: true, professional: true, enterprise: true }, sortOrder: 2 },
@@ -407,53 +551,61 @@ async function seedPricing() {
     { categorySlug: "support", slug: "source-code", name: "Source Code Ownership", nameVi: "Sở hữu mã nguồn", values: { starter: true, business: true, professional: true, enterprise: true }, sortOrder: 6 },
   ];
   for (const f of features) {
-    await prisma.pricingComparisonFeature.create({
-      data: {
-        name: f.name,
-        nameVi: f.nameVi,
-        values: f.values as object,
-        sortOrder: f.sortOrder,
-        categoryId: categoryMap[f.categorySlug],
-      },
+    const catId = categoryMap[f.categorySlug];
+    const existing = await prisma.pricingComparisonFeature.findFirst({
+      where: { name: f.name, categoryId: catId },
     });
+    if (existing) {
+      await prisma.pricingComparisonFeature.update({
+        where: { id: existing.id },
+        data: { nameVi: f.nameVi, values: f.values as object, sortOrder: f.sortOrder },
+      });
+    } else {
+      await prisma.pricingComparisonFeature.create({
+        data: { name: f.name, nameVi: f.nameVi, values: f.values as object, sortOrder: f.sortOrder, categoryId: catId },
+      });
+    }
   }
   console.log("  ✓ Comparison Features");
 
-  // Hosting Plans
-  await prisma.pricingHostingPlan.createMany({
-    data: [
-      { slug: "hosting-basic", name: "Basic Hosting", nameVi: "Hosting Cơ Bản", price: 150000, period: "month", periodVi: "tháng", features: ["Shared hosting", "5GB SSD storage", "SSL certificate", "Daily backup", "99.5% uptime"], featuresVi: ["Shared hosting", "5GB SSD lưu trữ", "Chứng chỉ SSL", "Sao lưu hàng ngày", "99.5% uptime"], highlighted: false, color: "#3B82F6", sortOrder: 1 },
-      { slug: "hosting-pro", name: "Pro Hosting", nameVi: "Hosting Nâng Cao", price: 350000, period: "month", periodVi: "tháng", features: ["VPS hosting", "20GB SSD storage", "SSL certificate", "CDN integration", "Daily backup", "99.9% uptime"], featuresVi: ["VPS hosting", "20GB SSD lưu trữ", "Chứng chỉ SSL", "Tích hợp CDN", "Sao lưu hàng ngày", "99.9% uptime"], highlighted: true, color: "#6366F1", sortOrder: 2 },
-      { slug: "hosting-enterprise", name: "Enterprise Hosting", nameVi: "Hosting Doanh Nghiệp", price: 900000, period: "month", periodVi: "tháng", features: ["Dedicated server", "Unlimited storage", "SSL certificate", "CDN integration", "Real-time backup", "99.99% uptime SLA", "24/7 monitoring"], featuresVi: ["Server chuyên dụng", "Không giới hạn lưu trữ", "Chứng chỉ SSL", "Tích hợp CDN", "Sao lưu real-time", "99.99% uptime SLA", "Giám sát 24/7"], highlighted: false, color: "#8B5CF6", sortOrder: 3 },
-    ],
-  });
+  // ── Hosting Plans ──────────────────────────────────────────────────────────────
+  const hostingPlans = [
+    { slug: "hosting-basic", name: "Basic Hosting", nameVi: "Hosting Cơ Bản", price: 150000, period: "month", periodVi: "tháng", features: ["Shared hosting", "5GB SSD storage", "SSL certificate", "Daily backup", "99.5% uptime"], featuresVi: ["Shared hosting", "5GB SSD lưu trữ", "Chứng chỉ SSL", "Sao lưu hàng ngày", "99.5% uptime"], highlighted: false, color: "#3B82F6", sortOrder: 1 },
+    { slug: "hosting-pro", name: "Pro Hosting", nameVi: "Hosting Nâng Cao", price: 350000, period: "month", periodVi: "tháng", features: ["VPS hosting", "20GB SSD storage", "SSL certificate", "CDN integration", "Daily backup", "99.9% uptime"], featuresVi: ["VPS hosting", "20GB SSD lưu trữ", "Chứng chỉ SSL", "Tích hợp CDN", "Sao lưu hàng ngày", "99.9% uptime"], highlighted: true, color: "#6366F1", sortOrder: 2 },
+    { slug: "hosting-enterprise", name: "Enterprise Hosting", nameVi: "Hosting Doanh Nghiệp", price: 900000, period: "month", periodVi: "tháng", features: ["Dedicated server", "Unlimited storage", "SSL certificate", "CDN integration", "Real-time backup", "99.99% uptime SLA", "24/7 monitoring"], featuresVi: ["Server chuyên dụng", "Không giới hạn lưu trữ", "Chứng chỉ SSL", "Tích hợp CDN", "Sao lưu real-time", "99.99% uptime SLA", "Giám sát 24/7"], highlighted: false, color: "#8B5CF6", sortOrder: 3 },
+  ];
+  for (const p of hostingPlans) {
+    await prisma.pricingHostingPlan.upsert({ where: { slug: p.slug }, update: p, create: p });
+  }
   console.log("  ✓ Hosting Plans");
 
-  // Domain Prices
-  await prisma.pricingDomainPrice.createMany({
-    data: [
-      { extension: ".com", registrationPrice: 280000, renewalPrice: 280000, period: "year", periodVi: "năm", sortOrder: 1 },
-      { extension: ".vn", registrationPrice: 350000, renewalPrice: 350000, period: "year", periodVi: "năm", note: "Requires Vietnamese business license (GPKD)", noteVi: "Yêu cầu GPKD", sortOrder: 2 },
-      { extension: ".com.vn", registrationPrice: 450000, renewalPrice: 450000, period: "year", periodVi: "năm", note: "Requires Vietnamese business license (GPKD)", noteVi: "Yêu cầu GPKD", sortOrder: 3 },
-      { extension: ".net", registrationPrice: 320000, renewalPrice: 320000, period: "year", periodVi: "năm", sortOrder: 4 },
-    ],
-  });
+  // ── Domain Prices ────────────────────────────────────────────────────────────
+  const domainPrices = [
+    { extension: ".com", registrationPrice: 280000, renewalPrice: 280000, period: "year", periodVi: "năm", sortOrder: 1 },
+    { extension: ".vn", registrationPrice: 350000, renewalPrice: 350000, period: "year", periodVi: "năm", note: "Requires Vietnamese business license (GPKD)", noteVi: "Yêu cầu GPKD", sortOrder: 2 },
+    { extension: ".com.vn", registrationPrice: 450000, renewalPrice: 450000, period: "year", periodVi: "năm", note: "Requires Vietnamese business license (GPKD)", noteVi: "Yêu cầu GPKD", sortOrder: 3 },
+    { extension: ".net", registrationPrice: 320000, renewalPrice: 320000, period: "year", periodVi: "năm", sortOrder: 4 },
+  ];
+  for (const d of domainPrices) {
+    await prisma.pricingDomainPrice.upsert({ where: { extension: d.extension }, update: d, create: d });
+  }
   console.log("  ✓ Domain Prices");
 
-  // Deployment Items
-  await prisma.pricingDeploymentItem.createMany({
-    data: [
-      { slug: "source-code", title: "Source Code", titleVi: "Mã Nguồn", description: "Full access to Git repository with complete source code", descriptionVi: "Toàn quyền truy cập Git repository với mã nguồn đầy đủ", handedToClient: true, icon: "GitBranch", sortOrder: 1 },
-      { slug: "admin-access", title: "Admin Dashboard", titleVi: "Bảng Điều Khiển Admin", description: "Admin/CMS credentials for content management", descriptionVi: "Tài khoản admin/CMS để quản trị nội dung", handedToClient: true, icon: "LayoutDashboard", sortOrder: 2 },
-      { slug: "hosting-panel", title: "Hosting Panel", titleVi: "Hosting Panel", description: "Access to Vercel dashboard or VPS control panel", descriptionVi: "Truy cập Vercel dashboard hoặc VPS panel", handedToClient: true, icon: "Server", sortOrder: 3 },
-      { slug: "analytics", title: "Analytics Access", titleVi: "Truy Cập Analytics", description: "Google Analytics & Search Console ownership transfer", descriptionVi: "Chuyển quyền sở hữu Google Analytics & Search Console", handedToClient: true, icon: "BarChart3", sortOrder: 4 },
-      { slug: "ssl", title: "SSL Certificate", titleVi: "Chứng Chỉ SSL", description: "Auto-renewed SSL certificate via Let's Encrypt", descriptionVi: "Chứng chỉ SSL tự động gia hạn qua Let's Encrypt", handedToClient: true, icon: "ShieldCheck", sortOrder: 5 },
-      { slug: "cicd-docs", title: "CI/CD Documentation", titleVi: "Tài Liệu CI/CD", description: "Complete deployment pipeline documentation", descriptionVi: "Tài liệu đầy đủ về quy trình triển khai", handedToClient: true, icon: "FileText", sortOrder: 6 },
-      { slug: "dns-guide", title: "DNS Configuration", titleVi: "Cấu Hình DNS", description: "Step-by-step DNS setup guide for your domain", descriptionVi: "Hướng dẫn cấu hình DNS chi tiết cho tên miền", handedToClient: true, icon: "Globe", sortOrder: 7 },
-      { slug: "training", title: "Content Training", titleVi: "Đào Tạo Quản Trị", description: "Hands-on training session for content management", descriptionVi: "Buổi đào tạo thực hành quản trị nội dung", handedToClient: true, icon: "GraduationCap", sortOrder: 8 },
-      { slug: "domain", title: "Domain Registration", titleVi: "Đăng Ký Tên Miền", description: "Domain registration requires the owner's business license", descriptionVi: "Đăng ký tên miền yêu cầu GPKD của chính chủ sở hữu", handedToClient: false, icon: "AlertTriangle", note: "Vietnamese .vn domains require GPKD. We recommend registering through PA Vietnam, Mắt Bão, or Nhân Hòa.", noteVi: "Tên miền .vn yêu cầu Giấy phép Kinh doanh (GPKD). Chúng tôi khuyến nghị đăng ký qua PA Vietnam, Mắt Bão, hoặc Nhân Hòa.", sortOrder: 9 },
-    ],
-  });
+  // ── Deployment Items ───────────────────────────────────────────────────────────
+  const deploymentItems = [
+    { slug: "source-code", title: "Source Code", titleVi: "Mã Nguồn", description: "Full access to Git repository with complete source code", descriptionVi: "Toàn quyền truy cập Git repository với mã nguồn đầy đủ", handedToClient: true, icon: "GitBranch", sortOrder: 1 },
+    { slug: "admin-access", title: "Admin Dashboard", titleVi: "Bảng Điều Khiển Admin", description: "Admin/CMS credentials for content management", descriptionVi: "Tài khoản admin/CMS để quản trị nội dung", handedToClient: true, icon: "LayoutDashboard", sortOrder: 2 },
+    { slug: "hosting-panel", title: "Hosting Panel", titleVi: "Hosting Panel", description: "Access to Vercel dashboard or VPS control panel", descriptionVi: "Truy cập Vercel dashboard hoặc VPS panel", handedToClient: true, icon: "Server", sortOrder: 3 },
+    { slug: "analytics", title: "Analytics Access", titleVi: "Truy Cập Analytics", description: "Google Analytics & Search Console ownership transfer", descriptionVi: "Chuyển quyền sở hữu Google Analytics & Search Console", handedToClient: true, icon: "BarChart3", sortOrder: 4 },
+    { slug: "ssl", title: "SSL Certificate", titleVi: "Chứng Chỉ SSL", description: "Auto-renewed SSL certificate via Let's Encrypt", descriptionVi: "Chứng chỉ SSL tự động gia hạn qua Let's Encrypt", handedToClient: true, icon: "ShieldCheck", sortOrder: 5 },
+    { slug: "cicd-docs", title: "CI/CD Documentation", titleVi: "Tài Liệu CI/CD", description: "Complete deployment pipeline documentation", descriptionVi: "Tài liệu đầy đủ về quy trình triển khai", handedToClient: true, icon: "FileText", sortOrder: 6 },
+    { slug: "dns-guide", title: "DNS Configuration", titleVi: "Cấu Hình DNS", description: "Step-by-step DNS setup guide for your domain", descriptionVi: "Hướng dẫn cấu hình DNS chi tiết cho tên miền", handedToClient: true, icon: "Globe", sortOrder: 7 },
+    { slug: "training", title: "Content Training", titleVi: "Đào Tạo Quản Trị", description: "Hands-on training session for content management", descriptionVi: "Buổi đào tạo thực hành quản trị nội dung", handedToClient: true, icon: "GraduationCap", sortOrder: 8 },
+    { slug: "domain", title: "Domain Registration", titleVi: "Đăng Ký Tên Miền", description: "Domain registration requires the owner's business license", descriptionVi: "Đăng ký tên miền yêu cầu GPKD của chính chủ sở hữu", handedToClient: false, icon: "AlertTriangle", note: "Vietnamese .vn domains require GPKD. We recommend registering through PA Vietnam, Mắt Bão, or Nhân Hòa.", noteVi: "Tên miền .vn yêu cầu Giấy phép Kinh doanh (GPKD). Chúng tôi khuyến nghị đăng ký qua PA Vietnam, Mắt Bão, hoặc Nhân Hòa.", sortOrder: 9 },
+  ];
+  for (const d of deploymentItems) {
+    await prisma.pricingDeploymentItem.upsert({ where: { slug: d.slug }, update: d, create: d });
+  }
   console.log("  ✓ Deployment Items");
 }
 
@@ -511,8 +663,6 @@ async function seedPointsSystem() {
 
 async function seedExpertises() {
   console.log("\n[Expertise] Seeding developer skills...");
-  
-  await prisma.expertise.deleteMany();
 
   const expertises = [
     // Frontend
@@ -547,16 +697,24 @@ async function seedExpertises() {
   ];
 
   for (const skill of expertises) {
-    await prisma.expertise.create({
-      data: {
-        name: skill.name,
-        category: skill.category,
-        categoryEn: null,
-        icon: skill.icon,
-        isActive: true,
-        sortOrder: skill.sortOrder,
-      },
-    });
+    const existing = await prisma.expertise.findFirst({ where: { name: skill.name } });
+    if (existing) {
+      await prisma.expertise.update({
+        where: { id: existing.id },
+        data: { category: skill.category, icon: skill.icon, isActive: true, sortOrder: skill.sortOrder },
+      });
+    } else {
+      await prisma.expertise.create({
+        data: {
+          name: skill.name,
+          category: skill.category,
+          categoryEn: null,
+          icon: skill.icon,
+          isActive: true,
+          sortOrder: skill.sortOrder,
+        },
+      });
+    }
   }
   console.log(`  ✓ ${expertises.length} developer skills`);
 }
@@ -1594,61 +1752,28 @@ async function seedAllTeamMembers() {
   console.log("\n[R2-TeamMembers] Seeding 26 team members...");
 
   // memberData.ts canonical LP values (source of truth per fe-reseed-plan)
+  // Giảm còn 10 members cho test (giữ nguyên canonical LP values)
   const members = [
     // id=1: Kai Tanaka
-    { slug: "kai-tanaka",       name: "Kai Tanaka",          title: "Junior Operative",          bio: "Thanh kiếm vẫn đang được rèn giũa. Tiềm năng thô đang chờ đợi ngọn lửa kinh nghiệm.",     shortBio: "Frontend Dev chuyên Vue.js & CSS Animations.",  level: 8,   rank: "iron",     availableLp: 850,   totalEarnedLp: 1200,  totalSpentLp: 350,  currentXp: 45,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 1 },
+    { slug: "kai-tanaka",       name: "Kai Tanaka",          title: "Junior Operative",         bio: "Thanh kiếm vẫn đang được rèn giũa. Tiềm năng thô đang chờ đợi ngọn lửa kinh nghiệm.",     shortBio: "Frontend Dev chuyên Vue.js & CSS Animations.",  level: 8,   rank: "iron",     availableLp: 850,   currentXp: 45,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 1 },
     // id=2: Mei Lin
-    { slug: "mei-lin",           name: "Mei Lin",              title: "Visual Artisan",            bio: "Một hòn than hồng rực cháy ổn định. Kỹ năng sắc bén qua từng chu kỳ thiết kế.",                    shortBio: "UI/UX Designer — Design Systems & Figma.",          level: 24,  rank: "bronze",   availableLp: 3200,  totalEarnedLp: 8500,  totalSpentLp: 5300, currentXp: 78,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 2 },
+    { slug: "mei-lin",           name: "Mei Lin",              title: "Visual Artisan",           bio: "Một hòn than hồng rực cháy ổn định. Kỹ năng sắc bén qua từng chu kỳ thiết kế.",                    shortBio: "UI/UX Designer — Design Systems & Figma.",          level: 24,  rank: "bronze",   availableLp: 3200,  currentXp: 78,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 2 },
     // id=3: Ryo Hashimoto
-    { slug: "ryo-hashimoto",     name: "Ryo Hashimoto",        title: "Code Sentinel",           bio: "Những con đường bạc được khắc qua vô số cơn bão debug. API phải tuân lệnh anh.",            shortBio: "Backend Dev — Node.js & Microservices.",          level: 43,  rank: "silver",   availableLp: 8500,  totalEarnedLp: 22000, totalSpentLp: 13500, currentXp: 62,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 3 },
+    { slug: "ryo-hashimoto",     name: "Ryo Hashimoto",        title: "Code Sentinel",            bio: "Những con đường bạc được khắc qua vô số cơn bão debug. API phải tuân lệnh anh.",            shortBio: "Backend Dev — Node.js & Microservices.",          level: 43,  rank: "silver",   availableLp: 8500,  currentXp: 62,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 3 },
     // id=4: Yuna Park
-    { slug: "yuna-park",         name: "Yuna Park",            title: "Dual-Path Operative",     bio: "Nơi mã nguồn gặp gỡ nghệ thuật — Yuna điều khiển cả hai với sự uyển chuyển tự nhiên.", shortBio: "Full Stack Dev — React & System Architecture.", level: 68,  rank: "gold",     availableLp: 15800, totalEarnedLp: 65000, totalSpentLp: 49200, currentXp: 85,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 4 },
+    { slug: "yuna-park",         name: "Yuna Park",            title: "Dual-Path Operative",     bio: "Nơi mã nguồn gặp gỡ nghệ thuật — Yuna điều khiển cả hai với sự uyển chuyển tự nhiên.", shortBio: "Full Stack Dev — React & System Architecture.", level: 68,  rank: "gold",     availableLp: 15800, currentXp: 85,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 4 },
     // id=5: Shin Watanabe
-    { slug: "shin-watanabe",    name: "Shin Watanabe",         title: "Infrastructure Warden",   bio: "Người thì thầm với hạ tầng. Không hệ thống nào thoát khỏi trật tự của anh.",              shortBio: "DevOps Engineer — Kubernetes & CI/CD.",               level: 85,  rank: "platinum", availableLp: 28500, totalEarnedLp: 142000,totalSpentLp: 113500,currentXp: 40,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 5 },
+    { slug: "shin-watanabe",      name: "Shin Watanabe",         title: "Infrastructure Warden",   bio: "Người thì thầm với hạ tầng. Không hệ thống nào thoát khỏi trật tự của anh.",              shortBio: "DevOps Engineer — Kubernetes & CI/CD.",               level: 85,  rank: "platinum", availableLp: 28500, currentXp: 40,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 5 },
     // id=6: Rin Nakamura
-    { slug: "rin-nakamura",      name: "Rin Nakamura",           title: "Crimson Architect",        bio: "Sự chính xác đầy quyết đoán. Mọi hàm số là một đòn tấn công.",                            shortBio: "Backend Lead — High-Performance Systems.",            level: 103, rank: "ruby",     availableLp: 52000, totalEarnedLp: 380000,totalSpentLp: 328000,currentXp: 60,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 6 },
+    { slug: "rin-nakamura",      name: "Rin Nakamura",          title: "Crimson Architect",       bio: "Sự chính xác đầy quyết đoán. Mọi hàm số là một đòn tấn công.",                            shortBio: "Backend Lead — High-Performance Systems.",            level: 103, rank: "ruby",     availableLp: 52000, currentXp: 60,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 6 },
     // id=7: Akira Sato
-    { slug: "akira-sato",        name: "Akira Sato",             title: "Guild Master",             bio: "Đặc vụ đỉnh cao. Một huyền thoại được khắc trên silicon và ánh sao. Guild cúi chào.", shortBio: "Tech Lead — Vision & System Architecture.",       level: 118, rank: "diamond",  availableLp: 98000, totalEarnedLp: 820000,totalSpentLp: 722000,currentXp: 92,  maxXp: 100, isActive: true,  isFeatured: true,  sortOrder: 7 },
+    { slug: "akira-sato",        name: "Akira Sato",             title: "Guild Master",            bio: "Đặc vụ đỉnh cao. Một huyền thoại được khắc trên silicon và ánh sao. Guild cúi chào.", shortBio: "Tech Lead — Vision & System Architecture.",       level: 118, rank: "diamond",  availableLp: 98000, currentXp: 92,  maxXp: 100, isActive: true,  isFeatured: true,  sortOrder: 7 },
     // id=8: Trần Hữu Phúc
-    { slug: "tran-huu-phuc",     name: "Trần Hữu Phúc",         title: "Senior Operative",       bio: "Sự chính xác trong từng pixel. Một bậc thầy của nghệ thuật dàn trang.",                        shortBio: "Frontend Dev — Tailwind CSS & React Hooks.",         level: 28,  rank: "bronze",   availableLp: 4500,  totalEarnedLp: 12000, totalSpentLp: 7500,  currentXp: 32,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 8 },
-    // id=9: Nguyễn Minh Thư
-    { slug: "nguyen-minh-thu",   name: "Nguyễn Minh Thư",       title: "Creative Artisan",         bio: "Thiết kế những giao diện đầy sức sống.",                                                   shortBio: "UI Designer — Minimalist UX & Visual Systems.",    level: 48,  rank: "silver",   availableLp: 7800,  totalEarnedLp: 25000, totalSpentLp: 17200, currentXp: 65,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 9 },
-    // id=10: Lê Văn Nam
-    { slug: "le-van-nam",        name: "Lê Văn Nam",             title: "Junior Operative",        bio: "Lặng lẽ, hiệu quả và sắc bén trong việc sửa lỗi.",                                      shortBio: "Backend Dev — API Development & SQL Optimization.", level: 12,  rank: "iron",     availableLp: 1200,  totalEarnedLp: 2500,  totalSpentLp: 1300,  currentXp: 85,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 10 },
-    // id=11: Phạm Hoàng Long
-    { slug: "pham-hoang-long",    name: "Phạm Hoàng Long",        title: "System Guardian",          bio: "Bảo vệ ranh giới hệ thống. Đảm bảo luồng dữ liệu không bao giờ bị gián đoạn.",           shortBio: "DevOps — AWS & Kubernetes.",                       level: 65,  rank: "gold",     availableLp: 12500, totalEarnedLp: 58000, totalSpentLp: 45500, currentXp: 22,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 11 },
-    // id=12: Đặng Mỹ Linh
-    { slug: "dang-my-linh",       name: "Đặng Mỹ Linh",           title: "Strategic Overseer",      bio: "Điều phối các chiến dịch phức tạp với sự điềm tĩnh thiền định.",                     shortBio: "Project Manager — Agile Strategy & Resource Mgmt.", level: 88,  rank: "platinum", availableLp: 32000, totalEarnedLp: 135000,totalSpentLp: 103000,currentXp: 45,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 12 },
-    // id=13: Vũ Đình Trọng
-    { slug: "vu-dinh-trong",      name: "Vũ Đình Trọng",          title: "Quality Sentry",          bio: "Không lỗi nào thoát khỏi tầm mắt của lính gác.",                                       shortBio: "QA Lead — Automated Testing & Security Audits.",    level: 52,  rank: "silver",   availableLp: 6200,  totalEarnedLp: 22000, totalSpentLp: 15800, currentXp: 15,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 13 },
-    // id=14: Haru Tanaka (Media Manager — matches DEMO_USERS.manager_media)
-    { slug: "haru-tanaka",       name: "Haru Tanaka",            title: "Media Artisan",            bio: "Kiến trúc sư của hình ảnh và âm thanh. Mỗi khung hình là một tuyên bố nghệ thuật.",        shortBio: "Media Manager — Media Production & Brand Identity.",  level: 72,  rank: "ruby",     availableLp: 45000, totalEarnedLp: 175000,totalSpentLp: 130000,currentXp: 88,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 14 },
-    // id=15: Lý Gia Hưng
-    { slug: "ly-gia-hung",       name: "Lý Gia Hưng",            title: "Data Oracle",             bio: "Nhìn thấy các mô hình nơi người khác chỉ thấy sự nhiễu loạn.",                              shortBio: "Data Scientist — Predictive Analytics & AI Models.",   level: 82,  rank: "platinum", availableLp: 24000, totalEarnedLp: 110000,totalSpentLp: 86000, currentXp: 38,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 15 },
-    // id=16: Dương Bảo Ngọc
-    { slug: "duong-bao-ngoc",     name: "Dương Bảo Ngọc",         title: "Vocal Vanguard",          bio: "Khuếch đại tiếng vang của guild khắp cõi hư vô kỹ thuật số.",                           shortBio: "Marketing Lead — Growth Hacking & Brand Narrative.",  level: 62,  rank: "gold",     availableLp: 11200, totalEarnedLp: 45000, totalSpentLp: 33800, currentXp: 55,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 16 },
-    // id=17: Bùi Tiến Dũng
-    { slug: "bui-tien-dung",     name: "Bùi Tiến Dũng",          title: "Mobile Specialist",       bio: "Xây dựng những trải nghiệm bản địa nằm gọn trong lòng bàn tay bạn.",                        shortBio: "Mobile Developer — React Native & iOS Dev.",       level: 32,  rank: "bronze",   availableLp: 3800,  totalEarnedLp: 15000, totalSpentLp: 11200, currentXp: 42,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 17 },
-    // id=18: Hồ Diệu Thảo
-    { slug: "ho-dieu-thao",       name: "Hồ Diệu Thảo",           title: "Culture Guardian",         bio: "Nuôi dưỡng yếu tố con người trong guild silicon.",                                  shortBio: "HR Specialist — Talent Acquisition & Guild Culture.", level: 42,  rank: "silver",   availableLp: 5500,  totalEarnedLp: 18000, totalSpentLp: 12500, currentXp: 28,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 18 },
-    // id=19: Trương Công Định
-    { slug: "truong-cong-dinh",   name: "Trương Công Định",       title: "Product Visionary",       bio: "Xác định con đường phía trước. Kim chỉ nam cho sự tiến hóa sản phẩm.",               shortBio: "Product Owner — Product Lifecycle & Market Strategy.", level: 92,  rank: "platinum", availableLp: 35000, totalEarnedLp: 150000,totalSpentLp: 115000,currentXp: 68,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 19 },
-    // id=20: Đỗ Quyên
-    { slug: "do-quyen",           name: "�Ứoàn Quyên",            title: "Visual Master",            bio: "Vượt lên trên những giao diện. Tạo ra những trải nghiệm số chạm đến tâm hồn.",        shortBio: "UI/UX Designer — Immersive UX & Design Psychology.", level: 98,  rank: "ruby",     availableLp: 48000, totalEarnedLp: 320000,totalSpentLp: 272000,currentXp: 12,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 20 },
-    // id=21: Phan Anh Tuấn
-    { slug: "phan-anh-tuan",      name: "Phan Anh Tuấn",          title: "Digital Sentinel",         bio: "Lá chắn tối thượng. Bảo vệ tài sản số của guild với sự cảnh giác không lay chuyển.",   shortBio: "Security Engineer — Cybersecurity & Ethical Hacking.", level: 105, rank: "ruby",     availableLp: 55000, totalEarnedLp: 400000,totalSpentLp: 345000,currentXp: 45,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 21 },
-    // id=22: Võ Minh Tuấn
-    { slug: "vo-minh-tuan",      name: "Võ Minh Tuấn",           title: "Grand Architect",         bio: "Phác thảo bản thiết kế của tương lai. Kiến trúc sư của những hệ thống phức tạp nhất.", shortBio: "Solution Architect — Distributed Systems & Enterprise Architecture.", level: 122, rank: "diamond",  availableLp: 110000,totalEarnedLp: 950000,totalSpentLp: 840000,currentXp: 15,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 22 },
-    // id=23: Mai Phương Linh
-    { slug: "mai-phuong-linh",   name: "Mai Phương Linh",        title: "Messenger",               bio: "Xây dựng những thông điệp xuyên qua sự nhiễu loạn.",                                   shortBio: "Content Strategist — Copywriting & Content Marketing.", level: 5,   rank: "iron",     availableLp: 650,   totalEarnedLp: 1500,  totalSpentLp: 850,   currentXp: 62,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 23 },
-    // id=24: Cao Hữu Việt
-    { slug: "cao-huu-viet",      name: "Cao Hữu Việt",           title: "Initiate",                bio: "Mài giũa thanh kiếm Backend. Hiệu quả là mục tiêu cuối cùng.",                        shortBio: "Junior Backend — Node.js Basics & DB Queries.",       level: 14,  rank: "iron",     availableLp: 1500,  totalEarnedLp: 3200,  totalSpentLp: 1700,  currentXp: 95,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 24 },
-    // id=25: Đoàn Minh Quân
-    { slug: "doan-minh-quan",    name: "Đoàn Minh Quân",          title: "Elite Operative",        bio: "Làm chủ nghệ thuật tương tác. Mỗi khung hình là một sự lựa chọn có chủ đích.",      shortBio: "Senior Frontend — Animation Systems & State Management.", level: 94,  rank: "platinum", availableLp: 42000, totalEarnedLp: 210000,totalSpentLp: 168000,currentXp: 92,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 25 },
-    // id=26: Tạ Minh Tâm
-    { slug: "ta-minh-tam",       name: "Tạ Minh Tâm",            title: "Void Weaver",             bio: "Dệt nên niềm tin vào hư vô. Bậc thầy của sổ cái bất biến.",                         shortBio: "Blockchain Dev — Smart Contracts & DeFi Architecture.", level: 112, rank: "ruby",     availableLp: 68000, totalEarnedLp: 480000,totalSpentLp: 412000,currentXp: 82,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 26 },
-    // id=27: Đinh Tiến Đạt
-    { slug: "dinh-tien-dat",     name: "Đinh Tiến Đạt",          title: "Talent Scout",            bio: "Xác định những huyền thoại tiếp theo trước khi họ tự nhận ra điều đó.",                   shortBio: "Tech Recruiter — Sourcing & Technical Assessment.", level: 22,  rank: "bronze",   availableLp: 2800,  totalEarnedLp: 10000, totalSpentLp: 7200,  currentXp: 58,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 27 },
+    { slug: "tran-huu-phuc",     name: "Trần Hữu Phúc",         title: "Senior Operative",       bio: "Sự chính xác trong từng pixel. Một bậc thầy của nghệ thuật dàn trang.",                        shortBio: "Frontend Dev — Tailwind CSS & React Hooks.",         level: 28,  rank: "bronze",   availableLp: 4500,  currentXp: 32,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 8 },
+    // id=9: Haru Tanaka
+    { slug: "haru-tanaka",       name: "Haru Tanaka",            title: "Media Artisan",           bio: "Kiến trúc sư của hình ảnh và âm thanh. Mỗi khung hình là một tuyên bố nghệ thuật.",        shortBio: "Media Manager — Media Production & Brand Identity.",  level: 72,  rank: "ruby",     availableLp: 45000, currentXp: 88,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 9 },
+    // id=10: Vũ Đình Trọng
+    { slug: "vu-dinh-trong",     name: "Vũ Đình Trọng",          title: "Quality Sentry",          bio: "Không lỗi nào thoát khỏi tầm mắt của lính gác.",                                       shortBio: "QA Lead — Automated Testing & Security Audits.",    level: 52,  rank: "silver",   availableLp: 6200,  currentXp: 15,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 10 },
   ];
 
   const memberCUIDs: Record<string, string> = {};
@@ -1694,43 +1819,44 @@ async function seedAllTeamMembers() {
 async function seedTeamUsers(memberCUIDs: Record<string, string>): Promise<Record<string, string>> {
   console.log("\n[R2-TeamUsers] Creating User records for team members...");
 
-  // Create User accounts for top members (so they can participate in quests/events)
-  // Use loop.vn emails that don't conflict with existing users
+  // Create User accounts for seeded members (so they can participate in quests/events)
+  // NOTE: Only 10 members are seeded — matching the trimmed member list above
   const teamUsers: Array<{ slug: string; name: string; email: string }> = [
-    { slug: "akira-sato",      name: "Akira Sato",       email: "akira.sato@loop.vn" },
-    { slug: "yuna-park",       name: "Yuna Park",         email: "yuna.park@loop.vn" },
-    { slug: "ryo-hashimoto",   name: "Ryo Hashimoto",     email: "ryo.hashimoto@loop.vn" },
+    { slug: "kai-tanaka",       name: "Kai Tanaka",       email: "kai.tanaka@loop.vn" },
     { slug: "mei-lin",         name: "Mei Lin",           email: "mei.lin@loop.vn" },
+    { slug: "ryo-hashimoto",   name: "Ryo Hashimoto",     email: "ryo.hashimoto@loop.vn" },
+    { slug: "yuna-park",       name: "Yuna Park",         email: "yuna.park@loop.vn" },
     { slug: "shin-watanabe",   name: "Shin Watanabe",      email: "shin.watanabe@loop.vn" },
-    { slug: "haru-tanaka",     name: "Haru Tanaka",       email: "haru.tanaka@loop.vn" },
+    { slug: "rin-nakamura",    name: "Rin Nakamura",       email: "rin.nakamura@loop.vn" },
+    { slug: "akira-sato",      name: "Akira Sato",        email: "akira.sato@loop.vn" },
     { slug: "tran-huu-phuc",   name: "Trần Hữu Phúc",     email: "tran.huuphuoc@loop.vn" },
+    { slug: "haru-tanaka",     name: "Haru Tanaka",       email: "haru.tanaka@loop.vn" },
     { slug: "vu-dinh-trong",   name: "Vũ Đình Trọng",     email: "vu.dinhtrong@loop.vn" },
-    { slug: "pham-hoang-long", name: "Phạm Hoàng Long",   email: "phamhoanglong@loop.vn" },
-    { slug: "dang-my-linh",    name: "Đặng Mỹ Linh",      email: "dangmylinh@loop.vn" },
-    { slug: "rin-nakamura",    name: "Rin Nakamura",        email: "rin.nakamura@loop.vn" },
-    { slug: "nguyen-minh-thu", name: "Nguyễn Minh Thư",   email: "nguyenminhthu@loop.vn" },
-    { slug: "le-van-nam",      name: "Lê Văn Nam",         email: "levannam@loop.vn" },
-    { slug: "ly-gia-hung",     name: "Lý Gia Hưng",       email: "ly.giahung@loop.vn" },
-    { slug: "duong-bao-ngoc",  name: "Dương Bảo Ngọc",   email: "duongbaongoc@loop.vn" },
   ];
 
   const userIdMap: Record<string, string> = {};
   for (const u of teamUsers) {
+    const memberId = memberCUIDs[u.slug];
     const existing = await prisma.user.findUnique({ where: { email: u.email } });
     if (existing) {
+      // Update teamMemberId link if not set
+      if (memberId && !existing.teamMemberId) {
+        await prisma.user.update({ where: { id: existing.id }, data: { teamMemberId: memberId } });
+      }
       userIdMap[u.slug] = existing.id;
     } else {
       const created = await prisma.user.create({
         data: {
           email: u.email,
           name: u.name,
-          passwordHash: undefined,
-          role: "user",
+          role: "member",
           isActive: true,
-          accountType: "team",
+          accountType: "staff",
+          teamMemberId: memberId ?? undefined,
         },
       });
       userIdMap[u.slug] = created.id;
+      console.log(`  ✓ User created: ${u.email} → ${u.name} (teamMemberId=${memberId ?? "none"})`);
     }
   }
   console.log(`  ✓ ${Object.keys(userIdMap).length} team user accounts`);
@@ -2063,26 +2189,20 @@ async function seedProjectMembers(memberCUIDs: Record<string, string>) {
 async function seedLPEconomy(memberCUIDs: Record<string, string>, _teamUserIds: Record<string, string>) {
   console.log("\n[R2-LPEconomy] Seeding LP economy...");
 
-  // Clean slate: delete existing LP data before re-seeding (prevents accumulation on re-run)
-  await prisma.lpTransaction.deleteMany({});
-  await prisma.customerPoint.deleteMany({});
+  // NOTE: No deleteMany — LpTransaction uses @default(cuid()) (can't upsert).
+  // On re-run, LpTransaction records accumulate (expected for audit trail).
+  // CustomerPoint uses upsert by userEmail (unique constraint) so no deleteMany needed.
 
-  // CustomerPoints for all 27 members
+  // CustomerPoints for all seeded members
   const pointIdMap: Record<string, string> = {};
   for (const [slug, memberId] of Object.entries(memberCUIDs)) {
     const email = `${slug}@loop.vn`;
     const id = `loop-pt-${slug}`;
     pointIdMap[slug] = id;
-    await prisma.customerPoint.create({
-      data: {
-        id,
-        userId: memberId,
-        userEmail: email,
-        userName: slug,
-        balance: 0,
-        totalEarned: 0,
-        totalSpent: 0,
-      },
+    await prisma.customerPoint.upsert({
+      where: { userEmail: email },
+      update: { userId: memberId, userName: slug, balance: 0, totalEarned: 0, totalSpent: 0 },
+      create: { id, userId: memberId, userEmail: email, userName: slug, balance: 0, totalEarned: 0, totalSpent: 0 },
     });
   }
   console.log(`  ✓ ${Object.keys(pointIdMap).length} customer points (LP balance = 0 — updated via LP transactions)`);
@@ -2091,9 +2211,9 @@ async function seedLPEconomy(memberCUIDs: Record<string, string>, _teamUserIds: 
   // Realistic LP earning pattern: task completion + quest rewards + order LP
   const lpHistory: Array<{ memberSlug: string, amount: number, type: string, description: string, source: string, daysAgo: number }> = [];
 
-  // Add some history entries per active member
+  // Add some history entries per seeded member
   const activeMembers = ["kai-tanaka", "mei-lin", "ryo-hashimoto", "yuna-park", "shin-watanabe",
-    "akira-sato", "tran-huu-phuc", "vu-dinh-trong", "haru-tanaka", "pham-hoang-long", "dang-my-linh"];
+    "akira-sato", "tran-huu-phuc", "vu-dinh-trong", "haru-tanaka"];
 
   for (const slug of activeMembers) {
     // Monthly task awards
@@ -2195,18 +2315,21 @@ async function seedPMData(memberCUIDs: Record<string, string>) {
     const projectId = pmOrderMap[epic.orderNumber];
     if (!projectId) continue;
 
+    // Use projectId as part of id to create unique epic per order
+    // Epic.id = CUID — upsert with a project-scoped key
+    const epicId = `epic-${epic.slug}`;
     const createdEpic = await prisma.epic.upsert({
-      where: { id: epic.slug },
-      update: { title: epic.title, color: epic.color, isActive: true },
-      create: { id: epic.slug, title: epic.title, color: epic.color, isActive: true, projectId },
+      where: { id: epicId },
+      update: { title: epic.title, color: epic.color, isActive: true, projectId },
+      create: { id: epicId, title: epic.title, color: epic.color, isActive: true, projectId },
     });
     epicCount++;
 
     // Default backlog
     const backlog = await prisma.backlog.upsert({
-      where: { id: `${epic.slug}-default` },
+      where: { id: `backlog-${epic.slug}` },
       update: { title: "Sprint Backlog", isDefault: true, isActive: true },
-      create: { id: `${epic.slug}-default`, title: "Sprint Backlog", name: "Sprint Backlog", isDefault: true, isActive: true, epicId: createdEpic.id, projectId },
+      create: { id: `backlog-${epic.slug}`, title: "Sprint Backlog", name: "Sprint Backlog", isDefault: true, isActive: true, epicId: createdEpic.id, projectId },
     });
 
     // Seed tasks assigned to members
@@ -2227,9 +2350,9 @@ async function seedPMData(memberCUIDs: Record<string, string>) {
       const t = taskDefs[i];
       const assigneeId = memberCUIDs[t.slugRef] ?? null;
       await prisma.task.upsert({
-        where: { id: `${epic.slug}-task-${i + 1}` },
+        where: { id: `task-${epic.slug}-${i + 1}` },
         create: {
-          id: `${epic.slug}-task-${i + 1}`,
+          id: `task-${epic.slug}-${i + 1}`,
           backlogId: backlog.id,
           title: t.title,
           lp: Math.floor(Math.random() * 500) + 100,
@@ -2366,6 +2489,7 @@ async function main() {
       });
     }
     await seedAdmin();
+    await seedHR();
     await seedAccessTags();
     await seedMemberRequests();
     await seedCEO();

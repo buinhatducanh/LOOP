@@ -48,16 +48,18 @@ export const ROLE_LEVEL: Record<string, number> = {
   super_admin: 0,
   // Staff
   admin: 1,
-  project_manager: 2,
-  media: 3,
-  qa: 4,
-  member: 5,
+  hr: 2,                  // HR: create members only — no delete/approve/lp-award
+  project_manager: 3,
+  media: 4,
+  qa: 5,
+  member: 6,
 };
 
 export const ROLE_DISPLAY_NAMES: Record<string, { vi: string; en: string }> = {
   ceo: { vi: "CEO / Founder", en: "CEO / Founder" },
   super_admin: { vi: "Quản trị tối cao", en: "Super Admin" },
   admin: { vi: "Quản trị viên", en: "Administrator" },
+  hr: { vi: "Nhân sự (HR)", en: "HR" },
   project_manager: { vi: "Trưởng nhóm / PM", en: "Project Manager" },
   media: { vi: "Media / Marketing", en: "Media" },
   qa: { vi: "QA / Tester", en: "QA / Tester" },
@@ -68,6 +70,7 @@ export const ROLE_COLORS: Record<string, string> = {
   ceo: "text-yellow-400 bg-yellow-500/15 border-yellow-500/30",
   super_admin: "text-red-400 bg-red-500/15 border-red-500/30",
   admin: "text-indigo-400 bg-indigo-500/15 border-indigo-500/30",
+  hr: "text-purple-400 bg-purple-500/15 border-purple-500/30",
   project_manager: "text-amber-400 bg-amber-500/15 border-amber-500/30",
   media: "text-pink-400 bg-pink-500/15 border-pink-500/30",
   qa: "text-cyan-400 bg-cyan-500/15 border-cyan-500/30",
@@ -79,10 +82,11 @@ export const ALL_ROLES = [
   { name: "ceo", level: -1 },
   { name: "super_admin", level: 0 },
   { name: "admin", level: 1 },
-  { name: "project_manager", level: 2 },
-  { name: "media", level: 3 },
-  { name: "qa", level: 4 },
-  { name: "member", level: 5 },
+  { name: "hr", level: 2 },
+  { name: "project_manager", level: 3 },
+  { name: "media", level: 4 },
+  { name: "qa", level: 5 },
+  { name: "member", level: 6 },
 ] as const;
 
 // ─── Navigation Permission Config ──────────────────────────────────────────────

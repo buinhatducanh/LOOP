@@ -394,7 +394,19 @@ export default function AdminOverviewPage() {
       </div>
 
       {/* Content grid */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: "1.5rem" }}>
+      <div className="admin-overview-grid">
+        <style>{`
+          .admin-overview-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+          }
+          @media (min-width: 1024px) {
+            .admin-overview-grid {
+              grid-template-columns: 1fr 320px;
+            }
+          }
+        `}</style>
         {/* Recent orders */}
         <div
           style={{

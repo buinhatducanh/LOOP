@@ -1490,11 +1490,12 @@ export function ServicesClient({
                   key={svc.id}
                   style={{
                     display: "grid",
-                    gridTemplateColumns: i % 2 === 1 ? "1fr 1fr" : "1fr 1fr",
+                    gridTemplateColumns: "1fr",
                     background: DS.bgCard, border: `1px solid ${DS.border}`,
                     borderRadius: "1.5rem", overflow: "hidden",
                     minHeight: 300,
                   }}
+                  className="sm:grid-cols-2"
                   initial={{ opacity: 0, y: 30 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
