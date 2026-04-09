@@ -367,7 +367,6 @@ export default function HandoverPage({ params }: { params: Promise<{ orderId: st
   useQuery({
     queryKey: ["handover", orderId],
     enabled: !!data,
-    // eslint-disable-next-line @tanstack-query/use-query-client
     staleTime: 0,
   });
 
@@ -377,7 +376,6 @@ export default function HandoverPage({ params }: { params: Promise<{ orderId: st
   useQuery({
     queryKey: ["handover-sync", orderId, !!handover],
     enabled: !!handover,
-    // eslint-disable-next-line @tanstack-query/use-query-client
     staleTime: Infinity,
   });
 

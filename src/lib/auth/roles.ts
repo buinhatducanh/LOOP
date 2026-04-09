@@ -691,7 +691,7 @@ export function isPrivilegedRole(role: string): boolean {
 export const DEFAULT_ACCESS_TAGS: Record<string, string[]> = {
   ceo: [],
   super_admin: ["kanban", "order-basic", "blog-post", "seo-content", "media-content", "order-manage", "salary", "lp-manage", "finance-view", "hr-manage"],
-  admin: ["kankan", "order-basic", "blog-post", "seo-content", "media-content", "order-manage", "lp-manage"],
+  admin: ["kanban", "order-basic", "blog-post", "seo-content", "media-content", "order-manage", "lp-manage"],
   hr:    ["kanban", "order-basic", "hr-manage", "members", "departments"],
   project_manager: ["kanban", "order-basic", "order-manage"],
   media: ["kanban", "order-basic", "blog-post", "media-content"],

@@ -58,6 +58,14 @@ export interface SessionUser {
   lockedLp?: number;
   /** Access tags (e.g. kanban, blog-post) from TeamMember */
   accessTags?: string[];
+  /** Admin tab permissions (CEO-assigned per member) */
+  tabPermissions?: string[];
+  /** Department-level tab bonus permissions */
+  departmentPermissions?: Record<string, string[]>;
+  /** Department.id the member belongs to */
+  departmentId?: string | null;
+  /** Whether member is department head */
+  isDeptHead?: boolean;
   /** Whether customer has completed onboarding profile */
   isOnboarded?: boolean;
 }

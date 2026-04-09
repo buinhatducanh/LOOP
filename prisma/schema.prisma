@@ -365,6 +365,10 @@ model TeamMember {
   role                   String
   /// Department: engineering/design/media/marketing/sales/finance/hr/management
   department             String                 @default("engineering") @map("department")
+  departmentId           String?                @map("department_id")
+  departmentRelation     Department?            @relation(fields: [departmentId], references: [id])
+  tabPermissions         String[]               @default([]) @map("tab_permissions")
+  isDeptHead             Boolean                @default(false) @map("is_dept_head")
   /// Access tags granted by CEO during onboarding
   accessTags             String[]               @default([]) @map("access_tags")
   /// Onboarding status: pending = waiting CEO approval, approved = active
@@ -443,6 +447,24 @@ model TeamMember {
   offSystemSplits        OffSystemSplit[]
 
   @@map("team_members")
+}
+
+model Department {
+  id          String       @id @default(cuid())
+  key         String?      @unique
+  name        String?
+  shortName   String?
+  color       String?
+  description String?
+  mission     String?
+  headId     String?
+  memberCount Int?         @default(0) @map("member_count")
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  members TeamMember[]
+
+  @@map("departments")
 }
 
 model Expertise {
@@ -2769,4 +2791,17 @@ model OffSystemSplit {
   @@index([memberId])
   @@index([status])
   @@map("off_system_splits")
+}
+
+model PermissionAudit {
+  id           String   @id @default(cuid())
+  targetUserId String  @map("target_user_id")
+  grantedBy    String  @map("granted_by")
+  permission   String
+  department   String?
+  action       String
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@index([targetUserId])
+  @@map("permission_audits")
 }

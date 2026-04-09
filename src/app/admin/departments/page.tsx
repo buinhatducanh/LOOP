@@ -4,21 +4,16 @@
  * Departments Admin Page — LOOP Solutions
  * Route: /admin/departments
  *
- * Full rewrite to match DESIGN LOOPS DepartmentTab (1,008 lines):
- * - 4 KPI cards + dept selector + full detail view
- * - OrgChart with 3 adaptive modes (tree ≤8 / grid 9-24 / squads 25+)
- * - DeptDetail: KPI + org chart + stats sidebar + rank distribution
- * - MemberList: paginated (12/page) + search + rank filter + sort
- * - AssignModal: bulk assignment with rank filter + select-all
+ * Wired to real DB via /api/admin/departments + /api/admin/team
  */
 
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { DS, GRD } from "@/lib/design-tokens";
 import {
   Building2, Users, Crown, ChevronRight, ChevronDown, ChevronUp,
   X, Save, Search, BarChart3, UserPlus, Layers,
-  CheckSquare, Square,
+  CheckSquare, Square, RefreshCw, Loader2, AlertCircle,
 } from "lucide-react";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -47,97 +42,132 @@ const RANK_ORDER: Record<RankKey, number> = {
 };
 const RANK_KEYS: RankKey[] = ["diamond", "ruby", "platinum", "gold", "silver", "bronze", "iron"];
 
-// Mock members
-interface Member {
-  id: number;
-  name: string;
-  role: string;
-  rank: RankKey;
-  level: number;
-  img: string;
-  lpBalance: number;
-  lpEarned: number;
-  missions: number;
+function getRankConfig(rank: string): RankConfig {
+  return RANKS[rank as RankKey] ?? RANKS.iron;
 }
 
-const MOCK_MEMBERS: Member[] = [
-  { id: 1, name: "Akira Tanaka", role: "CEO", rank: "diamond", level: 120, img: "https://i.pravatar.cc/150?img=1", lpBalance: 450000, lpEarned: 450000, missions: 18 },
-  { id: 2, name: "Yuki Sato", role: "Marketing Lead", rank: "ruby", level: 96, img: "https://i.pravatar.cc/150?img=2", lpBalance: 220000, lpEarned: 220000, missions: 16 },
-  { id: 3, name: "Min-jun Lee", role: "IT Lead", rank: "platinum", level: 88, img: "https://i.pravatar.cc/150?img=3", lpBalance: 180000, lpEarned: 180000, missions: 15 },
-  { id: 4, name: "Wei Chen", role: "Senior Engineer", rank: "gold", level: 68, img: "https://i.pravatar.cc/150?img=4", lpBalance: 95000, lpEarned: 95000, missions: 12 },
-  { id: 5, name: "Sora Kimura", role: "Frontend Dev", rank: "silver", level: 48, img: "https://i.pravatar.cc/150?img=5", lpBalance: 42000, lpEarned: 42000, missions: 9 },
-  { id: 6, name: "Ryo Nakamura", role: "Backend Dev", rank: "silver", level: 42, img: "https://i.pravatar.cc/150?img=6", lpBalance: 38000, lpEarned: 38000, missions: 8 },
-  { id: 7, name: "Hana Park", role: "Media Lead", rank: "bronze", level: 28, img: "https://i.pravatar.cc/150?img=7", lpBalance: 18000, lpEarned: 18000, missions: 6 },
-  { id: 8, name: "Alex Nguyen", role: "Marketing Specialist", rank: "bronze", level: 22, img: "https://i.pravatar.cc/150?img=8", lpBalance: 12000, lpEarned: 12000, missions: 5 },
-  { id: 9, name: "Linh Hoang", role: "Junior Dev", rank: "iron", level: 8, img: "https://i.pravatar.cc/150?img=9", lpBalance: 3200, lpEarned: 3200, missions: 2 },
-  { id: 10, name: "Minh Tran", role: "QA Engineer", rank: "iron", level: 5, img: "https://i.pravatar.cc/150?img=10", lpBalance: 1800, lpEarned: 1800, missions: 1 },
-];
+// ── API Types (mirror BE response) ────────────────────────────────────────────
 
-// Dept config
+interface TeamMemberAPI {
+  id: string;
+  name: string;
+  avatar: string | null;
+  image: string | null;
+  rank: string;
+  level: number;
+  role: string;
+  roleEn?: string | null;
+  department: string;
+  departmentId: string | null;
+  isDeptHead: boolean;
+  tabPermissions: string[];
+  availableLp: number;
+  lockedLp: number;
+  currentXp: number;
+  maxXp: number;
+}
+
+interface DepartmentAPI {
+  id: string;
+  key: string;
+  name: string;
+  shortName: string;
+  color: string;
+  description: string | null;
+  mission: string | null;
+  headId: string | null;
+  memberCount: number;
+  members: TeamMemberAPI[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 interface DeptConfig {
   id: string;
+  key: string;
   name: string;
   shortName: string;
   color: string;
   description: string;
   mission: string;
-  headId: number;
-  memberIds: number[];
+  headId: string | null;
+  memberCount: number;
+  members: TeamMemberAPI[];
+  // KPI — computed from real data
   kpi: { label: string; value: string; color: string }[];
 }
 
-const INIT_DEPTS: DeptConfig[] = [
-  {
-    id: "marketing", name: "Phòng Marketing", shortName: "MKT",
-    color: "#F59E0B",
-    description: "Chiến lược thương hiệu, nội dung số, SEO/SEM và quản lý cộng đồng",
-    mission: "Xây dựng nhận diện thương hiệu LOOP và thu hút khách hàng tiềm năng",
-    headId: 2,
-    memberIds: [2, 8, 9],
-    kpi: [
-      { label: "Chiến dịch active", value: "3", color: "#22C55E" },
-      { label: "Reach tháng này", value: "124K", color: "#F59E0B" },
-      { label: "Conversion rate", value: "3.2%", color: "#3B82F6" },
-      { label: "Dự án đang làm", value: "4", color: "#818CF8" },
-    ],
-  },
-  {
-    id: "it", name: "Phòng IT", shortName: "IT",
-    color: "#3B82F6",
-    description: "Phát triển phần mềm, hạ tầng hệ thống, bảo mật và DevOps",
-    mission: "Đảm bảo hạ tầng kỹ thuật ổn định và phát triển sản phẩm chất lượng cao",
-    headId: 3,
-    memberIds: [1, 3, 4, 5, 6, 9, 10],
-    kpi: [
-      { label: "Sprint velocity", value: "48 pts", color: "#3B82F6" },
-      { label: "Bug fix rate", value: "94%", color: "#22C55E" },
-      { label: "Uptime", value: "99.98%", color: "#14B8A6" },
-      { label: "PR merged/tháng", value: "127", color: "#818CF8" },
-    ],
-  },
-  {
-    id: "media", name: "Phòng Media", shortName: "MDI",
-    color: "#818CF8",
-    description: "Sản xuất video, thiết kế đồ họa, photography và motion graphics",
-    mission: "Tạo ra nội dung hình ảnh chất lượng cao, phục vụ brand và client",
-    headId: 7,
-    memberIds: [7, 8],
-    kpi: [
-      { label: "Video deliveries", value: "12", color: "#818CF8" },
-      { label: "Design assets", value: "340+", color: "#3B82F6" },
-      { label: "Client satisfaction", value: "4.8/5", color: "#22C55E" },
-      { label: "Turnaround avg", value: "2.3d", color: "#F59E0B" },
-    ],
-  },
-];
+function computeDeptKPIs(dept: DepartmentAPI): DeptConfig["kpi"] {
+  const members = dept.members;
+  const count = members.length;
+  const avgLevel = count > 0 ? Math.round(members.reduce((s, m) => s + m.level, 0) / count) : 0;
+  const totalLP = members.reduce((s, m) => s + (m.availableLp ?? 0), 0);
+  const goldPlus = members.filter(m => {
+    const o = RANK_ORDER[m.rank as RankKey] ?? 0;
+    return o >= RANK_ORDER.gold;
+  }).length;
+  const deptColors: Record<string, string> = {
+    engineering: "#3B82F6", design: "#8B5CF6", media: "#EC4899",
+    marketing: "#F59E0B", sales: "#22C55E", finance: "#14B8A6",
+    hr: "#6366F1", management: "#EAB308",
+  };
+  const accent = deptColors[dept.key] ?? dept.color ?? "#3B82F6";
+  return [
+    { label: "Tổng nhân sự", value: `${count}`, color: accent },
+    { label: "Cấp trung bình", value: `Lv.${avgLevel}`, color: DS.purple },
+    { label: "Tổng LP", value: totalLP >= 1000 ? `${(totalLP / 1000).toFixed(0)}K` : `${totalLP}`, color: DS.gold },
+    { label: "Rank cao (Gold+)", value: `${goldPlus}`, color: DS.amber },
+  ];
+}
 
-// ── MiniAvatar ───────────────────────────────────────────────────────────────
+// ── API calls ─────────────────────────────────────────────────────────────────
 
-function _MiniAvatar({ id, size = 32, tooltip = true }: { id: number; size?: number; tooltip?: boolean }) {
-  const m = MOCK_MEMBERS.find(x => x.id === id);
+async function fetchDepts(): Promise<DepartmentAPI[]> {
+  const token = typeof window !== "undefined" ? localStorage.getItem("loop_access_token") : null;
+  const res = await fetch("/api/admin/departments?limit=100", {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!res.ok) throw new Error(`Failed to fetch departments: ${res.status}`);
+  const json = await res.json();
+  return json.data ?? json;
+}
+
+async function fetchAllMembers(): Promise<TeamMemberAPI[]> {
+  const token = typeof window !== "undefined" ? localStorage.getItem("loop_access_token") : null;
+  const res = await fetch("/api/admin/team?limit=200", {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!res.ok) throw new Error(`Failed to fetch members: ${res.status}`);
+  const json = await res.json();
+  return json.data ?? json;
+}
+
+async function saveDeptMembers(deptId: string, memberIds: string[], headId: string | null): Promise<void> {
+  const token = localStorage.getItem("loop_access_token")!;
+  // Bulk assign members
+  const res1 = await fetch(`/api/admin/departments/${deptId}/members`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ memberIds }),
+  });
+  if (!res1.ok) throw new Error(`Failed to assign members: ${res1.status}`);
+  // Set head
+  if (headId) {
+    const res2 = await fetch(`/api/admin/departments/${deptId}/head`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ headId }),
+    });
+    if (!res2.ok) throw new Error(`Failed to set head: ${res2.status}`);
+  }
+}
+
+// ── MiniAvatar ────────────────────────────────────────────────────────────────
+
+function _MiniAvatar({ member, size = 32, tooltip = true }: { member: TeamMemberAPI; size?: number; tooltip?: boolean }) {
   const [showTip, setShowTip] = useState(false);
-  if (!m) return null;
-  const rc = RANKS[m.rank];
+  const rc = getRankConfig(member.rank);
+  const src = member.avatar ?? member.image ?? `https://api.dicebear.com/7.x/avataaars/svg?seed=${member.id}`;
   return (
     <div
       onMouseEnter={() => setShowTip(true)}
@@ -149,7 +179,7 @@ function _MiniAvatar({ id, size = 32, tooltip = true }: { id: number; size?: num
         border: `2px solid ${rc.color}70`,
         boxShadow: `0 0 6px ${rc.glowColor}`,
       }}>
-        <img src={m.img} alt={m.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        <img src={src} alt={member.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
       </div>
       {tooltip && showTip && (
         <div style={{
@@ -158,8 +188,8 @@ function _MiniAvatar({ id, size = 32, tooltip = true }: { id: number; size?: num
           padding: "5px 10px", whiteSpace: "nowrap", zIndex: 99,
           boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
         }}>
-          <div style={{ color: DS.text, fontSize: 11, fontWeight: 700 }}>{m.name}</div>
-          <div style={{ color: rc.color, fontSize: 9, fontFamily: DS.mono }}>{rc.symbol} {rc.label} Lv.{m.level}</div>
+          <div style={{ color: DS.text, fontSize: 11, fontWeight: 700 }}>{member.name}</div>
+          <div style={{ color: rc.color, fontSize: 9, fontFamily: DS.mono }}>{rc.symbol} {rc.label} Lv.{member.level}</div>
         </div>
       )}
     </div>
@@ -168,24 +198,23 @@ function _MiniAvatar({ id, size = 32, tooltip = true }: { id: number; size?: num
 
 // ── AvatarStack ──────────────────────────────────────────────────────────────
 
-function AvatarStack({ ids, max = 5, size = 28 }: { ids: number[]; max?: number; size?: number }) {
-  const shown = ids.slice(0, max);
-  const rest = ids.length - shown.length;
+function AvatarStack({ members, max = 5, size = 28 }: { members: TeamMemberAPI[]; max?: number; size?: number }) {
+  const shown = members.slice(0, max);
+  const rest = members.length - shown.length;
   return (
     <div style={{ display: "flex", alignItems: "center" }}>
-      {shown.map((id, i) => {
-        const m = MOCK_MEMBERS.find(x => x.id === id);
-        if (!m) return null;
-        const rc = RANKS[m.rank];
+      {shown.map((m, i) => {
+        const rc = getRankConfig(m.rank);
+        const src = m.avatar ?? m.image ?? `https://api.dicebear.com/7.x/avataaars/svg?seed=${m.id}`;
         return (
-          <div key={id} style={{
+          <div key={m.id} style={{
             width: size, height: size, borderRadius: "50%", overflow: "hidden",
             border: `2px solid ${DS.bgCard}`,
             marginLeft: i === 0 ? 0 : -(size * 0.35),
             zIndex: shown.length - i, position: "relative",
             boxShadow: `0 0 4px ${rc.glowColor}`,
           }}>
-            <img src={m.img} alt={m.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            <img src={src} alt={m.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           </div>
         );
       })}
@@ -207,25 +236,21 @@ function AvatarStack({ ids, max = 5, size = 28 }: { ids: number[]; max?: number;
 // ── OrgChart (3 modes) ────────────────────────────────────────────────────────
 
 function OrgChart({ dept }: { dept: DeptConfig }) {
-  const { color, headId, memberIds } = dept;
-  const head = MOCK_MEMBERS.find(m => m.id === headId);
-  const headRc = head ? RANKS[head.rank] : null;
-  const subMembers = memberIds
-    .filter(id => id !== headId)
-    .map(id => MOCK_MEMBERS.find(m => m.id === id))
-    .filter(Boolean) as Member[];
-
+  const head = dept.members.find(m => m.id === dept.headId) ?? null;
+  const headRc = head ? getRankConfig(head.rank) : null;
+  const subMembers = dept.members.filter(m => m.id !== dept.headId);
   const count = subMembers.length;
 
-  // Group by role category
   const roleGroups = useMemo(() => {
-    const groups: Record<string, Member[]> = {};
+    const groups: Record<string, TeamMemberAPI[]> = {};
     subMembers.forEach(m => {
-      const cat = m.role.includes("Dev") || m.role.includes("DevOps") || m.role.includes("QA") ? "Dev"
-        : m.role.includes("Design") || m.role.includes("UI") ? "Design"
-        : m.role.includes("Manager") || m.role.includes("Lead") || m.role.includes("PM") ? "Lead"
-        : m.role.includes("Content") || m.role.includes("SEO") || m.role.includes("Market") ? "Marketing"
-        : m.role.includes("Video") || m.role.includes("Photo") || m.role.includes("Media") ? "Media"
+      const role = (m.role ?? "").toLowerCase();
+      const cat =
+        role.includes("dev") || role.includes("engineer") || role.includes("backend") || role.includes("frontend") || role.includes("devops") || role.includes("qa") ? "Dev"
+        : role.includes("design") || role.includes("ui") || role.includes("ux") ? "Design"
+        : role.includes("manager") || role.includes("lead") || role.includes("pm") || role.includes("director") || role.includes("ceo") || role.includes("head") ? "Lead"
+        : role.includes("content") || role.includes("seo") || role.includes("marketing") ? "Marketing"
+        : role.includes("video") || role.includes("photo") || role.includes("media") || role.includes("creative") ? "Media"
         : "Khác";
       if (!groups[cat]) groups[cat] = [];
       groups[cat].push(m);
@@ -235,16 +260,17 @@ function OrgChart({ dept }: { dept: DeptConfig }) {
 
   if (!head || !headRc) return null;
 
+  const src = (m: TeamMemberAPI) => m.avatar ?? m.image ?? `https://api.dicebear.com/7.x/avataaars/svg?seed=${m.id}`;
+
   // Mode A: ≤ 8 sub-members → tree
   if (count <= 8) {
     return (
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-        {/* Head */}
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
           <div style={{ position: "relative" }}>
             <Crown size={14} style={{ position: "absolute", top: -8, right: -4, color: DS.amber, filter: `drop-shadow(0 0 4px ${DS.amber})`, zIndex: 10 }} />
             <div style={{ width: 60, height: 60, borderRadius: "50%", overflow: "hidden", border: `2.5px solid ${DS.amber}`, boxShadow: `0 0 18px rgba(245,158,11,0.5)` }}>
-              <img src={head.img} alt={head.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              <img src={src(head)} alt={head.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             </div>
           </div>
           <div style={{ textAlign: "center" }}>
@@ -255,16 +281,16 @@ function OrgChart({ dept }: { dept: DeptConfig }) {
 
         {count > 0 && (
           <>
-            <div style={{ width: 1, height: 16, background: `${color}40` }} />
+            <div style={{ width: 1, height: 16, background: `${dept.color}40` }} />
             <div style={{ maxWidth: 520, width: "100%", position: "relative" }}>
-              <div style={{ position: "absolute", top: 0, left: "5%", right: "5%", height: 1, background: `${color}30` }} />
+              <div style={{ position: "absolute", top: 0, left: "5%", right: "5%", height: 1, background: `${dept.color}30` }} />
               <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 20, paddingTop: 16 }}>
                 {subMembers.map(m => {
-                  const rc = RANKS[m.rank];
+                  const rc = getRankConfig(m.rank);
                   return (
                     <div key={m.id} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
                       <div style={{ width: 42, height: 42, borderRadius: "50%", overflow: "hidden", border: `2px solid ${rc.color}60`, boxShadow: `0 0 6px ${rc.glowColor}` }}>
-                        <img src={m.img} alt={m.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        <img src={src(m)} alt={m.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                       </div>
                       <div style={{ textAlign: "center", maxWidth: 68 }}>
                         <div style={{ color: DS.text3, fontSize: 9, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.name.split(" ").slice(-1)[0]}</div>
@@ -285,12 +311,11 @@ function OrgChart({ dept }: { dept: DeptConfig }) {
   if (count <= 24) {
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-        {/* Head card */}
         <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px", borderRadius: 12, background: `${DS.amber}08`, border: `1px solid ${DS.amber}30` }}>
           <div style={{ position: "relative", flexShrink: 0 }}>
             <Crown size={12} style={{ position: "absolute", top: -4, right: -3, color: DS.amber, zIndex: 10 }} />
             <div style={{ width: 48, height: 48, borderRadius: "50%", overflow: "hidden", border: `2px solid ${DS.amber}`, boxShadow: `0 0 14px rgba(245,158,11,0.4)` }}>
-              <img src={head.img} alt={head.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              <img src={src(head)} alt={head.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             </div>
           </div>
           <div>
@@ -300,19 +325,18 @@ function OrgChart({ dept }: { dept: DeptConfig }) {
           </div>
           <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8 }}>
             <div style={{ height: 24, width: 1, background: DS.border }} />
-            <AvatarStack ids={subMembers.map(m => m.id)} max={4} size={24} />
+            <AvatarStack members={subMembers} max={4} size={24} />
             <span style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono }}>{count} nhân sự</span>
           </div>
         </div>
 
-        {/* Compact avatar grid */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(72px, 1fr))", gap: 8, maxHeight: 280, overflowY: "auto" }}>
           {subMembers.map(m => {
-            const rc = RANKS[m.rank];
+            const rc = getRankConfig(m.rank);
             return (
               <div key={m.id} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, padding: "8px", borderRadius: 12, background: DS.bgCard2, border: `1px solid ${DS.border}` }}>
                 <div style={{ width: 38, height: 38, borderRadius: "50%", overflow: "hidden", border: `2px solid ${rc.color}60`, boxShadow: `0 0 6px ${rc.glowColor}` }}>
-                  <img src={m.img} alt={m.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  <img src={src(m)} alt={m.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                 </div>
                 <div style={{ color: DS.text3, fontSize: 9, fontWeight: 600, textAlign: "center", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", width: "100%" }}>
                   {m.name.split(" ").slice(-1)[0]}
@@ -329,12 +353,11 @@ function OrgChart({ dept }: { dept: DeptConfig }) {
   // Mode C: 25+ → head + collapsible squads
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      {/* Head banner */}
       <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "16px", borderRadius: 12, background: `linear-gradient(135deg, ${DS.amber}12, transparent)`, border: `1px solid ${DS.amber}35` }}>
         <div style={{ position: "relative", flexShrink: 0 }}>
           <Crown size={14} style={{ position: "absolute", top: -5, right: -4, color: DS.amber, zIndex: 10 }} />
           <div style={{ width: 52, height: 52, borderRadius: "50%", overflow: "hidden", border: `2.5px solid ${DS.amber}`, boxShadow: `0 0 18px rgba(245,158,11,0.5)` }}>
-            <img src={head.img} alt={head.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            <img src={src(head)} alt={head.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           </div>
         </div>
         <div style={{ flex: 1 }}>
@@ -348,16 +371,16 @@ function OrgChart({ dept }: { dept: DeptConfig }) {
         </div>
       </div>
 
-      {/* Squad groups */}
       {Object.entries(roleGroups).map(([group, gMembers]) => (
-        <SquadGroup key={group} label={group} color={color} members={gMembers} />
+        <SquadGroup key={group} label={group} color={dept.color} members={gMembers} />
       ))}
     </div>
   );
 }
 
-function SquadGroup({ label, color, members: gMembers }: { label: string; color: string; members: Member[] }) {
+function SquadGroup({ label, color, members }: { label: string; color: string; members: TeamMemberAPI[] }) {
   const [open, setOpen] = useState(true);
+  const src = (m: TeamMemberAPI) => m.avatar ?? m.image ?? `https://api.dicebear.com/7.x/avataaars/svg?seed=${m.id}`;
   return (
     <div style={{ border: `1px solid ${DS.border}`, borderRadius: 12, overflow: "hidden" }}>
       <button
@@ -367,10 +390,10 @@ function SquadGroup({ label, color, members: gMembers }: { label: string; color:
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <div style={{ width: 6, height: 6, borderRadius: "50%", background: color, boxShadow: `0 0 6px ${color}` }} />
           <span style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.1em" }}>{label.toUpperCase()}</span>
-          <span style={{ color, fontSize: 10, fontFamily: DS.mono, background: `${color}15`, border: `1px solid ${color}30`, padding: "1px 6px", borderRadius: 4 }}>{gMembers.length}</span>
+          <span style={{ color, fontSize: 10, fontFamily: DS.mono, background: `${color}15`, border: `1px solid ${color}30`, padding: "1px 6px", borderRadius: 4 }}>{members.length}</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <AvatarStack ids={gMembers.map(m => m.id)} max={5} size={22} />
+          <AvatarStack members={members} max={5} size={22} />
           {open ? <ChevronUp size={13} style={{ color: DS.text5 }} /> : <ChevronDown size={13} style={{ color: DS.text5 }} />}
         </div>
       </button>
@@ -383,12 +406,12 @@ function SquadGroup({ label, color, members: gMembers }: { label: string; color:
             style={{ overflow: "hidden" }}
           >
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))", gap: 6, padding: 12, background: DS.bgCard }}>
-              {gMembers.map(m => {
-                const rc = RANKS[m.rank];
+              {members.map(m => {
+                const rc = getRankConfig(m.rank);
                 return (
                   <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 8px", borderRadius: 8, background: DS.bgCard2, border: `1px solid ${DS.border}` }}>
                     <div style={{ width: 26, height: 26, borderRadius: "50%", overflow: "hidden", border: `1.5px solid ${rc.color}50`, flexShrink: 0 }}>
-                      <img src={m.img} alt={m.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      <img src={src(m)} alt={m.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                     </div>
                     <div style={{ minWidth: 0 }}>
                       <div style={{ color: DS.text3, fontSize: 10, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.name.split(" ").slice(-1)[0]}</div>
@@ -417,23 +440,23 @@ function MemberList({ dept }: { dept: DeptConfig }) {
   const [sort, setSort] = useState<SortKey>("level");
   const [page, setPage] = useState(1);
 
-  const deptMembers = useMemo(() =>
-    dept.memberIds.map(id => MOCK_MEMBERS.find(m => m.id === id)).filter(Boolean) as Member[],
-    [dept.memberIds]
-  );
+  const deptMembers = dept.members;
 
   const filtered = useMemo(() => {
-    let list = deptMembers;
+    let list = [...deptMembers];
     if (rankFilter !== "all") list = list.filter(m => m.rank === rankFilter);
     if (search.trim()) {
       const q = search.toLowerCase();
-      list = list.filter(m => m.name.toLowerCase().includes(q) || m.role.toLowerCase().includes(q));
+      list = list.filter(m =>
+        m.name.toLowerCase().includes(q) ||
+        (m.role ?? "").toLowerCase().includes(q)
+      );
     }
     const sorted = [...list];
     if (sort === "level") sorted.sort((a, b) => b.level - a.level);
     else if (sort === "name") sorted.sort((a, b) => a.name.localeCompare(b.name));
-    else if (sort === "lp") sorted.sort((a, b) => b.lpBalance - a.lpBalance);
-    else if (sort === "rank") sorted.sort((a, b) => RANK_ORDER[b.rank] - RANK_ORDER[a.rank]);
+    else if (sort === "lp") sorted.sort((a, b) => (b.availableLp ?? 0) - (a.availableLp ?? 0));
+    else if (sort === "rank") sorted.sort((a, b) => (RANK_ORDER[b.rank as RankKey] ?? 0) - (RANK_ORDER[a.rank as RankKey] ?? 0));
     return sorted;
   }, [deptMembers, rankFilter, search, sort]);
 
@@ -442,12 +465,13 @@ function MemberList({ dept }: { dept: DeptConfig }) {
 
   const rankCounts = useMemo(() => {
     const counts: Partial<Record<RankKey, number>> = {};
-    deptMembers.forEach(m => { counts[m.rank] = (counts[m.rank] ?? 0) + 1; });
+    deptMembers.forEach(m => { counts[m.rank as RankKey] = (counts[m.rank as RankKey] ?? 0) + 1; });
     return counts;
   }, [deptMembers]);
 
   const handleFilter = (r: RankKey | "all") => { setRankFilter(r); setPage(1); };
   const handleSearch = (v: string) => { setSearch(v); setPage(1); };
+  const src = (m: TeamMemberAPI) => m.avatar ?? m.image ?? `https://api.dicebear.com/7.x/avataaars/svg?seed=${m.id}`;
 
   return (
     <div style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 16, padding: "1.25rem" }}>
@@ -458,7 +482,6 @@ function MemberList({ dept }: { dept: DeptConfig }) {
             <span style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.15em" }}>── DANH SÁCH NHÂN SỰ </span>
             <span style={{ color: dept.color, marginLeft: 8 }}>({filtered.length}/{deptMembers.length})</span>
           </div>
-          {/* Sort */}
           <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 8, background: DS.bgCard2, border: `1px solid ${DS.border}` }}>
             <Layers size={11} style={{ color: DS.text5 }} />
             <select value={sort} onChange={e => { setSort(e.target.value as SortKey); setPage(1); }}
@@ -512,7 +535,7 @@ function MemberList({ dept }: { dept: DeptConfig }) {
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 8 }}>
           {paginated.map(m => {
-            const rc = RANKS[m.rank];
+            const rc = getRankConfig(m.rank);
             const isHead = m.id === dept.headId;
             return (
               <motion.div
@@ -527,7 +550,7 @@ function MemberList({ dept }: { dept: DeptConfig }) {
                 <div style={{ position: "relative", flexShrink: 0 }}>
                   {isHead && <Crown size={10} style={{ position: "absolute", top: -4, right: -3, color: DS.amber, zIndex: 10 }} />}
                   <div style={{ width: 38, height: 38, borderRadius: "50%", overflow: "hidden", border: `2px solid ${isHead ? DS.amber : `${rc.color}80`}` }}>
-                    <img src={m.img} alt={m.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    <img src={src(m)} alt={m.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   </div>
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -540,7 +563,7 @@ function MemberList({ dept }: { dept: DeptConfig }) {
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 0 }}>
                   <span style={{ color: rc.color, fontSize: 9, fontFamily: DS.mono }}>{rc.symbol} {rc.label}</span>
                   <span style={{ color: DS.text5, fontSize: 9, fontFamily: DS.mono }}>Lv.{m.level}</span>
-                  <span style={{ color: DS.text5, fontSize: 9, fontFamily: DS.mono }}>{(m.lpBalance / 1000).toFixed(1)}K LP</span>
+                  <span style={{ color: DS.text5, fontSize: 9, fontFamily: DS.mono }}>{((m.availableLp ?? 0) / 1000).toFixed(1)}K LP</span>
                 </div>
               </motion.div>
             );
@@ -567,7 +590,7 @@ function MemberList({ dept }: { dept: DeptConfig }) {
               else if (page <= 4) pageNum = i + 1;
               else if (page >= totalPages - 3) pageNum = totalPages - 6 + i;
               else {
-                const offsets: (number | null)[] = [null, -2, -1, 0, 1, 2, null];
+                const offsets = [null, -2, -1, 0, 1, 2, null];
                 const off = offsets[i];
                 pageNum = off === null ? null : page + off;
               }
@@ -598,29 +621,38 @@ function MemberList({ dept }: { dept: DeptConfig }) {
 
 // ── Assign Modal ──────────────────────────────────────────────────────────────
 
-function AssignModal({ dept, onClose, onSave }: { dept: DeptConfig; onClose: () => void; onSave: (ids: number[], headId: number) => void }) {
-  const [selectedIds, setSelectedIds] = useState<number[]>(dept.memberIds);
-  const [headId, setHeadId] = useState(dept.headId);
+interface AssignModalProps {
+  dept: DeptConfig;
+  allMembers: TeamMemberAPI[];
+  onClose: () => void;
+  onSave: (memberIds: string[], headId: string | null) => Promise<void>;
+}
+
+function AssignModal({ dept, allMembers, onClose, onSave }: AssignModalProps) {
+  const [selectedIds, setSelectedIds] = useState<string[]>(dept.members.map(m => m.id));
+  const [headId, setHeadId] = useState<string | null>(dept.headId);
   const [search, setSearch] = useState("");
   const [rankFilter, setRankFilter] = useState<RankKey | "all">("all");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const toggleId = (id: number) => {
+  const toggleId = (id: string) => {
     setSelectedIds(prev => {
       const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id];
-      if (!next.includes(headId) && next.length > 0) setHeadId(next[0] ?? id);
+      if (!next.includes(headId!) && next.length > 0) setHeadId(next[0]);
       return next;
     });
   };
 
   const filteredAll = useMemo(() => {
-    let list = [...MOCK_MEMBERS];
+    let list = [...allMembers];
     if (rankFilter !== "all") list = list.filter(m => m.rank === rankFilter);
     if (search.trim()) {
       const q = search.toLowerCase();
-      list = list.filter(m => m.name.toLowerCase().includes(q) || m.role.toLowerCase().includes(q));
+      list = list.filter(m => m.name.toLowerCase().includes(q) || (m.role ?? "").toLowerCase().includes(q));
     }
-    return list.sort((a, b) => RANK_ORDER[b.rank] - RANK_ORDER[a.rank]);
-  }, [rankFilter, search]);
+    return list.sort((a, b) => (RANK_ORDER[b.rank as RankKey] ?? 0) - (RANK_ORDER[a.rank as RankKey] ?? 0));
+  }, [allMembers, rankFilter, search]);
 
   const selectAll = () => setSelectedIds(prev => {
     const toAdd = filteredAll.map(m => m.id).filter(id => !prev.includes(id));
@@ -630,7 +662,22 @@ function AssignModal({ dept, onClose, onSave }: { dept: DeptConfig; onClose: () 
   const allSelected = filteredAll.every(m => selectedIds.includes(m.id));
 
   const rankCounts: Partial<Record<RankKey, number>> = {};
-  MOCK_MEMBERS.forEach(m => { rankCounts[m.rank] = (rankCounts[m.rank] ?? 0) + 1; });
+  allMembers.forEach(m => { rankCounts[m.rank as RankKey] = (rankCounts[m.rank as RankKey] ?? 0) + 1; });
+
+  const handleSave = async () => {
+    setSaving(true);
+    setError(null);
+    try {
+      await onSave(selectedIds, headId);
+      onClose();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Lưu thất bại");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const src = (m: TeamMemberAPI) => m.avatar ?? m.image ?? `https://api.dicebear.com/7.x/avataaars/svg?seed=${m.id}`;
 
   return (
     <motion.div
@@ -659,17 +706,25 @@ function AssignModal({ dept, onClose, onSave }: { dept: DeptConfig; onClose: () 
 
         {/* Body */}
         <div style={{ flex: 1, overflowY: "auto", padding: "1.25rem 1.5rem", display: "flex", flexDirection: "column", gap: 16 }}>
+          {error && (
+            <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 10, background: `${DS.red}10`, border: `1px solid ${DS.red}30` }}>
+              <AlertCircle size={14} style={{ color: DS.red, flexShrink: 0 }} />
+              <span style={{ color: DS.red, fontSize: 12 }}>{error}</span>
+            </div>
+          )}
+
           {/* Head selector */}
           <div>
             <label style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, display: "block", marginBottom: 8, letterSpacing: "0.12em" }}>
               TRƯỞNG PHÒNG (chọn từ danh sách đã chọn)
             </label>
-            <select value={headId} onChange={e => setHeadId(Number(e.target.value))}
+            <select value={headId ?? ""} onChange={e => setHeadId(e.target.value || null)}
               style={{ width: "100%", background: DS.bgCard2, border: `1px solid ${dept.color}40`, borderRadius: 10, padding: "9px 12px", color: DS.text, fontSize: 13, outline: "none" }}>
+              <option value="">— Chưa chỉ định —</option>
               {selectedIds.map(id => {
-                const m = MOCK_MEMBERS.find(x => x.id === id);
+                const m = allMembers.find(x => x.id === id);
                 if (!m) return null;
-                const rc = RANKS[m.rank];
+                const rc = getRankConfig(m.rank);
                 return <option key={id} value={id}>{rc.symbol} {m.name} — {m.role} (Lv.{m.level})</option>;
               })}
             </select>
@@ -679,7 +734,7 @@ function AssignModal({ dept, onClose, onSave }: { dept: DeptConfig; onClose: () 
           <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", borderRadius: 12, background: DS.bgCard2, border: `1px solid ${DS.border}` }}>
             <Search size={13} style={{ color: DS.text5 }} />
             <input value={search} onChange={e => setSearch(e.target.value)}
-              placeholder={`Tìm trong ${MOCK_MEMBERS.length} thành viên...`}
+              placeholder={`Tìm trong ${allMembers.length} thành viên...`}
               style={{ background: "none", border: "none", outline: "none", color: DS.text3, fontSize: 13, flex: 1 }} />
             {search && <button onClick={() => setSearch("")} style={{ background: "none", border: "none", cursor: "pointer", color: DS.text5 }}><X size={12} /></button>}
           </div>
@@ -705,7 +760,7 @@ function AssignModal({ dept, onClose, onSave }: { dept: DeptConfig; onClose: () 
           {/* Bulk actions */}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span style={{ color: DS.text5, fontSize: 11, fontFamily: DS.mono }}>
-              Hiển thị {filteredAll.length} / {MOCK_MEMBERS.length} thành viên
+              Hiển thị {filteredAll.length} / {allMembers.length} thành viên
             </span>
             <button onClick={() => allSelected ? deselectAll() : selectAll()}
               style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", color: allSelected ? DS.red : dept.color, fontSize: 11, fontFamily: DS.mono }}>
@@ -717,7 +772,7 @@ function AssignModal({ dept, onClose, onSave }: { dept: DeptConfig; onClose: () 
           {/* Member grid */}
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             {filteredAll.map(m => {
-              const rc = RANKS[m.rank];
+              const rc = getRankConfig(m.rank);
               const sel = selectedIds.includes(m.id);
               const isHead = headId === m.id;
               return (
@@ -730,7 +785,7 @@ function AssignModal({ dept, onClose, onSave }: { dept: DeptConfig; onClose: () 
                   }}
                 >
                   <div style={{ width: 32, height: 32, borderRadius: "50%", overflow: "hidden", border: `2px solid ${rc.color}${sel ? "80" : "25"}`, flexShrink: 0 }}>
-                    <img src={m.img} alt={m.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    <img src={src(m)} alt={m.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -760,15 +815,15 @@ function AssignModal({ dept, onClose, onSave }: { dept: DeptConfig; onClose: () 
             style={{ flex: 1, background: "none", border: `1px solid ${DS.border}`, borderRadius: 10, padding: "10px", color: DS.text3, cursor: "pointer", fontSize: 13 }}>
             Hủy
           </button>
-          <button onClick={() => { onSave(selectedIds, headId); onClose(); }}
+          <button onClick={handleSave} disabled={saving}
             style={{
-              flex: 2, background: selectedIds.length === 0 ? DS.bgCard2 : GRD.primary,
-              color: selectedIds.length === 0 ? DS.text5 : "#fff",
+              flex: 2, background: saving || selectedIds.length === 0 ? DS.bgCard2 : GRD.primary,
+              color: saving || selectedIds.length === 0 ? DS.text5 : "#fff",
               border: "none", borderRadius: 10, padding: "10px",
-              cursor: selectedIds.length === 0 ? "default" : "pointer",
-              fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+              cursor: saving || selectedIds.length === 0 ? "default" : "pointer",
+              fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
             }}>
-            <Save size={14} /> Lưu phân công ({selectedIds.length})
+            {saving ? <><Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> Đang lưu…</> : <><Save size={14} /> Lưu phân công ({selectedIds.length})</>}
           </button>
         </div>
       </motion.div>
@@ -778,20 +833,21 @@ function AssignModal({ dept, onClose, onSave }: { dept: DeptConfig; onClose: () 
 
 // ── DeptDetail ────────────────────────────────────────────────────────────────
 
-function DeptDetail({ dept, onAssign }: { dept: DeptConfig; onAssign: () => void }) {
-  const head = MOCK_MEMBERS.find(m => m.id === dept.headId);
-  const headRank = head ? RANKS[head.rank] : null;
-  const deptMembers = dept.memberIds.map(id => MOCK_MEMBERS.find(m => m.id === id)).filter(Boolean) as Member[];
+function DeptDetail({ dept, allMembers, onAssign }: { dept: DeptConfig; allMembers: TeamMemberAPI[]; onAssign: () => void }) {
+  const head = dept.members.find(m => m.id === dept.headId) ?? null;
+  const headRank = head ? getRankConfig(head.rank) : null;
+  const deptMembers = dept.members;
   const avgLevel = deptMembers.length > 0 ? Math.round(deptMembers.reduce((s, m) => s + m.level, 0) / deptMembers.length) : 0;
-  const totalLP = deptMembers.reduce((s, m) => s + m.lpEarned, 0);
+  const totalLP = deptMembers.reduce((s, m) => s + (m.availableLp ?? 0), 0);
 
   const rankDist = useMemo(() => {
     const dist: Partial<Record<RankKey, number>> = {};
-    deptMembers.forEach(m => { dist[m.rank] = (dist[m.rank] ?? 0) + 1; });
+    deptMembers.forEach(m => { dist[m.rank as RankKey] = (dist[m.rank as RankKey] ?? 0) + 1; });
     return dist;
   }, [deptMembers]);
 
   const maxRankCount = Math.max(...Object.values(rankDist).map(v => v ?? 0), 1);
+  const src = (m: TeamMemberAPI) => m.avatar ?? m.image ?? `https://api.dicebear.com/7.x/avataaars/svg?seed=${m.id}`;
 
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
@@ -807,7 +863,7 @@ function DeptDetail({ dept, onAssign }: { dept: DeptConfig; onAssign: () => void
             <div>
               <div style={{ color: dept.color, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.15em" }}>── PHÒNG BAN</div>
               <div style={{ color: DS.text, fontSize: 18, fontWeight: 700 }}>{dept.name}</div>
-              <div style={{ color: DS.text4, fontSize: 12, marginTop: 2 }}>{dept.description}</div>
+              <div style={{ color: DS.text4, fontSize: 12, marginTop: 2 }}>{dept.description || dept.key.toUpperCase()}</div>
             </div>
           </div>
           <button onClick={onAssign}
@@ -815,10 +871,12 @@ function DeptDetail({ dept, onAssign }: { dept: DeptConfig; onAssign: () => void
             <UserPlus size={13} /> Phân công
           </button>
         </div>
-        <div style={{ marginTop: 12, padding: "10px 12px", borderRadius: 12, background: "rgba(255,255,255,0.03)", border: `1px solid ${DS.border}` }}>
-          <span style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono }}>SỨ MỆNH: </span>
-          <span style={{ color: DS.text3, fontSize: 12, fontStyle: "italic" }}>{dept.mission}</span>
-        </div>
+        {dept.mission && (
+          <div style={{ marginTop: 12, padding: "10px 12px", borderRadius: 12, background: "rgba(255,255,255,0.03)", border: `1px solid ${DS.border}` }}>
+            <span style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono }}>SỨ MỆNH: </span>
+            <span style={{ color: DS.text3, fontSize: 12, fontStyle: "italic" }}>{dept.mission}</span>
+          </div>
+        )}
       </div>
 
       {/* KPI */}
@@ -855,7 +913,7 @@ function DeptDetail({ dept, onAssign }: { dept: DeptConfig; onAssign: () => void
               <div style={{ color: DS.text5, fontSize: 9, fontFamily: DS.mono, letterSpacing: "0.12em", marginBottom: 10 }}>TRƯỞNG PHÒNG</div>
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                 <div style={{ width: 44, height: 44, borderRadius: "50%", overflow: "hidden", border: `2px solid ${DS.amber}`, boxShadow: `0 0 10px rgba(245,158,11,0.4)` }}>
-                  <img src={head.img} alt={head.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  <img src={src(head)} alt={head.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                 </div>
                 <div>
                   <div style={{ color: DS.amber, fontSize: 13, fontWeight: 700 }}>{head.name}</div>
@@ -865,12 +923,12 @@ function DeptDetail({ dept, onAssign }: { dept: DeptConfig; onAssign: () => void
               </div>
               <div style={{ display: "flex", gap: 12, marginTop: 12, paddingTop: 12, borderTop: `1px solid ${DS.border}` }}>
                 <div style={{ flex: 1, textAlign: "center" }}>
-                  <div style={{ color: DS.amber, fontFamily: DS.heading, fontSize: 16, fontWeight: 700 }}>{head.missions}</div>
-                  <div style={{ color: DS.text5, fontSize: 9 }}>Missions</div>
+                  <div style={{ color: headRank.color, fontFamily: DS.heading, fontSize: 16, fontWeight: 700 }}>Lv.{head.level}</div>
+                  <div style={{ color: DS.text5, fontSize: 9 }}>Level</div>
                 </div>
                 <div style={{ flex: 1, textAlign: "center" }}>
-                  <div style={{ color: DS.green, fontFamily: DS.heading, fontSize: 16, fontWeight: 700 }}>{(head.lpEarned / 1000).toFixed(0)}K</div>
-                  <div style={{ color: DS.text5, fontSize: 9 }}>LP Earned</div>
+                  <div style={{ color: DS.green, fontFamily: DS.heading, fontSize: 16, fontWeight: 700 }}>{(head.availableLp ?? 0) >= 1000 ? `${((head.availableLp ?? 0) / 1000).toFixed(0)}K` : head.availableLp}</div>
+                  <div style={{ color: DS.text5, fontSize: 9 }}>LP</div>
                 </div>
               </div>
             </div>
@@ -882,7 +940,7 @@ function DeptDetail({ dept, onAssign }: { dept: DeptConfig; onAssign: () => void
             {[
               { label: "Tổng nhân sự", value: deptMembers.length, color: DS.text3 },
               { label: "Cấp độ trung bình", value: `Lv.${avgLevel}`, color: dept.color },
-              { label: "Tổng LP đã kiếm", value: `${(totalLP / 1000).toFixed(0)}K`, color: DS.purple },
+              { label: "Tổng LP", value: totalLP >= 1000 ? `${(totalLP / 1000).toFixed(0)}K` : `${totalLP}`, color: DS.purple },
             ].map(s => (
               <div key={s.label} style={{ display: "flex", justifyContent: "space-between", paddingTop: 8, paddingBottom: 8, borderBottom: `1px solid ${DS.border}` }}>
                 <span style={{ color: DS.text4, fontSize: 12 }}>{s.label}</span>
@@ -928,13 +986,82 @@ function DeptDetail({ dept, onAssign }: { dept: DeptConfig; onAssign: () => void
 // ── Main ─────────────────────────────────────────────────────────────────────
 
 export default function DepartmentsPage() {
-  const [depts, setDepts] = useState<DeptConfig[]>(INIT_DEPTS);
-  const [selectedId, setSelectedId] = useState("it");
+  const [rawDepts, setRawDepts] = useState<DepartmentAPI[]>([]);
+  const [allMembers, setAllMembers] = useState<TeamMemberAPI[]>([]);
+  const [selectedId, setSelectedId] = useState<string>("");
   const [assignDept, setAssignDept] = useState<DeptConfig | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [depts, members] = await Promise.all([fetchDepts(), fetchAllMembers()]);
+      setRawDepts(depts);
+      setAllMembers(members);
+      if (depts.length > 0 && !selectedId) {
+        setSelectedId(depts[0].id);
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Không tải được dữ liệu");
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedId]);
+
+  useEffect(() => { load(); }, [load]);
+
+  // Enrich departments with computed KPIs
+  const depts: DeptConfig[] = rawDepts.map(d => ({
+    ...d,
+    description: d.description ?? "",
+    mission: d.mission ?? "",
+    kpi: computeDeptKPIs(d),
+  }));
 
   const selected = depts.find(d => d.id === selectedId) ?? depts[0];
-  const totalMembers = [...new Set(depts.flatMap(d => d.memberIds))].length;
-  const avgMembers = Math.round(depts.reduce((s, d) => s + d.memberIds.length, 0) / depts.length);
+  const totalMembers = new Set(depts.flatMap(d => d.members.map(m => m.id))).size;
+  const avgMembers = depts.length > 0 ? Math.round(depts.reduce((s, d) => s + d.members.length, 0) / depts.length) : 0;
+
+  const handleSaveAssignment = async (deptId: string, memberIds: string[], headId: string | null) => {
+    await saveDeptMembers(deptId, memberIds, headId);
+    // Refresh data
+    await load();
+  };
+
+  if (loading) {
+    return (
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 320 }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
+          <Loader2 size={32} style={{ color: DS.purple, animation: "spin 1s linear infinite" }} />
+          <span style={{ color: DS.text4, fontSize: 13, fontFamily: DS.mono }}>Đang tải phòng ban…</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: 320, gap: 16 }}>
+        <AlertCircle size={32} style={{ color: DS.red }} />
+        <span style={{ color: DS.red, fontSize: 13 }}>{error}</span>
+        <button onClick={load}
+          style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 20px", borderRadius: 10, background: DS.bgCard2, border: `1px solid ${DS.border}`, color: DS.text3, cursor: "pointer", fontSize: 12 }}>
+          <RefreshCw size={13} /> Thử lại
+        </button>
+      </div>
+    );
+  }
+
+  if (depts.length === 0) {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: 320, gap: 16 }}>
+        <Building2 size={32} style={{ color: DS.text5 }} />
+        <span style={{ color: DS.text4, fontSize: 13 }}>Chưa có phòng ban nào</span>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -948,6 +1075,10 @@ export default function DepartmentsPage() {
             {depts.length} phòng ban · Cấu trúc RBAC · Sơ đồ tổ chức
           </p>
         </div>
+        <button onClick={load}
+          style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 10, background: DS.bgCard2, border: `1px solid ${DS.border}`, color: DS.text4, cursor: "pointer", fontSize: 12 }}>
+          <RefreshCw size={13} /> Làm mới
+        </button>
       </div>
 
       {/* KPI */}
@@ -956,7 +1087,7 @@ export default function DepartmentsPage() {
           { label: "Tổng phòng ban", value: depts.length, color: DS.blue, icon: <Building2 size={18} /> },
           { label: "Tổng nhân sự", value: totalMembers, color: DS.green, icon: <Users size={18} /> },
           { label: "TB nhân sự/phòng", value: avgMembers, color: DS.amber, icon: <BarChart3 size={18} /> },
-          { label: "Trưởng phòng", value: depts.length, color: DS.purple, icon: <Crown size={18} /> },
+          { label: "Trưởng phòng", value: depts.filter(d => d.headId).length, color: DS.purple, icon: <Crown size={18} /> },
         ].map(s => (
           <div key={s.label} style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 16, padding: "1rem" }}>
             <div style={{ width: 40, height: 40, borderRadius: 12, background: `${s.color}15`, border: `1px solid ${s.color}25`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 12 }}>
@@ -977,8 +1108,10 @@ export default function DepartmentsPage() {
           </div>
           {depts.map(d => {
             const isSelected = selectedId === d.id;
-            const head = MOCK_MEMBERS.find(m => m.id === d.headId);
-            const headRank = head ? RANKS[head.rank] : null;
+            const head = d.members.find(m => m.id === d.headId) ?? null;
+            const headRank = head ? getRankConfig(head.rank) : null;
+            const subMembers = d.members.filter(m => m.id !== d.headId);
+            const src = (m: TeamMemberAPI) => m.avatar ?? m.image ?? `https://api.dicebear.com/7.x/avataaars/svg?seed=${m.id}`;
             return (
               <motion.div
                 key={d.id}
@@ -997,20 +1130,22 @@ export default function DepartmentsPage() {
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ color: d.color, fontSize: 13, fontWeight: 700 }}>{d.name}</div>
-                    <div style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono }}>{d.memberIds.length} nhân sự</div>
+                    <div style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono }}>{d.members.length} nhân sự</div>
                   </div>
                   {isSelected && <ChevronRight size={14} style={{ color: d.color, flexShrink: 0 }} />}
                 </div>
 
                 {/* Avatar stack */}
-                <div style={{ marginBottom: 8 }}>
-                  <AvatarStack ids={d.memberIds.filter(id => id !== d.headId)} max={4} size={22} />
-                </div>
+                {subMembers.length > 0 && (
+                  <div style={{ marginBottom: 8 }}>
+                    <AvatarStack members={subMembers} max={4} size={22} />
+                  </div>
+                )}
 
                 {head && headRank && (
                   <div style={{ display: "flex", alignItems: "center", gap: 8, paddingTop: 8, borderTop: `1px solid ${DS.border}` }}>
                     <div style={{ width: 22, height: 22, borderRadius: "50%", overflow: "hidden", border: `1.5px solid ${headRank.color}40` }}>
-                      <img src={head.img} alt={head.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      <img src={src(head)} alt={head.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                     </div>
                     <span style={{ color: DS.text5, fontSize: 10, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>{head.name}</span>
                     <Crown size={9} style={{ color: DS.amber, flexShrink: 0 }} />
@@ -1029,7 +1164,7 @@ export default function DepartmentsPage() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
           >
-            {selected && <DeptDetail dept={selected} onAssign={() => setAssignDept(selected)} />}
+            {selected && <DeptDetail dept={selected} allMembers={allMembers} onAssign={() => setAssignDept(selected)} />}
           </motion.div>
         </AnimatePresence>
       </div>
@@ -1039,14 +1174,16 @@ export default function DepartmentsPage() {
         {assignDept && (
           <AssignModal
             dept={assignDept}
+            allMembers={allMembers}
             onClose={() => setAssignDept(null)}
-            onSave={(ids, headId) => {
-              setDepts(prev => prev.map(d => d.id === assignDept.id ? { ...d, memberIds: ids, headId } : d));
-              setAssignDept(null);
-            }}
+            onSave={(ids, headId) => handleSaveAssignment(assignDept.id, ids, headId)}
           />
         )}
       </AnimatePresence>
+
+      <style>{`
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+      `}</style>
     </div>
   );
 }

@@ -64,6 +64,9 @@ export async function createSession(
     role: string;
     roles: string[];
     accessTags: string[];
+    tabPermissions?: string[];
+    departmentId?: string | null;
+    isDeptHead?: boolean;
     accountType: "staff" | "customer";
     isOnboarded: boolean;
     rank?: string;

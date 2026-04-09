@@ -71,6 +71,9 @@ type LoginUser = {
     accessTags: string[];
     rank?: string | null;
     availableLp?: number | null;
+    tabPermissions?: string[];
+    departmentId?: string | null;
+    isDeptHead?: boolean;
   } | null;
 };
 
@@ -145,7 +148,14 @@ export async function POST(req: NextRequest) {
           },
         },
         teamMember: {
-          select: { accessTags: true, rank: true, availableLp: true },
+          select: {
+            accessTags: true,
+            rank: true,
+            availableLp: true,
+            tabPermissions: true,
+            departmentId: true,
+            isDeptHead: true,
+          },
         },
       },
     });
@@ -236,6 +246,9 @@ export async function POST(req: NextRequest) {
       role: user.role,
       roles,
       accessTags: user.teamMember?.accessTags ?? [],
+      tabPermissions: user.teamMember?.tabPermissions ?? [],
+      departmentId: user.teamMember?.departmentId ?? null,
+      isDeptHead: user.teamMember?.isDeptHead ?? false,
       accountType,
       isOnboarded: resolvedIsOnboarded,
       rank: user.teamMember?.rank ?? undefined,
@@ -267,6 +280,9 @@ export async function POST(req: NextRequest) {
         accountType,
         teamMemberId: user.teamMemberId,
         accessTags: user.teamMember?.accessTags ?? [],
+        tabPermissions: user.teamMember?.tabPermissions ?? [],
+        departmentId: user.teamMember?.departmentId ?? null,
+        isDeptHead: user.teamMember?.isDeptHead ?? false,
         isOnboarded: resolvedIsOnboarded,
         rank: user.teamMember?.rank,
         availableLp: user.teamMember?.availableLp,

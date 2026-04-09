@@ -157,7 +157,98 @@ async function seedRBAC() {
 }
 
 // ══════════════════════════════════════════════════════════════════
-// 2. Admin User
+// 2. Departments
+// ══════════════════════════════════════════════════════════════════
+
+async function seedDepartments() {
+  console.log("\n[Departments] Seeding 8 departments...");
+
+  const departments = [
+    {
+      key: "engineering",
+      name: "Phòng Kỹ thuật",
+      shortName: "IT",
+      color: "#3B82F6",
+      description: "Phòng Kỹ thuật — Dev, QA, DevOps, xây dựng và duy trì hạ tầng công nghệ.",
+      mission: "Xây dựng sản phẩm chất lượng cao, tối ưu hiệu suất và đảm bảo hệ thống ổn định 24/7.",
+    },
+    {
+      key: "design",
+      name: "Phòng Thiết kế",
+      shortName: "DSE",
+      color: "#8B5CF6",
+      description: "Phòng Thiết kế — UI/UX, Graphic Design, Brand Identity.",
+      mission: "Mang đến trải nghiệm người dùng xuất sắc qua thiết kế đột phá và nhất quán.",
+    },
+    {
+      key: "media",
+      name: "Phòng Media",
+      shortName: "MED",
+      color: "#EC4899",
+      description: "Phòng Media — Content, Video, Social Media, Photography.",
+      mission: "Sáng tạo nội dung số thu hút, xây dựng thương hiệu LOOP trên mọi nền tảng.",
+    },
+    {
+      key: "marketing",
+      name: "Phòng Marketing",
+      shortName: "MKT",
+      color: "#F59E0B",
+      description: "Phòng Marketing — SEO, SEM, Brand Marketing, Email Marketing.",
+      mission: "Thu hút khách hàng tiềm năng, tăng trưởng doanh thu qua các chiến dịch hiệu quả.",
+    },
+    {
+      key: "sales",
+      name: "Phòng Kinh doanh",
+      shortName: "SLS",
+      color: "#22C55E",
+      description: "Phòng Kinh doanh — Bán hàng, Chăm sóc khách hàng, Báo giá.",
+      mission: "Chuyển đổi khách hàng tiềm năng thành đối tác lâu dài của LOOP.",
+    },
+    {
+      key: "finance",
+      name: "Phòng Tài chính",
+      shortName: "FIN",
+      color: "#14B8A6",
+      description: "Phòng Tài chính — Kế toán, Quản lý dòng tiền, LP, Thu nhập.",
+      mission: "Quản lý tài chính minh bạch, tối ưu chi phí và đảm bảo lợi ích cho mọi thành viên.",
+    },
+    {
+      key: "hr",
+      name: "Phòng Nhân sự",
+      shortName: "HR",
+      color: "#6366F1",
+      description: "Phòng Nhân sự — Tuyển dụng, Onboarding, Đào tạo, Văn hóa công ty.",
+      mission: "Xây dựng đội ngũ tài năng, gắn kết và phát triển con người LOOP bền vững.",
+    },
+    {
+      key: "management",
+      name: "Ban Quản lý",
+      shortName: "MGT",
+      color: "#EAB308",
+      description: "Ban Quản lý — CEO, Super Admin, điều phối toàn công ty.",
+      mission: "Định hướng chiến lược, giám sát hoạt động và đảm bảo LOOP phát triển bền vững.",
+    },
+  ];
+
+  for (const dept of departments) {
+    await prisma.department.upsert({
+      where: { key: dept.key },
+      update: {
+        name: dept.name,
+        shortName: dept.shortName,
+        color: dept.color,
+        description: dept.description,
+        mission: dept.mission,
+      },
+      create: dept,
+    });
+  }
+
+  console.log(`  ✓ 8 departments seeded`);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// 3. Admin User
 // ══════════════════════════════════════════════════════════════════
 
 async function seedAdmin() {
@@ -2660,6 +2751,7 @@ async function main() {
         create: { key, label: labels[key], color: colors[key], sortOrder: projectRoleKeys.indexOf(key) + 1 },
       });
     }
+    await seedDepartments();
     await seedAdmin();
     await seedHR();
     await seedAccessTags();
