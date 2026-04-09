@@ -24,6 +24,7 @@ import { AdminTopbar } from "@/components/admin/AdminTopbar";
 import { AdminI18nProvider } from "@/i18n/admin/AdminI18nProvider";
 import { AuthGuard } from "@/components/admin/AuthGuard";
 import { SessionHydrator } from "./SessionHydrator";
+import { MemberStatsPanel } from "@/components/shared/MemberStatsPanel";
 import "@/styles/globals.css";
 
 const dmSans = DM_Sans({
@@ -51,8 +52,9 @@ export default function AdminLayout({
       <AdminI18nProvider>
         <AuthGuard>
           <SessionHydrator />
-          {/* Sidebar + Topbar read session from Zustand store */}
-          <AdminSidebar userName="" userRole="admin" />
+          <MemberStatsPanel />
+          {/* Sidebar reads session from Zustand store — no prop needed */}
+          <AdminSidebar />
           {/* Main area */}
           <div
             style={{

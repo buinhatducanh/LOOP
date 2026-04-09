@@ -402,7 +402,11 @@
     "formEventTitle": "이벤트 추가", "formEventType": "유형", "formEventStartDate": "시작일",
     "formEventEndDate": "종료일", "formEventColor": "색상", "formEventTitlePlaceholder": "이벤트명",
     "formEventDescPlaceholder": "이벤트 설명...", "formBtnCreateEvent": "이벤트 생성",
-    "errTitleRequired": "제목은 필수입니다", "errCreateFailed": "생성 실패"
+    "errTitleRequired": "제목은 필수입니다", "errCreateFailed": "생성 실패",
+    "formQuestDaily": "매일", "formQuestWeekly": "매주", "formQuestMonthly": "매월",
+    "formQuestOne_time": "일회성", "formQuestEvent": "이벤트",
+    "formEditQuest": "퀘스트 수정", "formEditEvent": "이벤트 수정",
+    "confirmDelete": "삭제 확인?", "confirmDeleteWarn": "이 작업은 취소할 수 없습니다."
   },
   "settings": {
     "title": "시스템 설정", "titleCount": "{n} 설정", "refreshBtn": "새로고침",

@@ -21,7 +21,7 @@ import { DS, GRD } from "@/lib/design-tokens";
 import { useAdminTranslations } from "@/i18n/admin/useAdminTranslations";
 import {
   Settings, Layers, Server, Package as PackageIcon, PlusCircle,
-  Save, Trash2, RefreshCw, Loader2,
+  Save, Trash2, RefreshCw, Loader2, Edit2, X,
 } from "lucide-react";
 
 // ── Types ───────────────────────────────────────────────────────────────────────
@@ -38,13 +38,26 @@ type Feature = {
   slug: string;
   name: string;
   nameVi: string;
+  nameEn?: string | null;
+  nameJa?: string | null;
+  nameKo?: string | null;
+  nameZh?: string | null;
+  description?: string | null;
+  descriptionVi?: string | null;
   category: string;
   categoryVi: string;
+  categoryEn?: string | null;
   price: number;
   isRequired: boolean;
   isActive: boolean;
   tier: string;
   sortOrder: number;
+  xpPoints: number;
+  parentId?: string | null;
+  includedInBase: boolean;
+  isUpgradeable: boolean;
+  parent?: { id: string; name: string; nameVi: string } | null;
+  children?: { id: string; name: string; nameVi: string; tier: string; isUpgradeable: boolean }[];
 };
 
 type InfraTier = {
@@ -248,6 +261,222 @@ function SettingsTab() {
   );
 }
 
+// ── Feature Form Modal ──────────────────────────────────────────────────────────
+
+function FeatureFormModal({
+  feature, allFeatures,
+  onClose, onSuccess,
+}: {
+  feature?: Feature | null;
+  allFeatures: Feature[];
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const isEdit = Boolean(feature?.id);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [form, setForm] = useState({
+    nameVi: feature?.nameVi ?? "",
+    nameEn: feature?.nameEn ?? "",
+    slug: feature?.slug ?? "",
+    categoryVi: feature?.categoryVi ?? "",
+    categoryEn: feature?.categoryEn ?? "",
+    price: feature?.price ?? 0,
+    xpPoints: feature?.xpPoints ?? 0,
+    tier: feature?.tier ?? "basic",
+    parentId: feature?.parentId ?? "",
+    includedInBase: feature?.includedInBase ?? false,
+    isUpgradeable: feature?.isUpgradeable ?? false,
+    isRequired: feature?.isRequired ?? false,
+    sortOrder: feature?.sortOrder ?? 0,
+    isActive: feature?.isActive ?? true,
+  });
+
+  const inpStyle: React.CSSProperties = {
+    width: "100%", background: DS.bg, border: `1px solid ${DS.border}`,
+    borderRadius: 8, padding: "9px 12px", color: DS.text, fontSize: 13,
+    outline: "none", fontFamily: DS.body, boxSizing: "border-box",
+  };
+
+  const labelStyle: React.CSSProperties = { color: DS.text4, fontSize: 11, fontFamily: DS.mono, display: "block", marginBottom: 4 };
+  const fieldGap: React.CSSProperties = { display: "flex", flexDirection: "column", gap: 2 };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.nameVi.trim()) return setError("Tên tính năng (VN) bắt buộc");
+    if (!form.slug.trim()) return setError("Slug bắt buộc");
+    setSaving(true); setError("");
+    try {
+      const payload = {
+        name: form.nameVi,
+        nameVi: form.nameVi,
+        nameEn: form.nameEn || undefined,
+        slug: form.slug,
+        category: form.categoryVi,
+        categoryVi: form.categoryVi,
+        categoryEn: form.categoryEn || undefined,
+        price: Number(form.price) || 0,
+        xpPoints: Number(form.xpPoints) || 0,
+        tier: form.tier,
+        parentId: form.parentId || null,
+        includedInBase: form.includedInBase,
+        isUpgradeable: form.isUpgradeable,
+        isRequired: form.isRequired,
+        sortOrder: Number(form.sortOrder) || 0,
+        isActive: form.isActive,
+      };
+      if (isEdit) {
+        await adminApi.put(`/api/admin/service-attributes/${feature!.id}`, payload);
+      } else {
+        await adminApi.post("/api/admin/service-attributes", payload);
+      }
+      onSuccess(); onClose();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Lưu thất bại");
+    } finally { setSaving(false); }
+  };
+
+  // Auto-generate slug from nameVi
+  const handleNameViChange = (val: string) => {
+    setForm(f => ({
+      ...f,
+      nameVi: val,
+      slug: f.slug || val.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, ""),
+    }));
+  };
+
+  return (
+    <AnimatePresence>
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        onClick={onClose}
+        style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", backdropFilter: "blur(8px)", zIndex: 60, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+        <motion.div initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
+          onClick={e => e.stopPropagation()}
+          style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 16, padding: 24, width: "100%", maxWidth: 560, maxHeight: "85vh", overflowY: "auto" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
+            <div>
+              <h3 style={{ color: DS.text, fontWeight: 700, fontSize: 18, margin: 0 }}>
+                {isEdit ? "Chỉnh sửa tính năng" : "Thêm tính năng mới"}
+              </h3>
+              <p style={{ color: DS.text4, fontSize: 11, margin: "4px 0 0" }}>
+                {form.includedInBase ? "Tính năng cơ bản (included in base price)" : form.isUpgradeable ? "Tính năng nâng cấp (upgrade)" : "Tính năng bổ sung"}
+              </p>
+            </div>
+            <button onClick={onClose} style={{ background: "none", border: "none", color: DS.text4, cursor: "pointer" }}><X size={18} /></button>
+          </div>
+
+          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              <div style={fieldGap}>
+                <label style={labelStyle}>Tên (Tiếng Việt) *</label>
+                <input style={inpStyle} value={form.nameVi} onChange={e => handleNameViChange(e.target.value)} placeholder="VD: Blog & Content" />
+              </div>
+              <div style={fieldGap}>
+                <label style={labelStyle}>Slug *</label>
+                <input style={inpStyle} value={form.slug} onChange={e => setForm(f => ({ ...f, slug: e.target.value }))} placeholder="VD: blog-content" />
+              </div>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              <div style={fieldGap}>
+                <label style={labelStyle}>Tên (English)</label>
+                <input style={inpStyle} value={form.nameEn} onChange={e => setForm(f => ({ ...f, nameEn: e.target.value }))} placeholder="Blog & Content Module" />
+              </div>
+              <div style={fieldGap}>
+                <label style={labelStyle}>Danh mục (Tiếng Việt) *</label>
+                <input style={inpStyle} value={form.categoryVi} onChange={e => setForm(f => ({ ...f, categoryVi: e.target.value }))} placeholder="VD: Nội dung" />
+              </div>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+              <div style={fieldGap}>
+                <label style={labelStyle}>Giá (VND)</label>
+                <input type="number" style={inpStyle} value={form.price} onChange={e => setForm(f => ({ ...f, price: Number(e.target.value) }))} placeholder="500000" />
+              </div>
+              <div style={fieldGap}>
+                <label style={labelStyle}>XP Points</label>
+                <input type="number" style={inpStyle} value={form.xpPoints} onChange={e => setForm(f => ({ ...f, xpPoints: Number(e.target.value) }))} placeholder="50" />
+              </div>
+              <div style={fieldGap}>
+                <label style={labelStyle}>Sort Order</label>
+                <input type="number" style={inpStyle} value={form.sortOrder} onChange={e => setForm(f => ({ ...f, sortOrder: Number(e.target.value) }))} />
+              </div>
+            </div>
+
+            <div style={fieldGap}>
+              <label style={labelStyle}>Parent Feature (nâng cấp từ)</label>
+              <select style={{ ...inpStyle, cursor: "pointer" }} value={form.parentId} onChange={e => setForm(f => ({ ...f, parentId: e.target.value }))}>
+                <option value="">— Không có (tính năng độc lập) —</option>
+                {allFeatures.filter(f => !f.parentId && f.id !== feature?.id).map(f => (
+                  <option key={f.id} value={f.id}>{f.nameVi || f.name} ({f.categoryVi || f.category})</option>
+                ))}
+              </select>
+              {form.parentId && (
+                <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
+                    <input type="checkbox" checked={form.isUpgradeable} onChange={e => setForm(f => ({ ...f, isUpgradeable: e.target.checked }))} />
+                    <span style={{ color: DS.pink, fontSize: 11, fontFamily: DS.mono }}>Đánh dấu là "Nâng cấp"</span>
+                  </label>
+                </div>
+              )}
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              <div style={fieldGap}>
+                <label style={labelStyle}>Tier</label>
+                <select style={{ ...inpStyle, cursor: "pointer" }} value={form.tier} onChange={e => setForm(f => ({ ...f, tier: e.target.value }))}>
+                  <option value="basic">Basic</option>
+                  <option value="standard">Standard</option>
+                  <option value="advanced">Advanced</option>
+                  <option value="premium">Premium</option>
+                </select>
+              </div>
+              <div style={fieldGap}>
+                <label style={labelStyle}>Trạng thái</label>
+                <select style={{ ...inpStyle, cursor: "pointer" }} value={String(form.isActive)} onChange={e => setForm(f => ({ ...f, isActive: e.target.value === "true" }))}>
+                  <option value="true">Hoạt động</option>
+                  <option value="false">Tạm ngưng</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Flags */}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+              <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", padding: "6px 12px", borderRadius: 8, background: form.includedInBase ? `${DS.green}15` : DS.bg, border: `1px solid ${form.includedInBase ? DS.green : DS.border}` }}>
+                <input type="checkbox" checked={form.includedInBase} onChange={e => setForm(f => ({ ...f, includedInBase: e.target.checked }))} />
+                <span style={{ color: form.includedInBase ? DS.green : DS.text3, fontSize: 12, fontFamily: DS.mono }}>
+                  ✓ Included in Base (giá 0đ, luôn có)
+                </span>
+              </label>
+              <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", padding: "6px 12px", borderRadius: 8, background: form.isRequired ? `${DS.amber}15` : DS.bg, border: `1px solid ${form.isRequired ? DS.amber : DS.border}` }}>
+                <input type="checkbox" checked={form.isRequired} onChange={e => setForm(f => ({ ...f, isRequired: e.target.checked }))} />
+                <span style={{ color: form.isRequired ? DS.amber : DS.text3, fontSize: 12, fontFamily: DS.mono }}>
+                  Bắt buộc
+                </span>
+              </label>
+            </div>
+
+            {error && (
+              <div style={{ background: "rgba(239,68,68,0.1)", border: `1px solid rgba(239,68,68,0.3)`, borderRadius: 8, padding: "8px 12px", color: DS.red, fontSize: 12 }}>
+                {error}
+              </div>
+            )}
+
+            <div style={{ display: "flex", gap: 10, paddingTop: 4 }}>
+              <button type="button" onClick={onClose} style={{ flex: 1, padding: "10px", background: DS.bg, border: `1px solid ${DS.border}`, borderRadius: 10, color: DS.text3, cursor: "pointer", fontSize: 13 }}>
+                Hủy
+              </button>
+              <button type="submit" disabled={saving} style={{ flex: 1, padding: "10px", background: saving ? DS.text4 : DS.blue, border: "none", borderRadius: 10, color: "#fff", fontWeight: 700, cursor: saving ? "not-allowed" : "pointer", fontSize: 13 }}>
+                {saving ? "Đang lưu..." : isEdit ? "Lưu thay đổi" : "Thêm tính năng"}
+              </button>
+            </div>
+          </form>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
 // ── Tab 2: Features ────────────────────────────────────────────────────────────
 
 function FeaturesTab() {
@@ -255,37 +484,72 @@ function FeaturesTab() {
 
   const { data, isLoading } = useQuery<{ data: Feature[]; pagination: { total: number } }>({
     queryKey: ["admin", "pricing", "features"],
-    queryFn: () => adminApi.get<{ data: Feature[]; pagination: { total: number } }>("/api/admin/pricing/features"),
+    queryFn: () => adminApi.get<{ data: Feature[]; pagination: { total: number } }>("/api/admin/service-attributes"),
   });
 
+  const [editingFeature, setEditingFeature] = useState<Feature | null | undefined>(undefined);
+  const [search, setSearch] = useState("");
+  const [filterCategory, setFilterCategory] = useState("");
+
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => { await adminApi.delete(`/api/admin/pricing/features?id=${id}`); },
+    mutationFn: async (id: string) => { await adminApi.delete(`/api/admin/service-attributes/${id}`); },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "pricing", "features"] }),
     onError: (err: unknown) => { alert(err instanceof Error ? err.message : "Xóa thất bại"); },
   });
 
   const toggleMutation = useMutation({
     mutationFn: async ({ id, isActive }: { id: string; isActive: boolean }) => {
-      await adminApi.put(`/api/admin/pricing/features`, { id, isActive });
+      await adminApi.put(`/api/admin/service-attributes/${id}`, { isActive });
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "pricing", "features"] }),
     onError: (err: unknown) => { alert(err instanceof Error ? err.message : "Cập nhật thất bại"); },
   });
 
   const features: Feature[] = data?.data ?? [];
-
   const categories = [...new Set(features.map(f => f.categoryVi || f.category))];
+
+  const filtered = features.filter(f => {
+    const matchSearch = !search || (f.nameVi || f.name).toLowerCase().includes(search.toLowerCase());
+    const matchCat = !filterCategory || (f.categoryVi || f.category) === filterCategory;
+    return matchSearch && matchCat;
+  });
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
+      {editingFeature !== undefined && (
+        <FeatureFormModal
+          feature={editingFeature}
+          allFeatures={features}
+          onClose={() => setEditingFeature(undefined)}
+          onSuccess={() => { qc.invalidateQueries({ queryKey: ["admin", "pricing", "features"] }); setEditingFeature(undefined); }}
+        />
+      )}
+
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem", flexWrap: "wrap", gap: 8 }}>
         <div>
           <h3 style={{ fontFamily: DS.heading, fontSize: 16, fontWeight: 700, color: DS.text, margin: "0 0 4px" }}>
             Tính năng dịch vụ
           </h3>
           <p style={{ color: DS.text4, fontSize: 12, fontFamily: DS.mono, margin: 0 }}>
-            {data?.pagination?.total ?? 0} tính năng · {categories.length} danh mục
+            {filtered.length} / {features.length} tính năng · {categories.length} danh mục
           </p>
+        </div>
+        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Tìm kiếm..."
+            style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 8, padding: "6px 12px", color: DS.text, fontSize: 12, fontFamily: DS.mono, outline: "none" }}
+          />
+          <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)}
+            style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 8, padding: "6px 12px", color: DS.text, fontSize: 12, fontFamily: DS.mono, outline: "none", cursor: "pointer" }}>
+            <option value="">Tất cả danh mục</option>
+            {categories.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+          <button onClick={() => setEditingFeature(null)}
+            style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 14px", background: DS.blue, border: "none", borderRadius: 8, color: "#fff", cursor: "pointer", fontSize: 12, fontFamily: DS.mono, fontWeight: 600 }}>
+            <PlusCircle size={13} /> Thêm tính năng
+          </button>
         </div>
       </div>
 
@@ -293,40 +557,63 @@ function FeaturesTab() {
         <div style={{ display: "flex", justifyContent: "center", padding: "3rem" }}>
           <Loader2 size={24} style={{ color: DS.text4, animation: "spin 1s linear infinite" }} />
         </div>
+      ) : filtered.length === 0 ? (
+        <div style={{ textAlign: "center", padding: "3rem", color: DS.text4 }}>Không có tính năng nào</div>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 12 }}>
-          {features.map(f => (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {filtered.map(f => (
             <div key={f.id} style={{
               background: DS.bgCard,
               border: `1px solid ${f.isActive ? DS.border : DS.red + "44"}`,
-              borderRadius: 12, padding: 14,
+              borderRadius: 12, padding: "12px 16px",
               opacity: f.isActive ? 1 : 0.6,
+              transition: "all 0.15s",
             }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ color: DS.text, fontSize: 13, fontWeight: 600, marginBottom: 2 }}>{f.nameVi || f.name}</div>
-                  <div style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono }}>{f.slug}</div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+                {/* Left: info */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 4 }}>
+                    <span style={{ color: DS.text, fontSize: 13, fontWeight: 600 }}>{f.nameVi || f.name}</span>
+                    {f.nameEn && <span style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono }}>/ {f.nameEn}</span>}
+                  </div>
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+                    <span style={{ fontSize: 10, fontFamily: DS.mono, color: DS.text4, background: DS.bg, borderRadius: 4, padding: "1px 6px" }}>{f.slug}</span>
+                    <span style={{ fontSize: 10, fontFamily: DS.mono, color: DS.text4 }}>{f.categoryVi || f.category}</span>
+                    <span style={{ fontSize: 10, fontFamily: DS.mono, color: DS.text4 }}>{f.tier}</span>
+                    {f.includedInBase && (
+                      <span style={{ fontSize: 9, fontFamily: DS.mono, color: DS.green, background: "rgba(34,197,94,0.12)", border: `1px solid rgba(34,197,94,0.25)`, borderRadius: 4, padding: "1px 6px" }}>✓ Base</span>
+                    )}
+                    {f.isUpgradeable && (
+                      <span style={{ fontSize: 9, fontFamily: DS.mono, color: DS.pink, background: "rgba(236,72,153,0.12)", border: `1px solid rgba(236,72,153,0.25)`, borderRadius: 4, padding: "1px 6px" }}>↑ Upgrade</span>
+                    )}
+                    {f.parentId && f.parent && (
+                      <span style={{ fontSize: 9, fontFamily: DS.mono, color: DS.amber, background: "rgba(245,158,11,0.1)", border: `1px solid rgba(245,158,11,0.2)`, borderRadius: 4, padding: "1px 6px" }}>
+                        ↑ từ: {f.parent.nameVi || f.parent.name}
+                      </span>
+                    )}
+                    {f.isRequired && (
+                      <span style={{ fontSize: 9, fontFamily: DS.mono, color: DS.amber, background: "rgba(245,158,11,0.1)", border: `1px solid rgba(245,158,11,0.2)`, borderRadius: 4, padding: "1px 6px" }}>Bắt buộc</span>
+                    )}
+                  </div>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                  {f.isRequired && (
-                    <span style={{ fontSize: 9, fontFamily: DS.mono, color: DS.amber, background: "rgba(245,158,11,0.1)", borderRadius: 4, padding: "2px 6px" }}>Bắt buộc</span>
-                  )}
+
+                {/* Right: price + actions */}
+                <div style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ fontSize: 14, fontFamily: DS.mono, fontWeight: 700, color: f.includedInBase ? DS.green : DS.blue }}>
+                      {f.includedInBase ? "0đ" : `+${fmtVND(f.price)}`}
+                    </div>
+                    {f.xpPoints > 0 && (
+                      <div style={{ fontSize: 10, fontFamily: DS.mono, color: DS.text4 }}>+{f.xpPoints} XP</div>
+                    )}
+                  </div>
                   <Toggle checked={f.isActive} onChange={() => toggleMutation.mutate({ id: f.id, isActive: !f.isActive })} />
-                </div>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div>
-                  <span style={{ fontSize: 10, color: DS.text4 }}>Danh mục: </span>
-                  <span style={{ fontSize: 10, fontFamily: DS.mono, color: DS.text3 }}>{f.categoryVi || f.category}</span>
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ fontSize: 12, fontFamily: DS.mono, color: DS.blue, fontWeight: 600 }}>
-                    +{fmtVND(f.price)}
-                  </span>
-                  <button
-                    onClick={() => { if (confirm("Xóa tính năng này?")) deleteMutation.mutate(f.id); }}
-                    style={{ color: DS.text4, background: "none", border: "none", cursor: "pointer", padding: 4 }}
-                  >
+                  <button onClick={() => setEditingFeature(f)}
+                    style={{ color: DS.blue, background: "none", border: "none", cursor: "pointer", padding: 4, fontSize: 12, fontFamily: DS.mono }}>
+                    Sửa
+                  </button>
+                  <button onClick={() => { if (confirm("Xóa tính năng này?")) deleteMutation.mutate(f.id); }}
+                    style={{ color: DS.text4, background: "none", border: "none", cursor: "pointer", padding: 4 }}>
                     <Trash2 size={12} />
                   </button>
                 </div>

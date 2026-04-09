@@ -365,7 +365,7 @@ function DemosTab({ demos }: { demos: CustomerDemo[] }) {
 
                   <div style={{ display: "flex", gap: "0.5rem" }}>
                     <a
-                      href={demo.figmaUrl}
+                      href={`https://www.figma.com/embed?embed_host=loops&url=${encodeURIComponent(demo.figmaUrl)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       style={{

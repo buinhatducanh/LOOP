@@ -8,7 +8,9 @@
  * - LED running border animation (LEDRunner)
  * - Rank-specific effects (gold comet, ruby sparks, platinum/ruby particles, diamond prismatic)
  * - XP bar, LP balance, hover glow
- * - Corner decorations
+ *
+ * Click → opens global MemberStatsPanel (from loopStore).
+ * Link → navigates to full profile.
  */
 import { useState, CSSProperties } from "react";
 import { motion } from "motion/react";
@@ -22,6 +24,7 @@ import {
   ROLE_SYMBOLS,
   type RankKey,
 } from "./guildMemberData";
+import { useLoopStore, type MemberStats } from "@/app/store/loopStore";
 import { LEDRunner } from "./LEDRunner";
 import { Counter } from "./Counter";
 import { DS } from "@/lib/design-tokens";
@@ -352,6 +355,7 @@ interface MemberCardProps {
 export function MemberCard({ member, index, locale }: MemberCardProps) {
   const [hovered, setHovered] = useState(false);
   const [imgError, setImgError] = useState(false);
+  const setActiveMember = useLoopStore((s) => s.setActiveMember);
 
   const rankKey = normalizeRank(member.rank as string | undefined);
   const cfg = RANKS[rankKey];
@@ -383,7 +387,40 @@ export function MemberCard({ member, index, locale }: MemberCardProps) {
     overflow: "hidden",
   };
 
+  // Build MemberStats for the global stats panel
+  const memberStats: MemberStats = {
+    id: String(member.id ?? index),
+    slug,
+    name,
+    role,
+    avatar: image || null,
+    rank: rankKey,
+    level,
+    currentXp,
+    maxXp,
+    availableLp: lpBalance,
+    lockedLp: 0,
+    department: team,
+    systemRole: member.roleCode as string ?? "member",
+    skills: (member.skills as string[]) ?? [],
+    achievements: (member.achievements as string[]) ?? [],
+    rankHistory: [],
+    missionLogs: [],
+    missionsCompleted: 0,
+    totalApprovedLp: lpBalance,
+    teamTag: team,
+    status: "active",
+  };
+
+  const handleShowStats = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setActiveMember(memberStats, { x: e.clientX, y: e.clientY });
+  };
+
   return (
+    // Outer wrapper: click anywhere on card → open global stats panel
+    <div onClick={handleShowStats} style={{ cursor: "pointer" }}>
     <motion.div
       style={{ borderRadius: 12, position: "relative", willChange: "transform" }}
       whileHover={{ y: -10, scale: 1.03 }}
@@ -662,5 +699,6 @@ export function MemberCard({ member, index, locale }: MemberCardProps) {
       {/* ── Corner decorations ────────────────────────────── */}
       <CornerDeco color={cfg.color} opacity={hovered ? 1 : 0.5} />
     </motion.div>
+    </div>
   );
 }

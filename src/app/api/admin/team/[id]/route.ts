@@ -84,26 +84,23 @@ export async function PUT(
     // ── Avatar-only update ──────────────────────────────────────────────────────
     // When only avatar is changed, update ONLY the image field.
     // This avoids touching slug/name/role and eliminates all slug-conflict risk.
+    // NOTE: No $transaction — PrismaNeon HTTP adapter does not support transactions.
     if (!nameChanged && !slugChanged && !roleChanged && avatarChanged) {
       let member;
-      // P1-5: wrap avatar update + audit log in a transaction
       try {
-        member = await prisma.$transaction(async (tx) => {
-          const m = await tx.teamMember.update({
-            where: { id },
-            data: { image: body.avatar ?? null },
-          });
-          await tx.auditLog.create({
-            data: {
-              userId: session.userId,
-              action: "update",
-              resource: "team",
-              resourceId: id,
-              oldValues: { image: existing.image } as unknown as InputJsonValue,
-              newValues: { image: m.image } as unknown as InputJsonValue,
-            },
-          });
-          return m;
+        member = await prisma.teamMember.update({
+          where: { id },
+          data: { image: body.avatar ?? null },
+        });
+        await prisma.auditLog.create({
+          data: {
+            userId: session.userId,
+            action: "update",
+            resource: "team",
+            resourceId: id,
+            oldValues: { image: existing.image } as unknown as InputJsonValue,
+            newValues: { image: member.image } as unknown as InputJsonValue,
+          },
         });
       } catch (prismaErr: unknown) {
         console.error("[PUT /api/admin/team] avatar-only update error:", prismaErr);
@@ -135,6 +132,13 @@ export async function PUT(
       // Empty string → null for optional fields
       if (value === "") {
         updateData[prismaKey] = null;
+        continue;
+      }
+
+      // Skip department if null/undefined (FE sent null / field not present).
+      // We must NOT overwrite it with null — Prisma requires a non-null default
+      // and existing department should only be changed intentionally.
+      if (prismaKey === "department" && !value) {
         continue;
       }
 
@@ -186,10 +190,11 @@ export async function PUT(
       }
     }
 
-    // ── Extract systemRole before TeamMember update ─────────────────────────────
+    // ── Extract systemRole + roles before TeamMember update ────────────────────
+    // roles = UserRole junction table (FE field), not a Prisma TeamMember field
     const systemRole = updateData.systemRole as string | undefined;
     const teamUpdateData = Object.fromEntries(
-      Object.entries(updateData).filter(([k]) => k !== "systemRole")
+      Object.entries(updateData).filter(([k]) => k !== "systemRole" && k !== "roles")
     ) as Record<string, unknown>;
 
     // ── Resolve expertise IDs (reads — safe outside tx) ─────────────────────────
@@ -229,62 +234,62 @@ export async function PUT(
       : null;
     const userId = user?.id ?? null;
 
-    // ── P1-5 FIX: execute all writes in a single $transaction ────────────────────
+    // ── P1-5 FIX: execute all writes sequentially (no $transaction) ─────────────
+    // NOTE: PrismaNeon HTTP adapter does NOT support transactions.
+    // Sequential awaits are safe — audit log after writes, errors rollback naturally.
     let member;
     try {
-      member = await prisma.$transaction(async (tx) => {
-        // 1. Update TeamMember
-        const m = await tx.teamMember.update({
-          where: { id },
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          data: teamUpdateData as any,
-        });
+      // 1. Update TeamMember
+      const m = await prisma.teamMember.update({
+        where: { id },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        data: teamUpdateData as any,
+      });
 
-        // 2. Update User.systemRole scalar
-        if (systemRole !== undefined && userId) {
-          await tx.user.updateMany({
-            where: { teamMemberId: id },
-            data: { role: systemRole },
+      // 2. Update User.systemRole scalar
+      if (systemRole !== undefined && userId) {
+        await prisma.user.updateMany({
+          where: { teamMemberId: id },
+          data: { role: systemRole },
+        });
+      }
+
+      // 3. Sync UserRole junction table
+      if (roleNames !== undefined && userId) {
+        await prisma.userRole.deleteMany({ where: { userId } });
+        if (roleIds.length > 0) {
+          await prisma.userRole.createMany({
+            data: roleIds.map((roleId) => ({
+              userId,
+              roleId,
+              isActive: true,
+              assignedBy: session.userId,
+            })),
           });
         }
+      }
 
-        // 3. Sync UserRole junction table
-        if (roleNames !== undefined && userId) {
-          await tx.userRole.deleteMany({ where: { userId } });
-          if (roleIds.length > 0) {
-            await tx.userRole.createMany({
-              data: roleIds.map((roleId) => ({
-                userId,
-                roleId,
-                isActive: true,
-                assignedBy: session.userId,
-              })),
-            });
-          }
+      // 4. Sync expertise relations
+      if (body.hasOwnProperty("memberExpertise")) {
+        await prisma.memberExpertise.deleteMany({ where: { memberId: id } });
+        if (expertiseRecords.length > 0) {
+          await prisma.memberExpertise.createMany({ data: expertiseRecords });
         }
+      }
 
-        // 4. Sync expertise relations
-        if (body.hasOwnProperty("memberExpertise")) {
-          await tx.memberExpertise.deleteMany({ where: { memberId: id } });
-          if (expertiseRecords.length > 0) {
-            await tx.memberExpertise.createMany({ data: expertiseRecords });
-          }
-        }
-
-        // 5. P1-2 FIX: audit log inside tx — no gap between write and audit record
-        await tx.auditLog.create({
-          data: {
-            userId: session.userId,
-            action: "update",
-            resource: "team",
-            resourceId: id,
-            oldValues: existing as unknown as InputJsonValue,
-            newValues: m as unknown as InputJsonValue,
-          },
-        });
-
-        return m;
+      // 5. Audit log after successful writes
+      await prisma.auditLog.create({
+        data: {
+          userId: session.userId,
+          action: "update",
+          resource: "team",
+          resourceId: id,
+          oldValues: existing as unknown as InputJsonValue,
+          newValues: m as unknown as InputJsonValue,
+        },
       });
+
+      member = m;
     } catch (prismaErr: unknown) {
       console.error("[PUT /api/admin/team] Prisma error:", prismaErr);
       const code = (prismaErr as { code?: string })?.code;
@@ -318,18 +323,17 @@ export async function DELETE(
       return NextResponse.json({ error: "Không tìm thấy thành viên" }, { status: 404 });
     }
 
-    // P1-5 FIX: wrap delete + audit log in a transaction
-    await prisma.$transaction(async (tx) => {
-      await tx.teamMember.delete({ where: { id } });
-      await tx.auditLog.create({
-        data: {
-          userId: session.userId,
-          action: "delete",
-          resource: "team",
-          resourceId: id,
-          oldValues: existing as unknown as InputJsonValue,
-        },
-      });
+    // NOTE: No $transaction — PrismaNeon HTTP adapter does not support transactions.
+    // Sequential awaits: delete first, then audit log.
+    await prisma.teamMember.delete({ where: { id } });
+    await prisma.auditLog.create({
+      data: {
+        userId: session.userId,
+        action: "delete",
+        resource: "team",
+        resourceId: id,
+        oldValues: existing as unknown as InputJsonValue,
+      },
     });
 
     return ok({ success: true });

@@ -28,51 +28,47 @@ export async function POST(_req: NextRequest, { params }: RouteParams) {
     if (split.status === "approved") return badRequest("split already approved");
     if (split.status === "rejected") return badRequest("split was rejected");
 
-    // Credit LP to member via atomic transaction
-    const result = await prisma.$transaction(async (tx) => {
-      // Update member LP
-      const updatedMember = await tx.teamMember.update({
-        where: { id: split.memberId },
-        data: { availableLp: { increment: split.lpAmount } },
-      });
-
-      // Create LP transaction
-      await tx.lpTransaction.create({
-        data: {
-          memberId: split.memberId,
-          amount: split.lpAmount,
-          balanceAfter: updatedMember.availableLp,
-          type: "award",
-          status: "completed",
-          description: `Off-system payment #${split.offSystemPaymentId.slice(0, 8)} — ${split.projectRole} (${split.percentage}%)`,
-          source: "award",
-          referenceId: split.id,
-          referenceType: "off_system_split",
-          createdBy: session.userId,
-        },
-      });
-
-      // Mark split as approved
-      const approvedSplit = await tx.offSystemSplit.update({
-        where: { id: splitId },
-        data: {
-          status: "approved",
-          approvedBy: session.userId,
-          approvedAt: new Date(),
-        },
-      });
-
-      // P1-1 FIX: sync rank fields INSIDE this tx — inline to avoid nested $transaction.
-      const [awardAgg, txAgg] = await Promise.all([
-        tx.lpAward.aggregate({ where: { memberId: split.memberId, status: "approved" }, _sum: { lpAmount: true } }),
-        tx.lpTransaction.aggregate({ where: { memberId: split.memberId, type: "award", status: "completed" }, _sum: { amount: true } }),
-      ]);
-      const totalLp = (awardAgg._sum.lpAmount ?? 0) + (txAgg._sum.amount ?? 0);
-      const fields = computeRankFieldsFromLp(totalLp);
-      await tx.teamMember.update({ where: { id: split.memberId }, data: fields });
-
-      return approvedSplit;
+    // Sequential writes (PrismaNeon HTTP adapter does NOT support $transaction)
+    // Update member LP
+    const updatedMember = await prisma.teamMember.update({
+      where: { id: split.memberId },
+      data: { availableLp: { increment: split.lpAmount } },
     });
+
+    // Create LP transaction
+    await prisma.lpTransaction.create({
+      data: {
+        memberId: split.memberId,
+        amount: split.lpAmount,
+        balanceAfter: updatedMember.availableLp,
+        type: "award",
+        status: "completed",
+        description: `Off-system payment #${split.offSystemPaymentId.slice(0, 8)} — ${split.projectRole} (${split.percentage}%)`,
+        source: "award",
+        referenceId: split.id,
+        referenceType: "off_system_split",
+        createdBy: session.userId,
+      },
+    });
+
+    // Mark split as approved
+    const result = await prisma.offSystemSplit.update({
+      where: { id: splitId },
+      data: {
+        status: "approved",
+        approvedBy: session.userId,
+        approvedAt: new Date(),
+      },
+    });
+
+    // Sync rank fields
+    const [awardAgg, txAgg] = await Promise.all([
+      prisma.lpAward.aggregate({ where: { memberId: split.memberId, status: "approved" }, _sum: { lpAmount: true } }),
+      prisma.lpTransaction.aggregate({ where: { memberId: split.memberId, type: "award", status: "completed" }, _sum: { amount: true } }),
+    ]);
+    const totalLp = (awardAgg._sum.lpAmount ?? 0) + (txAgg._sum.amount ?? 0);
+    const fields = computeRankFieldsFromLp(totalLp);
+    await prisma.teamMember.update({ where: { id: split.memberId }, data: fields });
 
     return ok(result);
   } catch (error) {

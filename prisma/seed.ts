@@ -1306,6 +1306,22 @@ async function seedContent() {
     { key: "vat_rate", value: "0.1", group: "pricing" },  // 10% VAT — used by /api/pricing/config
     // Base price for Custom Web: includes responsive, SSL, cart, SEO, home page (3,890,000₫)
     { key: "custom_web_base_price", value: "3890000", group: "pricing" },
+    // Website marketing pricing config — controls package display prices + promotions
+    // Admin sửa tại: Admin → Settings → Pricing (hoặc Admin → Settings → Site Settings)
+    // Shape: { marketPrices: {"basic":5500000,"business":8900000,"experience":12000000}, promotion: { active: true, label: "..." }, slotsLeft: 3 }
+    {
+      key: "website_pricing_config",
+      value: JSON.stringify({
+        marketPrices: {
+          basic: 5_500_000,
+          business: 8_900_000,
+          experience: 12_000_000,
+        },
+        promotion: { active: false, label: "Giảm ngay 10%" },
+        slotsLeft: 3,
+      }),
+      group: "marketing",
+    },
   ];
 
   for (const setting of settings) {
@@ -2727,9 +2743,111 @@ async function seedR2() {
   await seedLPEconomy(memberCUIDs, teamUserIds);
   await seedPMData(memberCUIDs);
   await seedQuestParticipants(memberCUIDs, teamUserIds);
+  // Rank history: generate rank transition records from LP transactions
+  await seedRankHistory(memberCUIDs);
 
   console.log("\n✅ R2 seed complete — all demo data unified");
 }
+
+// ── Seed Rank History ───────────────────────────────────────────────────────────
+// Generates rank transition records from member level milestones.
+// Rank thresholds (from guildMemberData.ts):
+//   Iron → Bronze: level 15
+//   Bronze → Silver: level 35
+//   Silver → Gold: level 55
+//   Gold → Platinum: level 75
+//   Platinum → Ruby: level 95
+//   Ruby → Diamond: level 115
+const RANK_THRESHOLDS = [
+  { minLevel: 1,  maxLevel: 14,  rank: "iron" },
+  { minLevel: 15, maxLevel: 34,  rank: "bronze" },
+  { minLevel: 35, maxLevel: 54,  rank: "silver" },
+  { minLevel: 55, maxLevel: 74,  rank: "gold" },
+  { minLevel: 75, maxLevel: 94,  rank: "platinum" },
+  { minLevel: 95, maxLevel: 114, rank: "ruby" },
+  { minLevel: 115, maxLevel: Infinity, rank: "diamond" },
+];
+
+function getRankFromLevel(level: number): string {
+  for (const t of RANK_THRESHOLDS) {
+    if (level >= t.minLevel && level <= t.maxLevel) return t.rank;
+  }
+  return "iron";
+}
+
+const RANK_REASONS: Record<string, string[]> = {
+  iron:     ["Gia nhập LOOP", "Bắt đầu hành trình", "Sẵn sàng chiến đấu"],
+  bronze:   ["Hoàn thành 5 nhiệm vụ đầu tiên", "Team vượt sprint đầu", "Không ngừng tiến lên"],
+  silver:   ["Hoàn thành 10 task phức tạp", "Thành thạo tech stack", "Tốc độ tăng trưởng ấn tượng"],
+  gold:     ["Dẫn dắt dự án thành công", "Đạt top 20% team", "Elite performer"],
+  platinum: ["CTO đánh giá xuất sắc", "100% uptime dự án", "Lead engineer của tháng"],
+  ruby:     ["Thành tựu vượt kỳ vọng", "Architect của quý", "Đỉnh cao không ngừng"],
+  diamond:  ["Guild Master confirmed", "Huyền thoại sống", "Elite Tier achieved"],
+};
+
+async function seedRankHistory(memberCUIDs: Record<string, string>) {
+  console.log("\n[RankHistory] Seeding rank transition history...");
+
+  // Get all seeded members with their levels
+  const members = await prisma.teamMember.findMany({
+    where: { slug: { in: Object.keys(memberCUIDs) } },
+    select: { id: true, slug: true, level: true, rank: true },
+  });
+
+  let transitions = 0;
+  for (const m of members) {
+    const currentLevel = m.level ?? 1;
+    const currentRank = m.rank ?? "iron";
+
+    // Find all rank milestones this member has passed
+    const passedThresholds: string[] = [];
+    for (const t of RANK_THRESHOLDS) {
+      if (currentLevel > t.maxLevel && t.rank !== currentRank) {
+        passedThresholds.push(t.rank);
+      }
+    }
+
+    // Get LpTransactions to use as rank-up date sources
+    const transactions = await prisma.lpTransaction.findMany({
+      where: { memberId: m.id },
+      orderBy: { createdAt: "asc" },
+      take: passedThresholds.length,
+    });
+
+    for (let i = 0; i < passedThresholds.length; i++) {
+      const toRank = passedThresholds[i];
+      const fromRank = RANK_THRESHOLDS[RANK_THRESHOLDS.findIndex((t) => t.rank === toRank) - 1]?.rank ?? "iron";
+      const reason = RANK_REASONS[toRank]?.[Math.floor(Math.random() * RANK_REASONS[toRank].length)] ?? `Thăng hạng ${toRank}`;
+
+      // Use transaction date if available, otherwise estimate
+      const txDate = transactions[i]?.createdAt;
+      const rankUpDate = txDate
+        ? new Date(txDate.getTime() + Math.random() * 86400 * 1000)
+        : new Date(Date.now() - (currentLevel - RANK_THRESHOLDS.find((t) => t.rank === toRank)!.minLevel) * 7 * 86400 * 1000);
+
+      // Create a synthetic "rank-up" LpTransaction record to serve as rank history
+      await prisma.lpTransaction.upsert({
+        where: {
+          id: `rankup-${m.id}-${toRank}-${i}`,
+        },
+        update: {},
+        create: {
+          id: `rankup-${m.id}-${toRank}-${i}`,
+          memberId: m.id,
+          amount: 0,
+          type: "award",
+          status: "completed",
+          description: `[RANK UP] ${fromRank.toUpperCase()} → ${toRank.toUpperCase()}: ${reason}`,
+          source: "rank_up",
+          balanceAfter: 0,
+        },
+      });
+      transitions++;
+    }
+  }
+  console.log(`  ✓ ${transitions} rank-up transaction records`);
+}
+
 
 // ══════════════════════════════════════════════════════════════════
 

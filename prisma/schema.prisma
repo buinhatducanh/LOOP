@@ -446,6 +446,13 @@ model TeamMember {
   user                   User?
   offSystemSplits        OffSystemSplit[]
 
+  @@index([departmentId])
+  @@index([isActive])
+  @@index([rank])
+  @@index([requestStatus])
+  @@index([isDeptHead])
+  @@index([departmentId, isActive])
+  @@index([rank, isActive])
   @@map("team_members")
 }
 
@@ -457,13 +464,15 @@ model Department {
   color       String?
   description String?
   mission     String?
-  headId     String?
+  headId      String?
   memberCount Int?         @default(0) @map("member_count")
   createdAt   DateTime     @default(now()) @map("created_at")
   updatedAt   DateTime     @updatedAt @map("updated_at")
 
   members TeamMember[]
+  quests   Quest[]
 
+  @@index([headId])
   @@map("departments")
 }
 
@@ -805,6 +814,10 @@ model ServiceAttribute {
   /// If true, this feature is included in the base price (3,890,000₫).
   /// Appears in the feature table with price 0đ and "✓ Đã bao gồm" badge.
   includedInBase     Boolean                @default(false) @map("included_in_base")
+  /// If true, this feature is an upgrade from a base feature.
+  /// Appears in the "Nâng cấp" section with upgrade delta pricing.
+  /// Only applies when parentId is set (i.e., this is a child of another feature).
+  isUpgradeable      Boolean                @default(false) @map("is_upgradeable")
   orderAttributes    OrderAttribute[]
   parent             ServiceAttribute?      @relation("FeatureHierarchy", fields: [parentId], references: [id])
   children           ServiceAttribute[]     @relation("FeatureHierarchy")
@@ -813,6 +826,7 @@ model ServiceAttribute {
   @@index([tier, isActive])
   @@index([category, tier])
   @@index([parentId])
+  @@index([includedInBase, tier])
   @@map("service_attributes")
 }
 
@@ -1754,14 +1768,16 @@ model LpAward {
   rejectedReason String?     @map("rejected_reason")
   createdAt      DateTime    @default(now()) @map("created_at")
   approvedAt     DateTime?   @map("approved_at")
-  projectId      String      @map("project_id")
+  projectId      String?     @map("project_id")
   approver       TeamMember? @relation("LpAwardApprover", fields: [approvedBy], references: [id])
   member         TeamMember  @relation("LpAwardMember", fields: [memberId], references: [id])
-  project        Order       @relation(fields: [projectId], references: [id])
+  project        Order?      @relation(fields: [projectId], references: [id])
   task           Task?       @relation(fields: [taskId], references: [id])
 
   @@index([projectId, memberId])
   @@index([taskId])
+  @@index([memberId, status])
+  @@index([status, createdAt])
   @@map("lp_awards")
 }
 
@@ -2440,25 +2456,29 @@ model MemberEffectOverride {
 
 // ── Quests ─────────────────────────────────────────────────────────────────────
 model Quest {
-  id          String   @id @default(cuid())
-  title       String
-  description String
-  lpReward    Int      @map("lp_reward")
-  xpReward    Int      @default(0) @map("xp_reward")
-  /// * Frequency: daily | weekly | monthly | one_time | event
-  frequency   String
+  id             String       @id @default(cuid())
+  title          String
+  description    String
+  lpReward       Int          @map("lp_reward")
+  xpReward       Int          @default(0) @map("xp_reward")
+  /// * Frequency: daily | weekly | monthly | one_time | event | seasonal
+  frequency      String
   /// * Category: engagement | project | social | learning | achievement
-  category    String
-  icon        String
-  color       String
-  target      Int      @default(1)
-  forRoles    String[] @map("for_roles")
-  isActive    Boolean  @default(true) @map("is_active")
-  sortOrder   Int      @default(0) @map("sort_order")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  category       String
+  /// * Scope: company (all staff) | department (same dept) | personal (per member)
+  scope          String       @default("company")
+  departmentId   String?      @map("department_id")   // null = company-wide or personal
+  department     Department?  @relation(fields: [departmentId], references: [id])
+  icon           String
+  color          String
+  target         Int          @default(1)
+  forRoles       String[]     @map("for_roles")
+  isActive       Boolean      @default(true) @map("is_active")
+  sortOrder      Int          @default(0) @map("sort_order")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
 
-  participants QuestParticipant[]
+  participants   QuestParticipant[]
 
   @@map("quests")
 }
@@ -2652,8 +2672,8 @@ model MemberRequest {
   updatedAt       DateTime  @updatedAt @map("updated_at")
   user            User?     @relation("MemberRequestUser", fields: [userId], references: [id])
 
-  @@index([status])
-  @@index([department])
+  @@index([status, createdAt])
+  @@index([inviteToken])
   @@map("member_requests")
 }
 

@@ -9,7 +9,7 @@ import { useAdminTranslations } from "@/i18n/admin/useAdminTranslations";
 import {
   X, Camera, CheckCircle2, Eye, ChevronRight, Search,
   RefreshCw, Trash2, Plus, ChevronLeft, Upload, FileText, TrendingUp,
-  Image, ZoomIn, ExternalLink, LayoutGrid, List,
+  Image, ZoomIn, ExternalLink, LayoutGrid, List, Package as PackageIcon, Check, Loader2, Edit2,
 } from "lucide-react";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -75,6 +75,22 @@ type MediaBooking = {
   package?: { title: string };
   createdAt: string;
   updatedAt: string;
+};
+
+type MediaPackage = {
+  id: string;
+  slug: string;
+  title: string;
+  titleEn?: string | null;
+  shortDesc: string;
+  shortDescEn?: string | null;
+  type: string;
+  price: number | null;
+  priceText?: string | null;
+  features: string[];
+  isSubscription: boolean;
+  sortOrder: number;
+  isActive: boolean;
 };
 
 type BookingFormData = {
@@ -1206,7 +1222,7 @@ export default function MediaBookingsPage() {
   const [selectedBooking, setSelectedBooking] = useState<MediaBooking | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [editBooking, setEditBooking] = useState<MediaBooking | null>(null);
-  const [activeTab, setActiveTab] = useState<"bookings" | "portfolio">("bookings");
+  const [activeTab, setActiveTab] = useState<"bookings" | "portfolio" | "packages">("bookings");
 
   const translatedStatuses = Object.fromEntries(
     Object.entries(STATUS_CONFIG).map(([k, v]) => [
@@ -1294,6 +1310,7 @@ export default function MediaBookingsPage() {
         {([
           { key: "bookings", label: t("media.tabBookings"), icon: <List size={13} /> },
           { key: "portfolio", label: t("media.tabPortfolio"), icon: <LayoutGrid size={13} /> },
+          { key: "packages", label: "Gói dịch vụ", icon: <PackageIcon size={13} /> },
         ] as const).map((tab) => (
           <button
             key={tab.key}
@@ -1314,8 +1331,10 @@ export default function MediaBookingsPage() {
         ))}
       </div>
 
-      {/* Portfolio tab */}
-      {activeTab === "portfolio" ? (
+      {/* Packages tab */}
+      {activeTab === "packages" ? (
+        <MediaPackagesTab />
+      ) : activeTab === "portfolio" ? (
         <PortfolioGallery
           onEditBooking={(booking) => setSelectedBooking(booking)}
           t={t}
@@ -1509,6 +1528,251 @@ export default function MediaBookingsPage() {
           onClose={() => { setShowCreate(false); setEditBooking(null); }}
           onSuccess={() => { setShowCreate(false); setEditBooking(null); }}
         />
+      )}
+    </div>
+  );
+}
+
+// ─── Tab 3: Media Packages ─────────────────────────────────────────────────────
+
+function MediaPackagesTab() {
+  const qc = useQueryClient();
+  const { data, isLoading, isFetching } = useQuery({
+    queryKey: ["admin", "media-packages"],
+    queryFn: () => adminApi.get<{ data: MediaPackage[] }>("/api/admin/pricing/packages?type=media"),
+  });
+
+  const toggleMutation = useMutation({
+    mutationFn: async (pkg: MediaPackage) => {
+      await adminApi.put("/api/admin/pricing/packages", {
+        id: pkg.id,
+        isActive: !pkg.isActive,
+      });
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "media-packages"] }),
+    onError: (err: unknown) => { alert(err instanceof Error ? err.message : "Lưu thất bại"); },
+  });
+
+  const seedMutation = useMutation({
+    mutationFn: () => adminApi.post("/api/pricing/media-seed", {}),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "media-packages"] }),
+    onError: (err: unknown) => { alert(err instanceof Error ? err.message : "Seed thất bại"); },
+  });
+
+  const packages: MediaPackage[] = data?.data ?? [];
+
+  // Card gradient + icon color config per package slug
+  const PKG_META: Record<string, { gradient: string; iconBg: string; iconColor: string; badge: string; popular?: boolean }> = {
+    "chup-anh":       { gradient: GRD.teal,   iconBg: "rgba(110,177,168,0.15)", iconColor: "#6EB1A8", badge: "Basic" },
+    "quay-va-dung":   { gradient: GRD.blue,   iconBg: "rgba(79,125,243,0.15)",  iconColor: "#4F7DF3", badge: "Standard", popular: true },
+    "quay-dung-content": { gradient: GRD.primary, iconBg: "rgba(236,72,153,0.15)", iconColor: DS.pink, badge: "Premium" },
+  };
+
+  return (
+    <div>
+      {/* Header */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+        <div>
+          <h3 style={{ fontFamily: DS.heading, fontSize: 16, fontWeight: 700, color: DS.text, margin: "0 0 4px" }}>
+            Gói dịch vụ Media
+          </h3>
+          <p style={{ color: DS.text4, fontSize: 12, fontFamily: DS.mono, margin: 0 }}>
+            3 gói: Chụp Ảnh · Quay & Dựng · Quay & Dựng + Content
+          </p>
+        </div>
+        <button
+          onClick={() => seedMutation.mutate()}
+          disabled={seedMutation.isPending}
+          style={{
+            display: "flex", alignItems: "center", gap: 6,
+            padding: "7px 14px", borderRadius: 9, cursor: "pointer",
+            background: "rgba(139,92,246,0.1)", border: `1px solid rgba(139,92,246,0.3)`,
+            color: "#8B5CF6", fontSize: 12, fontFamily: DS.mono, fontWeight: 600,
+            opacity: seedMutation.isPending ? 0.6 : 1,
+          }}
+        >
+          {seedMutation.isPending ? <Loader2 size={13} style={{ animation: "spin 1s linear infinite" }} /> : <RefreshCw size={13} />}
+          Seed / Sync
+        </button>
+      </div>
+
+      {/* Loading */}
+      {isLoading && (
+        <div style={{ display: "flex", justifyContent: "center", padding: 48 }}>
+          <Loader2 size={32} style={{ animation: "spin 1s linear infinite", color: DS.pink }} />
+        </div>
+      )}
+
+      {/* Empty state */}
+      {!isLoading && packages.length === 0 && (
+        <div style={{
+          textAlign: "center", padding: "48px 24px",
+          background: DS.bgCard, border: `1px dashed ${DS.border}`,
+          borderRadius: 16,
+        }}>
+          <Camera size={40} style={{ color: DS.text4, marginBottom: 12 }} />
+          <p style={{ color: DS.text3, fontFamily: DS.heading, fontSize: 16, marginBottom: 8 }}>Chưa có gói Media nào</p>
+          <p style={{ color: DS.text4, fontSize: 13, marginBottom: 20 }}>
+            Nhấn "Seed / Sync" để tạo 3 gói mặc định
+          </p>
+          <button
+            onClick={() => seedMutation.mutate()}
+            disabled={seedMutation.isPending}
+            style={{
+              padding: "8px 20px", borderRadius: 9, cursor: "pointer",
+              background: GRD.primary, border: "none", color: "#fff",
+              fontFamily: DS.heading, fontSize: 14, fontWeight: 700,
+            }}
+          >
+            Tạo 3 gói mặc định
+          </button>
+        </div>
+      )}
+
+      {/* Package cards */}
+      {!isLoading && packages.length > 0 && (
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+          gap: 16,
+        }}>
+          {packages.map((pkg) => {
+            const meta = PKG_META[pkg.slug] ?? { gradient: GRD.cosmicBg1, iconBg: "rgba(139,92,246,0.15)", iconColor: DS.purple, badge: "—" };
+            return (
+              <motion.div
+                key={pkg.id}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                style={{
+                  background: DS.bgCard,
+                  border: `1px solid ${pkg.isActive ? meta.iconColor + "44" : DS.border}`,
+                  borderRadius: 16,
+                  overflow: "hidden",
+                  position: "relative",
+                  transition: "border-color 0.2s",
+                  opacity: pkg.isActive ? 1 : 0.55,
+                }}
+              >
+                {/* Gradient top bar */}
+                <div style={{
+                  height: 4,
+                  background: pkg.isActive ? meta.gradient : "transparent",
+                }} />
+
+                {/* Popular badge */}
+                {meta.popular && pkg.isActive && (
+                  <div style={{
+                    position: "absolute", top: 12, right: 12,
+                    background: DS.pink, color: "#fff",
+                    fontSize: 10, fontFamily: DS.mono, fontWeight: 700,
+                    padding: "2px 8px", borderRadius: 99,
+                  }}>
+                    PHỔ BIẾN
+                  </div>
+                )}
+
+                <div style={{ padding: "20px 20px 16px" }}>
+                  {/* Icon + badge row */}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
+                    <div style={{
+                      width: 48, height: 48, borderRadius: 12,
+                      background: meta.iconBg, display: "flex",
+                      alignItems: "center", justifyContent: "center",
+                    }}>
+                      <Camera size={24} style={{ color: meta.iconColor }} />
+                    </div>
+                    <span style={{
+                      fontSize: 10, fontFamily: DS.mono, fontWeight: 700,
+                      padding: "3px 8px", borderRadius: 99,
+                      background: meta.iconBg, color: meta.iconColor,
+                    }}>
+                      {meta.badge}
+                    </span>
+                  </div>
+
+                  {/* Title */}
+                  <h4 style={{
+                    fontFamily: DS.heading, fontSize: 18, fontWeight: 700,
+                    color: DS.text, margin: "0 0 4px",
+                  }}>
+                    {pkg.title}
+                  </h4>
+
+                  {/* Short desc */}
+                  <p style={{ color: DS.text4, fontSize: 13, lineHeight: 1.5, margin: "0 0 16px", minHeight: 40 }}>
+                    {pkg.shortDesc}
+                  </p>
+
+                  {/* Price */}
+                  <div style={{ marginBottom: 16 }}>
+                    <span style={{
+                      fontFamily: DS.heading, fontSize: 24, fontWeight: 700,
+                      color: pkg.isActive ? meta.iconColor : DS.text4,
+                    }}>
+                      {pkg.price != null ? fmtVND(pkg.price) : "Liên hệ"}
+                    </span>
+                    <span style={{ color: DS.text4, fontSize: 12, marginLeft: 4 }}>VND</span>
+                  </div>
+
+                  {/* Features */}
+                  <ul style={{ listStyle: "none", padding: 0, margin: "0 0 20px" }}>
+                    {(pkg.features ?? []).map((feat, i) => (
+                      <li key={i} style={{
+                        display: "flex", alignItems: "flex-start", gap: 8,
+                        marginBottom: 8, fontSize: 13, color: DS.text3, lineHeight: 1.4,
+                      }}>
+                        <Check size={13} style={{ color: meta.iconColor, flexShrink: 0, marginTop: 2 }} />
+                        <span>{feat}</span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  {/* Footer: toggle */}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontSize: 11, color: DS.text4, fontFamily: DS.mono }}>
+                        {pkg.isActive ? "Đang bật" : "Đã tắt"}
+                      </span>
+                      <button
+                        onClick={() => toggleMutation.mutate(pkg)}
+                        disabled={toggleMutation.isPending}
+                        style={{
+                          width: 36, height: 20, borderRadius: 10, border: "none", cursor: "pointer",
+                          background: pkg.isActive ? "#22C55E" : DS.border,
+                          transition: "background 0.2s", position: "relative",
+                          opacity: toggleMutation.isPending ? 0.6 : 1,
+                        }}
+                      >
+                        <span style={{
+                          position: "absolute", top: 2,
+                          left: pkg.isActive ? 18 : 2,
+                          width: 16, height: 16, borderRadius: "50%", background: "#fff",
+                          transition: "left 0.2s",
+                        }} />
+                      </button>
+                    </div>
+                    <span style={{ fontSize: 10, color: DS.text5, fontFamily: DS.mono }}>
+                      #{pkg.sortOrder}
+                    </span>
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Add-on note */}
+      {!isLoading && packages.length > 0 && (
+        <div style={{
+          marginTop: 20, padding: "12px 16px", borderRadius: 10,
+          background: "rgba(59,130,246,0.05)", border: `1px solid rgba(59,130,246,0.15)`,
+        }}>
+          <p style={{ color: DS.text4, fontSize: 12, fontFamily: DS.mono, margin: 0 }}>
+            💡 <strong style={{ color: DS.text3 }}>Tùy chỉnh thêm:</strong> Khách hàng có thể chọn thêm dịch vụ đắp thêm (extra shooting, extra clip, drone footage, makeup artist) khi đặt dịch vụ.
+            Extra được ghi nhận trong <strong style={{ color: DS.text3 }}>MediaBooking.note</strong> hoặc thêm field <strong style={{ color: DS.text3 }}>addonAmount</strong>.
+          </p>
+        </div>
       )}
     </div>
   );

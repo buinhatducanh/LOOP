@@ -102,38 +102,38 @@ export const POST = withIdempotency(
         );
       }
 
+      // Sequential writes (PrismaNeon HTTP adapter does NOT support $transaction)
       // Use UUID-based order number to prevent collision under concurrent requests
       const orderNumber = `ORD-${crypto.randomUUID().replace(/-/g, "").slice(0, 12).toUpperCase()}`;
 
-      // ⚠️ FIX: wrap order create + audit log in a transaction.
-      // If audit log write fails, the order still exists — gap in audit trail.
-      const order = await prisma.$transaction(async (tx) => {
-        const created = await tx.order.create({
-          data: {
-            orderNumber,
-            packageId: data.packageId,
-            customerName: data.customerName,
-            customerEmail: data.customerEmail,
-            customerPhone: data.customerPhone || null,
-            companyName: data.companyName || null,
-            requirements: data.requirements || null,
-            status: requestedStatus,
-            paymentStatus: data.paymentStatus || "unpaid",
-            totalAmount: data.totalAmount ? parseInt(data.totalAmount) : null,
-          },
-          include: { package: { select: { title: true } } },
-        });
-        await tx.auditLog.create({
-          data: {
-            userId: session.userId,
-            action: "create",
-            resource: "orders",
-            resourceId: created.id,
-            newValues: data,
-          },
-        });
-        return created;
+      const created = await prisma.order.create({
+        data: {
+          orderNumber,
+          packageId: data.packageId,
+          customerName: data.customerName,
+          customerEmail: data.customerEmail,
+          customerPhone: data.customerPhone || null,
+          companyName: data.companyName || null,
+          requirements: data.requirements || null,
+          status: requestedStatus,
+          paymentStatus: data.paymentStatus || "unpaid",
+          totalAmount: data.totalAmount ? parseInt(data.totalAmount) : null,
+        },
+        include: { package: { select: { title: true } } },
       });
+
+      // Audit log after successful order creation (non-critical)
+      await prisma.auditLog.create({
+        data: {
+          userId: session.userId,
+          action: "create",
+          resource: "orders",
+          resourceId: created.id,
+          newValues: data,
+        },
+      }).catch(() => { /* non-critical */ });
+
+      const order = created;
 
       orderLogger.info("Admin order created", {
         orderId: order.id,

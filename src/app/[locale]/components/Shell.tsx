@@ -8,6 +8,7 @@ import { usePathname } from "next/navigation";
 import SiteHeader from "./SiteHeader";
 import SiteFooter from "./SiteFooter";
 import { FloatingSocialButtons } from "@/components/landing/FloatingSocialButtons";
+import { MemberStatsPanel } from "@/components/shared/MemberStatsPanel";
 
 const HIDE_HEADER_PATHS = [
   "/dang-nhap/client-onboarding",
@@ -26,6 +27,8 @@ export function Shell({ children, locale }: { children: React.ReactNode; locale:
       {showHeader && <SiteFooter locale={locale} />}
       {/* FloatingSocialButtons hides itself when onboarding is active via localStorage */}
       <FloatingSocialButtons />
+      {/* Global member stats panel — click any member anywhere to show stats */}
+      <MemberStatsPanel />
     </>
   );
 }

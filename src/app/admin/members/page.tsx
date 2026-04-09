@@ -6,12 +6,13 @@
 // Target: ~1,200 lines | Completed sections noted inline
 // =============================================================================
 
-import { useState, useMemo, useCallback, useRef } from "react";
+import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "motion/react";
 import { qk } from "@/lib/query/provider";
 
 import { useAuthStore, canEdit, type AuthUser } from "@/app/store/authStore";
+import { useLoopStore, type MemberStats } from "@/app/store/loopStore";
 import { adminApi } from "@/lib/api/client";
 import { DS } from "@/lib/design-tokens";
 import { ImageUpload } from "@/components/ui/ImageUpload";
@@ -73,12 +74,22 @@ interface TeamMemberBE {
   systemRole?: string | null; // User.role — system role (e.g. "member", "pm", "admin")
   roles?: string[];             // All roles from UserRole junction table (multi-role)
   department?: string;
+  tabPermissions?: string[];
   phone?: string | null;
   bio?: string | null;
   createdAt: string;
   joinedDate?: string;
   missionsCompleted?: number;
   memberExpertise?: { name: string }[];
+  // Transaction history from lpTransactions include
+  lpTransactions?: Array<{
+    id: string;
+    source: string;
+    amount: number;
+    status: string;
+    description: string | null;
+    createdAt: string;
+  }>;
   // Fields absent in BE — provided by MemberExt defaults
   isActive?: boolean;
 }
@@ -146,8 +157,29 @@ function toMemberExt(raw: TeamMemberBE): MemberExt {
   const level = raw.level ?? 1;
   const rankKey = getRankFromLevel(level);
   const rankLabel = getRankLabel(rankKey);
-  const _xpPct = raw.maxXp && raw.maxXp > 0 ? Math.min((raw.currentXp ?? 0) / raw.maxXp, 1) : 0;
-  const _lpBalance = raw.availableLp ?? raw.totalApprovedLp ?? 0;
+
+  // ── Derive rank history from lpTransactions (source: "rank_up") ──────────
+  const rankHistory = (raw.lpTransactions ?? [])
+    .filter((tx) => tx.source === "rank_up")
+    .map((tx) => {
+      const match = tx.description?.match(/\[RANK UP\]\s*(\w+)\s*→\s*(\w+)\s*:\s*(.+)/);
+      return {
+        date: tx.createdAt,
+        from: (match?.[1] ?? "iron") as RankKey,
+        to: (match?.[2] ?? "unknown") as RankKey,
+        reason: match?.[3] ?? tx.description ?? "",
+      };
+    });
+
+  // ── Derive mission logs from lpTransactions (task/quest/order sources) ───
+  const missionLogs = (raw.lpTransactions ?? [])
+    .filter((tx) => tx.source !== "rank_up" && tx.status === "completed" && tx.amount !== 0)
+    .slice(0, 10)
+    .map((tx) => ({
+      date: tx.createdAt,
+      task: tx.description ?? tx.source ?? "Task completed",
+      lpEarned: Math.max(tx.amount, 0),
+    }));
 
   return {
     ...raw,
@@ -164,10 +196,42 @@ function toMemberExt(raw: TeamMemberBE): MemberExt {
     joinedDate: raw.joinedDate ?? raw.createdAt,
     missionsCompleted: raw.missionsCompleted ?? Math.floor(Math.random() * 50),
     topSkill: raw.memberExpertise?.[0]?.name ?? "Design",
-    rankHistory: [],
-    missionLogs: [],
+    rankHistory,
+    missionLogs,
     lpEarned: raw.totalApprovedLp ?? 0,
     lpSpent: raw.lockedLp ?? 0,
+  };
+}
+
+/** Transform TeamMemberBE → loopStore.MemberStats for the global stats panel */
+function toMemberStats(raw: TeamMemberBE): MemberStats {
+  const level = raw.level ?? 1;
+  const rankKey = getRankFromLevel(level);
+  const rankLabel = getRankLabel(rankKey);
+  const ext = toMemberExt(raw);
+  return {
+    id: raw.id,
+    slug: raw.id, // slug falls back to id for admin context
+    name: raw.name,
+    role: raw.role ?? "Member",
+    avatar: raw.avatar ?? null,
+    email: raw.email,
+    rank: rankLabel.toLowerCase(),
+    level,
+    currentXp: raw.currentXp ?? 0,
+    maxXp: raw.maxXp ?? 100,
+    availableLp: raw.availableLp ?? 0,
+    lockedLp: raw.lockedLp ?? 0,
+    department: raw.department ?? "engineering",
+    systemRole: raw.systemRole ?? "member",
+    skills: raw.memberExpertise?.map((e) => e.name) ?? [],
+    achievements: [],
+    rankHistory: ext.rankHistory as MemberStats["rankHistory"],
+    missionLogs: ext.missionLogs as MemberStats["missionLogs"],
+    missionsCompleted: ext.missionsCompleted,
+    totalApprovedLp: raw.totalApprovedLp ?? 0,
+    teamTag: ext.team,
+    status: ext.status,
   };
 }
 
@@ -189,6 +253,7 @@ function toNumber(v?: string | number | null) {
 export default function AdminMembersPage() {
   const queryClient = useQueryClient();
   const { role } = useAuthStore();
+  const setActiveMember = useLoopStore((s) => s.setActiveMember);
   const editing = canEdit(role); // admin or hr — can add/edit members
   const canDelete = role === "admin";        // only admin — can delete members
   const canAwardLP = role === "admin";       // only admin — can award LP
@@ -615,33 +680,44 @@ export default function AdminMembersPage() {
     const cfg = RANKS[rankKey];
     const pct = (m.maxXp && m.maxXp > 0 ? (m.currentXp ?? 0) / m.maxXp : 0) * 100;
     const checked = selectedIds.has(m.id);
+    const roles = m.roles && m.roles.length > 0 ? m.roles : (m.systemRole ? [m.systemRole] : []);
+    const primaryRole = roles[0] ?? "member";
+    const roleColors: Record<string, string> = {
+      ceo: "#FFD700", super_admin: "#6B3DF5", admin: DS.blue,
+      hr: "#14B8A6", project_manager: "#EC4899", media: "#F59E0B",
+      qa: "#22C55E", member: DS.text3,
+    };
+    const rc = roleColors[primaryRole] ?? DS.text3;
 
     return (
       <>
-        {/* Checkbox */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "0 8px" }}>
-          <div
-            onClick={() => toggleSelect(m.id)}
-            style={{
-              width: 16, height: 16, borderRadius: 4, cursor: "pointer",
-              border: `1.5px solid ${checked ? DS.blue : DS.text3}`,
-              backgroundColor: checked ? DS.blue + "33" : "transparent",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              transition: "all 0.15s",
-            }}
-          >
-            {checked && <Check size={10} color={DS.blue} />}
+        {/* Select checkbox */}
+        <div
+          onClick={() => toggleSelect(m.id)}
+          style={{
+            display: "flex", alignItems: "center", justifyContent: "center",
+            cursor: "pointer", width: 14, height: 14,
+          }}
+        >
+          <div style={{
+            width: 14, height: 14, borderRadius: 4,
+            border: `1.5px solid ${checked ? DS.blue : DS.text4}`,
+            backgroundColor: checked ? DS.blue + "33" : "transparent",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            transition: "all 0.15s",
+          }}>
+            {checked && <Check size={9} color={DS.blue} />}
           </div>
         </div>
 
-        {/* Member info */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "0 8px", minWidth: 0 }}>
+        {/* Avatar + name + email */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0, flexShrink: 0 }}>
           <div style={{
-            width: 36, height: 36, borderRadius: "50%",
-            backgroundColor: cfg.color + "33",
-            border: `2px solid ${cfg.color}`,
+            width: 34, height: 34, borderRadius: "50%",
+            backgroundColor: cfg.color + "22",
+            border: `1.5px solid ${cfg.color}66`,
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontFamily: DS.heading, fontSize: 13, color: cfg.color,
+            fontFamily: DS.heading, fontSize: 12, color: cfg.color,
             flexShrink: 0, overflow: "hidden",
           }}>
             {m.avatar ? (
@@ -650,15 +726,16 @@ export default function AdminMembersPage() {
               <span>{m.name.slice(0, 2).toUpperCase()}</span>
             )}
           </div>
-          <div style={{ minWidth: 0 }}>
+          <div style={{ minWidth: 0, flex: 1, overflow: "hidden" }}>
             <div style={{
-              fontFamily: DS.heading, fontSize: 13, color: DS.text,
+              fontFamily: DS.heading, fontSize: 12, color: DS.text,
               overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+              maxWidth: "100%",
             }}>
               {m.name}
             </div>
             <div style={{
-              fontFamily: DS.mono, fontSize: 10, color: DS.text3,
+              fontFamily: DS.mono, fontSize: 9, color: DS.text4,
               overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
             }}>
               {m.email}
@@ -666,114 +743,91 @@ export default function AdminMembersPage() {
           </div>
         </div>
 
-        {/* Rank + XP bar */}
-        <div style={{ padding: "0 8px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 4 }}>
-            <span style={{ fontSize: 12 }}>{cfg.symbol}</span>
+        {/* Rank + XP progress */}
+        <div>
+          <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 4 }}>
+            <span style={{ fontSize: 11, color: cfg.color }}>{cfg.symbol}</span>
             <span style={{ fontFamily: DS.mono, fontSize: 10, color: cfg.color }}>
-              {cfg.label} · Lv.{m.level}
+              {cfg.label}
+            </span>
+            <span style={{ fontFamily: DS.mono, fontSize: 9, color: DS.text4 }}>
+              Lv.{m.level}
             </span>
           </div>
-          <div style={{
-            height: 4, borderRadius: 2,
-            backgroundColor: DS.border, overflow: "hidden",
-          }}>
+          <div style={{ height: 3, borderRadius: 2, backgroundColor: DS.border, overflow: "hidden" }}>
             <div style={{
               height: "100%", width: `${pct}%`,
-              background: `linear-gradient(90deg, ${cfg.color}88, ${cfg.color})`,
+              background: `linear-gradient(90deg, ${cfg.color}66, ${cfg.color})`,
               borderRadius: 2, transition: "width 0.4s ease",
             }} />
           </div>
         </div>
 
-        {/* LP Balance */}
-        <div style={{ padding: "0 8px" }}>
-          <div style={{ fontFamily: DS.mono, fontSize: 13, color: DS.amber }}>
-            {fmtLP(m.availableLp ?? 0)}
-          </div>
-          <div style={{ fontFamily: DS.mono, fontSize: 9, color: DS.text3 }}>LP</div>
+        {/* LP */}
+        <div style={{ fontFamily: DS.mono, fontSize: 12, color: DS.amber }}>
+          {fmtLP(m.availableLp ?? 0)}
         </div>
 
-        {/* Role badges (multi-role) + Job title */}
-        <div style={{ padding: "0 8px", display: "flex", flexDirection: "column", gap: 2 }}>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
-            {(m.roles && m.roles.length > 0 ? m.roles : (m.systemRole ? [m.systemRole] : [])).map((r) => {
-              const roleColors: Record<string, string> = {
-                ceo: "#FFD700", super_admin: "#6B3DF5", admin: DS.blue,
-                hr: "#14B8A6", project_manager: "#EC4899", media: "#F59E0B",
-                qa: "#22C55E", member: DS.text3,
-              };
-              const color = roleColors[r] ?? DS.text3;
-              return (
-                <span key={r} style={{
-                  fontFamily: DS.mono, fontSize: 9, color,
-                  backgroundColor: color + "22",
-                  border: `1px solid ${color}55`,
-                  borderRadius: 4, padding: "0 4px",
-                  whiteSpace: "nowrap",
-                }}>
-                  {capitalize(r)}
-                </span>
-              );
-            })}
-          </div>
+        {/* Role pill */}
+        <div>
           <div style={{
-            fontFamily: DS.mono, fontSize: 9, color: DS.text4,
-            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+            display: "inline-flex", alignItems: "center", gap: 4,
+            backgroundColor: rc + "18",
+            border: `1px solid ${rc}44`,
+            borderRadius: 20, padding: "2px 8px",
           }}>
-            {m.role || m.team}
+            <div style={{ width: 5, height: 5, borderRadius: "50%", backgroundColor: rc }} />
+            <span style={{
+              fontFamily: DS.mono, fontSize: 9, color: rc,
+              whiteSpace: "nowrap",
+            }}>
+              {capitalize(primaryRole)}
+            </span>
           </div>
+          {m.team && (
+            <div style={{
+              fontFamily: DS.mono, fontSize: 9, color: DS.text4,
+              marginTop: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+            }}>
+              {m.team}
+            </div>
+          )}
         </div>
 
-        {/* Join date */}
-        <div style={{ padding: "0 8px" }}>
-          <div style={{ fontFamily: DS.mono, fontSize: 11, color: DS.text2 }}>
-            {fmtDate(m.joinedDate)}
-          </div>
+        {/* Ngày vào */}
+        <div style={{ fontFamily: DS.mono, fontSize: 10, color: DS.text3 }}>
+          {fmtDate(m.joinedDate)}
         </div>
 
         {/* Status */}
-        <div style={{ padding: "0 8px" }}>
+        <div>
           <StatusBadge_ status={m.status} />
         </div>
 
         {/* Actions */}
         <div style={{
-          display: "flex", alignItems: "center", gap: 4,
-          justifyContent: "flex-end", padding: "0 8px",
+          display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 2,
         }}>
-          <button
-            onClick={() => setDetailMember(m)}
-            title="Xem chi tiết"
-            style={iconBtn(DS.text3, DS.blue)}
-          >
-            <Eye size={14} />
+          <button onClick={() => { setActiveMember(toMemberStats(m), { x: 0, y: 0 }); }} title="Xem thống kê"
+            style={iconBtn(DS.text4, DS.blue)}>
+            <Eye size={13} />
           </button>
           {canAwardLP && (
-            <button
-              onClick={() => setLpMember(m)}
-              title="Award LP"
-              style={iconBtn(DS.text3, DS.amber)}
-            >
-              <Award size={14} />
+            <button onClick={() => setLpMember(m)} title="Điều chỉnh LP"
+              style={iconBtn(DS.text4, DS.amber)}>
+              <Award size={13} />
             </button>
           )}
           {editing && (
-            <button
-              onClick={() => setFormMember(m)}
-              title="Sửa"
-              style={iconBtn(DS.text3, DS.purple)}
-            >
-              <Edit2 size={14} />
+            <button onClick={() => setFormMember(m)} title="Sửa"
+              style={iconBtn(DS.text4, DS.purple)}>
+              <Edit2 size={13} />
             </button>
           )}
           {canDelete && (
-            <button
-              onClick={() => setDeleteMember(m)}
-              title="Xóa"
-              style={iconBtn(DS.text3, DS.red)}
-            >
-              <Trash2 size={14} />
+            <button onClick={() => setDeleteMember(m)} title="Xóa"
+              style={iconBtn(DS.text4, DS.red)}>
+              <Trash2 size={13} />
             </button>
           )}
         </div>
@@ -892,8 +946,8 @@ export default function AdminMembersPage() {
 
         {/* Actions */}
         <div style={{ display: "flex", gap: 4, marginTop: 10 }}>
-          <button onClick={() => setDetailMember(m)} style={smallBtn(DS.blue)}>
-            <Eye size={12} /> Chi tiết
+          <button onClick={() => { setActiveMember(toMemberStats(m), { x: 0, y: 0 }); }} style={smallBtn(DS.blue)}>
+            <Eye size={12} /> Stats
           </button>
           {canAwardLP && (
             <button onClick={() => setLpMember(m)} style={smallBtn(DS.amber)}>
@@ -1048,6 +1102,55 @@ export default function AdminMembersPage() {
                   <div style={{ fontFamily: DS.mono, fontSize: 18, color, marginTop: 2 }}>{value}</div>
                 </div>
               ))}
+            </div>
+
+            {/* Phòng ban + Vị trí + Phân quyền */}
+            <div style={{ marginBottom: 20, display: "flex", flexDirection: "column", gap: 8 }}>
+              <div style={{
+                fontFamily: DS.mono, fontSize: 10, color: DS.text2,
+                textTransform: "uppercase", letterSpacing: "0.08em",
+              }}>
+                Phân loại
+              </div>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <div style={{
+                  background: DS.bgCard, borderRadius: 8,
+                  border: `1px solid ${DS.border}`, padding: "8px 12px", flex: 1, minWidth: 120,
+                }}>
+                  <div style={{ fontFamily: DS.mono, fontSize: 9, color: DS.text3, textTransform: "uppercase" }}>Phòng ban</div>
+                  <div style={{ fontFamily: DS.mono, fontSize: 12, color: DS.text, marginTop: 2 }}>{m.team || "—"}</div>
+                </div>
+                <div style={{
+                  background: DS.bgCard, borderRadius: 8,
+                  border: `1px solid ${DS.border}`, padding: "8px 12px", flex: 1, minWidth: 120,
+                }}>
+                  <div style={{ fontFamily: DS.mono, fontSize: 9, color: DS.text3, textTransform: "uppercase" }}>Vị trí</div>
+                  <div style={{ fontFamily: DS.mono, fontSize: 12, color: DS.text, marginTop: 2 }}>{m.role || "—"}</div>
+                </div>
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                <div style={{ fontFamily: DS.mono, fontSize: 9, color: DS.text3, alignSelf: "center", marginRight: 4 }}>
+                  Phân quyền:
+                </div>
+                {(m.roles && m.roles.length > 0 ? m.roles : (m.systemRole ? [m.systemRole] : [])).map((r) => {
+                  const roleColors: Record<string, string> = {
+                    ceo: "#FFD700", super_admin: "#6B3DF5", admin: DS.blue,
+                    hr: "#14B8A6", project_manager: "#EC4899", media: "#F59E0B",
+                    qa: "#22C55E", member: DS.text3,
+                  };
+                  const color = roleColors[r] ?? DS.text3;
+                  return (
+                    <span key={r} style={{
+                      fontFamily: DS.mono, fontSize: 10, color,
+                      backgroundColor: color + "22",
+                      border: `1px solid ${color}55`,
+                      borderRadius: 6, padding: "3px 8px",
+                    }}>
+                      {capitalize(r)}
+                    </span>
+                  );
+                })}
+              </div>
             </div>
 
             {/* Skills */}
@@ -1403,352 +1506,1100 @@ export default function AdminMembersPage() {
   }
 
   // =============================================================================
-  // MemberFormModal (3 tabs)
+  // MemberFormModal — Redesigned v3 (2026-04-10)
+  // Layout: 2-column — left sidebar (role preview) | right: 4 form tabs
+  // Phân quyền: System Role preset → auto-fill tabs, tùy chỉnh thêm bớt
   // =============================================================================
 
-  // System role options (from User.role — permission-based)
+  // ── System Role presets ────────────────────────────────────────────────────────
   const SYSTEM_ROLES = [
-    { value: "member",           label: "Member",       desc: "Nhân viên thường" },
-    { value: "hr",               label: "HR",            desc: "Nhân sự — chỉ thêm thành viên" },
-    { value: "qa",              label: "QA",             desc: "QA Engineer" },
-    { value: "media",           label: "Media",          desc: "Media Team" },
-    { value: "project_manager",  label: "PM",            desc: "Project Manager" },
-    { value: "admin",           label: "Admin",           desc: "Quản trị viên" },
-    { value: "super_admin",    label: "Super Admin",     desc: "Quản trị tối cao" },
+    { id: "member",          label: "Member",       symbol: "⬡", color: "#94A3B8",
+      desc: "Nhân viên thường", icon: "◉" },
+    { id: "hr",             label: "HR",            symbol: "◈", color: "#14B8A6",
+      desc: "Nhân sự & Tuyển dụng", icon: "◔" },
+    { id: "project_manager", label: "PM",             symbol: "◕", color: "#EC4899",
+      desc: "Quản trị dự án", icon: "◉" },
+    { id: "admin",          label: "Admin",         symbol: "★", color: "#4F7DF3",
+      desc: "Quản trị hệ thống", icon: "◔" },
+  ] as const;
+
+  // ── Tab permission groups ──────────────────────────────────────────────────────
+  type TabPerm = "view" | "edit" | "none";
+
+  const TAB_GROUPS = [
+    {
+      label: "Quản lý nhân sự",
+      icon: "◎",
+      color: "#22C55E",
+      tabs: [
+        { id: "overview",            label: "Tổng quan" },
+        { id: "members",            label: "Thành viên" },
+        { id: "departments",         label: "Phòng ban" },
+        { id: "notification_center", label: "Thông báo" },
+        { id: "quests_events",      label: "Nhiệm vụ" },
+      ],
+    },
+    {
+      label: "Dự án & Kanban",
+      icon: "◕",
+      color: "#F59E0B",
+      tabs: [
+        { id: "projects",           label: "Dự án" },
+        { id: "kanban",            label: "Kanban" },
+        { id: "figma_demos",       label: "Figma Demos" },
+        { id: "leaderboard_admin", label: "Bảng xếp hạng" },
+        { id: "analytics",         label: "Phân tích" },
+      ],
+    },
+    {
+      label: "Kinh doanh",
+      icon: "◈",
+      color: "#EC4899",
+      tabs: [
+        { id: "orders",            label: "Đơn hàng" },
+        { id: "quotation",         label: "Báo giá" },
+        { id: "clients",           label: "Khách hàng" },
+        { id: "revenue",           label: "Doanh thu" },
+        { id: "services",          label: "Dịch vụ" },
+      ],
+    },
+    {
+      label: "Marketing & Media",
+      icon: "◇",
+      color: "#8B5CF6",
+      tabs: [
+        { id: "media",              label: "Media" },
+        { id: "blog",               label: "Blog" },
+        { id: "portfolio",           label: "Portfolio" },
+        { id: "projects_completed", label: "Dự án hoàn tất" },
+      ],
+    },
+    {
+      label: "Tài chính & LP",
+      icon: "◔",
+      color: "#FFD700",
+      tabs: [
+        { id: "lp",               label: "LP" },
+        { id: "lp_manage",        label: "Quản lý LP" },
+        { id: "revenue_split",    label: "Chia doanh thu" },
+        { id: "off_system_payments", label: "Chi ngoài HT" },
+        { id: "income_tax",       label: "Thuế" },
+      ],
+    },
+    {
+      label: "Học vấn & Khác",
+      icon: "◉",
+      color: "#4F7DF3",
+      tabs: [
+        { id: "academy",       label: "Học vấn" },
+        { id: "web_packages", label: "Gói Web" },
+        { id: "effects",       label: "Hiệu ứng" },
+        { id: "settings",      label: "Cài đặt" },
+      ],
+    },
   ];
+
+  // ── Default tabs per system role ─────────────────────────────────────────────
+  const ROLE_DEFAULT_TABS: Record<string, string[]> = {
+    member:          ["overview", "notification_center", "leaderboard_admin", "academy", "quests_events"],
+    hr:              ["overview", "members", "departments", "notification_center", "quests_events", "academy", "lp_manage"],
+    project_manager: ["overview","orders","clients","quotation","services","revenue","projects","members","departments","notification_center","leaderboard_admin","lp_manage","quests_events","academy","blog","lp","portfolio","projects_completed","kanban","figma_demos","analytics"],
+    admin:           ["*"],  // wildcard = all tabs full access
+  };
+
+  // ── Parse tab permissions from storage format ────────────────────────────────
+  // Format in tabPermissions[]: "tab.view" | "tab.edit" | "tab"
+  function parseTabPerms(stored: string[]): Record<string, TabPerm> {
+    const result: Record<string, TabPerm> = {};
+    for (const t of stored) {
+      if (t.endsWith(".view"))      result[t.slice(0, -5)] = "view";
+      else if (t.endsWith(".edit")) result[t.slice(0, -5)] = "edit";
+      else                         result[t] = "edit";
+    }
+    return result;
+  }
+
+  // Serialize tab perms back to storage format
+  function serializeTabPerms(perms: Record<string, TabPerm>): string[] {
+    return Object.entries(perms)
+      .filter(([, v]) => v !== "none")
+      .flatMap(([tab, v]) => v === "edit" ? [tab] : [`${tab}.view`]);
+  }
+
+  // All tabs flattened for lookup
+  const ALL_TABS = TAB_GROUPS.flatMap((g) => g.tabs);
 
   function MemberFormModal_() {
     const isEdit = formMember !== undefined;
-    const [tab, setTab] = useState<0 | 1 | 2>(0);
+    const [tab, setTab] = useState<0 | 1 | 2 | 3>(0);
     const [name, setName] = useState(formMember?.name ?? "");
     const [email, setEmail] = useState(formMember?.email ?? "");
     const [phone, setPhone] = useState(formMember?.phone ?? "");
-    const [team, setTeam] = useState(formMember?.team ?? "Engineering");
+    const [team, setTeam] = useState(formMember?.team ?? "");
     const [avatar, setAvatar] = useState(formMember?.avatar ?? "");
     const [bio, setBio] = useState(formMember?.bio ?? "");
-    const [roleInput, setRoleInput] = useState(formMember?.role ?? ""); // job title
-    // Multi-role: array from UserRole junction table. Primary = first item (User.role scalar)
-    const [rolesInput, setRolesInput] = useState<string[]>(
-      formMember?.roles && formMember.roles.length > 0
-        ? formMember.roles
-        : formMember?.systemRole ? [formMember.systemRole] : ["member"]
+    const [roleInput, setRoleInput] = useState(formMember?.role ?? "");
+    // Selected system role (single select)
+    const [systemRole, setSystemRole] = useState<string>(
+      formMember?.roles?.[0] ?? formMember?.systemRole ?? "member",
+    );
+    // Tab permissions: tabId → "edit" | "view" | "none"
+    const [tabPerms, setTabPerms] = useState<Record<string, TabPerm>>(
+      parseTabPerms(formMember?.tabPermissions ?? []),
     );
     const [level, setLevel] = useState(String(formMember?.level ?? 1));
     const [currentXp, setCurrentXp] = useState(String(formMember?.currentXp ?? 0));
-    const [rankKey, setRankKey] = useState<RankKey>(formMember ? getRankFromLevel(formMember.level ?? 1) : "iron");
+    const [rankKey, setRankKey] = useState<RankKey>(
+      formMember ? getRankFromLevel(formMember.level ?? 1) : "iron",
+    );
     const [skills, setSkills] = useState<string[]>(
-      formMember?.memberExpertise?.map((e) => e.name) ?? []
+      formMember?.memberExpertise?.map((e) => e.name) ?? [],
     );
     const [skillInput, setSkillInput] = useState("");
     const [status, setStatus] = useState<MemberStatus>(formMember?.status ?? "active");
 
-    const TABS = ["Thông tin", "Hạng & LP", "Kỹ năng"];
+    const TABS = [
+      { id: 0, label: "Thông tin", symbol: "◉" },
+      { id: 1, label: "Phân quyền", symbol: "★" },
+      { id: 2, label: "Hạng & LP", symbol: "◕" },
+      { id: 3, label: "Kỹ năng", symbol: "◈" },
+    ] as const;
 
-    const handleSubmit = () => {
-      if (!name.trim() || !email.trim()) {
-        showToast("Vui lòng nhập tên và email", "error");
-        return;
-      }
-      if (!roleInput.trim()) {
-        showToast("Vui lòng nhập vai trò", "error");
-        return;
-      }
-      const lvl = parseInt(level) || 1;
-      const xpVal = parseInt(currentXp) || 0;
-      const slug = name.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+    const lvlNum = parseInt(level) || 1;
+    const rankCfg = RANKS[rankKey];
+    const statusCfg = STATUS_CFG[status];
+    const sysRoleCfg = SYSTEM_ROLES.find((r) => r.id === systemRole) ?? SYSTEM_ROLES[0];
 
-      const body: Record<string, unknown> = {
-        name: name.trim(),
-        email: email.trim(),
-        role: roleInput.trim(),         // TeamMember.role — job title
-        roles: rolesInput,              // UserRole junction table — multi-role
-        slug,
-        phone: phone.trim() || null,
-        bio: bio.trim() || null,
-        avatar: avatar.trim() || null,
-        department: team,
-        level: lvl,
-        currentXp: xpVal,
-        isActive: status === "active",
-        memberExpertise: skills.map((s) => ({ name: s })),
-      };
-
-      if (isEdit && formMember) {
-        updateMutation.mutate({ id: formMember.id, body });
+    // Apply system role preset tabs
+    const applyRolePreset = (roleId: string) => {
+      setSystemRole(roleId);
+      const defaults = ROLE_DEFAULT_TABS[roleId] ?? [];
+      if (roleId === "admin") {
+        // Admin = all tabs edit
+        const all: Record<string, TabPerm> = {};
+        ALL_TABS.forEach((t) => { all[t.id] = "edit"; });
+        setTabPerms(all);
       } else {
-        createMutation.mutate(body);
+        const next: Record<string, TabPerm> = {};
+        ALL_TABS.forEach((t) => {
+          next[t.id] = defaults.includes(t.id) ? "edit" : "none";
+        });
+        setTabPerms(next);
       }
     };
 
+    // Toggle single tab: none → view → edit → none
+    const cycleTab = (tabId: string) => {
+      const cur = tabPerms[tabId] ?? "none";
+      const next: Record<string, TabPerm> = { ...tabPerms };
+      next[tabId] = cur === "none" ? "edit" : cur === "edit" ? "view" : "none";
+      setTabPerms(next);
+    };
+
+    const handleSubmit = () => {
+      if (!name.trim() || !email.trim()) { showToast("Vui lòng nhập tên và email", "error"); return; }
+      if (!roleInput.trim()) { showToast("Vui lòng nhập vị trí công tác", "error"); return; }
+      const slug = name.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+      const body: Record<string, unknown> = {
+        name: name.trim(), email: email.trim(), role: roleInput.trim(),
+        roles: [systemRole],
+        tabPermissions: serializeTabPerms(tabPerms),
+        slug,
+        phone: phone.trim() || null, bio: bio.trim() || null,
+        avatar: avatar.trim() || null,
+        department: team,
+        level: parseInt(level) || 1,
+        currentXp: parseInt(currentXp) || 0,
+        isActive: status === "active",
+        memberExpertise: skills.map((s) => ({ name: s })),
+      };
+      if (isEdit && formMember) updateMutation.mutate({ id: formMember.id, body });
+      else createMutation.mutate(body);
+    };
+
+    // Rank tier progress bar width
+    const xpForCurrentRank = (() => {
+      const tiers = Object.values(RANKS);
+      const curIdx = tiers.findIndex((r) => r.label === rankCfg.label);
+      if (curIdx === 0) return 0;
+      const prevTier = tiers[curIdx - 1];
+      const prevMin = prevTier.minLevel;
+      const curMin = rankCfg.minLevel;
+      if (lvlNum <= prevMin) return 0;
+      const range = curMin - prevMin;
+      const pos = Math.min(lvlNum - prevMin, range);
+      return Math.round((pos / range) * 100);
+    })();
+
+    const activeTabCount = Object.values(tabPerms).filter((v) => v !== "none").length;
+
+    // Field sub-component (scoped to modal)
+    function Field({ label, children, required = false }: { label: string; children: React.ReactNode; required?: boolean }) {
+      return (
+        <div>
+          <div style={{
+            fontFamily: DS.mono, fontSize: 10, color: DS.text3,
+            textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5,
+          }}>
+            {label}{required && <span style={{ color: DS.red, marginLeft: 3 }}>*</span>}
+          </div>
+          {children}
+        </div>
+      );
+    }
+
+    const fieldInput: React.CSSProperties = {
+      width: "100%", padding: "9px 12px", borderRadius: 8,
+      border: "1px solid rgba(255,255,255,0.1)",
+      background: "rgba(255,255,255,0.04)",
+      color: DS.text2, fontFamily: DS.mono, fontSize: 12, outline: "none",
+      boxSizing: "border-box",
+      opacity: isMutating ? 0.5 : 1,
+      transition: "border-color 0.15s",
+    };
+
     return (
-      <ModalWrapper onClose={() => setFormMember(undefined)} title={isEdit ? `Sửa: ${formMember?.name}` : "Thêm thành viên"} wide>
-        {/* Tab bar */}
-        <div style={{ display: "flex", gap: 4, marginBottom: 20, borderBottom: `1px solid ${DS.border}` }}>
-          {TABS.map((t, i) => (
+      <motion.div
+        key="modal-overlay"
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        onClick={isMutating ? undefined : () => setFormMember(undefined)}
+        style={{
+          position: "fixed", inset: 0, zIndex: 200,
+          background: isMutating ? "rgba(0,0,0,0.88)" : "rgba(0,0,0,0.75)",
+          display: "flex", alignItems: "center", justifyContent: "center", padding: 20,
+          backdropFilter: "blur(6px)", cursor: isMutating ? "wait" : "default",
+        }}
+      >
+        <motion.div
+          key="modal-panel"
+          initial={{ opacity: 0, scale: 0.93, y: 24 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.93, y: 24 }}
+          transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            background: "linear-gradient(160deg, #0d1117 0%, #0a0f1e 100%)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            borderRadius: 20, width: "100%", maxWidth: 860,
+            maxHeight: "92vh", overflowY: "auto",
+            boxShadow: "0 32px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.03)",
+            position: "relative",
+          }}
+        >
+          {/* Loading overlay */}
+          {isMutating && (
+            <div style={{
+              position: "absolute", inset: 0, zIndex: 10,
+              background: "rgba(10,15,30,0.85)",
+              display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+              borderRadius: 20,
+            }}>
+              <div style={{
+                width: 48, height: 48, borderRadius: "50%",
+                border: `3px solid ${DS.blue}33`,
+                borderTopColor: DS.blue,
+                animation: "spin 0.8s linear infinite",
+              }} />
+              <div style={{ color: DS.text3, fontFamily: DS.mono, fontSize: 12, marginTop: 16 }}>
+                Đang lưu thay đổi...
+              </div>
+            </div>
+          )}
+
+          {/* ── Header bar ─────────────────────────────────────────────────── */}
+          <div style={{
+            display: "flex", justifyContent: "space-between", alignItems: "center",
+            padding: "18px 24px", borderBottom: "1px solid rgba(255,255,255,0.06)",
+            position: "sticky", top: 0, zIndex: 5,
+            background: "rgba(10,15,30,0.95)",
+            backdropFilter: "blur(8px)",
+            borderRadius: "20px 20px 0 0",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              {/* Icon badge */}
+              <div style={{
+                width: 36, height: 36, borderRadius: 10,
+                background: `linear-gradient(135deg, ${DS.blue}33, ${DS.purple}33)`,
+                border: `1px solid ${DS.blue}44`,
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>
+                <UserCheck size={17} color={DS.blue} />
+              </div>
+              <div>
+                <div style={{ fontFamily: DS.heading, fontSize: 15, color: DS.text }}>
+                  {isEdit ? formMember?.name : "Thêm thành viên"}
+                </div>
+                <div style={{ fontFamily: DS.mono, fontSize: 10, color: DS.text3, marginTop: 1 }}>
+                  {isEdit ? "Chỉnh sửa thông tin thành viên" : "Tạo hồ sơ nhân viên mới"}
+                </div>
+              </div>
+            </div>
             <button
-              key={t}
-              onClick={() => setTab(i as 0 | 1 | 2)}
+              onClick={isMutating ? undefined : () => setFormMember(undefined)}
+              disabled={isMutating}
               style={{
-                padding: "8px 16px", border: "none", cursor: "pointer",
-                backgroundColor: "transparent", borderBottom: `2px solid ${tab === i ? DS.blue : "transparent"}`,
-                color: tab === i ? DS.blue : DS.text3,
-                fontFamily: DS.mono, fontSize: 12,
-                transition: "all 0.15s", marginBottom: -1,
+                width: 30, height: 30, borderRadius: "50%",
+                background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
+                cursor: isMutating ? "not-allowed" : "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                color: DS.text3, transition: "all 0.15s",
+              }}
+              onMouseEnter={(e) => {
+                if (!isMutating) {
+                  (e.currentTarget as HTMLButtonElement).style.background = "rgba(239,68,68,0.15)";
+                  (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(239,68,68,0.3)";
+                  (e.currentTarget as HTMLButtonElement).style.color = "#EF4444";
+                }
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.04)";
+                (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.08)";
+                (e.currentTarget as HTMLButtonElement).style.color = DS.text3;
               }}
             >
-              {t}
+              <X size={14} />
             </button>
-          ))}
-        </div>
+          </div>
 
-        {/* Tab 0: Info */}
-        {tab === 0 && (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            <FormField label="Tên *">
-              <input value={name} onChange={(e) => setName(e.target.value)} style={inputStyle} />
-            </FormField>
-            <FormField label="Email *">
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} style={inputStyle} />
-            </FormField>
-            <FormField label="Chức vụ *">
-              <input value={roleInput} onChange={(e) => setRoleInput(e.target.value)} style={inputStyle} placeholder="VD: Frontend Dev, Designer, PM" />
-            </FormField>
-            <FormField label="System Roles (multi-select)">
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 4 }}>
-                {SYSTEM_ROLES.map((r) => {
-                  const checked = rolesInput.includes(r.value);
-                  const roleColors: Record<string, string> = {
-                    ceo: "#FFD700", super_admin: "#6B3DF5", admin: DS.blue,
-                    hr: "#14B8A6", project_manager: "#EC4899", media: "#F59E0B",
-                    qa: "#22C55E", member: DS.text3,
-                  };
-                  const color = roleColors[r.value] ?? DS.text3;
-                  return (
-                    <label
-                      key={r.value}
-                      style={{
-                        display: "flex", alignItems: "center", gap: 4,
-                        cursor: "pointer",
-                        fontFamily: DS.mono, fontSize: 11,
-                        color: checked ? color : DS.text3,
-                        backgroundColor: checked ? color + "1A" : "transparent",
-                        border: `1px solid ${checked ? color + "66" : DS.border}`,
-                        borderRadius: 6, padding: "4px 8px",
-                        transition: "all 0.15s",
-                      }}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        onChange={() => {
-                          if (checked) {
-                            // Don't allow removing the last role
-                            if (rolesInput.length === 1) return;
-                            setRolesInput(rolesInput.filter((x) => x !== r.value));
-                          } else {
-                            setRolesInput([...rolesInput, r.value]);
-                          }
-                        }}
-                        style={{ display: "none" }}
-                      />
-                      <span style={{ color, fontWeight: checked ? 600 : 400 }}>{r.label}</span>
-                      <span style={{ fontSize: 9, color: DS.text4 }}>{r.desc}</span>
-                    </label>
-                  );
-                })}
+          {/* ── Body: 2-column layout ─────────────────────────────────────── */}
+          <div style={{ display: "grid", gridTemplateColumns: "220px 1fr", gap: 0, minHeight: 480 }}>
+
+            {/* ── Left sidebar ─────────────────────────────────────────── */}
+            <div style={{
+              borderRight: "1px solid rgba(255,255,255,0.06)",
+              padding: "20px 16px",
+              display: "flex", flexDirection: "column", gap: 16,
+            }}>
+
+              {/* Avatar */}
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
+                <div style={{
+                  width: 72, height: 72, borderRadius: "50%",
+                  background: avatar
+                    ? `url(${avatar}) center/cover no-repeat`
+                    : `linear-gradient(135deg, ${DS.blue}44, ${DS.purple}44)`,
+                  border: `2px solid ${DS.blue}55`,
+                  boxShadow: `0 0 20px ${DS.blue}22`,
+                  overflow: "hidden",
+                  cursor: "pointer", position: "relative",
+                }}
+                  onClick={() => {
+                    const url = prompt("Nhập URL avatar:");
+                    if (url) setAvatar(url);
+                  }}
+                >
+                  {!avatar && (
+                    <div style={{
+                      position: "absolute", inset: 0,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                    }}>
+                      <UserCheck size={24} color={DS.text3} />
+                    </div>
+                  )}
+                </div>
+                <div style={{ fontFamily: DS.mono, fontSize: 10, color: DS.text3, textAlign: "center" }}>
+                  {avatar ? "Nhấn để đổi ảnh" : "Nhấn để thêm ảnh"}
+                </div>
+                {avatar && (
+                  <button
+                    onClick={() => setAvatar("")}
+                    style={{
+                      fontFamily: DS.mono, fontSize: 10, color: DS.red,
+                      background: "none", border: "none", cursor: "pointer", padding: 0,
+                    }}
+                  >
+                    Gỡ ảnh
+                  </button>
+                )}
               </div>
-              {rolesInput.length === 0 && (
-                <div style={{ color: DS.red, fontFamily: DS.mono, fontSize: 10, marginTop: 4 }}>
-                  Phải chọn ít nhất 1 vai trò
+
+              {/* Name preview */}
+              <div style={{ textAlign: "center" }}>
+                <div style={{
+                  fontFamily: DS.heading, fontSize: 13, color: DS.text,
+                  overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                }}>
+                  {name || "Tên thành viên"}
+                </div>
+                <div style={{
+                  fontFamily: DS.mono, fontSize: 10, color: DS.text3,
+                  overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                }}>
+                  {roleInput || "Vị trí"}
+                </div>
+              </div>
+
+              {/* Status badge */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                <div style={{ fontFamily: DS.mono, fontSize: 9, color: DS.text3, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                  Trạng thái
+                </div>
+                <select
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value as MemberStatus)}
+                  disabled={isMutating}
+                  style={{
+                    width: "100%",
+                    padding: "6px 8px",
+                    borderRadius: 8,
+                    border: `1px solid ${statusCfg.color}55`,
+                    background: statusCfg.color + "15",
+                    color: statusCfg.color,
+                    fontFamily: DS.mono, fontSize: 11,
+                    cursor: "pointer", outline: "none",
+                    opacity: isMutating ? 0.5 : 1,
+                  }}
+                >
+                  {(Object.keys(STATUS_CFG) as MemberStatus[]).map((s) => (
+                    <option key={s} value={s}>{STATUS_CFG[s].label}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Tab permissions preview */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                <div style={{ fontFamily: DS.mono, fontSize: 9, color: DS.text3, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                  Trang được phép ({activeTabCount})
+                </div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 3 }}>
+                  {Object.entries(tabPerms)
+                    .filter(([, v]) => v !== "none")
+                    .map(([tabId, perm]) => {
+                      const cfg = ALL_TABS.find((t) => t.id === tabId);
+                      const groupCfg = TAB_GROUPS.find((g) => g.tabs.some((t) => t.id === tabId));
+                      const color = groupCfg?.color ?? DS.text3;
+                      const isEdit = perm === "edit";
+                      return (
+                        <span
+                          key={tabId}
+                          style={{
+                            padding: "2px 7px", borderRadius: 5,
+                            background: color + "18",
+                            border: `1px solid ${color}44`,
+                            fontFamily: DS.mono, fontSize: 9,
+                            color, fontWeight: 500,
+                          }}
+                        >
+                          {cfg?.label ?? tabId}{!isEdit && " 👁"}
+                        </span>
+                      );
+                    })}
+                  {activeTabCount === 0 && (
+                    <span style={{ fontFamily: DS.mono, fontSize: 10, color: DS.text3 }}>
+                      Không có quyền truy cập trang nào
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Rank preview */}
+              <div style={{
+                background: "rgba(255,255,255,0.03)",
+                border: "1px solid rgba(255,255,255,0.06)",
+                borderRadius: 10, padding: "10px 12px",
+              }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{ fontSize: 14 }}>{rankCfg.symbol}</span>
+                    <span style={{ fontFamily: DS.mono, fontSize: 11, color: rankCfg.color }}>
+                      {rankCfg.label}
+                    </span>
+                  </div>
+                  <span style={{ fontFamily: DS.mono, fontSize: 10, color: DS.text3 }}>
+                    Lv.{lvlNum}
+                  </span>
+                </div>
+                {/* XP progress bar */}
+                <div style={{
+                  height: 3, borderRadius: 2, background: "rgba(255,255,255,0.08)",
+                  overflow: "hidden",
+                }}>
+                  <div style={{
+                    height: "100%", width: `${xpForCurrentRank}%`,
+                    background: `linear-gradient(90deg, ${rankCfg.color}, ${rankCfg.color}aa)`,
+                    borderRadius: 2,
+                    transition: "width 0.4s ease",
+                  }} />
+                </div>
+                <div style={{ fontFamily: DS.mono, fontSize: 9, color: DS.text3, marginTop: 4 }}>
+                  {lvlNum} XP · {skills.length} kỹ năng
+                </div>
+              </div>
+
+              {/* Department preview */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                <div style={{ fontFamily: DS.mono, fontSize: 9, color: DS.text3, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                  Phòng ban
+                </div>
+                <select
+                  value={team}
+                  onChange={(e) => setTeam(e.target.value)}
+                  disabled={isMutating}
+                  style={{
+                    width: "100%", padding: "6px 8px", borderRadius: 8,
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    background: "rgba(255,255,255,0.04)",
+                    color: DS.text2, fontFamily: DS.mono, fontSize: 11,
+                    cursor: "pointer", outline: "none", opacity: isMutating ? 0.5 : 1,
+                  }}
+                >
+                  <option value="">— Chọn phòng ban —</option>
+                  {TEAMS.filter((t) => t !== "All").map((t) => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Email */}
+              {(email || isEdit) && (
+                <div style={{
+                  fontFamily: DS.mono, fontSize: 10, color: DS.text3,
+                  overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                  borderTop: "1px solid rgba(255,255,255,0.05)", paddingTop: 10,
+                }}>
+                  {email}
                 </div>
               )}
-            </FormField>
-            <FormField label="Điện thoại">
-              <input value={phone} onChange={(e) => setPhone(e.target.value)} style={inputStyle} />
-            </FormField>
-            <FormField label="Team">
-              <select value={team} onChange={(e) => setTeam(e.target.value)} style={inputStyle}>
-                {TEAMS.filter((t) => t !== "All").map((t) => (
-                  <option key={t} value={t}>{t}</option>
-                ))}
-              </select>
-            </FormField>
-            <FormField label="Avatar">
-              <ImageUpload
-                value={avatar}
-                onChange={url => setAvatar(url)}
-                folder="loop-avatars"
-                aspectRatio="square"
-              />
-            </FormField>
-            <FormField label="Trạng thái">
-              <select value={status} onChange={(e) => setStatus(e.target.value as MemberStatus)} style={inputStyle}>
-                {(Object.keys(STATUS_CFG) as MemberStatus[]).map((s) => (
-                  <option key={s} value={s}>{STATUS_CFG[s].label}</option>
-                ))}
-              </select>
-            </FormField>
-            <div style={{ gridColumn: "1 / -1" }}>
-              <FormField label="Bio">
-                <textarea
-                  value={bio}
-                  onChange={(e) => setBio(e.target.value)}
-                  rows={3}
-                  style={{ ...inputStyle, resize: "vertical" }}
-                />
-              </FormField>
             </div>
-          </div>
-        )}
 
-        {/* Tab 1: Rank & LP */}
-        {tab === 1 && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            <FormField label="Cấp độ (Level)">
-              <input
-                type="number" value={level}
-                onChange={(e) => {
-                  setLevel(e.target.value);
-                  const lvl = parseInt(e.target.value) || 1;
-                  setRankKey(getRankFromLevel(lvl));
-                }}
-                min={1} style={inputStyle}
-              />
-            </FormField>
+            {/* ── Right content ─────────────────────────────────────────── */}
+            <div style={{ padding: "20px 24px" }}>
 
-            <FormField label="Kinh nghiệm (XP)">
-              <input
-                type="number" value={currentXp}
-                onChange={(e) => setCurrentXp(e.target.value)}
-                min={0} style={inputStyle}
-              />
-            </FormField>
-
-            <div>
+              {/* Tab bar */}
               <div style={{
-                fontFamily: DS.mono, fontSize: 10, color: DS.text2,
-                textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8,
+                display: "flex", gap: 2, marginBottom: 24,
+                background: "rgba(255,255,255,0.03)",
+                borderRadius: 10, padding: 4,
+                border: "1px solid rgba(255,255,255,0.06)",
               }}>
-                Hạng
-              </div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                {(Object.keys(RANKS) as RankKey[]).map((rk) => {
-                  const active = rankKey === rk;
-                  const cfg = RANKS[rk];
+                {TABS.map((t) => {
+                  const active = tab === t.id;
                   return (
                     <button
-                      key={rk}
-                      onClick={() => {
-                        setRankKey(rk);
-                        setLevel(String(cfg.minLevel));
-                      }}
+                      key={t.id}
+                      onClick={isMutating ? undefined : () => setTab(t.id as 0 | 1 | 2 | 3)}
+                      disabled={isMutating}
                       style={{
-                        display: "flex", alignItems: "center", gap: 5,
-                        padding: "6px 12px", borderRadius: 20,
-                        border: `1px solid ${active ? cfg.color : DS.border}`,
-                        backgroundColor: active ? cfg.color + "22" : "transparent",
-                        cursor: "pointer", transition: "all 0.15s",
+                        flex: 1, padding: "8px 12px",
+                        cursor: isMutating ? "not-allowed" : "pointer",
+                        background: active
+                          ? `linear-gradient(135deg, ${DS.blue}30, ${DS.purple}20)`
+                          : "transparent",
+                        border: active ? `1px solid ${DS.blue}44` : "1px solid transparent",
+                        color: active ? DS.blue : DS.text3,
+                        fontFamily: DS.mono, fontSize: 11,
+                        fontWeight: active ? 600 : 400,
+                        transition: "all 0.2s ease",
+                        display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                        opacity: isMutating ? 0.5 : 1,
                       }}
                     >
-                      <span style={{ fontSize: 14 }}>{cfg.symbol}</span>
-                      <span style={{ fontFamily: DS.mono, fontSize: 11, color: active ? cfg.color : DS.text3 }}>
-                        {cfg.label}
-                      </span>
-                      <span style={{ fontFamily: DS.mono, fontSize: 9, color: DS.text3 }}>
-                        Lv.{cfg.minLevel}
-                      </span>
+                      {t.label}
                     </button>
                   );
                 })}
               </div>
-            </div>
-          </div>
-        )}
 
-        {/* Tab 2: Skills */}
-        {tab === 2 && (
-          <div>
-            <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-              <input
-                value={skillInput}
-                onChange={(e) => setSkillInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && skillInput.trim()) {
-                    setSkills((s) => [...s, skillInput.trim()]);
-                    setSkillInput("");
-                    e.preventDefault();
-                  }
-                }}
-                placeholder="Nhập kỹ năng, Enter để thêm"
-                style={{ ...inputStyle, flex: 1 }}
-              />
-              <button
-                onClick={() => {
-                  if (skillInput.trim()) {
-                    setSkills((s) => [...s, skillInput.trim()]);
-                    setSkillInput("");
-                  }
-                }}
-                style={{ padding: "0 16px", borderRadius: 8, border: `1px solid ${DS.blue}`, background: DS.blue + "22", color: DS.blue, fontFamily: DS.mono, fontSize: 12, cursor: "pointer" }}
-              >
-                + Thêm
-              </button>
-            </div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-              {skills.map((s, i) => (
-                <span key={i} style={{
-                  display: "inline-flex", alignItems: "center", gap: 5,
-                  padding: "4px 10px", borderRadius: 20,
-                  backgroundColor: DS.purple + "22",
-                  border: `1px solid ${DS.purple}44`,
-                  fontFamily: DS.mono, fontSize: 11, color: DS.purple,
-                }}>
-                  {s}
-                  <button
-                    onClick={() => setSkills((sk) => sk.filter((_, j) => j !== i))}
-                    style={{ background: "none", border: "none", cursor: "pointer", color: DS.text3, padding: 0, display: "flex", alignItems: "center" }}
-                  >
-                    <X size={10} />
-                  </button>
-                </span>
-              ))}
-              {skills.length === 0 && (
-                <span style={{ fontFamily: DS.mono, fontSize: 11, color: DS.text3 }}>
-                  Chưa có kỹ năng nào
-                </span>
+              {/* ── Tab 0: Thông tin ─────────────────────────────────────── */}
+              {tab === 0 && (
+                <motion.div
+                  key="tab-info"
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.18 }}
+                  style={{ display: "flex", flexDirection: "column", gap: 14 }}
+                >
+                  {/* Row: name + email */}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                    <Field label="Tên thành viên *" required>
+                      <input value={name} onChange={(e) => setName(e.target.value)} placeholder="VD: Nguyễn Văn A"
+                        style={fieldInput} />
+                    </Field>
+                    <Field label="Email *" required>
+                      <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@loop.vn"
+                        style={fieldInput} />
+                    </Field>
+                  </div>
+
+                  {/* Row: role + phone */}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                    <Field label="Vị trí công tác *">
+                      <input value={roleInput} onChange={(e) => setRoleInput(e.target.value)}
+                        placeholder="VD: Frontend Developer"
+                        style={fieldInput} />
+                    </Field>
+                    <Field label="Số điện thoại">
+                      <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="090x xxx xxx"
+                        style={fieldInput} />
+                    </Field>
+                  </div>
+
+                  {/* Bio */}
+                  <Field label="Giới thiệu">
+                    <textarea
+                      value={bio}
+                      onChange={(e) => setBio(e.target.value)}
+                      placeholder="Mô tả ngắn về thành viên..."
+                      rows={3}
+                      style={{ ...fieldInput, resize: "vertical", minHeight: 72 }}
+                    />
+                  </Field>
+                </motion.div>
               )}
+
+              {/* ── Tab 1: Phân quyền ───────────────────────────────────── */}
+              {tab === 1 && (
+                <motion.div
+                  key="tab-perms"
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.18 }}
+                  style={{ display: "flex", flexDirection: "column", gap: 12 }}
+                >
+                  {/* Intro */}
+                  <div style={{
+                    fontFamily: DS.mono, fontSize: 10, color: DS.text3,
+                    padding: "10px 14px", background: "rgba(255,255,255,0.02)",
+                    border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10,
+                    lineHeight: 1.6,
+                  }}>
+                    Chọn System Role bên trái để tự động điền quyền, hoặc tùy chỉnh từng tab bên dưới:
+                    <span style={{ color: DS.green }}> ✏ </span>chỉnh sửa ·
+                    <span style={{ color: DS.blue }}> 👁 </span>xem ·
+                    <span style={{ color: DS.text4 }}> ✕ </span>không có quyền
+                  </div>
+
+                  {/* System role quick buttons */}
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    {SYSTEM_ROLES.map((r) => (
+                      <button
+                        key={r.id}
+                        onClick={() => applyRolePreset(r.id)}
+                        disabled={isMutating}
+                        style={{
+                          display: "flex", alignItems: "center", gap: 6,
+                          padding: "7px 14px", borderRadius: 10,
+                          cursor: isMutating ? "not-allowed" : "pointer",
+                          border: `1px solid ${systemRole === r.id ? r.color + "55" : "rgba(255,255,255,0.08)"}`,
+                          background: systemRole === r.id ? `${r.color}14` : "rgba(255,255,255,0.02)",
+                          color: systemRole === r.id ? r.color : DS.text3,
+                          fontFamily: DS.mono, fontSize: 11, fontWeight: 600,
+                          opacity: isMutating ? 0.5 : 1,
+                          transition: "all 0.15s",
+                        }}
+                      >
+                        <span>{r.symbol}</span> {r.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Tab permission groups */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10, maxHeight: 340, overflowY: "auto", paddingRight: 4 }}>
+                    {TAB_GROUPS.map((group) => (
+                      <div key={group.label} style={{
+                        background: "rgba(255,255,255,0.02)",
+                        border: "1px solid rgba(255,255,255,0.06)",
+                        borderRadius: 12, padding: "12px 14px",
+                      }}>
+                        {/* Group header */}
+                        <div style={{
+                          display: "flex", alignItems: "center", gap: 7,
+                          marginBottom: 10,
+                        }}>
+                          <span style={{ fontSize: 13, color: group.color }}>{group.icon}</span>
+                          <span style={{ fontFamily: DS.mono, fontSize: 10, color: group.color, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                            {group.label}
+                          </span>
+                        </div>
+                        {/* Individual tab buttons */}
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                          {group.tabs.map((t) => {
+                            const perm = tabPerms[t.id] ?? "none";
+                            const isEdit = perm === "edit";
+                            const isView = perm === "view";
+                            const isNone = perm === "none";
+                            const activeColor = isEdit ? DS.green : isView ? DS.blue : DS.text4;
+                            return (
+                              <button
+                                key={t.id}
+                                onClick={() => cycleTab(t.id)}
+                                disabled={isMutating}
+                                style={{
+                                  display: "flex", alignItems: "center", gap: 4,
+                                  padding: "5px 10px", borderRadius: 8,
+                                  cursor: isMutating ? "not-allowed" : "pointer",
+                                  border: `1px solid ${isNone ? "rgba(255,255,255,0.07)" : activeColor + "44"}`,
+                                  background: isNone ? "rgba(255,255,255,0.02)" : `${activeColor}12`,
+                                  color: activeColor,
+                                  fontFamily: DS.mono, fontSize: 10, fontWeight: 500,
+                                  opacity: isMutating ? 0.5 : 1,
+                                  transition: "all 0.15s",
+                                  minWidth: 80,
+                                  justifyContent: "space-between",
+                                }}
+                                title={`${t.label}: ${perm}`}
+                              >
+                                <span>{t.label}</span>
+                                <span style={{ fontSize: 10 }}>
+                                  {isEdit ? "✏" : isView ? "👁" : "✕"}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Summary bar */}
+                  <div style={{
+                    display: "flex", alignItems: "center", justifyContent: "space-between",
+                    padding: "10px 14px",
+                    background: "rgba(255,255,255,0.02)",
+                    border: "1px solid rgba(255,255,255,0.06)",
+                    borderRadius: 10, fontFamily: DS.mono, fontSize: 11,
+                  }}>
+                    <span style={{ color: DS.text3 }}>
+                      Tổng: {activeTabCount} trang được phép
+                    </span>
+                    <span style={{ color: DS.text3 }}>
+                      Edit: {Object.values(tabPerms).filter((v) => v === "edit").length} ·
+                      View: {Object.values(tabPerms).filter((v) => v === "view").length}
+                    </span>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* ── Tab 2: Hạng & LP ───────────────────────────────────── */}
+              {tab === 2 && (
+                <motion.div
+                  key="tab-rank"
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.18 }}
+                  style={{ display: "flex", flexDirection: "column", gap: 18 }}
+                >
+                  {/* Level + XP row */}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                    <Field label="Cấp độ (Level)">
+                      <input
+                        type="number" value={level}
+                        onChange={(e) => {
+                          setLevel(e.target.value);
+                          const lvl = parseInt(e.target.value) || 1;
+                          setRankKey(getRankFromLevel(lvl));
+                        }}
+                        min={1}
+                        style={fieldInput}
+                      />
+                    </Field>
+                    <Field label="Kinh nghiệm (XP)">
+                      <input type="number" value={currentXp}
+                        onChange={(e) => setCurrentXp(e.target.value)} min={0}
+                        style={fieldInput}
+                      />
+                    </Field>
+                  </div>
+
+                  {/* Current rank card */}
+                  <div style={{
+                    background: `linear-gradient(135deg, ${rankCfg.color}12, ${rankCfg.color}06)`,
+                    border: `1px solid ${rankCfg.color}33`,
+                    borderRadius: 14, padding: "16px 20px",
+                  }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <span style={{ fontSize: 28, filter: `drop-shadow(0 0 8px ${rankCfg.color})` }}>
+                          {rankCfg.symbol}
+                        </span>
+                        <div>
+                          <div style={{ fontFamily: DS.heading, fontSize: 16, color: rankCfg.color }}>
+                            {rankCfg.label}
+                          </div>
+                          <div style={{ fontFamily: DS.mono, fontSize: 10, color: DS.text3, marginTop: 2 }}>
+                            Level {lvlNum} · {(rankCfg.tier <= 2 ? "Common" : rankCfg.tier === 3 ? "Rare" : rankCfg.tier === 4 ? "Epic" : "Legendary")}
+                          </div>
+                        </div>
+                      </div>
+                      <div style={{
+                        padding: "4px 12px", borderRadius: 20,
+                        background: rankCfg.color + "22",
+                        border: `1px solid ${rankCfg.color}44`,
+                        fontFamily: DS.mono, fontSize: 11, color: rankCfg.color,
+                      }}>
+                        #{Object.values(RANKS).findIndex((r) => r.label === rankCfg.label) + 1} Rank
+                      </div>
+                    </div>
+                    {/* XP bar */}
+                    <div style={{ height: 4, borderRadius: 2, background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${xpForCurrentRank}%` }}
+                        transition={{ duration: 0.5, ease: "easeOut" }}
+                        style={{
+                          height: "100%",
+                          background: `linear-gradient(90deg, ${rankCfg.color}88, ${rankCfg.color})`,
+                          borderRadius: 2,
+                          boxShadow: `0 0 8px ${rankCfg.color}66`,
+                        }}
+                      />
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginTop: 5 }}>
+                      <span style={{ fontFamily: DS.mono, fontSize: 9, color: DS.text3 }}>
+                        {lvlNum} / {rankCfg.minLevel} XP
+                      </span>
+                      <span style={{ fontFamily: DS.mono, fontSize: 9, color: DS.text3 }}>
+                        Next: {rankCfg.label}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Rank selector grid */}
+                  <div>
+                    <div style={{
+                      fontFamily: DS.mono, fontSize: 10, color: DS.text3,
+                      textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8,
+                    }}>
+                      Chọn hạng
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6 }}>
+                      {(Object.keys(RANKS) as RankKey[]).map((rk) => {
+                        const cfg = RANKS[rk];
+                        const active = rankKey === rk;
+                        return (
+                          <button
+                            key={rk}
+                            onClick={() => { setRankKey(rk); setLevel(String(cfg.minLevel)); }}
+                            style={{
+                              display: "flex", flexDirection: "column", alignItems: "center",
+                              gap: 4, padding: "10px 6px",
+                              borderRadius: 10,
+                              border: `1px solid ${active ? cfg.color + "66" : "rgba(255,255,255,0.06)"}`,
+                              background: active ? cfg.color + "15" : "rgba(255,255,255,0.02)",
+                              cursor: "pointer", transition: "all 0.15s ease",
+                            }}
+                          >
+                            <span style={{ fontSize: 18, filter: active ? `drop-shadow(0 0 6px ${cfg.color})` : "none" }}>
+                              {cfg.symbol}
+                            </span>
+                            <span style={{
+                              fontFamily: DS.mono, fontSize: 9, color: active ? cfg.color : DS.text3,
+                              fontWeight: active ? 600 : 400,
+                            }}>
+                              {cfg.label}
+                            </span>
+                            <span style={{ fontFamily: DS.mono, fontSize: 8, color: DS.text3 }}>
+                              Lv.{cfg.minLevel}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* ── Tab 3: Kỹ năng ─────────────────────────────────────── */}
+              {tab === 3 && (
+                <motion.div
+                  key="tab-skills"
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.18 }}
+                  style={{ display: "flex", flexDirection: "column", gap: 16 }}
+                >
+                  <Field label="Kỹ năng">
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <input
+                        value={skillInput}
+                        onChange={(e) => setSkillInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && skillInput.trim()) {
+                            setSkills((s) => [...s, skillInput.trim()]);
+                            setSkillInput("");
+                            e.preventDefault();
+                          }
+                        }}
+                        placeholder="VD: React, Figma, Node.js..."
+                        style={{ ...fieldInput, flex: 1 }}
+                      />
+                      <button
+                        onClick={() => {
+                          if (skillInput.trim()) {
+                            setSkills((s) => [...s, skillInput.trim()]);
+                            setSkillInput("");
+                          }
+                        }}
+                        disabled={!skillInput.trim() || isMutating}
+                        style={{
+                          padding: "0 16px", borderRadius: 8,
+                          border: `1px solid ${DS.green}55`,
+                          background: `${DS.green}15`,
+                          color: DS.green,
+                          fontFamily: DS.mono, fontSize: 11,
+                          cursor: skillInput.trim() && !isMutating ? "pointer" : "not-allowed",
+                          opacity: skillInput.trim() && !isMutating ? 1 : 0.5,
+                          display: "flex", alignItems: "center", gap: 4,
+                          transition: "all 0.15s",
+                        }}
+                      >
+                        <Plus size={13} /> Thêm
+                      </button>
+                    </div>
+                  </Field>
+
+                  {/* Skills list */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {skills.length === 0 ? (
+                      <div style={{
+                        padding: "24px 0", textAlign: "center",
+                        fontFamily: DS.mono, fontSize: 11, color: DS.text3,
+                      }}>
+                        <Zap size={20} style={{ margin: "0 auto 8px", opacity: 0.4 }} />
+                        Chưa có kỹ năng nào. Nhập và nhấn Enter để thêm.
+                      </div>
+                    ) : (
+                      skills.map((s, i) => (
+                        <motion.div
+                          key={`${s}-${i}`}
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          style={{
+                            display: "flex", alignItems: "center", justifyContent: "space-between",
+                            padding: "8px 14px", borderRadius: 10,
+                            background: "rgba(255,255,255,0.03)",
+                            border: "1px solid rgba(255,255,255,0.06)",
+                          }}
+                        >
+                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                            <div style={{
+                              width: 28, height: 28, borderRadius: 6,
+                              background: `${DS.purple}22`,
+                              border: `1px solid ${DS.purple}33`,
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                            }}>
+                              <Zap size={12} color={DS.purple} />
+                            </div>
+                            <span style={{ fontFamily: DS.mono, fontSize: 12, color: DS.text2 }}>
+                              {s}
+                            </span>
+                          </div>
+                          <button
+                            onClick={() => setSkills((sk) => sk.filter((_, j) => j !== i))}
+                            disabled={isMutating}
+                            style={{
+                              width: 24, height: 24, borderRadius: "50%",
+                              background: "rgba(239,68,68,0.1)",
+                              border: "1px solid rgba(239,68,68,0.2)",
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                              cursor: isMutating ? "not-allowed" : "pointer",
+                              color: DS.red, transition: "all 0.15s",
+                            }}
+                          >
+                            <X size={11} />
+                          </button>
+                        </motion.div>
+                      ))
+                    )}
+                  </div>
+
+                  {/* Quick-add suggestions */}
+                  {skills.length < 5 && (
+                    <div>
+                      <div style={{ fontFamily: DS.mono, fontSize: 10, color: DS.text3, marginBottom: 6 }}>
+                        Gợi ý nhanh
+                      </div>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+                        {["React", "TypeScript", "Node.js", "Figma", "Next.js", "PostgreSQL"]
+                          .filter((s) => !skills.includes(s))
+                          .map((s) => (
+                            <button
+                              key={s}
+                              onClick={() => setSkills((sk) => [...sk, s])}
+                              disabled={isMutating}
+                              style={{
+                                padding: "3px 10px", borderRadius: 20,
+                                border: "1px solid rgba(255,255,255,0.08)",
+                                background: "rgba(255,255,255,0.03)",
+                                color: DS.text3, fontFamily: DS.mono, fontSize: 10,
+                                cursor: "pointer", transition: "all 0.12s",
+                              }}
+                              onMouseEnter={(e) => {
+                                (e.currentTarget as HTMLButtonElement).style.borderColor = `${DS.blue}55`;
+                                (e.currentTarget as HTMLButtonElement).style.color = DS.blue;
+                              }}
+                              onMouseLeave={(e) => {
+                                (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.08)";
+                                (e.currentTarget as HTMLButtonElement).style.color = DS.text3;
+                              }}
+                            >
+                              + {s}
+                            </button>
+                          ))}
+                      </div>
+                    </div>
+                  )}
+                </motion.div>
+              )}
+
+              {/* ── Action buttons ──────────────────────────────────────── */}
+              <div style={{
+                display: "flex", gap: 8, marginTop: 24,
+                borderTop: "1px solid rgba(255,255,255,0.06)",
+                paddingTop: 20,
+              }}>
+                <button
+                  onClick={() => setFormMember(undefined)}
+                  disabled={isMutating}
+                  style={{
+                    flex: 1, padding: "11px 16px", borderRadius: 10,
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    background: "rgba(255,255,255,0.03)",
+                    color: DS.text3, fontFamily: DS.mono, fontSize: 12,
+                    cursor: isMutating ? "not-allowed" : "pointer",
+                    opacity: isMutating ? 0.5 : 1,
+                    transition: "all 0.15s",
+                  }}
+                >
+                  Hủy bỏ
+                </button>
+                <button
+                  onClick={handleSubmit}
+                  disabled={isMutating || !name.trim() || !email.trim() || !roleInput.trim()}
+                  style={{
+                    flex: 2.5, padding: "11px 16px", borderRadius: 10,
+                    border: "none",
+                    background: (!name.trim() || !email.trim() || !roleInput.trim() || isMutating)
+                      ? "rgba(79,125,243,0.3)"
+                      : `linear-gradient(135deg, ${DS.blue}, ${DS.purple})`,
+                    color: "#fff",
+                    fontFamily: DS.heading, fontSize: 13, fontWeight: 600,
+                    cursor: (!name.trim() || !email.trim() || !roleInput.trim() || isMutating)
+                      ? "not-allowed"
+                      : "pointer",
+                    opacity: isMutating ? 0.7 : 1,
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                    transition: "all 0.2s ease",
+                    boxShadow: (!name.trim() || !email.trim() || !roleInput.trim())
+                      ? "none"
+                      : `0 4px 20px ${DS.blue}44`,
+                  }}
+                >
+                  {isMutating && (
+                    <div style={{
+                      width: 14, height: 14, borderRadius: "50%",
+                      border: "2px solid rgba(255,255,255,0.3)",
+                      borderTopColor: "#fff",
+                      animation: "spin 0.8s linear infinite",
+                    }} />
+                  )}
+                  {isEdit ? "Lưu thay đổi" : "Tạo thành viên"}
+                </button>
+              </div>
             </div>
           </div>
-        )}
-
-        {/* Submit */}
-        <div style={{ display: "flex", gap: 8, marginTop: 20 }}>
-          <button
-            onClick={() => setFormMember(undefined)}
-            style={{
-              flex: 1, padding: "10px", borderRadius: 8,
-              border: `1px solid ${DS.border}`, background: "transparent",
-              color: DS.text2, fontFamily: DS.heading, fontSize: 13, cursor: "pointer",
-            }}
-          >
-            Hủy
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={isMutating}
-            style={{
-              flex: 2, padding: "10px", borderRadius: 8, border: "none",
-              background: DS.blue, color: "#fff",
-              fontFamily: DS.heading, fontSize: 13, cursor: isMutating ? "not-allowed" : "pointer",
-              opacity: isMutating ? 0.7 : 1,
-              display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-            }}
-          >
-            {isMutating && <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} />}
-            {isEdit ? "Lưu thay đổi" : "Thêm thành viên"}
-          </button>
-        </div>
-      </ModalWrapper>
+        </motion.div>
+      </motion.div>
     );
   }
 
@@ -2072,20 +2923,21 @@ export default function AdminMembersPage() {
   // =============================================================================
 
   function ModalWrapper({
-    children, onClose, title, wide = false,
+    children, onClose, title, wide = false, disabled = false,
   }: {
-    children: React.ReactNode; onClose: () => void; title: string; wide?: boolean;
+    children: React.ReactNode; onClose: () => void; title: string; wide?: boolean; disabled?: boolean;
   }) {
     return (
       <motion.div
         key="modal-overlay"
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-        onClick={onClose}
+        onClick={disabled ? undefined : onClose}
         style={{
           position: "fixed", inset: 0, zIndex: 200,
-          background: "rgba(0,0,0,0.75)",
+          background: disabled ? "rgba(0,0,0,0.85)" : "rgba(0,0,0,0.75)",
           display: "flex", alignItems: "center", justifyContent: "center", padding: 20,
           backdropFilter: "blur(4px)",
+          cursor: disabled ? "wait" : "default",
         }}
       >
         <motion.div
@@ -2101,8 +2953,24 @@ export default function AdminMembersPage() {
             width: "100%", maxWidth: wide ? 560 : 440,
             maxHeight: "90vh", overflowY: "auto",
             boxShadow: `0 24px 80px rgba(0,0,0,0.6)`,
+            position: "relative",
           }}
         >
+          {/* Loading overlay */}
+          {disabled && (
+            <div style={{
+              position: "absolute", inset: 0, zIndex: 10,
+              background: "rgba(2,6,23,0.7)",
+              display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+              borderRadius: 16,
+            }}>
+              <Loader2 size={32} style={{ animation: "spin 1s linear infinite", color: DS.blue }} />
+              <div style={{ color: DS.text3, fontFamily: DS.mono, fontSize: 11, marginTop: 12 }}>
+                Đang lưu...
+              </div>
+            </div>
+          )}
+
           {/* Header */}
           <div style={{
             display: "flex", justifyContent: "space-between", alignItems: "center",
@@ -2112,12 +2980,15 @@ export default function AdminMembersPage() {
               {title}
             </h3>
             <button
-              onClick={onClose}
+              onClick={disabled ? undefined : onClose}
+              disabled={disabled}
               style={{
                 width: 28, height: 28, borderRadius: "50%",
                 background: DS.bgCard, border: `1px solid ${DS.border}`,
-                cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-                color: DS.text3,
+                cursor: disabled ? "not-allowed" : "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                color: disabled ? DS.text5 : DS.text3,
+                opacity: disabled ? 0.5 : 1,
               }}
             >
               <X size={14} />
@@ -2160,6 +3031,7 @@ export default function AdminMembersPage() {
     backgroundColor: DS.bgCard, color: DS.text,
     fontFamily: DS.mono, fontSize: 13, outline: "none",
     boxSizing: "border-box",
+    ...(isMutating ? { opacity: 0.5, cursor: "not-allowed" } : {}),
   };
 
   function FormField({ label, children }: { label: string; children: React.ReactNode }) {
@@ -2467,32 +3339,35 @@ export default function AdminMembersPage() {
             {/* Table header */}
             <div style={{
               display: "grid",
-              gridTemplateColumns: "40px 2.5fr 1.2fr 1fr 1fr 1fr 1fr 100px",
-              padding: "8px 0",
+              gridTemplateColumns: "32px 220px 1fr 72px 100px 76px 80px 88px",
+              padding: "0 6px",
+              height: 34,
               borderBottom: `1px solid ${DS.border}`,
               backgroundColor: DS.bgCard,
+              alignItems: "center",
             }}>
               {/* Select all */}
               <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <div
                   onClick={toggleSelectAll}
                   style={{
-                    width: 16, height: 16, borderRadius: 4, cursor: "pointer",
-                    border: `1.5px solid ${allSelected ? DS.blue : DS.text3}`,
+                    width: 14, height: 14, borderRadius: 4, cursor: "pointer",
+                    border: `1.5px solid ${allSelected ? DS.blue : DS.text4}`,
                     backgroundColor: allSelected ? DS.blue + "33" : "transparent",
                     display: "flex", alignItems: "center", justifyContent: "center",
+                    transition: "all 0.15s",
                   }}
                 >
-                  {allSelected && <Check size={10} color={DS.blue} />}
+                  {allSelected && <Check size={9} color={DS.blue} />}
                 </div>
               </div>
-              <SortHeader_ col="name" sk="name" style={{ padding: "0 8px" }}>Thành viên</SortHeader_>
+              <SortHeader_ col="name" sk="name">Thành viên</SortHeader_>
               <SortHeader_ col="rank" sk="rank">Hạng</SortHeader_>
-              <SortHeader_ col="role" sk="role">Hệ thống</SortHeader_>
               <SortHeader_ col="lp" sk="lpBalance">LP</SortHeader_>
+              <SortHeader_ col="role" sk="role">Hệ thống</SortHeader_>
               <SortHeader_ col="join" sk="name">Ngày vào</SortHeader_>
               <SortHeader_ col="status" sk="name">Trạng thái</SortHeader_>
-              <div style={{ padding: "0 8px", textAlign: "right", fontFamily: DS.mono, fontSize: 10, color: DS.text3, textTransform: "uppercase", letterSpacing: "0.08em" }}>Thao tác</div>
+              <div style={{ fontFamily: DS.mono, fontSize: 9, color: DS.text4, textTransform: "uppercase", letterSpacing: "0.08em", textAlign: "right" }}>Thao tác</div>
             </div>
 
             {/* Rows */}
@@ -2501,11 +3376,13 @@ export default function AdminMembersPage() {
                 key={m.id}
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "40px 2.5fr 1.2fr 1fr 1fr 1fr 1fr 100px",
+                  gridTemplateColumns: "32px 220px 1fr 72px 100px 76px 80px 88px",
                   alignItems: "center",
                   borderBottom: `1px solid ${DS.border}`,
                   backgroundColor: selectedIds.has(m.id) ? DS.blue + "08" : "transparent",
                   transition: "background 0.15s",
+                  padding: "0 6px",
+                  height: 52,
                 }}
               >
                 <MemberRow_ m={m} />

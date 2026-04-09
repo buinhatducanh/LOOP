@@ -70,29 +70,27 @@ export async function PATCH(
       updateData.completedAt = data.completedAt ? new Date(data.completedAt) : null;
     }
 
-    // ⚠️ FIX: wrap task update + audit log in a transaction.
-    const task = await prisma.$transaction(async (tx) => {
-      const updated = await tx.taskKanban.update({
-        where: { id },
-        data: updateData,
-        include: {
-          order: {
-            select: { id: true, orderNumber: true, customerName: true },
-          },
+    // Sequential writes (PrismaNeon HTTP adapter does NOT support $transaction)
+    const updated = await prisma.taskKanban.update({
+      where: { id },
+      data: updateData,
+      include: {
+        order: {
+          select: { id: true, orderNumber: true, customerName: true },
         },
-      });
-      await tx.auditLog.create({
-        data: {
-          userId: session.userId,
-          action: "update",
-          resource: "task-kanban",
-          resourceId: id,
-          oldValues: existing,
-          newValues: data,
-        },
-      });
-      return updated;
+      },
     });
+    await prisma.auditLog.create({
+      data: {
+        userId: session.userId,
+        action: "update",
+        resource: "task-kanban",
+        resourceId: id,
+        oldValues: existing,
+        newValues: data,
+      },
+    }).catch(() => { /* non-critical */ });
+    const task = updated;
 
     return ok(task);
   } catch (err) {

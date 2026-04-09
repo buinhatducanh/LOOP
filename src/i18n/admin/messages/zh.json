@@ -402,7 +402,11 @@
     "formEventTitle": "添加活动", "formEventType": "类型", "formEventStartDate": "开始日期",
     "formEventEndDate": "结束日期", "formEventColor": "颜色", "formEventTitlePlaceholder": "活动名称",
     "formEventDescPlaceholder": "活动描述...", "formBtnCreateEvent": "创建活动",
-    "errTitleRequired": "标题必填", "errCreateFailed": "创建失败"
+    "errTitleRequired": "标题必填", "errCreateFailed": "创建失败",
+    "formQuestDaily": "每日", "formQuestWeekly": "每周", "formQuestMonthly": "每月",
+    "formQuestOne_time": "一次性", "formQuestEvent": "活动",
+    "formEditQuest": "编辑任务", "formEditEvent": "编辑活动",
+    "confirmDelete": "确认删除？", "confirmDeleteWarn": "此操作无法撤销。"
   },
   "settings": {
     "title": "系统设置", "titleCount": "{n} 项设置", "refreshBtn": "刷新",

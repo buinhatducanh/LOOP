@@ -73,11 +73,9 @@ export async function DELETE(_req: NextRequest, { params }: RouteParams) {
     const payment = await prisma.offSystemPayment.findUnique({ where: { id } });
     if (!payment) return notFound("Payment not found");
 
-    // Cascade delete splits + payment
-    await prisma.$transaction([
-      prisma.offSystemSplit.deleteMany({ where: { offSystemPaymentId: id } }),
-      prisma.offSystemPayment.delete({ where: { id } }),
-    ]);
+    // Sequential writes (PrismaNeon HTTP adapter does NOT support $transaction)
+    await prisma.offSystemSplit.deleteMany({ where: { offSystemPaymentId: id } });
+    await prisma.offSystemPayment.delete({ where: { id } });
 
     return ok({ deleted: true });
   } catch (error) {

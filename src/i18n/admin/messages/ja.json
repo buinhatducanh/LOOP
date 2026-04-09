@@ -402,7 +402,11 @@
     "formEventTitle": "イベント追加", "formEventType": "タイプ", "formEventStartDate": "開始日",
     "formEventEndDate": "終了日", "formEventColor": "色", "formEventTitlePlaceholder": "イベント名",
     "formEventDescPlaceholder": "イベントの説明...", "formBtnCreateEvent": "イベント作成",
-    "errTitleRequired": "タイトルは必須です", "errCreateFailed": "作成失敗"
+    "errTitleRequired": "タイトルは必須です", "errCreateFailed": "作成失敗",
+    "formQuestDaily": "毎日", "formQuestWeekly": "毎週", "formQuestMonthly": "毎月",
+    "formQuestOne_time": "一回限り", "formQuestEvent": "イベント",
+    "formEditQuest": "クエスト編集", "formEditEvent": "イベント編集",
+    "confirmDelete": "削除を確認？", "confirmDeleteWarn": "この操作は取り消せません。"
   },
   "settings": {
     "title": "システム設定", "titleCount": "{n} 設定", "refreshBtn": "更新",

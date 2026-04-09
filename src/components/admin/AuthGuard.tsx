@@ -5,111 +5,130 @@
  *
  * Auth flow:
  *   1. Zustand hydrated → isAuthenticated=true + accountType=staff
- *      → RENDER IMMEDIATELY (no delay)
- *      → useEffect: verify session with /me in background
- *      → /me = 401 → clear auth store → setStatus("blocked") → useEffect: redirect
- *
+ *      → RENDER IMMEDIATELY (no /me verification, no expiry check)
  *   2. Zustand hydrated → isAuthenticated=false OR no token in localStorage
  *      → RENDER null immediately
- *      → useEffect: redirect to /admin/login
+ *      → useEffect:
+ *         • Has stale token → show "Phiên hết hạn" modal
+ *         • No token → render AdminLoginModal (no redirect needed)
+ *
+ * Auto-logout on token expiry shows a modal instead of a harsh redirect.
  *
  * Rules:
  *   - NEVER call Zustand set() during render phase (anti-pattern)
  *   - NEVER call router.replace() during render phase (React error)
  *   - All state mutations MUST be in useEffect
- *
- * Fix (2026-04-07): AuthGuard now checks localStorage directly for the staff token
- * BEFORE making routing decisions, so it works even when Zustand hasn't rehydrated
- * yet from a freshly logged-in session (e.g. footer login → /admin/overview navigation).
  */
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/app/store/authStore";
-import { adminApi, type ApiErrorResponse } from "@/lib/api/client";
+import { AdminLoginModal } from "./AdminLoginModal";
+
+// ── Session Expiry Modal ────────────────────────────────────────────────────────
+
+function SessionExpiryModal({
+  onDismiss,
+}: {
+  onDismiss: () => void;
+}) {
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 9999,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "rgba(0,0,0,0.7)",
+        backdropFilter: "blur(4px)",
+      }}
+    >
+      <div
+        style={{
+          background: "#111827",
+          border: "1px solid rgba(236,72,153,0.3)",
+          borderRadius: 16,
+          padding: "32px 28px",
+          maxWidth: 400,
+          width: "90%",
+          textAlign: "center",
+          boxShadow: "0 0 40px rgba(236,72,153,0.15)",
+        }}
+      >
+        {/* Lock icon */}
+        <div
+          style={{
+            width: 56,
+            height: 56,
+            borderRadius: "50%",
+            background: "rgba(236,72,153,0.12)",
+            border: "1px solid rgba(236,72,153,0.3)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            margin: "0 auto 20px",
+          }}
+        >
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#EC4899" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+        </div>
+
+        <h3 style={{ color: "#FFFFFF", fontSize: 18, fontWeight: 700, marginBottom: 8, fontFamily: "'Cinzel', serif" }}>
+          Phiên đăng nhập hết hạn
+        </h3>
+        <p style={{ color: "#94A3B8", fontSize: 14, lineHeight: 1.6, marginBottom: 24 }}>
+          Phiên làm việc của bạn đã hết hạn. Vui lòng đăng nhập lại để tiếp tục sử dụng hệ thống.
+        </p>
+
+        <button
+          onClick={onDismiss}
+          style={{
+            width: "100%",
+            padding: "12px 20px",
+            borderRadius: 10,
+            border: "none",
+            background: "linear-gradient(135deg, #6B3DF5, #EC4899)",
+            color: "#FFFFFF",
+            fontSize: 15,
+            fontWeight: 600,
+            cursor: "pointer",
+          }}
+        >
+          Quay về trang chủ
+        </button>
+      </div>
+    </div>
+  );
+}
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 /**
- * Lightweight JWT expiry check without signature verification.
- * Only decodes the payload — fast enough to run synchronously.
- * Returns null if the token is missing or malformed.
- */
-function getTokenExpiry(token: string): number | null {
-  try {
-    const payload = JSON.parse(atob(token.split(".")[1]));
-    // exp is seconds; convert to ms
-    return payload.exp ? payload.exp * 1000 : null;
-  } catch {
-    return null;
-  }
-}
-
-function isTokenExpired(expiryMs: number): boolean {
-  return Date.now() >= expiryMs;
-}
-
-/**
  * Returns "allowed" if we should render the admin UI, "blocked" if we should
  * redirect to login. Checks Zustand store AND falls back to localStorage token.
+ *
+ * NOTE: Auto-logout on token expiry is DISABLED — sessions stay alive regardless
+ * of JWT expiry. Sessions only end when the user explicitly logs out or
+ * the server returns 401.
  */
 type DecisionResult = "allowed" | "blocked";
 
 function makeDecision(opts: {
   isAuthenticated: boolean;
   accountType: string | null;
-  tokenExpiry: number | null;
 }): DecisionResult {
-  const { isAuthenticated, accountType, tokenExpiry } = opts;
+  const { isAuthenticated, accountType } = opts;
 
-  // ── Check 1: localStorage has the staff token ──────────────────────────────
-  // This is the primary signal after a successful login.
-  // It is always set synchronously by login() before navigation.
-  const storedToken = typeof window !== "undefined"
-    ? localStorage.getItem("loop-staff-token")
-    : null;
-
-  if (storedToken) {
-    // Token present — check if we know it has expired
-    if (tokenExpiry !== null && isTokenExpired(tokenExpiry)) {
-      // We know the JWT has expired — clear it and block
-      localStorage.removeItem("loop-staff-token");
-      return "blocked";
-    }
-    // Token present and not expired → ALLOW immediately
-    // (background /me verification will catch edge cases)
-    return "allowed";
-  }
-
-  // ── Check 2: Zustand says authenticated + correct accountType ─────────────
-  // This handles pages visited while already logged in (page refresh).
+  // ── Check 1: Zustand says authenticated + staff ──────────────────────────────
   if (isAuthenticated && accountType === "staff") {
-    // Zustand believes session is valid → ALLOW
-    // (background /me verification will catch expired token)
     return "allowed";
   }
 
-  // ── Check 3: Nothing — block ───────────────────────────────────────────────
+  // ── Check 2: Nothing — block ───────────────────────────────────────────────
   return "blocked";
-}
-
-// ── Async session verification ────────────────────────────────────────────────
-
-async function verifySessionWithServer(): Promise<boolean> {
-  const MAX_RETRIES = 1;
-  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-    try {
-      const res = await adminApi.get<{ user: unknown } | ApiErrorResponse>(
-        "/api/admin/auth/me",
-        { throwOnError: false }
-      );
-      return !("error" in res);
-    } catch {
-      if (attempt < MAX_RETRIES) {
-        await new Promise<void>((r) => setTimeout(r, 500));
-      }
-    }
-  }
-  return false;
 }
 
 // ── SessionStatus ──────────────────────────────────────────────────────────────
@@ -124,81 +143,32 @@ type SessionStatus =
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
-  // ── Local status state ───────────────────────────────────────────────────────
+  // ── Local status state + expiry modal ────────────────────────────────────────
   const [status, setStatus] = useState<SessionStatus>("pending");
-  const redirectFired = useRef(false);
+  const [showExpiryModal, setShowExpiryModal] = useState(false);
 
   // ── Hydration check + auth decision ─────────────────────────────────────────
   useEffect(() => {
-    /**
-     * Zustand 5: persist API is on the store API (useAuthStore.persist),
-     * NOT on the state object returned by getState().
-     * In Zustand 4 the API was on getState().persist; in Zustand 5 it moved
-     * to useAuthStore.persist (the store itself IS the API).
-     */
     const checkHydration = (): boolean => {
       return !!useAuthStore.persist?.hasHydrated?.();
     };
 
     const decide = () => {
-      /**
-       * Read FRESH Zustand state — NOT the closure variables.
-       * This fixes the race condition where AuthGuard checks stale state
-       * (isAuthenticated=false) before Zustand rehydrates from localStorage
-       * after a soft navigation from the homepage.
-       */
       const fresh = useAuthStore.getState();
-      const freshTokenExpiry = fresh.tokenExpiry;
+
+      const hasLocalToken =
+        typeof window !== "undefined" &&
+        !!localStorage.getItem("loop-staff-token");
+
       const result = makeDecision({
-        isAuthenticated: fresh.isAuthenticated,
+        isAuthenticated: fresh.isAuthenticated || hasLocalToken,
         accountType: fresh.accountType,
-        tokenExpiry: freshTokenExpiry,
       });
 
-      // If blocked, clear any stale localStorage token
-      if (result === "blocked") {
-        localStorage.removeItem("loop-staff-token");
-      }
-
       setStatus(result);
-
-      // Background revalidation: always confirm with /me when allowed
-      if (result === "allowed") {
-        void (async () => {
-          const valid = await verifySessionWithServer();
-          if (!valid) {
-            // Server says 401 → token dead (e.g. DB reset, forced logout)
-            localStorage.removeItem("loop-staff-token");
-            setStatus("blocked");
-          }
-          // If valid, keep status="allowed" — no state change needed
-        })();
-      }
     };
 
     if (!checkHydration()) {
-      // Zustand not yet hydrated — check localStorage as fallback.
-      // This prevents race condition when opening /admin in a new tab.
-      const storedToken = localStorage.getItem("loop-staff-token");
-      if (storedToken) {
-        const exp = getTokenExpiry(storedToken);
-        if (!exp || !isTokenExpired(exp)) {
-          // Token exists and not expired → allow immediately
-          setStatus("allowed");
-          void (async () => {
-            const valid = await verifySessionWithServer();
-            if (!valid) {
-              localStorage.removeItem("loop-staff-token");
-              setStatus("blocked");
-            }
-          })();
-          return;
-        }
-        // Token expired → clear and wait for hydration
-        localStorage.removeItem("loop-staff-token");
-      }
-
-      // No localStorage token → poll Zustand hydration
       const interval = setInterval(() => {
         if (checkHydration()) {
           clearInterval(interval);
@@ -206,8 +176,6 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
         }
       }, 50);
 
-      // Safety: if Zustand hydration never fires (e.g. SSR edge case),
-      // don't block — the only way to be here without a token is truly no session.
       const timeout = setTimeout(() => {
         clearInterval(interval);
         setStatus("blocked");
@@ -222,28 +190,55 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     decide();
   }, []); // No reactive deps — Zustand state read via getState() inside decide()
 
-  // ── Redirect — ONLY in useEffect (never during render) ─────────────────────
+  // ── Handle blocked status ────────────────────────────────────────────────────
   useEffect(() => {
-    if (status === "blocked" && !redirectFired.current) {
-      redirectFired.current = true;
-      // Redirect to /admin/login which renders the footer login modal.
-      // The page is already /admin/login so no navigation actually occurs —
-      // the modal just needs to be opened by the page itself.
-      if (!window.location.pathname.includes("/admin/login")) {
-        router.replace("/admin/login");
+    if (status === "blocked") {
+      const hasStaleToken =
+        typeof window !== "undefined" &&
+        !!localStorage.getItem("loop-staff-token");
+
+      if (hasStaleToken) {
+        // Stale session — show expiry modal
+        setShowExpiryModal(true);
       }
+      // No token at all → AdminLoginModal renders below (no redirect needed)
     }
-  }, [status, router]);
+  }, [status]);
 
-  // ── Render ─────────────────────────────────────────────────────────────────
+  // ── Dismiss modal → clear stale token, show login form ─────────────────────────
+  const handleDismiss = () => {
+    localStorage.removeItem("loop-staff-token");
+    setShowExpiryModal(false);
+    // Modal stays open — user can log in again
+  };
 
-  // Waiting for Zustand hydration → render nothing
+  // ── Sync: clear stale token when Zustand session is cleared by 401 ─────────────
+  useEffect(() => {
+    const unsubscribe = useAuthStore.subscribe((state, prev) => {
+      // isAuthenticated flipped true → false after being hydrated (401 from /me)
+      if (prev.isAuthenticated && !state.isAuthenticated && state.sessionHydrated) {
+        localStorage.removeItem("loop-staff-token");
+      }
+    });
+    return unsubscribe;
+  }, []);
+
+  // ── Render ───────────────────────────────────────────────────────────────────
+
   if (status === "pending") return null;
 
-  // No valid session → render nothing (redirect fires in useEffect above)
-  if (status === "blocked") return null;
+  // Blocked: show login form (expiry modal overlays it)
+  if (status === "blocked") {
+    return (
+      <>
+        <AdminLoginModal>
+          <div style={{ display: "none" }} />
+        </AdminLoginModal>
+        {showExpiryModal && <SessionExpiryModal onDismiss={handleDismiss} />}
+      </>
+    );
+  }
 
-  // Valid session → render admin UI immediately
-  return <>{children}</>;
+  return children;
 }
 

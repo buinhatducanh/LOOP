@@ -45,36 +45,35 @@ export async function POST(req: NextRequest) {
     // Resolve async teamMember link before spreading into create data
     const teamMemberLink = await linkTeamMember(email.toLowerCase());
 
-    // ⚠️ FIX: wrap user create + audit log in a transaction.
-    // If audit log fails, we still have the user — but this ensures audit
-    // is committed atomically with the create when both succeed.
-    const user = await prisma.$transaction(async (tx) => {
-      const created = await tx.user.create({
-        data: {
-          name: name.trim(),
-          email: email.toLowerCase().trim(),
-          passwordHash,
-          phone: phone?.trim() || null,
-          companyName: company?.trim() || null,
-          businessType: businessType?.trim() || null,
-          role: "member",
-          accountType: "customer",
-          isOnboarded: false,
-          loginCount: 1, // first "login" = registration
-          lastLogin: new Date(),
-          ...teamMemberLink,
-        },
-      });
-      await tx.auditLog.create({
-        data: {
-          userId: created.id,
-          action: "register",
-          resource: "auth",
-          resourceId: created.id,
-        },
-      });
-      return created;
+    // Sequential writes (PrismaNeon HTTP adapter does NOT support $transaction)
+    const created = await prisma.user.create({
+      data: {
+        name: name.trim(),
+        email: email.toLowerCase().trim(),
+        passwordHash,
+        phone: phone?.trim() || null,
+        companyName: company?.trim() || null,
+        businessType: businessType?.trim() || null,
+        role: "member",
+        accountType: "customer",
+        isOnboarded: false,
+        loginCount: 1, // first "login" = registration
+        lastLogin: new Date(),
+        ...teamMemberLink,
+      },
     });
+
+    // Audit log after successful user creation (non-critical)
+    await prisma.auditLog.create({
+      data: {
+        userId: created.id,
+        action: "register",
+        resource: "auth",
+        resourceId: created.id,
+      },
+    }).catch(() => { /* non-critical */ });
+
+    const user = created;
 
     // Determine actual accountType after teamMember link resolution
     const finalAccountType: "staff" | "customer" =

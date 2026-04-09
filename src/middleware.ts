@@ -31,7 +31,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { routing } from "./i18n/routing";
 import {
-  checkAdminAccess,
   checkCustomerAccess,
   getAccountType,
 } from "./lib/auth/edge";
@@ -69,37 +68,27 @@ export async function middleware(req: NextRequest) {
 
   // ─── 2) /admin/* — Staff-only routes ──────────────────────────────────────
   if (pathname === "/admin" || pathname.startsWith("/admin/")) {
-    // /admin/login is always public
+    // /admin/login is always public — no auth required
     if (pathname === "/admin/login") {
       return NextResponse.next();
     }
 
-    // /admin/overview — always pass through to client-side AuthGuard.
-    // AuthGuard reads localStorage (not cookie) so it always sees the token
-    // after login. Middleware's cookie-based check can miss the token on
-    // the first request after login due to cookie sync delay.
-    if (pathname === "/admin/overview") {
-      return NextResponse.next();
+    // ── Pass through to client-side AuthGuard for all admin routes ────────────
+    // AuthGuard reads localStorage (not HttpOnly cookie) so it always sees
+    // the token after login. Middleware's cookie-based check can miss the
+    // token on soft navigations (sidebar Link clicks) due to cookie sync
+    // delay — causing spurious redirects to /admin/login.
+    //
+    // Security boundary: if a CUSTOMER token tries to access admin, block it
+    // at the edge (can't be faked client-side).
+    const accountType = getAccountType(req);
+    if (accountType === "customer") {
+      const locale = req.cookies.get("NEXT_LOCALE")?.value ?? "vi";
+      return NextResponse.redirect(new URL(`/${locale}/khach-hang`, req.url));
     }
 
-    const result = checkAdminAccess(req, pathname);
-
-    if (!result.allowed) {
-      if (result.reason === "unauthenticated") {
-        // No staff token → go to admin login page.
-        // AuthGuard is NOT in the /admin/login page, so we must redirect here.
-        return NextResponse.redirect(new URL("/admin/login", req.url));
-      }
-      // Customer token present trying to access admin → redirect to customer portal
-      const accountType = getAccountType(req);
-      if (accountType === "customer") {
-        const locale = req.cookies.get("NEXT_LOCALE")?.value ?? "vi";
-        return NextResponse.redirect(new URL(`/${locale}/khach-hang`, req.url));
-      }
-      // Forbidden role → 403
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-
+    // Let AuthGuard handle unauthenticated / forbidden staff — it reads
+    // localStorage token and redirects to /admin/login if needed.
     return NextResponse.next();
   }
 

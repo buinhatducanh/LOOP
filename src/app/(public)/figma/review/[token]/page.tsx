@@ -170,9 +170,13 @@ export default function FigmaReviewPage({ params }: { params: Promise<{ token: s
                   </code>
                 </div>
               )}
-              <a href={demo.figmaUrl} target="_blank" rel="noopener noreferrer"
+              <a
+                href={`https://www.figma.com/embed?embed_host=loops&url=${encodeURIComponent(demo.figmaUrl)}`}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="text-sm font-medium underline underline-offset-2"
-                style={{ color: "#A78BFA" }}>
+                style={{ color: "#A78BFA" }}
+              >
                 Mở trong Figma →
               </a>
             </div>

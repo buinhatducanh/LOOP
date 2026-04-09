@@ -3,20 +3,34 @@
 /**
  * Admin Login Page — /admin/login
  *
- * Renders the AdminLoginModal directly so the user can log in
- * when redirected here by AuthGuard or middleware.
+ * Public: shows login form for unauthenticated users.
+ * Already-authenticated users are auto-redirected to /admin/overview.
  *
- * Layout: dark background + auto-opened modal.
+ * Fix (2026-04-09): reads localStorage directly instead of Zustand,
+ * so redirect fires immediately without waiting for Zustand rehydration.
  */
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { AdminLoginModal } from "@/components/admin/AdminLoginModal";
 import { DS } from "@/lib/design-tokens";
 
+function hasStoredToken(): boolean {
+  if (typeof window === "undefined") return false;
+  return !!localStorage.getItem("loop-staff-token");
+}
+
 export default function AdminLoginPage() {
   const [mounted, setMounted] = useState(false);
+  const router = useRouter();
 
   // Trigger modal open after first render (avoids SSR mismatch)
+  // Also redirect if user is already logged in
   useEffect(() => {
+    // Always check localStorage — fastest way to know if user has a session
+    if (hasStoredToken()) {
+      router.replace("/admin/overview");
+      return;
+    }
     setMounted(true);
   }, []);
 

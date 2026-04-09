@@ -19,8 +19,8 @@ export async function GET(
         templateAttributes: {
           include: { template: { select: { id: true, name: true, nameVi: true } } },
         },
-        parent: { select: { id: true, name: true, nameVi: true } },
-        children: { select: { id: true, name: true, nameVi: true, tier: true } },
+        parent: { select: { id: true, name: true, nameVi: true, isUpgradeable: true } },
+        children: { select: { id: true, name: true, nameVi: true, tier: true, isUpgradeable: true } },
       },
     });
 
@@ -66,6 +66,7 @@ export async function PUT(
         tier: data.tier || "basic",
         xpPoints: Number(data.xpPoints) || 0,
         parentId: data.parentId || null,
+        isUpgradeable: data.isUpgradeable ?? false,
       },
     });
 

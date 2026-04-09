@@ -674,7 +674,16 @@
     "formEventDescPlaceholder": "Mô tả sự kiện...",
     "formBtnCreateEvent": "Tạo sự kiện",
     "errTitleRequired": "Tiêu đề là bắt buộc",
-    "errCreateFailed": "Tạo thất bại"
+    "errCreateFailed": "Tạo thất bại",
+    "formQuestDaily": "Hằng ngày",
+    "formQuestWeekly": "Hàng tuần",
+    "formQuestMonthly": "Hàng tháng",
+    "formQuestOne_time": "Một lần",
+    "formQuestEvent": "Sự kiện",
+    "formEditQuest": "Sửa nhiệm vụ",
+    "formEditEvent": "Sửa sự kiện",
+    "confirmDelete": "Xác nhận xóa?",
+    "confirmDeleteWarn": "Hành động này không thể hoàn tác."
   },
 
   "settings": {

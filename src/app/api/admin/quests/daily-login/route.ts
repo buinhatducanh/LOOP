@@ -9,9 +9,10 @@
  *   2. Guard: ALREADY_CLAIMED if lastLogin was today
  *   3. Streak: +1 if last login was yesterday, else reset to 1
  *   4. Look up DailyReward (day 1–7) → lpEarned + xpEarned
- *   5. Update TeamMember: availableLp↑, currentXp↑, level↑, maxXp↑
- *   6. Ledger: LpTransaction(type="award", source="daily_login")
- *   7. QuestParticipant: upsert q-daily-1 record
+ *   5. Create LpAward (status=approved) so syncRankFields() picks it up
+ *   6. Update TeamMember: currentXp↑, level↑, maxXp↑
+ *   7. Ledger: LpTransaction(type="award", source="daily_login")
+ *   8. QuestParticipant: upsert q-daily-1 record
  *
  * Body: { questId?: string }
  */
@@ -93,11 +94,26 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      // ── Credit LP + XP to TeamMember ────────────────────────────────────────
+      // ── Create LpAward (status=approved) ────────────────────────────────────
+      // FIX C1: Use LpAward so syncRankFields() aggregates it correctly.
+      // Daily login is auto-approved since we're inside a verified transaction.
+      await tx.lpAward.create({
+        data: {
+          memberId: session.teamMemberId!,
+          lpAmount: lpEarned,
+          expAmount: xpEarned,
+          source: "daily_login",
+          status: "approved",
+          approvedBy: session.userId,
+          approvedAt: new Date(),
+          projectId: null,
+        },
+      });
+
+      // ── Credit XP to TeamMember (LP comes from syncRankFields via LpAward) ─
       const member = await tx.teamMember.findUnique({
         where: { id: session.teamMemberId! },
         select: {
-          availableLp: true,
           currentXp: true,
           level: true,
           maxXp: true,
@@ -117,29 +133,28 @@ export async function POST(req: NextRequest) {
           await tx.teamMember.update({
             where: { id: session.teamMemberId! },
             data: {
-              availableLp: member.availableLp + lpEarned,
               currentXp: newCurrentXp,
               level: newLevel,
               maxXp: newMaxXp,
             },
           });
         } else {
-          // No level up — just credit LP and XP
+          // No level up — just credit XP
           await tx.teamMember.update({
             where: { id: session.teamMemberId! },
             data: {
-              availableLp: member.availableLp + lpEarned,
               currentXp: newXp,
             },
           });
         }
 
         // ── Ledger entry ────────────────────────────────────────────────────
+        // balanceAfter uses lpEarned — syncRankFields will compute total from LpAward
         await tx.lpTransaction.create({
           data: {
             memberId: session.teamMemberId!,
             amount: lpEarned,
-            balanceAfter: member.availableLp + lpEarned,
+            balanceAfter: lpEarned, // provisional; recomputed by syncRankFields on read
             type: "award",
             status: "completed",
             description: `Điểm danh ngày ${newStreak}: +${lpEarned} LP + ${xpEarned} XP`,

@@ -58,25 +58,22 @@ export async function PUT(
       }
     }
 
-    // ⚠️ FIX: wrap order update + audit log in a transaction.
-    const order = await prisma.$transaction(async (tx) => {
-      const updated = await tx.order.update({
-        where: { id },
-        data,
-        include: { package: { select: { title: true } } },
-      });
-      await tx.auditLog.create({
-        data: {
-          userId: session.userId,
-          action: "update",
-          resource: "orders",
-          resourceId: id,
-          oldValues: existing as unknown as InputJsonValue,
-          newValues: data as unknown as InputJsonValue,
-        },
-      });
-      return updated;
+    // Sequential writes (PrismaNeon HTTP adapter does NOT support $transaction)
+    const order = await prisma.order.update({
+      where: { id },
+      data,
+      include: { package: { select: { title: true } } },
     });
+    await prisma.auditLog.create({
+      data: {
+        userId: session.userId,
+        action: "update",
+        resource: "orders",
+        resourceId: id,
+        oldValues: existing as unknown as InputJsonValue,
+        newValues: data as unknown as InputJsonValue,
+      },
+    }).catch(() => { /* non-critical */ });
 
     return NextResponse.json({ data: order });
   } catch (error) {
@@ -97,19 +94,17 @@ export async function DELETE(
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    // ⚠️ FIX: wrap order delete + audit log in a transaction.
-    await prisma.$transaction(async (tx) => {
-      await tx.order.delete({ where: { id } });
-      await tx.auditLog.create({
-        data: {
-          userId: session.userId,
-          action: "delete",
-          resource: "orders",
-          resourceId: id,
-          oldValues: existing as unknown as InputJsonValue,
-        },
-      });
-    });
+    // Sequential writes (PrismaNeon HTTP adapter does NOT support $transaction)
+    await prisma.order.delete({ where: { id } });
+    await prisma.auditLog.create({
+      data: {
+        userId: session.userId,
+        action: "delete",
+        resource: "orders",
+        resourceId: id,
+        oldValues: existing as unknown as InputJsonValue,
+      },
+    }).catch(() => { /* non-critical */ });
 
     return ok({ success: true });
   } catch (error) {

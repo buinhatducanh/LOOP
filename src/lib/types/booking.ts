@@ -16,17 +16,24 @@ export interface WizardPackage {
   id: string;
   slug?: string;
   name: string;
-  multiplier: number;
+  multiplier: number;      // deprecated — kept for backward compat
   color: string;
   desc: string;
   features: string[];
   lp: number;
   popular?: boolean;
+  /** Real price from DB — use this instead of multiplier × basePrice */
   price?: number | null;
   priceText?: string;
   isSubscription?: boolean;
   billingPeriod?: string | null;
   type?: string;
+  /** Market anchor price — strikethrough display for anchoring */
+  marketPrice?: number;
+  /** Saving vs market price percentage (0 if no market anchor) */
+  savingPct?: number;
+  /** All features up to this tier (inclusive) — for comparison table */
+  allFeatures?: string[];
 }
 
 export interface WizardFeature {
@@ -129,6 +136,11 @@ export interface PricingConfig {
   packageLps: Record<string, number>;
   /** VAT rate (e.g. 0.10 = 10%). Falls back to 0.10 if SiteSetting not set. */
   vatRate: number;
+  /** Marketing data loaded from SiteSetting "website_pricing_config" */
+  marketing?: {
+    promotion?: { active: boolean; label: string; expiresAt?: string };
+    slotsLeft?: number;
+  };
   meta: {
     locale: string;
     cached: boolean;

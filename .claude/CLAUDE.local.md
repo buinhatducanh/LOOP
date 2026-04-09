@@ -19,14 +19,14 @@
 
 ## Quick Notes
 
-<!-- Add your personal notes here -->
-- User prefers fast mode (`/fast`)
-- Frontend deleted (2026-03-26): API-only app, zero TS errors
-- Next: setup new frontend repo or integrate into this repo
+- All 8 phases complete (F0–F8, Fi, Fs, R-seed)
+- Revenue Split + Off-System Payment done (2026-04-07)
+- RBAC redesign complete (2026-04-04): 7 roles, per-role tab sets
+- `FE/` and `DESIGN LOOPS/` archived (commit 38fa12e) — production only
+- Production: loops.vn (Vercel + Neon PostgreSQL)
 
 ## Personal Aliases
 
-<!-- Add shorthand commands or reminders -->
-- `/plan` → review PLAN.md progress
+- `/plan` → review LOOP plan progress
 - `/audit` → audit API consistency
 - `/docs` → create/update documentation

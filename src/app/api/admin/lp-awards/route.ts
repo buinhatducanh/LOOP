@@ -88,50 +88,48 @@ export const POST = withIdempotency(
 
       const isPending = (data.status ?? "pending") === "pending";
 
-      // Atomic: create award + lock LP on member + audit log
-      const award = await prisma.$transaction(async (tx) => {
-        const created = await tx.lpAward.create({
-          data: {
-            projectId,
-            taskId: data.taskId ?? null,
-            memberId: memberIdStr,
-            lpAmount,
-            expAmount: parseInt(data.expAmount ?? lpAmount),
-            source: data.source ?? "manual",
-            status: data.status ?? "pending",
-          },
-          include: {
-            task: { select: { id: true, title: true } },
-            project: { select: { id: true, orderNumber: true } },
-          },
-        });
-
-        if (isPending) {
-          const member = await tx.teamMember.findUnique({
-            where: { id: memberIdStr },
-            select: { lockedLp: true },
-          });
-          if (member) {
-            await tx.teamMember.update({
-              where: { id: memberIdStr },
-              data: { lockedLp: member.lockedLp + lpAmount },
-            });
-          }
-        }
-
-        // P1-2 FIX: audit log inside tx — no gap between write and audit record
-        await tx.auditLog.create({
-          data: {
-            userId: session.userId,
-            action: "create",
-            resource: "lp-awards",
-            resourceId: created.id,
-            newValues: data as unknown as InputJsonValue,
-          },
-        });
-
-        return created;
+      // Sequential writes (PrismaNeon HTTP adapter does NOT support $transaction)
+      const created = await prisma.lpAward.create({
+        data: {
+          projectId,
+          taskId: data.taskId ?? null,
+          memberId: memberIdStr,
+          lpAmount,
+          expAmount: parseInt(data.expAmount ?? lpAmount),
+          source: data.source ?? "manual",
+          status: data.status ?? "pending",
+        },
+        include: {
+          task: { select: { id: true, title: true } },
+          project: { select: { id: true, orderNumber: true } },
+        },
       });
+
+      if (isPending) {
+        const member = await prisma.teamMember.findUnique({
+          where: { id: memberIdStr },
+          select: { lockedLp: true },
+        });
+        if (member) {
+          await prisma.teamMember.update({
+            where: { id: memberIdStr },
+            data: { lockedLp: member.lockedLp + lpAmount },
+          });
+        }
+      }
+
+      // Audit log after successful writes
+      await prisma.auditLog.create({
+        data: {
+          userId: session.userId,
+          action: "create",
+          resource: "lp-awards",
+          resourceId: created.id,
+          newValues: data as unknown as InputJsonValue,
+        },
+      }).catch(() => { /* non-critical */ });
+
+      const award = created;
 
       lpLogger.info("LP award created", {
         awardId: award.id,

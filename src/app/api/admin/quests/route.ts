@@ -1,4 +1,4 @@
-import { list, handleError, ok } from "@/lib/api/response";
+import { list, handleError, ok, buildPagination } from "@/lib/api/response";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
 
     return list(
       quests.map(q => ({ ...q, participantCount: (q as { _count?: { participants: number } })._count?.participants ?? 0 })),
-      { page, limit, total, totalPages: Math.ceil(total / limit) },
+      buildPagination(page, limit, total),
     );
   } catch (error) {
     return handleError(error);

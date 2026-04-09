@@ -11,7 +11,7 @@ import { computeRankFieldsFromLp } from "@/lib/rank/xp";
 
 export async function GET(req: NextRequest) {
   try {
-    await requirePermission("team", "read");
+    await requirePermission("lp-transactions", "read");
 
     const { searchParams } = new URL(req.url);
     const memberId = searchParams.get("memberId");
@@ -62,7 +62,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await requirePermission("team", "update");
+    const session = await requirePermission("lp-transactions", "update");
 
     const { memberId, amount, description } = await req.json();
 
@@ -89,59 +89,55 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Team member not found" }, { status: 404 });
     }
 
-    // Atomic: create transaction + update balance
-    const result = await prisma.$transaction(async (tx) => {
-      const newBalance = member.availableLp + amount;
-      if (newBalance < 0) {
-        throw new Error("Insufficient LP balance for this adjustment");
-      }
+    // Sequential writes (PrismaNeon HTTP adapter does NOT support $transaction)
+    const newBalance = member.availableLp + amount;
+    if (newBalance < 0) {
+      throw new Error("Insufficient LP balance for this adjustment");
+    }
 
-      const txn = await tx.lpTransaction.create({
-        data: {
-          memberId,
-          amount,
-          balanceAfter: newBalance,
-          type: "adjust",
-          status: "completed",
-          description: description ?? `Admin adjustment: ${amount > 0 ? "+" : ""}${amount} LP`,
-          source: "admin",
-          referenceId: null,
-          referenceType: null,
-          counterpartyId: null,
-          fee: 0,
-          createdBy: session.teamMemberId ?? null,
-        },
-      });
+    const txn = await prisma.lpTransaction.create({
+      data: {
+        memberId,
+        amount,
+        balanceAfter: newBalance,
+        type: "adjust",
+        status: "completed",
+        description: description ?? `Admin adjustment: ${amount > 0 ? "+" : ""}${amount} LP`,
+        source: "admin",
+        referenceId: null,
+        referenceType: null,
+        counterpartyId: null,
+        fee: 0,
+        createdBy: session.teamMemberId ?? null,
+      },
+    });
 
-      await tx.teamMember.update({
-        where: { id: memberId },
-        data: { availableLp: newBalance },
-      });
+    await prisma.teamMember.update({
+      where: { id: memberId },
+      data: { availableLp: newBalance },
+    });
 
-      // Re-rank after balance change
-      const lpAgg = await tx.lpAward.aggregate({
-        where: { memberId, status: "approved" },
-        _sum: { lpAmount: true },
-      });
-      const totalLp = lpAgg._sum.lpAmount ?? 0;
-      const { level, currentXp, maxXp, rank } = computeRankFieldsFromLp(totalLp);
-      await tx.teamMember.update({
-        where: { id: memberId },
-        data: { level, currentXp, maxXp, rank },
-      });
-
-      return txn;
+    // Re-rank after balance change
+    const lpAgg = await prisma.lpAward.aggregate({
+      where: { memberId, status: "approved" },
+      _sum: { lpAmount: true },
+    });
+    const totalLp = lpAgg._sum.lpAmount ?? 0;
+    const { level, currentXp, maxXp, rank } = computeRankFieldsFromLp(totalLp);
+    await prisma.teamMember.update({
+      where: { id: memberId },
+      data: { level, currentXp, maxXp, rank },
     });
 
     await createAuditLog({
       userId: session.userId,
       action: "adjust",
       resource: "lp-transactions",
-      resourceId: result.id,
+      resourceId: txn.id,
       newValues: { memberId, amount, description },
     });
 
-    return NextResponse.json({ data: result }, { status: 201 });
+    return NextResponse.json({ data: txn }, { status: 201 });
   } catch (error) {
     if (error instanceof Error && error.message.includes("Insufficient")) {
       return NextResponse.json({ error: error.message }, { status: 400 });

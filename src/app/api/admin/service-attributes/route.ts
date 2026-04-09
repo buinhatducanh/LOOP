@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
         include: {
           _count: { select: { templateAttributes: true, orderAttributes: true } },
           parent: { select: { id: true, name: true, nameVi: true } },
-          children: { select: { id: true, name: true, nameVi: true, tier: true } },
+          children: { select: { id: true, name: true, nameVi: true, tier: true, isUpgradeable: true } },
         },
       }),
       prisma.serviceAttribute.count({ where }),
@@ -72,6 +72,7 @@ export async function POST(req: NextRequest) {
         tier: data.tier || "basic",
         xpPoints: Number(data.xpPoints) || 0,
         parentId: data.parentId || null,
+        isUpgradeable: data.isUpgradeable ?? false,
       },
     });
 

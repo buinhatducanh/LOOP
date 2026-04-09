@@ -10,6 +10,7 @@ import Link from "next/link";
 import { Trophy, Zap, Target } from "lucide-react";
 import { RANKS, normalizeRank, formatLP } from "./guildMemberData";
 import { DS } from "@/lib/design-tokens";
+import { useLoopStore, type MemberStats } from "@/app/store/loopStore";
 
 type MemberRecord = Record<string, unknown>;
 
@@ -239,6 +240,7 @@ function HolographicCard({
   locale: string;
 }) {
   const [imgError, setImgError] = useState(false);
+  const setActiveMember = useLoopStore((s) => s.setActiveMember);
   const rankKey = normalizeRank(member.rank as string | undefined);
   const cfg = RANKS[rankKey];
   const name = (member.name as string) ?? "???";
@@ -246,10 +248,44 @@ function HolographicCard({
   const role = (member.role as string) ?? "";
   const image = (member.image as string) ?? "";
   const level = (member.level as number) ?? 1;
+  const currentXp = (member.currentXp as number) ?? 0;
+  const maxXp = (member.maxXp as number) ?? 100;
   const achievements = ((member.achievements as string[]) ?? []).length;
   const lpBalance = (member.availableLp as number) ?? 0;
 
+  const memberStats: MemberStats = {
+    id: String(member.id ?? 0),
+    slug,
+    name,
+    role,
+    avatar: image || null,
+    rank: rankKey,
+    level,
+    currentXp,
+    maxXp,
+    availableLp: lpBalance,
+    lockedLp: 0,
+    department: (member.team as string) ?? "Loop",
+    systemRole: "member",
+    skills: (member.skills as string[]) ?? [],
+    achievements: (member.achievements as string[]) ?? [],
+    rankHistory: [],
+    missionLogs: [],
+    missionsCompleted: achievements,
+    totalApprovedLp: lpBalance,
+    teamTag: (member.team as string) ?? "Loop",
+    status: "active",
+  };
+
+  const handleShowStats = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setActiveMember(memberStats, { x: e.clientX, y: e.clientY });
+  };
+
   return (
+    // Outer wrapper: click → open global stats panel, Link → navigate
+    <div onClick={handleShowStats}>
     <motion.div
       className="relative cursor-pointer group"
       initial={{ opacity: 0, y: 60, rotateX: 20 }}
@@ -478,6 +514,7 @@ function HolographicCard({
         </div>
       </Link>
     </motion.div>
+    </div>
   );
 }
 

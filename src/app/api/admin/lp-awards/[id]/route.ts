@@ -54,35 +54,32 @@ export async function PATCH(
       }
     }
 
-    // ⚠️ FIX: wrap award update + audit log in a transaction.
-    const updated = await prisma.$transaction(async (tx) => {
-      const u = await tx.lpAward.update({
-        where: { id },
-        data: {
-          source:
-            existing.status === "pending" ? (data.source ?? undefined) : undefined,
-          lpAmount:
-            existing.status === "pending" && data.lpAmount !== undefined
-              ? parseInt(data.lpAmount)
-              : undefined,
-          expAmount:
-            existing.status === "pending" && data.expAmount !== undefined
-              ? parseInt(data.expAmount)
-              : undefined,
-        },
-      });
-      await tx.auditLog.create({
-        data: {
-          userId: session.userId,
-          action: "update",
-          resource: "lp-awards",
-          resourceId: id,
-          oldValues: existing,
-          newValues: data,
-        },
-      });
-      return u;
+    // Sequential writes (PrismaNeon HTTP adapter does NOT support $transaction)
+    const updated = await prisma.lpAward.update({
+      where: { id },
+      data: {
+        source:
+          existing.status === "pending" ? (data.source ?? undefined) : undefined,
+        lpAmount:
+          existing.status === "pending" && data.lpAmount !== undefined
+            ? parseInt(data.lpAmount)
+            : undefined,
+        expAmount:
+          existing.status === "pending" && data.expAmount !== undefined
+            ? parseInt(data.expAmount)
+            : undefined,
+      },
     });
+    await prisma.auditLog.create({
+      data: {
+        userId: session.userId,
+        action: "update",
+        resource: "lp-awards",
+        resourceId: id,
+        oldValues: existing,
+        newValues: data,
+      },
+    }).catch(() => { /* non-critical */ });
 
     return NextResponse.json({ data: updated });
   } catch (error) {
@@ -105,52 +102,49 @@ export async function DELETE(
     });
     if (!award) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-    // Atomic: reverse LP effects based on award status before deleting
-    // ⚠️ FIX: LP reversal + award delete + audit log — all in one transaction.
-    await prisma.$transaction(async (tx) => {
-      if (award.status === "pending") {
-        // Pending awards have LP locked — release it back to available
-        const member = await tx.teamMember.findUnique({
-          where: { id: award.memberId },
-          select: { lockedLp: true, availableLp: true },
-        });
-        if (member) {
-          const toRelease = Math.min(award.lpAmount, member.lockedLp);
-          await tx.teamMember.update({
-            where: { id: award.memberId },
-            data: {
-              lockedLp: { decrement: toRelease },
-              availableLp: { increment: toRelease },
-            },
-          });
-        }
-      } else if (award.status === "approved") {
-        // Approved awards have LP moved to available — deduct it back
-        const member = await tx.teamMember.findUnique({
-          where: { id: award.memberId },
-          select: { availableLp: true },
-        });
-        if (member) {
-          await tx.teamMember.update({
-            where: { id: award.memberId },
-            data: { availableLp: { decrement: award.lpAmount } },
-          });
-        }
-      }
-      // "rejected" awards: LP was never credited, nothing to reverse
-
-      await tx.lpAward.delete({ where: { id } });
-
-      await tx.auditLog.create({
-        data: {
-          userId: session.userId,
-          action: "delete",
-          resource: "lp-awards",
-          resourceId: id,
-          newValues: { status: award.status, lpAmount: award.lpAmount, memberId: award.memberId },
-        },
+    // Sequential writes (PrismaNeon HTTP adapter does NOT support $transaction)
+    if (award.status === "pending") {
+      // Pending awards have LP locked — release it back to available
+      const member = await prisma.teamMember.findUnique({
+        where: { id: award.memberId },
+        select: { lockedLp: true, availableLp: true },
       });
-    });
+      if (member) {
+        const toRelease = Math.min(award.lpAmount, member.lockedLp);
+        await prisma.teamMember.update({
+          where: { id: award.memberId },
+          data: {
+            lockedLp: { decrement: toRelease },
+            availableLp: { increment: toRelease },
+          },
+        });
+      }
+    } else if (award.status === "approved") {
+      // Approved awards have LP moved to available — deduct it back
+      const member = await prisma.teamMember.findUnique({
+        where: { id: award.memberId },
+        select: { availableLp: true },
+      });
+      if (member) {
+        await prisma.teamMember.update({
+          where: { id: award.memberId },
+          data: { availableLp: { decrement: award.lpAmount } },
+        });
+      }
+    }
+    // "rejected" awards: LP was never credited, nothing to reverse
+
+    await prisma.lpAward.delete({ where: { id } });
+
+    await prisma.auditLog.create({
+      data: {
+        userId: session.userId,
+        action: "delete",
+        resource: "lp-awards",
+        resourceId: id,
+        newValues: { status: award.status, lpAmount: award.lpAmount, memberId: award.memberId },
+      },
+    }).catch(() => { /* non-critical */ });
 
     return ok({ success: true });
   } catch (error) {

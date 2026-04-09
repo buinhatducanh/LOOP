@@ -32,6 +32,10 @@ export async function GET(req: NextRequest) {
               expertise: true,
             },
           },
+          lpTransactions: {
+            orderBy: { createdAt: "desc" },
+            take: 30,
+          },
         },
       }),
       prisma.teamMember.count({ where }),
@@ -93,6 +97,8 @@ export async function GET(req: NextRequest) {
         systemRole: userInfo?.role ?? m.role ?? null,
         // ALL junction roles from UserRole table (multi-role support)
         roles: userInfo?.roles ?? [],
+        // Rich transaction history — powers the stats panel rank history + mission logs
+        lpTransactions: m.lpTransactions ?? [],
       });
     });
 
@@ -117,8 +123,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Extract memberExpertise array if present (it's a relation, not a direct field)
-    const { memberExpertise, avatar, ...memberData } = data;
+    // Extract non-Prisma fields before writing (roles = UserRole junction, not TeamMember field)
+    const { memberExpertise, avatar, roles: _roles, ...memberData } = data;
 
     // Convert empty strings to null for optional fields (except required fields)
     // Also convert date strings (dd/mm/yyyy) to proper ISO format
@@ -179,31 +185,28 @@ export async function POST(req: NextRequest) {
       })));
     }
 
-    // ⚠️ FIX: wrap member create + expertise relations in a transaction.
-    // If expertise.createMany fails, the member is rolled back — no orphan members.
-    const member = await prisma.$transaction(async (tx) => {
-      const created = await tx.teamMember.create({
-        data: {
-          ...(cleanedData as TeamMemberCreateInput),
-          // Map FE field name "avatar" → Prisma "image" if provided
-          ...(avatar !== undefined && { image: avatar }),
-        },
-      });
-
-      // Fill memberId in expertise records now that we have it
-      const recordsWithMemberId = expertiseRecords.map(r => ({
-        ...r,
-        memberId: created.id,
-      }));
-
-      if (recordsWithMemberId.length > 0) {
-        await tx.memberExpertise.createMany({
-          data: recordsWithMemberId,
-        });
-      }
-
-      return created;
+    // Sequential writes (PrismaNeon HTTP adapter does NOT support $transaction)
+    const created = await prisma.teamMember.create({
+      data: {
+        ...(cleanedData as TeamMemberCreateInput),
+        // Map FE field name "avatar" → Prisma "image" if provided
+        ...(avatar !== undefined && { image: avatar }),
+      },
     });
+
+    // Fill memberId in expertise records now that we have it
+    const recordsWithMemberId = expertiseRecords.map(r => ({
+      ...r,
+      memberId: created.id,
+    }));
+
+    if (recordsWithMemberId.length > 0) {
+      await prisma.memberExpertise.createMany({
+        data: recordsWithMemberId,
+      });
+    }
+
+    const member = created;
 
     await createAuditLog({
       userId: session.userId,

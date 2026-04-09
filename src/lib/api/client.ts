@@ -80,8 +80,12 @@ function getTokenKey(endpoint: string): "loop-staff-token" | "loop-customer-toke
   return "loop-staff-token";
 }
 
-function shouldAttachBearer(endpoint: string): boolean {
-  // Skip Bearer for auth endpoints — they should not receive the stale token
+function shouldAttachBearer(endpoint: string, withCredentials: boolean): boolean {
+  // Admin API (adminApi) uses HttpOnly cookies via withCredentials.
+  // The localStorage Bearer token may be stale/expired — skip it to avoid
+  // a stale-token-401 race with the fresh cookie auth.
+  if (withCredentials) return false;
+  // Skip Bearer for auth endpoints to prevent stale-token 401 on fresh login.
   if (AUTH_SKIP_PATTERNS.some((p) => endpoint.includes(p))) return false;
   return true;
 }
@@ -113,10 +117,10 @@ async function apiFetch<T>(
     ...fetchOptions.headers,
   };
 
-  // Attach Bearer token from localStorage for authenticated routes.
-  // Split auth: choose correct key per endpoint type (Option C).
-  // Skip for auth endpoints to prevent stale-token 401 on fresh login attempts.
-  if (shouldAttachBearer(endpoint) && typeof window !== "undefined") {
+  // Attach Bearer token from localStorage for non-cookie authenticated routes.
+  // adminApi uses HttpOnly cookies (withCredentials=true) — skip Bearer to avoid
+  // stale-token 401 collisions with the fresh cookie session.
+  if (shouldAttachBearer(endpoint, withCredentials) && typeof window !== "undefined") {
     const key = getTokenKey(endpoint);
     if (key) {
       const storedToken = localStorage.getItem(key);

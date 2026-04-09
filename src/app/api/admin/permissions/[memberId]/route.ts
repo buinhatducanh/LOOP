@@ -23,27 +23,26 @@ export async function PUT(
     const member = await prisma.teamMember.findUnique({ where: { id: memberId } });
     if (!member) return notFound("Member not found");
 
-    const updated = await prisma.$transaction(async (tx) => {
-      await tx.permissionAudit.create({
-        data: {
-          targetUserId: memberId,
-          grantedBy: session.userId,
-          permission: tabPermissions != null ? "tab_permissions" : (isDeptHead != null ? "dept_head" : "tab_permissions"),
-          department: departmentId ?? null,
-          action: isDeptHead === true ? "grant_dept_head" : (isDeptHead === false ? "revoke_dept_head" : "set"),
-        },
-      }).catch(() => { /* audit log non-critical */ });
+    // Sequential writes (PrismaNeon HTTP adapter does NOT support $transaction)
+    await prisma.permissionAudit.create({
+      data: {
+        targetUserId: memberId,
+        grantedBy: session.userId,
+        permission: tabPermissions != null ? "tab_permissions" : (isDeptHead != null ? "dept_head" : "tab_permissions"),
+        department: departmentId ?? null,
+        action: isDeptHead === true ? "grant_dept_head" : (isDeptHead === false ? "revoke_dept_head" : "set"),
+      },
+    }).catch(() => { /* audit log non-critical */ });
 
-      return tx.teamMember.update({
-        where: { id: memberId },
-        data: {
-          ...(tabPermissions !== undefined && { tabPermissions: tabPermissions ?? [] }),
-          ...(departmentId !== undefined && { departmentId: departmentId ?? null }),
-          ...(isDeptHead !== undefined && { isDeptHead: isDeptHead ?? false }),
-          ...(systemRole !== undefined && { role: systemRole ?? member.role }),
-          ...(roleLevel !== undefined && { roleLevel: roleLevel ?? member.roleLevel }),
-        },
-      });
+    const updated = await prisma.teamMember.update({
+      where: { id: memberId },
+      data: {
+        ...(tabPermissions !== undefined && { tabPermissions: tabPermissions ?? [] }),
+        ...(departmentId !== undefined && { departmentId: departmentId ?? null }),
+        ...(isDeptHead !== undefined && { isDeptHead: isDeptHead ?? false }),
+        ...(systemRole !== undefined && { role: systemRole ?? member.role }),
+        ...(roleLevel !== undefined && { roleLevel: roleLevel ?? member.roleLevel }),
+      },
     });
 
     return ok({

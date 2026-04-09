@@ -19,14 +19,16 @@ import { jwtVerify } from "jose";
 
 /**
  * Role level hierarchy (lower = more privileged).
+ * Synced with src/lib/auth/roles.ts ROLE_LEVEL.
  *
  *   -1 = CEO          (top-level access)
  *    0 = super_admin
  *    1 = admin
- *    2 = project_manager
- *    3 = media
- *    4 = qa
- *    5 = member       (any authenticated staff)
+ *    2 = hr
+ *    3 = project_manager
+ *    4 = media
+ *    5 = qa
+ *    6 = member       (any authenticated staff)
  *   99 = unauthenticated (fallback)
  *
  * Route requirements use this scale: a user can access routes
@@ -37,10 +39,11 @@ export const ROLE_LEVEL: Record<string, number> = {
   ceo: -1,
   super_admin: 0,
   admin: 1,
-  project_manager: 2,
-  media: 3,
-  qa: 4,
-  member: 5,
+  hr: 2,
+  project_manager: 3,
+  media: 4,
+  qa: 5,
+  member: 6,
 } as const;
 
 export const PATH_ROLE_REQUIREMENTS: Record<string, number> = {

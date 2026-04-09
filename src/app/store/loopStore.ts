@@ -48,6 +48,46 @@ export interface MemberEffectOverride {
   selectedByMember: boolean;
 }
 
+// ── Member Stats Panel ────────────────────────────────────────────────────────
+
+export interface RankHistoryEntry {
+  date: string;
+  from: string;
+  to: string;
+  reason: string;
+}
+
+export interface MissionLogEntry {
+  date: string;
+  task: string;
+  lpEarned: number;
+}
+
+export interface MemberStats {
+  id: string;
+  slug: string;
+  name: string;
+  role: string;
+  avatar: string | null;
+  email?: string;
+  rank: string;
+  level: number;
+  currentXp: number;
+  maxXp: number;
+  availableLp: number;
+  lockedLp: number;
+  department: string;
+  systemRole: string;
+  skills: string[];
+  achievements: string[];
+  rankHistory: RankHistoryEntry[];
+  missionLogs: MissionLogEntry[];
+  missionsCompleted: number;
+  totalApprovedLp: number;
+  teamTag?: string;
+  status?: string;
+}
+
 // ── Order Types ───────────────────────────────────────────────────────────────
 
 export interface Order {
@@ -440,6 +480,12 @@ interface LoopStore {
   memberEffectOverrides: MemberEffectOverride[];
   userEquippedEffects: string[];
 
+  // ── Member Stats Panel ──────────────────────────────────────────────────
+  activeMember: MemberStats | null;
+  activeMemberPos: { x: number; y: number } | null;
+  setActiveMember: (m: MemberStats | null, pos?: { x: number; y: number } | null) => void;
+  clearActiveMember: () => void;
+
   addOrder: (order: Order) => void;
   updateOrderStatus: (orderId: string, status: OrderStatus, pm?: string) => void;
   updateOrderProgress: (orderId: string, progress: number) => void;
@@ -494,6 +540,16 @@ export const useLoopStore = create<LoopStore>((set, get) => ({
   globalEffectsEnabled: true,
   memberEffectOverrides: INIT_OVERRIDES,
   userEquippedEffects: ["eff-1", "eff-9"],
+
+  // ── Member Stats Panel ──────────────────────────────────────────────────
+  activeMember: null,
+  activeMemberPos: null,
+
+  setActiveMember: (m, pos) =>
+    set({ activeMember: m, activeMemberPos: pos ?? null }),
+
+  clearActiveMember: () =>
+    set({ activeMember: null, activeMemberPos: null }),
 
   // ── Admin order actions ──────────────────────────────────────────────────
   addOrder: (order) => set((s) => ({ orders: [order, ...s.orders] })),

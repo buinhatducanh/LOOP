@@ -13,6 +13,11 @@ interface ImageUploadProps {
   previewOnly?: boolean;
   /** URL to show as the current image when previewOnly=true */
   currentImage?: string;
+  /**
+   * Parent passes its own isPending state — when true, clicks are blocked
+   * and the replace/remove buttons show disabled style.
+   */
+  disabled?: boolean;
 }
 
 const ASPECT = {
@@ -29,6 +34,7 @@ export function ImageUpload({
   aspectRatio = "square",
   previewOnly = false,
   currentImage,
+  disabled = false,
 }: ImageUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
@@ -128,11 +134,11 @@ export function ImageUpload({
             <button
               type="button"
               onClick={() => inputRef.current?.click()}
-              disabled={loading}
+              disabled={loading || disabled}
               style={{
                 padding: "5px 10px", borderRadius: 7, fontSize: 11,
                 background: "rgba(0,0,0,0.7)", border: "none", color: "#fff",
-                cursor: loading ? "not-allowed" : "pointer",
+                cursor: loading || disabled ? "not-allowed" : "pointer",
               }}
             >
               {loading ? "..." : "Thay đổi"}
@@ -141,11 +147,11 @@ export function ImageUpload({
             <button
               type="button"
               onClick={() => { onChange(""); setLocalPreview(null); }}
-              disabled={loading}
+              disabled={loading || disabled}
               style={{
                 padding: "5px 10px", borderRadius: 7, fontSize: 11,
                 background: "rgba(239,68,68,0.8)", border: "none", color: "#fff",
-                cursor: loading ? "not-allowed" : "pointer",
+                cursor: loading || disabled ? "not-allowed" : "pointer",
               }}
             >
               ✕
@@ -162,8 +168,8 @@ export function ImageUpload({
         </div>
       ) : (
         <div
-          onClick={() => !loading && inputRef.current?.click()}
-          onDragOver={e => { e.preventDefault(); setIsDragOver(true); }}
+          onClick={() => !loading && !disabled && inputRef.current?.click()}
+          onDragOver={e => { e.preventDefault(); if (!disabled) setIsDragOver(true); }}
           onDragLeave={() => setIsDragOver(false)}
           onDrop={onDrop}
           style={{
@@ -171,7 +177,7 @@ export function ImageUpload({
             border: `2px dashed ${isDragOver ? DS.blue : DS.border}`,
             background: isDragOver ? "rgba(59,130,246,0.05)" : "rgba(15,23,42,0.3)",
             transition: "all 0.15s",
-            cursor: loading ? "not-allowed" : "pointer",
+            cursor: loading || disabled ? "not-allowed" : "pointer",
             padding: "40px 20px",
             textAlign: "center",
           }}

@@ -674,7 +674,16 @@
     "formEventDescPlaceholder": "Event description...",
     "formBtnCreateEvent": "Create Event",
     "errTitleRequired": "Title is required",
-    "errCreateFailed": "Create failed"
+    "errCreateFailed": "Create failed",
+    "formQuestDaily": "Daily",
+    "formQuestWeekly": "Weekly",
+    "formQuestMonthly": "Monthly",
+    "formQuestOne_time": "One-time",
+    "formQuestEvent": "Event",
+    "formEditQuest": "Edit Quest",
+    "formEditEvent": "Edit Event",
+    "confirmDelete": "Confirm deletion?",
+    "confirmDeleteWarn": "This action cannot be undone."
   },
 
   "settings": {

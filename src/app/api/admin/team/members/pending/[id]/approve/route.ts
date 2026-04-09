@@ -153,6 +153,23 @@ export async function POST(
             isActive: true,
           },
         });
+
+        // FIX P1-9: Auto-set as department head if no head exists yet
+        if (memberRequest.department) {
+          const dept = await tx.department.findUnique({
+            where: { key: memberRequest.department },
+          });
+          if (dept && !dept.headId) {
+            await tx.teamMember.update({
+              where: { id: teamMember.id },
+              data: { isDeptHead: true },
+            });
+            await tx.department.update({
+              where: { id: dept.id },
+              data: { headId: teamMember.id },
+            });
+          }
+        }
       } else {
         await tx.teamMember.update({
           where: { id: teamMember.id },

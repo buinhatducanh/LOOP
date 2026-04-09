@@ -49,38 +49,65 @@ function getLocalizedName(
 
 // ── Mapping helpers ────────────────────────────────────────────────────────────
 
-function mapPackage(p: {
-  id: string;
-  slug: string;
-  title: string;
-  titleEn?: string | null;
-  titleJa?: string | null;
-  titleKo?: string | null;
-  titleZh?: string | null;
-  shortDesc: string;
-  shortDescEn?: string | null;
-  shortDescJa?: string | null;
-  shortDescKo?: string | null;
-  shortDescZh?: string | null;
-  price: number | null;
-  priceText?: string | null;
-  features: string[];
-  type: string;
-  isSubscription: boolean;
-  billingPeriod?: string | null;
-}, locale: Locale) {
+/**
+ * Maps a DB ServicePackage to WizardPackage.
+ * allFeatures = deduplicated union of all features from this package and all packages
+ * before it in sortOrder. This enables the FE comparison table to show which
+ * features are NEW in each tier.
+ */
+function mapPackage(
+  p: {
+    id: string;
+    slug: string;
+    title: string;
+    titleEn?: string | null;
+    titleJa?: string | null;
+    titleKo?: string | null;
+    titleZh?: string | null;
+    shortDesc: string;
+    shortDescEn?: string | null;
+    shortDescJa?: string | null;
+    shortDescKo?: string | null;
+    shortDescZh?: string | null;
+    price: number | null;
+    priceText?: string | null;
+    features: string[];
+    type: string;
+    isSubscription: boolean;
+    billingPeriod?: string | null;
+    sortOrder: number;
+  },
+  locale: Locale,
+  marketPrices: Record<string, number>,
+  allPackages: typeof arguments[0][],
+) {
+  const pkgPrice = p.price ?? 0;
+  const marketPrice = marketPrices[p.slug] ?? pkgPrice;
+  const saving = marketPrice - pkgPrice;
+
+  // Compute allFeatures: union of features up to and including this package
+  const allFeatures = [...new Set(
+    allPackages
+      .filter(other => other.sortOrder <= p.sortOrder)
+      .flatMap(other => other.features ?? [])
+  )];
+
   return {
     id: p.id,
     slug: p.slug,
     name: getLocalizedName(locale, p.title, p.title, p.titleEn, p.titleJa, p.titleKo, p.titleZh),
     desc: getLocalizedName(locale, p.shortDesc, p.shortDesc, p.shortDescEn, p.shortDescJa, p.shortDescKo, p.shortDescZh),
-    priceText: p.priceText ?? (p.price ? `${(p.price / 1_000_000).toFixed(0)} triệu` : "Liên hệ báo giá"),
-    price: p.price,
-    multiplier: p.price ? Math.round((p.price / 3_000_000) * 10) / 10 : 1,
+    priceText: p.priceText ?? (pkgPrice > 0 ? `${(pkgPrice / 1_000_000).toFixed(0)} triệu` : "Liên hệ báo giá"),
+    price: pkgPrice,
+    multiplier: 1,
     features: p.features ?? [],
+    /** All features up to this tier (inclusive) — for comparison table */
+    allFeatures,
     type: p.type,
     isSubscription: p.isSubscription,
     billingPeriod: p.billingPeriod,
+    marketPrice,
+    savingPct: saving > 0 ? Math.round((saving / marketPrice) * 100) : 0,
   };
 }
 
@@ -103,6 +130,7 @@ function mapFeature(f: {
   tier: string;
   parentId?: string | null;
   includedInBase: boolean;
+  isUpgradeable?: boolean;
 }, locale: Locale) {
   return {
     id: f.id,
@@ -115,6 +143,8 @@ function mapFeature(f: {
     categoryEn: f.categoryEn ?? f.categoryVi ?? f.category,
     parentId: f.parentId,
     includedInBase: f.includedInBase,
+    /** True = đây là phiên bản nâng cấp từ parent (VD: advanced search thay basic search) */
+    isUpgradeable: f.isUpgradeable ?? false,
   };
 }
 
@@ -251,7 +281,10 @@ export async function GET(request: Request) {
     const locale = normalizeLocale(searchParams.get("lang"));
 
     // Run all DB queries in parallel
-    const [packages, features, addons, infraTiers, hostingPlans, domainPrices, basePriceSetting, vatSetting] = await Promise.all([
+    const [
+      packages, features, addons, infraTiers, hostingPlans, domainPrices,
+      basePriceSetting, vatSetting, websitePricingConfig, lpRateSetting,
+    ] = await Promise.all([
       // Service packages
       prisma.servicePackage.findMany({
         where: { isActive: true },
@@ -275,6 +308,7 @@ export async function GET(request: Request) {
           isSubscription: true,
           billingPeriod: true,
           type: true,
+          sortOrder: true,
         },
       }),
 
@@ -300,6 +334,7 @@ export async function GET(request: Request) {
           xpPoints: true,
           parentId: true,
           includedInBase: true,
+          isUpgradeable: true,
         },
         orderBy: [{ category: "asc" }, { tier: "asc" }, { name: "asc" }],
       }),
@@ -405,10 +440,43 @@ export async function GET(request: Request) {
         where: { key: "vat_rate" },
         select: { value: true },
       }),
+
+      // Website marketing pricing config (market prices, anchors, promotions)
+      prisma.siteSetting.findUnique({
+        where: { key: "website_pricing_config" },
+        select: { value: true },
+      }),
+
+      // LP rate config (fallback to 1000 LP = 1M VND if not set)
+      prisma.siteSetting.findUnique({
+        where: { key: "lp_rate_config" },
+        select: { value: true },
+      }),
     ]);
 
     const basePrice = basePriceSetting ? parseInt(basePriceSetting.value, 10) : 3_000_000;
     const vatRate = vatSetting ? parseFloat(vatSetting.value) : 0.10;
+
+    // Parse website marketing pricing config
+    // Expected shape:
+    // {
+    //   "marketPrices": { "basic": 5500000, "business": 8900000, "experience": 12000000 },
+    //   "promotion": { "active": true, "label": "Giảm 20%", "expiresAt": "2026-04-30" },
+    //   "slotsLeft": 3,
+    // }
+    let websitePricing: {
+      marketPrices: Record<string, number>;
+      promotion?: { active: boolean; label: string; expiresAt?: string };
+      slotsLeft?: number;
+    } = { marketPrices: {} };
+    if (websitePricingConfig?.value) {
+      try {
+        websitePricing = JSON.parse(websitePricingConfig.value);
+      } catch {
+        // ignore malformed JSON — use empty defaults
+      }
+    }
+    const { marketPrices, promotion, slotsLeft } = websitePricing;
 
     // Sample calculation for reference (no features selected)
     const sampleCalc = await calculateOrderPrice({ selectedFeatureIds: [] });
@@ -421,8 +489,8 @@ export async function GET(request: Request) {
       return acc;
     }, {});
 
-    // Map with locale-aware fields
-    const wizardPackages = packages.map((p) => mapPackage(p, locale));
+    // Map with locale-aware fields — mapPackage gets marketPrices for anchor display
+    const wizardPackages = packages.map((p) => mapPackage(p, locale, marketPrices, packages));
     const wizardFeatures = features.map((f) => mapFeature(f, locale));
     const wizardAddons = addons.map((a) => mapAddon(a, locale));
     const wizardInfraTiers = infraTiers.map((t) => mapInfraTier(t, locale));
@@ -450,8 +518,8 @@ export async function GET(request: Request) {
         hostingPlans: wizardHostingPlans,
         domainPrices: wizardDomainPrices,
         lpRate: {
-          lpPerVnd: 500,
-          vndPerLp: 2,
+          lpPerVnd: lpRateSetting ? JSON.parse(lpRateSetting.value).lp_to_vnd ?? 1000 : 1000,
+          vndPerLp: lpRateSetting ? 1 / (JSON.parse(lpRateSetting.value).lp_to_vnd ?? 1000) * 1000 : 1000,
           maxDiscountPercent: 20,
           lpEarnPerMillion: 50,
         },
@@ -460,6 +528,11 @@ export async function GET(request: Request) {
           return acc;
         }, {}),
         vatRate,
+        /** Marketing data — loaded from SiteSetting "website_pricing_config" */
+        marketing: {
+          promotion: promotion?.active ? promotion : undefined,
+          slotsLeft: slotsLeft ?? undefined,
+        },
         meta: {
           locale,
           cached: true,
