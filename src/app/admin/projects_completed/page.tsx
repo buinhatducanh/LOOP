@@ -52,6 +52,10 @@ type PortfolioProject = {
   demoTitle: string;
   featured: boolean;
   publishedAt: string;
+  testimonialName?: string;
+  testimonialText?: string;
+  testimonialStars?: number;
+  testimonialRole?: string;
 };
 
 // ── Formatters ────────────────────────────────────────────────────────
@@ -244,6 +248,61 @@ function ProjectDetailModal({ project, onClose, onSave }: {
           {activeTab === "testimonial" && (
             <div style={{ padding: "0.75rem", background: "rgba(245,158,11,0.06)", border: `1px solid rgba(245,158,11,0.15)`, borderRadius: 10 }}>
               <div style={{ color: DS.amber, fontSize: 11, fontFamily: DS.mono, marginBottom: 12 }}>TESTIMONIAL KHÁCH HÀNG</div>
+
+              {/* Author name */}
+              <div style={{ marginBottom: 10 }}>
+                <label style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, display: "block", marginBottom: 4 }}>TÊN KHÁCH HÀNG</label>
+                <input value={draft.testimonialName ?? ""} onChange={e => setDraft({ ...draft, testimonialName: e.target.value })}
+                  placeholder="VD: Nguyễn Văn A"
+                  style={{ width: "100%", background: DS.bg, border: `1px solid ${DS.border}`, borderRadius: 8, padding: "8px 10px", color: DS.text, fontSize: 12, outline: "none", boxSizing: "border-box" as const }} />
+              </div>
+
+              {/* Stars */}
+              <div style={{ marginBottom: 10 }}>
+                <label style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, display: "block", marginBottom: 4 }}>SỐ SAO ({draft.testimonialStars ?? 5})</label>
+                <div style={{ display: "flex", gap: 4 }}>
+                  {[5, 4, 3, 2, 1].map(s => (
+                    <button key={s} onClick={() => setDraft({ ...draft, testimonialStars: s })}
+                      style={{ background: "none", border: "none", cursor: "pointer", fontSize: 18,
+                        color: s <= (draft.testimonialStars ?? 5) ? "#F59E0B" : DS.text5, padding: 0 }}>
+                      ★
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Role */}
+              <div style={{ marginBottom: 10 }}>
+                <label style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, display: "block", marginBottom: 4 }}>CHỨC VỤ / CÔNG TY</label>
+                <input value={draft.testimonialRole ?? ""} onChange={e => setDraft({ ...draft, testimonialRole: e.target.value })}
+                  placeholder="VD: CEO, VNRetail JSC"
+                  style={{ width: "100%", background: DS.bg, border: `1px solid ${DS.border}`, borderRadius: 8, padding: "8px 10px", color: DS.text, fontSize: 12, outline: "none", boxSizing: "border-box" as const }} />
+              </div>
+
+              {/* Testimonial text */}
+              <div style={{ marginBottom: 10 }}>
+                <label style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, display: "block", marginBottom: 4 }}>NỘI DUNG TESTIMONIAL</label>
+                <textarea value={draft.testimonialText ?? ""} onChange={e => setDraft({ ...draft, testimonialText: e.target.value })}
+                  placeholder="Nhập lời testimonials của khách hàng..."
+                  rows={4}
+                  style={{ width: "100%", background: DS.bg, border: `1px solid ${DS.border}`, borderRadius: 8, padding: "8px 10px", color: DS.text, fontSize: 12, outline: "none", resize: "vertical", boxSizing: "border-box" as const }} />
+              </div>
+
+              {draft.testimonialText && (
+                <div style={{ background: "rgba(245,158,11,0.08)", border: `1px solid rgba(245,158,11,0.2)`, borderRadius: 10, padding: "0.75rem", marginTop: 4 }}>
+                  <div style={{ color: "#F59E0B", fontSize: 14, marginBottom: 6 }}>
+                    {"★".repeat(draft.testimonialStars ?? 5)}
+                  </div>
+                  <p style={{ color: DS.text3, fontSize: 12, fontStyle: "italic", lineHeight: 1.6, margin: 0 }}>
+                    "{draft.testimonialText}"
+                  </p>
+                  {draft.testimonialName && (
+                    <p style={{ color: DS.text4, fontSize: 11, marginTop: 8, fontWeight: 600 }}>
+                      — {draft.testimonialName}{draft.testimonialRole ? ", " + draft.testimonialRole : ""}
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -299,11 +358,22 @@ export default function ProjectsCompletedPage() {
     { label: "Dự án nổi bật", value: String(featured), color: DS.amber, icon: <Star size={16} /> },
   ];
 
-  const handleSave = (data: Partial<PortfolioProject>) => {
+  const handleSave = async (data: Partial<PortfolioProject>) => {
     if (detailProject?.id === "new") {
       const newProj = { ...detailProject, ...data, id: `p${Date.now()}` } as PortfolioProject;
       setProjects(prev => [...prev, newProj]);
     } else if (detailProject) {
+      // Call API to persist testimonial fields
+      try {
+        await adminApi.patch(`/api/admin/projects/${detailProject.id}`, {
+          testimonialName: data.testimonialName,
+          testimonialText: data.testimonialText,
+          testimonialStars: data.testimonialStars,
+          testimonialRole: data.testimonialRole,
+        });
+      } catch (e) {
+        // continue with local update
+      }
       setProjects(prev => prev.map(p => p.id === detailProject.id ? { ...p, ...data } : p));
     }
     setDetailProject(null);

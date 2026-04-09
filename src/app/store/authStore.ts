@@ -9,6 +9,7 @@
  */
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
+import { useShallow } from "zustand/shallow";
 import { apiClient, adminApi, type ApiErrorResponse } from "@/lib/api/client";
 import { DS } from "@/lib/design-tokens";
 
@@ -37,11 +38,14 @@ export interface AuthUser {
   role: UserRole;
   accountType: "staff" | "customer"; // Split auth: determines which portal they belong to
   _department?: string;
+  departmentKey?: string;       // NEW v4.0: "engineering" | "design" | ...
+  isDeptHead?: boolean;          // NEW v4.0: Trưởng phòng
+  tabPermissions?: string[];    // NEW v4.0: CEO-granted tab permissions
   rank?: string;
   rankColor?: string;
   lpBalance: number;
   level: number;
-  beRoleLevel?: number; // original BE role level (0-5)
+  beRoleLevel?: number; // original BE role level (0-6)
   teamMemberId?: string | null;
   accessTags?: string[];
   isOnboarded?: boolean;
@@ -59,6 +63,9 @@ export interface EnrichedSession {
   teamMemberId: string | null;
   roleLevel: number;
   _department?: string;
+  departmentKey?: string;       // NEW v4.0: "engineering" | "design" | ...
+  isDeptHead?: boolean;         // NEW v4.0: Trưởng phòng
+  tabPermissions?: string[];   // NEW v4.0: CEO-granted tab permissions
   rank?: string;
   rankColor?: string;
   lpBalance?: number;
@@ -74,7 +81,8 @@ export type AdminTab =
   | "income_tax" | "web_packages" | "pricing" | "effects" | "notification_center"
   | "settings" | "quests_events" | "leaderboard_admin" | "analytics"
   | "figma-demos" | "kanban"
-  | "revenue_split" | "off_system_payments";
+  | "revenue_split" | "off_system_payments"
+  | "*"; // wildcard: all tabs (ceo/super_admin/admin)
 
 // ── Quest / Event Types (from FE gamification system) ────────────────────────────
 
@@ -175,30 +183,40 @@ const INIT_EVENTS: CompanyEvent[] = [
   },
 ];
 
-// ── RBAC — Per-Role Admin Tab Access ──────────────────────────────────────────
+// ── RBAC — Per-Role Admin Tab Access (v4.0) ────────────────────────────────────
 
 /**
- * 7 role-specific tab sets. Each role sees only the tabs it needs.
+ * 8 role-specific tab sets. Each role sees only the tabs it needs.
  *
- * Admin (level 0-1): all 23 tabs
- * Project Manager (level 2): orders, clients, quotation, services, revenue,
+ * CEO / super_admin / admin: all tabs (bypass)
+ * HR (level 2): members, departments, notification, quests, academy, lp_manage
+ * Project Manager (level 3): orders, clients, quotation, services, revenue,
  *   projects, members, departments, notification_center, leaderboard_admin, lp_manage, quests_events
- * Media (level 3): media, blog, orders, projects, clients, notification_center,
+ * Media (level 4): media, blog, orders, projects, clients, notification_center,
  *   academy, services, leaderboard_admin, quests_events
- * QA (level 4): projects, notification_center, orders, clients, members,
+ * QA (level 5): projects, notification_center, orders, clients, members,
  *   academy, leaderboard_admin
- * Member (level 5): overview, notification_center, leaderboard_admin,
+ * Member (level 6): overview, notification_center, leaderboard_admin,
  *   academy (learn), quests_events
+ *
+ * v4.0: CEO gán từng tab permission riêng cho từng member.
+ * Baseline tabs ở đây là default — CEO gán thêm/bớt từ Settings.
+ * Department bonus: tự động thêm dept tabs khi member thuộc phòng ban.
  *
  * Client (customer accountType): redirected to /khach-hang, no admin tabs
  * Guest: no access
  */
 
+const HR_TABS: AdminTab[] = [
+  "overview", "members", "departments", "notification_center",
+  "quests_events", "academy", "lp_manage",
+];
+
 const PM_TABS: AdminTab[] = [
   "overview", "orders", "clients", "quotation", "services", "revenue",
   "projects", "members", "departments", "notification_center",
   "leaderboard_admin", "lp_manage", "quests_events",
-  "academy", "blog", "lp", "pricing", "figma-demos",
+  "academy", "blog", "lp", "figma-demos",
   "revenue_split", "off_system_payments",
 ];
 
@@ -218,8 +236,21 @@ const MEMBER_TABS: AdminTab[] = [
   "academy", "quests_events",
 ];
 
-export function getAccessibleTabs(role: UserRole, _department?: string): AdminTab[] | "all" {
+// Department bonus tab grants (tự động thêm khi member thuộc phòng ban)
+export const DEPT_TAB_BONUS: Record<string, AdminTab[]> = {
+  engineering: ["kanban", "lp"],
+  design:     ["figma-demos", "portfolio"],
+  media:      ["media", "blog"],
+  marketing:  ["blog", "projects"],
+  sales:      ["orders", "clients", "quotation", "revenue"],
+  finance:    ["revenue", "lp", "lp_manage", "income_tax", "revenue_split", "off_system_payments"],
+  hr:         ["members", "departments"],
+  management: ["*"],
+};
+
+export function getAccessibleTabs(role: UserRole, _departmentKey?: string): AdminTab[] | "all" {
   if (role === "admin") return "all";
+  if (role === "hr") return HR_TABS;
   if (role === "project_manager") return PM_TABS;
   if (role === "media") return MEDIA_TABS;
   if (role === "qa") return QA_TABS;
@@ -228,10 +259,26 @@ export function getAccessibleTabs(role: UserRole, _department?: string): AdminTa
   return []; // guest
 }
 
-export function canAccessTab(role: UserRole, _department: string | undefined, tab: AdminTab): boolean {
-  const tabs = getAccessibleTabs(role, _department);
+/**
+ * Check if user can access a specific admin tab (v4.0).
+ * Supports: role bypass, explicit tab list, department bonus.
+ */
+export function canAccessTab(
+  role: UserRole,
+  departmentKey: string | undefined,
+  tab: AdminTab,
+  userTabPermissions?: string[],
+): boolean {
+  if (role === "admin") return true;
+  // CEO/super_admin are mapped to "admin" in FE UserRole
+  const tabs = getAccessibleTabs(role, departmentKey);
   if (tabs === "all") return true;
-  return tabs.includes(tab);
+  if (tabs.includes(tab)) return true;
+  // Department bonus tabs
+  if (departmentKey && DEPT_TAB_BONUS[departmentKey]?.includes(tab)) return true;
+  // Explicit CEO-granted tab permissions (from session)
+  if (userTabPermissions?.includes(tab)) return true;
+  return false;
 }
 
 export function canEdit(role: UserRole): boolean {
@@ -265,6 +312,9 @@ interface AuthStore {
   role: UserRole;
   accountType: "staff" | "customer" | null; // Split auth: Option C
   _department?: string;
+  departmentKey?: string;    // v4.0: "engineering" | "design" | ...
+  isDeptHead?: boolean;      // v4.0: Trưởng phòng
+  tabPermissions?: string[]; // v4.0: CEO-granted explicit tab permissions
   accessibleTabs: AdminTab[] | "all";
 
   /** R2: Server-session verified flag — set true after /me returns 200. Prevents stale cache. */
@@ -317,6 +367,9 @@ function sessionToAuthUser(session: EnrichedSession): AuthUser {
     role,
     accountType: session.accountType,
     _department: session._department,
+    departmentKey: session.departmentKey,     // v4.0
+    isDeptHead: session.isDeptHead,           // v4.0
+    tabPermissions: session.tabPermissions,   // v4.0
     rank: session.rank,
     rankColor: session.rankColor,
     lpBalance: session.lpBalance ?? 0,
@@ -397,7 +450,10 @@ export const useAuthStore = create<AuthStore>()(
         role,
         accountType: session.accountType,
         _department: session._department,
-        accessibleTabs: getAccessibleTabs(role, session._department),
+        departmentKey: session.departmentKey,     // v4.0
+        isDeptHead: session.isDeptHead,           // v4.0
+        tabPermissions: session.tabPermissions,   // v4.0
+        accessibleTabs: getAccessibleTabs(role, session.departmentKey),
         sessionHydrated: true,       // R2: login payload IS the server session — mark hydrated
         tokenExpiry: Date.now() + 15 * 60 * 1000, // R2: access token TTL = 15 min
       });
@@ -422,7 +478,10 @@ export const useAuthStore = create<AuthStore>()(
       role,
       accountType: user.accountType,
       _department: user._department,
-      accessibleTabs: getAccessibleTabs(role, user._department),
+      departmentKey: user.departmentKey,       // v4.0
+      isDeptHead: user.isDeptHead,             // v4.0
+      tabPermissions: user.tabPermissions,     // v4.0
+      accessibleTabs: getAccessibleTabs(role, user.departmentKey),
       sessionHydrated: true,    // R2: programmatic login — trust the caller
       tokenExpiry: Date.now() + 15 * 60 * 1000, // R2: default 15-min TTL
     });
@@ -457,11 +516,28 @@ export const useAuthStore = create<AuthStore>()(
     } catch {
       // Ignore network errors — always clear session client-side
     } finally {
+      // ── Clear all auth storage (triệt để) ───────────────────────────────
       if (typeof window !== "undefined") {
-        // Clear BOTH token keys to ensure no cross-account state
+        // localStorage tokens
         localStorage.removeItem("loop-staff-token");
         localStorage.removeItem("loop-customer-token");
+        localStorage.removeItem("loop-staff-email"); // remembered email
+        // Zustand persist key
+        localStorage.removeItem("loop-auth");
       }
+
+      // ── Clear React Query cache ────────────────────────────────────────
+      // Import động để tránh circular import và SSR issues
+      if (typeof window !== "undefined") {
+        try {
+          const { QueryClient } = await import("@tanstack/react-query");
+          const qc = new QueryClient();
+          qc.clear();
+        } catch {
+          // Non-fatal — cache will expire on next load anyway
+        }
+      }
+
       set({
         user: null,
         isAuthenticated: false,
@@ -470,6 +546,9 @@ export const useAuthStore = create<AuthStore>()(
         role: "guest",
         accountType: null,
         _department: undefined,
+        departmentKey: undefined,
+        isDeptHead: undefined,
+        tabPermissions: undefined,
         accessibleTabs: [],
         sessionHydrated: false,
         tokenExpiry: null,
@@ -506,7 +585,10 @@ export const useAuthStore = create<AuthStore>()(
         role,
         accountType: session.accountType,
         _department: session._department,
-        accessibleTabs: getAccessibleTabs(role, session._department),
+        departmentKey: session.departmentKey,     // v4.0
+        isDeptHead: session.isDeptHead,           // v4.0
+        tabPermissions: session.tabPermissions,   // v4.0
+        accessibleTabs: getAccessibleTabs(role, session.departmentKey),
         sessionHydrated: true,         // R2: server confirmed valid session
         tokenExpiry: Date.now() + 15 * 60 * 1000, // R2: refresh expiry on each /me
       });
@@ -627,3 +709,4 @@ export const useAuthLoading = () => useAuthStore((s) => s.isLoading);
 export const useAuthError = () => useAuthStore((s) => s.error);
 export const useRole = () => useAuthStore((s) => s.role);
 export const useAccessibleTabs = () => useAuthStore((s) => s.accessibleTabs);
+export { useShallow };

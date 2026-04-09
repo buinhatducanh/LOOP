@@ -145,19 +145,12 @@ export async function POST(req: NextRequest) {
       })
     );
 
-    const member = await prisma.teamMember.create({
-      data: {
-        ...(cleanedData as TeamMemberCreateInput),
-        // Map FE field name "avatar" → Prisma "image" if provided
-        ...(avatar !== undefined && { image: avatar }),
-      },
-    });
-
-    // Create member expertise relations with level if provided and not empty.
-    // FE sends: { name: "React" }[] or { expertiseId, level }[].
-    // Resolve expertise names → IDs by querying/upserting the Expertise table.
+    // Resolve expertise IDs before the atomic transaction.
+    // Reads + potential expertise.create happen outside the member tx — this is safe
+    // because expertise records are shared across members and idempotent.
+    const expertiseRecords: { memberId: string; expertiseId: string; level: number }[] = [];
     if (Array.isArray(memberExpertise) && memberExpertise.length > 0) {
-      const records = await Promise.all(
+      const resolved = await Promise.all(
         memberExpertise.map(async (exp: { name?: string; expertiseId?: string; level?: number }) => {
           let resolvedExpertiseId = exp.expertiseId;
           // Resolve by name if FE sends { name } instead of { expertiseId }
@@ -173,14 +166,44 @@ export async function POST(req: NextRequest) {
             resolvedExpertiseId = expertise.id;
           }
           return {
-            memberId: member.id,
-            expertiseId: resolvedExpertiseId,
+            expertiseId: resolvedExpertiseId as string,
             level: (exp.level as number) || 5,
           };
         })
       );
-      await prisma.memberExpertise.createMany({ data: records as { memberId: string; expertiseId: string; level: number }[] });
+      // memberId injected inside tx below (not known yet)
+      expertiseRecords.push(...resolved.map(r => ({
+        memberId: "", // filled below
+        expertiseId: r.expertiseId,
+        level: r.level,
+      })));
     }
+
+    // ⚠️ FIX: wrap member create + expertise relations in a transaction.
+    // If expertise.createMany fails, the member is rolled back — no orphan members.
+    const member = await prisma.$transaction(async (tx) => {
+      const created = await tx.teamMember.create({
+        data: {
+          ...(cleanedData as TeamMemberCreateInput),
+          // Map FE field name "avatar" → Prisma "image" if provided
+          ...(avatar !== undefined && { image: avatar }),
+        },
+      });
+
+      // Fill memberId in expertise records now that we have it
+      const recordsWithMemberId = expertiseRecords.map(r => ({
+        ...r,
+        memberId: created.id,
+      }));
+
+      if (recordsWithMemberId.length > 0) {
+        await tx.memberExpertise.createMany({
+          data: recordsWithMemberId,
+        });
+      }
+
+      return created;
+    });
 
     await createAuditLog({
       userId: session.userId,

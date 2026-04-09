@@ -102,6 +102,7 @@ function mapFeature(f: {
   xpPoints: number;
   tier: string;
   parentId?: string | null;
+  includedInBase: boolean;
 }, locale: Locale) {
   return {
     id: f.id,
@@ -113,6 +114,7 @@ function mapFeature(f: {
     category: getLocalizedName(locale, f.category, f.categoryVi, f.categoryEn, f.categoryJa, f.categoryKo, f.categoryZh),
     categoryEn: f.categoryEn ?? f.categoryVi ?? f.category,
     parentId: f.parentId,
+    includedInBase: f.includedInBase,
   };
 }
 
@@ -182,6 +184,65 @@ function mapInfraTier(t: {
   };
 }
 
+function mapHostingPlan(h: {
+  id: string;
+  slug: string;
+  name: string;
+  nameVi: string;
+  monthlyPrice: number;
+  period: string;
+  periodVi: string;
+  months: number;
+  discountPct: number;
+  features: string[];
+  featuresVi: string[];
+  highlighted: boolean;
+  color: string;
+}, locale: Locale) {
+  // Compute the actual plan price after discount
+  const basePrice = h.monthlyPrice * h.months;
+  const discountedPrice = h.discountPct > 0
+    ? Math.round(basePrice * (1 - h.discountPct / 100))
+    : basePrice;
+  return {
+    id: h.id,
+    slug: h.slug,
+    name: getLocalizedName(locale, h.name, h.nameVi, h.nameVi, h.nameVi, h.nameVi, h.nameVi),
+    monthlyPrice: h.monthlyPrice,
+    basePrice,          // monthlyPrice × months (before discount)
+    discountedPrice,     // price after discountPct
+    period: getLocalizedName(locale, h.period, h.periodVi, h.periodVi, h.periodVi, h.periodVi, h.periodVi),
+    periodVi: h.periodVi,
+    months: h.months,
+    discountPct: h.discountPct,
+    features: getLocalizedName(locale, h.features.join("; "), h.featuresVi.join("; "), h.featuresVi.join("; "), h.featuresVi.join("; "), h.featuresVi.join("; "), h.featuresVi.join("; ")).split("; "),
+    highlighted: h.highlighted,
+    color: h.color,
+  };
+}
+
+function mapDomainPrice(d: {
+  extension: string;
+  registrationPrice: number;
+  renewalPrice: number;
+  period: string;
+  periodVi: string;
+  note?: string | null;
+  noteVi?: string | null;
+  isAvailable: boolean;
+}, locale: Locale) {
+  return {
+    extension: d.extension,
+    registrationPrice: d.registrationPrice,
+    renewalPrice: d.renewalPrice,
+    period: getLocalizedName(locale, d.period, d.periodVi, d.periodVi, d.periodVi, d.periodVi, d.periodVi),
+    periodVi: d.periodVi,
+    note: getLocalizedName(locale, d.note ?? "", d.note ?? "", d.note ?? "", d.note ?? "", d.note ?? "", d.note ?? ""),
+    noteVi: d.noteVi ?? d.note ?? "",
+    isAvailable: d.isAvailable,
+  };
+}
+
 // ── GET handler ───────────────────────────────────────────────────────────────
 
 export async function GET(request: Request) {
@@ -190,7 +251,7 @@ export async function GET(request: Request) {
     const locale = normalizeLocale(searchParams.get("lang"));
 
     // Run all DB queries in parallel
-    const [packages, features, addons, infraTiers, basePriceSetting, vatSetting] = await Promise.all([
+    const [packages, features, addons, infraTiers, hostingPlans, domainPrices, basePriceSetting, vatSetting] = await Promise.all([
       // Service packages
       prisma.servicePackage.findMany({
         where: { isActive: true },
@@ -238,6 +299,7 @@ export async function GET(request: Request) {
           price: true,
           xpPoints: true,
           parentId: true,
+          includedInBase: true,
         },
         orderBy: [{ category: "asc" }, { tier: "asc" }, { name: "asc" }],
       }),
@@ -294,6 +356,44 @@ export async function GET(request: Request) {
         orderBy: { sortOrder: "asc" },
       }),
 
+      // Hosting plans
+      prisma.pricingHostingPlan.findMany({
+        where: { isActive: true },
+        select: {
+          id: true,
+          slug: true,
+          name: true,
+          nameVi: true,
+          monthlyPrice: true,
+          period: true,
+          periodVi: true,
+          months: true,
+          discountPct: true,
+          features: true,
+          featuresVi: true,
+          highlighted: true,
+          color: true,
+        },
+        orderBy: { sortOrder: "asc" },
+      }),
+
+      // Domain prices
+      prisma.pricingDomainPrice.findMany({
+        where: { isActive: true },
+        select: {
+          id: true,
+          extension: true,
+          registrationPrice: true,
+          renewalPrice: true,
+          period: true,
+          periodVi: true,
+          note: true,
+          noteVi: true,
+          isAvailable: true,
+        },
+        orderBy: { sortOrder: "asc" },
+      }),
+
       // Base price setting
       prisma.siteSetting.findUnique({
         where: { key: "custom_web_base_price" },
@@ -326,6 +426,8 @@ export async function GET(request: Request) {
     const wizardFeatures = features.map((f) => mapFeature(f, locale));
     const wizardAddons = addons.map((a) => mapAddon(a, locale));
     const wizardInfraTiers = infraTiers.map((t) => mapInfraTier(t, locale));
+    const wizardHostingPlans = hostingPlans.map((h) => mapHostingPlan(h, locale));
+    const wizardDomainPrices = domainPrices.map((d) => mapDomainPrice(d, locale));
 
     // Group localized features by localized category key
     const localizedFeaturesByCategory = Object.fromEntries(
@@ -345,6 +447,8 @@ export async function GET(request: Request) {
         featuresByCategory: localizedFeaturesByCategory,
         addons: wizardAddons,
         infraTiers: wizardInfraTiers,
+        hostingPlans: wizardHostingPlans,
+        domainPrices: wizardDomainPrices,
         lpRate: {
           lpPerVnd: 500,
           vndPerLp: 2,

@@ -517,6 +517,120 @@ export function getRoleLevelLabel(level: number): { vi: string; en: string } {
   return { vi: `Cấp ${level}`, en: `Level ${level}` };
 }
 
+// ─── Department System (v4.0) ─────────────────────────────────────────────────
+
+export interface Department {
+  key: string;          // "engineering" | "design" | "media" | ...
+  name: string;         // "Phòng Kỹ thuật"
+  shortName: string;    // "IT"
+  color: string;        // "#3B82F6"
+}
+
+export const DEPARTMENTS: Department[] = [
+  { key: "engineering", name: "Phòng Kỹ thuật (IT)", shortName: "IT",    color: "#3B82F6" },
+  { key: "design",      name: "Phòng Thiết kế",       shortName: "Design", color: "#8B5CF6" },
+  { key: "media",       name: "Phòng Media",           shortName: "MDI",   color: "#EC4899" },
+  { key: "marketing",   name: "Phòng Marketing",       shortName: "MKT",   color: "#F59E0B" },
+  { key: "sales",       name: "Phòng Kinh doanh",      shortName: "SLS",   color: "#22C55E" },
+  { key: "finance",     name: "Phòng Tài chính",       shortName: "FIN",   color: "#14B8A6" },
+  { key: "hr",          name: "Phòng Nhân sự",         shortName: "HR",    color: "#6366F1" },
+  { key: "management",  name: "Ban Quản lý",           shortName: "MGT",    color: "#EAB308" },
+];
+
+export const DEPT_COLORS: Record<string, string> = Object.fromEntries(
+  DEPARTMENTS.map(d => [d.key, d.color])
+);
+
+// ─── Tab Permissions (v4.0) ────────────────────────────────────────────────────
+
+/**
+ * 28 admin tabs — each tab = 1 permission grant.
+ * CEO assigns tab permissions to individual members.
+ * ceo / super_admin / admin automatically get all tabs.
+ * Special values: "*" = all tabs, dept_head bonus tabs.
+ */
+export type AdminTab =
+  | "overview" | "orders" | "members" | "departments" | "projects"
+  | "services" | "media" | "quotation" | "portfolio" | "projects_completed"
+  | "academy" | "blog" | "revenue" | "clients" | "lp" | "lp_manage"
+  | "income_tax" | "web_packages" | "effects" | "notification_center"
+  | "settings" | "quests_events" | "leaderboard_admin" | "analytics"
+  | "figma_demos" | "kanban" | "revenue_split" | "off_system_payments"
+  | "*"; // wildcard: all tabs (ceo/super_admin/admin)
+
+/** Baseline tab permissions per system role (CEO gán thêm/bớt sau đó) */
+export const ROLE_BASE_TABS: Record<string, AdminTab[]> = {
+  admin:            ["*"], // all tabs
+  hr:               ["members", "departments", "overview", "notification_center", "quests_events", "academy", "lp_manage"],
+  project_manager:  ["overview","orders","clients","quotation","services","revenue","projects","members","departments","notification_center","leaderboard_admin","lp_manage","quests_events","academy","blog","lp","portfolio","projects_completed"],
+  media:            ["overview","media","blog","orders","projects","clients","academy","services","leaderboard_admin","quests_events","portfolio","revenue"],
+  qa:               ["overview","projects","notification_center","orders","clients","members","academy","leaderboard_admin","lp"],
+  member:           ["overview","notification_center","leaderboard_admin","academy","quests_events"],
+  client:           [],
+  guest:            [],
+};
+
+/** Automatic tab bonus when member belongs to a department */
+export const DEPT_TAB_BONUS: Record<string, AdminTab[]> = {
+  engineering: ["kanban", "lp"],
+  design:     ["figma_demos", "portfolio"],
+  media:      ["media", "blog"],
+  marketing:  ["blog", "projects"],
+  sales:      ["orders", "clients", "quotation", "revenue"],
+  finance:    ["revenue", "lp", "lp_manage", "income_tax", "revenue_split", "off_system_payments"],
+  hr:         ["members", "departments"],
+  management: ["*"],
+};
+
+/** Dept head bonus permissions (bonus trên base role) */
+export const DEPT_HEAD_BONUS: string[] = [
+  "department_overview",
+  "assign_tasks",
+  "view_dept_lp",
+];
+
+/**
+ * Check if a session user can access an admin tab.
+ * Checks: ceo/super_admin/admin bypass, explicit tab grant, dept bonus.
+ */
+export function canAccessTab(
+  tabPermissions: string[],
+  departmentKey: string | null,
+  isDeptHead: boolean,
+  tabId: string,
+): boolean {
+  // ceo / super_admin / admin bypass
+  if (tabPermissions.includes("*")) return true;
+
+  // Explicit tab grant
+  if (tabPermissions.includes(tabId)) return true;
+
+  // Department bonus
+  if (departmentKey && DEPT_TAB_BONUS[departmentKey]?.includes(tabId as AdminTab)) return true;
+
+  // Dept head bonus
+  if (isDeptHead && DEPT_HEAD_BONUS.includes(tabId as AdminTab)) return true;
+
+  return false;
+}
+
+/** Build all accessible tabs for a user (for sidebar rendering) */
+export function getAccessibleTabs(
+  role: string,
+  tabPermissions: string[],
+  departmentKey: string | null,
+  isDeptHead: boolean,
+): AdminTab[] {
+  if (role === "ceo" || role === "super_admin" || role === "admin") return ["*"];
+
+  const base = ROLE_BASE_TABS[role] ?? [];
+  if (base.includes("*")) return ["*"];
+
+  const deptBonus = departmentKey ? (DEPT_TAB_BONUS[departmentKey] ?? []) : [];
+  const allTabs = [...new Set([...base, ...deptBonus])];
+  return allTabs as AdminTab[];
+}
+
 // ─── Role Predicate Helpers ─────────────────────────────────────────────────────
 
 /** Check if role is CEO */
@@ -534,22 +648,27 @@ export function isAdminRole(role: string): boolean {
   return role === "super_admin" || role === "admin";
 }
 
-/** Check if role is project_manager (level 2) */
+/** Check if role is hr (level 2) */
+export function isHRRole(role: string): boolean {
+  return role === "hr";
+}
+
+/** Check if role is project_manager (level 3) */
 export function isPMRole(role: string): boolean {
   return role === "project_manager";
 }
 
-/** Check if role is media (level 3) */
+/** Check if role is media (level 4) */
 export function isMediaRole(role: string): boolean {
   return role === "media";
 }
 
-/** Check if role is qa (level 4) */
+/** Check if role is qa (level 5) */
 export function isQARole(role: string): boolean {
   return role === "qa";
 }
 
-/** Check if role is member (level 5) */
+/** Check if role is member (level 6) */
 export function isMemberRole(role: string): boolean {
   return role === "member";
 }
@@ -572,7 +691,8 @@ export function isPrivilegedRole(role: string): boolean {
 export const DEFAULT_ACCESS_TAGS: Record<string, string[]> = {
   ceo: [],
   super_admin: ["kanban", "order-basic", "blog-post", "seo-content", "media-content", "order-manage", "salary", "lp-manage", "finance-view", "hr-manage"],
-  admin: ["kanban", "order-basic", "blog-post", "seo-content", "media-content", "order-manage", "lp-manage"],
+  admin: ["kankan", "order-basic", "blog-post", "seo-content", "media-content", "order-manage", "lp-manage"],
+  hr:    ["kanban", "order-basic", "hr-manage", "members", "departments"],
   project_manager: ["kanban", "order-basic", "order-manage"],
   media: ["kanban", "order-basic", "blog-post", "media-content"],
   qa: ["kanban", "order-basic"],

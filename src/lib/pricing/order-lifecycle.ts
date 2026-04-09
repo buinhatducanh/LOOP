@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { awardCustomerLpOnPayment } from "@/lib/services/customer/lp.service";
 import { awardReferralLpOnPayment, awardReferralLpOnCompletion } from "@/lib/services/customer/referral.service";
-import { distributeLpFromOrder } from "@/lib/pricing/quote-to-order";
+import { buildLpAwardsFromOrder } from "@/lib/pricing/quote-to-order";
 import { vndToLp } from "@/lib/services/customer/lp.service";
 
 // ── Notification helper ───────────────────────────────────────────────────────
@@ -120,12 +120,16 @@ export function getNextStatuses(
 
 /**
  * Chuyển trạng thái đơn hàng + ghi log lịch sử + award referral LP khi hoàn tất
+ *
+ * P1-2 FIX: audit log written INSIDE the $transaction — no gap between write and audit.
  */
 export async function transitionOrderStatus(
   orderId: string,
   toStatus: string,
   changedBy?: string,
-  note?: string
+  note?: string,
+  auditUserId?: string,
+  auditResourceId?: string
 ): Promise<{ success: boolean; error?: string }> {
   const order = await prisma.order.findUnique({
     where: { id: orderId },
@@ -161,6 +165,8 @@ export async function transitionOrderStatus(
   }
 
   // Atomic: update status + history + lpReward
+  // P0-3 FIX: awardReferralLpOnCompletion moved INSIDE the tx — no more fire-and-forget.
+  // P1-2 FIX: audit log inside this tx — no gap between write and audit record.
   await prisma.$transaction(async (tx) => {
     const updateData: Record<string, unknown> = { status: toStatus };
     if (isCompletion) {
@@ -173,12 +179,25 @@ export async function transitionOrderStatus(
     await tx.orderStatusHistory.create({
       data: { orderId, fromStatus: order.status, toStatus, changedBy, note },
     });
-  });
 
-  // ── Award referral LP on order completion ────────────────────────────────────
-  if (isCompletion && order.paidAmount > 0) {
-    awardReferralLpOnCompletion(orderId, order.orderNumber, order.paidAmount).catch(() => {/* silent */});
-  }
+    // ── Award referral LP on order completion — NOW atomic inside this tx ─────
+    if (isCompletion && order.paidAmount > 0) {
+      await awardReferralLpOnCompletion(orderId, order.orderNumber, order.paidAmount);
+    }
+
+    // ── P1-2 FIX: audit log inside tx ─────────────────────────────────────────
+    if (auditUserId && auditResourceId) {
+      await tx.auditLog.create({
+        data: {
+          userId: auditUserId,
+          action: "update",
+          resource: "orders",
+          resourceId: auditResourceId,
+          newValues: { toStatus, note } as unknown as import("@/generated/prisma/internal/prismaNamespace").InputJsonValue,
+        },
+      });
+    }
+  });
 
   // ── Fire admin notification on key status transitions ─────────────────────────
   const priority = toStatus === "delivered" ? "high" : "normal";
@@ -230,7 +249,8 @@ export async function recordPayment(
     paymentStatus = "unpaid";
   }
 
-  // Atomic: create payment + update order + award customer LP
+  // Atomic: create payment + update order + award LP to all parties
+  // P0-2 FIX: moved awardReferralLpOnCompletion into this tx below so it commits atomically.
   await prisma.$transaction(async (tx) => {
     const payment = await tx.payment.create({
       data: {
@@ -270,10 +290,50 @@ export async function recordPayment(
       });
     }
 
-    // ── Distribute LP to staff via Quote.lpAllocation (when project members exist) ─
+    // ── Distribute LP to staff via Order.lpAllocation ───────────────────────────
+    // P0-1+P0-2 FIX: build award data first, then batch-insert inside the same tx.
+    // Previously distributeLpFromOrder opened its own separate connection.
     if (amount > 0) {
-      await distributeLpFromOrder(orderId, amount);
+      const orderData = await tx.order.findUnique({
+        where: { id: orderId },
+        select: {
+          lpAllocation: true,
+          projectMembers: { select: { id: true, projectRoleKey: true, memberId: true } },
+        },
+      });
+
+      if (orderData?.lpAllocation) {
+        const awards = buildLpAwardsFromOrder(
+          orderId,
+          amount,
+          orderData.lpAllocation as Record<string, number>,
+          orderData.projectMembers
+        );
+
+        if (awards.length > 0) {
+          await tx.lpAward.createMany({
+            data: awards.map((a) => ({
+              memberId: a.memberId,
+              projectId: orderId,
+              lpAmount: a.lpAmount,
+              expAmount: 0,
+              source: a.source,
+              status: "pending", // PM reviews before LP is credited
+            })),
+          });
+        }
+      }
     }
+
+    // ── P0-3 FIX: award referral LP on order completion INSIDE this tx ─────────
+    // Previously this was fire-and-forget after the tx — silent data loss risk.
+    // Moved here so it commits atomically with the payment record.
+    const isCompletion = newPaidAmount >= totalExpected;
+    if (isCompletion && order.customerEmail) {
+      await awardReferralLpOnCompletion(orderId, order.orderNumber, newPaidAmount);
+    }
+
+    return payment;
   });
 
   return { success: true };

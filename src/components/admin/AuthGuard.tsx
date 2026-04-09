@@ -29,12 +29,6 @@ import { adminApi, type ApiErrorResponse } from "@/lib/api/client";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-/** Returns true if the staff JWT exists in localStorage */
-function hasStoredStaffToken(): boolean {
-  if (typeof window === "undefined") return false;
-  return !!localStorage.getItem("loop-staff-token");
-}
-
 /**
  * Lightweight JWT expiry check without signature verification.
  * Only decodes the payload — fast enough to run synchronously.
@@ -63,10 +57,9 @@ type DecisionResult = "allowed" | "blocked";
 function makeDecision(opts: {
   isAuthenticated: boolean;
   accountType: string | null;
-  sessionHydrated: boolean;
   tokenExpiry: number | null;
 }): DecisionResult {
-  const { isAuthenticated, accountType, sessionHydrated, tokenExpiry } = opts;
+  const { isAuthenticated, accountType, tokenExpiry } = opts;
 
   // ── Check 1: localStorage has the staff token ──────────────────────────────
   // This is the primary signal after a successful login.
@@ -131,26 +124,36 @@ type SessionStatus =
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
-  // ── Zustand selectors (read synchronously — these are in-memory, no side effects) ──
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  const accountType = useAuthStore((s) => s.accountType);
-  const sessionHydrated = useAuthStore((s) => s.sessionHydrated);
-  const tokenExpiry = useAuthStore((s) => s.tokenExpiry);
-
   // ── Local status state ───────────────────────────────────────────────────────
   const [status, setStatus] = useState<SessionStatus>("pending");
   const redirectFired = useRef(false);
 
   // ── Hydration check + auth decision ─────────────────────────────────────────
   useEffect(() => {
+    /**
+     * Zustand 5: persist API is on the store API (useAuthStore.persist),
+     * NOT on the state object returned by getState().
+     * In Zustand 4 the API was on getState().persist; in Zustand 5 it moved
+     * to useAuthStore.persist (the store itself IS the API).
+     */
     const checkHydration = (): boolean => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const store = useAuthStore.getState() as any;
-      return !!store.persist?.hasHydrated?.();
+      return !!useAuthStore.persist?.hasHydrated?.();
     };
 
     const decide = () => {
-      const result = makeDecision({ isAuthenticated, accountType, sessionHydrated, tokenExpiry });
+      /**
+       * Read FRESH Zustand state — NOT the closure variables.
+       * This fixes the race condition where AuthGuard checks stale state
+       * (isAuthenticated=false) before Zustand rehydrates from localStorage
+       * after a soft navigation from the homepage.
+       */
+      const fresh = useAuthStore.getState();
+      const freshTokenExpiry = fresh.tokenExpiry;
+      const result = makeDecision({
+        isAuthenticated: fresh.isAuthenticated,
+        accountType: fresh.accountType,
+        tokenExpiry: freshTokenExpiry,
+      });
 
       // If blocked, clear any stale localStorage token
       if (result === "blocked") {
@@ -217,7 +220,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     }
 
     decide();
-  }, [isAuthenticated, accountType, sessionHydrated, tokenExpiry]);
+  }, []); // No reactive deps — Zustand state read via getState() inside decide()
 
   // ── Redirect — ONLY in useEffect (never during render) ─────────────────────
   useEffect(() => {

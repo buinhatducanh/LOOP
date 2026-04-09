@@ -34,8 +34,11 @@ export async function PATCH(
       const lpReward = participant.quest?.lpReward ?? participant.event?.lpBonus ?? 0;
       const xpReward = participant.quest?.xpReward ?? 0;
 
-      const [updated] = await Promise.all([
-        prisma.questParticipant.update({
+      // P0-4 FIX: wrap participant update + LP transaction in a transaction.
+      // Previously used Promise.all — if lpTransaction.create failed, participant
+      // was marked complete but LP was never credited (phantom completion).
+      const updated = await prisma.$transaction(async (tx) => {
+        const up = await tx.questParticipant.update({
           where: { id },
           data: {
             completed: true,
@@ -44,24 +47,24 @@ export async function PATCH(
             xpEarned: xpReward,
             progress: participant.quest?.target ?? participant.progress,
           },
-        }),
-        // Credit LP to member
-        ...(lpReward > 0
-          ? [
-              prisma.lpTransaction.create({
-                data: {
-                  memberId: participant.userId,
-                  type: "award",
-                  amount: lpReward,
-                  source: "quest",
-                  description: participant.quest
-                    ? `Quest: ${participant.quest.title}`
-                    : `Event: ${participant.event?.title ?? "Unknown"}`,
-                },
-              }),
-            ]
-          : []),
-      ]);
+        });
+
+        if (lpReward > 0) {
+          await tx.lpTransaction.create({
+            data: {
+              memberId: participant.userId,
+              type: "award",
+              amount: lpReward,
+              source: "quest",
+              description: participant.quest
+                ? `Quest: ${participant.quest.title}`
+                : `Event: ${participant.event?.title ?? "Unknown"}`,
+            },
+          });
+        }
+
+        return up;
+      });
 
       // Sync rank fields after LP award
       await syncRankFields(participant.userId);

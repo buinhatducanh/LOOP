@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
+import type { InputJsonValue } from "@/generated/prisma/internal/prismaNamespace";
 import { lpLogger } from "@/lib/logger";
 import { withIdempotency } from "@/lib/idempotency";
 
@@ -87,7 +88,7 @@ export const POST = withIdempotency(
 
       const isPending = (data.status ?? "pending") === "pending";
 
-      // Atomic: create award + lock LP on member
+      // Atomic: create award + lock LP on member + audit log
       const award = await prisma.$transaction(async (tx) => {
         const created = await tx.lpAward.create({
           data: {
@@ -117,15 +118,19 @@ export const POST = withIdempotency(
             });
           }
         }
-        return created;
-      });
 
-      await createAuditLog({
-        userId: session.userId,
-        action: "create",
-        resource: "lp-awards",
-        resourceId: award.id,
-        newValues: data,
+        // P1-2 FIX: audit log inside tx — no gap between write and audit record
+        await tx.auditLog.create({
+          data: {
+            userId: session.userId,
+            action: "create",
+            resource: "lp-awards",
+            resourceId: created.id,
+            newValues: data as unknown as InputJsonValue,
+          },
+        });
+
+        return created;
       });
 
       lpLogger.info("LP award created", {

@@ -156,16 +156,17 @@ export async function POST() {
     ];
 
     const hostingPlans = [
-      { slug: "hosting-basic", name: "Basic Hosting", nameVi: "Hosting Cơ Bản", price: 150000, period: "month", periodVi: "tháng", features: ["Shared hosting", "5GB SSD storage", "SSL certificate", "Daily backup", "99.5% uptime"], featuresVi: ["Shared hosting", "5GB SSD lưu trữ", "Chứng chỉ SSL", "Sao lưu hàng ngày", "99.5% uptime"], highlighted: false, color: "#3B82F6", sortOrder: 0 },
-      { slug: "hosting-pro", name: "Pro Hosting", nameVi: "Hosting Nâng Cao", price: 350000, period: "month", periodVi: "tháng", features: ["VPS hosting", "20GB SSD storage", "SSL certificate", "CDN integration", "Daily backup", "99.9% uptime"], featuresVi: ["VPS hosting", "20GB SSD lưu trữ", "Chứng chỉ SSL", "Tích hợp CDN", "Sao lưu hàng ngày", "99.9% uptime"], highlighted: true, color: "#6366F1", sortOrder: 1 },
-      { slug: "hosting-enterprise", name: "Enterprise Hosting", nameVi: "Hosting Doanh Nghiệp", price: 900000, period: "month", periodVi: "tháng", features: ["Dedicated server", "Unlimited storage", "SSL certificate", "CDN integration", "Real-time backup", "99.99% uptime SLA", "24/7 monitoring"], featuresVi: ["Server chuyên dụng", "Không giới hạn lưu trữ", "Chứng chỉ SSL", "Tích hợp CDN", "Sao lưu real-time", "99.99% uptime SLA", "Giám sát 24/7"], highlighted: false, color: "#8B5CF6", sortOrder: 2 },
+      { slug: "free", name: "Free", nameVi: "Miễn Phí", monthlyPrice: 0, period: "1 năm", periodVi: "1 năm", months: 12, discountPct: 0, features: ["Sub-domain .loops.vn", "Shared hosting", "1GB SSD", "SSL miễn phí", "99% uptime"], featuresVi: ["Tên miền sub-domain .loops.vn", "Shared hosting", "1GB SSD", "SSL miễn phí", "99% uptime"], highlighted: false, color: "#6B7280", sortOrder: 1 },
+      { slug: "starter-1yr", name: "Starter", nameVi: "Starter", monthlyPrice: 99000, period: "1 năm", periodVi: "1 năm", months: 12, discountPct: 0, features: ["Domain riêng .com/.vn", "Shared hosting", "5GB SSD", "SSL miễn phí", "99.5% uptime", "Backup hàng tuần"], featuresVi: ["Tên miền .com/.vn riêng", "Shared hosting", "5GB SSD", "SSL miễn phí", "99.5% uptime", "Backup hàng tuần"], highlighted: false, color: "#3B82F6", sortOrder: 2 },
+      { slug: "pro-1yr", name: "Pro", nameVi: "Pro", monthlyPrice: 199000, period: "1 năm", periodVi: "1 năm", months: 12, discountPct: 0, features: ["Domain riêng .com/.vn", "VPS hosting", "20GB SSD", "SSL cao cấp", "CDN", "99.9% uptime", "Backup hàng ngày"], featuresVi: ["Tên miền .com/.vn riêng", "VPS hosting", "20GB SSD", "SSL cao cấp", "CDN", "99.9% uptime", "Backup hàng ngày"], highlighted: true, color: "#6366F1", sortOrder: 3 },
+      { slug: "enterprise-1yr", name: "Enterprise", nameVi: "Enterprise", monthlyPrice: 499000, period: "1 năm", periodVi: "1 năm", months: 12, discountPct: 0, features: ["Domain riêng", "Dedicated server", "Unlimited SSD", "SSL cao cấp", "CDN premium", "99.99% uptime SLA", "Backup real-time"], featuresVi: ["Tên miền .com/.vn riêng", "Server chuyên dụng", "Không giới hạn SSD", "SSL cao cấp", "CDN premium", "99.99% uptime SLA", "Backup real-time"], highlighted: false, color: "#8B5CF6", sortOrder: 4 },
     ];
 
     const domainPrices = [
-      { extension: ".com", registrationPrice: 280000, renewalPrice: 280000, period: "year", periodVi: "năm", sortOrder: 0 },
-      { extension: ".vn", registrationPrice: 350000, renewalPrice: 350000, period: "year", periodVi: "năm", note: "Requires Vietnamese business license (GPKD)", noteVi: "Yêu cầu GPKD", sortOrder: 1 },
-      { extension: ".com.vn", registrationPrice: 450000, renewalPrice: 450000, period: "year", periodVi: "năm", note: "Requires Vietnamese business license (GPKD)", noteVi: "Yêu cầu GPKD", sortOrder: 2 },
-      { extension: ".net", registrationPrice: 320000, renewalPrice: 320000, period: "year", periodVi: "năm", sortOrder: 3 },
+      { extension: ".com", registrationPrice: 350000, renewalPrice: 350000, period: "year", periodVi: "năm", note: "Phổ biến nhất", noteVi: "Phổ biến nhất", sortOrder: 1, isAvailable: true },
+      { extension: ".vn", registrationPrice: 438000, renewalPrice: 438000, period: "year", periodVi: "năm", note: "Yêu cầu GPKD", noteVi: "Yêu cầu GPKD", sortOrder: 2, isAvailable: true },
+      { extension: ".com.vn", registrationPrice: 563000, renewalPrice: 563000, period: "year", periodVi: "năm", note: "Yêu cầu GPKD", noteVi: "Yêu cầu GPKD", sortOrder: 3, isAvailable: true },
+      { extension: ".net", registrationPrice: 400000, renewalPrice: 400000, period: "year", periodVi: "năm", note: "Phù hợp công nghệ", noteVi: "Phù hợp công nghệ", sortOrder: 4, isAvailable: true },
     ];
 
     const deploymentItems = [

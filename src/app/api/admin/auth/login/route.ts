@@ -24,7 +24,6 @@ import {
   createSession,
   checkLoginLockout,
   recordLoginAttempt,
-  clearLoginLockout,
   parseDeviceType,
 } from "@/lib/auth/session";
 import { createAuditLog } from "@/lib/auth/audit";
@@ -175,15 +174,30 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // ── Success: clear lockout + track login ──────────────────────────────────
-    await Promise.all([
-      clearLoginLockout(email),
-      prisma.user.update({
-        where: { id: user!.id },
-        data: { loginCount: { increment: 1 }, lastLogin: new Date() },
-      }),
-      createAuditLog({ userId: user!.id, action: "login_success", resource: "auth" }),
-    ]);
+    // ── Success: clear lockout + track login ────────────────────────────────────
+    // NOTE: PrismaNeonHttp (HTTP adapter) does NOT support $transaction.
+    // Sequential await is fine here — these ops are non-critical side-effects
+    // of a successful login and must not block the auth response.
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+    (async () => {
+      try {
+        await prisma.loginAttempt.deleteMany({ where: { email } });
+        await prisma.user.update({
+          where: { id: user!.id },
+          data: { loginCount: { increment: 1 }, lastLogin: new Date() },
+        });
+        await prisma.auditLog.create({
+          data: {
+            userId: user!.id,
+            action: "login_success",
+            resource: "auth",
+            resourceId: user!.id,
+          },
+        });
+      } catch {
+        // Non-critical — do not surface to client
+      }
+    })();
 
     // ── Build session ──────────────────────────────────────────────────────────
     const roles = user.userRoles.map((ur) => ur.role.name);

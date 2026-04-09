@@ -39,6 +39,8 @@ export interface WizardFeature {
   category: string;
   categoryEn?: string;
   parentId?: string | null;
+  /** true = bao gồm trong base price → hiển thị "✓ Đã bao gồm" */
+  includedInBase?: boolean;
 }
 
 export interface WizardTalent {
@@ -78,6 +80,32 @@ export interface WizardInfraTier {
   color?: string | null;
 }
 
+export interface WizardHostingPlan {
+  id: string;
+  slug: string;
+  name: string;
+  monthlyPrice: number;
+  basePrice: number;         // monthlyPrice × months (before discount)
+  discountedPrice: number;    // after discountPct
+  period: string;
+  months: number;
+  discountPct: number;
+  features: string[];
+  highlighted: boolean;
+  color: string;
+}
+
+export interface WizardDomainPrice {
+  extension: string;
+  registrationPrice: number;
+  renewalPrice: number;
+  period: string;
+  periodVi: string;
+  note: string;
+  noteVi: string;
+  isAvailable: boolean;
+}
+
 export interface LpRateConfig {
   lpPerVnd: number;       // LP earned per 1 VND spent (e.g. 500)
   vndPerLp: number;       // VND discount per 1 LP (e.g. 2)
@@ -95,6 +123,8 @@ export interface PricingConfig {
   featuresByCategory: Record<string, WizardFeature[]>;
   addons: WizardExtra[];
   infraTiers: WizardInfraTier[];
+  hostingPlans: WizardHostingPlan[];
+  domainPrices: WizardDomainPrice[];
   lpRate: LpRateConfig;
   packageLps: Record<string, number>;
   /** VAT rate (e.g. 0.10 = 10%). Falls back to 0.10 if SiteSetting not set. */

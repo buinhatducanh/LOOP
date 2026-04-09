@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
-import { syncRankFields } from "@/lib/rank/xp";
+import type { InputJsonValue } from "@/generated/prisma/internal/prismaNamespace";
+import { computeRankFieldsFromLp } from "@/lib/rank/xp";
 import { handleError } from "@/lib/api";
 
 // POST /api/admin/lp-awards/[id]/approve
@@ -42,8 +43,8 @@ export async function POST(
     const approverMemberId = approver?.teamMember?.id ?? null;
     const now = new Date();
 
-    // ── Atomic DB writes ─────────────────────────────────────────────────────────
-    await prisma.$transaction(async (tx) => {
+    // ── Atomic DB writes + audit log ─────────────────────────────────────────────
+    const rank = await prisma.$transaction(async (tx) => {
       if (action === "reject") {
         // Release locked LP back to available balance (no LP awarded on rejection)
         const member = await tx.teamMember.findUnique({
@@ -88,7 +89,7 @@ export async function POST(
           },
         });
 
-        return;
+        return null;
       }
 
       // ── Approve ──────────────────────────────────────────────────────────
@@ -144,18 +145,28 @@ export async function POST(
           },
         });
       }
-    });
 
-    // ── Rank sync (outside the main tx — reads fresh committed state) ────────────
-    // Re-sync on both approve and reject so rank always reflects current totals
-    const rank = await syncRankFields(award.memberId);
+      // 5. P1-1 FIX: sync rank fields INSIDE this tx — inline to avoid nested $transaction.
+      // Read LP totals, compute rank, update TeamMember — all inside this tx.
+      const [awardAgg, txAgg] = await Promise.all([
+        tx.lpAward.aggregate({ where: { memberId: award.memberId, status: "approved" }, _sum: { lpAmount: true } }),
+        tx.lpTransaction.aggregate({ where: { memberId: award.memberId, type: "award", status: "completed" }, _sum: { amount: true } }),
+      ]);
+      const totalLp = (awardAgg._sum.lpAmount ?? 0) + (txAgg._sum.amount ?? 0);
+      const fields = computeRankFieldsFromLp(totalLp);
+      await tx.teamMember.update({ where: { id: award.memberId }, data: fields });
 
-    await createAuditLog({
-      userId: session.userId,
-      action,
-      resource: "lp-awards",
-      resourceId: id,
-      newValues: { lpAmount: award.lpAmount, memberId: award.memberId, action, reason },
+      await tx.auditLog.create({
+        data: {
+          userId: session.userId,
+          action,
+          resource: "lp-awards",
+          resourceId: id,
+          newValues: { lpAmount: award.lpAmount, memberId: award.memberId, action, reason } as unknown as InputJsonValue,
+        },
+      });
+
+      return fields;
     });
 
     return NextResponse.json({

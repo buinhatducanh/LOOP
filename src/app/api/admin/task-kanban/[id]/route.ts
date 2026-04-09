@@ -52,7 +52,8 @@ export async function PATCH(
 
     const updateData: Record<string, unknown> = {};
 
-    if (data.column !== undefined) updateData.column = data.column;
+    // NOTE: column transitions MUST go through /task-kanban/:id/transition
+    // Direct PATCH with column is blocked to enforce FSM transition rules.
     if (data.title !== undefined) updateData.title = data.title;
     if (data.description !== undefined) updateData.description = data.description;
     if (data.priority !== undefined) updateData.priority = data.priority;
@@ -69,23 +70,28 @@ export async function PATCH(
       updateData.completedAt = data.completedAt ? new Date(data.completedAt) : null;
     }
 
-    const task = await prisma.taskKanban.update({
-      where: { id },
-      data: updateData,
-      include: {
-        order: {
-          select: { id: true, orderNumber: true, customerName: true },
+    // ⚠️ FIX: wrap task update + audit log in a transaction.
+    const task = await prisma.$transaction(async (tx) => {
+      const updated = await tx.taskKanban.update({
+        where: { id },
+        data: updateData,
+        include: {
+          order: {
+            select: { id: true, orderNumber: true, customerName: true },
+          },
         },
-      },
-    });
-
-    await createAuditLog({
-      userId: session.userId,
-      action: "update",
-      resource: "task-kanban",
-      resourceId: id,
-      oldValues: existing,
-      newValues: data,
+      });
+      await tx.auditLog.create({
+        data: {
+          userId: session.userId,
+          action: "update",
+          resource: "task-kanban",
+          resourceId: id,
+          oldValues: existing,
+          newValues: data,
+        },
+      });
+      return updated;
     });
 
     return ok(task);

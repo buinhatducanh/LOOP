@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
+import type { InputJsonValue } from "@/generated/prisma/internal/prismaNamespace";
 
 export async function GET(
   req: NextRequest,
@@ -76,27 +77,32 @@ export async function PUT(
     const existing = await prisma.referralCode.findUnique({ where: { id } });
     if (!existing) return NextResponse.json({ error: "Referral code not found" }, { status: 404 });
 
-    const updated = await prisma.referralCode.update({
-      where: { id },
-      data: {
-        name: body.name ?? existing.name,
-        campaign: body.campaign !== undefined ? body.campaign : existing.campaign,
-        lpRate: body.lpRate !== undefined ? Number(body.lpRate) : existing.lpRate,
-        minRevenue: body.minRevenue !== undefined ? Number(body.minRevenue) : existing.minRevenue,
-        maxUses: body.maxUses !== undefined ? (body.maxUses === null ? null : Number(body.maxUses)) : existing.maxUses,
-        isActive: body.isActive !== undefined ? Boolean(body.isActive) : existing.isActive,
-        expiresAt: body.expiresAt !== undefined ? (body.expiresAt ? new Date(body.expiresAt) : null) : existing.expiresAt,
-      },
-      include: { member: { select: { id: true, name: true } } },
-    });
-
-    await createAuditLog({
-      userId: session.userId,
-      action: "update",
-      resource: "referral-codes",
-      resourceId: id,
-      oldValues: existing as unknown as Record<string, unknown>,
-      newValues: body,
+    // ⚠️ FIX: wrap referral code update + audit log in a transaction.
+    const updated = await prisma.$transaction(async (tx) => {
+      const u = await tx.referralCode.update({
+        where: { id },
+        data: {
+          name: body.name ?? existing.name,
+          campaign: body.campaign !== undefined ? body.campaign : existing.campaign,
+          lpRate: body.lpRate !== undefined ? Number(body.lpRate) : existing.lpRate,
+          minRevenue: body.minRevenue !== undefined ? Number(body.minRevenue) : existing.minRevenue,
+          maxUses: body.maxUses !== undefined ? (body.maxUses === null ? null : Number(body.maxUses)) : existing.maxUses,
+          isActive: body.isActive !== undefined ? Boolean(body.isActive) : existing.isActive,
+          expiresAt: body.expiresAt !== undefined ? (body.expiresAt ? new Date(body.expiresAt) : null) : existing.expiresAt,
+        },
+        include: { member: { select: { id: true, name: true } } },
+      });
+      await tx.auditLog.create({
+        data: {
+          userId: session.userId,
+          action: "update",
+          resource: "referral-codes",
+          resourceId: id,
+          oldValues: existing as unknown as InputJsonValue,
+          newValues: body as unknown as InputJsonValue,
+        },
+      });
+      return u;
     });
 
     return NextResponse.json({ data: updated });
@@ -116,17 +122,21 @@ export async function DELETE(
     const existing = await prisma.referralCode.findUnique({ where: { id } });
     if (!existing) return NextResponse.json({ error: "Referral code not found" }, { status: 404 });
 
-    await prisma.referralCode.update({
-      where: { id },
-      data: { isActive: false },
-    });
-
-    await createAuditLog({
-      userId: session.userId,
-      action: "delete",
-      resource: "referral-codes",
-      resourceId: id,
-      oldValues: existing as unknown as Record<string, unknown>,
+    // ⚠️ FIX: wrap soft delete + audit log in a transaction.
+    await prisma.$transaction(async (tx) => {
+      await tx.referralCode.update({
+        where: { id },
+        data: { isActive: false },
+      });
+      await tx.auditLog.create({
+        data: {
+          userId: session.userId,
+          action: "delete",
+          resource: "referral-codes",
+          resourceId: id,
+          oldValues: existing as unknown as InputJsonValue,
+        },
+      });
     });
 
     return ok({ success: true });

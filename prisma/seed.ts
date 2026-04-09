@@ -432,6 +432,7 @@ async function seedServiceAttributes() {
     icon?: string | null; price?: number; isRequired?: boolean; sortOrder?: number;
     isActive?: boolean; tier?: string; xpPoints?: number;
     parentId?: string | null;
+    includedInBase?: boolean;
   }) => {
     const { parentId, ...rest } = data;
     await prisma.serviceAttribute.upsert({
@@ -444,10 +445,11 @@ async function seedServiceAttributes() {
     });
   };
 
-  // Parent groups
-  const ecommerce = { slug: "shopping-cart", name: "Shopping Cart", nameVi: "Giỏ hàng", category: "Ecommerce", categoryVi: "Thương mại điện tử", price: 0, isRequired: false, tier: "basic", sortOrder: 1 };
-  const seo = { slug: "seo", name: "SEO", nameVi: "SEO", category: "Marketing", categoryVi: "Marketing", price: 0, isRequired: false, tier: "basic", sortOrder: 10 };
-  const security = { slug: "security", name: "Security", nameVi: "Bảo mật", category: "Security", categoryVi: "Bảo mật", price: 0, isRequired: false, tier: "basic", sortOrder: 20 };
+  // Parent groups — includedInBase for each group header
+  // The base price (3,890,000₫) includes: responsive, SSL cơ bản, giỏ hàng cơ bản, SEO cơ bản, trang chủ
+  const ecommerce = { slug: "shopping-cart", name: "Shopping Cart", nameVi: "Giỏ hàng", category: "Ecommerce", categoryVi: "Thương mại điện tử", price: 0, isRequired: false, tier: "basic", sortOrder: 1, includedInBase: false };
+  const seo = { slug: "seo", name: "SEO", nameVi: "SEO", category: "Marketing", categoryVi: "Marketing", price: 0, isRequired: false, tier: "basic", sortOrder: 10, includedInBase: false };
+  const security = { slug: "security", name: "Security", nameVi: "Bảo mật", category: "Security", categoryVi: "Bảo mật", price: 0, isRequired: false, tier: "basic", sortOrder: 20, includedInBase: false };
 
   await upsertAttr(ecommerce);
   await upsertAttr(seo);
@@ -461,22 +463,79 @@ async function seedServiceAttributes() {
   }
 
   // Children — Ecommerce
-  await upsertAttr({ slug: "basic-cart", name: "Basic Cart", nameVi: "Giỏ hàng cơ bản", description: "Chức năng giỏ hàng cơ bản - thêm/sửa/xóa sản phẩm", descriptionVi: "Chức năng giỏ hàng cơ bản - thêm/sửa/xóa sản phẩm", category: "Ecommerce", categoryVi: "Thương mại điện tử", price: 500000, isRequired: false, tier: "basic", sortOrder: 2, parentId: parentMap["shopping-cart"] });
-  await upsertAttr({ slug: "advanced-cart", name: "Advanced Cart", nameVi: "Giỏ hàng nâng cao", description: "Giỏ hàng nâng cao với so sánh sản phẩm, wishlist, notify giá giảm", descriptionVi: "Giỏ hàng nâng cao với so sánh sản phẩm, wishlist, notify giá giảm", category: "Ecommerce", categoryVi: "Thương mại điện tử", price: 2000000, isRequired: false, tier: "advanced", sortOrder: 3, parentId: parentMap["shopping-cart"] });
+  // includedInBase=true → đã bao gồm trong base price 3,890,000₫ → giá 0đ
+  // advanced → tích thêm → giá extra
+  await upsertAttr({
+    slug: "basic-cart", name: "Basic Cart", nameVi: "Giỏ hàng cơ bản",
+    description: "Chức năng giỏ hàng cơ bản — thêm/sửa/xóa sản phẩm, tổng cộng giỏ hàng, cập nhật số lượng.",
+    descriptionVi: "Chức năng giỏ hàng cơ bản — thêm/sửa/xóa sản phẩm, tổng cộng giỏ hàng, cập nhật số lượng.",
+    category: "Ecommerce", categoryVi: "Thương mại điện tử",
+    price: 0, isRequired: false, tier: "basic", sortOrder: 2,
+    parentId: parentMap["shopping-cart"], includedInBase: true,
+  });
+  // Upgrade: basic-cart (0đ) → advanced-cart: delta 500,000₫ (2,000,000 - 0)
+  await upsertAttr({
+    slug: "advanced-cart", name: "Advanced Cart", nameVi: "Giỏ hàng nâng cao",
+    description: "Giỏ hàng nâng cao: so sánh sản phẩm, wishlist, thông báo giá giảm, đơn hàng theo dõi, coupon system.",
+    descriptionVi: "Giỏ hàng nâng cao: so sánh sản phẩm, wishlist, thông báo giá giảm, đơn hàng theo dõi, coupon system.",
+    category: "Ecommerce", categoryVi: "Thương mại điện tử",
+    price: 500000, isRequired: false, tier: "advanced", sortOrder: 3,
+    parentId: parentMap["shopping-cart"], includedInBase: false,
+  });
 
   // Children — SEO
-  await upsertAttr({ slug: "basic-seo", name: "Basic SEO", nameVi: "SEO cơ bản", description: "Meta tags, sitemap, schema markup cơ bản", descriptionVi: "Meta tags, sitemap, schema markup cơ bản", category: "Marketing", categoryVi: "Marketing", price: 300000, isRequired: false, tier: "basic", sortOrder: 11, parentId: parentMap["seo"] });
-  await upsertAttr({ slug: "advanced-seo", name: "Advanced SEO", nameVi: "SEO nâng cao", description: "Audit SEO toàn diện, tối ưu tốc độ, backlink strategy", descriptionVi: "Audit SEO toàn diện, tối ưu tốc độ, backlink strategy", category: "Marketing", categoryVi: "Marketing", price: 1000000, isRequired: false, tier: "advanced", sortOrder: 12, parentId: parentMap["seo"] });
+  await upsertAttr({
+    slug: "basic-seo", name: "Basic SEO", nameVi: "SEO cơ bản",
+    description: "Meta tags, sitemap.xml, schema markup cơ bản — giúp Google index website nhanh hơn.",
+    descriptionVi: "Meta tags, sitemap.xml, schema markup cơ bản — giúp Google index website nhanh hơn.",
+    category: "Marketing", categoryVi: "Marketing",
+    price: 0, isRequired: false, tier: "basic", sortOrder: 11,
+    parentId: parentMap["seo"], includedInBase: true,
+  });
+  await upsertAttr({
+    slug: "advanced-seo", name: "Advanced SEO", nameVi: "SEO nâng cao",
+    description: "Audit SEO toàn diện, tối ưu Core Web Vitals, backlink strategy, Google Search Console setup.",
+    descriptionVi: "Audit SEO toàn diện, tối ưu Core Web Vitals, backlink strategy, Google Search Console setup.",
+    category: "Marketing", categoryVi: "Marketing",
+    price: 1500000, isRequired: false, tier: "advanced", sortOrder: 12,
+    parentId: parentMap["seo"], includedInBase: false,
+  });
 
   // Children — Security
-  await upsertAttr({ slug: "basic-ssl", name: "Basic SSL", nameVi: "SSL cơ bản", description: "Chứng chỉ SSL miễn phí Let's Encrypt", descriptionVi: "Chứng chỉ SSL miễn phí Let's Encrypt", category: "Security", categoryVi: "Bảo mật", price: 0, isRequired: false, tier: "basic", sortOrder: 21, parentId: parentMap["security"] });
-  await upsertAttr({ slug: "advanced-ssl", name: "Advanced SSL", nameVi: "SSL nâng cao", description: "Chứng chỉ SSL cao cấp với bảo hiểm bảo mật", descriptionVi: "Chứng chỉ SSL cao cấp với bảo hiểm bảo mật", category: "Security", categoryVi: "Bảo mật", price: 500000, isRequired: false, tier: "advanced", sortOrder: 22, parentId: parentMap["security"] });
+  await upsertAttr({
+    slug: "basic-ssl", name: "Basic SSL", nameVi: "SSL cơ bản",
+    description: "Chứng chỉ SSL miễn phí Let's Encrypt — mã hóa dữ liệu, tăng trust trên trình duyệt.",
+    descriptionVi: "Chứng chỉ SSL miễn phí Let's Encrypt — mã hóa dữ liệu, tăng trust trên trình duyệt.",
+    category: "Security", categoryVi: "Bảo mật",
+    price: 0, isRequired: false, tier: "basic", sortOrder: 21,
+    parentId: parentMap["security"], includedInBase: true,
+  });
+  await upsertAttr({
+    slug: "advanced-ssl", name: "Advanced SSL", nameVi: "SSL nâng cao",
+    description: "Chứng chỉ SSL cao cấp (DigiCert/Comodo) kèm bảo hiểm bảo mật $10K+.",
+    descriptionVi: "Chứng chỉ SSL cao cấp (DigiCert/Comodo) kèm bảo hiểm bảo mật $10K+.",
+    category: "Security", categoryVi: "Bảo mật",
+    price: 800000, isRequired: false, tier: "advanced", sortOrder: 22,
+    parentId: parentMap["security"], includedInBase: false,
+  });
 
-  // Standalone features
+  // Standalone features — Core (all includedInBase)
+  // Tất cả features dưới đây đã bao gồm trong base price 3,890,000₫
   for (const s of [
-    { slug: "menu", name: "Navigation Menu", nameVi: "Menu điều hướng", description: "Menu điều hướng responsive", descriptionVi: "Menu điều hướng responsive", category: "Core", categoryVi: "Cốt lõi", price: 0, isRequired: true, tier: "basic", sortOrder: 30 },
-    { slug: "responsive", name: "Responsive Design", nameVi: "Thiết kế responsive", description: "Tương thích mọi thiết bị", descriptionVi: "Tương thích mọi thiết bị", category: "Core", categoryVi: "Cốt lõi", price: 0, isRequired: true, tier: "basic", sortOrder: 31 },
-    { slug: "multilang", name: "Multi-language", nameVi: "Đa ngôn ngữ", description: "Hỗ trợ nhiều ngôn ngữ", descriptionVi: "Hỗ trợ nhiều ngôn ngữ", category: "Core", categoryVi: "Cốt lõi", price: 500000, isRequired: false, tier: "basic", sortOrder: 32 },
+    { slug: "menu", name: "Navigation Menu", nameVi: "Menu điều hướng", description: "Menu điều hướng responsive — mega menu, mobile hamburger, sticky header", descriptionVi: "Menu điều hướng responsive — mega menu, mobile hamburger, sticky header", category: "Core", categoryVi: "Cốt lõi", price: 0, isRequired: true, tier: "basic", sortOrder: 30, includedInBase: true },
+    { slug: "responsive", name: "Responsive Design", nameVi: "Thiết kế responsive", description: "Thiết kế responsive — tương thích desktop, tablet, mobile", descriptionVi: "Thiết kế responsive — tương thích desktop, tablet, mobile", category: "Core", categoryVi: "Cốt lõi", price: 0, isRequired: true, tier: "basic", sortOrder: 31, includedInBase: true },
+    { slug: "home-page", name: "Home Page", nameVi: "Trang chủ", description: "Trang chủ với hero banner, giới thiệu dịch vụ, portfolio, testimonial, footer liên hệ", descriptionVi: "Trang chủ với hero banner, giới thiệu dịch vụ, portfolio, testimonial, footer liên hệ", category: "Core", categoryVi: "Cốt lõi", price: 0, isRequired: true, tier: "basic", sortOrder: 32, includedInBase: true },
+  ]) {
+    await upsertAttr(s);
+  }
+
+  // Standalone advanced features — NOT included in base (tính phí thêm)
+  for (const s of [
+    { slug: "multilang", name: "Multi-language", nameVi: "Đa ngôn ngữ", description: "Hỗ trợ tối thiểu 2 ngôn ngữ — VN + EN + thêm 3 ngôn ngữ JA/KO/ZH", descriptionVi: "Hỗ trợ tối thiểu 2 ngôn ngữ — VN + EN + thêm 3 ngôn ngữ JA/KO/ZH", category: "Core", categoryVi: "Cốt lõi", price: 800000, isRequired: false, tier: "basic", sortOrder: 33, includedInBase: false },
+    { slug: "blog-module", name: "Blog Module", nameVi: "Module Blog", description: "Quản lý bài viết — CMS, phân loại, bình luận, chia sẻ social", descriptionVi: "Quản lý bài viết — CMS, phân loại, bình luận, chia sẻ social", category: "Core", categoryVi: "Cốt lõi", price: 2000000, isRequired: false, tier: "basic", sortOrder: 34, includedInBase: false },
+    { slug: "cms", name: "CMS Integration", nameVi: "Tích hợp CMS", description: "Kết nối Sanity/Contentful — quản lý nội dung động, multi-site", descriptionVi: "Kết nối Sanity/Contentful — quản lý nội dung động, multi-site", category: "Development", categoryVi: "Phát triển", price: 3000000, isRequired: false, tier: "basic", sortOrder: 40, includedInBase: false },
+    { slug: "payment-gateway", name: "Payment Gateway", nameVi: "Cổng thanh toán", description: "Tích hợp VNPAY / MoMo / Zalopay — thanh toán QR, thẻ ATM, ví điện tử", descriptionVi: "Tích hợp VNPAY / MoMo / Zalopay — thanh toán QR, thẻ ATM, ví điện tử", category: "Ecommerce", categoryVi: "Thương mại điện tử", price: 4000000, isRequired: false, tier: "basic", sortOrder: 3, includedInBase: false },
+    { slug: "analytics", name: "Analytics Dashboard", nameVi: "Dashboard Analytics", description: "Bảng điều khiển analytics riêng — theo dõi traffic, conversions, user behavior", descriptionVi: "Bảng điều khiển analytics riêng — theo dõi traffic, conversions, user behavior", category: "Development", categoryVi: "Phát triển", price: 2500000, isRequired: false, tier: "basic", sortOrder: 41, includedInBase: false },
   ]) {
     await upsertAttr(s);
   }
@@ -569,10 +628,115 @@ async function seedPricing() {
   console.log("  ✓ Comparison Features");
 
   // ── Hosting Plans ──────────────────────────────────────────────────────────────
+  // monthlyPrice × months = basePrice; discountedPrice = basePrice × (1 - discountPct/100)
+  // Free plan: 0đ, 12 months, no discount
+  // Longer terms get progressive discounts
   const hostingPlans = [
-    { slug: "hosting-basic", name: "Basic Hosting", nameVi: "Hosting Cơ Bản", price: 150000, period: "month", periodVi: "tháng", features: ["Shared hosting", "5GB SSD storage", "SSL certificate", "Daily backup", "99.5% uptime"], featuresVi: ["Shared hosting", "5GB SSD lưu trữ", "Chứng chỉ SSL", "Sao lưu hàng ngày", "99.5% uptime"], highlighted: false, color: "#3B82F6", sortOrder: 1 },
-    { slug: "hosting-pro", name: "Pro Hosting", nameVi: "Hosting Nâng Cao", price: 350000, period: "month", periodVi: "tháng", features: ["VPS hosting", "20GB SSD storage", "SSL certificate", "CDN integration", "Daily backup", "99.9% uptime"], featuresVi: ["VPS hosting", "20GB SSD lưu trữ", "Chứng chỉ SSL", "Tích hợp CDN", "Sao lưu hàng ngày", "99.9% uptime"], highlighted: true, color: "#6366F1", sortOrder: 2 },
-    { slug: "hosting-enterprise", name: "Enterprise Hosting", nameVi: "Hosting Doanh Nghiệp", price: 900000, period: "month", periodVi: "tháng", features: ["Dedicated server", "Unlimited storage", "SSL certificate", "CDN integration", "Real-time backup", "99.99% uptime SLA", "24/7 monitoring"], featuresVi: ["Server chuyên dụng", "Không giới hạn lưu trữ", "Chứng chỉ SSL", "Tích hợp CDN", "Sao lưu real-time", "99.99% uptime SLA", "Giám sát 24/7"], highlighted: false, color: "#8B5CF6", sortOrder: 3 },
+    {
+      slug: "free",
+      name: "Free",
+      nameVi: "Miễn Phí",
+      monthlyPrice: 0,
+      period: "1 năm",
+      periodVi: "1 năm",
+      months: 12,
+      discountPct: 0,
+      features: ["Tên miền sub-domain .loops.vn", "Shared hosting", "1GB SSD", "SSL miễn phí", "99% uptime", "Cơ bản support"],
+      featuresVi: ["Tên miền sub-domain .loops.vn", "Shared hosting", "1GB SSD", "SSL miễn phí", "99% uptime", "Cơ bản support"],
+      highlighted: false,
+      color: "#6B7280",
+      sortOrder: 1,
+    },
+    {
+      slug: "starter-1yr",
+      name: "Starter",
+      nameVi: "Starter",
+      monthlyPrice: 99000,
+      period: "1 năm",
+      periodVi: "1 năm",
+      months: 12,
+      discountPct: 0,
+      features: ["Tên miền .com/.vn riêng", "Shared hosting", "5GB SSD", "SSL miễn phí", "Hỗ trợ email", "99.5% uptime", "Backup hàng tuần"],
+      featuresVi: ["Tên miền .com/.vn riêng", "Shared hosting", "5GB SSD", "SSL miễn phí", "Hỗ trợ email", "99.5% uptime", "Backup hàng tuần"],
+      highlighted: false,
+      color: "#3B82F6",
+      sortOrder: 2,
+    },
+    {
+      slug: "starter-2yr",
+      name: "Starter 2 Năm",
+      nameVi: "Starter 2 Năm",
+      monthlyPrice: 99000,
+      period: "2 năm",
+      periodVi: "2 năm",
+      months: 24,
+      discountPct: 15,
+      features: ["Tên miền .com/.vn riêng", "Shared hosting", "5GB SSD", "SSL miễn phí", "Hỗ trợ email", "99.5% uptime", "Backup hàng tuần", "Tặng 1 tháng"],
+      featuresVi: ["Tên miền .com/.vn riêng", "Shared hosting", "5GB SSD", "SSL miễn phí", "Hỗ trợ email", "99.5% uptime", "Backup hàng tuần", "Tặng 1 tháng"],
+      highlighted: false,
+      color: "#3B82F6",
+      sortOrder: 3,
+    },
+    {
+      slug: "pro-1yr",
+      name: "Pro",
+      nameVi: "Pro",
+      monthlyPrice: 199000,
+      period: "1 năm",
+      periodVi: "1 năm",
+      months: 12,
+      discountPct: 0,
+      features: ["Tên miền .com/.vn riêng", "VPS hosting", "20GB SSD", "SSL cao cấp", "CDN integration", "99.9% uptime", "Backup hàng ngày", "Priority support"],
+      featuresVi: ["Tên miền .com/.vn riêng", "VPS hosting", "20GB SSD", "SSL cao cấp", "CDN integration", "99.9% uptime", "Backup hàng ngày", "Priority support"],
+      highlighted: true,
+      color: "#6366F1",
+      sortOrder: 4,
+    },
+    {
+      slug: "pro-2yr",
+      name: "Pro 2 Năm",
+      nameVi: "Pro 2 Năm",
+      monthlyPrice: 199000,
+      period: "2 năm",
+      periodVi: "2 năm",
+      months: 24,
+      discountPct: 20,
+      features: ["Tên miền .com/.vn riêng", "VPS hosting", "20GB SSD", "SSL cao cấp", "CDN integration", "99.9% uptime", "Backup hàng ngày", "Priority support", "Tặng 2 tháng"],
+      featuresVi: ["Tên miền .com/.vn riêng", "VPS hosting", "20GB SSD", "SSL cao cấp", "CDN integration", "99.9% uptime", "Backup hàng ngày", "Priority support", "Tặng 2 tháng"],
+      highlighted: false,
+      color: "#6366F1",
+      sortOrder: 5,
+    },
+    {
+      slug: "enterprise-1yr",
+      name: "Enterprise",
+      nameVi: "Enterprise",
+      monthlyPrice: 499000,
+      period: "1 năm",
+      periodVi: "1 năm",
+      months: 12,
+      discountPct: 0,
+      features: ["Tên miền .com/.vn riêng", "Dedicated server", "Unlimited SSD", "SSL cao cấp", "CDN premium", "99.99% uptime SLA", "Backup real-time", "24/7 monitoring", "Dedicated support"],
+      featuresVi: ["Tên miền .com/.vn riêng", "Server chuyên dụng", "Không giới hạn SSD", "SSL cao cấp", "CDN premium", "99.99% uptime SLA", "Backup real-time", "24/7 monitoring", "Dedicated support"],
+      highlighted: false,
+      color: "#8B5CF6",
+      sortOrder: 6,
+    },
+    {
+      slug: "enterprise-2yr",
+      name: "Enterprise 2 Năm",
+      nameVi: "Enterprise 2 Năm",
+      monthlyPrice: 499000,
+      period: "2 năm",
+      periodVi: "2 năm",
+      months: 24,
+      discountPct: 25,
+      features: ["Tên miền .com/.vn riêng", "Dedicated server", "Unlimited SSD", "SSL cao cấp", "CDN premium", "99.99% uptime SLA", "Backup real-time", "24/7 monitoring", "Dedicated support", "Tặng 3 tháng"],
+      featuresVi: ["Tên miền .com/.vn riêng", "Server chuyên dụng", "Không giới hạn SSD", "SSL cao cấp", "CDN premium", "99.99% uptime SLA", "Backup real-time", "24/7 monitoring", "Dedicated support", "Tặng 3 tháng"],
+      highlighted: false,
+      color: "#8B5CF6",
+      sortOrder: 7,
+    },
   ];
   for (const p of hostingPlans) {
     await prisma.pricingHostingPlan.upsert({ where: { slug: p.slug }, update: p, create: p });
@@ -580,11 +744,17 @@ async function seedPricing() {
   console.log("  ✓ Hosting Plans");
 
   // ── Domain Prices ────────────────────────────────────────────────────────────
+  // inet.com prices × 1.25 for LOOP markup (as agreed with user)
+  // Source: inet.com.vn domain registration prices (2026)
   const domainPrices = [
-    { extension: ".com", registrationPrice: 280000, renewalPrice: 280000, period: "year", periodVi: "năm", sortOrder: 1 },
-    { extension: ".vn", registrationPrice: 350000, renewalPrice: 350000, period: "year", periodVi: "năm", note: "Requires Vietnamese business license (GPKD)", noteVi: "Yêu cầu GPKD", sortOrder: 2 },
-    { extension: ".com.vn", registrationPrice: 450000, renewalPrice: 450000, period: "year", periodVi: "năm", note: "Requires Vietnamese business license (GPKD)", noteVi: "Yêu cầu GPKD", sortOrder: 3 },
-    { extension: ".net", registrationPrice: 320000, renewalPrice: 320000, period: "year", periodVi: "năm", sortOrder: 4 },
+    { extension: ".com", registrationPrice: 350000, renewalPrice: 350000, period: "year", periodVi: "năm", note: "Phổ biến nhất — phù hợp mọi loại website", noteVi: "Phổ biến nhất — phù hợp mọi loại website", sortOrder: 1, isAvailable: true },
+    { extension: ".vn", registrationPrice: 438000, renewalPrice: 438000, period: "year", periodVi: "năm", note: "Yêu cầu GPKD hoặc chứng minh thư (theo quy định .VN)", noteVi: "Yêu cầu GPKD hoặc chứng minh thư (theo quy định .VN)", sortOrder: 2, isAvailable: true },
+    { extension: ".com.vn", registrationPrice: 563000, renewalPrice: 563000, period: "year", periodVi: "năm", note: "Yêu cầu GPKD", noteVi: "Yêu cầu GPKD", sortOrder: 3, isAvailable: true },
+    { extension: ".net", registrationPrice: 400000, renewalPrice: 400000, period: "year", periodVi: "năm", note: "Phù hợp website công nghệ, network services", noteVi: "Phù hợp website công nghệ, network services", sortOrder: 4, isAvailable: true },
+    { extension: ".org", registrationPrice: 438000, renewalPrice: 438000, period: "year", periodVi: "năm", note: "Thường dùng cho tổ chức phi lợi nhuận", noteVi: "Thường dùng cho tổ chức phi lợi nhuận", sortOrder: 5, isAvailable: true },
+    { extension: ".info", registrationPrice: 313000, renewalPrice: 313000, period: "year", periodVi: "năm", note: "Phù hợp blog, trang thông tin", noteVi: "Phù hợp blog, trang thông tin", sortOrder: 6, isAvailable: true },
+    { extension: ".biz", registrationPrice: 350000, renewalPrice: 350000, period: "year", periodVi: "năm", note: "Phù hợp website thương mại nhỏ", noteVi: "Phù hợp website thương mại nhỏ", sortOrder: 7, isAvailable: true },
+    { extension: ".io", registrationPrice: 875000, renewalPrice: 875000, period: "year", periodVi: "năm", note: "Phổ biến trong giới startup/tech — giá cao do demand", noteVi: "Phổ biến trong giới startup/tech — giá cao do demand", sortOrder: 8, isAvailable: true },
   ];
   for (const d of domainPrices) {
     await prisma.pricingDomainPrice.upsert({ where: { extension: d.extension }, update: d, create: d });
@@ -1043,6 +1213,8 @@ async function seedContent() {
     { key: "company_phone", value: "0378443602", group: "general" },
     { key: "company_address", value: "Ho Chi Minh City, Vietnam", group: "general" },
     { key: "vat_rate", value: "0.1", group: "pricing" },  // 10% VAT — used by /api/pricing/config
+    // Base price for Custom Web: includes responsive, SSL, cart, SEO, home page (3,890,000₫)
+    { key: "custom_web_base_price", value: "3890000", group: "pricing" },
   ];
 
   for (const setting of settings) {

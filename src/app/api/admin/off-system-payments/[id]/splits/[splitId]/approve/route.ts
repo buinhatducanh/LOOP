@@ -7,7 +7,7 @@ import { handleError, ok, notFound, badRequest } from "@/lib/api/response";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
-import { syncRankFields } from "@/lib/rank/xp";
+import { computeRankFieldsFromLp } from "@/lib/rank/xp";
 
 interface RouteParams { params: Promise<{ id: string; splitId: string }> }
 
@@ -62,8 +62,14 @@ export async function POST(_req: NextRequest, { params }: RouteParams) {
         },
       });
 
-      // Recalculate rank fields
-      await syncRankFields(updatedMember.id);
+      // P1-1 FIX: sync rank fields INSIDE this tx — inline to avoid nested $transaction.
+      const [awardAgg, txAgg] = await Promise.all([
+        tx.lpAward.aggregate({ where: { memberId: split.memberId, status: "approved" }, _sum: { lpAmount: true } }),
+        tx.lpTransaction.aggregate({ where: { memberId: split.memberId, type: "award", status: "completed" }, _sum: { amount: true } }),
+      ]);
+      const totalLp = (awardAgg._sum.lpAmount ?? 0) + (txAgg._sum.amount ?? 0);
+      const fields = computeRankFieldsFromLp(totalLp);
+      await tx.teamMember.update({ where: { id: split.memberId }, data: fields });
 
       return approvedSplit;
     });

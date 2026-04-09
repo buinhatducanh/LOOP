@@ -12,7 +12,7 @@
  */
 
 import { prisma } from "@/lib/prisma";
-import { syncRankFields } from "@/lib/rank/xp";
+import { computeRankFieldsFromLp } from "@/lib/rank/xp";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -133,11 +133,17 @@ export async function redeemLp(params: RedeemParams): Promise<RedeemResult> {
         },
       });
 
+      // P1-4 FIX: sync rank fields INSIDE this tx — inline to avoid nested $transaction.
+      const [awardAgg, txAgg] = await Promise.all([
+        tx.lpAward.aggregate({ where: { memberId, status: "approved" }, _sum: { lpAmount: true } }),
+        tx.lpTransaction.aggregate({ where: { memberId, type: "award", status: "completed" }, _sum: { amount: true } }),
+      ]);
+      const totalLp = (awardAgg._sum.lpAmount ?? 0) + (txAgg._sum.amount ?? 0);
+      const fields = computeRankFieldsFromLp(totalLp);
+      await tx.teamMember.update({ where: { id: memberId }, data: fields });
+
       return { redemption, newBalance };
     });
-
-    // P2-8: After LP spend, sync rank fields so level/XP are recalculated
-    await syncRankFields(memberId);
 
     return {
       ok: true,

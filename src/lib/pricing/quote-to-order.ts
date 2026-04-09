@@ -8,7 +8,7 @@
  *    LP is distributed to each role proportionally.
  *
  * LP Allocation Flow (triggered by recordPayment):
- *   order.lpAllocation → distribute to TeamMember(s) via LpAward records
+ *   order.lpAllocation → buildLpAwardsFromOrder → batch-insert via createMany inside tx
  */
 
 import { prisma } from "@/lib/prisma";
@@ -154,7 +154,7 @@ export async function approveQuoteAndCreateOrder(
 }
 
 /**
- * Distribute LP to team roles from a paid Order's lpAllocation.
+ * Build LP award records for team roles from a paid Order's lpAllocation.
  * Called by recordPayment after a payment is recorded.
  *
  * lpAllocation format: { sales: 30, design: 20, pm: 20, dev: 20, qa: 10 }
@@ -162,41 +162,31 @@ export async function approveQuoteAndCreateOrder(
  *
  * For each role with a percentage:
  *   1. Find the TeamMember(s) with that role in the project
- *   2. Create LpAward records for each member
+ *   2. Return LpAward create data for each member (NOT a DB write)
  *
- * NOTE: Unassigned role LP (no members with that projectRole) is logged as a warning
+ * Returns an array so the caller can batch-insert via createMany inside a tx.
+ * Unassigned role LP (no members with that projectRole) is logged as a warning
  * so ops can rebalance manually — it is NOT silently dropped.
  */
-export async function distributeLpFromOrder(
+export function buildLpAwardsFromOrder(
   orderId: string,
-  paidAmount: number
-): Promise<void> {
-  const order = await prisma.order.findUnique({
-    where: { id: orderId },
-    select: { lpAllocation: true, projectMembers: { select: { id: true, projectRoleKey: true, memberId: true } } },
-  });
-
-  if (!order?.lpAllocation) return;
-
-  let allocation: Record<string, number> = {};
-  if (order.lpAllocation && typeof order.lpAllocation === "object" && !Array.isArray(order.lpAllocation)) {
-    allocation = Object.fromEntries(
-      Object.entries(order.lpAllocation as Record<string, unknown>).map(([k, v]) => [k, Number(v) || 0])
-    );
-  } else {
-    return;
-  }
+  paidAmount: number,
+  lpAllocation: Record<string, number>,
+  projectMembers: { id: string; projectRoleKey: string; memberId: string }[]
+): { memberId: string; lpAmount: number; source: string }[] {
+  if (!lpAllocation || typeof lpAllocation !== "object") return [];
 
   // Group project members by project role
   const membersByRole = new Map<string, string[]>();
-  for (const pm of order.projectMembers ?? []) {
-    const role = pm.projectRoleKey.toLowerCase();
+  for (const pm of projectMembers ?? []) {
+    const role = (pm.projectRoleKey ?? "").toLowerCase();
     if (!membersByRole.has(role)) membersByRole.set(role, []);
     membersByRole.get(role)!.push(pm.memberId);
   }
 
-  // Distribute LP for each role that has a percentage
-  for (const [role, percent] of Object.entries(allocation)) {
+  const awards: { memberId: string; lpAmount: number; source: string }[] = [];
+
+  for (const [role, percent] of Object.entries(lpAllocation)) {
     const memberIds = membersByRole.get(role) ?? [];
     if (memberIds.length === 0) {
       // Log warning so ops knows this role's LP share was not distributed
@@ -209,17 +199,14 @@ export async function distributeLpFromOrder(
 
     for (const memberId of memberIds) {
       if (lpPerMember > 0) {
-        await prisma.lpAward.create({
-          data: {
-            memberId,
-            projectId: orderId, // using orderId as projectId for simplicity
-            lpAmount: lpPerMember,
-            expAmount: 0,
-            source: "lp_allocation",
-            status: "pending", // P2-3: PM reviews before LP is credited
-          },
+        awards.push({
+          memberId,
+          lpAmount: lpPerMember,
+          source: "lp_allocation",
         });
       }
     }
   }
+
+  return awards;
 }

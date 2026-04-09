@@ -41,6 +41,12 @@ const STATUS_COLS: Record<string, { label: string; color: string; bg: string }> 
 // "epic" được giữ trong STATUS_COLS để filter nhưng không hiển thị trên Kanban board
 const BOARD_COLS = ["backlog", "todo", "in_progress", "qa", "done"] as const;
 
+type TeamMemberOption = {
+  id: string;
+  name: string;
+  avatar?: string;
+};
+
 type Project = {
   id: string;
   name: string;
@@ -68,6 +74,8 @@ type ProjectFormData = {
   priority: string;
   status: string;
   dueDate: string;
+  startDate: string;
+  endDate: string;
 };
 
 // ── New/Edit Project Modal ─────────────────────────────────────────────────────
@@ -89,6 +97,8 @@ function ProjectModal({
     priority: project?.priority ?? "medium",
     status: project?.status ?? "backlog",
     dueDate: project?.dueDate ?? "",
+    startDate: project?.startDate ?? "",
+    endDate: project?.endDate ?? "",
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -102,10 +112,12 @@ function ProjectModal({
       const payload = {
         name: form.name.trim(),
         description: form.description.trim() || undefined,
-        assigneeId: form.assigneeId.trim() || undefined,
+        assigneeId: form.assigneeId || undefined,
         priority: form.priority,
         status: form.status,
         dueDate: form.dueDate || undefined,
+        startDate: form.startDate || undefined,
+        endDate: form.endDate || undefined,
       };
       if (isEdit) {
         await adminApi.put(`/api/admin/projects/${project!.id}`, payload);
@@ -215,12 +227,23 @@ function ProjectModal({
                 <label style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.08em", display: "block", marginBottom: 4 }}>
                   NGƯỜI PHỤ TRÁCH
                 </label>
-                <input
-                  style={inp}
+                <select
                   value={form.assigneeId}
                   onChange={(e) => setForm((f) => ({ ...f, assigneeId: e.target.value }))}
-                  placeholder="assigneeId"
-                />
+                  style={{ ...inp, cursor: "pointer" }}
+                >
+                  <option value="">Chưa gán</option>
+                  {[
+                    { id: "tm_akira", name: "Akira Tanaka" },
+                    { id: "tm_ryo", name: "Ryo Yamamoto" },
+                    { id: "tm_mei", name: "Mei Linh" },
+                    { id: "tm_yuna", name: "Yuna Park" },
+                    { id: "tm_kai", name: "Kai Nguyen" },
+                    { id: "tm_shin", name: "Shinji Võ" },
+                  ].map(m => (
+                    <option key={m.id} value={m.id}>{m.name}</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.08em", display: "block", marginBottom: 4 }}>
@@ -267,6 +290,32 @@ function ProjectModal({
                   style={inp}
                   value={form.dueDate}
                   onChange={(e) => setForm((f) => ({ ...f, dueDate: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            {/* Start date + End date */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              <div>
+                <label style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.08em", display: "block", marginBottom: 4 }}>
+                  NGÀY BẮT ĐẦU
+                </label>
+                <input
+                  type="date"
+                  style={inp}
+                  value={form.startDate}
+                  onChange={(e) => setForm((f) => ({ ...f, startDate: e.target.value }))}
+                />
+              </div>
+              <div>
+                <label style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.08em", display: "block", marginBottom: 4 }}>
+                  NGÀY KẾT THÚC
+                </label>
+                <input
+                  type="date"
+                  style={inp}
+                  value={form.endDate}
+                  onChange={(e) => setForm((f) => ({ ...f, endDate: e.target.value }))}
                 />
               </div>
             </div>
@@ -482,7 +531,28 @@ export default function ProjectsPage() {
   const [page] = useState(1);
   const [search, setSearch] = useState("");
   const [editProject, setEditProject] = useState<Project | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const qc = useQueryClient();
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const bulkDelete = useMutation({
+    mutationFn: async () => {
+      await Promise.all([...selectedIds].map(id => adminApi.delete(`/admin/projects/${id}`)));
+    },
+    onSuccess: () => {
+      setSelectedIds(new Set());
+      qc.invalidateQueries({ queryKey: ["admin", "projects"] });
+    },
+    onError: (err: unknown) => { alert(err instanceof Error ? err.message : "Xóa thất bại"); },
+  });
 
   const { data, isLoading, isFetching } = useQuery({
     queryKey: (["admin", "projects", { page, limit: 100, ...(search ? { search } : {}) }] as const),

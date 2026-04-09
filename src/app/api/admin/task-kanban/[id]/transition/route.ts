@@ -3,6 +3,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
+import { XP_PER_LP } from "@/lib/rank/xp";
 
 // Valid kanban column transitions
 const VALID_TRANSITIONS: Record<string, string[]> = {
@@ -89,7 +90,7 @@ export async function POST(
               taskId: null, // TaskKanban — no FK to Task model
               memberId: updatedTask.assigneeId,
               lpAmount: updatedTask.lp,
-              expAmount: updatedTask.lp * 10, // XP_PER_LP = 10
+              expAmount: updatedTask.lp * XP_PER_LP,
               source: "kanban_task_done",
               status: "pending",
               projectId: updatedTask.orderId,

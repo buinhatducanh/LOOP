@@ -344,25 +344,22 @@ export default function FigmaDemosPage() {
 
   const approveMutation = useMutation({
     mutationFn: async (demo: FigmaDemo) => {
-      await adminApi.patch(`/api/admin/figma-demos/${demo.id}`, {
-        status: "approved",
-        approvedAt: new Date().toISOString(),
-        approvedBy: "admin",
-      });
+      // ✅ Call the dedicated endpoint — activates project + creates default backlogs
+      await adminApi.post(`/api/admin/figma-demos/${demo.id}/approve`);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "figma-demos"] }),
+    onError: (err: unknown) => alert(err instanceof Error ? err.message : "Duyệt thất bại"),
   });
 
   const rejectMutation = useMutation({
     mutationFn: async (demo: FigmaDemo) => {
       const note = prompt("Lý do từ chối demo:");
-      if (!note) return;
-      await adminApi.patch(`/api/admin/figma-demos/${demo.id}`, {
-        status: "rejected",
-        rejectionNote: note,
-      });
+      if (!note) return; // user cancelled
+      // ✅ Call the dedicated reject endpoint — stores rejection reason
+      await adminApi.post(`/api/admin/figma-demos/${demo.id}/reject`, { reason: note });
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "figma-demos"] }),
+    onError: (err: unknown) => alert(err instanceof Error ? err.message : "Từ chối thất bại"),
   });
 
   const _deleteMutation = useMutation({
@@ -465,9 +462,7 @@ export default function FigmaDemosPage() {
             key={demo.id}
             demo={demo}
             onApprove={d => approveMutation.mutate(d)}
-            onReject={d => {
-              if (confirm(`Từ chối demo "${d.title}"?`)) rejectMutation.mutate(d);
-            }}
+            onReject={d => rejectMutation.mutate(d)}
           />
         ))
       )}

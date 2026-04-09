@@ -209,17 +209,22 @@ export const slaViolationCheck = inngest.createFunction(
     });
 
     for (const task of violatedTasks) {
-      await prisma.task.update({
-        where: { id: task.id },
-        data: { violated: true },
-      });
+      // P0-5 FIX: wrap task update + violation record in a transaction.
+      // Previously sequential writes — if crash after task.update but before
+      // taskViolation.create, task is marked violated with no audit trail.
+      await prisma.$transaction(async (tx) => {
+        await tx.task.update({
+          where: { id: task.id },
+          data: { violated: true },
+        });
 
-      await prisma.taskViolation.create({
-        data: {
-          taskId: task.id,
-          type: "deadline_missed",
-          note: `SLA deadline passed: ${task.slaDeadline?.toISOString()}`,
-        },
+        await tx.taskViolation.create({
+          data: {
+            taskId: task.id,
+            type: "deadline_missed",
+            note: `SLA deadline passed: ${task.slaDeadline?.toISOString()}`,
+          },
+        });
       });
 
       const assigneeData = task.assignee;
@@ -515,28 +520,31 @@ export const eventLpBonusAward = inngest.createFunction(
         let awardedCount = 0;
 
         for (const p of participants) {
-          // Find member by userId
+          // Find member by userId (read — stays outside tx for isolation)
           const member = await prisma.teamMember.findFirst({
             where: { user: { id: p.userId } },
             select: { id: true },
           });
           if (!member) continue;
 
-          // Award lpBonus to member
-          await prisma.lpAward.create({
-            data: {
-              memberId: member.id,
-              projectId: event.id, // LpAward.projectId is String, stores event id as reference
-              lpAmount: event.lpBonus,
-              expAmount: 0,
-              source: "event_bonus",
-              status: "approved", // auto-approved since it's a bonus
-            },
-          });
+          // ⚠️ FIX: wrap lpAward.create + teamMember.update in a transaction
+          // to prevent phantom awards (award recorded but LP not credited).
+          await prisma.$transaction(async (tx) => {
+            await tx.lpAward.create({
+              data: {
+                memberId: member.id,
+                projectId: event.id, // LpAward.projectId stores event id as reference
+                lpAmount: event.lpBonus,
+                expAmount: 0,
+                source: "event_bonus",
+                status: "approved", // auto-approved since it's a bonus
+              },
+            });
 
-          await prisma.teamMember.update({
-            where: { id: member.id },
-            data: { availableLp: { increment: event.lpBonus } },
+            await tx.teamMember.update({
+              where: { id: member.id },
+              data: { availableLp: { increment: event.lpBonus } },
+            });
           });
 
           awardedCount++;

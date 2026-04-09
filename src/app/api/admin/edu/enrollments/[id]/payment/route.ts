@@ -12,7 +12,8 @@ import { handleError } from "@/lib/api/response";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
-import { syncRankFields } from "@/lib/rank/xp";
+import type { InputJsonValue } from "@/generated/prisma/internal/prismaNamespace";
+import { computeRankFieldsFromLp } from "@/lib/rank/xp";
 
 const LP_VND_RATE = 20_000;
 
@@ -72,6 +73,7 @@ export async function POST(
       instructorMember && instructorLp > 0 ? instructorMember.id : null;
 
     // ── Atomic transaction ─────────────────────────────────────────
+    // P1-2 FIX: moved syncRankFields and createAuditLog inside this tx.
     const payment = await prisma.$transaction(async (tx) => {
       // 1. EduPayment record
       const eduPayment = await tx.eduPayment.create({
@@ -162,27 +164,36 @@ export async function POST(
             referenceType: "EduPayment",
           },
         });
+
+        // P1-1 FIX: sync rank fields INSIDE this tx — inline to avoid nested $transaction.
+        if (_instructorIdForRankSync) {
+          const [awardAgg, txAgg] = await Promise.all([
+            tx.lpAward.aggregate({ where: { memberId: instructorMember.id, status: "approved" }, _sum: { lpAmount: true } }),
+            tx.lpTransaction.aggregate({ where: { memberId: instructorMember.id, type: "award", status: "completed" }, _sum: { amount: true } }),
+          ]);
+          const totalLp = (awardAgg._sum.lpAmount ?? 0) + (txAgg._sum.amount ?? 0);
+          const fields = computeRankFieldsFromLp(totalLp);
+          await tx.teamMember.update({ where: { id: instructorMember.id }, data: fields });
+        }
       }
 
+      // P1-2 FIX: audit log inside tx — no gap between write and audit record
+      await tx.auditLog.create({
+        data: {
+          userId: session.userId,
+          action: "record_payment",
+          resource: "edu-enrollments",
+          resourceId: id,
+          newValues: {
+            amount,
+            method,
+            studentLpEarned,
+            instructorLp,
+          } as unknown as InputJsonValue,
+        },
+      });
+
       return eduPayment;
-    });
-
-    // ── Rank sync (outside tx — reads committed state, writes to TeamMember) ──
-    if (_instructorIdForRankSync) {
-      await syncRankFields(_instructorIdForRankSync);
-    }
-
-    await createAuditLog({
-      userId: session.userId,
-      action: "record_payment",
-      resource: "edu-enrollments",
-      resourceId: id,
-      newValues: {
-        amount,
-        method,
-        studentLpEarned,
-        instructorLp,
-      },
     });
 
     return NextResponse.json(

@@ -66,7 +66,16 @@ export function computeRankFieldsFromLp(
  *
  * Then persist rank fields to TeamMember and return them.
  *
- * Used by: LP award approve/reject, EDU payment.
+ * Uses $transaction to prevent race conditions:
+ *   - LP awards approved between the two reads would cause wrong rank computation
+ *   - If teamMember.update fails after reads succeed, next call will retry correctly
+ *
+ * NOTE: For callers that need the rank sync INSIDE an existing $transaction,
+ * inline this logic (read aggregates + compute + tx.teamMember.update) directly.
+ * The gap between read and write within a single tx is zero — the self-healing
+ * property only applies when called standalone (outside any tx).
+ *
+ * Used by: standalone calls (rank cron, redemption post-tx, etc.)
  */
 export async function syncRankFields(memberId: string): Promise<{
   level: number;
@@ -74,20 +83,22 @@ export async function syncRankFields(memberId: string): Promise<{
   maxXp: number;
   rank: RankKey;
 } | null> {
-  const [awardAgg, txAgg] = await Promise.all([
-    prisma.lpAward.aggregate({
-      where: { memberId, status: "approved" },
-      _sum: { lpAmount: true },
-    }),
-    prisma.lpTransaction.aggregate({
-      where: { memberId, type: "award", status: "completed" },
-      _sum: { amount: true },
-    }),
-  ]);
+  const fields = await prisma.$transaction(async (tx) => {
+    const [awardAgg, txAgg] = await Promise.all([
+      tx.lpAward.aggregate({
+        where: { memberId, status: "approved" },
+        _sum: { lpAmount: true },
+      }),
+      tx.lpTransaction.aggregate({
+        where: { memberId, type: "award", status: "completed" },
+        _sum: { amount: true },
+      }),
+    ]);
 
-  const awardLp = awardAgg._sum.lpAmount ?? 0;
-  const txLp = txAgg._sum.amount ?? 0;
-  const fields = computeRankFieldsFromLp(awardLp + txLp);
+    const awardLp = awardAgg._sum.lpAmount ?? 0;
+    const txLp = txAgg._sum.amount ?? 0;
+    return computeRankFieldsFromLp(awardLp + txLp);
+  });
 
   await prisma.teamMember.update({
     where: { id: memberId },

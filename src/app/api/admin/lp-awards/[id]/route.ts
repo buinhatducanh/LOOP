@@ -54,29 +54,34 @@ export async function PATCH(
       }
     }
 
-    const updated = await prisma.lpAward.update({
-      where: { id },
-      data: {
-        source:
-          existing.status === "pending" ? (data.source ?? undefined) : undefined,
-        lpAmount:
-          existing.status === "pending" && data.lpAmount !== undefined
-            ? parseInt(data.lpAmount)
-            : undefined,
-        expAmount:
-          existing.status === "pending" && data.expAmount !== undefined
-            ? parseInt(data.expAmount)
-            : undefined,
-      },
-    });
-
-    await createAuditLog({
-      userId: session.userId,
-      action: "update",
-      resource: "lp-awards",
-      resourceId: id,
-      oldValues: existing,
-      newValues: data,
+    // ⚠️ FIX: wrap award update + audit log in a transaction.
+    const updated = await prisma.$transaction(async (tx) => {
+      const u = await tx.lpAward.update({
+        where: { id },
+        data: {
+          source:
+            existing.status === "pending" ? (data.source ?? undefined) : undefined,
+          lpAmount:
+            existing.status === "pending" && data.lpAmount !== undefined
+              ? parseInt(data.lpAmount)
+              : undefined,
+          expAmount:
+            existing.status === "pending" && data.expAmount !== undefined
+              ? parseInt(data.expAmount)
+              : undefined,
+        },
+      });
+      await tx.auditLog.create({
+        data: {
+          userId: session.userId,
+          action: "update",
+          resource: "lp-awards",
+          resourceId: id,
+          oldValues: existing,
+          newValues: data,
+        },
+      });
+      return u;
     });
 
     return NextResponse.json({ data: updated });
@@ -101,6 +106,7 @@ export async function DELETE(
     if (!award) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
     // Atomic: reverse LP effects based on award status before deleting
+    // ⚠️ FIX: LP reversal + award delete + audit log — all in one transaction.
     await prisma.$transaction(async (tx) => {
       if (award.status === "pending") {
         // Pending awards have LP locked — release it back to available
@@ -134,14 +140,16 @@ export async function DELETE(
       // "rejected" awards: LP was never credited, nothing to reverse
 
       await tx.lpAward.delete({ where: { id } });
-    });
 
-    await createAuditLog({
-      userId: session.userId,
-      action: "delete",
-      resource: "lp-awards",
-      resourceId: id,
-      newValues: { status: award.status, lpAmount: award.lpAmount, memberId: award.memberId },
+      await tx.auditLog.create({
+        data: {
+          userId: session.userId,
+          action: "delete",
+          resource: "lp-awards",
+          resourceId: id,
+          newValues: { status: award.status, lpAmount: award.lpAmount, memberId: award.memberId },
+        },
+      });
     });
 
     return ok({ success: true });

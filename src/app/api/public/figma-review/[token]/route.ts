@@ -60,7 +60,8 @@ export async function POST(
     });
 
     if (!demo) return notFound("Not found");
-    if (demo.status !== "pending")
+    // Allow re-approval if client previously approved then requests revisions
+    if (demo.status !== "pending" && demo.status !== "approved_by_client")
       return badRequest("Demo already reviewed");
 
     if (parsed.data.action === "approve") {

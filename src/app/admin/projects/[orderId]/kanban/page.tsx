@@ -215,11 +215,13 @@ export default function ProjectKanbanPage({
       {/* Header */}
       <div className="px-6 py-5" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
         <div className="flex items-center gap-2 text-sm mb-1" style={{ color: "#475569" }}>
-          <span>Projects</span>
+          <a href="/admin/projects" style={{ color: DS.blue, textDecoration: "none" }}>Projects</a>
           <ChevronRight size={14} />
           <span style={{ color: "#94A3B8" }}>{order?.orderNumber ?? "..."}</span>
           <ChevronRight size={14} />
           <span style={{ color: DS.cosmicCyan }}>Kanban</span>
+          <ChevronRight size={14} />
+          <a href={`/admin/projects/${orderId}/handover`} style={{ color: DS.pink, textDecoration: "none", fontFamily: DS.mono, fontSize: 12 }}>Bàn giao</a>
         </div>
 
         {order && (

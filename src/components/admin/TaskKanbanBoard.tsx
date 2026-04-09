@@ -13,6 +13,7 @@ import { DS, GRD } from "@/lib/design-tokens";
 import {
   Plus, GitBranch, ExternalLink, X,
   CheckCircle2, AlertCircle, Clock, Zap,
+  Edit2, Trash2,
 } from "lucide-react";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -45,6 +46,8 @@ interface CreateTaskData {
   lp?: number;
   assigneeId?: string;
   qaId?: string;
+  branchName?: string;
+  githubLink?: string;
   column?: KanbanColumn;
 }
 
@@ -92,9 +95,15 @@ function priorityIcon(p: string) {
 function TaskCard({
   task,
   onTransition,
+  onEdit,
+  onDelete,
+  onDragStart,
 }: {
   task: TaskKanban;
   onTransition: (id: string, col: KanbanColumn) => void;
+  onEdit: (task: TaskKanban) => void;
+  onDelete: (id: string) => void;
+  onDragStart: (id: string) => void;
 }) {
   const [showMenu, setShowMenu] = useState(false);
 
@@ -105,6 +114,8 @@ function TaskCard({
         backgroundColor: "rgba(255,255,255,0.04)",
         border: "1px solid rgba(255,255,255,0.06)",
       }}
+      draggable
+      onDragStart={e => { e.dataTransfer.setData("taskId", task.id); onDragStart(task.id); }}
       onMouseEnter={e => {
         (e.currentTarget as HTMLDivElement).style.backgroundColor = "rgba(255,255,255,0.08)";
         (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(255,255,255,0.12)";
@@ -113,7 +124,7 @@ function TaskCard({
         (e.currentTarget as HTMLDivElement).style.backgroundColor = "rgba(255,255,255,0.04)";
         (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(255,255,255,0.06)";
       }}
-      onClick={() => setShowMenu(v => !v)}
+      onClick={e => { if (!(e.target as HTMLElement).closest('[data-no-menu]')) setShowMenu(v => !v); }}
     >
       {/* Priority + LP row */}
       <div className="flex items-center justify-between mb-1.5">
@@ -191,6 +202,24 @@ function TaskCard({
               <span className="font-mono text-[10px] max-w-[60px] truncate">{task.branchName}</span>
             </div>
           )}
+          <button
+            data-no-menu
+            onClick={e => { e.stopPropagation(); onEdit(task); }}
+            className="p-1 rounded opacity-0 group-hover:opacity-60 hover:!opacity-100 transition-opacity"
+            style={{ color: "#94A3B8" }}
+            title="Sửa task"
+          >
+            <Edit2 size={11} />
+          </button>
+          <button
+            data-no-menu
+            onClick={e => { e.stopPropagation(); onDelete(task.id); }}
+            className="p-1 rounded opacity-0 group-hover:opacity-60 hover:!opacity-100 transition-opacity"
+            style={{ color: "#EF4444" }}
+            title="Xóa task"
+          >
+            <Trash2 size={11} />
+          </button>
         </div>
       </div>
 
@@ -371,6 +400,28 @@ function CreateTaskModal({
               </select>
             </div>
           </div>
+
+          <div>
+            <label className="block text-sm text-gray-400 mb-1">Branch</label>
+            <input
+              value={form.branchName ?? ""}
+              onChange={e => setForm(f => ({ ...f, branchName: e.target.value || undefined }))}
+              placeholder="VD: feature/homepage"
+              className="w-full rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 outline-none"
+              style={{ backgroundColor: "#1E293B", border: "1px solid rgba(255,255,255,0.1)" }}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm text-gray-400 mb-1">GitHub Link</label>
+            <input
+              value={form.githubLink ?? ""}
+              onChange={e => setForm(f => ({ ...f, githubLink: e.target.value || undefined }))}
+              placeholder="VD: https://github.com/..."
+              className="w-full rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 outline-none"
+              style={{ backgroundColor: "#1E293B", border: "1px solid rgba(255,255,255,0.1)" }}
+            />
+          </div>
         </div>
 
         <button
@@ -380,6 +431,185 @@ function CreateTaskModal({
           style={{ background: GRD.primary }}
         >
           {create.isPending ? "Đang tạo..." : "Tạo Task"}
+        </button>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+// ── EditTaskModal ──────────────────────────────────────────────────────────────
+
+function EditTaskModal({
+  task,
+  members,
+  onClose,
+  onUpdated,
+}: {
+  task: TaskKanban;
+  members: { id: string; name: string; projectRoleKey: string }[];
+  onClose: () => void;
+  onUpdated: (task: TaskKanban) => void;
+}) {
+  const [form, setForm] = useState({
+    title: task.title,
+    description: task.description ?? "",
+    priority: task.priority,
+    lp: task.lp,
+    assigneeId: task.assigneeId ?? "",
+    qaId: task.qaId ?? "",
+    branchName: task.branchName ?? "",
+    githubLink: task.githubLink ?? "",
+  });
+  const update = useMutation({
+    mutationFn: async (data: Partial<typeof form>) => {
+      const payload: Record<string, unknown> = { title: data.title, description: data.description, priority: data.priority, lp: data.lp };
+      if (data.assigneeId) payload.assigneeId = data.assigneeId;
+      if (data.qaId) payload.qaId = data.qaId;
+      if (data.branchName) payload.branchName = data.branchName;
+      if (data.githubLink) payload.githubLink = data.githubLink;
+      const res = await adminApi.patch(`/admin/task-kanban/${task.id}`, payload);
+      return (res as { data: TaskKanban }).data;
+    },
+    onSuccess: (updated: TaskKanban) => { onUpdated(updated); },
+    onError: () => alert("Cập nhật thất bại"),
+  });
+
+  const filteredDevs = members.filter(m => ["dev", "designer"].includes(m.projectRoleKey));
+  const filteredQa = members.filter(m => m.projectRoleKey === "qa");
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ backgroundColor: "rgba(0,0,0,0.7)" }}
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.95, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        className="rounded-xl p-6 w-full max-w-md"
+        style={{ backgroundColor: "#0F172A", border: "1px solid rgba(255,255,255,0.1)" }}
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between mb-5">
+          <h3 className="text-lg font-semibold text-white">Sửa Task</h3>
+          <button onClick={onClose} className="p-1 rounded hover:bg-white/10">
+            <X size={18} color="#94A3B8" />
+          </button>
+        </div>
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm text-gray-400 mb-1">Tiêu đề *</label>
+            <input
+              value={form.title}
+              onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
+              className="w-full rounded-lg px-3 py-2 text-sm text-white outline-none"
+              style={{ backgroundColor: "#1E293B", border: "1px solid rgba(255,255,255,0.1)" }}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm text-gray-400 mb-1">Mô tả</label>
+            <textarea
+              value={form.description}
+              onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+              rows={3}
+              className="w-full rounded-lg px-3 py-2 text-sm text-white outline-none resize-none"
+              style={{ backgroundColor: "#1E293B", border: "1px solid rgba(255,255,255,0.1)" }}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm text-gray-400 mb-1">Ưu tiên</label>
+              <select
+                value={form.priority}
+                onChange={e => setForm(f => ({ ...f, priority: e.target.value as TaskKanban["priority"] }))}
+                className="w-full rounded-lg px-3 py-2 text-sm text-white outline-none"
+                style={{ backgroundColor: "#1E293B", border: "1px solid rgba(255,255,255,0.1)" }}
+              >
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+                <option value="urgent">Urgent</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm text-gray-400 mb-1">LP</label>
+              <input
+                type="number"
+                value={form.lp}
+                onChange={e => setForm(f => ({ ...f, lp: parseInt(e.target.value) || 0 }))}
+                className="w-full rounded-lg px-3 py-2 text-sm text-white outline-none"
+                style={{ backgroundColor: "#1E293B", border: "1px solid rgba(255,255,255,0.1)" }}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm text-gray-400 mb-1">Dev</label>
+              <select
+                value={form.assigneeId}
+                onChange={e => setForm(f => ({ ...f, assigneeId: e.target.value }))}
+                className="w-full rounded-lg px-3 py-2 text-sm text-white outline-none"
+                style={{ backgroundColor: "#1E293B", border: "1px solid rgba(255,255,255,0.1)" }}
+              >
+                <option value="">Chưa gán</option>
+                {filteredDevs.map(m => (
+                  <option key={m.id} value={m.id}>{m.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm text-gray-400 mb-1">QA</label>
+              <select
+                value={form.qaId}
+                onChange={e => setForm(f => ({ ...f, qaId: e.target.value }))}
+                className="w-full rounded-lg px-3 py-2 text-sm text-white outline-none"
+                style={{ backgroundColor: "#1E293B", border: "1px solid rgba(255,255,255,0.1)" }}
+              >
+                <option value="">Chưa gán</option>
+                {filteredQa.map(m => (
+                  <option key={m.id} value={m.id}>{m.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm text-gray-400 mb-1">Branch</label>
+            <input
+              value={form.branchName}
+              onChange={e => setForm(f => ({ ...f, branchName: e.target.value }))}
+              placeholder="VD: feature/homepage"
+              className="w-full rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 outline-none"
+              style={{ backgroundColor: "#1E293B", border: "1px solid rgba(255,255,255,0.1)" }}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm text-gray-400 mb-1">GitHub Link</label>
+            <input
+              value={form.githubLink}
+              onChange={e => setForm(f => ({ ...f, githubLink: e.target.value }))}
+              placeholder="VD: https://github.com/..."
+              className="w-full rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 outline-none"
+              style={{ backgroundColor: "#1E293B", border: "1px solid rgba(255,255,255,0.1)" }}
+            />
+          </div>
+        </div>
+
+        <button
+          onClick={() => form.title && update.mutate(form)}
+          disabled={!form.title || update.isPending}
+          className="mt-5 w-full py-2.5 rounded-lg text-sm font-semibold text-white transition-all disabled:opacity-50"
+          style={{ background: GRD.primary }}
+        >
+          {update.isPending ? "Đang lưu..." : "Lưu thay đổi"}
         </button>
       </motion.div>
     </motion.div>
@@ -409,6 +639,37 @@ export function TaskKanbanBoard({ orderId, members = [], className = "" }: TaskK
   });
 
   const [showCreate, setShowCreate] = useState(false);
+  const [showEdit, setShowEdit] = useState<TaskKanban | null>(null);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [filterPriority, setFilterPriority] = useState<string>("");
+  const [filterDev, setFilterDev] = useState<string>("");
+  const [filterQa, setFilterQa] = useState<string>("");
+
+  const deleteTask = useMutation({
+    mutationFn: (id: string) => adminApi.delete(`/admin/task-kanban/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["task-kanban", orderId] }),
+  });
+
+  const handleEdit = (task: TaskKanban) => setShowEdit(task);
+  const handleDelete = (id: string) => {
+    if (confirm("Xóa task này?")) deleteTask.mutate(id);
+  };
+  const handleDragStart = (id: string) => setDraggingId(id);
+  const handleDragEnd = () => setDraggingId(null);
+
+  const handleDrop = (e: React.DragEvent, column: KanbanColumn) => {
+    e.preventDefault();
+    const taskId = e.dataTransfer.getData("taskId");
+    if (taskId) transition.mutate({ id: taskId, column });
+    setDraggingId(null);
+  };
+
+  const filteredTasks = tasks.filter(t => {
+    if (filterPriority && t.priority !== filterPriority) return false;
+    if (filterDev && t.assigneeId !== filterDev) return false;
+    if (filterQa && t.qaId !== filterQa) return false;
+    return true;
+  });
 
   const handleTransition = (id: string, toColumn: KanbanColumn) => {
     transition.mutate({ id, column: toColumn });
@@ -432,11 +693,60 @@ export function TaskKanbanBoard({ orderId, members = [], className = "" }: TaskK
     );
   }
 
+  const allDevs = members.filter(m => ["dev", "designer"].includes(m.projectRoleKey));
+  const allQa = members.filter(m => m.projectRoleKey === "qa");
+
+  const hasFilter = filterPriority || filterDev || filterQa;
+
   return (
     <>
+      {/* Filter bar */}
+      <div className="flex items-center gap-3 mb-4 flex-wrap">
+        <span className="text-xs font-mono" style={{ color: DS.text4 }}>Lọc:</span>
+        <select
+          value={filterPriority}
+          onChange={e => setFilterPriority(e.target.value)}
+          className="rounded px-2 py-1 text-xs text-white outline-none"
+          style={{ backgroundColor: DS.bgCard, border: "1px solid " + DS.border }}
+        >
+          <option value="">Tất cả ưu tiên</option>
+          <option value="urgent">Urgent</option>
+          <option value="high">High</option>
+          <option value="medium">Medium</option>
+          <option value="low">Low</option>
+        </select>
+        <select
+          value={filterDev}
+          onChange={e => setFilterDev(e.target.value)}
+          className="rounded px-2 py-1 text-xs text-white outline-none"
+          style={{ backgroundColor: DS.bgCard, border: "1px solid " + DS.border }}
+        >
+          <option value="">Tất cả Dev</option>
+          {allDevs.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+        </select>
+        <select
+          value={filterQa}
+          onChange={e => setFilterQa(e.target.value)}
+          className="rounded px-2 py-1 text-xs text-white outline-none"
+          style={{ backgroundColor: DS.bgCard, border: "1px solid " + DS.border }}
+        >
+          <option value="">Tất cả QA</option>
+          {allQa.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+        </select>
+        {hasFilter && (
+          <button
+            onClick={() => { setFilterPriority(""); setFilterDev(""); setFilterQa(""); }}
+            className="text-xs px-2 py-1 rounded"
+            style={{ backgroundColor: DS.red + "20", color: DS.red, border: "1px solid " + DS.red + "40" }}
+          >
+            Clear
+          </button>
+        )}
+      </div>
+
       <div className={`flex gap-4 overflow-x-auto pb-4 ${className}`}>
         {COLUMNS.map(col => {
-          const colTasks = tasks.filter(t => t.column === col.id);
+          const colTasks = filteredTasks.filter(t => t.column === col.id);
           const isBacklog = col.id === "backlog";
 
           return (
@@ -479,7 +789,13 @@ export function TaskKanbanBoard({ orderId, members = [], className = "" }: TaskK
               </div>
 
               {/* Task list */}
-              <div className="flex-1 overflow-y-auto px-3 py-3" style={{ maxHeight: "calc(100vh - 320px)" }}>
+              <div
+                className="flex-1 overflow-y-auto px-3 py-3"
+                style={{ maxHeight: "calc(100vh - 320px)" }}
+                onDragOver={e => e.preventDefault()}
+                onDrop={e => handleDrop(e, col.id)}
+                onDragEnd={handleDragEnd}
+              >
                 <AnimatePresence>
                   {colTasks.map(task => (
                     <motion.div
@@ -490,7 +806,7 @@ export function TaskKanbanBoard({ orderId, members = [], className = "" }: TaskK
                       exit={{ opacity: 0, scale: 0.95 }}
                       transition={{ duration: 0.15 }}
                     >
-                      <TaskCard task={task} onTransition={handleTransition} />
+                      <TaskCard task={task} onTransition={handleTransition} onEdit={handleEdit} onDelete={handleDelete} onDragStart={handleDragStart} />
                     </motion.div>
                   ))}
                 </AnimatePresence>
@@ -513,6 +829,14 @@ export function TaskKanbanBoard({ orderId, members = [], className = "" }: TaskK
             members={members}
             onClose={() => setShowCreate(false)}
             onCreated={handleCreated}
+          />
+        )}
+        {showEdit && (
+          <EditTaskModal
+            task={showEdit}
+            members={members}
+            onClose={() => setShowEdit(null)}
+            onUpdated={task => { qc.invalidateQueries({ queryKey: ["task-kanban", orderId] }); setShowEdit(null); }}
           />
         )}
       </AnimatePresence>

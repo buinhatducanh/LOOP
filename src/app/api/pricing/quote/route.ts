@@ -22,6 +22,12 @@ const quoteSchema = z.object({
   lpUsed: z.number().int().min(0).default(0),
   paymentPlan: z.enum(["50", "100"]).optional(),
   notes: z.string().optional(),
+  /** Pre-selected hosting plan slug */
+  hostingPlanSlug: z.string().optional(),
+  /** Domain name the customer wants (e.g. "mysite.vn") */
+  domainName: z.string().optional(),
+  /** "now" = purchase domain now; "after_handover" = purchase after project delivery */
+  domainPurchaseTime: z.enum(["now", "after_handover"]).default("now"),
 });
 
 export async function POST(req: NextRequest) {
@@ -44,6 +50,9 @@ export async function POST(req: NextRequest) {
         lpUsed,                          // stored for downstream approval flow
         paymentPlan: validated.paymentPlan || null,
         notes: validated.notes || null,
+        hostingPlanSlug: validated.hostingPlanSlug || null,
+        domainName: validated.domainName || null,
+        domainPurchaseTime: validated.domainPurchaseTime,
       },
     });
 

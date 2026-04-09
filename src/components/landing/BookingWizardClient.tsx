@@ -17,7 +17,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { DS, GRD } from "@/lib/design-tokens";
 import {
   Globe, Code2, BarChart3, Target, Check, ArrowRight, ArrowLeft,
-  Users, Calendar, Layers, Sparkles, Shield, Plus, Minus,
+  Users, Calendar, Layers, Sparkles, Shield, Plus, Minus, X, ExternalLink, Zap, Eye,
 } from "lucide-react";
 import type { PricingConfig } from "@/lib/types/booking";
 
@@ -28,13 +28,18 @@ interface WizardService {
   basePrice: number; color: string; perMonth?: boolean;
 }
 interface WizardPackage {
-  id: string; name: string; multiplier: number; color: string;
+  id: string; name: string;
+  /** Reserved for future use — currently all custom web uses fixed basePrice (3,890,000₫). */
+  multiplier: number;
+  color: string;
   desc: string; features: string[]; lp: number; popular?: boolean;
 }
 interface WizardFeature {
   id: string; label: string; labelEn?: string; price: number;
   category: string; xpPoints?: number; tier?: string;
   categoryEn?: string; parentId?: string | null;
+  /** true = bao gồm trong 3,890,000₫ → hiển thị "✓ Đã bao gồm" thay vì giá */
+  includedInBase?: boolean;
 }
 interface WizardTalent {
   id: string; name: string; role: string; rank: string;
@@ -42,6 +47,28 @@ interface WizardTalent {
 }
 interface WizardExtra {
   id: string; label: string; price: number; color: string;
+}
+interface WizardHostingPlan {
+  id: string; slug: string; name: string;
+  monthlyPrice: number;
+  basePrice: number;          // monthlyPrice × months (before discount)
+  discountedPrice: number;     // after discountPct
+  period: string;
+  months: number;
+  discountPct: number;
+  features: string[];
+  highlighted: boolean;
+  color: string;
+}
+interface WizardDomainPrice {
+  extension: string;
+  registrationPrice: number;
+  renewalPrice: number;
+  period: string;
+  periodVi: string;
+  note: string;
+  noteVi: string;
+  isAvailable: boolean;
 }
 interface LpRateConfig {
   lpPerVnd: number; vndPerLp: number;
@@ -171,19 +198,33 @@ function ProgressBar({ step, stepLabels }: { step: number; stepLabels: string[] 
 // ── Price Sidebar ────────────────────────────────────────────────────────────
 
 function PriceSidebar({
-  service, pkg, featureOptions, features, extras, extraOptions, lpDiscount, lpBalance, lpRate, vatRate,
+  service, featureOptions, features, extras, extraOptions, lpDiscount, lpBalance, lpRate, vatRate,
+  selectedHostingPlan, hostingPlans, domainPrices, domainName, domainPurchaseNow,
 }: {
-  service: WizardService | null; pkg: WizardPackage | null;
+  service: WizardService | null;
   featureOptions: WizardFeature[]; features: string[];
   extraOptions: WizardExtra[]; extras: string[];
   lpDiscount: number; lpBalance: number; lpRate: LpRateConfig;
   /** VAT rate from pricing config (e.g. 0.10 = 10%). Used for grand total display. */
   vatRate?: number;
+  selectedHostingPlan: string;
+  hostingPlans: WizardHostingPlan[];
+  domainPrices: WizardDomainPrice[];
+  domainName: string;
+  domainPurchaseNow: boolean;
 }) {
-  const basePrice = service ? service.basePrice * (pkg?.multiplier ?? 1) : 0;
-  const featurePrices = featureOptions.filter(f => features.includes(f.id)).reduce((s, f) => s + f.price, 0);
+  const basePrice = service?.basePrice ?? 0;
+  // Only charge non-included features
+  const featurePrices = featureOptions
+    .filter(f => features.includes(f.id) && !f.includedInBase)
+    .reduce((s, f) => s + f.price, 0);
   const extraPrices = extraOptions.filter(e => extras.includes(e.id)).reduce((s, e) => s + e.price, 0);
-  const subtotal = basePrice + featurePrices + extraPrices;
+  const hosting = hostingPlans.find(h => h.slug === selectedHostingPlan);
+  const hostingCost = hosting?.discountedPrice ?? 0;
+  const domainCost = domainPurchaseNow && domainName
+    ? (domainPrices.find(d => domainName.endsWith(d.extension))?.registrationPrice ?? 0)
+    : 0;
+  const subtotal = basePrice + featurePrices + extraPrices + hostingCost + domainCost;
   const lpApplied = calcLpDiscount(subtotal, lpDiscount, lpBalance, lpRate);
   const totalBeforeVat = subtotal - lpApplied.vndDiscount;
   // VAT is always set (defaults to 0.10 from API config or component state)
@@ -211,16 +252,22 @@ function PriceSidebar({
               <span style={{ color: DS.text, fontSize: 12, fontFamily: DS.mono }}>{fmtVND(service.basePrice)}</span>
             </div>
           )}
-          {pkg && pkg.multiplier > 1 && (
-            <div className="flex justify-between">
-              <span style={{ color: DS.text3, fontSize: 12 }}>Gói {pkg.name}</span>
-              <span style={{ color: DS.blue, fontSize: 12, fontFamily: DS.mono }}>×{pkg.multiplier}</span>
-            </div>
-          )}
           {featurePrices > 0 && (
             <div className="flex justify-between">
               <span style={{ color: DS.text3, fontSize: 12 }}>Tính năng thêm ({features.length})</span>
               <span style={{ color: DS.text, fontSize: 12, fontFamily: DS.mono }}>+{fmtVND(featurePrices)}</span>
+            </div>
+          )}
+          {hostingCost > 0 && (
+            <div className="flex justify-between">
+              <span style={{ color: DS.text3, fontSize: 12 }}>{hosting?.name ?? "Hosting"}</span>
+              <span style={{ color: DS.text, fontSize: 12, fontFamily: DS.mono }}>+{fmtVND(hostingCost)}</span>
+            </div>
+          )}
+          {domainCost > 0 && (
+            <div className="flex justify-between">
+              <span style={{ color: DS.text3, fontSize: 12 }}>Domain {domainName}</span>
+              <span style={{ color: DS.text, fontSize: 12, fontFamily: DS.mono }}>+{fmtVND(domainCost)}</span>
             </div>
           )}
           {extraPrices > 0 && (
@@ -323,138 +370,985 @@ function StepService({ services, selected, onSelect }: { services: WizardService
   );
 }
 
-// ── Step 1: Package + Add-ons (merged from StepPackage + StepFeatures + StepExtras) ──
+// ── Add-on Service Modal ─────────────────────────────────────────────────────────
+
+type AddonModalType = "hosting" | "domain" | "ga4" | "maintenance" | "training" | "priority" | null;
+
+interface AddonModalState {
+  type: AddonModalType;
+  isOpen: boolean;
+}
+
+function AddonModalOverlay({ isOpen, onClose, children }: { isOpen: boolean; onClose: () => void; children: React.ReactNode }) {
+  if (!isOpen) return null;
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        style={{
+          position: "fixed", inset: 0, zIndex: 100,
+          background: "rgba(0,0,0,0.7)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          padding: 16,
+          backdropFilter: "blur(8px)",
+        }}
+        onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      >
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95, y: 10 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.95, y: 10 }}
+          transition={{ duration: 0.2 }}
+          style={{
+            background: "rgba(15,23,42,0.98)",
+            border: `1px solid ${DS.border}`,
+            borderRadius: 20,
+            maxWidth: 640, width: "100%",
+            maxHeight: "85vh",
+            overflowY: "auto",
+            boxShadow: `0 24px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(107,61,245,0.2)`,
+          }}
+        >
+          {children}
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+// Modal title bar
+function ModalHeader({ title, subtitle, color, onClose }: { title: string; subtitle?: string; color: string; onClose: () => void }) {
+  return (
+    <div style={{ padding: "24px 24px 0" }}>
+      <div className="flex items-start justify-between">
+        <div>
+          <div style={{ color, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.15em", marginBottom: 6 }}>
+            DỊCH VỤ BỔ SUNG
+          </div>
+          <h3 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 20, fontWeight: 900, letterSpacing: "0.04em" }}>
+            {title}
+          </h3>
+          {subtitle && <p style={{ color: DS.text3, fontSize: 13, marginTop: 4 }}>{subtitle}</p>}
+        </div>
+        <button
+          onClick={onClose}
+          style={{
+            width: 32, height: 32, borderRadius: 8,
+            background: "rgba(255,255,255,0.06)", border: `1px solid ${DS.border}`,
+            color: DS.text3, cursor: "pointer", display: "flex",
+            alignItems: "center", justifyContent: "center", flexShrink: 0,
+          }}
+        >
+          <X size={14} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── Step 1: Feature Table + Add-on Selection (no packages) ─────────────────────
 
 function StepAddons({
-  packages, service, pkgId, onSelectPkg,
   featureOptions, selectedFeatures, onToggleFeature,
   extraOptions, selectedExtras, onToggleExtra,
+  // Hosting
+  hostingPlans, selectedHostingPlan, onSelectHostingPlan,
+  // Domain
+  domainPrices, domainName, onSetDomainName, domainPurchaseNow, onSetDomainPurchaseNow,
+  // Modal state
+  modal, setModal,
 }: {
-  packages: WizardPackage[]; service: WizardService | null;
-  pkgId: string; onSelectPkg: (id: string) => void;
   featureOptions: WizardFeature[]; selectedFeatures: string[]; onToggleFeature: (id: string) => void;
   extraOptions: WizardExtra[]; selectedExtras: string[]; onToggleExtra: (id: string) => void;
+  hostingPlans: WizardHostingPlan[];
+  selectedHostingPlan: string; onSelectHostingPlan: (slug: string) => void;
+  domainPrices: WizardDomainPrice[];
+  domainName: string; onSetDomainName: (name: string) => void;
+  domainPurchaseNow: boolean; onSetDomainPurchaseNow: (now: boolean) => void;
+  modal: AddonModalState; setModal: (s: AddonModalState) => void;
 }) {
   const t = useTranslations("BookingPage");
-  const featureOpts = featureOptions;
-  const extraOpts = extraOptions;
-  const hasAnyAddon = featureOpts.length > 0 || extraOpts.length > 0;
+
+  // ── Feature table ────────────────────────────────────────────────────────────
+  const grouped = featureOptions.reduce<Record<string, WizardFeature[]>>((acc, f) => {
+    const cat = f.category || "Khác";
+    if (!acc[cat]) acc[cat] = [];
+    acc[cat]!.push(f);
+    return acc;
+  }, {});
+
+  const renderFeatureRow = (opt: WizardFeature, isSelected: boolean) => (
+    <motion.button
+      key={opt.id}
+      onClick={() => onToggleFeature(opt.id)}
+      className="w-full text-left p-3 rounded-xl flex items-center gap-3"
+      style={{
+        background: isSelected ? "rgba(59,130,246,0.08)" : "rgba(15,23,42,0.4)",
+        border: isSelected ? "1.5px solid rgba(59,130,246,0.3)" : `1px solid ${DS.border}`,
+        cursor: "pointer",
+      }}
+      whileHover={{ scale: 1.003 }}
+    >
+      <div className="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0"
+        style={{ background: isSelected ? DS.blue : "rgba(255,255,255,0.05)", border: isSelected ? "none" : `1px solid ${DS.border}` }}>
+        {isSelected && <Check size={11} style={{ color: "#fff" }} />}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div style={{ color: DS.text, fontSize: 13, fontWeight: 600 }}>{opt.label}</div>
+        {opt.labelEn && <div style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, marginTop: 1 }}>{opt.labelEn}</div>}
+      </div>
+      {opt.includedInBase ? (
+        <div className="px-2 py-1 rounded-md flex items-center gap-1 flex-shrink-0"
+          style={{ background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.25)" }}>
+          <Check size={10} style={{ color: DS.green }} />
+          <span style={{ color: DS.green, fontSize: 10, fontFamily: DS.mono, fontWeight: 600 }}>Đã bao gồm</span>
+        </div>
+      ) : (
+        <div style={{ color: DS.blue, fontSize: 12, fontFamily: DS.mono, fontWeight: 700, flexShrink: 0 }}>
+          +{fmtVND(opt.price)}
+        </div>
+      )}
+    </motion.button>
+  );
+
+  // ── Add-on service card (opens popup) ───────────────────────────────────────
+  const renderAddonCard = (
+    type: AddonModalType,
+    label: string,
+    price: number,
+    icon: React.ReactNode,
+    color: string,
+    description: string,
+    isSelected: boolean,
+  ) => (
+    <motion.button
+      key={type}
+      onClick={() => setModal({ type, isOpen: true })}
+      className="w-full text-left p-4 rounded-xl flex items-start gap-4"
+      style={{
+        background: isSelected ? `${color}0C` : "rgba(15,23,42,0.5)",
+        border: isSelected ? `1.5px solid ${color}50` : `1px solid ${DS.border}`,
+        cursor: "pointer",
+      }}
+      whileHover={{ scale: 1.01 }}
+    >
+      <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${color}15`, color }}>
+        {icon}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center justify-between mb-1">
+          <span style={{ color: DS.text, fontSize: 14, fontWeight: 700 }}>{label}</span>
+          {isSelected && <Check size={14} style={{ color }} />}
+        </div>
+        <div style={{ color: DS.text3, fontSize: 12, marginBottom: 6 }}>{description}</div>
+        {price > 0 && (
+          <div style={{ color, fontSize: 13, fontFamily: DS.mono, fontWeight: 700 }}>
+            +{fmtVND(price)}
+          </div>
+        )}
+        {isSelected && (
+          <div style={{ color: DS.green, fontSize: 11, marginTop: 4 }}>✓ Đã chọn — click để sửa</div>
+        )}
+      </div>
+    </motion.button>
+  );
+
+  // ── Hosting popup content ─────────────────────────────────────────────────
+  const hostingSelectedPlan = hostingPlans.find(h => h.slug === selectedHostingPlan);
+
+  // ── Domain matching ────────────────────────────────────────────────────────
+  const isValidDomain = domainName.length === 0 || domainName.includes(".");
+  const matchedDomainExt = domainName.includes(".")
+    ? domainPrices.find(d => domainName.endsWith(d.extension))
+    : null;
 
   return (
     <div>
-      {/* Package section */}
-      <h3 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 22, fontWeight: 900, letterSpacing: "0.05em", marginBottom: 8 }}>{t("bookingPackage")}</h3>
-      <p style={{ color: DS.text3, fontSize: 14, marginBottom: 24 }}>{t("selectPackage")}</p>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {packages.map(pkg => {
-          const price = (service?.basePrice ?? 0) * pkg.multiplier;
-          return (
-            <motion.button
-              key={pkg.id}
-              onClick={() => onSelectPkg(pkg.id)}
-              className="text-left p-5 rounded-2xl relative overflow-hidden"
-              style={{
-                background: pkgId === pkg.id ? `${pkg.color}10` : "rgba(15,23,42,0.6)",
-                border: pkgId === pkg.id ? `1.5px solid ${pkg.color}60` : pkg.popular ? "1px solid rgba(59,130,246,0.3)" : `1px solid ${DS.border}`,
-                boxShadow: pkgId === pkg.id ? `0 0 24px ${pkg.color}15` : "none",
-                cursor: "pointer",
-              }}
-              whileHover={{ scale: 1.015 }}
-            >
-              {pkg.popular && (
-                <div className="absolute top-0 left-0 right-0 py-1 text-center" style={{ background: GRD.primary, fontSize: 9, color: "#fff", fontFamily: DS.mono, letterSpacing: "0.15em" }}>
-                  ★ {t("popularMost")}
-                </div>
-              )}
-              <div style={{ marginTop: pkg.popular ? 20 : 0 }}>
-                <div style={{ color: pkg.color, fontSize: 11, fontFamily: DS.mono, fontWeight: 700, letterSpacing: "0.12em", marginBottom: 8 }}>{pkg.name.toUpperCase()}</div>
-                <div style={{ color: DS.text, fontFamily: DS.heading, fontSize: 20, fontWeight: 900, marginBottom: 4 }}>{fmtVND(price)}</div>
-                {service?.perMonth && <div style={{ color: DS.text5, fontSize: 11, fontFamily: DS.mono, marginBottom: 8 }}>/tháng</div>}
-                <div style={{ color: DS.text3, fontSize: 12, marginBottom: 14 }}>{pkg.desc}</div>
-                <div className="space-y-2">
-                  {pkg.features.map(f => (
-                    <div key={f} className="flex items-center gap-2">
-                      <Check size={11} style={{ color: pkg.color, flexShrink: 0 }} />
-                      <span style={{ color: DS.text3, fontSize: 11 }}>{f}</span>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-4 pt-3" style={{ borderTop: `1px solid ${DS.border}` }}>
-                  <span style={{ color: DS.purple, fontSize: 10, fontFamily: DS.mono }}>◈ +{pkg.lp} LP/tháng</span>
-                </div>
-              </div>
-              {pkgId === pkg.id && (
-                <div className="absolute top-3 right-3 w-6 h-6 rounded-full flex items-center justify-center" style={{ background: pkg.color }}>
-                  <Check size={12} style={{ color: "#fff" }} />
-                </div>
-              )}
-            </motion.button>
+      {/* Header: base price */}
+      <div className="mb-6 p-4 rounded-xl" style={{ background: "rgba(59,130,246,0.07)", border: "1px solid rgba(59,130,246,0.18)" }}>
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div>
+            <div style={{ color: DS.blue, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.15em", marginBottom: 4 }}>
+              WEBSITE TÙY CHỈNH
+            </div>
+            <div style={{ color: DS.text, fontFamily: DS.heading, fontSize: 28, fontWeight: 900 }}>
+              {fmtVND(3_890_000)}
+              <span style={{ color: DS.text4, fontSize: 13, fontFamily: DS.mono, fontWeight: 400, marginLeft: 8 }}>/ trọn gói</span>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {["Responsive", "SSL", "Trang chủ", "Giỏ hàng", "SEO"].map(item => (
+              <span key={item} className="px-2 py-0.5 rounded-md text-xs"
+                style={{ background: "rgba(34,197,94,0.12)", color: DS.green, border: "1px solid rgba(34,197,94,0.2)" }}>
+                ✓ {item}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Add-on service cards ──────────────────────────────────────────── */}
+      <div className="flex items-center gap-3 mb-4">
+        <div style={{ width: 3, height: 16, background: DS.pink, borderRadius: 2 }} />
+        <h4 style={{ color: DS.text2, fontSize: 12, fontFamily: DS.mono, letterSpacing: "0.12em" }}>
+          DỊCH VỤ BỔ SUNG (NHẤN ĐỂ CHỌN)
+        </h4>
+        <div className="flex-1 h-px" style={{ background: DS.border }} />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-8">
+        {extraOptions.map(ext => {
+          const icons: Record<string, React.ReactNode> = {
+            hosting: <Globe size={20} />,
+            maintenance: <Shield size={20} />,
+            "analytics-setup": <BarChart3 size={20} />,
+            training: <Users size={20} />,
+            priority: <Sparkles size={20} />,
+            "seo-basic": <Target size={20} />,
+          };
+          const colors: Record<string, string> = {
+            hosting: DS.purple,
+            maintenance: DS.cyan,
+            "analytics-setup": DS.amber,
+            training: DS.green,
+            priority: DS.pink,
+            "seo-basic": DS.blue,
+          };
+          const descriptions: Record<string, string> = {
+            hosting: "Hosting từ Free → Enterprise — chọn gói phù hợp nhu cầu",
+            maintenance: "Bảo trì & cập nhật website 1 năm",
+            "analytics-setup": "Setup Google Analytics 4 — theo dõi traffic & conversions",
+            training: "Training 1-1 với đội ngũ LOOP (3 buổi)",
+            priority: "Priority support 24/7 trong 6 tháng đầu",
+            "seo-basic": "SEO cơ bản & Google submission",
+          };
+          return renderAddonCard(
+            ext.id as AddonModalType,
+            ext.label,
+            ext.price,
+            icons[ext.id] ?? <Zap size={20} />,
+            colors[ext.id] ?? DS.purple,
+            descriptions[ext.id] ?? ext.label,
+            selectedExtras.includes(ext.id),
           );
         })}
       </div>
 
-      {/* Optional add-ons section */}
-      {hasAnyAddon && (
-        <div style={{ marginTop: 40 }}>
-          <h4 style={{ color: DS.text2, fontSize: 14, fontFamily: DS.mono, letterSpacing: "0.1em", marginBottom: 6 }}>{t("addonsTitle").toUpperCase()}</h4>
-          <p style={{ color: DS.text4, fontSize: 12, marginBottom: 16 }}>{t("addonsDesc")}</p>
+      {/* ── Feature table ───────────────────────────────────────────────── */}
+      <div className="flex items-center gap-3 mb-4">
+        <div style={{ width: 3, height: 16, background: GRD.primary, borderRadius: 2 }} />
+        <h4 style={{ color: DS.text2, fontSize: 12, fontFamily: DS.mono, letterSpacing: "0.12em" }}>
+          TÍNH NĂNG NÂNG CAO
+        </h4>
+        <div className="flex-1 h-px" style={{ background: DS.border }} />
+      </div>
+
+      {Object.entries(grouped).map(([cat, opts]) => (
+        <div key={cat} style={{ marginBottom: 24 }}>
+          <div className="flex items-center gap-2 mb-2">
+            <div style={{ width: 2, height: 12, background: DS.blue, borderRadius: 1 }} />
+            <span style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.1em" }}>
+              {cat.toUpperCase()}
+            </span>
+          </div>
+          <div className="space-y-2">
+            {opts.map(opt => renderFeatureRow(opt, selectedFeatures.includes(opt.id)))}
+          </div>
+        </div>
+      ))}
+
+      {/* ── MODALS ──────────────────────────────────────────────────────── */}
+
+      {/* HOSTING MODAL */}
+      <AddonModalOverlay isOpen={modal.type === "hosting"} onClose={() => setModal({ type: null, isOpen: false })}>
+        <ModalHeader
+          title="Chọn gói Hosting"
+          subtitle="Chọn gói hosting phù hợp nhu cầu website của bạn"
+          color={DS.purple}
+          onClose={() => setModal({ type: null, isOpen: false })}
+        />
+        <div style={{ padding: "20px 24px 24px" }}>
           <div className="space-y-3">
-            {featureOpts.map(opt => (
-              <motion.button
-                key={opt.id}
-                onClick={() => onToggleFeature(opt.id)}
-                className="w-full text-left p-4 rounded-xl flex items-center gap-4"
-                style={{
-                  background: selectedFeatures.includes(opt.id) ? "rgba(59,130,246,0.1)" : "rgba(15,23,42,0.5)",
-                  border: selectedFeatures.includes(opt.id) ? "1.5px solid rgba(59,130,246,0.4)" : `1px solid ${DS.border}`,
-                  cursor: "pointer",
-                }}
-                whileHover={{ scale: 1.005 }}
-              >
-                <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: selectedFeatures.includes(opt.id) ? "rgba(59,130,246,0.2)" : "rgba(255,255,255,0.05)", color: selectedFeatures.includes(opt.id) ? DS.blue : DS.text4 }}>
-                  {selectedFeatures.includes(opt.id) ? <Check size={14} /> : <Plus size={12} />}
-                </div>
-                <div className="flex-1">
-                  <div style={{ color: DS.text, fontSize: 14, fontWeight: 600 }}>{opt.label}</div>
-                  {opt.labelEn && <div style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, marginTop: 2 }}>{opt.labelEn}</div>}
-                </div>
-                <div style={{ color: DS.blue, fontSize: 13, fontFamily: DS.mono, fontWeight: 700 }}>+{fmtVND(opt.price)}</div>
-              </motion.button>
-            ))}
-            {extraOpts.map(ext => {
-              const icons: Record<string, React.ReactNode> = {
-                hosting: <Globe size={16} />, maintenance: <Shield size={16} />,
-                "analytics-setup": <BarChart3 size={16} />, training: <Users size={16} />,
-                priority: <Sparkles size={16} />, "seo-basic": <Target size={16} />,
-              };
+            {hostingPlans.map(plan => {
+              const isSelected = selectedHostingPlan === plan.slug;
+              const hasDiscount = plan.discountPct > 0;
               return (
                 <motion.button
-                  key={ext.id}
-                  onClick={() => onToggleExtra(ext.id)}
-                  className="w-full text-left p-4 rounded-xl flex items-center gap-3"
+                  key={plan.slug}
+                  onClick={() => {
+                    onSelectHostingPlan(isSelected ? "" : plan.slug);
+                    if (!isSelected) setModal({ type: null, isOpen: false });
+                  }}
+                  className="w-full text-left p-4 rounded-xl relative"
                   style={{
-                    background: selectedExtras.includes(ext.id) ? `${ext.color}0C` : "rgba(15,23,42,0.5)",
-                    border: selectedExtras.includes(ext.id) ? `1.5px solid ${ext.color}50` : `1px solid ${DS.border}`,
+                    background: isSelected ? `${plan.color}0E` : "rgba(15,23,42,0.6)",
+                    border: isSelected ? `1.5px solid ${plan.color}50` : `1px solid ${DS.border}`,
                     cursor: "pointer",
                   }}
                   whileHover={{ scale: 1.01 }}
                 >
-                  <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${ext.color}15`, color: ext.color }}>
-                    {selectedExtras.includes(ext.id) ? <Check size={12} /> : icons[ext.id] ?? <Plus size={11} />}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div style={{ color: DS.text, fontSize: 13, fontWeight: 600 }}>{ext.label}</div>
-                    <div style={{ color: ext.color, fontSize: 12, fontFamily: DS.mono, marginTop: 2 }}>+{fmtVND(ext.price)}</div>
-                  </div>
-                  <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0" style={{
-                    background: selectedExtras.includes(ext.id) ? ext.color : "rgba(255,255,255,0.06)",
-                    border: selectedExtras.includes(ext.id) ? "none" : "1px solid rgba(255,255,255,0.1)",
-                  }}>
-                    {selectedExtras.includes(ext.id) ? <Check size={11} style={{ color: "#fff" }} /> : <Plus size={10} style={{ color: DS.text4 }} />}
+                  {plan.highlighted && (
+                    <div className="absolute top-0 left-0 right-0 py-1 text-center rounded-t-xl"
+                      style={{ background: GRD.primary, fontSize: 9, color: "#fff", fontFamily: DS.mono, letterSpacing: "0.1em" }}>
+                      ★ PHỔ BIẾN NHẤT
+                    </div>
+                  )}
+                  <div style={{ marginTop: plan.highlighted ? 16 : 0 }}>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <span style={{ color: isSelected ? plan.color : DS.text2, fontSize: 13, fontFamily: DS.mono, fontWeight: 700 }}>
+                          {plan.name.toUpperCase()}
+                        </span>
+                        {hasDiscount && (
+                          <span className="px-1.5 py-0.5 rounded text-xs" style={{ background: "rgba(34,197,94,0.15)", color: DS.green, fontFamily: DS.mono }}>
+                            -{plan.discountPct}%
+                          </span>
+                        )}
+                      </div>
+                      {isSelected && <Check size={14} style={{ color: plan.color }} />}
+                    </div>
+                    <div className="flex items-baseline gap-2 mb-1">
+                      <span style={{ color: DS.text, fontFamily: DS.heading, fontSize: 22, fontWeight: 900 }}>
+                        {fmtVND(hasDiscount ? plan.discountedPrice : plan.basePrice)}
+                      </span>
+                      <span style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono }}>
+                        {plan.period}
+                      </span>
+                    </div>
+                    {hasDiscount && (
+                      <div style={{ color: DS.text5, fontSize: 11, fontFamily: DS.mono, textDecoration: "line-through", marginBottom: 6 }}>
+                        {fmtVND(plan.basePrice)}
+                      </div>
+                    )}
+                    <div className="flex flex-wrap gap-1">
+                      {plan.features.map(f => (
+                        <span key={f} className="px-2 py-0.5 rounded text-xs"
+                          style={{ background: "rgba(255,255,255,0.04)", color: DS.text4 }}>
+                          ✓ {f}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 </motion.button>
               );
             })}
+            {/* Skip */}
+            <motion.button
+              onClick={() => { onSelectHostingPlan(""); setModal({ type: null, isOpen: false }); }}
+              className="w-full text-center py-3 rounded-xl"
+              style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${DS.border}`, cursor: "pointer" }}
+            >
+              <span style={{ color: DS.text4, fontSize: 13 }}>Bỏ qua — tự chuẩn bị hosting</span>
+            </motion.button>
+          </div>
+        </div>
+      </AddonModalOverlay>
+
+      {/* DOMAIN MODAL */}
+      <AddonModalOverlay isOpen={modal.type === "domain"} onClose={() => setModal({ type: null, isOpen: false })}>
+        <ModalHeader
+          title="Đăng ký tên miền"
+          subtitle="Chọn domain và thời điểm đăng ký"
+          color={DS.cyan}
+          onClose={() => setModal({ type: null, isOpen: false })}
+        />
+        <div style={{ padding: "20px 24px 24px" }}>
+          {/* Domain input */}
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.1em", display: "block", marginBottom: 8 }}>
+              TÊN MIỀN BẠN MUỐN ĐĂNG KÝ
+            </label>
+            <div className="flex gap-2">
+              <input
+                value={domainName}
+                onChange={e => onSetDomainName(e.target.value)}
+                placeholder="ví dụ: mysite"
+                style={{
+                  flex: 1, background: "rgba(15,23,42,0.6)", border: `1px solid ${DS.border}`,
+                  borderRadius: 10, padding: "12px 16px", color: DS.text, fontSize: 15,
+                  outline: "none", fontFamily: DS.body,
+                }}
+              />
+              <select
+                value={domainName.includes(".") ? "." + domainName.split(".").pop() : ".com"}
+                onChange={e => {
+                  const base = domainName.includes(".") ? domainName.split(".")[0] : domainName;
+                  onSetDomainName(base + e.target.value);
+                }}
+                style={{
+                  background: "rgba(15,23,42,0.8)", border: `1px solid ${DS.border}`,
+                  borderRadius: 10, padding: "12px 14px", color: DS.text,
+                  fontSize: 14, fontFamily: DS.mono, outline: "none", cursor: "pointer",
+                }}
+              >
+                {domainPrices.map(d => (
+                  <option key={d.extension} value={d.extension} style={{ background: "#0F172A" }}>
+                    {d.extension}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {matchedDomainExt && (
+              <div className="mt-2 p-2 rounded-lg" style={{ background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.2)" }}>
+                <span style={{ color: DS.green, fontSize: 12, fontFamily: DS.mono }}>
+                  ✓ {matchedDomainExt.extension}: đăng ký {fmtVND(matchedDomainExt.registrationPrice)}/năm — gia hạn {fmtVND(matchedDomainExt.renewalPrice)}/năm
+                </span>
+                {matchedDomainExt.note && (
+                  <div style={{ color: DS.amber, fontSize: 11, marginTop: 4 }}>{matchedDomainExt.note}</div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Timing */}
+          {matchedDomainExt && (
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ color: DS.text3, fontSize: 12, fontFamily: DS.mono, marginBottom: 10 }}>
+                BẠN MUỐN ĐĂNG KÝ KHI NÀO?
+              </div>
+              <div className="flex flex-col gap-2">
+                {[
+                  { val: true, title: "Đăng ký ngay", desc: "Domain được đăng ký trước khi bàn giao web — website hoạt động ngay.", color: DS.cyan },
+                  { val: false, title: "Mua sau bàn giao", desc: "Tự chuẩn bị domain riêng — LOOP hỗ trợ kỹ thuật cấu hình miễn phí.", color: DS.purple },
+                ].map(opt => (
+                  <motion.button
+                    key={String(opt.val)}
+                    onClick={() => onSetDomainPurchaseNow(opt.val)}
+                    className="w-full text-left p-4 rounded-xl"
+                    style={{
+                      background: domainPurchaseNow === opt.val ? `${opt.color}10` : "rgba(15,23,42,0.5)",
+                      border: domainPurchaseNow === opt.val ? `1.5px solid ${opt.color}40` : `1px solid ${DS.border}`,
+                      cursor: "pointer",
+                    }}
+                    whileHover={{ scale: 1.01 }}
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="w-4 h-4 rounded-full flex items-center justify-center"
+                        style={{ background: domainPurchaseNow === opt.val ? opt.color : "transparent", border: domainPurchaseNow === opt.val ? "none" : `1.5px solid ${DS.text4}` }}>
+                        {domainPurchaseNow === opt.val && <Check size={9} style={{ color: "#fff" }} />}
+                      </div>
+                      <span style={{ color: DS.text, fontSize: 13, fontWeight: 600 }}>{opt.title}</span>
+                    </div>
+                    <div style={{ color: DS.text4, fontSize: 12, marginLeft: 24 }}>{opt.desc}</div>
+                  </motion.button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Domain price table */}
+          <div>
+            <div style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, marginBottom: 8 }}>
+              BẢNG GIÁ TÊN MIỀN (inet.com ×1.25)
+            </div>
+            <div className="overflow-x-auto rounded-xl" style={{ border: `1px solid ${DS.border}` }}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr style={{ background: "rgba(15,23,42,0.8)" }}>
+                    {["ĐUÔI", "ĐĂNG KÝ", "GIA HẠN", "GHI CHÚ"].map(h => (
+                      <th key={h} style={{ padding: "8px 12px", textAlign: h === "ĐUÔI" ? "left" : "right", color: DS.text4, fontSize: 10, fontFamily: DS.mono, borderBottom: `1px solid ${DS.border}` }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {domainPrices.map(d => (
+                    <tr key={d.extension} style={{ borderBottom: `1px solid ${DS.border}` }}>
+                      <td style={{ padding: "8px 12px" }}>
+                        <span style={{ color: DS.blue, fontFamily: DS.mono, fontSize: 13, fontWeight: 700 }}>{d.extension}</span>
+                      </td>
+                      <td style={{ padding: "8px 12px", textAlign: "right" }}>
+                        <span style={{ color: DS.text, fontFamily: DS.mono, fontSize: 12 }}>{fmtVND(d.registrationPrice)}</span>
+                      </td>
+                      <td style={{ padding: "8px 12px", textAlign: "right" }}>
+                        <span style={{ color: DS.text4, fontFamily: DS.mono, fontSize: 12 }}>{fmtVND(d.renewalPrice)}</span>
+                      </td>
+                      <td style={{ padding: "8px 12px" }}>
+                        <span style={{ color: d.note ? DS.text4 : DS.text5, fontSize: 11 }}>{d.note || "—"}</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </AddonModalOverlay>
+
+      {/* GA4 / MAINTENANCE / TRAINING / PRIORITY modals */}
+      <AddonModalOverlay isOpen={modal.type === "ga4"} onClose={() => setModal({ type: null, isOpen: false })}>
+        <ModalHeader title="Google Analytics 4" subtitle="Setup GA4 chuyên nghiệp cho website của bạn" color={DS.amber}
+          onClose={() => setModal({ type: null, isOpen: false })} />
+        <div style={{ padding: "20px 24px 24px" }}>
+          <div className="space-y-3 mb-6">
+            {[
+              { label: "Setup GA4 cơ bản", price: 1_500_000, desc: "Cài đặt GA4, Google Tag, pixel tracking cơ bản", color: DS.amber },
+              { label: "Setup GA4 nâng cao", price: 3_000_000, desc: "Goals, funnels, ecommerce tracking, custom events, dashboard riêng", color: DS.purple },
+            ].map(opt => {
+              const isSelected = selectedExtras.includes("ga4-" + opt.label.slice(0, 5).replace(" ", "-").toLowerCase());
+              return (
+                <motion.button key={opt.label}
+                  onClick={() => {
+                    // Toggle selection — for simplicity, treat as single option
+                    if (isSelected) {
+                      onToggleExtra("analytics-setup");
+                    } else {
+                      onToggleExtra("analytics-setup");
+                    }
+                    setModal({ type: null, isOpen: false });
+                  }}
+                  className="w-full text-left p-4 rounded-xl"
+                  style={{
+                    background: isSelected ? `${opt.color}10` : "rgba(15,23,42,0.5)",
+                    border: isSelected ? `1.5px solid ${opt.color}40` : `1px solid ${DS.border}`,
+                    cursor: "pointer",
+                  }}
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div style={{ color: DS.text, fontSize: 14, fontWeight: 700, marginBottom: 4 }}>{opt.label}</div>
+                      <div style={{ color: DS.text4, fontSize: 12 }}>{opt.desc}</div>
+                    </div>
+                    <div className="text-right flex-shrink-0 ml-4">
+                      <div style={{ color: opt.color, fontFamily: DS.mono, fontSize: 16, fontWeight: 900 }}>
+                        +{fmtVND(opt.price)}
+                      </div>
+                      {isSelected && <Check size={14} style={{ color: opt.color, marginTop: 4 }} />}
+                    </div>
+                  </div>
+                </motion.button>
+              );
+            })}
+          </div>
+          <motion.button
+            onClick={() => { onToggleExtra("analytics-setup"); setModal({ type: null, isOpen: false }); }}
+            className="w-full py-3 rounded-xl text-center"
+            style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${DS.border}`, cursor: "pointer" }}
+          >
+            <span style={{ color: DS.text4, fontSize: 13 }}>Bỏ qua</span>
+          </motion.button>
+        </div>
+      </AddonModalOverlay>
+
+      {/* Maintenance modal */}
+      <AddonModalOverlay isOpen={modal.type === "maintenance"} onClose={() => setModal({ type: null, isOpen: false })}>
+        <ModalHeader title="Bảo trì & Cập nhật 1 năm" subtitle="LOOP bảo trì website của bạn trong 12 tháng" color={DS.cyan}
+          onClose={() => setModal({ type: null, isOpen: false })} />
+        <div style={{ padding: "20px 24px 24px" }}>
+          <div className="p-4 rounded-xl mb-6" style={{ background: "rgba(20,184,166,0.08)", border: "1px solid rgba(20,184,166,0.2)" }}>
+            <div className="flex items-center gap-2 mb-3">
+              <Shield size={16} style={{ color: DS.cyan }} />
+              <span style={{ color: DS.cyan, fontSize: 13, fontWeight: 700 }}>Bảo trì trọn gói 1 năm</span>
+            </div>
+            {["Cập nhật plugin, framework bảo mật", "Backup hàng tuần", "SSL certificate renewal", "Hỗ trợ kỹ thuật qua email", "Tối ưu tốc độ website", "Báo cáo hàng tháng"].map(item => (
+              <div key={item} className="flex items-center gap-2 mb-2">
+                <Check size={12} style={{ color: DS.green }} />
+                <span style={{ color: DS.text3, fontSize: 13 }}>{item}</span>
+              </div>
+            ))}
+            <div className="mt-3 pt-3" style={{ borderTop: "1px solid rgba(20,184,166,0.2)" }}>
+              <span style={{ color: DS.cyan, fontFamily: DS.heading, fontSize: 22, fontWeight: 900 }}>
+                +{fmtVND(5_000_000)}/năm
+              </span>
+            </div>
+          </div>
+          <motion.button
+            onClick={() => { onToggleExtra("maintenance"); setModal({ type: null, isOpen: false }); }}
+            className="w-full py-3 rounded-xl text-center"
+            style={{ background: "rgba(20,184,166,0.15)", border: "1px solid rgba(20,184,166,0.3)", cursor: "pointer" }}
+          >
+            <span style={{ color: DS.cyan, fontSize: 13, fontWeight: 700 }}>✓ Chọn Bảo trì 1 năm — {fmtVND(5_000_000)}</span>
+          </motion.button>
+          <motion.button
+            onClick={() => setModal({ type: null, isOpen: false })}
+            className="w-full py-3 rounded-xl text-center mt-2"
+            style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${DS.border}`, cursor: "pointer" }}
+          >
+            <span style={{ color: DS.text4, fontSize: 13 }}>Bỏ qua</span>
+          </motion.button>
+        </div>
+      </AddonModalOverlay>
+
+      {/* Training modal */}
+      <AddonModalOverlay isOpen={modal.type === "training"} onClose={() => setModal({ type: null, isOpen: false })}>
+        <ModalHeader title="Training & Hướng dẫn sử dụng" subtitle="3 buổi training 1-1 với đội ngũ LOOP" color={DS.green}
+          onClose={() => setModal({ type: null, isOpen: false })} />
+        <div style={{ padding: "20px 24px 24px" }}>
+          <div className="space-y-2 mb-6">
+            {[
+              "Hướng dẫn quản trị CMS & nội dung",
+              "Cách thêm/sửa/xóa sản phẩm, bài viết",
+              "Quản lý đơn hàng & khách hàng",
+              "Cách đọc báo cáo Google Analytics",
+              "Backup & restore website",
+            ].map(item => (
+              <div key={item} className="flex items-center gap-2">
+                <Check size={12} style={{ color: DS.green }} />
+                <span style={{ color: DS.text3, fontSize: 13 }}>{item}</span>
+              </div>
+            ))}
+          </div>
+          <div className="p-4 rounded-xl mb-4" style={{ background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.2)" }}>
+            <span style={{ color: DS.green, fontFamily: DS.heading, fontSize: 22, fontWeight: 900 }}>
+              +{fmtVND(2_000_000)}/3 buổi
+            </span>
+            <div style={{ color: DS.text4, fontSize: 12, marginTop: 4 }}>Mỗi buổi 60–90 phút qua Google Meet</div>
+          </div>
+          <motion.button
+            onClick={() => { onToggleExtra("training"); setModal({ type: null, isOpen: false }); }}
+            className="w-full py-3 rounded-xl text-center"
+            style={{ background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.3)", cursor: "pointer" }}
+          >
+            <span style={{ color: DS.green, fontSize: 13, fontWeight: 700 }}>✓ Chọn Training — {fmtVND(2_000_000)}</span>
+          </motion.button>
+          <motion.button
+            onClick={() => setModal({ type: null, isOpen: false })}
+            className="w-full py-3 rounded-xl text-center mt-2"
+            style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${DS.border}`, cursor: "pointer" }}
+          >
+            <span style={{ color: DS.text4, fontSize: 13 }}>Bỏ qua</span>
+          </motion.button>
+        </div>
+      </AddonModalOverlay>
+
+      {/* Priority support modal */}
+      <AddonModalOverlay isOpen={modal.type === "priority"} onClose={() => setModal({ type: null, isOpen: false })}>
+        <ModalHeader title="Priority Support 24/7" subtitle="Hỗ trợ ưu tiên trong 6 tháng đầu" color={DS.pink}
+          onClose={() => setModal({ type: null, isOpen: false })} />
+        <div style={{ padding: "20px 24px 24px" }}>
+          <div className="space-y-2 mb-6">
+            {[
+              "Phản hồi trong 2 giờ (thay vì 24h thông thường)",
+              "Hỗ trợ qua Zalo, Phone, Email",
+              "优先处理 Priority ticket trong queue",
+              "Được assign PM riêng",
+            ].map(item => (
+              <div key={item} className="flex items-center gap-2">
+                <Sparkles size={12} style={{ color: DS.pink }} />
+                <span style={{ color: DS.text3, fontSize: 13 }}>{item}</span>
+              </div>
+            ))}
+          </div>
+          <div className="p-4 rounded-xl mb-4" style={{ background: "rgba(236,72,153,0.08)", border: "1px solid rgba(236,72,153,0.2)" }}>
+            <span style={{ color: DS.pink, fontFamily: DS.heading, fontSize: 22, fontWeight: 900 }}>
+              +{fmtVND(4_500_000)}/6 tháng
+            </span>
+          </div>
+          <motion.button
+            onClick={() => { onToggleExtra("priority"); setModal({ type: null, isOpen: false }); }}
+            className="w-full py-3 rounded-xl text-center"
+            style={{ background: "rgba(236,72,153,0.15)", border: "1px solid rgba(236,72,153,0.3)", cursor: "pointer" }}
+          >
+            <span style={{ color: DS.pink, fontSize: 13, fontWeight: 700 }}>✓ Chọn Priority Support — {fmtVND(4_500_000)}</span>
+          </motion.button>
+          <motion.button
+            onClick={() => setModal({ type: null, isOpen: false })}
+            className="w-full py-3 rounded-xl text-center mt-2"
+            style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${DS.border}`, cursor: "pointer" }}
+          >
+            <span style={{ color: DS.text4, fontSize: 13 }}>Bỏ qua</span>
+          </motion.button>
+        </div>
+      </AddonModalOverlay>
+    </div>
+  );
+}
+
+// ── Step 2: Hosting + Domain ─────────────────────────────────────────────────
+
+function StepHostingDomain({
+  hostingPlans,
+  selectedHostingPlan, onSelectHostingPlan,
+  domainPrices,
+  domainName, onSetDomainName,
+  domainPurchaseNow, onSetDomainPurchaseNow,
+}: {
+  hostingPlans: WizardHostingPlan[];
+  selectedHostingPlan: string; onSelectHostingPlan: (slug: string) => void;
+  domainPrices: WizardDomainPrice[];
+  domainName: string; onSetDomainName: (name: string) => void;
+  domainPurchaseNow: boolean; onSetDomainPurchaseNow: (now: boolean) => void;
+}) {
+  const t = useTranslations("BookingPage");
+
+  // Validate domain name input
+  const isValidDomain = domainName.length === 0 || domainName.includes(".");
+  const matchedExtension = domainName.includes(".")
+    ? domainPrices.find(d => domainName.endsWith(d.extension))
+    : null;
+
+  return (
+    <div>
+      <h3 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 22, fontWeight: 900, letterSpacing: "0.05em", marginBottom: 8 }}>
+        Hosting & Tên miền
+      </h3>
+      <p style={{ color: DS.text3, fontSize: 14, marginBottom: 28 }}>
+        Chọn gói hosting phù hợp và đăng ký tên miền cho website của bạn.
+      </p>
+
+      {/* ── Hosting Plans ─────────────────────────────────────────────── */}
+      <div className="flex items-center gap-3 mb-4">
+        <div style={{ width: 3, height: 16, background: DS.purple, borderRadius: 2 }} />
+        <h4 style={{ color: DS.text2, fontSize: 12, fontFamily: DS.mono, letterSpacing: "0.12em" }}>
+          CHỌN GÓI HOSTING
+        </h4>
+        <div className="flex-1 h-px" style={{ background: DS.border }} />
+        <span style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono }}>Không bắt buộc</span>
+      </div>
+
+      {/* Hosting plan cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 mb-8">
+        {hostingPlans.map(plan => {
+          const isSelected = selectedHostingPlan === plan.slug;
+          const monthlyDisplay = plan.monthlyPrice === 0
+            ? "Miễn phí"
+            : fmtVND(plan.monthlyPrice) + "/tháng";
+          const hasDiscount = plan.discountPct > 0;
+          const baseCost = plan.basePrice;
+          return (
+            <motion.button
+              key={plan.slug}
+              onClick={() => onSelectHostingPlan(isSelected ? "" : plan.slug)}
+              className="text-left p-4 rounded-xl relative overflow-hidden"
+              style={{
+                background: isSelected ? `${plan.color}0E` : "rgba(15,23,42,0.5)",
+                border: isSelected ? `1.5px solid ${plan.color}50` : `1px solid ${DS.border}`,
+                boxShadow: isSelected ? `0 0 16px ${plan.color}18` : "none",
+                cursor: "pointer",
+              }}
+              whileHover={{ scale: 1.02 }}
+            >
+              {plan.highlighted && (
+                <div className="absolute top-0 left-0 right-0 py-1 text-center" style={{ background: GRD.primary, fontSize: 9, color: "#fff", fontFamily: DS.mono, letterSpacing: "0.1em" }}>
+                  ★ PHỔ BIẾN NHẤT
+                </div>
+              )}
+              <div style={{ marginTop: plan.highlighted ? 18 : 0 }}>
+                <div className="flex items-center justify-between mb-2">
+                  <span style={{ color: isSelected ? plan.color : DS.text2, fontSize: 13, fontFamily: DS.mono, fontWeight: 700 }}>
+                    {plan.name.toUpperCase()}
+                  </span>
+                  {isSelected && (
+                    <div className="w-5 h-5 rounded-full flex items-center justify-center" style={{ background: plan.color }}>
+                      <Check size={10} style={{ color: "#fff" }} />
+                    </div>
+                  )}
+                </div>
+                <div style={{ color: DS.text, fontFamily: DS.heading, fontSize: 18, fontWeight: 900, marginBottom: 2 }}>
+                  {hasDiscount
+                    ? fmtVND(plan.discountedPrice)
+                    : fmtVND(baseCost)}
+                </div>
+                <div style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, marginBottom: 6 }}>
+                  {monthlyDisplay} · {plan.period}
+                  {hasDiscount && (
+                    <span className="ml-1" style={{ color: DS.green }}>-{plan.discountPct}%</span>
+                  )}
+                </div>
+                {hasDiscount && (
+                  <div style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono, textDecoration: "line-through", marginBottom: 6 }}>
+                    {fmtVND(baseCost)}
+                  </div>
+                )}
+                <div className="space-y-1">
+                  {plan.features.slice(0, 4).map(f => (
+                    <div key={f} className="flex items-start gap-1.5">
+                      <Check size={10} style={{ color: DS.green, flexShrink: 0, marginTop: 2 }} />
+                      <span style={{ color: DS.text4, fontSize: 10, lineHeight: 1.4 }}>{f}</span>
+                    </div>
+                  ))}
+                  {plan.features.length > 4 && (
+                    <div style={{ color: DS.text5, fontSize: 10 }}>+{plan.features.length - 4} tính năng khác</div>
+                  )}
+                </div>
+              </div>
+            </motion.button>
+          );
+        })}
+
+        {/* Skip / None option */}
+        <motion.button
+          onClick={() => onSelectHostingPlan("")}
+          className="text-left p-4 rounded-xl flex items-center justify-center"
+          style={{
+            background: !selectedHostingPlan ? "rgba(255,255,255,0.04)" : "rgba(15,23,42,0.4)",
+            border: !selectedHostingPlan ? `1.5px solid ${DS.text4}60` : `1px solid ${DS.border}`,
+            cursor: "pointer",
+          }}
+          whileHover={{ scale: 1.02 }}
+        >
+          <span style={{ color: DS.text4, fontSize: 13 }}>Bỏ qua — Tự chuẩn bị hosting</span>
+        </motion.button>
+      </div>
+
+      {/* ── Domain Name ──────────────────────────────────────────────── */}
+      <div className="flex items-center gap-3 mb-4">
+        <div style={{ width: 3, height: 16, background: DS.cyan, borderRadius: 2 }} />
+        <h4 style={{ color: DS.text2, fontSize: 12, fontFamily: DS.mono, letterSpacing: "0.12em" }}>
+          ĐĂNG KÝ TÊN MIỀN
+        </h4>
+        <div className="flex-1 h-px" style={{ background: DS.border }} />
+        <span style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono }}>Tên miền bắt buộc cho website</span>
+      </div>
+
+      <div className="mb-4">
+        <label style={{ color: DS.text3, fontSize: 12, fontFamily: DS.mono, letterSpacing: "0.1em", display: "block", marginBottom: 8 }}>
+          TÊN MIỀN BẠN MUỐN ĐĂNG KÝ
+        </label>
+        <div className="flex gap-3">
+          <div style={{ flex: 1 }}>
+            <input
+              value={domainName}
+              onChange={e => onSetDomainName(e.target.value)}
+              placeholder="ví dụ: mysite"
+              style={{
+                width: "100%",
+                background: "rgba(15,23,42,0.6)",
+                border: domainName && !isValidDomain ? `1.5px solid ${DS.red}` : `1px solid ${DS.border}`,
+                borderRadius: 10,
+                padding: "12px 16px",
+                color: DS.text,
+                fontSize: 15,
+                outline: "none",
+                fontFamily: DS.body,
+                boxSizing: "border-box",
+              }}
+            />
+          </div>
+          {/* Extension selector */}
+          <select
+            value={domainName.includes(".") ? "." + domainName.split(".").pop() : ".com"}
+            onChange={e => {
+              const base = domainName.includes(".") ? domainName.split(".")[0] : domainName;
+              onSetDomainName(base + e.target.value);
+            }}
+            style={{
+              background: "rgba(15,23,42,0.8)",
+              border: `1px solid ${DS.border}`,
+              borderRadius: 10,
+              padding: "12px 14px",
+              color: DS.text,
+              fontSize: 14,
+              fontFamily: DS.mono,
+              outline: "none",
+              cursor: "pointer",
+            }}
+          >
+            {domainPrices.map(d => (
+              <option key={d.extension} value={d.extension} style={{ background: "#0F172A" }}>
+                {d.extension}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Domain price hint */}
+        {matchedExtension && (
+          <div className="mt-2 flex items-center gap-2">
+            <Check size={11} style={{ color: DS.green }} />
+            <span style={{ color: DS.green, fontSize: 11, fontFamily: DS.mono }}>
+              Đăng ký {matchedExtension.extension}: {fmtVND(matchedExtension.registrationPrice)}/{matchedExtension.periodVi}
+            </span>
+            <span style={{ color: DS.text5, fontSize: 10 }}>— Gia hạn: {fmtVND(matchedExtension.renewalPrice)}/năm</span>
+          </div>
+        )}
+        {domainName && !matchedExtension && domainName.includes(".") && (
+          <div className="mt-2 flex items-center gap-2">
+            <span style={{ color: DS.amber, fontSize: 11 }}>⚠ Không tìm thấy giá cho {domainName.split(".").pop()}</span>
+          </div>
+        )}
+        {domainName && matchedExtension?.note && (
+          <div className="mt-1 px-3 py-2 rounded-lg" style={{ background: "rgba(234,179,8,0.07)", border: "1px solid rgba(234,179,8,0.2)" }}>
+            <span style={{ color: DS.amber, fontSize: 11 }}>{matchedExtension.note}</span>
+          </div>
+        )}
+      </div>
+
+      {/* Purchase timing */}
+      {domainName && matchedExtension && (
+        <div className="mb-6 p-4 rounded-xl" style={{ background: "rgba(15,23,42,0.5)", border: `1px solid ${DS.border}` }}>
+          <div style={{ color: DS.text2, fontSize: 12, fontFamily: DS.mono, marginBottom: 12 }}>BẠN MUỐN ĐĂNG KÝ KHI NÀO?</div>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <motion.button
+              onClick={() => onSetDomainPurchaseNow(true)}
+              className="flex-1 text-left p-4 rounded-xl"
+              style={{
+                background: domainPurchaseNow ? "rgba(59,130,246,0.1)" : "rgba(15,23,42,0.3)",
+                border: domainPurchaseNow ? "1.5px solid rgba(59,130,246,0.4)" : `1px solid ${DS.border}`,
+                cursor: "pointer",
+              }}
+              whileHover={{ scale: 1.01 }}
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-4 h-4 rounded-full flex items-center justify-center" style={{ background: domainPurchaseNow ? DS.blue : "transparent", border: domainPurchaseNow ? "none" : `1.5px solid ${DS.text4}` }}>
+                  {domainPurchaseNow && <Check size={9} style={{ color: "#fff" }} />}
+                </div>
+                <span style={{ color: DS.text, fontSize: 13, fontWeight: 600 }}>Đăng ký ngay bây giờ</span>
+              </div>
+              <div style={{ color: DS.text4, fontSize: 11, marginLeft: 24 }}>
+                Domain được đăng ký trước khi bàn giao web — website hoạt động ngay khi bàn giao.
+              </div>
+            </motion.button>
+            <motion.button
+              onClick={() => onSetDomainPurchaseNow(false)}
+              className="flex-1 text-left p-4 rounded-xl"
+              style={{
+                background: !domainPurchaseNow ? "rgba(129,140,248,0.08)" : "rgba(15,23,42,0.3)",
+                border: !domainPurchaseNow ? "1.5px solid rgba(129,140,248,0.3)" : `1px solid ${DS.border}`,
+                cursor: "pointer",
+              }}
+              whileHover={{ scale: 1.01 }}
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-4 h-4 rounded-full flex items-center justify-center" style={{ background: !domainPurchaseNow ? DS.purple : "transparent", border: !domainPurchaseNow ? "none" : `1.5px solid ${DS.text4}` }}>
+                  {!domainPurchaseNow && <Check size={9} style={{ color: "#fff" }} />}
+                </div>
+                <span style={{ color: DS.text, fontSize: 13, fontWeight: 600 }}>Mua sau khi bàn giao</span>
+              </div>
+              <div style={{ color: DS.text4, fontSize: 11, marginLeft: 24 }}>
+                Bạn tự chuẩn bị domain riêng — LOOP hỗ trợ kỹ thuật cấu hình miễn phí.
+              </div>
+            </motion.button>
+          </div>
+        </div>
+      )}
+
+      {/* Domain price table */}
+      {domainPrices.length > 0 && (
+        <div>
+          <div style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, marginBottom: 8 }}>
+            BẢNG GIÁ TÊN MIỀN (tham khảo — inet.com ×1.25)
+          </div>
+          <div className="overflow-x-auto rounded-xl" style={{ border: `1px solid ${DS.border}` }}>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr style={{ background: "rgba(15,23,42,0.8)" }}>
+                  <th style={{ padding: "10px 14px", textAlign: "left", color: DS.text4, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.1em", borderBottom: `1px solid ${DS.border}` }}>ĐUÔI</th>
+                  <th style={{ padding: "10px 14px", textAlign: "right", color: DS.text4, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.1em", borderBottom: `1px solid ${DS.border}` }}>ĐĂNG KÝ</th>
+                  <th style={{ padding: "10px 14px", textAlign: "right", color: DS.text4, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.1em", borderBottom: `1px solid ${DS.border}` }}>GIA HẠN</th>
+                  <th style={{ padding: "10px 14px", textAlign: "left", color: DS.text4, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.1em", borderBottom: `1px solid ${DS.border}` }}>GHI CHÚ</th>
+                </tr>
+              </thead>
+              <tbody>
+                {domainPrices.map(d => (
+                  <tr key={d.extension} style={{ borderBottom: `1px solid ${DS.border}` }}>
+                    <td style={{ padding: "10px 14px" }}>
+                      <span style={{ color: DS.blue, fontFamily: DS.mono, fontSize: 13, fontWeight: 700 }}>{d.extension}</span>
+                    </td>
+                    <td style={{ padding: "10px 14px", textAlign: "right" }}>
+                      <span style={{ color: DS.text, fontFamily: DS.mono, fontSize: 12 }}>{fmtVND(d.registrationPrice)}</span>
+                    </td>
+                    <td style={{ padding: "10px 14px", textAlign: "right" }}>
+                      <span style={{ color: DS.text4, fontFamily: DS.mono, fontSize: 12 }}>{fmtVND(d.renewalPrice)}</span>
+                    </td>
+                    <td style={{ padding: "10px 14px" }}>
+                      <span style={{ color: d.note ? DS.text4 : DS.text5, fontSize: 11 }}>{d.note || "—"}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
@@ -794,7 +1688,7 @@ function StepContact({
   startDate, setStartDate, duration, setDuration,
   talentNote, setTalentNote,
   paymentPlan, setPaymentPlan,
-  service, pkg, features, extras,
+  service, features, extras,
   submitted, orderId, submitError, setSubmitError, onSubmit, submitLoading,
   onEditSelection,
 }: {
@@ -808,7 +1702,7 @@ function StepContact({
   duration: string; setDuration: (s: string) => void;
   talentNote: string; setTalentNote: (s: string) => void;
   paymentPlan: "50" | "100"; setPaymentPlan: (p: "50" | "100") => void;
-  service: WizardService | null; pkg: WizardPackage | null;
+  service: WizardService | null;
   features: WizardFeature[]; extras: WizardExtra[];
   submitted: boolean; orderId: string; submitError: string; setSubmitError: (s: string) => void;
   onSubmit: () => void; submitLoading: boolean;
@@ -884,11 +1778,6 @@ function StepContact({
           {service && (
             <span className="px-3 py-1 rounded-full text-xs font-mono" style={{ background: `${service.color}15`, color: service.color, border: `1px solid ${service.color}30` }}>
               {service.title}
-            </span>
-          )}
-          {pkg && (
-            <span className="px-3 py-1 rounded-full text-xs font-mono" style={{ background: "rgba(59,130,246,0.1)", color: DS.blue, border: "1px solid rgba(59,130,246,0.25)" }}>
-              {pkg.name}
             </span>
           )}
           {features.length > 0 && (
@@ -1265,7 +2154,8 @@ export function BookingWizardClient({ locale }: Props) {
     const s = searchParams.get("service");
     return s && FALLBACK_SERVICES.some((svc) => svc.id === s) ? s : "";
   });
-  const [pkgId, setPkgId] = useState("business");
+  // Add-on modal state
+  const [modal, setModal] = useState<AddonModalState>({ type: null, isOpen: false });
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
   const [startDate, setStartDate] = useState("");
   const [duration, setDuration] = useState("");
@@ -1283,9 +2173,14 @@ export function BookingWizardClient({ locale }: Props) {
 
   // ── Wizard config (from BE, with fallback) ─────────────────────────────
   const [services, setServices] = useState<WizardService[]>(FALLBACK_SERVICES);
-  const [packages, setPackages] = useState<WizardPackage[]>(FALLBACK_PACKAGES);
+  const [packages] = useState<WizardPackage[]>(FALLBACK_PACKAGES);
   const [featureOptions, setFeatureOptions] = useState<Record<string, WizardFeature[]>>(FALLBACK_FEATURES);
   const [extraOptions] = useState<WizardExtra[]>(FALLBACK_EXTRAS);
+  const [hostingPlans, setHostingPlans] = useState<WizardHostingPlan[]>([]);
+  const [domainPrices, setDomainPrices] = useState<WizardDomainPrice[]>([]);
+  const [selectedHostingPlan, setSelectedHostingPlan] = useState<string>("");
+  const [domainName, setDomainName] = useState("");
+  const [domainPurchaseNow, setDomainPurchaseNow] = useState(true);
   const [lpRate, setLpRate] = useState<LpRateConfig>(DEFAULT_LP_RATE);
   const [vatRate, setVatRate] = useState(0.10);
   const [maxLpRedeem, setMaxLpRedeem] = useState(0);
@@ -1314,16 +2209,7 @@ export function BookingWizardClient({ locale }: Props) {
             perMonth: p.isSubscription,
           }));
           if (wSvcs.length > 0) setServices(wSvcs);
-          setPackages(cfg.packages.map((p, i) => ({
-            id: p.id,
-            name: p.name,
-            multiplier: p.multiplier,
-            color: p.popular ? DS.blue : i === 2 ? DS.purple : DS.text3,
-            desc: p.desc || "",
-            features: p.features ?? [],
-            lp: p.slug && cfg.packageLps?.[p.slug] ? cfg.packageLps?.[p.slug]! : 50,
-            popular: p.popular,
-          })));
+          // packages are static — no longer derived from API
         }
 
         if (cfg.features?.length) {
@@ -1335,6 +2221,9 @@ export function BookingWizardClient({ locale }: Props) {
           }
           if (Object.keys(grouped).length) setFeatureOptions(grouped);
         }
+
+        if (cfg.hostingPlans?.length) setHostingPlans(cfg.hostingPlans);
+        if (cfg.domainPrices?.length) setDomainPrices(cfg.domainPrices);
 
         if (cfg.lpRate) setLpRate(cfg.lpRate);
         if (cfg.vatRate !== undefined) setVatRate(cfg.vatRate);
@@ -1352,12 +2241,19 @@ export function BookingWizardClient({ locale }: Props) {
 
   // ── Derived values ────────────────────────────────────────────────────
   const service = services.find(s => s.id === serviceId) ?? null;
-  const pkg = packages.find(p => p.id === pkgId) ?? null;
 
-  const currentBasePrice = service ? service.basePrice * (pkg?.multiplier ?? 1) : 0;
-  const currentFeaturePrice = currentFeatureOptions.filter(f => selectedFeatures.includes(f.id)).reduce((s, f) => s + f.price, 0);
+  // Filter: only count non-included features for price
+  const extraFeaturePrice = currentFeatureOptions
+    .filter(f => selectedFeatures.includes(f.id) && !f.includedInBase)
+    .reduce((s, f) => s + f.price, 0);
   const currentExtraPrice = extraOptions.filter(e => selectedExtras.includes(e.id)).reduce((s, e) => s + e.price, 0);
-  const currentSubtotal = currentBasePrice + currentFeaturePrice + currentExtraPrice;
+  const currentBasePrice = service?.basePrice ?? 0;
+  const selectedHosting = hostingPlans.find(h => h.slug === selectedHostingPlan);
+  const hostingCost = selectedHosting?.discountedPrice ?? 0;
+  const domainCost = domainPurchaseNow && domainName
+    ? (domainPrices.find(d => domainName.endsWith(d.extension))?.registrationPrice ?? 0)
+    : 0;
+  const currentSubtotal = currentBasePrice + extraFeaturePrice + currentExtraPrice + hostingCost + domainCost;
 
   useEffect(() => {
     const maxDiscountVnd = currentSubtotal * (lpRate.maxDiscountPercent / 100);
@@ -1374,27 +2270,39 @@ export function BookingWizardClient({ locale }: Props) {
 
   const canNext = () => {
     if (step === 0) return !!serviceId;
-    if (step === 1) return !!pkgId;
+    if (step === 1) return true;  // features are optional
+    if (step === 2) return true;  // hosting/domain are optional
     return true;
   };
 
   // ── Submit ────────────────────────────────────────────────────────────
   const handleSubmit = async () => {
     const svc = service;
-    const selectedPkg = pkg;
     const featOpts = currentFeatureOptions;
-    const basePrice = svc ? svc.basePrice * (selectedPkg?.multiplier ?? 1) : 0;
-    const featPrices = featOpts.filter(f => selectedFeatures.includes(f.id)).reduce((s, f) => s + f.price, 0);
+    const basePrice = svc ? svc.basePrice : 0;
+    // Only charge for non-included features
+    const featPrices = featOpts
+      .filter(f => selectedFeatures.includes(f.id) && !f.includedInBase)
+      .reduce((s, f) => s + f.price, 0);
     const extraPricesTotal = extraOptions.filter(e => selectedExtras.includes(e.id)).reduce((s, e) => s + e.price, 0);
-    const subtotal = basePrice + featPrices + extraPricesTotal;
+    const domainTotalCost = domainPurchaseNow && domainName
+      ? (domainPrices.find(d => domainName.endsWith(d.extension))?.registrationPrice ?? 0)
+      : 0;
+    const hostingTotalCost = selectedHosting?.discountedPrice ?? 0;
+    const subtotal = basePrice + featPrices + extraPricesTotal + hostingTotalCost + domainTotalCost;
     // Deduct LP discount from total (lpDiscount already capped at 20% in useEffect)
     const vndDiscount = Math.round(lpDiscount * lpRate.lpPerVnd);
     const total = Math.round((subtotal - vndDiscount) * (1 + vatRate));
-    const selectedItems = [
-      { featureId: svc?.id ?? serviceId, featureName: svc?.title ?? "", variantId: selectedPkg?.id ?? "", variantName: selectedPkg?.name ?? "", price: basePrice },
-      ...featOpts.filter(f => selectedFeatures.includes(f.id)).map(f => ({
+    // Chỉ gửi features có phí thêm (non-includedInBase) trong selectedItems
+    // Backend sẽ tính basePrice + featureTotal riêng để đảm bảo FE/BE đồng nhất
+    const paidFeatureItems = featOpts
+      .filter(f => selectedFeatures.includes(f.id) && !f.includedInBase)
+      .map(f => ({
         featureId: f.id, featureName: f.label, variantId: "", variantName: "", price: f.price,
-      })),
+      }));
+    const selectedItems = [
+      { featureId: svc?.id ?? serviceId, featureName: svc?.title ?? "", variantId: "", variantName: "Custom", price: basePrice },
+      ...paidFeatureItems,
       ...extraOptions.filter(e => selectedExtras.includes(e.id)).map(e => ({
         featureId: e.id, featureName: e.label, variantId: "", variantName: "", price: e.price,
       })),
@@ -1415,7 +2323,10 @@ export function BookingWizardClient({ locale }: Props) {
           totalAmount: total,
           lpUsed: lpDiscount,  // LP discount applied by customer
           paymentPlan,
-          notes: `Dịch vụ: ${svc?.title ?? ""} | Gói: ${selectedPkg?.name ?? ""} | Ghi chú đội ngũ: ${talentNote || "—"} | Bắt đầu: ${startDate || "—"} | Thời gian: ${duration || "—"}`,
+          notes: `Dịch vụ: ${svc?.title ?? ""} | Tính năng: ${selectedFeatures.length} | Ghi chú đội ngũ: ${talentNote || "—"} | Bắt đầu: ${startDate || "—"} | Thời gian: ${duration || "—"}`,
+          hostingPlanSlug: selectedHosting?.slug || undefined,
+          domainName: domainName || undefined,
+          domainPurchaseTime: domainPurchaseNow ? "now" : "after_handover",
         }),
       });
       const data = await res.json();
@@ -1472,11 +2383,19 @@ export function BookingWizardClient({ locale }: Props) {
                   {step === 0 && <StepService services={services} selected={serviceId} onSelect={setServiceId} />}
                   {step === 1 && (
                     <StepAddons
-                      packages={packages} service={service}
-                      pkgId={pkgId} onSelectPkg={setPkgId}
                       featureOptions={currentFeatureOptions}
                       selectedFeatures={selectedFeatures} onToggleFeature={toggleFeature}
                       extraOptions={extraOptions} selectedExtras={selectedExtras} onToggleExtra={toggleExtra}
+                      hostingPlans={hostingPlans}
+                      selectedHostingPlan={selectedHostingPlan}
+                      onSelectHostingPlan={setSelectedHostingPlan}
+                      domainPrices={domainPrices}
+                      domainName={domainName}
+                      onSetDomainName={setDomainName}
+                      domainPurchaseNow={domainPurchaseNow}
+                      onSetDomainPurchaseNow={setDomainPurchaseNow}
+                      modal={modal}
+                      setModal={setModal}
                     />
                   )}
                   {step === 2 && (
@@ -1490,7 +2409,7 @@ export function BookingWizardClient({ locale }: Props) {
                       duration={duration} setDuration={setDuration}
                       talentNote={talentNote} setTalentNote={setTalentNote}
                       paymentPlan={paymentPlan} setPaymentPlan={setPaymentPlan}
-                      service={service} pkg={pkg}
+                      service={service}
                       features={currentFeatureOptions.filter(f => selectedFeatures.includes(f.id))}
                       extras={extraOptions.filter(e => selectedExtras.includes(e.id))}
                       submitted={submitted} orderId={newOrderId}
@@ -1547,11 +2466,16 @@ export function BookingWizardClient({ locale }: Props) {
             {!submitted && (
               <div>
                 <PriceSidebar
-                  service={service} pkg={pkg}
+                  service={service}
                   featureOptions={currentFeatureOptions} features={selectedFeatures}
                   extraOptions={extraOptions} extras={selectedExtras}
                   lpDiscount={lpDiscount} lpBalance={lpBalance} lpRate={lpRate}
                   vatRate={vatRate}
+                  selectedHostingPlan={selectedHostingPlan}
+                  hostingPlans={hostingPlans}
+                  domainPrices={domainPrices}
+                  domainName={domainName}
+                  domainPurchaseNow={domainPurchaseNow}
                 />
               </div>
             )}

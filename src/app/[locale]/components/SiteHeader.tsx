@@ -1136,35 +1136,46 @@ export default function SiteHeader({ locale }: { locale: string }) {
             {/* Locale Switcher */}
             <LocaleSwitcher locale={locale} />
 
-            {/* User menu — icon only */}
+            {/* User menu — avatar + name + role badge */}
             {mounted && isAuthenticated && user ? (
               <div style={{ position: "relative" }} ref={userMenuRef}>
                 <button
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
                   title={user.name}
                   style={{
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    width: 34, height: 34,
-                    background: rgba(DS.text, 0.03), border: `1px solid ${rgba(DS.text, 0.08)}`,
-                    borderRadius: 9, cursor: "pointer",
-                    transition: "border-color 0.15s",
+                    display: "flex", alignItems: "center", gap: 8,
+                    padding: "4px 10px 4px 4px",
+                    background: rgba(DS.text, 0.03),
+                    border: `1px solid ${rgba(DS.text, 0.08)}`,
+                    borderRadius: 10, cursor: "pointer",
+                    transition: "all 0.15s",
                   }}
                   onMouseEnter={e => {
-                    const rl = roleLabels[user.role] ?? { color: DS.text4 };
-                    (e.currentTarget as HTMLButtonElement).style.borderColor = rgba(rl.color, 0.3);
+                    const el = e.currentTarget as HTMLButtonElement;
+                    el.style.background = "rgba(107,61,245,0.08)";
+                    el.style.borderColor = rgba(DS.purple, 0.35);
                   }}
                   onMouseLeave={e => {
-                    (e.currentTarget as HTMLButtonElement).style.borderColor = rgba(DS.text, 0.08);
+                    const el = e.currentTarget as HTMLButtonElement;
+                    el.style.background = rgba(DS.text, 0.03);
+                    el.style.borderColor = rgba(DS.text, 0.08);
                   }}
                 >
+                  {/* Avatar */}
                   {user.avatar ? (
-                    <img src={user.avatar} alt={user.name} style={{ width: 24, height: 24, borderRadius: 6, objectFit: "cover" }} />
+                    <img src={user.avatar} alt={user.name} style={{ width: 28, height: 28, borderRadius: 7, objectFit: "cover", border: "1px solid rgba(107,61,245,0.3)" }} />
                   ) : (
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={DS.text3} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                      <circle cx="12" cy="7" r="4"/>
-                    </svg>
+                    <div style={{ width: 28, height: 28, borderRadius: 7, background: GRD.primary, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <span style={{ color: "#fff", fontSize: 12, fontWeight: 700 }}>{user.name.charAt(0)}</span>
+                    </div>
                   )}
+                  {/* Name + role */}
+                  <div style={{ textAlign: "left" }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: DS.text, lineHeight: 1.2, maxWidth: 90, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.name}</div>
+                    <div style={{ fontSize: 9, fontFamily: DS.mono, letterSpacing: "0.06em", color: DS.text4, lineHeight: 1.2, marginTop: 1 }}>{(roleLabels[user.role] ?? { label: user.role }).label}</div>
+                  </div>
+                  {/* Chevron */}
+                  <ChevronDown size={12} style={{ color: DS.text5, flexShrink: 0 }} />
                 </button>
 
                 <AnimatePresence>
@@ -1316,42 +1327,7 @@ export default function SiteHeader({ locale }: { locale: string }) {
             </Link>
 
             {/* Call Now Button */}
-            <a
-              href={`tel:${CEO_CONTACT.phone}`}
-              className="hide-mobile"
-              title="Gọi ngay: 037 844 3602"
-              style={{
-                display: "flex", alignItems: "center", gap: 6,
-                background: "rgba(236,72,153,0.10)",
-                border: "1px solid rgba(236,72,153,0.35)",
-                color: DS.pink,
-                fontSize: 13, fontWeight: 700,
-                padding: "7px 14px", borderRadius: 8,
-                textDecoration: "none",
-                boxShadow: "0 0 16px rgba(236,72,153,0.18), inset 0 1px 0 rgba(255,255,255,0.04)",
-                transition: "all 0.18s ease",
-                whiteSpace: "nowrap",
-                letterSpacing: "0.01em",
-                fontFamily: "'Inter', sans-serif",
-              }}
-              onMouseEnter={e => {
-                const el = e.currentTarget as HTMLElement;
-                el.style.background = "rgba(236,72,153,0.18)";
-                el.style.borderColor = "rgba(236,72,153,0.65)";
-                el.style.boxShadow = "0 0 28px rgba(236,72,153,0.35), inset 0 1px 0 rgba(255,255,255,0.08)";
-                el.style.transform = "translateY(-1px)";
-              }}
-              onMouseLeave={e => {
-                const el = e.currentTarget as HTMLElement;
-                el.style.background = "rgba(236,72,153,0.10)";
-                el.style.borderColor = "rgba(236,72,153,0.35)";
-                el.style.boxShadow = "0 0 16px rgba(236,72,153,0.18), inset 0 1px 0 rgba(255,255,255,0.04)";
-                el.style.transform = "translateY(0)";
-              }}
-            >
-              <Phone size={13} style={{ animation: "pulse-ring 2s ease-in-out infinite" }} />
-              <span>037 844 3602</span>
-            </a>
+            {/* REMOVED — contact info now in top bar */}
 
             {/* Mobile hamburger */}
             <button
@@ -1452,20 +1428,6 @@ export default function SiteHeader({ locale }: { locale: string }) {
                   <Search size={14} /> <span style={{ flex: 1, textAlign: "left" }}>Tìm kiếm...</span>
                   <kbd style={{ fontSize: 9, fontFamily: DS.mono, color: DS.text5, background: rgba(DS.text, 0.04), borderRadius: 3, padding: "1px 4px" }}>⌘K</kbd>
                 </button>
-                {/* Mobile Call button */}
-                <a
-                  href={`tel:${CEO_CONTACT.phone}`}
-                  style={{
-                    display: "flex", alignItems: "center", gap: 8, padding: "12px",
-                    borderRadius: 10, background: "rgba(236,72,153,0.10)",
-                    border: "1px solid rgba(236,72,153,0.30)",
-                    color: DS.pink, fontSize: 15, fontWeight: 700,
-                    textDecoration: "none",
-                    boxShadow: "0 0 16px rgba(236,72,153,0.12)",
-                  }}
-                >
-                  <Phone size={16} /> Gọi ngay: 037 844 3602
-                </a>
                 <Link
                   href={`/${locale}/booking`}
                   onClick={() => setMobileOpen(false)}

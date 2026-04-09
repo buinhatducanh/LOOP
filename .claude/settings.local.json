@@ -323,7 +323,10 @@
       "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsImtpZCI6IlBCZV92dms1czF1aGRzNHMtelJEWkplX2pBd0JscUtFVXowTVJPX0ZHTU0ifQ.eyJ0eXAiOiJhY2Nlc3MiLCJzaWQiOiJzZXNzX21ucTJ6bWxnbnViNXVxIiwicmwiOjAsImVtbCI6ImFkbWluQGxvb3Audm4iLCJuYW0iOiJBZG1pbiIsInJvbCI6InN1cGVyX2FkbWluIiwicmxzIjpbInN1cGVyX2FkbWluIl0sImF0cyI6W10sImFjYyI6InN0YWZmIiwib25iIjp0cnVlLCJpYXQiOjE3NzU2NTQ3NDUsImlzcyI6Imxvb3AtYXV0aCIsImF1ZCI6Imxvb3AtYWRtaW4iLCJleHAiOjE3NzU2NTU2NDUsInN1YiI6ImNtbnEydTE4MTAwN3Bua2p4YTk0eDIwOTIifQ.3OU6L9KkxD8oq0KR4KEPyBXU_ihDeGVX5jiCJ4iWLH4\" curl -s -X GET \"http://localhost:3000/api/admin/team\" -H \"Authorization: Bearer $TOKEN\" -H \"Content-Type: application/json\")",
       "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsImtpZCI6IlBCZV92dms1czF1aGRzNHMtelJEWkplX2pBd0JscUtFVXowTVJPX0ZHTU0ifQ.eyJ0eXAiOiJhY2Nlc3MiLCJzaWQiOiJzZXNzX21ucTJ6bWxnbnViNXVxIiwicmwiOjAsImVtbCI6ImFkbWluQGxvb3Audm4iLCJuYW0iOiJBZG1pbiIsInJvbCI6InN1cGVyX2FkbWluIiwicmxzIjpbInN1cGVyX2FkbWluIl0sImF0cyI6W10sImFjYyI6InN0YWZmIiwib25iIjp0cnVlLCJpYXQiOjE3NzU2NTQ3NDUsImlzcyI6Imxvb3AtYXV0aCIsImF1ZCI6Imxvb3AtYWRtaW4iLCJleHAiOjE3NzU2NTU2NDUsInN1YiI6ImNtbnEydTE4MTAwN3Bua2p4YTk0eDIwOTIifQ.3OU6L9KkxD8oq0KR4KEPyBXU_ihDeGVX5jiCJ4iWLH4\" curl -s -X GET \"http://localhost:3000/api/admin/team?limit=1\" -H \"Authorization: Bearer $TOKEN\")",
       "Bash(MID=\"cmnq2u4r6008ankjxh797idqd\" echo \"=== Restore original avatar ===\" curl -s -X PUT \"http://localhost:3000/api/admin/team/$MID\" -b cookies3.txt -H \"Content-Type: application/json\" --data-raw '{\"\"\"\"avatar\"\"\"\":\"\"\"\"/images/team/ceo-placeholder.jpg\"\"\"\"}')",
-      "Bash(grep -n '\"\"pg\"\"\\\\|@types/pg' package.json)"
+      "Bash(grep -n '\"\"pg\"\"\\\\|@types/pg' package.json)",
+      "Bash(wc:*)",
+      "Bash(node -e \"console.log\\(require\\(''D:/LOOP_COMPANY/LOOP/node_modules/react/package.json''\\).version\\)\")",
+      "Bash(node -e \"console.log\\(require\\(''D:/LOOP_COMPANY/LOOP/node_modules/react-dom/package.json''\\).version\\)\")"
     ],
     "additionalDirectories": [
       "D:\\LOOP_COMPANY\\LOOP\\src\\app\\api\\admin\\expertises",

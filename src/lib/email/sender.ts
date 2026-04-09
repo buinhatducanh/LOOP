@@ -417,6 +417,59 @@ export async function sendAdminContactNotification(data: ContactConfirmationEmai
   return { error };
 }
 
+/** Handover delivered — sent to the customer when their project is handed over */
+export async function sendHandoverDelivered(data: {
+  customerName: string;
+  customerEmail: string;
+  orderNumber: string;
+  handoverDate: Date;
+  projectName: string;
+  figmaUrl?: string | null;
+  githubUrl?: string | null;
+  deploymentUrl?: string | null;
+  completedItems?: number;
+  totalItems?: number;
+}) {
+  const html = htmlShell(
+    `🎉 Gói bàn giao cho đơn hàng ${data.orderNumber} đã sẵn sàng!`,
+    `<p style="margin:0 0 20px 0;font-size:15px;color:rgba(209,213,219,0.8)">
+      Chào <strong style="color:#fff">${data.customerName}</strong>, dự án <strong style="color:#8B5CF6">${data.projectName}</strong> đã hoàn thành và sẵn sàng bàn giao cho bạn.
+    </p>
+    <div style="background:rgba(16,185,129,0.08);border-radius:12px;border:1px solid rgba(16,185,129,0.2);padding:20px;margin:0 0 20px 0;text-align:center">
+      <p style="margin:0 0 8px 0;font-size:11px;color:rgba(209,213,219,0.5);font-family:monospace;letter-spacing:0.1em">ĐÃ BÀN GIAO NGÀY</p>
+      <p style="margin:0;font-size:16px;font-weight:700;color:#10B981">${format(data.handoverDate, "dd/MM/yyyy", { locale: vi })}</p>
+    </div>
+    ${data.figmaUrl || data.githubUrl || data.deploymentUrl ? `<div style="background:rgba(255,255,255,0.03);border-radius:10px;padding:16px;margin:0 0 16px 0">
+      <p style="margin:0 0 12px 0;font-size:12px;color:rgba(209,213,219,0.5);font-family:monospace;letter-spacing:0.1em">TÀI NGUYÊN BÀN GIAO</p>
+      ${data.figmaUrl ? `<p style="margin:0 0 6px 0"><a href="${data.figmaUrl}" style="color:#8B5CF6;text-decoration:none;font-size:13px">🎨 Figma Design</a></p>` : ""}
+      ${data.githubUrl ? `<p style="margin:0 0 6px 0"><a href="${data.githubUrl}" style="color:#62C5EB;text-decoration:none;font-size:13px">💻 Source Code</a></p>` : ""}
+      ${data.deploymentUrl ? `<p style="margin:0"><a href="${data.deploymentUrl}" style="color:#10B981;text-decoration:none;font-size:13px">🌐 Live Website</a></p>` : ""}
+    </div>` : ""}
+    ${(data.totalItems ?? 0) > 0 ? `<div style="background:rgba(59,130,246,0.08);border-radius:10px;padding:16px;margin:0 0 20px 0;text-align:center">
+      <p style="margin:0 0 4px 0;font-size:11px;color:rgba(209,213,219,0.5)">CHECKLIST HOÀN THÀNH</p>
+      <p style="margin:8px 0 0 0;font-size:20px;font-weight:900;color:#3B82F6">${data.completedItems}/${data.totalItems} items</p>
+    </div>` : ""}
+    <p style="margin:0 0 16px 0;font-size:13px;color:rgba(209,213,219,0.6)">
+      Truy cập dashboard để xem chi tiết: <a href="https://loops.vn/khach-hang" style="color:#8B5CF6">loops.vn/khach-hang</a>
+    </p>
+    <div style="background:rgba(139,92,246,0.08);border-radius:10px;padding:16px;margin:0">
+      <p style="margin:0;font-size:12px;color:rgba(209,213,219,0.6)">
+        💡 Nếu có thắc mắc, liên hệ LOOP qua <a href="mailto:hello@loop.vn" style="color:#8B5CF6">hello@loop.vn</a> — chúng tôi luôn sẵn sàng hỗ trợ.
+      </p>
+    </div>`
+  );
+
+  const { error } = await getResend().emails.send({
+    from: FROM,
+    to: data.customerEmail,
+    subject: `🎉 Đơn hàng ${data.orderNumber} — Gói bàn giao đã sẵn sàng!`,
+    html,
+  });
+
+  if (error) console.error("[Email] Handover delivered failed:", error);
+  return { error };
+}
+
 /** Order confirmation — sent to the customer after placing an order */
 export async function sendOrderConfirmation(data: OrderConfirmationEmailData) {
   const html = htmlShell(

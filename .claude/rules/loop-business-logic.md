@@ -1,8 +1,8 @@
 # LOOP Business Logic — Source of Truth
 
-> **Version**: 6.0.0 · Updated: 2026-04-08
-> **Source**: Verified vs `loopStore.ts`, `authStore.ts`, `KanbanBoard.tsx`, `useRealtimeNotifications.ts`, authStore v3 (7 roles)
-> **Status**: v6 — Full E2E Simulation (2026-04-08): ProjectRole model, TaskKanban task-level board, SSE notifications (replaced fake), HandoverPackage extended, CustomerWebsite + eKYC, FigmaDemo token approval API, domain purchase flow, automation tests scaffold.
+> **Version**: 7.0.0 · Updated: 2026-04-09
+> **Source**: Verified vs `loopStore.ts`, `authStore.ts`, `KanbanBoard.tsx`, `useRealtimeNotifications.ts`, authStore v4 (8 roles + department system)
+> **Status**: v7 — Department System + Permission-Based Admin Tabs (2026-04-09): 8 departments, dept heads, CEO assigns tabs individually. Full RBAC redesign. See Section 14.
 
 ---
 
@@ -191,72 +191,95 @@ low    → chỉ hiện trong list
 
 ---
 
-## 7. Staff Portal Tabs
+## 7. Staff Portal Tabs (v4.0)
 
 ```typescript
-// authStore.ts — getAccessibleTabs()
-STAFF_TABS = ['overview', 'projects', 'notification_center'];
-// Manager: theo department (xem DEPT_TABS trong authStore)
+// authStore.ts — getAccessibleTabs(role, departmentKey?)
+// Tab list KHÔNG còn hardcoded — CEO gán permissions từng tab
+// Baseline: ROLE_BASE_TABS[role] + DEPT_TAB_BONUS[departmentKey]
+// CEO gán thêm/bớt: PUT /api/admin/permissions/[memberId]
 ```
 
 ---
 
-## 8. Admin RBAC — 7 Staff Roles
+## 8. Admin RBAC — 8 Staff Roles (v4.0)
 
-### 8.1 Role Hierarchy
+### 8.1 Role Hierarchy (có thêm `hr`)
 
 ```typescript
 // roleLevel: lower = more privileged
-ceo: -1 → super_admin: 0 → admin: 1 → project_manager: 2 → media: 3 → qa: 4 → member: 5
+ceo: -1 → super_admin: 0 → admin: 1 → hr: 2 → project_manager: 3 → media: 4 → qa: 5 → member: 6
 ```
 
-### 8.2 Per-Role Admin Tabs
+### 8.2 8 Phòng ban
 
-| Role | Tabs | Domain |
-|------|------|--------|
-| admin (0-1) | all 23 | Toàn hệ thống |
-| project_manager (2) | orders, clients, quotation, services, revenue, projects, members, departments, lp_manage... | Kinh doanh, vận hành dự án |
-| media (3) | media, blog, orders, projects, clients, academy, services, portfolio... | Media, marketing, nội dung |
-| qa (4) | projects, notification_center, orders, clients, members, academy... | Testing, QA |
-| member (5) | overview, notification_center, leaderboard_admin, academy, quests_events | Cơ bản — mọi người đều xem Kanban |
+| ID | Tên | Màu | Trưởng phòng |
+|----|-----|------|--------------|
+| `engineering` | Phòng Kỹ thuật (IT) | `#3B82F6` | Có (Crown icon) |
+| `design` | Phòng Thiết kế | `#8B5CF6` | Có |
+| `media` | Phòng Media | `#EC4899` | Có |
+| `marketing` | Phòng Marketing | `#F59E0B` | Có |
+| `sales` | Phòng Kinh doanh | `#22C55E` | Có |
+| `finance` | Phòng Tài chính | `#14B8A6` | Có |
+| `hr` | Phòng Nhân sự | `#6366F1` | Có |
+| `management` | Ban Quản lý | `#EAB308` | CEO (không cần chỉ định) |
 
-### 8.3 Member Onboarding — CEO Approval Workflow
+### 8.3 Tab Permissions — Permission-Based (v4.0)
+
+> **Thay đổi lớn**: Từ trước mỗi role có 1 danh sách tabs cố định.
+> **Bây giờ** mỗi tab = 1 permission riêng biệt, CEO gán cho từng member.
+
+```typescript
+// 28 admin tabs — mỗi tab = 1 permission
+type AdminTab =
+  | "overview" | "orders" | "members" | "departments" | "projects"
+  | "services" | "media" | "quotation" | "portfolio" | "projects_completed"
+  | "academy" | "blog" | "revenue" | "clients" | "lp" | "lp_manage"
+  | "income_tax" | "web_packages" | "effects" | "notification_center"
+  | "settings" | "quests_events" | "leaderboard_admin" | "analytics"
+  | "figma_demos" | "kanban" | "revenue_split" | "off_system_payments";
+
+// CEO gán permissions → lưu vào TeamMember.tabPermissions
+// Session user nhận tabPermissions[] khi login
+canAccessTab(user, tabId): boolean
+  → ceo/super_admin/admin → true (all tabs)
+  → user.tabPermissions.includes(tabId) → true
+  → user.departmentPermissions[user.departmentId]?.includes(tabId) → true
+  → else → false
+```
+
+### 8.4 Member Onboarding — CEO Approval Workflow (v4.0)
+
+> Xem chi tiết: `admin-rbac.md` Section 8 (Onboarding)
 
 ```
-HR tạo hồ sơ → Nhân viên đăng ký (pending) → CEO duyệt → Gán role + tags → Kích hoạt
+HR tạo hồ sơ → Nhân viên đăng ký (pending) → CEO duyệt → Gán role + department + tab permissions → Kích hoạt
 ```
 
-**2 lớp quyền:**
-- System Role (1 cái): member, media, qa, pm — gán bởi CEO
-- Access Tags (nhiều cái): blog-post, seo-content, kanban... — gán bởi CEO
+**3 lớp quyền (v4.0):**
+- System Role (1 cái): member, media, qa, pm, hr — gán bởi CEO khi onboarding
+- Tab Permissions (nhiều cái): CEO gán từng admin tab từ Settings → Phân quyền
+- Department (1 cái): chọn phòng ban → tự nhận dept bonus tabs
 
-**Default tags (cho mọi member, không revoke):**
+**Default tabs (cho mọi member, không revoke):**
 - `kanban`: Kanban Board
 - `order-basic`: Xem đơn hàng
 
-**Mới thêm (v4):**
-- `blog-post`: Quản trị bài viết (cho SEO, Media)
-- `project-content`: Nội dung dự án (cho SEO, Designer)
-- `seo-content`: Nội dung SEO (cho SEO Specialist)
-- `media-content`: Nội dung Media (cho Media team)
-- `salary`: Xem lương (CEO/Admin only)
-- `lp-manage`: Quản lý LP (CEO → Admin)
-- `finance-view`: Xem tài chính (cho Kế toán)
-- `hr-manage`: Quản lý nhân sự (cho HR)
+**Trưởng phòng (isDeptHead):** Giữ nguyên system role + thêm dept bonus tabs + xem LP phòng mình + gán task trong phòng
 
 ---
 
-## 9. Admin RBAC Tabs (25 tabs)
+## 9. Admin RBAC Tabs (28 tabs — v4.0)
 
 ```typescript
 type AdminTab =
-  | 'overview' | 'orders' | 'members' | 'departments' | 'projects'
-  | 'services' | 'media' | 'quotation' | 'portfolio' | 'projects_completed'
-  | 'academy' | 'blog'
-  | 'revenue' | 'clients' | 'lp' | 'lp_manage' | 'income_tax' | 'web_packages'
-  | 'effects' | 'notification_center' | 'settings' | 'quests_events'
-  | 'leaderboard_admin' | 'analytics' | 'figma-demos' | 'kanban'
-  | 'revenue_split' | 'off_system_payments'; // v5 (2026-04-07)
+  | "overview" | "orders" | "members" | "departments" | "projects"
+  | "services" | "media" | "quotation" | "portfolio" | "projects_completed"
+  | "academy" | "blog"
+  | "revenue" | "clients" | "lp" | "lp_manage" | "income_tax" | "web_packages"
+  | "effects" | "notification_center" | "settings" | "quests_events"
+  | "leaderboard_admin" | "analytics" | "figma_demos" | "kanban"
+  | "revenue_split" | "off_system_payments"; // v4.0 (2026-04-09): figma_demos, kanban
 ```
 
 ---

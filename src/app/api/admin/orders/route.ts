@@ -105,28 +105,34 @@ export const POST = withIdempotency(
       // Use UUID-based order number to prevent collision under concurrent requests
       const orderNumber = `ORD-${crypto.randomUUID().replace(/-/g, "").slice(0, 12).toUpperCase()}`;
 
-      const order = await prisma.order.create({
-        data: {
-          orderNumber,
-          packageId: data.packageId,
-          customerName: data.customerName,
-          customerEmail: data.customerEmail,
-          customerPhone: data.customerPhone || null,
-          companyName: data.companyName || null,
-          requirements: data.requirements || null,
-          status: requestedStatus,
-          paymentStatus: data.paymentStatus || "unpaid",
-          totalAmount: data.totalAmount ? parseInt(data.totalAmount) : null,
-        },
-        include: { package: { select: { title: true } } },
-      });
-
-      await createAuditLog({
-        userId: session.userId,
-        action: "create",
-        resource: "orders",
-        resourceId: order.id,
-        newValues: data,
+      // ⚠️ FIX: wrap order create + audit log in a transaction.
+      // If audit log write fails, the order still exists — gap in audit trail.
+      const order = await prisma.$transaction(async (tx) => {
+        const created = await tx.order.create({
+          data: {
+            orderNumber,
+            packageId: data.packageId,
+            customerName: data.customerName,
+            customerEmail: data.customerEmail,
+            customerPhone: data.customerPhone || null,
+            companyName: data.companyName || null,
+            requirements: data.requirements || null,
+            status: requestedStatus,
+            paymentStatus: data.paymentStatus || "unpaid",
+            totalAmount: data.totalAmount ? parseInt(data.totalAmount) : null,
+          },
+          include: { package: { select: { title: true } } },
+        });
+        await tx.auditLog.create({
+          data: {
+            userId: session.userId,
+            action: "create",
+            resource: "orders",
+            resourceId: created.id,
+            newValues: data,
+          },
+        });
+        return created;
       });
 
       orderLogger.info("Admin order created", {

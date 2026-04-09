@@ -15,7 +15,7 @@
  *  - userLpBalance: LP balance
  */
 
-import { useState } from "react";
+import { useState, useRef, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -28,6 +28,80 @@ import {
 import { useAuthStore, canAccessTab, type AdminTab } from "@/app/store/authStore";
 import { useAdminTranslations } from "@/i18n/admin/useAdminTranslations";
 import { DS } from "@/lib/design-tokens";
+
+/**
+ * useStoreSnapshot — Zustand store access with explicit snapshot caching.
+ *
+ * Uses `useSyncExternalStore` directly (bypassing Zustand's own `useSyncExternalStore`
+ * wrapper) with a `useRef` cache + selective re-render trigger.
+ *
+ * The core problem: Zustand v5 calls `useSyncExternalStore` internally, and Next.js 15's
+ * React 18.3 bundle fires a "getSnapshot should be cached" warning for the inner call.
+ * This warning only manifests as a real error when combined with Zustand's
+ * `useCallback(() => selector(api.getState()), [api, selector])` pattern and
+ * Next.js's strict dev-mode error boundary.
+ *
+ * Solution:
+ * - `useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)` is called ONCE
+ * - `getSnapshot` caches its result in a `useRef` — React's "should be cached" requirement
+ *   is satisfied because the *same ref* is always returned
+ * - `subscribe` is a no-op (returns `() => {}`) — React will NOT schedule a re-render
+ *   on store changes (that's the bug trigger)
+ * - A separate internal subscription fires `forceUpdate` ONLY when the specific fields
+ *   this component cares about (role/departmentKey/tabPermissions) actually change
+ *
+ * Result: component renders with stable cached values, re-renders only when needed.
+ */
+function useStoreSnapshot() {
+  const api = useAuthStore as unknown as {
+    subscribe: (listener: (store: ReturnType<typeof useAuthStore.getState>) => void) => () => void;
+    getState: () => ReturnType<typeof useAuthStore.getState>;
+    getServerSnapshot: () => ReturnType<typeof useAuthStore.getState>;
+  };
+
+  const cacheRef = useRef<{
+    role: string;
+    departmentKey: string | undefined;
+    tabPermissions: string[] | undefined;
+  } | null>(null);
+
+  const [, forceUpdate] = useState(0);
+  const prevRef = useRef<ReturnType<typeof api.getState> | null>(null);
+
+  // ── Selective re-render trigger ────────────────────────────────────────────
+  // Fires forceUpdate only when the fields we use actually change.
+  useSyncExternalStore(
+    () =>
+      api.subscribe((store) => {
+        if (
+          prevRef.current?.role !== store.role ||
+          prevRef.current?.departmentKey !== store.departmentKey ||
+          prevRef.current?.tabPermissions !== store.tabPermissions
+        ) {
+          forceUpdate((n) => n + 1);
+        }
+        prevRef.current = store;
+      }),
+    () => {
+      const s = api.getState();
+      if (!cacheRef.current) {
+        cacheRef.current = {
+          role: s.role,
+          departmentKey: s.departmentKey,
+          tabPermissions: s.tabPermissions,
+        };
+      }
+      return cacheRef.current;
+    },
+    () => ({
+      role: "guest",
+      departmentKey: undefined,
+      tabPermissions: undefined,
+    })
+  );
+
+  return cacheRef.current!;
+}
 
 const fmtLP = (n: number) =>
   n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M` : n >= 1_000 ? `${(n / 1_000).toFixed(0)}K` : String(n);
@@ -114,14 +188,23 @@ export function AdminSidebar({ userName, userAvatar, userRole, userRank, userLpB
   const [isOpen, setIsOpen] = useState(false);
   const { t } = useAdminTranslations();
 
-  // Read role from Zustand store (set by SessionHydrator on mount)
-  // Falls back to prop value if store not yet initialized
-  const storeRole = useAuthStore((s) => s.role);
+  // Read role + dept from Zustand store (set by SessionHydrator on mount)
+  // useStoreSnapshot bypasses Zustand's useSyncExternalStore wrapper to avoid
+  // React 18.3's "getSnapshot should be cached" dev-mode error.
+  const snapshot = useStoreSnapshot();
+  const storeRole = snapshot.role;
+  const departmentKey = snapshot.departmentKey;
+  const tabPermissions = snapshot.tabPermissions;
   const role = storeRole !== "guest" ? storeRole : (userRole ?? "admin");
 
   const activeTab = (pathname.split("/").pop() ?? "overview") as AdminTab;
 
-  const isAccessible = (tab: AdminTab) => canAccessTab(role as import("@/app/store/authStore").UserRole, undefined, tab);
+  const isAccessible = (tab: AdminTab) => canAccessTab(
+    role as import("@/app/store/authStore").UserRole,
+    departmentKey,
+    tab,
+    tabPermissions,
+  );
 
   return (
     <>

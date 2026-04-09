@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
+import type { InputJsonValue } from "@/generated/prisma/internal/prismaNamespace";
 import { CUSTOM_ORDER_STATUSES, TEMPLATE_ORDER_STATUSES } from "@/lib/pricing/order-lifecycle";
 
 export async function GET(
@@ -57,19 +58,24 @@ export async function PUT(
       }
     }
 
-    const order = await prisma.order.update({
-      where: { id },
-      data,
-      include: { package: { select: { title: true } } },
-    });
-
-    await createAuditLog({
-      userId: session.userId,
-      action: "update",
-      resource: "orders",
-      resourceId: id,
-      oldValues: existing as unknown as Record<string, unknown>,
-      newValues: data,
+    // ⚠️ FIX: wrap order update + audit log in a transaction.
+    const order = await prisma.$transaction(async (tx) => {
+      const updated = await tx.order.update({
+        where: { id },
+        data,
+        include: { package: { select: { title: true } } },
+      });
+      await tx.auditLog.create({
+        data: {
+          userId: session.userId,
+          action: "update",
+          resource: "orders",
+          resourceId: id,
+          oldValues: existing as unknown as InputJsonValue,
+          newValues: data as unknown as InputJsonValue,
+        },
+      });
+      return updated;
     });
 
     return NextResponse.json({ data: order });
@@ -91,14 +97,18 @@ export async function DELETE(
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    await prisma.order.delete({ where: { id } });
-
-    await createAuditLog({
-      userId: session.userId,
-      action: "delete",
-      resource: "orders",
-      resourceId: id,
-      oldValues: existing as unknown as Record<string, unknown>,
+    // ⚠️ FIX: wrap order delete + audit log in a transaction.
+    await prisma.$transaction(async (tx) => {
+      await tx.order.delete({ where: { id } });
+      await tx.auditLog.create({
+        data: {
+          userId: session.userId,
+          action: "delete",
+          resource: "orders",
+          resourceId: id,
+          oldValues: existing as unknown as InputJsonValue,
+        },
+      });
     });
 
     return ok({ success: true });

@@ -19,7 +19,7 @@ const createSchema = z.object({
 
 export async function GET(req: NextRequest) {
   try {
-    await requirePermission("projects", "read");
+    await requirePermission("handover", "read");
     const { searchParams } = new URL(req.url);
     const projectId = searchParams.get("projectId") ?? searchParams.get("orderId");
     const status = searchParams.get("status");
@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await requirePermission("projects", "create");
+    const session = await requirePermission("handover", "create");
     const body = await req.json();
     const parsed = createSchema.safeParse(body);
     if (!parsed.success) return NextResponse.json({ error: parsed.error.message }, { status: 400 });

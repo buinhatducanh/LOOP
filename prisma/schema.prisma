@@ -780,6 +780,9 @@ model ServiceAttribute {
   tier               String                 @default("basic")
   xpPoints           Int                    @default(0) @map("xp_points")
   parentId           String?                @map("parent_id")
+  /// If true, this feature is included in the base price (3,890,000₫).
+  /// Appears in the feature table with price 0đ and "✓ Đã bao gồm" badge.
+  includedInBase     Boolean                @default(false) @map("included_in_base")
   orderAttributes    OrderAttribute[]
   parent             ServiceAttribute?      @relation("FeatureHierarchy", fields: [parentId], references: [id])
   children           ServiceAttribute[]     @relation("FeatureHierarchy")
@@ -1066,6 +1069,12 @@ model QuoteRequest {
   status        String   @default("new")
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
+  /// Optional: pre-selected hosting plan slug
+  hostingPlanSlug String? @map("hosting_plan_slug")
+  /// Optional: pre-selected domain name
+  domainName    String?  @map("domain_name")
+  /// Whether domain will be purchased now or deferred until handover
+  domainPurchaseTime String? @default("now") @map("domain_purchase_time")
   /// Links to Quotes created from this request (reverse of Quote.quoteRequest)
   quotes        Quote[]
 
@@ -1130,9 +1139,16 @@ model PricingHostingPlan {
   slug        String   @unique
   name        String
   nameVi      String   @map("name_vi")
-  price       Int
+  /// Base monthly price (used to compute period-prorated prices).
+  monthlyPrice Int     @map("monthly_price")
+  /// Human-readable period label, e.g. "1 năm", "2 năm".
   period      String
   periodVi    String   @map("period_vi")
+  /// Number of months this plan is billed for (e.g. 6, 12, 24).
+  months      Int      @default(12)
+  /// Discount % applied when purchasing this plan upfront.
+  /// E.g. 10 = 10% off the sum of monthlyPrice × months.
+  discountPct Float    @default(0) @map("discount_pct")
   features    String[]
   featuresVi  String[] @map("features_vi")
   highlighted Boolean  @default(false)
@@ -1156,6 +1172,8 @@ model PricingDomainPrice {
   noteVi            String? @map("note_vi")
   sortOrder         Int     @default(0) @map("sort_order")
   isActive          Boolean @default(true) @map("is_active")
+  /// Whether the domain can be purchased immediately (via WHOIS check / inet.com availability API).
+  isAvailable       Boolean @default(true) @map("is_available")
 
   @@map("pricing_domain_prices")
 }

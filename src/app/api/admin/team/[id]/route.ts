@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
-import { createAuditLog } from "@/lib/auth/audit";
 import { addAvatar } from "@/lib/api/mappings";
 import { handleError, ok } from "@/lib/api/response";
+import type { InputJsonValue } from "@/generated/prisma/internal/prismaNamespace";
 
 export async function GET(
   req: NextRequest,
@@ -53,6 +53,10 @@ export async function GET(
  *   - If avatar-only change: update ONLY image field → never slug conflict
  *   - If name/slug/role changes: update those fields + defensive pre-check
  *
+ * P1-5 FIX: all writes (teamMember.update, user.updateMany, userRole.deleteMany,
+ * userRole.createMany, memberExpertise.*) are wrapped in a single $transaction.
+ * createAuditLog is also inside the transaction.
+ *
  * Prisma fields vs FE field names:
  *   avatar (FE) → image (Prisma)
  *   team      (FE) → department (Prisma)
@@ -82,23 +86,29 @@ export async function PUT(
     // This avoids touching slug/name/role and eliminates all slug-conflict risk.
     if (!nameChanged && !slugChanged && !roleChanged && avatarChanged) {
       let member;
+      // P1-5: wrap avatar update + audit log in a transaction
       try {
-        member = await prisma.teamMember.update({
-          where: { id },
-          data: { image: body.avatar ?? null },
+        member = await prisma.$transaction(async (tx) => {
+          const m = await tx.teamMember.update({
+            where: { id },
+            data: { image: body.avatar ?? null },
+          });
+          await tx.auditLog.create({
+            data: {
+              userId: session.userId,
+              action: "update",
+              resource: "team",
+              resourceId: id,
+              oldValues: { image: existing.image } as unknown as InputJsonValue,
+              newValues: { image: m.image } as unknown as InputJsonValue,
+            },
+          });
+          return m;
         });
       } catch (prismaErr: unknown) {
         console.error("[PUT /api/admin/team] avatar-only update error:", prismaErr);
         return NextResponse.json({ error: "Cập nhật ảnh thất bại" }, { status: 500 });
       }
-      await createAuditLog({
-        userId: session.userId,
-        action: "update",
-        resource: "team",
-        resourceId: id,
-        oldValues: { image: existing.image },
-        newValues: { image: member.image },
-      });
       return NextResponse.json({ data: addAvatar(member) });
     }
 
@@ -176,19 +186,104 @@ export async function PUT(
       }
     }
 
-    // ── Extract systemRole before TeamMember update (User.role is updated separately) ─
+    // ── Extract systemRole before TeamMember update ─────────────────────────────
     const systemRole = updateData.systemRole as string | undefined;
     const teamUpdateData = Object.fromEntries(
       Object.entries(updateData).filter(([k]) => k !== "systemRole")
     ) as Record<string, unknown>;
 
-    // ── Execute update ─────────────────────────────────────────────────────────
+    // ── Resolve expertise IDs (reads — safe outside tx) ─────────────────────────
+    let expertiseRecords: { memberId: string; expertiseId: string; level: number }[] = [];
+    if (body.hasOwnProperty("memberExpertise") && Array.isArray(memberExpertise) && memberExpertise.length > 0) {
+      expertiseRecords = [];
+      for (const exp of memberExpertise as { name?: string; expertiseId?: string; level?: number }[]) {
+        let resolvedId = exp.expertiseId;
+        if (!resolvedId && exp.name) {
+          let expRecord = await prisma.expertise.findFirst({ where: { name: exp.name } });
+          if (!expRecord) {
+            expRecord = await prisma.expertise.create({ data: { name: exp.name, category: "General" } });
+          }
+          resolvedId = expRecord.id;
+        }
+        if (resolvedId) {
+          expertiseRecords.push({
+            memberId: id,
+            expertiseId: resolvedId,
+            level: (exp.level as number) || 5,
+          });
+        }
+      }
+    }
+
+    // ── Resolve role IDs (reads — safe outside tx) ───────────────────────────────
+    const roleNames = (body as { roles?: string[] }).roles;
+    let roleIds: string[] = [];
+    if ((systemRole !== undefined || roleNames !== undefined) && roleNames !== undefined && roleNames.length > 0) {
+      const roles = await prisma.role.findMany({ where: { name: { in: roleNames } } });
+      roleIds = roles.map((r) => r.id);
+    }
+
+    // ── Resolve userId for User table updates ────────────────────────────────────
+    const user = roleNames !== undefined || systemRole !== undefined
+      ? await prisma.user.findFirst({ where: { teamMemberId: id } })
+      : null;
+    const userId = user?.id ?? null;
+
+    // ── P1-5 FIX: execute all writes in a single $transaction ────────────────────
     let member;
     try {
-      member = await prisma.teamMember.update({
-        where: { id },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        data: teamUpdateData as any,
+      member = await prisma.$transaction(async (tx) => {
+        // 1. Update TeamMember
+        const m = await tx.teamMember.update({
+          where: { id },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          data: teamUpdateData as any,
+        });
+
+        // 2. Update User.systemRole scalar
+        if (systemRole !== undefined && userId) {
+          await tx.user.updateMany({
+            where: { teamMemberId: id },
+            data: { role: systemRole },
+          });
+        }
+
+        // 3. Sync UserRole junction table
+        if (roleNames !== undefined && userId) {
+          await tx.userRole.deleteMany({ where: { userId } });
+          if (roleIds.length > 0) {
+            await tx.userRole.createMany({
+              data: roleIds.map((roleId) => ({
+                userId,
+                roleId,
+                isActive: true,
+                assignedBy: session.userId,
+              })),
+            });
+          }
+        }
+
+        // 4. Sync expertise relations
+        if (body.hasOwnProperty("memberExpertise")) {
+          await tx.memberExpertise.deleteMany({ where: { memberId: id } });
+          if (expertiseRecords.length > 0) {
+            await tx.memberExpertise.createMany({ data: expertiseRecords });
+          }
+        }
+
+        // 5. P1-2 FIX: audit log inside tx — no gap between write and audit record
+        await tx.auditLog.create({
+          data: {
+            userId: session.userId,
+            action: "update",
+            resource: "team",
+            resourceId: id,
+            oldValues: existing as unknown as InputJsonValue,
+            newValues: m as unknown as InputJsonValue,
+          },
+        });
+
+        return m;
       });
     } catch (prismaErr: unknown) {
       console.error("[PUT /api/admin/team] Prisma error:", prismaErr);
@@ -202,79 +297,6 @@ export async function PUT(
       }
       return NextResponse.json({ error: "Cập nhật thất bại" }, { status: 500 });
     }
-
-    // ── Update User.systemRole (User.role scalar) + UserRole junction ──────────
-    // systemRole: the PRIMARY role shown in the UI (User.role field)
-    // roles:      ALL roles from the junction table — supports multi-role assignment
-    if (systemRole !== undefined || (body as { roles?: string[] }).roles !== undefined) {
-      const roleNames = (body as { roles?: string[] }).roles;
-      // Update User.role scalar (primary display role)
-      if (systemRole !== undefined) {
-        await prisma.user.updateMany({
-          where: { teamMemberId: id },
-          data: { role: systemRole },
-        });
-      }
-      // Sync UserRole junction table (multi-role support)
-      if (roleNames !== undefined) {
-        const user = await prisma.user.findFirst({ where: { teamMemberId: id } });
-        if (user) {
-          // Remove all existing role assignments
-          await prisma.userRole.deleteMany({ where: { userId: user.id } });
-          // Assign each role from the array
-          if (roleNames.length > 0) {
-            const roles = await prisma.role.findMany({
-              where: { name: { in: roleNames } },
-            });
-            await prisma.userRole.createMany({
-              data: roles.map((r) => ({
-                userId: user.id,
-                roleId: r.id,
-                isActive: true,
-                assignedBy: session.userId,
-              })),
-            });
-          }
-        }
-      }
-    }
-
-    // ── Update expertise relations ──────────────────────────────────────────────
-    if (body.hasOwnProperty("memberExpertise")) {
-      await prisma.memberExpertise.deleteMany({ where: { memberId: id } });
-
-      if (Array.isArray(memberExpertise) && memberExpertise.length > 0) {
-        const records = await Promise.all(
-          memberExpertise.map(async (exp: { name?: string; expertiseId?: string; level?: number }) => {
-            let resolvedId = exp.expertiseId;
-            if (!resolvedId && exp.name) {
-              let expRecord = await prisma.expertise.findFirst({ where: { name: exp.name } });
-              if (!expRecord) {
-                expRecord = await prisma.expertise.create({ data: { name: exp.name, category: "General" } });
-              }
-              resolvedId = expRecord.id;
-            }
-            return {
-              memberId: id,
-              expertiseId: resolvedId,
-              level: (exp.level as number) || 5,
-            };
-          })
-        );
-        await prisma.memberExpertise.createMany({
-          data: records as { memberId: string; expertiseId: string; level: number }[],
-        });
-      }
-    }
-
-    await createAuditLog({
-      userId: session.userId,
-      action: "update",
-      resource: "team",
-      resourceId: id,
-      oldValues: existing as unknown as Record<string, unknown>,
-      newValues: member,
-    });
 
     return NextResponse.json({ data: addAvatar(member) });
 
@@ -296,14 +318,18 @@ export async function DELETE(
       return NextResponse.json({ error: "Không tìm thấy thành viên" }, { status: 404 });
     }
 
-    await prisma.teamMember.delete({ where: { id } });
-
-    await createAuditLog({
-      userId: session.userId,
-      action: "delete",
-      resource: "team",
-      resourceId: id,
-      oldValues: existing as unknown as Record<string, unknown>,
+    // P1-5 FIX: wrap delete + audit log in a transaction
+    await prisma.$transaction(async (tx) => {
+      await tx.teamMember.delete({ where: { id } });
+      await tx.auditLog.create({
+        data: {
+          userId: session.userId,
+          action: "delete",
+          resource: "team",
+          resourceId: id,
+          oldValues: existing as unknown as InputJsonValue,
+        },
+      });
     });
 
     return ok({ success: true });

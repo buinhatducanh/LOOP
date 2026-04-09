@@ -1,7 +1,6 @@
 import { handleError, ok } from "@/lib/api/response";
 import { NextRequest, NextResponse } from "next/server";
 import { requirePermission } from "@/lib/auth/permissions";
-import { createAuditLog } from "@/lib/auth/audit";
 import { transitionOrderStatus } from "@/lib/pricing/order-lifecycle";
 
 export async function POST(
@@ -20,19 +19,12 @@ export async function POST(
       );
     }
 
-    const result = await transitionOrderStatus(id, toStatus, session.userId, note);
+    // P1-2 FIX: audit log is written INSIDE transitionOrderStatus's $transaction.
+    const result = await transitionOrderStatus(id, toStatus, session.userId, note, session.userId, id);
 
     if (!result.success) {
       return NextResponse.json({ error: result.error }, { status: 400 });
     }
-
-    await createAuditLog({
-      userId: session.userId,
-      action: "update",
-      resource: "orders",
-      resourceId: id,
-      newValues: { toStatus, note },
-    });
 
     return ok({ success: true });
   } catch (error) {

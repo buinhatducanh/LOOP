@@ -145,7 +145,7 @@ async function fetchPricing() {
     prisma.pricingHostingPlan.findMany({
       where: { isActive: true },
       select: {
-        name: true, price: true, period: true, features: true,
+        name: true, monthlyPrice: true, period: true, features: true,
         highlighted: true, color: true, createdAt: true,
       },
     }),
