@@ -293,6 +293,21 @@ model Project {
   service       Service?    @relation(fields: [serviceId], references: [id])
   teamMember    TeamMember? @relation(fields: [teamMemberId], references: [id])
 
+  // Case study fields (P0 — 2026-04-11)
+  isCaseStudy   Boolean     @default(false) @map("is_case_study")
+  industry      String?                // fintech | retail | manufacturing | healthcare | education | logistics | other
+  projectScope String?                // "MVP", "Full platform", "Migration", ...
+  teamSize      Int?                  @map("team_size")
+  duration      String?               // "3 tháng", "6 tuần", ...
+  challenge     String?               // Business challenge
+  solution      String?               // Methodology & approach
+  clientQuote   String?               @map("client_quote")
+  clientRole    String?               @map("client_role")  // "CEO", "CTO", ...
+  roiMetric     String?               @map("roi_metric")    // "300% ROI in 6 months"
+  primaryMetric String?               @map("primary_metric") // "conversion_rate_up_45%"
+  videoUrl      String?               @map("video_url")
+  galleryImages String[]              @map("gallery_images")
+
   @@map("projects")
 }
 
@@ -621,12 +636,50 @@ model Order {
   socialPosts           SocialPost[]
   offSystemPayments     OffSystemPayment[]
   taskKanbans          TaskKanban[]
+  externalProject      ExternalProject?  @relation("OrderExternalProject", fields: [externalProjectId], references: [id])
+  externalProjectId    String?           @unique @map("external_project_id")
 
   @@index([status, createdAt])
   @@index([orderType, status])
   @@index([customerEmail])
   @@index([referralCodeId])
   @@map("orders")
+}
+
+/// ExternalProject — dự án tiếp nhận từ bên ngoài hệ thống (ký HĐ bên ngoài / sales mua hộ)
+/// Gắn với Order qua externalProjectId; Order có isActiveProject = true thì Kanban hoạt động.
+model ExternalProject {
+  id               String   @id @default(cuid())
+  /// "external" = ký kết ngoài hệ thống; "sales_assisted" = sales mua hộ cho KH
+  type             String   @default("external")  @map("type")
+  orderId          String?  @unique @map("order_id")
+  /// Thông tin hợp đồng bên ngoài
+  contractRef      String?  @map("contract_ref")
+  contractParty    String?  @map("contract_party")
+  signedAt         DateTime? @map("signed_at")
+  /// Thông tin khách hàng (lưu lại để tạo Order)
+  customerName     String
+  customerEmail    String
+  customerPhone    String?
+  companyName      String?
+  requirements     String?
+  /// Giá (optional — external project có thể chưa có giá)
+  totalAmount      Float?
+  /// Ghi chú riêng của sales (cho sales_assisted)
+  salesNote        String?  @map("sales_note")
+  /// active | pending_approval | paused | completed | cancelled
+  status           String   @default("active")  @map("status")
+  /// Ai tạo
+  createdBy        String   @map("created_by")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  order           Order?  @relation("OrderExternalProject")
+
+  @@index([type])
+  @@index([status])
+  @@index([orderId])
+  @@map("external_projects")
 }
 
 /// Infrastructure tier: determines the base hosting/ops cost component of an order.
@@ -2840,4 +2893,215 @@ model PermissionAudit {
 
   @@index([targetUserId])
   @@map("permission_audits")
+}
+
+// ─── P0: FAQ ───────────────────────────────────────────────────────────────────
+model Faq {
+  id          String   @id @default(cuid())
+  question    String
+  answer      String   @db.Text
+  category    String   @default("general") // general | services | technical | payment | lp | academy
+  sortOrder   Int      @default(0) @map("sort_order")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // i18n
+  questionEn  String?  @map("question_en")
+  questionJa  String?  @map("question_ja")
+  questionKo  String?  @map("question_ko")
+  questionZh  String?  @map("question_zh")
+  answerEn    String?  @map("answer_en")  @db.Text
+  answerJa    String?  @map("answer_ja")  @db.Text
+  answerKo    String?  @map("answer_ko")  @db.Text
+  answerZh    String?  @map("answer_zh")  @db.Text
+
+  @@index([category, isActive])
+  @@index([isActive, sortOrder])
+  @@map("faqs")
+}
+
+// ─── P1: Careers ───────────────────────────────────────────────────────────────
+model JobPosting {
+  id           String    @id @default(cuid())
+  title        String
+  department   String    // engineering | design | media | marketing | sales | finance | hr | management
+  role         String    // junior | mid | senior | lead | manager
+  employmentType String @default("full_time") @map("employment_type") // full_time | part_time | contract | internship
+  location     String    @default("Ho Chi Minh City, Vietnam")
+  salaryMin    Int?      @map("salary_min")
+  salaryMax    Int?      @map("salary_max")
+  salaryCurrency String @default("VND") @map("salary_currency")
+  description  String    @db.Text
+  requirements String    @db.Text
+  benefits     String    @db.Text
+  status       String    @default("open") @map("status") // open | closed | draft
+  isActive     Boolean   @default(true) @map("is_active")
+  sortOrder    Int       @default(0) @map("sort_order")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  expiresAt    DateTime? @map("expires_at")
+
+  // i18n
+  titleEn      String?   @map("title_en")
+  descEn       String?  @map("desc_en") @db.Text
+  reqEn        String?   @map("req_en")  @db.Text
+  benEn        String?   @map("ben_en")  @db.Text
+
+  applications JobApplication[]
+  @@index([status, isActive])
+  @@index([department, status])
+  @@index([isActive, sortOrder])
+  @@map("job_postings")
+}
+
+model JobApplication {
+  id            String    @id @default(cuid())
+  jobPostingId  String    @map("job_posting_id")
+  name         String
+  email        String
+  phone        String?
+  linkedinUrl  String?   @map("linkedin_url")
+  portfolioUrl  String?   @map("portfolio_url")
+  coverLetter  String?   @map("cover_letter") @db.Text
+  resumeUrl    String?   @map("resume_url")
+  status       String    @default("applied") @map("status") // applied | screening | interview | offer | hired | rejected
+  note         String?   @map("note") @db.Text
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  jobPosting   JobPosting @relation(fields: [jobPostingId], references: [id], onDelete: Cascade)
+
+  @@index([jobPostingId, status])
+  @@index([status])
+  @@map("job_applications")
+}
+
+// ─── P1: Contracts ─────────────────────────────────────────────────────────────
+model Contract {
+  id          String    @id @default(cuid())
+  title       String
+  orderId     String?    @map("order_id")
+  customerId  String?    @map("customer_id")
+  status      String    @default("draft") @map("status") // draft | sent | signed | expired | cancelled
+  fileUrl     String?    @map("file_url")
+  value       Int?       // Contract value in VND
+  sentAt      DateTime?  @map("sent_at")
+  signedAt    DateTime?  @map("signed_at")
+  expiresAt   DateTime?  @map("expires_at")
+  createdBy   String     @map("created_by")
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+  note        String?    @map("note") @db.Text
+
+  @@index([status])
+  @@index([orderId])
+  @@index([customerId])
+  @@map("contracts")
+}
+
+// ─── P1: Invoices ──────────────────────────────────────────────────────────────
+model Invoice {
+  id            String    @id @default(cuid())
+  invoiceNumber String    @unique @map("invoice_number")
+  orderId       String?   @map("order_id")
+  customerId    String?   @map("customer_id")
+  type          String    @default("income") @map("type") // income | expense
+  amount        Int
+  taxAmount     Int       @default(0) @map("tax_amount")
+  totalAmount   Int       @default(0) @map("total_amount")
+  currency      String    @default("VND")
+  status        String    @default("draft") @map("status") // draft | sent | paid | overdue | cancelled
+  dueDate       DateTime? @map("due_date")
+  paidAt        DateTime? @map("paid_at")
+  paidMethod    String?   @map("paid_method") // bank_transfer | cash | vn_pay | momo
+  description   String?   @map("description")
+  note          String?   @map("note") @db.Text
+  createdBy     String    @map("created_by")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  lineItems     InvoiceLineItem[]
+  @@index([status, type])
+  @@index([orderId])
+  @@index([customerId])
+  @@index([dueDate])
+  @@map("invoices")
+}
+
+model InvoiceLineItem {
+  id          String  @id @default(cuid())
+  invoiceId   String  @map("invoice_id")
+  description String
+  quantity    Int     @default(1) @map("quantity")
+  unitPrice   Int     @map("unit_price")
+  totalPrice  Int     @map("total_price")
+  invoice     Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+  @@map("invoice_line_items")
+}
+
+model Expense {
+  id          String    @id @default(cuid())
+  category    String    // software | hardware | marketing | salary | office | travel | other
+  description String
+  amount      Int
+  currency    String    @default("VND")
+  date        DateTime  @default(now()) @map("date")
+  vendor      String?
+  receiptUrl  String?   @map("receipt_url")
+  status      String    @default("pending") @map("status") // pending | approved | rejected | reimbursed
+  approvedBy  String?   @map("approved_by")
+  approvedAt  DateTime? @map("approved_at")
+  note        String?   @map("note") @db.Text
+  createdBy   String    @map("created_by")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@index([category, status])
+  @@index([status, date])
+  @@index([date])
+  @@map("expenses")
+}
+
+// ─── P2: Knowledge Base ────────────────────────────────────────────────────────
+model KnowledgeArticle {
+  id          String    @id @default(cuid())
+  title       String
+  slug        String    @unique
+  category    String    @default("general") @map("category") // engineering | design | hr | processes | general
+  content     String    @db.Text
+  excerpt     String?
+  authorId    String?   @map("author_id")
+  isPinned    Boolean   @default(false) @map("is_pinned")
+  isPublished Boolean   @default(false) @map("is_published")
+  viewCount   Int       @default(0) @map("view_count")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  tags        String[]
+  @@index([category, isPublished])
+  @@index([isPinned])
+  @@map("knowledge_articles")
+}
+
+// ─── P2: Leave Request ────────────────────────────────────────────────────────
+model LeaveRequest {
+  id          String    @id @default(cuid())
+  memberId     String    @map("member_id")
+  type        String    // annual | sick | unpaid | maternity | paternity | bereavement
+  startDate   DateTime  @map("start_date")
+  endDate     DateTime  @map("end_date")
+  days        Int       @default(1)
+  reason      String?   @db.Text
+  status      String    @default("pending") @map("status") // pending | approved | rejected | cancelled
+  respondedBy String?   @map("responded_by")
+  respondedAt DateTime? @map("responded_at")
+  note        String?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@index([memberId, status])
+  @@index([status])
+  @@map("leave_requests")
 }

@@ -12,6 +12,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { useQuery } from "@tanstack/react-query";
 import { motion } from "motion/react";
 import {
   Zap, Shield, ChevronRight,
@@ -21,6 +22,7 @@ import {
 } from "lucide-react";
 import { DS, GRD } from "@/lib/design-tokens";
 import ServicesSection from "@/components/landing/ServicesSectionClient";
+import { CaseStudiesSection } from "@/components/landing/CaseStudiesSectionClient";
 import { OnboardingClient } from "@/components/landing/OnboardingClient";
 
 /* ── Galaxy keyframes (motion.div only — nebula clouds + aurora) ── */
@@ -465,11 +467,19 @@ function HeroSection({ locale }: { locale: string }) {
               boxShadow: "0 0 100px rgba(107,61,245,0.18), 0 40px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05) inset",
             }}
           >
-            {/* Banner image — full bleed */}
+            {/* Banner video — full bleed */}
             <div style={{ position: "relative", aspectRatio: "16/9", overflow: "hidden" }}>
-              <img
-                src="/assets/design-company/Banner_2k.png"
-                alt="LOOP Solutions Agency Platform"
+              <video
+                src="/assets/design-company/welcome-logo-animate.mp4"
+                ref={(el) => {
+                  if (el) {
+                    el.pause();
+                    const play = el.play();
+                    play?.catch(() => {});
+                    el.addEventListener("ended", () => el.pause(), { once: true });
+                  }
+                }}
+                playsInline
                 style={{
                   width: "100%", height: "100%", objectFit: "cover",
                   display: "block",
@@ -870,6 +880,26 @@ function LPSystemSection({ locale }: { locale: string }) {
   );
 }
 
+// ── CASE STUDIES SECTION (fetched inline) ────────────────────────────────────
+function CaseStudiesSectionWrapper({ locale }: { locale: string }) {
+  const { data } = useQuery({
+    queryKey: ["landing-case-studies", locale],
+    queryFn: async () => {
+      const baseUrl = typeof window !== "undefined" ? window.location.origin : process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.loops.vn";
+      const res = await fetch(`${baseUrl}/api/v1/case-studies?lang=${locale}&limit=3`, {
+        next: { revalidate: 300 },
+      });
+      if (!res.ok) return [];
+      const json = await res.json();
+      return Array.isArray(json.data) ? json.data : [];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+  const projects = Array.isArray(data) ? data : [];
+  if (!projects.length) return null;
+  return <CaseStudiesSection projects={projects} locale={locale} />;
+}
+
 // ── CTA SECTION ───────────────────────────────────────────────────────────────
 
 function CTASection({ locale }: { locale: string }) {
@@ -959,6 +989,7 @@ export function HomeClient({ locale }: { locale: string }) {
         <MarqueeSection />
         <StatsSection />
         <ServicesSection locale={locale} />
+        <CaseStudiesSectionWrapper locale={locale} />
         <LPSystemSection locale={locale} />
         <CTASection locale={locale} />
       </main>

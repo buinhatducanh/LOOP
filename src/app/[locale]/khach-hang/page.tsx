@@ -17,7 +17,9 @@ import {
   Settings, LogOut,
   CheckCircle2, Clock, XCircle,
   BookOpen, Award, Monitor, ExternalLink,
+  LayoutList,
 } from "lucide-react";
+import { ProjectTrackerTab } from "./_components/ProjectTrackerTab";
 import { DS, GRD } from "@/lib/design-tokens";
 import { useAuthStore } from "@/app/store/authStore";
 import { apiClient } from "@/lib/api/client";
@@ -25,8 +27,8 @@ import { apiClient } from "@/lib/api/client";
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type Tab =
-  | "overview" | "projects" | "demos" | "courses" | "invoices"
-  | "wallet" | "referral" | "support" | "settings";
+  | "overview" | "projects" | "project-tracker" | "demos" | "courses"
+  | "invoices" | "wallet" | "referral" | "support" | "settings";
 
 interface CustomerOrder {
   id: string;
@@ -104,6 +106,7 @@ function TabIcon({ tab, size = 16 }: { tab: Tab; size?: number }) {
   const icons: Record<Tab, React.ReactNode> = {
     overview: <LayoutDashboard size={size} />,
     projects: <FolderKanban size={size} />,
+    "project-tracker": <LayoutList size={size} />,
     demos: <Monitor size={size} />,
     courses: <GraduationCap size={size} />,
     invoices: <Receipt size={size} />,
@@ -605,6 +608,7 @@ export default function CustomerPortalPage({
   const [locale, setLocale] = useState("vi");
   const [activeTab, setActiveTab] = useState<Tab>("overview");
   const [orders, setOrders] = useState<CustomerOrder[]>([]);
+  const [projectTrackerOrders, setProjectTrackerOrders] = useState<unknown[]>([]);
   const [enrollments, setEnrollments] = useState<CustomerEnrollment[]>([]);
   const [pointData, setPointData] = useState<PointData | null>(null);
   const [demos, setDemos] = useState<CustomerDemo[]>([]);
@@ -650,16 +654,18 @@ export default function CustomerPortalPage({
 
     async function load() {
       try {
-        const [oRes, eRes, pRes, dRes] = await Promise.all([
+        const [oRes, eRes, pRes, dRes, ptRes] = await Promise.all([
           apiClient.get<{ data: CustomerOrder[] }>("/api/portal/orders", { params: { limit: 20 }, throwOnError: false }),
           apiClient.get<{ data: CustomerEnrollment[] }>("/api/portal/enrollments", { params: { limit: 10 }, throwOnError: false }),
           apiClient.get<{ data: PointData }>("/api/portal/points", { throwOnError: false }),
           apiClient.get<{ data: CustomerDemo[] }>("/api/portal/demos", { throwOnError: false }),
+          apiClient.get<{ data: unknown[] }>("/api/client/project-tracker", { throwOnError: false }),
         ]);
         if (!("error" in oRes)) setOrders((oRes as unknown as { data: { data: CustomerOrder[] } }).data?.data ?? []);
         if (!("error" in eRes)) setEnrollments((eRes as unknown as { data: { data: CustomerEnrollment[] } }).data?.data ?? []);
         if (!("error" in pRes)) setPointData((pRes as unknown as { data: { data: PointData } }).data?.data ?? null);
         if (!("error" in dRes)) setDemos((dRes as unknown as { data: { data: CustomerDemo[] } }).data?.data ?? []);
+        if (!("error" in ptRes)) setProjectTrackerOrders((ptRes as unknown as { data: { data: unknown[] } }).data?.data ?? []);
       } catch {
         // Silent fail — show empty state
       } finally {
@@ -674,11 +680,12 @@ export default function CustomerPortalPage({
     router.push(`/${locale}/dang-nhap`);
   };
 
-  const tabs: Tab[] = ["overview", "projects", "demos", "courses", "invoices", "wallet", "referral", "support", "settings"];
+  const tabs: Tab[] = ["overview", "projects", "project-tracker", "demos", "courses", "invoices", "wallet", "referral", "support", "settings"];
 
   const tabLabels: Record<Tab, string> = {
     overview: "Tổng quan",
     projects: "Dự án",
+    "project-tracker": "Theo dõi dự án",
     demos: "Demo",
     courses: "Khóa học",
     invoices: "Hóa đơn",
@@ -769,6 +776,7 @@ export default function CustomerPortalPage({
               >
                 {activeTab === "overview" && <OverviewTab locale={locale} orders={orders} />}
                 {activeTab === "projects" && <ProjectsTab locale={locale} orders={orders} />}
+                {activeTab === "project-tracker" && <ProjectTrackerTab orders={projectTrackerOrders as Parameters<typeof ProjectTrackerTab>[0]["orders"]} locale={locale} />}
                 {activeTab === "demos" && <DemosTab demos={demos} />}
                 {activeTab === "courses" && <CoursesTab enrollments={enrollments} />}
                 {activeTab === "wallet" && <WalletTab pointData={pointData} />}
