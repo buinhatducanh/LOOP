@@ -142,7 +142,7 @@ const SIDEBAR_GROUPS_CONFIG: NavGroup[] = [
       { id: "addon_services", icon: <Layers size={16} />, labelKey: "sidebar.nav.addon_services" },
       { id: "academy", icon: <BookOpen size={16} />, labelKey: "sidebar.nav.academy" },
       { id: "blog", icon: <FileText size={16} />, labelKey: "sidebar.nav.blog" },
-      { id: "figma-demos", icon: <Monitor size={16} />, labelKey: "sidebar.nav.figma_demos" },
+      { id: "figma_demos", icon: <Monitor size={16} />, labelKey: "sidebar.nav.figma_demos" },
     ],
   },
   {

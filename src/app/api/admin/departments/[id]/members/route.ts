@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireAuth } from "@/lib/auth/permissions";
+import { requireAuth, requirePermissionFast } from "@/lib/auth/permissions";
 import { prisma } from "@/lib/prisma";
 import { handleError, ok, notFound, badRequest } from "@/lib/api";
 
@@ -9,7 +9,8 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireAuth();
+    const session = await requireAuth();
+    requirePermissionFast(session, "team", "update");
     const { id } = await params;
     const body = await req.json();
     const { memberIds } = body;

@@ -80,7 +80,7 @@ export type AdminTab =
   | "academy" | "blog" | "revenue" | "clients" | "lp" | "lp_manage"
   | "income_tax" | "web_packages" | "domain_prices" | "addon_services" | "pricing" | "effects" | "notification_center"
   | "settings" | "quests_events" | "leaderboard_admin" | "analytics"
-  | "figma-demos" | "kanban"
+  | "figma_demos" | "kanban"
   | "revenue_split" | "off_system_payments"
   | "*"; // wildcard: all tabs (ceo/super_admin/admin)
 
@@ -216,19 +216,19 @@ const PM_TABS: AdminTab[] = [
   "overview", "orders", "clients", "quotation", "services", "revenue",
   "projects", "members", "departments", "notification_center",
   "leaderboard_admin", "lp_manage", "quests_events",
-  "academy", "blog", "lp", "figma-demos",
+  "academy", "blog", "lp", "figma_demos",
   "revenue_split", "off_system_payments",
 ];
 
 const MEDIA_TABS: AdminTab[] = [
   "media", "blog", "orders", "projects", "clients", "notification_center",
   "academy", "services", "leaderboard_admin", "quests_events",
-  "overview", "portfolio", "revenue", "figma-demos",
+  "overview", "portfolio", "revenue", "figma_demos",
 ];
 
 const QA_TABS: AdminTab[] = [
   "projects", "notification_center", "orders", "clients", "members",
-  "academy", "leaderboard_admin", "overview", "lp", "figma-demos",
+  "academy", "leaderboard_admin", "overview", "lp", "figma_demos",
 ];
 
 const MEMBER_TABS: AdminTab[] = [
@@ -239,7 +239,7 @@ const MEMBER_TABS: AdminTab[] = [
 // Department bonus tab grants (tự động thêm khi member thuộc phòng ban)
 export const DEPT_TAB_BONUS: Record<string, AdminTab[]> = {
   engineering: ["kanban", "lp"],
-  design:     ["figma-demos", "portfolio"],
+  design:     ["figma_demos", "portfolio"],
   media:      ["media", "blog"],
   marketing:  ["blog", "projects"],
   sales:      ["orders", "clients", "quotation", "revenue"],

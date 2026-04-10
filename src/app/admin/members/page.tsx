@@ -18,8 +18,8 @@ import { DS } from "@/lib/design-tokens";
 import { ImageUpload } from "@/components/ui/ImageUpload";
 import {
  Plus, Trash2, Edit2, Award, Users, TrendingUp,
- ChevronDown, ChevronUp, X, Check,   Crown, Zap, Grid3x3, List, Search,
-  UserMinus, Clock, AlertTriangle, CheckCircle2,   ArrowUpDown, Eye, Info, Loader2,
+ ChevronDown, ChevronUp, X, Check, Crown, Zap, Grid3x3, List, Search,
+ UserMinus, Clock, AlertTriangle, CheckCircle2, Eye, Info, Loader2,
  UserCheck, ShieldCheck, CheckCircle,
 } from "lucide-react";
 import {
@@ -372,8 +372,7 @@ export default function AdminMembersPage() {
         const aRoles = (a.roles && a.roles.length > 0 ? a.roles : [a.systemRole ?? a.role ?? ""]).sort();
         const bRoles = (b.roles && b.roles.length > 0 ? b.roles : [b.systemRole ?? b.role ?? ""]).sort();
         cmp = aRoles[0].localeCompare(bRoles[0]);
-      }
-      else if (sortKey === "team") cmp = (a.team ?? "").localeCompare(b.team ?? "");
+      } else if (sortKey === "team") cmp = (a.team ?? "").localeCompare(b.team ?? "");
       return sortAsc ? cmp : -cmp;
     });
   }, [members, search, teamFilter, statusFilter, rankFilter, sortKey, sortAsc]);
@@ -434,7 +433,12 @@ export default function AdminMembersPage() {
         }
       );
       queryClient.invalidateQueries({ queryKey: qk.adminMembers() });
-      showToast("Cập nhật thành viên thành công");
+      // Show diagnostic info from BE to understand what was persisted
+      const diag = res && "_diag" in res ? (res as { _diag?: { persistedLevel?: number; persistedRank?: string; updateDataKeys?: string[] } })._diag : null;
+      const diagMsg = diag
+        ? ` [rank=${diag.persistedRank}, level=${diag.persistedLevel}, keys=${diag.updateDataKeys?.join(",")}]`
+        : "";
+      showToast("Cập nhật thành viên thành công" + diagMsg);
       setFormMember(undefined);
     },
     onError: () => showToast("Cập nhật thất bại", "error"),
@@ -448,6 +452,16 @@ export default function AdminMembersPage() {
       setDeleteMember(null);
     },
     onError: () => showToast("Xóa thất bại", "error"),
+  });
+
+  const bulkDeleteMutation = useMutation({
+    mutationFn: (ids: string[]) => Promise.all(ids.map((id) => adminApi.delete(`/api/admin/team/${id}`))),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: qk.adminMembers() });
+      showToast(`Đã xóa ${selectedIds.size} thành viên`);
+      setSelectedIds(new Set());
+    },
+    onError: () => showToast("Xóa hàng loạt thất bại", "error"),
   });
 
   const lpMutation = useMutation({
@@ -475,7 +489,8 @@ export default function AdminMembersPage() {
 
   const isMutating =
     createMutation.isPending || updateMutation.isPending ||
-    deleteMutation.isPending || lpMutation.isPending || bulkLpMutation.isPending;
+    deleteMutation.isPending || lpMutation.isPending || bulkLpMutation.isPending ||
+    bulkDeleteMutation.isPending;
 
   // ── Pending requests ─────────────────────────────────────────────────────────
   // canApprove already declared at top-level (role === "admin")
@@ -551,40 +566,9 @@ export default function AdminMembersPage() {
     });
   }, []);
 
-  const toggleSelectAll = useCallback(() => {
-    if (allSelected) setSelectedIds(new Set());
-    else setSelectedIds(new Set(filtered.map((m) => m.id)));
-  }, [allSelected, filtered]);
-
-  // ── Sort handler ────────────────────────────────────────────────────────────
-  const handleSort = useCallback((key: SortKey) => {
-    if (sortKey === key) setSortAsc((a) => !a);
-    else { setSortKey(key); setSortAsc(true); }
-  }, [sortKey]);
-
   // =============================================================================
   // JSX Helpers
   // =============================================================================
-
-  function SortHeader_({ col: _col, sk, children, style }: { col: string; sk: SortKey; children: React.ReactNode; style?: React.CSSProperties }) {
-    const active = sortKey === sk;
-    return (
-      <div
-        onClick={() => handleSort(sk)}
-        style={{
-          display: "flex", alignItems: "center", gap: 4, cursor: "pointer",
-          userSelect: "none", color: active ? DS.blue : DS.text2,
-          fontFamily: DS.mono, fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase",
-          ...style,
-        }}
-      >
-        {children}
-        {active ? (sortAsc ? <ChevronUp size={11} /> : <ChevronDown size={11} />) : (
-          <span style={{ opacity: 0.35 }}><ArrowUpDown size={11} /></span>
-        )}
-      </div>
-    );
-  }
 
   function StatusBadge_({ status }: { status: MemberStatus }) {
     const cfg = STATUS_CFG[status];
@@ -709,205 +693,6 @@ export default function AdminMembersPage() {
 
   // =============================================================================
   // MemberTableRow
-  // =============================================================================
-
-  function MemberRow_({ m }: { m: MemberExt }) {
-    const rankKey = getRankFromLevel(m.level ?? 1);
-    const cfg = RANKS[rankKey];
-    const pct = (m.maxXp && m.maxXp > 0 ? (m.currentXp ?? 0) / m.maxXp : 0) * 100;
-    const checked = selectedIds.has(m.id);
-    const roles = m.roles && m.roles.length > 0 ? m.roles : (m.systemRole ? [m.systemRole] : []);
-    const primaryRole = roles[0] ?? "member";
-    const roleColors: Record<string, string> = {
-      ceo: "#FFD700", super_admin: "#6B3DF5", admin: DS.blue,
-      hr: "#14B8A6", project_manager: "#EC4899", media: "#F59E0B",
-      qa: "#22C55E", member: DS.text3,
-    };
-    const rc = roleColors[primaryRole] ?? DS.text3;
-
-    // Role display
-    const isCeo = primaryRole === "ceo";
-    const isAdmin = primaryRole === "super_admin" || primaryRole === "admin";
-    const isPm = primaryRole === "project_manager";
-    const isHr = primaryRole === "hr";
-    const isQa = primaryRole === "qa";
-    const isMedia = primaryRole === "media";
-    // System role label for CEO/Admin/SuperAdmin
-    const sysRoleLabel = isCeo ? "CEO"
-      : isAdmin ? capitalize(primaryRole)
-      : capitalize(primaryRole);
-
-    return (
-      <>
-        {/* ── Col 1: Select checkbox ── */}
-        <div
-          onClick={() => toggleSelect(m.id)}
-          style={{
-            display: "flex", alignItems: "center", justifyContent: "center",
-            cursor: "pointer",
-          }}
-        >
-          <div style={{
-            width: 15, height: 15, borderRadius: 4,
-            border: `1.5px solid ${checked ? DS.blue : DS.text4}`,
-            backgroundColor: checked ? DS.blue + "33" : "transparent",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            transition: "all 0.15s", flexShrink: 0,
-          }}>
-            {checked && <Check size={9} color={DS.blue} />}
-          </div>
-        </div>
-
-        {/* ── Col 2: Avatar + name + email ── */}
-        <div style={{
-          display: "flex", alignItems: "center", gap: 8,
-          minWidth: 0, overflow: "hidden",
-        }}>
-          <div style={{
-            width: 36, height: 36, borderRadius: "50%",
-            backgroundColor: cfg.color + "22",
-            border: `2px solid ${cfg.color}88`,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontFamily: DS.heading, fontSize: 11, color: cfg.color,
-            flexShrink: 0, overflow: "hidden",
-          }}>
-            {m.avatar ? (
-              <img src={m.avatar} alt={m.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-            ) : (
-              <span>{m.name.slice(0, 2).toUpperCase()}</span>
-            )}
-          </div>
-          {/* Name + email stacked — each clipped individually */}
-          <div style={{ minWidth: 0, flex: 1, overflow: "hidden" }}>
-            <div style={{
-              fontFamily: DS.heading, fontSize: 12, color: DS.text,
-              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-            }}>
-              {m.name}
-            </div>
-            <div style={{
-              fontFamily: DS.mono, fontSize: 9, color: DS.text4,
-              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-            }}>
-              {m.email}
-            </div>
-          </div>
-        </div>
-
-        {/* ── Col 3: Rank badge + Level + XP bar (200px) ── */}
-        <div style={{ overflow: "hidden" }}>
-          {/* Top row: symbol + rank label + level */}
-          <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 5 }}>
-            <span style={{ fontSize: 12, color: cfg.color }}>{cfg.symbol}</span>
-            <span style={{ fontFamily: DS.mono, fontSize: 10, color: cfg.color, fontWeight: 600 }}>
-              {cfg.label}
-            </span>
-            <span style={{
-              fontFamily: DS.mono, fontSize: 9, color: DS.text3,
-              background: DS.border, borderRadius: 8, padding: "0 5px",
-            }}>
-              Lv.{m.level}
-            </span>
-          </div>
-          {/* XP progress bar */}
-          <div style={{
-            height: 3, borderRadius: 2, background: DS.border, overflow: "hidden",
-          }}>
-            <div style={{
-              height: "100%", width: `${pct}%`,
-              background: `linear-gradient(90deg, ${cfg.color}66, ${cfg.color})`,
-              borderRadius: 2, transition: "width 0.4s ease",
-            }} />
-          </div>
-        </div>
-
-        {/* ── Col 4: LP balance ── */}
-        <div style={{
-          fontFamily: DS.mono, fontSize: 12, color: DS.amber,
-          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-          textAlign: "right",
-        }}>
-          {fmtLP(m.availableLp ?? 0)}
-        </div>
-
-        {/* ── Col 5: Phòng ban + system role ── */}
-        <div style={{ overflow: "hidden" }}>
-          {/* Phòng ban row */}
-          <div style={{
-            display: "flex", alignItems: "center", gap: 5,
-            marginBottom: 3, overflow: "hidden",
-          }}>
-            <div style={{
-              width: 6, height: 6, borderRadius: "50%",
-              backgroundColor: deptColor(m.team), flexShrink: 0,
-            }} />
-            <div style={{
-              fontFamily: DS.mono, fontSize: 10, color: deptColor(m.team),
-              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-              fontWeight: 500,
-            }}>
-              {deptLabel(m.team)}
-            </div>
-          </div>
-          {/* System role pill */}
-          <div style={{
-            display: "inline-flex", alignItems: "center", gap: 4,
-            backgroundColor: rc + "15",
-            border: `1px solid ${rc}33`,
-            borderRadius: 10, padding: "1px 7px",
-          }}>
-            <div style={{ width: 5, height: 5, borderRadius: "50%", backgroundColor: rc, flexShrink: 0 }} />
-            <span style={{
-              fontFamily: DS.mono, fontSize: 8, color: rc,
-              whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-            }}>
-              {sysRoleLabel}
-            </span>
-          </div>
-        </div>
-
-        {/* ── Col 6: Ngày vào ── */}
-        <div style={{
-          fontFamily: DS.mono, fontSize: 10, color: DS.text3,
-          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-        }}>
-          {fmtDate(m.joinedDate)}
-        </div>
-
-        {/* ── Col 7: Trạng thái ── */}
-        <StatusBadge_ status={m.status} />
-
-        {/* ── Col 8: Actions ── */}
-        <div style={{
-          display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 4,
-        }}>
-          <button onClick={() => { setActiveMember(toMemberStats(m), { x: 0, y: 0 }); }} title="Xem thống kê"
-            style={iconBtn(DS.text4, DS.blue)}>
-            <Eye size={13} />
-          </button>
-          {canAwardLP && (
-            <button onClick={() => setLpMember(m)} title="Điều chỉnh LP"
-              style={iconBtn(DS.text4, DS.amber)}>
-              <Award size={13} />
-            </button>
-          )}
-          {editing && (
-            <button onClick={() => setFormMember(m)} title="Sửa"
-              style={iconBtn(DS.text4, DS.purple)}>
-              <Edit2 size={13} />
-            </button>
-          )}
-          {canDelete && (
-            <button onClick={() => setDeleteMember(m)} title="Xóa"
-              style={iconBtn(DS.text4, DS.red)}>
-              <Trash2 size={13} />
-            </button>
-          )}
-        </div>
-      </>
-    );
-  }
-
   // Grid card
   function MemberCard_({ m }: { m: MemberExt }) {
     const rankKey = getRankFromLevel(m.level ?? 1);
@@ -1743,6 +1528,8 @@ export default function AdminMembersPage() {
     );
     const [level, setLevel] = useState(String(formMember?.level ?? 1));
     const [currentXp, setCurrentXp] = useState(String(formMember?.currentXp ?? 0));
+    // Flag: true when admin explicitly changes rank/level → BE should persist as-is
+    const [rankManuallySet, setRankManuallySet] = useState(false);
     const [rankKey, setRankKey] = useState<RankKey>(
       formMember ? getRankFromLevel(formMember.level ?? 1) : "iron",
     );
@@ -1807,8 +1594,20 @@ export default function AdminMembersPage() {
         isActive: status === "active",
         memberExpertise: skills.map((s) => ({ name: s })),
       };
-      if (isEdit && formMember) updateMutation.mutate({ id: formMember.id, body: base });
-      else {
+      if (isEdit && formMember) {
+        const editBody: Record<string, unknown> = {
+          ...base,
+          // Only send rank fields when manually set by admin (forceRank=true on BE)
+          // Otherwise BE computes rank from LP (LP-driven)
+          ...(rankManuallySet ? {
+            level: parseInt(level) || 1,
+            currentXp: parseInt(currentXp) || 0,
+            rank: rankKey,
+            forceRank: true,
+          } : {}),
+        };
+        updateMutation.mutate({ id: formMember.id, body: editBody });
+      } else {
         // On create, admin can set initial level (BE will compute rank from it)
         const body: Record<string, unknown> = {
           ...base,
@@ -2396,6 +2195,7 @@ export default function AdminMembersPage() {
                       <input
                         type="number" value={level}
                         onChange={(e) => {
+                          setRankManuallySet(true);
                           setLevel(e.target.value);
                           const lvl = parseInt(e.target.value) || 1;
                           setRankKey(getRankFromLevel(lvl));
@@ -2480,7 +2280,7 @@ export default function AdminMembersPage() {
                         return (
                           <button
                             key={rk}
-                            onClick={() => { setRankKey(rk); setLevel(String(cfg.minLevel)); }}
+                            onClick={() => { setRankManuallySet(true); setRankKey(rk); setLevel(String(cfg.minLevel)); }}
                             style={{
                               display: "flex", flexDirection: "column", alignItems: "center",
                               gap: 4, padding: "10px 6px",
@@ -3381,49 +3181,97 @@ export default function AdminMembersPage() {
           ))}
         </select>
 
-        {/* View mode */}
-        <div style={{ display: "flex", gap: 2, marginLeft: "auto" }}>
-          <button
-            onClick={() => setViewMode("table")}
-            style={{
-              width: 32, height: 32, borderRadius: 6, border: "none", cursor: "pointer",
-              backgroundColor: viewMode === "table" ? DS.blue + "33" : "transparent",
-              color: viewMode === "table" ? DS.blue : DS.text3,
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}
-          >
-            <List size={15} />
-          </button>
-          <button
-            onClick={() => setViewMode("grid")}
-            style={{
-              width: 32, height: 32, borderRadius: 6, border: "none", cursor: "pointer",
-              backgroundColor: viewMode === "grid" ? DS.blue + "33" : "transparent",
-              color: viewMode === "grid" ? DS.blue : DS.text3,
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}
-          >
-            <Grid3x3 size={15} />
-          </button>
-        </div>
-
-        {/* Bulk LP — admin only */}
-        {canAwardLP && selectedIds.size > 0 && (
+        {/* Bulk actions — right side */}
+        <div style={{ display: "flex", gap: 8, marginLeft: "auto", alignItems: "center" }}>
+          {/* Select all */}
           <button
             onClick={() => {
-              const sel = members.filter((m) => selectedIds.has(m.id));
-              setBulkMembers(sel);
+              if (allSelected) setSelectedIds(new Set());
+              else setSelectedIds(new Set(filtered.map((m) => m.id)));
             }}
             style={{
               display: "flex", alignItems: "center", gap: 5,
               padding: "6px 14px", borderRadius: 8,
-              border: `1px solid ${DS.amber}55`, backgroundColor: DS.amber + "15",
-              color: DS.amber, fontFamily: DS.mono, fontSize: 11, cursor: "pointer",
+              border: `1px solid ${DS.blue}44`,
+              backgroundColor: allSelected ? DS.blue + "22" : "transparent",
+              color: allSelected ? DS.blue : DS.text3,
+              fontFamily: DS.mono, fontSize: 11, cursor: "pointer",
+              transition: "all 0.15s",
             }}
           >
-            <Award size={13} /> Bulk LP ({selectedIds.size})
+            <Check size={12} />
+            {allSelected ? "Bỏ chọn tất cả" : `Chọn tất cả (${filtered.length})`}
           </button>
-        )}
+
+          {/* Bulk LP — admin only */}
+          {canAwardLP && selectedIds.size > 0 && (
+            <button
+              onClick={() => {
+                const sel = members.filter((m) => selectedIds.has(m.id));
+                setBulkMembers(sel);
+              }}
+              style={{
+                display: "flex", alignItems: "center", gap: 5,
+                padding: "6px 14px", borderRadius: 8,
+                border: `1px solid ${DS.amber}55`, backgroundColor: DS.amber + "15",
+                color: DS.amber, fontFamily: DS.mono, fontSize: 11, cursor: "pointer",
+              }}
+            >
+              <Award size={13} /> Bulk LP ({selectedIds.size})
+            </button>
+          )}
+
+          {/* Bulk delete — admin only */}
+          {canDelete && selectedIds.size > 0 && (
+            <button
+              onClick={() => {
+                if (!confirm(`Xóa ${selectedIds.size} thành viên đã chọn?\nHành động này không thể hoàn tác.`)) return;
+                bulkDeleteMutation.mutate(Array.from(selectedIds));
+              }}
+              disabled={bulkDeleteMutation.isPending}
+              style={{
+                display: "flex", alignItems: "center", gap: 5,
+                padding: "6px 14px", borderRadius: 8,
+                border: `1px solid ${DS.red}55`, backgroundColor: DS.red + "15",
+                color: DS.red, fontFamily: DS.mono, fontSize: 11, cursor: "pointer",
+                opacity: bulkDeleteMutation.isPending ? 0.6 : 1,
+              }}
+            >
+              {bulkDeleteMutation.isPending
+                ? <Loader2 size={12} style={{ animation: "spin 1s linear infinite" }} />
+                : <Trash2 size={12} />}
+              Xóa ({selectedIds.size})
+            </button>
+          )}
+
+          {/* View mode toggle */}
+          <div style={{ display: "flex", gap: 4 }}>
+            <button
+              onClick={() => setViewMode("table")}
+              style={{
+                padding: "6px 10px", borderRadius: 8, cursor: "pointer",
+                border: `1px solid ${viewMode === "table" ? DS.blue : DS.border}`,
+                backgroundColor: viewMode === "table" ? DS.blue + "22" : "transparent",
+                color: viewMode === "table" ? DS.blue : DS.text3,
+                display: "flex", alignItems: "center",
+              }}
+            >
+              <List size={14} />
+            </button>
+            <button
+              onClick={() => setViewMode("grid")}
+              style={{
+                padding: "6px 10px", borderRadius: 8, cursor: "pointer",
+                border: `1px solid ${viewMode === "grid" ? DS.blue : DS.border}`,
+                backgroundColor: viewMode === "grid" ? DS.blue + "22" : "transparent",
+                color: viewMode === "grid" ? DS.blue : DS.text3,
+                display: "flex", alignItems: "center",
+              }}
+            >
+              <Grid3x3 size={14} />
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Content */}
@@ -3443,102 +3291,146 @@ export default function AdminMembersPage() {
             Không tìm thấy thành viên nào
           </div>
         ) : viewMode === "table" ? (
+          /* ── Table View ── */
           <div style={{
             background: DS.bgCard, borderRadius: 12,
             border: `1px solid ${DS.border}`, overflow: "hidden",
-            // Full-width horizontal scroll on small screens
-            overflowX: "auto",
           }}>
-            {/* Scrollable table wrapper */}
-            <div style={{ minWidth: 900 }}>
-              {/* ── Table header ───────────────────────────────────────── */}
-              {/* Layout: sel(36) | member(220) | rank(200) | lp(80) | role(130) | join(90) | status(90) | actions(88) */}
-              <div style={{
-                display: "grid",
-                gridTemplateColumns: "36px 220px 200px 80px 130px 90px 90px 88px",
-                padding: "0 8px",
-                height: 36,
-                borderBottom: `1px solid ${DS.border}`,
-                background: "rgba(0,0,0,0.2)",
-                alignItems: "center",
-                flexShrink: 0,
-              }}>
-                {/* Select all */}
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <div
-                    onClick={toggleSelectAll}
-                    style={{
-                      width: 15, height: 15, borderRadius: 4, cursor: "pointer",
-                      border: `1.5px solid ${allSelected ? DS.blue : DS.text4}`,
-                      backgroundColor: allSelected ? DS.blue + "33" : "transparent",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      transition: "all 0.15s",
-                    }}
-                  >
-                    {allSelected && <Check size={9} color={DS.blue} />}
-                  </div>
-                </div>
-                <SortHeader_ col="name" sk="name">Thành viên</SortHeader_>
-                <SortHeader_ col="rank" sk="rank">Hạng & Level</SortHeader_>
-                <SortHeader_ col="lp" sk="lpBalance">LP</SortHeader_>
-                <SortHeader_ col="role" sk="role">Phòng ban</SortHeader_>
-                <SortHeader_ col="join" sk="name">Ngày vào</SortHeader_>
-                <SortHeader_ col="status" sk="name">Trạng thái</SortHeader_>
-                <div style={{
-                  fontFamily: DS.mono, fontSize: 9, color: DS.text4,
-                  textTransform: "uppercase", letterSpacing: "0.08em",
-                  textAlign: "right",
-                }}>
-                  Thao tác
-                </div>
-              </div>
-
-              {/* ── Table rows ─────────────────────────────────────────── */}
-              {/* Row layout matches header exactly. Each cell uses overflow:hidden
-                  so content never pushes siblings. Row height auto (min 64px). */}
-              {filtered.map((m) => {
-                const rowBg = selectedIds.has(m.id) ? DS.blue + "0a" : "transparent";
-                return (
-                  <div
-                    key={m.id}
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "36px 220px 200px 80px 130px 90px 90px 88px",
-                      alignItems: "center",
-                      borderBottom: `1px solid ${DS.border}`,
-                      backgroundColor: rowBg,
-                      transition: "background 0.15s",
-                      padding: "0 8px",
-                      minHeight: 64,
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!selectedIds.has(m.id)) {
-                        (e.currentTarget as HTMLDivElement).style.backgroundColor = "rgba(255,255,255,0.02)";
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!selectedIds.has(m.id)) {
-                        (e.currentTarget as HTMLDivElement).style.backgroundColor = "transparent";
-                      }
-                    }}
-                  >
-                    <MemberRow_ m={m} />
-                  </div>
-                );
-              })}
-
-              {/* Empty state */}
-              {filtered.length === 0 && !isLoading && (
-                <div style={{
-                  padding: "48px 24px", textAlign: "center",
-                  color: DS.text3, fontFamily: DS.mono, fontSize: 13,
-                }}>
-                  Không tìm thấy thành viên nào
-                </div>
-              )}
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr style={{ borderBottom: `1px solid ${DS.border}` }}>
+                    {[
+                      { key: "name" as SortKey, label: "Thành viên" },
+                      { key: "role" as SortKey, label: "Vai trò" },
+                      { key: "rank" as SortKey, label: "Hạng" },
+                      { key: "level" as SortKey, label: "Level" },
+                      { key: "lpBalance" as SortKey, label: "LP" },
+                      { key: "missions" as SortKey, label: "Nhiệm vụ" },
+                      { key: "team" as SortKey, label: "Phòng ban" },
+                    ].map((col) => {
+                      const active = sortKey === col.key;
+                      return (
+                        <th
+                          key={col.key}
+                          onClick={() => {
+                            if (sortKey === col.key) setSortAsc((a) => !a);
+                            else { setSortKey(col.key); setSortAsc(true); }
+                          }}
+                          style={{
+                            padding: "10px 14px", cursor: "pointer", userSelect: "none",
+                            fontFamily: DS.mono, fontSize: 10, fontWeight: 700,
+                            color: active ? DS.blue : DS.text3,
+                            textTransform: "uppercase", letterSpacing: "0.06em",
+                            textAlign: "left", whiteSpace: "nowrap",
+                          }}
+                        >
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                            {col.label}
+                            {active ? (sortAsc ? <ChevronUp size={11} /> : <ChevronDown size={11} />) : null}
+                          </span>
+                        </th>
+                      );
+                    })}
+                    <th style={{ padding: "10px 14px", fontFamily: DS.mono, fontSize: 10, color: DS.text3, textTransform: "uppercase" }}>
+                      Thao tác
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((m) => {
+                    const rankKey = getRankFromLevel(m.level ?? 1);
+                    const cfg = RANKS[rankKey];
+                    const checked = selectedIds.has(m.id);
+                    const roles = m.roles && m.roles.length > 0 ? m.roles : (m.systemRole ? [m.systemRole] : []);
+                    const primaryRole = roles[0] ?? "member";
+                    return (
+                      <tr
+                        key={m.id}
+                        onClick={() => setDetailMember(m)}
+                        style={{
+                          borderBottom: `1px solid ${DS.border}22`,
+                          backgroundColor: checked ? DS.blue + "0a" : "transparent",
+                          cursor: "pointer",
+                          transition: "background-color 0.15s",
+                        }}
+                      >
+                        <td style={{ padding: "10px 14px", display: "flex", alignItems: "center", gap: 10 }}>
+                          <div
+                            onClick={(e) => { e.stopPropagation(); toggleSelect(m.id); }}
+                            style={{
+                              width: 16, height: 16, borderRadius: 4, cursor: "pointer",
+                              border: `1.5px solid ${checked ? DS.blue : DS.text3}`,
+                              backgroundColor: checked ? DS.blue + "33" : "transparent",
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                              flexShrink: 0,
+                            }}
+                          >
+                            {checked && <Check size={10} color={DS.blue} />}
+                          </div>
+                          <div style={{ width: 32, height: 32, borderRadius: "50%", backgroundColor: cfg.color + "33", border: `1.5px solid ${cfg.color}`, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: DS.heading, fontSize: 11, color: cfg.color, overflow: "hidden", flexShrink: 0 }}>
+                            {m.avatar ? <img src={m.avatar} alt={m.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : m.name.slice(0, 2).toUpperCase()}
+                          </div>
+                          <div>
+                            <div style={{ fontFamily: DS.heading, fontSize: 13, color: DS.text }}>{m.name}</div>
+                            <div style={{ fontFamily: DS.mono, fontSize: 10, color: DS.text3 }}>{m.email}</div>
+                          </div>
+                        </td>
+                        <td style={{ padding: "10px 14px" }}>
+                          <span style={{ fontFamily: DS.mono, fontSize: 11, color: DS.text2 }}>
+                            {primaryRole}
+                          </span>
+                        </td>
+                        <td style={{ padding: "10px 14px" }}>
+                          <span style={{ fontFamily: DS.mono, fontSize: 11, color: cfg.color }}>
+                            {cfg.symbol} {cfg.label}
+                          </span>
+                        </td>
+                        <td style={{ padding: "10px 14px" }}>
+                          <span style={{ fontFamily: DS.mono, fontSize: 11, color: DS.text2 }}>{m.level}</span>
+                        </td>
+                        <td style={{ padding: "10px 14px" }}>
+                          <span style={{ fontFamily: DS.mono, fontSize: 11, color: DS.text2 }}>{(m.availableLp ?? 0).toLocaleString()}</span>
+                        </td>
+                        <td style={{ padding: "10px 14px" }}>
+                          <span style={{ fontFamily: DS.mono, fontSize: 11, color: DS.text2 }}>{m.missionsCompleted}</span>
+                        </td>
+                        <td style={{ padding: "10px 14px" }}>
+                          <span style={{ fontFamily: DS.mono, fontSize: 11, color: DS.text2 }}>{m.team || "—"}</span>
+                        </td>
+                        <td style={{ padding: "10px 14px", display: "flex", gap: 6, alignItems: "center" }}>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setDetailMember(m); }}
+                            style={{ ...smallBtn(DS.blue), padding: "4px 8px" }}
+                          >
+                            <Eye size={11} />
+                          </button>
+                          {editing && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setFormMember(m); }}
+                              style={{ ...smallBtn(DS.purple), padding: "4px 8px" }}
+                            >
+                              <Edit2 size={11} />
+                            </button>
+                          )}
+                          {canAwardLP && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setLpMember(m); }}
+                              style={{ ...smallBtn(DS.amber), padding: "4px 8px" }}
+                            >
+                              <Award size={11} />
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           </div>
         ) : (
+          /* ── Grid View ── */
           <div style={{
             display: "grid",
             gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",

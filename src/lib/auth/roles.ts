@@ -168,7 +168,8 @@ export const NAV_PERMISSIONS: Record<string, NavPermission> = {
   "/admin/sales/orders": {
     label: { vi: "Đơn hàng", en: "Orders" },
     minRoleLevel: 3,
-    permissions: [{ resource: "orders", actions: ["read", "update", "approve"] }],
+    // P1-15 FIX: added create/delete; removed phantom "approve" (no route checks it)
+    permissions: [{ resource: "orders", actions: ["read", "create", "update", "delete"] }],
     icon: "ShoppingCart",
   },
   "/admin/sales/web-templates": {
@@ -334,7 +335,7 @@ export const NAV_PERMISSIONS: Record<string, NavPermission> = {
   "/admin/projects/[id]/figma": {
     label: { vi: "Figma Demos", en: "Figma Demos" },
     minRoleLevel: 2,
-    permissions: [{ resource: "figma-demos", actions: ["read", "create", "update"] }],
+    permissions: [{ resource: "figma_demos", actions: ["read", "create", "update"] }],
     icon: "Figma",
   },
   "/admin/projects/[id]/env": {
@@ -397,10 +398,10 @@ export const NAV_PERMISSIONS: Record<string, NavPermission> = {
     permissions: [{ resource: "tasks", actions: ["read", "update"] }],
     icon: "CheckSquare",
   },
-  "/admin/figma-demos": {
+  "/admin/figma_demos": {
     label: { vi: "Figma Demos", en: "Figma Demos" },
     minRoleLevel: 3,
-    permissions: [{ resource: "figma-demos", actions: ["read", "create", "update"] }],
+    permissions: [{ resource: "figma_demos", actions: ["read", "create", "update"] }],
     icon: "Figma",
   },
   "/admin/env-files": {
@@ -619,7 +620,7 @@ export function getAccessibleTabs(
   role: string,
   tabPermissions: string[],
   departmentKey: string | null,
-  isDeptHead: boolean,
+  _isDeptHead: boolean,
 ): AdminTab[] {
   if (role === "ceo" || role === "super_admin" || role === "admin") return ["*"];
 
@@ -713,7 +714,8 @@ export const DEFAULT_PERMISSIONS: Record<string, Array<{ resource: string; actio
   super_admin: [{ resource: "*", actions: ["*"] }],
   admin: [
     { resource: "team", actions: ["read", "create", "update", "delete"] },
-    { resource: "orders", actions: ["read", "update", "approve"] },
+    // P1-9 FIX: added orders:create and orders:delete (previously missing)
+    { resource: "orders", actions: ["read", "create", "update", "delete", "approve"] },
     { resource: "lp-awards", actions: ["read", "create", "update", "approve"] },
     { resource: "lp-redemptions", actions: ["read", "update"] },
     { resource: "blog-posts", actions: ["read", "create", "update", "delete"] },
@@ -725,11 +727,12 @@ export const DEFAULT_PERMISSIONS: Record<string, Array<{ resource: string; actio
     { resource: "roles", actions: ["read", "create", "update", "delete"] },
   ],
   project_manager: [
-    { resource: "orders", actions: ["read", "update"] },
+    // P1-9 FIX: added orders:create (previously missing — only read/update existed)
+    { resource: "orders", actions: ["read", "create", "update"] },
     { resource: "quotes", actions: ["read", "create", "update"] },
     { resource: "clients", actions: ["read", "create", "update"] },
     { resource: "projects", actions: ["read", "create", "update"] },
-    { resource: "figma-demos", actions: ["read", "create", "update"] },
+    { resource: "figma_demos", actions: ["read", "create", "update"] },
     { resource: "lp-awards", actions: ["read", "create"] },
     { resource: "edu", actions: ["read"] },
   ],

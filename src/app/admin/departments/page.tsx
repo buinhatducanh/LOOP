@@ -123,7 +123,7 @@ function computeDeptKPIs(dept: DepartmentAPI): DeptConfig["kpi"] {
 // ── API calls ─────────────────────────────────────────────────────────────────
 
 async function fetchDepts(): Promise<DepartmentAPI[]> {
-  const token = typeof window !== "undefined" ? localStorage.getItem("loop_access_token") : null;
+  const token = typeof window !== "undefined" ? localStorage.getItem("loop-staff-token") : null;
   const res = await fetch("/api/admin/departments?limit=100", {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
   });
@@ -133,7 +133,7 @@ async function fetchDepts(): Promise<DepartmentAPI[]> {
 }
 
 async function fetchAllMembers(): Promise<TeamMemberAPI[]> {
-  const token = typeof window !== "undefined" ? localStorage.getItem("loop_access_token") : null;
+  const token = typeof window !== "undefined" ? localStorage.getItem("loop-staff-token") : null;
   const res = await fetch("/api/admin/team?limit=200", {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
   });
@@ -143,7 +143,7 @@ async function fetchAllMembers(): Promise<TeamMemberAPI[]> {
 }
 
 async function saveDeptMembers(deptId: string, memberIds: string[], headId: string | null): Promise<void> {
-  const token = localStorage.getItem("loop_access_token")!;
+  const token = localStorage.getItem("loop-staff-token")!;
   // Bulk assign members
   const res1 = await fetch(`/api/admin/departments/${deptId}/members`, {
     method: "PUT",

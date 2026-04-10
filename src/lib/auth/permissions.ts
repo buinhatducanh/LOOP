@@ -19,7 +19,7 @@ import { prisma } from "@/lib/prisma";
 import { verifyAccessToken } from "./token";
 import { verifyToken } from "./jwt"; // backward compat wrapper — tokens signed with old jwt.ts still work
 import { cookies, headers } from "next/headers";
-import { ROLE_LEVEL, type NavPermission } from "./roles";
+import { ROLE_LEVEL, type NavPermission, DEPT_TAB_BONUS } from "./roles";
 import { auth } from "@/auth";
 import type { NextRequest } from "next/server";
 
@@ -64,6 +64,8 @@ export interface SessionUser {
   departmentPermissions?: Record<string, string[]>;
   /** Department.id the member belongs to */
   departmentId?: string | null;
+  /** Department.key (e.g. "engineering") the member belongs to */
+  departmentKey?: string | null;
   /** Whether member is department head */
   isDeptHead?: boolean;
   /** Whether customer has completed onboarding profile */
@@ -132,7 +134,13 @@ export async function getSessionFromBearer(
             OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
           },
         },
-        teamMember: { select: { rank: true, availableLp: true, lockedLp: true, accessTags: true } },
+        teamMember: {
+          select: {
+            rank: true, availableLp: true, lockedLp: true, accessTags: true,
+            departmentId: true, isDeptHead: true,
+            tabPermissions: true,
+          },
+        },
       },
     });
 
@@ -151,6 +159,18 @@ export async function getSessionFromBearer(
       : ROLE_LEVEL[user.role] ?? 99;
     const accountType: "staff" | "customer" = effectiveRoleLevel <= 5 ? "staff" : "customer";
 
+    const teamMember = user.teamMember;
+    const departmentId = teamMember?.departmentId ?? null;
+    const departmentKey = departmentId
+      ? (await prisma.department.findUnique({ where: { id: departmentId }, select: { key: true } }))?.key ?? null
+      : null;
+
+    // Build dept bonus tabs (auto-granted based on member's department)
+    const departmentPermissions: Record<string, string[]> = {};
+    if (departmentKey && DEPT_TAB_BONUS[departmentKey]) {
+      departmentPermissions[departmentKey] = DEPT_TAB_BONUS[departmentKey];
+    }
+
     return {
       userId,
       email: user.email,
@@ -162,11 +182,16 @@ export async function getSessionFromBearer(
       teamMemberId: user.teamMemberId,
       roleLevel: effectiveRoleLevel,
       permissions,
-      rank: user.teamMember?.rank,
-      availableLp: user.teamMember?.availableLp,
-      lockedLp: user.teamMember?.lockedLp,
-      accessTags: user.teamMember?.accessTags ?? [],
+      rank: teamMember?.rank,
+      availableLp: teamMember?.availableLp,
+      lockedLp: teamMember?.lockedLp,
+      accessTags: teamMember?.accessTags ?? [],
       isOnboarded: user.isOnboarded,
+      departmentId,
+      departmentKey,
+      isDeptHead: teamMember?.isDeptHead ?? false,
+      departmentPermissions,
+      tabPermissions: teamMember?.tabPermissions ?? [],
     };
   } catch {
     // DB unavailable — derive from JWT payload
@@ -188,6 +213,9 @@ export async function getSessionFromBearer(
       permissions: [],
       accessTags: (payload?.ats as string[] | undefined) ?? [],
       isOnboarded: payload?.onb as boolean | undefined,
+      departmentId: (payload?.did as string | undefined) ?? null,
+      departmentKey: (payload?.dk as string | undefined) ?? null,
+      departmentPermissions: {},
     };
   }
 }
@@ -245,7 +273,12 @@ export async function getSession(): Promise<SessionUser | null> {
               OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
             },
           },
-          teamMember: { select: { rank: true, availableLp: true, lockedLp: true, accessTags: true } },
+          teamMember: {
+            select: {
+              rank: true, availableLp: true, lockedLp: true, accessTags: true,
+              departmentId: true, isDeptHead: true,
+            },
+          },
         },
       });
 
@@ -264,6 +297,17 @@ export async function getSession(): Promise<SessionUser | null> {
         : ROLE_LEVEL[user.role] ?? 99;
       const accountType: "staff" | "customer" = effectiveRoleLevel <= 5 ? "staff" : "customer";
 
+      const teamMember = user.teamMember;
+      const departmentId = teamMember?.departmentId ?? null;
+      const departmentKey = departmentId
+        ? (await prisma.department.findUnique({ where: { id: departmentId }, select: { key: true } }))?.key ?? null
+        : null;
+
+      const departmentPermissions: Record<string, string[]> = {};
+      if (departmentKey && DEPT_TAB_BONUS[departmentKey]) {
+        departmentPermissions[departmentKey] = DEPT_TAB_BONUS[departmentKey];
+      }
+
       return {
         userId,
         email: user.email,
@@ -276,11 +320,21 @@ export async function getSession(): Promise<SessionUser | null> {
         roleLevel: effectiveRoleLevel,
         sessionId,
         permissions,
-        rank: user.teamMember?.rank,
-        availableLp: user.teamMember?.availableLp,
-        lockedLp: user.teamMember?.lockedLp,
-        accessTags: user.teamMember?.accessTags ?? [],
+        rank: teamMember?.rank,
+        availableLp: teamMember?.availableLp,
+        lockedLp: teamMember?.lockedLp,
+        accessTags: teamMember?.accessTags ?? [],
         isOnboarded: user.isOnboarded,
+        departmentId,
+        departmentKey,
+        isDeptHead: teamMember?.isDeptHead ?? false,
+        departmentPermissions,
+        tabPermissions: user.teamMemberId
+          ? (await prisma.teamMember.findUnique({
+              where: { id: user.teamMemberId },
+              select: { tabPermissions: true },
+            }))?.tabPermissions ?? []
+          : [],
       };
     } catch {
       // DB unavailable — derive from JWT payload
@@ -322,7 +376,13 @@ export async function getSession(): Promise<SessionUser | null> {
             OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
           },
         },
-        teamMember: { select: { rank: true, availableLp: true, lockedLp: true, accessTags: true } },
+        teamMember: {
+          select: {
+            rank: true, availableLp: true, lockedLp: true, accessTags: true,
+            departmentId: true, isDeptHead: true,
+            tabPermissions: true,
+          },
+        },
       },
     });
 
@@ -342,6 +402,17 @@ export async function getSession(): Promise<SessionUser | null> {
       : ROLE_LEVEL[user.role] ?? 99;
     const accountType: "staff" | "customer" = effectiveRoleLevel <= 5 ? "staff" : "customer";
 
+    const teamMember = user.teamMember;
+    const departmentId = teamMember?.departmentId ?? null;
+    const departmentKey = departmentId
+      ? (await prisma.department.findUnique({ where: { id: departmentId }, select: { key: true } }))?.key ?? null
+      : null;
+
+    const departmentPermissions: Record<string, string[]> = {};
+    if (departmentKey && DEPT_TAB_BONUS[departmentKey]) {
+      departmentPermissions[departmentKey] = DEPT_TAB_BONUS[departmentKey];
+    }
+
     return {
       userId: user.id,
       email: user.email,
@@ -353,11 +424,16 @@ export async function getSession(): Promise<SessionUser | null> {
       teamMemberId: user.teamMemberId,
       roleLevel: effectiveRoleLevel,
       permissions,
-      rank: user.teamMember?.rank,
-      availableLp: user.teamMember?.availableLp,
-      lockedLp: user.teamMember?.lockedLp,
-      accessTags: user.teamMember?.accessTags ?? [],
+      rank: teamMember?.rank,
+      availableLp: teamMember?.availableLp,
+      lockedLp: teamMember?.lockedLp,
+      accessTags: teamMember?.accessTags ?? [],
       isOnboarded: user.isOnboarded,
+      departmentId,
+      departmentKey,
+      isDeptHead: teamMember?.isDeptHead ?? false,
+      departmentPermissions,
+      tabPermissions: teamMember?.tabPermissions ?? [],
     };
   } catch {
     return null;
@@ -376,14 +452,18 @@ export async function requireAuth(req?: NextRequest): Promise<SessionUser> {
     bearer = h.get("authorization") ?? h.get("Authorization");
   }
 
+  // Priority 1: Authorization header (FE API client sends Bearer token)
+  // Only use if token is present AND valid — fall through to cookie if token is
+  // absent or expired/invalid so cookie-based sessions (Google OAuth) still work.
   if (bearer?.startsWith("Bearer ")) {
     const session = await getSessionFromBearer(bearer.slice(7));
     if (session) return session;
-    // Bearer invalid → 401 (don't fall through to cookie)
-    throw new AuthError("Unauthorized", 401);
+    // Token present but invalid/expired → fall through to cookie below
   }
 
-  // Priority 2: cookie-based session
+  // Priority 2: cookie-based session (covers:
+  //   a) no Bearer header at all
+  //   b) Bearer was present but expired/invalid → now try cookie
   const session = await getSession();
   if (!session) {
     throw new AuthError("Unauthorized", 401);
