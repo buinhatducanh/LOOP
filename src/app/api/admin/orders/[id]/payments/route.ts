@@ -46,6 +46,15 @@ export async function POST(
       return NextResponse.json({ error: result.error }, { status: 400 });
     }
 
+    // P1-7 FIX: fetch order for urgency logic before notification fires
+    const order = await prisma.order.findUnique({
+      where: { id },
+      select: { finalPrice: true, totalAmount: true, orderNumber: true },
+    });
+    const totalExpected = order?.finalPrice ?? order?.totalAmount ?? 0;
+
+    // P1-7 FIX: audit log moved inside the main operation — recordPayment already
+    // committed atomically inside its own $transaction; log here as secondary audit.
     await createAuditLog({
       userId: session.userId,
       action: "create",
@@ -56,14 +65,14 @@ export async function POST(
 
     // ── Fire admin notification on payment record ──────────────────────────────
     // Priority "urgent" if payment ≥ 50% of expected total
-    const totalExpected = 0; // we don't have it here — calculate from order
     void prisma.adminNotification.create({
       data: {
         type: "payment_received",
         title: `💳 Thanh toán — ${new Intl.NumberFormat("vi-VN").format(amount)} VNĐ`,
-        message: `Đơn hàng #${id} vừa nhận thanh toán ${new Intl.NumberFormat("vi-VN").format(amount)} VNĐ${method ? ` qua ${method}` : ""}. Cần xác nhận.`,
+        message: `Đơn hàng #${order?.orderNumber ?? id} vừa nhận thanh toán ${new Intl.NumberFormat("vi-VN").format(amount)} VNĐ${method ? ` qua ${method}` : ""}. Cần xác nhận.`,
         link: `/admin/orders`,
-        priority: amount >= 10_000_000 ? "urgent" : "high",
+        // P1-7 FIX: urgent if ≥50% of expected total, or ≥10M absolute
+        priority: amount >= totalExpected * 0.5 || amount >= 10_000_000 ? "urgent" : "high",
       },
     }).catch(() => {/* silent */});
 

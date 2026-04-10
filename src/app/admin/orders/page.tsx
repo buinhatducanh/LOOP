@@ -14,17 +14,57 @@ import {
   Monitor,
 } from "lucide-react";
 
+// P1-6 FIX: align FE statuses with actual backend order-lifecycle.ts
+// ── Status config: all statuses used by the backend ──────────────────────────
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
-  pending_payment: { label: "Chờ thanh toán", color: "#F59E0B", bg: "rgba(245,158,11,0.1)" },
-  paid:            { label: "Đã thanh toán",    color: "#3B82F6", bg: "rgba(59,130,246,0.1)" },
-  in_progress:    { label: "Đang thực hiện",   color: "#818CF8", bg: "rgba(129,140,248,0.1)" },
-  demo_ready:      { label: "Demo sẵn sàng",    color: "#A78BFA", bg: "rgba(167,139,250,0.1)" },
-  client_review:  { label: "Khách review",     color: "#60A5FA", bg: "rgba(96,165,250,0.1)" },
-  done:            { label: "Hoàn thành",        color: "#22C55E", bg: "rgba(34,197,94,0.1)" },
-  cancelled:       { label: "Đã hủy",           color: "#EF4444", bg: "rgba(239,68,68,0.1)" },
+  // Custom order statuses
+  draft:        { label: "Bản nháp",     color: "#94A3B8", bg: "rgba(148,163,168,0.1)" },
+  pending:      { label: "Chờ báo giá",  color: "#F59E0B", bg: "rgba(245,158,11,0.1)" },
+  quoted:       { label: "Đã báo giá",   color: "#FBBF24", bg: "rgba(251,191,36,0.1)" },
+  accepted:     { label: "Đã chấp nhận", color: "#34D399", bg: "rgba(52,211,153,0.1)" },
+  paid_partial: { label: "Thanh toán 1 phần", color: "#60A5FA", bg: "rgba(96,165,250,0.1)" },
+  paid_full:    { label: "Thanh toán đủ",    color: "#3B82F6", bg: "rgba(59,130,246,0.1)" },
+  contracted:   { label: "Đã ký hợp đồng",  color: "#818CF8", bg: "rgba(129,140,248,0.1)" },
+  designing:    { label: "Đang thiết kế",    color: "#A78BFA", bg: "rgba(167,139,250,0.1)" },
+  developing:   { label: "Đang phát triển",  color: "#C084FC", bg: "rgba(192,132,252,0.1)" },
+  reviewing:    { label: "Review",             color: "#F472B6", bg: "rgba(244,114,182,0.1)" },
+  delivered:    { label: "Đã bàn giao",      color: "#22C55E", bg: "rgba(34,197,94,0.1)" },
+  completed:    { label: "Hoàn thành",        color: "#10B981", bg: "rgba(16,185,129,0.1)" },
+  cancelled:   { label: "Đã hủy",            color: "#EF4444", bg: "rgba(239,68,68,0.1)" },
+  // Template order statuses
+  setting_up:   { label: "Đang thiết lập",   color: "#F97316", bg: "rgba(249,115,22,0.1)" },
 };
 
-const STATUS_FLOW = ["pending_payment", "paid", "in_progress", "demo_ready", "client_review", "done"];
+// ── Transition map — mirrors backend order-lifecycle.ts ────────────────────────
+// Used to compute "next valid status" for each current status
+const TRANSITIONS: Record<string, string[]> = {
+  // Custom
+  draft:        ["pending", "cancelled"],
+  pending:      ["quoted", "cancelled"],
+  quoted:       ["accepted", "cancelled"],
+  accepted:     ["paid_partial", "paid_full", "cancelled"],
+  paid_partial: ["paid_full", "contracted", "cancelled"],
+  paid_full:    ["contracted", "cancelled"],
+  contracted:   ["designing", "cancelled"],
+  designing:    ["developing", "cancelled"],
+  developing:   ["reviewing", "cancelled"],
+  reviewing:    ["delivered", "developing", "cancelled"],
+  delivered:    ["completed"],
+  completed:    [],
+  cancelled:    [],
+  // Template (pending/paid_full/delivered already defined above — merge below)
+  setting_up:   ["delivered", "cancelled"],
+};
+
+// Terminal statuses that should block certain UI actions
+const TERMINAL_STATUSES = new Set(["completed", "cancelled"]);
+
+// ── Ordered flow for UI display (status timeline + filter chips) ───────────────
+const STATUS_FLOW = [
+  "draft", "pending", "quoted", "accepted",
+  "paid_partial", "paid_full", "contracted",
+  "designing", "developing", "reviewing", "delivered", "completed", "cancelled",
+] as const;
 
 type Order = {
   id: string;
@@ -118,8 +158,8 @@ function OrderRow({
         >
           <Edit2 size={12} />
         </button>
-        {/* Gửi Demo — hiện khi order đang ở trạng thái in_progress */}
-        {onSendDemo && order.status === "in_progress" && (
+        {/* Gửi Demo — hiện khi order đang ở designing hoặc developing */}
+        {onSendDemo && (order.status === "designing" || order.status === "developing") && (
           <button
             onClick={() => onSendDemo(order)}
             title="Gửi Demo cho khách"
@@ -133,12 +173,13 @@ function OrderRow({
           </button>
         )}
         {((): React.ReactNode => {
-          const idx = STATUS_FLOW.indexOf(order.status);
-          const next = STATUS_FLOW[idx + 1];
-          if (!next) return null;
+          // P1-6 FIX: derive next valid statuses from TRANSITIONS map (backend-aligned)
+          const validNext = TRANSITIONS[order.status] ?? [];
+          const next = validNext[0]; // primary forward step
+          if (!next || TERMINAL_STATUSES.has(order.status)) return null;
           return (
             <button
-              onClick={() => onTransition(order.id, order.status)}
+              onClick={() => onTransition(order.id, next)}
               title={`Chuyển → ${STATUS_CONFIG[next]?.label ?? ""}`}
               style={{
                 background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.3)",
@@ -215,7 +256,7 @@ function OrderEditModal({
         packageTitle: form.packageTitle.trim() || undefined,
         totalAmount: form.totalAmount ? Number(form.totalAmount) : undefined,
         note: form.note.trim() || undefined,
-        ...(isEdit ? {} : { status: "pending_payment" }),
+        ...(isEdit ? {} : { status: "pending" }),
       };
       if (isEdit) {
         await adminApi.put(`/api/admin/orders/${order!.id}`, payload);
@@ -413,7 +454,8 @@ function OrderDetailModal({ order, onClose }: { order: Order | null; onClose: ()
             {STATUS_FLOW.map((s, i) => {
               const sc = STATUS_CONFIG[s];
               const isActive = s === order.status;
-              const isPast = STATUS_FLOW.indexOf(order.status) > i;
+              // P1-6 FIX: cast to string[] to allow runtime indexOf on a const tuple
+              const isPast = (STATUS_FLOW as readonly string[]).indexOf(order.status) > i;
               return (
                 <div key={s} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, opacity: isPast ? 0.5 : 1 }}>
                   <div style={{ width: 24, height: 24, borderRadius: "50%", background: isActive ? sc.color : "transparent", border: `2px solid ${isActive ? sc.color : DS.border}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -582,7 +624,8 @@ export default function OrdersPage() {
 
   const transition = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const res = await adminApi.put<{ data: Order }>(`/api/admin/orders/${id}`, { status });
+      // P0-1 FIX: use /transition endpoint to enforce status transition rules
+      const res = await adminApi.post<{ data: Order }>(`/api/admin/orders/${id}/transition`, { toStatus: status });
       return res;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: qk.orders() }),
@@ -705,11 +748,7 @@ export default function OrdersPage() {
               <OrderRow
                 key={order.id}
                 order={order}
-                onTransition={(id, currentStatus) => {
-                  const idx = STATUS_FLOW.indexOf(currentStatus);
-                  const next = STATUS_FLOW[idx + 1];
-                  if (next) transition.mutate({ id, status: next });
-                }}
+                onTransition={(id, nextStatus) => transition.mutate({ id, status: nextStatus })}
                 onDetail={setSelectedOrder}
                 onEdit={setEditOrder}
                 onDelete={setDeleteOrder}

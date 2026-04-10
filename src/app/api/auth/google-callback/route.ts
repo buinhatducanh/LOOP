@@ -38,9 +38,10 @@ export async function GET(req: NextRequest) {
     };
 
     // Resolve authoritative role from DB (authoritative over NextAuth raw role field)
-    const dbUser = await prisma.user.findUnique({
+    let dbUser = await prisma.user.findUnique({
       where: { id: oauthUser.id },
       select: {
+        id: true,
         role: true,
         accountType: true,
         isOnboarded: true,
@@ -52,8 +53,75 @@ export async function GET(req: NextRequest) {
       },
     });
 
+    // Determine authoritative accountType — always check TeamMember email match first.
+    // A User might have accountType="customer" from a previous login, but if their email
+    // now matches an active TeamMember, they should be treated as staff.
+    // Normalize: lowercase + trim to handle email whitespace / case mismatch.
+    const email = oauthUser.email?.toLowerCase().trim();
+    // Capture ids before any narrowing so closures can safely reference them
+    const dbUserId = dbUser?.id ?? null;
+    let accountType: "staff" | "customer" = (dbUser?.accountType as "staff" | "customer") ?? "customer";
+    let teamMemberMatchId: string | null = dbUser?.teamMemberId ?? null;
+
+    if (teamMemberMatchId) {
+      // User already linked to a TeamMember → staff
+      accountType = "staff";
+    } else if (email) {
+      // Check if email matches any active TeamMember → staff
+      const teamMemberMatch = await prisma.teamMember.findFirst({
+        where: {
+          email: { equals: email, mode: "insensitive" },
+          isActive: true,
+        },
+        select: { id: true },
+      });
+      if (teamMemberMatch) {
+        teamMemberMatchId = teamMemberMatch.id;
+        accountType = "staff";
+        // Auto-link + promote customer→staff inside a transaction (atomic)
+        if (dbUserId) {
+          const userId = dbUserId; // stable reference for closure
+          const tmId = teamMemberMatchId; // stable reference for closure
+          const isCustomer = dbUser?.accountType === "customer"; // capture before transaction
+          await prisma.$transaction(async (tx) => {
+            if (!isCustomer && tmId) {
+              // Case B-3b: Link pre-created member (HR made member, user logs in first time)
+              await tx.user.update({
+                where: { id: userId },
+                data: { teamMemberId: tmId, accountType: "staff" },
+              });
+            } else if (isCustomer && tmId) {
+              // Case B-3c: Promote existing customer → staff
+              //   (HR added this person as TeamMember AFTER their first login as customer)
+              await tx.user.update({
+                where: { id: userId },
+                data: { teamMemberId: tmId, accountType: "staff", isOnboarded: true },
+              });
+            }
+          }).catch(() => {/* non-fatal — next login will retry */});
+        }
+      }
+    }
+
+    // Re-fetch user after potentially linking teamMember so rank/LP reflect the
+    // linked TeamMember (not the stale in-memory dbUser snapshot).
+    if (dbUserId && teamMemberMatchId && !(dbUser?.teamMemberId)) {
+      dbUser = await prisma.user.findUnique({
+        where: { id: dbUserId },
+        select: {
+          id: true,
+          role: true,
+          accountType: true,
+          isOnboarded: true,
+          teamMemberId: true,
+          userRoles: {
+            select: { role: { select: { name: true, level: true } } },
+          },
+          teamMember: { select: { accessTags: true, rank: true, availableLp: true } },
+        },
+      });
+    }
     const primaryRole = dbUser?.role ?? "member";
-    const accountType: "staff" | "customer" = (dbUser?.accountType as "staff" | "customer") ?? "customer";
     const isOnboarded = dbUser?.isOnboarded ?? false;
     const roles = dbUser?.userRoles.map((ur) => ur.role.name) ?? [primaryRole];
     const roleLevel = dbUser?.userRoles.length

@@ -131,6 +131,8 @@ function mapFeature(f: {
   parentId?: string | null;
   includedInBase: boolean;
   isUpgradeable?: boolean;
+  description?: string | null;
+  descriptionVi?: string | null;
 }, locale: Locale) {
   return {
     id: f.id,
@@ -145,6 +147,8 @@ function mapFeature(f: {
     includedInBase: f.includedInBase,
     /** True = đây là phiên bản nâng cấp từ parent (VD: advanced search thay basic search) */
     isUpgradeable: f.isUpgradeable ?? false,
+    /** Plain-language Vietnamese description — non-tech customers */
+    description: f.descriptionVi ?? f.description ?? "",
   };
 }
 
@@ -323,6 +327,7 @@ export async function GET(request: Request) {
           categoryJa: true, categoryKo: true, categoryZh: true,
           tier: true, price: true, xpPoints: true,
           parentId: true, includedInBase: true, isUpgradeable: true,
+          description: true, descriptionVi: true,
         },
         orderBy: [{ category: "asc" }, { tier: "asc" }, { name: "asc" }],
       }),

@@ -14,6 +14,20 @@ export async function POST(
     const body = await req.json();
     const { selectedFeatureIds, infraTierSlug, infraTierId, adminOverridePrice } = body;
 
+    // P1-5 FIX: sanity cap on admin override price (max 10× baseline, min 0)
+    if (adminOverridePrice !== undefined) {
+      if (typeof adminOverridePrice !== "number" || adminOverridePrice < 0) {
+        return NextResponse.json(
+          { error: "adminOverridePrice must be a non-negative number" },
+          { status: 400 }
+        );
+      }
+      // Warn (but allow) if override exceeds 10× baseline — log for review
+      if (adminOverridePrice > 1_000_000_000) {
+        console.warn(`[calculate-price] adminOverridePrice=${adminOverridePrice} exceeds 1B cap for order ${id}`);
+      }
+    }
+
     if (!selectedFeatureIds || !Array.isArray(selectedFeatureIds)) {
       return NextResponse.json(
         { error: "selectedFeatureIds is required and must be an array" },

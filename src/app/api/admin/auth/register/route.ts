@@ -24,12 +24,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Mật khẩu phải có ít nhất 8 ký tự" }, { status: 400 });
     }
 
+    // Normalize email BEFORE validation and all DB lookups
+    const normalizedEmail = email.toLowerCase().trim();
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    if (!emailRegex.test(normalizedEmail)) {
       return NextResponse.json({ error: "Email không hợp lệ" }, { status: 400 });
     }
 
-    const existing = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
+    const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
     if (existing) {
       if (existing.googleId) {
         return NextResponse.json(
@@ -43,13 +45,13 @@ export async function POST(req: NextRequest) {
     const passwordHash = await hashPassword(password);
 
     // Resolve async teamMember link before spreading into create data
-    const teamMemberLink = await linkTeamMember(email.toLowerCase());
+    const teamMemberLink = await linkTeamMember(normalizedEmail);
 
     // Sequential writes (PrismaNeon HTTP adapter does NOT support $transaction)
     const created = await prisma.user.create({
       data: {
         name: name.trim(),
-        email: email.toLowerCase().trim(),
+        email: normalizedEmail,
         passwordHash,
         phone: phone?.trim() || null,
         companyName: company?.trim() || null,

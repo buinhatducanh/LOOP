@@ -23,12 +23,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Mật khẩu phải có ít nhất 8 ký tự" }, { status: 400 });
     }
 
+    // Normalize email BEFORE validation and all DB lookups
+    const normalizedEmail = email.toLowerCase().trim();
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    if (!emailRegex.test(normalizedEmail)) {
       return NextResponse.json({ error: "Email không hợp lệ" }, { status: 400 });
     }
 
-    const existing = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
+    const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
     if (existing) {
       if (existing.googleId) {
         return NextResponse.json(
@@ -43,7 +45,7 @@ export async function POST(req: NextRequest) {
 
     // Check if email matches a TeamMember → auto-link staff account
     const teamMember = await prisma.teamMember.findFirst({
-      where: { email: { mode: "insensitive", equals: email }, isActive: true },
+      where: { email: { mode: "insensitive", equals: normalizedEmail }, isActive: true },
       select: { id: true },
     });
 
@@ -53,7 +55,7 @@ export async function POST(req: NextRequest) {
     const created = await prisma.user.create({
       data: {
         name: name.trim(),
-        email: email.toLowerCase().trim(),
+        email: normalizedEmail,
         passwordHash,
         phone: phone?.trim() || null,
         role: "member",

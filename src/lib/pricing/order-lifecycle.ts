@@ -226,13 +226,18 @@ export async function recordPayment(
   const order = await prisma.order.findUnique({
     where: { id: orderId },
     select: {
-      finalPrice: true, paidAmount: true, totalAmount: true,
+      status: true, finalPrice: true, paidAmount: true, totalAmount: true,
       orderNumber: true, customerEmail: true, customerName: true,
     },
   });
 
   if (!order) {
     return { success: false, error: "Order not found" };
+  }
+
+  // P1-6 FIX: reject payment on terminal orders
+  if (["completed", "cancelled"].includes(order.status)) {
+    return { success: false, error: "Cannot record payment for completed or cancelled order" };
   }
 
   const totalExpected = order.finalPrice ?? order.totalAmount ?? 0;

@@ -161,8 +161,13 @@ export const ORDER_FILTER_CONFIG: EntityFilterConfig = {
     { field: "orderNumber", operator: "contains" },
   ],
   enumFields: {
-    status: ["pending", "confirmed", "in_progress", "review", "completed", "cancelled"],
-    paymentStatus: ["unpaid", "partial", "paid", "refunded"],
+    status: [
+      "draft", "pending", "quoted", "accepted",
+      "paid_partial", "paid_full", "contracted",
+      "designing", "developing", "reviewing", "delivered",
+      "completed", "cancelled",
+    ],
+    paymentStatus: ["unpaid", "paid_partial", "paid_full", "refunded"],
     orderType: ["package", "template", "custom"],
   },
   dateFields: ["createdAt"],

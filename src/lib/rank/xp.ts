@@ -60,18 +60,18 @@ export function computeRankFieldsFromLp(
 // ── DB-backed rank sync ──────────────────────────────────────────────────
 
 /**
- * Compute total awarded LP for a member from ALL sources:
+ * Compute total LP for rank from ALL sources:
  *   1. Approved LpAward records
- *   2. Completed LpTransaction(type=award) records (admin adjustment, etc.)
+ *   2. Completed LpTransaction(type=award, amount > 0) — positive adjustments only
  *
- * Then persist rank fields AND availableLp to TeamMember and return them.
+ * IMPORTANT: LpTransaction.amount is an absolute value.
+ *   Positive = credit (award, bonus, referral, etc.) → counts toward rank
+ *   Negative = debit (deduction, penalty) → does NOT count toward rank
  *
- * availableLp is kept in sync with the sum of approved awards so the rank display
- * is always consistent with actual awarded LP (not inflated by manual deductions).
+ * Rank is based on net positive LP earned, not current balance.
+ * availableLp is updated separately to reflect actual spendable balance.
  *
  * Uses sequential queries (Neon HTTP adapter does not support $transaction).
- * The read gap is small (~ms) — a race on concurrent approval is acceptable
- * for a rank sync (self-heals on next trigger).
  *
  * Used by: LP award approval, LP transaction creation, member profile update.
  */
@@ -82,21 +82,29 @@ export async function syncRankFields(memberId: string): Promise<{
   rank: RankKey;
   availableLp: number;
 } | null> {
-  // Sequential reads — Neon PostgreSQL HTTP adapter does NOT support $transaction
-  const [awardAgg, txAgg] = await Promise.all([
+  // Read all three in parallel
+  const [awardAgg, txAgg, member] = await Promise.all([
     prisma.lpAward.aggregate({
       where: { memberId, status: "approved" },
       _sum: { lpAmount: true },
     }),
-    // NOTE: exclude "spend" transactions from the rank total.
-    // Spend transactions are deductions (negative amounts) that are also
-    // directly reflected in TeamMember.availableLp via redemption.service.ts.
-    // Including them here would double-count the deduction inside a redemption
-    // $transaction (the spend is uncommitted so the re-read sees old totals,
-    // then P2002-style stale totals overwrite the already-deducted availableLp).
+    // Only count POSITIVE amounts toward rank — negative = deductions/penalties
+    // that reduce available balance but do not erase earned XP for rank purposes.
     prisma.lpTransaction.aggregate({
-      where: { memberId, type: "award", status: "completed" },
+      where: {
+        memberId,
+        type: "award",
+        status: "completed",
+        // BUG FIX: exclude negative amounts (deductions) from rank calculation
+        // amount > 0 means earned/awarded LP only
+        amount: { gt: 0 },
+      },
       _sum: { amount: true },
+    }),
+    // Read current availableLp separately (not affected by rank calculation)
+    prisma.teamMember.findUnique({
+      where: { id: memberId },
+      select: { availableLp: true },
     }),
   ]);
 
@@ -104,11 +112,17 @@ export async function syncRankFields(memberId: string): Promise<{
   const txLp = txAgg._sum.amount ?? 0;
   const totalLp = awardLp + txLp;
   const fields = computeRankFieldsFromLp(totalLp);
+  // availableLp: use the actual balance field, not the rank-computed total
+  const availableLp = member?.availableLp ?? totalLp;
 
   await prisma.teamMember.update({
     where: { id: memberId },
-    data: { ...fields, availableLp: totalLp },
+    data: {
+      ...fields,
+      // Always sync availableLp from the authoritative balance field
+      availableLp,
+    },
   });
 
-  return { ...fields, availableLp: totalLp };
+  return { ...fields, availableLp };
 }

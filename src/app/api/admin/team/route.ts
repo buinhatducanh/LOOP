@@ -11,7 +11,7 @@ import {
   buildPaginationResponse,
   TEAM_MEMBER_FILTER_CONFIG,
 } from "@/lib/api/search-utils";
-import { computeRankFieldsFromLp } from "@/lib/rank/xp";
+import { computeRankFieldsFromLp, xpForLevel } from "@/lib/rank/xp";
 
 export async function GET(req: NextRequest) {
   try {
@@ -80,11 +80,31 @@ export async function GET(req: NextRequest) {
 
     const enriched = members.map((m) => {
       const totalApprovedLp = lpMap.get(m.id) ?? 0;
-      const { level, currentXp, maxXp, rank } = computeRankFieldsFromLp(totalApprovedLp);
+      // FIX: rank is admin-set and persisted in TeamMember.
+      // Only compute rank from LP when there are actual LpAward records.
+      // If totalApprovedLp > 0, compute from LP (LP-driven).
+      // If totalApprovedLp === 0, preserve the persisted rank fields.
+      // This fixes the bug where a manual rank update was overwritten
+      // because the GET re-computed rank from zero LP (CEO/seed members).
+      let level: number, currentXp: number, maxXp: number, rank: string;
+      if (totalApprovedLp > 0) {
+        const computed = computeRankFieldsFromLp(totalApprovedLp);
+        level = computed.level;
+        currentXp = computed.currentXp;
+        maxXp = computed.maxXp;
+        rank = computed.rank;
+      } else {
+        // Preserve admin-set values — rank was manually set, not driven by LP
+        level = m.level;
+        currentXp = m.currentXp;
+        maxXp = xpForLevel(level);
+        rank = m.rank ?? "iron";
+      }
       const userInfo = userMap.get(m.id);
       return addAvatar({
         ...m,
-        // Override level/XP/rank with computed values (reflect real LP)
+        // Expose level/XP/rank as stored (admin-set overrides take precedence
+        // when no LP awards exist; LP-driven when awards exist)
         level,
         currentXp,
         maxXp,

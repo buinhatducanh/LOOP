@@ -15,6 +15,7 @@ import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { motion, AnimatePresence } from "motion/react";
 import { DS, GRD } from "@/lib/design-tokens";
+import { FeatureToggleTable } from "./FeatureToggleTable";
 import {
   Globe, Code2, BarChart3, Target, Check, ArrowRight, ArrowLeft,
   Users, Calendar, Layers, Sparkles, Shield, Plus, Minus, X, ExternalLink, Zap, Eye, Server,
@@ -50,10 +51,14 @@ interface WizardFeature {
   id: string; label: string; labelEn?: string; price: number;
   category: string; xpPoints?: number; tier?: string;
   categoryEn?: string; parentId?: string | null;
-  /** true = bao gồm trong 3,890,000₫ → hiển thị "✓ Đã bao gồm" thay vì giá */
+  /** true = bao gồm trong gói đã chọn → hiển thị "✓ Đã bao gồm" */
   includedInBase?: boolean;
-  /** true = đây là phiên bản nâng cấp từ parent feature (VD: advanced search thay basic search) */
+  /** true = đây là phiên bản nâng cấp từ parent feature */
   isUpgradeable?: boolean;
+  /** Plain-language Vietnamese description — non-tech customers */
+  description: string;
+  /** Short benefit (1 line) */
+  benefit?: string;
 }
 interface WizardTalent {
   id: string; name: string; role: string; rank: string;
@@ -147,13 +152,34 @@ const WEBSITE_SERVICE: WizardService = {
   color: DS.blue, basePrice: WEB_BASE_PRICE,
 };
 
-/** Feature fallback — nếu API fail, chỉ hiện web features. */
+/** Feature fallback — nếu API fail, chỉ hiện web features.
+ * Mỗi feature có description cho khách hàng non-tech. */
 const WEBSITE_FEATURES_FALLBACK: WizardFeature[] = [
-  { id: "cms", label: "Tích hợp CMS (Sanity/Contentful)", price: 5_000_000, category: "Nâng cao", xpPoints: 50, tier: "add-on" },
-  { id: "i18n", label: "Đa ngôn ngữ (i18n)", price: 3_000_000, category: "Nâng cao", xpPoints: 30, tier: "add-on" },
-  { id: "ecom", label: "E-commerce (giỏ hàng, thanh toán)", price: 12_000_000, category: "Nâng cao", xpPoints: 120, tier: "add-on" },
-  { id: "blog", label: "Blog & Content module", price: 2_500_000, category: "Nâng cao", xpPoints: 25, tier: "add-on" },
-  { id: "analytics", label: "Analytics dashboard riêng", price: 4_000_000, category: "Nâng cao", xpPoints: 40, tier: "add-on" },
+  {
+    id: "cms", label: "Tích hợp CMS", price: 5_000_000, category: "Nâng cao", xpPoints: 50, tier: "add-on",
+    description: "CMS (Hệ thống Quản trị Nội dung) cho phép bạn tự thêm/sửa/xóa nội dung website mà không cần biết code. Bạn có thể tự viết bài, thay hình ảnh, cập nhật giá sản phẩm — tất cả chỉ cần vài click chuột. Không cần thuê dev mỗi khi cần chỉnh sửa nhỏ.",
+    benefit: "Tự quản lý website không cần biết code",
+  },
+  {
+    id: "i18n", label: "Đa ngôn ngữ (i18n)", price: 3_000_000, category: "Nâng cao", xpPoints: 30, tier: "add-on",
+    description: "Website hiển thị đồng thời nhiều ngôn ngữ (Tiếng Việt, Tiếng Anh, Nhật, Hàn...). Khách hàng nước ngoài có thể đọc website bằng ngôn ngữ của họ. Người dùng tự chuyển ngôn ngữ bằng nút trên giao diện.",
+    benefit: "Tiếp cận khách hàng quốc tế",
+  },
+  {
+    id: "ecom", label: "E-commerce (Giỏ hàng & Thanh toán)", price: 12_000_000, category: "Nâng cao", xpPoints: 120, tier: "add-on",
+    description: "Biến website thành cửa hàng online — khách có thể xem sản phẩm, cho vào giỏ, thanh toán trực tiếp bằng VNPay, MoMo, ZaloPay hoặc chuyển khoản. Tích hợp quản lý đơn hàng, kho hàng, mã giảm giá. Phù hợp bán hàng online, boutique, shop nhỏ.",
+    benefit: "Bán hàng online ngay trên website",
+  },
+  {
+    id: "blog", label: "Blog & Content Module", price: 2_500_000, category: "Nội dung", xpPoints: 25, tier: "add-on",
+    description: "Trang tin tức riêng biệt trên website — bạn có thể viết bài chia sẻ, tin khuyến mãi, hướng dẫn sản phẩm. Mỗi bài viết đều được tối ưu SEO để khách hàng tìm thấy bạn trên Google. Không cần biết code để viết và đăng bài.",
+    benefit: "Chia sẻ nội dung, thu hút khách tìm kiếm Google",
+  },
+  {
+    id: "analytics", label: "Analytics Dashboard", price: 4_000_000, category: "Analytics", xpPoints: 40, tier: "add-on",
+    description: "Bảng điều khiển thống kê riêng — xem lượt truy cập, khách đến từ đâu, trang nào được xem nhiều nhất, khách ở lại bao lâu. Dữ liệu được cập nhật real-time, giúp bạn hiểu hành vi khách hàng và đưa ra quyết định kinh doanh tốt hơn.",
+    benefit: "Hiểu khách hàng qua dữ liệu thực tế",
+  },
 ];
 
 /** Extras fallback — nếu API fail. */
@@ -1629,38 +1655,42 @@ function StepHostingDomain({
   );
 }
 
-// ── Step 0: Website Package Comparison Table ───────────────────────────────────
+// ── Step 1: Package Selection + Feature Toggle Table ───────────────────────────────────
 
 /**
- * Comparison table — the same pattern used by Netflix, Slack, Notion.
- *
- * Mỗi gói thừa hưởng tất cả features của gói trước.
- * allFeatures được computed từ API (mapPackage trả về allFeatures).
- * FE chỉ dùng để hiển thị.
+ * Phần 1: Chọn gói (3 cards đơn giản)
+ * Phần 2: Khi chọn gói → FeatureToggleTable hiện bên dưới với
+ *   - Included features: disabled (không bỏ được = giá không đổi)
+ *   - Extra features: tích thêm → giá tăng
+ *   - Mỗi feature có mô tả non-tech cho khách hàng
  */
-function StepPackage({ packages, service, selected, onSelect }: {
+function StepPackage({
+  packages, service, selected, onSelect,
+  featureOptions, selectedFeatures, onToggleFeature,
+}: {
   packages: WizardPackage[];
   service: WizardService | null;
   selected: string;
   onSelect: (id: string) => void;
+  featureOptions: WizardFeature[];
+  selectedFeatures: string[];
+  onToggleFeature: (id: string) => void;
 }) {
-  const t = useTranslations("BookingPage");
-
-  // Fallback maps
   const FALLBACK_PRICE: Record<string, number> = {
     basic: WEB_BASE_PRICE, business: 5_890_000, experience: 6_890_000,
   };
   const FALLBACK_MARKET: Record<string, number> = {
     basic: 5_500_000, business: 8_900_000, experience: 12_000_000,
   };
-
   const pkgKey = (pkg: WizardPackage) => pkg.slug ?? pkg.id;
   const getPrice = (pkg: WizardPackage) =>
     pkg.price ?? FALLBACK_PRICE[pkgKey(pkg)] ?? WEB_BASE_PRICE;
   const getMarket = (pkg: WizardPackage) =>
     pkg.marketPrice ?? FALLBACK_MARKET[pkgKey(pkg)] ?? getPrice(pkg);
 
-  /** Deduplicated union of features up to and including this package */
+  // Features bao gồm trong gói đã chọn (cascade: mỗi gói thừa hưởng từ gói trước)
+  const selectedPkg = packages.find(p => p.id === selected || p.slug === selected);
+  const selectedPkgIdx = packages.findIndex(p => p.id === selected || p.slug === selected);
   const getAllFeatures = (pkg: WizardPackage) => {
     const idx = packages.findIndex(p => p.id === pkg.id || p.slug === pkg.slug);
     if (idx < 0) return pkg.features ?? [];
@@ -1671,32 +1701,25 @@ function StepPackage({ packages, service, selected, onSelect }: {
     }
     return all;
   };
+  // Maps feature IDs included in the selected package
+  // pkg.features = feature NAME strings → match against featureOptions labels → get IDs
+  const includedFeatureIds: string[] = selectedPkg
+    ? featureOptions
+        .filter(f => getAllFeatures(selectedPkg).includes(f.label))
+        .map(f => f.id)
+    : [];
 
-  // All unique feature names for the table rows
-  const allFeatureNames = [...new Set(packages.flatMap(p => p.features ?? []))].sort();
-
-  /** Features exclusive to this tier (not in the tier before it) */
-  const getExtraFeatures = (pkg: WizardPackage) => {
-    const idx = packages.findIndex(p => p.id === pkg.id || p.slug === pkg.slug);
-    if (idx <= 0) return pkg.features ?? [];
-    const prevSet = new Set(packages[idx - 1]!.features ?? []);
-    return (pkg.features ?? []).filter(f => !prevSet.has(f));
+  const handleToggle = (featureId: string) => {
+    // Cannot deselect features that are included in the base package (price unchanged)
+    if (includedFeatureIds.includes(featureId)) return;
+    onToggleFeature(featureId);
   };
 
   const popularPkg = packages.find(p => p.popular);
-
-  // Per-package color helpers
   const getColor = (pkg: WizardPackage) => {
     const isPopular = pkg.popular || pkg.id === popularPkg?.id || pkg.slug === popularPkg?.slug;
     return pkg.color || (isPopular ? DS.blue : DS.text3);
   };
-  const isPkgPopular = (pkg: WizardPackage) =>
-    pkg.popular || pkg.id === popularPkg?.id || pkg.slug === popularPkg?.slug;
-  const isPkgSelected = (pkg: WizardPackage) =>
-    selected === pkg.id || pkg.slug === selected;
-
-  // ── Render ───────────────────────────────────────────────────────────────────
-  const colTemplate = `220px repeat(${packages.length}, minmax(0, 1fr))`;
 
   return (
     <div>
@@ -1705,24 +1728,17 @@ function StepPackage({ packages, service, selected, onSelect }: {
         className="mb-6 p-6 rounded-2xl relative overflow-hidden"
         style={{ background: "rgba(15,23,42,0.8)", border: "1px solid rgba(236,72,153,0.15)" }}
       >
-        <div
-          style={{
-            position: "absolute", top: -80, right: -80,
-            width: 240, height: 240, borderRadius: "50%",
-            background: "radial-gradient(circle, rgba(236,72,153,0.07) 0%, transparent 70%)",
-            pointerEvents: "none",
-          }}
-        />
+        <div style={{ position: "absolute", top: -80, right: -80, width: 240, height: 240, borderRadius: "50%", background: "radial-gradient(circle, rgba(236,72,153,0.07) 0%, transparent 70%)", pointerEvents: "none" }} />
         <div className="relative flex items-start justify-between gap-4 flex-wrap">
           <div>
             <div style={{ color: DS.pink, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.22em", marginBottom: 8 }}>
-              WEBSITE TÙY CHỈNH — SẢN PHẨM CHÍNH
+              WEBSITE TÙY CHỈNH
             </div>
             <h3 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 30, fontWeight: 900, letterSpacing: "0.03em", marginBottom: 8 }}>
               Chọn gói Website phù hợp
             </h3>
-            <p style={{ color: DS.text3, fontSize: 14, lineHeight: 1.7, maxWidth: 500 }}>
-              Mỗi gói <strong style={{ color: DS.text2 }}>thừa hưởng toàn bộ</strong> tính năng từ gói trước — chỉ cần chọn mức phù hợp nhất với bạn.
+            <p style={{ color: DS.text3, fontSize: 14, lineHeight: 1.7, maxWidth: 520 }}>
+              Chọn gói, sau đó tùy chỉnh tính năng bên dưới — bỏ những thứ bạn không cần, thêm những thứ bạn cần. Mỗi tính năng đều có giải thích dễ hiểu.
             </p>
           </div>
           <div className="flex flex-col gap-2 flex-shrink-0">
@@ -1739,176 +1755,99 @@ function StepPackage({ packages, service, selected, onSelect }: {
         </div>
       </div>
 
-      {/* ── Unified comparison table ── */}
-      <div
-        className="rounded-2xl overflow-x-auto"
-        style={{ border: `1px solid ${DS.border}`, background: "rgba(8,12,25,0.6)" }}
-      >
-        {/* ── Header row: label + per-package pricing blocks ── */}
-        <div className="grid min-w-[700px]" style={{ gridTemplateColumns: colTemplate }}>
-          {/* Feature label header */}
-          <div className="flex items-end px-6 py-5" style={{ borderRight: `1px solid ${DS.border}`, background: "rgba(15,23,42,0.5)" }}>
-            <div style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.18em", marginBottom: 2 }}>TÍNH NĂNG</div>
-          </div>
+      {/* ── Step 1A: 3 Package cards (compact horizontal) ── */}
+      <div className="grid gap-4 mb-8" style={{ gridTemplateColumns: "repeat(3, minmax(0, 1fr))" }}>
+        {packages.map(pkg => {
+          const price = getPrice(pkg);
+          const market = getMarket(pkg);
+          const saving = market - price;
+          const savingPct = saving > 0 ? Math.round((saving / market) * 100) : 0;
+          const color = getColor(pkg);
+          const isSelected = selected === pkg.id || pkg.slug === selected;
+          const isPopular = pkg.popular || pkg.id === popularPkg?.id || pkg.slug === popularPkg?.slug;
 
-          {/* Per-package pricing headers */}
-          {packages.map(pkg => {
-            const price = getPrice(pkg);
-            const market = getMarket(pkg);
-            const saving = market - price;
-            const savingPct = saving > 0 ? Math.round((saving / market) * 100) : 0;
-            const color = getColor(pkg);
-            const isSelected = isPkgSelected(pkg);
-            const isPopular = isPkgPopular(pkg);
+          return (
+            <motion.button
+              key={pkg.id}
+              onClick={() => onSelect(pkg.id)}
+              className="text-left relative overflow-hidden"
+              style={{
+                background: isSelected ? `${color}0C` : "rgba(15,23,42,0.7)",
+                border: isSelected ? `2px solid ${color}60` : `1px solid ${DS.border}`,
+                borderRadius: 16,
+                padding: "18px 16px",
+                cursor: "pointer",
+                boxShadow: isSelected ? `0 0 24px ${color}18` : "none",
+                transition: "all 0.2s",
+              }}
+              whileHover={{ scale: 1.02 }}
+            >
+              {/* Popular / Selected badge */}
+              {isPopular && !isSelected && (
+                <div style={{ position: "absolute", top: 0, left: 0, right: 0, padding: "2px", textAlign: "center", background: GRD.primary, fontSize: 8, color: "#fff", fontFamily: DS.mono, letterSpacing: "0.1em" }}>
+                  ★ PHỔ BIẾN
+                </div>
+              )}
+              {isSelected && (
+                <div style={{ position: "absolute", top: 0, left: 0, right: 0, padding: "2px", textAlign: "center", background: color, fontSize: 8, color: "#fff", fontFamily: DS.mono, letterSpacing: "0.1em" }}>
+                  ✓ ĐÃ CHỌN
+                </div>
+              )}
 
-            return (
-              <div
-                key={pkg.id}
-                className="relative px-4 py-5 text-center flex flex-col items-center justify-center gap-1"
-                style={{
-                  borderLeft: `1px solid ${DS.border}`,
-                  background: isSelected ? `${color}08` : isPopular ? "rgba(59,130,246,0.04)" : "rgba(15,23,42,0.3)",
-                }}
-              >
-                {/* Popular badge */}
-                {isPopular && !isSelected && (
-                  <div
-                    className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap px-2.5 py-0.5 rounded-full text-[9px] font-bold tracking-widest"
-                    style={{ background: GRD.primary, color: "#fff", fontFamily: DS.mono, boxShadow: "0 2px 10px rgba(236,72,153,0.4)" }}
-                  >
-                    ★ PHỔ BIẾN
-                  </div>
-                )}
-                {/* Selected badge */}
-                {isSelected && (
-                  <div
-                    className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-bold tracking-widest"
-                    style={{ background: color, color: "#fff", fontFamily: DS.mono, boxShadow: `0 2px 10px ${color}50` }}
-                  >
-                    <Check size={9} />ĐÃ CHỌN
-                  </div>
-                )}
-
-                {/* Package name */}
-                <div style={{ color, fontSize: 10, fontFamily: DS.mono, fontWeight: 700, letterSpacing: "0.18em", marginTop: isPopular || isSelected ? 6 : 0 }}>
+              <div style={{ marginTop: isPopular || isSelected ? 14 : 0 }}>
+                <div style={{ color, fontSize: 9, fontFamily: DS.mono, letterSpacing: "0.18em", marginBottom: 6 }}>
                   {pkg.name.toUpperCase()}
                 </div>
-
-                {/* Market price anchor */}
                 {saving > 0 && (
-                  <div style={{ color: DS.text5, fontSize: 11, fontFamily: DS.mono, textDecoration: "line-through", lineHeight: 1 }}>
+                  <div style={{ color: DS.text5, fontSize: 11, fontFamily: DS.mono, textDecoration: "line-through", lineHeight: 1, marginBottom: 2 }}>
                     {fmtVND(market)}
                   </div>
                 )}
-
-                {/* Main price — large and prominent */}
-                <div style={{ color: DS.text, fontFamily: DS.heading, fontSize: 34, fontWeight: 900, lineHeight: 1.1 }}>
+                <div style={{ color: DS.text, fontFamily: DS.heading, fontSize: 28, fontWeight: 900, lineHeight: 1.1, marginBottom: 4 }}>
                   {fmtVND(price)}
                 </div>
-
-                {/* Saving */}
                 {saving > 0 && (
-                  <div className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold"
-                    style={{ background: `${DS.green}15`, color: DS.green, border: `1px solid ${DS.green}35`, fontFamily: DS.mono }}>
+                  <div className="inline-block mb-3 px-1.5 py-0.5 rounded text-[9px] font-bold"
+                    style={{ background: "rgba(34,197,94,0.12)", color: DS.green, fontFamily: DS.mono }}>
                     −{savingPct}%
                   </div>
                 )}
-
-                {/* LP */}
-                <div style={{ color: DS.purple, fontSize: 10, fontFamily: DS.mono, marginTop: 2 }}>
+                <div style={{ color: DS.text3, fontSize: 11, lineHeight: 1.5, marginTop: 6 }}>{pkg.desc}</div>
+                {pkg.features.length > 0 && (
+                  <ul style={{ margin: "8px 0 0", padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 2 }}>
+                    {pkg.features.slice(0, 3).map((feat, i) => (
+                      <li key={i} style={{ display: "flex", alignItems: "center", gap: 4, color: DS.text4, fontSize: 10, lineHeight: 1.4 }}>
+                        <Check size={9} style={{ color: DS.green, flexShrink: 0 }} />
+                        {feat}
+                      </li>
+                    ))}
+                    {pkg.features.length > 3 && (
+                      <li style={{ color: DS.text5, fontSize: 10 }}>+{pkg.features.length - 3} tính năng khác</li>
+                    )}
+                  </ul>
+                )}
+                <div style={{ color: DS.purple, fontSize: 10, fontFamily: DS.mono, marginTop: 8 }}>
                   ◈ +{pkg.lp.toLocaleString()} LP
                 </div>
-
-                {/* CTA button */}
-                <button
-                  onClick={() => onSelect(pkg.id)}
-                  className="mt-3 w-full py-2.5 rounded-xl text-xs font-bold transition-all duration-200"
-                  style={{
-                    background: isSelected ? color : "transparent",
-                    color: isSelected ? "#fff" : color,
-                    border: isSelected ? "none" : `1.5px solid ${color}50`,
-                    fontFamily: DS.mono,
-                    cursor: "pointer",
-                    boxShadow: isSelected ? `0 4px 16px ${color}35` : "none",
-                  }}
-                >
-                  {isSelected ? "✓ Đã chọn" : "Chọn gói này"}
-                </button>
               </div>
-            );
-          })}
-        </div>
-
-        {/* Divider */}
-        <div style={{ height: 1, background: DS.border }} />
-
-        {/* ── Feature rows ── */}
-        {allFeatureNames.map(name => (
-          <div key={name} className="grid min-w-[700px]" style={{ gridTemplateColumns: colTemplate }}>
-            {/* Feature label */}
-            <div className="px-6 py-4 flex items-center" style={{ borderRight: `1px solid ${DS.border}`, background: "rgba(15,23,42,0.3)" }}>
-              <span style={{ color: DS.text3, fontSize: 13, lineHeight: 1.5 }}>{name}</span>
-            </div>
-
-            {/* Per-package cells */}
-            {packages.map((pkg, pkgIdx) => {
-              const color = getColor(pkg);
-              const has = getAllFeatures(pkg).includes(name);
-              const isExtra = getExtraFeatures(pkg).includes(name);
-
-              return (
-                <div key={pkg.id} className="flex items-center justify-center py-4 px-4" style={{ borderLeft: `1px solid ${DS.border}` }}>
-                  {has ? (
-                    <div className="flex flex-col items-center gap-1.5">
-                      <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: `${color}12`, border: `1px solid ${color}35` }}>
-                        <Check size={15} style={{ color }} />
-                      </div>
-                      {isExtra && pkgIdx > 0 && (
-                        <span className="px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider"
-                          style={{ background: `${DS.pink}12`, color: DS.pink, border: `1px solid ${DS.pink}35`, fontFamily: DS.mono }}>
-                          MỚI
-                        </span>
-                      )}
-                    </div>
-                  ) : (
-                    <span style={{ color: DS.text5, fontSize: 18 }}>—</span>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        ))}
-
-        {/* Divider */}
-        <div style={{ height: 1, background: DS.border }} />
-
-        {/* ── CTA footer row ── */}
-        <div className="grid min-w-[700px]" style={{ gridTemplateColumns: colTemplate }}>
-          <div className="px-6 py-4" style={{ background: "rgba(15,23,42,0.4)", borderRight: `1px solid ${DS.border}` }} />
-          {packages.map(pkg => {
-            const price = getPrice(pkg);
-            const color = getColor(pkg);
-            const isSelected = isPkgSelected(pkg);
-            return (
-              <div key={pkg.id} className="flex items-center justify-center py-4 px-4" style={{ borderLeft: `1px solid ${DS.border}` }}>
-                {isSelected ? (
-                  <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl w-full justify-center"
-                    style={{ background: `${color}10`, border: `1px solid ${color}30` }}>
-                    <Check size={13} style={{ color }} />
-                    <span style={{ color, fontSize: 12, fontFamily: DS.mono, fontWeight: 700 }}>{fmtVND(price)}</span>
-                  </div>
-                ) : (
-                  <button onClick={() => onSelect(pkg.id)}
-                    className="px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-200"
-                    style={{ background: "transparent", color, border: `1.5px solid ${color}40`, fontFamily: DS.mono, cursor: "pointer" }}>
-                    Chọn {pkg.name}
-                  </button>
-                )}
-              </div>
-            );
-          })}
-        </div>
+            </motion.button>
+          );
+        })}
       </div>
+
+      {/* ── Step 1B: Feature Toggle Table (only when package selected) ── */}
+      {selectedPkg && featureOptions.length > 0 && (
+        <div style={{ marginBottom: 32 }}>
+          <FeatureToggleTable
+            allFeatures={featureOptions}
+            selectedIds={selectedFeatures}
+            includedIds={includedFeatureIds}
+            onToggle={handleToggle}
+            packageName={selectedPkg.name}
+            packageColor={getColor(selectedPkg)}
+          />
+        </div>
+      )}
 
       {/* ── Trust strip ── */}
       <div className="mt-5 grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}>
@@ -3096,45 +3035,8 @@ export function BookingWizardClient({ locale }: Props) {
     return { pkg, price, market, saving, savingPct, isSelected, color };
   });
 
-  // ── Inline feature rows ──────────────────────────────────────────────────────
+  // ── Feature categorisation (for FeatureToggleTable includedIds) ─────────────────
   const baseFeatures = currentFeatureOptions.filter(f => f.includedInBase);
-  const upgradeFeatures = currentFeatureOptions.filter(f => f.isUpgradeable && !f.includedInBase);
-  const addOnFeatures = currentFeatureOptions.filter(f => !f.includedInBase && !f.isUpgradeable);
-
-  const renderFeatureRow = (f: WizardFeature, isSelected: boolean, isBase: boolean) => (
-    <div key={f.id} className="flex items-center justify-between p-3 rounded-xl"
-      style={{
-        background: isSelected ? `${DS.blue}0A` : "rgba(15,23,42,0.35)",
-        border: `1px solid ${isSelected ? `${DS.blue}40` : DS.border}`,
-      }}>
-      <div className="flex items-center gap-3 flex-1 min-w-0">
-        <div className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0"
-          style={{ background: isSelected ? DS.blue : "rgba(255,255,255,0.05)", border: isSelected ? "none" : `1px solid ${DS.border}` }}>
-          {isSelected && <Check size={11} style={{ color: "#fff" }} />}
-        </div>
-        <div className="min-w-0">
-          <div style={{ color: DS.text, fontSize: 13, fontWeight: 600 }}>{f.label}</div>
-          {f.labelEn && <div style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono }}>{f.labelEn}</div>}
-        </div>
-      </div>
-      {isBase ? (
-        <div style={{ background: "rgba(34,197,94,0.12)", border: "1px solid rgba(34,197,94,0.25)", borderRadius: 6, padding: "2px 8px" }}>
-          <span style={{ color: DS.green, fontSize: 10, fontFamily: DS.mono, fontWeight: 600 }}>✓ Đã có</span>
-        </div>
-      ) : f.isUpgradeable ? (
-        <div style={{ textAlign: "right" }}>
-          <div style={{ color: DS.pink, fontSize: 12, fontFamily: DS.mono, fontWeight: 700 }}>+{fmtVND(f.price)}</div>
-          {f.parentId && (
-            <div style={{ color: DS.text4, fontSize: 9, fontFamily: DS.mono }}>Nâng cấp từ basic</div>
-          )}
-        </div>
-      ) : (
-        <div style={{ color: DS.blue, fontSize: 12, fontFamily: DS.mono, fontWeight: 700, flexShrink: 0 }}>
-          +{fmtVND(f.price)}
-        </div>
-      )}
-    </div>
-  );
 
   return (
     <main style={{ background: DS.bg, minHeight: "100vh" }}>
@@ -3321,110 +3223,17 @@ export function BookingWizardClient({ locale }: Props) {
             </div>
           </div>
 
-          {/* ── SECTION 3: Feature selection (only when package selected) ── */}
+          {/* ── SECTION 3: Feature Toggle Table (only when package selected) ── */}
           {selectedPackage && currentFeatureOptions.length > 0 && (
             <div style={{ marginBottom: 32 }}>
-              <div className="flex items-center gap-3 mb-4">
-                <div style={{ width: 3, height: 16, background: GRD.primary, borderRadius: 2 }} />
-                <h3 style={{ color: DS.text2, fontSize: 12, fontFamily: DS.mono, letterSpacing: "0.14em" }}>
-                  TÍNH NĂNG & NÂNG CẤP
-                </h3>
-                <div style={{ flex: 1, height: 1, background: DS.border }} />
-              </div>
-
-              {/* Base features */}
-              {baseFeatures.length > 0 && (
-                <div style={{ marginBottom: 16 }}>
-                  <div style={{ color: DS.green, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.12em", marginBottom: 8 }}>
-                    ✓ TÍNH NĂNG CƠ BẢN (đã bao gồm trong gói)
-                  </div>
-                  <div style={{ display: "grid", gap: 6 }}>
-                    {baseFeatures.map(f => renderFeatureRow(f, selectedFeatures.includes(f.id), true))}
-                  </div>
-                </div>
-              )}
-
-              {/* Upgrade features */}
-              {upgradeFeatures.length > 0 && (
-                <div style={{ marginBottom: 16 }}>
-                  <div style={{ color: DS.pink, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.12em", marginBottom: 8 }}>
-                    ↑ NÂNG CẤP TÍNH NĂNG (chọn để nâng cấp)
-                  </div>
-                  <div style={{ display: "grid", gap: 6 }}>
-                    {upgradeFeatures.map(f => {
-                      const parent = currentFeatureOptions.find(p => p.id === f.parentId);
-                      return (
-                        <motion.button
-                          key={f.id}
-                          onClick={() => toggleFeature(f.id)}
-                          className="w-full text-left p-3 rounded-xl flex items-center justify-between"
-                          style={{
-                            background: selectedFeatures.includes(f.id) ? `${DS.pink}0A` : "rgba(15,23,42,0.35)",
-                            border: selectedFeatures.includes(f.id) ? `1.5px solid rgba(236,72,153,0.4)` : `1px solid ${DS.border}`,
-                            cursor: "pointer",
-                          }}
-                          whileHover={{ scale: 1.003 }}
-                        >
-                          <div className="flex items-center gap-3 flex-1 min-w-0">
-                            <div className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0"
-                              style={{ background: selectedFeatures.includes(f.id) ? DS.pink : "rgba(255,255,255,0.05)", border: selectedFeatures.includes(f.id) ? "none" : `1px solid ${DS.border}` }}>
-                              {selectedFeatures.includes(f.id) && <Check size={11} style={{ color: "#fff" }} />}
-                            </div>
-                            <div className="min-w-0">
-                              <div style={{ color: DS.text, fontSize: 13, fontWeight: 600 }}>{f.label}</div>
-                              {parent && <div style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono }}>thay cho: {parent.label}</div>}
-                            </div>
-                          </div>
-                          <div style={{ textAlign: "right", flexShrink: 0 }}>
-                            <div style={{ color: DS.pink, fontSize: 13, fontFamily: DS.mono, fontWeight: 700 }}>
-                              +{fmtVND(f.price)}
-                            </div>
-                            {parent && parent.price !== undefined && (
-                              <div style={{ color: DS.text4, fontSize: 9, fontFamily: DS.mono }}>chênh: +{fmtVND(Math.max(0, f.price - parent.price))}</div>
-                            )}
-                          </div>
-                        </motion.button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Add-on features */}
-              {addOnFeatures.length > 0 && (
-                <div>
-                  <div style={{ color: DS.blue, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.12em", marginBottom: 8 }}>
-                    + TÍNH NĂNG BỔ SUNG (chọn thêm)
-                  </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 8 }}>
-                    {addOnFeatures.map(f => (
-                      <motion.button
-                        key={f.id}
-                        onClick={() => toggleFeature(f.id)}
-                        className="w-full text-left p-3 rounded-xl flex items-center gap-3"
-                        style={{
-                          background: selectedFeatures.includes(f.id) ? `${DS.blue}0A` : "rgba(15,23,42,0.35)",
-                          border: selectedFeatures.includes(f.id) ? `1.5px solid rgba(59,130,246,0.35)` : `1px solid ${DS.border}`,
-                          cursor: "pointer",
-                        }}
-                        whileHover={{ scale: 1.003 }}
-                      >
-                        <div className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0"
-                          style={{ background: selectedFeatures.includes(f.id) ? DS.blue : "rgba(255,255,255,0.05)", border: selectedFeatures.includes(f.id) ? "none" : `1px solid ${DS.border}` }}>
-                          {selectedFeatures.includes(f.id) && <Check size={11} style={{ color: "#fff" }} />}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div style={{ color: DS.text, fontSize: 12, fontWeight: 600 }}>{f.label}</div>
-                          {f.labelEn && <div style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono }}>{f.labelEn}</div>}
-                        </div>
-                        <div style={{ color: DS.blue, fontSize: 11, fontFamily: DS.mono, fontWeight: 700, flexShrink: 0 }}>
-                          +{fmtVND(f.price)}
-                        </div>
-                      </motion.button>
-                    ))}
-                  </div>
-                </div>
-              )}
+              <FeatureToggleTable
+                allFeatures={currentFeatureOptions}
+                selectedIds={selectedFeatures}
+                includedIds={baseFeatures.map(f => f.id)}
+                onToggle={toggleFeature}
+                packageName={selectedPkg?.name}
+                packageColor={pkgColor}
+              />
             </div>
           )}
 

@@ -71,6 +71,12 @@ export async function PUT(
     const { id } = await params;
     const body = await req.json();
 
+    console.log("[PUT /api/admin/team/:id] body:", JSON.stringify({
+      ...body,
+      // truncate long arrays for logging
+      memberExpertise: body.memberExpertise?.length ?? 0,
+    }));
+
     const existing = await prisma.teamMember.findUnique({ where: { id } });
     if (!existing) {
       return NextResponse.json({ error: "Không tìm thấy thành viên" }, { status: 404 });
@@ -191,11 +197,13 @@ export async function PUT(
       }
     }
 
-    // ── Extract systemRole + roles before TeamMember update ────────────────────
+    // ── Extract systemRole + roles + forceRank before TeamMember update ────────────
     // roles = UserRole junction table (FE field), not a Prisma TeamMember field
+    // forceRank = true when admin explicitly sets rank/level from the form
     const systemRole = updateData.systemRole as string | undefined;
+    const forceRank = body.forceRank === true;
     const teamUpdateData = Object.fromEntries(
-      Object.entries(updateData).filter(([k]) => k !== "systemRole" && k !== "roles")
+      Object.entries(updateData).filter(([k]) => k !== "systemRole" && k !== "roles" && k !== "forceRank")
     ) as Record<string, unknown>;
 
     // ── Resolve expertise IDs (reads — safe outside tx) ─────────────────────────
@@ -278,14 +286,17 @@ export async function PUT(
         }
       }
 
-      // 5. Re-compute rank fields from actual LP totals
-      // FIX: syncRankFields aggregates approved LpAwards + completed LpTransactions
-      // so the persisted level/rank always reflect real LP, not stale manual values.
-      // Also syncs availableLp so the returned member always reflects live LP state.
-      await syncRankFields(id);
+      // 5. Rank update strategy:
+      //   - forceRank=true: admin manually set rank/level in the form → persist as-is.
+      //     level/currentXp/rank are already in teamUpdateData from the submitted body.
+      //     Do NOT call syncRankFields here — it would overwrite with LP-computed values.
+      //   - forceRank=false: rank is LP-driven → recalculate from actual LP totals.
+      if (!forceRank) {
+        await syncRankFields(id);
+      }
 
       // 6. Audit log after successful writes — re-fetch fresh member to capture
-      // updated rank/level/XP/availableLp from syncRankFields
+      // updated rank/level/XP/availableLp
       const freshMember = await prisma.teamMember.findUnique({ where: { id } });
       await prisma.auditLog.create({
         data: {
@@ -299,6 +310,17 @@ export async function PUT(
       });
 
       member = freshMember ?? m;
+
+    console.log("[PUT /api/admin/team/:id] updateData sent to Prisma:", JSON.stringify(updateData, null, 2));
+    console.log("[PUT /api/admin/team/:id] persisted member rank fields:", {
+      id: member!.id,
+      name: member!.name,
+      level: member!.level,
+      currentXp: member!.currentXp,
+      rank: member!.rank,
+      availableLp: member!.availableLp,
+      forceRank: body.forceRank,
+    });
     } catch (prismaErr: unknown) {
       console.error("[PUT /api/admin/team] Prisma error:", prismaErr);
       const code = (prismaErr as { code?: string })?.code;
@@ -312,7 +334,18 @@ export async function PUT(
       return NextResponse.json({ error: "Cập nhật thất bại" }, { status: 500 });
     }
 
-    return NextResponse.json({ data: addAvatar(member!) });
+    return NextResponse.json({
+      data: addAvatar(member!),
+      // Diagnostic: show what was actually persisted
+      _diag: {
+        updateDataKeys: Object.keys(updateData),
+        forceRank: body.forceRank,
+        persistedLevel: member!.level,
+        persistedRank: member!.rank,
+        persistedCurrentXp: member!.currentXp,
+        persistedAvailableLp: member!.availableLp,
+      }
+    });
 
   } catch (error) {
     return handleError(error);

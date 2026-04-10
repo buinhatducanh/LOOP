@@ -160,7 +160,7 @@ async function seedRBAC() {
 // 2. Departments
 // ══════════════════════════════════════════════════════════════════
 
-async function seedDepartments() {
+async function seedDepartments(): Promise<Record<string, string>> {
   console.log("\n[Departments] Seeding 8 departments...");
 
   const departments = [
@@ -230,8 +230,9 @@ async function seedDepartments() {
     },
   ];
 
+  const deptIds: Record<string, string> = {};
   for (const dept of departments) {
-    await prisma.department.upsert({
+    const created = await prisma.department.upsert({
       where: { key: dept.key },
       update: {
         name: dept.name,
@@ -242,9 +243,11 @@ async function seedDepartments() {
       },
       create: dept,
     });
+    deptIds[dept.key] = created.id;
   }
 
   console.log(`  ✓ 8 departments seeded`);
+  return deptIds;
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -2026,37 +2029,38 @@ async function seedCompanyEvents() {
 //   effects from loopStore INIT_EFFECTS; quests/events from authStore INIT_QUESTS/INIT_EVENTS
 // ══════════════════════════════════════════════════════════════════
 
-// ── Seed all 26 team members (CEO already seeded) ─────────────────────────────
-async function seedAllTeamMembers() {
-  console.log("\n[R2-TeamMembers] Seeding 26 team members...");
+// ── Seed all 10 team members (CEO already seeded) ────────────────────────────
+async function seedAllTeamMembers(deptIds: Record<string, string>) {
+  console.log("\n[R2-TeamMembers] Seeding 10 team members with department FK...");
 
   // memberData.ts canonical LP values (source of truth per fe-reseed-plan)
   // Giảm còn 10 members cho test (giữ nguyên canonical LP values)
   const members = [
-    // id=1: Kai Tanaka
-    { slug: "kai-tanaka",       name: "Kai Tanaka",          title: "Junior Operative",         bio: "Thanh kiếm vẫn đang được rèn giũa. Tiềm năng thô đang chờ đợi ngọn lửa kinh nghiệm.",     shortBio: "Frontend Dev chuyên Vue.js & CSS Animations.",  level: 8,   rank: "iron",     availableLp: 850,   currentXp: 45,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 1 },
-    // id=2: Mei Lin
-    { slug: "mei-lin",           name: "Mei Lin",              title: "Visual Artisan",           bio: "Một hòn than hồng rực cháy ổn định. Kỹ năng sắc bén qua từng chu kỳ thiết kế.",                    shortBio: "UI/UX Designer — Design Systems & Figma.",          level: 24,  rank: "bronze",   availableLp: 3200,  currentXp: 78,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 2 },
-    // id=3: Ryo Hashimoto
-    { slug: "ryo-hashimoto",     name: "Ryo Hashimoto",        title: "Code Sentinel",            bio: "Những con đường bạc được khắc qua vô số cơn bão debug. API phải tuân lệnh anh.",            shortBio: "Backend Dev — Node.js & Microservices.",          level: 43,  rank: "silver",   availableLp: 8500,  currentXp: 62,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 3 },
-    // id=4: Yuna Park
-    { slug: "yuna-park",         name: "Yuna Park",            title: "Dual-Path Operative",     bio: "Nơi mã nguồn gặp gỡ nghệ thuật — Yuna điều khiển cả hai với sự uyển chuyển tự nhiên.", shortBio: "Full Stack Dev — React & System Architecture.", level: 68,  rank: "gold",     availableLp: 15800, currentXp: 85,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 4 },
-    // id=5: Shin Watanabe
-    { slug: "shin-watanabe",      name: "Shin Watanabe",         title: "Infrastructure Warden",   bio: "Người thì thầm với hạ tầng. Không hệ thống nào thoát khỏi trật tự của anh.",              shortBio: "DevOps Engineer — Kubernetes & CI/CD.",               level: 85,  rank: "platinum", availableLp: 28500, currentXp: 40,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 5 },
-    // id=6: Rin Nakamura
-    { slug: "rin-nakamura",      name: "Rin Nakamura",          title: "Crimson Architect",       bio: "Sự chính xác đầy quyết đoán. Mọi hàm số là một đòn tấn công.",                            shortBio: "Backend Lead — High-Performance Systems.",            level: 103, rank: "ruby",     availableLp: 52000, currentXp: 60,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 6 },
-    // id=7: Akira Sato
-    { slug: "akira-sato",        name: "Akira Sato",             title: "Guild Master",            bio: "Đặc vụ đỉnh cao. Một huyền thoại được khắc trên silicon và ánh sao. Guild cúi chào.", shortBio: "Tech Lead — Vision & System Architecture.",       level: 118, rank: "diamond",  availableLp: 98000, currentXp: 92,  maxXp: 100, isActive: true,  isFeatured: true,  sortOrder: 7 },
-    // id=8: Trần Hữu Phúc
-    { slug: "tran-huu-phuc",     name: "Trần Hữu Phúc",         title: "Senior Operative",       bio: "Sự chính xác trong từng pixel. Một bậc thầy của nghệ thuật dàn trang.",                        shortBio: "Frontend Dev — Tailwind CSS & React Hooks.",         level: 28,  rank: "bronze",   availableLp: 4500,  currentXp: 32,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 8 },
-    // id=9: Haru Tanaka
-    { slug: "haru-tanaka",       name: "Haru Tanaka",            title: "Media Artisan",           bio: "Kiến trúc sư của hình ảnh và âm thanh. Mỗi khung hình là một tuyên bố nghệ thuật.",        shortBio: "Media Manager — Media Production & Brand Identity.",  level: 72,  rank: "ruby",     availableLp: 45000, currentXp: 88,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 9 },
-    // id=10: Vũ Đình Trọng
-    { slug: "vu-dinh-trong",     name: "Vũ Đình Trọng",          title: "Quality Sentry",          bio: "Không lỗi nào thoát khỏi tầm mắt của lính gác.",                                       shortBio: "QA Lead — Automated Testing & Security Audits.",    level: 52,  rank: "silver",   availableLp: 6200,  currentXp: 15,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 10 },
+    // id=1: Kai Tanaka — Engineering
+    { slug: "kai-tanaka",       name: "Kai Tanaka",          title: "Junior Operative",         bio: "Thanh kiếm vẫn đang được rèn giũa. Tiềm năng thô đang chờ đợi ngọn lửa kinh nghiệm.",     shortBio: "Frontend Dev chuyên Vue.js & CSS Animations.",  level: 8,   rank: "iron",     availableLp: 850,   currentXp: 45,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 1, deptKey: "engineering" },
+    // id=2: Mei Lin — Design
+    { slug: "mei-lin",           name: "Mei Lin",              title: "Visual Artisan",           bio: "Một hòn than hồng rực cháy ổn định. Kỹ năng sắc bén qua từng chu kỳ thiết kế.",                    shortBio: "UI/UX Designer — Design Systems & Figma.",          level: 24,  rank: "bronze",   availableLp: 3200,  currentXp: 78,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 2, deptKey: "design" },
+    // id=3: Ryo Hashimoto — Engineering
+    { slug: "ryo-hashimoto",     name: "Ryo Hashimoto",        title: "Code Sentinel",            bio: "Những con đường bạc được khắc qua vô số cơn bão debug. API phải tuân lệnh anh.",            shortBio: "Backend Dev — Node.js & Microservices.",          level: 43,  rank: "silver",   availableLp: 8500,  currentXp: 62,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 3, deptKey: "engineering" },
+    // id=4: Yuna Park — Engineering
+    { slug: "yuna-park",         name: "Yuna Park",            title: "Dual-Path Operative",     bio: "Nơi mã nguồn gặp gỡ nghệ thuật — Yuna điều khiển cả hai với sự uyển chuyển tự nhiên.", shortBio: "Full Stack Dev — React & System Architecture.", level: 68,  rank: "gold",     availableLp: 15800, currentXp: 85,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 4, deptKey: "engineering" },
+    // id=5: Shin Watanabe — Engineering
+    { slug: "shin-watanabe",     name: "Shin Watanabe",        title: "Infrastructure Warden",   bio: "Người thì thầm với hạ tầng. Không hệ thống nào thoát khỏi trật tự của anh.",              shortBio: "DevOps Engineer — Kubernetes & CI/CD.",               level: 85,  rank: "platinum", availableLp: 28500, currentXp: 40,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 5, deptKey: "engineering" },
+    // id=6: Rin Nakamura — Engineering
+    { slug: "rin-nakamura",      name: "Rin Nakamura",        title: "Crimson Architect",       bio: "Sự chính xác đầy quyết đoán. Mọi hàm số là một đòn tấn công.",                            shortBio: "Backend Lead — High-Performance Systems.",            level: 103, rank: "ruby",     availableLp: 52000, currentXp: 60,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 6, deptKey: "engineering" },
+    // id=7: Akira Sato — Management
+    { slug: "akira-sato",        name: "Akira Sato",            title: "Guild Master",            bio: "Đặc vụ đỉnh cao. Một huyền thoại được khắc trên silicon và ánh sao. Guild cúi chào.", shortBio: "Tech Lead — Vision & System Architecture.",       level: 118, rank: "diamond",  availableLp: 98000, currentXp: 92,  maxXp: 100, isActive: true,  isFeatured: true,  sortOrder: 7, deptKey: "management" },
+    // id=8: Trần Hữu Phúc — Engineering
+    { slug: "tran-huu-phuc",     name: "Trần Hữu Phúc",        title: "Senior Operative",       bio: "Sự chính xác trong từng pixel. Một bậc thầy của nghệ thuật dàn trang.",                        shortBio: "Frontend Dev — Tailwind CSS & React Hooks.",         level: 28,  rank: "bronze",   availableLp: 4500,  currentXp: 32,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 8, deptKey: "engineering" },
+    // id=9: Haru Tanaka — Media
+    { slug: "haru-tanaka",       name: "Haru Tanaka",            title: "Media Artisan",           bio: "Kiến trúc sư của hình ảnh và âm thanh. Mỗi khung hình là một tuyên bố nghệ thuật.",        shortBio: "Media Manager — Media Production & Brand Identity.",  level: 72,  rank: "ruby",     availableLp: 45000, currentXp: 88,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 9, deptKey: "media" },
+    // id=10: Vũ Đình Trọng — Engineering
+    { slug: "vu-dinh-trong",     name: "Vũ Đình Trọng",          title: "Quality Sentry",          bio: "Không lỗi nào thoát khỏi tầm mắt của lính gác.",                                       shortBio: "QA Lead — Automated Testing & Security Audits.",    level: 52,  rank: "silver",   availableLp: 6200,  currentXp: 15,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 10, deptKey: "engineering" },
   ];
 
   const memberCUIDs: Record<string, string> = {};
   for (const m of members) {
+    const deptId = deptIds[m.deptKey];
     const existing = await prisma.teamMember.findUnique({ where: { slug: m.slug } });
     if (existing) {
       await prisma.teamMember.update({
@@ -2070,10 +2074,11 @@ async function seedAllTeamMembers() {
           level: m.level, rank: m.rank, availableLp: m.availableLp,
           currentXp: m.currentXp, maxXp: m.maxXp,
           isActive: m.isActive, isFeatured: m.isFeatured, sortOrder: m.sortOrder,
+          departmentId: deptId,
         },
       });
       memberCUIDs[m.slug] = existing.id;
-      console.log(`  ↻ ${m.name} (${m.rank}/${m.level}) updated`);
+      console.log(`  ↻ ${m.name} (${m.rank}/${m.level}) → ${m.deptKey} updated`);
     } else {
       const created = await prisma.teamMember.create({
         data: {
@@ -2085,10 +2090,11 @@ async function seedAllTeamMembers() {
           level: m.level, rank: m.rank, availableLp: m.availableLp,
           currentXp: m.currentXp, maxXp: m.maxXp,
           isActive: m.isActive, isFeatured: m.isFeatured, sortOrder: m.sortOrder,
+          departmentId: deptId,
         },
       });
       memberCUIDs[m.slug] = created.id;
-      console.log(`  ✓ ${m.name} (${m.rank}/${m.level}) created`);
+      console.log(`  ✓ ${m.name} (${m.rank}/${m.level}) → ${m.deptKey} created`);
     }
   }
   return memberCUIDs;
@@ -2725,12 +2731,12 @@ async function seedQuestParticipants(memberCUIDs: Record<string, string>, teamUs
 }
 
 // ── MAIN R2 DISPATCHER ────────────────────────────────────────────────────────
-async function seedR2() {
+async function seedR2(deptIds: Record<string, string>) {
   console.log("\n" + "═".repeat(50));
   console.log("🌱 R2 — Unified Demo Data Seed (2026-03-30)");
   console.log("═".repeat(50));
 
-  const memberCUIDs = await seedAllTeamMembers();
+  const memberCUIDs = await seedAllTeamMembers(deptIds);
   const teamUserIds = await seedTeamUsers(memberCUIDs);
   await seedMemberExpertise(memberCUIDs);
   // NOTE: seedRankEffects() and seedMemberOverrides() removed —
@@ -2869,7 +2875,7 @@ async function main() {
         create: { key, label: labels[key], color: colors[key], sortOrder: projectRoleKeys.indexOf(key) + 1 },
       });
     }
-    await seedDepartments();
+    const deptIds = await seedDepartments();
     await seedAdmin();
     await seedHR();
     await seedAccessTags();
@@ -2886,7 +2892,7 @@ async function main() {
     await seedQuests();
     await seedCompanyEvents();
     await seedServices(); // <-- Seed public services (used by /api/v1/services)
-    await seedR2(); // <-- NEW: R2 unified demo data
+    await seedR2(deptIds); // <-- NEW: R2 unified demo data (pass deptIds for FK)
 
     // Verify counts
     const [tm, us, pr, ord, pm, ef, ov, lp, tx, qp, ec, tsk, q, ev, exp, me, svc, at, mr] = await Promise.all([

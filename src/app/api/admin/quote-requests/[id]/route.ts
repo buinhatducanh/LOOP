@@ -9,7 +9,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requirePermission("pricing_features", "read");
+    await requirePermission("quote-requests", "read");
     const { id } = await params;
 
     const quoteRequest = await prisma.quoteRequest.findUnique({
@@ -31,7 +31,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await requirePermission("pricing_features", "update");
+    const session = await requirePermission("quote-requests", "update");
     const { id } = await params;
     const data = await req.json();
 

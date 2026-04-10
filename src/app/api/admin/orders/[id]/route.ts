@@ -94,6 +94,20 @@ export async function DELETE(
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
+    // P1-4 FIX: block deletion of terminal orders or orders with payments
+    if (["completed", "cancelled"].includes(existing.status)) {
+      return NextResponse.json(
+        { error: "Cannot delete a completed or cancelled order" },
+        { status: 400 }
+      );
+    }
+    if (existing.paidAmount > 0) {
+      return NextResponse.json(
+        { error: "Cannot delete an order with recorded payments. Cancel it instead." },
+        { status: 400 }
+      );
+    }
+
     // Sequential writes (PrismaNeon HTTP adapter does NOT support $transaction)
     await prisma.order.delete({ where: { id } });
     await prisma.auditLog.create({

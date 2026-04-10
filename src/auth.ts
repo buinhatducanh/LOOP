@@ -44,27 +44,32 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       // If signing in with Google, get or create user in a SINGLE transaction
       if (account?.provider === "google" && account?.providerAccountId) {
         try {
-          const email = profile?.email?.toLowerCase();
+          // Normalize: lowercase + trim to handle email whitespace / case mismatch
+          const email = profile?.email?.toLowerCase().trim();
 
-          // Single transaction: find + update/create in one roundtrip to Neon
           const result = await prisma.$transaction(async (tx) => {
-            // 1. Find by googleId
+            // 1. Find by googleId (primary — Google account already linked)
             let dbUser = await tx.user.findUnique({
               where: { googleId: account.providerAccountId },
             });
 
             // 2. Fallback: find by email if googleId miss
+            //    (covers pre-created users who linked their Google account)
             if (!dbUser && email) {
               dbUser = await tx.user.findUnique({ where: { email } });
             }
 
-            // 3. Check team member email match (parallel, non-blocking reads)
+            // 3. Check if pre-created TeamMember matches this email (case-insensitive, trim-safe)
             let teamMemberId: string | null = null;
             let accountType = "customer";
 
             if (email) {
               const teamMember = await tx.teamMember.findFirst({
-                where: { email: { mode: "insensitive", equals: email }, isActive: true },
+                where: {
+                  // PostgreSQL ILIKE via Prisma ILIKE extension — case-insensitive
+                  email: { equals: email, mode: "insensitive" },
+                  isActive: true,
+                },
                 select: { id: true },
               });
               if (teamMember) {
@@ -73,8 +78,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               }
             }
 
+            // ──────────────────────────────────────────────────────────────────
+            // CASE A: No existing User → CREATE one
+            // ──────────────────────────────────────────────────────────────────
             if (!dbUser && email) {
-              // 4a. Create new user (customer onboarding: isOnboarded=false, loginCount=1)
               dbUser = await tx.user.create({
                 data: {
                   email,
@@ -84,29 +91,51 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                   role: "user",
                   accountType,
                   teamMemberId,
-                  isOnboarded: false,
+                  // Staff users from TeamMember are pre-approved → onboarded immediately
+                  isOnboarded: accountType === "staff",
                   loginCount: 1,
                   lastLogin: new Date(),
                 },
               });
-            } else if (dbUser) {
-              // 4b. Backfill googleId if missing
+            }
+            // ──────────────────────────────────────────────────────────────────
+            // CASE B: Existing User found → UPDATE
+            // ──────────────────────────────────────────────────────────────────
+            else if (dbUser) {
+              // 3a. Backfill googleId if missing (user created via other method first)
               if (!dbUser.googleId) {
-                await tx.user.update({ where: { id: dbUser.id }, data: { googleId: account.providerAccountId } });
+                await tx.user.update({
+                  where: { id: dbUser.id },
+                  data: { googleId: account.providerAccountId },
+                });
               }
-              // 4c. Auto-link to team member
+
+              // 3b. Auto-link to TeamMember (HR pre-created member, now logging in for 1st time)
               if (!dbUser.teamMemberId && teamMemberId) {
-                await tx.user.update({ where: { id: dbUser.id }, data: { teamMemberId, accountType: "staff" } });
+                await tx.user.update({
+                  where: { id: dbUser.id },
+                  data: { teamMemberId, accountType: "staff" },
+                });
                 dbUser.teamMemberId = teamMemberId;
                 dbUser.accountType = "staff";
               }
-              // 4d. Track every Google login
+
+              // 3c. Promote existing customer → staff if email now matches TeamMember
+              //     (HR added this member AFTER the user first logged in)
+              else if (dbUser.accountType === "customer" && teamMemberId) {
+                await tx.user.update({
+                  where: { id: dbUser.id },
+                  data: { teamMemberId, accountType: "staff", isOnboarded: true },
+                });
+                dbUser.teamMemberId = teamMemberId;
+                dbUser.accountType = "staff";
+                dbUser.isOnboarded = true;
+              }
+
+              // 3d. Track every login
               await tx.user.update({
                 where: { id: dbUser.id },
-                data: {
-                  loginCount: { increment: 1 },
-                  lastLogin: new Date(),
-                },
+                data: { loginCount: { increment: 1 }, lastLogin: new Date() },
               });
             }
 
@@ -115,10 +144,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
           if (result) {
             token.id = result.id;
-            token.role = result.role;
+            token.role = result.role ?? "member";
             token.teamMemberId = result.teamMemberId;
             token.accountType = result.accountType;
-            // Expose isOnboarded on JWT token for downstream use
             (token as Record<string, unknown>).isOnboarded = result.isOnboarded ?? false;
           }
         } catch (error) {

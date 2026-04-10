@@ -48,6 +48,12 @@ export interface WizardFeature {
   parentId?: string | null;
   /** true = bao gồm trong base price → hiển thị "✓ Đã bao gồm" */
   includedInBase?: boolean;
+  /** true = đây là phiên bản nâng cấp từ parent feature */
+  isUpgradeable?: boolean;
+  /** Plain-language Vietnamese description — non-tech customers */
+  description: string;
+  /** Short benefit (1 line) */
+  benefit?: string;
 }
 
 export interface WizardTalent {

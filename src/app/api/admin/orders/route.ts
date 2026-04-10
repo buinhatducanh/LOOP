@@ -93,7 +93,7 @@ export const POST = withIdempotency(
       }
 
       // Only allow non-terminal statuses at creation — prevents bypassing payment workflow
-      const ALLOWED_CREATE_STATUSES = ["pending", "quote", "draft"];
+      const ALLOWED_CREATE_STATUSES = ["pending", "quoted", "draft"];
       const requestedStatus = data.status ?? "pending";
       if (!ALLOWED_CREATE_STATUSES.includes(requestedStatus)) {
         return NextResponse.json(
