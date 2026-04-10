@@ -89,34 +89,49 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Team member not found" }, { status: 404 });
     }
 
-    // Sequential writes (PrismaNeon HTTP adapter does NOT support $transaction)
-    const newBalance = member.availableLp + amount;
-    if (newBalance < 0) {
-      throw new Error("Insufficient LP balance for this adjustment");
-    }
+    // ── Atomic transaction: balance check + write wrapped ────────────────────────────
+    // PrismaNeon (WebSocket mode) supports $transaction.
+    // The protective re-read of availableLp inside the tx ensures no overdraw from
+    // concurrent adjustments.
+    const txn = await prisma.$transaction(async (tx) => {
+      // Re-read balance inside transaction (idempotency + overdraw guard)
+      const freshMember = await tx.teamMember.findUnique({
+        where: { id: memberId },
+        select: { id: true, name: true, availableLp: true },
+      });
+      if (!freshMember) throw new Error("NOT_FOUND");
+      const newBalance = freshMember.availableLp + amount;
+      if (newBalance < 0) {
+        throw new Error(`Insufficient LP balance: have ${freshMember.availableLp}, tried to deduct ${Math.abs(amount)}`);
+      }
 
-    const txn = await prisma.lpTransaction.create({
-      data: {
-        memberId,
-        amount,
-        balanceAfter: newBalance,
-        type: amount < 0 ? "adjust" : "award",  // "adjust" for penalties so syncRankFields handles correctly
-        status: "completed",
-        description: description ?? `Admin adjustment: ${amount > 0 ? "+" : ""}${amount} LP`,
-        source: "admin",
-        referenceId: null,
-        referenceType: null,
-        counterpartyId: null,
-        fee: 0,
-        createdBy: session.teamMemberId ?? null,
-      },
+      // Write ledger entry and update balance atomically
+      const lpTransaction = await tx.lpTransaction.create({
+        data: {
+          memberId,
+          amount,
+          balanceAfter: newBalance,
+          type: amount < 0 ? "adjust" : "award",  // "adjust" for penalties so syncRankFields handles correctly
+          status: "completed",
+          description: description ?? `Admin adjustment: ${amount > 0 ? "+" : ""}${amount} LP`,
+          source: "admin",
+          referenceId: null,
+          referenceType: null,
+          counterpartyId: null,
+          fee: 0,
+          createdBy: session.teamMemberId ?? null,
+        },
+      });
+
+      await tx.teamMember.update({
+        where: { id: memberId },
+        data: { availableLp: newBalance },
+      });
+
+      return lpTransaction;
     });
 
-    await prisma.teamMember.update({
-      where: { id: memberId },
-      data: { availableLp: newBalance },
-    });
-
+    // syncRankFields: runs outside transaction (read-only on LP tables)
     // FIX BUG #2: Use syncRankFields — aggregates approved LpAwards + completed LpTransactions
     // so rank is always computed from actual LP totals, not a stale manual value.
     await syncRankFields(memberId);

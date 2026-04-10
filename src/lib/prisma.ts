@@ -1,5 +1,6 @@
 import { PrismaClient } from "@/generated/prisma/client";
-import { PrismaNeonHttp } from "@prisma/adapter-neon";
+import { PrismaNeon } from "@prisma/adapter-neon";
+import { Pool } from "@neondatabase/serverless";
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined };
 
@@ -14,10 +15,15 @@ function createPrismaClient(): PrismaClient {
       "and restart the dev server: npm run dev"
     );
   }
-  // @prisma/adapter-neon v7.4.2 — PrismaNeonHttp uses direct HTTP connection string
-  // No pg Pool needed — ~50ms cold start vs pg Pool's ~500ms
-  // Works with Neon direct compute endpoint (no pooler required)
-  const adapter = new PrismaNeonHttp(connectionString, { fullResults: false });
+
+  // PrismaNeon (WebSocket pooler mode) — supports prisma.$transaction.
+  // Requires Neon pooler endpoint (ep-xxx-pooler.ap-southeast-1.aws.neon.tech).
+  // Pool from @neondatabase/serverless manages connections internally.
+  // @ts-ignore: PoolConfig type mismatch between @neondatabase/serverless Pool
+  // and SqlDriverAdapterFactory expectation — runtime accepts Pool instance fine.
+  const pool = new Pool({ connectionString, max: 10 });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const adapter = new PrismaNeon(pool as any);
   return new PrismaClient({ adapter });
 }
 
