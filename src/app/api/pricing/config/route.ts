@@ -279,13 +279,14 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const locale = normalizeLocale(searchParams.get("lang"));
+    const email = searchParams.get("email");
 
-    // Run all DB queries in parallel
+    // ── Run all DB queries in parallel ──────────────────────────────────────────
     const [
       packages, features, addons, infraTiers, hostingPlans, domainPrices,
       basePriceSetting, vatSetting, websitePricingConfig, lpRateSetting,
+      customerLp,
     ] = await Promise.all([
-      // Service packages
       prisma.servicePackage.findMany({
         where: { isActive: true },
         orderBy: { sortOrder: "asc" },
@@ -316,25 +317,12 @@ export async function GET(request: Request) {
       prisma.serviceAttribute.findMany({
         where: { isActive: true },
         select: {
-          id: true,
-          name: true,
-          nameVi: true,
-          nameEn: true,
-          nameJa: true,
-          nameKo: true,
-          nameZh: true,
-          category: true,
-          categoryVi: true,
-          categoryEn: true,
-          categoryJa: true,
-          categoryKo: true,
-          categoryZh: true,
-          tier: true,
-          price: true,
-          xpPoints: true,
-          parentId: true,
-          includedInBase: true,
-          isUpgradeable: true,
+          id: true, name: true, nameVi: true, nameEn: true,
+          nameJa: true, nameKo: true, nameZh: true,
+          category: true, categoryVi: true, categoryEn: true,
+          categoryJa: true, categoryKo: true, categoryZh: true,
+          tier: true, price: true, xpPoints: true,
+          parentId: true, includedInBase: true, isUpgradeable: true,
         },
         orderBy: [{ category: "asc" }, { tier: "asc" }, { name: "asc" }],
       }),
@@ -452,10 +440,18 @@ export async function GET(request: Request) {
         where: { key: "lp_rate_config" },
         select: { value: true },
       }),
+
+      // Customer LP balance lookup by email (public — no auth required on wizard)
+      email ? prisma.customerPoint.findUnique({
+        where: { userEmail: email },
+        select: { balance: true, totalEarned: true, totalSpent: true, level: true },
+      }) : Promise.resolve(null),
     ]);
 
     const basePrice = basePriceSetting ? parseInt(basePriceSetting.value, 10) : 3_000_000;
     const vatRate = vatSetting ? parseFloat(vatSetting.value) : 0.10;
+    const lpToVnd = lpRateSetting ? (JSON.parse(lpRateSetting.value).lp_to_vnd ?? 1000) : 1000;
+    const lpEarnPerMillion = Math.ceil(1_000_000 * 0.10 / lpToVnd);
 
     // Parse website marketing pricing config
     // Expected shape:
@@ -477,6 +473,19 @@ export async function GET(request: Request) {
       }
     }
     const { marketPrices, promotion, slotsLeft } = websitePricing;
+
+    // Look up ClientVipStatus for the customer (G3 — returns discount cap for wizard UI)
+    const customerVip = email ? await prisma.clientVipStatus.findUnique({
+      where: { userEmail: email },
+      select: { tier: true, totalSpending: true, vipPoints: true },
+    }) : null;
+
+    // VIP tier → discount cap (regular=10%, vip1=15%, vip2=20%, vip3=25%)
+    const VIP_DISCOUNT_CAPS: Record<string, number> = {
+      regular: 10, vip1: 15, vip2: 20, vip3: 25,
+    };
+    const vipTier = customerVip?.tier ?? "regular";
+    const maxDiscountPct = VIP_DISCOUNT_CAPS[vipTier] ?? 10;
 
     // Sample calculation for reference (no features selected)
     const sampleCalc = await calculateOrderPrice({ selectedFeatureIds: [] });
@@ -518,11 +527,20 @@ export async function GET(request: Request) {
         hostingPlans: wizardHostingPlans,
         domainPrices: wizardDomainPrices,
         lpRate: {
-          lpPerVnd: lpRateSetting ? JSON.parse(lpRateSetting.value).lp_to_vnd ?? 1000 : 1000,
-          vndPerLp: lpRateSetting ? 1 / (JSON.parse(lpRateSetting.value).lp_to_vnd ?? 1000) * 1000 : 1000,
-          maxDiscountPercent: 20,
-          lpEarnPerMillion: 50,
+          lpPerVnd: lpToVnd,
+          vndPerLp: Math.round(1_000 / lpToVnd),
+          maxDiscountPercent: maxDiscountPct,
+          lpEarnPerMillion,
         },
+        /** Customer LP data — returned when email param is provided */
+        customerLp: email && customerLp ? {
+          balance: customerLp.balance,
+          totalEarned: customerLp.totalEarned,
+          totalSpent: customerLp.totalSpent,
+          level: customerLp.level,
+        } : null,
+        /** VIP tier for this customer (G3) */
+        customerVip: customerVip ?? null,
         packageLps: packages.reduce<Record<string, number>>((acc, p) => {
           acc[p.slug] = p.isSubscription ? 30 : 50;
           return acc;

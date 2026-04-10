@@ -20,7 +20,7 @@ type Props = { params: Promise<{ locale: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
   const tSeo = await getTranslations("seo");
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://loop.vn";
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.loops.vn";
   const title = tSeo("pricingTitle");
   const description = tSeo("pricingDescription");
   const brandMetaTitle = tSeo("brandMetaTitle");

@@ -124,8 +124,44 @@ const STATUS_CFG: Record<MemberStatus, { label: string; color: string; icon: Rea
   probation: { label: "Thử việc", color: DS.purple, icon: <AlertTriangle size={11} /> },
 };
 
-const DEPARTMENTS = ["All", "Engineering", "Design", "Media", "Marketing", "Sales", "Finance", "HR"] as const;
-const TEAMS = DEPARTMENTS; // alias for form/modal use
+const DEPARTMENTS_EN = ["Engineering", "Design", "Media", "Marketing", "Sales", "Finance", "HR"] as const;
+const DEPARTMENTS_VI: Record<string, string> = {
+  engineering: "Phòng Kỹ thuật",
+  design: "Phòng Thiết kế",
+  media: "Phòng Media",
+  marketing: "Phòng Marketing",
+  sales: "Phòng Kinh doanh",
+  finance: "Phòng Tài chính",
+  hr: "Phòng Nhân sự",
+};
+const TEAMS_VI: Record<string, string> = {
+  Engineering: "Phòng Kỹ thuật",
+  Design: "Phòng Thiết kế",
+  Media: "Phòng Media",
+  Marketing: "Phòng Marketing",
+  Sales: "Phòng Kinh doanh",
+  Finance: "Phòng Tài chính",
+  HR: "Phòng Nhân sự",
+};
+const DEPT_COLORS: Record<string, string> = {
+  engineering: "#3B82F6",
+  design: "#8B5CF6",
+  media: "#EC4899",
+  marketing: "#F59E0B",
+  sales: "#22C55E",
+  finance: "#14B8A6",
+  hr: "#6366F1",
+};
+
+function deptLabel(key?: string | null) {
+  if (!key) return "—";
+  const k = key.toLowerCase();
+  return DEPARTMENTS_VI[k] ?? capitalize(key);
+}
+function deptColor(key?: string | null) {
+  if (!key) return DS.text4;
+  return DEPT_COLORS[key.toLowerCase()] ?? DS.text4;
+}
 
 const fmtLP = (n?: number) => {
   const v = n ?? 0;
@@ -262,7 +298,7 @@ export default function AdminMembersPage() {
   // ── State ──────────────────────────────────────────────────────────────────
   const [viewMode, setViewMode] = useState<ViewMode>("table");
   const [search, setSearch] = useState("");
-  const [teamFilter, setTeamFilter] = useState<typeof DEPARTMENTS[number]>("All");
+  const [teamFilter, setTeamFilter] = useState<string>("All");
   const [statusFilter, setStatusFilter] = useState<MemberStatus | "all">("all");
   const [rankFilter, setRankFilter] = useState<RankKey | "All">("All");
   const [sortKey, setSortKey] = useState<SortKey>("name");
@@ -689,35 +725,50 @@ export default function AdminMembersPage() {
     };
     const rc = roleColors[primaryRole] ?? DS.text3;
 
+    // Role display
+    const isCeo = primaryRole === "ceo";
+    const isAdmin = primaryRole === "super_admin" || primaryRole === "admin";
+    const isPm = primaryRole === "project_manager";
+    const isHr = primaryRole === "hr";
+    const isQa = primaryRole === "qa";
+    const isMedia = primaryRole === "media";
+    // System role label for CEO/Admin/SuperAdmin
+    const sysRoleLabel = isCeo ? "CEO"
+      : isAdmin ? capitalize(primaryRole)
+      : capitalize(primaryRole);
+
     return (
       <>
-        {/* Select checkbox */}
+        {/* ── Col 1: Select checkbox ── */}
         <div
           onClick={() => toggleSelect(m.id)}
           style={{
             display: "flex", alignItems: "center", justifyContent: "center",
-            cursor: "pointer", width: 14, height: 14,
+            cursor: "pointer",
           }}
         >
           <div style={{
-            width: 14, height: 14, borderRadius: 4,
+            width: 15, height: 15, borderRadius: 4,
             border: `1.5px solid ${checked ? DS.blue : DS.text4}`,
             backgroundColor: checked ? DS.blue + "33" : "transparent",
             display: "flex", alignItems: "center", justifyContent: "center",
-            transition: "all 0.15s",
+            transition: "all 0.15s", flexShrink: 0,
           }}>
             {checked && <Check size={9} color={DS.blue} />}
           </div>
         </div>
 
-        {/* Avatar + name + email */}
-        <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0, flexShrink: 0 }}>
+        {/* ── Col 2: Avatar + name + email ── */}
+        <div style={{
+          display: "flex", alignItems: "center", gap: 8,
+          minWidth: 0, overflow: "hidden",
+        }}>
           <div style={{
-            width: 34, height: 34, borderRadius: "50%",
+            width: 36, height: 36, borderRadius: "50%",
             backgroundColor: cfg.color + "22",
-            border: `1.5px solid ${cfg.color}66`,
+            border: `2px solid ${cfg.color}88`,
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontFamily: DS.heading, fontSize: 12, color: cfg.color,
+            fontFamily: DS.heading, fontSize: 11, color: cfg.color,
             flexShrink: 0, overflow: "hidden",
           }}>
             {m.avatar ? (
@@ -726,11 +777,11 @@ export default function AdminMembersPage() {
               <span>{m.name.slice(0, 2).toUpperCase()}</span>
             )}
           </div>
+          {/* Name + email stacked — each clipped individually */}
           <div style={{ minWidth: 0, flex: 1, overflow: "hidden" }}>
             <div style={{
               fontFamily: DS.heading, fontSize: 12, color: DS.text,
               overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-              maxWidth: "100%",
             }}>
               {m.name}
             </div>
@@ -743,18 +794,25 @@ export default function AdminMembersPage() {
           </div>
         </div>
 
-        {/* Rank + XP progress */}
-        <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 4 }}>
-            <span style={{ fontSize: 11, color: cfg.color }}>{cfg.symbol}</span>
-            <span style={{ fontFamily: DS.mono, fontSize: 10, color: cfg.color }}>
+        {/* ── Col 3: Rank badge + Level + XP bar (200px) ── */}
+        <div style={{ overflow: "hidden" }}>
+          {/* Top row: symbol + rank label + level */}
+          <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 5 }}>
+            <span style={{ fontSize: 12, color: cfg.color }}>{cfg.symbol}</span>
+            <span style={{ fontFamily: DS.mono, fontSize: 10, color: cfg.color, fontWeight: 600 }}>
               {cfg.label}
             </span>
-            <span style={{ fontFamily: DS.mono, fontSize: 9, color: DS.text4 }}>
+            <span style={{
+              fontFamily: DS.mono, fontSize: 9, color: DS.text3,
+              background: DS.border, borderRadius: 8, padding: "0 5px",
+            }}>
               Lv.{m.level}
             </span>
           </div>
-          <div style={{ height: 3, borderRadius: 2, backgroundColor: DS.border, overflow: "hidden" }}>
+          {/* XP progress bar */}
+          <div style={{
+            height: 3, borderRadius: 2, background: DS.border, overflow: "hidden",
+          }}>
             <div style={{
               height: "100%", width: `${pct}%`,
               background: `linear-gradient(90deg, ${cfg.color}66, ${cfg.color})`,
@@ -763,50 +821,65 @@ export default function AdminMembersPage() {
           </div>
         </div>
 
-        {/* LP */}
-        <div style={{ fontFamily: DS.mono, fontSize: 12, color: DS.amber }}>
+        {/* ── Col 4: LP balance ── */}
+        <div style={{
+          fontFamily: DS.mono, fontSize: 12, color: DS.amber,
+          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+          textAlign: "right",
+        }}>
           {fmtLP(m.availableLp ?? 0)}
         </div>
 
-        {/* Role pill */}
-        <div>
+        {/* ── Col 5: Phòng ban + system role ── */}
+        <div style={{ overflow: "hidden" }}>
+          {/* Phòng ban row */}
+          <div style={{
+            display: "flex", alignItems: "center", gap: 5,
+            marginBottom: 3, overflow: "hidden",
+          }}>
+            <div style={{
+              width: 6, height: 6, borderRadius: "50%",
+              backgroundColor: deptColor(m.team), flexShrink: 0,
+            }} />
+            <div style={{
+              fontFamily: DS.mono, fontSize: 10, color: deptColor(m.team),
+              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+              fontWeight: 500,
+            }}>
+              {deptLabel(m.team)}
+            </div>
+          </div>
+          {/* System role pill */}
           <div style={{
             display: "inline-flex", alignItems: "center", gap: 4,
-            backgroundColor: rc + "18",
-            border: `1px solid ${rc}44`,
-            borderRadius: 20, padding: "2px 8px",
+            backgroundColor: rc + "15",
+            border: `1px solid ${rc}33`,
+            borderRadius: 10, padding: "1px 7px",
           }}>
-            <div style={{ width: 5, height: 5, borderRadius: "50%", backgroundColor: rc }} />
+            <div style={{ width: 5, height: 5, borderRadius: "50%", backgroundColor: rc, flexShrink: 0 }} />
             <span style={{
-              fontFamily: DS.mono, fontSize: 9, color: rc,
-              whiteSpace: "nowrap",
+              fontFamily: DS.mono, fontSize: 8, color: rc,
+              whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
             }}>
-              {capitalize(primaryRole)}
+              {sysRoleLabel}
             </span>
           </div>
-          {m.team && (
-            <div style={{
-              fontFamily: DS.mono, fontSize: 9, color: DS.text4,
-              marginTop: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-            }}>
-              {m.team}
-            </div>
-          )}
         </div>
 
-        {/* Ngày vào */}
-        <div style={{ fontFamily: DS.mono, fontSize: 10, color: DS.text3 }}>
+        {/* ── Col 6: Ngày vào ── */}
+        <div style={{
+          fontFamily: DS.mono, fontSize: 10, color: DS.text3,
+          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+        }}>
           {fmtDate(m.joinedDate)}
         </div>
 
-        {/* Status */}
-        <div>
-          <StatusBadge_ status={m.status} />
-        </div>
+        {/* ── Col 7: Trạng thái ── */}
+        <StatusBadge_ status={m.status} />
 
-        {/* Actions */}
+        {/* ── Col 8: Actions ── */}
         <div style={{
-          display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 2,
+          display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 4,
         }}>
           <button onClick={() => { setActiveMember(toMemberStats(m), { x: 0, y: 0 }); }} title="Xem thống kê"
             style={iconBtn(DS.text4, DS.blue)}>
@@ -841,6 +914,20 @@ export default function AdminMembersPage() {
     const cfg = RANKS[rankKey];
     const pct = (m.maxXp && m.maxXp > 0 ? (m.currentXp ?? 0) / m.maxXp : 0) * 100;
     const checked = selectedIds.has(m.id);
+    const roles = m.roles && m.roles.length > 0 ? m.roles : (m.systemRole ? [m.systemRole] : []);
+    const primaryRole = roles[0] ?? "member";
+    const roleColors: Record<string, string> = {
+      ceo: "#FFD700", super_admin: "#6B3DF5", admin: DS.blue,
+      hr: "#14B8A6", project_manager: "#EC4899", media: "#F59E0B",
+      qa: "#22C55E", member: DS.text3,
+    };
+    const rc = roleColors[primaryRole] ?? DS.text3;
+    const isCeo = primaryRole === "ceo";
+    const isAdmin = primaryRole === "super_admin" || primaryRole === "admin";
+    const roleLabel = isCeo ? "CEO"
+      : isAdmin ? capitalize(primaryRole)
+      : m.team ? `Trưởng phòng ${m.team}`
+      : capitalize(primaryRole);
 
     return (
       <motion.div
@@ -895,30 +982,24 @@ export default function AdminMembersPage() {
           {m.email}
         </div>
         <div style={{
-          fontFamily: DS.mono, fontSize: 10, color: DS.blue,
-          backgroundColor: DS.blue + "15",
-          border: `1px solid ${DS.blue}33`,
+          fontFamily: DS.mono, fontSize: 10, color: rc,
+          backgroundColor: rc + "15",
+          border: `1px solid ${rc}33`,
           borderRadius: 8, padding: "1px 6px",
-          display: "flex", flexWrap: "wrap", gap: 2, marginBottom: 8,
+          display: "inline-flex", flexWrap: "wrap", gap: 4, marginBottom: 8,
         }}>
-          {(m.roles && m.roles.length > 0 ? m.roles : (m.systemRole ? [m.systemRole] : [])).map((r) => {
-            const roleColors: Record<string, string> = {
-              ceo: "#FFD700", super_admin: "#6B3DF5", admin: DS.blue,
-              hr: "#14B8A6", project_manager: "#EC4899", media: "#F59E0B",
-              qa: "#22C55E", member: DS.text3,
-            };
-            const color = roleColors[r] ?? DS.text3;
-            return (
-              <span key={r} style={{
-                fontFamily: DS.mono, fontSize: 9, color,
-                backgroundColor: color + "22",
-                border: `1px solid ${color}55`,
-                borderRadius: 4, padding: "0 4px",
-              }}>
-                {capitalize(r)}
-              </span>
-            );
-          })}
+          {isCeo && <span style={{ color: "#FFD700", fontSize: 11, fontWeight: 700 }}>👑 CEO</span>}
+          {isAdmin && <span style={{ color: rc, fontSize: 9 }}>{capitalize(primaryRole)}</span>}
+          {!isCeo && !isAdmin && (
+            <span style={{ color: rc, fontSize: 9 }}>
+              {m.team ? `Trưởng phòng ${m.team}` : deptLabel(m.team)}
+            </span>
+          )}
+          {!isCeo && !isAdmin && (
+            <span style={{ color: deptColor(m.team), fontSize: 9, marginLeft: 2 }}>
+              · {deptLabel(m.team)}
+            </span>
+          )}
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 6 }}>
@@ -1104,7 +1185,7 @@ export default function AdminMembersPage() {
               ))}
             </div>
 
-            {/* Phòng ban + Vị trí + Phân quyền */}
+            {/* Phòng ban + Role display */}
             <div style={{ marginBottom: 20, display: "flex", flexDirection: "column", gap: 8 }}>
               <div style={{
                 fontFamily: DS.mono, fontSize: 10, color: DS.text2,
@@ -1118,14 +1199,27 @@ export default function AdminMembersPage() {
                   border: `1px solid ${DS.border}`, padding: "8px 12px", flex: 1, minWidth: 120,
                 }}>
                   <div style={{ fontFamily: DS.mono, fontSize: 9, color: DS.text3, textTransform: "uppercase" }}>Phòng ban</div>
-                  <div style={{ fontFamily: DS.mono, fontSize: 12, color: DS.text, marginTop: 2 }}>{m.team || "—"}</div>
+                  <div style={{ fontFamily: DS.mono, fontSize: 12, color: deptColor(m.team), marginTop: 2 }}>
+                    {deptLabel(m.team)}
+                  </div>
                 </div>
                 <div style={{
                   background: DS.bgCard, borderRadius: 8,
                   border: `1px solid ${DS.border}`, padding: "8px 12px", flex: 1, minWidth: 120,
                 }}>
-                  <div style={{ fontFamily: DS.mono, fontSize: 9, color: DS.text3, textTransform: "uppercase" }}>Vị trí</div>
-                  <div style={{ fontFamily: DS.mono, fontSize: 12, color: DS.text, marginTop: 2 }}>{m.role || "—"}</div>
+                  <div style={{ fontFamily: DS.mono, fontSize: 9, color: DS.text3, textTransform: "uppercase" }}>Vai trò</div>
+                  <div style={{ fontFamily: DS.mono, fontSize: 12, color: DS.text, marginTop: 2 }}>
+                    {(() => {
+                      const roles = m.roles && m.roles.length > 0 ? m.roles : (m.systemRole ? [m.systemRole] : []);
+                      const primaryRole = roles[0] ?? "member";
+                      const isCeo = primaryRole === "ceo";
+                      const isAdmin = primaryRole === "super_admin" || primaryRole === "admin";
+                      return isCeo ? "CEO"
+                        : isAdmin ? capitalize(primaryRole)
+                        : m.team ? `Trưởng phòng ${m.team}`
+                        : capitalize(m.role ?? primaryRole);
+                    })()}
+                  </div>
                 </div>
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
@@ -1146,7 +1240,7 @@ export default function AdminMembersPage() {
                       border: `1px solid ${color}55`,
                       borderRadius: 6, padding: "3px 8px",
                     }}>
-                      {capitalize(r)}
+                      {r === "ceo" ? "👑 CEO" : r === "super_admin" ? "👑 Super Admin" : capitalize(r)}
                     </span>
                   );
                 })}
@@ -1698,9 +1792,11 @@ export default function AdminMembersPage() {
 
     const handleSubmit = () => {
       if (!name.trim() || !email.trim()) { showToast("Vui lòng nhập tên và email", "error"); return; }
-      if (!roleInput.trim()) { showToast("Vui lòng nhập vị trí công tác", "error"); return; }
       const slug = name.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
-      const body: Record<string, unknown> = {
+      // NOTE: Do NOT send level/currentXp/rank on edit — they are computed from
+      // actual LP totals via syncRankFields() on the BE and reflect true state.
+      // Sending stale form values would overwrite the computed fields in the DB.
+      const base: Record<string, unknown> = {
         name: name.trim(), email: email.trim(), role: roleInput.trim(),
         roles: [systemRole],
         tabPermissions: serializeTabPerms(tabPerms),
@@ -1708,13 +1804,19 @@ export default function AdminMembersPage() {
         phone: phone.trim() || null, bio: bio.trim() || null,
         avatar: avatar.trim() || null,
         department: team,
-        level: parseInt(level) || 1,
-        currentXp: parseInt(currentXp) || 0,
         isActive: status === "active",
         memberExpertise: skills.map((s) => ({ name: s })),
       };
-      if (isEdit && formMember) updateMutation.mutate({ id: formMember.id, body });
-      else createMutation.mutate(body);
+      if (isEdit && formMember) updateMutation.mutate({ id: formMember.id, body: base });
+      else {
+        // On create, admin can set initial level (BE will compute rank from it)
+        const body: Record<string, unknown> = {
+          ...base,
+          level: parseInt(level) || 1,
+          currentXp: parseInt(currentXp) || 0,
+        };
+        createMutation.mutate(body);
+      }
     };
 
     // Rank tier progress bar width
@@ -2044,7 +2146,7 @@ export default function AdminMembersPage() {
                   }}
                 >
                   <option value="">— Chọn phòng ban —</option>
-                  {TEAMS.filter((t) => t !== "All").map((t) => (
+                  {DEPARTMENTS_EN.map((t) => (
                     <option key={t} value={t}>{t}</option>
                   ))}
                 </select>
@@ -2121,12 +2223,21 @@ export default function AdminMembersPage() {
                     </Field>
                   </div>
 
-                  {/* Row: role + phone */}
+                  {/* Row: system role quick select + phone */}
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                    <Field label="Vị trí công tác *">
-                      <input value={roleInput} onChange={(e) => setRoleInput(e.target.value)}
-                        placeholder="VD: Frontend Developer"
-                        style={fieldInput} />
+                    <Field label="Vai trò hệ thống">
+                      <select
+                        value={systemRole}
+                        onChange={(e) => { setSystemRole(e.target.value); setRoleInput(e.target.value); }}
+                        style={{ ...fieldInput, cursor: "pointer" }}
+                      >
+                        <option value="member">Member — Nhân viên</option>
+                        <option value="hr">HR — Nhân sự</option>
+                        <option value="qa">QA — Kiểm thử</option>
+                        <option value="media">Media — Truyền thông</option>
+                        <option value="project_manager">PM — Quản lý dự án</option>
+                        <option value="admin">Admin — Quản trị</option>
+                      </select>
                     </Field>
                     <Field label="Số điện thoại">
                       <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="090x xxx xxx"
@@ -2565,22 +2676,22 @@ export default function AdminMembersPage() {
                 </button>
                 <button
                   onClick={handleSubmit}
-                  disabled={isMutating || !name.trim() || !email.trim() || !roleInput.trim()}
+                  disabled={isMutating || !name.trim() || !email.trim()}
                   style={{
                     flex: 2.5, padding: "11px 16px", borderRadius: 10,
                     border: "none",
-                    background: (!name.trim() || !email.trim() || !roleInput.trim() || isMutating)
+                    background: (!name.trim() || !email.trim() || isMutating)
                       ? "rgba(79,125,243,0.3)"
                       : `linear-gradient(135deg, ${DS.blue}, ${DS.purple})`,
                     color: "#fff",
                     fontFamily: DS.heading, fontSize: 13, fontWeight: 600,
-                    cursor: (!name.trim() || !email.trim() || !roleInput.trim() || isMutating)
+                    cursor: (!name.trim() || !email.trim() || isMutating)
                       ? "not-allowed"
                       : "pointer",
                     opacity: isMutating ? 0.7 : 1,
                     display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
                     transition: "all 0.2s ease",
-                    boxShadow: (!name.trim() || !email.trim() || !roleInput.trim())
+                    boxShadow: (!name.trim() || !email.trim())
                       ? "none"
                       : `0 4px 20px ${DS.blue}44`,
                   }}
@@ -3236,7 +3347,7 @@ export default function AdminMembersPage() {
 
         {/* Team filter */}
         <div style={{ display: "flex", gap: 4 }}>
-          {TEAMS.map((t) => (
+          {[...DEPARTMENTS_EN, "All"].map((t) => (
             <button
               key={t}
               onClick={() => setTeamFilter(t)}
@@ -3335,59 +3446,97 @@ export default function AdminMembersPage() {
           <div style={{
             background: DS.bgCard, borderRadius: 12,
             border: `1px solid ${DS.border}`, overflow: "hidden",
+            // Full-width horizontal scroll on small screens
+            overflowX: "auto",
           }}>
-            {/* Table header */}
-            <div style={{
-              display: "grid",
-              gridTemplateColumns: "32px 220px 1fr 72px 100px 76px 80px 88px",
-              padding: "0 6px",
-              height: 34,
-              borderBottom: `1px solid ${DS.border}`,
-              backgroundColor: DS.bgCard,
-              alignItems: "center",
-            }}>
-              {/* Select all */}
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <div
-                  onClick={toggleSelectAll}
-                  style={{
-                    width: 14, height: 14, borderRadius: 4, cursor: "pointer",
-                    border: `1.5px solid ${allSelected ? DS.blue : DS.text4}`,
-                    backgroundColor: allSelected ? DS.blue + "33" : "transparent",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    transition: "all 0.15s",
-                  }}
-                >
-                  {allSelected && <Check size={9} color={DS.blue} />}
+            {/* Scrollable table wrapper */}
+            <div style={{ minWidth: 900 }}>
+              {/* ── Table header ───────────────────────────────────────── */}
+              {/* Layout: sel(36) | member(220) | rank(200) | lp(80) | role(130) | join(90) | status(90) | actions(88) */}
+              <div style={{
+                display: "grid",
+                gridTemplateColumns: "36px 220px 200px 80px 130px 90px 90px 88px",
+                padding: "0 8px",
+                height: 36,
+                borderBottom: `1px solid ${DS.border}`,
+                background: "rgba(0,0,0,0.2)",
+                alignItems: "center",
+                flexShrink: 0,
+              }}>
+                {/* Select all */}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <div
+                    onClick={toggleSelectAll}
+                    style={{
+                      width: 15, height: 15, borderRadius: 4, cursor: "pointer",
+                      border: `1.5px solid ${allSelected ? DS.blue : DS.text4}`,
+                      backgroundColor: allSelected ? DS.blue + "33" : "transparent",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      transition: "all 0.15s",
+                    }}
+                  >
+                    {allSelected && <Check size={9} color={DS.blue} />}
+                  </div>
+                </div>
+                <SortHeader_ col="name" sk="name">Thành viên</SortHeader_>
+                <SortHeader_ col="rank" sk="rank">Hạng & Level</SortHeader_>
+                <SortHeader_ col="lp" sk="lpBalance">LP</SortHeader_>
+                <SortHeader_ col="role" sk="role">Phòng ban</SortHeader_>
+                <SortHeader_ col="join" sk="name">Ngày vào</SortHeader_>
+                <SortHeader_ col="status" sk="name">Trạng thái</SortHeader_>
+                <div style={{
+                  fontFamily: DS.mono, fontSize: 9, color: DS.text4,
+                  textTransform: "uppercase", letterSpacing: "0.08em",
+                  textAlign: "right",
+                }}>
+                  Thao tác
                 </div>
               </div>
-              <SortHeader_ col="name" sk="name">Thành viên</SortHeader_>
-              <SortHeader_ col="rank" sk="rank">Hạng</SortHeader_>
-              <SortHeader_ col="lp" sk="lpBalance">LP</SortHeader_>
-              <SortHeader_ col="role" sk="role">Hệ thống</SortHeader_>
-              <SortHeader_ col="join" sk="name">Ngày vào</SortHeader_>
-              <SortHeader_ col="status" sk="name">Trạng thái</SortHeader_>
-              <div style={{ fontFamily: DS.mono, fontSize: 9, color: DS.text4, textTransform: "uppercase", letterSpacing: "0.08em", textAlign: "right" }}>Thao tác</div>
-            </div>
 
-            {/* Rows */}
-            {filtered.map((m) => (
-              <div
-                key={m.id}
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "32px 220px 1fr 72px 100px 76px 80px 88px",
-                  alignItems: "center",
-                  borderBottom: `1px solid ${DS.border}`,
-                  backgroundColor: selectedIds.has(m.id) ? DS.blue + "08" : "transparent",
-                  transition: "background 0.15s",
-                  padding: "0 6px",
-                  height: 52,
-                }}
-              >
-                <MemberRow_ m={m} />
-              </div>
-            ))}
+              {/* ── Table rows ─────────────────────────────────────────── */}
+              {/* Row layout matches header exactly. Each cell uses overflow:hidden
+                  so content never pushes siblings. Row height auto (min 64px). */}
+              {filtered.map((m) => {
+                const rowBg = selectedIds.has(m.id) ? DS.blue + "0a" : "transparent";
+                return (
+                  <div
+                    key={m.id}
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "36px 220px 200px 80px 130px 90px 90px 88px",
+                      alignItems: "center",
+                      borderBottom: `1px solid ${DS.border}`,
+                      backgroundColor: rowBg,
+                      transition: "background 0.15s",
+                      padding: "0 8px",
+                      minHeight: 64,
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!selectedIds.has(m.id)) {
+                        (e.currentTarget as HTMLDivElement).style.backgroundColor = "rgba(255,255,255,0.02)";
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!selectedIds.has(m.id)) {
+                        (e.currentTarget as HTMLDivElement).style.backgroundColor = "transparent";
+                      }
+                    }}
+                  >
+                    <MemberRow_ m={m} />
+                  </div>
+                );
+              })}
+
+              {/* Empty state */}
+              {filtered.length === 0 && !isLoading && (
+                <div style={{
+                  padding: "48px 24px", textAlign: "center",
+                  color: DS.text3, fontFamily: DS.mono, fontSize: 13,
+                }}>
+                  Không tìm thấy thành viên nào
+                </div>
+              )}
+            </div>
           </div>
         ) : (
           <div style={{

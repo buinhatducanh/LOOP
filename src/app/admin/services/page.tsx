@@ -284,7 +284,7 @@ function EditServiceForm({ service, onClose, onUpdated }: { service: Service; on
       style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 12, padding: 20, marginBottom: 16 }}
     >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-        <h3 style={{ color: DS.text, fontWeight: 700, fontSize: 15 }}>{t("services.editTitle")}</h3>
+        <h3 style={{ color: DS.text, fontWeight: 700, fontSize: 15 }}>{t("services.formEditTitle")}</h3>
         <button onClick={onClose} style={{ background: "none", border: "none", color: DS.text4, cursor: "pointer" }}>
           <X size={16} />
         </button>
@@ -379,7 +379,7 @@ function CreateServiceForm({ onClose, onCreated }: { onClose: () => void; onCrea
       style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 12, padding: 20 }}
     >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-        <h3 style={{ color: DS.text, fontWeight: 700, fontSize: 15 }}>{t("services.createTitle")}</h3>
+        <h3 style={{ color: DS.text, fontWeight: 700, fontSize: 15 }}>{t("services.formCreateTitle")}</h3>
         <button onClick={onClose} style={{ background: "none", border: "none", color: DS.text4, cursor: "pointer" }}>
           <X size={16} />
         </button>

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { addAvatar } from "@/lib/api/mappings";
 import { handleError, ok } from "@/lib/api/response";
+import { syncRankFields } from "@/lib/rank/xp";
 import type { InputJsonValue } from "@/generated/prisma/internal/prismaNamespace";
 
 export async function GET(
@@ -277,7 +278,15 @@ export async function PUT(
         }
       }
 
-      // 5. Audit log after successful writes
+      // 5. Re-compute rank fields from actual LP totals
+      // FIX: syncRankFields aggregates approved LpAwards + completed LpTransactions
+      // so the persisted level/rank always reflect real LP, not stale manual values.
+      // Also syncs availableLp so the returned member always reflects live LP state.
+      await syncRankFields(id);
+
+      // 6. Audit log after successful writes — re-fetch fresh member to capture
+      // updated rank/level/XP/availableLp from syncRankFields
+      const freshMember = await prisma.teamMember.findUnique({ where: { id } });
       await prisma.auditLog.create({
         data: {
           userId: session.userId,
@@ -285,11 +294,11 @@ export async function PUT(
           resource: "team",
           resourceId: id,
           oldValues: existing as unknown as InputJsonValue,
-          newValues: m as unknown as InputJsonValue,
+          newValues: freshMember as unknown as InputJsonValue,
         },
       });
 
-      member = m;
+      member = freshMember ?? m;
     } catch (prismaErr: unknown) {
       console.error("[PUT /api/admin/team] Prisma error:", prismaErr);
       const code = (prismaErr as { code?: string })?.code;
@@ -303,7 +312,7 @@ export async function PUT(
       return NextResponse.json({ error: "Cập nhật thất bại" }, { status: 500 });
     }
 
-    return NextResponse.json({ data: addAvatar(member) });
+    return NextResponse.json({ data: addAvatar(member!) });
 
   } catch (error) {
     return handleError(error);

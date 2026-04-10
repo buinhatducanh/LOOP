@@ -12,7 +12,7 @@
  *   and returning locale-specific descriptions from SiteSettings.
  */
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://loop.vn";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.loops.vn";
 
 // ─── Base Types ────────────────────────────────────────────────────────────────
 

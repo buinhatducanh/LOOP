@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
 import type { InputJsonValue } from "@/generated/prisma/internal/prismaNamespace";
-import { computeRankFieldsFromLp } from "@/lib/rank/xp";
+import { syncRankFields } from "@/lib/rank/xp";
 import { handleError } from "@/lib/api";
 
 // POST /api/admin/lp-awards/[id]/approve
@@ -148,14 +148,34 @@ export async function POST(
       });
     }
 
-    // 5. Sync rank fields
-    const [awardAgg, txAgg] = await Promise.all([
-      prisma.lpAward.aggregate({ where: { memberId: award.memberId, status: "approved" }, _sum: { lpAmount: true } }),
-      prisma.lpTransaction.aggregate({ where: { memberId: award.memberId, type: "award", status: "completed" }, _sum: { amount: true } }),
-    ]);
-    const totalLp = (awardAgg._sum.lpAmount ?? 0) + (txAgg._sum.amount ?? 0);
-    const rank = computeRankFieldsFromLp(totalLp);
-    await prisma.teamMember.update({ where: { id: award.memberId }, data: rank });
+    // 5. Sync rank fields — use syncRankFields (correct: approved LpAwards + completed LpTransactions)
+    const oldMember = await prisma.teamMember.findUnique({
+      where: { id: award.memberId },
+      select: { rank: true, level: true },
+    });
+    const newRank = await syncRankFields(award.memberId);
+
+    // 6. Record rank-up in ledger if rank actually changed (for rank history panel)
+    if (
+      oldMember &&
+      newRank &&
+      (oldMember.rank !== newRank.rank || oldMember.level !== newRank.level)
+    ) {
+      await prisma.lpTransaction.create({
+        data: {
+          memberId: award.memberId,
+          amount: 0,
+          balanceAfter: 0,
+          type: "rank_up",
+          status: "completed",
+          description: `Rank up: ${oldMember.rank} Lv.${oldMember.level} → ${newRank.rank} Lv.${newRank.level}`,
+          source: "rank_sync",
+          referenceId: award.id,
+          referenceType: "LpAward",
+          createdBy: approverMemberId,
+        },
+      });
+    }
 
     await prisma.auditLog.create({
       data: {
@@ -167,8 +187,9 @@ export async function POST(
       },
     }).catch(() => { /* non-critical */ });
 
+    const synced = newRank;
     return NextResponse.json({
-      data: { awardId: id, action, rank },
+      data: { awardId: id, action, rank: synced },
     });
   } catch (error) {
     return handleError(error);

@@ -1478,6 +1478,22 @@ model CustomerPoint {
   @@map("customer_points")
 }
 
+// ─── Client VIP Status ─────────────────────────────────────────────────────────
+
+/// Tracks VIP tier for each customer based on spending + VIP points.
+/// Tier auto-promotes (never demotes) when conditions are met.
+model ClientVipStatus {
+  id            String    @id @default(cuid())
+  userId        String?   @unique @map("user_id")
+  userEmail     String    @unique @map("user_email")
+  tier          String    @default("regular")  // regular | vip1 | vip2 | vip3
+  totalSpending Float    @default(0)          // VNĐ — sum of Order.paidAmount (paid orders)
+  vipPoints     Int      @default(0)          // accumulated from client quests
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("client_vip_status")
+}
+
 model PointTransaction {
   id              String        @id @default(cuid())
   customerPointId String        @map("customer_point_id")

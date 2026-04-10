@@ -27,6 +27,8 @@
       "lp_manage": "LP Management",
       "income_tax": "Income & Tax",
       "web_packages": "Web Packages",
+      "domain_prices": "Domain Prices",
+      "addon_services": "Add-on Services",
       "pricing": "Pricing Config",
       "figma_demos": "Figma Demo",
       "effects": "Rank Effects",

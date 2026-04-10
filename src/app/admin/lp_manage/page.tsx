@@ -3,14 +3,13 @@
 /**
  * LP Manage Admin Page — LOOP Solutions
  * Route: /admin/lp_manage
- * Wire: /api/admin/lp-awards, /api/admin/lp-transactions
+ * Wire: /api/admin/team, /api/admin/lp-transactions, /api/admin/settings/lp-rate
  *
- * Full rewrite to match DESIGN LOOPS LPManagementTab (650 lines):
- * - RateConfigModal: LP→VND rate + salary by rank + bonus rates
- * - AddLPModal: 6 sources (project/performance/service/salary/tet_bonus/manual)
- * - 6-source breakdown cards
- * - Transactions table + Member summary view
- * - Per-member source breakdown
+ * Changes from mock:
+ * - Uses GET /api/admin/team for real member data (rank, level, avatar, availableLp)
+ * - Uses GET /api/admin/lp-transactions for real transaction history
+ * - Uses POST /api/admin/lp-awards for creating LP awards
+ * - RateConfigModal persists to /api/admin/settings/lp-rate
  */
 
 import { useState, useMemo, useEffect } from "react";
@@ -19,27 +18,46 @@ import { motion, AnimatePresence } from "motion/react";
 import { adminApi } from "@/lib/api/client";
 import { DS, GRD } from "@/lib/design-tokens";
 import {
-  Wallet, Plus, Save, X, BarChart3, Users,
+  Wallet, Plus, X, BarChart3, Users,
   FolderKanban, Trophy, Briefcase, DollarSign, Gift, Star,
-  Settings, RefreshCw, Send,
+  Settings, RefreshCw, Send, Loader2, Save,
 } from "lucide-react";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type LPSource = "project" | "performance" | "service" | "salary" | "tet_bonus" | "manual";
+// Source types for LP awards (mirrors business logic)
+type LpAwardSource = "manual" | "auto" | "bonus" | "performance" | "project" | "salary" | "tet_bonus" | "service";
 
-interface LPTransaction {
+// Real member from GET /api/admin/team
+interface RealMember {
   id: string;
-  memberId: number;
-  memberName: string;
-  memberRank: string;
-  source: LPSource;
+  name: string;
+  avatar: string | null;
+  level: number;
+  rank: string;
+  availableLp: number;
+  lockedLp: number;
+  systemRole: string | null;
+}
+
+// Real transaction from GET /api/admin/lp-transactions
+// API returns nested `member: { id, name, role, image }` + scalars
+interface ApiTransaction {
+  id: string;
+  memberId: string;
   amount: number;
-  vndEquivalent: number;
-  note: string;
-  period: string;
+  balanceAfter: number;
+  type: string;
+  status: string;
+  description: string | null;
+  source: string | null;
+  referenceId: string | null;
+  referenceType: string | null;
+  fee: number;
   createdAt: string;
-  createdBy: string;
+  member: { id: string; name: string; role: string; image: string | null } | null;
+  counterparty: { id: string; name: string; role: string } | null;
+  creator: { id: string; name: string } | null;
 }
 
 interface LPRateConfig {
@@ -71,31 +89,20 @@ const RANKS: Record<RankKey, { label: string; symbol: string; color: string }> =
   diamond:  { label: "Diamond",  symbol: "✦", color: "#818CF8" },
 };
 
-const MOCK_MEMBERS = [
-  { id: 1, name: "Akira Tanaka", role: "CEO", rank: "diamond" as RankKey, img: "https://i.pravatar.cc/150?img=1", level: 120 },
-  { id: 2, name: "Yuki Sato", role: "Marketing Lead", rank: "ruby" as RankKey, img: "https://i.pravatar.cc/150?img=2", level: 96 },
-  { id: 3, name: "Min-jun Lee", role: "IT Lead", rank: "platinum" as RankKey, img: "https://i.pravatar.cc/150?img=3", level: 88 },
-  { id: 4, name: "Wei Chen", role: "Senior Engineer", rank: "gold" as RankKey, img: "https://i.pravatar.cc/150?img=4", level: 68 },
-  { id: 5, name: "Sora Kimura", role: "Frontend Dev", rank: "silver" as RankKey, img: "https://i.pravatar.cc/150?img=5", level: 48 },
-  { id: 6, name: "Ryo Nakamura", role: "Backend Dev", rank: "silver" as RankKey, img: "https://i.pravatar.cc/150?img=6", level: 42 },
-  { id: 7, name: "Hana Park", role: "Media Lead", rank: "bronze" as RankKey, img: "https://i.pravatar.cc/150?img=7", level: 28 },
-  { id: 8, name: "Alex Nguyen", role: "Marketing Specialist", rank: "bronze" as RankKey, img: "https://i.pravatar.cc/150?img=8", level: 22 },
-  { id: 9, name: "Linh Hoang", role: "Junior Dev", rank: "iron" as RankKey, img: "https://i.pravatar.cc/150?img=9", level: 8 },
-  { id: 10, name: "Minh Tran", role: "QA Engineer", rank: "iron" as RankKey, img: "https://i.pravatar.cc/150?img=10", level: 5 },
-];
-
 // ── Source config ─────────────────────────────────────────────────────────────
 
-const SOURCE_CFG: Record<LPSource, { label: string; labelVi: string; color: string; icon: typeof FolderKanban; desc: string }> = {
-  project:     { label: "Project",     labelVi: "Dự án",               color: DS.blue,   icon: FolderKanban, desc: "LP từ dự án hoàn thành (small/medium/large)" },
-  performance: { label: "Performance", labelVi: "Thưởng hiệu suất",    color: DS.amber,  icon: Trophy,       desc: "Thưởng KPI hàng tháng/quý theo phòng ban" },
-  service:     { label: "Service",     labelVi: "Dịch vụ",             color: DS.cyan,   icon: Briefcase,    desc: "LP khi hoàn thành gói dịch vụ cho khách hàng" },
-  salary:      { label: "Salary",      labelVi: "Lương cứng",          color: DS.green,  icon: DollarSign,   desc: "Lương tháng/quý cố định theo rank" },
-  tet_bonus:   { label: "Tết Bonus",   labelVi: "Thưởng Tết",          color: DS.red,    icon: Gift,         desc: "Thưởng Tết hàng năm (tháng lương × hệ số)" },
-  manual:      { label: "Manual",      labelVi: "Thủ công",            color: DS.purple, icon: Star,         desc: "Admin cấp/trừ LP thủ công với lý do rõ ràng" },
+const SOURCE_CFG: Record<string, { label: string; labelVi: string; color: string; icon: typeof FolderKanban; desc: string }> = {
+  manual:      { label: "Manual",      labelVi: "Thủ công",           color: DS.purple, icon: Star,         desc: "Admin cấp/trừ LP thủ công với lý do rõ ràng" },
+  auto:        { label: "Auto",         labelVi: "Tự động",            color: DS.blue,   icon: FolderKanban, desc: "LP tự động từ hệ thống (quest, điểm danh...)" },
+  bonus:       { label: "Bonus",       labelVi: "Thưởng",             color: DS.amber,  icon: Trophy,       desc: "Thưởng hiệu suất KPI, thưởng tháng/quý" },
+  performance: { label: "Performance", labelVi: "Thưởng hiệu suất",   color: DS.amber,  icon: Trophy,       desc: "Thưởng KPI hàng tháng/quý theo phòng ban" },
+  project:     { label: "Project",     labelVi: "Dự án",              color: DS.cyan,   icon: FolderKanban, desc: "LP từ dự án hoàn thành (small/medium/large)" },
+  service:     { label: "Service",     labelVi: "Dịch vụ",            color: DS.teal,   icon: Briefcase,    desc: "LP khi hoàn thành gói dịch vụ cho khách hàng" },
+  salary:      { label: "Salary",      labelVi: "Lương cứng",         color: DS.green,  icon: DollarSign,  desc: "Lương tháng/quý cố định theo rank" },
+  tet_bonus:   { label: "Tết Bonus",   labelVi: "Thưởng Tết",         color: DS.red,    icon: Gift,         desc: "Thưởng Tết hàng năm (tháng lương × hệ số)" },
 };
 
-const INIT_RATE: LPRateConfig = {
+const DEFAULT_RATE: LPRateConfig = {
   lp_to_vnd: 1_000,
   salary_iron:     500,
   salary_bronze:   1_200,
@@ -112,7 +119,7 @@ const INIT_RATE: LPRateConfig = {
   project_large:   4_000,
 };
 
-const SALARY_BY_RANK: Record<RankKey, keyof LPRateConfig> = {
+const SALARY_BY_RANK: Record<string, keyof LPRateConfig> = {
   iron:     "salary_iron",
   bronze:   "salary_bronze",
   silver:   "salary_silver",
@@ -121,27 +128,6 @@ const SALARY_BY_RANK: Record<RankKey, keyof LPRateConfig> = {
   ruby:     "salary_ruby",
   diamond:  "salary_diamond",
 };
-
-const CURRENT_YEAR = 2026;
-
-// ── Init transactions ─────────────────────────────────────────────────────────
-
-function genId() { return `tx-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`; }
-
-const INIT_TRANSACTIONS: LPTransaction[] = [
-  { id: genId(), memberId: 1, memberName: "Akira Tanaka", memberRank: "diamond", source: "salary",      amount: 50_000, vndEquivalent: 50_000_000, note: "Lương tháng 3/2026 — Diamond", period: "T3/2026", createdAt: "2026-03-01", createdBy: "Admin" },
-  { id: genId(), memberId: 2, memberName: "Yuki Sato", memberRank: "ruby",     source: "salary",      amount: 22_000, vndEquivalent: 22_000_000, note: "Lương tháng 3/2026 — Ruby",    period: "T3/2026", createdAt: "2026-03-01", createdBy: "Admin" },
-  { id: genId(), memberId: 3, memberName: "Min-jun Lee", memberRank: "platinum", source: "salary",   amount: 10_000, vndEquivalent: 10_000_000, note: "Lương tháng 3/2026 — Platinum", period: "T3/2026", createdAt: "2026-03-01", createdBy: "Admin" },
-  { id: genId(), memberId: 4, memberName: "Wei Chen", memberRank: "gold",     source: "salary",      amount: 5_000,  vndEquivalent: 5_000_000,  note: "Lương tháng 3/2026 — Gold",    period: "T3/2026", createdAt: "2026-03-01", createdBy: "Admin" },
-  { id: genId(), memberId: 5, memberName: "Sora Kimura", memberRank: "silver",  source: "salary",      amount: 2_500,  vndEquivalent: 2_500_000,  note: "Lương tháng 3/2026 — Silver",  period: "T3/2026", createdAt: "2026-03-01", createdBy: "Admin" },
-  { id: genId(), memberId: 2, memberName: "Yuki Sato", memberRank: "ruby",     source: "project",     amount: 4_000,  vndEquivalent: 4_000_000,  note: "Dự án: LOOP OS v2.0 — Large milestone", period: "T3/2026", createdAt: "2026-03-13", createdBy: "Admin" },
-  { id: genId(), memberId: 4, memberName: "Wei Chen", memberRank: "gold",     source: "project",     amount: 1_500,  vndEquivalent: 1_500_000,  note: "Dự án: VNRetail v3 — Sprint 4 done", period: "T3/2026", createdAt: "2026-03-14", createdBy: "Admin" },
-  { id: genId(), memberId: 1, memberName: "Akira Tanaka", memberRank: "diamond", source: "performance", amount: 10_000, vndEquivalent: 10_000_000, note: "Thưởng KPI Q1/2026 — Đạt 140% target", period: "Q1/2026", createdAt: "2026-03-31", createdBy: "Admin" },
-  { id: genId(), memberId: 3, memberName: "Min-jun Lee", memberRank: "platinum", source: "performance", amount: 2_000,  vndEquivalent: 2_000_000,  note: "Thưởng KPI T3/2026 — IT uptime 99.98%", period: "T3/2026", createdAt: "2026-03-31", createdBy: "Admin" },
-  { id: genId(), memberId: 5, memberName: "Sora Kimura", memberRank: "silver",  source: "service",     amount: 900,   vndEquivalent: 900_000,    note: "Design system delivery — 3 gói × 300 LP", period: "T3/2026", createdAt: "2026-03-20", createdBy: "Admin" },
-  { id: genId(), memberId: 6, memberName: "Ryo Nakamura", memberRank: "silver",  source: "service",     amount: 600,   vndEquivalent: 600_000,    note: "UI/UX audit cho client MedTech — 2 gói", period: "T3/2026", createdAt: "2026-03-18", createdBy: "Admin" },
-  { id: genId(), memberId: 7, memberName: "Hana Park", memberRank: "bronze",     source: "tet_bonus",   amount: 750,   vndEquivalent: 750_000,    note: "Thưởng Tết Bính Ngọ 2026 — 1.5 tháng lương Bronze", period: "Tết 2026", createdAt: "2026-01-25", createdBy: "Admin" },
-];
 
 // ── Formatters ────────────────────────────────────────────────────────────────
 
@@ -260,26 +246,49 @@ function RateConfigModal({ rate, onClose, onSave, isSaving }: {
 }
 
 // ── Add LP Modal ─────────────────────────────────────────────────────────────
+// Uses POST /api/admin/lp-awards — approved automatically for simplicity
 
-function AddLPModal({ rate, onClose, onSave }: {
+function AddLPModal({
+  members,
+  rate,
+  onClose,
+  onSuccess,
+}: {
+  members: RealMember[];
   rate: LPRateConfig;
   onClose: () => void;
-  onSave: (tx: LPTransaction) => void;
+  onSuccess: () => void;
 }) {
-  const [source, setSource] = useState<LPSource>("salary");
-  const [memberId, setMemberId] = useState<number>(MOCK_MEMBERS[0].id);
+  const qc = useQueryClient();
+  const [source, setSource] = useState<LpAwardSource>("manual");
+  const [memberId, setMemberId] = useState<string>(members[0]?.id ?? "");
   const [amount, setAmount] = useState<number>(0);
-  const [note, setNote] = useState("");
-  const [period, setPeriod] = useState(`T${new Date().getMonth() + 1}/${CURRENT_YEAR}`);
+  const [description, setDescription] = useState("");
+  const [saving, setSaving] = useState(false);
   const [projectSize, setProjectSize] = useState<"small" | "medium" | "large">("medium");
 
-  const sc = SOURCE_CFG[source];
-  const selectedMember = MOCK_MEMBERS.find(m => m.id === memberId)!;
-  const rc = RANKS[selectedMember?.rank ?? "iron"];
+  const saveMutation = useMutation({
+    mutationFn: (body: { memberId: string; lpAmount: number; source: LpAwardSource; description: string }) =>
+      adminApi.post("/api/admin/lp-awards", { ...body, status: "approved" }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin", "lp", "transactions"] });
+      qc.invalidateQueries({ queryKey: ["admin", "lp", "transactions-manage"] });
+      qc.invalidateQueries({ queryKey: ["admin", "lp", "awards"] });
+      onSuccess();
+      onClose();
+    },
+    onError: () => alert("Lỗi cấp LP. Vui lòng thử lại."),
+  });
+
+  const sc = SOURCE_CFG[source] ?? SOURCE_CFG.manual;
+  const selectedMember = members.find(m => m.id === memberId);
+  const rk = (selectedMember?.rank ?? "iron") as RankKey;
+  const rc = RANKS[rk];
 
   const calcAmount = () => {
     if (!selectedMember) return 0;
-    const salaryKey = SALARY_BY_RANK[selectedMember.rank];
+    const salaryKey = SALARY_BY_RANK[rk];
+    if (!salaryKey) return 0;
     const baseSalary = rate[salaryKey] as number;
     switch (source) {
       case "salary":      return baseSalary;
@@ -301,22 +310,19 @@ function AddLPModal({ rate, onClose, onSave }: {
     marginBottom: 6, letterSpacing: "0.1em",
   };
 
-  const handleSave = () => {
-    const finalAmount = amount || calcAmount();
-    onSave({
-      id: genId(),
-      memberId,
-      memberName: selectedMember.name,
-      memberRank: selectedMember.rank,
-      source,
-      amount: finalAmount,
-      vndEquivalent: finalAmount * rate.lp_to_vnd,
-      note: note || `${sc.labelVi} — ${period}`,
-      period,
-      createdAt: new Date().toISOString().split("T")[0],
-      createdBy: "Admin",
-    });
-    onClose();
+  const handleSave = async () => {
+    if (!memberId || !amount) return;
+    setSaving(true);
+    try {
+      await saveMutation.mutateAsync({
+        memberId,
+        lpAmount: amount,
+        source,
+        description: description || sc.labelVi,
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -343,8 +349,9 @@ function AddLPModal({ rate, onClose, onSave }: {
           <div>
             <label style={labelStyle}>NGUỒN LP</label>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }}>
-              {(Object.keys(SOURCE_CFG) as LPSource[]).map(s => {
+              {(Object.keys(SOURCE_CFG) as LpAwardSource[]).map(s => {
                 const cfg = SOURCE_CFG[s];
+                if (!cfg) return null;
                 return (
                   <button key={s} onClick={() => setSource(s)}
                     style={{
@@ -366,10 +373,14 @@ function AddLPModal({ rate, onClose, onSave }: {
           {/* Member selector */}
           <div>
             <label style={labelStyle}>THÀNH VIÊN</label>
-            <select value={memberId} onChange={e => setMemberId(Number(e.target.value))} style={inputStyle}>
-              {MOCK_MEMBERS.map(m => {
-                const mr = RANKS[m.rank];
-                return <option key={m.id} value={m.id}>{mr.symbol} {m.name} — {m.role} (Lv.{m.level})</option>;
+            <select value={memberId} onChange={e => setMemberId(e.target.value)} style={inputStyle}>
+              {members.map(m => {
+                const mr = RANKS[m.rank as RankKey] ?? RANKS.iron;
+                return (
+                  <option key={m.id} value={m.id}>
+                    {mr.symbol} {m.name} — {m.rank} (Lv.{m.level})
+                  </option>
+                );
               })}
             </select>
           </div>
@@ -416,28 +427,24 @@ function AddLPModal({ rate, onClose, onSave }: {
             )}
           </div>
 
-          {/* Period + Note */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            <div>
-              <label style={labelStyle}>KỲ LƯƠNG / KỲ THƯỞNG</label>
-              <input value={period} onChange={e => setPeriod(e.target.value)}
-                placeholder="VD: T3/2026, Q1/2026" style={inputStyle} />
-            </div>
-            <div>
-              <label style={labelStyle}>GHI CHÚ</label>
-              <input value={note} onChange={e => setNote(e.target.value)}
-                placeholder={`${sc.labelVi} — ${period}`} style={inputStyle} />
-            </div>
+          {/* Description */}
+          <div>
+            <label style={labelStyle}>GHI CHÚ / MÔ TẢ</label>
+            <input value={description} onChange={e => setDescription(e.target.value)}
+              placeholder={sc.labelVi} style={inputStyle} />
           </div>
 
           {/* Preview */}
           <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", borderRadius: 12, background: `${sc.color}08`, border: `1px solid ${sc.color}20` }}>
-            <div style={{ width: 36, height: 36, borderRadius: "50%", overflow: "hidden", border: `2px solid ${rc.color}50`, flexShrink: 0 }}>
-              <img src={selectedMember?.img} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            <div style={{ width: 36, height: 36, borderRadius: "50%", overflow: "hidden", border: `2px solid ${rc.color}50`, flexShrink: 0, background: DS.bgCard2 }}>
+              {selectedMember?.avatar
+                ? <img src={selectedMember.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: rc.color, fontSize: 14 }}>{rc.symbol}</div>
+              }
             </div>
             <div style={{ flex: 1 }}>
-              <div style={{ color: DS.text2, fontSize: 12, fontWeight: 700 }}>{selectedMember?.name}</div>
-              <div style={{ color: DS.text5, fontSize: 10 }}>{sc.labelVi} · {period}</div>
+              <div style={{ color: DS.text2, fontSize: 12, fontWeight: 700 }}>{selectedMember?.name ?? "—"}</div>
+              <div style={{ color: DS.text5, fontSize: 10 }}>{sc.labelVi} · {rk}</div>
             </div>
             <div style={{ textAlign: "right" }}>
               <div style={{ color: sc.color, fontFamily: DS.mono, fontWeight: 700, fontSize: 14 }}>+{fmtLP(amount || calcAmount())}</div>
@@ -445,9 +452,9 @@ function AddLPModal({ rate, onClose, onSave }: {
             </div>
           </div>
 
-          <button onClick={handleSave}
-            style={{ width: "100%", background: GRD.primary, color: "#fff", border: "none", borderRadius: 12, padding: "12px", cursor: "pointer", fontSize: 14, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, boxShadow: "0 0 20px rgba(129,140,248,0.25)" }}>
-            <Send size={14} /> Cấp LP ngay
+          <button onClick={handleSave} disabled={saving || !memberId || !amount}
+            style={{ width: "100%", background: (!memberId || !amount || saving) ? "rgba(79,125,243,0.3)" : GRD.primary, color: "#fff", border: "none", borderRadius: 12, padding: "12px", cursor: (!memberId || !amount || saving) ? "not-allowed" : "pointer", fontSize: 14, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, boxShadow: (!memberId || !amount || saving) ? "none" : "0 0 20px rgba(129,140,248,0.25)" }}>
+            {saving ? <><Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> Đang cấp...</> : <><Send size={14} /> Cấp LP ngay</>}
           </button>
         </div>
       </motion.div>
@@ -458,12 +465,11 @@ function AddLPModal({ rate, onClose, onSave }: {
 // ── Main Page ────────────────────────────────────────────────────────────────
 
 export default function LpManagePage() {
-  const [transactions, setTransactions] = useState<LPTransaction[]>(INIT_TRANSACTIONS);
-  const [rate, setRate] = useState<LPRateConfig>(INIT_RATE);
+  const [rate, setRate] = useState<LPRateConfig>(DEFAULT_RATE);
   const [showConfig, setShowConfig] = useState(false);
   const [showAddLP, setShowAddLP] = useState(false);
-  const [filterSource, setFilterSource] = useState<LPSource | "all">("all");
-  const [filterMember, setFilterMember] = useState<number | "all">("all");
+  const [filterSource, setFilterSource] = useState<string>("all");
+  const [filterMember, setFilterMember] = useState<string>("all");
   const [filterPeriod, setFilterPeriod] = useState<string>("all");
   const [activeView, setActiveView] = useState<"transactions" | "summary">("transactions");
   const [isSavingRate, setIsSavingRate] = useState(false);
@@ -478,16 +484,14 @@ export default function LpManagePage() {
 
   // Sync rate from API when data loads
   useEffect(() => {
-    if (rateData?.data) {
-      setRate(rateData.data);
-    }
+    if (rateData?.data) setRate(rateData.data);
   }, [rateData]);
 
   // Save rate config mutation
   const saveRateMutation = useMutation({
     mutationFn: (config: LPRateConfig) =>
       adminApi.post("/api/admin/settings/lp-rate", config),
-    onSuccess: (_res) => {
+    onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin", "settings", "lp-rate"] });
     },
     onError: () => {
@@ -495,66 +499,116 @@ export default function LpManagePage() {
     },
   });
 
-  const qc2 = qc;
-
-  // Persist rate config → API
   const handleSaveRate = async (draft: LPRateConfig) => {
     setIsSavingRate(true);
     try {
       await saveRateMutation.mutateAsync(draft);
-      setRate(draft); // update local state
+      setRate(draft);
     } finally {
       setIsSavingRate(false);
     }
   };
 
+  // Real member list from API
+  const { data: membersData } = useQuery({
+    queryKey: ["admin", "team", "all-lp-manage"],
+    queryFn: () => adminApi.get<{ data: RealMember[] }>("/api/admin/team", { params: { limit: 100 } }),
+  });
+  const realMembers: RealMember[] = membersData?.data ?? [];
+
+  // Real transactions from API
   const { data: txData, isLoading: txLoading, isFetching: txFetching } = useQuery({
     queryKey: ["admin", "lp", "transactions-manage"],
-    queryFn: () => adminApi.get<{ data: LPTransaction[] }>("/api/admin/lp-transactions", { params: { limit: 100 } }),
+    queryFn: () => adminApi.get<{ data: ApiTransaction[] }>("/api/admin/lp-transactions", { params: { limit: 200 } }),
   });
 
-  // Use API data when available, fallback to local
-  const allTx = (txData?.data?.length ?? 0) > 0 ? (txData?.data ?? []) : transactions;
+  // All transactions from API (no local fallback)
+  const allTx: ApiTransaction[] = txData?.data ?? [];
 
+  // Extract unique periods from transaction dates
   const periods = useMemo(() => {
-    const set = new Set(allTx.map((t: LPTransaction) => t.period));
-    return ["all", ...Array.from(set)];
+    const set = new Set(
+      allTx.map((t: ApiTransaction) => {
+        const d = new Date(t.createdAt);
+        return `T${d.getMonth() + 1}/${d.getFullYear()}`;
+      })
+    );
+    return ["all", ...Array.from(set).sort().reverse()];
   }, [allTx]);
 
-  const filtered = allTx.filter((t: LPTransaction) =>
-    (filterSource === "all" || t.source === filterSource) &&
-    (filterMember === "all" || t.memberId === filterMember) &&
-    (filterPeriod === "all" || t.period === filterPeriod)
-  ).sort((a: LPTransaction, b: LPTransaction) => b.createdAt.localeCompare(a.createdAt));
-
-  const totalLP = allTx.reduce((s: number, t: LPTransaction) => s + t.amount, 0);
-  const totalVND = allTx.reduce((s: number, t: LPTransaction) => s + t.vndEquivalent, 0);
-  const bySource = (Object.keys(SOURCE_CFG) as LPSource[]).map(s => ({
-    source: s,
-    total: allTx.filter((t: LPTransaction) => t.source === s).reduce((sum: number, t: LPTransaction) => sum + t.amount, 0),
-    count: allTx.filter((t: LPTransaction) => t.source === s).length,
-  })).sort((a, b) => b.total - a.total);
-
-  // Per-member summary
-  const memberSummary = MOCK_MEMBERS.slice(0, 10).map(m => {
-    const txs = allTx.filter((t: LPTransaction) => t.memberId === m.id);
-    const totalEarned = txs.reduce((s: number, t: LPTransaction) => s + t.amount, 0);
-    const bySourceMap = (Object.keys(SOURCE_CFG) as LPSource[]).reduce((acc, s) => {
-      acc[s] = txs.filter((t: LPTransaction) => t.source === s).reduce((sum: number, t: LPTransaction) => sum + t.amount, 0);
-      return acc;
-    }, {} as Record<LPSource, number>);
-    return { member: m, totalEarned, bySourceMap, txCount: txs.length };
-  }).filter(x => x.totalEarned > 0).sort((a, b) => b.totalEarned - a.totalEarned);
-
-  const addTx = (tx: LPTransaction) => {
-    setTransactions(prev => [tx, ...prev]);
-    qc.setQueryData(["admin", "lp", "transactions-manage"], (old: unknown) => {
-      if (old && typeof old === "object" && "data" in old && Array.isArray((old as { data: LPTransaction[] }).data)) {
-        return { ...old, data: [tx, ...(old as { data: LPTransaction[] }).data] };
-      }
-      return old;
-    });
+  // Normalize source from transaction (map API source to display source)
+  const txSource = (tx: ApiTransaction): string => {
+    if (tx.source) return tx.source;
+    if (tx.type === "award") return "manual";
+    if (tx.type === "deduct") return "manual";
+    return tx.type ?? "manual";
   };
+
+  const filtered = allTx.filter((t: ApiTransaction) =>
+    (filterSource === "all" || txSource(t) === filterSource) &&
+    (filterMember === "all" || t.memberId === filterMember) &&
+    (filterPeriod === "all" || (() => {
+      const d = new Date(t.createdAt);
+      const p = `T${d.getMonth() + 1}/${d.getFullYear()}`;
+      return p === filterPeriod;
+    })())
+  ).sort((a: ApiTransaction, b: ApiTransaction) =>
+    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
+
+  const totalLP = allTx.reduce((s: number, t: ApiTransaction) => s + t.amount, 0);
+  const totalVND = totalLP * rate.lp_to_vnd;
+
+  const bySource = useMemo(() => {
+    const map: Record<string, { total: number; count: number }> = {};
+    allTx.forEach((t: ApiTransaction) => {
+      const src = txSource(t);
+      if (!map[src]) map[src] = { total: 0, count: 0 };
+      map[src].total += t.amount;
+      map[src].count += 1;
+    });
+    return Object.entries(map)
+      .map(([source, v]) => ({ source, ...v }))
+      .sort((a, b) => b.total - a.total);
+  }, [allTx]);
+
+  // Per-member summary from real data
+  const memberSummary = useMemo(() => {
+    const map: Record<string, { memberId: string; memberName: string; avatar: string | null; rank: string; level: number; totalEarned: number; bySourceMap: Record<string, number>; txCount: number }> = {};
+    allTx.forEach((t: ApiTransaction) => {
+      const mid = t.memberId;
+      if (!map[mid]) {
+        map[mid] = {
+          memberId: mid,
+          memberName: t.member?.name ?? mid,
+          avatar: t.member?.image ?? null,
+          rank: t.member?.role ?? "iron",
+          level: 1,
+          totalEarned: 0,
+          bySourceMap: {},
+          txCount: 0,
+        };
+      }
+      const src = txSource(t);
+      map[mid].totalEarned += t.amount;
+      map[mid].bySourceMap[src] = (map[mid].bySourceMap[src] ?? 0) + t.amount;
+      map[mid].txCount += 1;
+    });
+
+    // Enrich with team API data (rank, level, avatar)
+    realMembers.forEach((m: RealMember) => {
+      if (map[m.id]) {
+        map[m.id].rank = m.rank;
+        map[m.id].level = m.level;
+        map[m.id].avatar = m.avatar;
+        map[m.id].memberName = m.name;
+      }
+    });
+
+    return Object.values(map)
+      .filter(x => x.totalEarned > 0)
+      .sort((a, b) => b.totalEarned - a.totalEarned);
+  }, [allTx, realMembers]);
 
   return (
     <div>
@@ -591,7 +645,7 @@ export default function LpManagePage() {
         {[
           { label: "Tổng LP đã cấp", value: fmtLP(totalLP), sub: `${allTx.length} giao dịch`, color: DS.purple, icon: <Wallet size={18} /> },
           { label: "Tổng VND quy đổi", value: fmtVND(totalVND), sub: `1 LP = ${rate.lp_to_vnd.toLocaleString()} VND`, color: DS.green, icon: <DollarSign size={18} /> },
-          { label: "Thành viên nhận LP", value: new Set(allTx.map((t: LPTransaction) => t.memberId)).size, sub: "trong hệ thống", color: DS.blue, icon: <Users size={18} /> },
+          { label: "Thành viên nhận LP", value: new Set(allTx.map((t: ApiTransaction) => t.memberId)).size, sub: "trong hệ thống", color: DS.blue, icon: <Users size={18} /> },
           { label: "Tỷ lệ đổi hiện tại", value: `1:${rate.lp_to_vnd}`, sub: "LP → VND", color: DS.amber, icon: <TrendingUp size={18} /> },
         ].map(s => (
           <div key={s.label} style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 16, padding: "1rem" }}>
@@ -677,15 +731,18 @@ export default function LpManagePage() {
           >
             {/* Filters */}
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-              <select value={filterSource} onChange={e => setFilterSource(e.target.value as LPSource | "all")}
+              <select value={filterSource} onChange={e => setFilterSource(e.target.value)}
                 style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 10, padding: "8px 12px", color: DS.text3, fontSize: 12, outline: "none" }}>
                 <option value="all">Tất cả nguồn</option>
-                {(Object.keys(SOURCE_CFG) as LPSource[]).map(s => <option key={s} value={s}>{SOURCE_CFG[s].labelVi}</option>)}
+                {bySource.map(s => {
+                  const cfg = SOURCE_CFG[s.source];
+                  return cfg ? <option key={s.source} value={s.source}>{cfg.labelVi}</option> : null;
+                })}
               </select>
-              <select value={String(filterMember)} onChange={e => setFilterMember(e.target.value === "all" ? "all" : Number(e.target.value))}
+              <select value={filterMember} onChange={e => setFilterMember(e.target.value)}
                 style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 10, padding: "8px 12px", color: DS.text3, fontSize: 12, outline: "none" }}>
                 <option value="all">Tất cả thành viên</option>
-                {MOCK_MEMBERS.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                {realMembers.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
               </select>
               <select value={filterPeriod} onChange={e => setFilterPeriod(e.target.value)}
                 style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 10, padding: "8px 12px", color: DS.text3, fontSize: 12, outline: "none" }}>
@@ -712,11 +769,16 @@ export default function LpManagePage() {
                   </div>
 
                   {/* Rows */}
-                  {filtered.map((tx: LPTransaction, i: number) => {
-                    const m = MOCK_MEMBERS.find(x => x.id === tx.memberId);
-                    const rc = RANKS[m?.rank ?? "iron"];
-                    const sc = SOURCE_CFG[tx.source];
-                    const SIcon = sc.icon;
+                  {filtered.map((tx: ApiTransaction, i: number) => {
+                    const src = txSource(tx);
+                    const cfg = SOURCE_CFG[src] ?? SOURCE_CFG.manual;
+                    const mem = tx.member;
+                    const rk = (mem?.role ?? "iron") as RankKey;
+                    const rc = RANKS[rk];
+                    const periodStr = (() => {
+                      const d = new Date(tx.createdAt);
+                      return `T${d.getMonth() + 1}/${d.getFullYear()}`;
+                    })();
                     return (
                       <div
                         key={tx.id}
@@ -728,28 +790,31 @@ export default function LpManagePage() {
                       >
                         {/* Member */}
                         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          <div style={{ width: 28, height: 28, borderRadius: "50%", overflow: "hidden", border: `1.5px solid ${rc.color}50` }}>
-                            <img src={m?.img} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                          <div style={{ width: 28, height: 28, borderRadius: "50%", overflow: "hidden", border: `1.5px solid ${rc.color}50`, background: DS.bgCard2 }}>
+                            {mem?.image
+                              ? <img src={mem.image} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                              : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: rc.color, fontSize: 11 }}>{rc.symbol}</div>
+                            }
                           </div>
                           <div>
-                            <div style={{ color: DS.text2, fontSize: 11, fontWeight: 600 }}>{m?.name ?? "N/A"}</div>
+                            <div style={{ color: DS.text2, fontSize: 11, fontWeight: 600 }}>{mem?.name ?? "N/A"}</div>
                             <div style={{ color: rc.color, fontSize: 9, fontFamily: DS.mono }}>{rc.symbol} {rc.label}</div>
                           </div>
                         </div>
                         {/* Note */}
-                        <div style={{ color: DS.text3, fontSize: 11, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{tx.note}</div>
+                        <div style={{ color: DS.text3, fontSize: 11, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{tx.description ?? "—"}</div>
                         {/* Source */}
-                        <div style={{ display: "flex", alignItems: "center", gap: 4, color: sc.color, background: `${sc.color}10`, border: `1px solid ${sc.color}25`, borderRadius: 6, padding: "2px 8px", fontSize: 9, fontFamily: DS.mono, whiteSpace: "nowrap" }}>
-                          <SIcon size={9} /> {sc.labelVi}
+                        <div style={{ display: "flex", alignItems: "center", gap: 4, color: cfg.color, background: `${cfg.color}10`, border: `1px solid ${cfg.color}25`, borderRadius: 6, padding: "2px 8px", fontSize: 9, fontFamily: DS.mono, whiteSpace: "nowrap" }}>
+                          <cfg.icon size={9} /> {cfg.labelVi}
                         </div>
                         {/* Period */}
-                        <div style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono, whiteSpace: "nowrap" }}>{tx.period}</div>
+                        <div style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono, whiteSpace: "nowrap" }}>{periodStr}</div>
                         {/* Amount */}
                         <div style={{ textAlign: "right" }}>
                           <div style={{ color: tx.amount > 0 ? DS.green : DS.red, fontSize: 12, fontFamily: DS.mono, fontWeight: 700 }}>
-                            +{fmtLP(tx.amount)}
+                            {tx.amount > 0 ? "+" : ""}{fmtLP(Math.abs(tx.amount))}
                           </div>
-                          <div style={{ color: DS.text5, fontSize: 9, fontFamily: DS.mono }}>{fmtVND(tx.vndEquivalent)}</div>
+                          <div style={{ color: DS.text5, fontSize: 9, fontFamily: DS.mono }}>{fmtVND(Math.abs(tx.amount) * rate.lp_to_vnd)}</div>
                         </div>
                       </div>
                     );
@@ -776,16 +841,20 @@ export default function LpManagePage() {
                   <div style={{ textAlign: "center", padding: "3rem", color: DS.text4 }}>Chưa có dữ liệu</div>
                 )}
                 {memberSummary.map((ms, i) => {
-                  const rc = RANKS[ms.member.rank];
+                  const rk = ms.rank as RankKey;
+                  const rc = RANKS[rk] ?? RANKS.iron;
                   return (
-                    <div key={ms.member.id} style={{ padding: "1rem", borderBottom: i < memberSummary.length - 1 ? `1px solid ${DS.border}` : "none" }}>
+                    <div key={ms.memberId} style={{ padding: "1rem", borderBottom: i < memberSummary.length - 1 ? `1px solid ${DS.border}` : "none" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
-                        <div style={{ width: 36, height: 36, borderRadius: "50%", overflow: "hidden", border: `2px solid ${rc.color}50` }}>
-                          <img src={ms.member.img} alt={ms.member.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        <div style={{ width: 36, height: 36, borderRadius: "50%", overflow: "hidden", border: `2px solid ${rc.color}50`, background: DS.bgCard2 }}>
+                          {ms.avatar
+                            ? <img src={ms.avatar} alt={ms.memberName} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                            : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: rc.color, fontSize: 13 }}>{rc.symbol}</div>
+                          }
                         </div>
                         <div style={{ flex: 1 }}>
-                          <div style={{ color: DS.text, fontSize: 13, fontWeight: 700 }}>{ms.member.name}</div>
-                          <div style={{ color: DS.text5, fontSize: 10 }}>{ms.member.rank} · {rc.symbol} {rc.label}</div>
+                          <div style={{ color: DS.text, fontSize: 13, fontWeight: 700 }}>{ms.memberName}</div>
+                          <div style={{ color: DS.text5, fontSize: 10 }}>{rk} · {rc.symbol} {rc.label}</div>
                         </div>
                         <div style={{ textAlign: "right" }}>
                           <div style={{ color: DS.green, fontFamily: DS.mono, fontWeight: 700, fontSize: 14 }}>{fmtLP(ms.totalEarned)}</div>
@@ -794,14 +863,13 @@ export default function LpManagePage() {
                       </div>
                       {/* Source breakdown */}
                       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                        {(Object.keys(SOURCE_CFG) as LPSource[]).filter(s => ms.bySourceMap[s] > 0).map(s => {
-                          const cfg = SOURCE_CFG[s];
-                          const pct = (ms.bySourceMap[s] / ms.totalEarned) * 100;
-                          const SIcon = cfg.icon;
+                        {Object.entries(ms.bySourceMap).filter(([, v]) => v > 0).map(([src, amount]) => {
+                          const cfg = SOURCE_CFG[src] ?? SOURCE_CFG.manual;
+                          const pct = (amount / ms.totalEarned) * 100;
                           return (
-                            <div key={s} style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 8px", borderRadius: 10, background: `${cfg.color}08`, border: `1px solid ${cfg.color}20` }}>
-                              <SIcon size={10} style={{ color: cfg.color }} />
-                              <span style={{ color: cfg.color, fontSize: 10, fontFamily: DS.mono }}>{fmtLP(ms.bySourceMap[s])}</span>
+                            <div key={src} style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 8px", borderRadius: 10, background: `${cfg.color}08`, border: `1px solid ${cfg.color}20` }}>
+                              <cfg.icon size={10} style={{ color: cfg.color }} />
+                              <span style={{ color: cfg.color, fontSize: 10, fontFamily: DS.mono }}>{fmtLP(amount)}</span>
                               <span style={{ color: DS.text5, fontSize: 9 }}>({pct.toFixed(0)}%)</span>
                             </div>
                           );
@@ -819,12 +887,17 @@ export default function LpManagePage() {
       {/* Modals */}
       <AnimatePresence>
         {showConfig && <RateConfigModal rate={rate} onClose={() => setShowConfig(false)} onSave={handleSaveRate} isSaving={isSavingRate} />}
-        {showAddLP && <AddLPModal rate={rate} onClose={() => setShowAddLP(false)} onSave={addTx} />}
+        {showAddLP && (
+          <AddLPModal
+            members={realMembers}
+            rate={rate}
+            onClose={() => setShowAddLP(false)}
+            onSuccess={() => qc.invalidateQueries({ queryKey: ["admin", "lp", "transactions-manage"] })}
+          />
+        )}
       </AnimatePresence>
     </div>
   );
 }
-
-// ── Helper for display ──────────────────────────────────────────────────────
 
 import { TrendingUp } from "lucide-react";

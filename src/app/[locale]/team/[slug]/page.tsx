@@ -26,7 +26,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!member) notFound();
 
   const mapped = mapLocalizedTeamMember(member, resolvedLocale) as Record<string, string | null | undefined>;
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://loop.vn";
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.loops.vn";
 
   const pageTitle = `${mapped.name ?? ""} - ${mapped.role ?? ""} | LOOP Solutions`;
   const pageDescription = (mapped.shortBio as string | undefined) ?? (mapped.bio as string | undefined) ?? `${mapped.name} - LOOP Solutions`;

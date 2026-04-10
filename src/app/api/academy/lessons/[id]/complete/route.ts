@@ -135,35 +135,69 @@ export async function POST(
     const isCourseComplete = progressPercent >= 100;
 
     // If completed, update enrollment status and award LP reward
-    if (isCourseComplete) {
-      await prisma.$transaction([
-        prisma.enrollment.update({
+    if (isCourseComplete && enrollment.course.lpReward > 0) {
+      // Resolve userEmail for CustomerPoint lookup (G4 fix)
+      let userEmail: string | null = null;
+      if (!memberId && userId) {
+        const user = await prisma.user.findUnique({
+          where: { id: userId },
+          select: { email: true },
+        });
+        userEmail = user?.email ?? null;
+      }
+
+      await prisma.$transaction(async (tx) => {
+        await tx.enrollment.update({
           where: { id: enrollment.id },
           data: { status: "completed" },
-        }),
-        // Award LP reward to the student
-        ...(enrollment.course.lpReward > 0
-          ? [
-              memberId
-                ? prisma.teamMember.update({
-                    data: { availableLp: { increment: enrollment.course.lpReward } },
-                    where: { id: memberId },
-                  })
-                : prisma.customerPoint.updateMany({
-                    data: {
-                      balance: { increment: enrollment.course.lpReward },
-                      totalEarned: { increment: enrollment.course.lpReward },
-                    },
-                    where: { userId: userId! },
-                  }),
-            ]
-          : []),
-      ]);
+        });
 
-      // P2-7: After LP award, sync rank fields so level/XP are recalculated
-      if (memberId && enrollment.course.lpReward > 0) {
+        if (memberId) {
+          // Staff: update TeamMember LP (syncRankFields handles the ledger)
+          await tx.teamMember.update({
+            data: { availableLp: { increment: enrollment.course.lpReward } },
+            where: { id: memberId },
+          });
+        } else if (userEmail) {
+          // Customer: update CustomerPoint + create ledger entry (G4 fix)
+          const cp = await tx.customerPoint.findUnique({
+            where: { userEmail },
+            select: { id: true, balance: true },
+          });
+          if (cp) {
+            await tx.customerPoint.update({
+              where: { id: cp.id },
+              data: {
+                balance: { increment: enrollment.course.lpReward },
+                totalEarned: { increment: enrollment.course.lpReward },
+              },
+            });
+            await tx.pointTransaction.create({
+              data: {
+                customerPointId: cp.id,
+                type: "earn",
+                amount: enrollment.course.lpReward,
+                source: "academy",
+                description: `Hoàn thành khóa học: ${enrollment.course.title}`,
+                referenceId: lessonId,
+                referenceType: "Lesson",
+                status: "completed",
+              },
+            });
+          }
+        }
+      });
+
+      // Sync rank fields for staff (already credited inside tx above)
+      if (memberId) {
         await syncRankFields(memberId);
       }
+    } else if (isCourseComplete) {
+      // Complete but no LP reward — just mark enrollment done
+      await prisma.enrollment.update({
+        where: { id: enrollment.id },
+        data: { status: "completed" },
+      });
     }
 
     // Get next lesson

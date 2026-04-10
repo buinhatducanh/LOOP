@@ -55,7 +55,7 @@ export async function GET(
       },
     }).catch(() => {/* silent */});
 
-    const destination = process.env.NEXT_PUBLIC_SITE_URL ?? "https://loop.vn";
+    const destination = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.loops.vn";
     return NextResponse.redirect(new URL(`/?ref=${normalized}`, destination), 302);
   } catch (error) {
     console.error("Referral tracking error:", error);

@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    const portalUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://loop.vn"}/portal/${token}`;
+    const portalUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.loops.vn"}/portal/${token}`;
 
     return NextResponse.json({ data: { ...portalToken, portalUrl } }, { status: 201 });
   } catch (error) {

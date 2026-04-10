@@ -250,7 +250,7 @@ function OrderEditModal({
           style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 16, padding: 24, width: "100%", maxWidth: 480 }}
         >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-            <h3 style={{ color: DS.text, fontWeight: 700, fontSize: 18 }}>{isEdit ? t("orders.editTitle") : t("orders.createTitle")}</h3>
+            <h3 style={{ color: DS.text, fontWeight: 700, fontSize: 18 }}>{isEdit ? t("orders.modalEditTitle") : t("orders.modalCreateTitle")}</h3>
             <button onClick={onClose} style={{ background: "none", border: "none", color: DS.text4, cursor: "pointer" }}>
               <X size={18} />
             </button>
@@ -297,7 +297,7 @@ function OrderEditModal({
                 {t("common.cancel")}
               </button>
               <button type="submit" disabled={saving} style={{ flex: 1, padding: "10px", background: saving ? DS.text4 : GRD.primary, border: "none", borderRadius: 10, color: "#fff", fontWeight: 700, cursor: saving ? "not-allowed" : "pointer", fontSize: 13 }}>
-                {saving ? t("common.saving") : isEdit ? t("orders.saveChanges") : t("orders.createOrder")}
+                {saving ? t("orders.formBtnSaving") : isEdit ? t("orders.formBtnSave") : t("orders.formBtnCreate")}
               </button>
             </div>
           </form>

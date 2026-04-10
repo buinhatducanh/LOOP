@@ -13,7 +13,7 @@ import { json } from "@/lib/api";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://loop.vn";
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.loops.vn";
 
   const payload = {
     name: "LOOP Public API",

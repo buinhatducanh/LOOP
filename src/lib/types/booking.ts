@@ -146,4 +146,17 @@ export interface PricingConfig {
     cached: boolean;
     revalidateSeconds: number;
   };
+  /** Customer LP data — returned when email param is provided */
+  customerLp?: {
+    balance: number;
+    totalEarned: number;
+    totalSpent: number;
+    level: number;
+  } | null;
+  /** VIP tier for this customer (G3) */
+  customerVip?: {
+    tier: string;
+    totalSpending: number;
+    vipPoints: number;
+  } | null;
 }

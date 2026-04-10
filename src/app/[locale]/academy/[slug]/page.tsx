@@ -24,7 +24,7 @@ function deriveLevel(weeks: number): string {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale, slug } = await params;
   const resolvedLocale = parseLocaleParam(new URLSearchParams({ lang: locale }));
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://loop.vn";
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.loops.vn";
 
   const course = await prisma.course.findFirst({
     where: { id: slug, status: "published" },

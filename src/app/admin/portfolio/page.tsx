@@ -257,7 +257,7 @@ function EditProjectForm({ project, onClose, onUpdated }: { project: Project; on
       style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 12, padding: 20, marginBottom: 16 }}
     >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-        <h3 style={{ color: DS.text, fontWeight: 700, fontSize: 15 }}>{t("portfolio.editTitle")}</h3>
+        <h3 style={{ color: DS.text, fontWeight: 700, fontSize: 15 }}>{t("portfolio.formEditTitle")}</h3>
         <button onClick={onClose} style={{ background: "none", border: "none", color: DS.text4, cursor: "pointer" }}>
           <X size={16} />
         </button>
@@ -320,7 +320,7 @@ function CreateProjectForm({ onClose, onCreated }: { onClose: () => void; onCrea
   return (
     <div style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 12, padding: 20 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-        <h3 style={{ color: DS.text, fontWeight: 700, fontSize: 15 }}>{t("portfolio.createTitle")}</h3>
+        <h3 style={{ color: DS.text, fontWeight: 700, fontSize: 15 }}>{t("portfolio.formCreateTitle")}</h3>
         <button onClick={onClose} style={{ background: "none", border: "none", color: DS.text4, cursor: "pointer" }}><X size={16} /></button>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>

@@ -22,6 +22,7 @@ import { HallOfFame } from "./HallOfFame";
 import { RoleFilters, type RoleFilter } from "./RoleFilters";
 import { SearchSortBar, type SortOption } from "./SearchSortBar";
 import { GuildAnimations } from "./GuildAnimations";
+import { HUDPanel } from "./HUDPanel";
 import { RANKS, normalizeRank, formatLP, type RankKey } from "./guildMemberData";
 import { Shield, Users, Trophy, ChevronRight, ArrowRight } from "lucide-react";
 import { DS, GRD, GLOW } from "@/lib/design-tokens";
@@ -616,6 +617,9 @@ export function TeamGuildClient({ locale, members, hero }: TeamGuildClientProps)
           <CTABanner locale={locale} />
         </div>
       </main>
+
+      {/* HUD Panel — guild-styled slide-in member stats */}
+      <HUDPanel />
     </>
   );
 }

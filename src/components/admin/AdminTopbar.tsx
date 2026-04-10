@@ -171,44 +171,6 @@ export function AdminTopbar() {
         )}
       </button>
 
-      {/* Language toggle */}
-      <button
-        onClick={() => {
-          const current = document.cookie.match(/NEXT_LOCALE=([^;]+)/)?.[1];
-          const next = current === "en" ? "vi" : "en";
-          document.cookie = `NEXT_LOCALE=${next}; path=/; max-age=31536000; SameSite=Lax`;
-          window.location.href = `/${next}/`;
-        }}
-        title="Toggle language"
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          width: 28,
-          height: 28,
-          borderRadius: 6,
-          background: "rgba(255,255,255,0.04)",
-          color: "var(--figma-text3, #94A3B8)",
-          border: "none",
-          cursor: "pointer",
-          fontSize: "0.625rem",
-          fontWeight: 700,
-          fontFamily: "'JetBrains Mono', monospace",
-          letterSpacing: "0.05em",
-          transition: "all 0.15s ease",
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.background = "rgba(255,255,255,0.08)";
-          e.currentTarget.style.color = "var(--figma-text2, #E2E8F0)";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.background = "rgba(255,255,255,0.04)";
-          e.currentTarget.style.color = "var(--figma-text3, #94A3B8)";
-        }}
-      >
-        EN
-      </button>
-
       <style>{`
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
       `}</style>

@@ -17,7 +17,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { DS, GRD } from "@/lib/design-tokens";
 import {
   Globe, Code2, BarChart3, Target, Check, ArrowRight, ArrowLeft,
-  Users, Calendar, Layers, Sparkles, Shield, Plus, Minus, X, ExternalLink, Zap, Eye,
+  Users, Calendar, Layers, Sparkles, Shield, Plus, Minus, X, ExternalLink, Zap, Eye, Server,
 } from "lucide-react";
 import type { PricingConfig } from "@/lib/types/booking";
 
@@ -158,12 +158,13 @@ const WEBSITE_FEATURES_FALLBACK: WizardFeature[] = [
 
 /** Extras fallback — nếu API fail. */
 const WEBSITE_EXTRAS_FALLBACK: WizardExtra[] = [
-  { id: "hosting", label: "Hosting & Domain 1 năm", price: 3_000_000, color: DS.blue },
-  { id: "maintenance", label: "Bảo trì & cập nhật 1 năm", price: 5_000_000, color: DS.green },
-  { id: "analytics-setup", label: "Setup Google Analytics 4", price: 1_500_000, color: DS.cyan },
-  { id: "training", label: "Training & hướng dẫn sử dụng (3 buổi)", price: 2_000_000, color: DS.purple },
-  { id: "priority", label: "Priority support 24/7 (6 tháng)", price: 4_500_000, color: DS.amber },
-  { id: "seo-basic", label: "SEO cơ bản & submission", price: 1_200_000, color: DS.red },
+  { id: "hosting",        label: "Hosting 1 năm",             price: 3_000_000, desc: "Hosting từ Starter → Enterprise — chọn gói phù hợp",    color: DS.purple },
+  { id: "domain",         label: "Tên miền",                   price: 0,          desc: "Đăng ký .com .vn .com.vn — tra cứu & chọn TLD phù hợp", color: DS.cyan   },
+  { id: "maintenance",    label: "Bảo trì & cập nhật 1 năm",   price: 5_000_000, desc: "Cập nhật plugin, backup hàng tuần",                        color: DS.green  },
+  { id: "analytics-setup", label: "Setup Google Analytics 4",   price: 1_500_000, desc: "Track traffic & conversions",                               color: DS.amber  },
+  { id: "training",      label: "Training đội ngũ",             price: 2_000_000, desc: "Training 1-1 với đội ngũ LOOP (3 buổi)",                   color: DS.teal   },
+  { id: "priority",      label: "Priority Support",            price: 3_000_000, desc: "Priority support 24/7 trong 6 tháng đầu",                 color: DS.pink   },
+  { id: "seo-basic",     label: "SEO cơ bản",                  price: 2_000_000, desc: "SEO foundation & Google submission",                          color: DS.gold   },
 ];
 
 const DEFAULT_LP_RATE: LpRateConfig = {
@@ -868,7 +869,8 @@ function StepAddons({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-8">
         {extraOptions.map(ext => {
           const icons: Record<string, React.ReactNode> = {
-            hosting: <Globe size={20} />,
+            hosting: <Server size={20} />,
+            domain: <Globe size={20} />,
             maintenance: <Shield size={20} />,
             "analytics-setup": <BarChart3 size={20} />,
             training: <Users size={20} />,
@@ -877,14 +879,16 @@ function StepAddons({
           };
           const colors: Record<string, string> = {
             hosting: DS.purple,
-            maintenance: DS.cyan,
+            domain: DS.cyan,
+            maintenance: DS.green,
             "analytics-setup": DS.amber,
-            training: DS.green,
+            training: DS.teal,
             priority: DS.pink,
-            "seo-basic": DS.blue,
+            "seo-basic": DS.gold,
           };
           const descriptions: Record<string, string> = {
-            hosting: "Hosting từ Free → Enterprise — chọn gói phù hợp nhu cầu",
+            hosting: "Hosting từ Starter → Enterprise — chọn gói phù hợp nhu cầu",
+            domain: "Đăng ký .com .vn .com.vn — tra cứu & chọn TLD phù hợp",
             maintenance: "Bảo trì & cập nhật website 1 năm",
             "analytics-setup": "Setup Google Analytics 4 — theo dõi traffic & conversions",
             training: "Training 1-1 với đội ngũ LOOP (3 buổi)",
@@ -2080,9 +2084,9 @@ function _StepSchedule({ startDate, setStartDate, duration, setDuration }: {
 function _StepExtras({ extraOptions, selected, onToggle }: { extraOptions: WizardExtra[]; selected: string[]; onToggle: (id: string) => void }) {
   const t = useTranslations("BookingPage");
   const icons: Record<string, React.ReactNode> = {
-    hosting: <Globe size={16} />, maintenance: <Shield size={16} />,
-    "analytics-setup": <BarChart3 size={16} />, training: <Users size={16} />,
-    priority: <Sparkles size={16} />, "seo-basic": <Target size={16} />,
+    hosting: <Server size={16} />, domain: <Globe size={16} />,
+    maintenance: <Shield size={16} />, "analytics-setup": <BarChart3 size={16} />,
+    training: <Users size={16} />, priority: <Sparkles size={16} />, "seo-basic": <Target size={16} />,
   };
   return (
     <div>
@@ -2877,15 +2881,15 @@ export function BookingWizardClient({ locale }: Props) {
   const [vatRate, setVatRate] = useState(0.10);
   const [maxLpRedeem, setMaxLpRedeem] = useState(0);
 
-  // LP balance — 0 for anonymous users (auth needed for real balance)
-  const lpBalance = 0;
+  // LP balance — fetched from /api/pricing/config?email= when customer enters email
+  const [lpBalance, setLpBalance] = useState(0);
 
   // Filtered feature options — always "web" since website-only
   const currentFeatureOptions: WizardFeature[] = featureOptions["web"] ?? [];
 
   useEffect(() => {
     let cancelled = false;
-    fetch(`/api/pricing/config?lang=${locale}`)
+    fetch(`/api/pricing/config?lang=${locale}${email ? `&email=${encodeURIComponent(email)}` : ""}`)
       .then(r => r.json())
       .then(json => {
         if (cancelled || !json?.data) return;
@@ -2925,10 +2929,15 @@ export function BookingWizardClient({ locale }: Props) {
         // ── Rates ──
         if (cfg.lpRate) setLpRate(cfg.lpRate);
         if (cfg.vatRate !== undefined) setVatRate(cfg.vatRate);
+
+        // ── Customer LP balance (if email provided) ──
+        if (email && cfg.customerLp) {
+          setLpBalance(cfg.customerLp.balance ?? 0);
+        }
       })
       .catch(() => { /* keep fallback */ });
     return () => { cancelled = true; };
-  }, [locale]);
+  }, [locale, email]);
 
   // ── Derived values ────────────────────────────────────────────────────
   const service = WEBSITE_SERVICE;
@@ -3419,22 +3428,31 @@ export function BookingWizardClient({ locale }: Props) {
             </div>
           )}
 
-          {/* ── SECTION 4: Hosting (optional) ── */}
+          {/* ── SECTION 4a: Hosting ── */}
           {selectedPackage && hostingPlans.length > 0 && (
-            <div style={{ marginBottom: 32 }}>
+            <div style={{ marginBottom: 20 }}>
               <div className="flex items-center gap-3 mb-4">
                 <div style={{ width: 3, height: 16, background: DS.purple, borderRadius: 2 }} />
                 <h3 style={{ color: DS.text2, fontSize: 12, fontFamily: DS.mono, letterSpacing: "0.14em" }}>
-                  HOSTING & TÊN MIỀN
+                  HOSTING
                 </h3>
                 <div style={{ flex: 1, height: 1, background: DS.border }} />
-                <span style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono }}>Tùy chọn</span>
+                <button
+                  onClick={() => setModal({ type: "hosting", isOpen: true })}
+                  style={{ background: "none", border: `1px solid ${DS.pink}40`, cursor: "pointer", color: DS.pink, fontSize: 11, fontFamily: DS.mono, padding: "2px 6px", borderRadius: 4 }}
+                >
+                  So sánh →
+                </button>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 10 }}>
                 {hostingPlans.map(plan => {
-                  const isSelected = selectedHostingPlan === plan.slug;
+                  const isSelected = selectedExtras.includes("hosting") && selectedHostingPlan === plan.slug;
+                  const hasDiscount = plan.discountPct > 0;
                   return (
-                    <motion.button key={plan.slug} onClick={() => setSelectedHostingPlan(isSelected ? "" : plan.slug)}
+                    <motion.button key={plan.slug} onClick={() => {
+                      if (isSelected) { setSelectedHostingPlan(""); }
+                      else { setSelectedHostingPlan(plan.slug); if (!selectedExtras.includes("hosting")) toggleExtra("hosting"); setModal({ type: "hosting", isOpen: true }); }
+                    }}
                       className="text-left p-4 rounded-xl relative"
                       style={{
                         background: isSelected ? `${plan.color}0C` : "rgba(15,23,42,0.5)",
@@ -3445,31 +3463,115 @@ export function BookingWizardClient({ locale }: Props) {
                     >
                       {plan.highlighted && (
                         <div style={{ position: "absolute", top: 0, left: 0, right: 0, padding: "2px", textAlign: "center", background: GRD.primary, fontSize: 8, color: "#fff", fontFamily: DS.mono, borderRadius: "10px 10px 0 0" }}>
-                          ★ PHỔ BIẾN
+                          ★ PHỔ BIẾN NHẤT
                         </div>
                       )}
                       <div style={{ marginTop: plan.highlighted ? 14 : 0 }}>
                         <div style={{ color: isSelected ? plan.color : DS.text2, fontSize: 12, fontFamily: DS.mono, fontWeight: 700, marginBottom: 4 }}>
                           {plan.name.toUpperCase()}
                         </div>
-                        <div style={{ color: DS.text, fontFamily: DS.heading, fontSize: 18, fontWeight: 900, marginBottom: 2 }}>
-                          {fmtVND(plan.discountedPrice)}
+                        <div style={{ display: "flex", alignItems: "baseline", gap: 4, marginBottom: 2 }}>
+                          <span style={{ color: DS.text, fontFamily: DS.heading, fontSize: 17, fontWeight: 900 }}>
+                            {fmtVND(plan.discountedPrice)}
+                          </span>
+                          {hasDiscount && (
+                            <span className="px-1 py-0.5 rounded text-xs" style={{ background: `${DS.green}15`, color: DS.green, fontFamily: DS.mono }}>
+                              -{plan.discountPct}%
+                            </span>
+                          )}
                         </div>
-                        <div style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono }}>{plan.period}</div>
+                        {plan.monthlyPrice > 0 && (
+                          <div style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono }}>
+                            ~{fmtVND(plan.monthlyPrice)}/tháng · {plan.period}
+                          </div>
+                        )}
+                        {hasDiscount && (
+                          <div style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono, textDecoration: "line-through" }}>
+                            {fmtVND(plan.basePrice)}
+                          </div>
+                        )}
+                        {isSelected && <Check size={12} style={{ color: plan.color, marginTop: 4 }} />}
                       </div>
                     </motion.button>
                   );
                 })}
-                <motion.button onClick={() => setSelectedHostingPlan("")}
+                <motion.button onClick={() => { setSelectedHostingPlan(""); if (selectedExtras.includes("hosting")) toggleExtra("hosting"); }}
                   className="text-center flex items-center justify-center"
                   style={{
-                    background: !selectedHostingPlan ? "rgba(255,255,255,0.04)" : "rgba(15,23,42,0.4)",
-                    border: !selectedHostingPlan ? `1.5px solid ${DS.text4}60` : `1px solid ${DS.border}`,
+                    background: !selectedExtras.includes("hosting") ? "rgba(255,255,255,0.04)" : "rgba(15,23,42,0.4)",
+                    border: !selectedExtras.includes("hosting") ? `1.5px solid ${DS.text4}60` : `1px solid ${DS.border}`,
                     borderRadius: 12, cursor: "pointer",
                   }}
                   whileHover={{ scale: 1.02 }}
                 >
-                  <span style={{ color: DS.text4, fontSize: 12 }}>Bỏ qua hosting</span>
+                  <span style={{ color: DS.text4, fontSize: 12 }}>Tự chuẩn bị</span>
+                </motion.button>
+              </div>
+            </div>
+          )}
+
+          {/* ── SECTION 4b: Domain name ── */}
+          {selectedPackage && (
+            <div style={{ marginBottom: 32 }}>
+              <div className="flex items-center gap-3 mb-4">
+                <div style={{ width: 3, height: 16, background: DS.cyan, borderRadius: 2 }} />
+                <h3 style={{ color: DS.text2, fontSize: 12, fontFamily: DS.mono, letterSpacing: "0.14em" }}>
+                  TÊN MIỀN
+                </h3>
+                <div style={{ flex: 1, height: 1, background: DS.border }} />
+                <button
+                  onClick={() => setModal({ type: "domain", isOpen: true })}
+                  style={{ background: "none", border: `1px solid ${DS.cyan}40`, cursor: "pointer", color: DS.cyan, fontSize: 11, fontFamily: DS.mono, padding: "2px 6px", borderRadius: 4 }}
+                >
+                  Tra cứu →
+                </button>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 10 }}>
+                {/* Domain option — click opens modal */}
+                <motion.button onClick={() => { if (!selectedExtras.includes("domain")) toggleExtra("domain"); setModal({ type: "domain", isOpen: true }); }}
+                  className="text-left p-4 rounded-xl relative"
+                  style={{
+                    background: domainName ? `${DS.cyan}0C` : "rgba(15,23,42,0.5)",
+                    border: domainName ? `1.5px solid ${DS.cyan}50` : `1px solid ${DS.border}`,
+                    cursor: "pointer",
+                  }}
+                  whileHover={{ scale: 1.02 }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                    <Globe size={16} style={{ color: DS.cyan }} />
+                    <span style={{ color: DS.text, fontSize: 12, fontFamily: DS.mono, fontWeight: 700 }}>
+                      ĐĂNG KÝ TÊN MIỀN
+                    </span>
+                  </div>
+                  <div style={{ color: DS.text4, fontSize: 11, marginBottom: 6, fontFamily: DS.mono }}>
+                    {domainName ? domainName : ".com · .vn · .com.vn..."}
+                  </div>
+                  {domainPrices.length > 0 && (
+                    <div style={{ color: DS.cyan, fontFamily: DS.mono, fontSize: 12, fontWeight: 700 }}>
+                      Từ {fmtVND(Math.min(...domainPrices.map(d => d.registrationPrice)))}
+                    </div>
+                  )}
+                  {domainPurchaseNow && domainName && (
+                    <div style={{ marginTop: 4 }}>
+                      <span className="px-2 py-0.5 rounded text-xs" style={{ background: `${DS.cyan}15`, color: DS.cyan, fontFamily: DS.mono }}>
+                        ✓ Đăng ký ngay
+                      </span>
+                    </div>
+                  )}
+                </motion.button>
+
+                {/* Skip */}
+                <motion.button
+                  onClick={() => { if (selectedExtras.includes("domain")) toggleExtra("domain"); setDomainName(""); setDomainPurchaseNow(false); }}
+                  className="text-center flex items-center justify-center"
+                  style={{
+                    background: !domainName ? "rgba(255,255,255,0.04)" : "rgba(15,23,42,0.4)",
+                    border: !domainName ? `1.5px solid ${DS.text4}60` : `1px solid ${DS.border}`,
+                    borderRadius: 12, cursor: "pointer",
+                  }}
+                  whileHover={{ scale: 1.02 }}
+                >
+                  <span style={{ color: DS.text4, fontSize: 12 }}>Bỏ qua — tự đăng ký sau</span>
                 </motion.button>
               </div>
             </div>
@@ -3502,11 +3604,13 @@ export function BookingWizardClient({ locale }: Props) {
                     >
                       <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
                         style={{ background: `${color}15`, color }}>
-                        {ext.id === "hosting" ? <Globe size={16} /> :
+                        {ext.id === "hosting" ? <Server size={16} /> :
+                         ext.id === "domain" ? <Globe size={16} /> :
                          ext.id === "maintenance" ? <Shield size={16} /> :
                          ext.id === "analytics-setup" ? <BarChart3 size={16} /> :
                          ext.id === "training" ? <Users size={16} /> :
                          ext.id === "priority" ? <Sparkles size={16} /> :
+                         ext.id === "seo-basic" ? <Target size={16} /> :
                          <Layers size={16} />}
                       </div>
                       <div className="flex-1 min-w-0">

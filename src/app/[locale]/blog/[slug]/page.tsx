@@ -44,7 +44,7 @@ type SeoMeta = {
 
 export async function generateMetadata({ params }: DetailProps): Promise<Metadata> {
   const { locale, slug } = await params;
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://loop.vn";
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.loops.vn";
   const loc = locale as "vi" | "en" | "ja" | "ko" | "zh";
 
   const metaPost = await prisma.blogPost.findFirst({

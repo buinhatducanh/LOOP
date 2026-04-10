@@ -62,48 +62,53 @@ export function computeRankFieldsFromLp(
 /**
  * Compute total awarded LP for a member from ALL sources:
  *   1. Approved LpAward records
- *   2. Completed LpTransaction(type=award) records (teaching, referral, etc.)
+ *   2. Completed LpTransaction(type=award) records (admin adjustment, etc.)
  *
- * Then persist rank fields to TeamMember and return them.
+ * Then persist rank fields AND availableLp to TeamMember and return them.
  *
- * Uses $transaction to prevent race conditions:
- *   - LP awards approved between the two reads would cause wrong rank computation
- *   - If teamMember.update fails after reads succeed, next call will retry correctly
+ * availableLp is kept in sync with the sum of approved awards so the rank display
+ * is always consistent with actual awarded LP (not inflated by manual deductions).
  *
- * NOTE: For callers that need the rank sync INSIDE an existing $transaction,
- * inline this logic (read aggregates + compute + tx.teamMember.update) directly.
- * The gap between read and write within a single tx is zero — the self-healing
- * property only applies when called standalone (outside any tx).
+ * Uses sequential queries (Neon HTTP adapter does not support $transaction).
+ * The read gap is small (~ms) — a race on concurrent approval is acceptable
+ * for a rank sync (self-heals on next trigger).
  *
- * Used by: standalone calls (rank cron, redemption post-tx, etc.)
+ * Used by: LP award approval, LP transaction creation, member profile update.
  */
 export async function syncRankFields(memberId: string): Promise<{
   level: number;
   currentXp: number;
   maxXp: number;
   rank: RankKey;
+  availableLp: number;
 } | null> {
-  const fields = await prisma.$transaction(async (tx) => {
-    const [awardAgg, txAgg] = await Promise.all([
-      tx.lpAward.aggregate({
-        where: { memberId, status: "approved" },
-        _sum: { lpAmount: true },
-      }),
-      tx.lpTransaction.aggregate({
-        where: { memberId, type: "award", status: "completed" },
-        _sum: { amount: true },
-      }),
-    ]);
+  // Sequential reads — Neon PostgreSQL HTTP adapter does NOT support $transaction
+  const [awardAgg, txAgg] = await Promise.all([
+    prisma.lpAward.aggregate({
+      where: { memberId, status: "approved" },
+      _sum: { lpAmount: true },
+    }),
+    // NOTE: exclude "spend" transactions from the rank total.
+    // Spend transactions are deductions (negative amounts) that are also
+    // directly reflected in TeamMember.availableLp via redemption.service.ts.
+    // Including them here would double-count the deduction inside a redemption
+    // $transaction (the spend is uncommitted so the re-read sees old totals,
+    // then P2002-style stale totals overwrite the already-deducted availableLp).
+    prisma.lpTransaction.aggregate({
+      where: { memberId, type: "award", status: "completed" },
+      _sum: { amount: true },
+    }),
+  ]);
 
-    const awardLp = awardAgg._sum.lpAmount ?? 0;
-    const txLp = txAgg._sum.amount ?? 0;
-    return computeRankFieldsFromLp(awardLp + txLp);
-  });
+  const awardLp = awardAgg._sum.lpAmount ?? 0;
+  const txLp = txAgg._sum.amount ?? 0;
+  const totalLp = awardLp + txLp;
+  const fields = computeRankFieldsFromLp(totalLp);
 
   await prisma.teamMember.update({
     where: { id: memberId },
-    data: fields,
+    data: { ...fields, availableLp: totalLp },
   });
 
-  return fields;
+  return { ...fields, availableLp: totalLp };
 }

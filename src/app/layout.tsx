@@ -14,7 +14,7 @@ import type { Metadata } from "next";
 import "@/styles/globals.css";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://loop.vn"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.loops.vn"),
   title: "LOOP Solutions",
   description: "LOOP Solutions — Professional Web & App Development. SEO-optimized, 95+ performance, 150+ projects delivered.",
   keywords: ["LOOP Solutions", "web design", "web app", "SaaS", "dashboard", "SEO", "agency Vietnam"],
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     siteName: "LOOP Solutions",
     title: "LOOP Solutions",
     description: "Professional Web & App Development — SEO-optimized, 95+ performance, 150+ projects delivered.",
-    url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://loop.vn",
+    url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.loops.vn",
     images: [
       {
         url: `/api/og?type=home&locale=vi`,

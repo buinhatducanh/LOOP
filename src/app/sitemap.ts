@@ -8,7 +8,7 @@ import type { MetadataRoute } from "next";
 import { routing } from "@/i18n/routing";
 import { prisma } from "@/lib/prisma";
 
-const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://loop.vn";
+const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.loops.vn";
 
 // Stable list for sitemap iteration (avoids repeated type casts)
 const locales: string[] = [...routing.locales];

@@ -382,7 +382,7 @@ export const warmCache = inngest.createFunction(
     triggers: [{ cron: "0 6,12 * * *" }],
   },
   async ({ step }) => {
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://loop.vn";
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.loops.vn";
 
     const urls = [
       `${siteUrl}/vi`,

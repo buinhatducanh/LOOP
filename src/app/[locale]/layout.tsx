@@ -40,7 +40,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const baseUrl =
     process.env.NODE_ENV === "development"
       ? "http://localhost:3000"
-      : (process.env.NEXT_PUBLIC_SITE_URL ?? "https://loop.vn");
+      : (process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.loops.vn");
   const ogImage = `/api/og?title=${encodeURIComponent(title)}&description=${encodeURIComponent(description)}&locale=${locale}`;
   const _gaId = process.env.NEXT_PUBLIC_GA_ID ?? "";
   const gscVerification = process.env.NEXT_PUBLIC_GSC_VERIFICATION ?? "";

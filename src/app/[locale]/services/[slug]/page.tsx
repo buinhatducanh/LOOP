@@ -16,7 +16,7 @@ type DetailProps = { params: Promise<{ locale: string; slug: string }> };
 
 export async function generateMetadata({ params }: DetailProps): Promise<Metadata> {
   const { locale, slug } = await params;
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://loop.vn";
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.loops.vn";
 
   const metaService = await prisma.service.findUnique({
     where: { slug },

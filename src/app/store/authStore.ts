@@ -78,7 +78,7 @@ export type AdminTab =
   | "overview" | "orders" | "members" | "departments" | "projects"
   | "services" | "media" | "quotation" | "portfolio" | "projects_completed"
   | "academy" | "blog" | "revenue" | "clients" | "lp" | "lp_manage"
-  | "income_tax" | "web_packages" | "pricing" | "effects" | "notification_center"
+  | "income_tax" | "web_packages" | "domain_prices" | "addon_services" | "pricing" | "effects" | "notification_center"
   | "settings" | "quests_events" | "leaderboard_admin" | "analytics"
   | "figma-demos" | "kanban"
   | "revenue_split" | "off_system_payments"

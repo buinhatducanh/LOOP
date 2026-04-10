@@ -70,7 +70,7 @@ export interface ContentAnalysis {
 
 const WORDS_PER_MINUTE = { en: 200, vi: 160 } as const;
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://loop.vn";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.loops.vn";
 
 /** Returns a minimal heuristic-based analysis when no API key is present. */
 function heuristicAnalysis(options: AnalyzeContentOptions): ContentAnalysis {

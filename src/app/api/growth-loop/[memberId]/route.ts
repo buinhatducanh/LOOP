@@ -96,7 +96,7 @@ export async function GET(
     });
 
     const completedStatuses = ["completed", "contracted", "delivered", "paid_full", "paid"] as string[];
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://loop.vn";
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.loops.vn";
 
     const codesWithStats = await Promise.all(
       referralCodes.map(async (code) => {

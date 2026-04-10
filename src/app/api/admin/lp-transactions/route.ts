@@ -3,7 +3,7 @@ import { handleError } from "@/lib/api/response";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
-import { computeRankFieldsFromLp } from "@/lib/rank/xp";
+import { syncRankFields } from "@/lib/rank/xp";
 
 // GET /api/admin/lp-transactions
 // List LP transactions with optional filters.
@@ -100,7 +100,7 @@ export async function POST(req: NextRequest) {
         memberId,
         amount,
         balanceAfter: newBalance,
-        type: "adjust",
+        type: "award",  // "award" type so syncRankFields includes this in rank calculation
         status: "completed",
         description: description ?? `Admin adjustment: ${amount > 0 ? "+" : ""}${amount} LP`,
         source: "admin",
@@ -117,17 +117,9 @@ export async function POST(req: NextRequest) {
       data: { availableLp: newBalance },
     });
 
-    // Re-rank after balance change
-    const lpAgg = await prisma.lpAward.aggregate({
-      where: { memberId, status: "approved" },
-      _sum: { lpAmount: true },
-    });
-    const totalLp = lpAgg._sum.lpAmount ?? 0;
-    const { level, currentXp, maxXp, rank } = computeRankFieldsFromLp(totalLp);
-    await prisma.teamMember.update({
-      where: { id: memberId },
-      data: { level, currentXp, maxXp, rank },
-    });
+    // FIX BUG #2: Use syncRankFields — aggregates approved LpAwards + completed LpTransactions
+    // so rank is always computed from actual LP totals, not a stale manual value.
+    await syncRankFields(memberId);
 
     await createAuditLog({
       userId: session.userId,
