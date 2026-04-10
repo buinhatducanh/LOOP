@@ -23,7 +23,7 @@ import {
   DollarSign, UserCheck, BookOpen, FileText, BarChart2,
   Briefcase, Camera, Receipt, Package, FolderCheck,
   Sparkles, Star, Bell, Zap, Calculator, Building2, ShoppingCart,
-  Monitor, X, ChevronRight, Globe, Layers,
+  Monitor, X, ChevronRight, Globe, Layers, FilePlus,
 } from "lucide-react";
 import { useAuthStore, canAccessTab, type AdminTab } from "@/app/store/authStore";
 import { useAdminTranslations } from "@/i18n/admin/useAdminTranslations";
@@ -126,6 +126,7 @@ const SIDEBAR_GROUPS_CONFIG: NavGroup[] = [
       { id: "members", icon: <Users size={16} />, labelKey: "sidebar.nav.members" },
       { id: "departments", icon: <Building2 size={16} />, labelKey: "sidebar.nav.departments" },
       { id: "projects", icon: <FolderKanban size={16} />, labelKey: "sidebar.nav.projects" },
+      { id: "project_intake", icon: <FilePlus size={16} />, labelKey: "sidebar.nav.project_intake" },
       { id: "leaderboard_admin", icon: <BarChart2 size={16} />, labelKey: "sidebar.nav.leaderboard_admin" },
     ],
   },

@@ -13,6 +13,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { getMessages, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
+import { QueryProvider } from "@/lib/query/provider";
 import { Shell } from "./components/Shell";
 import { Toaster } from "@/components/ui/sonner";
 import { buildOrganizationJsonLd, buildWebSiteJsonLd } from "@/lib/json-ld";
@@ -157,10 +158,12 @@ export default async function LocaleLayout({ children, params }: Props) {
       )}
 
       <NextIntlClientProvider messages={messages}>
-        <Shell locale={locale}>
-          {children}
-        </Shell>
-        <Toaster position="top-right" richColors closeButton />
+        <QueryProvider>
+          <Shell locale={locale}>
+            {children}
+          </Shell>
+          <Toaster position="top-right" richColors closeButton />
+        </QueryProvider>
       </NextIntlClientProvider>
     </>
   );

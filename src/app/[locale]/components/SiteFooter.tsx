@@ -407,61 +407,88 @@ export default function SiteFooter({ locale = "vi" }: { locale?: string }) {
           </div>
 
           {/* Quick action buttons */}
-          <div style={{ display: "flex", gap: "0.625rem" }}>
-            <a
+          <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+            {/* ── Call button ── */}
+            <motion.a
               href={`tel:${CEO_CONTACT.phone}`}
+              aria-label={`Gọi ${CEO_CONTACT.phoneDisplay}`}
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ type: "spring", stiffness: 400, damping: 24 }}
               style={{
                 display: "inline-flex", alignItems: "center", gap: "0.4rem",
-                background: "rgba(236,72,153,0.12)",
-                border: "1px solid rgba(236,72,153,0.40)",
-                borderRadius: 8, padding: "0.5rem 0.875rem",
-                color: DS.pinkLight, fontSize: "0.8125rem", fontWeight: 700,
+                background: "linear-gradient(135deg, #EC4899 0%, #6B3DF5 100%)",
+                border: "none",
+                borderRadius: 10, padding: "0.55rem 1rem",
+                color: "#fff", fontSize: "0.8125rem", fontWeight: 700,
                 textDecoration: "none",
-                boxShadow: "0 0 12px rgba(236,72,153,0.15)",
-                transition: "all 0.18s ease",
-              }}
-              onMouseEnter={e => {
-                const el = e.currentTarget as HTMLElement;
-                el.style.background = "rgba(236,72,153,0.22)";
-                el.style.boxShadow = "0 0 20px rgba(236,72,153,0.30)";
-                el.style.transform = "translateY(-1px)";
-              }}
-              onMouseLeave={e => {
-                const el = e.currentTarget as HTMLElement;
-                el.style.background = "rgba(236,72,153,0.12)";
-                el.style.boxShadow = "0 0 12px rgba(236,72,153,0.15)";
-                el.style.transform = "translateY(0)";
+                boxShadow: "0 4px 18px rgba(236,72,153,0.45), 0 0 0 1px rgba(255,255,255,0.1)",
+                position: "relative", overflow: "hidden",
               }}
             >
-              <Phone size={13} /> Gọi ngay
-            </a>
+              {/* Shimmer */}
+              <motion.div
+                animate={{ x: ["-120%", "200%"] }}
+                transition={{ duration: 2, repeat: Infinity, repeatDelay: 5, ease: "easeInOut" }}
+                style={{
+                  position: "absolute", inset: 0,
+                  background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.2) 50%, transparent 100%)",
+                  pointerEvents: "none",
+                }}
+              />
+              <Phone size={13} />
+              <span>Gọi ngay</span>
+            </motion.a>
 
-            <a
+            {/* ── Zalo button ── */}
+            <motion.a
               href={CEO_CONTACT.zaloUrl}
               target="_blank"
               rel="noopener noreferrer"
+              aria-label="Liên hệ qua Zalo"
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ type: "spring", stiffness: 400, damping: 24 }}
               style={{
                 display: "inline-flex", alignItems: "center", gap: "0.4rem",
-                background: "rgba(0,104,255,0.12)",
-                border: "1px solid rgba(0,104,255,0.40)",
-                borderRadius: 8, padding: "0.5rem 0.875rem",
-                color: "#4D9FFF", fontSize: "0.8125rem", fontWeight: 700,
+                background: "linear-gradient(135deg, #0068FF 0%, #0047CC 100%)",
+                border: "none",
+                borderRadius: 10, padding: "0.55rem 1rem",
+                color: "#fff", fontSize: "0.8125rem", fontWeight: 700,
                 textDecoration: "none",
-                transition: "all 0.18s ease",
-              }}
-              onMouseEnter={e => {
-                const el = e.currentTarget as HTMLElement;
-                el.style.background = "rgba(0,104,255,0.22)";
-                el.style.transform = "translateY(-1px)";
-              }}
-              onMouseLeave={e => {
-                const el = e.currentTarget as HTMLElement;
-                el.style.background = "rgba(0,104,255,0.12)";
-                el.style.transform = "translateY(0)";
+                boxShadow: "0 4px 16px rgba(0,104,255,0.4), 0 0 0 1px rgba(255,255,255,0.08)",
               }}
             >
-              <MessageCircle size={13} /> Zalo
-            </a>
+              <svg width={13} height={13} viewBox="0 0 80 80" fill="none" aria-hidden="true">
+                <path d="M70.58 55.27C71.36 51.84 72 48.49 72 44.52C72 31.12 63.45 20.5 50.06 20.5C46.35 20.5 42.76 21.32 39.59 22.84L28 14.5 37.19 24.88C33.24 26.72 30.16 29.73 28.11 33.63L19.38 27.19 26.88 41.21C26.88 41.21 22.81 55.27 10.12 55.27C5.46 55.27 1 59.11 1 64.08C1 69.05 5.46 73.58 10.12 73.58C16.15 73.58 25.27 70.66 27.58 65.08C31.04 74.38 40.65 79.58 50.65 79.58C63.45 79.58 72 67.89 72 55.27H70.58Z" fill="white"/>
+              </svg>
+              <span>Zalo</span>
+            </motion.a>
+
+            {/* ── Facebook button ── */}
+            <motion.a
+              href={CEO_CONTACT.facebookUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Kết nối qua Facebook"
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ type: "spring", stiffness: 400, damping: 24 }}
+              style={{
+                display: "inline-flex", alignItems: "center", gap: "0.4rem",
+                background: "linear-gradient(135deg, #1877F2 0%, #0D5FC4 100%)",
+                border: "none",
+                borderRadius: 10, padding: "0.55rem 1rem",
+                color: "#fff", fontSize: "0.8125rem", fontWeight: 700,
+                textDecoration: "none",
+                boxShadow: "0 4px 16px rgba(24,119,242,0.4), 0 0 0 1px rgba(255,255,255,0.08)",
+              }}
+            >
+              <svg width={12} height={12} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M9.101 23.691v-7.98H6.627v-3.667h2.474v-1.58c0-4.085 1.848-5.978 5.858-5.978.401 0 .955.042 1.468.103a8.68 8.68 0 0 1 1.141.195v3.325a8.623 8.623 0 0 0-.653-.036 26.805 26.805 0 0 0-.733-.009c-.707 0-1.259.096-1.675.309a1.686 1.686 0 0 0-.679.622c-.258.42-.374.995-.374 1.752v1.297h3.919l-.386 2.103-.287 1.564h-3.246v8.245C19.396 23.238 24 18.179 24 12.044c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.628 3.874 10.35 9.101 11.647Z" />
+              </svg>
+              <span>Facebook</span>
+            </motion.a>
           </div>
         </div>
       </div>

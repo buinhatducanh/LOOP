@@ -467,17 +467,32 @@ function HeroSection({ locale }: { locale: string }) {
               boxShadow: "0 0 100px rgba(107,61,245,0.18), 0 40px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05) inset",
             }}
           >
-            {/* Banner video — full bleed */}
+            {/* Banner video — full bleed, pauses on last frame (logo) */}
             <div style={{ position: "relative", aspectRatio: "16/9", overflow: "hidden" }}>
               <video
                 src="/assets/design-company/welcome-logo-animate.mp4"
                 ref={(el) => {
-                  if (el) {
+                  if (!el) return;
+                  // Play briefly then freeze on the final frame (logo moment)
+                  el.pause();
+                  el.addEventListener("loadedmetadata", () => {
+                    // Seek to 90% of duration — logo segment near the end
+                    el.currentTime = el.duration * 0.9;
+                  });
+                  el.addEventListener("seeked", () => {
                     el.pause();
-                    const play = el.play();
-                    play?.catch(() => {});
-                    el.addEventListener("ended", () => el.pause(), { once: true });
-                  }
+                  });
+                  el.addEventListener("canplay", () => {
+                    // Fallback: if metadata not yet loaded, seek on canplay too
+                    if (el.duration && el.currentTime === 0) {
+                      el.currentTime = el.duration * 0.9;
+                    }
+                  });
+                  // Play then stop
+                  const play = el.play();
+                  play?.catch(() => {});
+                  // Stop after 500ms (enough to reach logo)
+                  setTimeout(() => el.pause(), 500);
                 }}
                 playsInline
                 style={{
