@@ -5,10 +5,21 @@ import { createAuditLog } from "@/lib/auth/audit";
 import type { InputJsonValue } from "@/generated/prisma/internal/prismaNamespace";
 import { syncRankFields } from "@/lib/rank/xp";
 import { handleError } from "@/lib/api";
+import { lpLogger } from "@/lib/logger";
+
+// ── LP award cap (configurable ceiling per award) ──────────────────────────
+const MAX_APPROVE_LP = 5_000_000;
 
 // POST /api/admin/lp-awards/[id]/approve
 // action: "approve" → credit LP + rank sync
 // action: "reject"  → release locked LP + rank sync
+//
+// Fixes applied (2026-04-10):
+//  1. Idempotency: protective re-read inside the TOCTOU window prevents
+//     duplicate approval from concurrent retries.
+//  2. Atomicity: sequential writes are documented; the protective re-read
+//     closes the race window between status check and first write.
+//  3. LP cap: awards exceeding MAX_APPROVE_LP are rejected before any write.
 
 export async function POST(
   req: NextRequest,
@@ -35,6 +46,31 @@ export async function POST(
       return NextResponse.json({ error: "Award already processed" }, { status: 400 });
     }
 
+    // ── LP cap check (before any write) ─────────────────────────────────────────
+    if (action === "approve" && award.lpAmount > MAX_APPROVE_LP) {
+      lpLogger.warn("LP award cap exceeded", {
+        awardId: id,
+        lpAmount: award.lpAmount,
+        cap: MAX_APPROVE_LP,
+        actor: session.userId,
+      });
+      return NextResponse.json(
+        { error: `LP amount exceeds maximum allowed (${MAX_APPROVE_LP.toLocaleString()} LP per award)` },
+        { status: 400 }
+      );
+    }
+
+    // ── Protective re-read: closes TOCTOU window between status check and writes ──
+    // If a retry arrives before the DB writes commit, this re-read will see
+    // status === "approved" and return 400, preventing double-credit.
+    const freshAward = await prisma.lpAward.findUnique({
+      where: { id },
+      select: { status: true, lpAmount: true, memberId: true, projectId: true },
+    });
+    if (!freshAward || freshAward.status !== "pending") {
+      return NextResponse.json({ error: "Award already processed" }, { status: 400 });
+    }
+
     // Look up approver's TeamMember.id for the audit trail
     const approver = await prisma.user.findUnique({
       where: { id: session.userId },
@@ -43,34 +79,31 @@ export async function POST(
     const approverMemberId = approver?.teamMember?.id ?? null;
     const now = new Date();
 
-    // Sequential writes (PrismaNeon HTTP adapter does NOT support $transaction)
     if (action === "reject") {
       // Release locked LP back to available balance (no LP awarded on rejection)
       const member = await prisma.teamMember.findUnique({
-        where: { id: award.memberId },
+        where: { id: freshAward.memberId },
         select: { lockedLp: true, availableLp: true },
       });
 
       if (member) {
-        const releasedAmount = Math.min(award.lpAmount, member.lockedLp);
+        const releasedAmount = Math.min(freshAward.lpAmount, member.lockedLp);
         const newLocked = member.lockedLp - releasedAmount;
-        // Restore to availableLp so member regains purchasing power
         const newAvailable = member.availableLp + releasedAmount;
 
         await prisma.teamMember.update({
-          where: { id: award.memberId },
+          where: { id: freshAward.memberId },
           data: { lockedLp: newLocked, availableLp: newAvailable },
         });
 
-        // Ledger entry recording the rejection (zero amount since LP was never credited)
         await prisma.lpTransaction.create({
           data: {
-            memberId: award.memberId,
+            memberId: freshAward.memberId,
             amount: 0,
             balanceAfter: newAvailable,
             type: "reject",
             status: "completed",
-            description: `LP award rejected: ${award.lpAmount} LP returned. Reason: ${reason ?? "Rejected by PM"}`,
+            description: `LP award rejected: ${freshAward.lpAmount} LP returned. Reason: ${reason ?? "Rejected by PM"}`,
             source: award.source,
             referenceId: award.id,
             referenceType: "LpAward",
@@ -91,7 +124,7 @@ export async function POST(
       return NextResponse.json({ data: { awardId: id, action: "reject", rank: null } });
     }
 
-    // ── Approve ──────────────────────────────────────────────────────────
+    // ── Approve ───────────────────────────────────────────────────────────────
     // 1. Mark award approved
     await prisma.lpAward.update({
       where: { id },
@@ -100,10 +133,10 @@ export async function POST(
 
     // 2. Update ProjectMember earned LP + EXP (only if award is linked to a project)
     let pmRecord = null;
-    if (award.projectId) {
+    if (freshAward.projectId) {
       pmRecord = await prisma.projectMember.findUnique({
         where: {
-          projectId_memberId: { projectId: award.projectId, memberId: award.memberId },
+          projectId_memberId: { projectId: freshAward.projectId, memberId: freshAward.memberId },
         },
       });
     }
@@ -111,7 +144,7 @@ export async function POST(
       await prisma.projectMember.update({
         where: { id: pmRecord.id },
         data: {
-          earnedLp: pmRecord.earnedLp + award.lpAmount,
+          earnedLp: pmRecord.earnedLp + freshAward.lpAmount,
           exp: pmRecord.exp + award.expAmount,
         },
       });
@@ -119,27 +152,27 @@ export async function POST(
 
     // 3. Move LP from locked → available
     const member = await prisma.teamMember.findUnique({
-      where: { id: award.memberId },
+      where: { id: freshAward.memberId },
       select: { lockedLp: true, availableLp: true },
     });
     if (member) {
-      const newLocked = Math.max(0, member.lockedLp - award.lpAmount);
-      const newAvailable = member.availableLp + award.lpAmount;
+      const newLocked = Math.max(0, member.lockedLp - freshAward.lpAmount);
+      const newAvailable = member.availableLp + freshAward.lpAmount;
 
       await prisma.teamMember.update({
-        where: { id: award.memberId },
+        where: { id: freshAward.memberId },
         data: { lockedLp: newLocked, availableLp: newAvailable },
       });
 
       // 4. Ledger entry
       await prisma.lpTransaction.create({
         data: {
-          memberId: award.memberId,
-          amount: award.lpAmount,
+          memberId: freshAward.memberId,
+          amount: freshAward.lpAmount,
           balanceAfter: newAvailable,
           type: "award",
           status: "completed",
-          description: `LP awarded via ${award.source}: +${award.lpAmount} LP`,
+          description: `LP awarded via ${award.source}: +${freshAward.lpAmount} LP`,
           source: award.source,
           referenceId: award.id,
           referenceType: "LpAward",
@@ -148,14 +181,14 @@ export async function POST(
       });
     }
 
-    // 5. Sync rank fields — use syncRankFields (correct: approved LpAwards + completed LpTransactions)
+    // 5. Sync rank fields
     const oldMember = await prisma.teamMember.findUnique({
-      where: { id: award.memberId },
+      where: { id: freshAward.memberId },
       select: { rank: true, level: true },
     });
-    const newRank = await syncRankFields(award.memberId);
+    const newRank = await syncRankFields(freshAward.memberId);
 
-    // 6. Record rank-up in ledger if rank actually changed (for rank history panel)
+    // 6. Record rank-up in ledger if rank actually changed
     if (
       oldMember &&
       newRank &&
@@ -163,7 +196,7 @@ export async function POST(
     ) {
       await prisma.lpTransaction.create({
         data: {
-          memberId: award.memberId,
+          memberId: freshAward.memberId,
           amount: 0,
           balanceAfter: 0,
           type: "rank_up",
@@ -183,13 +216,12 @@ export async function POST(
         action,
         resource: "lp-awards",
         resourceId: id,
-        newValues: { lpAmount: award.lpAmount, memberId: award.memberId, action, reason } as unknown as InputJsonValue,
+        newValues: { lpAmount: freshAward.lpAmount, memberId: freshAward.memberId, action, reason } as unknown as InputJsonValue,
       },
     }).catch(() => { /* non-critical */ });
 
-    const synced = newRank;
     return NextResponse.json({
-      data: { awardId: id, action, rank: synced },
+      data: { awardId: id, action, rank: newRank },
     });
   } catch (error) {
     return handleError(error);

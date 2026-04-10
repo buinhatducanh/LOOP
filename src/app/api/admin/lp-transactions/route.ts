@@ -100,7 +100,7 @@ export async function POST(req: NextRequest) {
         memberId,
         amount,
         balanceAfter: newBalance,
-        type: "award",  // "award" type so syncRankFields includes this in rank calculation
+        type: amount < 0 ? "adjust" : "award",  // "adjust" for penalties so syncRankFields handles correctly
         status: "completed",
         description: description ?? `Admin adjustment: ${amount > 0 ? "+" : ""}${amount} LP`,
         source: "admin",

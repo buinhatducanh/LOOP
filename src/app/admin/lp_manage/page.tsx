@@ -269,7 +269,7 @@ function AddLPModal({
 
   const saveMutation = useMutation({
     mutationFn: (body: { memberId: string; lpAmount: number; source: LpAwardSource; description: string }) =>
-      adminApi.post("/api/admin/lp-awards", { ...body, status: "approved" }),
+      adminApi.post("/api/admin/lp-awards", body),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin", "lp", "transactions"] });
       qc.invalidateQueries({ queryKey: ["admin", "lp", "transactions-manage"] });
