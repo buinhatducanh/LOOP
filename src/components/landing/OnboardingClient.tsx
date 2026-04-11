@@ -28,7 +28,13 @@ function SlideWrapper({ children, direction }: { children: React.ReactNode; dire
       animate={{ x: 0, opacity: 1 }}
       exit={{ x: direction > 0 ? "-100%" : "100%", opacity: 0 }}
       transition={{ type: "spring", stiffness: 220, damping: 30 }}
-      style={{ display: "flex", flexDirection: "column", justifyContent: "center", minHeight: "100%" }}
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        minHeight: "100%",
+        paddingBottom: "env(safe-area-inset-bottom, 80px)",
+      }}
     >
       {children}
     </motion.div>
@@ -122,10 +128,10 @@ function SlideWelcome({ direction }: SlideProps) {
             aria-hidden="true"
             data-nosnippet
             style={{
-              width: "min(75vw, 460px)",
+              width: "min(85vw, 380px)",
               position: "relative",
               zIndex: 2,
-              borderRadius: 16,
+              borderRadius: 12,
             }}
           />
         </motion.div>
@@ -250,18 +256,18 @@ function SlideAbout({ direction }: SlideProps) {
             width: "min(280px, 60vw)", height: 2, borderRadius: 2,
             background: `linear-gradient(90deg, transparent, ${DS.pink}, ${DS.blue}, ${DS.purple}, transparent)`,
             boxShadow: `0 0 16px ${hexRgba(DS.pink, 0.6)}, 0 0 32px ${hexRgba(DS.pink, 0.3)}`,
-            marginBottom: 24,
+            marginBottom: 20,
           }}
         />
 
-        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="text-center mb-8">
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="text-center mb-6">
           <div className="inline-flex items-center gap-2 mb-3 px-4 py-1.5 rounded-full"
             style={{ background: hexRgba(DS.pink, 0.08), border: `1px solid ${hexRgba(DS.pink, 0.2)}` }}>
             <Sparkles size={11} style={{ color: DS.pink }} />
             <span style={{ color: DS.pink, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.2em" }}>6 LĨNH VỰC</span>
           </div>
 
-          <h2 style={{ fontFamily: DS.heading, fontSize: "clamp(22px, 4vw, 42px)", fontWeight: 900, letterSpacing: "0.04em", marginBottom: 10 }}>
+          <h2 style={{ fontFamily: DS.heading, fontSize: "clamp(20px, 4vw, 36px)", fontWeight: 900, letterSpacing: "0.04em", marginBottom: 8 }}>
             <span style={{
               background: `linear-gradient(135deg, #FFFFFF 0%, ${DS.pink} 55%, ${DS.pinkLight} 100%)`,
               WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
@@ -270,17 +276,17 @@ function SlideAbout({ direction }: SlideProps) {
             </span>
           </h2>
 
-          <p style={{ color: DS.text3, fontSize: "clamp(13px, 1.6vw, 16px)", lineHeight: 1.9, maxWidth: 660, margin: "0 auto" }}>
+          <p style={{ color: DS.text3, fontSize: "clamp(12px, 1.6vw, 15px)", lineHeight: 1.8, maxWidth: 660, margin: "0 auto" }}>
             Một đối tác — giải pháp số cho <span style={{ color: DS.pink, fontWeight: 700 }}>toàn bộ hành trình chuyển đổi</span> của doanh nghiệp.
           </p>
         </motion.div>
 
         {/* 6 service cards */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-w-3xl w-full mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-w-3xl w-full mb-5">
           {services.map((s, i) => (
             <motion.div
               key={s.title}
-              className="rounded-2xl p-4 text-center cursor-default"
+              className="rounded-2xl p-3 text-center cursor-default relative"
               style={{
                 background: `linear-gradient(145deg, ${hexRgba(s.color, 0.06)}, ${hexRgba(s.color, 0.02)})`,
                 border: `1px solid ${hexRgba(s.color, 0.2)}`,
@@ -288,10 +294,6 @@ function SlideAbout({ direction }: SlideProps) {
               }}
               initial={{ opacity: 0, y: 20, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              whileHover={{
-                boxShadow: `0 0 0 1px ${hexRgba(s.color, 0.4)} inset, 0 8px 32px ${hexRgba(s.color, 0.18)}`,
-                borderColor: hexRgba(s.color, 0.5),
-              }}
               transition={{ delay: 0.25 + i * 0.07, type: "spring", stiffness: 200 }}
             >
               {/* Top accent line */}
@@ -300,22 +302,22 @@ function SlideAbout({ direction }: SlideProps) {
                 background: `linear-gradient(90deg, transparent, ${s.color}, transparent)`,
                 borderRadius: 1,
               }} />
-              <div className="w-11 h-11 rounded-2xl mx-auto mb-3 flex items-center justify-center relative"
+              <div className="w-10 h-10 rounded-2xl mx-auto mb-2 flex items-center justify-center relative"
                 style={{ background: hexRgba(s.color, 0.12), color: s.color, boxShadow: `0 0 18px ${hexRgba(s.color, 0.25)}` }}>
                 {s.icon}
               </div>
-              <div style={{ color: DS.text, fontSize: 13, fontWeight: 700, marginBottom: 4 }}>{s.title}</div>
-              <div style={{ color: DS.text4, fontSize: 10, lineHeight: 1.6 }}>{s.desc}</div>
+              <div style={{ color: DS.text, fontSize: 12, fontWeight: 700, marginBottom: 2 }}>{s.title}</div>
+              <div style={{ color: DS.text4, fontSize: 9, lineHeight: 1.5 }}>{s.desc}</div>
             </motion.div>
           ))}
         </div>
 
         {/* Pillars + Stats */}
-        <div className="flex flex-wrap justify-center gap-3 max-w-3xl w-full">
+        <div className="flex flex-wrap justify-center gap-2 max-w-3xl w-full mb-4">
           {pillars.map((p, i) => (
             <motion.div
               key={p.title}
-              className="rounded-xl px-4 py-2.5 text-center"
+              className="rounded-xl px-3 py-2 text-center"
               style={{
                 background: hexRgba(p.color, 0.07),
                 border: `1px solid ${hexRgba(p.color, 0.2)}`,
@@ -324,8 +326,8 @@ function SlideAbout({ direction }: SlideProps) {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.65 + i * 0.08 }}
             >
-              <div style={{ color: p.color, fontSize: 10, fontFamily: DS.mono, fontWeight: 700 }}>{p.title}</div>
-              <div style={{ color: DS.text5, fontSize: 9, marginTop: 2 }}>{p.desc}</div>
+              <div style={{ color: p.color, fontSize: 9, fontFamily: DS.mono, fontWeight: 700 }}>{p.title}</div>
+              <div style={{ color: DS.text5, fontSize: 8, marginTop: 2 }}>{p.desc}</div>
             </motion.div>
           ))}
         </div>
@@ -335,7 +337,7 @@ function SlideAbout({ direction }: SlideProps) {
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.9 }}
-          className="flex items-center gap-8 mt-6"
+          className="flex items-center justify-center gap-6 flex-wrap"
         >
           {[
             { value: "120+", label: "Dự án", color: DS.blue },
@@ -344,8 +346,8 @@ function SlideAbout({ direction }: SlideProps) {
             { value: "380%", label: "Tăng trưởng", color: DS.amber },
           ].map((s) => (
             <div key={s.label} className="text-center">
-              <div style={{ color: s.color, fontSize: "clamp(18px, 2.5vw, 26px)", fontWeight: 900, fontFamily: DS.mono, lineHeight: 1, textShadow: `0 0 20px ${hexRgba(s.color, 0.5)}` }}>{s.value}</div>
-              <div style={{ color: DS.text5, fontSize: 9, marginTop: 4, fontFamily: DS.mono, letterSpacing: "0.1em" }}>{s.label.toUpperCase()}</div>
+              <div style={{ color: s.color, fontSize: "clamp(16px, 2.5vw, 24px)", fontWeight: 900, fontFamily: DS.mono, lineHeight: 1, textShadow: `0 0 20px ${hexRgba(s.color, 0.5)}` }}>{s.value}</div>
+              <div style={{ color: DS.text5, fontSize: 8, marginTop: 3, fontFamily: DS.mono, letterSpacing: "0.1em" }}>{s.label.toUpperCase()}</div>
             </div>
           ))}
         </motion.div>
@@ -571,7 +573,7 @@ function SlideGrowth({ direction }: SlideProps) {
         </motion.div>
 
         {/* Stats grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-3xl w-full mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-3xl w-full mb-8">
           {stats.map((s, i) => (
             <motion.div
               key={s.label}
@@ -633,7 +635,192 @@ function SlideGrowth({ direction }: SlideProps) {
 }
 
 // ──────────────────────────────────────────────
-// SLIDE 5 — Get Started (LP System)
+// SLIDE 5 — VIP Tiers (Customer Loyalty)
+// ──────────────────────────────────────────────
+function SlideVip({ direction }: SlideProps) {
+  const vipTiers = [
+    {
+      name: "Khách hàng",
+      label: "REGULAR",
+      emoji: "👤",
+      color: "#94A3B8",
+      spending: "0 VNĐ",
+      discount: "10%",
+      lpRate: "1,000 LP = 500K",
+      benefits: ["Tích điểm LP khi mua dịch vụ", "Đổi thưởng nội bộ", "Giảm giá tối đa 10%"],
+      highlight: false,
+    },
+    {
+      name: "VIP 1",
+      label: "VIP 1",
+      emoji: "🌟",
+      color: "#3B82F6",
+      spending: "10 triệu",
+      discount: "15%",
+      lpRate: "1,000 LP = 550K",
+      benefits: ["Tất cả quyền lợi Regular", "Hỗ trợ ưu tiên", "Giảm giá tối đa 15%"],
+      highlight: false,
+    },
+    {
+      name: "VIP 2",
+      label: "VIP 2",
+      emoji: "💎",
+      color: "#A855F7",
+      spending: "50 triệu",
+      discount: "20%",
+      lpRate: "1,000 LP = 600K",
+      benefits: ["Tất cả quyền lợi VIP 1", "Priority Support", "Truy cập dịch vụ độc quyền"],
+      highlight: true,
+    },
+    {
+      name: "VIP 3",
+      label: "VIP 3",
+      emoji: "👑",
+      color: "#E6C75F",
+      spending: "100 triệu",
+      discount: "25%",
+      lpRate: "1,000 LP = 750K",
+      benefits: ["Tất cả quyền lợi VIP 2", "VIP Desk chuyên biệt", "Early access dịch vụ mới"],
+      highlight: true,
+    },
+  ];
+
+  return (
+    <SlideWrapper direction={direction}>
+      <div className="flex flex-col items-center justify-center min-h-full px-4 sm:px-6 py-8 overflow-y-auto">
+
+        {/* Top bar */}
+        <motion.div
+          initial={{ scaleX: 0, opacity: 0 }}
+          animate={{ scaleX: 1, opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.05 }}
+          style={{
+            width: "min(240px, 55vw)", height: 2, borderRadius: 2,
+            background: `linear-gradient(90deg, transparent, ${DS.amber}, ${DS.pink}, transparent)`,
+            boxShadow: `0 0 12px ${hexRgba(DS.amber, 0.5)}`,
+            marginBottom: 20,
+          }}
+        />
+
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="text-center mb-6">
+          <div className="inline-flex items-center gap-2 mb-3 px-4 py-1.5 rounded-full"
+            style={{ background: hexRgba(DS.amber, 0.08), border: `1px solid ${hexRgba(DS.amber, 0.2)}` }}>
+            <Award size={12} style={{ color: DS.amber }} />
+            <span style={{ color: DS.amber, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.2em" }}>CHƯƠNG TRÌNH VIP</span>
+          </div>
+
+          <h2 style={{ fontFamily: DS.heading, fontSize: "clamp(18px, 4vw, 34px)", fontWeight: 900, letterSpacing: "0.04em", marginBottom: 6 }}>
+            <span style={{
+              background: `linear-gradient(135deg, #FFFFFF 0%, ${DS.amber} 60%, ${DS.pink} 100%)`,
+              WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+            }}>
+              CÀNG CHI TIÊU — CÀNG HƯỞNG
+            </span>
+          </h2>
+
+          <p style={{ color: DS.text4, fontSize: 12, maxWidth: 440, margin: "0 auto", lineHeight: 1.6 }}>
+            Mỗi giao dịch đều tích lũy. Lên VIP để hưởng tỷ lệ quy đổi LP tốt hơn và ưu đãi giảm giá cao hơn.
+          </p>
+        </motion.div>
+
+        {/* VIP Tier Cards */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 max-w-3xl w-full mb-4">
+          {vipTiers.map((tier, i) => (
+            <motion.div
+              key={tier.label}
+              className="rounded-2xl p-3 sm:p-4 text-center relative overflow-hidden"
+              style={{
+                background: tier.highlight
+                  ? `linear-gradient(145deg, ${hexRgba(tier.color, 0.12)}, ${hexRgba(tier.color, 0.04)})`
+                  : `linear-gradient(145deg, ${hexRgba(tier.color, 0.06)}, ${hexRgba(tier.color, 0.02)})`,
+                border: tier.highlight
+                  ? `1px solid ${hexRgba(tier.color, 0.55)}`
+                  : `1px solid ${hexRgba(tier.color, 0.2)}`,
+                boxShadow: tier.highlight
+                  ? `0 0 24px ${hexRgba(tier.color, 0.2)}, 0 4px 16px rgba(0,0,0,0.25)`
+                  : `0 4px 16px ${hexRgba(tier.color, 0.06)}`,
+                minHeight: 140,
+              }}
+              initial={{ opacity: 0, y: 20, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              whileHover={{ scale: tier.highlight ? 1.06 : 1.03, borderColor: hexRgba(tier.color, 0.7) }}
+              transition={{ delay: 0.25 + i * 0.08, type: "spring", stiffness: 180 }}
+            >
+              {/* Glow top */}
+              <div style={{
+                position: "absolute", top: 0, left: "10%", right: "10%", height: 1,
+                background: `linear-gradient(90deg, transparent, ${tier.color}, transparent)`,
+              }} />
+              {tier.highlight && (
+                <div style={{
+                  position: "absolute", top: 4, right: 4,
+                  padding: "1px 5px", borderRadius: 4,
+                  background: hexRgba(tier.color, 0.2),
+                  color: tier.color, fontSize: 7, fontFamily: DS.mono, fontWeight: 700,
+                }}>
+                  ✦ ĐỀ XUẤT
+                </div>
+              )}
+              <span style={{ fontSize: 22, display: "block", marginBottom: 2 }}>{tier.emoji}</span>
+              <div style={{ color: tier.color, fontSize: 9, fontWeight: 800, fontFamily: DS.mono, letterSpacing: "0.08em", marginBottom: 4 }}>{tier.label}</div>
+
+              {/* Spending requirement */}
+              <div style={{
+                background: hexRgba(tier.color, 0.08),
+                border: `1px solid ${hexRgba(tier.color, 0.15)}`,
+                borderRadius: 6, padding: "3px 6px", marginBottom: 4,
+              }}>
+                <div style={{ color: DS.text5, fontSize: 7, fontFamily: DS.mono, marginBottom: 1 }}>TỔNG CHI TIÊU</div>
+                <div style={{ color: tier.color, fontSize: 10, fontWeight: 700, fontFamily: DS.mono }}>{tier.spending}</div>
+              </div>
+
+              {/* Discount */}
+              <div style={{ color: tier.color, fontSize: 13, fontWeight: 900, fontFamily: DS.mono, marginBottom: 1 }}>
+                Giảm {tier.discount}
+              </div>
+              <div style={{ color: DS.text5, fontSize: 7, fontFamily: DS.mono }}>{tier.lpRate}</div>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Benefits breakdown */}
+        <motion.div
+          className="rounded-2xl p-4 max-w-2xl w-full"
+          style={{
+            background: `linear-gradient(145deg, ${hexRgba(DS.amber, 0.05)}, ${hexRgba(DS.pink, 0.03)})`,
+            border: `1px solid ${hexRgba(DS.amber, 0.14)}`,
+            boxShadow: `0 4px 24px ${hexRgba(DS.amber, 0.07)}`,
+          }}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.7 }}
+        >
+          <div style={{ color: DS.amber, fontSize: 10, fontFamily: DS.mono, marginBottom: 10, letterSpacing: "0.1em" }}>
+            ✦ QUYỀN LỢI VIP 3 — ĐỈNH CAO NHẤT
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {[
+              { icon: "💰", text: "Giảm giá đến 25%", sub: "Khi dùng LP thanh toán" },
+              { icon: "💎", text: "1,000 LP = 750K VNĐ", sub: "Tỷ lệ quy đổi tốt nhất" },
+              { icon: "👑", text: "VIP Desk ưu tiên", sub: "Hỗ trợ riêng biệt 24/7" },
+            ].map((b, i) => (
+              <div key={i} className="flex items-start gap-3">
+                <span style={{ fontSize: 20 }}>{b.icon}</span>
+                <div>
+                  <div style={{ color: DS.text2, fontSize: 12, fontWeight: 700 }}>{b.text}</div>
+                  <div style={{ color: DS.text4, fontSize: 10, marginTop: 2 }}>{b.sub}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      </div>
+    </SlideWrapper>
+  );
+}
+
+// ──────────────────────────────────────────────
+// SLIDE 6 — Get Started (LP System)
 // ──────────────────────────────────────────────
 function SlideGetStarted({ direction, onComplete }: SlideProps & { onComplete: () => void }) {
   const ranks = [
@@ -653,7 +840,7 @@ function SlideGetStarted({ direction, onComplete }: SlideProps & { onComplete: (
 
   return (
     <SlideWrapper direction={direction}>
-      <div className="flex flex-col items-center justify-center min-h-full px-6 py-10">
+      <div className="flex flex-col items-center justify-center min-h-full px-4 sm:px-6 py-8 overflow-y-auto">
 
         {/* Top bar */}
         <motion.div
@@ -661,21 +848,21 @@ function SlideGetStarted({ direction, onComplete }: SlideProps & { onComplete: (
           animate={{ scaleX: 1, opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.05 }}
           style={{
-            width: "min(260px, 55vw)", height: 2, borderRadius: 2,
+            width: "min(240px, 55vw)", height: 2, borderRadius: 2,
             background: `linear-gradient(90deg, transparent, ${DS.amber}, ${DS.pink}, transparent)`,
             boxShadow: `0 0 12px ${hexRgba(DS.amber, 0.5)}`,
-            marginBottom: 24,
+            marginBottom: 20,
           }}
         />
 
-        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="text-center mb-8">
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="text-center mb-6">
           <div className="inline-flex items-center gap-2 mb-3 px-4 py-1.5 rounded-full"
             style={{ background: hexRgba(DS.pink, 0.08), border: `1px solid ${hexRgba(DS.pink, 0.2)}` }}>
             <Award size={12} style={{ color: DS.pink }} />
             <span style={{ color: DS.pink, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.2em" }}>HỆ THỐNG LP & THĂNG HẠNG</span>
           </div>
 
-          <h2 style={{ fontFamily: DS.heading, fontSize: "clamp(22px, 4vw, 40px)", fontWeight: 900, letterSpacing: "0.04em", marginBottom: 8 }}>
+          <h2 style={{ fontFamily: DS.heading, fontSize: "clamp(18px, 4vw, 36px)", fontWeight: 900, letterSpacing: "0.04em", marginBottom: 6 }}>
             <span style={{
               background: `linear-gradient(135deg, #FFFFFF 0%, ${DS.pink} 60%, ${DS.pinkLight} 100%)`,
               WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
@@ -684,14 +871,14 @@ function SlideGetStarted({ direction, onComplete }: SlideProps & { onComplete: (
             </span>
           </h2>
 
-          <p style={{ color: DS.text4, fontSize: 13, maxWidth: 500, margin: "0 auto", lineHeight: 1.7 }}>
+          <p style={{ color: DS.text4, fontSize: 12, maxWidth: 480, margin: "0 auto", lineHeight: 1.6 }}>
             Mỗi giao dịch tích lũy điểm LP. Thăng hạng để nhận ưu đãi độc quyền dành riêng cho bạn.
           </p>
         </motion.div>
 
         {/* Rank cards */}
         <motion.div
-          className="flex items-center justify-center gap-3 mb-8 flex-wrap max-w-3xl"
+          className="flex items-center justify-center gap-2 sm:gap-3 mb-6 flex-wrap max-w-3xl"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3 }}
@@ -699,12 +886,12 @@ function SlideGetStarted({ direction, onComplete }: SlideProps & { onComplete: (
           {ranks.map((r, i) => (
             <motion.div
               key={r.name}
-              className="flex flex-col items-center rounded-2xl px-4 py-4 relative"
+              className="flex flex-col items-center rounded-2xl px-3 py-3 relative"
               style={{
                 background: `linear-gradient(145deg, ${hexRgba(r.color, 0.08)}, ${hexRgba(r.color, 0.02)})`,
                 border: `1px solid ${hexRgba(r.color, 0.25)}`,
                 boxShadow: `0 0 16px ${hexRgba(r.color, 0.12)}, 0 4px 16px rgba(0,0,0,0.2)`,
-                minWidth: 70,
+                minWidth: 60,
               }}
               initial={{ opacity: 0, y: 16, scale: 0.9 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -716,8 +903,8 @@ function SlideGetStarted({ direction, onComplete }: SlideProps & { onComplete: (
                 position: "absolute", top: 0, left: "10%", right: "10%", height: 1,
                 background: `linear-gradient(90deg, transparent, ${r.color}, transparent)`,
               }} />
-              <span style={{ fontSize: 24 }}>{r.emoji}</span>
-              <span style={{ color: r.color, fontSize: 10, fontWeight: 700, marginTop: 4, fontFamily: DS.mono }}>{r.name}</span>
+              <span style={{ fontSize: 22 }}>{r.emoji}</span>
+              <span style={{ color: r.color, fontSize: 9, fontWeight: 700, marginTop: 3, fontFamily: DS.mono }}>{r.name}</span>
               <span style={{ color: DS.text5, fontSize: 8, fontFamily: DS.mono, marginTop: 2 }}>{r.lp} LP</span>
               <span style={{ color: DS.text5, fontSize: 8, fontFamily: DS.mono, marginTop: 1 }}>{r.level}</span>
             </motion.div>
@@ -776,12 +963,12 @@ function SlideGetStarted({ direction, onComplete }: SlideProps & { onComplete: (
 // ──────────────────────────────────────────────
 // Root export
 // ──────────────────────────────────────────────
-const LABELS = ["Chào mừng", "Dịch vụ", "Chi tiết", "Tăng trưởng", "Bắt đầu"];
+const LABELS = ["Chào mừng", "Dịch vụ", "Chi tiết", "Tăng trưởng", "VIP Ưu đãi", "Bắt đầu"];
 
 export function OnboardingClient({ onComplete }: { onComplete: () => void }) {
   const [current, setCurrent] = useState(0);
   const [direction, setDirection] = useState(1);
-  const total = 5;
+  const total = 6;
 
   const goTo = (idx: number) => {
     if (idx < 0 || idx >= total || idx === current) return;

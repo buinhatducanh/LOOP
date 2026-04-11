@@ -52,8 +52,8 @@ export default async function FaqPage({ params }: Props) {
     );
     if (res.ok) {
       const json = await res.json();
-      faqs = json.data ?? [];
-      categories = json.categories ?? [];
+      faqs = Array.isArray(json?.data) ? json.data : [];
+      categories = Array.isArray(json?.categories) ? json.categories : [];
     }
   } catch {
     faqs = [];

@@ -1085,7 +1085,7 @@ export default function SiteHeader({ locale }: { locale: string }) {
                         <div style={{ color: DS.text, fontSize: 14, fontWeight: 700 }}>{user.name}</div>
                         <div style={{ color: DS.text4, fontSize: 11, marginTop: 2 }}>{user.email}</div>
                         {user.lpBalance > 0 && (
-                          <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 8, padding: "5px 10px", borderRadius: 8, background: rgba(236,72,153,0.06), border: `1px solid rgba(236,72,153,0.15)` }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 8, padding: "5px 10px", borderRadius: 8, background: "rgba(236,72,153,0.06)", border: `1px solid rgba(236,72,153,0.15)` }}>
                             <Zap size={10} style={{ color: DS.pink }} />
                             <span style={{ color: DS.pink, fontSize: 12, fontFamily: DS.mono, fontWeight: 700 }}>{user.lpBalance.toLocaleString("vi-VN")} LP</span>
                           </div>

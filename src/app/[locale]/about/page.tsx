@@ -50,5 +50,5 @@ export default async function AboutPage({ params }: Props) {
     dbSections = [];
   }
 
-  return <AboutClient locale={locale} dbSections={dbSections} />;
+  return <AboutClient locale={locale} dbSections={dbSections as any} />;
 }

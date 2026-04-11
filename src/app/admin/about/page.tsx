@@ -730,7 +730,7 @@ export default function AboutAdminPage() {
         <SectionEditModal section={editSection} onClose={() => setEditSection(null)} onSuccess={handleSuccess} />
       )}
       {deleteSection && (
-        <DeleteConfirmModal section={deleteSection} onClose={() => setDeleteSection(null)} onSuccess={handleSuccess} />
+        <DeleteConfirmModal section={deleteSection} onClose={() => setDeleteSection(null)} onConfirm={handleSuccess} />
       )}
     </div>
   );

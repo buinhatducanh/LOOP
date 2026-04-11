@@ -252,7 +252,7 @@ type DbSection = {
   ctaSectionSub?: string | null;
 };
 
-function db<T>(arr: unknown[], key: string, fallback: T): T {
+function db<T>(arr: any[], key: string, fallback: T): T {
   const item = arr.find((s: DbSection) => s.sectionType === key);
   if (!item || !item.stats) return fallback;
   return item.stats as T;

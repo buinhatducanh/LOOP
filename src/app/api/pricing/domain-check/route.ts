@@ -28,7 +28,7 @@ export async function GET(req: Request) {
     }
 
     // Reserved / government TLDs
-    if (TAKEN_SUFFIXES.some(s => domain.toLowerCase().endsWith(s))) {
+    if (Array.from(TAKEN_SUFFIXES).some(s => domain.toLowerCase().endsWith(s))) {
       return ok({ available: false, suggestions: [], invalid: true, reserved: true });
     }
 
