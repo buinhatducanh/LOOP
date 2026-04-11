@@ -23,7 +23,7 @@ import {
   DollarSign, UserCheck, BookOpen, FileText, BarChart2,
   Briefcase, Camera, Receipt, Package, FolderCheck,
   Sparkles, Star, Bell, Zap, Calculator, Building2, ShoppingCart,
-  Monitor, X, ChevronRight, Globe, Layers, FilePlus,
+  Monitor, X, ChevronRight, Globe, Layers, FilePlus, HelpCircle, Info,
 } from "lucide-react";
 import { useAuthStore, canAccessTab, type AdminTab } from "@/app/store/authStore";
 import { useAdminTranslations } from "@/i18n/admin/useAdminTranslations";
@@ -143,7 +143,9 @@ const SIDEBAR_GROUPS_CONFIG: NavGroup[] = [
       { id: "addon_services", icon: <Layers size={16} />, labelKey: "sidebar.nav.addon_services" },
       { id: "academy", icon: <BookOpen size={16} />, labelKey: "sidebar.nav.academy" },
       { id: "blog", icon: <FileText size={16} />, labelKey: "sidebar.nav.blog" },
+      { id: "faq", icon: <HelpCircle size={16} />, labelKey: "sidebar.nav.faq" },
       { id: "figma_demos", icon: <Monitor size={16} />, labelKey: "sidebar.nav.figma_demos" },
+      { id: "about", icon: <Info size={16} />, labelKey: "sidebar.nav.about" },
     ],
   },
   {

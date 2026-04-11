@@ -98,7 +98,11 @@
       "Bash(grep -n '\"\"servicesTitle\"\":' src/i18n/messages/ja.json)",
       "Bash(grep -n '\"\"servicesTitle\"\":' src/i18n/messages/ko.json)",
       "Bash(grep -n '\"\"servicesTitle\"\":' src/i18n/messages/zh.json)",
-      "Bash(grep -n '\"\"mediaDescription\"\":' src/i18n/messages/en.json)"
+      "Bash(grep -n '\"\"mediaDescription\"\":' src/i18n/messages/en.json)",
+      "Bash(do echo:*)",
+      "Read(//d/LOOP_COMPANY/LOOP/**)",
+      "Bash(done)",
+      "Bash(do sed:*)"
     ],
     "additionalDirectories": []
   }

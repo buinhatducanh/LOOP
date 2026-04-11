@@ -230,32 +230,94 @@ function TeamPreviewCard({ name, role, department, avatar, deptColor }: TeamMemb
   );
 }
 
+// ── DB Section helper ───────────────────────────────────────────────────────────
+type DbSection = {
+  sectionType: string;
+  locale: string;
+  badge?: string | null;
+  title?: string | null;
+  titleHighlight?: string | null;
+  subtitle?: string | null;
+  description?: string | null;
+  ctaText?: string | null;
+  ctaLink?: string | null;
+  cta2Text?: string | null;
+  cta2Link?: string | null;
+  stats?: unknown;
+  story?: unknown;
+  timeline?: unknown;
+  values?: unknown;
+  teamPreview?: unknown;
+  ctaSectionTitle?: string | null;
+  ctaSectionSub?: string | null;
+};
+
+function db<T>(arr: unknown[], key: string, fallback: T): T {
+  const item = arr.find((s: DbSection) => s.sectionType === key);
+  if (!item || !item.stats) return fallback;
+  return item.stats as T;
+}
+
+type AboutClientProps = { locale: string; dbSections?: DbSection[] };
+
 // ── Main Component ─────────────────────────────────────────────────────────────
-export default function AboutClient({ locale }: { locale: string }) {
+export default function AboutClient({ locale, dbSections = [] }: AboutClientProps) {
   const t = useTranslations("AboutPage");
 
-  const stats: StatProps[] = [
-    { value: "50+", label: t("statsProjects") || "Dự án hoàn thành", icon: <TrendingUp size={20} />, color: DS.cosmicCyan },
-    { value: "200+", label: t("statsClients") || "Khách hàng", icon: <Users size={20} />, color: DS.cosmicPurple },
-    { value: "27+", label: t("statsMembers") || "Thành viên", icon: <Award size={20} />, color: DS.pink },
-    { value: "2+", label: t("statsYears") || "Năm hoạt động", icon: <Clock size={20} />, color: DS.gold },
-  ];
+  // Use DB data when available, fallback to i18n defaults
+  const stats: StatProps[] = (() => {
+    const raw = db<Array<{value: string; label: string; icon: string; color: string}>>(
+      dbSections, "stats", []
+    );
+    if (raw.length > 0) {
+      return raw.map((s, i) => ({
+        value: s.value,
+        label: s.label,
+        color: s.color || DS.cosmicCyan,
+        icon: <TrendingUp size={20} />,
+      }));
+    }
+    return [
+      { value: "50+", label: t("statsProjects") || "Dự án hoàn thành", icon: <TrendingUp size={20} />, color: DS.cosmicCyan },
+      { value: "200+", label: t("statsClients") || "Khách hàng", icon: <Users size={20} />, color: DS.cosmicPurple },
+      { value: "27+", label: t("statsMembers") || "Thành viên", icon: <Award size={20} />, color: DS.pink },
+      { value: "2+", label: t("statsYears") || "Năm hoạt động", icon: <Clock size={20} />, color: DS.gold },
+    ];
+  })();
 
-  const values = [
-    { icon: <Target size={24} />, title: t("val1Title"), description: t("val1Desc"), color: DS.cosmicCyan, delay: 0 },
-    { icon: <Lightbulb size={24} />, title: t("val2Title"), description: t("val2Desc"), color: DS.cosmicPurple, delay: 0.1 },
-    { icon: <Handshake size={24} />, title: t("val3Title"), description: t("val3Desc"), color: DS.pink, delay: 0.2 },
-    { icon: <Globe2 size={24} />, title: t("val4Title"), description: t("val4Desc"), color: DS.gold, delay: 0.3 },
-  ];
+  const values = (() => {
+    const raw = db<Array<{icon: string; title: string; description: string; color: string}>>(dbSections, "values", []);
+    if (raw.length > 0) {
+      return raw.map((v, i) => ({
+        icon: <Target size={24} />, // icon mapped by key if needed
+        title: v.title,
+        description: v.description,
+        color: v.color || DS.cosmicCyan,
+        delay: i * 0.1,
+      }));
+    }
+    return [
+      { icon: <Target size={24} />, title: t("val1Title"), description: t("val1Desc"), color: DS.cosmicCyan, delay: 0 },
+      { icon: <Lightbulb size={24} />, title: t("val2Title"), description: t("val2Desc"), color: DS.cosmicPurple, delay: 0.1 },
+      { icon: <Handshake size={24} />, title: t("val3Title"), description: t("val3Desc"), color: DS.pink, delay: 0.2 },
+      { icon: <Globe2 size={24} />, title: t("val4Title"), description: t("val4Desc"), color: DS.gold, delay: 0.3 },
+    ];
+  })();
 
-  const timeline = [
-    { year: "2024", title: "Khởi đầu", description: "LOOP Solutions được thành lập với sứ mệnh mang chuyển đổi số đến gần hơn với doanh nghiệp Việt Nam." },
-    { year: "2024", title: "10 dự án đầu tiên", description: "Hoàn thành 10 dự án đầu tiên trong năm đầu tiên, xây dựng danh tiếng trong ngành." },
-    { year: "2025", title: "Mở rộng quy mô", description: "Tăng trưởng 200% — đội ngũ mở rộng lên 27 thành viên với 4 phòng ban chuyên môn." },
-    { year: "2025", title: "Hệ thống LP & Rank", description: "Ra mắt hệ thống LP (Loop Points) và Rank nội bộ, tạo động lực cho nhân viên." },
-    { year: "2026", title: "LOOP Academy", description: "Khởi động học viện đào tạo nội bộ với 7 khóa học chuyên sâu cho nhân viên." },
-    { year: "2026", title: "Mở rộng dịch vụ", description: "Ra mắt thêm Dashboard Analytics, SEO Services và Media Production." },
-  ];
+  const timeline = (() => {
+    const raw = db<Array<{year: string; title: string; description: string}>>(dbSections, "timeline", []);
+    if (raw.length > 0) {
+      return raw.map(t => ({ year: t.year, title: t.title, description: t.description }));
+    }
+    return [
+      { year: "2024", title: "Khởi đầu", description: "LOOP Solutions được thành lập với sứ mệnh mang chuyển đổi số đến gần hơn với doanh nghiệp Việt Nam." },
+      { year: "2024", title: "10 dự án đầu tiên", description: "Hoàn thành 10 dự án đầu tiên trong năm đầu tiên, xây dựng danh tiếng trong ngành." },
+      { year: "2025", title: "Mở rộng quy mô", description: "Tăng trưởng 200% — đội ngũ mở rộng lên 27 thành viên với 4 phòng ban chuyên môn." },
+      { year: "2025", title: "Hệ thống LP & Rank", description: "Ra mắt hệ thống LP (Loop Points) và Rank nội bộ, tạo động lực cho nhân viên." },
+      { year: "2026", title: "LOOP Academy", description: "Khởi động học viện đào tạo nội bộ với 7 khóa học chuyên sâu cho nhân viên." },
+      { year: "2026", title: "Mở rộng dịch vụ", description: "Ra mắt thêm Dashboard Analytics, SEO Services và Media Production." },
+    ];
+  })();
 
   const teamPreview: TeamMemberProps[] = [
     { name: "CEO", role: "Chief Executive Officer", department: "Management", avatar: "", deptColor: DS.gold },
@@ -326,7 +388,7 @@ export default function AboutClient({ locale }: { locale: string }) {
               letterSpacing: "0.05em",
               textTransform: "uppercase",
             }}>
-              {t("badge")}
+              {(dbSections.find((s: DbSection) => s.sectionType === "hero")?.badge) ?? t("badge")}
             </span>
             <h1 style={{
               fontSize: "clamp(2.5rem, 5vw, 4rem)",
@@ -338,14 +400,14 @@ export default function AboutClient({ locale }: { locale: string }) {
               WebkitTextFillColor: "transparent",
               backgroundClip: "text",
             }}>
-              {t("heroTitle1")}{" "}
+              {(dbSections.find((s: DbSection) => s.sectionType === "hero")?.title) ?? t("heroTitle1")}{" "}
               <span style={{
                 background: `linear-gradient(135deg, ${DS.cosmicPurple}, ${DS.pink})`,
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",
                 backgroundClip: "text",
               }}>
-                {t("heroHighlight")}
+                {(dbSections.find((s: DbSection) => s.sectionType === "hero")?.titleHighlight) ?? t("heroHighlight")}
               </span>
             </h1>
             <p style={{
@@ -355,7 +417,7 @@ export default function AboutClient({ locale }: { locale: string }) {
               margin: "0 auto 2rem",
               lineHeight: 1.7,
             }}>
-              {t("heroDesc")}
+              {(dbSections.find((s: DbSection) => s.sectionType === "hero")?.subtitle) ?? t("heroDesc")}
             </p>
             <div style={{ display: "flex", gap: "1rem", justifyContent: "center", flexWrap: "wrap" }}>
               <Link href={`/${locale}/contact`} style={{
@@ -439,15 +501,13 @@ export default function AboutClient({ locale }: { locale: string }) {
             </h2>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-            {[t("storyP1"), t("storyP2"), t("storyP3")].map((p, i) => (
-              <p key={i} style={{
-                color: DS.text3,
-                fontSize: "1.0625rem",
-                lineHeight: 1.8,
-              }}>
-                {p}
-              </p>
-            ))}
+            {(() => {
+              const raw = db<string[]>(dbSections, "story", []);
+              const paragraphs = raw.length > 0 ? raw : [t("storyP1"), t("storyP2"), t("storyP3")];
+              return paragraphs.map((p, i) => (
+                <p key={i} style={{ color: DS.text3, fontSize: "1.0625rem", lineHeight: 1.8 }}>{p}</p>
+              ));
+            })()}
           </div>
         </div>
       </section>
@@ -585,10 +645,10 @@ export default function AboutClient({ locale }: { locale: string }) {
             color: DS.text,
             marginBottom: "1rem",
           }}>
-            {t("ctaTitle")}
+            {(dbSections.find((s: DbSection) => s.sectionType === "cta")?.ctaSectionTitle) ?? t("ctaTitle")}
           </h2>
           <p style={{ color: DS.text3, marginBottom: "2rem", lineHeight: 1.7 }}>
-            {t("ctaSub")}
+            {(dbSections.find((s: DbSection) => s.sectionType === "cta")?.ctaSectionSub) ?? t("ctaSub")}
           </p>
           <Link href={`/${locale}/contact`} style={{
             display: "inline-flex",

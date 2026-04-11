@@ -7,7 +7,7 @@
 import Link from "next/link";
 import { motion } from "motion/react";
 import { ArrowRight, TrendingUp, Users, Clock } from "lucide-react";
-import { DS, GRD } from "@/lib/design-tokens";
+import { DS, GRD, GLOW } from "@/lib/design-tokens";
 
 type ProjectRecord = Record<string, unknown>;
 
@@ -15,7 +15,7 @@ const INDUSTRY_COLORS: Record<string, string> = {
   fintech: "#4F7DF3",
   retail: "#EC4899",
   manufacturing: "#E6C75F",
-  healthcare: "#22C55E",
+  healthcare: DS.green,
   education: "#8B5CF6",
   logistics: "#62C5EB",
   other: "#71717A",

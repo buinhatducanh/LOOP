@@ -182,7 +182,7 @@ export function WhyUsClient({ locale }: { locale: string }) {
               border: `1px solid ${DS.pink}30`,
               color: DS.pinkLight,
               fontSize: "0.6875rem",
-              fontFamily: "'JetBrains Mono', monospace",
+              fontFamily: DS.mono,
               letterSpacing: "0.1em",
               marginBottom: "1.5rem",
             }}
@@ -300,7 +300,7 @@ export function WhyUsClient({ locale }: { locale: string }) {
                 style={{
                   textAlign: "center",
                   fontSize: "0.6875rem",
-                  fontFamily: "'JetBrains Mono', monospace",
+                  fontFamily: DS.mono,
                   letterSpacing: "0.1em",
                   fontWeight: h === "LOOP" ? 700 : 400,
                   color: h === "LOOP" ? DS.pink : DS.text4,
@@ -381,7 +381,7 @@ export function WhyUsClient({ locale }: { locale: string }) {
                   right: "0.875rem",
                   color: step.color,
                   fontSize: "0.5625rem",
-                  fontFamily: "'JetBrains Mono', monospace",
+                  fontFamily: DS.mono,
                   fontWeight: 700,
                 }}
               >
@@ -444,7 +444,7 @@ export function WhyUsClient({ locale }: { locale: string }) {
                 color: tech.color,
                 fontSize: "0.8125rem",
                 fontWeight: 600,
-                fontFamily: "'JetBrains Mono', monospace",
+                fontFamily: DS.mono,
               }}
             >
               {tech.name}

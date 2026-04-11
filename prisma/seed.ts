@@ -2944,6 +2944,134 @@ async function seedRankHistory(memberCUIDs: Record<string, string>) {
 
 
 // ══════════════════════════════════════════════════════════════════
+// 17. About Sections
+// ══════════════════════════════════════════════════════════════════
+
+async function seedAboutSections() {
+  console.log("\n[AboutSections] Seeding About page sections...");
+  const sections = [
+    // Hero — VI
+    {
+      sectionType: "hero", locale: "vi", sortOrder: 0,
+      badge: "VỀ CHÚNG TÔI",
+      title: "LOOP SOLUTIONS LÀ AI?",
+      titleHighlight: "Chuyển đổi số",
+      subtitle: "Hệ điều hành số dành cho Digital Agency hàng đầu Việt Nam",
+      ctaText: "Liên hệ ngay", ctaLink: "/vi/contact",
+      cta2Text: "Xem Case Studies", cta2Link: "/vi/case-studies",
+      isActive: true,
+    },
+    // Stats — VI
+    {
+      sectionType: "stats", locale: "vi", sortOrder: 1, isActive: true,
+      stats: [
+        { value: "50+", label: "Dự án hoàn thành", icon: "TrendingUp", color: "#62C5EB" },
+        { value: "200+", label: "Khách hàng", icon: "Users", color: "#6B3DF5" },
+        { value: "27+", label: "Thành viên", icon: "Award", color: "#EC4899" },
+        { value: "2+", label: "Năm hoạt động", icon: "Clock", color: "#E6C75F" },
+      ],
+    },
+    // Story — VI
+    {
+      sectionType: "story", locale: "vi", sortOrder: 2, isActive: true,
+      title: "Câu chuyện LOOP",
+      titleHighlight: "Từ ý tưởng đến thực tiễn",
+      story: [
+        "LOOP Solutions là đối tác công nghệ tin cậy của doanh nghiệp Việt Nam. Chúng tôi thiết kế, phát triển và vận hành giải pháp số toàn diện — từ website đến hệ thống quản lý nội bộ.",
+        "Với đội ngũ 27 chuyên gia trẻ, đam mê công nghệ và tinh thần khởi nghiệp, LOOP không ngừng sáng tạo để mang đến giải pháp tối ưu nhất cho từng khách hàng.",
+        "Hệ điều hành số dành cho Digital Agency.",
+      ],
+    },
+    // Timeline — VI
+    {
+      sectionType: "timeline", locale: "vi", sortOrder: 3, isActive: true,
+      timeline: [
+        { year: "2024", title: "Khởi đầu", description: "LOOP Solutions được thành lập với sứ mệnh mang chuyển đổi số đến gần hơn với doanh nghiệp Việt Nam." },
+        { year: "2024", title: "10 dự án đầu tiên", description: "Hoàn thành 10 dự án đầu tiên trong năm đầu tiên, xây dựng danh tiếng trong ngành." },
+        { year: "2025", title: "Mở rộng quy mô", description: "Tăng trưởng 200% — đội ngũ mở rộng lên 27 thành viên với 4 phòng ban chuyên môn." },
+        { year: "2025", title: "Hệ thống LP & Rank", description: "Ra mắt hệ thống LP (Loop Points) và Rank nội bộ, tạo động lực cho nhân viên." },
+        { year: "2026", title: "LOOP Academy", description: "Khởi động học viện đào tạo nội bộ với 7 khóa học chuyên sâu cho nhân viên." },
+        { year: "2026", title: "Mở rộng dịch vụ", description: "Ra mắt thêm Dashboard Analytics, SEO Services và Media Production." },
+      ],
+    },
+    // Values — VI
+    {
+      sectionType: "values", locale: "vi", sortOrder: 4, isActive: true,
+      values: [
+        { icon: "Target", title: "Sứ mệnh", description: "Mang công nghệ đến gần hơn với doanh nghiệp Việt, giúp họ cạnh tranh trên thị trường số.", color: "#62C5EB" },
+        { icon: "Lightbulb", title: "Đổi mới", description: "Không ngừng tìm kiếm giải pháp sáng tạo, ứng dụng công nghệ mới nhất vào thực tiễn.", color: "#6B3DF5" },
+        { icon: "Handshake", title: "Tin cậy", description: "Cam kết chất lượng, đúng deadline, hỗ trợ lâu dài sau triển khai.", color: "#EC4899" },
+        { icon: "Globe2", title: "Toàn cầu", description: "Hướng đến chuẩn quốc tế, phục vụ khách hàng từ nhiều quốc gia.", color: "#E6C75F" },
+      ],
+    },
+    // CTA — VI
+    {
+      sectionType: "cta", locale: "vi", sortOrder: 5, isActive: true,
+      ctaSectionTitle: "SẴN SẮNG NÂNG CẤP DIGITAL?",
+      ctaSectionSub: "Tư vấn miễn phí 30 phút. Bắt đầu hành trình chuyển đổi số cùng LOOP ngay hôm nay.",
+    },
+    // Hero — EN
+    {
+      sectionType: "hero", locale: "en", sortOrder: 0, isActive: true,
+      badge: "ABOUT US",
+      title: "WHO IS",
+      titleHighlight: "LOOP Solutions?",
+      subtitle: "Vietnam's leading Digital Agency operating system — from website to internal management.",
+      ctaText: "Contact Us", ctaLink: "/en/contact",
+      cta2Text: "View Case Studies", cta2Link: "/en/case-studies",
+    },
+    // Stats — EN
+    {
+      sectionType: "stats", locale: "en", sortOrder: 1, isActive: true,
+      stats: [
+        { value: "50+", label: "Projects Completed", icon: "TrendingUp", color: "#62C5EB" },
+        { value: "200+", label: "Clients", icon: "Users", color: "#6B3DF5" },
+        { value: "27+", label: "Team Members", icon: "Award", color: "#EC4899" },
+        { value: "2+", label: "Years Operating", icon: "Clock", color: "#E6C75F" },
+      ],
+    },
+    // Hero — JA
+    {
+      sectionType: "hero", locale: "ja", sortOrder: 0, isActive: true,
+      badge: "会社概要",
+      title: "LOOP SOLUTIONSとは",
+      titleHighlight: "デジタル変革を",
+      subtitle: "ベトナムトップのデジタルエージェンシー — ウェブサイトから内部管理まで。",
+      ctaText: "お問い合わせ", ctaLink: "/ja/contact",
+      cta2Text: "事例を見る", cta2Link: "/ja/case-studies",
+    },
+    // Hero — KO
+    {
+      sectionType: "hero", locale: "ko", sortOrder: 0, isActive: true,
+      badge: "회사 소개",
+      title: "LOOP SOLUTIONS는",
+      titleHighlight: "디지털 전환을",
+      subtitle: "베트남 최고의 디지털 에이전시 — 웹사이트부터 내부 관리까지.",
+      ctaText: "문의하기", ctaLink: "/ko/contact",
+      cta2Text: "사례 보기", cta2Link: "/ko/case-studies",
+    },
+    // Hero — ZH
+    {
+      sectionType: "hero", locale: "zh", sortOrder: 0, isActive: true,
+      badge: "关于我们",
+      title: "LOOP SOLUTIONS是",
+      titleHighlight: "数字化转型",
+      subtitle: "越南领先的数字代理商 — 从网站到内部管理系统。",
+      ctaText: "联系我们", ctaLink: "/zh/contact",
+      cta2Text: "查看案例", cta2Link: "/zh/case-studies",
+    },
+  ];
+
+  for (const s of sections) {
+    await prisma.aboutSection.upsert({
+      where: { sectionType_locale: { sectionType: s.sectionType, locale: s.locale } },
+      update: {},
+      create: s,
+    });
+  }
+  console.log(`  ✅ Seeded ${sections.length} AboutSections (vi/en/ja/ko/zh)`);
+}
+
 // 17. Blog Tags
 // ══════════════════════════════════════════════════════════════════
 
@@ -3015,6 +3143,7 @@ async function main() {
     await seedServiceTiers(); // <-- NEW: 4 services × 3 tiers for /dich-vu page
     await seedBlogTags();
     await seedR2(deptIds); // <-- NEW: R2 unified demo data (pass deptIds for FK)
+    await seedAboutSections();
 
     // Verify counts
     const [tm, us, pr, ord, pm, ef, ov, lp, tx, qp, ec, tsk, q, ev, exp, me, svc, at, mr, st, bt] = await Promise.all([

@@ -1543,6 +1543,45 @@ model WebsitePageView {
   @@map("website_page_views")
 }
 
+// About page sections — admin can CRUD each section
+model AboutSection {
+  id          String   @id @default(cuid())
+  sectionType String              // "hero" | "stats" | "story" | "timeline" | "values" | "team_preview" | "cta"
+  locale     String   @default("vi") @map("locale")
+  // Hero
+  badge      String?
+  title      String?
+  titleHighlight String?         @map("title_highlight")
+  subtitle   String?
+  description String?
+  ctaText    String?            @map("cta_text")
+  ctaLink    String?            @map("cta_link")
+  cta2Text   String?            @map("cta_2_text")
+  cta2Link   String?            @map("cta_2_link")
+  // Stats — JSON array of {value, label, icon, color}
+  stats      Json?
+  // Story paragraphs — JSON array of strings
+  story      Json?
+  // Timeline — JSON array of {year, title, description}
+  timeline   Json?
+  // Values — JSON array of {icon, title, description, color}
+  values     Json?
+  // Team preview — JSON array of {name, role, department, avatar, deptColor}
+  teamPreview Json?             @map("team_preview")
+  // CTA section
+  ctaSectionTitle String?       @map("cta_section_title")
+  ctaSectionSub   String?        @map("cta_section_sub")
+  // General
+  isActive   Boolean  @default(true)  @map("is_active")
+  sortOrder  Int      @default(0)      @map("sort_order")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt       @map("updated_at")
+
+  @@unique([sectionType, locale])
+  @@index([locale, isActive])
+  @@map("about_sections")
+}
+
 model CustomerPoint {
   id             String             @id @default(cuid())
   userId         String?            @map("user_id")

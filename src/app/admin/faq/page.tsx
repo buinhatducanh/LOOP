@@ -38,8 +38,10 @@ type FaqFormData = {
   category: string;
   sortOrder: number;
   isActive: boolean;
-  questionEn: string;
-  answerEn: string;
+  questionEn: string; answerEn: string;
+  questionJa: string; answerJa: string;
+  questionKo: string; answerKo: string;
+  questionZh: string; answerZh: string;
 };
 
 const CATEGORIES = [
@@ -155,6 +157,12 @@ function FaqEditModal({
     isActive: faq?.isActive ?? true,
     questionEn: faq?.questionEn ?? "",
     answerEn: faq?.answerEn ?? "",
+    questionJa: faq?.questionJa ?? "",
+    answerJa: faq?.answerJa ?? "",
+    questionKo: faq?.questionKo ?? "",
+    answerKo: faq?.answerKo ?? "",
+    questionZh: faq?.questionZh ?? "",
+    answerZh: faq?.answerZh ?? "",
   });
 
   const [saving, setSaving] = useState(false);
@@ -318,6 +326,72 @@ function FaqEditModal({
                 value={form.answerEn}
                 onChange={e => set("answerEn", e.target.value)}
                 placeholder="English answer — supports HTML"
+              />
+            </div>
+          </Section>
+
+          {/* Japanese translation */}
+          <Section title="🇯🇵 日本語 Translation" icon={<span>🇯🇵</span>}>
+            <div>
+              <label style={labelStyle}>QUESTION (JA)</label>
+              <input
+                style={inp}
+                value={form.questionJa}
+                onChange={e => set("questionJa", e.target.value)}
+                placeholder="日本語の質問 (optional)"
+              />
+            </div>
+            <div>
+              <label style={labelStyle}>ANSWER (JA)</label>
+              <textarea
+                style={{ ...inp, minHeight: 120, resize: "vertical" }}
+                value={form.answerJa}
+                onChange={e => set("answerJa", e.target.value)}
+                placeholder="日本語の回答 — HTML対応"
+              />
+            </div>
+          </Section>
+
+          {/* Korean translation */}
+          <Section title="🇰🇷 한국어 Translation" icon={<span>🇰🇷</span>}>
+            <div>
+              <label style={labelStyle}>QUESTION (KO)</label>
+              <input
+                style={inp}
+                value={form.questionKo}
+                onChange={e => set("questionKo", e.target.value)}
+                placeholder="한국어 질문 (optional)"
+              />
+            </div>
+            <div>
+              <label style={labelStyle}>ANSWER (KO)</label>
+              <textarea
+                style={{ ...inp, minHeight: 120, resize: "vertical" }}
+                value={form.answerKo}
+                onChange={e => set("answerKo", e.target.value)}
+                placeholder="한국어 답변 — HTML 지원"
+              />
+            </div>
+          </Section>
+
+          {/* Chinese translation */}
+          <Section title="🇨🇳 中文 Translation" icon={<span>🇨🇳</span>}>
+            <div>
+              <label style={labelStyle}>QUESTION (ZH)</label>
+              <input
+                style={inp}
+                value={form.questionZh}
+                onChange={e => set("questionZh", e.target.value)}
+                placeholder="中文问题 (optional)"
+              />
+            </div>
+            <div>
+              <label style={labelStyle}>ANSWER (ZH)</label>
+              <textarea
+                style={{ ...inp, minHeight: 120, resize: "vertical" }}
+                value={form.answerZh}
+                onChange={e => set("answerZh", e.target.value)}
+                placeholder="中文回答 — 支持HTML"
               />
             </div>
           </Section>
@@ -609,6 +683,14 @@ export default function FaqAdminPage() {
                             EN: {faq.questionEn}
                           </p>
                         )}
+                        {/* Language badges */}
+                        <div style={{ display: "flex", gap: 4, marginTop: 4, flexWrap: "wrap" }}>
+                          <span style={{ fontSize: 10, padding: "1px 6px", borderRadius: 9999, background: "rgba(220,38,38,0.15)", color: "#EF4444", border: "1px solid rgba(220,38,38,0.3)", fontWeight: 600 }}>VI</span>
+                          {faq.questionEn && <span style={{ fontSize: 10, padding: "1px 6px", borderRadius: 9999, background: "rgba(59,130,246,0.15)", color: "#3B82F6", border: "1px solid rgba(59,130,246,0.3)", fontWeight: 600 }}>EN</span>}
+                          {faq.questionJa && <span style={{ fontSize: 10, padding: "1px 6px", borderRadius: 9999, background: "rgba(239,68,68,0.15)", color: "#EF4444", border: "1px solid rgba(239,68,68,0.3)", fontWeight: 600 }}>JA</span>}
+                          {faq.questionKo && <span style={{ fontSize: 10, padding: "1px 6px", borderRadius: 9999, background: "rgba(34,197,94,0.15)", color: "#22C55E", border: "1px solid rgba(34,197,94,0.3)", fontWeight: 600 }}>KO</span>}
+                          {faq.questionZh && <span style={{ fontSize: 10, padding: "1px 6px", borderRadius: 9999, background: "rgba(245,158,11,0.15)", color: "#F59E0B", border: "1px solid rgba(245,158,11,0.3)", fontWeight: 600 }}>ZH</span>}
+                        </div>
                       </td>
                       <td style={{ padding: "12px 16px" }}>
                         <span style={{
