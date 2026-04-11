@@ -16,7 +16,7 @@ import {
   ArrowRight,
   MousePointer,
 } from "lucide-react";
-import { DS, GRD } from "@/lib/design-tokens";
+import { DS, GRD, GLOW } from "@/lib/design-tokens";
 import { apiClient } from "@/lib/api/client";
 import { QueryProvider } from "@/lib/query/provider";
 
@@ -56,6 +56,13 @@ const FALLBACK_SERVICES = [
     priceFrom: "200,000 VNĐ",
     tags: ["SEO", "Google Ads", "Content"],
   },
+  {
+    id: "5", slug: "dashboard-analytics", title: "Dashboard & Analytics",
+    description: "Trực quan hóa dữ liệu doanh nghiệp. Dashboard tùy chỉnh, báo cáo real-time, KPI tracking cho mọi ngành.",
+    color: DS.amber,
+    priceFrom: "5,000,000 VNĐ",
+    tags: ["Data Viz", "React", "Charts"],
+  },
 ];
 
 function Badge({ label, color = DS.blue }: { label: string; color?: string }) {
@@ -85,7 +92,7 @@ function Badge({ label, color = DS.blue }: { label: string; color?: string }) {
         style={{
           color,
           fontSize: "0.625rem",
-          fontFamily: "'JetBrains Mono', monospace",
+          fontFamily: DS.mono,
           letterSpacing: "0.22em",
         }}
       >
@@ -120,8 +127,8 @@ function ServicesSectionInner({ locale }: { locale: string }) {
   });
 
   const services = data?.data?.services?.length
-    ? data.data.services.slice(0, 4).map((s, i) => {
-        const colors = [DS.blue, DS.purple, DS.cyan, DS.green];
+    ? data.data.services.slice(0, 5).map((s, i) => {
+        const colors = [DS.blue, DS.purple, DS.cyan, DS.green, DS.amber];
         return {
           id: s.id,
           slug: s.slug,
@@ -260,7 +267,7 @@ function ServicesSectionInner({ locale }: { locale: string }) {
                         style={{
                           color: svc.color,
                           fontSize: "0.625rem",
-                          fontFamily: "'JetBrains Mono', monospace",
+                          fontFamily: DS.mono,
                           padding: "0.1875rem 0.5rem",
                           borderRadius: 4,
                           background: `${svc.color}10`,
@@ -285,7 +292,7 @@ function ServicesSectionInner({ locale }: { locale: string }) {
                         style={{
                           color: DS.text5,
                           fontSize: "0.625rem",
-                          fontFamily: "'JetBrains Mono', monospace",
+                          fontFamily: DS.mono,
                           marginBottom: "0.125rem",
                         }}
                       >
@@ -300,7 +307,7 @@ function ServicesSectionInner({ locale }: { locale: string }) {
                         style={{
                           color: DS.text5,
                           fontSize: "0.625rem",
-                          fontFamily: "'JetBrains Mono', monospace",
+                          fontFamily: DS.mono,
                           marginBottom: "0.125rem",
                         }}
                       >
@@ -310,7 +317,7 @@ function ServicesSectionInner({ locale }: { locale: string }) {
                         style={{
                           color: DS.purple,
                           fontSize: "0.75rem",
-                          fontFamily: "'JetBrains Mono', monospace",
+                          fontFamily: DS.mono,
                         }}
                       >
                         {t("lpRewardPer", { amount: "500", threshold: "10M" })}
@@ -337,7 +344,7 @@ function ServicesSectionInner({ locale }: { locale: string }) {
               padding: "0.75rem 1.75rem",
               borderRadius: "0.75rem",
               textDecoration: "none",
-              boxShadow: "0 0 30px rgba(129,140,248,0.35)",
+              boxShadow: GLOW.purple,
             }}
           >
             <MousePointer size={15} />
@@ -349,14 +356,6 @@ function ServicesSectionInner({ locale }: { locale: string }) {
   );
 }
 
-/**
- * Public export: wraps ServicesSection with QueryProvider
- * so React Query works without needing provider at page level.
- */
 export default function ServicesSection({ locale }: { locale: string }) {
-  return (
-    <QueryProvider>
-      <ServicesSectionInner locale={locale} />
-    </QueryProvider>
-  );
+  return <ServicesSectionInner locale={locale} />;
 }

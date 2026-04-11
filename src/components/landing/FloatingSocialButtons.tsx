@@ -94,12 +94,9 @@ const BTNS: Btn[] = [
     glowFn: "fsb-glow-zalo",
     borderColor: "rgba(0,104,255,0.35)",
     icon: (
-      <svg width={20} height={20} viewBox="0 0 80 80" fill="none" aria-hidden="true">
-        <path d="M70.58 55.27C71.36 51.84 72 48.49 72 44.52C72 31.12 63.45 20.5 50.06 20.5C46.35 20.5 42.76 21.32 39.59 22.84L28 14.5 37.19 24.88C33.24 26.72 30.16 29.73 28.11 33.63L19.38 27.19 26.88 41.21C26.88 41.21 22.81 55.27 10.12 55.27C5.46 55.27 1 59.11 1 64.08C1 69.05 5.46 73.58 10.12 73.58C16.15 73.58 25.27 70.66 27.58 65.08C31.04 74.38 40.65 79.58 50.65 79.58C63.45 79.58 72 67.89 72 55.27H70.58Z" fill="white"/>
-        <circle cx="50.96" cy="47.27" r="3.23" fill="#0068FF"/>
-        <circle cx="55.38" cy="47.27" r="3.23" fill="#0068FF"/>
-        <circle cx="59.8" cy="47.27" r="3.23" fill="#0068FF"/>
-      </svg>
+      <span style={{ color: "#fff", fontSize: 11, fontWeight: 800, letterSpacing: "0.02em", lineHeight: 1 }}>
+        Zalo
+      </span>
     ),
   },
   {

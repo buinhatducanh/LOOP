@@ -83,7 +83,8 @@ export type AdminTab =
   | "figma_demos" | "kanban"
   | "revenue_split" | "off_system_payments"
   | "project_intake"
-  | "*"; // wildcard: all tabs (ceo/super_admin/admin)
+  | "faq" | "about"
+  | "*";
 
 // ── Quest / Event Types (from FE gamification system) ────────────────────────────
 

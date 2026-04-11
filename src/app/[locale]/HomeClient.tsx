@@ -16,8 +16,8 @@ import { useQuery } from "@tanstack/react-query";
 import { motion } from "motion/react";
 import {
   Zap, Shield, ChevronRight,
-  ArrowRight, TrendingUp, Users, Award, Sparkles,
-  Heart, Eye, Layers,
+  ArrowRight, Users, Award, Sparkles,
+  Heart, Eye,
   Clock, Rocket,
 } from "lucide-react";
 import { DS, GRD } from "@/lib/design-tokens";
@@ -113,7 +113,7 @@ function HeroSection({ locale }: { locale: string }) {
     <section
       style={{
         position: "relative", minHeight: "100vh", display: "flex",
-        alignItems: "center", paddingTop: "7rem", paddingBottom: "5rem",
+        alignItems: "center", paddingTop: "6rem", paddingBottom: "4rem",
         paddingLeft: "1.5rem", paddingRight: "1.5rem", overflow: "hidden",
       }}
     >
@@ -344,40 +344,34 @@ function HeroSection({ locale }: { locale: string }) {
             <Badge label={t("heroBadge")} />
           </motion.div>
 
-          {/* Headline */}
+          {/* Headline — single massive gradient line */}
           <h1
             style={{
               fontFamily: DS.heading, letterSpacing: "0.04em",
-              lineHeight: 1.1, marginBottom: "1.5rem",
+              lineHeight: 1.05, marginBottom: "1.25rem",
             }}
           >
-            {[
-              { text: t("heroTitle1"), gradient: "linear-gradient(135deg, #FFFFFF 0%, #CBD5E1 100%)" },
-              { text: t("heroTitle2"), gradient: GRD.primary },
-            ].map((item, i) => (
-              <motion.span
-                key={i}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 + i * 0.1 }}
-                style={{ display: "block", fontSize: "clamp(2.25rem, 5vw, 4rem)", fontWeight: 900 }}
+            <motion.span
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              style={{ display: "block", fontSize: "clamp(2.5rem, 6vw, 4.5rem)", fontWeight: 900 }}
+            >
+              <span
+                style={{
+                  background: `linear-gradient(135deg, #FFFFFF 0%, #E2E8F0 30%, ${DS.pink} 65%, ${DS.cosmicPurple} 100%)`,
+                  WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+                  backgroundClip: "text",
+                }}
               >
-                <span
-                  style={{
-                    background: item.gradient,
-                    WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-                    backgroundClip: "text",
-                  }}
-                >
-                  {item.text}
-                </span>
-              </motion.span>
-            ))}
+                {t("heroTitle1")}
+              </span>
+            </motion.span>
           </h1>
 
           <motion.p
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}
-            style={{ color: DS.text3, fontSize: "1.0625rem", lineHeight: 1.8, marginBottom: "2.25rem", maxWidth: 520 }}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }}
+            style={{ color: DS.text3, fontSize: "1rem", lineHeight: 1.8, marginBottom: "2rem", maxWidth: 520 }}
           >
             {t("heroDesc")}
           </motion.p>
@@ -393,7 +387,7 @@ function HeroSection({ locale }: { locale: string }) {
                 background: GRD.primary, color: "#fff", fontSize: "0.9375rem",
                 fontWeight: 700, padding: "0.875rem 2rem", borderRadius: "0.875rem",
                 textDecoration: "none", display: "flex", alignItems: "center",
-                gap: "0.625rem", boxShadow: "0 0 40px rgba(129,140,248,0.5), 0 8px 24px rgba(0,0,0,0.3)",
+                gap: "0.625rem", boxShadow: "0 0 40px rgba(107,61,245,0.5), 0 8px 24px rgba(0,0,0,0.3)",
                 letterSpacing: "0.02em",
               }}
             >
@@ -463,59 +457,21 @@ function HeroSection({ locale }: { locale: string }) {
           <div
             style={{
               position: "relative", borderRadius: "1.5rem", overflow: "hidden",
-              border: "1px solid rgba(59,130,246,0.3)",
+              border: "1px solid rgba(79,125,243,0.3)",
               boxShadow: "0 0 100px rgba(107,61,245,0.18), 0 40px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05) inset",
             }}
           >
-            {/* Banner video — full bleed, freezes at logo (95% of duration) */}
+            {/* Banner — full video */}
             <div style={{ position: "relative", aspectRatio: "16/9", overflow: "hidden" }}>
               <video
-                src="/assets/design-company/welcome-logo-animate.mp4"
-                preload="metadata"
+                src="/assets/design-company/welcome-logo-animate_2.mp4"
+                autoPlay
                 muted
+                loop
                 playsInline
-                ref={(el) => {
-                  if (!el) return;
-
-                  const v = el;
-                  function seekToLogo() {
-                    if (!v.duration || isNaN(v.duration)) return;
-                    v.currentTime = v.duration * 0.60;
-                  }
-
-                  function lockFrame() {
-                    v.pause();
-                    v.addEventListener("timeupdate", function guard() {
-                      if (!v.paused) v.pause();
-                      if (v.currentTime < v.duration * 0.59) {
-                        v.currentTime = v.duration * 0.60;
-                      }
-                    }, { once: true });
-                  }
-
-                  v.addEventListener("loadedmetadata", () => {
-                    v.currentTime = v.duration * 0.60;
-                  });
-
-                  v.addEventListener("seeked", () => {
-                    v.pause();
-                  });
-
-                  v.addEventListener("canplay", () => {
-                    if (v.currentTime === 0) {
-                      v.currentTime = v.duration * 0.60;
-                    }
-                  });
-
-                  const play = v.play();
-                  play?.catch(() => {});
-                  setTimeout(() => {
-                    seekToLogo();
-                    setTimeout(lockFrame, 60);
-                  }, 600);
-                }}
                 style={{
                   width: "100%", height: "100%", objectFit: "cover",
+                  objectPosition: "center",
                   display: "block",
                 }}
               />
@@ -556,33 +512,6 @@ function HeroSection({ locale }: { locale: string }) {
               </div>
             </div>
 
-            {/* Stats bar */}
-            <div style={{
-              display: "grid", gridTemplateColumns: "repeat(3, 1fr)",
-              gap: "0.5rem", padding: "0.875rem 1rem",
-              background: "rgba(12,12,20,0.9)",
-              borderTop: "1px solid rgba(59,130,246,0.1)",
-            }}>
-              {[
-                { label: "PROJECTS", value: "120+", color: DS.blue, icon: <Layers size={11} /> },
-                { label: "CLIENTS", value: "98%", color: DS.green, icon: <TrendingUp size={11} /> },
-                { label: "LP REWARD", value: "500K", color: DS.purple, icon: <Zap size={11} /> },
-              ].map((s) => (
-                <div key={s.label} style={{
-                  display: "flex", alignItems: "center", gap: "0.5rem",
-                  padding: "0.5rem 0.625rem",
-                  borderRadius: "0.5rem",
-                  background: "rgba(255,255,255,0.04)",
-                  border: `1px solid ${s.color}30`,
-                }}>
-                  <span style={{ color: s.color, opacity: 0.8 }}>{s.icon}</span>
-                  <div>
-                    <div style={{ color: s.color, fontFamily: DS.heading, fontSize: "0.75rem", fontWeight: 700 }}>{s.value}</div>
-                    <div style={{ color: DS.text5, fontSize: "0.4375rem", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.08em" }}>{s.label}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
           </div>
 
           {/* Floating LP badge */}
@@ -826,7 +755,7 @@ function LPSystemSection({ locale }: { locale: string }) {
                 background: GRD.primary, color: "#fff", fontSize: "0.875rem",
                 fontWeight: 600, padding: "0.6875rem 1.5rem", borderRadius: "0.625rem",
                 textDecoration: "none", display: "inline-flex", alignItems: "center",
-                gap: "0.5rem", boxShadow: "0 0 20px rgba(129,140,248,0.3)",
+                gap: "0.5rem", boxShadow: "0 0 20px rgba(107,61,245,0.3)",
               }}
             >
               {t("btnAbout")} <ArrowRight size={15} />
@@ -899,7 +828,7 @@ function LPSystemSection({ locale }: { locale: string }) {
               <div
                 style={{
                   marginTop: "1.5rem", padding: "1rem", borderRadius: "0.75rem",
-                  background: "rgba(59,130,246,0.08)", border: "1px solid rgba(59,130,246,0.2)",
+                  background: "rgba(79,125,243,0.08)", border: "1px solid rgba(79,125,243,0.2)",
                 }}
               >
                 <div style={{ color: DS.text4, fontSize: "0.75rem", lineHeight: 1.6 }}>
@@ -945,7 +874,7 @@ function CTASection({ locale }: { locale: string }) {
       <div
         style={{
           position: "absolute", inset: 0,
-          background: "radial-gradient(ellipse at 50% 50%, rgba(29,78,216,0.15) 0%, transparent 70%)",
+          background: "radial-gradient(ellipse at 50% 50%, rgba(79,125,243,0.15) 0%, transparent 70%)",
           pointerEvents: "none",
         }}
       />
@@ -973,7 +902,7 @@ function CTASection({ locale }: { locale: string }) {
               background: GRD.primary, color: "#fff", fontSize: "1rem",
               fontWeight: 700, padding: "1rem 2rem", borderRadius: "0.875rem",
               textDecoration: "none", display: "flex", alignItems: "center",
-              gap: "0.625rem", boxShadow: "0 0 40px rgba(129,140,248,0.5)",
+              gap: "0.625rem", boxShadow: "0 0 40px rgba(107,61,245,0.5)",
             }}
           >
             <Rocket size={18} />

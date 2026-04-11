@@ -2264,8 +2264,7 @@ function StepContact({
         <p style={{ color: DS.text3, fontSize: 14, lineHeight: 1.7 }}>Điền thông tin để nhận báo giá chi tiết và đặt cọc bắt đầu dự án.</p>
       </div>
 
-      {/* Two-column grid: form + billing summary */}
-      <div className="grid gap-6" style={{ gridTemplateColumns: "1fr 380px" }}>
+      {/* Single-column form layout */}
 
         {/* ── Left: form ── */}
         <div>
