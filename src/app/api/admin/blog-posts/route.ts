@@ -17,6 +17,7 @@ const createSchema = z.object({
   videoUrl: z.string().optional(),
   canonicalUrl: z.string().optional(),
   backlinks: z.string().optional(), // JSON: [{url, label}]
+  tagIds: z.array(z.string()).optional(), // BlogTag IDs
   authorId: z.string().optional(),   // TeamMember.id — if not provided, resolve from authorName/authorEmail or session
   authorName: z.string().optional(), // fallback if authorId not given
   authorEmail: z.string().optional(),
@@ -57,6 +58,7 @@ export async function GET(req: NextRequest) {
       include: {
         project: { select: { id: true, orderNumber: true, customerName: true } },
         author: { select: { id: true, name: true } },
+        tags: { include: { tag: true } },
       },
       orderBy: { createdAt: "desc" },
     });
@@ -135,6 +137,10 @@ export async function POST(req: NextRequest) {
         contentJa: parsed.data.contentJa,
         contentKo: parsed.data.contentKo,
         contentZh: parsed.data.contentZh,
+        // Tags
+        ...(parsed.data.tagIds?.length
+          ? { tags: { create: parsed.data.tagIds.map(tagId => ({ tagId })) } }
+          : {}),
       },
     });
 

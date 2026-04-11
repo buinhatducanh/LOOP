@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
 
   // Logo URL — @vercel/og fetches remote <img> URLs automatically inside ImageResponse.
   // Cache at CDN layer (1 week) so Edge cold-starts don't pay the fetch cost.
-  const logoUrl = `${req.nextUrl.origin}/logo.png`;
+  const logoUrl = `${req.nextUrl.origin}/loop-logo.png`;
 
   return new ImageResponse(
     (

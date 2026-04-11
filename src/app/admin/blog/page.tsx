@@ -11,11 +11,15 @@ import {
   ChevronDown, ChevronRight, Link, ExternalLink, Video, Globe, BookOpen,
 } from "lucide-react";
 import { ImageUpload } from "@/components/ui/ImageUpload";
+import { RichTextEditor } from "@/components/admin/blog/RichTextEditor";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type OrderOption = { id: string; orderNumber: string; customerName: string };
 type MemberOption = { id: string; name: string };
+
+type BlogTagOption = { id: string; key: string; name: string; nameEn?: string; color: string };
+type BlogPostTagEntry = { id: string; tagId: string; tag: BlogTagOption };
 
 type BlogPost = {
   id: string;
@@ -37,6 +41,7 @@ type BlogPost = {
   titleEn?: string; titleJa?: string; titleKo?: string; titleZh?: string;
   contentEn?: string; contentJa?: string; contentKo?: string; contentZh?: string;
   excerptEn?: string; excerptJa?: string; excerptKo?: string; excerptZh?: string;
+  tags?: BlogPostTagEntry[];
 };
 
 type BacklinkEntry = { url: string; label: string };
@@ -55,6 +60,7 @@ type PostFormData = {
   videoUrl: string;
   canonicalUrl: string;
   backlinks: BacklinkEntry[];
+  tagIds: string[];
   // i18n
   titleEn: string; titleJa: string; titleKo: string; titleZh: string;
   contentEn: string; contentJa: string; contentKo: string; contentZh: string;
@@ -307,6 +313,14 @@ function BlogPostEditModal({
     },
   });
 
+  const { data: tagsData } = useQuery({
+    queryKey: ["admin", "blog-tags"],
+    queryFn: async () => {
+      const res = await adminApi.get<{ data: BlogTagOption[] }>("/api/admin/blog-tags", { params: { limit: 100 } });
+      return res.data ?? [];
+    },
+  });
+
   const parseBacklinks = (raw?: string): BacklinkEntry[] => {
     if (!raw) return [];
     try { return JSON.parse(raw); } catch { return []; }
@@ -338,6 +352,7 @@ function BlogPostEditModal({
     excerptJa: post?.excerptJa ?? "",
     excerptKo: post?.excerptKo ?? "",
     excerptZh: post?.excerptZh ?? "",
+    tagIds: post?.tags?.map((t: BlogPostTagEntry) => t.tagId) ?? [],
   });
 
   const [activeLocale, setActiveLocale] = useState<LocaleKey>("en");
@@ -383,6 +398,7 @@ function BlogPostEditModal({
         excerptJa: form.excerptJa.trim() || undefined,
         excerptKo: form.excerptKo.trim() || undefined,
         excerptZh: form.excerptZh.trim() || undefined,
+        tagIds: form.tagIds,
       };
       if (form.projectId) payload.projectId = form.projectId;
       if (form.authorId) payload.authorId = form.authorId;
@@ -545,29 +561,52 @@ function BlogPostEditModal({
               </div>
             </Section>
 
-            {/* ── 4. Nội dung ── */}
-            <Section title={`${t("blog.formContent") ?? "Nội dung"} · ${words > 0 ? `${words.toLocaleString()} từ · ${readTime}` : "..."}`} icon={<BookOpen size={14} color={DS.teal} />} defaultOpen>
-              <textarea
-                style={{ ...inp, resize: "vertical", minHeight: 200, fontFamily: DS.mono, fontSize: 13, lineHeight: 1.7 }}
-                value={form.content}
-                onChange={e => setForm(f => ({ ...f, content: e.target.value }))}
-                placeholder={t("blog.formContentPlaceholder") ?? "Nội dung bài viết bằng tiếng Việt..."}
-              />
-              {/* Word count bar */}
-              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                <div style={{ flex: 1, height: 4, background: DS.border, borderRadius: 4, overflow: "hidden" }}>
-                  <div style={{
-                    height: "100%",
-                    width: `${Math.min(100, (words / 1500) * 100)}%`,
-                    background: words < 300 ? DS.amber : DS.green,
-                    borderRadius: 4,
-                    transition: "width 0.3s",
-                  }} />
-                </div>
-                <span style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, minWidth: 80, textAlign: "right" }}>
-                  {words.toLocaleString()} từ · {readTime}
-                </span>
+            {/* ── Tags ── */}
+            <Section title={`${t("blog.formTags") ?? "Tags"} (${form.tagIds.length})`} icon={<span style={{ fontSize: 13 }}>🏷️</span>}>
+              <p style={{ color: DS.text4, fontSize: 12, margin: 0 }}>
+                Gắn tags để phân loại bài viết và hiển thị bộ lọc trên trang blog công khai.
+              </p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {(tagsData ?? []).map(tag => {
+                  const active = form.tagIds.includes(tag.id);
+                  return (
+                    <button
+                      key={tag.id}
+                      type="button"
+                      onClick={() => setForm(f => ({
+                        ...f,
+                        tagIds: active
+                          ? f.tagIds.filter(id => id !== tag.id)
+                          : [...f.tagIds, tag.id],
+                      }))}
+                      style={{
+                        padding: "4px 10px",
+                        borderRadius: 9999,
+                        border: `1px solid ${active ? tag.color : DS.border}`,
+                        background: active ? `${tag.color}22` : "transparent",
+                        color: active ? tag.color : DS.text4,
+                        fontSize: 12,
+                        fontFamily: DS.mono,
+                        cursor: "pointer",
+                        transition: "all 0.15s",
+                      }}
+                    >
+                      {tag.nameEn ?? tag.name}
+                    </button>
+                  );
+                })}
               </div>
+            </Section>
+
+            {/* ── 4. Nội dung (Tiptap WYSIWYG) ── */}
+            <Section title={t("blog.formContent") ?? "Nội dung bài viết"} icon={<BookOpen size={14} color={DS.teal} />} defaultOpen>
+              <RichTextEditor
+                value={form.content}
+                onChange={html => setForm(f => ({ ...f, content: html }))}
+                placeholder={t("blog.formContentPlaceholder") ?? "Bắt đầu viết bài viết của bạn..."}
+                minHeight={300}
+                label="NỘI DUNG (TIẾNG VIỆT)"
+              />
             </Section>
 
             {/* ── 5. SEO ── */}
@@ -731,7 +770,12 @@ function LocaleFields({
           </div>
           <div>
             <label style={labelStyle}>NỘI DUNG ({locale.toUpperCase()})</label>
-            <textarea style={{ ...inp, resize: "vertical", minHeight: 160, fontFamily: DS.mono, fontSize: 13, lineHeight: 1.7 }} value={contentVal} onChange={e => set(contentKey, e.target.value)} placeholder={`Nội dung bài viết (${localeInfo.label})`} />
+            <RichTextEditor
+              value={contentVal}
+              onChange={html => set(contentKey, html)}
+              placeholder={`Nội dung bài viết (${localeInfo.label})`}
+              minHeight={200}
+            />
           </div>
         </>
       )}

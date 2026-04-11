@@ -20,6 +20,7 @@ const updateSchema = z.object({
   videoUrl: z.string().optional().nullable(),
   canonicalUrl: z.string().optional().nullable(),
   backlinks: z.string().optional().nullable(), // JSON string [{url, label}]
+  tagIds: z.array(z.string()).optional(),     // Replace all tags with these IDs
   // i18n fields
   titleEn: z.string().optional().nullable(),
   titleJa: z.string().optional().nullable(),
@@ -52,6 +53,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       include: {
         project: { select: { id: true, orderNumber: true, customerName: true } },
         author: { select: { id: true, name: true } },
+        tags: { include: { tag: true } },
       },
     });
     if (!data) return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -77,13 +79,27 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       delete data.seoDescription;
     }
 
-    const updated = await prisma.blogPost.update({ where: { id }, data });
+    // Handle tagIds separately (relation write)
+    const { tagIds, ...postData } = data;
+
+    const updated = await prisma.blogPost.update({
+      where: { id },
+      data: {
+        ...postData,
+        ...(tagIds !== undefined ? {
+          tags: {
+            deleteMany: {},
+            ...(tagIds.length > 0 ? { create: tagIds.map(tagId => ({ tagId })) } : {}),
+          },
+        } : {}),
+      },
+    });
     await createAuditLog({
       userId: session.userId,
       action: "update",
       resource: "blogs",
       resourceId: id,
-      newValues: data,
+      newValues: postData,
     });
     return NextResponse.json({ data: updated });
   } catch (error) {

@@ -1,518 +1,627 @@
 "use client";
 
 /**
- * DichVuClient — Standalone pricing page at /dich-vu
- * Khách xem bảng giá + tích chọn tính năng mà không cần đặt lịch.
- * Fetches pricing config from /api/pricing/config — falls back to static data.
+ * DichVuClient — Bảng Giá Dịch Vụ tất cả 4 dịch vụ × 3 cấp
+ * /dich-vu
+ * Fetches from /api/services/pricing (server component passes data).
  */
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
-import { DS, GRD } from "@/lib/design-tokens";
-import { FeatureToggleTable, type WizardFeature } from "@/components/landing/FeatureToggleTable";
-import { Check, ArrowRight } from "lucide-react";
+import { DS, GRD, GLOW } from "@/lib/design-tokens";
+import { ArrowRight, ChevronDown } from "lucide-react";
+
+// ── Types ──────────────────────────────────────────────────────────────────────
+
+type ServiceTier = {
+  id: string;
+  serviceKey: string;
+  level: number;
+  name: string;
+  nameEn: string | null;
+  shortDesc: string | null;
+  basePrice: number;
+  marketPrice: number | null;
+  lpReward: number;
+  sortOrder: number;
+  isActive: boolean;
+};
+
+type ServiceAttribute = {
+  id: string;
+  slug: string;
+  name: string;
+  nameEn: string | null;
+  description: string | null;
+  category: string;
+  categoryEn: string | null;
+  price: number;
+  tier: string;
+  serviceKey: string | null;
+  includedInBase: boolean;
+};
+
+type PricingData = {
+  tiers: ServiceTier[];
+  features: Record<string, ServiceAttribute[]>;
+  meta: { locale: string; cached: boolean; revalidateSeconds: number };
+};
+
+type Props = {
+  data: PricingData | null;
+  locale: string;
+};
+
+// ── Constants ─────────────────────────────────────────────────────────────────
+
+const SERVICE_KEYS = ["web", "app", "dashboard", "seo"] as const;
+
+const SERVICE_META: Record<string, {
+  icon: string;
+  label: Record<string, string>;
+  labelEn: Record<string, string>;
+  color: string;
+  heroTitle: Record<string, string>;
+  heroTitleEn: Record<string, string>;
+}> = {
+  web: {
+    icon: "🌐",
+    color: "#3B82F6",
+    label: { vi: "Website", en: "Website", ja: "ウェブサイト", ko: "웹사이트", zh: "网站" },
+    labelEn: { vi: "Website", en: "Website", ja: "Website", ko: "Website", zh: "Website" },
+    heroTitle: { vi: "Thiết Kế Website Chuyên Nghiệp", en: "Professional Web Design", ja: "プロフェッショナルウェブサイト制作", ko: "전문 웹사이트 제작", zh: "专业网页设计" },
+    heroTitleEn: { vi: "Professional Web Design", en: "Professional Web Design", ja: "Professional Web Design", ko: "Professional Web Design", zh: "Professional Web Design" },
+  },
+  app: {
+    icon: "📱",
+    color: "#8B5CF6",
+    label: { vi: "App / SaaS", en: "App / SaaS", ja: "アプリ/SaaS", ko: "앱/SaaS", zh: "应用/SaaS" },
+    labelEn: { vi: "App / SaaS", en: "App / SaaS", ja: "App / SaaS", ko: "App / SaaS", zh: "App / SaaS" },
+    heroTitle: { vi: "Ứng Dụng Di Động & SaaS", en: "Mobile App & SaaS Development", ja: "モバイルアプリ&SaaS開発", ko: "모바일 앱 및 SaaS 개발", zh: "移动应用和SaaS开发" },
+    heroTitleEn: { vi: "Mobile App & SaaS Development", en: "Mobile App & SaaS Development", ja: "Mobile App & SaaS Development", ko: "Mobile App & SaaS Development", zh: "Mobile App & SaaS Development" },
+  },
+  dashboard: {
+    icon: "📊",
+    color: "#EC4899",
+    label: { vi: "Dashboard", en: "Dashboard", ja: "ダッシュボード", ko: "대시보드", zh: "仪表盘" },
+    labelEn: { vi: "Dashboard", en: "Dashboard", ja: "Dashboard", ko: "Dashboard", zh: "Dashboard" },
+    heroTitle: { vi: "Dashboard Quản Lý & Phân Tích", en: "Management Dashboard & Analytics", ja: "管理与分析ダッシュボード", ko: "관리 대시보드 및 분석", zh: "管理仪表盘和分析" },
+    heroTitleEn: { vi: "Management Dashboard & Analytics", en: "Management Dashboard & Analytics", ja: "Management Dashboard & Analytics", ko: "Management Dashboard & Analytics", zh: "Management Dashboard & Analytics" },
+  },
+  seo: {
+    icon: "🔍",
+    color: "#F59E0B",
+    label: { vi: "SEO", en: "SEO", ja: "SEO", ko: "SEO", zh: "SEO" },
+    labelEn: { vi: "SEO", en: "SEO", ja: "SEO", ko: "SEO", zh: "SEO" },
+    heroTitle: { vi: "Dịch Vụ SEO Chuyên Nghiệp", en: "Professional SEO Services", ja: "プロフェッショナルSEOサービス", ko: "전문 SEO 서비스", zh: "专业SEO服务" },
+    heroTitleEn: { vi: "Professional SEO Services", en: "Professional SEO Services", ja: "Professional SEO Services", ko: "Professional SEO Services", zh: "Professional SEO Services" },
+  },
+};
+
+const TIER_LABELS: Record<number, string> = { 1: "Cơ Bản", 2: "Doanh Nghiệp", 3: "Chuyên Nghiệp" };
+const TIER_LABELS_EN: Record<number, string> = { 1: "Basic", 2: "Business", 3: "Experience" };
+const TIER_COLORS: Record<string, string> = {
+  web: "#3B82F6",
+  app: "#8B5CF6",
+  dashboard: "#EC4899",
+  seo: "#F59E0B",
+};
+
+// Fallback static data (when API fails)
+const FALLBACK_TIERS: ServiceTier[] = [
+  { id: "fb-web-1", serviceKey: "web", level: 1, name: "Cơ Bản", nameEn: "Basic", shortDesc: "Phù hợp khởi nghiệp", basePrice: 3_890_000, marketPrice: 5_500_000, lpReward: 50, sortOrder: 1, isActive: true },
+  { id: "fb-web-2", serviceKey: "web", level: 2, name: "Doanh Nghiệp", nameEn: "Business", shortDesc: "Doanh nghiệp vừa và lớn", basePrice: 5_890_000, marketPrice: 8_900_000, lpReward: 80, sortOrder: 2, isActive: true },
+  { id: "fb-web-3", serviceKey: "web", level: 3, name: "Chuyên Nghiệp", nameEn: "Experience", shortDesc: "Giải pháp toàn diện", basePrice: 9_890_000, marketPrice: 12_000_000, lpReward: 120, sortOrder: 3, isActive: true },
+  { id: "fb-app-1", serviceKey: "app", level: 1, name: "Cơ Bản", nameEn: "Basic", shortDesc: "MVP nhanh chóng", basePrice: 19_980_000, marketPrice: 25_000_000, lpReward: 200, sortOrder: 1, isActive: true },
+  { id: "fb-app-2", serviceKey: "app", level: 2, name: "Doanh Nghiệp", nameEn: "Business", shortDesc: "Tính năng đầy đủ", basePrice: 39_800_000, marketPrice: 49_000_000, lpReward: 400, sortOrder: 2, isActive: true },
+  { id: "fb-app-3", serviceKey: "app", level: 3, name: "Chuyên Nghiệp", nameEn: "Experience", shortDesc: "SaaS độc quyền, AI, multi-tenant", basePrice: 79_800_000, marketPrice: 99_000_000, lpReward: 800, sortOrder: 3, isActive: true },
+  { id: "fb-dashboard-1", serviceKey: "dashboard", level: 1, name: "Cơ Bản", nameEn: "Basic", shortDesc: "Biểu đồ & báo cáo cơ bản", basePrice: 9_900_000, marketPrice: 15_000_000, lpReward: 100, sortOrder: 1, isActive: true },
+  { id: "fb-dashboard-2", serviceKey: "dashboard", level: 2, name: "Doanh Nghiệp", nameEn: "Business", shortDesc: "Multi-user, role-based", basePrice: 19_900_000, marketPrice: 29_000_000, lpReward: 200, sortOrder: 2, isActive: true },
+  { id: "fb-dashboard-3", serviceKey: "dashboard", level: 3, name: "Chuyên Nghiệp", nameEn: "Experience", shortDesc: "Enterprise, AI analytics, SLA", basePrice: 49_900_000, marketPrice: 69_000_000, lpReward: 500, sortOrder: 3, isActive: true },
+  { id: "fb-seo-1", serviceKey: "seo", level: 1, name: "Cơ Bản", nameEn: "Basic", shortDesc: "10 bài chuẩn SEO", basePrice: 2_000_000, marketPrice: 3_000_000, lpReward: 20, sortOrder: 1, isActive: true },
+  { id: "fb-seo-2", serviceKey: "seo", level: 2, name: "Doanh Nghiệp", nameEn: "Business", shortDesc: "30 bài/tháng, Google Search Console", basePrice: 6_000_000, marketPrice: 9_000_000, lpReward: 60, sortOrder: 2, isActive: true },
+  { id: "fb-seo-3", serviceKey: "seo", level: 3, name: "Chuyên Nghiệp", nameEn: "Experience", shortDesc: "SEO toàn diện: content, link building, AI", basePrice: 36_000_000, marketPrice: 48_000_000, lpReward: 360, sortOrder: 3, isActive: true },
+];
+
+const FAQ_ITEMS = [
+  {
+    q: { vi: "Gói Basic và Business khác nhau thế nào?", en: "What is the difference between Basic and Business?" },
+    a: { vi: "Gói Basic bao gồm các tính năng cốt lõi để bạn có thể khởi động nhanh với chi phí thấp. Gói Business bổ sung thêm các tính năng nâng cao như SEO toàn diện, analytics, tích hợp API và hỗ trợ ưu tiên.", en: "The Basic plan includes essential features for a quick, low-cost start. The Business plan adds advanced features like comprehensive SEO, analytics, API integrations, and priority support." },
+  },
+  {
+    q: { vi: "Tôi có thể nâng cấp gói sau không?", en: "Can I upgrade my plan later?" },
+    a: { vi: "Có! Bạn có thể nâng cấp gói bất kỳ lúc nào. Chúng tôi sẽ tính phí chênh lệch và kích hoạt tính năng mới ngay lập tức. Không cần làm lại từ đầu.", en: "Yes! You can upgrade at any time. We will calculate the price difference and activate new features immediately. No rework required." },
+  },
+  {
+    q: { vi: "Thanh toán như thế nào?", en: "How do I pay?" },
+    a: { vi: "Chúng tôi hỗ trợ chuyển khoản ngân hàng, quét mã QR VietQR, thanh toán qua ví điện tử (VNPay, MoMo, ZaloPay). Đặt cọc 50%, thanh toán 50% còn lại khi bàn giao.", en: "We accept bank transfer, VietQR QR scanning, and e-wallets (VNPay, MoMo, ZaloPay). 50% deposit to start, 50% upon handover." },
+  },
+  {
+    q: { vi: "Bảo hành bao lâu?", en: "How long is the warranty?" },
+    a: { vi: "Gói Basic: 1 tháng. Gói Business: 3 tháng. Gói Experience: 6 tháng. Tất cả đều bao gồm sửa lỗi miễn phí trong thời gian bảo hành.", en: "Basic: 1 month. Business: 3 months. Experience: 6 months. All include free bug fixes during the warranty period." },
+  },
+  {
+    q: { vi: "Có hỗ trợ sau bảo hành không?", en: "Is there support after warranty?" },
+    a: { vi: "Có! Gói Experience bao gồm hỗ trợ 24/7. Tất cả gói đều có thể mua gói bảo trì riêng (hosting, domain, maintenance) với chi phí hợp lý.", en: "Yes! The Experience plan includes 24/7 support. All plans can add a maintenance package (hosting, domain, maintenance) at a reasonable cost." },
+  },
+];
+
+const TRUST_ITEMS = [
+  { icon: "🛡", textVi: "Bảo hành 1–6 tháng", textEn: "1–6 month warranty", color: "#22C55E" },
+  { icon: "📱", textVi: "Responsive mọi thiết bị", textEn: "Responsive on all devices", color: "#3B82F6" },
+  { icon: "🔒", textVi: "SSL miễn phí trọn đời", textEn: "Free lifetime SSL", color: "#8B5CF6" },
+  { icon: "⚡", textVi: "Code sạch, dễ mở rộng", textEn: "Clean code, easy to scale", color: "#62C5EB" },
+  { icon: "🎯", textVi: "Giao hàng đúng hạn", textEn: "On-time delivery", color: "#F59E0B" },
+  { icon: "💬", textVi: "Hỗ trợ 24/7 (Experience)", textEn: "24/7 support (Experience)", color: "#EC4899" },
+];
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
 const fmtVND = (n: number) =>
   new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(n);
 
-// ── Local package shape (not the API type — simpler) ──────────────────────────
-
-interface Package {
-  id: string;
-  slug?: string;
-  name: string;
-  price: number;
-  marketPrice?: number;
-  savingPct?: number;
-  features: string[];   // feature NAME strings from DB
-  lp: number;
-  popular?: boolean;
-  color: string;
-  desc: string;
+function getLocaleText(vi: string | null | undefined, en: string | null | undefined, locale: string): string {
+  if (!locale || locale === "vi") return (vi ?? "") as string;
+  return ((en ?? vi ?? "") as string);
 }
 
-// ── Fallback: Static data (shown when API fails) ────────────────────────────
+// ── Package Card ────────────────────────────────────────────────────────────────
 
-const FALLBACK_PACKAGES: Package[] = [
-  {
-    id: "basic", slug: "basic", name: "Cơ bản",
-    price: 3_890_000, marketPrice: 5_500_000, savingPct: 29,
-    features: ["Giao diện chuẩn responsive", "Tối đa 5 trang", "SEO cơ bản", "Bảo hành 1 tháng", "Hỗ trợ qua email"],
-    lp: 100, color: DS.text3,
-    desc: "Thiết kế chuẩn responsive, phù hợp website giới thiệu doanh nghiệp nhỏ",
-  },
-  {
-    id: "business", slug: "business", name: "Doanh nghiệp",
-    price: 5_890_000, marketPrice: 8_900_000, savingPct: 34,
-    features: ["Thiết kế tùy chỉnh theo brand", "Tối đa 15 trang", "SEO nâng cao", "Animation & Mega Menu", "Bảo hành 3 tháng", "Không giới hạn chỉnh sửa"],
-    lp: 180, popular: true, color: DS.blue,
-    desc: "Thiết kế tùy chỉnh theo thương hiệu, tối ưu UX, doanh nghiệp vừa và lớn",
-  },
-  {
-    id: "experience", slug: "experience", name: "Experience",
-    price: 6_890_000, marketPrice: 12_000_000, savingPct: 43,
-    features: ["Giao diện độc quyền NextJS", "Không giới hạn trang", "SEO toàn diện", "Dedicated PM riêng", "Bảo hành 6 tháng", "Support 24/7"],
-    lp: 280, color: DS.purple,
-    desc: "Giao diện độc quyền NextJS, tối ưu tốc độ cao, thương hiệu cao cấp",
-  },
-];
+function PackageCard({
+  tier,
+  serviceKey,
+  locale,
+  isPopular,
+  onSelect,
+}: {
+  tier: ServiceTier;
+  serviceKey: string;
+  locale: string;
+  isPopular: boolean;
+  onSelect: () => void;
+}) {
+  const color = TIER_COLORS[serviceKey] ?? DS.blue;
+  const tierLabel = locale === "vi" ? TIER_LABELS[tier.level] : TIER_LABELS_EN[tier.level];
+  const name = tier.name || tierLabel;
+  const shortDesc = tier.shortDesc ?? "";
 
-const FALLBACK_FEATURES: WizardFeature[] = [
-  {
-    id: "cms", label: "Tích hợp CMS", price: 5_000_000,
-    category: "Nâng cao", tier: "add-on",
-    description: "CMS (Hệ thống Quản trị Nội dung) cho phép bạn tự thêm/sửa/xóa nội dung website mà không cần biết code. Bạn có thể tự viết bài, thay hình ảnh, cập nhật giá sản phẩm — tất cả chỉ cần vài click chuột. Không cần thuê dev mỗi khi cần chỉnh sửa nhỏ.",
-    benefit: "Tự quản lý website không cần biết code",
-  },
-  {
-    id: "i18n", label: "Đa ngôn ngữ (i18n)", price: 3_000_000,
-    category: "Nâng cao", tier: "add-on",
-    description: "Website hiển thị đồng thời nhiều ngôn ngữ (Tiếng Việt, Tiếng Anh, Nhật, Hàn...). Khách hàng nước ngoài có thể đọc website bằng ngôn ngữ của họ. Người dùng tự chuyển ngôn ngữ bằng nút trên giao diện.",
-    benefit: "Tiếp cận khách hàng quốc tế",
-  },
-  {
-    id: "ecom", label: "E-commerce (Giỏ hàng & Thanh toán)", price: 12_000_000,
-    category: "Nâng cao", tier: "add-on",
-    description: "Biến website thành cửa hàng online — khách có thể xem sản phẩm, cho vào giỏ, thanh toán trực tiếp bằng VNPay, MoMo, ZaloPay hoặc chuyển khoản. Tích hợp quản lý đơn hàng, kho hàng, mã giảm giá. Phù hợp bán hàng online, boutique, shop nhỏ.",
-    benefit: "Bán hàng online ngay trên website",
-  },
-  {
-    id: "blog", label: "Blog & Content Module", price: 2_500_000,
-    category: "Nội dung", tier: "add-on",
-    description: "Trang tin tức riêng biệt trên website — bạn có thể viết bài chia sẻ, tin khuyến mãi, hướng dẫn sản phẩm. Mỗi bài viết đều được tối ưu SEO để khách hàng tìm thấy bạn trên Google. Không cần biết code để viết và đăng bài.",
-    benefit: "Chia sẻ nội dung, thu hút khách tìm kiếm Google",
-  },
-  {
-    id: "analytics", label: "Analytics Dashboard", price: 4_000_000,
-    category: "Analytics", tier: "add-on",
-    description: "Bảng điều khiển thống kê riêng — xem lượt truy cập, khách đến từ đâu, trang nào được xem nhiều nhất, khách ở lại bao lâu. Dữ liệu cập nhật real-time, giúp bạn hiểu hành vi khách hàng và đưa ra quyết định kinh doanh tốt hơn.",
-    benefit: "Hiểu khách hàng qua dữ liệu thực tế",
-  },
-];
+  const savingPct = tier.marketPrice && tier.marketPrice > tier.basePrice
+    ? Math.round((1 - tier.basePrice / tier.marketPrice) * 100)
+    : 0;
+
+  return (
+    <motion.div
+      onClick={onSelect}
+      className="text-left relative overflow-hidden cursor-pointer"
+      style={{
+        background: isPopular ? `${color}0C` : "rgba(15,23,42,0.7)",
+        border: `2px solid ${isPopular ? color + "50" : DS.border}`,
+        borderRadius: 20,
+        padding: "24px 20px",
+        boxShadow: isPopular ? `0 0 30px ${color}15` : "none",
+        transition: "all 0.2s",
+      }}
+      whileHover={{ scale: 1.02, boxShadow: `0 0 20px ${color}20` }}
+    >
+      {/* Popular / Selected badge */}
+      {isPopular && (
+        <div style={{
+          position: "absolute", top: 0, left: 0, right: 0,
+          padding: "4px", textAlign: "center",
+          background: GRD.primary,
+          fontSize: 9, color: "#fff", fontFamily: DS.mono, letterSpacing: "0.1em",
+        }}>
+          ★ {locale === "vi" ? "PHỔ BIẾN NHẤT" : "MOST POPULAR"}
+        </div>
+      )}
+
+      <div style={{ marginTop: isPopular ? 18 : 0 }}>
+        {/* Tier + Price */}
+        <div style={{ marginBottom: 16 }}>
+          <div style={{
+            color: color, fontSize: 10, fontFamily: DS.mono,
+            letterSpacing: "0.18em", marginBottom: 6,
+          }}>
+            {name.toUpperCase()}
+          </div>
+
+          {tier.marketPrice && tier.marketPrice > tier.basePrice && (
+            <div style={{
+              color: DS.text5, fontSize: 12, fontFamily: DS.mono,
+              textDecoration: "line-through", lineHeight: 1, marginBottom: 4,
+            }}>
+              {fmtVND(tier.marketPrice)}
+            </div>
+          )}
+
+          <div style={{
+            color: DS.text, fontFamily: DS.heading,
+            fontSize: tier.basePrice >= 1_000_000 ? 28 : 32,
+            fontWeight: 900, lineHeight: 1.1, marginBottom: 2,
+          }}>
+            {fmtVND(tier.basePrice)}
+          </div>
+
+          {savingPct > 0 && (
+            <div
+              className="inline-block mb-3 px-2 py-0.5 rounded text-[10px] font-bold"
+              style={{ background: "rgba(34,197,94,0.12)", color: "#22C55E", fontFamily: DS.mono }}
+            >
+              −{savingPct}%
+            </div>
+          )}
+
+          <p style={{ color: DS.text3, fontSize: 12, lineHeight: 1.5, marginTop: 4 }}>
+            {shortDesc}
+          </p>
+        </div>
+
+        {/* CTA */}
+        <Link
+          href={`/${locale}/booking?service=${serviceKey}&package=${tier.id}`}
+          onClick={e => e.stopPropagation()}
+          style={{
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+            padding: "10px", borderRadius: 12,
+            background: isPopular ? GRD.primary : "rgba(255,255,255,0.06)",
+            color: "#fff", fontWeight: 700, fontSize: 13,
+            textDecoration: "none", fontFamily: DS.mono,
+            boxShadow: isPopular ? "0 4px 16px rgba(236,72,153,0.35)" : "none",
+            transition: "all 0.2s",
+          }}
+        >
+          {locale === "vi" ? "Chọn gói này" : "Select this plan"}
+          <ArrowRight size={14} />
+        </Link>
+
+        {/* LP reward */}
+        <div style={{
+          textAlign: "center", marginTop: 10,
+          color: DS.purple, fontSize: 11, fontFamily: DS.mono,
+        }}>
+          ◈ +{tier.lpReward.toLocaleString()} LP
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// ── FAQ Accordion ─────────────────────────────────────────────────────────────
+
+function FaqItem({ item, locale }: { item: typeof FAQ_ITEMS[0]; locale: string }) {
+  const [open, setOpen] = useState(false);
+  const q = getLocaleText(item.q.vi, item.q.en, locale);
+  const a = getLocaleText(item.a.vi, item.a.en, locale);
+
+  return (
+    <div style={{
+      background: DS.bgCard, border: `1px solid ${open ? DS.pink + "40" : DS.border}`,
+      borderRadius: 12, overflow: "hidden", transition: "border-color 0.2s",
+    }}>
+      <button
+        onClick={() => setOpen(v => !v)}
+        style={{
+          width: "100%", padding: "16px 18px", background: "none", border: "none",
+          cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between",
+          gap: 12, textAlign: "left",
+        }}
+      >
+        <span style={{ color: DS.text, fontSize: 14, fontWeight: 600, lineHeight: 1.4 }}>
+          {q}
+        </span>
+        <motion.div animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.2 }}>
+          <ChevronDown size={16} style={{ color: DS.text4, flexShrink: 0 }} />
+        </motion.div>
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            style={{ overflow: "hidden" }}
+          >
+            <div style={{
+              padding: "0 18px 16px",
+              color: DS.text3, fontSize: 13, lineHeight: 1.7,
+              borderTop: `1px solid ${DS.border}`,
+              paddingTop: 12,
+            }}>
+              {a}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// ── Trust Strip ───────────────────────────────────────────────────────────────
+
+function TrustStrip({ locale }: { locale: string }) {
+  return (
+    <div style={{
+      display: "grid",
+      gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+      gap: 12,
+    }}>
+      {TRUST_ITEMS.map(item => (
+        <div
+          key={item.textVi}
+          style={{
+            display: "flex", alignItems: "center", gap: 10, padding: "12px 14px",
+            background: `${item.color}06`,
+            border: `1px solid ${item.color}18`,
+            borderRadius: 12,
+          }}
+        >
+          <div style={{
+            width: 36, height: 36, borderRadius: 10,
+            background: `${item.color}12`,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 16, flexShrink: 0,
+          }}>
+            {item.icon}
+          </div>
+          <span style={{ color: DS.text3, fontSize: 12, lineHeight: 1.4 }}>
+            {locale === "vi" ? item.textVi : item.textEn}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 // ── Main Component ─────────────────────────────────────────────────────────────
 
-export function DichVuClient({
-  config,
-  locale,
-}: {
-  config: import("@/lib/types/booking").PricingConfig | null;
-  locale: string;
-}) {
-  const [selectedPkgId, setSelectedPkgId] = useState<string | null>(null);
-  const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
+export function DichVuClient({ data, locale }: Props) {
+  const [activeService, setActiveService] = useState<string>("web");
 
-  // Derive data — use API config, fallback to static
-  const packages: Package[] = config
-    ? config.packages.map(p => ({
-        id: p.id,
-        slug: p.slug,
-        name: p.name,
-        price: p.price ?? 0,
-        marketPrice: p.marketPrice,
-        savingPct: p.savingPct,
-        features: p.features ?? [],
-        lp: config.packageLps?.[p.id] ?? 50,
-        popular: p.popular,
-        color: p.color ?? DS.blue,
-        desc: p.desc ?? "",
-      }))
-    : FALLBACK_PACKAGES;
+  // Derive tiers from API or fallback
+  const allTiers: ServiceTier[] = data?.tiers ?? FALLBACK_TIERS;
 
-  const allFeatures: WizardFeature[] = config ? config.features : FALLBACK_FEATURES;
-
-  // Find selected package
-  const selectedPkg = packages.find(p => p.id === selectedPkgId);
-  const selectedPkgIdx = packages.findIndex(p => p.id === selectedPkgId);
-
-  // Compute included feature IDs:
-  // pkg.features = NAME strings → match against allFeatures[i].label → get IDs
-  const includedFeatureIds: string[] = useMemo(() => {
-    if (selectedPkgIdx < 0 || !selectedPkg) return [];
-    // Cascade: all features from Basic + Business up to selected
-    const pkgNames = new Set<string>();
-    for (let i = 0; i <= selectedPkgIdx; i++) {
-      packages[i]!.features.forEach(name => pkgNames.add(name));
+  // Group by serviceKey
+  const tiersByService = useMemo(() => {
+    const map: Record<string, ServiceTier[]> = {};
+    for (const key of SERVICE_KEYS) {
+      map[key] = allTiers
+        .filter(t => t.serviceKey === key && t.isActive)
+        .sort((a, b) => a.level - b.level);
     }
-    // Match names → IDs from allFeatures
-    return allFeatures
-      .filter(f => pkgNames.has(f.label))
-      .map(f => f.id);
-  }, [selectedPkgIdx, packages, allFeatures]);
+    return map;
+  }, [allTiers]);
 
-  // Compute prices
-  const basePrice = selectedPkg?.price ?? 0;
-  const extraFeatureTotal = allFeatures
-    .filter(f => selectedFeatures.includes(f.id) && !includedFeatureIds.includes(f.id))
-    .reduce((s, f) => s + f.price, 0);
-  const subtotal = basePrice + extraFeatureTotal;
+  const serviceTiers = tiersByService[activeService] ?? [];
+  const meta = SERVICE_META[activeService];
+  const color = TIER_COLORS[activeService] ?? DS.blue;
 
-  const handleToggle = (featureId: string) => {
-    // Cannot deselect features included in the base package
-    if (includedFeatureIds.includes(featureId)) return;
-    setSelectedFeatures(prev =>
-      prev.includes(featureId) ? prev.filter(id => id !== featureId) : [...prev, featureId]
-    );
-  };
-
-  // When switching packages, reset selectedFeatures (keep only non-included ones)
-  const handleSelectPackage = (pkgId: string) => {
-    setSelectedFeatures(prev =>
-      prev.filter(id => !includedFeatureIds.includes(id))
-    );
-    setSelectedPkgId(pkgId);
-  };
-
-  const pkgColor = selectedPkg?.color ?? DS.blue;
-  const pkgBorderColor = `${pkgColor}30`;
-  const pkgBgColor = `${pkgColor}0C`;
+  // Find the "popular" tier (level 2)
+  const popularTierId = serviceTiers.find(t => t.level === 2)?.id;
 
   return (
     <main style={{ background: DS.bg, minHeight: "100vh", fontFamily: DS.body }}>
       {/* ── Hero ── */}
-      <section style={{ background: GRD.hero, padding: "40px 0 0" }}>
+      <section style={{
+        background: GRD.hero,
+        padding: "48px 0 32px",
+        borderBottom: `1px solid ${DS.border}`,
+      }}>
         <div className="max-w-5xl mx-auto px-6 text-center">
-          <div
-            className="inline-flex items-center gap-2 mb-4 px-3 py-1 rounded-full"
+          {/* Badge */}
+          <motion.div
+            className="inline-flex items-center gap-2 mb-5 px-4 py-1.5 rounded-full"
             style={{ background: "rgba(236,72,153,0.1)", border: "1px solid rgba(236,72,153,0.25)" }}
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
           >
-            <span style={{ color: DS.pink, fontSize: 9, fontFamily: DS.mono, letterSpacing: "0.22em" }}>
-              BẢNG GIÁ WEBSITE
+            <span style={{ color: DS.pink, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.22em" }}>
+              {locale === "vi" ? "BẢNG GIÁ 2026" : "PRICING 2026"}
             </span>
-          </div>
-          <h1 style={{
-            fontFamily: DS.heading, fontSize: 36, fontWeight: 900, letterSpacing: "0.04em",
-            background: GRD.heroText, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-            marginBottom: 12,
-          }}>
-            Chọn gói Website phù hợp với bạn
-          </h1>
-          <p style={{ color: DS.text3, fontSize: 15, lineHeight: 1.7, maxWidth: 560, margin: "0 auto 20px" }}>
-            Mỗi gói bao gồm đầy đủ tính năng cơ bản. Thêm tính năng bạn cần —
-            tất cả đều có giải thích dễ hiểu. Không phí ẩn.
-          </p>
+          </motion.div>
+
+          {/* Title */}
+          <motion.h1
+            style={{
+              fontFamily: DS.heading, fontSize: 38, fontWeight: 900, letterSpacing: "0.03em",
+              background: GRD.heroText, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+              marginBottom: 14, lineHeight: 1.2,
+            }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            {locale === "vi"
+              ? "Giải Pháp Số Toàn Diện"
+              : "Comprehensive Digital Solutions"}
+          </motion.h1>
+
+          <motion.p
+            style={{ color: DS.text3, fontSize: 15, lineHeight: 1.7, maxWidth: 560, margin: "0 auto 28px" }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+          >
+            {locale === "vi"
+              ? "Website · App/SaaS · Dashboard · SEO — Basic đến Experience. Miễn phí SSL, bảo hành, bàn giao code nguồn."
+              : "Website · App/SaaS · Dashboard · SEO — Basic to Experience. Free SSL, warranty, full source code handover."}
+          </motion.p>
+
+          {/* Service Tabs */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            style={{
+              display: "inline-flex", gap: 6, padding: 6,
+              background: "rgba(15,23,42,0.9)",
+              borderRadius: 16, border: `1px solid ${DS.border}`,
+            }}
+          >
+            {SERVICE_KEYS.map(key => {
+              const svc = SERVICE_META[key];
+              const isActive = activeService === key;
+              const count = tiersByService[key]?.length ?? 0;
+              return (
+                <button
+                  key={key}
+                  onClick={() => setActiveService(key)}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 6,
+                    padding: "8px 16px", borderRadius: 12,
+                    background: isActive ? `${svc.color}18` : "transparent",
+                    border: isActive ? `1px solid ${svc.color}40` : "1px solid transparent",
+                    color: isActive ? svc.color : DS.text4,
+                    cursor: "pointer", fontSize: 13, fontWeight: isActive ? 700 : 400,
+                    fontFamily: DS.body, transition: "all 0.2s",
+                  }}
+                >
+                  <span>{svc.icon}</span>
+                  <span>{svc.label[locale] ?? svc.label.vi}</span>
+                  {count > 0 && (
+                    <span style={{
+                      fontSize: 10, fontFamily: DS.mono,
+                      background: isActive ? `${svc.color}20` : DS.bg,
+                      color: isActive ? svc.color : DS.text5,
+                      padding: "1px 5px", borderRadius: 9999,
+                    }}>
+                      {count}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </motion.div>
         </div>
       </section>
 
-      {/* ── Main content ── */}
-      <section style={{ padding: "32px 0 80px" }}>
+      {/* ── Package Cards ── */}
+      <section style={{ padding: "36px 0 48px" }}>
         <div className="max-w-5xl mx-auto px-6">
-
-          {/* ── Price summary bar ── */}
-          <div
-            className="rounded-2xl mb-8 p-5 relative overflow-hidden"
-            style={{
-              background: "rgba(10,15,30,0.92)",
-              border: `1px solid ${pkgColor}30`,
-              boxShadow: `0 0 40px ${pkgColor}10`,
-            }}
-          >
-            <div
-              style={{
-                position: "absolute", top: -40, right: -40,
-                width: 160, height: 160, borderRadius: "50%",
-                background: `radial-gradient(circle, ${pkgColor}12 0%, transparent 70%)`,
-                pointerEvents: "none",
-              }}
-            />
-            <div className="relative flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-              {/* Left: package info */}
-              <div>
-                <div style={{ color: pkgColor, fontSize: 9, fontFamily: DS.mono, letterSpacing: "0.2em", marginBottom: 4 }}>
-                  {selectedPkg ? "GÓI ĐÃ CHỌN" : "CHỌN GÓI WEBSITE"}
-                </div>
-                {selectedPkg ? (
-                  <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
-                    <span style={{ color: DS.text, fontFamily: DS.heading, fontSize: 30, fontWeight: 900 }}>
-                      {fmtVND(subtotal)}
-                    </span>
-                    <span style={{ color: pkgColor, fontSize: 13, fontFamily: DS.mono }}>
-                      {selectedPkg.name}
-                    </span>
-                    {selectedPkg.savingPct && selectedPkg.savingPct > 0 && (
-                      <span
-                        className="inline-block px-2 py-0.5 rounded-full text-xs font-bold"
-                        style={{
-                          background: "rgba(34,197,94,0.12)",
-                          color: DS.green,
-                          fontFamily: DS.mono,
-                        }}
-                      >
-                        −{selectedPkg.savingPct}%
-                      </span>
-                    )}
-                  </div>
-                ) : (
-                  <div style={{ color: DS.text4, fontSize: 15 }}>
-                    Chọn gói bên dưới để xem báo giá
-                  </div>
-                )}
-              </div>
-
-              {/* Right: breakdown chips */}
-              {selectedPkg && (
-                <div className="flex flex-wrap gap-2">
-                  <div
-                    className="px-3 py-1.5 rounded-xl text-xs font-mono"
-                    style={{ background: `${pkgColor}10`, color: pkgColor, border: `1px solid ${pkgColor}25` }}
-                  >
-                    Gói: {fmtVND(basePrice)}
-                  </div>
-                  {extraFeatureTotal > 0 && (
-                    <div
-                      className="px-3 py-1.5 rounded-xl text-xs font-mono"
-                      style={{ background: `${DS.blue}10`, color: DS.blue, border: `1px solid ${DS.blue}25` }}
-                    >
-                      +Tính năng: {fmtVND(extraFeatureTotal)}
-                    </div>
-                  )}
-                  <div
-                    className="px-3 py-1.5 rounded-xl text-xs font-mono"
-                    style={{ background: `${DS.purple}10`, color: DS.purple, border: `1px solid ${DS.purple}25` }}
-                  >
-                    ◈ +{selectedPkg.lp.toLocaleString()} LP
-                  </div>
-                </div>
-              )}
+          {/* Service headline */}
+          <div style={{ textAlign: "center", marginBottom: 28 }}>
+            <div style={{
+              display: "inline-flex", alignItems: "center", gap: 8,
+              background: `${color}10`, border: `1px solid ${color}25`,
+              borderRadius: 9999, padding: "4px 12px", marginBottom: 8,
+            }}>
+              <span>{meta.icon}</span>
+              <span style={{ color, fontSize: 12, fontFamily: DS.mono, fontWeight: 600 }}>
+                {meta.heroTitle[locale] ?? meta.heroTitle.vi}
+              </span>
             </div>
-          </div>
-
-          {/* ── Package cards ── */}
-          <div className="flex items-center gap-3 mb-5">
-            <div style={{ width: 3, height: 16, background: DS.pink, borderRadius: 2 }} />
-            <h2 style={{ color: DS.text2, fontSize: 12, fontFamily: DS.mono, letterSpacing: "0.14em" }}>
-              CHỌN GÓI WEBSITE
+            <h2 style={{
+              color: DS.text2, fontSize: 14, fontFamily: DS.mono,
+              letterSpacing: "0.05em",
+            }}>
+              {locale === "vi" ? "CHỌN GÓI PHÙ HỢP VỚI BẠN" : "CHOOSE THE RIGHT PLAN FOR YOU"}
             </h2>
-            <div style={{ flex: 1, height: 1, background: DS.border }} />
           </div>
 
-          <div
-            className="grid gap-4 mb-10"
-            style={{ gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))" }}
-          >
-            {packages.map(pkg => {
-              const isSelected = selectedPkgId === pkg.id || pkg.slug === selectedPkgId;
-              const isPopular = pkg.popular && !isSelected;
-              const saving = (pkg.marketPrice ?? 0) - pkg.price;
+          {/* 3 tier cards */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeService}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.3 }}
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+                gap: 16,
+              }}
+            >
+              {serviceTiers.length === 0 ? (
+                <div style={{ gridColumn: "1/-1", textAlign: "center", padding: "4rem", color: DS.text4 }}>
+                  {locale === "vi" ? "Đang cập nhật bảng giá..." : "Updating pricing..."}
+                </div>
+              ) : (
+                serviceTiers.map(tier => (
+                  <PackageCard
+                    key={tier.id}
+                    tier={tier}
+                    serviceKey={activeService}
+                    locale={locale}
+                    isPopular={tier.id === popularTierId}
+                    onSelect={() => {}}
+                  />
+                ))
+              )}
+            </motion.div>
+          </AnimatePresence>
+        </div>
+      </section>
 
-              return (
-                <motion.button
-                  key={pkg.id}
-                  onClick={() => handleSelectPackage(pkg.id)}
-                  className="text-left relative overflow-hidden"
-                  style={{
-                    background: isSelected ? pkgBgColor : "rgba(15,23,42,0.7)",
-                    border: isSelected ? `2px solid ${pkg.color}60` : `1px solid ${DS.border}`,
-                    borderRadius: 16,
-                    padding: "20px 18px",
-                    cursor: "pointer",
-                    boxShadow: isSelected ? `0 0 24px ${pkg.color}18` : "none",
-                    transition: "all 0.2s",
-                  }}
-                  whileHover={{ scale: 1.02 }}
-                >
-                  {/* Badge */}
-                  {isPopular && (
-                    <div style={{
-                      position: "absolute", top: 0, left: 0, right: 0,
-                      padding: "2px", textAlign: "center",
-                      background: GRD.primary, fontSize: 8, color: "#fff", fontFamily: DS.mono,
-                      letterSpacing: "0.1em",
-                    }}>
-                      ★ PHỔ BIẾN
-                    </div>
-                  )}
-                  {isSelected && (
-                    <div style={{
-                      position: "absolute", top: 0, left: 0, right: 0,
-                      padding: "2px", textAlign: "center",
-                      background: pkg.color, fontSize: 8, color: "#fff", fontFamily: DS.mono,
-                      letterSpacing: "0.1em",
-                    }}>
-                      ✓ ĐÃ CHỌN
-                    </div>
-                  )}
+      {/* ── Trust Strip ── */}
+      <section style={{ padding: "0 0 60px" }}>
+        <div className="max-w-5xl mx-auto px-6">
+          <TrustStrip locale={locale} />
+        </div>
+      </section>
 
-                  <div style={{ marginTop: isPopular || isSelected ? 14 : 0 }}>
-                    <div style={{
-                      color: pkg.color, fontSize: 9, fontFamily: DS.mono,
-                      letterSpacing: "0.18em", marginBottom: 6,
-                    }}>
-                      {pkg.name.toUpperCase()}
-                    </div>
-                    {saving > 0 && (
-                      <div style={{
-                        color: DS.text5, fontSize: 11, fontFamily: DS.mono,
-                        textDecoration: "line-through", lineHeight: 1, marginBottom: 2,
-                      }}>
-                        {fmtVND(pkg.marketPrice ?? 0)}
-                      </div>
-                    )}
-                    <div style={{
-                      color: DS.text, fontFamily: DS.heading, fontSize: 28, fontWeight: 900,
-                      lineHeight: 1.1, marginBottom: 4,
-                    }}>
-                      {fmtVND(pkg.price)}
-                    </div>
-                    {pkg.savingPct && pkg.savingPct > 0 && (
-                      <div
-                        className="inline-block mb-3 px-1.5 py-0.5 rounded text-[9px] font-bold"
-                        style={{
-                          background: "rgba(34,197,94,0.12)", color: DS.green, fontFamily: DS.mono,
-                        }}
-                      >
-                        −{pkg.savingPct}%
-                      </div>
-                    )}
-                    <p style={{ color: DS.text3, fontSize: 11, lineHeight: 1.5, marginTop: 6 }}>
-                      {pkg.desc}
-                    </p>
-                    {pkg.features.length > 0 && (
-                      <ul style={{ margin: "8px 0 0", padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 2 }}>
-                        {pkg.features.slice(0, 3).map((feat, i) => (
-                          <li key={i} style={{ display: "flex", alignItems: "center", gap: 4, color: DS.text4, fontSize: 10, lineHeight: 1.4 }}>
-                            <Check size={9} style={{ color: DS.green, flexShrink: 0 }} />
-                            {feat}
-                          </li>
-                        ))}
-                        {pkg.features.length > 3 && (
-                          <li style={{ color: DS.text5, fontSize: 10 }}>
-                            +{pkg.features.length - 3} tính năng khác
-                          </li>
-                        )}
-                      </ul>
-                    )}
-                    <div style={{ color: DS.purple, fontSize: 10, fontFamily: DS.mono, marginTop: 8 }}>
-                      ◈ +{pkg.lp.toLocaleString()} LP
-                    </div>
-                  </div>
-                </motion.button>
-              );
-            })}
+      {/* ── FAQ ── */}
+      <section style={{
+        padding: "0 0 80px",
+        borderTop: `1px solid ${DS.border}`,
+      }}>
+        <div className="max-w-3xl mx-auto px-6">
+          <div style={{ textAlign: "center", marginBottom: 28, marginTop: 48 }}>
+            <h2 style={{
+              fontFamily: DS.heading, fontSize: 26, fontWeight: 800,
+              background: GRD.heroText, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+              marginBottom: 8,
+            }}>
+              {locale === "vi" ? "Câu Hỏi Thường Gặp" : "Frequently Asked Questions"}
+            </h2>
+            <p style={{ color: DS.text4, fontSize: 13 }}>
+              {locale === "vi"
+                ? "Trả lời nhanh những thắc mắc phổ biến nhất"
+                : "Quick answers to the most common questions"}
+            </p>
           </div>
 
-          {/* ── Feature Toggle Table (animate in when package selected) ── */}
-          <AnimatePresence>
-            {selectedPkgId && allFeatures.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: 24 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -12 }}
-                transition={{ duration: 0.3, ease: "easeOut" }}
-              >
-                <FeatureToggleTable
-                  allFeatures={allFeatures}
-                  selectedIds={selectedFeatures}
-                  includedIds={includedFeatureIds}
-                  onToggle={handleToggle}
-                  packageName={selectedPkg?.name}
-                  packageColor={pkgColor}
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* ── CTA ── */}
-          <AnimatePresence>
-            {selectedPkg && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-                className="mt-10"
-              >
-                {/* Summary */}
-                <div className="text-center mb-6">
-                  <p style={{ color: DS.text3, fontSize: 14, marginBottom: 6 }}>
-                    Giá ước tính:{" "}
-                    <strong style={{ color: DS.text, fontSize: 18, fontFamily: DS.heading }}>
-                      {fmtVND(subtotal)}
-                    </strong>
-                  </p>
-                  {extraFeatureTotal > 0 && (
-                    <p style={{ color: DS.text4, fontSize: 12, fontFamily: DS.mono }}>
-                      (gói {fmtVND(basePrice)} + {selectedFeatures.filter(id => !includedFeatureIds.includes(id)).length} tính năng thêm)
-                    </p>
-                  )}
-                  <p style={{ color: DS.purple, fontSize: 12, fontFamily: DS.mono, marginTop: 4 }}>
-                    ◈ Nhận +{selectedPkg.lp.toLocaleString()} LP khi hoàn thành dự án
-                  </p>
-                </div>
-
-                {/* Buttons */}
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Link
-                    href={`/${locale}/booking?service=web&package=${selectedPkgId}`}
-                    className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl font-bold text-white"
-                    style={{
-                      background: GRD.primary,
-                      fontFamily: DS.mono, fontSize: 14,
-                      boxShadow: "0 4px 20px rgba(236,72,153,0.4)",
-                      textDecoration: "none",
-                    }}
-                  >
-                    Đặt dịch vụ này
-                    <ArrowRight size={16} />
-                  </Link>
-                  <Link
-                    href={`/${locale}/contact`}
-                    className="inline-flex items-center justify-center px-8 py-4 rounded-2xl font-bold"
-                    style={{
-                      background: "rgba(15,23,42,0.8)",
-                      color: DS.text3,
-                      border: `1px solid ${DS.border}`,
-                      fontFamily: DS.mono, fontSize: 14,
-                      textDecoration: "none",
-                    }}
-                  >
-                    Liên hệ tư vấn
-                  </Link>
-                </div>
-
-                <p style={{
-                  color: DS.text5, fontSize: 11, fontFamily: DS.mono,
-                  marginTop: 14, textAlign: "center",
-                }}>
-                  Không phí ẩn · Bảo hành{" "}
-                  {selectedPkg.id === "basic" ? "1" : selectedPkg.id === "business" ? "3" : "6"} tháng ·
-                  Thanh toán linh hoạt
-                </p>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* ── Trust strip ── */}
-          <div
-            className="mt-16 grid gap-3"
-            style={{ gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}
-          >
-            {[
-              { icon: "🛡", text: "Bảo hành 1–6 tháng", color: DS.green },
-              { icon: "📱", text: "Responsive mọi thiết bị", color: DS.blue },
-              { icon: "🔒", text: "SSL miễn phí trọn đời", color: DS.purple },
-              { icon: "⚡", text: "Code sạch, dễ mở rộng", color: DS.cyan },
-            ].map(item => (
-              <div
-                key={item.text}
-                className="flex items-center gap-3 p-3 rounded-xl"
-                style={{ background: `${item.color}08`, border: `1px solid ${item.color}20` }}
-              >
-                <div
-                  className="flex items-center justify-center text-sm flex-shrink-0 rounded-lg"
-                  style={{
-                    width: 32, height: 32,
-                    background: `${item.color}15`,
-                    color: item.color,
-                  }}
-                >
-                  {item.icon}
-                </div>
-                <span style={{ color: DS.text3, fontSize: 12, lineHeight: 1.4 }}>
-                  {item.text}
-                </span>
-              </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {FAQ_ITEMS.map((item, i) => (
+              <FaqItem key={i} item={item} locale={locale} />
             ))}
+          </div>
+
+          {/* CTA after FAQ */}
+          <div style={{ textAlign: "center", marginTop: 36 }}>
+            <p style={{ color: DS.text4, fontSize: 13, marginBottom: 16 }}>
+              {locale === "vi"
+                ? "Không tìm thấy câu trả lời bạn cần?"
+                : "Didn't find the answer you're looking for?"}
+            </p>
+            <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+              <Link
+                href={`/${locale}/contact`}
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 6,
+                  padding: "10px 24px", borderRadius: 12,
+                  background: GRD.primary, color: "#fff", fontWeight: 700,
+                  textDecoration: "none", fontSize: 14, fontFamily: DS.mono,
+                  boxShadow: GLOW.pink,
+                }}
+              >
+                {locale === "vi" ? "Liên hệ tư vấn miễn phí" : "Get free consultation"}
+                <ArrowRight size={14} />
+              </Link>
+              <Link
+                href={`/${locale}/booking`}
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 6,
+                  padding: "10px 24px", borderRadius: 12,
+                  background: DS.bgCard, color: DS.text3,
+                  border: `1px solid ${DS.border}`,
+                  textDecoration: "none", fontSize: 14, fontFamily: DS.mono,
+                }}
+              >
+                {locale === "vi" ? "Đặt dịch vụ ngay" : "Book a service now"}
+              </Link>
+            </div>
           </div>
         </div>
       </section>

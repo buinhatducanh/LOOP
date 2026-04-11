@@ -69,6 +69,7 @@ export const qk = {
 
   // Admin — content
   adminServices: (params?: Record<string, string | number>) => ["admin", "services", params] as const,
+  adminServiceTiers: (params?: Record<string, string>) => ["admin", "service-tiers", params] as const,
   adminProjects: (params?: Record<string, string | number>) => ["admin", "projects", params] as const,
   adminBlogPosts: (params?: Record<string, string | number>) => ["admin", "blog-posts", params] as const,
   adminTeam: () => ["admin", "team"] as const,

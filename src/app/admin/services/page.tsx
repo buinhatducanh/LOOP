@@ -9,10 +9,11 @@ import { adminApi } from "@/lib/api/client";
 import { DS, GRD } from "@/lib/design-tokens";
 import {
   Plus, Edit2, Search, RefreshCw,
-  X, Globe,
+  X, Globe, DollarSign,
 } from "lucide-react";
 import { AnimatePresence } from "motion/react";
 import { ImageUpload } from "@/components/ui/ImageUpload";
+import { PricingTab } from "./components/PricingTab";
 
 type Service = {
   id: string;
@@ -127,6 +128,7 @@ export default function ServicesTabPage() {
   const [search, setSearch] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   const [editService, setEditService] = useState<Service | null>(null);
+  const [activeTab, setActiveTab] = useState<"services" | "pricing">("services");
 
   const { data, isLoading, isFetching } = useQuery({
     queryKey: qk.adminServices({ page, limit: 20, search }),
@@ -145,10 +147,52 @@ export default function ServicesTabPage() {
 
   return (
     <div>
-      {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-        <div>
-          <h2 style={{ fontFamily: DS.heading, fontSize: 20, fontWeight: 800, color: DS.text, marginBottom: 2 }}>{t("services.title")}</h2>
+      {/* Tab switcher */}
+      <div style={{ display: "flex", gap: 4, marginBottom: 24, borderBottom: `1px solid ${DS.border}`, paddingBottom: 0 }}>
+        <button
+          onClick={() => setActiveTab("services")}
+          style={{
+            display: "flex", alignItems: "center", gap: 6, padding: "10px 18px",
+            borderBottom: activeTab === "services" ? `2px solid ${DS.blue}` : "2px solid transparent",
+            background: "none", border: "none", borderRadius: 0,
+            color: activeTab === "services" ? DS.text : DS.text4,
+            cursor: "pointer", fontSize: 13, fontWeight: 600,
+            transition: "all 0.15s",
+          }}
+        >
+          <Globe size={14} /> {t("services.title")}
+        </button>
+        <button
+          onClick={() => setActiveTab("pricing")}
+          style={{
+            display: "flex", alignItems: "center", gap: 6, padding: "10px 18px",
+            borderBottom: activeTab === "pricing" ? `2px solid ${DS.pink}` : "2px solid transparent",
+            background: "none", border: "none", borderRadius: 0,
+            color: activeTab === "pricing" ? DS.text : DS.text4,
+            cursor: "pointer", fontSize: 13, fontWeight: 600,
+            transition: "all 0.15s",
+          }}
+        >
+          <DollarSign size={14} /> Bảng Giá
+          <span style={{
+            background: DS.pink + "20", color: DS.pink,
+            fontSize: 10, fontFamily: DS.mono,
+            padding: "1px 6px", borderRadius: 9999,
+          }}>
+            NEW
+          </span>
+        </button>
+      </div>
+
+      {/* Tab content */}
+      {activeTab === "pricing" ? (
+        <PricingTab />
+      ) : (
+        <>
+          {/* Header */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+            <div>
+              <h2 style={{ fontFamily: DS.heading, fontSize: 20, fontWeight: 800, color: DS.text, marginBottom: 2 }}>{t("services.title")}</h2>
           <p style={{ color: DS.text4, fontSize: 12, fontFamily: DS.mono }}>
             {pagination?.total ?? 0} {t("services.serviceCount")}
           </p>
@@ -246,6 +290,8 @@ export default function ServicesTabPage() {
             </button>
           ))}
         </div>
+      )}
+        </>
       )}
     </div>
   );

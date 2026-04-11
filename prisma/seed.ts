@@ -1103,6 +1103,94 @@ async function seedServices() {
   console.log('  ✓ ' + services.length + ' services');
 }
 
+// ══════════════════════════════════════════════════════════════════
+// 9b. Service Tiers — 4 services × 3 tiers (Basic/Business/Experience)
+// ══════════════════════════════════════════════════════════════════
+
+async function seedServiceTiers() {
+  console.log("\n[ServiceTiers] Seeding 4 services × 3 tiers...");
+
+  const tiers = [
+    // ── WEB ──────────────────────────────────────────────────────
+    { serviceKey: "web", level: 1, name: "Cơ Bản", nameEn: "Basic",
+      shortDesc: "Phù hợp khởi nghiệp, website giới thiệu doanh nghiệp nhỏ",
+      shortDescEn: "Perfect for startups and small business websites",
+      basePrice: 3_890_000, marketPrice: 5_500_000, lpReward: 50, sortOrder: 1 },
+    { serviceKey: "web", level: 2, name: "Doanh Nghiệp", nameEn: "Business",
+      shortDesc: "Thiết kế tùy chỉnh theo thương hiệu, doanh nghiệp vừa và lớn",
+      shortDescEn: "Custom branding design for medium and large businesses",
+      basePrice: 5_890_000, marketPrice: 8_900_000, lpReward: 80, sortOrder: 2 },
+    { serviceKey: "web", level: 3, name: "Chuyên Nghiệp", nameEn: "Experience",
+      shortDesc: "Giao diện độc quyền Next.js, giải pháp toàn diện",
+      shortDescEn: "Exclusive Next.js design, comprehensive solution",
+      basePrice: 9_890_000, marketPrice: 12_000_000, lpReward: 120, sortOrder: 3 },
+
+    // ── APP/SaaS ─────────────────────────────────────────────────
+    { serviceKey: "app", level: 1, name: "Cơ Bản", nameEn: "Basic",
+      shortDesc: "App cơ bản với tính năng thiết yếu, MVP nhanh chóng",
+      shortDescEn: "Essential app features, fast MVP launch",
+      basePrice: 19_980_000, marketPrice: 25_000_000, lpReward: 200, sortOrder: 1 },
+    { serviceKey: "app", level: 2, name: "Doanh Nghiệp", nameEn: "Business",
+      shortDesc: "App đầy đủ tính năng, tích hợp push notification và analytics",
+      shortDescEn: "Full-featured app with push notifications and analytics",
+      basePrice: 39_800_000, marketPrice: 49_000_000, lpReward: 400, sortOrder: 2 },
+    { serviceKey: "app", level: 3, name: "Chuyên Nghiệp", nameEn: "Experience",
+      shortDesc: "App SaaS độc quyền, tích hợp AI, real-time, multi-tenant",
+      shortDescEn: "Exclusive SaaS app with AI, real-time, and multi-tenant support",
+      basePrice: 79_800_000, marketPrice: 99_000_000, lpReward: 800, sortOrder: 3 },
+
+    // ── DASHBOARD ─────────────────────────────────────────────────
+    { serviceKey: "dashboard", level: 1, name: "Cơ Bản", nameEn: "Basic",
+      shortDesc: "Dashboard cơ bản với biểu đồ và báo cáo, phù hợp nhóm nhỏ",
+      shortDescEn: "Basic dashboard with charts and reports for small teams",
+      basePrice: 9_900_000, marketPrice: 15_000_000, lpReward: 100, sortOrder: 1 },
+    { serviceKey: "dashboard", level: 2, name: "Doanh Nghiệp", nameEn: "Business",
+      shortDesc: "Dashboard nâng cao, multi-user, quyền hạn theo role",
+      shortDescEn: "Advanced dashboard with multi-user and role-based access",
+      basePrice: 19_900_000, marketPrice: 29_000_000, lpReward: 200, sortOrder: 2 },
+    { serviceKey: "dashboard", level: 3, name: "Chuyên Nghiệp", nameEn: "Experience",
+      shortDesc: "Enterprise dashboard với AI analytics, API đầy đủ, SLA",
+      shortDescEn: "Enterprise dashboard with AI analytics, full API, SLA support",
+      basePrice: 49_900_000, marketPrice: 69_000_000, lpReward: 500, sortOrder: 3 },
+
+    // ── SEO ───────────────────────────────────────────────────────
+    { serviceKey: "seo", level: 1, name: "Cơ Bản", nameEn: "Basic",
+      shortDesc: "10 bài chuẩn SEO, tối ưu on-page cơ bản",
+      shortDescEn: "10 SEO articles, basic on-page optimization",
+      basePrice: 2_000_000, marketPrice: 3_000_000, lpReward: 20, sortOrder: 1 },
+    { serviceKey: "seo", level: 2, name: "Doanh Nghiệp", nameEn: "Business",
+      shortDesc: "30 bài/tháng, SEO technical, Google Search Console",
+      shortDescEn: "30 articles/month, technical SEO, Google Search Console",
+      basePrice: 6_000_000, marketPrice: 9_000_000, lpReward: 60, sortOrder: 2 },
+    { serviceKey: "seo", level: 3, name: "Chuyên Nghiệp", nameEn: "Experience",
+      shortDesc: "SEO toàn diện: content, link building, AI content, 6 tháng",
+      shortDescEn: "Full SEO: content, link building, AI content, 6-month campaign",
+      basePrice: 36_000_000, marketPrice: 48_000_000, lpReward: 360, sortOrder: 3 },
+  ];
+
+  let count = 0;
+  for (const t of tiers) {
+    await prisma.serviceTier.upsert({
+      where: { serviceKey_level: { serviceKey: t.serviceKey, level: t.level } },
+      create: {
+        serviceKey: t.serviceKey, level: t.level,
+        name: t.name, nameEn: t.nameEn,
+        shortDesc: t.shortDesc, shortDescEn: t.shortDescEn,
+        basePrice: t.basePrice, marketPrice: t.marketPrice,
+        lpReward: t.lpReward, sortOrder: t.sortOrder, isActive: true,
+      },
+      update: {
+        name: t.name, nameEn: t.nameEn,
+        shortDesc: t.shortDesc, shortDescEn: t.shortDescEn,
+        basePrice: t.basePrice, marketPrice: t.marketPrice,
+        lpReward: t.lpReward, sortOrder: t.sortOrder, isActive: true,
+      },
+    });
+    count++;
+  }
+  console.log("  ✓ " + count + " service tiers (4 services × 3 tiers)");
+}
+
 // 9. Addon Services// 9. Addon Services
 // ══════════════════════════════════════════════════════════════════
 
@@ -2856,6 +2944,38 @@ async function seedRankHistory(memberCUIDs: Record<string, string>) {
 
 
 // ══════════════════════════════════════════════════════════════════
+// 17. Blog Tags
+// ══════════════════════════════════════════════════════════════════
+
+async function seedBlogTags() {
+  console.log("\n[BlogTags] Seeding blog tag taxonomy...");
+  const tags = [
+    { key: "web-design",     name: "Thiết kế Web",         nameEn: "Web Design",     color: "#3B82F6" },
+    { key: "web-app",         name: "Ứng dụng Web",           nameEn: "Web Application", color: "#8B5CF6" },
+    { key: "seo",             name: "SEO",                    nameEn: "SEO",             color: "#22C55E" },
+    { key: "digital-marketing", name: "Marketing số",        nameEn: "Digital Marketing", color: "#F59E0B" },
+    { key: "ux-ui",           name: "UX/UI Design",           nameEn: "UX/UI Design",   color: "#EC4899" },
+    { key: "mobile",          name: "Di động",               nameEn: "Mobile",         color: "#14B8A6" },
+    { key: "saas",             name: "SaaS",                  nameEn: "SaaS",           color: "#6366F1" },
+    { key: "ecommerce",       name: "Thương mại điện tử",   nameEn: "E-Commerce",      color: "#F97316" },
+    { key: "performance",     name: "Hiệu năng",            nameEn: "Performance",    color: "#06B6D4" },
+    { key: "ai-tools",        name: "AI & Công cụ",          nameEn: "AI & Tools",     color: "#A855F7" },
+  ];
+  let count = 0;
+  for (let i = 0; i < tags.length; i++) {
+    const t = tags[i];
+    await prisma.blogTag.upsert({
+      where: { key: t.key },
+      update: { name: t.name, nameEn: t.nameEn, color: t.color, sortOrder: i },
+      create: { key: t.key, name: t.name, nameEn: t.nameEn, color: t.color, sortOrder: i },
+    });
+    count++;
+  }
+  console.log(`  ✓ ${count} blog tags`);
+}
+
+
+// ══════════════════════════════════════════════════════════════════
 
 async function main() {
   console.log("=".repeat(50));
@@ -2892,10 +3012,12 @@ async function main() {
     await seedQuests();
     await seedCompanyEvents();
     await seedServices(); // <-- Seed public services (used by /api/v1/services)
+    await seedServiceTiers(); // <-- NEW: 4 services × 3 tiers for /dich-vu page
+    await seedBlogTags();
     await seedR2(deptIds); // <-- NEW: R2 unified demo data (pass deptIds for FK)
 
     // Verify counts
-    const [tm, us, pr, ord, pm, ef, ov, lp, tx, qp, ec, tsk, q, ev, exp, me, svc, at, mr] = await Promise.all([
+    const [tm, us, pr, ord, pm, ef, ov, lp, tx, qp, ec, tsk, q, ev, exp, me, svc, at, mr, st, bt] = await Promise.all([
       prisma.teamMember.count(),
       prisma.user.count(),
       prisma.project.count(),
@@ -2916,9 +3038,11 @@ async function main() {
       prisma.service.count(),
       prisma.accessTag.count(),
       prisma.memberRequest.count(),
+      prisma.serviceTier.count(),
+      prisma.blogTag.count(),
     ]);
-    console.log("\n[VERIFY] TM=%d US=%d PR=%d OR=%d PM=%d | LP=%d TX=%d QP=%d | EC=%d TS=%d Q=%d EV=%d | EXP=%d ME=%d | SVC=%d | AT=%d MR=%d",
-      tm, us, pr, ord, pm, lp, tx, qp, ec, tsk, q, ev, exp, me, svc, at, mr);
+    console.log("\n[VERIFY] TM=%d US=%d PR=%d OR=%d PM=%d | LP=%d TX=%d QP=%d | EC=%d TS=%d Q=%d EV=%d | EXP=%d ME=%d | SVC=%d | AT=%d MR=%d ST=%d | BT=%d",
+      tm, us, pr, ord, pm, lp, tx, qp, ec, tsk, q, ev, exp, me, svc, at, mr, st, bt);
     console.log("  (EF=%d OV=%d — effects in code, not DB)", ef, ov);
 
     console.log("\n" + "=".repeat(50));

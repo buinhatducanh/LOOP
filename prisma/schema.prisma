@@ -251,6 +251,33 @@ model Service {
   @@map("services")
 }
 
+model ServiceTier {
+  id          String   @id @default(cuid())
+  serviceKey  String              @map("service_key")
+  level       Int                 @map("tier_level")
+  name        String
+  nameEn      String?             @map("name_en")
+  nameJa      String?             @map("name_ja")
+  nameKo      String?             @map("name_ko")
+  nameZh      String?             @map("name_zh")
+  shortDesc   String?             @map("short_desc")
+  shortDescEn String?             @map("short_desc_en")
+  shortDescJa String?             @map("short_desc_ja")
+  shortDescKo String?             @map("short_desc_ko")
+  shortDescZh String?             @map("short_desc_zh")
+  basePrice   Int                 @map("base_price")
+  marketPrice Int?                @map("market_price")
+  lpReward    Int                 @default(50) @map("lp_reward")
+  sortOrder   Int                 @default(0) @map("sort_order")
+  isActive    Boolean             @default(true) @map("is_active")
+  createdAt   DateTime           @default(now()) @map("created_at")
+  updatedAt   DateTime           @updatedAt @map("updated_at")
+
+  @@unique([serviceKey, level])
+  @@index([serviceKey, isActive])
+  @@map("service_tiers")
+}
+
 model Project {
   id            String      @id @default(cuid())
   slug          String      @unique
@@ -552,6 +579,10 @@ model ServicePackage {
   isActive       Boolean        @default(true) @map("is_active")
   createdAt      DateTime       @default(now()) @map("created_at")
   updatedAt      DateTime       @updatedAt @map("updated_at")
+  /// Maps this package to a ServiceTier: "web" | "app" | "dashboard" | "seo"
+  serviceKey     String?        @map("service_key")
+  /// Tier level: 1=Basic, 2=Business, 3=Experience — matches ServiceTier.level
+  tierLevel      Int            @default(1) @map("tier_level")
   mediaBookings  MediaBooking[]
   orders         Order[]
 
@@ -871,6 +902,8 @@ model ServiceAttribute {
   /// Appears in the "Nâng cấp" section with upgrade delta pricing.
   /// Only applies when parentId is set (i.e., this is a child of another feature).
   isUpgradeable      Boolean                @default(false) @map("is_upgradeable")
+  /// Scopes this attribute to a specific service: "web" | "app" | "dashboard" | "seo". null = shared (applies to all).
+  serviceKey         String?                @map("service_key")
   orderAttributes    OrderAttribute[]
   parent             ServiceAttribute?      @relation("FeatureHierarchy", fields: [parentId], references: [id])
   children           ServiceAttribute[]     @relation("FeatureHierarchy")
@@ -1955,11 +1988,46 @@ model BlogPost {
   backlinks   String?    @map("backlinks")
   author      TeamMember @relation(fields: [authorId], references: [id])
   project     Order      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tags        BlogPostTag[]
 
   @@unique([projectId, slug])
   @@index([projectId])
   @@index([authorId])
+  @@index([status, publishedAt])
+  @@index([slug])
   @@map("blog_posts")
+}
+
+/// Tag phân loại bài viết blog (VD: "SEO", "Web Design", "Marketing")
+model BlogTag {
+  id        String   @id @default(cuid())
+  key       String   @unique  @map("tag_key")   // "seo", "web-design", "marketing"
+  name      String             // "SEO"
+  nameEn    String?  @map("name_en")
+  nameJa    String?  @map("name_ja")
+  nameKo    String?  @map("name_ko")
+  nameZh    String?  @map("name_zh")
+  color     String   @default("#3B82F6") // màu hiển thị
+  sortOrder Int      @default(0) @map("sort_order")
+  posts     BlogPostTag[]
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("blog_tags")
+}
+
+/// Join table: nhiều tag cho mỗi bài viết
+model BlogPostTag {
+  id        String   @id @default(cuid())
+  blogPostId String  @map("blog_post_id")
+  tagId     String  @map("tag_id")
+  blogPost  BlogPost @relation(fields: [blogPostId], references: [id], onDelete: Cascade)
+  tag       BlogTag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([blogPostId, tagId])
+  @@index([tagId])
+  @@map("blog_post_tags")
 }
 
 /// Client-facing project portal access token.

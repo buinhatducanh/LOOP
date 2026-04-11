@@ -166,7 +166,7 @@ function HeroSection({ locale }: { locale: string }) {
             background: "radial-gradient(circle, rgba(204,51,68,0.26) 0%, rgba(207,83,182,0.10) 45%, rgba(107,61,245,0.05) 65%, transparent 75%)",
             filter: "blur(60px)",
           }}
-          animate={{ x: [0, -70, 0], y: [0, 35, 0], scale: [1, 1.06, 1], opacity: [0.55, 0.95, 0.55] }}
+          animate={{ x: [0, -70, 0], y: [0, 35, 0], scale: [1, 1.06, 1], opacity: [0.55, 0.60, 0.55] }}
           transition={{ duration: 36, repeat: Infinity, ease: "easeInOut", delay: 7 }}
         />
         {/* Nebula cloud 3 — blue #4F7DF3 (center-right, cyan tint) */}
@@ -217,7 +217,7 @@ function HeroSection({ locale }: { locale: string }) {
           ].map((s, i) => (
             <g key={`mid-${i}`}>
               <circle cx={`${s.cx}%`} cy={`${s.cy}%`} r={s.r * 2.2} fill="rgba(180,200,255,0.18)" />
-              <circle cx={`${s.cx}%`} cy={`${s.cy}%`} r={s.r} fill="white" opacity={0.95} />
+              <circle cx={`${s.cx}%`} cy={`${s.cy}%`} r={s.r} fill="white" opacity={0.60} />
             </g>
           ))}
           {/* Twinkling stars — CSS class + inline style for max browser compatibility */}
@@ -480,21 +480,21 @@ function HeroSection({ locale }: { locale: string }) {
                   const v = el;
                   function seekToLogo() {
                     if (!v.duration || isNaN(v.duration)) return;
-                    v.currentTime = v.duration * 0.95;
+                    v.currentTime = v.duration * 0.60;
                   }
 
                   function lockFrame() {
                     v.pause();
                     v.addEventListener("timeupdate", function guard() {
                       if (!v.paused) v.pause();
-                      if (v.currentTime < v.duration * 0.94) {
-                        v.currentTime = v.duration * 0.95;
+                      if (v.currentTime < v.duration * 0.59) {
+                        v.currentTime = v.duration * 0.60;
                       }
                     }, { once: true });
                   }
 
                   v.addEventListener("loadedmetadata", () => {
-                    v.currentTime = v.duration * 0.95;
+                    v.currentTime = v.duration * 0.60;
                   });
 
                   v.addEventListener("seeked", () => {
@@ -503,7 +503,7 @@ function HeroSection({ locale }: { locale: string }) {
 
                   v.addEventListener("canplay", () => {
                     if (v.currentTime === 0) {
-                      v.currentTime = v.duration * 0.95;
+                      v.currentTime = v.duration * 0.60;
                     }
                   });
 
@@ -590,7 +590,7 @@ function HeroSection({ locale }: { locale: string }) {
             style={{
               position: "absolute", top: "-1rem", right: "-0.75rem",
               padding: "0.625rem 0.875rem", borderRadius: "1rem",
-              background: "rgba(12,12,20,0.95)", border: "1px solid rgba(107,61,245,0.45)",
+              background: "rgba(12,12,20,0.60)", border: "1px solid rgba(107,61,245,0.45)",
               backdropFilter: "blur(20px)",
               boxShadow: "0 8px 32px rgba(0,0,0,0.5), 0 0 20px rgba(139,92,246,0.2)",
             }}
@@ -608,7 +608,7 @@ function HeroSection({ locale }: { locale: string }) {
             style={{
               position: "absolute", bottom: "-0.75rem", left: "-0.75rem",
               padding: "0.625rem 0.875rem", borderRadius: "1rem",
-              background: "rgba(12,12,20,0.95)", border: "1px solid rgba(230,199,95,0.25)",
+              background: "rgba(12,12,20,0.60)", border: "1px solid rgba(230,199,95,0.25)",
               backdropFilter: "blur(20px)",
               boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
             }}

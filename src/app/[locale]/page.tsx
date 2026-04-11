@@ -27,7 +27,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       siteName: "LOOP Solutions",
       locale: locale === "vi" ? "vi_VN" : locale === "en" ? "en_US" : locale,
       type: "website",
-      images: [{ url: "/og-home.svg", width: 1200, height: 630 }],
+      images: [{ url: "/loop-logo.png", width: 1200, height: 630, alt: "LOOP Solutions — Digital Agency OS" }],
     },
     alternates: {
       canonical: `/${locale}`,
@@ -43,7 +43,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       card: "summary_large_image",
       title: tHome("homeTitle") || "LOOP Solutions",
       description: tHome("homeDescription") || "Đối tác công nghệ tin cậy cho doanh nghiệp Việt Nam",
-      images: ["/og-home.svg"],
+      images: ["/loop-logo.png"],
     },
   };
 }

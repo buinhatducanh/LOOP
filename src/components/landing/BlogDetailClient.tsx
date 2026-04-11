@@ -56,8 +56,10 @@ export function BlogDetailClient({
     try { backlinkList = JSON.parse(backlinks); } catch { /* ignore */ }
   }
 
-  // Word count + reading time
-  const words = content.trim() ? content.trim().split(/\s+/).filter(Boolean).length : 0;
+  // Word count + reading time — strip HTML tags for accurate count
+  const stripHtml = (html: string) => html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+  const plainText = stripHtml(content);
+  const words = plainText ? plainText.split(/\s+/).filter(Boolean).length : 0;
   const readTime = Math.ceil(words / 200);
 
   const formattedDate = publishedAt
@@ -166,17 +168,87 @@ export function BlogDetailClient({
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 }}
-            style={{ color: DS.text2, fontSize: 16, lineHeight: 1.9 }}
+            className="blog-prose"
           >
-            {content.split("\n").map((para, i) =>
-              para.trim() ? (
-                para.startsWith("#") ? (
-                  <h2 key={i} style={{ fontFamily: DS.heading, fontSize: 20, fontWeight: 800, color: DS.text, marginTop: 32, marginBottom: 12 }}>{para.replace(/^#+\s*/, "")}</h2>
-                ) : (
-                  <p key={i} style={{ marginBottom: 16 }}>{para}</p>
-                )
-              ) : <div key={i} style={{ height: 12 }} />
-            )}
+            <style>{`
+              .blog-prose {
+                color: ${DS.text2};
+                font-size: 16px;
+                line-height: 1.9;
+              }
+              .blog-prose h2 {
+                font-family: ${DS.heading};
+                font-size: 22px;
+                font-weight: 800;
+                color: ${DS.text};
+                margin: 36px 0 14px;
+                padding-bottom: 8px;
+                border-bottom: 1px solid ${DS.border};
+              }
+              .blog-prose h3 {
+                font-family: ${DS.heading};
+                font-size: 18px;
+                font-weight: 700;
+                color: ${DS.text};
+                margin: 28px 0 10px;
+              }
+              .blog-prose p { margin-bottom: 16px; }
+              .blog-prose ul, .blog-prose ol {
+                padding-left: 24px;
+                margin-bottom: 16px;
+              }
+              .blog-prose li { margin-bottom: 6px; }
+              .blog-prose blockquote {
+                border-left: 4px solid ${DS.pink};
+                padding: 12px 20px;
+                margin: 20px 0;
+                background: rgba(236,72,153,0.06);
+                border-radius: 0 10px 10px 0;
+                font-style: italic;
+                color: ${DS.text3};
+              }
+              .blog-prose code {
+                background: rgba(107,61,245,0.12);
+                padding: 2px 6px;
+                border-radius: 4px;
+                font-family: ${DS.mono};
+                font-size: 14px;
+                color: ${DS.cosmicPurple};
+              }
+              .blog-prose pre {
+                background: #0d1117;
+                border-radius: 10px;
+                padding: 16px;
+                margin: 16px 0;
+                overflow-x: auto;
+              }
+              .blog-prose pre code {
+                background: none;
+                padding: 0;
+                color: #e2e8f0;
+              }
+              .blog-prose img {
+                max-width: 100%;
+                border-radius: 10px;
+                margin: 16px 0;
+              }
+              .blog-prose a {
+                color: ${DS.blue};
+                text-decoration: underline;
+              }
+              .blog-prose iframe {
+                width: 100%;
+                border-radius: 10px;
+                border: none;
+                aspect-ratio: 16/9;
+              }
+              .blog-prose hr {
+                border: none;
+                border-top: 1px solid ${DS.border};
+                margin: 28px 0;
+              }
+            `}</style>
+            <div dangerouslySetInnerHTML={{ __html: content }} />
           </motion.div>
         ) : (
           <p style={{ color: DS.text5, fontStyle: "italic", textAlign: "center", padding: "3rem" }}>Nội dung đang được cập nhật...</p>

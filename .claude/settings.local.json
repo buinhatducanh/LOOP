@@ -91,7 +91,14 @@
       "Bash(rm \"D:/LOOP_COMPANY/LOOP/.claude/rules/fe-be-parity.md\")",
       "Bash(rm \"D:/LOOP_COMPANY/LOOP/.claude/rules/e2e-testing.md\")",
       "Bash(rm \"D:/LOOP_COMPANY/LOOP/.claude/rules/admin-design-parity.md\")",
-      "Bash(rm \"D:/LOOP_COMPANY/LOOP/.claude/rules/go-live-phase2.md\")"
+      "Bash(rm \"D:/LOOP_COMPANY/LOOP/.claude/rules/go-live-phase2.md\")",
+      "Bash(grep -n '\"\"PricingPage\"\"' src/i18n/messages/vi.json)",
+      "Bash(grep -n '\"\"servicesTitle\"\":' src/i18n/messages/vi.json)",
+      "Bash(grep -n '\"\"servicesTitle\"\":' src/i18n/messages/en.json)",
+      "Bash(grep -n '\"\"servicesTitle\"\":' src/i18n/messages/ja.json)",
+      "Bash(grep -n '\"\"servicesTitle\"\":' src/i18n/messages/ko.json)",
+      "Bash(grep -n '\"\"servicesTitle\"\":' src/i18n/messages/zh.json)",
+      "Bash(grep -n '\"\"mediaDescription\"\":' src/i18n/messages/en.json)"
     ],
     "additionalDirectories": []
   }

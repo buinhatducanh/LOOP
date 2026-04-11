@@ -221,6 +221,20 @@ export interface BlogPostJsonLd extends BaseJsonLd {
   mainEntityOfPage?: { "@type": "WebPage"; "@id": string };
 }
 
+/**
+ * Resolves an image path to an absolute URL.
+ * Guards against double-prefixing when image is already an absolute URL
+ * (e.g. Cloudinary full URLs like https://res.cloudinary.com/...).
+ */
+function resolveImageUrl(image?: string): string | undefined {
+  if (!image) return undefined;
+  // Already absolute — return as-is
+  if (image.startsWith("http://") || image.startsWith("https://") || image.startsWith("//")) {
+    return image;
+  }
+  return `${SITE_URL}${image}`;
+}
+
 export function buildBlogPostJsonLd(opts: {
   title: string;
   description?: string;
@@ -235,7 +249,7 @@ export function buildBlogPostJsonLd(opts: {
     "@type": "Article",
     headline: opts.title,
     description: opts.description,
-    image: opts.image ? `${SITE_URL}${opts.image}` : undefined,
+    image: resolveImageUrl(opts.image),
     author: { "@type": "Person", name: opts.authorName },
     datePublished: publishedAt,
     dateModified: publishedAt,
