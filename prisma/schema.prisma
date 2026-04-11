@@ -664,7 +664,7 @@ model ExternalProject {
   companyName      String?
   requirements     String?
   /// Giá (optional — external project có thể chưa có giá)
-  totalAmount      Float?
+  totalAmount      Int?
   /// Ghi chú riêng của sales (cho sales_assisted)
   salesNote        String?  @map("sales_note")
   /// active | pending_approval | paused | completed | cancelled

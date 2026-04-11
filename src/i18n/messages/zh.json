@@ -518,7 +518,7 @@
     "bookingDescription": "3步向导选择最合适的网站套餐。透明定价，无隐藏费用。注册即送500 LP积分。",
     "homeTitle": "LOOP Solutions — 数字 agency",
     "homeDescription": "越南可信赖的技术合作伙伴 — 设计、开发、运营全方位的数字解决方案。",
-    "ogImage": "",
+    "ogImage": "https://loops.vn/og-image.jpg",
     "pricingTitle": "价格 — LOOP Solutions",
     "pricingDescription": "固定价格网页套餐，起价590万越南盾。无隐藏费用。每个服务都可获得LP奖励积分。",
     "aboutTitle": "关于我们 — LOOP Solutions",
@@ -536,7 +536,17 @@
     "contactTitle": "联系我们 — LOOP Solutions",
     "contactDescription": "联系LOOP Solutions。预约免费咨询、获取报价或了解服务详情。",
     "mediaTitle": "媒体制作 — LOOP Solutions",
-    "mediaDescription": "专业媒体制作服务：视频、摄影、直播、企业内容。"
+    "mediaDescription": "专业媒体制作服务：视频、摄影、直播、企业内容。",
+    "caseStudiesTitle": "案例研究 | LOOP Solutions",
+    "caseStudiesDescription": "查看LOOP Solutions的案例",
+    "faqTitle": "常见问题 | LOOP Solutions",
+    "faqDescription": "LOOP Solutions常见问题",
+    "mediaBookingTitle": "媒体预订 | LOOP Solutions",
+    "mediaBookingDescription": "预订LOOP Solutions媒体服务",
+    "resourcesTitle": "资源 | LOOP Solutions",
+    "resourcesDescription": "LOOP Solutions资源",
+    "testimonialsTitle": "客户评价 | LOOP Solutions",
+    "testimonialsDescription": "LOOP Solutions客户评价"
   },
   "Navigation": {
     "home": "首页",
@@ -1152,5 +1162,17 @@
     "tChallenge": "Challenge",
     "tSolution": "Solution",
     "tResult": "Result"
+  },
+  "CaseStudiesPage": {
+    "title": "Case Studies",
+    "subtitle": "Our Work",
+    "viewAll": "View All Case Studies",
+    "relatedProjects": "Related Projects"
+  },
+  "ResourcesPage": {
+    "title": "Resources",
+    "subtitle": "Learn & Grow",
+    "downloadGuide": "Download Guide",
+    "viewAll": "View All"
   }
 }

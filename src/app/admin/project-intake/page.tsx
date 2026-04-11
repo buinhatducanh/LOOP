@@ -65,6 +65,7 @@ interface IntakePayload {
   type: IntakeType;
   contractRef?: string;
   contractParty?: string;
+  salesNote?: string;
   signedAt?: string;
   totalAmount?: number;
   pmMemberId?: string;
@@ -156,6 +157,7 @@ function IntakeFormModal({ onClose }: { onClose: () => void }) {
   const [totalAmount, setTotalAmount] = useState("");
   const [activateKanban, setActivateKanban] = useState(true);
   const [startedAt, setStartedAt] = useState("");
+  const [salesNote, setSalesNote] = useState("");
 
   // Team
   const [pmId, setPmId] = useState("");
@@ -231,6 +233,7 @@ function IntakeFormModal({ onClose }: { onClose: () => void }) {
       totalAmount: totalAmount ? parseFloat(totalAmount) : undefined,
       pmMemberId: pmId || undefined,
       teamMembers: teamMembers.length > 0 ? teamMembers : undefined,
+      salesNote: salesNote.trim() || undefined,
       activateKanban,
       startedAt: startedAt || undefined,
     };
@@ -450,6 +453,16 @@ function IntakeFormModal({ onClose }: { onClose: () => void }) {
                     style={inputStyle}
                   />
                 </div>
+              </div>
+              {/* Sales note */}
+              <div style={{ marginTop: 12 }}>
+                <label style={labelStyle}>GHI CHÚ SALES</label>
+                <textarea
+                  value={salesNote} onChange={(e) => setSalesNote(e.target.value)}
+                  placeholder="Ghi chú nội bộ của Sales..."
+                  rows={2}
+                  style={{ ...inputStyle, resize: "vertical", minHeight: 56 }}
+                />
               </div>
             </div>
           )}

@@ -518,7 +518,7 @@
     "bookingDescription": "3단계 마법사로 최적의 웹사이트 패키지를 선택하세요. 투명한 가격, 숨김 비용 없음. 등록 시 500 LP 적립.",
     "homeTitle": "LOOP Solutions — 디지털 에이전시",
     "homeDescription": "베트남 신뢰의 기술 파트너 — 디자인, 개발, 운영까지 종합적인 디지털 솔루션 제공.",
-    "ogImage": "",
+    "ogImage": "https://loops.vn/og-image.jpg",
     "pricingTitle": "가격 — LOOP Solutions",
     "pricingDescription": "590만 VND부터 고정 가격 웹 패키지. 숨은 비용 없음. 모든 서비스에서 LP 보상 포인트 적립.",
     "aboutTitle": "회사 소개 — LOOP Solutions",
@@ -536,7 +536,17 @@
     "contactTitle": "문의하기 — LOOP Solutions",
     "contactDescription": "LOOP Solutions에 문의하세요. 무료 상담 예약, 견적 요청, 서비스 안내.",
     "mediaTitle": "미디어 제작 — LOOP Solutions",
-    "mediaDescription": "전문 미디어 제작 서비스: 영상, 사진, 라이브 방송, 기업 콘텐츠."
+    "mediaDescription": "전문 미디어 제작 서비스: 영상, 사진, 라이브 방송, 기업 콘텐츠.",
+    "caseStudiesTitle": "사례 연구 | LOOP Solutions",
+    "caseStudiesDescription": "LOOP Solutions의 사례를 확인하세요",
+    "faqTitle": "자주 묻는 질문 | LOOP Solutions",
+    "faqDescription": "LOOP Solutions 자주 묻는 질문",
+    "mediaBookingTitle": "미디어 예약 | LOOP Solutions",
+    "mediaBookingDescription": "LOOP Solutions 미디어 서비스 예약",
+    "resourcesTitle": "리소스 | LOOP Solutions",
+    "resourcesDescription": "LOOP Solutions 리소스",
+    "testimonialsTitle": "고객 후기 | LOOP Solutions",
+    "testimonialsDescription": "LOOP Solutions 고객 후기"
   },
   "Navigation": {
     "home": "홈",
@@ -1152,5 +1162,17 @@
     "tChallenge": "Challenge",
     "tSolution": "Solution",
     "tResult": "Result"
+  },
+  "CaseStudiesPage": {
+    "title": "Case Studies",
+    "subtitle": "Our Work",
+    "viewAll": "View All Case Studies",
+    "relatedProjects": "Related Projects"
+  },
+  "ResourcesPage": {
+    "title": "Resources",
+    "subtitle": "Learn & Grow",
+    "downloadGuide": "Download Guide",
+    "viewAll": "View All"
   }
 }

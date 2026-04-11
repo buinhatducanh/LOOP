@@ -45,7 +45,8 @@ export type IdempotencyOperation =
   | "create_order_admin"
   | "create_enrollment"
   | "create_lp_award"
-  | "create_lp_redemption";
+  | "create_lp_redemption"
+  | "create_project_intake";
 
 const _REGISTERED_OPERATIONS: IdempotencyOperation[] = [
   "create_order",
@@ -53,6 +54,7 @@ const _REGISTERED_OPERATIONS: IdempotencyOperation[] = [
   "create_enrollment",
   "create_lp_award",
   "create_lp_redemption",
+  "create_project_intake",
 ];
 
 // ─── Types ─────────────────────────────────────────────────────────────────
