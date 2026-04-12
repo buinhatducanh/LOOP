@@ -1,7 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { X, ExternalLink, Info } from "lucide-react";
+import { X, Info } from "lucide-react";
 import { useLoopStore, type MemberStats, type RankKey } from "@/app/store/loopStore";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
@@ -334,23 +333,6 @@ function PanelContent({
             </div>
           )}
         </div>
-
-        <Link
-          href={`/team/${member.slug}`}
-          onClick={onClose}
-          style={{
-            display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-            padding: "10px", borderRadius: 10,
-            background: `${cfg.color}15`,
-            border: `1px solid ${cfg.color}44`,
-            color: cfg.color,
-            fontFamily: DS.mono, fontSize: 12,
-            textDecoration: "none",
-            transition: "all 0.15s",
-          }}
-        >
-          View Full Profile <ExternalLink size={12} />
-        </Link>
       </div>
     </div>
   );

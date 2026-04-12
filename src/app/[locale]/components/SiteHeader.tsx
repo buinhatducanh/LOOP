@@ -17,7 +17,7 @@
  *  - Mobile accordion menu
  */
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
@@ -598,15 +598,19 @@ export default function SiteHeader({ locale }: { locale: string }) {
   const pathname = usePathname();
   if (pathname.includes("/onboarding")) return null;
   const router = useRouter();
-  const { user, isAuthenticated, logout } = useAuthStore();
+  const { user, isAuthenticated, logout, accountType } = useAuthStore();
   const t = useTranslations("Navigation");
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [scrolled, setScrolled] = useState(false);
-  const [notifCount, setNotifCount] = useState(3);
+  const [notifCount, setNotifCount] = useState(0);
+  const [notifPanelOpen, setNotifPanelOpen] = useState(false);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [loadingNotifs, setLoadingNotifs] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
+  const notifRef = useRef<HTMLDivElement>(null);
   const navRef = useRef<HTMLElement>(null);
   const roleLabels = getRoleLabels(t);
   const mounted = useMounted();
@@ -673,11 +677,107 @@ export default function SiteHeader({ locale }: { locale: string }) {
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) setUserMenuOpen(false);
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) setNotifPanelOpen(false);
       if (navRef.current && !navRef.current.contains(e.target as Node)) setOpenDropdown(null);
     };
-    if (userMenuOpen || openDropdown) document.addEventListener("mousedown", handler);
+    if (userMenuOpen || notifPanelOpen || openDropdown) document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
-  }, [userMenuOpen, openDropdown]);
+  }, [userMenuOpen, notifPanelOpen, openDropdown]);
+
+  
+
+  // Auth header helper
+  const getAuthHeaders = (): Record<string, string> => {
+    const tokenKey = accountType === "customer" ? "loop-customer-token" : "loop-staff-token";
+    const token = typeof window !== "undefined" ? localStorage.getItem(tokenKey) : null;
+    const headers: Record<string, string> = {};
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+    return headers;
+  };
+ // Load unread count — reads accountType directly from store to avoid stale closure.
+ // Empty deps: function is stable, reads fresh state on every call.
+ const fetchUnreadCount = useCallback(async () => {
+ const authStore = useAuthStore.getState();
+ if (!authStore.isAuthenticated) return;
+ const { accountType: at, tokenExpiry } = authStore;
+ if (!at || (tokenExpiry && Date.now() > tokenExpiry)) return;
+
+ try {
+ const tokenKey = at === "customer" ? "loop-customer-token" : "loop-staff-token";
+ const token = typeof window !== "undefined" ? localStorage.getItem(tokenKey) : null;
+ if (!token) return;
+
+ const headers: Record<string, string> = { Authorization: `Bearer ${token}` };
+  const res = await fetch("/api/notifications/unread-count", { headers });
+ if (res.ok) {
+ const data = await res.json();
+ setNotifCount(data.count || 0);
+ }
+  } catch {
+ // Silently ignore network errors — next poll will retry
+ }
+ }, []);
+
+ // Poll every 30s — stable deps, only re-runs when auth state changes
+ useEffect(() => {
+ fetchUnreadCount();
+ if (isAuthenticated) {
+ const interval = setInterval(fetchUnreadCount, 30000);
+ return () => clearInterval(interval);
+ }
+ }, [isAuthenticated, fetchUnreadCount]);
+
+
+  // Load notifications list
+  const fetchNotifications = async () => {
+    if (!isAuthenticated) return;
+    setLoadingNotifs(true);
+    try {
+      const res = await fetch("/api/notifications?limit=10", { headers: getAuthHeaders() });
+      if (res.ok) {
+        const data = await res.json();
+        setNotifications(data.items || []);
+      }
+    } catch (err) {
+      console.error("Failed to fetch notifications", err);
+    } finally {
+      setLoadingNotifs(false);
+    }
+  };
+
+  const handleOpenNotifs = () => {
+    if (!notifPanelOpen) fetchNotifications();
+    setNotifPanelOpen(!notifPanelOpen);
+  };
+
+  const markAsRead = async (id: string, link?: string | null) => {
+    try {
+      await fetch("/api/notifications/mark-read", {
+        method: "POST",
+        headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: [id] }),
+      });
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+      setNotifCount(prev => Math.max(0, prev - 1));
+      if (link) router.push(link);
+    } catch (error) {
+      console.error("Failed to mark notification as read", error);
+    }
+  };
+
+  const markAllAsRead = async () => {
+    try {
+      await fetch("/api/notifications/mark-read", {
+        method: "POST",
+        headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify({ all: true }),
+      });
+      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+      setNotifCount(0);
+    } catch (error) {
+      console.error("Failed to mark all as read", error);
+    }
+  };
 
   const isMac = typeof navigator !== "undefined" && /Mac/i.test(navigator.userAgent);
 

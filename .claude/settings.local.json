@@ -102,7 +102,25 @@
       "Bash(do echo:*)",
       "Read(//d/LOOP_COMPANY/LOOP/**)",
       "Bash(done)",
-      "Bash(do sed:*)"
+      "Bash(do sed:*)",
+      "Bash(\"/c/Python314/python\" _patch_pkg.py)",
+      "Bash(\"/c/Python314/python\" -c \":*)",
+      "Bash(\"/c/Python314/python\" _rebuild_pkg.py)",
+      "Bash(\"/c/Python314/python\" _green_pkg.py)",
+      "Bash(sed -i 's/const color = pkg.color || DS.blue;/const color = pkg.color || DS.blue;\\\\n const selColor = DS.green;/' src/components/landing/BookingWizardClient.tsx)",
+      "Bash(sed -i 's/return { pkg, price, market, saving, savingPct, isSelected, color };/return { pkg, price, market, saving, savingPct, isSelected, color, selColor };/' src/components/landing/BookingWizardClient.tsx)",
+      "Bash(sed -i '443,446s/<Link$/<'div'/' src/components/landing/guild/MemberCard.tsx)",
+      "Bash(sed -i 's/href={`\\\\/\\\\${locale}\\\\/team\\\\/\\\\${slug}`}\\\\n style/style/' src/components/landing/guild/MemberCard.tsx)",
+      "Bash(sed -i '697s/<\\\\/Link>/<\\\\/div>/' src/components/landing/guild/MemberCard.tsx)",
+      "Bash(\"/c/Python314/python\" _no_nav.py)",
+      "Bash(\"/c/Python314/python\" _fix_link.py)",
+      "Bash(\"/c/Python314/python\" _fix_ssr.py)",
+      "Bash(sed -i '97,101d' src/components/admin/AdminSidebar.tsx)",
+      "Bash(sed -i '96s/.*/ \\(\\) => serverSnapshotRef.current,/' src/components/admin/AdminSidebar.tsx)",
+      "Bash(\"/c/Python314/python\":*)",
+      "Bash(\"/c/Python314/python\" _fix_ssr3.py)",
+      "Bash(\"/c/Python314/python\" _fix_it.py)",
+      "Bash(\"/c/Python314/python\" _fix_indent.py)"
     ],
     "additionalDirectories": []
   }

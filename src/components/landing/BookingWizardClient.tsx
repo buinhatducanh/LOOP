@@ -513,7 +513,8 @@ export function BookingWizardClient({ locale }: Props) {
     const savingPct = saving > 0 ? Math.round((saving / market) * 100) : 0;
     const isSelected = selectedPackage === pkg.id;
     const color = pkg.color || DS.blue;
-    return { pkg, price, market, saving, savingPct, isSelected, color };
+ const selColor = DS.green;
+    return { pkg, price, market, saving, savingPct, isSelected, color, selColor };
   });
 
   // ── Feature categorisation (for FeatureToggleTable includedIds) ─────────────────
@@ -549,7 +550,7 @@ export function BookingWizardClient({ locale }: Props) {
             marginBottom: 28,
             position: "relative",
             overflow: "hidden",
-            boxShadow: `0 0 40px ${pkgColor}10`,
+            boxShadow: `0 0 40px ${DS.green}12`,
           }}>
             {/* Glow */}
             <div style={{ position: "absolute", top: -40, right: -40, width: 160, height: 160, borderRadius: "50%", background: `radial-gradient(circle, ${pkgColor}12 0%, transparent 70%)`, pointerEvents: "none" }} />
@@ -640,78 +641,378 @@ export function BookingWizardClient({ locale }: Props) {
               transition={{ duration: 0.25, ease: "easeInOut" }}
             >
 
-          {/* ── STEP 0: Package + Features ──────────────────────────── */}
-          {step === 0 && (
-            <div>
-              <div style={{ marginBottom: 32 }}>
-                <div className="flex items-center gap-3 mb-4">
-                  <div style={{ width: 3, height: 16, background: DS.pink, borderRadius: 2 }} />
-                  <h3 style={{ color: DS.text2, fontSize: 12, fontFamily: DS.mono, letterSpacing: "0.14em" }}>
-                    CHỌN GÓI WEBSITE
-                  </h3>
-                  <div style={{ flex: 1, height: 1, background: DS.border }} />
-                </div>
+           {/* ── STEP 0: Package + Features ──────────────────────────── */}
+ {step === 0 && (
+ <div>
 
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14 }}>
-                  {pkgCards.map(({ pkg, price, market, saving, savingPct, isSelected, color }) => (
-                    <motion.button
-                      key={pkg.id}
-                      onClick={() => setSelectedPackage(pkg.id)}
-                      className="text-left"
-                      style={{
-                        background: isSelected ? `${color}0C` : "rgba(15,23,42,0.6)",
-                        border: isSelected ? `2px solid ${color}60` : `1px solid ${DS.border}`,
-                        borderRadius: 16, padding: "20px 18px", cursor: "pointer",
-                        boxShadow: isSelected ? `0 0 24px ${color}18` : "none",
-                        position: "relative", overflow: "hidden", transition: "all 0.2s",
-                      }}
-                      whileHover={{ scale: 1.02 }}
-                    >
-                      {pkg.popular && !isSelected && (
-                        <div style={{ position: "absolute", top: 0, left: 0, right: 0, padding: "3px", textAlign: "center", background: GRD.primary, fontSize: 8, color: "#fff", fontFamily: DS.mono, letterSpacing: "0.1em" }}>★ PHỔ BIẾN</div>
-                      )}
-                      {isSelected && (
-                        <div style={{ position: "absolute", top: 0, left: 0, right: 0, padding: "3px", textAlign: "center", background: color, fontSize: 8, color: "#fff", fontFamily: DS.mono, letterSpacing: "0.1em" }}>✓ ĐÃ CHỌN</div>
-                      )}
-                      <div style={{ marginTop: pkg.popular || isSelected ? 16 : 0 }}>
-                        <div style={{ color, fontSize: 9, fontFamily: DS.mono, letterSpacing: "0.18em", marginBottom: 6 }}>{pkg.name.toUpperCase()}</div>
-                        {saving > 0 && <div style={{ color: DS.text5, fontSize: 11, fontFamily: DS.mono, textDecoration: "line-through", marginBottom: 2 }}>{fmtVND(market)}</div>}
-                        <div style={{ color: DS.text, fontFamily: DS.heading, fontSize: 26, fontWeight: 900, lineHeight: 1.1, marginBottom: 4 }}>{fmtVND(price)}</div>
-                        {saving > 0 && <div style={{ display: "inline-block", background: "rgba(34,197,94,0.12)", color: DS.green, fontSize: 9, fontFamily: DS.mono, padding: "1px 6px", borderRadius: 4, marginBottom: 6 }}>−{savingPct}%</div>}
-                        <div style={{ color: DS.text3, fontSize: 11, lineHeight: 1.5, marginTop: 8 }}>{pkg.desc}</div>
-                        {pkg.features.length > 0 && (
-                          <ul style={{ margin: "8px 0 0", padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 3 }}>
-                            {pkg.features.slice(0, 3).map((feat, i) => (
-                              <li key={i} style={{ display: "flex", alignItems: "center", gap: 5, color: DS.text3, fontSize: 10, lineHeight: 1.4 }}>
-                                <Check size={9} style={{ color: DS.green, flexShrink: 0 }} />{feat}
-                              </li>
-                            ))}
-                            {pkg.features.length > 3 && <li style={{ color: DS.text4, fontSize: 10 }}>+{pkg.features.length - 3} tính năng khác</li>}
-                          </ul>
-                        )}
-                      </div>
-                    </motion.button>
-                  ))}
-                </div>
-              </div>
+ {/* ── Section header ── */}
+ <div style={{ marginBottom: 28 }}>
+ <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 6 }}>
+ <div style={{ width: 4, height: 20, background: GRD.primary, borderRadius: 2 }} />
+ <h3 style={{ color: DS.text, fontSize: 16, fontFamily: DS.heading, fontWeight: 700, letterSpacing: "0.06em" }}>
+ CHỌN GÓI WEBSITE
+ </h3>
+ <div style={{ flex: 1, height: 1, background: DS.border, maxWidth: 120 }} />
+ </div>
+ <p style={{ color: DS.text4, fontSize: 13, marginLeft: 16 }}>
+ Chọn gói phù hợp với nhu cầu của bạn.{" "}
+ <span style={{ color: DS.pink }}>Không phí ẩn, không giới hạn.</span>
+ </p>
+ </div>
 
-              {/* Feature Toggle Table */}
-              {selectedPackage && currentFeatureOptions.length > 0 && (
-                <div style={{ marginBottom: 32 }}>
-                  <FeatureToggleTable
-                    allFeatures={currentFeatureOptions}
-                    selectedIds={selectedFeatures}
-                    includedIds={baseFeatures.map(f => f.id)}
-                    onToggle={toggleFeature}
-                    packageName={selectedPkg?.name}
-                    packageColor={pkgColor}
-                  />
-                </div>
-              )}
-            </div>
-          )}
+ {/* ── Package cards: grid desktop / horizontal scroll mobile ── */}
+ <div style={{ marginBottom: 28 }}>
+ <style>{`
+ @media (max-width: 767px) {
+ .pkg-scroll { scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; overflow-x: auto; padding-bottom: 12px; }
+ .pkg-card { scroll-snap-align: center; }
+ .pkg-card:first-child { scroll-snap-align: start; }
+ .pkg-card:last-child { scroll-snap-align: end; }
+ }
+ `}</style>
 
-          {/* ── STEP 1: Domain ──────────────────────────────────────── */}
+ <div
+ style={{
+ display: "grid",
+ gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 280px), 1fr))",
+ gap: 16,
+ }}
+ className="pkg-scroll"
+ >
+ {pkgCards.map(({ pkg, price, market, saving, savingPct, isSelected, color, selColor }) => {
+ const isPopular = pkg.popular && !isSelected;
+ return (
+ <motion.button
+ key={pkg.id}
+ onClick={() => setSelectedPackage(pkg.id)}
+ className="pkg-card text-left"
+ style={{
+ background: isSelected
+ ? `linear-gradient(160deg, ${selColor}16 0%, rgba(10,15,30,0.95) 70%)`
+  : "rgba(15,23,42,0.7)",
+ border: isSelected
+ ? `2px solid ${selColor}`
+ : `1px solid ${DS.border}`,
+ borderRadius: 20,
+ cursor: "pointer",
+ position: "relative",
+ overflow: "hidden",
+ transition: "all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)",
+ boxShadow: isSelected
+ ? `0 0 40px ${selColor}30, 0 8px 32px rgba(0,0,0,0.4)`
+ : "0 4px 16px rgba(0,0,0,0.2)",
+ padding: 0,
+ }}
+ whileHover={{ scale: 1.03, y: -4 }}
+ whileTap={{ scale: 0.97 }}
+ >
+ {/* Top accent strip — accent only when selected */}
+ <div style={{
+ height: 5,
+ background: isSelected
+ ? `linear-gradient(90deg, ${selColor}, ${selColor}80)`
+ : "rgba(255,255,255,0.07)",
+ borderRadius: "20px 20px 0 0",
+ transition: "background 0.3s",
+ }} />
+
+ {/* Badge */}
+ <div style={{ padding: "12px 20px 0", minHeight: isPopular || isSelected ? 34 : 10 }}>
+ {isPopular && (
+ <div style={{
+ display: "inline-block",
+ background: "rgba(255,255,255,0.07)",
+ color: DS.text3,
+ border: "1px solid rgba(255,255,255,0.12)",
+ fontSize: 9,
+ fontFamily: DS.mono,
+ letterSpacing: "0.12em",
+ padding: "3px 10px",
+ borderRadius: 20,
+ marginBottom: 4,
+ }}>
+ ★ PHỔ BIẾN NHẤT
+ </div>
+ )}
+ {isSelected && (
+ <div style={{
+ display: "inline-flex",
+ alignItems: "center",
+ gap: 5,
+ background: selColor,
+ color: "#fff",
+ fontSize: 9,
+ fontFamily: DS.mono,
+ letterSpacing: "0.12em",
+ padding: "3px 10px",
+ borderRadius: 20,
+ marginBottom: 4,
+ }}>
+ <Check size={9} style={{ strokeWidth: 3 }} />
+ ĐANG CHỌN
+ </div>
+ )}
+ </div>
+
+ {/* Card body */}
+ <div style={{ padding: "8px 20px 24px" }}>
+ {/* Package name — neutral when unselected */}
+ <div style={{
+ color: isSelected ? selColor : DS.text4,
+ fontSize: 10,
+ fontFamily: DS.mono,
+ letterSpacing: "0.2em",
+ marginBottom: 6,
+ transition: "color 0.2s",
+ }}>
+ {pkg.name.toUpperCase()}
+ </div>
+
+ {/* Price */}
+ <div style={{ marginBottom: 8 }}>
+ {saving > 0 && (
+ <div style={{
+ color: DS.text5, fontSize: 11, fontFamily: DS.mono,
+ textDecoration: "line-through", marginBottom: 2,
+ }}>
+ {fmtVND(market)}
+ </div>
+ )}
+ <div style={{
+ color: DS.text,
+ fontFamily: DS.heading,
+ fontSize: 30,
+  fontWeight: 900,
+ lineHeight: 1,
+ marginBottom: 2,
+ }}>
+ {fmtVND(price)}
+ </div>
+ <div style={{ color: DS.text4, fontSize: 10 }}>
+ {pkg.billingPeriod || "một lần"}
+ </div>
+ </div>
+
+ {/* Saving badge */}
+ {saving > 0 && (
+ <div style={{
+ display: "inline-block",
+ background: "rgba(34,197,94,0.12)",
+ border: "1px solid rgba(34,197,94,0.3)",
+ color: DS.green,
+ fontSize: 9,
+ fontFamily: DS.mono,
+ padding: "2px 8px",
+ borderRadius: 8,
+ marginBottom: 14,
+ }}>
+ −{savingPct}% · Tiết kiệm {fmtVND(saving)}
+ </div>
+ )}
+
+ {/* Description */}
+ <p style={{
+ color: DS.text3,
+ fontSize: 11,
+ lineHeight: 1.55,
+ marginBottom: 14,
+ }}>
+ {pkg.desc}
+ </p>
+
+ {/* Feature list */}
+ {pkg.features.length > 0 && (
+ <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 6 }}>
+ {pkg.features.slice(0, 4).map((feat, i) => (
+ <li key={i} style={{
+ display: "flex", alignItems: "flex-start", gap: 7,
+ color: DS.text3, fontSize: 11, lineHeight: 1.4,
+ }}>
+ <Check size={12} style={{ color: DS.green, flexShrink: 0, marginTop: 1 }} />
+ {feat}
+ </li>
+ ))}
+ {pkg.features.length > 4 && (
+ <li style={{ color: DS.text4, fontSize: 10, paddingLeft: 19 }}>
+ +{pkg.features.length - 4} tính năng khác
+ </li>
+ )}
+ </ul>
+ )}
+ </div>
+
+ {/* Selected checkmark circle */}
+ {isSelected && (
+ <div style={{
+ position: "absolute", top: 14, right: 14,
+ width: 32, height: 32, borderRadius: "50%",
+ background: selColor,
+ display: "flex", alignItems: "center", justifyContent: "center",
+ boxShadow: `0 0 20px ${selColor}70`,
+ }}>
+ <Check size={16} style={{ color: "#fff", strokeWidth: 3 }} />
+ </div>
+ )}
+ </motion.button>
+ );
+ })}
+ </div>
+ </div>
+
+ {/* ── Selected package summary bar ── */}
+  {selectedPkg && (
+ <motion.div
+ initial={{ opacity: 0, y: 20 }}
+ animate={{ opacity: 1, y: 0 }}
+ transition={{ duration: 0.35, ease: "easeOut" }}
+ style={{
+ background: `linear-gradient(135deg, ${DS.green}0C, ${DS.green}04)`,
+ border: `1px solid ${DS.green}30`,
+ borderRadius: 20,
+ padding: "24px",
+ marginBottom: 28,
+ position: "relative",
+ overflow: "hidden",
+ boxShadow: `0 0 40px ${DS.green}12`,
+ }}
+ >
+ {/* Background glow */}
+ <div style={{
+ position: "absolute", top: -30, right: -30,
+ width: 140, height: 140, borderRadius: "50%",
+ background: `radial-gradient(circle, ${DS.green}10 0%, transparent 70%)`,
+ pointerEvents: "none",
+ }} />
+
+ <div className="relative">
+ {/* Top row: package name + total */}
+ <div style={{
+ display: "flex", alignItems: "flex-start",
+ justifyContent: "space-between", flexWrap: "wrap",
+ gap: 16, marginBottom: 16,
+ }}>
+ <div>
+ <div style={{
+ color: DS.green, fontSize: 9, fontFamily: DS.mono,
+ letterSpacing: "0.22em", marginBottom: 6,
+ }}>
+ GÓI ĐÃ CHỌN
+ </div>
+ <div style={{ display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
+ <span style={{
+ color: DS.text, fontFamily: DS.heading,
+ fontSize: 34, fontWeight: 900,
+ }}>
+ {fmtVND(grandForDisplay)}
+ </span>
+ <span style={{
+ background: `${DS.green}20`,
+ color: DS.green, fontSize: 11, fontFamily: DS.mono,
+ padding: "3px 10px", borderRadius: 20,
+ }}>
+ {selectedPkg.name}
+ </span>
+ </div>
+ {selectedPkg.savingPct && selectedPkg.savingPct > 0 && (
+ <div style={{
+ display: "inline-block",
+ background: "rgba(34,197,94,0.12)",
+ color: DS.green, fontSize: 10, fontFamily: DS.mono,
+ padding: "3px 10px", borderRadius: 20,
+ marginTop: 8,
+ }}>
+ −{selectedPkg.savingPct}% so với giá gốc
+ </div>
+ )}
+ </div>
+
+ {/* LP reward */}
+ {lpEarnedDisplay > 0 && (
+ <div style={{
+ background: `linear-gradient(135deg, ${DS.purple}18, ${DS.pink}08)`,
+ border: `1px solid ${DS.purple}30`,
+ borderRadius: 14, padding: "12px 18px",
+ display: "flex", alignItems: "center", gap: 8,
+ }}>
+ <svg width="16" height="16" viewBox="0 0 24 24" fill={DS.purple} stroke="none">
+ <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
+ </svg>
+ <span style={{ color: DS.purple, fontSize: 12, fontFamily: DS.mono }}>
+ +{lpEarnedDisplay.toLocaleString()} LP
+ </span>
+ </div>
+ )}
+ </div>
+
+ {/* Price breakdown chips */}
+ <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+ {currentBasePrice > 0 && (
+ <div style={{
+ background: `${DS.green}10`,
+ border: `1px solid ${DS.green}30`,
+ borderRadius: 12, padding: "8px 16px",
+ }}>
+ <div style={{ color: DS.text4, fontSize: 9, fontFamily: DS.mono, marginBottom: 2 }}>GÓI</div>
+ <div style={{ color: DS.green, fontSize: 15, fontFamily: DS.mono, fontWeight: 700 }}>{fmtVND(currentBasePrice)}</div>
+ </div>
+ )}
+ {featTotalForDisplay > 0 && (
+ <div style={{ background: `${DS.blue}10`, border: `1px solid ${DS.blue}30`, borderRadius: 12, padding: "8px 16px" }}>
+ <div style={{ color: DS.text4, fontSize: 9, fontFamily: DS.mono, marginBottom: 2 }}>TÍNH NĂNG</div>
+ <div style={{ color: DS.blue, fontSize: 15, fontFamily: DS.mono, fontWeight: 700 }}>+{fmtVND(featTotalForDisplay)}</div>
+ </div>
+ )}
+ {extraTotalForDisplay > 0 && (
+ <div style={{ background: `${DS.purple}10`, border: `1px solid ${DS.purple}30`, borderRadius: 12, padding: "8px 16px" }}>
+ <div style={{ color: DS.text4, fontSize: 9, fontFamily: DS.mono, marginBottom: 2 }}>DỊCH VỤ</div>
+ <div style={{ color: DS.purple, fontSize: 15, fontFamily: DS.mono, fontWeight: 700 }}>+{fmtVND(extraTotalForDisplay)}</div>
+ </div>
+ )}
+ {hostingTotal > 0 && (
+ <div style={{ background: `${DS.amber}10`, border: `1px solid ${DS.amber}30`, borderRadius: 12, padding: "8px 16px" }}>
+ <div style={{ color: DS.text4, fontSize: 9, fontFamily: DS.mono, marginBottom: 2 }}>HOSTING</div>
+ <div style={{ color: DS.amber, fontSize: 15, fontFamily: DS.mono, fontWeight: 700 }}>+{fmtVND(hostingTotal)}</div>
+ </div>
+ )}
+ {domainTotal > 0 && (
+ <div style={{ background: `${DS.cyan}10`, border: `1px solid ${DS.cyan}30`, borderRadius: 12, padding: "8px 16px" }}>
+ <div style={{ color: DS.text4, fontSize: 9, fontFamily: DS.mono, marginBottom: 2 }}>DOMAIN</div>
+ <div style={{ color: DS.cyan, fontSize: 15, fontFamily: DS.mono, fontWeight: 700 }}>+{fmtVND(domainTotal)}</div>
+ </div>
+ )}
+ {vatAmt > 0 && (
+ <div style={{ background: "rgba(148,163,184,0.06)", border: "1px solid rgba(148,163,184,0.2)", borderRadius: 12, padding: "8px 16px" }}>
+ <div style={{ color: DS.text4, fontSize: 9, fontFamily: DS.mono, marginBottom: 2 }}>VAT</div>
+ <div style={{ color: DS.text3, fontSize: 15, fontFamily: DS.mono, fontWeight: 700 }}>+{fmtVND(vatAmt)}</div>
+ </div>
+ )}
+ {lpDisc.vndDiscount > 0 && (
+ <div style={{ background: `${DS.pink}10`, border: `1px solid ${DS.pink}30`, borderRadius: 12, padding: "8px 16px" }}>
+ <div style={{ color: DS.text4, fontSize: 9, fontFamily: DS.mono, marginBottom: 2 }}>GIẢM LP</div>
+ <div style={{ color: DS.pink, fontSize: 15, fontFamily: DS.mono, fontWeight: 700 }}>−{fmtVND(lpDisc.vndDiscount)}</div>
+ </div>
+ )}
+ </div>
+ </div>
+ </motion.div>
+ )}
+
+ {/* ── Feature toggle ── */}
+ {selectedPackage && currentFeatureOptions.length > 0 && (
+ <div style={{ marginBottom: 32 }}>
+ <FeatureToggleTable
+ allFeatures={currentFeatureOptions}
+ selectedIds={selectedFeatures}
+ includedIds={baseFeatures.map(f => f.id)}
+ onToggle={toggleFeature}
+ packageName={selectedPkg?.name}
+ packageColor={pkgColor}
+ />
+ </div>
+ )}
+ </div>
+ )}
+ {/* ── STEP 1: Domain ──────────────────────────────────────── */}
           {step === 1 && (
             <div>
               <div className="mb-6 p-5 rounded-2xl" style={{ background: "rgba(15,23,42,0.7)", border: `1px solid ${DS.cyan}15` }}>

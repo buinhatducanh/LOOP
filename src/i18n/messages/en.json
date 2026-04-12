@@ -99,7 +99,16 @@
     "servicesSectionDesc": "All services are paid in VND. Earn LP reward points starting from your very first project.",
     "priceFrom": "STARTING AT (VND)",
     "lpRewardLabel": "LP REWARD",
-    "lpRewardPer": "◈ {amount} LP / {threshold}"
+    "lpRewardPer": "◈ {amount} LP / {threshold}",
+    "whyUsProcessLabel": "4-STEP PROCESS",
+    "whyUsProcessStep1": "Discover & Analyze",
+    "whyUsProcessDesc1": "Detailed analysis of requirements, business goals, and target audience.",
+    "whyUsProcessStep2": "Strategy & Design",
+    "whyUsProcessDesc2": "Build optimal solutions with professional UX/UI design following the latest trends.",
+    "whyUsProcessStep3": "Develop & Test",
+    "whyUsProcessDesc3": "Implement modern technology with rigorous QA to ensure product quality.",
+    "whyUsProcessStep4": "Deliver & Support",
+    "whyUsProcessDesc4": "Complete documentation handover with continuous maintenance and upgrades."
   },
   "team": {
     "badge": "TEAM MEMBERS",
@@ -620,7 +629,9 @@
     "pricingDescription": "View detailed pricing for 4 services: Website, App/SaaS, Dashboard, SEO — each with 3 tiers: Basic, Business, Experience. Basic from $160, Business from $240. Free SSL, warranty included.",
     "brandMetaDescription": "Server-first architecture, AI-driven execution, edge-ready delivery for scalable digital products.",
     "teamTitle": "Team | LOOP Solutions",
-    "teamDescription": "27 outstanding experts - developers, designers, media, marketing and sales. Rank up with LP, Iron to Diamond system."
+    "teamDescription": "27 outstanding experts - developers, designers, media, marketing and sales. Rank up with LP, Iron to Diamond system.",
+    "academyTitle": "アカデミー — LOOP Solutions",
+    "academyDescription": "Learn from LOOP Solutions experts — coding, marketing, design, and business courses. Earn LP rewards upon completion."
   },
   "Navigation": {
     "home": "Home",

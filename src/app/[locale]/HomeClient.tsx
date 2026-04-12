@@ -120,7 +120,7 @@ function HeroSection({ locale }: { locale: string }) {
       {/* ── GALAXY BACKGROUND (enhanced cosmic depth) ── */}
       <div style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 0, overflow: "hidden" }}>
         {/* Layer 1 — Deep space base with layered radial depth */}
-        <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at 20% 40%, #1A1A2E 0%, #0C0C14 40%, #080810 70%, #04040C 100%)" }} />
+        <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at 20% 40%, #071529 0%, #010e24 40%, #010a1c 70%, #000814 100%)" }} />
         {/* Layer 2 — Cosmic horizon glow (bottom horizon light bleed) */}
         <div style={{ position: "absolute", bottom: "-20%", left: "10%", right: "10%", height: "40%", background: "radial-gradient(ellipse at 50% 100%, rgba(107,61,245,0.12) 0%, rgba(79,125,243,0.06) 40%, transparent 70%)", filter: "blur(30px)" }} />
 
@@ -314,7 +314,7 @@ function HeroSection({ locale }: { locale: string }) {
         {/* Layer 7 — Depth vignette overlay */}
         <div style={{
           position: "absolute", inset: 0,
-          background: "radial-gradient(ellipse at 50% 50%, transparent 30%, rgba(4,4,12,0.35) 70%, rgba(4,4,12,0.70) 100%)",
+          background: "radial-gradient(ellipse at 50% 50%, transparent 30%, rgba(0,8,20,0.45) 70%, rgba(0,6,16,0.80) 100%)",
         }} />
 
         {/* Layer 8 — Subtle grid (parallax-ready, very faint) */}
@@ -327,7 +327,7 @@ function HeroSection({ locale }: { locale: string }) {
         {/* Layer 9 — Foreground dark gradient for text readability */}
         <div style={{
           position: "absolute", inset: 0,
-          background: "linear-gradient(135deg, rgba(12,12,20,0.92) 0%, rgba(12,12,20,0.60) 38%, rgba(12,12,20,0.35) 100%)",
+          background: "linear-gradient(135deg, rgba(0,10,28,0.94) 0%, rgba(1,14,36,0.65) 38%, rgba(1,18,44,0.40) 100%)",
         }} />
       </div>
 
@@ -478,7 +478,7 @@ function HeroSection({ locale }: { locale: string }) {
               {/* Bottom gradient for text readability */}
               <div style={{
                 position: "absolute", inset: 0,
-                background: "linear-gradient(to top, rgba(12,12,20,0.9) 0%, rgba(12,12,20,0.3) 40%, transparent 70%)",
+                background: "linear-gradient(to top, rgba(1,21,50,0.9) 0%, rgba(1,21,50,0.3) 40%, transparent 70%)",
               }} />
               {/* Brand overlay */}
               <div style={{
@@ -487,7 +487,7 @@ function HeroSection({ locale }: { locale: string }) {
               }}>
                 <div style={{
                   width: 36, height: 36, borderRadius: 10,
-                  background: "rgba(12,12,20,0.8)", backdropFilter: "blur(10px)",
+                  background: "rgba(1,21,50,0.8)", backdropFilter: "blur(10px)",
                   border: "1px solid rgba(107,61,245,0.5)",
                   display: "flex", alignItems: "center", justifyContent: "center",
                   boxShadow: "0 0 16px rgba(107,61,245,0.5)",
@@ -519,7 +519,7 @@ function HeroSection({ locale }: { locale: string }) {
             style={{
               position: "absolute", top: "-1rem", right: "-0.75rem",
               padding: "0.625rem 0.875rem", borderRadius: "1rem",
-              background: "rgba(12,12,20,0.60)", border: "1px solid rgba(107,61,245,0.45)",
+              background: "rgba(1,21,50,0.60)", border: "1px solid rgba(107,61,245,0.45)",
               backdropFilter: "blur(20px)",
               boxShadow: "0 8px 32px rgba(0,0,0,0.5), 0 0 20px rgba(139,92,246,0.2)",
             }}
@@ -537,7 +537,7 @@ function HeroSection({ locale }: { locale: string }) {
             style={{
               position: "absolute", bottom: "-0.75rem", left: "-0.75rem",
               padding: "0.625rem 0.875rem", borderRadius: "1rem",
-              background: "rgba(12,12,20,0.60)", border: "1px solid rgba(230,199,95,0.25)",
+              background: "rgba(1,21,50,0.60)", border: "1px solid rgba(230,199,95,0.25)",
               backdropFilter: "blur(20px)",
               boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
             }}

@@ -65,6 +65,7 @@ function useStoreSnapshot() {
     tabPermissions: string[] | undefined;
   } | null>(null);
 
+  const serverSnapshotRef = useRef({ role: "guest", departmentKey: undefined, tabPermissions: undefined });
   const [, forceUpdate] = useState(0);
   const prevRef = useRef<ReturnType<typeof api.getState> | null>(null);
 
@@ -93,11 +94,7 @@ function useStoreSnapshot() {
       }
       return cacheRef.current;
     },
-    () => ({
-      role: "guest",
-      departmentKey: undefined,
-      tabPermissions: undefined,
-    })
+ () => serverSnapshotRef.current,
   );
 
   return cacheRef.current!;

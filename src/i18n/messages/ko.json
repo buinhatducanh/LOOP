@@ -106,7 +106,15 @@
     "servicesSectionDesc": "모든 서비스는 VND로 결제됩니다. 첫 번째 프로젝트부터 LP 보상 포인트를 적립하세요.",
     "priceFrom": "시작가 (VND)",
     "lpRewardLabel": "LP 보상",
-    "lpRewardPer": "◈ {amount} LP / {threshold}"
+    "lpRewardPer": "◈ {amount} LP / {threshold}",
+    "whyUsProcessLabel": "4단계 프로세스",
+    "whyUsProcessStep1": "요구 분석 및 전략 수립",
+    "whyUsProcessDesc1": "요구사항, 비즈니스 목표 및 목표 고객에 대한 상세 분석을 진행합니다.",
+    "whyUsProcessStep2": "전략 및 디자인",
+    "whyUsProcessDesc2": "최신 트렌드를 반영한 전문적인 UX/UI 디자인으로 최적의 솔루션을 구축합니다.",
+    "whyUsProcessStep3": "최신 기술 구현 및 엄격한 QA를 통해 제품 품질을 확보합니다.",
+    "whyUsProcessStep4": "인수 및 지원",
+    "whyUsProcessDesc4": "완전한 문서 인수와 지속적인 유지보수 및 업그레이드를 제공합니다."
   },
   "team": {
     "badge": "팀 멤버",

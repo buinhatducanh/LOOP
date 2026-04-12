@@ -99,7 +99,16 @@
     "servicesSectionDesc": "Mọi dịch vụ đều được thanh toán bằng VNĐ. Tích lũy LP điểm thưởng và nhận ưu đãi ngay từ dự án đầu tiên.",
     "priceFrom": "GIÁ TỪ (VNĐ)",
     "lpRewardLabel": "ĐIỂM THƯỞNG LP",
-    "lpRewardPer": "◈ {amount} LP / {threshold}"
+    "lpRewardPer": "◈ {amount} LP / {threshold}",
+    "whyUsProcessLabel": "QUY TRÌNH 4 BƯỚC",
+    "whyUsProcessStep1": "Khám phá nhu cầu",
+    "whyUsProcessDesc1": "Phân tích chi tiết yêu cầu, mục tiêu kinh doanh và đối tượng khách hàng mục tiêu.",
+    "whyUsProcessStep2": "Chiến lược & Thiết kế",
+    "whyUsProcessDesc2": "Xây dựng giải pháp tối ưu, thiết kế UX/UI chuyên nghiệp theo xu hướng mới nhất.",
+    "whyUsProcessStep3": "Phát triển & Kiểm thử",
+    "whyUsProcessDesc3": "Triển khai công nghệ hiện đại, QA chặt chẽ đảm bảo chất lượng sản phẩm.",
+    "whyUsProcessStep4": "Bàn giao & Hỗ trợ",
+    "whyUsProcessDesc4": "Bàn giao đầy đủ tài liệu, bảo trì và nâng cấp liên tục theo nhu cầu."
   },
   "services": {
     "heroBadge": "WEBPACKAGES & DỊCH VỤ",
@@ -620,7 +629,9 @@
     "pricingDescription": "Xem bảng giá chi tiết 4 dịch vụ: Website, App/SaaS, Dashboard, SEO — mỗi dịch vụ 3 cấp Basic / Business / Experience. Basic từ 3.9M, Business từ 5.9M. Miễn phí SSL, bảo hành.",
     "brandMetaDescription": "LOOP Solutions - Đối tác chuyển đổi số hàng đầu Việt Nam. Thiết kế web, app, dashboard, SEO chuyên nghiệp.",
     "teamTitle": "Đội ngũ | LOOP Solutions",
-    "teamDescription": "27 chuyên gia xuất sắc - developer, designer, media, marketing, sales. Thăng hạng qua LP, xếp hạng Iron đến Diamond."
+    "teamDescription": "27 chuyên gia xuất sắc - developer, designer, media, marketing, sales. Thăng hạng qua LP, xếp hạng Iron đến Diamond.",
+    "academyTitle": "Học viện | LOOP Solutions",
+    "academyDescription": "Học từ chuyên gia LOOP Solutions — các khóa học về lập trình, marketing, thiết kế, kinh doanh. Hoàn thành nhận thưởng LP."
   },
   "Navigation": {
     "home": "Trang chủ",

@@ -106,7 +106,16 @@
     "servicesSectionDesc": "所有服务以越南盾结算。从第一个项目开始赚取LP奖励积分。",
     "priceFrom": "起售价 (VND)",
     "lpRewardLabel": "LP奖励",
-    "lpRewardPer": "◈ {amount} LP / {threshold}"
+    "lpRewardPer": "◈ {amount} LP / {threshold}",
+    "whyUsProcessLabel": "4",
+    "whyUsProcessStep1": "phân tích",
+    "whyUsProcessDesc1": "phân tích、。",
+    "whyUsProcessStep2": "",
+    "whyUsProcessDesc2": "UX/UI。",
+    "whyUsProcessStep3": "",
+    "whyUsProcessDesc3": "QA。",
+    "whyUsProcessStep4": "",
+    "whyUsProcessDesc4": "。"
   },
   "team": {
     "badge": "团队成员",

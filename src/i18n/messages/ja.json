@@ -106,7 +106,16 @@
     "servicesSectionDesc": "全サービスはVNDで決済。最初のプロジェクトからLP報酬ポイントを貯めてください。",
     "priceFrom": "価格（税込）",
     "lpRewardLabel": "LP報酬",
-    "lpRewardPer": "◈ {amount} LP / {threshold}"
+    "lpRewardPer": "◈ {amount} LP / {threshold}",
+    "whyUsProcessLabel": "4つのステップ",
+    "whyUsProcessStep1": "ニーズのphân tích",
+    "whyUsProcessDesc1": "ビジネスとターゲットのなphân tíchをします。",
+    "whyUsProcessStep2": "とデザイン",
+    "whyUsProcessDesc2": "トレンドにったプロフェッショナルなUX/UIでなソリューションをします。",
+    "whyUsProcessStep3": "とテスト",
+    "whyUsProcessDesc3": "のでいなQAでのをします。",
+    "whyUsProcessStep4": "とサポート",
+    "whyUsProcessDesc4": "なドキュメントのきしとなメンテナンス・アップグレードをします。"
   },
   "team": {
     "badge": "チームメンバー",

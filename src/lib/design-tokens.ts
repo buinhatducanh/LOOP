@@ -16,7 +16,7 @@
 
 export const DS = {
   // ── Backgrounds ──────────────────────────────────────────────────────────
-  bg:          "#0C0C14",   // Deep space
+  bg:          "#020b1d",   // Deep space
   bgCosmic:    "#0C0C14",
   bgDeep:      "#1A1A2E",
   bgCard:      "#111827",

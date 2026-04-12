@@ -14,7 +14,7 @@
  */
 import { useState, CSSProperties } from "react";
 import { motion } from "motion/react";
-import Link from "next/link";
+// Link import removed — no longer navigating to portfolio
 import {
   RANKS,
   normalizeRank,
@@ -352,7 +352,7 @@ interface MemberCardProps {
   locale: string;
 }
 
-export function MemberCard({ member, index, locale }: MemberCardProps) {
+export function MemberCard({ member, index, locale: _locale }: MemberCardProps) {
   const [hovered, setHovered] = useState(false);
   const [imgError, setImgError] = useState(false);
   const setActiveMember = useLoopStore((s) => s.setActiveMember);
@@ -440,8 +440,7 @@ export function MemberCard({ member, index, locale }: MemberCardProps) {
       />
 
       {/* ── Card (overflow:hidden clips VFX) ─────────── */}
-      <Link
-        href={`/${locale}/team/${slug}`}
+      <div
         style={{ textDecoration: "none", color: "inherit", display: "block" }}
       >
         <div style={cardStyle}>
@@ -694,7 +693,7 @@ export function MemberCard({ member, index, locale }: MemberCardProps) {
             level,
           }}
         />
-      </Link>
+      </div>
 
       {/* ── Corner decorations ────────────────────────────── */}
       <CornerDeco color={cfg.color} opacity={hovered ? 1 : 0.5} />
