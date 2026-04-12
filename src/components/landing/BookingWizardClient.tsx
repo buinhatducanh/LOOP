@@ -2133,7 +2133,329 @@ function _StepReview({ service, pkg, talent, featureOptions, features, extraOpti
   );
 }
 
+// ── Step Domain — Domain name picker with availability check ──────────────────
+
+interface DomainCheckResult {
+  available: boolean;
+  invalid?: boolean;
+  reserved?: boolean;
+  blocked?: boolean;
+  suggestions?: string[];
+}
+
+function StepDomain({
+  domainName, setDomainName,
+  domainPurchaseNow, setDomainPurchaseNow,
+  domainPrices,
+}: {
+  domainName: string;
+  setDomainName: (s: string) => void;
+  domainPurchaseNow: boolean;
+  setDomainPurchaseNow: (b: boolean) => void;
+  domainPrices: WizardDomainPrice[];
+}) {
+  const t = useTranslations("BookingPage");
+
+  // Parse existing selection: split into base + extension
+  const initialExt = (() => {
+    const found = domainPrices.find(d => domainName.toLowerCase().endsWith(d.extension));
+    return found?.extension ?? domainPrices[0]?.extension ?? ".com";
+  })();
+  const initialBase = domainName && initialExt && domainName.toLowerCase().endsWith(initialExt)
+    ? domainName.slice(0, -initialExt.length)
+    : "";
+
+  const [query, setQuery] = useState(initialBase);
+  const [ext, setExt] = useState(initialExt);
+  const [checking, setChecking] = useState(false);
+  const [checkResult, setCheckResult] = useState<DomainCheckResult | null>(null);
+
+  const fullDomain = query ? `${query}${ext}` : "";
+
+  // Debounced availability check
+  useEffect(() => {
+    if (!query || query.length < 2) {
+      setCheckResult(null);
+      setChecking(false);
+      return;
+    }
+    const dom = `${query}${ext}`.toLowerCase();
+    setChecking(true);
+    const controller = new AbortController();
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `/api/pricing/domain-check?domain=${encodeURIComponent(dom)}`,
+          { signal: controller.signal },
+        );
+        const data = await res.json();
+        setCheckResult((data?.data as DomainCheckResult) ?? null);
+      } catch (err) {
+        if (!(err instanceof DOMException && err.name === "AbortError")) {
+          setCheckResult(null);
+        }
+      } finally {
+        setChecking(false);
+      }
+    }, 450);
+    return () => {
+      controller.abort();
+      clearTimeout(timer);
+    };
+  }, [query, ext]);
+
+  const selectedPrice = domainPrices.find(d => d.extension === ext);
+  const isConfirmed = domainPurchaseNow && domainName === fullDomain && fullDomain !== "";
+
+  const confirmDomain = () => {
+    if (checkResult?.available) {
+      setDomainName(fullDomain);
+      setDomainPurchaseNow(true);
+    }
+  };
+
+  const skipDomain = () => {
+    setDomainName("");
+    setDomainPurchaseNow(false);
+  };
+
+  const pickSuggestion = (s: string) => {
+    const m = s.match(/^([^.]+)(\..+)$/);
+    if (m && m[1] && m[2]) {
+      setQuery(m[1]);
+      setExt(m[2]);
+    }
+  };
+
+  const statusColor = checking
+    ? DS.text4
+    : checkResult?.available
+      ? DS.green
+      : checkResult
+        ? DS.red
+        : DS.text4;
+
+  return (
+    <div>
+      {/* Header */}
+      <div className="mb-5">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: `${DS.cyan}15` }}>
+            <Globe size={18} style={{ color: DS.cyan }} />
+          </div>
+          <div>
+            <h3 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 22, fontWeight: 900, letterSpacing: "0.04em" }}>
+              {t("domainStepTitle")}
+            </h3>
+            <p style={{ color: DS.text3, fontSize: 13, marginTop: 2 }}>{t("domainStepDesc")}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Search row */}
+      <div className="mb-4 p-4 rounded-xl" style={{ background: "rgba(15,23,42,0.6)", border: `1px solid ${DS.border}` }}>
+        <label style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.12em", display: "block", marginBottom: 8 }}>
+          {t("domainInputLabel").toUpperCase()}
+        </label>
+        <div className="flex gap-2 flex-wrap">
+          <input
+            type="text"
+            value={query}
+            onChange={(e) =>
+              setQuery(e.target.value.trim().toLowerCase().replace(/[^a-z0-9-]/g, ""))
+            }
+            placeholder={t("domainQueryPlaceholder")}
+            style={{
+              flex: "1 1 200px",
+              background: "rgba(10,15,30,0.7)",
+              border: `1px solid ${DS.border}`,
+              borderRadius: 10,
+              padding: "11px 14px",
+              color: DS.text,
+              fontSize: 14,
+              outline: "none",
+              fontFamily: DS.mono,
+            }}
+          />
+          <select
+            value={ext}
+            onChange={(e) => setExt(e.target.value)}
+            style={{
+              background: "rgba(10,15,30,0.7)",
+              border: `1px solid ${DS.border}`,
+              borderRadius: 10,
+              padding: "11px 14px",
+              color: DS.text,
+              fontSize: 14,
+              outline: "none",
+              fontFamily: DS.mono,
+              minWidth: 120,
+            }}
+          >
+            {domainPrices.map((d) => (
+              <option key={d.extension} value={d.extension}>{d.extension}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Status */}
+        {query && query.length >= 2 && (
+          <div
+            className="mt-3 p-3 rounded-lg flex items-center justify-between gap-3 flex-wrap"
+            style={{
+              background: checking
+                ? "rgba(255,255,255,0.03)"
+                : checkResult?.available
+                  ? "rgba(34,197,94,0.08)"
+                  : "rgba(239,68,68,0.08)",
+              border: `1px solid ${checking ? DS.border : checkResult?.available ? `${DS.green}40` : `${DS.red}40`}`,
+            }}
+          >
+            <div>
+              <div style={{ color: DS.text, fontSize: 14, fontFamily: DS.mono, fontWeight: 700 }}>
+                {fullDomain}
+              </div>
+              <div style={{ color: statusColor, fontSize: 12, fontFamily: DS.mono, marginTop: 2 }}>
+                {checking
+                  ? t("domainChecking")
+                  : !checkResult
+                    ? ""
+                    : checkResult.invalid
+                      ? `✗ ${t("domainInvalid")}`
+                      : checkResult.reserved
+                        ? `✗ ${t("domainReserved")}`
+                        : checkResult.blocked
+                          ? `✗ ${t("domainBlocked")}`
+                          : checkResult.available
+                            ? `✓ ${t("domainAvailable")}`
+                            : `✗ ${t("domainTaken")}`}
+              </div>
+            </div>
+            {checkResult?.available && selectedPrice && (
+              <div style={{ color: DS.cyan, fontSize: 14, fontFamily: DS.mono, fontWeight: 700 }}>
+                {fmtVND(selectedPrice.registrationPrice)}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Suggestions */}
+        {!checking && checkResult && !checkResult.available && (checkResult.suggestions?.length ?? 0) > 0 && (
+          <div className="mt-3 pt-3" style={{ borderTop: `1px solid ${DS.border}` }}>
+            <div style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, marginBottom: 6 }}>
+              {t("domainSuggestions")}:
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {(checkResult.suggestions ?? []).map((s) => (
+                <button
+                  key={s}
+                  onClick={() => pickSuggestion(s)}
+                  style={{
+                    background: `${DS.cyan}10`,
+                    border: `1px solid ${DS.cyan}30`,
+                    color: DS.cyan,
+                    fontSize: 11,
+                    fontFamily: DS.mono,
+                    padding: "4px 10px",
+                    borderRadius: 6,
+                    cursor: "pointer",
+                  }}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Price table */}
+      {domainPrices.length > 0 && (
+        <div className="mb-5">
+          <div style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.12em", marginBottom: 8 }}>
+            {t("domainPriceList").toUpperCase()}
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))", gap: 8 }}>
+            {domainPrices.map((d) => (
+              <button
+                key={d.extension}
+                onClick={() => setExt(d.extension)}
+                style={{
+                  background: ext === d.extension ? `${DS.cyan}12` : "rgba(15,23,42,0.5)",
+                  border: ext === d.extension ? `1.5px solid ${DS.cyan}50` : `1px solid ${DS.border}`,
+                  borderRadius: 10,
+                  padding: "10px 12px",
+                  cursor: "pointer",
+                  textAlign: "left",
+                }}
+              >
+                <div style={{ color: ext === d.extension ? DS.cyan : DS.text2, fontSize: 13, fontFamily: DS.mono, fontWeight: 700 }}>
+                  {d.extension}
+                </div>
+                <div style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, marginTop: 2 }}>
+                  {fmtVND(d.registrationPrice)} / {d.periodVi}
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Actions */}
+      <div className="flex gap-3 flex-wrap">
+        <button
+          onClick={confirmDomain}
+          disabled={!checkResult?.available || checking}
+          style={{
+            background: checkResult?.available && !checking ? GRD.primary : "rgba(255,255,255,0.05)",
+            color: checkResult?.available && !checking ? "#fff" : DS.text4,
+            fontSize: 13,
+            fontWeight: 700,
+            padding: "11px 20px",
+            borderRadius: 10,
+            border: "none",
+            cursor: checkResult?.available && !checking ? "pointer" : "not-allowed",
+            fontFamily: DS.mono,
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+          }}
+        >
+          <Check size={14} />
+          {isConfirmed ? t("domainSelected") : t("domainConfirm")}
+        </button>
+        <button
+          onClick={skipDomain}
+          style={{
+            background: !domainPurchaseNow && !domainName ? `${DS.text4}15` : "rgba(15,23,42,0.6)",
+            color: !domainPurchaseNow && !domainName ? DS.text2 : DS.text3,
+            fontSize: 13,
+            padding: "11px 20px",
+            borderRadius: 10,
+            border: `1px solid ${!domainPurchaseNow && !domainName ? `${DS.text3}40` : DS.border}`,
+            cursor: "pointer",
+            fontFamily: DS.mono,
+          }}
+        >
+          {t("domainSkip")}
+        </button>
+      </div>
+
+      {/* Current selection pill */}
+      {(isConfirmed || (!domainPurchaseNow && !domainName)) && (
+        <div className="mt-4 p-3 rounded-lg" style={{ background: `${DS.cyan}08`, border: `1px solid ${DS.cyan}20` }}>
+          <span style={{ color: DS.cyan, fontSize: 12, fontFamily: DS.mono }}>
+            {isConfirmed ? `◈ ${t("domainSelectedStatus")}: ${domainName}` : `◈ ${t("domainSkipStatus")}`}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Step 3 — Contact + Payment ─────────────────────────────────────────────────
+
+type ContactStepMode = "contact" | "payment" | "review";
 
 function StepContact({
   vatRate,
@@ -2150,6 +2472,7 @@ function StepContact({
   extraOptions, selectedExtras,
   selectedHostingPlan, hostingPlans,
   domainPrices, domainName, domainPurchaseNow,
+  mode = "review",
 }: {
   vatRate: number;
   lpBalance: number; maxLpRedeem: number; lpDiscount: number; setLpDiscount: (n: number) => void; lpRate: LpRateConfig;
@@ -2171,7 +2494,13 @@ function StepContact({
   extraOptions?: WizardExtra[]; selectedExtras?: string[];
   selectedHostingPlan?: string; hostingPlans?: WizardHostingPlan[];
   domainPrices?: WizardDomainPrice[]; domainName?: string; domainPurchaseNow?: boolean;
+  mode?: ContactStepMode;
 }) {
+  const showContact = mode === "contact" || mode === "review";
+  const showPayment = mode === "payment" || mode === "review";
+  const showSubmit = mode === "review";
+  const showSidebar = mode === "review";
+  const showOrderTags = mode === "review";
   const t = useTranslations("BookingPage");
   const [payMethod, setPayMethod] = useState("bank");
 
@@ -2268,7 +2597,7 @@ function StepContact({
 
         {/* ── Left: form ── */}
         <div>
-          {/* Order tags */}
+          {showOrderTags && (
           <div className="mb-5 p-4 rounded-xl flex items-center justify-between flex-wrap gap-3"
             style={{ background: "rgba(15,23,42,0.7)", border: `1px solid ${DS.border}` }}>
             <div className="flex flex-wrap gap-2">
@@ -2299,7 +2628,9 @@ function StepContact({
               ← Sửa lựa chọn
             </button>
           </div>
+          )}
 
+          {showContact && (<>
           {/* Section: Contact */}
           <div className="mb-5">
             <div className="flex items-center gap-3 mb-4">
@@ -2368,8 +2699,10 @@ function StepContact({
               rows={3}
               style={{ width: "100%", background: "rgba(15,23,42,0.6)", border: `1px solid ${DS.border}`, borderRadius: 10, padding: "11px 14px", color: DS.text, fontSize: 14, outline: "none", fontFamily: DS.body, boxSizing: "border-box", resize: "vertical" }} />
           </div>
+          </>)}
 
-          {/* Section: Payment */}
+          {showPayment && (
+          /* Section: Payment */
           <div className="mb-5">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `${DS.green}15` }}>
@@ -2452,7 +2785,9 @@ function StepContact({
               </div>
             )}
           </div>
+          )}
 
+          {showSubmit && (<>
           {/* Submit */}
           <button onClick={onSubmit} disabled={!name || !email || !phone || submitLoading}
             style={{
@@ -2471,9 +2806,11 @@ function StepContact({
           <div style={{ color: DS.text5, fontSize: 11, marginTop: 10, textAlign: "center" }}>
             {paymentPlan === "100" ? "Thanh toán 100% ngay — giảm 5%." : t("depositNote")}
           </div>
+          </>)}
         </div>
 
-        {/* ── Right: billing summary (sticky) ── */}
+        {showSidebar && (
+        /* ── Right: billing summary (sticky) ── */
         <div>
           <div style={{
             background: "rgba(10,15,30,0.95)",
@@ -2613,7 +2950,7 @@ function StepContact({
             )}
           </div>
         </div>
-      </div>
+        )}
     </div>
   );
 }
@@ -2911,12 +3248,24 @@ export function BookingWizardClient({ locale }: Props) {
   const toggleExtra = (id: string) =>
     setSelectedExtras(prev => prev.includes(id) ? prev.filter(e => e !== id) : [...prev, id]);
 
+  // 6-step flow:
+  // 0 = Package + Features
+  // 1 = Domain
+  // 2 = Hosting + Add-ons
+  // 3 = Contact info
+  // 4 = Payment
+  // 5 = Review + Submit
+  const TOTAL_STEPS = 6;
   const canNext = () => {
-    if (step === 0) return !!selectedPackage;  // must select a package
-    if (step === 1) return true;  // features + hosting are optional
-    if (step === 2) return true;  // contact info validated server-side
-    return true;
+    if (step === 0) return !!selectedPackage;          // package required
+    if (step === 1) return true;                        // domain optional
+    if (step === 2) return true;                        // hosting + addons optional
+    if (step === 3) return !!name && !!email && !!phone; // contact required
+    if (step === 4) return true;                        // payment defaults valid
+    return true;                                        // review
   };
+  const goNext = () => { if (canNext() && step < TOTAL_STEPS - 1) setStep(step + 1); };
+  const goBack = () => { if (step > 0) setStep(step - 1); };
 
   // ── Submit ────────────────────────────────────────────────────────────
   const handleSubmit = async () => {
@@ -2997,11 +3346,14 @@ export function BookingWizardClient({ locale }: Props) {
     }
   };
 
-  // ── i18n step labels ──────────────────────────────────────────────────
+  // ── i18n step labels (6-step wizard) ──────────────────────────────────
   const STEP_LABELS = [
-    t("bookingPackage"),  // Step 0: Package selection
-    t("bookingAddons"),  // Step 1: Add-ons
-    t("bookingContact"),  // Step 2: Contact + Payment
+    t("bookingPackage"),  // Step 0: Package + Features
+    t("bookingDomain"),   // Step 1: Domain
+    t("bookingHosting"),  // Step 2: Hosting + Add-ons
+    t("bookingContact"),  // Step 3: Contact info
+    t("bookingPayment"),  // Step 4: Payment
+    t("bookingReview"),   // Step 5: Review + Submit
   ];
 
   // ── All-in-one layout: single column ─────────────────────────────────────────
@@ -3146,7 +3498,8 @@ export function BookingWizardClient({ locale }: Props) {
             )}
           </div>
 
-          {/* ── SECTION 2: Package cards ── */}
+          {/* ── STEP 0: Package cards ── */}
+          {step === 0 && (
           <div style={{ marginBottom: 32 }}>
             <div className="flex items-center gap-3 mb-4">
               <div style={{ width: 3, height: 16, background: DS.pink, borderRadius: 2 }} />
@@ -3221,9 +3574,10 @@ export function BookingWizardClient({ locale }: Props) {
               ))}
             </div>
           </div>
+          )}
 
-          {/* ── SECTION 3: Feature Toggle Table (only when package selected) ── */}
-          {selectedPackage && currentFeatureOptions.length > 0 && (
+          {/* ── STEP 0: Feature Toggle Table ── */}
+          {step === 0 && selectedPackage && currentFeatureOptions.length > 0 && (
             <div style={{ marginBottom: 32 }}>
               <FeatureToggleTable
                 allFeatures={currentFeatureOptions}
@@ -3236,8 +3590,21 @@ export function BookingWizardClient({ locale }: Props) {
             </div>
           )}
 
-          {/* ── SECTION 4a: Hosting ── */}
-          {selectedPackage && hostingPlans.length > 0 && (
+          {/* ── STEP 1: Domain (with availability check) ── */}
+          {step === 1 && selectedPackage && (
+            <div style={{ marginBottom: 32 }}>
+              <StepDomain
+                domainName={domainName}
+                setDomainName={setDomainName}
+                domainPurchaseNow={domainPurchaseNow}
+                setDomainPurchaseNow={setDomainPurchaseNow}
+                domainPrices={domainPrices}
+              />
+            </div>
+          )}
+
+          {/* ── STEP 2: Hosting ── */}
+          {step === 2 && selectedPackage && hostingPlans.length > 0 && (
             <div style={{ marginBottom: 20 }}>
               <div className="flex items-center gap-3 mb-4">
                 <div style={{ width: 3, height: 16, background: DS.purple, borderRadius: 2 }} />
@@ -3318,75 +3685,8 @@ export function BookingWizardClient({ locale }: Props) {
             </div>
           )}
 
-          {/* ── SECTION 4b: Domain name ── */}
-          {selectedPackage && (
-            <div style={{ marginBottom: 32 }}>
-              <div className="flex items-center gap-3 mb-4">
-                <div style={{ width: 3, height: 16, background: DS.cyan, borderRadius: 2 }} />
-                <h3 style={{ color: DS.text2, fontSize: 12, fontFamily: DS.mono, letterSpacing: "0.14em" }}>
-                  TÊN MIỀN
-                </h3>
-                <div style={{ flex: 1, height: 1, background: DS.border }} />
-                <button
-                  onClick={() => setModal({ type: "domain", isOpen: true })}
-                  style={{ background: "none", border: `1px solid ${DS.cyan}40`, cursor: "pointer", color: DS.cyan, fontSize: 11, fontFamily: DS.mono, padding: "2px 6px", borderRadius: 4 }}
-                >
-                  Tra cứu →
-                </button>
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 10 }}>
-                {/* Domain option — click opens modal */}
-                <motion.button onClick={() => { if (!selectedExtras.includes("domain")) toggleExtra("domain"); setModal({ type: "domain", isOpen: true }); }}
-                  className="text-left p-4 rounded-xl relative"
-                  style={{
-                    background: domainName ? `${DS.cyan}0C` : "rgba(15,23,42,0.5)",
-                    border: domainName ? `1.5px solid ${DS.cyan}50` : `1px solid ${DS.border}`,
-                    cursor: "pointer",
-                  }}
-                  whileHover={{ scale: 1.02 }}
-                >
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                    <Globe size={16} style={{ color: DS.cyan }} />
-                    <span style={{ color: DS.text, fontSize: 12, fontFamily: DS.mono, fontWeight: 700 }}>
-                      ĐĂNG KÝ TÊN MIỀN
-                    </span>
-                  </div>
-                  <div style={{ color: DS.text4, fontSize: 11, marginBottom: 6, fontFamily: DS.mono }}>
-                    {domainName ? domainName : ".com · .vn · .com.vn..."}
-                  </div>
-                  {domainPrices.length > 0 && (
-                    <div style={{ color: DS.cyan, fontFamily: DS.mono, fontSize: 12, fontWeight: 700 }}>
-                      Từ {fmtVND(Math.min(...domainPrices.map(d => d.registrationPrice)))}
-                    </div>
-                  )}
-                  {domainPurchaseNow && domainName && (
-                    <div style={{ marginTop: 4 }}>
-                      <span className="px-2 py-0.5 rounded text-xs" style={{ background: `${DS.cyan}15`, color: DS.cyan, fontFamily: DS.mono }}>
-                        ✓ Đăng ký ngay
-                      </span>
-                    </div>
-                  )}
-                </motion.button>
-
-                {/* Skip */}
-                <motion.button
-                  onClick={() => { if (selectedExtras.includes("domain")) toggleExtra("domain"); setDomainName(""); setDomainPurchaseNow(false); }}
-                  className="text-center flex items-center justify-center"
-                  style={{
-                    background: !domainName ? "rgba(255,255,255,0.04)" : "rgba(15,23,42,0.4)",
-                    border: !domainName ? `1.5px solid ${DS.text4}60` : `1px solid ${DS.border}`,
-                    borderRadius: 12, cursor: "pointer",
-                  }}
-                  whileHover={{ scale: 1.02 }}
-                >
-                  <span style={{ color: DS.text4, fontSize: 12 }}>Bỏ qua — tự đăng ký sau</span>
-                </motion.button>
-              </div>
-            </div>
-          )}
-
-          {/* ── SECTION 5: Add-on services ── */}
-          {selectedPackage && extraOptions.length > 0 && (
+          {/* ── STEP 2: Add-on services ── */}
+          {step === 2 && selectedPackage && extraOptions.length > 0 && (
             <div style={{ marginBottom: 32 }}>
               <div className="flex items-center gap-3 mb-4">
                 <div style={{ width: 3, height: 16, background: DS.amber, borderRadius: 2 }} />
@@ -3437,40 +3737,89 @@ export function BookingWizardClient({ locale }: Props) {
             </div>
           )}
 
-          {/* ── Divider ── */}
-          {selectedPackage && (
-            <div style={{ height: 1, background: DS.border, margin: "8px 0 28px" }} />
+          {/* ── STEPS 3 / 4 / 5: Contact / Payment / Review ── */}
+          {(step === 3 || step === 4 || step === 5) && (
+            <StepContact
+              vatRate={vatRate}
+              lpBalance={lpBalance} maxLpRedeem={maxLpRedeem}
+              lpDiscount={lpDiscount} setLpDiscount={setLpDiscount} lpRate={lpRate}
+              name={name} setName={setName} email={email} setEmail={setEmail}
+              phone={phone} setPhone={setPhone} company={company} setCompany={setCompany}
+              startDate={startDate} setStartDate={setStartDate}
+              duration={duration} setDuration={setDuration}
+              talentNote={talentNote} setTalentNote={setTalentNote}
+              paymentPlan={paymentPlan} setPaymentPlan={setPaymentPlan}
+              service={service}
+              features={currentFeatureOptions.filter(f => selectedFeatures.includes(f.id))}
+              extras={extraOptions.filter(e => selectedExtras.includes(e.id))}
+              submitted={submitted} orderId={newOrderId}
+              submitError={submitError} setSubmitError={setSubmitError}
+              onSubmit={handleSubmit} submitLoading={submitLoading}
+              onEditSelection={() => setStep(0)}
+              selectedPackage={selectedPkg}
+              featureOptions={currentFeatureOptions}
+              selectedFeatures={selectedFeatures}
+              extraOptions={extraOptions}
+              selectedExtras={selectedExtras}
+              selectedHostingPlan={selectedHostingPlan}
+              hostingPlans={hostingPlans}
+              domainPrices={domainPrices}
+              domainName={domainName}
+              domainPurchaseNow={domainPurchaseNow}
+              mode={step === 3 ? "contact" : step === 4 ? "payment" : "review"}
+            />
           )}
 
-          {/* ── SECTION 6: Contact form (full width) ── */}
-          <StepContact
-            vatRate={vatRate}
-            lpBalance={lpBalance} maxLpRedeem={maxLpRedeem}
-            lpDiscount={lpDiscount} setLpDiscount={setLpDiscount} lpRate={lpRate}
-            name={name} setName={setName} email={email} setEmail={setEmail}
-            phone={phone} setPhone={setPhone} company={company} setCompany={setCompany}
-            startDate={startDate} setStartDate={setStartDate}
-            duration={duration} setDuration={setDuration}
-            talentNote={talentNote} setTalentNote={setTalentNote}
-            paymentPlan={paymentPlan} setPaymentPlan={setPaymentPlan}
-            service={service}
-            features={currentFeatureOptions.filter(f => selectedFeatures.includes(f.id))}
-            extras={extraOptions.filter(e => selectedExtras.includes(e.id))}
-            submitted={submitted} orderId={newOrderId}
-            submitError={submitError} setSubmitError={setSubmitError}
-            onSubmit={handleSubmit} submitLoading={submitLoading}
-            onEditSelection={() => {}} // no step navigation
-            selectedPackage={selectedPkg}
-            featureOptions={currentFeatureOptions}
-            selectedFeatures={selectedFeatures}
-            extraOptions={extraOptions}
-            selectedExtras={selectedExtras}
-            selectedHostingPlan={selectedHostingPlan}
-            hostingPlans={hostingPlans}
-            domainPrices={domainPrices}
-            domainName={domainName}
-            domainPurchaseNow={domainPurchaseNow}
-          />
+          {/* ── Back / Next navigation (hide on success) ── */}
+          {!submitted && !submitError && (
+            <div
+              className="flex items-center justify-between gap-4 mt-8 pt-6"
+              style={{ borderTop: `1px solid ${DS.border}` }}
+            >
+              <button
+                onClick={goBack}
+                disabled={step === 0}
+                style={{
+                  padding: "12px 22px", borderRadius: 12, fontSize: 13,
+                  fontFamily: DS.mono, fontWeight: 600, letterSpacing: "0.04em",
+                  background: step === 0 ? "rgba(255,255,255,0.03)" : "rgba(15,23,42,0.7)",
+                  border: `1px solid ${step === 0 ? DS.border : DS.text4}`,
+                  color: step === 0 ? DS.text5 : DS.text2,
+                  cursor: step === 0 ? "not-allowed" : "pointer",
+                  display: "flex", alignItems: "center", gap: 8,
+                }}
+              >
+                <ArrowLeft size={15} />
+                {t("wizardBack")}
+              </button>
+
+              <div style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.12em" }}>
+                {step + 1} / {TOTAL_STEPS} · {STEP_LABELS[step]}
+              </div>
+
+              {step < TOTAL_STEPS - 1 ? (
+                <button
+                  onClick={goNext}
+                  disabled={!canNext()}
+                  style={{
+                    padding: "12px 24px", borderRadius: 12, fontSize: 13,
+                    fontFamily: DS.mono, fontWeight: 700, letterSpacing: "0.04em",
+                    background: canNext() ? GRD.primary : "rgba(255,255,255,0.05)",
+                    border: "none",
+                    color: canNext() ? "#fff" : DS.text5,
+                    cursor: canNext() ? "pointer" : "not-allowed",
+                    boxShadow: canNext() ? "0 0 22px rgba(236,72,153,0.32)" : "none",
+                    display: "flex", alignItems: "center", gap: 8,
+                  }}
+                >
+                  {t("wizardNext")}
+                  <ArrowRight size={15} />
+                </button>
+              ) : (
+                <div style={{ width: 120 }} />
+              )}
+            </div>
+          )}
         </div>
       </section>
     </main>
