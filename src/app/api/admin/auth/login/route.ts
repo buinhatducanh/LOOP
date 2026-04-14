@@ -320,12 +320,16 @@ export async function POST(req: NextRequest) {
  path: "/",
  });
 
- // Staff access token — HttpOnly, 5 minutes (split auth: Option C)
-  response.cookies.set("loop-staff-token", accessToken, cookieOptions(5 * 60));
+
+  // Staff access token — HttpOnly, 24 hours
+ // NOTE: Short TTL (5 min) + refresh was designed but the FE doesn't
+ // implement auto-refresh. Set to 24h to avoid 401 after ~5 min.
+ const ACCESS_TOKEN_TTL = 24 * 60 * 60;
+ response.cookies.set("loop-staff-token", accessToken, cookieOptions(ACCESS_TOKEN_TTL));
 
  // Also keep legacy auth-token for backward compat during migration
  response.cookies.set("auth-token", accessToken, {
- ...cookieOptions(5 * 60),
+ ...cookieOptions(ACCESS_TOKEN_TTL),
  httpOnly: true,
  });
 

@@ -633,7 +633,7 @@
     "mediaBookingTitle": "Đặt lịch Media - LOOP Solutions",
     "mediaBookingDescription": "Đặt lịch dịch vụ media - sản xuất nội dung từ LOOP Solutions",
     "bookingTitle": "Đặt lịch báo giá - LOOP Solutions",
-    "ogImage": "https://loops.vn/og-image.jpg",
+    "ogImage": "/api/og?type=home&locale=vi",
     "brandMetaTitle": "LOOP Solutions - Digital Agency",
     "mediaTitle": "Media - LOOP Solutions",
     "mediaDescription": "Dịch vụ media chuyên nghiệp - sản xuất nội dung, quay phim, chụp ảnh từ LOOP Solutions",

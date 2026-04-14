@@ -436,7 +436,7 @@ model TeamMember {
   roleLevel              Int                    @default(4) @map("role_level")
   coverImage             String?                @map("cover_image")
   quote                  String?
-  email                  String?
+  email                  String? @unique
   phone                  String?
   skills                 String[]
   experience             String?

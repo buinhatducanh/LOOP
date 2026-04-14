@@ -540,7 +540,7 @@
     "bookingDescription": "3단계 마법사로 최적의 웹사이트 패키지를 선택하세요. 투명한 가격, 숨김 비용 없음. 등록 시 500 LP 적립.",
     "homeTitle": "LOOP Solutions — 디지털 에이전시",
     "homeDescription": "베트남 신뢰의 기술 파트너 — 디자인, 개발, 운영까지 종합적인 디지털 솔루션 제공.",
-    "ogImage": "https://loops.vn/og-image.jpg",
+    "ogImage": "/api/og?type=home&locale=vi",
     "pricingTitle": "웹, 앱, 대시보드, SEO 서비스 가격표 | LOOP Solutions",
     "pricingDescription": "웹사이트, 앱/SaaS, 대시보드, SEO 4가지 서비스의 가격표를 확인하세요. Basic, Business, Experience 3단계로 제공됩니다. SSL 무료, 품질보증 포함.",
     "aboutTitle": "회사 소개 — LOOP Solutions",

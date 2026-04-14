@@ -136,12 +136,27 @@ export async function POST(req: NextRequest) {
     const session = await requirePermission("team", "create");
     const data = await req.json();
 
-    if (!data.name || !data.role || !data.slug) {
-      return NextResponse.json(
-        { error: "Tên, vai trò và slug là bắt buộc" },
-        { status: 400 }
-      );
-    }
+ if (!data.name || !data.role || !data.slug) {
+ return NextResponse.json(
+ { error: "Tên, vai trò và slug là bắt buộc" },
+ { status: 400 }
+ );
+ }
+
+ // Email uniqueness check — prevent duplicate emails across TeamMembers
+ if (data.email && String(data.email).trim() !== "") {
+ const existing = await prisma.teamMember.findFirst({
+ where: { email: data.email as string },
+ select: { id: true, name: true },
+ });
+ if (existing) {
+ return NextResponse.json(
+ { error: `Email "${data.email}" đã được dùng bởi "${existing.name}".` },
+ { status: 409 }
+ );
+ }
+ }
+
 
     // Extract non-Prisma fields before writing (roles = UserRole junction, not TeamMember field)
     const { memberExpertise, avatar, roles: _roles, ...memberData } = data;

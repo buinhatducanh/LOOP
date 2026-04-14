@@ -541,7 +541,7 @@
     "bookingDescription": "3步向导选择最合适的网站套餐。透明定价，无隐藏费用。注册即送500 LP积分。",
     "homeTitle": "LOOP Solutions — 数字 agency",
     "homeDescription": "越南可信赖的技术合作伙伴 — 设计、开发、运营全方位的数字解决方案。",
-    "ogImage": "https://loops.vn/og-image.jpg",
+    "ogImage": "/api/og?type=home&locale=vi",
     "pricingTitle": "网页，应用和SEO服务价格表 | LOOP Solutions",
     "pricingDescription": "查看网页，应用，SaaS，SEO和CRM服务的价格表，包含Basic、Business、Experience三个级别。SSL免费，质量保证。",
     "aboutTitle": "关于我们 — LOOP Solutions",

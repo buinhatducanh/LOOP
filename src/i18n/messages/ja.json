@@ -541,7 +541,7 @@
     "bookingDescription": "3ステップのウィザードで最適なウェブサイトパッケージを選択。透明な価格設定、隠し費用なし。登録で500 LPを進呈。",
     "homeTitle": "LOOP Solutions — デジタルエージェンシー",
     "homeDescription": "ベトナム信頼のテクノロジーパートナー — デザイン、開発、運用まで包括的なデジタルソリューション。",
-    "ogImage": "https://loops.vn/og-image.jpg",
+    "ogImage": "/api/og?type=home&locale=vi",
     "pricingTitle": "ウェブ、アプリ、SEOサービス価格表 | LOOP Solutions",
     "pricingDescription": "4つのサービス（ウェブサイト、アプリ/SaaS、SEO、CRM）の料金表。3つのプラン：Basic、Business、Experience。Basic 160ドル～、Business 240ドル～。SSL無料、保証付き。",
     "aboutTitle": "会社概要 — LOOP Solutions",

@@ -135,7 +135,9 @@
       "Bash(sed -i 's/Access token \\(15 min TTL\\)/Access token \\(5 min TTL\\)/' src/lib/auth/token.ts)",
       "Bash(mkdir -p prisma/migrations/20260414_add_totp_2fa)",
       "Bash(prisma/migrations/20260414_add_totp_2fa/migration.sql:*)",
-      "Bash(\"/c/Python314/python\" \"D:/LOOP_COMPANY/LOOP/temp_fix.py\")"
+      "Bash(\"/c/Python314/python\" \"D:/LOOP_COMPANY/LOOP/temp_fix.py\")",
+      "Bash(find public/assets/design-company -type f \\\\\\(-name *.png -o -name *.svg -o -name *.jpg -o -name *.webp \\\\\\))",
+      "Bash(do)"
     ],
     "additionalDirectories": []
   }

@@ -711,7 +711,7 @@ export default function SiteHeader({ locale }: { locale: string }) {
   const res = await fetch("/api/notifications/unread-count", { headers });
  if (res.ok) {
  const data = await res.json();
- setNotifCount(data.count || 0);
+ setNotifCount(data.data?.count || 0);
  }
   } catch {
  // Silently ignore network errors — next poll will retry

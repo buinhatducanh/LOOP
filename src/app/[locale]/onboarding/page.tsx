@@ -1034,7 +1034,7 @@ function ProgressDots({ total, current, onGo }: { total: number; current: number
 }
 
 // ── Slide labels ─────────────────────────────────────────────────────────
-const SLIDE_LABELS = ['Chào mừng', 'Về chúng tôi', 'Dịch vụ', 'Tăng trưởng', 'Bắt đầu'];
+const SLIDE_LABELS = ['Chào mừng', 'Về chúng tôi', 'Dịch vụ', 'Tăng trưởng'];
 
 // ══════════════════════════════════════════════════════════════════════════
 // ── MAIN COMPONENT ───────────────────────────────────────────────────────
@@ -1043,7 +1043,7 @@ const SLIDE_LABELS = ['Chào mừng', 'Về chúng tôi', 'Dịch vụ', 'Tăng 
 export default function OnboardingPage() {
   const [current, setCurrent] = useState(0);
   const [direction, setDirection] = useState(0);
-  const total = 5;
+  const total = 4;
 
   const handleComplete = useCallback(() => {
     if (typeof window !== "undefined") {
@@ -1076,7 +1076,6 @@ export default function OnboardingPage() {
     <SlideAbout key="about" direction={direction} />,
     <SlideServices key="services" direction={direction} />,
     <SlideGrowth key="growth" direction={direction} />,
-    <SlideGetStarted key="start" direction={direction} handleComplete={handleComplete} />,
   ];
 
   return (
@@ -1095,8 +1094,8 @@ export default function OnboardingPage() {
       </svg>
 
       {/* Slide content — extra bottom padding so floating social buttons don't cover nav */}
-      <div className="relative w-full h-full pb-48" style={{ zIndex: 1 }}>
-        <AnimatePresence mode="wait">
+      <div className="relative w-full h-full pb-48" style={{ zIndex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <AnimatePresence mode="sync">
           {slides[current]}
         </AnimatePresence>
       </div>
