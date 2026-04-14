@@ -4,7 +4,7 @@
  * Replaces jwt.ts (jsonwebtoken) with jose for Edge + Node.js compatibility.
  *
  * Token types:
- *   - Access token  (15 min TTL) — stateless, verified via JWS signature
+ *   - Access token  (5 min TTL) — stateless, verified via JWS signature
  *   - Refresh token (7d TTL)    — stored in DB for revocation, rotated on use
  *
  * Both tokens carry "sid" (session ID) linking to RefreshToken DB row for revocation.
@@ -19,7 +19,7 @@ import { createHash } from "crypto";
 export const TOKEN_CONFIG = {
   issuer: "loop-auth",
   audience: "loop-admin",
-  accessTTL: 15 * 60,      // 15 minutes in seconds
+  accessTTL: 5 * 60,      // 5 minutes in seconds
   refreshTTL: 7 * 24 * 3600, // 7 days in seconds
 } as const;
 
@@ -75,7 +75,7 @@ export interface RefreshTokenPayload extends JWTPayload {
 // ─── Access Token ───────────────────────────────────────────────────────────────
 
 /**
- * Sign an access token (15 min TTL).
+ * Sign an access token (5 min TTL).
  *
  * @param params.sub       - userId
  * @param params.sessionId - links to RefreshToken DB row

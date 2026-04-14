@@ -1,6 +1,18 @@
 /**
  * Redis Cache Layer using Upstash Redis.
  *
+ * WARNING: PRODUCTION REQUIREMENT:
+ * Upstash Redis MUST be configured for production deployments.
+ * Rate limiting, cache, and TOTP lockout all depend on Redis.
+ * Without Redis:
+ * - Rate limiting falls back to in-memory (single-instance only)
+ * - Cache is disabled (every request hits DB)
+ * - TOTP lockout uses in-memory Map (resets on cold start)
+ *
+ * Setup (free tier at https://console.upstash.com):
+ * 1. Create a database
+ * 2. Copy UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN to .env
+ *
  * Provides:
  * - `redis` client for data caching (upstash/redis)
  * - `ratelimit` middleware for API routes (upstash/ratelimit)
@@ -55,8 +67,8 @@ function makeRatelimit(window: number, prefix: string) {
 /** 100 requests per minute per IP — public API routes */
 export const publicApiRateLimit = makeRatelimit(100, "rl:public");
 
-/** 20 requests per minute per IP — auth routes */
-export const authRateLimit = makeRatelimit(20, "rl:auth");
+/** 10 requests per minute per IP — auth routes (strict for brute-force protection) */
+export const authRateLimit = makeRatelimit(10, "rl:auth");
 
 /** 10 requests per minute per IP — contact form */
 export const contactRateLimit = makeRatelimit(10, "rl:contact");

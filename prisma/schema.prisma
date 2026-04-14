@@ -168,6 +168,11 @@ model User {
   lastLogin            DateTime?          @map("last_login")
   /// Daily login streak for staff (resets to 1 if a day is missed)
   loginStreak          Int                @default(0) @map("login_streak")
+  /// 2FA TOTP
+ totpSecret String? @map("totp_secret")
+ totpEnabled Boolean @default(false) @map("totp_enabled")
+  /// Hashed backup codes (up to 8)
+ totpBackupCodes String? @map("totp_backup_codes")
   createdAt            DateTime           @default(now()) @map("created_at")
   updatedAt            DateTime           @updatedAt @map("updated_at")
   teamMemberId         String?            @unique @map("team_member_id")
@@ -187,6 +192,8 @@ model User {
   userRoleApprovals    UserRoleApproval[]
   otps                 OtpCode[]
 
+ reviews ProjectReview[]
+ supportTickets SupportTicket[]
   @@map("users")
 }
 
@@ -445,6 +452,12 @@ model TeamMember {
   tiktok                 String?                @map("tiktok")
   currentXp              Int                    @default(0) @map("current_xp")
   level                  Int                    @default(1) @map("level")
+  /// Tổng LP commission đã nhận
+ totalSalesCommission Int @default(0) @map("total_sales_commission")
+  /// LP commission đang chờ (chưa done)
+ pendingCommission Int @default(0) @map("pending_commission")
+  /// LP commission đã nhận (done)
+ completedCommission Int @default(0) @map("completed_commission")
   maxXp                  Int                    @default(100) @map("max_xp")
   rank                   String                 @default("iron") @map("rank")
   availableLp            Int                    @default(0) @map("available_lp")
@@ -487,6 +500,8 @@ model TeamMember {
   assignedTasks          Task[]                 @relation("TaskAssignee")
   user                   User?
   offSystemSplits        OffSystemSplit[]
+  /// Sales commission events (audit trail)
+ salesCommissionEvents SalesCommissionEvent[] @relation("SalesCommissionMember")
 
   @@index([departmentId])
   @@index([isActive])
@@ -675,6 +690,77 @@ model Order {
   @@index([customerEmail])
   @@index([referralCodeId])
   @@map("orders")
+ salesRepId String? @map("sales_rep_id")
+  /// LP earned from main service (10% direct commission)
+ salesDirectCommission Int @default(0) @map("sales_direct_commission")
+  /// LP earned from addons (5% addon commission)
+ salesAddonCommission Int @default(0) @map("sales_addon_commission")
+  /// Whether commission has been credited to salesRep
+ commissionPaid Boolean @default(false) @map("commission_paid")
+  /// When commission was credited
+ commissionPaidAt DateTime? @map("commission_paid_at")
+  /// Sales commission events for this order
+ salesCommissionEvents SalesCommissionEvent[] @relation("SalesCommissionOrder")
+ reviews ProjectReview[]
+ supportTickets SupportTicket[]
+ orderRevenueLines OrderRevenueLine[]
+}
+/// ProjectReview — customer reviews of completed orders
+model ProjectReview {
+ id  String @id @default(cuid())
+ orderId String @map("order_id")
+ userId String @map("user_id")
+ rating Int
+ title String?
+ comment String?
+ aspects Json?
+ createdAt DateTime @default(now()) @map("created_at")
+ updatedAt DateTime @updatedAt @map("updated_at")
+ order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+ user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+ @@unique([orderId, userId])
+ @@index([userId])
+ @@index([orderId])
+ @@map("project_reviews")
+}
+/// SupportTicket — customer support tickets
+model SupportTicket {
+ id String @id @default(cuid())
+ userId String @map("user_id")
+ orderId String? @map("order_id")
+ subject String
+ description String
+ priority String @default("normal")
+ status String @default("open")
+ createdAt DateTime @default(now()) @map("created_at")
+ updatedAt DateTime @updatedAt @map("updated_at")
+ user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+ order Order? @relation(fields: [orderId], references: [id], onDelete: SetNull)
+ @@index([userId])
+ @@index([orderId])
+ @@index([status])
+ @@map("support_tickets")
+}
+/// OrderRevenueLine — VAT/tax line items for orders (domain, hosting, web packages)
+model OrderRevenueLine {
+ id String @id @default(cuid())
+ orderId String @map("order_id")
+ category String
+ serviceName String @map("service_name")
+ packageRef String? @map("package_ref")
+ quantity Int @default(1)
+ unitPrice Float @map("unit_price")
+ totalPrice Float @map("total_price")
+ periodMonths Int? @map("period_months")
+ taxable Boolean @default(true)
+ taxRate Float @default(0) @map("tax_rate")
+ taxAmount Float @default(0) @map("tax_amount")
+ createdAt DateTime @default(now()) @map("created_at")
+ updatedAt DateTime @updatedAt @map("updated_at")
+ order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+ @@index([orderId])
+ @@index([category])
+ @@map("order_revenue_lines")
 }
 
 /// ExternalProject — dự án tiếp nhận từ bên ngoài hệ thống (ký HĐ bên ngoài / sales mua hộ)
@@ -1220,6 +1306,7 @@ model PricingWebPackage {
   color       String   @default("#3B82F6")
   pages       String
   pagesVi     String   @map("pages_vi")
+ templateRepoUrl String? @map("template_repo_url")
   sortOrder   Int      @default(0) @map("sort_order")
   isActive    Boolean  @default(true) @map("is_active")
   createdAt   DateTime @default(now()) @map("created_at")
@@ -1279,6 +1366,7 @@ model PricingHostingPlan {
   isActive    Boolean  @default(true) @map("is_active")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
+ websites CustomerWebsite[] @relation("HostingPlanWebsite")
 
   @@map("pricing_hosting_plans")
 }
@@ -1483,6 +1571,8 @@ model CustomerWebsite {
   configStatus    String            @default("pending_config") @map("config_status")
   isMonitored     Boolean           @default(true) @map("is_monitored")
   deployedAt      DateTime?         @map("deployed_at")
+ vercelProjectId String? @map("vercel_project_id")
+ vercelProjectUrl String? @map("vercel_project_url")
   deployedUrl     String?           @map("deployed_url")
   expiresAt       DateTime?         @map("expires_at")
   createdAt       DateTime          @default(now()) @map("created_at")
@@ -1492,6 +1582,20 @@ model CustomerWebsite {
   ekycIdNumber    String?           @map("ekyc_id_number")
   ekycDob         String?           @map("ekyc_dob")
   ekycAddress     String?           @map("ekyc_address")
+/// Domain purchase fields
+  registeredAt DateTime? @map("registered_at")
+  domainTermMonths Int?  @map("domain_term_months")
+  domainCost Float? @map("domain_cost")
+  domainTld String? @map("domain_tld")
+  autoRenewDomain Boolean @default(false) @map("auto_renew_domain")
+  domainExpiresAt DateTime? @map("domain_expires_at")
+  /// Hosting purchase fields
+  hostingPlanId String? @map("hosting_plan_id")
+  hostingPlan PricingHostingPlan? @relation("HostingPlanWebsite", fields: [hostingPlanId], references: [id])
+  hostingTermMonths Int? @map("hosting_term_months")
+  hostingCost Float? @map("hosting_cost")
+  autoRenewHosting Boolean @default(false) @map("auto_renew_hosting")
+  hostingExpiresAt DateTime? @map("hosting_expires_at")
   order           Order?            @relation(fields: [orderId], references: [id])
   package         PricingWebPackage? @relation(fields: [packageId], references: [id])
   pageViews       WebsitePageView[]
@@ -1922,6 +2026,40 @@ model LpAward {
   @@map("lp_awards")
 }
 
+/// Sales LP commission events — audit trail for sales commission credits.
+model SalesCommissionEvent {
+ id String @id @default(cuid())
+  /// TeamMember.id — nhân viên nhận commission
+ salesRepId String @map("sales_rep_id")
+  /// Loại nguồn: "order" | "enrollment" | "media_booking"
+ referenceType String @map("reference_type")
+  /// Order.id / Enrollment.id / ...
+ referenceId String @map("reference_id")
+  /// LP từ dịch vụ chính (10%)
+ directLp Int @default(0) @map("direct_lp")
+  /// LP từ addon (5%)
+ addonLp Int @default(0) @map("addon_lp")
+  /// Tổng LP đã credited
+ totalLp Int @map("total_lp")
+  /// Thời điểm credited
+ paidAt DateTime @default(now()) @map("paid_at")
+
+ salesRep TeamMember @relation("SalesCommissionMember", fields: [salesRepId], references: [id])
+  /// Back-ref to Order (nullable)
+ order Order? @relation("SalesCommissionOrder", fields: [orderId], references: [id])
+ orderId String? @map("order_id")
+  /// Back-ref to Enrollment (nullable)
+ enrollment Enrollment? @relation("SalesCommissionEnrollment", fields: [enrollmentId], references: [id])
+ enrollmentId String? @map("enrollment_id")
+
+ @@index([salesRepId])
+ @@index([orderId])
+ @@index([enrollmentId])
+ @@index([referenceType, referenceId])
+ @@index([paidAt])
+ @@map("sales_commission_events")
+}
+
 /// Figma demo review workflow per project.
 model FigmaDemo {
   id            String    @id @default(cuid())
@@ -2337,6 +2475,13 @@ model Enrollment {
   @@index([memberId])
   @@index([status])
   @@map("enrollments")
+ salesRepId String? @map("sales_rep_id")
+  /// Whether academy commission has been credited
+ commissionPaid Boolean @default(false) @map("commission_paid")
+  /// When commission was credited
+ commissionPaidAt DateTime? @map("commission_paid_at")
+  /// Sales commission events for this enrollment
+ salesCommissionEvents SalesCommissionEvent[] @relation("SalesCommissionEnrollment")
 }
 
 /// Payment record for EDU enrollments (tuition transactions).
@@ -3212,3 +3357,4 @@ model LeaveRequest {
   @@index([status])
   @@map("leave_requests")
 }
+

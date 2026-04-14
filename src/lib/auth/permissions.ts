@@ -19,7 +19,7 @@ import { prisma } from "@/lib/prisma";
 import { verifyAccessToken } from "./token";
 import { verifyToken } from "./jwt"; // backward compat wrapper — tokens signed with old jwt.ts still work
 import { cookies, headers } from "next/headers";
-import { ROLE_LEVEL, type NavPermission, DEPT_TAB_BONUS } from "./roles";
+import { ROLE_LEVEL, type NavPermission, DEPT_TAB_BONUS, DEFAULT_PERMISSIONS } from "./roles";
 import { auth } from "@/auth";
 import type { NextRequest } from "next/server";
 
@@ -556,6 +556,7 @@ export async function checkPermission(
 ): Promise<boolean> {
   if (isSuperAdmin(session) || isAdmin(session)) return true;
 
+  // 1. Check DB Permission table first (source of truth)
   const count = await prisma.permission.count({
     where: {
       resource,
@@ -572,7 +573,30 @@ export async function checkPermission(
     },
   });
 
-  return count > 0;
+  if (count > 0) return true;
+
+  // 2. Fallback: check static DEFAULT_PERMISSIONS for all user roles
+  //    This covers roles (e.g. "hr") that exist in ROLE_LEVEL but may not have
+  //    Permission rows seeded in the DB yet.
+  for (const roleName of session.roles) {
+    const defaults = DEFAULT_PERMISSIONS[roleName];
+    if (!defaults) continue;
+    const match = defaults.some(
+      (p) => (p.resource === "*" || p.resource === resource) && (p.actions.includes("*") || p.actions.includes(action))
+    );
+    if (match) return true;
+  }
+
+  // 3. Also check session.role (User.role scalar) as fallback
+  const scalarDefaults = DEFAULT_PERMISSIONS[session.role];
+  if (scalarDefaults) {
+    const match = scalarDefaults.some(
+      (p) => (p.resource === "*" || p.resource === resource) && (p.actions.includes("*") || p.actions.includes(action))
+    );
+    if (match) return true;
+  }
+
+  return false;
 }
 
 /**

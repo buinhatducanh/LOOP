@@ -81,7 +81,7 @@ export type AdminTab =
   | "income_tax" | "web_packages" | "domain_prices" | "addon_services" | "pricing" | "effects" | "notification_center"
   | "settings" | "quests_events" | "leaderboard_admin" | "analytics"
   | "figma_demos" | "kanban"
-  | "revenue_split" | "off_system_payments"
+  | "revenue_split" | "off_system_payments" | "commission"
   | "project_intake"
   | "faq" | "about"
   | "*";
@@ -219,7 +219,7 @@ const PM_TABS: AdminTab[] = [
   "projects", "members", "departments", "notification_center",
   "leaderboard_admin", "lp_manage", "quests_events",
   "academy", "blog", "lp", "figma_demos",
-  "revenue_split", "off_system_payments",
+  "revenue_split", "off_system_payments", "commission",
 ];
 
 const MEDIA_TABS: AdminTab[] = [
@@ -245,7 +245,7 @@ export const DEPT_TAB_BONUS: Record<string, AdminTab[]> = {
   media:      ["media", "blog"],
   marketing:  ["blog", "projects"],
   sales:      ["orders", "clients", "quotation", "revenue"],
-  finance:    ["revenue", "lp", "lp_manage", "income_tax", "revenue_split", "off_system_payments"],
+  finance:    ["revenue", "lp", "lp_manage", "income_tax", "revenue_split", "off_system_payments", "commission"],
   hr:         ["members", "departments"],
   management: ["*"],
 };

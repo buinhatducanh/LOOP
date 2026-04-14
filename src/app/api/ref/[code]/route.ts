@@ -82,7 +82,7 @@ export async function POST(
 
     const referralCode = await prisma.referralCode.findUnique({
       where: { code: normalized },
-      select: { id: true, isActive: true, expiresAt: true, useCount: true, maxUses: true, lpRate: true },
+      select: { id: true, isActive: true, expiresAt: true, useCount: true, maxUses: true, lpRate: true, memberId: true },
     });
 
     if (!referralCode) return notFound("Referral code not found");
@@ -117,7 +117,7 @@ export async function POST(
         }
         await tx.order.update({
           where: { id: orderId },
-          data: { referralCodeId: referralCode.id },
+          data: { referralCodeId: referralCode.id, salesRepId: referralCode.memberId ?? undefined },
         }).catch(ignoreIfAlreadyLinked);
       });
     }

@@ -726,6 +726,13 @@ export const DEFAULT_PERMISSIONS: Record<string, Array<{ resource: string; actio
     { resource: "settings", actions: ["read", "update"] },
     { resource: "roles", actions: ["read", "create", "update", "delete"] },
   ],
+  hr: [
+    // HR: full member management (read/create/update) — no delete, no LP awards
+    { resource: "team", actions: ["read", "create", "update"] },
+    { resource: "departments", actions: ["read", "update"] },
+    { resource: "lp-awards", actions: ["read"] },
+    { resource: "edu", actions: ["read"] },
+  ],
   project_manager: [
     // P1-9 FIX: added orders:create (previously missing — only read/update existed)
     { resource: "orders", actions: ["read", "create", "update"] },

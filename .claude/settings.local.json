@@ -120,7 +120,22 @@
       "Bash(\"/c/Python314/python\":*)",
       "Bash(\"/c/Python314/python\" _fix_ssr3.py)",
       "Bash(\"/c/Python314/python\" _fix_it.py)",
-      "Bash(\"/c/Python314/python\" _fix_indent.py)"
+      "Bash(\"/c/Python314/python\" _fix_indent.py)",
+      "Bash(printf '\\\\n// ─── Client Project Reviews ────────────────────────────────────────────────────\\\\nmodel ProjectReview {\\\\n  id String @id @default\\(cuid\\(\\)\\)\\\\n orderId String @map\\(\"\"order_id\"\"\\)\\\\n userId String @map\\(\"\"user_id\"\"\\)\\\\n rating Int\\\\n title String? @db.Text\\\\n comment String? @db.Text\\\\n aspects Json?\\\\n createdAt DateTime @default\\(now\\(\\)\\) @map\\(\"\"created_at\"\"\\)\\\\n updatedAt DateTime @updatedAt @map\\(\"\"updated_at\"\"\\)\\\\n\\\\n order Order @relation\\(fields: [orderId], references: [id]\\)\\\\n user User @relation\\(fields: [userId], references: [id]\\)\\\\n\\\\n @@unique\\([orderId, userId]\\)\\\\n @@index\\([userId]\\)\\\\n @@index\\([orderId]\\)\\\\n @@map\\(\"\"project_reviews\"\"\\)\\\\n}\\\\n')",
+      "Bash(\"D:/LOOP_COMPANY/LOOP/prisma/schema.prisma\")",
+      "Bash(printf '\\\\n// ─── Client Support Tickets ──────────────────────────────────────────────────\\\\nmodel SupportTicket {\\\\n id String @id @default\\(cuid\\(\\)\\)\\\\n userId String @map\\(\"\"user_id\"\"\\)\\\\n orderId String? @map\\(\"\"order_id\"\"\\)\\\\n subject String\\\\n description String @db.Text\\\\n priority String @default\\(\"\"normal\"\"\\)\\\\n status String @default\\(\"\"open\"\"\\)\\\\n createdAt DateTime @default\\(now\\(\\)\\) @map\\(\"\"created_at\"\"\\)\\\\n updatedAt DateTime @updatedAt @map\\(\"\"updated_at\"\"\\)\\\\n\\\\n @@index\\([userId]\\)\\\\n @@index\\([orderId]\\)\\\\n @@index\\([status]\\)\\\\n @@map\\(\"\"support_tickets\"\"\\)\\\\n}\\\\n')",
+      "Bash(sed -i '629s/^ / /' \"D:\\\\LOOP_COMPANY\\\\LOOP\\\\src\\\\app\\\\[locale]\\\\HomeClient.tsx\")",
+      "Bash(sed -i '630s/^ / /' \"D:\\\\LOOP_COMPANY\\\\LOOP\\\\src\\\\app\\\\[locale]\\\\HomeClient.tsx\")",
+      "Bash(printf %sn 'content = open\\(\"\"\"\"src/app/[locale]/HomeClient.tsx\"\"\"\", \"\"\"\"r\"\"\"\", encoding=\"\"\"\"utf-8\"\"\"\"\\).read\\(\\)' 'lines = content.split\\(chr\\(10\\)\\)' 'print\\(\"\"\"\"Total lines:\"\"\"\", len\\(lines\\)\\)' 'for i, line in enumerate\\(lines\\):' ' s = line.strip\\(\\)' ' if \"\"\"\"Floating LP badge\"\"\"\" in s or \"\"\"\"Floating rank card\"\"\"\" in s or \"\"\"\"+500 LP\"\"\"\" in s or \\(\"\"\"\"GOLD\"\"\"\" in s and \"\"\"\"PLATINUM\"\"\"\" in s\\):' ' print\\(\"\"\"\"Line\"\"\"\", i+1, \"\"\"\":\"\"\"\", line[:80]\\)')",
+      "Bash(printf '%s\\\\n' 'content = open\\(\"\"src/app/[locale]/HomeClient.tsx\"\", \"\"r\"\", encoding=\"\"utf-8\"\"\\).read\\(\\)' 'lines = content.split\\(chr\\(10\\)\\)' 'print\\(\"\"Total lines:\"\", len\\(lines\\)\\)' 'for i, line in enumerate\\(lines\\):' ' s = line.strip\\(\\)' ' if \"\"Floating LP badge\"\" in s or \"\"Floating rank card\"\" in s or \"\"+500 LP\"\" in s or \\(\"\"GOLD\"\" in s and \"\"PLATINUM\"\" in s\\):' ' print\\(\"\"Line\"\", i+1, \"\":\"\", line[:80]\\)')",
+      "Bash(printf '%s\\\\n' 'content = open\\(\"\"src/app/[locale]/HomeClient.tsx\"\", \"\"r\"\", encoding=\"\"utf-8\"\"\\).read\\(\\)' 'lines = content.split\\(chr\\(10\\)\\)' 'print\\(\"\"Total lines:\"\", len\\(lines\\)\\)' 'for i, line in enumerate\\(lines\\):' ' s = line.strip\\(\\)' ' if \"\"Floating LP badge\"\" in s or \"\"Floating rank card\"\" in s or \"\"+500 LP\"\" in s or \\(\"\"GOLD\"\" in s and \"\"PLATINUM\"\" in s\\):')",
+      "Bash(printf ' %s\\\\n' 'print\\(\"\"Line\"\", i+1, \"\":\"\", line[:80]\\)')",
+      "Bash(python -c \"print\\(''test''\\)\")",
+      "Bash(sed -i 's/15 \\\\* 60, \\\\/\\\\/ 15 minutes in seconds/5 * 60, \\\\/\\\\/ 5 minutes in seconds/' src/lib/auth/token.ts)",
+      "Bash(sed -i 's/Access token \\(15 min TTL\\)/Access token \\(5 min TTL\\)/' src/lib/auth/token.ts)",
+      "Bash(mkdir -p prisma/migrations/20260414_add_totp_2fa)",
+      "Bash(prisma/migrations/20260414_add_totp_2fa/migration.sql:*)",
+      "Bash(\"/c/Python314/python\" \"D:/LOOP_COMPANY/LOOP/temp_fix.py\")"
     ],
     "additionalDirectories": []
   }

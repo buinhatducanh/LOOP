@@ -3,7 +3,7 @@
 /**
  * Pricing Admin Page — LOOP Solutions
  * Route: /admin/pricing
- * Wire: /api/admin/pricing/settings + features + infra-tiers + packages + addons
+ * Wire: /api/admin/pricing/settings + features + infra-tiers + packages + addons + hosting-plans
  *
  * 5 tabs:
  *   1. Settings     — Base price, XP/LP rates, discount caps
@@ -21,7 +21,7 @@ import { DS, GRD } from "@/lib/design-tokens";
 import { useAdminTranslations } from "@/i18n/admin/useAdminTranslations";
 import {
   Settings, Layers, Server, Package as PackageIcon, PlusCircle,
-  Save, Trash2, RefreshCw, Loader2, Edit2, X,
+  Save, Trash2, RefreshCw, Loader2, Edit2, X, Globe, HardDrive,
 } from "lucide-react";
 
 // ── Types ───────────────────────────────────────────────────────────────────────
@@ -95,6 +95,38 @@ type Addon = {
   sortOrder: number;
 };
 
+
+// ── Hosting Plan ────────────────────────────────────────────────────────────────
+
+type HostingPlan = {
+ id: string;
+ slug: string;
+ name: string;
+ nameVi: string;
+ monthlyPrice: number;
+ months: number;
+ discountPct: number;
+ features: string[];
+ featuresVi: string[];
+ highlighted: boolean;
+ color: string;
+ sortOrder: number;
+ isActive: boolean;
+};
+
+type DomainPrice = {
+ id: string;
+ extension: string;
+ registrationPrice: number;
+ renewalPrice: number;
+ period: string;
+ periodVi: string;
+ note: string | null;
+ noteVi: string | null;
+ sortOrder: number;
+ isActive: boolean;
+};
+
 // ── Tab Config ────────────────────────────────────────────────────────────────
 
 const TABS = [
@@ -103,6 +135,8 @@ const TABS = [
   { key: "infra-tiers",   label: "Hạ tầng",           icon: <Server size={14} /> },
   { key: "packages",     label: "Gói dịch vụ",        icon: <PackageIcon size={14} /> },
   { key: "addons",       label: "Dịch vụ thêm",       icon: <PlusCircle size={14} /> },
+ { key: "hosting", label: "Hosting", icon: <HardDrive size={14} /> },
+ { key: "domain-prices", label: "Tên miền", icon: <Globe size={14} /> },
 ];
 
 const fmtVND = (n: number) =>
@@ -883,6 +917,420 @@ function AddonsTab() {
       )}
     </div>
   );
+}
+
+
+// ── Tab 6: Hosting Plans ───────────────────────────────────────────────────────
+
+function HostingTab() {
+ const qc = useQueryClient();
+ const [showForm, setShowForm] = useState(false);
+ const [editing, setEditing] = useState<HostingPlan | null>(null);
+ const [saving, setSaving] = useState(false);
+ const [error, setError] = useState('');
+
+ const { data, isLoading } = useQuery<{ data: HostingPlan[] }>({
+ queryKey: ['admin', 'pricing', 'hosting-plans'],
+ queryFn: () => adminApi.get('/api/admin/pricing/hosting-plans'),
+ });
+
+ const plans: HostingPlan[] = data?.data ?? [];
+ const [form, setForm] = useState({
+ slug: '', name: '', nameVi: '',
+ monthlyPrice: 0, months: 12, discountPct: 0,
+ features: '', featuresVi: '',
+ highlighted: false, color: '#3B82F6', sortOrder: 0, isActive: true,
+ });
+
+ const inpStyle: React.CSSProperties = {
+ width: '100%', background: DS.bg, border: `1px solid ${DS.border}`,
+ borderRadius: 8, padding: '9px 12px', color: DS.text, fontSize: 13,
+ outline: 'none', fontFamily: DS.body, boxSizing: 'border-box',
+ };
+ const labelStyle: React.CSSProperties = { color: DS.text4, fontSize: 11, fontFamily: DS.mono, display: 'block', marginBottom: 4 };
+
+ const openAdd = () => {
+ setEditing(null);
+ setForm({ slug: '', name: '', nameVi: '', monthlyPrice: 0, months: 12, discountPct: 0, features: '', featuresVi: '', highlighted: false, color: '#3B82F6', sortOrder: 0, isActive: true });
+ setError('');
+ setShowForm(true);
+ };
+ const openEdit = (p: HostingPlan) => {
+ setEditing(p);
+ setForm({
+ slug: p.slug, name: p.name, nameVi: p.nameVi,
+ monthlyPrice: p.monthlyPrice, months: p.months, discountPct: p.discountPct,
+ features: (p.features || []).join(', '), featuresVi: (p.featuresVi || []).join(', '),
+ highlighted: p.highlighted, color: p.color || '#3B82F6', sortOrder: p.sortOrder, isActive: p.isActive,
+ });
+ setError('');
+ setShowForm(true);
+ };
+
+ const calcTotal = (monthly: number, mo: number, discount: number) => {
+ if (discount > 0) return Math.round(monthly * mo * (1 - discount / 100));
+ return monthly * mo;
+ };
+
+ const handleSave = async () => {
+  setSaving(true); setError('');
+ try {
+ const payload = {
+ slug: form.slug, name: form.name, nameVi: form.nameVi,
+ monthlyPrice: Number(form.monthlyPrice) || 0,
+ months: Number(form.months) || 12,
+ discountPct: Number(form.discountPct) || 0,
+ features: form.features.split(',').map((s: string) => s.trim()).filter(Boolean),
+ featuresVi: form.featuresVi.split(',').map((s: string) => s.trim()).filter(Boolean),
+ highlighted: form.highlighted,
+ color: form.color,
+ sortOrder: Number(form.sortOrder) || 0,
+ isActive: form.isActive,
+  };
+ if (editing) await adminApi.put('/api/admin/pricing/hosting-plans', { ...payload, id: editing.id });
+ else await adminApi.post('/api/admin/pricing/hosting-plans', payload);
+ qc.invalidateQueries({ queryKey: ['admin', 'pricing', 'hosting-plans'] });
+ setShowForm(false);
+ } catch (err: unknown) {
+ setError(err instanceof Error ? err.message : 'Lưu thất bại');
+ } finally { setSaving(false); }
+ };
+
+ return (
+ <div>
+ <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+ <div>
+ <h3 style={{ fontFamily: DS.heading, fontSize: 16, fontWeight: 700, color: DS.text, margin: '0 0 4px' }}>Hosting Plans</h3>
+ <p style={{ color: DS.text4, fontSize: 12, fontFamily: DS.mono, margin: 0 }}>
+ {plans.length} gói hosting · Giá/tháng dùng trong web purchase wizard
+ </p>
+ </div>
+ <div style={{ display: 'flex', gap: 8 }}>
+ <button onClick={() => qc.invalidateQueries({ queryKey: ['admin', 'pricing', 'hosting-plans'] })}
+ style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 10, color: DS.text3, cursor: 'pointer', fontSize: 12, fontFamily: DS.mono }}>
+ <RefreshCw size={13} /> Làm mới
+ </button>
+ <button onClick={openAdd}
+ style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 16px', background: DS.blue, color: '#fff', border: 'none', borderRadius: 10, cursor: 'pointer', fontSize: 12, fontWeight: 600, fontFamily: DS.mono }}>
+ <PlusCircle size={13} /> Thêm gói hosting
+ </button>
+ </div>
+ </div>
+
+ {isLoading ? (
+ <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem' }}>
+ <Loader2 size={24} style={{ color: DS.text4, animation: 'spin 1s linear infinite' }} />
+  </div>
+ ) : (
+ <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+ {plans.map(p => {
+ const total = calcTotal(p.monthlyPrice, p.months, p.discountPct);
+ return (
+ <div key={p.id} style={{
+ background: DS.bgCard,
+ border: `1px solid ${p.highlighted ? (p.color || DS.blue) : DS.border}`,
+ borderRadius: 12, padding: '16px 20px',
+ display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+ opacity: p.isActive ? 1 : 0.5,
+ }}>
+ <div>
+ <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 4 }}>
+ <span style={{ color: DS.text, fontWeight: 600, fontSize: 14 }}>{p.nameVi || p.name}</span>
+  {p.highlighted && (
+ <span style={{ background: p.color || DS.blue, color: '#fff', borderRadius: 6, padding: '2px 8px', fontSize: 10, fontFamily: DS.mono }}>NỔI BẬT</span>
+ )}
+ <span style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono }}>{p.slug}</span>
+ </div>
+ <div style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono }}>
+ {p.monthlyPrice.toLocaleString('vi-VN')}đ/tháng × {p.months} tháng
+ {p.discountPct > 0 && <span style={{ color: DS.green, marginLeft: 6 }}>−{p.discountPct}%</span>}
+ </div>
+ </div>
+ <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+ <div style={{ textAlign: 'right' }}>
+ <div style={{ color: DS.text, fontFamily: DS.mono, fontWeight: 700, fontSize: 16 }}>
+ {total.toLocaleString('vi-VN')}đ
+ </div>
+ <div style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono }}>
+ = {p.monthlyPrice.toLocaleString('vi-VN')}đ × {p.months}
+ </div>
+ </div>
+ <Toggle checked={p.isActive} onChange={() => adminApi.put('/api/admin/pricing/hosting-plans', { ...p, id: p.id }).then(() => qc.invalidateQueries({ queryKey: ['admin', 'pricing', 'hosting-plans'] }))} />
+ <button onClick={() => openEdit(p)} style={{ color: DS.blue, background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, fontFamily: DS.mono }}>Sửa</button>
+ <button onClick={() => { if (confirm('Xóa gói này?')) adminApi.delete(`/api/admin/pricing/hosting-plans?id=${p.id}`).then(() => qc.invalidateQueries({ queryKey: ['admin', 'pricing', 'hosting-plans'] })); }}
+ style={{ color: DS.text4, background: 'none', border: 'none', cursor: 'pointer' }}>
+ <Trash2 size={13} />
+  </button>
+ </div>
+ </div>
+ );
+ })}
+ {plans.length === 0 && (
+ <div style={{ textAlign: 'center', padding: '3rem', color: DS.text4, fontFamily: DS.mono }}>
+  Chưa có gói hosting nào
+ </div>
+ )}
+ </div>
+ )}
+
+ {showForm && (
+ <AnimatePresence>
+ <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+ onClick={() => setShowForm(false)}
+ style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+ <motion.div initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
+ onClick={e => e.stopPropagation()}
+ style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 16, padding: 24, width: '100%', maxWidth: 560, maxHeight: '85vh', overflowY: 'auto' }}>
+ <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
+  <h3 style={{ color: DS.text, fontWeight: 700, fontSize: 18, margin: 0 }}>{editing ? 'Sửa gói hosting' : 'Thêm gói hosting mới'}</h3>
+ <button onClick={() => setShowForm(false)} style={{ background: 'none', border: 'none', color: DS.text4, cursor: 'pointer' }}><X size={18} /></button>
+ </div>
+ {error && <p style={{ color: DS.red, fontSize: 13, marginBottom: 12 }}>{error}</p>}
+ <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+ <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+ <div>
+ <label style={labelStyle}>Tên (VN) *</label>
+ <input style={inpStyle} value={form.nameVi} onChange={e => setForm(f => ({ ...f, nameVi: e.target.value, name: e.target.value }))} placeholder='VD: Gói Starter 2GB' />
+ </div>
+ <div>
+ <label style={labelStyle}>Slug *</label>
+ <input style={inpStyle} value={form.slug} onChange={e => setForm(f => ({ ...f, slug: e.target.value }))} placeholder='VD: starter-2gb' />
+ </div>
+ </div>
+ <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+ <div>
+ <label style={labelStyle}>Giá/tháng (VND)</label>
+ <input style={inpStyle} type='number' value={form.monthlyPrice} onChange={e => setForm(f => ({ ...f, monthlyPrice: Number(e.target.value) }))} />
+ </div>
+ <div>
+ <label style={labelStyle}>Số tháng reference</label>
+ <input style={inpStyle} type='number' value={form.months} onChange={e => setForm(f => ({ ...f, months: Number(e.target.value) }))} />
+ </div>
+ <div>
+ <label style={labelStyle}>Discount (%)</label>
+ <input style={inpStyle} type='number' value={form.discountPct} onChange={e => setForm(f => ({ ...f, discountPct: Number(e.target.value) }))} />
+ </div>
+ </div>
+ <div style={{ background: DS.bg, border: `1px solid ${DS.blue}44`, borderRadius: 10, padding: 12 }}>
+ <div style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, marginBottom: 6 }}>Preview Calculator</div>
+ <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+ {[6, 12, 24].map(mo => {
+  const t = calcTotal(Number(form.monthlyPrice) || 0, mo, Number(form.discountPct) || 0);
+ return (
+ <div key={mo} style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 8, padding: '6px 12px' }}>
+ <div style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono }}>{mo} tháng</div>
+ <div style={{ color: DS.blue, fontFamily: DS.mono, fontWeight: 700, fontSize: 14 }}>{t.toLocaleString('vi-VN')}đ</div>
+ </div>
+ );
+ })}
+ </div>
+ </div>
+ <div>
+  <label style={labelStyle}>Tính năng (EN, cách nhau dấu phẩy)</label>
+ <input style={inpStyle} value={form.features} onChange={e => setForm(f => ({ ...f, features: e.target.value }))} placeholder='2GB SSD, Unlimited Bandwidth, Free SSL' />
+ </div>
+ <div>
+ <label style={labelStyle}>Tính năng (VN, cách nhau dấu phẩy)</label>
+ <input style={inpStyle} value={form.featuresVi} onChange={e => setForm(f => ({ ...f, featuresVi: e.target.value }))} placeholder='2GB SSD, Băng thông không giới hạn, SSL miễn phí' />
+ </div>
+ <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+ <div>
+ <label style={labelStyle}>Sort Order</label>
+ <input style={inpStyle} type='number' value={form.sortOrder} onChange={e => setForm(f => ({ ...f, sortOrder: Number(e.target.value) }))} />
+ </div>
+ <div>
+ <label style={labelStyle}>Màu sắc</label>
+ <input style={{ ...inpStyle, padding: '4px 8px' }} type='color' value={form.color} onChange={e => setForm(f => ({ ...f, color: e.target.value }))} />
+ </div>
+ <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingTop: 20 }}>
+ <Toggle checked={form.highlighted} onChange={v => setForm(f => ({ ...f, highlighted: v }))} />
+ <span style={{ color: DS.text3, fontSize: 12 }}>Nổi bật</span>
+ </div>
+ </div>
+ </div>
+ <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 16 }}>
+ <button onClick={() => setShowForm(false)} style={{ padding: '8px 16px', border: `1px solid ${DS.border}`, borderRadius: 10, background: 'transparent', color: DS.text3, cursor: 'pointer', fontFamily: DS.mono, fontSize: 13 }}>Hủy</button>
+ <button onClick={handleSave} disabled={saving}
+ style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 20px', background: saving ? DS.text4 : DS.blue, color: '#fff', border: 'none', borderRadius: 10, cursor: saving ? 'not-allowed' : 'pointer', fontFamily: DS.mono, fontSize: 13, fontWeight: 600 }}>
+ {saving && <Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} />}
+ {saving ? 'Đang lưu...' : 'Lưu'}
+ </button>
+ </div>
+ </motion.div>
+ </motion.div>
+ </AnimatePresence>
+ )}
+ </div>
+ );
+}
+
+
+// ── Tab 7: Domain Prices ───────────────────────────────────────────────────────
+
+function DomainPricesTab() {
+ const qc = useQueryClient();
+ const [showForm, setShowForm] = useState(false);
+ const [editing, setEditing] = useState<DomainPrice | null>(null);
+ const [saving, setSaving] = useState(false);
+ const [error, setError] = useState('');
+
+ const { data, isLoading } = useQuery<{ data: DomainPrice[] }>({
+ queryKey: ['admin', 'pricing', 'domain-prices'],
+ queryFn: () => adminApi.get('/api/admin/pricing/domain-prices'),
+ });
+
+ const prices: DomainPrice[] = data?.data ?? [];
+ const [form, setForm] = useState({
+ extension: '', registrationPrice: 0, renewalPrice: 0,
+ period: '1', periodVi: '1 năm',
+ note: '', noteVi: '', sortOrder: 0, isActive: true,
+ });
+
+ const inpStyle: React.CSSProperties = {
+ width: '100%', background: DS.bg, border: `1px solid ${DS.border}`,
+ borderRadius: 8, padding: '9px 12px', color: DS.text, fontSize: 13,
+ outline: 'none', fontFamily: DS.body, boxSizing: 'border-box',
+ };
+ const labelStyle: React.CSSProperties = { color: DS.text4, fontSize: 11, fontFamily: DS.mono, display: 'block', marginBottom: 4 };
+
+ const openAdd = () => {
+ setEditing(null);
+ setForm({ extension: '', registrationPrice: 0, renewalPrice: 0, period: '1', periodVi: '1 năm', note: '', noteVi: '', sortOrder: 0, isActive: true });
+ setError('');
+ setShowForm(true);
+ };
+ const openEdit = (p: DomainPrice) => {
+ setEditing(p);
+ setForm({ extension: p.extension, registrationPrice: p.registrationPrice, renewalPrice: p.renewalPrice, period: p.period, periodVi: p.periodVi || '1 năm', note: p.note || '', noteVi: p.noteVi || '', sortOrder: p.sortOrder, isActive: p.isActive });
+ setError('');
+ setShowForm(true);
+ };
+
+ return (
+ <div>
+ <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+ <div>
+ <h3 style={{ fontFamily: DS.heading, fontSize: 16, fontWeight: 700, color: DS.text, margin: '0 0 4px' }}>Giá tên miền</h3>
+ <p style={{ color: DS.text4, fontSize: 12, fontFamily: DS.mono, margin: 0 }}>
+ {prices.length} extension · Giá đăng ký & gia hạn dùng trong domain search
+ </p>
+ </div>
+ <button onClick={openAdd}
+ style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 16px', background: DS.blue, color: '#fff', border: 'none', borderRadius: 10, cursor: 'pointer', fontSize: 12, fontWeight: 600, fontFamily: DS.mono }}>
+ <PlusCircle size={13} /> Thêm extension
+ </button>
+ </div>
+
+ {isLoading ? (
+ <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem' }}>
+ <Loader2 size={24} style={{ color: DS.text4, animation: 'spin 1s linear infinite' }} />
+ </div>
+ ) : (
+ <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 12 }}>
+ {prices.map(p => (
+ <div key={p.id} style={{
+ background: DS.bgCard,
+ border: `1px solid ${p.isActive ? DS.border : DS.red + '44'}`,
+ borderRadius: 12, padding: 16,
+ opacity: p.isActive ? 1 : 0.5,
+ }}>
+ <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+ <div>
+ <span style={{ color: DS.text, fontWeight: 700, fontSize: 18, fontFamily: DS.mono }}>.{p.extension}</span>
+ {p.note && <div style={{ color: DS.text4, fontSize: 10, marginTop: 2 }}>{p.noteVi || p.note}</div>}
+ </div>
+ <Toggle checked={p.isActive} onChange={() => adminApi.put('/api/admin/pricing/domain-prices', { ...p, id: p.id }).then(() => qc.invalidateQueries({ queryKey: ['admin', 'pricing', 'domain-prices'] }))} />
+ </div>
+ <div style={{ display: 'flex', gap: 12 }}>
+ <div>
+ <div style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono }}>Đăng ký</div>
+ <div style={{ color: DS.green, fontFamily: DS.mono, fontWeight: 700, fontSize: 14 }}>{p.registrationPrice.toLocaleString('vi-VN')}đ</div>
+ </div>
+ <div>
+ <div style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono }}>Gia hạn</div>
+ <div style={{ color: DS.text3, fontFamily: DS.mono, fontWeight: 600, fontSize: 14 }}>{p.renewalPrice.toLocaleString('vi-VN')}đ</div>
+ </div>
+ </div>
+ <div style={{ display: 'flex', gap: 6, marginTop: 12 }}>
+ <button onClick={() => openEdit(p)} style={{ flex: 1, padding: '5px', border: `1px solid ${DS.border}`, borderRadius: 6, background: 'transparent', color: DS.blue, cursor: 'pointer', fontSize: 11, fontFamily: DS.mono }}>Sửa</button>
+ <button onClick={() => { if (confirm('Xóa extension này?')) adminApi.delete(`/api/admin/pricing/domain-prices?id=${p.id}`).then(() => qc.invalidateQueries({ queryKey: ['admin', 'pricing', 'domain-prices'] })); }}
+ style={{ padding: '5px 8px', border: `1px solid ${DS.border}`, borderRadius: 6, background: 'transparent', color: DS.text4, cursor: 'pointer' }}>
+ <Trash2 size={11} />
+ </button>
+ </div>
+  </div>
+ ))}
+ {prices.length === 0 && (
+ <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '3rem', color: DS.text4, fontFamily: DS.mono }}>
+ Chưa có giá domain nào
+ </div>
+ )}
+ </div>
+ )}
+
+ {showForm && (
+ <AnimatePresence>
+ <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+  onClick={() => setShowForm(false)}
+ style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+ <motion.div initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
+ onClick={e => e.stopPropagation()}
+ style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 16, padding: 24, width: '100%', maxWidth: 480 }}>
+ <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
+ <h3 style={{ color: DS.text, fontWeight: 700, fontSize: 18, margin: 0 }}>{editing ? 'Sửa giá domain' : 'Thêm extension mới'}</h3>
+ <button onClick={() => setShowForm(false)} style={{ background: 'none', border: 'none', color: DS.text4, cursor: 'pointer' }}><X size={18} /></button>
+ </div>
+ {error && <p style={{ color: DS.red, fontSize: 13, marginBottom: 12 }}>{error}</p>}
+ <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+ <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+ <div>
+ <label style={labelStyle}>Extension *</label>
+ <input style={inpStyle} value={form.extension} onChange={e => setForm(f => ({ ...f, extension: e.target.value }))} placeholder='VD: vn, com, com.vn' />
+ </div>
+ <div>
+ <label style={labelStyle}>Sort Order</label>
+ <input style={inpStyle} type='number' value={form.sortOrder} onChange={e => setForm(f => ({ ...f, sortOrder: Number(e.target.value) }))} />
+ </div>
+ </div>
+ <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+ <div>
+ <label style={labelStyle}>Giá đăng ký (VND)</label>
+ <input style={inpStyle} type='number' value={form.registrationPrice} onChange={e => setForm(f => ({ ...f, registrationPrice: Number(e.target.value) }))} />
+ </div>
+ <div>
+ <label style={labelStyle}>Giá gia hạn (VND)</label>
+ <input style={inpStyle} type='number' value={form.renewalPrice} onChange={e => setForm(f => ({ ...f, renewalPrice: Number(e.target.value) }))} />
+ </div>
+ </div>
+ <div>
+  <label style={labelStyle}>Ghi chú (VN)</label>
+ <input style={inpStyle} value={form.noteVi} onChange={e => setForm(f => ({ ...f, noteVi: e.target.value }))} placeholder='VD: Yêu cầu giấy tờ' />
+ </div>
+ </div>
+ <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 16 }}>
+ <button onClick={() => setShowForm(false)} style={{ padding: '8px 16px', border: `1px solid ${DS.border}`, borderRadius: 10, background: 'transparent', color: DS.text3, cursor: 'pointer', fontFamily: DS.mono, fontSize: 13 }}>Hủy</button>
+ <button onClick={async () => {
+ setSaving(true); setError('');
+ try {
+ const payload = { extension: form.extension, registrationPrice: form.registrationPrice, renewalPrice: form.renewalPrice, period: form.period, periodVi: form.periodVi, note: form.note, noteVi: form.noteVi, sortOrder: form.sortOrder, isActive: form.isActive };
+ if (editing) await adminApi.put('/api/admin/pricing/domain-prices', { ...payload, id: editing.id });
+ else await adminApi.post('/api/admin/pricing/domain-prices', payload);
+ qc.invalidateQueries({ queryKey: ['admin', 'pricing', 'domain-prices'] });
+ setShowForm(false);
+ } catch (err: unknown) { setError(err instanceof Error ? err.message : 'Lưu thất bại'); setSaving(false); return; }
+ setSaving(false);
+ }} disabled={saving}
+  style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 20px', background: saving ? DS.text4 : DS.blue, color: '#fff', border: 'none', borderRadius: 10, cursor: saving ? 'not-allowed' : 'pointer', fontFamily: DS.mono, fontSize: 13, fontWeight: 600 }}>
+ {saving && <Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} />}
+ {saving ? 'Đang lưu...' : 'Lưu'}
+ </button>
+ </div>
+ </motion.div>
+ </motion.div>
+ </AnimatePresence>
+ )}
+ </div>
+ );
 }
 
 // ── Main Page ─────────────────────────────────────────────────────────────────

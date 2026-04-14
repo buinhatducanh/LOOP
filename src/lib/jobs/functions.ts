@@ -566,6 +566,139 @@ export const eventLpBonusAward = inngest.createFunction(
   }
 );
 
+// ─── Domain & Hosting Expiry Notification ─────────────────────────────────
+// Cron: every day at 09:00 — alerts admins about expiring domain/hosting
+export const domainHostingExpiryNotification = inngest.createFunction(
+ {
+ id: "domain-hosting-expiry-notification",
+ name: "Domain & Hosting Expiry Notification",
+ rateLimit: { limit: 1, period: "1m" },
+ triggers: [{ cron: "0 9 * * *" }],
+ },
+ async () => {
+ const now = new Date();
+
+ // 30-day warning window
+ const warningDate = new Date(now);
+ warningDate.setDate(warningDate.getDate() + 30);
+
+ // 7-day urgent window
+ const urgentDate = new Date(now);
+ urgentDate.setDate(urgentDate.getDate() + 7);
+
+ // 1-day critical window
+ const criticalDate = new Date(now);
+ criticalDate.setDate(criticalDate.getDate() + 1);
+
+ // 1-day overdue window (expired but within 1 day)
+ const overdueEnd = new Date(now);
+ overdueEnd.setDate(overdueEnd.getDate() + 1);
+
+ // Find websites with domain expiring in 30 days or less
+ const domainExpiring = await prisma.customerWebsite.findMany({
+ where: {
+ domain: { not: null },
+ domainExpiresAt: {
+ lte: warningDate,
+ gte: now,
+ },
+ autoRenewDomain: false,
+ },
+ select: {
+ id: true,
+ domain: true,
+ customerName: true,
+ customerEmail: true,
+ domainExpiresAt: true,
+ },
+ });
+
+ // Find websites with hosting expiring in 30 days or less
+ const hostingExpiring = await prisma.customerWebsite.findMany({
+ where: {
+ hostingPlanId: { not: null },
+ hostingExpiresAt: {
+ lte: warningDate,
+ gte: now,
+ },
+ autoRenewHosting: false,
+ },
+ select: {
+ id: true,
+ domain: true,
+ customerName: true,
+ customerEmail: true,
+ hostingExpiresAt: true,
+ },
+ });
+
+ let notifiedCount = 0;
+
+ const classifyPriority = (expiresAt: Date) => {
+ if (expiresAt <= criticalDate) return "urgent";
+ if (expiresAt <= urgentDate) return "high";
+ return "normal";
+ };
+
+ const todayStart = new Date(now);
+ todayStart.setHours(0, 0, 0, 0);
+
+ // Domain expiry notifications
+ for (const site of domainExpiring) {
+ if (!site.domainExpiresAt) continue;
+ const expiresAt = site.domainExpiresAt;
+ const priority = classifyPriority(expiresAt);
+ const daysLeft = Math.ceil((expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+ const alreadyNotified = await prisma.adminNotification.findFirst({
+ where: { type: "domain_expiry", link: `/admin/web_packages?website=${site.id}`, createdAt: { gte: todayStart } },
+ });
+
+ if (alreadyNotified) continue;
+
+ await prisma.adminNotification.create({
+ data: {
+ type: "domain_expiry",
+ title: `Domain "${site.domain}" sắp hết hạn (${daysLeft} ngày)`,
+ message: `${site.customerName ?? site.customerEmail} — domain hết hạn ngày ${expiresAt.toLocaleDateString("vi-VN")}. Auto-renew: OFF.`,
+ link: `/admin/web_packages?website=${site.id}`,
+ priority,
+ isRead: false,
+ },
+ });
+ notifiedCount++;
+ }
+
+ // Hosting expiry notifications
+ for (const site of hostingExpiring) {
+ if (!site.hostingExpiresAt) continue;
+ const expiresAt = site.hostingExpiresAt;
+ const priority = classifyPriority(expiresAt);
+ const daysLeft = Math.ceil((expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+ const alreadyNotified = await prisma.adminNotification.findFirst({
+ where: { type: "hosting_expiry", link: `/admin/web_packages?website=${site.id}`, createdAt: { gte: todayStart } },
+ });
+
+ if (alreadyNotified) continue;
+
+ await prisma.adminNotification.create({
+ data: {
+ type: "hosting_expiry",
+ title: `Hosting "${site.domain}" sắp hết hạn (${daysLeft} ngày)`,
+ message: `${site.customerName ?? site.customerEmail} — hosting hết hạn ngày ${expiresAt.toLocaleDateString("vi-VN")}. Auto-renew: OFF.`,
+ link: `/admin/web_packages?website=${site.id}`,
+ priority,
+ isRead: false,
+ },
+ });
+ notifiedCount++;
+ }
+
+ return { domainExpiring: domainExpiring.length, hostingExpiring: hostingExpiring.length, notifiedCount };
+ }
+);
+
 // ─── All Functions (export for Next.js handler) ────────────────────────────
 // Register all jobs here — src/app/api/inngest/route.ts imports this array.
 export const allJobs = [
@@ -583,4 +716,6 @@ export const allJobs = [
   // Quest/Event
   questFrequencyReset,
   eventLpBonusAward,
+ // Web Package
+ domainHostingExpiryNotification,
 ];

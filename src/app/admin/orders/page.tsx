@@ -12,7 +12,7 @@ import {
  X, CheckCircle2, Eye, ChevronRight, Search,
  RefreshCw, Plus, Trash2, Edit2, AlertTriangle,
  Monitor, CreditCard, Users, Clock, CheckCheck,
- DollarSign, Package, List,
+ DollarSign, Package, List, UserCheck,
 } from "lucide-react";
 
 // ── Status config ─────────────────────────────────────────────────────────────
@@ -124,6 +124,7 @@ type Order = {
  finalPrice: number | null;
  lpUsed: number;
  lpReward: number;
+ salesRepId: string | null;
  status: string;
  orderType: string;
  paymentStatus: string;
@@ -187,6 +188,7 @@ function OrderRow({
  onSendDemo,
  onRecordPayment,
  onAssignMember,
+ onAssignSalesRep,
 }: {
  order: Order;
  onTransition: (id: string, status: string) => void;
@@ -196,6 +198,7 @@ function OrderRow({
  onSendDemo: (order: Order) => void;
  onRecordPayment: (order: Order) => void;
   onAssignMember: (order: Order) => void;
+ onAssignSalesRep: (order: Order) => void;
 }) {
  const { t } = useAdminTranslations();
  const cfg = STATUS_CONFIG[order.status] ?? { label: order.status, color: DS.text4, bg: "transparent" };
@@ -283,6 +286,14 @@ function OrderRow({
  <button onClick={() => onAssignMember(order)} title="Gán thành viên"
  style={{ background: "rgba(234,179,8,0.1)", border: "1px solid rgba(234,179,8,0.3)", borderRadius: 8, padding: "5px 8px", cursor: "pointer", color: "#EAB308", display: "flex", alignItems: "center" }}>
  <Users size={12} />
+ </button>
+ )}
+
+ {/* Sales Rep */}
+ {order.status !== "completed" && order.status !== "cancelled" && (
+ <button onClick={() => onAssignSalesRep(order)} title="Sales Rep"
+ style={{ background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.3)", borderRadius: 8, padding: "5px 8px", cursor: "pointer", color: "#22C55E", display: "flex", alignItems: "center" }}>
+ <UserCheck size={12} />
  </button>
  )}
 
@@ -864,6 +875,95 @@ function ProjectMembersModal({ order, onClose }: { order: Order | null; onClose:
 }
 
 // ───────────────────────────────────────────────────────────────────────────────
+// SALES REP MODAL
+// ───────────────────────────────────────────────────────────────────────────────
+function SalesRepModal({ order, onClose, onSuccess }: { order: Order | null; onClose: () => void; onSuccess: () => void }) {
+ const { t } = useAdminTranslations();
+ const qc = useQueryClient();
+ if (!order) return null;
+
+ const { data: teamData, isLoading: loadingTeam } = useQuery({
+ queryKey: ["admin", "team", "all"],
+ queryFn: () => adminApi.get<{ data: { id: string; name: string; email: string; avatar: string | null; rank: string }[] }>("/api/admin/team?limit=100&page=1"),
+ });
+
+ const [selectedId, setSelectedId] = useState(order.salesRepId ?? "");
+ const [saving, setSaving] = useState(false);
+ const [error, setError] = useState("");
+
+ const team: { id: string; name: string; email: string; avatar: string | null; rank: string }[] = teamData?.data ?? [];
+
+ const save = async () => {
+ setSaving(true);
+ setError("");
+ try {
+ await adminApi.put(`/api/admin/orders/${order!.id}`, {
+ salesRepId: selectedId || null,
+ });
+ onSuccess();
+ onClose();
+ } catch (err: unknown) {
+ setError(err instanceof Error ? err.message : "Lưu thất bại");
+ } finally {
+ setSaving(false);
+ }
+ };
+
+ return (
+ <AnimatePresence>
+ <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+ onClick={onClose}
+ style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", backdropFilter: "blur(8px)", zIndex: 70, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+ <motion.div initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
+ onClick={(e) => e.stopPropagation()}
+ style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 16, padding: 24, width: "100%", maxWidth: 480 }}>
+ <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+ <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+ <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.3)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+ <UserCheck size={18} style={{ color: "#22C55E" }} />
+ </div>
+ <div>
+ <h3 style={{ color: DS.text, fontWeight: 700, fontSize: 18, margin: 0 }}>Sales Rep</h3>
+ <p style={{ color: DS.text4, fontSize: 11, margin: 0 }}>{order.customerName} · #{order.orderNumber.slice(-8)}</p>
+ </div>
+ </div>
+ <button onClick={onClose} style={{ background: "none", border: "none", color: DS.text4, cursor: "pointer" }}><X size={18} /></button>
+ </div>
+
+ <p style={{ color: DS.text4, fontSize: 12, marginBottom: 12 }}>
+ Sales Rep nhận commission LP khi đơn hàng hoàn thành (10% main + 5% addon).
+ </p>
+
+ <select
+ value={selectedId}
+ onChange={(e) => setSelectedId(e.target.value)}
+ disabled={saving || loadingTeam}
+ style={{ width: "100%", background: DS.bg, border: `1px solid ${DS.border}`, borderRadius: 10, padding: "10px 12px", color: DS.text, fontSize: 13, outline: "none", cursor: "pointer", fontFamily: DS.body, boxSizing: "border-box", marginBottom: 12 }}>
+ <option value="">— Không chọn —</option>
+ {team.map(m => (
+ <option key={m.id} value={m.id}>{m.name} ({m.rank})</option>
+ ))}
+ </select>
+
+ {error && (
+ <div style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8, padding: "8px 12px", color: "#EF4444", fontSize: 12, marginBottom: 12 }}>
+ <AlertTriangle size={12} style={{ display: "inline", marginRight: 6 }} />{error}
+ </div>
+ )}
+
+ <div style={{ display: "flex", gap: 10 }}>
+ <button onClick={onClose} style={{ flex: 1, padding: "10px", background: DS.bg, border: `1px solid ${DS.border}`, borderRadius: 10, color: DS.text3, cursor: "pointer", fontSize: 13 }}>Hủy</button>
+ <button onClick={save} disabled={saving} style={{ flex: 1, padding: "10px", background: saving ? DS.text4 : "#22C55E", border: "none", borderRadius: 10, color: "#fff", fontWeight: 700, cursor: saving ? "not-allowed" : "pointer", fontSize: 13 }}>
+ {saving ? "Đang lưu..." : "Lưu"}
+ </button>
+ </div>
+ </motion.div>
+ </motion.div>
+ </AnimatePresence>
+ );
+}
+
+// ───────────────────────────────────────────────────────────────────────────────
 // ORDER DETAIL MODAL
 // ───────────────────────────────────────────────────────────────────────────────
 type DetailTab = "overview" | "history" | "demos" | "handover";
@@ -1176,6 +1276,7 @@ export default function OrdersPage() {
  const [sendDemoOrder, setSendDemoOrder] = useState<Order | null>(null);
  const [paymentOrder, setPaymentOrder] = useState<Order | null>(null);
  const [assignMemberOrder, setAssignMemberOrder] = useState<Order | null>(null);
+ const [salesRepOrder, setSalesRepOrder] = useState<Order | null>(null);
 
  const { data, isLoading, isFetching } = useQuery({
  queryKey: qk.orders({ page, limit: 20, search, status: statusFilter }),
@@ -1327,6 +1428,7 @@ export default function OrdersPage() {
  onSendDemo={setSendDemoOrder}
  onRecordPayment={setPaymentOrder}
  onAssignMember={setAssignMemberOrder}
+ onAssignSalesRep={setSalesRepOrder}
  />
  ))
  )}
@@ -1358,6 +1460,7 @@ export default function OrdersPage() {
  <SendDemoModal order={sendDemoOrder} onClose={() => setSendDemoOrder(null)} onSuccess={(data) => sendDemoMutation.mutate(data)} />
  <PaymentModal order={paymentOrder} onClose={() => setPaymentOrder(null)} onSuccess={() => qc.invalidateQueries({ queryKey: qk.orders() })} />
  <ProjectMembersModal order={assignMemberOrder} onClose={() => setAssignMemberOrder(null)} />
+ <SalesRepModal order={salesRepOrder} onClose={() => setSalesRepOrder(null)} onSuccess={() => qc.invalidateQueries({ queryKey: qk.orders() })} />
  </div>
  );
 }

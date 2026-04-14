@@ -22,7 +22,7 @@ import {
   LayoutDashboard, Users, FolderKanban, Wallet, Settings,
   DollarSign, UserCheck, BookOpen, FileText, BarChart2,
   Briefcase, Camera, Receipt, Package, FolderCheck,
-  Sparkles, Star, Bell, Zap, Calculator, Building2, ShoppingCart,
+  Sparkles, Star, Bell, Zap, Calculator, Building2, ShoppingCart, TrendingUp,
   Monitor, X, ChevronRight, Globe, Layers, FilePlus, HelpCircle, Info,
 } from "lucide-react";
 import { useAuthStore, canAccessTab, type AdminTab } from "@/app/store/authStore";
@@ -155,6 +155,7 @@ const SIDEBAR_GROUPS_CONFIG: NavGroup[] = [
       { id: "lp", icon: <Wallet size={16} />, labelKey: "sidebar.nav.lp" },
       { id: "lp_manage", icon: <Zap size={16} />, labelKey: "sidebar.nav.lp_manage" },
       { id: "income_tax", icon: <Calculator size={16} />, labelKey: "sidebar.nav.income_tax" },
+ { id: "commission", icon: <TrendingUp size={16} />, labelKey: "sidebar.nav.commission" },
     ],
   },
   {

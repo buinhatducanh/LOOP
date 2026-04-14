@@ -52,3 +52,6 @@ FE/
 FE-ARCHIVE/
 DESIGN LOOPS/
 DESIGN-LOOPS-ARCHIVE/
+
+.env.docker.local
+.env.docker

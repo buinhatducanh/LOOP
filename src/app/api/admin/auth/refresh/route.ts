@@ -77,12 +77,12 @@ export async function POST(req: NextRequest) {
       refreshToken: result.refreshToken,
     });
 
-    // Set new access token cookie (15 min)
+    // Set new access token cookie (5 min)
     response.cookies.set("auth-token", result.accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 15 * 60,
+      sameSite: "strict",
+      maxAge: 5 * 60,
       path: "/",
     });
 
@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
     response.cookies.set("refresh-token", result.refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      sameSite: "strict",
       maxAge: 7 * 24 * 3600,
       path: "/",
     });

@@ -3144,9 +3144,15 @@ async function main() {
     await seedBlogTags();
     await seedR2(deptIds); // <-- NEW: R2 unified demo data (pass deptIds for FK)
     await seedAboutSections();
+ // ─── P1: Web Package Pricing ────────────────────────────────────────────────
+ console.log("\n[WEB PACKAGE] Hosting Plans + Domain Prices...");
+ await prisma.pricingHostingPlan.upsert({ where:{slug:"professional"}, update:{}, create:{slug:"professional",name:"Professional",nameVi:"Gói Chuyên nghiệp",monthlyPrice:199000,months:12,discountPct:10,period:"1 năm",periodVi:"12 tháng",features:["SSD 30GB","SSL miễn phí","Email 5 hộp thư","Backup hàng ngày","CDN miễn phí","Hỗ trợ 24/7"],featuresVi:["SSD 30GB","SSL miễn phí","Email 5 hộp thư","Backup hàng ngày","CDN miễn phí","Hỗ trợ 24/7"],color:"#EC4899",sortOrder:2} });
+ await prisma.pricingDomainPrice.upsert({ where:{extension:"com.vn"}, update:{}, create:{extension:"com.vn",registrationPrice:299000,renewalPrice:299000,period:"1 năm",periodVi:"12 tháng",note:"Phổ biến nhất",noteVi:"Phổ biến nhất",sortOrder:1} });
+ console.log(" ✓ Web package pricing seeded");
+
 
     // Verify counts
-    const [tm, us, pr, ord, pm, ef, ov, lp, tx, qp, ec, tsk, q, ev, exp, me, svc, at, mr, st, bt] = await Promise.all([
+    const [tm, us, pr, ord, pm, ef, ov, lp, tx, qp, ec, tsk, q, ev, exp, me, svc, at, mr, st, bt, hp, dp] = await Promise.all([
       prisma.teamMember.count(),
       prisma.user.count(),
       prisma.project.count(),
@@ -3169,8 +3175,10 @@ async function main() {
       prisma.memberRequest.count(),
       prisma.serviceTier.count(),
       prisma.blogTag.count(),
+ prisma.pricingHostingPlan.count(),
+ prisma.pricingDomainPrice.count(),
     ]);
-    console.log("\n[VERIFY] TM=%d US=%d PR=%d OR=%d PM=%d | LP=%d TX=%d QP=%d | EC=%d TS=%d Q=%d EV=%d | EXP=%d ME=%d | SVC=%d | AT=%d MR=%d ST=%d | BT=%d",
+    console.log("\n[VERIFY] TM=%d US=%d PR=%d OR=%d PM=%d | LP=%d TX=%d QP=%d | EC=%d TS=%d Q=%d EV=%d | EXP=%d ME=%d | SVC=%d | AT=%d MR=%d ST=%d | BT=%d | HP=%d DP=%d",
       tm, us, pr, ord, pm, lp, tx, qp, ec, tsk, q, ev, exp, me, svc, at, mr, st, bt);
     console.log("  (EF=%d OV=%d — effects in code, not DB)", ef, ov);
 

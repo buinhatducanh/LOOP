@@ -3,6 +3,7 @@ import { awardCustomerLpOnPayment } from "@/lib/services/customer/lp.service";
 import { awardReferralLpOnPayment, awardReferralLpOnCompletion } from "@/lib/services/customer/referral.service";
 import { buildLpAwardsFromOrder } from "@/lib/pricing/quote-to-order";
 import { vndToLp } from "@/lib/services/customer/lp.service";
+import { creditSalesCommissionForOrderTx } from "@/lib/services/commerce/commission.service";
 
 // ── Notification helper ───────────────────────────────────────────────────────
 
@@ -185,7 +186,12 @@ export async function transitionOrderStatus(
       await awardReferralLpOnCompletion(orderId, order.orderNumber, order.paidAmount);
     }
 
-    // ── P1-2 FIX: audit log inside tx ─────────────────────────────────────────
+     // ── Credit sales commission on order completion (done) ──────────────────
+ if (toStatus === "completed") {
+ await creditSalesCommissionForOrderTx(orderId, tx);
+ }
+
+// ── P1-2 FIX: audit log inside tx ─────────────────────────────────────────
     if (auditUserId && auditResourceId) {
       await tx.auditLog.create({
         data: {

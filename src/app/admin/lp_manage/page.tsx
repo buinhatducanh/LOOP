@@ -245,8 +245,8 @@ function RateConfigModal({ rate, onClose, onSave, isSaving }: {
   );
 }
 
-// ── Add LP Modal ─────────────────────────────────────────────────────────────
-// Uses POST /api/admin/lp-awards — approved automatically for simplicity
+// ── Add LP Modal (Multi-select) ──────────────────────────────────────────────
+// Uses POST /api/admin/lp-awards — supports selecting multiple members at once
 
 function AddLPModal({
   members,
@@ -261,32 +261,40 @@ function AddLPModal({
 }) {
   const qc = useQueryClient();
   const [source, setSource] = useState<LpAwardSource>("manual");
-  const [memberId, setMemberId] = useState<string>(members[0]?.id ?? "");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [amount, setAmount] = useState<number>(0);
   const [description, setDescription] = useState("");
   const [saving, setSaving] = useState(false);
   const [projectSize, setProjectSize] = useState<"small" | "medium" | "large">("medium");
-
-  const saveMutation = useMutation({
-    mutationFn: (body: { memberId: string; lpAmount: number; source: LpAwardSource; description: string }) =>
-      adminApi.post("/api/admin/lp-awards", body),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["admin", "lp", "transactions"] });
-      qc.invalidateQueries({ queryKey: ["admin", "lp", "transactions-manage"] });
-      qc.invalidateQueries({ queryKey: ["admin", "lp", "awards"] });
-      onSuccess();
-      onClose();
-    },
-    onError: () => alert("Lỗi cấp LP. Vui lòng thử lại."),
-  });
+  const [searchQ, setSearchQ] = useState("");
+  const [progress, setProgress] = useState<{ done: number; total: number; errors: string[] } | null>(null);
 
   const sc = SOURCE_CFG[source] ?? SOURCE_CFG.manual;
-  const selectedMember = members.find(m => m.id === memberId);
-  const rk = (selectedMember?.rank ?? "iron") as RankKey;
-  const rc = RANKS[rk];
 
-  const calcAmount = () => {
-    if (!selectedMember) return 0;
+  // Filter members by search query
+  const filteredMembers = members.filter(m =>
+    !searchQ || m.name.toLowerCase().includes(searchQ.toLowerCase()) || m.rank.toLowerCase().includes(searchQ.toLowerCase())
+  );
+
+  const toggleMember = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleAll = () => {
+    if (selectedIds.size === filteredMembers.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredMembers.map(m => m.id)));
+    }
+  };
+
+  const calcAmountForMember = (member: RealMember) => {
+    const rk = (member.rank ?? "iron") as RankKey;
     const salaryKey = SALARY_BY_RANK[rk];
     if (!salaryKey) return 0;
     const baseSalary = rate[salaryKey] as number;
@@ -300,6 +308,17 @@ function AddLPModal({
     }
   };
 
+  // For manual source, use the typed amount; for others, amount per member may vary by rank
+  const getAmountForMember = (member: RealMember) => {
+    if (source === "manual" || source === "bonus" || source === "auto") return amount;
+    return amount > 0 ? amount : calcAmountForMember(member);
+  };
+
+  const totalLpPreview = Array.from(selectedIds).reduce((sum, id) => {
+    const m = members.find(x => x.id === id);
+    return sum + (m ? getAmountForMember(m) : 0);
+  }, 0);
+
   const inputStyle: React.CSSProperties = {
     width: "100%", background: DS.bgCard2, border: `1px solid ${DS.border}`,
     borderRadius: 8, padding: "9px 12px", color: DS.text, fontSize: 13, outline: "none",
@@ -311,17 +330,46 @@ function AddLPModal({
   };
 
   const handleSave = async () => {
-    if (!memberId || !amount) return;
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
     setSaving(true);
-    try {
-      await saveMutation.mutateAsync({
-        memberId,
-        lpAmount: amount,
-        source,
-        description: description || sc.labelVi,
-      });
-    } finally {
+    const errors: string[] = [];
+    setProgress({ done: 0, total: ids.length, errors: [] });
+
+    for (let i = 0; i < ids.length; i++) {
+      const mid = ids[i];
+      const member = members.find(m => m.id === mid);
+      const lpAmt = member ? getAmountForMember(member) : amount;
+      if (lpAmt <= 0) {
+        errors.push(`${member?.name ?? mid}: LP = 0, bỏ qua`);
+        setProgress({ done: i + 1, total: ids.length, errors: [...errors] });
+        continue;
+      }
+      try {
+        await adminApi.post("/api/admin/lp-awards", {
+          memberId: mid,
+          lpAmount: lpAmt,
+          source,
+          description: description || sc.labelVi,
+          projectId: "lp-manage-manual",
+          status: "approved",
+        });
+      } catch {
+        errors.push(`${member?.name ?? mid}: Lỗi cấp LP`);
+      }
+      setProgress({ done: i + 1, total: ids.length, errors: [...errors] });
+    }
+
+    qc.invalidateQueries({ queryKey: ["admin", "lp", "transactions"] });
+    qc.invalidateQueries({ queryKey: ["admin", "lp", "transactions-manage"] });
+    qc.invalidateQueries({ queryKey: ["admin", "lp", "awards"] });
+
+    if (errors.length === 0) {
+      onSuccess();
+      onClose();
+    } else {
       setSaving(false);
+      // Keep modal open to show errors
     }
   };
 
@@ -334,12 +382,12 @@ function AddLPModal({
       <motion.div
         initial={{ scale: 0.95 }} animate={{ scale: 1 }}
         onClick={e => e.stopPropagation()}
-        style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 16, width: "100%", maxWidth: 520, maxHeight: "90vh", overflow: "hidden", display: "flex", flexDirection: "column" }}
+        style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 16, width: "100%", maxWidth: 580, maxHeight: "92vh", overflow: "hidden", display: "flex", flexDirection: "column" }}
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "1.25rem 1.5rem", borderBottom: `1px solid ${DS.border}`, flexShrink: 0 }}>
           <div>
             <div style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.15em" }}>── CẤP LP MỚI</div>
-            <div style={{ color: DS.text, fontSize: 15, fontWeight: 700, marginTop: 2 }}>Thêm giao dịch LP</div>
+            <div style={{ color: DS.text, fontSize: 15, fontWeight: 700, marginTop: 2 }}>Thêm LP cho thành viên</div>
           </div>
           <button onClick={onClose} style={{ background: "none", border: "none", color: DS.text4, cursor: "pointer" }}><X size={18} /></button>
         </div>
@@ -370,19 +418,82 @@ function AddLPModal({
             <div style={{ color: DS.text5, fontSize: 10, marginTop: 6 }}>{sc.desc}</div>
           </div>
 
-          {/* Member selector */}
+          {/* Multi-member selector */}
           <div>
-            <label style={labelStyle}>THÀNH VIÊN</label>
-            <select value={memberId} onChange={e => setMemberId(e.target.value)} style={inputStyle}>
-              {members.map(m => {
-                const mr = RANKS[m.rank as RankKey] ?? RANKS.iron;
+            <label style={labelStyle}>CHỌN THÀNH VIÊN ({selectedIds.size}/{members.length})</label>
+            {/* Search + Select All */}
+            <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+              <input
+                value={searchQ} onChange={e => setSearchQ(e.target.value)}
+                placeholder="Tìm tên thành viên..."
+                style={{ ...inputStyle, flex: 1 }}
+              />
+              <button onClick={toggleAll}
+                style={{
+                  padding: "8px 14px", borderRadius: 8, cursor: "pointer", fontSize: 11, fontFamily: DS.mono, whiteSpace: "nowrap",
+                  background: selectedIds.size === filteredMembers.length && filteredMembers.length > 0 ? `${DS.blue}15` : DS.bgCard2,
+                  border: `1px solid ${selectedIds.size === filteredMembers.length && filteredMembers.length > 0 ? DS.blue + "40" : DS.border}`,
+                  color: selectedIds.size === filteredMembers.length && filteredMembers.length > 0 ? DS.blue : DS.text4,
+                }}>
+                {selectedIds.size === filteredMembers.length && filteredMembers.length > 0 ? "Bỏ chọn tất cả" : "Chọn tất cả"}
+              </button>
+            </div>
+            {/* Member list with checkboxes */}
+            <div style={{
+              maxHeight: 200, overflowY: "auto", border: `1px solid ${DS.border}`,
+              borderRadius: 12, background: DS.bgCard2,
+            }}>
+              {filteredMembers.length === 0 && (
+                <div style={{ padding: 16, textAlign: "center", color: DS.text4, fontSize: 12 }}>Không tìm thấy thành viên</div>
+              )}
+              {filteredMembers.map(m => {
+                const rk = (m.rank ?? "iron") as RankKey;
+                const rc = RANKS[rk] ?? RANKS.iron;
+                const isSelected = selectedIds.has(m.id);
+                const memberAmt = getAmountForMember(m);
                 return (
-                  <option key={m.id} value={m.id}>
-                    {mr.symbol} {m.name} — {m.rank} (Lv.{m.level})
-                  </option>
+                  <div
+                    key={m.id}
+                    onClick={() => toggleMember(m.id)}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 10, padding: "8px 12px",
+                      cursor: "pointer", borderBottom: `1px solid ${DS.border}`,
+                      background: isSelected ? `${rc.color}08` : "transparent",
+                      transition: "background 0.15s",
+                    }}
+                  >
+                    {/* Checkbox */}
+                    <div style={{
+                      width: 18, height: 18, borderRadius: 5, flexShrink: 0,
+                      border: `2px solid ${isSelected ? rc.color : DS.border}`,
+                      background: isSelected ? `${rc.color}25` : "transparent",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      transition: "all 0.15s",
+                    }}>
+                      {isSelected && <div style={{ width: 8, height: 8, borderRadius: 2, background: rc.color }} />}
+                    </div>
+                    {/* Avatar */}
+                    <div style={{ width: 28, height: 28, borderRadius: "50%", overflow: "hidden", border: `1.5px solid ${rc.color}50`, background: DS.bgCard, flexShrink: 0 }}>
+                      {m.avatar
+                        ? <img src={m.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: rc.color, fontSize: 11 }}>{rc.symbol}</div>
+                      }
+                    </div>
+                    {/* Name + rank */}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ color: DS.text2, fontSize: 12, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.name}</div>
+                      <div style={{ color: rc.color, fontSize: 9, fontFamily: DS.mono }}>{rc.symbol} {rc.label} · Lv.{m.level}</div>
+                    </div>
+                    {/* LP amount preview */}
+                    {isSelected && memberAmt > 0 && (
+                      <div style={{ color: sc.color, fontSize: 11, fontFamily: DS.mono, fontWeight: 700, flexShrink: 0 }}>
+                        +{fmtLP(memberAmt)}
+                      </div>
+                    )}
+                  </div>
                 );
               })}
-            </select>
+            </div>
           </div>
 
           {/* Project size */}
@@ -410,21 +521,22 @@ function AddLPModal({
 
           {/* Amount */}
           <div>
-            <label style={labelStyle}>SỐ LP (để trống = tự tính)</label>
+            <label style={labelStyle}>
+              {source === "manual" || source === "bonus" || source === "auto"
+                ? "SỐ LP (cố định cho mỗi người)"
+                : "SỐ LP (để trống = tự tính theo rank)"}
+            </label>
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
               <input type="number" value={amount || ""} onChange={e => setAmount(Number(e.target.value))}
-                placeholder={`${calcAmount()} LP (tự tính)`}
+                placeholder={source === "manual" ? "Nhập số LP..." : `Tự tính theo rank`}
                 style={{ ...inputStyle, flex: 1, color: DS.green, fontFamily: DS.mono }} />
-              <button onClick={() => setAmount(calcAmount())}
-                style={{ display: "flex", alignItems: "center", gap: 4, padding: "8px 12px", borderRadius: 12, background: `${DS.blue}12`, border: `1px solid ${DS.blue}25`, color: DS.blue, cursor: "pointer", fontSize: 11 }}>
-                <RefreshCw size={11} /> Auto
-              </button>
+              {source !== "manual" && source !== "bonus" && source !== "auto" && (
+                <button onClick={() => setAmount(0)}
+                  style={{ display: "flex", alignItems: "center", gap: 4, padding: "8px 12px", borderRadius: 12, background: `${DS.blue}12`, border: `1px solid ${DS.blue}25`, color: DS.blue, cursor: "pointer", fontSize: 11, whiteSpace: "nowrap" }}>
+                  <RefreshCw size={11} /> Auto
+                </button>
+              )}
             </div>
-            {(amount > 0 || calcAmount() > 0) && (
-              <div style={{ color: DS.text5, fontSize: 11, marginTop: 4, fontFamily: DS.mono }}>
-                ≈ {fmtVND((amount || calcAmount()) * rate.lp_to_vnd)} VND
-              </div>
-            )}
           </div>
 
           {/* Description */}
@@ -434,27 +546,53 @@ function AddLPModal({
               placeholder={sc.labelVi} style={inputStyle} />
           </div>
 
-          {/* Preview */}
-          <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", borderRadius: 12, background: `${sc.color}08`, border: `1px solid ${sc.color}20` }}>
-            <div style={{ width: 36, height: 36, borderRadius: "50%", overflow: "hidden", border: `2px solid ${rc.color}50`, flexShrink: 0, background: DS.bgCard2 }}>
-              {selectedMember?.avatar
-                ? <img src={selectedMember.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: rc.color, fontSize: 14 }}>{rc.symbol}</div>
-              }
+          {/* Preview summary */}
+          {selectedIds.size > 0 && (
+            <div style={{ padding: "12px 14px", borderRadius: 12, background: `${sc.color}08`, border: `1px solid ${sc.color}20` }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                <span style={{ color: DS.text3, fontSize: 12 }}>
+                  <strong>{selectedIds.size}</strong> thành viên được chọn
+                </span>
+                <span style={{ color: sc.color, fontFamily: DS.mono, fontWeight: 700, fontSize: 14 }}>
+                  Tổng: +{fmtLP(totalLpPreview)}
+                </span>
+              </div>
+              <div style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono }}>
+                ≈ {fmtVND(totalLpPreview * rate.lp_to_vnd)} VND · {sc.labelVi}
+              </div>
             </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ color: DS.text2, fontSize: 12, fontWeight: 700 }}>{selectedMember?.name ?? "—"}</div>
-              <div style={{ color: DS.text5, fontSize: 10 }}>{sc.labelVi} · {rk}</div>
-            </div>
-            <div style={{ textAlign: "right" }}>
-              <div style={{ color: sc.color, fontFamily: DS.mono, fontWeight: 700, fontSize: 14 }}>+{fmtLP(amount || calcAmount())}</div>
-              <div style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono }}>{fmtVND((amount || calcAmount()) * rate.lp_to_vnd)} VND</div>
-            </div>
-          </div>
+          )}
 
-          <button onClick={handleSave} disabled={saving || !memberId || !amount}
-            style={{ width: "100%", background: (!memberId || !amount || saving) ? "rgba(79,125,243,0.3)" : GRD.primary, color: "#fff", border: "none", borderRadius: 12, padding: "12px", cursor: (!memberId || !amount || saving) ? "not-allowed" : "pointer", fontSize: 14, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, boxShadow: (!memberId || !amount || saving) ? "none" : "0 0 20px rgba(129,140,248,0.25)" }}>
-            {saving ? <><Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> Đang cấp...</> : <><Send size={14} /> Cấp LP ngay</>}
+          {/* Progress bar */}
+          {progress && (
+            <div style={{ padding: "10px 14px", borderRadius: 12, background: DS.bgCard2, border: `1px solid ${DS.border}` }}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+                <span style={{ color: DS.text3, fontSize: 11 }}>Đang cấp LP...</span>
+                <span style={{ color: DS.blue, fontSize: 11, fontFamily: DS.mono }}>{progress.done}/{progress.total}</span>
+              </div>
+              <div style={{ height: 4, background: DS.border, borderRadius: 99, overflow: "hidden" }}>
+                <div style={{ height: "100%", width: `${(progress.done / progress.total) * 100}%`, background: DS.blue, borderRadius: 99, transition: "width 0.3s" }} />
+              </div>
+              {progress.errors.length > 0 && (
+                <div style={{ marginTop: 8 }}>
+                  {progress.errors.map((e, i) => (
+                    <div key={i} style={{ color: DS.red, fontSize: 10, fontFamily: DS.mono }}>{e}</div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          <button onClick={handleSave} disabled={saving || selectedIds.size === 0 || (amount <= 0 && (source === "manual" || source === "bonus" || source === "auto"))}
+            style={{
+              width: "100%",
+              background: (selectedIds.size === 0 || saving || (amount <= 0 && (source === "manual" || source === "bonus" || source === "auto"))) ? "rgba(79,125,243,0.3)" : GRD.primary,
+              color: "#fff", border: "none", borderRadius: 12, padding: "12px",
+              cursor: (selectedIds.size === 0 || saving) ? "not-allowed" : "pointer",
+              fontSize: 14, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+              boxShadow: (selectedIds.size === 0 || saving) ? "none" : "0 0 20px rgba(129,140,248,0.25)",
+            }}>
+            {saving ? <><Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> Đang cấp {progress ? `${progress.done}/${progress.total}` : "..."}...</> : <><Send size={14} /> Cấp LP cho {selectedIds.size} thành viên</>}
           </button>
         </div>
       </motion.div>

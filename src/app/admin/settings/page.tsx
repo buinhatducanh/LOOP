@@ -283,6 +283,433 @@ function SettingRow({ setting, onSave, saving }: { setting: Setting; onSave: (ke
   );
 }
 
+const ALL_ADMIN_TABS = [
+ { id: "overview", group: "core", label: "Tổng quan" },
+ { id: "orders", group: "core", label: "Đơn hàng" },
+ { id: "members", group: "core", label: "Nhân sự" },
+ { id: "departments", group: "core", label: "Phòng ban" },
+ { id: "projects", group: "project", label: "Dự án" },
+ { id: "services", group: "project", label: "Dịch vụ" },
+ { id: "quotation", group: "project", label: "Báo giá" },
+ { id: "portfolio", group: "project", label: "Portfolio" },
+ { id: "projects_completed", group: "project", label: "Dự án hoàn thành" },
+ { id: "academy", group: "edu", label: "Học viện" },
+ { id: "blog", group: "edu", label: "Blog" },
+ { id: "media", group: "edu", label: "Media" },
+ { id: "revenue", group: "finance", label: "Doanh thu" },
+ { id: "clients", group: "finance", label: "Khách hàng" },
+ { id: "lp", group: "finance", label: "LP" },
+ { id: "lp_manage", group: "finance", label: "Quản lý LP" },
+ { id: "income_tax", group: "finance", label: "Thuế" },
+ { id: "web_packages", group: "finance", label: "Gói Web" },
+ { id: "effects", group: "system", label: "Hiệu ứng" },
+ { id: "notification_center", group: "system", label: "Thông báo" },
+ { id: "settings", group: "system", label: "Cài đặt" },
+ { id: "quests_events", group: "system", label: "Quest & Events" },
+ { id: "leaderboard_admin", group: "system", label: "Bảng xếp hạng" },
+ { id: "analytics", group: "system", label: "Phân tích" },
+ { id: "figma_demos", group: "system", label: "Figma Demos" },
+ { id: "kanban", group: "system", label: "Kanban" },
+ { id: "revenue_split", group: "finance", label: "Chia doanh thu" },
+ { id: "off_system_payments", group: "finance", label: "Chi phí ngoài" },
+];
+
+const TAB_GROUPS: Record<string, string> = {
+ core: "Core", project: "Dự án", edu: "Giáo dục", finance: "Tài chính", system: "Hệ thống",
+};
+
+const DEPARTMENTS = [
+ { key: "engineering", label: "Kỹ thuật" },
+ { key: "design", label: "Thiết kế" },
+ { key: "media", label: "Media" },
+ { key: "marketing", label: "Marketing" },
+ { key: "sales", label: "Kinh doanh" },
+ { key: "finance", label: "Tài chính" },
+ { key: "hr", label: "Nhân sự" },
+ { key: "management", label: "Quản lý" },
+];
+
+const SYSTEM_ROLES = [
+ { key: "member", label: "Member", level: 6 },
+ { key: "qa", label: "QA", level: 5 },
+ { key: "media", label: "Media", level: 4 },
+ { key: "project_manager", label: "PM", level: 3 },
+ { key: "hr", label: "HR", level: 2 },
+ { key: "admin", label: "Admin", level: 1 },
+ { key: "super_admin", label: "Super Admin", level: 0 },
+ { key: "ceo", label: "CEO", level: -1 },
+];
+
+type MemberPerm = {
+ memberId: string;
+ name: string;
+ role: string;
+ roleLevel: number;
+ departmentId: string | null;
+ isDeptHead: boolean;
+ tabPermissions: string[];
+};
+
+type MemberRow = {
+ id: string;
+ name: string;
+ role: string;
+ roleLevel: number;
+ departmentId: string | null;
+ isDeptHead: boolean;
+ tabPermissions: string[];
+ avatar?: string | null;
+};
+
+function PermissionsManagement() {
+ const { t } = useAdminTranslations();
+ const qc = useQueryClient();
+ const [selectedId, setSelectedId] = useState<string | null>(null);
+ const [search, setSearch] = useState("");
+ const [saving, setSaving] = useState(false);
+ const [success, setSuccess] = useState(false);
+ const [error, setError] = useState("");
+
+ const { data: membersData, isLoading: membersLoading } = useQuery<{ data: MemberRow[]; pagination: unknown }>({
+ queryKey: ["admin", "permissions", "members"],
+ queryFn: () => adminApi.get("/api/admin/team?limit=100"),
+ });
+
+ const { data: permData, isLoading: permLoading } = useQuery<{ data: MemberPerm }>({
+ queryKey: ["admin", "permissions", "member", selectedId],
+ queryFn: () => adminApi.get("/api/admin/permissions?memberId=" + selectedId),
+ enabled: !!selectedId,
+ });
+
+ const members: MemberRow[] = membersData?.data ?? [];
+ const perm: MemberPerm | undefined = permData?.data;
+
+ const filtered = members.filter(m =>
+ !search || (m.name ?? "").toLowerCase().includes(search.toLowerCase()) || (m.role ?? "").toLowerCase().includes(search.toLowerCase())
+ );
+
+ const [localPerms, setLocalPerms] = useState<string[]>([]);
+ const [localDept, setLocalDept] = useState<string | null>(null);
+ const [localDeptHead, setLocalDeptHead] = useState(false);
+ const [localRole, setLocalRole] = useState("member");
+
+ useEffect(() => {
+ if (perm) {
+ setLocalPerms(perm.tabPermissions ?? []);
+ setLocalDept(perm.departmentId ?? null);
+ setLocalDeptHead(perm.isDeptHead ?? false);
+ setLocalRole(perm.role ?? "member");
+ }
+ }, [perm]);
+
+ const toggleTab = (tabId: string) => {
+ setLocalPerms(prev => prev.includes(tabId) ? prev.filter(t => t !== tabId) : [...prev, tabId]);
+ };
+
+ const toggleAll = () => {
+ if (localPerms.length === ALL_ADMIN_TABS.length) {
+ setLocalPerms([]);
+ } else {
+ setLocalPerms(ALL_ADMIN_TABS.map(t => t.id));
+ }
+ };
+
+ const handleSave = async () => {
+ if (!selectedId) return;
+ setSaving(true);
+ setError("");
+ try {
+ await adminApi.put("/api/admin/permissions/" + selectedId, {
+ tabPermissions: localPerms,
+ departmentId: localDept,
+ isDeptHead: localDeptHead,
+ systemRole: localRole,
+ });
+ setSuccess(true);
+ qc.invalidateQueries({ queryKey: ["admin", "permissions", "member", selectedId] });
+ qc.invalidateQueries({ queryKey: ["admin", "permissions", "members"] });
+ setTimeout(() => setSuccess(false), 3000);
+ } catch (err: unknown) {
+ setError(err instanceof Error ? err.message : "Lưu thất bại");
+ } finally {
+ setSaving(false);
+ }
+ };
+
+ const hasChanges = perm && (
+ JSON.stringify([...localPerms].sort()) !== JSON.stringify([...(perm.tabPermissions ?? [])].sort()) ||
+ localDept !== (perm.departmentId ?? null) ||
+ localDeptHead !== (perm.isDeptHead ?? false) ||
+ localRole !== (perm.role ?? "member")
+ );
+
+ return (
+ <div>
+ {/* Header */}
+ <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.25rem" }}>
+ <div>
+ <div style={{ color: DS.text2, fontSize: 13, fontWeight: 600, marginBottom: 2 }}>
+ Phân quyền Admin
+ </div>
+ <div style={{ color: DS.text4, fontSize: 11 }}>
+ Chọn nhân viên bên trái để gán tab permissions
+ </div>
+ </div>
+ <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+ {success && (
+ <motion.div
+ initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }}
+ style={{ display: "flex", alignItems: "center", gap: 4, color: DS.green, fontSize: 12, fontFamily: DS.mono }}
+ >
+ <CheckCircle2 size={13} /> Đã lưu
+ </motion.div>
+ )}
+ <button
+ onClick={handleSave}
+ disabled={saving || !hasChanges}
+ style={{
+ display: "flex", alignItems: "center", gap: 6,
+ padding: "6px 14px",
+ background: saving || !hasChanges ? DS.text4 : DS.green,
+ border: "none", borderRadius: 8, color: "#fff",
+ fontSize: 12, fontWeight: 600, cursor: saving || !hasChanges ? "not-allowed" : "pointer",
+ opacity: saving || !hasChanges ? 0.5 : 1,
+ }}
+ >
+ {saving ? <><Loader2 size={12} style={{ animation: "spin 1s linear infinite" }} /> Đang lưu...</> : <><Save size={12} /> Lưu thay đổi</>}
+ </button>
+ </div>
+ </div>
+
+ {/* Two-column layout */}
+ <div style={{ display: "grid", gridTemplateColumns: "280px 1fr", gap: "1rem" }}>
+ {/* Member list */}
+ <div style={{ background: DS.bg, border: `1px solid ${DS.border}`, borderRadius: 10, overflow: "hidden" }}>
+ <div style={{ padding: "10px 12px", borderBottom: `1px solid ${DS.border}`, background: "rgba(255,255,255,0.02)" }}>
+ <input
+ value={search}
+ onChange={e => setSearch(e.target.value)}
+ placeholder="Tìm tên hoặc role..."
+ style={{
+ width: "100%", background: DS.bgCard, border: `1px solid ${DS.border}`,
+ borderRadius: 8, padding: "6px 10px", color: DS.text, fontSize: 12, outline: "none",
+ }}
+ />
+ </div>
+ <div style={{ maxHeight: 500, overflowY: "auto" }}>
+ {membersLoading ? (
+ <div style={{ display: "flex", justifyContent: "center", padding: 24 }}>
+ <div style={{ width: 20, height: 20, border: `2px solid ${DS.border}`, borderTop: `2px solid ${DS.blue}`, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+ </div>
+ ) : filtered.length === 0 ? (
+ <div style={{ textAlign: "center", padding: "1.5rem", color: DS.text4, fontSize: 12 }}>Không tìm thấy</div>
+ ) : filtered.map(m => {
+ const isActive = selectedId === m.id;
+ return (
+ <button
+ key={m.id}
+ onClick={() => { setSelectedId(m.id); setError(""); setSuccess(false); }}
+ style={{
+ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "10px 12px",
+ background: isActive ? "rgba(59,130,246,0.1)" : "transparent",
+ border: "none", borderBottom: `1px solid ${DS.border}`,
+ borderLeft: isActive ? `2px solid ${DS.blue}` : "2px solid transparent",
+ cursor: "pointer", textAlign: "left",
+ }}
+ >
+ <div style={{
+ width: 32, height: 32, borderRadius: "50%",
+ background: isActive ? DS.blue : DS.bgCard,
+ border: `1px solid ${isActive ? DS.blue : DS.border}`,
+ display: "flex", alignItems: "center", justifyContent: "center",
+ fontSize: 12, fontWeight: 700, color: isActive ? "#fff" : DS.text3, flexShrink: 0,
+ overflow: "hidden",
+ }}>
+ {m.avatar ? <img src={m.avatar} alt={m.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : (m.name?.charAt(0)?.toUpperCase() ?? "?")}
+ </div>
+ <div style={{ flex: 1, minWidth: 0 }}>
+ <div style={{ color: isActive ? DS.blue : DS.text2, fontSize: 12, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+ {m.name ?? "—"}
+ </div>
+ <div style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+ {m.role ?? "member"}
+ </div>
+ </div>
+ {m.isDeptHead && <span style={{ fontSize: 14 }}>👑</span>}
+ </button>
+ );
+ })}
+ </div>
+ </div>
+
+ {/* Permission editor */}
+ {selectedId ? (
+ permLoading ? (
+ <div style={{ display: "flex", justifyContent: "center", alignItems: "center", padding: 48 }}>
+ <div style={{ width: 24, height: 24, border: `2px solid ${DS.border}`, borderTop: `2px solid ${DS.blue}`, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+ </div>
+ ) : perm ? (
+ <div>
+ {/* Member info banner */}
+ <div style={{
+ display: "flex", alignItems: "center", gap: 12, padding: "0.875rem",
+ background: "rgba(59,130,246,0.06)", border: `1px solid rgba(59,130,246,0.15)`,
+ borderRadius: 10, marginBottom: "1rem",
+ }}>
+ <div style={{
+ width: 44, height: 44, borderRadius: "50%",
+ background: DS.blue, border: `2px solid ${DS.blue}60`,
+ display: "flex", alignItems: "center", justifyContent: "center",
+ fontSize: 16, fontWeight: 800, color: "#fff",
+ overflow: "hidden", flexShrink: 0,
+ }}>
+ {perm.name?.charAt(0)?.toUpperCase() ?? "?"}
+ </div>
+ <div>
+ <div style={{ color: DS.text, fontSize: 14, fontWeight: 700 }}>{perm.name}</div>
+ <div style={{ display: "flex", gap: 6, marginTop: 4, flexWrap: "wrap" }}>
+ <span style={{ fontSize: 10, fontFamily: DS.mono, color: DS.blue, background: "rgba(59,130,246,0.1)", border: `1px solid rgba(59,130,246,0.2)`, borderRadius: 6, padding: "1px 8px" }}>
+ {perm.role ?? "member"}
+ </span>
+ {perm.isDeptHead && (
+ <span style={{ fontSize: 10, fontFamily: DS.mono, color: DS.amber, background: "rgba(234,179,8,0.1)", border: `1px solid rgba(234,179,8,0.2)`, borderRadius: 6, padding: "1px 8px" }}>
+ 👑 Trưởng phòng
+ </span>
+ )}
+ </div>
+ </div>
+ </div>
+
+ {/* System Role */}
+ <div style={{ marginBottom: "1rem" }}>
+ <label style={{ color: DS.text3, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.1em", display: "block", marginBottom: "0.5rem" }}>
+ SYSTEM ROLE
+ </label>
+ <select
+ value={localRole}
+ onChange={e => setLocalRole(e.target.value)}
+ style={{
+ width: "100%", background: DS.bg, border: `1px solid ${DS.border}`,
+ borderRadius: 8, padding: "8px 12px", color: DS.text, fontSize: 13, outline: "none",
+ cursor: "pointer",
+ }}
+ >
+ {SYSTEM_ROLES.map(r => (
+ <option key={r.key} value={r.key}>{r.label} (level {r.level})</option>
+ ))}
+ </select>
+ </div>
+
+ {/* Department */}
+ <div style={{ marginBottom: "1rem" }}>
+ <label style={{ color: DS.text3, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.1em", display: "block", marginBottom: "0.5rem" }}>
+ PHÒNG BAN
+ </label>
+ <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+ {DEPARTMENTS.map(d => (
+ <button
+ key={d.key}
+ onClick={() => setLocalDept(localDept === d.key ? null : d.key)}
+ style={{
+ padding: "4px 10px", fontSize: 11, fontFamily: DS.mono,
+ background: localDept === d.key ? "rgba(59,130,246,0.15)" : DS.bg,
+ border: `1px solid ${localDept === d.key ? DS.blue : DS.border}`,
+ borderRadius: 6, color: localDept === d.key ? DS.blue : DS.text3,
+ cursor: "pointer",
+ }}
+ >
+ {d.label}
+ </button>
+ ))}
+ </div>
+ </div>
+
+ {/* Dept Head toggle */}
+ <div style={{ marginBottom: "1rem", display: "flex", alignItems: "center", gap: 8 }}>
+ <Toggle checked={localDeptHead} onChange={v => setLocalDeptHead(v)} />
+ <span style={{ color: DS.text2, fontSize: 13 }}>Trưởng phòng</span>
+ </div>
+
+ {/* Tab permissions */}
+ <div>
+ <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.5rem" }}>
+ <label style={{ color: DS.text3, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.1em" }}>
+ TAB PERMISSIONS
+ </label>
+ <button
+ onClick={toggleAll}
+ style={{
+ fontSize: 10, fontFamily: DS.mono, color: DS.blue,
+ background: "transparent", border: "none", cursor: "pointer",
+ }}
+ >
+ {localPerms.length === ALL_ADMIN_TABS.length ? "Bỏ chọn tất cả" : "Chọn tất cả"}
+ </button>
+ </div>
+
+ {Object.entries(TAB_GROUPS).map(([group, groupLabel]) => {
+ const tabs = ALL_ADMIN_TABS.filter(t => t.group === group);
+ return (
+ <div key={group} style={{ marginBottom: "0.875rem" }}>
+ <div style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.05em", marginBottom: "0.375rem", paddingLeft: 2 }}>
+ {groupLabel}
+ </div>
+ <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+ {tabs.map(tab => {
+ const checked = localPerms.includes(tab.id);
+ return (
+ <button
+ key={tab.id}
+ onClick={() => toggleTab(tab.id)}
+ style={{
+ padding: "4px 10px", fontSize: 11, fontFamily: DS.mono,
+ background: checked ? "rgba(59,130,246,0.15)" : DS.bg,
+ border: `1px solid ${checked ? DS.blue : DS.border}`,
+ borderRadius: 6, color: checked ? DS.blue : DS.text3,
+ cursor: "pointer",
+ transition: "all 0.15s",
+ }}
+ >
+ {checked && "✓ "}
+ {tab.label}
+ </button>
+ );
+ })}
+ </div>
+ </div>
+ );
+ })}
+
+ <div style={{ color: DS.text4, fontSize: 11, marginTop: "0.5rem" }}>
+ {localPerms.length} / {ALL_ADMIN_TABS.length} tabs được phép
+ </div>
+ </div>
+
+ {error && (
+ <div style={{ marginTop: "0.875rem", padding: "0.625rem 0.875rem", borderRadius: "0.5rem", background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)", color: "#FCA5A5", fontSize: "0.8125rem" }}>
+ {error}
+ </div>
+ )}
+ </div>
+ ) : (
+ <div style={{ display: "flex", justifyContent: "center", alignItems: "center", padding: 48, color: DS.text4, fontSize: 13 }}>
+ Không tìm thấy thông tin
+ </div>
+ )
+ ) : (
+ <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", padding: 64, gap: 12, background: DS.bg, border: `1px solid ${DS.border}`, borderRadius: 10 }}>
+ <Shield size={40} style={{ color: DS.text4, opacity: 0.4 }} />
+ <div style={{ color: DS.text4, fontSize: 13, textAlign: "center" }}>
+ Chọn một nhân viên để gán phân quyền
+ </div>
+ </div>
+ )}
+ </div>
+ </div>
+ );
+}
+
+
 export default function SettingsPage() {
   const { t } = useAdminTranslations();
   const [section, setSection] = useState("general");

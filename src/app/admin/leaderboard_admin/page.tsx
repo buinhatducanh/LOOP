@@ -52,6 +52,17 @@ type LeaderboardEntry = {
   totalLp: number;
 };
 
+type CommissionEntry = {
+ id: string;
+ name: string;
+ avatar: string | null;
+ systemRole: string | null;
+ departmentKey: string | null;
+ completedCommission: number;
+ totalSalesCommission: number;
+ dealCount: number;
+};
+
 type AwardForm = {
   memberId: string;
   projectId: string;
@@ -583,7 +594,8 @@ function KpiBar({ entries }: { entries: LeaderboardEntry[] }) {
 export default function LeaderboardAdminPage() {
   const [sort, setSort] = useState<"rank" | "level" | "lp">("rank");
   const [awardTarget, setAwardTarget] = useState<LeaderboardEntry | null>(null);
-  const [showTop, setShowTop] = useState(20);
+ const [showTop, setShowTop] = useState(20);
+ const [viewTab, setViewTab] = useState<"lp" | "commission">("lp");
 
   const { data, isLoading, isFetching, refetch } = useQuery({
     queryKey: ["admin", "rank", "leaderboard", { sort }],
@@ -598,6 +610,15 @@ export default function LeaderboardAdminPage() {
   });
 
   const entries = data?.data ?? [];
+
+ // Sales commission leaderboard query
+ const { data: commData, isLoading: commLoading, isFetching: commFetching, refetch: commRefetch } = useQuery<{ data: CommissionEntry[] }>({
+ queryKey: ["admin", "sales-commission", "leaderboard"],
+ queryFn: () => adminApi.get("/api/admin/sales-commission/leaderboard"),
+ staleTime: 60_000,
+ enabled: viewTab === "commission",
+ });
+ const commEntries: CommissionEntry[] = commData?.data ?? [];
 
   // Apply local top-N filter
   const displayEntries = entries.slice(0, showTop);

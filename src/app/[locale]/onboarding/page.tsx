@@ -999,7 +999,7 @@ function SlideWrapper({ children, direction }: { children: React.ReactNode; dire
   return (
     <motion.div
       className="absolute inset-0 overflow-y-auto"
-      initial={{ x: direction > 0 ? '100%' : '-100%', opacity: 0 }}
+      initial={{ x: direction === 0 ? 0 : (direction > 0 ? '100%' : '-100%'), opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       exit={{ x: direction > 0 ? '-100%' : '100%', opacity: 0 }}
       transition={{ type: 'spring', stiffness: 200, damping: 28 }}
@@ -1042,7 +1042,7 @@ const SLIDE_LABELS = ['Chào mừng', 'Về chúng tôi', 'Dịch vụ', 'Tăng 
 
 export default function OnboardingPage() {
   const [current, setCurrent] = useState(0);
-  const [direction, setDirection] = useState(1);
+  const [direction, setDirection] = useState(0);
   const total = 5;
 
   const handleComplete = useCallback(() => {
@@ -1096,7 +1096,7 @@ export default function OnboardingPage() {
 
       {/* Slide content — extra bottom padding so floating social buttons don't cover nav */}
       <div className="relative w-full h-full pb-48" style={{ zIndex: 1 }}>
-        <AnimatePresence mode="wait" initial={false}>
+        <AnimatePresence mode="wait">
           {slides[current]}
         </AnimatePresence>
       </div>

@@ -8,6 +8,16 @@
 
 ---
 
+## ⚠️ TỐI THƯỢNG: SPRINT HIỆN TẠI (PHASE 1 - STABILIZE)
+
+Dưới sự chỉ đạo của Product Owner, chiến lược phát triển Mobile App và SaaS B2B hiện đang được **ĐÓNG BĂNG (DEFERRED)**.
+Sức lực lập trình viên và AI Agent hiện tại sẽ tập trung 100% vào việc:
+1. **Khóa Lõi (Freeze the Core):** Ngừng đẻ thêm luật Gamification mới. Tập trung xử lý bug ở Admin Kanban và Off-System Payment trên nền Web.
+2. **Cơ chế Trần (Cap limit) LP:** Soát xét và đảm bảo không có lạm phát điểm LP (LP Inflation). Mọi tính năng cộng LP tự động phải bị kiểm soát chặt.
+3. Không nhảy sang lập trình Mobile App cho đến khi Web thật sự trơn tru 100% không còn technical debt.
+
+---
+
 ## ⚠️ CRITICAL — Production Codebase Only
 
 ```
@@ -37,7 +47,9 @@ All development happens in `/src/`. **FE/** and **DESIGN LOOPS/** prototype fold
 
 | File | Mục đích |
 |------|-----------|
-| `.claude/rules/loop-business-logic.md` | **Source of truth** cho tất cả business facts đã verify vs code. LP rates, rank levels, order statuses, kanban columns, quest system. |
+| `docs/BUSINESS_LOGIC_ANALYSIS.md` | **[NEW] TÀI LIỆU SUPREME ANALYSIS (Source of Truth)**. Ghi nhận 100% logic toàn hệ sinh thái Web & Mobile, phân rã VIP, Off-system, và 3-Scope Quests. Đọc MỘT ĐI LÀ HIỂU HẾT DỰ ÁN. |
+| `.claude/rules/mobile-app-strategy.md` | Hướng dẫn chiến lược triển khai Native Mobile App, React Native Expo + NativeWind UI Tokens |
+| `.claude/rules/loop-business-logic-core.md` | Phân rã cấu trúc kỹ thuật Database cụ thể cho logic (Code level facts). |
 | `.claude/rules/api-conventions.md` | API response shapes, HTTP status codes, endpoint naming, pagination |
 | `.claude/rules/code-style.md` | TypeScript conventions, naming, async/await, null handling |
 | `.claude/rules/database.md` | Prisma conventions, indexes, transactions |

@@ -514,43 +514,56 @@ function HeroSection({ locale }: { locale: string }) {
 
           </div>
 
-          {/* Floating LP badge */}
-          <motion.div
-            style={{
-              position: "absolute", top: "-1rem", right: "-0.75rem",
-              padding: "0.625rem 0.875rem", borderRadius: "1rem",
-              background: "rgba(1,21,50,0.60)", border: "1px solid rgba(107,61,245,0.45)",
-              backdropFilter: "blur(20px)",
-              boxShadow: "0 8px 32px rgba(0,0,0,0.5), 0 0 20px rgba(139,92,246,0.2)",
-            }}
-            animate={{ y: [0, -8, 0], opacity: [0.9, 1, 0.9] }}
-            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}>
-              <Zap size={13} style={{ color: DS.purple }} />
-              <span style={{ color: DS.purple, fontFamily: DS.heading, fontSize: "0.875rem", fontWeight: 700 }}>+500 LP</span>
-            </div>
-          </motion.div>
+ {/* Floating anniversary badge — bottom left */}
+ <motion.div
+ style={{
+ position: "absolute", bottom: "-0.75rem", left: "-0.75rem",
+ padding: "0.625rem 0.875rem", borderRadius: "1rem",
+ background: "rgba(1,21,50,0.60)", border: "1px solid rgba(230,199,95,0.3)",
+ backdropFilter: "blur(20px)",
+ boxShadow: "0 8px 32px rgba(0,0,0,0.5), 0 0 16px rgba(230,199,95,0.15)",
+ }}
+ animate={{ y: [0, 6, 0], opacity: [0.85, 1, 0.85] }}
+ transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+ >
+ <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+ <span style={{ fontSize: "1rem" }}>🏆</span>
+ <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
+ <span style={{ color: DS.gold, fontFamily: DS.heading, fontSize: "0.75rem", fontWeight: 700, lineHeight: 1.2 }}>LOOP</span>
+ <span style={{ color: DS.gold, fontFamily: DS.heading, fontSize: "0.625rem", fontWeight: 700, lineHeight: 1.2, opacity: 0.75 }}>2 NĂM</span>
+ </div>
+ </div>
+ </motion.div>
 
-          {/* Floating rank card */}
-          <motion.div
-            style={{
-              position: "absolute", bottom: "-0.75rem", left: "-0.75rem",
-              padding: "0.625rem 0.875rem", borderRadius: "1rem",
-              background: "rgba(1,21,50,0.60)", border: "1px solid rgba(230,199,95,0.25)",
-              backdropFilter: "blur(20px)",
-              boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
-            }}
-            animate={{ y: [0, 6, 0] }}
-            transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}>
-              <span style={{ color: "#E6C75F", fontSize: "0.75rem" }}>★</span>
-              <span style={{ color: "#E6C75F", fontFamily: DS.heading, fontSize: "0.75rem", fontWeight: 700 }}>GOLD</span>
-              <ArrowRight size={10} style={{ color: DS.text5 }} />
-              <span style={{ color: DS.cyan, fontFamily: DS.heading, fontSize: "0.75rem", fontWeight: 700 }}>PLATINUM</span>
-            </div>
-          </motion.div>
+ {/* Floating Diamond badge — top right */}
+ <motion.div
+ style={{
+ position: "absolute", top: "-1rem", right: "-0.75rem",
+ padding: "0.625rem 0.875rem", borderRadius: "1rem",
+ background: "rgba(1,21,50,0.60)",
+ border: "1px solid rgba(129,140,248,0.5)",
+ backdropFilter: "blur(20px)",
+ boxShadow: "0 8px 32px rgba(0,0,0,0.5), 0 0 20px rgba(129,140,248,0.3)",
+ }}
+ animate={{
+ y: [0, -8, 0],
+ opacity: [0.9, 1, 0.9],
+ boxShadow: [
+ "0 8px 32px rgba(0,0,0,0.5), 0 0 20px rgba(129,140,248,0.3)",
+ "0 8px 40px rgba(0,0,0,0.5), 0 0 35px rgba(129,140,248,0.55)",
+ "0 8px 32px rgba(0,0,0,0.5), 0 0 20px rgba(129,140,248,0.3)",
+ ],
+ }}
+ transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+ >
+ <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+ <span style={{ fontSize: "1rem", color: "#818CF8" }}>✦</span>
+ <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
+ <span style={{ color: "#818CF8", fontFamily: DS.heading, fontSize: "0.75rem", fontWeight: 700, lineHeight: 1.2 }}>DIAMOND</span>
+ <span style={{ color: "#818CF8", fontFamily: DS.heading, fontSize: "0.625rem", fontWeight: 700, lineHeight: 1.2, opacity: 0.7 }}>RANK TIER</span>
+  </div>
+ </div>
+ </motion.div>
         </motion.div>
       </div>
 

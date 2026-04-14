@@ -4,6 +4,8 @@
 > Cập nhật ngay khi có thay đổi. Không được phép contradict với file này.
 
 ---
+> **⚡ TỐI THƯỢNG SPRINT HIỆN TẠI (PHASE 1 - CỐT LÕI):** Băng giá mọi tính năng Gamification mới. Đóng băng kế hoạch (Deferred) Mobile App và SaaS B2B. Tập trung 100% hỏa lực vào luồng Kanban (Admin) và dọn dẹp dòng tiền Off-system (Cap Limit LP) trên Web trước khi đi tiếp.
+---
 
 ## MỤC LỤC
 

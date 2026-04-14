@@ -40,6 +40,7 @@
       "settings": "Settings",
       "revenue_split": "Revenue Split",
       "off_system_payments": "Off-System Payments",
+ "commission": "Sales Commission",
       "goHome": "Go to Home"
     },
     "footer": {
