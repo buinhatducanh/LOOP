@@ -980,12 +980,13 @@ export function OnboardingClient({ onComplete }: { onComplete: () => void }) {
   const prev = () => goTo(current - 1);
 
   const slides = [
-    <SlideWelcome key="welcome" direction={direction} />,
-    <SlideAbout key="about" direction={direction} />,
-    <SlideServices key="services" direction={direction} />,
-    <SlideGrowth key="growth" direction={direction} />,
-    <SlideGetStarted key="start" direction={direction} onComplete={onComplete} />,
-  ];
+ <SlideWelcome key="welcome" direction={direction} />,
+ <SlideAbout key="about" direction={direction} />,
+ <SlideServices key="services" direction={direction} />,
+ <SlideGrowth key="growth" direction={direction} />,
+ <SlideVip key="vip" direction={direction} />,
+ <SlideGetStarted key="start" direction={direction} onComplete={onComplete} />,
+ ];
 
   return (
     <div className="fixed inset-0 z-[200] overflow-hidden" style={{ background: DS.bg }}>

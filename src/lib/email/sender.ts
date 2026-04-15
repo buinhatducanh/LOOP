@@ -506,3 +506,66 @@ export async function sendOrderConfirmation(data: OrderConfirmationEmailData) {
   if (error) console.error("[Email] Order confirmation failed:", error);
   return { error };
 }
+
+// ─── Payment Confirmation Email ─────────────────────────────────────────────────
+
+export interface PaymentConfirmationEmailData {
+ orderNumber: string;
+ customerName: string;
+ customerEmail: string;
+ totalAmount: number;
+ paidAmount: number;
+ paymentMethod: string;
+}
+
+/** Payment confirmed — sent to the customer when admin records a payment */
+export async function sendPaymentConfirmationEmail(data: PaymentConfirmationEmailData) {
+ const fmtVND = (n: number) => Intl.NumberFormat("vi-VN").format(n) + " ₫";
+
+ const methodLabel: Record<string, string> = {
+ vietqr: "VietQR",
+ bank_transfer: "Chuyển khoản ngân hàng",
+ cash: "Tiền mặt",
+ vnpay: "VNPay",
+ momo: "MoMo",
+ cod: "Thanh toán sau",
+ other: "Khác",
+ };
+ const methodText = methodLabel[data.paymentMethod] ?? data.paymentMethod;
+
+ const remaining = data.totalAmount - data.paidAmount;
+
+ const html = htmlShell(
+ `✅ Thanh toán #${data.orderNumber} đã được ghi nhận!`,
+ `<p style="margin:0 0 20px 0;font-size:15px;color:rgba(209,213,219,0.8)">
+ Chào <strong style="color:#fff">${data.customerName}</strong>, chúng tôi đã ghi nhận thanh toán của bạn cho đơn hàng <strong style="color:#8B5CF6">#${data.orderNumber}</strong>.
+ </p>
+
+ <div style="background:rgba(16,185,129,0.08);border-radius:12px;border:1px solid rgba(16,185,129,0.25);padding:24px;margin:0 0 20px 0;text-align:center">
+ <p style="margin:0 0 8px 0;font-size:12px;color:rgba(209,213,219,0.5);text-transform:uppercase;letter-spacing:0.1em">Số tiền đã thanh toán</p>
+ <p style="margin:0;font-size:28px;font-weight:900;color:#10B981">${fmtVND(data.paidAmount)}</p>
+ <p style="margin:8px 0 0 0;font-size:13px;color:rgba(209,213,219,0.5)">Phương thức: <strong style="color:#fff">${methodText}</strong></p>
+ ${remaining > 0 ? `<p style="margin:8px 0 0 0;font-size:13px;color:rgba(209,213,219,0.5)">Còn lại: <strong style="color:#F59E0B">${fmtVND(remaining)}</strong></p>` : ""}
+ </div>
+
+ <div style="background:rgba(255,255,255,0.03);border-radius:10px;padding:16px;margin:0 0 20px 0">
+ <p style="margin:0;font-size:13px;color:rgba(209,213,219,0.6)">
+ 💡 Nếu bạn đã thanh toán bằng VietQR hoặc chuyển khoản, vui lòng chờ 1-2 phút để hệ thống xác nhận. Nếu có thắc mắc, liên hệ <a href="mailto:hello@loop.vn" style="color:#8B5CF6">hello@loop.vn</a>.
+ </p>
+ </div>
+
+ <p style="margin:0;font-size:13px;color:rgba(209,213,219,0.5)">
+ Theo dõi đơn hàng: <a href="https://loops.vn/khach-hang" style="color:#8B5CF6">loops.vn/khach-hang</a>
+ </p>`
+ );
+
+ const { error } = await getResend().emails.send({
+ from: FROM,
+ to: data.customerEmail,
+ subject: `✅ Thanh toán #${data.orderNumber} — ${fmtVND(data.paidAmount)} đã được ghi nhận`,
+ html,
+ });
+
+ if (error) console.error("[Email] Payment confirmation failed:", error);
+ return { error };
+}

@@ -125,11 +125,13 @@ export function WebPurchaseWizard({ locale, isAuthenticated, t }: Props) {
  const [selectedPackage, setSelectedPackage] = useState<WebPackage | null>(null);
 
  // ── Step 3: Domain ──────────────────────────────────────────────────────────
- const [domainQuery, setDomainQuery] = useState("");
+ const [domainBrand, setDomainBrand] = useState(""); // tên thương hiệu
+ const [domainPrimaryTld, setDomainPrimaryTld] = useState("vn"); // đuôi chính đã chọn
  const [domainResults, setDomainResults] = useState<DomainResult[]>([]);
  const [domainSearching, setDomainSearching] = useState(false);
- const [selectedDomain, setSelectedDomain] = useState<DomainResult | null>(null);
  const [domainError, setDomainError] = useState("");
+ const [selectedDomains, setSelectedDomains] = useState<DomainResult[]>([]); // chọn nhiều
+ const [hasSearched, setHasSearched] = useState(false); // đã bấm kiểm tra chưa
 
  // ── Step 4: Hosting ─────────────────────────────────────────────────────────
  const [hostingPlans, setHostingPlans] = useState<HostingPlan[]>([]);
@@ -174,38 +176,45 @@ export function WebPurchaseWizard({ locale, isAuthenticated, t }: Props) {
  setHostingLoading(false);
  }, []);
 
- // ─── Search domain ───────────────────────────────────────────────────────────
- const searchDomain = useCallback(async (keyword: string) => {
- if (keyword.trim().length < 2) {
- setDomainResults([]);
- return;
- }
+ // ─── Search domain (user clicks "Kiểm tra") ───────────────────────────────
+ const searchDomain = useCallback(async () => {
+ if (domainBrand.trim().length < 2) return;
  setDomainSearching(true);
  setDomainError("");
+ setHasSearched(true);
  try {
- const res = await fetch(`/api/pricing/domain-search?q=${encodeURIComponent(keyword)}`);
+ // Send brand name + primary TLD as separate params
+ const params = new URLSearchParams({
+ q: domainBrand.trim(),
+ tld: domainPrimaryTld,
+ });
+ const res = await fetch(`/api/pricing/domain-search?${params}`);
  if (res.ok) {
  const json = await res.json();
  setDomainResults(json.data?.domains ?? []);
  } else {
- setDomainError("Search failed");
+ setDomainError("Tìm kiếm thất bại");
  }
  } catch {
- setDomainError("Network error");
+ setDomainError("Lỗi mạng");
  }
  setDomainSearching(false);
- }, []);
+ }, [domainBrand, domainPrimaryTld]);
 
- // ─── Domain search on input (debounced) ──────────────────────────────────────
- useEffect(() => {
- if (!domainQuery) {
- setDomainResults([]);
- setSelectedDomain(null);
- return;
+ // ─── Toggle domain in selection list ─────────────────────────────────────────
+ const toggleDomain = (d: DomainResult) => {
+ if (!d.available) return;
+ setSelectedDomains((prev) => {
+ const exists = prev.find((x) => x.domain === d.domain);
+ if (exists) {
+ return prev.filter((x) => x.domain !== d.domain);
  }
- const timer = setTimeout(() => searchDomain(domainQuery), 600);
- return () => clearTimeout(timer);
- }, [domainQuery, searchDomain]);
+ return [...prev, d];
+ });
+ };
+
+ // ─── Domain total price ───────────────────────────────────────────────────────
+ const domainsTotalPrice = selectedDomains.reduce((sum, d) => sum + (d.price ?? 0), 0);
 
  // ─── Calculate hosting total ────────────────────────────────────────────────
  const calcHostingTotal = (plan: HostingPlan, term: number) => {
@@ -221,7 +230,7 @@ export function WebPurchaseWizard({ locale, isAuthenticated, t }: Props) {
 
  const totalEstimate =
  (selectedPackage?.price ?? 0) +
- (selectedDomain?.price ?? 0) +
+ domainsTotalPrice +
  selectedHostingTotal;
 
  // ─── Steps config ────────────────────────────────────────────────────────────
@@ -247,7 +256,7 @@ export function WebPurchaseWizard({ locale, isAuthenticated, t }: Props) {
  setSubmitError(t.noPackage);
  return;
  }
- if (!selectedDomain) {
+ if (selectedDomains.length === 0) {
  setSubmitError(t.required);
  return;
  }
@@ -282,22 +291,31 @@ export function WebPurchaseWizard({ locale, isAuthenticated, t }: Props) {
  router.push(`/${locale}/dang-nhap`);
  return;
  }
- if (!selectedPackage || !selectedDomain) return;
+ if (!selectedPackage || selectedDomains.length === 0) return;
  setSubmitting(true);
  setSubmitError("");
 
  try {
+ // Lấy domain đầu tiên làm primary, gửi mảng domains
+ const primaryDomain = selectedDomains[0];
  const res = await fetch("/api/portal/web-purchase", {
  method: "POST",
  headers: { "Content-Type": "application/json" },
  credentials: "include",
  body: JSON.stringify({
- name: `${selectedPackage.nameVi ?? selectedPackage.name} - ${selectedDomain.domain}`,
+ name: `${selectedPackage.nameVi ?? selectedPackage.name} - ${primaryDomain.domain}`,
  packageId: selectedPackage.id,
- domain: selectedDomain.domain,
- domainTld: selectedDomain.domain.split(".").pop(),
+ domain: primaryDomain.domain,
+ domainTld: primaryDomain.domain.split(".").pop(),
  domainTermMonths: 12,
- domainCost: selectedDomain.price,
+ domainCost: domainsTotalPrice,
+ // Gửi mảng tất cả domains đã chọn để BE tạo nhiều CustomerWebsite
+ domains: selectedDomains.map((d) => ({
+ domain: d.domain,
+ tld: d.domain.split(".").pop(),
+ price: d.price,
+ available: d.available,
+ })),
  hostingPlanId: selectedHosting?.id ?? null,
  hostingTermMonths: hostingTerm,
  hostingCost: selectedHostingTotal,
@@ -502,70 +520,237 @@ export function WebPurchaseWizard({ locale, isAuthenticated, t }: Props) {
  {/* Step: Domain search */}
  {step === "domain" && (
  <div>
- <h3 className="mb-2 text-center font-heading text-2xl font-bold text-white">{t.searchDomain}</h3>
- <div className="mx-auto mt-8 max-w-xl">
- <div className="relative">
+ <h3 className="mb-6 text-center font-heading text-2xl font-bold text-white">{t.searchDomain}</h3>
+
+ {/* ── Search form ── */}
+ <div className="mx-auto max-w-xl space-y-3">
+ {/* Brand name input + TLD selector */}
+ <div className="flex gap-3">
  <input
  type="text"
- value={domainQuery}
- onChange={(e) => setDomainQuery(e.target.value)}
- placeholder={t.searchPlaceholder}
- className="w-full rounded-xl border border-slate-700 bg-slate-900/80 px-5 py-4 pr-12 font-mono text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+ value={domainBrand}
+ onChange={(e) => {
+ setDomainBrand(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""));
+ setHasSearched(false);
+ setDomainResults([]);
+ setSelectedDomains([]);
+ }}
+ placeholder="Tên website của bạn (VD: cong-ty-abc)"
+ className="flex-1 rounded-xl border border-slate-700 bg-slate-900/80 px-4 py-3 font-mono text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
  />
- <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500">.vn</span>
- </div>
 
- {domainSearching && (
- <div className="mt-4 flex items-center gap-2 text-sm text-slate-400">
- <div className="h-4 w-4 animate-spin rounded-full border border-indigo-500 border-t-transparent" />
- {t.checking}
- </div>
+ {/* TLD dropdown */}
+ <select
+ value={domainPrimaryTld}
+ onChange={(e) => {
+ setDomainPrimaryTld(e.target.value);
+ setHasSearched(false);
+ setDomainResults([]);
+ setSelectedDomains([]);
+ }}
+ className="rounded-xl border border-slate-700 bg-slate-900/80 px-4 py-3 font-mono text-white focus:border-indigo-500 focus:outline-none cursor-pointer"
+ style={{ minWidth: 110 }}
+ >
+ <option value="vn">.vn</option>
+ <option value="com.vn">.com.vn</option>
+ <option value="com">.com</option>
+ <option value="net">.net</option>
+ <option value="io">.io</option>
+ <option value="co">.co</option>
+ <option value="org">.org</option>
+ <option value="info">.info</option>
+ <option value="biz">.biz</option>
+ </select>
+
+ {/* Kiểm tra button */}
+ <button
+ onClick={searchDomain}
+ disabled={domainSearching || domainBrand.trim().length < 2}
+ className="flex items-center gap-2 rounded-xl border border-indigo-600 bg-indigo-600/20 px-5 py-3 font-semibold text-indigo-400 transition-all hover:border-indigo-500 hover:bg-indigo-600/30 disabled:cursor-not-allowed disabled:opacity-50"
+ >
+ {domainSearching ? (
+ <>
+ <div className="h-4 w-4 animate-spin rounded-full border-2 border-indigo-400 border-t-transparent" />
+ Kiểm tra...
+ </>
+ ) : (
+ <>
+ <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+ <circle cx="11" cy="11" r="8" />
+ <path strokeLinecap="round" d="m21 21-4.35-4.35" />
+ </svg>
+ Kiểm tra
+ </>
  )}
+ </button>
+ </div>
 
  {domainError && (
- <p className="mt-3 text-sm text-red-400">{domainError}</p>
+ <p className="text-sm text-red-400">{domainError}</p>
  )}
 
- {domainResults.length > 0 && (
+ {/* ── Results: domain chính + danh sách đuôi con ── */}
+ {hasSearched && domainResults.length > 0 && (
  <div className="mt-4 space-y-2">
- {domainResults.map((d) => (
+ {/* Domain chính — nổi bật */}
+ {domainResults.find((d) => d.domain === `${domainBrand}.${domainPrimaryTld}`) && (() => {
+ const primary = domainResults.find((d) => d.domain === `${domainBrand}.${domainPrimaryTld}`)!;
+ const isPrimarySelected = selectedDomains.some((x) => x.domain === primary.domain);
+ return (
  <button
- key={d.domain}
- disabled={!d.available}
- onClick={() => {
- if (d.available) {
- setSelectedDomain(d);
- setDomainQuery(d.domain);
- }
- }}
- className={`flex w-full items-center justify-between rounded-xl border p-4 text-left transition-all ${
- selectedDomain?.domain === d.domain
- ? "border-emerald-500 bg-emerald-500/10"
- : d.available
- ? "border-slate-700 bg-slate-900/60 hover:border-slate-600 cursor-pointer"
- : "border-slate-800 bg-slate-900/30 opacity-50 cursor-not-allowed"
+ onClick={() => toggleDomain(primary)}
+ className={`flex w-full items-center justify-between rounded-xl border-2 p-4 text-left transition-all ${
+ isPrimarySelected
+ ? "border-indigo-500 bg-indigo-500/10"
+ : primary.available
+ ? "border-emerald-500/60 bg-emerald-500/5 hover:border-emerald-500 cursor-pointer"
+ : "border-slate-700 bg-slate-800/50 opacity-60"
  }`}
  >
  <div className="flex items-center gap-3">
- <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center ${
- d.available ? "border-emerald-500 bg-emerald-500/20" : "border-slate-600"
+ <div className={`h-6 w-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+ isPrimarySelected ? "border-indigo-500 bg-indigo-500/30"
+ : primary.available ? "border-emerald-500 bg-emerald-500/20"
+ : "border-slate-600"
  }`}>
- {d.available && (
+ {isPrimarySelected ? (
+ <svg className="h-3 w-3 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+ <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+ </svg>
+ ) : primary.available ? (
  <div className="h-2 w-2 rounded-full bg-emerald-500" />
+ ) : null}
+ </div>
+ <div>
+ <div className="font-mono text-base font-bold text-white">{primary.domain}</div>
+ {primary.available ? (
+ <span className="text-xs text-emerald-400">{t.available} — đăng ký ngay</span>
+ ) : (
+ <span className="text-xs text-slate-400">{t.unavailable}</span>
  )}
  </div>
+ </div>
+ <div className="flex items-center gap-3">
+ {primary.price > 0 && (
+ <span className="font-mono text-sm font-bold text-white">{fmt(primary.price)}</span>
+ )}
+ {primary.available && (
+ <span className="rounded-full bg-indigo-500/20 border border-indigo-500/40 px-3 py-1 text-xs font-semibold text-indigo-300">
+ {isPrimarySelected ? "✓ Đã chọn" : "+ Chọn"}
+ </span>
+ )}
+ </div>
+ </button>
+ );
+ })()}
+
+ {/* Divider */}
+ <div className="flex items-center gap-3 py-1">
+ <div className="h-px flex-1 border-t border-slate-700" />
+ <span className="text-xs text-slate-500">Đuôi khác</span>
+ <div className="h-px flex-1 border-t border-slate-700" />
+ </div>
+
+ {/* Các đuôi còn lại */}
+ {domainResults
+ .filter((d) => d.domain !== `${domainBrand}.${domainPrimaryTld}`)
+ .map((d) => {
+ const isSelected = selectedDomains.some((x) => x.domain === d.domain);
+ return (
+ <button
+ key={d.domain}
+ onClick={() => toggleDomain(d)}
+ disabled={!d.available}
+ className={`flex w-full items-center justify-between rounded-xl border p-3 text-left transition-all ${
+ isSelected
+ ? "border-indigo-500/60 bg-indigo-500/5"
+ : d.available
+ ? "border-slate-700 bg-slate-900/40 hover:border-slate-600 cursor-pointer"
+ : "border-slate-800 bg-slate-900/20 opacity-50 cursor-not-allowed"
+ }`}
+ >
+ <div className="flex items-center gap-3">
+ <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+ isSelected ? "border-indigo-400 bg-indigo-400/20"
+ : d.available ? "border-emerald-500/60 bg-emerald-500/10"
+ : "border-slate-700"
+ }`}>
+ {isSelected ? (
+ <svg className="h-3 w-3 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+ <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+ </svg>
+ ) : d.available ? (
+ <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+ ) : null}
+ </div>
  <span className="font-mono text-sm text-white">{d.domain}</span>
- {d.available ? (
- <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-xs font-medium text-emerald-400">{t.available}</span>
- ) : (
+ {!d.available && (
  <span className="rounded-full bg-slate-700 px-2 py-0.5 text-xs text-slate-400">{t.unavailable}</span>
  )}
  </div>
+ <div className="flex items-center gap-2">
  {d.price > 0 && (
- <span className="font-mono text-sm text-slate-400">{fmt(d.price)}/năm</span>
+ <span className="font-mono text-xs text-slate-400">{fmt(d.price)}</span>
  )}
+ {d.available && (
+ <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
+ isSelected
+ ? "bg-indigo-500/20 border border-indigo-500/40 text-indigo-300"
+ : "bg-slate-700 text-slate-400"
+ }`}>
+ {isSelected ? "✓" : "+"}
+ </span>
+ )}
+ </div>
  </button>
+ );
+ })}
+ </div>
+ )}
+
+ {/* ── Selected domains list ── */}
+ {selectedDomains.length > 0 && (
+ <div className="mt-6 rounded-xl border border-indigo-500/30 bg-indigo-500/5 p-4">
+ <div className="mb-3 flex items-center justify-between">
+ <div className="text-xs font-semibold uppercase tracking-wider text-indigo-400">
+ Đã chọn ({selectedDomains.length})
+ </div>
+ <button
+ onClick={() => setSelectedDomains([])}
+ className="text-xs text-slate-500 hover:text-red-400 transition-colors"
+ >
+ Xóa tất cả
+ </button>
+ </div>
+ <div className="space-y-2">
+ {selectedDomains.map((d) => (
+ <div key={d.domain} className="flex items-center justify-between rounded-lg border border-slate-700/60 bg-slate-900/60 px-3 py-2">
+ <div className="flex items-center gap-2">
+ <svg className="h-3 w-3 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+ <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+ </svg>
+ <span className="font-mono text-sm text-white">{d.domain}</span>
+ </div>
+ <div className="flex items-center gap-3">
+ {d.price > 0 && (
+ <span className="font-mono text-xs text-slate-400">{fmt(d.price)}</span>
+ )}
+ <button
+ onClick={() => toggleDomain(d)}
+ className="text-slate-500 hover:text-red-400 transition-colors"
+ >
+ <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+ <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+ </svg>
+ </button>
+ </div>
+ </div>
  ))}
+ </div>
+ <div className="mt-3 flex items-center justify-between border-t border-slate-700/50 pt-3">
+ <span className="text-xs text-slate-400">Tổng phí domain</span>
+ <span className="font-mono text-sm font-bold text-white">{fmt(domainsTotalPrice)}</span>
+ </div>
  </div>
  )}
  </div>
@@ -689,13 +874,26 @@ export function WebPurchaseWizard({ locale, isAuthenticated, t }: Props) {
  <div className="font-mono font-bold text-white">{fmt(selectedPackage?.price ?? 0)}</div>
  </div>
 
- {/* Domain */}
- <div className="flex items-center justify-between rounded-xl border border-slate-700 bg-slate-900/60 p-4">
- <div>
- <div className="text-xs text-slate-400">{t.domain}</div>
- <div className="font-mono font-medium text-white">{selectedDomain?.domain}</div>
+ {/* Domains */}
+ <div className="rounded-xl border border-slate-700 bg-slate-900/60 p-4">
+ <div className="mb-2 text-xs text-slate-400">{t.domain}</div>
+ {selectedDomains.map((d) => (
+ <div key={d.domain} className="flex items-center justify-between py-1">
+ <div className="flex items-center gap-2">
+ <svg className="h-3 w-3 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+ <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+ </svg>
+ <span className="font-mono text-sm text-white">{d.domain}</span>
  </div>
- <div className="font-mono font-bold text-white">{fmt(selectedDomain?.price ?? 0)}</div>
+ <span className="font-mono text-sm text-white">{fmt(d.price ?? 0)}</span>
+ </div>
+ ))}
+ {selectedDomains.length > 1 && (
+ <div className="mt-2 flex items-center justify-between border-t border-slate-700/50 pt-2">
+ <span className="text-xs text-slate-400">Tổng domain</span>
+ <span className="font-mono text-sm font-bold text-indigo-400">{fmt(domainsTotalPrice)}</span>
+ </div>
+ )}
  </div>
 
  {/* Hosting */}
@@ -748,7 +946,7 @@ export function WebPurchaseWizard({ locale, isAuthenticated, t }: Props) {
  onClick={goNext}
  disabled={
  (step === "package" && !selectedPackage) ||
- (step === "domain" && !selectedDomain) ||
+ (step === "domain" && selectedDomains.length === 0) ||
  (step === "type" && !purchaseType)
  }
  className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-8 py-3 font-bold text-white shadow-lg shadow-indigo-500/30 transition-all hover:from-indigo-500 hover:to-purple-500 disabled:cursor-not-allowed disabled:opacity-40"

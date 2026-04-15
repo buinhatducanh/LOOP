@@ -517,13 +517,13 @@ function HeroSection({ locale }: { locale: string }) {
  {/* Floating anniversary badge — bottom left */}
  <motion.div
  style={{
- position: "absolute", bottom: "-0.75rem", left: "-0.75rem",
+ position: "absolute", bottom: "-1.75rem", right: "-1.25rem",
  padding: "0.625rem 0.875rem", borderRadius: "1rem",
  background: "rgba(1,21,50,0.60)", border: "1px solid rgba(230,199,95,0.3)",
  backdropFilter: "blur(20px)",
  boxShadow: "0 8px 32px rgba(0,0,0,0.5), 0 0 16px rgba(230,199,95,0.15)",
  }}
- animate={{ y: [0, 6, 0], opacity: [0.85, 1, 0.85] }}
+ animate={{ y: [0, 3, 0], opacity: [0.85, 1, 0.85] }}
  transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
  >
  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
@@ -538,7 +538,7 @@ function HeroSection({ locale }: { locale: string }) {
  {/* Floating Diamond badge — top right */}
  <motion.div
  style={{
- position: "absolute", top: "-1rem", right: "-0.75rem",
+ position: "absolute", top: "-2rem", left: "-1.25rem",
  padding: "0.625rem 0.875rem", borderRadius: "1rem",
  background: "rgba(1,21,50,0.60)",
  border: "1px solid rgba(129,140,248,0.5)",
@@ -546,12 +546,12 @@ function HeroSection({ locale }: { locale: string }) {
  boxShadow: "0 8px 32px rgba(0,0,0,0.5), 0 0 20px rgba(129,140,248,0.3)",
  }}
  animate={{
- y: [0, -8, 0],
+ y: [0, -4, 0],
  opacity: [0.9, 1, 0.9],
  boxShadow: [
- "0 8px 32px rgba(0,0,0,0.5), 0 0 20px rgba(129,140,248,0.3)",
- "0 8px 40px rgba(0,0,0,0.5), 0 0 35px rgba(129,140,248,0.55)",
- "0 8px 32px rgba(0,0,0,0.5), 0 0 20px rgba(129,140,248,0.3)",
+ "0 8px 32px rgba(0,0,0,0.5), 0 0 16px rgba(129,140,248,0.25)",
+ "0 8px 36px rgba(0,0,0,0.5), 0 0 28px rgba(129,140,248,0.4)",
+ "0 8px 32px rgba(0,0,0,0.5), 0 0 16px rgba(129,140,248,0.25)",
  ],
  }}
  transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}

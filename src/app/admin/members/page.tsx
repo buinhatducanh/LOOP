@@ -309,7 +309,9 @@ export default function AdminMembersPage() {
   const [detailMember, setDetailMember] = useState<MemberExt | null>(null);
   const [lpMember, setLpMember] = useState<MemberExt | null>(null);
   const [bulkMembers, setBulkMembers] = useState<MemberExt[]>([]);
-  const [formMember, setFormMember] = useState<MemberExt | undefined>(undefined); // undefined = add mode
+  const [formMember, setFormMember] = useState<MemberExt | null>(null); // null = closed | MemberExt = edit mode
+ const [showAddModal, setShowAddModal] = useState(false); // add mode flag
+ const closeAllForms = () => { setFormMember(null); setShowAddModal(false); };
   const [deleteMember, setDeleteMember] = useState<MemberExt | null>(null);
   // Pending requests state (CEO/Admin only)
   const [pendingRequest, setPendingRequest] = useState<PendingRequest | null>(null);
@@ -410,7 +412,7 @@ export default function AdminMembersPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: qk.adminMembers() });
       showToast("Thêm thành viên thành công");
-      setFormMember(undefined);
+      closeAllForms();
     },
     onError: () => showToast("Thêm thành viên thất bại", "error"),
   });
@@ -439,7 +441,7 @@ export default function AdminMembersPage() {
         ? ` [rank=${diag.persistedRank}, level=${diag.persistedLevel}, keys=${diag.updateDataKeys?.join(",")}]`
         : "";
       showToast("Cập nhật thành viên thành công" + diagMsg);
-      setFormMember(undefined);
+      setFormMember(null);
     },
     onError: () => showToast("Cập nhật thất bại", "error"),
   });
@@ -1508,8 +1510,7 @@ export default function AdminMembersPage() {
   // All tabs flattened for lookup
   const ALL_TABS = TAB_GROUPS.flatMap((g) => g.tabs);
 
-  function MemberFormModal_() {
-    const isEdit = formMember !== undefined;
+ function MemberFormModal_({ formMember, isAdd, setFormMember, onAddClose }: { formMember: MemberExt | null; isAdd: boolean; setFormMember: (v: MemberExt | null) => void; onAddClose: () => void }) {
     const [tab, setTab] = useState<0 | 1 | 2 | 3>(0);
     const [name, setName] = useState(formMember?.name ?? "");
     const [email, setEmail] = useState(formMember?.email ?? "");
@@ -1594,7 +1595,7 @@ export default function AdminMembersPage() {
         isActive: status === "active",
         memberExpertise: skills.map((s) => ({ name: s })),
       };
-      if (isEdit && formMember) {
+      if (!isAdd && formMember) {
         const editBody: Record<string, unknown> = {
           ...base,
           // Only send rank fields when manually set by admin (forceRank=true on BE)
@@ -1663,7 +1664,7 @@ export default function AdminMembersPage() {
       <motion.div
         key="modal-overlay"
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-        onClick={isMutating ? undefined : () => setFormMember(undefined)}
+        onClick={isMutating ? undefined : (isAdd ? onAddClose : () => setFormMember(null))}
         style={{
           position: "fixed", inset: 0, zIndex: 200,
           background: isMutating ? "rgba(0,0,0,0.88)" : "rgba(0,0,0,0.75)",
@@ -1728,15 +1729,15 @@ export default function AdminMembersPage() {
               </div>
               <div>
                 <div style={{ fontFamily: DS.heading, fontSize: 15, color: DS.text }}>
-                  {isEdit ? formMember?.name : "Thêm thành viên"}
+                  {isAdd ? "Thêm thành viên" : formMember?.name}
                 </div>
                 <div style={{ fontFamily: DS.mono, fontSize: 10, color: DS.text3, marginTop: 1 }}>
-                  {isEdit ? "Chỉnh sửa thông tin thành viên" : "Tạo hồ sơ nhân viên mới"}
+                  {isAdd ? "Tạo hồ sơ nhân viên mới" : "Chỉnh sửa thông tin thành viên"}
                 </div>
               </div>
             </div>
             <button
-              onClick={isMutating ? undefined : () => setFormMember(undefined)}
+              onClick={isMutating ? undefined : (isAdd ? onAddClose : () => setFormMember(null))}
               disabled={isMutating}
               style={{
                 width: 30, height: 30, borderRadius: "50%",
@@ -1952,7 +1953,7 @@ export default function AdminMembersPage() {
               </div>
 
               {/* Email */}
-              {(email || isEdit) && (
+              {(email || !isAdd) && (
                 <div style={{
                   fontFamily: DS.mono, fontSize: 10, color: DS.text3,
                   overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
@@ -2460,7 +2461,7 @@ export default function AdminMembersPage() {
                 paddingTop: 20,
               }}>
                 <button
-                  onClick={() => setFormMember(undefined)}
+                  onClick={() => (isAdd ? onAddClose : () => setFormMember(null))}
                   disabled={isMutating}
                   style={{
                     flex: 1, padding: "11px 16px", borderRadius: 10,
@@ -2504,7 +2505,7 @@ export default function AdminMembersPage() {
                       animation: "spin 0.8s linear infinite",
                     }} />
                   )}
-                  {isEdit ? "Lưu thay đổi" : "Tạo thành viên"}
+                  {isAdd ? "Tạo thành viên" : "Lưu thay đổi"}
                 </button>
               </div>
             </div>
@@ -3015,7 +3016,7 @@ export default function AdminMembersPage() {
         </div>
         {editing && (
           <button
-            onClick={() => setFormMember(undefined)}
+            onClick={() => setShowAddModal(true)}
             style={{
               display: "flex", alignItems: "center", gap: 6,
               padding: "10px 18px", borderRadius: 10, border: "none",
@@ -3449,7 +3450,13 @@ export default function AdminMembersPage() {
         {detailMember && <MemberDetailModal_ m={detailMember} />}
         {lpMember && <LPAwardModal_ m={lpMember} />}
         {bulkMembers.length > 0 && <BulkLPModal_ />}
-        {formMember !== undefined && <MemberFormModal_ />}
+        {(formMember !== null || showAddModal) && (
+ <MemberFormModal_
+ formMember={showAddModal ? null : formMember}
+ isAdd={showAddModal}
+ setFormMember={setFormMember}
+ onAddClose={() => setShowAddModal(false)}
+ />)}
         {deleteMember && <DeleteConfirmModal_ m={deleteMember} />}
       </AnimatePresence>
 
