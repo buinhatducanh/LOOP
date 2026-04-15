@@ -24,17 +24,30 @@ export interface WizardService {
 }
 
 /*** Wizard package (Step 2) — from pricing config */
+export interface PackageFreebie {
+ type: "hosting" | "domain";
+ label: string;
+ detail?: string;
+}
+
 export interface WizardPackage {
-  id: string;
-  slug: string;
-  name: string;
-  desc: string;
-  priceText: string;
-  multiplier: number;
-  features: string[];
-  type: string;
-  isSubscription: boolean;
-  billingPeriod: string | null;
+ id: string;
+ slug: string;
+ name: string;
+ desc: string;
+ priceText: string;
+ multiplier: number;
+ features: string[];
+ type: string;
+ isSubscription: boolean;
+ billingPeriod: string | null;
+ color?: string;
+ popular?: boolean;
+ price?: number | null;
+ marketPrice?: number;
+ savingPct?: number;
+ allFeatures?: string[];
+ freebies?: PackageFreebie[];
 }
 
 /*** Wizard feature (Step 3) — from pricing config */

@@ -28,24 +28,25 @@ interface WizardService {
   id: string; title: string; desc: string;
   basePrice: number; color: string; perMonth?: boolean;
 }
+interface PackageFreebie { type: "hosting" | "domain"; label: string; detail?: string; }
 interface WizardPackage {
-  id: string;
-  slug?: string;
-  name: string;
-  /** deprecated — use .price instead */
-  multiplier: number;
-  color: string;
-  desc: string; features: string[]; lp: number; popular?: boolean;
-  /** Real price from DB */
-  price?: number | null;
-  priceText?: string;
-  isSubscription?: boolean;
-  billingPeriod?: string | null;
-  type?: string;
-  /** Market anchor price for strikethrough display */
-  marketPrice?: number;
-  /** Saving vs market price % */
-  savingPct?: number;
+ id: string;
+ slug?: string;
+ name: string;
+ multiplier: number;
+ color: string;
+ desc: string;
+ features: string[];
+ lp: number;
+ popular?: boolean;
+ price?: number | null;
+ priceText?: string;
+ isSubscription?: boolean;
+ billingPeriod?: string | null;
+ type?: string;
+ marketPrice?: number;
+ savingPct?: number;
+ freebies?: PackageFreebie[];
 }
 interface WizardFeature {
   id: string; label: string; labelEn?: string; price: number;
@@ -105,7 +106,7 @@ interface LpRateConfig {
 // ── Fallback constants (website-only, used when API fails) ────────────────────────
 
 /** Base price — chỉ dùng trong fallback. Giá thực tế từ DB → SiteSetting */
-const WEB_BASE_PRICE = 3_890_000;
+const WEB_BASE_PRICE = 1_890_000;
 
 /**
  * Website-only package fallback — hiển thị khi API /pricing/config fail.
@@ -113,37 +114,95 @@ const WEB_BASE_PRICE = 3_890_000;
  * Admin truy cập: Admin → Settings → Site Settings
  */
 const WEBSITE_PACKAGES_FALLBACK: WizardPackage[] = [
-  {
-    id: "basic", slug: "basic", name: "Cơ bản",
-    multiplier: 1, color: DS.text3,
-    desc: "Thiết kế chuẩn responsive, phù hợp website giới thiệu doanh nghiệp nhỏ",
-    features: ["Giao diện chuẩn responsive", "Tối đa 5 trang", "SEO cơ bản", "Bảo hành 1 tháng", "Hỗ trợ qua email"],
-    lp: 100,
-    price: WEB_BASE_PRICE,
-    marketPrice: 5_500_000,
-    savingPct: 29,
-  },
-  {
-    id: "business", slug: "business", name: "Doanh nghiệp",
-    multiplier: 1, color: DS.blue,
-    desc: "Thiết kế tùy chỉnh theo thương hiệu, tối ưu UX, doanh nghiệp vừa và lớn",
-    features: ["Thiết kế tùy chỉnh theo brand", "Tối đa 15 trang", "SEO nâng cao", "Animation & Mega Menu", "Bảo hành 3 tháng", "Không giới hạn chỉnh sửa"],
-    lp: 180, popular: true,
-    price: 5_890_000,
-    marketPrice: 8_900_000,
-    savingPct: 34,
-  },
-  {
-    id: "experience", slug: "experience", name: "Experience",
-    multiplier: 1, color: DS.purple,
-    desc: "Giao diện độc quyền NextJS, tối ưu tốc độ cao, thương hiệu cao cấp",
-    features: ["Giao diện độc quyền NextJS", "Không giới hạn trang", "SEO toàn diện", "Dedicated PM riêng", "Bảo hành 6 tháng", "Support 24/7"],
-    lp: 280,
-    price: 6_890_000,
-    marketPrice: 12_000_000,
-    savingPct: 43,
-  },
+	 {
+		id: "landing", slug: "landing", name: "Landing Page",
+		multiplier: 1, color: "#6EB1A8",
+		desc: "Chien dich Marketing, gioi thieu ca nhan, offline. Phu hop landing page, trang gioi thieu ca nhan, san pham don le.",
+		features: [
+		"Giao dien hien dai, chuan Responsive",
+		"Toi uu trai nghiem UI/UX",
+		"Ho tro chinh sua sau ban giao",
+		"Trang gioi thieu SP/Dich vu",
+		"Admin quan ly bai viet",
+		"Form thu thap du lieu KH",
+		"Quan ly tep KH co ban",
+		"Toi uu SEO On-page",
+		],
+		lp: 80,
+		price: 1_890_000,
+		marketPrice: 2_500_000,
+		savingPct: 24,
+		freebies: [
+		{ type: "hosting", label: "Hosting Co Ban", detail: "6 thang" },
+		{ type: "domain", label: "Ten mien .io.vn", detail: "1 nam" },
+		],
+	 },
+	 {
+		id: "ban-hang", slug: "ban-hang", name: "Ban Hang Co Ban",
+		multiplier: 1, color: DS.blue,
+		desc: "Shop online nho & vua, bat dau chuyen doi so. Phu hop cua hang online, boutique, dich vu nho.",
+		features: [
+		"Bao gom moi tinh nang Landing Page",
+		"Danh muc & Chi tiet san pham",
+		"Chuc nang Gio hang thong minh",
+		"Thong ke don hang & Doanh thu",
+		"Tai khoan Admin & Khach hang",
+		"Tang 5 trang noi dung mien phi",
+		],
+		lp: 160, popular: true,
+		price: 3_890_000,
+		marketPrice: 5_500_000,
+		savingPct: 29,
+		freebies: [
+		{ type: "hosting", label: "Hosting Co Ban", detail: "6 thang" },
+		{ type: "domain", label: "Ten mien .com & .io.vn", detail: "1 nam" },
+		],
+	 },
+	 {
+		id: "doanh-nghiep", slug: "doanh-nghiep", name: "Quan Tri Doanh Nghiep",
+		multiplier: 1, color: "#8B5CF6",
+		desc: "Doanh nghiep, he thong ban hang quy mo lon. Phu hop doanh nghiep vua va lon, can quan ly phuc tap.",
+		features: [
+		"Bao gom moi tinh nang Ban Hang",
+		"Gio hang da dich vu/san pham",
+		"SP nang cao (size, mau, thuoc tinh)",
+		"He thong Ma giam gia/Flash sale",
+		"Tich diem & Doi qua thanh vien",
+		"Bo loc & Tim kiem AI thong minh",
+		"Quan ly Kho hang & Nha cung cap",
+		],
+		lp: 240,
+		price: 5_890_000,
+		marketPrice: 8_900_000,
+		savingPct: 34,
+		freebies: [
+		{ type: "hosting", label: "Hosting 3GB", detail: "6 thang" },
+		{ type: "domain", label: "Ten mien .vn & .io.vn", detail: "1 nam" },
+		],
+	 },
+	 {
+		id: "yeu-cau", slug: "yeu-cau", name: "Thiet Ke Theo Yeu Cau",
+		multiplier: 1, color: DS.pink,
+		desc: "Startups, nen tang App-web co logic phuc tap. Phu hop startup, platform, web app co yeu cau dac thu rieng.",
+		features: [
+		"Bao gom moi tinh nang Doanh Nghiep",
+		"UI/UX Doc quyen (Khong mau)",
+		"Tuy chinh chuc nang Core System",
+		"Tich hop Cong thanh toan/Van chuyen",
+		"API ket noi ben thu 3 (Zalo, App...)",
+		"Bao mat da lop & Toi uu Speed cuc han",
+		],
+		lp: 320,
+		price: 7_890_000,
+		marketPrice: 12_000_000,
+		savingPct: 34,
+		freebies: [
+		{ type: "hosting", label: "Thiet lap uu dai", detail: "tuy quy mo du an" },
+		],
+	 },
 ];
+
+
 
 /** Website service — single service, only for page title/favicon. */
 const WEBSITE_SERVICE: WizardService = {
@@ -264,7 +323,7 @@ export function BookingWizardClient({ locale }: Props) {
   const [step, setStep] = useState(0);
   const [paymentPlan, setPaymentPlan] = useState<"50" | "100">("50");
   // Package selection (website-only — packages are the primary selection)
-  const [selectedPackage, setSelectedPackage] = useState<string>("business"); // default to decoy
+  const [selectedPackage, setSelectedPackage] = useState<string>("ban-hang"); // default to decoy
 
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
   const [startDate, setStartDate] = useState("");
@@ -406,10 +465,12 @@ export function BookingWizardClient({ locale }: Props) {
     // Base price = WEB_BASE_PRICE × package multiplier (all = 1 for now)
     // Fixed package prices — not derived from multiplier
     const PACKAGE_PRICES_SUBMIT: Record<string, number> = {
-      basic: WEB_BASE_PRICE,
-      business: 5_890_000,
-      experience: 6_890_000,
-    };
+ landing: 1_890_000,
+ "ban-hang": 3_890_000,
+ "doanh-nghiep": 5_890_000,
+ "yeu-cau": 7_890_000,
+};
+
     const basePrice = pkg ? (PACKAGE_PRICES_SUBMIT[pkg.id] ?? WEB_BASE_PRICE) : WEB_BASE_PRICE;
     // Only charge for non-included features
     const featPrices = featOpts
@@ -837,7 +898,20 @@ export function BookingWizardClient({ locale }: Props) {
  +{pkg.features.length - 4} tính năng khác
  </li>
  )}
- </ul>
+ </ul>)}
+
+
+ {/* Freebies */}
+ {pkg.freebies && pkg.freebies.length > 0 && (
+ <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+ <div style={{ color: DS.green, fontSize: 9, fontFamily: DS.mono, letterSpacing: "0.15em", marginBottom: 5 }}>QUA TANG DI KEM</div>
+ {pkg.freebies.map((fb, fi) => (
+ <div key={fi} style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 3 }}>
+ <svg width="10" height="10" viewBox="0 0 24 24" fill={DS.green} stroke="none"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
+ <span style={{ color: DS.green, fontSize: 9, fontFamily: DS.mono }}>{fb.label}{fb.detail ? ` (${fb.detail})` : ''}</span>
+ </div>
+ ))}
+ </div>
  )}
  </div>
 

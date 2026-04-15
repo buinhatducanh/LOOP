@@ -451,12 +451,22 @@ export async function GET(request: Request) {
         where: { userEmail: email },
         select: { balance: true, totalEarned: true, totalSpent: true, level: true },
       }) : Promise.resolve(null),
-    ]);
+     prisma.siteSetting.findUnique({ where: { key: "package_freebies" }, select: { value: true } }),]);
 
     const basePrice = basePriceSetting ? parseInt(basePriceSetting.value, 10) : 3_000_000;
     const vatRate = vatSetting ? parseFloat(vatSetting.value) : 0.10;
     const lpToVnd = lpRateSetting ? (JSON.parse(lpRateSetting.value).lp_to_vnd ?? 1000) : 1000;
     const lpEarnPerMillion = Math.ceil(1_000_000 * 0.10 / lpToVnd);
+
+ // Package freebies
+ const freebiesSetting = await prisma.siteSetting.findUnique({
+ where: { key: "package_freebies" },
+ select: { value: true },
+ });
+ let packageFreebies: Record<string, { hosting?: string; domain?: string[]; note: string }> = {};
+ if (freebiesSetting?.value) {
+ try { packageFreebies = JSON.parse(freebiesSetting.value); } catch {}
+ }
 
     // Parse website marketing pricing config
     // Expected shape:
@@ -551,7 +561,9 @@ export async function GET(request: Request) {
           return acc;
         }, {}),
         vatRate,
-        /** Marketing data — loaded from SiteSetting "website_pricing_config" */
+         /** Package freebies per slug */
+ packageFreebies,
+/** Marketing data — loaded from SiteSetting "website_pricing_config" */
         marketing: {
           promotion: promotion?.active ? promotion : undefined,
           slotsLeft: slotsLeft ?? undefined,
