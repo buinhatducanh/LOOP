@@ -477,7 +477,12 @@ async function seedCEO() {
     slug: "bui-nhat-duc-anh",
     name: "Bùi Nhật Đức Anh",
     role: "Founder & CEO",
-    shortBio: "Một Gen Z đam mê công nghệ và nghệ thuật, người sáng lập LOOP với khát vọng xây dựng một môi trường lập trình tự do, sáng tạo và trân trọng tư duy thực tế.",
+ level: 200,
+ rank: "diamond",
+ availableLp: 999999,
+ currentXp: 0,
+ maxXp: 100,
+ shortBio: "Một Gen Z đam mê công nghệ và nghệ thuật, người sáng lập LOOP với khát vọng xây dựng một môi trường lập trình tự do, sáng tạo và trân trọng tư duy thực tế.",
     bio: `"Xuất phát điểm là một Gen Z với tình yêu lớn dành cho việc giải quyết vấn đề, sáng tác âm nhạc và giáo dục, tôi luôn ấp ủ mang đến một làn gió mới cho ngành IT: trẻ trung, tự do và đậm chất nghệ thuật. Bước ra từ giai đoạn thị trường công nghệ đang có dấu hiệu bão hòa, tôi nhận thấy nhiều bạn trẻ đầy năng lượng lại dễ bị cản bước bởi những định kiến về "bằng cấp" hay "điểm số".
 
 Chính vì vậy, tôi quyết định thành lập LOOP. Đây không chỉ là một tổ chức mà còn là một "sân chơi" công bằng, nơi tư duy logic và khả năng xử lý vấn đề thực tế được đặt lên hàng đầu. Tại LOOP, chúng tôi cùng nhau phá vỡ những giới hạn cũ để hết mình theo đuổi đam mê kiến tạo công nghệ trong kỷ nguyên số."`,
@@ -2119,32 +2124,31 @@ async function seedCompanyEvents() {
 
 // ── Seed all 10 team members (CEO already seeded) ────────────────────────────
 async function seedAllTeamMembers(deptIds: Record<string, string>) {
-  console.log("\n[R2-TeamMembers] Seeding 10 team members with department FK...");
+  console.log("\n[R2-TeamMembers] Seeding 13 team members (Iron Lv1) with department FK...");
 
   // memberData.ts canonical LP values (source of truth per fe-reseed-plan)
   // Giảm còn 10 members cho test (giữ nguyên canonical LP values)
   const members = [
-    // id=1: Kai Tanaka — Engineering
-    { slug: "kai-tanaka",       name: "Kai Tanaka",          title: "Junior Operative",         bio: "Thanh kiếm vẫn đang được rèn giũa. Tiềm năng thô đang chờ đợi ngọn lửa kinh nghiệm.",     shortBio: "Frontend Dev chuyên Vue.js & CSS Animations.",  level: 8,   rank: "iron",     availableLp: 850,   currentXp: 45,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 1, deptKey: "engineering" },
-    // id=2: Mei Lin — Design
-    { slug: "mei-lin",           name: "Mei Lin",              title: "Visual Artisan",           bio: "Một hòn than hồng rực cháy ổn định. Kỹ năng sắc bén qua từng chu kỳ thiết kế.",                    shortBio: "UI/UX Designer — Design Systems & Figma.",          level: 24,  rank: "bronze",   availableLp: 3200,  currentXp: 78,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 2, deptKey: "design" },
-    // id=3: Ryo Hashimoto — Engineering
-    { slug: "ryo-hashimoto",     name: "Ryo Hashimoto",        title: "Code Sentinel",            bio: "Những con đường bạc được khắc qua vô số cơn bão debug. API phải tuân lệnh anh.",            shortBio: "Backend Dev — Node.js & Microservices.",          level: 43,  rank: "silver",   availableLp: 8500,  currentXp: 62,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 3, deptKey: "engineering" },
-    // id=4: Yuna Park — Engineering
-    { slug: "yuna-park",         name: "Yuna Park",            title: "Dual-Path Operative",     bio: "Nơi mã nguồn gặp gỡ nghệ thuật — Yuna điều khiển cả hai với sự uyển chuyển tự nhiên.", shortBio: "Full Stack Dev — React & System Architecture.", level: 68,  rank: "gold",     availableLp: 15800, currentXp: 85,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 4, deptKey: "engineering" },
-    // id=5: Shin Watanabe — Engineering
-    { slug: "shin-watanabe",     name: "Shin Watanabe",        title: "Infrastructure Warden",   bio: "Người thì thầm với hạ tầng. Không hệ thống nào thoát khỏi trật tự của anh.",              shortBio: "DevOps Engineer — Kubernetes & CI/CD.",               level: 85,  rank: "platinum", availableLp: 28500, currentXp: 40,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 5, deptKey: "engineering" },
-    // id=6: Rin Nakamura — Engineering
-    { slug: "rin-nakamura",      name: "Rin Nakamura",        title: "Crimson Architect",       bio: "Sự chính xác đầy quyết đoán. Mọi hàm số là một đòn tấn công.",                            shortBio: "Backend Lead — High-Performance Systems.",            level: 103, rank: "ruby",     availableLp: 52000, currentXp: 60,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 6, deptKey: "engineering" },
-    // id=7: Akira Sato — Management
-    { slug: "akira-sato",        name: "Akira Sato",            title: "Guild Master",            bio: "Đặc vụ đỉnh cao. Một huyền thoại được khắc trên silicon và ánh sao. Guild cúi chào.", shortBio: "Tech Lead — Vision & System Architecture.",       level: 118, rank: "diamond",  availableLp: 98000, currentXp: 92,  maxXp: 100, isActive: true,  isFeatured: true,  sortOrder: 7, deptKey: "management" },
-    // id=8: Trần Hữu Phúc — Engineering
-    { slug: "tran-huu-phuc",     name: "Trần Hữu Phúc",        title: "Senior Operative",       bio: "Sự chính xác trong từng pixel. Một bậc thầy của nghệ thuật dàn trang.",                        shortBio: "Frontend Dev — Tailwind CSS & React Hooks.",         level: 28,  rank: "bronze",   availableLp: 4500,  currentXp: 32,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 8, deptKey: "engineering" },
-    // id=9: Haru Tanaka — Media
-    { slug: "haru-tanaka",       name: "Haru Tanaka",            title: "Media Artisan",           bio: "Kiến trúc sư của hình ảnh và âm thanh. Mỗi khung hình là một tuyên bố nghệ thuật.",        shortBio: "Media Manager — Media Production & Brand Identity.",  level: 72,  rank: "ruby",     availableLp: 45000, currentXp: 88,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 9, deptKey: "media" },
-    // id=10: Vũ Đình Trọng — Engineering
-    { slug: "vu-dinh-trong",     name: "Vũ Đình Trọng",          title: "Quality Sentry",          bio: "Không lỗi nào thoát khỏi tầm mắt của lính gác.",                                       shortBio: "QA Lead — Automated Testing & Security Audits.",    level: 52,  rank: "silver",   availableLp: 6200,  currentXp: 15,  maxXp: 100, isActive: true,  isFeatured: false, sortOrder: 10, deptKey: "engineering" },
-  ];
+ // 13 team members — all Iron Lv1 (CEO seeded separately with max level)
+ // Management — PM
+ { slug: "nguyen-phuc-thuan", name: "Nguyễn Phúc Thuần", title: "Project Manager", bio: "Điều phối và quản lý dự án.", shortBio: "PM — Quản lý dự án.", level: 1, rank: "iron", availableLp: 0, currentXp: 0, maxXp: 100, isActive: true, isFeatured: false, sortOrder: 1, deptKey: "management" },
+ { slug: "tran-vu-hung", name: "Trần Vũ Hùng", title: "Project Manager", bio: "Quản lý tiến độ dự án.", shortBio: "PM — Quản lý tiến độ.", level: 1, rank: "iron", availableLp: 0, currentXp: 0, maxXp: 100, isActive: true, isFeatured: false, sortOrder: 2, deptKey: "management" },
+ { slug: "le-ngoc-xuan-quynh", name: "Lê Ngọc Xuân Quỳnh", title: "PM Tập Sự", bio: "Hỗ trợ quản lý dự án.", shortBio: "PM tập sự.", level: 1, rank: "iron", availableLp: 0, currentXp: 0, maxXp: 100, isActive: true, isFeatured: false, sortOrder: 3, deptKey: "management" },
+ // Engineering — Dev / SEO
+ { slug: "duong-gia-lac", name: "Dương Gia Lạc", title: "SEO & Developer", bio: "SEO và phát triển web.", shortBio: "SEO & Dev.", level: 1, rank: "iron", availableLp: 0, currentXp: 0, maxXp: 100, isActive: true, isFeatured: false, sortOrder: 4, deptKey: "engineering" },
+ { slug: "nguyen-trong-quy", name: "Nguyễn Trọng Quý", title: "Developer", bio: "Phát triển web.", shortBio: "Dev.", level: 1, rank: "iron", availableLp: 0, currentXp: 0, maxXp: 100, isActive: true, isFeatured: false, sortOrder: 5, deptKey: "engineering" },
+ { slug: "do-tan-tai", name: "Đỗ Tấn Tài", title: "Developer", bio: "Phát triển phần mềm.", shortBio: "Dev.", level: 1, rank: "iron", availableLp: 0, currentXp: 0, maxXp: 100, isActive: true, isFeatured: false, sortOrder: 6, deptKey: "engineering" },
+ // Engineering — IT Support
+  { slug: "nguyen-minh-tri", name: "Nguyễn Minh Trí", title: "IT Support", bio: "Hỗ trợ hạ tầng kỹ thuật.", shortBio: "IT Support.", level: 1, rank: "iron", availableLp: 0, currentXp: 0, maxXp: 100, isActive: true, isFeatured: false, sortOrder: 7, deptKey: "engineering" },
+ // Engineering — QA
+ { slug: "le-van-thuan", name: "Lê Văn Thuận", title: "QA Engineer", bio: "Kiểm thử chất lượng sản phẩm.", shortBio: "QA.", level: 1, rank: "iron", availableLp: 0, currentXp: 0, maxXp: 100, isActive: true, isFeatured: false, sortOrder: 8, deptKey: "engineering" },
+ { slug: "tran-hoang-anh", name: "Trần Hoàng Anh", title: "QA Engineer", bio: "Kiểm thử chức năng.", shortBio: "QA.", level: 1, rank: "iron", availableLp: 0, currentXp: 0, maxXp: 100, isActive: true, isFeatured: false, sortOrder: 9, deptKey: "engineering" },
+ { slug: "ha-the-anh", name: "Hà Thế Anh", title: "QA Engineer", bio: "Kiểm thử phần mềm.", shortBio: "QA.", level: 1, rank: "iron", availableLp: 0, currentXp: 0, maxXp: 100, isActive: true, isFeatured: false, sortOrder: 10, deptKey: "engineering" },
+ { slug: "luong-hoang-thong", name: "Lương Hoàng Thông", title: "QA Engineer", bio: "Kiểm thử và đảm bảo chất lượng.", shortBio: "QA.", level: 1, rank: "iron", availableLp: 0, currentXp: 0, maxXp: 100, isActive: true, isFeatured: false, sortOrder: 11, deptKey: "engineering" },
+ // Marketing
+ { slug: "tran-vo-thuy-duong", name: "Trần Võ Thuỳ Dương", title: "Marketing Staff", bio: "Nhân viên Marketing.", shortBio: "Marketing.", level: 1, rank: "iron", availableLp: 0, currentXp: 0, maxXp: 100, isActive: true, isFeatured: false, sortOrder: 12, deptKey: "marketing" },
+ { slug: "nguyen-phuc-thinh", name: "Nguyễn Phúc Thịnh", title: "Marketing Staff", bio: "Nhân viên Marketing.", shortBio: "Marketing.", level: 1, rank: "iron", availableLp: 0, currentXp: 0, maxXp: 100, isActive: true, isFeatured: false, sortOrder: 13, deptKey: "marketing" },
+];
 
   const memberCUIDs: Record<string, string> = {};
   for (const m of members) {
@@ -2195,17 +2199,20 @@ async function seedTeamUsers(memberCUIDs: Record<string, string>): Promise<Recor
   // Create User accounts for seeded members (so they can participate in quests/events)
   // NOTE: Only 10 members are seeded — matching the trimmed member list above
   const teamUsers: Array<{ slug: string; name: string; email: string }> = [
-    { slug: "kai-tanaka",       name: "Kai Tanaka",       email: "kai.tanaka@loop.vn" },
-    { slug: "mei-lin",         name: "Mei Lin",           email: "mei.lin@loop.vn" },
-    { slug: "ryo-hashimoto",   name: "Ryo Hashimoto",     email: "ryo.hashimoto@loop.vn" },
-    { slug: "yuna-park",       name: "Yuna Park",         email: "yuna.park@loop.vn" },
-    { slug: "shin-watanabe",   name: "Shin Watanabe",      email: "shin.watanabe@loop.vn" },
-    { slug: "rin-nakamura",    name: "Rin Nakamura",       email: "rin.nakamura@loop.vn" },
-    { slug: "akira-sato",      name: "Akira Sato",        email: "akira.sato@loop.vn" },
-    { slug: "tran-huu-phuc",   name: "Trần Hữu Phúc",     email: "tran.huuphuoc@loop.vn" },
-    { slug: "haru-tanaka",     name: "Haru Tanaka",       email: "haru.tanaka@loop.vn" },
-    { slug: "vu-dinh-trong",   name: "Vũ Đình Trọng",     email: "vu.dinhtrong@loop.vn" },
-  ];
+ { slug: "nguyen-phuc-thuan", name: "Nguyễn Phúc Thuần", email: "phucthuancl@loop.vn" },
+ { slug: "tran-vu-hung", name: "Trần Vũ Hùng", email: "tranvuhung@loop.vn" },
+ { slug: "le-ngoc-xuan-quynh", name: "Lê Ngọc Xuân Quỳnh", email: "quynhle@loop.vn" },
+ { slug: "duong-gia-lac", name: "Dương Gia Lạc", email: "duonggialac@loop.vn" },
+ { slug: "nguyen-trong-quy", name: "Nguyễn Trọng Quý", email: "nguyentrongquy@loop.vn" },
+ { slug: "do-tan-tai", name: "Đỗ Tấn Tài", email: "dotantai@loop.vn" },
+ { slug: "nguyen-minh-tri", name: "Nguyễn Minh Trí", email: "nguyenminhtri@loop.vn" },
+ { slug: "le-van-thuan", name: "Lê Văn Thuận", email: "levanthuan@loop.vn" },
+ { slug: "tran-hoang-anh", name: "Trần Hoàng Anh", email: "hoanganh@loop.vn" },
+ { slug: "ha-the-anh", name: "Hà Thế Anh", email: "hetheanh@loop.vn" },
+ { slug: "luong-hoang-thong", name: "Lương Hoàng Thông", email: "luonghoangthong@loop.vn" },
+ { slug: "tran-vo-thuy-duong", name: "Trần Võ Thuỳ Dương", email: "voduong@loop.vn" },
+ { slug: "nguyen-phuc-thinh", name: "Nguyễn Phúc Thịnh", email: "nguyenphucthinh@loop.vn" },
+];
 
   const userIdMap: Record<string, string> = {};
   for (const u of teamUsers) {
@@ -2241,34 +2248,20 @@ async function seedMemberExpertise(memberCUIDs: Record<string, string>) {
   console.log("\n[R2-Expertise] Seeding member-expertise links...");
 
   const expertiseLinks: Record<string, string[]> = {
-    "kai-tanaka":         ["Vue.js", "Tailwind CSS", "TypeScript", "Figma"],
-    "mei-lin":            ["Figma", "Adobe XD", "Framer", "Protopie", "Spline"],
-    "ryo-hashimoto":      ["Node.js", "PostgreSQL", "Redis", "Docker", "GraphQL"],
-    "yuna-park":          ["React", "Next.js", "Prisma", "PostgreSQL", "AWS", "Tailwind"],
-    "shin-watanabe":      ["Kubernetes", "Terraform", "AWS", "Git", "CI/CD"],
-    "rin-nakamura":       ["Rust", "Go", "PostgreSQL", "Kafka", "gRPC"],
-    "akira-sato":         ["React", "Next.js", "TypeScript", "AWS", "GCP"],
-    "tran-huu-phuc":      ["React", "TypeScript", "Tailwind CSS", "Framer Motion"],
-    "nguyen-minh-thu":    ["Figma", "Adobe XD", "Spline", "Rive"],
-    "le-van-nam":         ["Node.js", "Express", "PostgreSQL"],
-    "pham-hoang-long":     ["AWS", "Docker", "Kubernetes", "Terraform"],
-    "dang-my-linh":       ["Jira", "Notion", "Miro", "ClickUp"],
-    "vu-dinh-trong":      ["Cypress", "Playwright", "Jest", "Postman"],
-    "haru-tanaka":        ["Figma", "Adobe Premiere", "After Effects", "DaVinci Resolve", "Blender"],
-    "ly-gia-hung":        ["Python", "TensorFlow", "PyTorch", "Pandas"],
-    "duong-bao-ngoc":      ["Google Ads", "Meta Ads", "SEO", "Analytics"],
-    "bui-tien-dung":      ["React Native", "Swift", "Kotlin", "Expo"],
-    "ho-dieu-thao":       ["LinkedIn", "Notion", "Slack"],
-    "truong-cong-dinh":   ["Jira", "Amplitude", "Hotjar", "Mixpanel"],
-    "do-quyen":           ["Figma", "Blender", "After Effects", "Protopie"],
-    "phan-anh-tuan":      ["Kali Linux", "Metasploit", "Wireshark", "Burp Suite"],
-    "vo-minh-tuan":       ["Microservices", "Event Sourcing", "Cloud Native", "Kubernetes"],
-    "mai-phuong-linh":    ["Notion", "Grammarly", "Canva"],
-    "cao-huu-viet":       ["Node.js", "MySQL", "JavaScript"],
-    "doan-minh-quan":     ["React", "Zustand", "Framer Motion", "Three.js"],
-    "ta-minh-tam":        ["Solidity", "Rust", "Web3.js", "Ethereum"],
-    "dinh-tien-dat":      ["LinkedIn Recruiter", "Greenhouse", "Notion"],
-  };
+  "nguyen-phuc-thuan": ["Project Management", "Jira", "Scrum", "Notion"],
+ "tran-vu-hung": ["Project Management", "Agile", "Trello", "Slack"],
+ "le-ngoc-xuan-quynh": ["Project Management", "Notion", "Communication"],
+ "duong-gia-lac": ["SEO", "Google Analytics", "React", "Next.js"],
+ "nguyen-trong-quy": ["Frontend", "JavaScript", "CSS"],
+ "do-tan-tai": ["Frontend", "React", "TypeScript"],
+ "nguyen-minh-tri": ["IT Support", "Hardware", "Networking", "Linux"],
+ "le-van-thuan": ["QA", "Manual Testing", "Jira", "Bug Tracking"],
+  "tran-hoang-anh": ["QA", "Test Automation", "Selenium", "Jira"],
+ "ha-the-anh": ["QA", "Performance Testing", "Postman", "API Testing"],
+ "luong-hoang-thong": ["QA", "Regression Testing", "Jira", "Documentation"],
+ "tran-vo-thuy-duong": ["Marketing", "Content Marketing", "Social Media"],
+ "nguyen-phuc-thinh": ["Marketing", "SEO", "Google Analytics", "Content"],
+};
 
   // Get all expertises
   const expertises = await prisma.expertise.findMany();
