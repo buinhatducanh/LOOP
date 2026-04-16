@@ -408,19 +408,19 @@ export function TeamGuildClient({ locale, members, hero }: TeamGuildClientProps)
 
   // Sort updated via useMemo deps: [members, search, roleFilter, rankFilter, sortOption]
 
-  // Hall of Fame — diamond/ruby/gold members
-  const { diamond, ruby, gold } = useMemo(() => {
-    const sorted = [...members].sort(
-      (a, b) => (RANKS[normalizeRank(b.rank as string)]?.tier ?? 0) - (RANKS[normalizeRank(a.rank as string)]?.tier ?? 0)
-    );
-    const safe = (i: number): MemberRecord =>
-      sorted[i] ?? { id: i, name: "???", role: "", rank: "iron", level: 1, availableLp: 0, missions: 0 } as MemberRecord;
-    return {
-      diamond: members.find((m) => normalizeRank(m.rank as string) === "diamond") ?? safe(0),
-      ruby: members.find((m) => normalizeRank(m.rank as string) === "ruby") ?? safe(1),
-      gold: members.find((m) => normalizeRank(m.rank as string) === "gold") ?? safe(2),
-    };
-  }, [members]);
+  // Hall of Fame — top 3 members by level (highest first)
+ const topMembers = useMemo(() => {
+ const sorted = [...members].sort(
+ (a, b) => ((b.level as number) ?? 0) - ((a.level as number) ?? 0)
+ );
+ const safe = (i: number): MemberRecord =>
+ sorted[i] ?? { id: i, name: "???", role: "", rank: "iron", level: 1, availableLp: 0 } as MemberRecord;
+  return {
+ first: sorted[0] ?? safe(0),
+ second: sorted[1] ?? safe(1),
+ third: sorted[2] ?? safe(2),
+ };
+ }, [members]);
 
   // Filter + sort
   const filtered = useMemo(() => {
@@ -515,11 +515,11 @@ export function TeamGuildClient({ locale, members, hero }: TeamGuildClientProps)
           >
             <SectionDivider label="HALL OF FAME · HUYỀN THOẠI GUILD" />
             <HallOfFame
-              mvp={diamond}
-              bugSlayer={ruby}
-              topPerformer={gold}
-              locale={locale}
-            />
+ first={topMembers.first}
+ second={topMembers.second}
+ third={topMembers.third}
+ locale={locale}
+ />
           </motion.div>
 
           {/* ── Rank Distribution ── */}

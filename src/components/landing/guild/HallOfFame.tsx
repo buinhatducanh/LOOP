@@ -15,10 +15,10 @@ import { useLoopStore, type MemberStats } from "@/app/store/loopStore";
 type MemberRecord = Record<string, unknown>;
 
 interface HallOfFameProps {
-  mvp: MemberRecord;
-  bugSlayer: MemberRecord;
-  topPerformer: MemberRecord;
-  locale: string;
+ first: MemberRecord;
+ second: MemberRecord;
+ third: MemberRecord;
+ locale: string;
 }
 
 // ── Prismatic beams config ────────────────────────────────────────────────
@@ -519,7 +519,7 @@ function HolographicCard({
 }
 
 // ── Main HallOfFame ──────────────────────────────────────────────────────
-export function HallOfFame({ mvp, bugSlayer, topPerformer, locale }: HallOfFameProps) {
+export function HallOfFame({ first, second, third, locale }: HallOfFameProps) {
   return (
     <div className="mb-14 relative" style={{ borderRadius: 16 }}>
       <PrismBackground />
@@ -616,30 +616,9 @@ export function HallOfFame({ mvp, bugSlayer, topPerformer, locale }: HallOfFameP
 
         {/* Cards grid */}
         <div className="grid grid-cols-3 gap-6 max-w-4xl mx-auto max-md:grid-cols-1 max-lg:grid-cols-3 max-sm:grid-cols-1">
-          <HolographicCard
-            member={mvp}
-            award="MVP LEGEND"
-            icon={<Trophy size={12} />}
-            accentColor={DS.amber}
-            delay={0.1}
-            locale={locale}
-          />
-          <HolographicCard
-            member={bugSlayer}
-            award="BUG SLAYER"
-            icon={<Zap size={12} />}
-            accentColor={DS.red}
-            delay={0.25}
-            locale={locale}
-          />
-          <HolographicCard
-            member={topPerformer}
-            award="TOP PERFORMER"
-            icon={<Target size={12} />}
-            accentColor={DS.cosmicCyan}
-            delay={0.4}
-            locale={locale}
-          />
+          <HolographicCard member={first} award="NGÔI VÀNG" icon={<Trophy size={12} />} accentColor={DS.amber} delay={0.1} locale={locale} />
+          <HolographicCard member={second} award="NGÔI BẠC" icon={<Zap size={12} />} accentColor="#CBD5E1" delay={0.25} locale={locale} />
+          <HolographicCard member={third} award="NGÔI ĐỒNG" icon={<Target size={12} />} accentColor="#CD7F32" delay={0.4} locale={locale} />
         </div>
 
         {/* Bottom ornament */}
