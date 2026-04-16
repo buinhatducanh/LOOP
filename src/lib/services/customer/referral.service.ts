@@ -25,15 +25,23 @@
 import { prisma } from "@/lib/prisma";
 import { LP_VND_RATE } from "@/lib/constants";
 
+// ── Types ───────────────────────────────────────────────────────────────────────
+
+type ReferralTier = {
+ minRevenue: number;
+ maxRevenue: number | null;
+ lpRate: number;
+ label?: string;
+};
+
 // ── Constants ──────────────────────────────────────────────────────────────────
 
-/** Tier thresholds in VND (inclusive upper bound). */
-// ── Default tiers (fallback if SiteSetting not configured) ──────────────────
-export const REFERRAL_TIERS_DEFAULT = [
+/** Default tiers (fallback if SiteSetting not configured) */
+export const REFERRAL_TIERS_DEFAULT: ReferralTier[] = [
  { minRevenue: 0, maxRevenue: 50_000_000, lpRate: 0.05 },
  { minRevenue: 50_000_000, maxRevenue: 200_000_000, lpRate: 0.07 },
  { minRevenue: 200_000_000, maxRevenue: null, lpRate: 0.10 },
-] as const;
+];
 
 // Cache for admin-configured tiers (60s TTL)
 let _cachedTiers: ReferralTier[] | null = null;

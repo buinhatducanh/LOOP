@@ -13,7 +13,7 @@ import { requirePermission } from "@/lib/auth/permissions";
 import { prisma } from "@/lib/prisma";
 
 // Default tiers (hardcoded until admin saves custom values)
-export const REFERRAL_TIERS_DEFAULT = [
+const REFERRAL_TIERS_DEFAULT = [
  { minRevenue: 0, maxRevenue: 50_000_000, lpRate: 0.05, label: "Tier 1 (0–50M)" },
  { minRevenue: 50_000_000, maxRevenue: 200_000_000, lpRate: 0.07, label: "Tier 2 (50–200M)" },
  { minRevenue: 200_000_000, maxRevenue: null, lpRate: 0.10, label: "Tier 3 (200M+)" },

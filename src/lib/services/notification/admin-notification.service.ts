@@ -4,6 +4,8 @@
  */
 
 import { prisma } from "@/lib/prisma";
+import { renderTemplate } from "./notification-template.service";
+import type { TemplateVariables } from "./notification-template.service";
 
 export interface AdminNotificationInput {
  type: string;
@@ -11,6 +13,18 @@ export interface AdminNotificationInput {
  message: string;
  link?: string;
  priority?: string;
+ /** Auto-calculates priority for payment_received: >= 50M → urgent, >= 10M → high, < 10M → normal */
+ amountVnd?: number;
+}
+
+/**
+ * Auto-calculate priority for payment notifications based on amount.
+ */
+function calcPaymentPriority(amountVnd?: number): string {
+ if (amountVnd === undefined) return "normal";
+ if (amountVnd >= 50_000_000) return "urgent";
+ if (amountVnd >= 10_000_000) return "high";
+ return "normal";
 }
 
 export interface NotificationFilters {
@@ -32,18 +46,23 @@ export interface NotifStats {
 
 /**
  * Create a single admin notification.
+ * For payment_received type, priority is auto-calculated from amountVnd:
+ * >= 50M → urgent | >= 10M → high | < 10M → normal
  */
 export async function createAdminNotification(
  data: AdminNotificationInput
 ): Promise<void> {
  try {
+ const priority = data.type === "payment_received"
+ ? (data.priority ?? calcPaymentPriority(data.amountVnd))
+ : (data.priority ?? "normal");
  await prisma.adminNotification.create({
  data: {
  type: data.type,
  title: data.title,
  message: data.message,
  link: data.link ?? null,
- priority: data.priority ?? "normal",
+ priority,
  },
  });
  } catch {
@@ -53,6 +72,7 @@ export async function createAdminNotification(
 
 /**
  * Create multiple notifications in batch.
+ * For payment_received type, priority is auto-calculated from amountVnd.
  */
 export async function createBulkNotifications(
  items: AdminNotificationInput[]
@@ -65,11 +85,51 @@ export async function createBulkNotifications(
  title: item.title,
  message: item.message,
  link: item.link ?? null,
- priority: item.priority ?? "normal",
+ priority: item.type === "payment_received"
+ ? (item.priority ?? calcPaymentPriority(item.amountVnd))
+ : (item.priority ?? "normal"),
  })),
  });
  } catch {
  // silent
+ }
+}
+
+/**
+ * Render + create a notification using a template.
+ *
+ * This is the preferred way to send admin notifications — it uses
+ * NotificationTemplate (DB) with i18n fallback to hardcoded defaults.
+ *
+ * @param key Template key (e.g., "payment_received")
+ * @param vars Variables for {{placeholder}} substitution
+ * @param options Override link/priority or specify locale
+ *
+ * @example
+ * await notify("payment_received", { amount: "3,500,000", orderNumber: "ORD-001" }, { link: "/admin/orders" });
+ */
+export async function notify(
+ key: string,
+ vars: TemplateVariables,
+ options?: {
+ link?: string;
+ priority?: string;
+ amountVnd?: number;
+ locale?: string;
+ }
+): Promise<void> {
+ try {
+ const { title, message } = await renderTemplate(key, vars, options?.locale ?? "vi");
+ await createAdminNotification({
+ type: key,
+ title,
+ message,
+ link: options?.link,
+ priority: options?.priority,
+ amountVnd: options?.amountVnd,
+ });
+ } catch {
+ // silent — fire-and-forget
  }
 }
 

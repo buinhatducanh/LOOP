@@ -2122,13 +2122,48 @@ async function seedCompanyEvents() {
 //   effects from loopStore INIT_EFFECTS; quests/events from authStore INIT_QUESTS/INIT_EVENTS
 // ══════════════════════════════════════════════════════════════════
 
+
+// Member → system role mapping (used by seedAllTeamMembers + seedTeamUsers)
+const MEMBER_SYSTEM_ROLE: Record<string, string> = {
+ "nguyen-phuc-thuan": "project_manager",
+ "tran-vu-hung": "project_manager",
+ "le-ngoc-xuan-quynh": "member",
+ "duong-gia-lac": "member",
+ "nguyen-trong-quy": "member",
+ "do-tan-tai": "member",
+ "nguyen-minh-tri": "member",
+ "le-van-thuan": "qa",
+ "tran-hoang-anh": "qa",
+ "ha-the-anh": "qa",
+ "luong-hoang-thong": "qa",
+ "tran-vo-thuy-duong": "media",
+ "nguyen-phuc-thinh": "media",
+};
 // ── Seed all 10 team members (CEO already seeded) ────────────────────────────
 async function seedAllTeamMembers(deptIds: Record<string, string>) {
   console.log("\n[R2-TeamMembers] Seeding 13 team members (Iron Lv1) with department FK...");
 
   // memberData.ts canonical LP values (source of truth per fe-reseed-plan)
   // Giảm còn 10 members cho test (giữ nguyên canonical LP values)
-  const members = [
+ 
+ // ── RBAC constants ──────────────────────────────────────────────────────────
+ const ROLE_TABS: Record<string, string[]> = {
+ project_manager: ["overview","orders","clients","quotation","services","revenue","projects","members","departments","notification_center","leaderboard_admin","lp_manage","quests_events","academy","blog","lp","portfolio","projects_completed","kanban","figma_demos","analytics"],
+ qa: ["overview","projects","notification_center","orders","clients","members","academy","leaderboard_admin","lp"],
+ media: ["overview","media","blog","academy","members","notification_center","leaderboard_admin","quests_events","orders","projects","clients","services","portfolio","revenue"],
+ member: ["overview","notification_center","leaderboard_admin","academy","quests_events"],
+ };
+ const ROLE_TAGS: Record<string, string[]> = {
+ project_manager: ["kanban","order-basic","order-manage"],
+ qa: ["kanban","order-basic"],
+ media: ["kanban","order-basic","blog-post"],
+ member: ["kanban","order-basic"],
+ };
+ const ROLE_LEVELS: Record<string, number> = {
+ project_manager: 3, qa: 5, media: 4, member: 6,
+ };
+
+ const members = [
  // 13 team members — all Iron Lv1 (CEO seeded separately with max level)
  // Management — PM
  { slug: "nguyen-phuc-thuan", name: "Nguyễn Phúc Thuần", title: "Project Manager", bio: "Điều phối và quản lý dự án.", shortBio: "PM — Quản lý dự án.", level: 1, rank: "iron", availableLp: 0, currentXp: 0, maxXp: 100, isActive: true, isFeatured: false, sortOrder: 1, deptKey: "management" },
@@ -2167,6 +2202,9 @@ async function seedAllTeamMembers(deptIds: Record<string, string>) {
           currentXp: m.currentXp, maxXp: m.maxXp,
           isActive: m.isActive, isFeatured: m.isFeatured, sortOrder: m.sortOrder,
           departmentId: deptId,
+          roleLevel: ROLE_LEVELS[MEMBER_SYSTEM_ROLE[m.slug] ?? "member"],
+          tabPermissions: ROLE_TABS[MEMBER_SYSTEM_ROLE[m.slug] ?? "member"],
+          accessTags: ROLE_TAGS[MEMBER_SYSTEM_ROLE[m.slug] ?? "member"],
         },
       });
       memberCUIDs[m.slug] = existing.id;
@@ -2183,6 +2221,9 @@ async function seedAllTeamMembers(deptIds: Record<string, string>) {
           currentXp: m.currentXp, maxXp: m.maxXp,
           isActive: m.isActive, isFeatured: m.isFeatured, sortOrder: m.sortOrder,
           departmentId: deptId,
+          roleLevel: ROLE_LEVELS[MEMBER_SYSTEM_ROLE[m.slug] ?? "member"],
+          tabPermissions: ROLE_TABS[MEMBER_SYSTEM_ROLE[m.slug] ?? "member"],
+          accessTags: ROLE_TAGS[MEMBER_SYSTEM_ROLE[m.slug] ?? "member"],
         },
       });
       memberCUIDs[m.slug] = created.id;
@@ -2229,7 +2270,7 @@ async function seedTeamUsers(memberCUIDs: Record<string, string>): Promise<Recor
         data: {
           email: u.email,
           name: u.name,
-          role: "member",
+          role: MEMBER_SYSTEM_ROLE[u.slug] ?? "member",
           isActive: true,
           accountType: "staff",
           teamMemberId: memberId ?? undefined,

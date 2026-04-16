@@ -5,10 +5,11 @@
  * Admin can force-expire any non-final quote.
  */
 
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { handleError, ok, badRequest } from "@/lib/api/response";
 import { requirePermission } from "@/lib/auth/permissions";
 import { prisma } from "@/lib/prisma";
+import { notify } from "@/lib/services/notification/admin-notification.service";
 
 export async function POST(
  req: NextRequest,
@@ -35,27 +36,19 @@ export async function POST(
  return badRequest(`cannot expire quote with status: ${quote.status}`);
  }
 
- // Update quote to expired
  const updated = await prisma.quoteRequest.update({
  where: { id },
  data: {
  status: "expired",
- expiredAt: new Date(),
  },
  });
 
- // Send admin notification
- await prisma.adminNotification.create({
- data: {
- type: "quote_expired",
- title: `Quote hết hạn: ${quote.customerName}`,
- message: `Admin đã manual expire quote "${id}" của ${quote.customerName}.`,
- priority: "normal",
- isRead: false,
- },
- });
+ void notify("quote_expired", {
+ customerName: quote.customerName,
+ quoteId: id,
+ }, { priority: "normal" });
 
- return ok({ id: updated.id, status: updated.status, expiredAt: updated.expiredAt });
+ return ok({ id: updated.id, status: updated.status });
  } catch (err) {
  return handleError(err);
  }

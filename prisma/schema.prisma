@@ -143,6 +143,27 @@ model AdminNotification {
   @@map("admin_notifications")
 }
 
+/// Notification templates — supports i18n and admin customization.
+/// Falls back to hardcoded defaults when no template exists.
+ model NotificationTemplate {
+  id String @id @default(cuid())
+  /// Template key matching AdminNotification.type or Notification.type
+  key String @unique @map("template_key")
+  /// UI locale code: vi | en | ja | ko | zh
+  locale String @default("vi")
+  /// Notification title — supports {{variable}} placeholders
+  title String
+  /// Notification message body — supports {{variable}} placeholders
+  message String @db.Text
+  /// Whether this template is active (admin can disable per locale)
+  isActive Boolean @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+ 
+  @@unique([key, locale])
+  @@map("notification_templates")
+ }
+
 model User {
   id                   String             @id @default(cuid())
   email                String             @unique
@@ -908,6 +929,7 @@ model TaskKanban {
   qaId        String?   @map("qa_id")
   envFileId   String?   @map("env_file_id")
   completedAt DateTime? @map("completed_at")
+  dueDate DateTime? @map("due_date")
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
   order       Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
@@ -3263,7 +3285,7 @@ model Invoice {
   totalAmount   Int       @default(0) @map("total_amount")
   currency      String    @default("VND")
   status        String    @default("draft") @map("status") // draft | sent | paid | overdue | cancelled
-  dueDate       DateTime? @map("due_date")
+   dueDate       DateTime? @map("due_date")
   paidAt        DateTime? @map("paid_at")
   paidMethod    String?   @map("paid_method") // bank_transfer | cash | vn_pay | momo
   description   String?   @map("description")

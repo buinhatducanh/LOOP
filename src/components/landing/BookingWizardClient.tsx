@@ -431,7 +431,7 @@ export function BookingWizardClient({ locale }: Props) {
  .then(r => r.json())
  .then(json => {
  if (json?.data?.methods?.length) {
- setPaymentMethods(json.data.methods.map(m => ({
+ setPaymentMethods(json.data.methods.map((m: Record<string, unknown>) => ({
  ...m,
  value: m.value === "bank_transfer" ? "bank" : m.value,
  })));

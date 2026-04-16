@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { apiClient } from "@/lib/api/client";
 import { DS } from "@/lib/design-tokens";
 import { Bell, CheckCheck, Clock, ChevronRight } from "lucide-react";
+import { useRealtimeClientNotifications } from "@/app/hooks/useRealtimeClientNotifications";
 
 type Notification = {
  id: string;
@@ -13,6 +14,7 @@ type Notification = {
  isRead: boolean;
  createdAt: string;
  link?: string;
+ time?: string;
 };
 
 type PageData = { data: Notification[]; pagination: { page: number; limit: number; total: number; totalPages: number } };
@@ -38,6 +40,24 @@ export function NotificationTab() {
  };
 
  useEffect(() => { load(); }, []);
+
+ // ── SSE: real-time new notifications ───────────────────────────────
+ const addSseNotification = useCallback((n: Notification & { time?: string }) => {
+ setNotifications(prev => {
+ // Avoid duplicates
+ if (prev.some(existing => existing.id === n.id)) return prev;
+ return [n, ...prev];
+ });
+ setTotal(prev => prev + 1);
+ if (!n.isRead) {
+ setUnread(prev => prev + 1);
+ }
+ }, []);
+
+ useRealtimeClientNotifications({
+ onNotification: addSseNotification,
+ enabled: true,
+ });
 
  const markRead = async (id: string) => {
  await apiClient.patch(`/api/client/notifications/${id}`, { isRead: true }, { throwOnError: false });

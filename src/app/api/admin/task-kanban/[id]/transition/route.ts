@@ -66,23 +66,29 @@ export async function POST(
       });
 
       // 2. Side effects per target column
-      if (column === "in_review") {
-        // Notify QA member when task enters review
-        if (updatedTask.qaId) {
-          await tx.adminNotification.create({
-            data: {
-              type: "task_review",
-              title: "Task cần Review",
-              message: `Task "${updatedTask.title}" (Dự án ${task.order.orderNumber}) đã chuyển sang Review và cần bạn kiểm tra.`,
-              link: `/admin/kanban?orderId=${updatedTask.orderId}`,
-              priority: "normal",
-              isRead: false,
-            },
-          });
-        }
-      }
+       if (column === "in_review") {
+ // Notify QA member when task enters review
+ // qaId is a TeamMember.id — look up the associated User to create notification
+ if (updatedTask.qaId) {
+ const qaUser = await tx.user.findFirst({
+ where: { teamMemberId: updatedTask.qaId },
+ select: { id: true, name: true },
+ });
+ if (qaUser) {
+ await tx.notification.create({
+ data: {
+ userId: qaUser.id,
+ type: "task_review",
+ title: "Task cần Review",
+ message: `Task "${updatedTask.title}" (Dự án ${task.order.orderNumber}) đã chuyển sang Review và cần bạn kiểm tra.`,
+ link: `/admin/kanban?orderId=${updatedTask.orderId}`,
+ },
+ });
+ }
+ }
+ }
 
-      if (column === "done") {
+ if (column === "done") {
         // Auto-create pending LP award for assignee
         if (updatedTask.lp > 0 && updatedTask.assigneeId) {
           await tx.lpAward.create({

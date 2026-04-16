@@ -69,6 +69,9 @@ export async function PATCH(
     if (data.completedAt !== undefined) {
       updateData.completedAt = data.completedAt ? new Date(data.completedAt) : null;
     }
+  if (data.dueDate !== undefined) {
+  updateData.dueDate = data.dueDate ? new Date(data.dueDate) : null;
+  }
 
     // Sequential writes (PrismaNeon HTTP adapter does NOT support $transaction)
     const updated = await prisma.taskKanban.update({

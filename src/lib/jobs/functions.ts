@@ -40,6 +40,7 @@ import type {
 export { EVENTS };
 export type { ContactSubmittedPayload, OrderCreatedPayload, DemoReadyPayload };
 export { quoteExpiryJob } from "./quote-expiry";
+import { quoteExpiryJob } from "./quote-expiry";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // CATEGORY 1: EVENT-DRIVEN JOBS

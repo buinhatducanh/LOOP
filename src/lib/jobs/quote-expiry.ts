@@ -65,7 +65,6 @@ export const quoteExpiryJob = inngest.createFunction(
  where: { id: quote.id },
  data: {
  status: "expired",
- expiredAt: new Date(),
  },
  });
 

@@ -96,6 +96,7 @@ export async function POST(req: NextRequest) {
         assigneeId: data.assigneeId ?? null,
         qaId: data.qaId ?? null,
         envFileId: data.envFileId ?? null,
+ dueDate: data.dueDate ? new Date(data.dueDate) : null,
       },
       include: {
         order: {
