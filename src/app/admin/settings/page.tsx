@@ -8,6 +8,7 @@
 
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { PaymentSettingsSection } from "./PaymentSettingsSection";
 import { motion } from "motion/react";
 import { adminApi } from "@/lib/api/client";
 import { DS } from "@/lib/design-tokens";
@@ -15,7 +16,7 @@ import { useAdminTranslations } from "@/i18n/admin/useAdminTranslations";
 import { useAuthStore } from "@/app/store/authStore";
 import {
   Settings, RefreshCw, Check, Shield, Globe, Bell, Database,
-  Languages, User, Save, Loader2, CheckCircle2,
+  Languages, User, Save, Loader2, CheckCircle2, CreditCard,
 } from "lucide-react";
 
 type Setting = {
@@ -75,6 +76,7 @@ const SETTING_SECTIONS = [
   { key: "notifications",label: "Notifications",icon: <Bell size={14} /> },
   { key: "security",     label: "Security",     icon: <Shield size={14} /> },
   { key: "system",       label: "System",       icon: <Database size={14} /> },
+ { key: "payments", label: "Thanh Toán", icon: <CreditCard size={14} /> },
 ];
 
 function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
@@ -809,7 +811,10 @@ export default function SettingsPage() {
                   .map(s => <SettingRow key={s.id} setting={s} saving={saveMutation.isPending} onSave={(key, value) => saveMutation.mutate({ key, value })} />)
               )}
 
-              {!isLoading && settings.filter(s => s.key.startsWith(section)).length === 0 && settings.length > 0 && (
+              {section === "payments" && (
+ <PaymentSettingsSection />
+ )}
+ {!isLoading && settings.filter(s => s.key.startsWith(section)).length === 0 && settings.length > 0 && (
                 <div>
                   {settings.map(s => <SettingRow key={s.id} setting={s} saving={saveMutation.isPending} onSave={(key, value) => saveMutation.mutate({ key, value })} />)}
                 </div>

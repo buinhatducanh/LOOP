@@ -34,7 +34,7 @@
  *   quote-requests   → /admin/sales/quote-requests
  *   users            → /admin/system/staff-users
  *   roles            → /admin/system/roles
- *   audit-log        → /admin/system/audit-log
+ *   audit-log        → /admin/audit_log
  *   settings         → /admin/system/settings
  *   websites         → /admin/system/websites
  *   points           → /admin/system/points
@@ -276,7 +276,7 @@ export const NAV_PERMISSIONS: Record<string, NavPermission> = {
     permissions: [{ resource: "roles", actions: ["read", "create", "update", "delete"] }],
     icon: "ShieldCheck",
   },
-  "/admin/system/audit-log": {
+  "/admin/audit_log": {
     label: { vi: "Nhật ký", en: "Audit Log" },
     minRoleLevel: 1,
     permissions: [{ resource: "audit-log", actions: ["read", "export"] }],

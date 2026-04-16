@@ -165,7 +165,9 @@
       "Bash(printf '%s\\\\n' ' opens=l.count\\(\"\"<div \"\"\\)+l.count\\(\"\"<div>\"\"\\)')",
       "Bash(python -c \":*)",
       "WebFetch(domain:vietqr.io)",
-      "Bash(PYTHONIOENCODING=utf-8 python -c \"import sys; print\\(sys.stdin.read\\(\\)\\)\")"
+      "Bash(PYTHONIOENCODING=utf-8 python -c \"import sys; print\\(sys.stdin.read\\(\\)\\)\")",
+      "Bash(ls /d/LOOP_COMPANY/LOOP/src/app/\\\\\\(public\\\\\\)/figma/review/[token]/)",
+      "Bash(/d/LOOP_COMPANY/LOOP/patch_khachhang.py:*)"
     ],
     "additionalDirectories": []
   }

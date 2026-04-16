@@ -28,21 +28,54 @@ import { LP_VND_RATE } from "@/lib/constants";
 // ── Constants ──────────────────────────────────────────────────────────────────
 
 /** Tier thresholds in VND (inclusive upper bound). */
-export const REFERRAL_TIERS = [
-  { minRevenue: 0,         maxRevenue: 50_000_000,  lpRate: 0.05 },
-  { minRevenue: 50_000_000, maxRevenue: 200_000_000, lpRate: 0.07 },
-  { minRevenue: 200_000_000, maxRevenue: null,        lpRate: 0.10 },
+// ── Default tiers (fallback if SiteSetting not configured) ──────────────────
+export const REFERRAL_TIERS_DEFAULT = [
+ { minRevenue: 0, maxRevenue: 50_000_000, lpRate: 0.05 },
+ { minRevenue: 50_000_000, maxRevenue: 200_000_000, lpRate: 0.07 },
+ { minRevenue: 200_000_000, maxRevenue: null, lpRate: 0.10 },
 ] as const;
 
-export type ReferralTier = (typeof REFERRAL_TIERS)[number];
+// Cache for admin-configured tiers (60s TTL)
+let _cachedTiers: ReferralTier[] | null = null;
+let _tiersCacheTime = 0;
+const TierCacheTTL = 60_000;
 
+/**
+ * Load referral tiers from SiteSetting (cached).
+ * Falls back to REFERRAL_TIERS_DEFAULT if not configured.
+ */
+export async function getReferralTiers() {
+ if (_cachedTiers && Date.now() - _tiersCacheTime < TierCacheTTL) return _cachedTiers;
+ try {
+ const { prisma } = await import("@/lib/prisma");
+ const setting = await prisma.siteSetting.findUnique({ where: { key: "referral_lp_tiers" } });
+ if (setting?.value) {
+ try {
+ const parsed = JSON.parse(setting.value);
+ if (Array.isArray(parsed) && parsed.length > 0) {
+ _cachedTiers = parsed;
+ _tiersCacheTime = Date.now();
+ return _cachedTiers;
+ }
+ } catch { /* invalid JSON */ }
+ }
+ } catch { /* DB error */ }
+ _cachedTiers = REFERRAL_TIERS_DEFAULT;
+ _tiersCacheTime = Date.now();
+ return _cachedTiers;
+}
+
+/** Invalidate tiers cache after admin updates SiteSetting. */
+export function invalidateReferralTiersCache() { _cachedTiers = null; _tiersCacheTime = 0; }
+
+/** Synchronous tier lookup using defaults. Use getReferralTiers() for admin rates. */
 export function getTierLpRate(totalRevenueVnd: number): number {
-  for (const tier of REFERRAL_TIERS) {
+  for (const tier of REFERRAL_TIERS_DEFAULT) {
     if (tier.maxRevenue === null || totalRevenueVnd <= tier.maxRevenue) {
       return tier.lpRate;
     }
   }
-  return REFERRAL_TIERS[REFERRAL_TIERS.length - 1].lpRate;
+  return REFERRAL_TIERS_DEFAULT[REFERRAL_TIERS_DEFAULT.length - 1].lpRate;
 }
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -119,7 +152,7 @@ export async function awardReferralLpOnPayment(
   const totalRevenue = completedOrders.reduce((s, o) => s + (o.paidAmount ?? 0), 0) + paidAmount;
 
   // 2. Determine tier rate: use ReferralCode.lpRate if set, else get from tier logic
-  const lpRate = referralCode.lpRate > 0 ? referralCode.lpRate : getTierLpRate(totalRevenue);
+  const lpRate = referralCode.lpRate > 0 ? referralCode.lpRate : getTierLpRate(totalRevenue) /* sync fallback */;
 
   // 3. LP = floor(paidAmount × lpRate / LP_VND_RATE)
   const lpAwarded = Math.floor((paidAmount * lpRate) / LP_VND_RATE);
@@ -127,7 +160,8 @@ export async function awardReferralLpOnPayment(
   if (lpAwarded <= 0) return { ok: true, lpAwarded: 0 };
 
   // ── Determine tier number for logging ───────────────────────────────────────
-  const tierNumber = REFERRAL_TIERS.findIndex(
+  const allTiers = await getReferralTiers();
+ const tierNumber = allTiers.findIndex(
     (t) =>
       (t.maxRevenue === null || totalRevenue <= t.maxRevenue) &&
       totalRevenue >= t.minRevenue
@@ -226,12 +260,13 @@ export async function awardReferralLpOnCompletion(
   const totalRevenue = completedOrders.reduce((s, o) => s + (o.paidAmount ?? 0), 0);
 
   // Use individual code rate if set, else tier-based
-  const lpRate = referralCode.lpRate > 0 ? referralCode.lpRate : getTierLpRate(totalRevenue);
+  const lpRate = referralCode.lpRate > 0 ? referralCode.lpRate : getTierLpRate(totalRevenue) /* sync fallback */;
   const lpAwarded = Math.floor((totalPaidAmount * lpRate) / LP_VND_RATE);
 
   if (lpAwarded <= 0) return { ok: true, lpAwarded: 0 };
 
-  const tierNumber = REFERRAL_TIERS.findIndex(
+  const allTiers = await getReferralTiers();
+ const tierNumber = allTiers.findIndex(
     (t) =>
       (t.maxRevenue === null || totalRevenue <= t.maxRevenue) &&
       totalRevenue >= t.minRevenue

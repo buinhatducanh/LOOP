@@ -68,7 +68,7 @@ export const PATH_ROLE_REQUIREMENTS: Record<string, number> = {
   "/admin/system/roles": 1,
   "/admin/system/points": 2,
   "/admin/system/websites": 3,
-  "/admin/system/audit-log": 1,
+  "/admin/audit_log": 1,
   "/admin/system/settings": 1,
 } as const;
 

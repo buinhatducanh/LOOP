@@ -7,8 +7,8 @@
  * Client-only page (uses authStore + API).
  * Redirects to login if not authenticated as client.
  */
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { motion } from "motion/react";
 import {
@@ -17,7 +17,7 @@ import {
   Settings, LogOut,
   CheckCircle2, Clock, XCircle,
   BookOpen, Award, Monitor, ExternalLink,
-  LayoutList,
+  LayoutList, X,
 } from "lucide-react";
 import { ProjectTrackerTab } from "./_components/ProjectTrackerTab";
 import { DS, GRD } from "@/lib/design-tokens";
@@ -596,6 +596,110 @@ function ReferralTab() {
       </div>
     </div>
   );
+}
+
+// ── Payment Result Banner ──────────────────────────────────────────────────────
+// Shows after VNPay/MoMo redirect. Reads ?payment=success/failed&reason=...&order=...
+// Then cleans the URL to avoid re-showing on refresh.
+
+function PaymentResultBanner({ locale }: { locale: string }) {
+ const searchParams = useSearchParams();
+ const router = useRouter();
+ const [shown, setShown] = useState(false);
+
+ const payment = searchParams.get("payment");
+ const reason = searchParams.get("reason");
+ const orderId = searchParams.get("order");
+
+ useEffect(() => {
+ if (payment && !shown) {
+ setShown(true);
+ // Clean URL after 100ms so it doesn't re-show on refresh
+ const timer = setTimeout(() => {
+ router.replace(`/${locale}/khach-hang`);
+ }, 100);
+ return () => clearTimeout(timer);
+ }
+ }, [payment, shown, router, locale]);
+
+ if (!payment) return null;
+
+ const isSuccess = payment === "success";
+
+ return (
+ <div style={{
+ position: "fixed", top: 72, left: "50%", transform: "translateX(-50%)",
+ zIndex: 100, width: "90%", maxWidth: 640,
+  }}>
+ <motion.div
+ initial={{ opacity: 0, y: -20, scale: 0.95 }}
+ animate={{ opacity: 1, y: 0, scale: 1 }}
+ transition={{ duration: 0.3, ease: "easeOut" }}
+ style={{
+ background: isSuccess
+ ? "linear-gradient(135deg, rgba(16,185,129,0.15), rgba(16,185,129,0.05))"
+ : "linear-gradient(135deg, rgba(239,68,68,0.15), rgba(239,68,68,0.05))",
+ border: `1px solid ${isSuccess ? "rgba(16,185,129,0.4)" : "rgba(239,68,68,0.4)"}`,
+ borderRadius: 12,
+ padding: "0.875rem 1.25rem",
+ display: "flex",
+ alignItems: "center",
+ gap: "0.75rem",
+ backdropFilter: "blur(12px)",
+  boxShadow: isSuccess
+ ? "0 0 24px rgba(16,185,129,0.15)"
+ : "0 0 24px rgba(239,68,68,0.15)",
+ }}
+  >
+ <div style={{
+ width: 36, height: 36, borderRadius: "50%",
+ background: isSuccess ? "rgba(16,185,129,0.2)" : "rgba(239,68,68,0.2)",
+ display: "flex", alignItems: "center", justifyContent: "center",
+ flexShrink: 0,
+ }}>
+ {isSuccess ? (
+ <CheckCircle2 size={18} color="#10B981" />
+ ) : (
+ <XCircle size={18} color="#EF4444" />
+ )}
+ </div>
+ <div style={{ flex: 1 }}>
+ <div style={{
+ color: isSuccess ? "#10B981" : "#EF4444",
+ fontWeight: 700, fontSize: "0.9375rem", marginBottom: 2,
+ }}>
+ {isSuccess ? "Thanh toán thành công!" : "Thanh toán thất bại"}
+ </div>
+ <div style={{ color: DS.text3, fontSize: "0.8125rem" }}>
+ {isSuccess
+ ? `Đơn hàng ${orderId ? `#${orderId.slice(-8).toUpperCase()}` : ""} đã được ghi nhận. Cảm ơn bạn!`
+ : reason
+ ? decodeURIComponent(reason)
+ : "Đã xảy ra lỗi khi xử lý thanh toán. Vui lòng thử lại hoặc liên hệ hỗ trợ."
+ }
+ </div>
+ </div>
+ <button
+ onClick={() => router.replace(`/${locale}/khach-hang`)}
+ style={{
+ background: "none", border: "none", cursor: "pointer",
+ color: DS.text4, display: "flex", alignItems: "center",
+ padding: 4,
+ }}
+ >
+ <X size={16} />
+ </button>
+ </motion.div>
+ </div>
+ );
+}
+
+function PaymentResultBannerWrapper(props: { locale: string }) {
+ return (
+ <Suspense fallback={null}>
+ <PaymentResultBanner {...props} />
+ </Suspense>
+ );
 }
 
 // ── Main page ─────────────────────────────────────────────────────────────────

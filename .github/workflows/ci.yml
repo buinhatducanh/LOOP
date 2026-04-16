@@ -217,8 +217,8 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
-          NEXTAUTH_URL: https://loops.vn
-          NEXT_PUBLIC_SITE_URL: https://loops.vn
+          NEXTAUTH_URL: https://www.loops.vn
+          NEXT_PUBLIC_SITE_URL: https://www.loops.vn
 
       - name: Wait for dev server
         run: npx wait-on http://localhost:3000 --timeout 60000

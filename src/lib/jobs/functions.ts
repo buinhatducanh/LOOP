@@ -39,6 +39,7 @@ import type {
 // (Re-exported from client.ts for convenience)
 export { EVENTS };
 export type { ContactSubmittedPayload, OrderCreatedPayload, DemoReadyPayload };
+export { quoteExpiryJob } from "./quote-expiry";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // CATEGORY 1: EVENT-DRIVEN JOBS
@@ -718,4 +719,6 @@ export const allJobs = [
   eventLpBonusAward,
  // Web Package
  domainHostingExpiryNotification,
+ // Quote
+ quoteExpiryJob,
 ];

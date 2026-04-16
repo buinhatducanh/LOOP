@@ -36,7 +36,7 @@
  *   quote-requests   → /admin/quote-requests
  *   users            → /admin/users
  *   roles            → /admin/roles
- *   audit-log        → /admin/audit-log
+ *   audit-log        → /admin/audit_log
  *   settings         → /admin/settings
  *   websites         → /admin/websites
  *   points           → /admin/points

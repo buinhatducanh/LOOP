@@ -55,8 +55,8 @@ async function verifyAdminSession(): Promise<void> {
  redirect("/admin/login");
  }
 
- // Require JWT_SECRET to be configured — fail closed if not set
- const secret = process.env.JWT_SECRET;
+ // Require JWT_SECRET (or AUTH_SECRET as fallback for local dev)
+ const secret = process.env.JWT_SECRET ?? process.env.AUTH_SECRET;
  if (!secret) {
  console.error("[AdminLayout] JWT_SECRET not configured — blocking access");
  redirect("/admin/login");
