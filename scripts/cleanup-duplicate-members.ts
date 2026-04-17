@@ -10,7 +10,7 @@ async function main() {
   const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
   });
-  const adapter = new PrismaPg(pool);
+  const adapter = new PrismaPg(pool as Parameters<typeof PrismaPg>[0]);
   const prisma = new PrismaClient({ adapter });
 
   // Map: old garbled slug → new correct slug + dept key
