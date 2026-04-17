@@ -5,10 +5,25 @@ import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
 
+function toSlug(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/[àáạảãâầấậẩẫăằắặẳẫ]/g, "a")
+    .replace(/[èéẹẻẽêềếệểễ]/g, "e")
+    .replace(/[ìíịỉĩ]/g, "i")
+    .replace(/[òóọỏõôồốộổỗơờớợởỡ]/g, "o")
+    .replace(/[ùúụủũưừứựửữ]/g, "u")
+    .replace(/[ỳýỵỷỹ]/g, "y")
+    .replace(/đ/g, "d")
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 const createSchema = z.object({
   projectId: z.string().optional(),   // FK → Order.id (optional — will auto-resolve from author session if missing)
   title: z.string().min(1),
-  slug: z.string().min(1),
+  slug: z.string().min(1).optional(), // auto-generated from title if not provided
   content: z.string().optional(),
   excerpt: z.string().optional(),
   coverImage: z.string().optional(),
@@ -91,6 +106,9 @@ export async function POST(req: NextRequest) {
       resolvedProjectId = fallbackOrder?.id;
     }
 
+    // Auto-generate slug from title if not provided
+    const resolvedSlug = parsed.data.slug ?? toSlug(parsed.data.title);
+
     // Resolve authorId: use provided, or find by name/email, or use session teamMemberId
     let authorId = parsed.data.authorId;
     if (!authorId && (parsed.data.authorName || parsed.data.authorEmail)) {
@@ -119,7 +137,7 @@ export async function POST(req: NextRequest) {
       data: {
         projectId: resolvedProjectId,
         title: parsed.data.title,
-        slug: parsed.data.slug,
+        slug: resolvedSlug,
         content: parsed.data.content,
         excerpt: parsed.data.excerpt,
         coverImage: parsed.data.coverImage,
@@ -149,7 +167,7 @@ export async function POST(req: NextRequest) {
       action: "create",
       resource: "blogs",
       resourceId: result.id,
-      newValues: { title: result.title, slug: result.slug, authorId },
+      newValues: { title: result.title, slug: resolvedSlug, authorId },
     });
     return ok(result, 201);
   } catch (error) {

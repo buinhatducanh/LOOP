@@ -29,7 +29,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title: `${title} — ${brandMetaTitle}`,
       description: brandMetaDescription || description,
       url: canonical,
-      images: [{ url: `/api/og?type=blog&locale=${locale}`, width: 1200, height: 630, alt: "LOOP Solutions" }],
+      images: [{ url: `/api/og?type=blog&locale=${locale}`, width: 1200, height: 630, alt: "LOOP Solutions Blog" }],
     },
     twitter: {
       card: "summary_large_image",

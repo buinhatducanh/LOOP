@@ -369,13 +369,12 @@ function BlogPostEditModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.title.trim()) return setError(t("blog.errTitleRequired"));
-    if (!form.slug.trim()) return setError(t("blog.errSlugRequired"));
     setSaving(true);
     setError("");
     try {
       const payload: Record<string, unknown> = {
         title: form.title.trim(),
-        slug: form.slug.trim(),
+        ...(form.slug.trim() ? { slug: form.slug.trim() } : {}), // auto-generated from title if empty
         excerpt: form.excerpt.trim() || undefined,
         coverImage: form.coverImage.trim() || undefined,
         content: form.content.trim() || undefined,

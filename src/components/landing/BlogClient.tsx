@@ -6,6 +6,11 @@ import { DS } from "@/lib/design-tokens";
 
 type BlogRecord = Record<string, unknown>;
 
+function formatDate(date: Date, locale: string): string {
+  const loc = locale === "vi" ? "vi-VN" : locale === "en" ? "en-US" : locale === "ja" ? "ja-JP" : locale === "ko" ? "ko-KR" : locale === "zh" ? "zh-CN" : locale;
+  return date.toLocaleDateString(loc, { year: "numeric", month: "long", day: "numeric" });
+}
+
 export function BlogClient({ locale, posts }: { locale: string; posts: BlogRecord[] }) {
   return (
     <main style={{ background: DS.bg, minHeight: "100vh" }}>
@@ -51,7 +56,7 @@ export function BlogClient({ locale, posts }: { locale: string; posts: BlogRecor
                   <div style={{ padding: 16 }}>
                     {publishedAt && (
                       <div style={{ color: DS.text5, fontSize: 11, fontFamily: DS.mono, marginBottom: 6 }}>
-                        {publishedAt.toLocaleDateString(locale, { year: "numeric", month: "long", day: "numeric" })}
+                        {formatDate(publishedAt, locale)}
                       </div>
                     )}
                     <h2 style={{ color: DS.text, fontSize: 16, fontWeight: 700, lineHeight: 1.4, marginBottom: 8 }}>{title}</h2>

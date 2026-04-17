@@ -63,7 +63,7 @@ export function BlogDetailClient({
   const readTime = Math.ceil(words / 200);
 
   const formattedDate = publishedAt
-    ? publishedAt.toLocaleDateString("vi-VN", { year: "numeric", month: "long", day: "numeric" })
+    ? publishedAt.toLocaleDateString(locale === "vi" ? "vi-VN" : locale === "en" ? "en-US" : locale, { year: "numeric", month: "long", day: "numeric" })
     : null;
 
   return (

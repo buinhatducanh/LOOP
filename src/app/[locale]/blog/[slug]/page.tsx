@@ -15,7 +15,6 @@ import { prisma } from "@/lib/prisma";
 import { parseLocaleParam, getLocalizedField } from "@/lib/i18n/localization";
 import { mapLocalizedBlogPost } from "@/lib/i18n/localization";
 import { BlogDetailClient } from "@/components/landing/BlogDetailClient";
-import { buildBlogPostJsonLd } from "@/lib/json-ld";
 
 type DetailProps = { params: Promise<{ locale: string; slug: string }> };
 
@@ -81,14 +80,26 @@ export async function generateMetadata({ params }: DetailProps): Promise<Metadat
   const seoDesc = ((mp as Record<string, unknown>)[seoDescField] as string | null) ?? localizedExcerpt;
 
   const canonical = mp.canonicalUrl ?? `${baseUrl}/${locale}/blog/${slug}`;
-  const ogImage = mp.coverImage ?? "/og-cover.svg";
+  const ogImage = mp.coverImage
+    ? `/api/og?type=blog-post&slug=${encodeURIComponent(slug)}&locale=${locale}`
+    : "/og-cover.svg";
   const videoUrl = mp.videoUrl;
   const pageTitle = `${seoTitle} | LOOP Solutions`;
+
+  // Build hreflang alternates for all 5 locales
+  const hreflangLocales = ["vi", "en", "ja", "ko", "zh"] as const;
+  const languages: Record<string, string> = {};
+  for (const l of hreflangLocales) {
+    languages[l] = `${baseUrl}/${l}/blog/${slug}`;
+  }
 
   return {
     title: pageTitle,
     description: seoDesc,
-    alternates: { canonical },
+    alternates: {
+      canonical,
+      languages,
+    },
     openGraph: {
       type: "article",
       title: pageTitle,
@@ -149,15 +160,29 @@ export default async function BlogPostPage({ params }: DetailProps) {
   });
   const related = relatedRaw.map((r) => mapLocalizedBlogPost(r, resolvedLocale));
 
-  // JSON-LD Article schema
-  const jsonLd = buildBlogPostJsonLd({
-    title: raw.title,
+  // JSON-LD Article schema — locale-aware URL
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.loops.vn";
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: raw.title,
     description: raw.excerpt ?? undefined,
     image: raw.coverImage ?? undefined,
-    authorName: authorName ?? "LOOP Solutions",
-    publishedAt: raw.publishedAt ? raw.publishedAt.toISOString() : undefined,
-    slug,
-  });
+    author: { "@type": "Person", name: authorName ?? "LOOP Solutions" },
+    datePublished: raw.publishedAt ? raw.publishedAt.toISOString() : undefined,
+    dateModified: raw.publishedAt ? raw.publishedAt.toISOString() : undefined,
+    publisher: {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      name: "LOOP",
+      url: siteUrl,
+      logo: `${siteUrl}/logo.png`,
+    },
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": `${siteUrl}/${locale}/blog/${slug}`,
+    },
+  };
 
   return (
     <>

@@ -1,5 +1,7 @@
 import { ImageResponse } from "next/og";
 import { NextRequest } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { parseLocaleParam, getLocalizedField } from "@/lib/i18n/localization";
 
 export const runtime = "edge";
 
@@ -98,35 +100,174 @@ const CTA_LABELS: Record<Locale, string> = {
  zh: "",
 };
 
-export async function GET(req: NextRequest) {
- const { searchParams } = req.nextUrl;
- const rawLocale = searchParams.get("locale") ?? "vi";
- const locale = LOCALES.includes(rawLocale as Locale) ? (rawLocale as Locale) : "vi";
- const type = searchParams.get("type") ?? "home";
+// ─── Blog Post OG Image ─────────────────────────────────────────────────────────
 
- const rawTitle = searchParams.get("title");
- const rawDescription = searchParams.get("description");
- const rawSubtitle = searchParams.get("subtitle");
+async function renderBlogPostOg(title: string, excerpt: string, imageUrl?: string, locale: Locale = "vi") {
+  const accent = "#6B3DF5";
+  const accent2 = "#EC4899";
+  const accent3 = "#4F7DF3";
+  const text = "#ffffff";
+  const muted = "#94a3b8";
+  const cardBg = "rgba(15,23,42,0.85)";
 
- const title =
- rawTitle ??
- (type === "home"
- ? "LOOP Solutions"
- : SUBTITLES[locale][type] ?? SUBTITLES[locale].home);
+  const localeLabels: Record<Locale, string> = {
+    vi: "Bài viết",
+    en: "Blog Post",
+    ja: "ブログ",
+    ko: "블로그",
+    zh: "博客",
+  };
 
- const description = rawDescription ?? DEFAULT_DESCRIPTIONS[locale];
- const subtitle = rawSubtitle ?? SUBTITLES[locale][type] ?? SUBTITLES[locale].home;
+  // Use cover image as left-side accent if provided
+  const hasImage = imageUrl && (imageUrl.startsWith("http://") || imageUrl.startsWith("https://") || imageUrl.startsWith("//"));
 
- // Colors — cosmic dark theme
- const bgFrom = "#020617";
- const bgVia = "#0f172a";
- const bgTo = "#1e1b4b";
+  return new ImageResponse(
+    (
+      <div
+        style={{
+          height: "100%",
+          width: "100%",
+          display: "flex",
+          flexDirection: "row",
+          background: `linear-gradient(135deg, #020617 0%, #0f172a 50%, #1e1b4b 100%)`,
+          fontFamily: "Inter, system-ui, sans-serif",
+          position: "relative",
+          overflow: "hidden",
+        }}
+      >
+        {/* Background decorative elements */}
+        <div style={{ position: "absolute", top: 0, right: 0, width: "600px", height: "600px", background: `radial-gradient(circle, ${accent}25 0%, transparent 70%)`, pointerEvents: "none" }} />
+        <div style={{ position: "absolute", bottom: 0, left: 0, width: "500px", height: "500px", background: `radial-gradient(circle, ${accent2}18 0%, transparent 70%)`, pointerEvents: "none" }} />
+
+        {/* Cover image on the right side */}
+        {hasImage && (
+          <div
+            style={{
+              width: "420px",
+              flexShrink: 0,
+              position: "relative",
+              display: "flex",
+              alignItems: "stretch",
+            }}
+          >
+            <img
+              src={imageUrl}
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              alt=""
+            />
+            {/* Gradient overlay */}
+            <div
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "100%",
+                height: "100%",
+                background: `linear-gradient(to right, rgba(2,6,23,0.7) 0%, transparent 60%)`,
+              }}
+            />
+          </div>
+        )}
+
+        {/* Main content */}
+        <div
+          style={{
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "space-between",
+            padding: "56px 60px",
+            position: "relative",
+            zIndex: 1,
+          }}
+        >
+          {/* Top bar */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              <img src={LOGO_DATA_URI} width={44} height={44} style={{ borderRadius: "10px" }} />
+              <span style={{ fontSize: "22px", fontWeight: 700, color: text, letterSpacing: "-0.02em" }}>LOOP</span>
+            </div>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                padding: "6px 16px",
+                borderRadius: "999px",
+                border: `1px solid ${accent2}50`,
+                background: `${accent2}18`,
+                fontSize: "13px",
+                fontWeight: 600,
+                color: "#F472B6",
+                textTransform: "uppercase",
+                letterSpacing: "0.06em",
+              }}
+            >
+              ✦ {localeLabels[locale]}
+            </div>
+          </div>
+
+          {/* Title & Excerpt */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "16px", flex: 1, justifyContent: "center", paddingTop: "20px" }}>
+            <div
+              style={{
+                fontSize: title.length > 50 ? "36px" : title.length > 30 ? "44px" : "52px",
+                fontWeight: 700,
+                color: text,
+                lineHeight: 1.15,
+                letterSpacing: "-0.03em",
+                maxWidth: hasImage ? "680px" : "1080px",
+              }}
+            >
+              {title}
+            </div>
+            {excerpt ? (
+              <div
+                style={{
+                  fontSize: "18px",
+                  color: muted,
+                  lineHeight: 1.55,
+                  maxWidth: hasImage ? "600px" : "900px",
+                  maxHeight: "80px",
+                  overflow: "hidden",
+                }}
+              >
+                {excerpt.length > 150 ? excerpt.substring(0, 147) + "…" : excerpt}
+              </div>
+            ) : null}
+          </div>
+
+          {/* Bottom bar */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              borderTop: "1px solid rgba(255,255,255,0.08)",
+              paddingTop: "20px",
+            }}
+          >
+            <span style={{ fontSize: "16px", color: muted }}>loops.vn/blog</span>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "16px", color: muted }}>
+              <span style={{ color: accent3, fontWeight: 600 }}>loops.vn</span>
+              <span>·</span>
+              <span>+84 37 844 3602</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    ),
+    { width: 1200, height: 630 }
+  );
+}
+
+// ─── Generic OG Image ───────────────────────────────────────────────────────────
+
+function renderGenericOg(title: string, description: string, subtitle: string, locale: Locale, type: string) {
  const accent = "#6B3DF5";
  const accent2 = "#EC4899";
  const accent3 = "#4F7DF3";
  const text = "#ffffff";
  const muted = "#94a3b8";
-
  const isHome = type === "home";
 
  return new ImageResponse(
@@ -139,7 +280,7 @@ export async function GET(req: NextRequest) {
  flexDirection: "column",
  justifyContent: "space-between",
  padding: "72px",
- background: `linear-gradient(135deg, ${bgFrom} 0%, ${bgVia} 50%, ${bgTo} 100%)`,
+ background: `linear-gradient(135deg, #020617 0%, #0f172a 50%, #1e1b4b 100%)`,
  fontFamily: "Inter, system-ui, sans-serif",
  }}
  >
@@ -334,9 +475,63 @@ export async function GET(req: NextRequest) {
  {
  width: 1200,
  height: 630,
- headers: {
- "Cache-Control": "public, max-age=31536000, immutable",
- },
  }
  );
+}
+
+// ─── Route Handler ──────────────────────────────────────────────────────────────
+
+export async function GET(req: NextRequest) {
+ const { searchParams } = req.nextUrl;
+ const rawLocale = searchParams.get("locale") ?? "vi";
+ const locale = LOCALES.includes(rawLocale as Locale) ? (rawLocale as Locale) : "vi";
+ const type = searchParams.get("type") ?? "home";
+
+ const rawTitle = searchParams.get("title");
+ const rawDescription = searchParams.get("description");
+ const rawSubtitle = searchParams.get("subtitle");
+ const rawImage = searchParams.get("image");
+
+ // ── Blog post OG: /api/og?type=blog-post&slug=...&locale=... ──
+ if (type === "blog-post") {
+   const slug = searchParams.get("slug");
+   if (slug) {
+     try {
+       const post = await prisma.blogPost.findFirst({
+         where: { slug, status: "published" },
+         select: {
+           title: true, titleEn: true, titleJa: true, titleKo: true, titleZh: true,
+           excerpt: true, excerptEn: true, excerptJa: true, excerptKo: true, excerptZh: true,
+           coverImage: true,
+         },
+       });
+       if (post) {
+         const resolvedLocale = parseLocaleParam(new URLSearchParams({ lang: locale }));
+         const title = (getLocalizedField(post, "title", resolvedLocale) as string | null) ?? post.title ?? "Blog";
+         const excerpt = (getLocalizedField(post, "excerpt", resolvedLocale) as string | null) ?? "";
+         const image = post.coverImage ?? undefined;
+         return renderBlogPostOg(title, excerpt, image, locale);
+       }
+     } catch {
+       // Fall through to generic rendering
+     }
+   }
+   // Fallback: use explicit title/description params
+   const title = rawTitle ?? "Blog | LOOP Solutions";
+   const excerpt = rawDescription ?? "";
+   const image = rawImage ?? undefined;
+   return renderBlogPostOg(title, excerpt, image, locale);
+ }
+
+ // ── Generic OG (existing types) ──
+ const title =
+ rawTitle ??
+ (type === "home"
+ ? "LOOP Solutions"
+ : SUBTITLES[locale][type] ?? SUBTITLES[locale].home);
+
+ const description = rawDescription ?? DEFAULT_DESCRIPTIONS[locale];
+ const subtitle = rawSubtitle ?? SUBTITLES[locale][type] ?? SUBTITLES[locale].home;
+
+ return renderGenericOg(title, description, subtitle, locale, type);
 }

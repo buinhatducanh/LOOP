@@ -48,6 +48,9 @@ export async function GET(
       publishedAt: post.publishedAt,
       seoTitle: getLocalizedField(post, "seoTitle", locale),
       seoDesc: getLocalizedField(post, "seoDesc", locale),
+      videoUrl: post.videoUrl,
+      canonicalUrl: post.canonicalUrl,
+      backlinks: post.backlinks,
       author: post.author,
       _localeUsed: locale,
     });

@@ -51,18 +51,26 @@ function hexRgba(hex: string, alpha: number): string {
 
 // ── Search Overlay ────────────────────────────────────────────────────────────
 
-const SEARCH_SUGGESTIONS = [
-  { label: "Thiết kế Website", href: "/services", color: DS.cosmicBlue },
-  { label: "Phát triển App / SaaS", href: "/services?cat=app", color: DS.cosmicPurple },
-  { label: "SEO & Marketing", href: "/services?cat=seo", color: DS.green },
-  { label: "Dashboard Analytics", href: "/services?cat=dashboard", color: DS.cyan },
-  { label: "Khóa học Digital Marketing", href: "/academy", color: DS.cosmicPurple },
-  { label: "Portfolio dự án", href: "/portfolio", color: DS.amber },
-  { label: "Đội ngũ LOOP", href: "/team", color: DS.cosmicCyan },
-];
+// Entity type config: icon emoji + DS color + label key
+const ENTITY_CONFIG: Record<string, { icon: string; color: string; pill: string }> = {
+  services:      { icon: "🌐", color: DS.cosmicBlue,   pill: "Dịch vụ" },
+  team:          { icon: "👨‍💻", color: DS.cosmicPurple,  pill: "Đội ngũ" },
+  projects:      { icon: "📁", color: DS.amber,        pill: "Dự án" },
+  blog:          { icon: "📝", color: DS.cosmicBlue,    pill: "Bài viết" },
+  courses:       { icon: "🎓", color: DS.cosmicPurple,  pill: "Khóa học" },
+  faqs:          { icon: "❓", color: DS.cyan,         pill: "FAQ" },
+  testimonials:  { icon: "⭐", color: DS.gold,         pill: "Đánh giá" },
+  instructors:   { icon: "🧑‍🏫", color: DS.cosmicPurple,  pill: "Giảng viên" },
+  expertises:    { icon: "🛠️", color: DS.teal,        pill: "Chuyên môn" },
+  webTemplates:  { icon: "🎨", color: DS.cosmicPurple,  pill: "Mẫu web" },
+  landingPages:   { icon: "🚀", color: DS.pink,         pill: "Landing" },
+  pricingPackages: { icon: "💰", color: DS.gold,       pill: "Gói giá" },
+  addonServices:  { icon: "➕", color: DS.cyan,        pill: "Bổ sung" },
+};
 
+// Trending pills for empty-query state
 const SEARCH_PILLS = [
-  { label: "Thiết kế web", color: DS.cosmicBlue },
+  { label: "Thiết kế website", color: DS.cosmicBlue },
   { label: "Nhận tư vấn", color: DS.green },
   { label: "Khóa học", color: DS.cosmicPurple },
   { label: "Web nhà hàng", color: DS.amber },
@@ -70,20 +78,191 @@ const SEARCH_PILLS = [
   { label: "Dashboard", color: DS.cyan },
 ];
 
+// Fuse.js fuzzy search — client-side typo tolerance
+import Fuse from "fuse.js";
+
+// Highlight matched query terms in text — wraps with <mark>
+function highlightText(text: string, query: string): React.ReactNode {
+  if (!query || !text) return text;
+  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const regex = new RegExp(`(${escaped})`, "gi");
+  const parts = text.split(regex);
+  return parts.map((part, i) =>
+    regex.test(part) ? (
+      <mark key={i} style={{
+        background: "rgba(236,72,153,0.18)",
+        color: DS.pink,
+        borderRadius: "3px",
+        padding: "0 2px",
+        fontWeight: 600,
+      }}>{part}</mark>
+    ) : part
+  );
+}
+
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedValue(value), delay);
+    return () => clearTimeout(timer);
+  }, [value, delay]);
+  return debouncedValue;
+}
+
+function useRecentSearches() {
+  const KEY = "loop-recent-searches";
+  const [recent, setRecent] = useState<string[]>([]);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(KEY);
+      if (stored) setRecent(JSON.parse(stored));
+    } catch { /* ignore */ }
+  }, []);
+
+  function addSearch(q: string) {
+    if (!q.trim()) return;
+    const updated = [q, ...recent.filter(r => r !== q)].slice(0, 10);
+    setRecent(updated);
+    try { localStorage.setItem(KEY, JSON.stringify(updated)); } catch { /* ignore */ }
+  }
+
+  function clearSearches() {
+    setRecent([]);
+    try { localStorage.removeItem(KEY); } catch { /* ignore */ }
+  }
+
+  return { recent, addSearch, clearSearches };
+}
+
 function SearchOverlay({ locale, onClose }: { locale: string; onClose: () => void }) {
+  const t = useTranslations("search");
   const [query, setQuery] = useState("");
+  const [results, setResults] = useState<any | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(-1);
+  const [flatItems, setFlatItems] = useState<{ href: string; label: string }[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
+  const debouncedQuery = useDebounce(query, 300);
+  const { recent, addSearch, clearSearches } = useRecentSearches();
 
   useEffect(() => {
     setTimeout(() => inputRef.current?.focus(), 50);
-    const fn = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", fn);
-    return () => window.removeEventListener("keydown", fn);
-  }, [onClose]);
+  }, []);
 
-  const results = query.trim().length > 0
-    ? SEARCH_SUGGESTIONS.filter(r => r.label.toLowerCase().includes(query.toLowerCase()))
-    : [];
+  // Fetch search results
+  useEffect(() => {
+    if (!debouncedQuery || debouncedQuery.trim().length < 2) {
+      setResults(null);
+      setLoading(false);
+      setError(false);
+      setActiveIndex(-1);
+      setFlatItems([]);
+      return;
+    }
+
+    let cancelled = false;
+    setLoading(true);
+    setError(false);
+    setActiveIndex(-1);
+    setFlatItems([]);
+
+    fetch(`/api/search?q=${encodeURIComponent(debouncedQuery)}&locale=${locale}&mode=full`)
+      .then(res => {
+        if (!res.ok) throw new Error("search failed");
+        return res.json();
+      })
+      .then(data => {
+        if (cancelled) return;
+
+        // Build flat list of all items with searchable fields for fuzzy matching
+        type FlatItem = { _entityKey: string; _item: any; href: string; label: string };
+        const flat: FlatItem[] = [];
+        for (const [key, list] of Object.entries(data.data)) {
+          if (!Array.isArray(list) || key === "total" || key === "totalHits") continue;
+          for (const item of list as any[]) {
+            const label = item.title || item.name || item.question || item.label || "";
+            const desc = item.description || item.excerpt || item.answer || item.text || "";
+            flat.push({ _entityKey: key, _item: item, href: item.href, label, [key]: { ...item, fuzzyLabel: label + " " + desc } });
+          }
+        }
+
+        // Apply Fuse.js fuzzy search — re-rank with typo tolerance (threshold 0.4)
+        const fuse = new Fuse(flat, {
+          keys: [
+            { name: "label", weight: 0.7 },
+            { name: "_item.description", weight: 0.2 },
+            { name: "_item.excerpt", weight: 0.1 },
+          ],
+          threshold: 0.4,
+          includeScore: true,
+          minMatchCharLength: 2,
+        });
+        const fuzzyResults = fuse.search(debouncedQuery);
+        const reRankedItems = fuzzyResults.map(r => r.item);
+
+        // Re-build grouped results from fuzzy-ranked items
+        const grouped: Record<string, any[]> = {};
+        for (const item of reRankedItems) {
+          const key = item._entityKey;
+          if (!grouped[key]) grouped[key] = [];
+          if (grouped[key].length < 5) grouped[key].push(item._item);
+        }
+
+        // Fallback: if fuzzy returns nothing, use original results
+        const finalResults = Object.keys(grouped).length > 0 ? { ...data.data, ...grouped } : data.data;
+        setResults(finalResults);
+
+        // Build flat list for keyboard nav
+        const items: { href: string; label: string }[] = [];
+        for (const [, list] of Object.entries(finalResults)) {
+          if (!Array.isArray(list)) continue;
+          for (const item of list as any[]) {
+            items.push({ href: item.href, label: item.title || item.name || item.question || "" });
+          }
+        }
+        setFlatItems(items);
+        setLoading(false);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setError(true);
+        setLoading(false);
+      });
+
+    return () => { cancelled = true; };
+  }, [debouncedQuery, locale]);
+
+  // Keyboard nav
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") { onClose(); return; }
+      if (!flatItems.length) return;
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setActiveIndex(i => Math.min(i + 1, flatItems.length - 1));
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setActiveIndex(i => Math.max(i - 1, -1));
+      } else if (e.key === "Enter" && activeIndex >= 0) {
+        e.preventDefault();
+        const item = flatItems[activeIndex];
+        if (item) { addSearch(query); onClose(); window.location.href = item.href; }
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [flatItems, activeIndex, query, onClose]);
+
+  // Flatten items for keyboard index lookup
+  const entityKeys = results ? Object.keys(results).filter(k => k !== "total" && k !== "totalHits" && Array.isArray((results as any)[k])) : [];
+  let itemIndex = 0;
+
+  function isActive(key: string, idx: number) {
+    const prevCount = entityKeys.slice(0, entityKeys.indexOf(key)).reduce((sum, k) => sum + ((results as any)?.[k]?.length ?? 0), 0);
+    return activeIndex >= prevCount && activeIndex < prevCount + idx;
+  }
 
   return (
     <motion.div
@@ -105,29 +284,36 @@ function SearchOverlay({ locale, onClose }: { locale: string; onClose: () => voi
         style={{ width: "100%", maxWidth: 640, padding: "0 1rem" }}
         onClick={e => e.stopPropagation()}
       >
-        {/* Cosmic glow input */}
+        {/* Search input */}
         <div
           style={{
             display: "flex", alignItems: "center", gap: "0.75rem",
             padding: "1rem 1.5rem", borderRadius: 16,
             background: DS.bgCard2,
-            border: `1px solid rgba(236,72,153,0.4), 1px solid rgba(107,61,245,0.2)`,
+            border: `1px solid rgba(236,72,153,0.4)`,
             boxShadow: `0 0 60px rgba(236,72,153,0.12), 0 25px 80px rgba(0,0,0,0.7)`,
           }}
         >
-          <Search size={20} style={{ color: DS.pink, flexShrink: 0 }} />
+          {loading ? (
+            <div className="search-spinner" style={{ width: 20, height: 20, flexShrink: 0 }}>
+              <div style={{ width: 20, height: 20, border: `2px solid rgba(236,72,153,0.2)`, borderTopColor: DS.pink, borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
+            </div>
+          ) : (
+            <Search size={20} style={{ color: DS.pink, flexShrink: 0 }} />
+          )}
           <input
             ref={inputRef}
             value={query}
             onChange={e => setQuery(e.target.value)}
-            placeholder="Tìm kiếm dịch vụ, khóa học..."
+            placeholder={t("searchPlaceholder")}
+            aria-label={t("searchPlaceholder")}
             style={{
               flex: 1, background: "none", border: "none", outline: "none",
               color: DS.text, fontSize: 16, caretColor: DS.pink,
             }}
           />
           {query ? (
-            <button onClick={() => setQuery("")} style={{ background: "none", border: "none", cursor: "pointer", color: DS.text5, display: "flex" }}>
+            <button onClick={() => setQuery("")} aria-label="Clear" style={{ background: "none", border: "none", cursor: "pointer", color: DS.text5, display: "flex" }}>
               <X size={18} />
             </button>
           ) : (
@@ -137,92 +323,186 @@ function SearchOverlay({ locale, onClose }: { locale: string; onClose: () => voi
           )}
         </div>
 
-        {/* Results */}
+        {/* Results panel */}
         <AnimatePresence>
-          {results.length > 0 && (
+          {(query.length >= 2) && (
             <motion.div
               initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.15 }}
               style={{
                 marginTop: 8, borderRadius: 16, overflow: "hidden",
                 background: DS.bgCard2, border: `1px solid rgba(107,61,245,0.2)`,
-                boxShadow: "0 20px 60px rgba(0,0,0,0.6)",
+                boxShadow: "0 20px 60px rgba(0,0,0,0.6)", maxHeight: "70vh", overflowY: "auto",
               }}
             >
-              {results.map((r, i) => (
-                <Link
-                  key={i}
-                  href={`/${locale}${r.href}`}
-                  onClick={onClose}
-                  style={{ textDecoration: "none", display: "block" }}
-                >
-                  <div
-                    style={{
-                      display: "flex", alignItems: "center", gap: "0.75rem",
-                      padding: "0.875rem 1.5rem",
-                      borderBottom: i < results.length - 1 ? `1px solid ${DS.border}` : "none",
-                      cursor: "pointer",
-                    }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(236,72,153,0.06)"; }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
-                  >
+              {/* Loading skeletons */}
+              {loading && (
+                <div style={{ padding: "12px 16px" }}>
+                  {[1, 2, 3].map(i => (
+                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderBottom: i < 3 ? `1px solid ${DS.border}` : "none" }}>
+                      <div style={{ width: 40, height: 40, borderRadius: 10, background: `rgba(255,255,255,0.05)`, animation: "pulse 1.4s ease-in-out infinite" }} />
+                      <div style={{ flex: 1 }}>
+                        <div style={{ width: "60%", height: 12, borderRadius: 6, background: `rgba(255,255,255,0.05)`, marginBottom: 6, animation: "pulse 1.4s ease-in-out infinite" }} />
+                        <div style={{ width: "35%", height: 10, borderRadius: 6, background: `rgba(255,255,255,0.03)`, animation: "pulse 1.4s ease-in-out infinite" }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Error state */}
+              {error && (
+                <div style={{ textAlign: "center", padding: "2rem 1.5rem" }}>
+                  <div style={{ fontSize: 32, marginBottom: 8 }}>⚠️</div>
+                  <div style={{ color: DS.text3, fontSize: 14, marginBottom: 12 }}>{t("errorState")}</div>
+                  <Link href={`/${locale}/contact`} onClick={onClose} style={{ color: DS.pink, fontSize: 13, textDecoration: "none" }}>
+                    {t("emptyResultCta")}
+                  </Link>
+                </div>
+              )}
+
+              {/* Results — grouped by entity type */}
+              {!loading && !error && results && results.totalHits === 0 && (
+                <div style={{ textAlign: "center", padding: "2rem 1.5rem" }}>
+                  <div style={{ fontSize: 36, marginBottom: 8 }}>🔍</div>
+                  <div style={{ color: DS.text3, fontSize: 14 }}>{t("noResults", { query })}</div>
+                  <Link href={`/${locale}/contact`} onClick={onClose} style={{ color: DS.pink, fontSize: 13, textDecoration: "none", marginTop: 8, display: "inline-block" }}>
+                    {t("emptyResultCta")}
+                  </Link>
+                </div>
+              )}
+
+              {!loading && !error && results && results.totalHits > 0 && entityKeys.map(key => {
+                const list = (results as any)[key];
+                if (!list?.length) return null;
+                const config = ENTITY_CONFIG[key] ?? { icon: "📄", color: DS.text4, pill: key };
+                return (
+                  <div key={key}>
+                    {/* Category header */}
                     <div style={{
-                      width: 40, height: 40, borderRadius: 12, flexShrink: 0,
-                      background: `${r.color}15`, border: `1px solid ${r.color}30`,
-                      display: "flex", alignItems: "center", justifyContent: "center",
+                      padding: "8px 16px 4px",
+                      display: "flex", alignItems: "center", justifyContent: "space-between",
                     }}>
-                      <Search size={16} style={{ color: r.color }} />
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <span style={{ fontSize: "0.8rem" }}>{config.icon}</span>
+                        <span style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.15em", textTransform: "uppercase" }}>
+                          {config.pill}
+                        </span>
+                        <span style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono }}>
+                          ({list.length})
+                        </span>
+                      </div>
+                      <Link href={`/${locale}/${key === "services" ? "services" : key === "projects" ? "portfolio" : key}`} onClick={() => { addSearch(query); onClose(); }} style={{ color: DS.pink, fontSize: 10, textDecoration: "none", fontFamily: DS.mono }}>
+                        {t("viewAll")} →
+                      </Link>
                     </div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ color: DS.text2, fontSize: 14, fontWeight: 600 }}>{r.label}</div>
-                    </div>
-                    <ArrowRight size={14} style={{ color: DS.text5 }} />
+                    {list.map((item: any, idx: number) => {
+                      const isItemActive = isActive(key, idx);
+                      const currentIndex = itemIndex++;
+                      return (
+                        <Link
+                          key={item.id}
+                          href={item.href}
+                          onClick={() => { addSearch(query); onClose(); }}
+                          style={{ textDecoration: "none", display: "block" }}
+                        >
+                          <div
+                            style={{
+                              display: "flex", alignItems: "center", gap: "0.75rem",
+                              padding: "9px 16px",
+                              cursor: "pointer",
+                              background: isItemActive ? "rgba(236,72,153,0.10)" : "transparent",
+                              borderLeft: isItemActive ? `2px solid ${DS.pink}` : "2px solid transparent",
+                              transition: "background 0.1s",
+                            }}
+                            onMouseEnter={e => { if (!isItemActive) (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.03)"; }}
+                            onMouseLeave={e => { if (!isItemActive) (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+                          >
+                            <div style={{
+                              width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+                              background: `${config.color}12`, border: `1px solid ${config.color}25`,
+                              display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15,
+                            }}>
+                              {config.icon}
+                            </div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ color: isItemActive ? DS.text : DS.text2, fontSize: 13, fontWeight: isItemActive ? 600 : 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                {highlightText(item.title || item.name || item.question || item.label, query)}
+                              </div>
+                              {item.description && (
+                                <div style={{ color: DS.text4, fontSize: 11, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: 1 }}>
+                                  {highlightText(item.description, query)}
+                                </div>
+                              )}
+                            </div>
+                            {item.category && (
+                              <div style={{ padding: "2px 8px", borderRadius: 6, background: `${config.color}12`, border: `1px solid ${config.color}20`, color: config.color, fontSize: 10, fontFamily: DS.mono, flexShrink: 0 }}>
+                                {item.category}
+                              </div>
+                            )}
+                            <ArrowRight size={13} style={{ color: DS.text5, flexShrink: 0 }} />
+                          </div>
+                        </Link>
+                      );
+                    })}
                   </div>
-                </Link>
-              ))}
+                );
+              })}
+
+              {/* Footer: total results */}
+              {!loading && !error && results && results.totalHits > 0 && (
+                <div style={{ padding: "10px 16px", borderTop: `1px solid ${DS.border}`, textAlign: "center" }}>
+                  <span style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono }}>
+                    {t("totalResults", { n: results.totalHits })}
+                  </span>
+                </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Pills */}
-        {!query && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }} style={{ marginTop: 20 }}>
-            <div style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.15em", marginBottom: 14, textAlign: "center" }}>
-              ── GỢI Ý TÌM KIẾM
-            </div>
-            <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 8 }}>
-              {SEARCH_PILLS.map(pill => (
-                <button
-                  key={pill.label}
-                  onClick={() => setQuery(pill.label)}
-                  style={{
-                    display: "flex", alignItems: "center", gap: 6,
-                    padding: "6px 14px", borderRadius: 9999,
-                    backgroundColor: hexRgba(pill.color, 0.08),
-                    border: `1px solid ${hexRgba(pill.color, 0.2)}`,
-                    color: pill.color, fontSize: 12, fontFamily: DS.mono,
-                    cursor: "pointer", transition: "all 0.15s",
-                  }}
-                >
-                  {pill.label}
-                </button>
-              ))}
-            </div>
-          </motion.div>
-        )}
-
-        {/* Empty */}
-        {query && results.length === 0 && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ textAlign: "center", padding: "2rem 0" }}>
-            <div style={{ fontSize: 36, marginBottom: 8 }}>🔍</div>
-            <div style={{ color: DS.text3, fontSize: 14 }}>Không tìm thấy kết quả cho &quot;{query}&quot;</div>
-            <Link href={`/${locale}/contact`} onClick={onClose} style={{ color: DS.pink, fontSize: 13, textDecoration: "none", marginTop: 8, display: "inline-block" }}>
-              Liên hệ để được tư vấn →
-            </Link>
-          </motion.div>
-        )}
+        {/* Recent searches (when query is empty) */}
+        <AnimatePresence>
+          {!query && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ delay: 0.05 }}>
+              {recent.length > 0 && (
+                <div style={{ marginTop: 16 }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8, padding: "0 4px" }}>
+                    <span style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.15em", textTransform: "uppercase" }}>
+                      {t("recentSearches")}
+                    </span>
+                    <button onClick={clearSearches} style={{ background: "none", border: "none", cursor: "pointer", color: DS.text5, fontSize: 10, fontFamily: DS.mono }}>
+                      {t("clearRecent")}
+                    </button>
+                  </div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                    {recent.map(r => (
+                      <button key={r} onClick={() => setQuery(r)} style={{
+                        display: "flex", alignItems: "center", gap: 5,
+                        padding: "5px 12px", borderRadius: 8,
+                        background: "rgba(255,255,255,0.04)",
+                        border: `1px solid ${DS.border}`,
+                        color: DS.text3, fontSize: 12, cursor: "pointer",
+                      }}>
+                        <span style={{ color: DS.pink, fontSize: "0.7rem" }}>🔍</span>
+                        {r}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
+
+      {/* Spin + pulse animations */}
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+      `}</style>
     </motion.div>
   );
 }
@@ -356,6 +636,53 @@ function LocaleSwitcher({ locale }: { locale: string }) {
   );
 }
 
+// ── Mobile Dropdown (hook-safe) ────────────────────────────────────────────────
+
+function MobileDropdown({
+  label, items, onClose,
+}: {
+  label: string;
+  items: MobileNavItem[];
+  onClose: () => void;
+}) {
+  const [subOpen, setSubOpen] = useState(false);
+  return (
+    <div>
+      <button
+        onClick={() => setSubOpen(v => !v)}
+        style={{
+          display: "flex", justifyContent: "space-between", alignItems: "center",
+          width: "100%", padding: "10px 14px", borderRadius: 10,
+          color: DS.text3, background: "none", border: "none",
+          cursor: "pointer", fontSize: 15,
+        }}
+      >
+        <span>{label}</span>
+        <ChevronDown size={14} style={{ transform: subOpen ? "rotate(180deg)" : "none", transition: "transform 0.15s" }} />
+      </button>
+      <AnimatePresence>
+        {subOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            style={{ overflow: "hidden", paddingLeft: 16 }}
+          >
+            {items.map(item => (
+              <Link key={item.href} href={item.href} onClick={onClose}
+                style={{ display: "block", padding: "8px 14px", color: DS.text4, fontSize: 14, textDecoration: "none" }}
+              >
+                <span style={{ marginRight: 8 }}>{item.icon}</span>{item.label}
+              </Link>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 // ── Mega Dropdown ─────────────────────────────────────────────────────────────
 
 interface MegaItem { label: string; href: string; icon: string; description: string; color: string; }
@@ -408,7 +735,7 @@ useEffect(() => { if (!isReallyOpen) return; const handler = () => onSelect(); w
               borderRadius: 20,
               backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)",
               boxShadow: `0 24px 80px rgba(0,0,0,0.7), 0 0 40px rgba(236,72,153,0.08), 0 0 80px rgba(107,61,245,0.05)`,
-              overflow: "hidden", zIndex: 100,
+              overflow: "hidden", zIndex: 200,
             }}
           >
             {/* Cosmic top bar */}
@@ -555,7 +882,7 @@ useEffect(() => { if (!isReallyOpen) return; const handler = () => onSelect(); w
               borderRadius: 16,
               backdropFilter: "blur(20px)",
               boxShadow: "0 20px 60px rgba(0,0,0,0.6), 0 0 20px rgba(107,61,245,0.06)",
-              overflow: "hidden", zIndex: 100, padding: "6px",
+              overflow: "hidden", zIndex: 200, padding: "6px",
             }}
           >
             {items.map((item) => (
@@ -649,7 +976,7 @@ export default function SiteHeader({ locale }: { locale: string }) {
       labelKey: "servicesDropdown",
       triggerLabel: t("servicesDropdown"),
       items: [
-        { label: t("serviceWebsite"), href: `/${locale}/services?cat=web`, icon: "🌐", description: "Thiết kế & phát triển website chuyên nghiệp, tối ưu SEO, responsive trên mọi thiết bị.", color: DS.cosmicBlue },
+        { label: t("serviceWebsite"), href: `/${locale}/booking`, icon: "🌐", description: "Thiết kế & phát triển website chuyên nghiệp, tối ưu SEO, responsive trên mọi thiết bị.", color: DS.cosmicBlue },
         { label: t("serviceApp"), href: `/${locale}/services?cat=app`, icon: "📱", description: "Xây dựng ứng dụng di động & phần mềm SaaS với trải nghiệm người dùng hiện đại.", color: DS.cosmicPurple },
         { label: t("serviceDashboard"), href: `/${locale}/services?cat=dashboard`, icon: "📊", description: "Hệ thống dashboard quản trị, phân tích dữ liệu trực quan, báo cáo thông minh.", color: DS.cyan },
         { label: t("serviceSeo"), href: `/${locale}/services?cat=seo`, icon: "🎯", description: "Tối ưu hóa công cụ tìm kiếm, quảng cáo Google & TikTok, tăng trưởng doanh thu bền vững.", color: DS.amber },
@@ -1329,37 +1656,14 @@ export default function SiteHeader({ locale }: { locale: string }) {
               <nav style={{ padding: "12px 1.5rem 20px", display: "flex", flexDirection: "column", gap: 4 }}>
                 {navLinks.map((link, idx) => {
                   if (link.type === "mega" || link.type === "dropdown") {
-                    const [subOpen, setSubOpen] = useState(false);
                     const items = (link as { items: MobileNavItem[] }).items;
-                    const mobileNavItems = items.map(function(item: MobileNavItem) {
-                      return <Link key={item.href} href={item.href}
-                        onClick={() => { setMobileOpen(false); setSubOpen(false); }}
-                        style={{ display: "block", padding: "8px 14px", color: DS.text4, fontSize: 14, textDecoration: "none" }}
-                      >
-                        <span style={{ marginRight: 8 }}>{item.icon}</span>{item.label}
-                      </Link>;
-                    });
                     return (
-                      <div key={`m-drop-${link.labelKey ?? idx}`}>
-                        <button onClick={() => setSubOpen(v => !v)}
-                          style={{
-                            display: "flex", justifyContent: "space-between", alignItems: "center",
-                            width: "100%", padding: "10px 14px", borderRadius: 10,
-                            color: DS.text3, background: "none", border: "none",
-                            cursor: "pointer", fontSize: 15,
-                          }}
-                        >
-                          <span>{link.type === "mega" ? link.triggerLabel : link.triggerLabel}</span>
-                          <ChevronDown size={14} style={{ transform: subOpen ? "rotate(180deg)" : "none", transition: "transform 0.15s" }} />
-                        </button>
-                        <AnimatePresence>
-                          {subOpen && (
-                            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }} style={{ overflow: "hidden", paddingLeft: 16 }}>
-                              {mobileNavItems}
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
+                      <MobileDropdown
+                        key={`m-drop-${link.labelKey ?? idx}`}
+                        label={link.triggerLabel}
+                        items={items}
+                        onClose={() => setMobileOpen(false)}
+                      />
                     );
                   }
                   const href = link.href;
