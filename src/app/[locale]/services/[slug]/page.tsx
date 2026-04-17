@@ -62,7 +62,14 @@ export default async function ServiceDetailPage({ params }: DetailProps) {
   setRequestLocale(locale);
 
   const resolvedLocale = parseLocaleParam(new URLSearchParams({ lang: locale }));
-  const tNav = await getTranslations("Navigation");
+
+  // Extract only the nav strings needed by the client component — avoids serializing
+  // the full AbstractIntlMessages object which can cause production errors.
+  const navRaw = await getTranslations("Navigation");
+  const tNav = {
+    home: navRaw("home"),
+    services: navRaw("services"),
+  };
 
   const raw = await prisma.service.findUnique({
     where: { slug },

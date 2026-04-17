@@ -29,6 +29,7 @@ import { AdminI18nProvider } from "@/i18n/admin/AdminI18nProvider";
 import { AuthGuard } from "@/components/admin/AuthGuard";
 import { SessionHydrator } from "./SessionHydrator";
 import { MemberStatsPanel } from "@/components/shared/MemberStatsPanel";
+import { AdminSessionHydrator, type HydrationPayload } from "./AdminSessionHydrator";
 import "@/styles/globals.css";
 
 /**
@@ -43,105 +44,151 @@ import "@/styles/globals.css";
  * Solution: Verify the JWT signature + expiry here using full jwtVerify().
  * Only renders the admin UI if the token is cryptographically valid AND not expired.
  */
-async function verifyAdminSession(): Promise<void> {
- // Prevent loop: /admin/login is also caught by this layout!
- const reqHeaders = await headers();
- if (reqHeaders.get("x-pathname") === "/admin/login") {
- return; // Let AuthGuard and the page handle logic, do NOT force redirect
- }
+async function verifyAdminSession(): Promise<Record<string, unknown> | null> {
+    // Prevent loop: /admin/login is also caught by this layout!
+    const reqHeaders = await headers();
+    if (reqHeaders.get("x-pathname") === "/admin/login") {
+        return null; // Let AuthGuard and the page handle logic, do NOT force redirect
+    }
 
- // Read token from HttpOnly cookie (server-side, no localStorage dependency)
- const cookieStore = await cookies();
- const token =
- cookieStore.get(COOKIES.STAFF_TOKEN)?.value ??
- cookieStore.get("auth-token")?.value ??
- null;
+    // Read token from HttpOnly cookie (server-side, no localStorage dependency)
+    const cookieStore = await cookies();
+    const token =
+        cookieStore.get(COOKIES.STAFF_TOKEN)?.value ??
+        cookieStore.get("auth-token")?.value ??
+        null;
 
- if (!token) {
- redirect("/admin/login?reason=expired");
- }
+    if (!token) {
+        redirect("/admin/login?reason=expired");
+    }
 
- // Require JWT_SECRET (or AUTH_SECRET as fallback for local dev)
- const secret = process.env.JWT_SECRET ?? process.env.AUTH_SECRET;
- if (!secret) {
- console.error("[AdminLayout] JWT_SECRET not configured — blocking access");
- redirect("/admin/login?reason=expired");
- }
+    // Require JWT_SECRET (or AUTH_SECRET as fallback for local dev)
+    const secret = process.env.JWT_SECRET ?? process.env.AUTH_SECRET;
+    if (!secret) {
+        console.error("[AdminLayout] JWT_SECRET not configured — blocking access");
+        redirect("/admin/login?reason=expired");
+    }
 
- // Full JWT verification: signature + expiry check via jose
- // jwtVerify checks exp, nbf, iat, iss, aud automatically
- let payload: Record<string, unknown>;
- try {
- const { payload: verifiedPayload } = await jwtVerify(
- token,
- new TextEncoder().encode(secret),
- { algorithms: ["HS256"] }
- );
- payload = verifiedPayload as Record<string, unknown>;
- } catch {
- // Token is invalid (malformed), signature mismatch, or expired — redirect to login
- redirect("/admin/login?reason=expired");
- return; // unreachable but satisfies TypeScript
- }
+    // Full JWT verification: signature + expiry check via jose
+    // jwtVerify checks exp, nbf, iat, iss, aud automatically
+    let payload: Record<string, unknown>;
+    try {
+        const { payload: verifiedPayload } = await jwtVerify(
+            token,
+            new TextEncoder().encode(secret),
+            { algorithms: ["HS256"] }
+        );
+        payload = verifiedPayload as Record<string, unknown>;
+    } catch {
+        // Token is invalid (malformed), signature mismatch, or expired — redirect to login
+        redirect("/admin/login?reason=expired");
+        return null; // unreachable but satisfies TypeScript
+    }
 
- // Verify account type is staff (belt-and-suspenders with middleware)
- const acc = payload.acc as string | undefined;
- if (acc === "customer") {
- redirect("/admin/login?reason=expired");
- }
+    // Verify account type is staff (belt-and-suspenders with middleware)
+    const acc = payload.acc as string | undefined;
+    if (acc === "customer") {
+        redirect("/admin/login?reason=expired");
+    }
+
+    return payload;
 }
 
 const dmSans = DM_Sans({
- subsets: ["latin"],
- weight: ["300", "400", "500", "600", "700", "800"],
- variable: "--font-dm-sans",
+    subsets: ["latin"],
+    weight: ["300", "400", "500", "600", "700", "800"],
+    variable: "--font-dm-sans",
 });
 
 const plusJakarta = Plus_Jakarta_Sans({
- subsets: ["latin"],
- weight: ["400", "500", "600", "700", "800"],
- variable: "--font-plus-jakarta",
+    subsets: ["latin"],
+    weight: ["400", "500", "600", "700", "800"],
+    variable: "--font-plus-jakarta",
 });
 
 // Re-export so other admin pages can import this type
 export type { SessionUser } from "@/lib/auth/permissions";
 
 export default async function AdminLayout({
- children,
+    children,
 }: {
- children: React.ReactNode;
+    children: React.ReactNode;
 }) {
- // CRITICAL: Verify session on EVERY request before rendering
- await verifyAdminSession();
+    // CRITICAL: Verify session on EVERY request before rendering
+    const verifiedPayload = await verifyAdminSession();
 
- return (
- <QueryProvider>
- <AdminI18nProvider>
- <AuthGuard>
- <SessionHydrator />
- <MemberStatsPanel />
- {/* Sidebar reads session from Zustand store — no prop needed */}
- <AdminSidebar />
- {/* Main area */}
- <div
- style={{
- flex: 1,
- display: "flex",
- flexDirection: "column",
- marginLeft: 260,
- minHeight: "100vh",
- background: "var(--figma-bg, #020617)",
- color: "var(--figma-text, #fff)",
- fontFamily: "var(--font-dm-sans, 'DM Sans', system-ui, sans-serif)",
- }}
- >
- <AdminTopbar />
- <main style={{ flex: 1, padding: "1.5rem", overflowY: "auto" }}>
- {children}
- </main>
- </div>
- </AuthGuard>
- </AdminI18nProvider>
- </QueryProvider>
- );
+    // Build hydration payload from verified JWT
+    // token is needed for localStorage sync in AdminSessionHydrator
+    const cookieStore = await cookies();
+    console.log("[DEBUG] AdminLayout: verifiedPayload =", verifiedPayload ? {
+        sub: verifiedPayload.sub,
+        eml: verifiedPayload.eml,
+        rl: verifiedPayload.rl,
+        acc: verifiedPayload.acc,
+    } : null);
+    const rawToken =
+        cookieStore.get(COOKIES.STAFF_TOKEN)?.value ??
+        cookieStore.get("auth-token")?.value ??
+        "";
+    const hydrationPayload: HydrationPayload | null = verifiedPayload
+        ? {
+            userId: String(verifiedPayload.sub ?? ""),
+            email: String(verifiedPayload.eml ?? verifiedPayload.email ?? ""),
+            name: String(verifiedPayload.nam ?? verifiedPayload.name ?? "User"),
+            role: String(verifiedPayload.rol ?? verifiedPayload.role ?? "member"),
+            roleLevel: Number(verifiedPayload.rl ?? verifiedPayload.roleLevel ?? 5),
+            accountType: (verifiedPayload.acc as "staff" | "customer") ?? "staff",
+            roles: (verifiedPayload.rls ?? verifiedPayload.roles ?? []) as string[],
+            token: rawToken,
+        }
+        : null;
+
+    return (
+        <QueryProvider>
+            <AdminI18nProvider>
+                {/*
+                 * CRITICAL: AdminSessionHydrator MUST be OUTSIDE AuthGuard.
+                 *
+                 * Problem: During SSR, Zustand store is empty. AuthGuard renders
+                 * AdminLoginModal (blocked) BEFORE AdminSessionHydrator's useEffect runs.
+                 * The browser shows the login modal → blank/black screen.
+                 *
+                 * Solution: Render AdminSessionHydrator OUTSIDE AuthGuard so it runs
+                 * first (during client hydration), setting isAuthenticated=true and
+                 * sessionHydrated=true BEFORE AuthGuard's useEffect check runs.
+                 *
+                 * SSR: AdminSessionHydrator returns null (no-op). Server renders
+                 * the admin shell HTML (correct). AuthGuard sees empty Zustand → null.
+                 *
+                 * CSR: AdminSessionHydrator useEffect runs first, sets store.
+                 * AuthGuard useEffect sees isAuthenticated=true → renders children.
+                 */}
+                <AdminSessionHydrator payload={hydrationPayload} />
+                <SessionHydrator />
+                <MemberStatsPanel />
+                <AuthGuard>
+                    {/* Sidebar reads session from Zustand store — no prop needed */}
+                    <AdminSidebar />
+                    {/* Main area */}
+                    <div
+                        style={{
+                            flex: 1,
+                            display: "flex",
+                            flexDirection: "column",
+                            marginLeft: 260,
+                            minHeight: "100vh",
+                            background: "var(--figma-bg, #020617)",
+                            color: "var(--figma-text, #fff)",
+                            fontFamily: "var(--font-dm-sans, 'DM Sans', system-ui, sans-serif)",
+                        }}
+                    >
+                        <AdminTopbar />
+                        <main style={{ flex: 1, padding: "1.5rem", overflowY: "auto" }}>
+                            {children}
+                        </main>
+                    </div>
+                </AuthGuard>
+            </AdminI18nProvider>
+        </QueryProvider>
+    );
 }

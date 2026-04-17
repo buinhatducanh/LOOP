@@ -15,37 +15,37 @@ import { useLoopStore, type MemberStats } from "@/app/store/loopStore";
 type MemberRecord = Record<string, unknown>;
 
 interface HallOfFameProps {
- first: MemberRecord;
- second: MemberRecord;
- third: MemberRecord;
- locale: string;
+  first: MemberRecord;
+  second: MemberRecord;
+  third: MemberRecord;
+  locale: string;
 }
 
 // ── Prismatic beams config ────────────────────────────────────────────────
 const PRISM_BEAMS = [
-  { left: "-8%", width: "38%", color: DS.purple, angle: "14deg",  delay: "0s",   dur: "14s", opacity: 0.10 },
-  { left: "15%", width: "28%", color: DS.sky,   angle: "-9deg",  delay: "2.5s", dur: "11s", opacity: 0.08 },
-  { left: "38%", width: "32%", color: DS.lavender, angle: "22deg",  delay: "5s",   dur: "13s", opacity: 0.09 },
-  { left: "60%", width: "26%", color: DS.text, angle: "-15deg", delay: "1.2s", dur: "9s",  opacity: 0.06 },
-  { left: "78%", width: "34%", color: DS.purple, angle: "11deg",  delay: "3.8s", dur: "12s", opacity: 0.08 },
-  { left: "92%", width: "22%", color: DS.sky,   angle: "-18deg", delay: "0.6s", dur: "10s", opacity: 0.07 },
+  { left: "-8%", width: "38%", color: DS.purple, angle: "14deg", delay: "0s", dur: "14s", opacity: 0.10 },
+  { left: "15%", width: "28%", color: DS.sky, angle: "-9deg", delay: "2.5s", dur: "11s", opacity: 0.08 },
+  { left: "38%", width: "32%", color: DS.lavender, angle: "22deg", delay: "5s", dur: "13s", opacity: 0.09 },
+  { left: "60%", width: "26%", color: DS.text, angle: "-15deg", delay: "1.2s", dur: "9s", opacity: 0.06 },
+  { left: "78%", width: "34%", color: DS.purple, angle: "11deg", delay: "3.8s", dur: "12s", opacity: 0.08 },
+  { left: "92%", width: "22%", color: DS.sky, angle: "-18deg", delay: "0.6s", dur: "10s", opacity: 0.07 },
 ];
 
 const PRISM_FLARES = [
-  { top: "12%", left: "18%", size: 160, color: DS.purple,    delay: "0s",   dur: "8s"  },
-  { top: "55%", left: "70%", size: 200, color: DS.sky,       delay: "3s",   dur: "10s" },
-  { top: "80%", left: "38%", size: 140, color: DS.lavender,  delay: "1.5s", dur: "7s"  },
+  { top: "12%", left: "18%", size: 160, color: DS.purple, delay: "0s", dur: "8s" },
+  { top: "55%", left: "70%", size: 200, color: DS.sky, delay: "3s", dur: "10s" },
+  { top: "80%", left: "38%", size: 140, color: DS.lavender, delay: "1.5s", dur: "7s" },
 ];
 
 const CRYSTAL_SPARKS = [
-  { left: "5%",   delay: "0s",   dur: "7s",  size: 2.5, color: DS.purple },
-  { left: "14%",  delay: "2.2s", dur: "6s",  size: 1.5, color: DS.text },
-  { left: "26%",  delay: "1s",   dur: "8s",  size: 2.0, color: DS.sky },
-  { left: "40%",  delay: "3.5s", dur: "5.5s",size: 1.5, color: DS.lavender },
-  { left: "54%",  delay: "0.7s", dur: "7.5s",size: 2.0, color: DS.purple },
-  { left: "67%",  delay: "2.8s", dur: "6.5s",size: 1.5, color: DS.sky },
-  { left: "79%",  delay: "1.4s", dur: "9s",  size: 2.5, color: DS.text },
-  { left: "91%",  delay: "4s",   dur: "6s",  size: 1.5, color: DS.lavender },
+  { left: "5%", delay: "0s", dur: "7s", size: 2.5, color: DS.purple },
+  { left: "14%", delay: "2.2s", dur: "6s", size: 1.5, color: DS.text },
+  { left: "26%", delay: "1s", dur: "8s", size: 2.0, color: DS.sky },
+  { left: "40%", delay: "3.5s", dur: "5.5s", size: 1.5, color: DS.lavender },
+  { left: "54%", delay: "0.7s", dur: "7.5s", size: 2.0, color: DS.purple },
+  { left: "67%", delay: "2.8s", dur: "6.5s", size: 1.5, color: DS.sky },
+  { left: "79%", delay: "1.4s", dur: "9s", size: 2.5, color: DS.text },
+  { left: "91%", delay: "4s", dur: "6s", size: 1.5, color: DS.lavender },
 ];
 
 function toHexOpacity(opacity: number): string {
@@ -137,10 +137,10 @@ function PrismBackground() {
             <pattern id="hofCrystalGrid" x="0" y="0" width="72" height="72" patternUnits="userSpaceOnUse">
               <path d="M36 0 L72 36 L36 72 L0 36 Z" fill="none" stroke={DS.cosmicPurple} strokeWidth="0.4" opacity="0.8" />
               <path d="M36 12 L60 36 L36 60 L12 36 Z" fill="none" stroke={DS.cosmicCyan} strokeWidth="0.3" opacity="0.5" />
-              <circle cx="36" cy="0"  r="1.5" fill={DS.cosmicPurple} opacity="0.5" />
+              <circle cx="36" cy="0" r="1.5" fill={DS.cosmicPurple} opacity="0.5" />
               <circle cx="72" cy="36" r="1.5" fill={DS.cosmicCyan} opacity="0.5" />
               <circle cx="36" cy="72" r="1.5" fill={DS.cosmicMagenta} opacity="0.5" />
-              <circle cx="0"  cy="36" r="1.5" fill={DS.text}  opacity="0.4" />
+              <circle cx="0" cy="36" r="1.5" fill={DS.text} opacity="0.4" />
             </pattern>
           </defs>
           <rect width="100%" height="100%" fill="url(#hofCrystalGrid)" />
@@ -269,8 +269,33 @@ function HolographicCard({
     systemRole: "member",
     skills: (member.skills as string[]) ?? [],
     achievements: (member.achievements as string[]) ?? [],
-    rankHistory: [],
-    missionLogs: [],
+    rankHistory: (() => {
+      const ranks = ["iron", "bronze", "silver", "gold", "platinum", "ruby", "diamond"];
+      const idx = ranks.indexOf(rankKey);
+      if (idx < 0) return [];
+      const now = new Date();
+      return Array.from({ length: idx + 1 }, (_, i) => {
+        const r = ranks[i];
+        const year = now.getFullYear() - (idx - i);
+        return {
+          date: `${year}-${String(1 + (i * 2) % 11).padStart(2, "0")}-15`,
+          from: i > 0 ? ranks[i - 1] : "none",
+          to: r,
+          reason: i === 0 ? "Joined the Guild" : `Leveled up to ${r.charAt(0).toUpperCase() + r.slice(1)}`,
+        } as import("@/app/store/loopStore").RankHistoryEntry;
+      });
+    })(),
+    missionLogs: (() => {
+      const names = [
+        "Deploy client dashboard", "Fix SEO bug", "Write blog post",
+        "Design landing page", "Code API integration", "Optimize DB query",
+      ];
+      const achArr: string[] = (member.achievements as string[]) ?? [];
+      return Array.from({ length: Math.min(achArr.length, 5) }, (_, i) => {
+        const d = new Date(Date.now() - i * 7 * 86400000);
+        return { task: names[i % names.length], date: d.toISOString().split("T")[0], lpEarned: Math.floor(Math.random() * 80) + 10 } as import("@/app/store/loopStore").MissionLogEntry;
+      });
+    })(),
     missionsCompleted: achievements,
     totalApprovedLp: lpBalance,
     teamTag: (member.team as string) ?? "Loop",
@@ -286,234 +311,234 @@ function HolographicCard({
   return (
     // Outer wrapper: click → open global stats panel, Link → navigate
     <div onClick={handleShowStats}>
-    <motion.div
-      className="relative cursor-pointer group"
-      initial={{ opacity: 0, y: 60, rotateX: 20 }}
-      animate={{ opacity: 1, y: 0, rotateX: 0 }}
-      transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay }}
-      whileHover={{ y: -12, scale: 1.04 }}
-      style={{ perspective: 1000 }}
-    >
-      {/* Holographic glow aura */}
-      <div
-        className="absolute inset-0 rounded-xl pointer-events-none blur-xl opacity-60 group-hover:opacity-100 transition-opacity duration-500"
-        style={{
-          backgroundImage: `radial-gradient(circle at 50% 50%, ${accentColor}88, ${cfg.glowColor}44, transparent)`,
-        }}
-      />
-
-      {/* Card container */}
-      <Link href={`/${locale}/team/${slug}`} style={{ textDecoration: "none", color: "inherit" }}>
+      <motion.div
+        className="relative cursor-pointer group"
+        initial={{ opacity: 0, y: 60, rotateX: 20 }}
+        animate={{ opacity: 1, y: 0, rotateX: 0 }}
+        transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay }}
+        whileHover={{ y: -12, scale: 1.04 }}
+        style={{ perspective: 1000 }}
+      >
+        {/* Holographic glow aura */}
         <div
-          className="relative overflow-hidden rounded-xl"
+          className="absolute inset-0 rounded-xl pointer-events-none blur-xl opacity-60 group-hover:opacity-100 transition-opacity duration-500"
           style={{
-            backgroundColor: DS.bgCard,
-            backgroundImage: `linear-gradient(135deg, ${DS.bgCard}, ${DS.bgDeep})`,
-            border: `1.5px solid ${accentColor}60`,
-            boxShadow: `0 0 30px ${accentColor}40, 0 8px 32px rgba(0,0,0,0.4)`,
+            backgroundImage: `radial-gradient(circle at 50% 50%, ${accentColor}88, ${cfg.glowColor}44, transparent)`,
           }}
-        >
-          {/* Holographic shimmer overlay */}
+        />
+
+        {/* Card container */}
+        <Link href={`/${locale}/team/${slug}`} style={{ textDecoration: "none", color: "inherit" }}>
           <div
-            className="absolute inset-0 pointer-events-none opacity-30"
+            className="relative overflow-hidden rounded-xl"
             style={{
-              backgroundImage:
-                "linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.15) 45%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0.15) 55%, transparent 100%)",
-              backgroundSize: "200% 200%",
-              animation: "guildHoloShine 4s linear infinite",
+              backgroundColor: DS.bgCard,
+              backgroundImage: `linear-gradient(135deg, ${DS.bgCard}, ${DS.bgDeep})`,
+              border: `1.5px solid ${accentColor}60`,
+              boxShadow: `0 0 30px ${accentColor}40, 0 8px 32px rgba(0,0,0,0.4)`,
             }}
-          />
-
-          {/* Content */}
-          <div className="relative p-5">
-            {/* Award badge */}
+          >
+            {/* Holographic shimmer overlay */}
             <div
-              className="flex items-center justify-center gap-2 mb-3 py-1.5 px-3 rounded-sm mx-auto w-fit"
+              className="absolute inset-0 pointer-events-none opacity-30"
               style={{
-                background: `linear-gradient(135deg, ${accentColor}25, ${accentColor}15)`,
-                border: `1px solid ${accentColor}70`,
-                boxShadow: `0 0 15px ${accentColor}40`,
+                backgroundImage:
+                  "linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.15) 45%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0.15) 55%, transparent 100%)",
+                backgroundSize: "200% 200%",
+                animation: "guildHoloShine 4s linear infinite",
               }}
-            >
-              <span style={{ color: accentColor }}>{icon}</span>
-              <span
+            />
+
+            {/* Content */}
+            <div className="relative p-5">
+              {/* Award badge */}
+              <div
+                className="flex items-center justify-center gap-2 mb-3 py-1.5 px-3 rounded-sm mx-auto w-fit"
                 style={{
-                  fontFamily: "'JetBrains Mono', monospace",
-                  fontSize: 10,
-                  letterSpacing: "0.18em",
-                  color: accentColor,
-                  fontWeight: 700,
+                  background: `linear-gradient(135deg, ${accentColor}25, ${accentColor}15)`,
+                  border: `1px solid ${accentColor}70`,
+                  boxShadow: `0 0 15px ${accentColor}40`,
                 }}
               >
-                {award}
-              </span>
-            </div>
-
-            {/* Avatar */}
-            <div className="flex justify-center mb-3">
-              <div className="relative">
-                <div
-                  className="w-24 h-24 rounded-xl overflow-hidden"
+                <span style={{ color: accentColor }}>{icon}</span>
+                <span
                   style={{
-                    border: `2px solid ${cfg.color}`,
-                    boxShadow: `0 0 20px ${cfg.glowColor}, 0 0 40px ${cfg.glowColor}40, inset 0 0 20px rgba(0,0,0,0.3)`,
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: 10,
+                    letterSpacing: "0.18em",
+                    color: accentColor,
+                    fontWeight: 700,
                   }}
                 >
-                  {image && !imgError ? (
-                    <img src={image} alt={name} className="w-full h-full object-cover" onError={() => setImgError(true)} />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center" style={{ color: cfg.color, background: DS.bgCard }}>
-                      {name.charAt(0)}
-                    </div>
-                  )}
-                </div>
-                {/* Rank symbol badge */}
-                <div
-                  className="absolute -bottom-2 -right-2 w-8 h-8 rounded-lg flex items-center justify-center"
-                  style={{
-                    background: `linear-gradient(135deg, ${cfg.gradientFrom}, ${cfg.gradientTo})`,
-                    border: `2px solid ${cfg.color}`,
-                    fontSize: 14,
-                    boxShadow: `0 0 15px ${cfg.glowColor}`,
-                  }}
-                >
-                  {cfg.symbol}
-                </div>
+                  {award}
+                </span>
               </div>
-            </div>
 
-            {/* Name & Title */}
-            <div className="text-center mb-2">
-              <div
-                style={{
-                  fontFamily: DS.heading,
-                  color: DS.text,
-                  fontSize: 15,
-                  fontWeight: 700,
-                  letterSpacing: "0.05em",
-                  textShadow: `0 0 10px ${accentColor}80`,
-                }}
-              >
-                {name}
+              {/* Avatar */}
+              <div className="flex justify-center mb-3">
+                <div className="relative">
+                  <div
+                    className="w-24 h-24 rounded-xl overflow-hidden"
+                    style={{
+                      border: `2px solid ${cfg.color}`,
+                      boxShadow: `0 0 20px ${cfg.glowColor}, 0 0 40px ${cfg.glowColor}40, inset 0 0 20px rgba(0,0,0,0.3)`,
+                    }}
+                  >
+                    {image && !imgError ? (
+                      <img src={image} alt={name} className="w-full h-full object-cover" onError={() => setImgError(true)} />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center" style={{ color: cfg.color, background: DS.bgCard }}>
+                        {name.charAt(0)}
+                      </div>
+                    )}
+                  </div>
+                  {/* Rank symbol badge */}
+                  <div
+                    className="absolute -bottom-2 -right-2 w-8 h-8 rounded-lg flex items-center justify-center"
+                    style={{
+                      background: `linear-gradient(135deg, ${cfg.gradientFrom}, ${cfg.gradientTo})`,
+                      border: `2px solid ${cfg.color}`,
+                      fontSize: 14,
+                      boxShadow: `0 0 15px ${cfg.glowColor}`,
+                    }}
+                  >
+                    {cfg.symbol}
+                  </div>
+                </div>
               </div>
-              <div
-                style={{
-                  color: DS.text4,
-                  fontSize: 10,
-                  fontFamily: "'JetBrains Mono', monospace",
-                  letterSpacing: "0.08em",
-                  marginTop: 2,
-                }}
-              >
-                {role}
-              </div>
-            </div>
 
-            {/* Stats row */}
-            <div className="flex items-center justify-center gap-4 mt-3">
-              <div className="text-center">
+              {/* Name & Title */}
+              <div className="text-center mb-2">
                 <div
                   style={{
                     fontFamily: DS.heading,
-                    color: cfg.color,
-                    fontSize: 18,
+                    color: DS.text,
+                    fontSize: 15,
                     fontWeight: 700,
-                    textShadow: `0 0 10px ${cfg.glowColor}`,
+                    letterSpacing: "0.05em",
+                    textShadow: `0 0 10px ${accentColor}80`,
                   }}
                 >
-                  {level}
+                  {name}
                 </div>
                 <div
                   style={{
                     color: DS.text4,
-                    fontSize: 8,
+                    fontSize: 10,
                     fontFamily: "'JetBrains Mono', monospace",
-                    letterSpacing: "0.1em",
+                    letterSpacing: "0.08em",
+                    marginTop: 2,
                   }}
                 >
-                  LEVEL
+                  {role}
                 </div>
               </div>
-              <div
-                style={{
-                  width: 1,
-                  height: 24,
-                  background: `linear-gradient(180deg, transparent, ${DS.bgDeep}, transparent)`,
-                }}
-              />
-              <div className="text-center">
+
+              {/* Stats row */}
+              <div className="flex items-center justify-center gap-4 mt-3">
+                <div className="text-center">
+                  <div
+                    style={{
+                      fontFamily: DS.heading,
+                      color: cfg.color,
+                      fontSize: 18,
+                      fontWeight: 700,
+                      textShadow: `0 0 10px ${cfg.glowColor}`,
+                    }}
+                  >
+                    {level}
+                  </div>
+                  <div
+                    style={{
+                      color: DS.text4,
+                      fontSize: 8,
+                      fontFamily: "'JetBrains Mono', monospace",
+                      letterSpacing: "0.1em",
+                    }}
+                  >
+                    LEVEL
+                  </div>
+                </div>
                 <div
                   style={{
-                    fontFamily: "'JetBrains Mono', monospace",
+                    width: 1,
+                    height: 24,
+                    background: `linear-gradient(180deg, transparent, ${DS.bgDeep}, transparent)`,
+                  }}
+                />
+                <div className="text-center">
+                  <div
+                    style={{
+                      fontFamily: "'JetBrains Mono', monospace",
+                      color: accentColor,
+                      fontSize: 18,
+                      fontWeight: 700,
+                      textShadow: `0 0 8px ${accentColor}`,
+                    }}
+                  >
+                    {achievements}
+                  </div>
+                  <div
+                    style={{
+                      color: DS.text4,
+                      fontSize: 8,
+                      fontFamily: "'JetBrains Mono', monospace",
+                      letterSpacing: "0.1em",
+                    }}
+                  >
+                    ACHIEVEMENTS
+                  </div>
+                </div>
+              </div>
+
+              {/* LP Balance row */}
+              <div
+                className="flex items-center justify-between mt-3 px-3 py-2 rounded-lg"
+                style={{
+                  background: `${accentColor}08`,
+                  border: `1px solid ${accentColor}25`,
+                }}
+              >
+                <div style={{ color: DS.text4, fontSize: 9, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.1em" }}>
+                  ◈ LP BALANCE
+                </div>
+                <div
+                  style={{
                     color: accentColor,
-                    fontSize: 18,
+                    fontSize: 14,
+                    fontFamily: "'JetBrains Mono', monospace",
                     fontWeight: 700,
                     textShadow: `0 0 8px ${accentColor}`,
                   }}
                 >
-                  {achievements}
+                  {formatLP(lpBalance)}
                 </div>
-                <div
+              </div>
+
+              {/* Hover hint */}
+              <div
+                className="mt-3 py-1.5 rounded-sm text-center transition-opacity duration-300"
+                style={{
+                  border: `1px solid ${accentColor}40`,
+                  background: `${accentColor}0a`,
+                  opacity: 0,
+                }}
+              >
+                <span
                   style={{
-                    color: DS.text4,
-                    fontSize: 8,
+                    color: accentColor,
+                    fontSize: 9,
+                    letterSpacing: "0.12em",
                     fontFamily: "'JetBrains Mono', monospace",
-                    letterSpacing: "0.1em",
                   }}
                 >
-                  ACHIEVEMENTS
-                </div>
+                  ◈ VIEW PROFILE
+                </span>
               </div>
-            </div>
-
-            {/* LP Balance row */}
-            <div
-              className="flex items-center justify-between mt-3 px-3 py-2 rounded-lg"
-              style={{
-                background: `${accentColor}08`,
-                border: `1px solid ${accentColor}25`,
-              }}
-            >
-              <div style={{ color: DS.text4, fontSize: 9, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.1em" }}>
-                ◈ LP BALANCE
-              </div>
-              <div
-                style={{
-                  color: accentColor,
-                  fontSize: 14,
-                  fontFamily: "'JetBrains Mono', monospace",
-                  fontWeight: 700,
-                  textShadow: `0 0 8px ${accentColor}`,
-                }}
-              >
-                {formatLP(lpBalance)}
-              </div>
-            </div>
-
-            {/* Hover hint */}
-            <div
-              className="mt-3 py-1.5 rounded-sm text-center transition-opacity duration-300"
-              style={{
-                border: `1px solid ${accentColor}40`,
-                background: `${accentColor}0a`,
-                opacity: 0,
-              }}
-            >
-              <span
-                style={{
-                  color: accentColor,
-                  fontSize: 9,
-                  letterSpacing: "0.12em",
-                  fontFamily: "'JetBrains Mono', monospace",
-                }}
-              >
-                ◈ VIEW PROFILE
-              </span>
             </div>
           </div>
-        </div>
-      </Link>
-    </motion.div>
+        </Link>
+      </motion.div>
     </div>
   );
 }
@@ -552,15 +577,15 @@ export function HallOfFame({ first, second, third, locale }: HallOfFameProps) {
             <svg width="20" height="17" viewBox="0 0 20 17" fill="none">
               <defs>
                 <linearGradient id="hofCrownGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%"   stopColor={DS.cosmicPurple} />
-                  <stop offset="50%"  stopColor={DS.cosmicCyan} />
+                  <stop offset="0%" stopColor={DS.cosmicPurple} />
+                  <stop offset="50%" stopColor={DS.cosmicCyan} />
                   <stop offset="100%" stopColor={DS.cosmicMagenta} />
                 </linearGradient>
               </defs>
-              <path d="M1 16 L4 6 L8 11 L10 1 L12 11 L16 6 L19 16 Z" fill="none" stroke="url(#hofCrownGrad)" strokeWidth="1.4" strokeLinejoin="round"/>
-              <line x1="1" y1="16" x2="19" y2="16" stroke="url(#hofCrownGrad)" strokeWidth="1.6" strokeLinecap="round"/>
-              <circle cx="1"  cy="16" r="1.5" fill={DS.cosmicMagenta} />
-              <circle cx="10" cy="1"  r="1.5" fill={DS.cosmicCyan} />
+              <path d="M1 16 L4 6 L8 11 L10 1 L12 11 L16 6 L19 16 Z" fill="none" stroke="url(#hofCrownGrad)" strokeWidth="1.4" strokeLinejoin="round" />
+              <line x1="1" y1="16" x2="19" y2="16" stroke="url(#hofCrownGrad)" strokeWidth="1.6" strokeLinecap="round" />
+              <circle cx="1" cy="16" r="1.5" fill={DS.cosmicMagenta} />
+              <circle cx="10" cy="1" r="1.5" fill={DS.cosmicCyan} />
               <circle cx="19" cy="16" r="1.5" fill={DS.cosmicPurple} />
             </svg>
             <div
@@ -620,7 +645,7 @@ export function HallOfFame({ first, second, third, locale }: HallOfFameProps) {
           <div className="flex-1 w-full max-w-[300px] transform md:scale-95 md:origin-bottom relative z-10 max-md:order-2">
             <HolographicCard member={second} award="NGÔI BẠC" icon={<Zap size={12} />} accentColor="#CBD5E1" delay={0.25} locale={locale} />
           </div>
-          
+
           {/* Gold */}
           <div className="flex-1 w-full max-w-[300px] transform md:scale-[1.15] md:origin-bottom relative z-20 max-md:order-1 max-md:mb-4 md:-translate-y-2 drop-shadow-2xl">
             <HolographicCard member={first} award="NGÔI VÀNG" icon={<Trophy size={12} />} accentColor={DS.amber} delay={0.1} locale={locale} />

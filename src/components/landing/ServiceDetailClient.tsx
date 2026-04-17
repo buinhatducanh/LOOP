@@ -20,10 +20,10 @@ const fmtVND = (n: number | null | undefined) =>
   n == null
     ? "—"
     : new Intl.NumberFormat("vi-VN", {
-        style: "currency",
-        currency: "VND",
-        maximumFractionDigits: 0,
-      }).format(n);
+      style: "currency",
+      currency: "VND",
+      maximumFractionDigits: 0,
+    }).format(n);
 
 interface DetailLabels {
   backLink: string;
@@ -51,33 +51,6 @@ interface DetailLabels {
   demoDesc: string;
   lpPerMillion: string;
 }
-
-const _DEFAULT_LABELS: DetailLabels = {
-  backLink: "← Quay lại dịch vụ",
-  badge: "DỊCH VỤ",
-  priceFrom: "TỪ",
-  lpReward: "THƯỞNG LP",
-  viewDemo: "Xem Demo",
-  bookConsult: "Nhận báo giá Website",
-  demoSection: "DEMO BẢO VỆ",
-  close: "Đóng",
-  demoProtected: "URL được mã hóa · Không thể copy",
-  overviewTitle: "Tổng quan dịch vụ",
-  processTitle: "Quy trình triển khai",
-  relatedProjectsTitle: "Dự án liên quan",
-  faqTitle: "Câu hỏi thường gặp",
-  featuresIncluded: "TÍNH NĂNG BAO GỒM",
-  techStack: "CÔNG NGHỆ SỬ DỤNG",
-  sidebarDemoTitle: "TRUY CẬP DEMO",
-  sidebarDemoDesc: "Xem demo bảo vệ bằng URL mã hóa. Không thể copy hay share URL gốc.",
-  openDemo: "Mở Demo ngay",
-  lpInfoTitle: "THÔNG TIN LP",
-  lpInfoDesc: "Mỗi 1M VNĐ giao dịch bạn nhận 50 LP. Tích lũy để đổi giảm giá dịch vụ tiếp theo.",
-  ctaTitle: "Bắt đầu dự án ngay",
-  ctaSubtitle: "Nhận tư vấn miễn phí trong 24h",
-  demoDesc: "Demo được bảo vệ bằng mã hóa URL. Bạn có thể xem nhưng không thể copy hay chia sẻ URL gốc.",
-  lpPerMillion: "50 LP / 1M VNĐ",
-};
 
 // ── Demo Preview Overlay ──────────────────────────────────────────────────────
 

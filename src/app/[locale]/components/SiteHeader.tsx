@@ -53,19 +53,19 @@ function hexRgba(hex: string, alpha: number): string {
 
 // Entity type config: icon emoji + DS color + label key
 const ENTITY_CONFIG: Record<string, { icon: string; color: string; pill: string }> = {
-  services:      { icon: "🌐", color: DS.cosmicBlue,   pill: "Dịch vụ" },
-  team:          { icon: "👨‍💻", color: DS.cosmicPurple,  pill: "Đội ngũ" },
-  projects:      { icon: "📁", color: DS.amber,        pill: "Dự án" },
-  blog:          { icon: "📝", color: DS.cosmicBlue,    pill: "Bài viết" },
-  courses:       { icon: "🎓", color: DS.cosmicPurple,  pill: "Khóa học" },
-  faqs:          { icon: "❓", color: DS.cyan,         pill: "FAQ" },
-  testimonials:  { icon: "⭐", color: DS.gold,         pill: "Đánh giá" },
-  instructors:   { icon: "🧑‍🏫", color: DS.cosmicPurple,  pill: "Giảng viên" },
-  expertises:    { icon: "🛠️", color: DS.teal,        pill: "Chuyên môn" },
-  webTemplates:  { icon: "🎨", color: DS.cosmicPurple,  pill: "Mẫu web" },
-  landingPages:   { icon: "🚀", color: DS.pink,         pill: "Landing" },
-  pricingPackages: { icon: "💰", color: DS.gold,       pill: "Gói giá" },
-  addonServices:  { icon: "➕", color: DS.cyan,        pill: "Bổ sung" },
+  services: { icon: "🌐", color: DS.cosmicBlue, pill: "Dịch vụ" },
+  team: { icon: "👨‍💻", color: DS.cosmicPurple, pill: "Đội ngũ" },
+  projects: { icon: "📁", color: DS.amber, pill: "Dự án" },
+  blog: { icon: "📝", color: DS.cosmicBlue, pill: "Bài viết" },
+  courses: { icon: "🎓", color: DS.cosmicPurple, pill: "Khóa học" },
+  faqs: { icon: "❓", color: DS.cyan, pill: "FAQ" },
+  testimonials: { icon: "⭐", color: DS.gold, pill: "Đánh giá" },
+  instructors: { icon: "🧑‍🏫", color: DS.cosmicPurple, pill: "Giảng viên" },
+  expertises: { icon: "🛠️", color: DS.teal, pill: "Chuyên môn" },
+  webTemplates: { icon: "🎨", color: DS.cosmicPurple, pill: "Mẫu web" },
+  landingPages: { icon: "🚀", color: DS.pink, pill: "Landing" },
+  pricingPackages: { icon: "💰", color: DS.gold, pill: "Gói giá" },
+  addonServices: { icon: "➕", color: DS.cyan, pill: "Bổ sung" },
 };
 
 // Trending pills for empty-query state
@@ -525,7 +525,7 @@ function LocaleSwitcher({ locale }: { locale: string }) {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => { setMounted(true); }, []);
-// Close on scroll useEffect(() => { if (!open) return; const handler = () => setOpen(false); window.addEventListener("scroll", handler, { passive: true }); return () => window.removeEventListener("scroll", handler); }, [open]);
+  // Close on scroll useEffect(() => { if (!open) return; const handler = () => setOpen(false); window.addEventListener("scroll", handler, { passive: true }); return () => window.removeEventListener("scroll", handler); }, [open]);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -698,7 +698,7 @@ function MegaDropdown({
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
   const isReallyOpen = mounted && isOpen;
-useEffect(() => { if (!isReallyOpen) return; const handler = () => onSelect(); window.addEventListener("scroll", handler, { passive: true }); return () => window.removeEventListener("scroll", handler); }, [isReallyOpen, onSelect]);
+  useEffect(() => { if (!isReallyOpen) return; const handler = () => onSelect(); window.addEventListener("scroll", handler, { passive: true }); return () => window.removeEventListener("scroll", handler); }, [isReallyOpen, onSelect]);
 
   return (
     <div style={{ position: "relative" }}>
@@ -845,7 +845,7 @@ function NavDropdown({
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
   const isReallyOpen = mounted && isOpen;
-useEffect(() => { if (!isReallyOpen) return; const handler = () => onSelect(); window.addEventListener("scroll", handler, { passive: true }); return () => window.removeEventListener("scroll", handler); }, [isReallyOpen, onSelect]);
+  useEffect(() => { if (!isReallyOpen) return; const handler = () => onSelect(); window.addEventListener("scroll", handler, { passive: true }); return () => window.removeEventListener("scroll", handler); }, [isReallyOpen, onSelect]);
 
   return (
     <div style={{ position: "relative" }}>
@@ -942,23 +942,23 @@ export default function SiteHeader({ locale }: { locale: string }) {
   const userMenuRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
   const navRef = useRef<HTMLElement>(null);
- const roleLabels = getRoleLabels(t);
- const mounted = useMounted();
- const [hasValidToken, setHasValidToken] = useState(false);
+  const roleLabels = getRoleLabels(t);
+  const mounted = useMounted();
+  const [hasValidToken, setHasValidToken] = useState(false);
 
- // Check token validity from localStorage on mount and when accountType changes
- useEffect(() => {
-  if (!mounted) return;
-  const tokenKey = accountType === "customer" ? "loop-customer-token" : "loop-staff-token";
-  const token = typeof window !== "undefined" ? localStorage.getItem(tokenKey) : null;
-  setHasValidToken(!!token);
- }, [mounted, accountType]);
+  // Check token validity from localStorage on mount and when accountType changes
+  useEffect(() => {
+    if (!mounted) return;
+    const tokenKey = accountType === "customer" ? "loop-customer-token" : "loop-staff-token";
+    const token = typeof window !== "undefined" ? localStorage.getItem(tokenKey) : null;
+    setHasValidToken(!!token);
+  }, [mounted, accountType]);
 
- // Scroll detection
- useEffect(() => {
-  const handler = () => setScrolled(window.scrollY > 40);
-  window.addEventListener("scroll", handler, { passive: true });
-  return () => window.removeEventListener("scroll", handler);
+  // Scroll detection
+  useEffect(() => {
+    const handler = () => setScrolled(window.scrollY > 40);
+    window.addEventListener("scroll", handler, { passive: true });
+    return () => window.removeEventListener("scroll", handler);
   }, []);
   const navLinks: Array<(
     | { type?: never; label: string; href: string }
@@ -966,30 +966,30 @@ export default function SiteHeader({ locale }: { locale: string }) {
     | { type: "dropdown"; labelKey: string; triggerLabel: string; items: NavDropdownItem[] }
     | { type: "mega"; labelKey: string; triggerLabel: string; items: MegaItem[] }
   )> = [
-    {
-      type: "linkIcon",
-      label: t("home"),
-      href: `/${locale}/`,
-    },
-    {
-      type: "mega",
-      labelKey: "servicesDropdown",
-      triggerLabel: t("servicesDropdown"),
-      items: [
-        { label: t("serviceWebsite"), href: `/${locale}/booking`, icon: "🌐", description: "Thiết kế & phát triển website chuyên nghiệp, tối ưu SEO, responsive trên mọi thiết bị.", color: DS.cosmicBlue },
-        { label: t("serviceApp"), href: `/${locale}/services?cat=app`, icon: "📱", description: "Xây dựng ứng dụng di động & phần mềm SaaS với trải nghiệm người dùng hiện đại.", color: DS.cosmicPurple },
-        { label: t("serviceDashboard"), href: `/${locale}/services?cat=dashboard`, icon: "📊", description: "Hệ thống dashboard quản trị, phân tích dữ liệu trực quan, báo cáo thông minh.", color: DS.cyan },
-        { label: t("serviceSeo"), href: `/${locale}/services?cat=seo`, icon: "🎯", description: "Tối ưu hóa công cụ tìm kiếm, quảng cáo Google & TikTok, tăng trưởng doanh thu bền vững.", color: DS.amber },
-        { label: t("quayChupDropdown"), href: `/${locale}/media`, icon: "🎬", description: "Quay phim, chụp ảnh sản phẩm & quảng cáo thương mại chất lượng cao cho doanh nghiệp.", color: DS.rose },
-      ],
-    },
-    { label: t("team"),    href: `/${locale}/team` },
-    { label: t("academy"), href: `/${locale}/academy` },
-    { label: t("blog"),   href: `/${locale}/blog` },
-    { label: t("contact"), href: `/${locale}/contact` },
-    { label: t("about"),  href: `/${locale}/about` },
-    { label: t("faqLabel"), href: `/${locale}/faq` },
-  ];
+      {
+        type: "linkIcon",
+        label: t("home"),
+        href: `/${locale}/`,
+      },
+      {
+        type: "mega",
+        labelKey: "servicesDropdown",
+        triggerLabel: t("servicesDropdown"),
+        items: [
+          { label: t("serviceWebsite"), href: `/${locale}/booking`, icon: "🌐", description: "Thiết kế & phát triển website chuyên nghiệp, tối ưu SEO, responsive trên mọi thiết bị.", color: DS.cosmicBlue },
+          { label: t("serviceApp"), href: `/${locale}/services?cat=app`, icon: "📱", description: "Xây dựng ứng dụng di động & phần mềm SaaS với trải nghiệm người dùng hiện đại.", color: DS.cosmicPurple },
+          { label: t("serviceDashboard"), href: `/${locale}/services?cat=dashboard`, icon: "📊", description: "Hệ thống dashboard quản trị, phân tích dữ liệu trực quan, báo cáo thông minh.", color: DS.cyan },
+          { label: t("serviceSeo"), href: `/${locale}/services?cat=seo`, icon: "🎯", description: "Tối ưu hóa công cụ tìm kiếm, quảng cáo Google & TikTok, tăng trưởng doanh thu bền vững.", color: DS.amber },
+          { label: t("quayChupDropdown"), href: `/${locale}/media`, icon: "🎬", description: "Quay phim, chụp ảnh sản phẩm & quảng cáo thương mại chất lượng cao cho doanh nghiệp.", color: DS.rose },
+        ],
+      },
+      { label: t("team"), href: `/${locale}/team` },
+      { label: t("academy"), href: `/${locale}/academy` },
+      { label: t("blog"), href: `/${locale}/blog` },
+      { label: t("contact"), href: `/${locale}/contact` },
+      { label: t("about"), href: `/${locale}/about` },
+      { label: t("faqLabel"), href: `/${locale}/faq` },
+    ];
 
   const isActive = (href: string) =>
     href === `/${locale}/` ? pathname === `/${locale}/` : pathname.startsWith(href);
@@ -1022,7 +1022,7 @@ export default function SiteHeader({ locale }: { locale: string }) {
     return () => document.removeEventListener("mousedown", handler);
   }, [userMenuOpen, notifPanelOpen, openDropdown]);
 
-  
+
 
   // Auth header helper
   const getAuthHeaders = (): Record<string, string> => {
@@ -1032,38 +1032,38 @@ export default function SiteHeader({ locale }: { locale: string }) {
     if (token) headers["Authorization"] = `Bearer ${token}`;
     return headers;
   };
- // Load unread count — reads accountType directly from store to avoid stale closure.
- // Empty deps: function is stable, reads fresh state on every call.
- const fetchUnreadCount = useCallback(async () => {
- const authStore = useAuthStore.getState();
- if (!authStore.isAuthenticated) return;
- const { accountType: at, tokenExpiry } = authStore;
- if (!at || (tokenExpiry && Date.now() > tokenExpiry)) return;
+  // Load unread count — reads accountType directly from store to avoid stale closure.
+  // Empty deps: function is stable, reads fresh state on every call.
+  const fetchUnreadCount = useCallback(async () => {
+    const authStore = useAuthStore.getState();
+    if (!authStore.isAuthenticated) return;
+    const { accountType: at, tokenExpiry } = authStore;
+    if (!at || (tokenExpiry && Date.now() > tokenExpiry)) return;
 
- try {
- const tokenKey = at === "customer" ? "loop-customer-token" : "loop-staff-token";
- const token = typeof window !== "undefined" ? localStorage.getItem(tokenKey) : null;
- if (!token) return;
+    try {
+      const tokenKey = at === "customer" ? "loop-customer-token" : "loop-staff-token";
+      const token = typeof window !== "undefined" ? localStorage.getItem(tokenKey) : null;
+      if (!token) return;
 
- const headers: Record<string, string> = { Authorization: `Bearer ${token}` };
-  const res = await fetch("/api/notifications/unread-count", { headers });
- if (res.ok) {
- const data = await res.json();
- setNotifCount(data.data?.count || 0);
- }
-  } catch {
- // Silently ignore network errors — next poll will retry
- }
- }, []);
+      const headers: Record<string, string> = { Authorization: `Bearer ${token}` };
+      const res = await fetch("/api/notifications/unread-count", { headers });
+      if (res.ok) {
+        const data = await res.json();
+        setNotifCount(data.data?.count || 0);
+      }
+    } catch {
+      // Silently ignore network errors — next poll will retry
+    }
+  }, []);
 
- // Poll every 30s — stable deps, only re-runs when auth state changes
- useEffect(() => {
- fetchUnreadCount();
- if (isAuthenticated) {
- const interval = setInterval(fetchUnreadCount, 30000);
- return () => clearInterval(interval);
- }
- }, [isAuthenticated, fetchUnreadCount]);
+  // Poll every 30s — stable deps, only re-runs when auth state changes
+  useEffect(() => {
+    fetchUnreadCount();
+    if (isAuthenticated) {
+      const interval = setInterval(fetchUnreadCount, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [isAuthenticated, fetchUnreadCount]);
 
 
   // Load notifications list
@@ -1117,7 +1117,11 @@ export default function SiteHeader({ locale }: { locale: string }) {
     }
   };
 
-  const isMac = typeof navigator !== "undefined" && /Mac/i.test(navigator.userAgent);
+  // Detect Mac for keyboard shortcut display — must be client-only to avoid SSR hydration mismatch
+  const [isMac, setIsMac] = useState(false);
+  useEffect(() => {
+    setIsMac(/Mac/i.test(navigator.userAgent));
+  }, []);
 
   // Header style adapts to scroll
   const headerBg = scrolled
@@ -1332,8 +1336,8 @@ export default function SiteHeader({ locale }: { locale: string }) {
                     }}
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-                      <polyline points="9 22 9 12 15 12 15 22"/>
+                      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                      <polyline points="9 22 9 12 15 12 15 22" />
                     </svg>
                   </Link>
                 );

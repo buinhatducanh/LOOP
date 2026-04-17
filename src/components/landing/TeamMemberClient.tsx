@@ -10,36 +10,69 @@ import Link from "next/link";
 import { motion } from "motion/react";
 import { DS, GRD } from "@/lib/design-tokens";
 import {
-  ArrowLeft, Crown, Zap, Target, Trophy, Award,
-  Star, Shield, Briefcase, MapPin,
+  ArrowLeft, Zap, Trophy, Award,
+  Star, Shield, Briefcase,
 } from "lucide-react";
 
 type MemberRecord = Record<string, unknown>;
 type RelatedRecord = Record<string, unknown>;
 
 // ── Rank config ───────────────────────────────────────────────────────────
+// Support both lowercase (db) and Titlecase (legacy) rank keys
 const RANKS: Record<string, {
   label: string; color: string; glowColor: string;
-  gradientFrom: string; gradientTo: string;
+  gradientFrom: string; gradientTo: string; symbol: string;
 }> = {
-  Diamond: { label: "DIAMOND", color: "#818CF8", glowColor: "rgba(129,140,248,0.4)", gradientFrom: "#818CF8", gradientTo: "#7DD3FC" },
-  Ruby:    { label: "RUBY",    color: "#EF4444", glowColor: "rgba(239,68,68,0.4)",    gradientFrom: "#EF4444", gradientTo: "#F87171" },
-  Platinum:{ label: "PLATINUM",color: "#14B8A6", glowColor: "rgba(20,184,166,0.4)",  gradientFrom: "#14B8A6", gradientTo: "#2DD4BF" },
-  Gold:    { label: "GOLD",    color: "#FFD700", glowColor: "rgba(255,215,0,0.4)",   gradientFrom: "#FFD700", gradientTo: "#FDE047" },
-  Silver:  { label: "SILVER",  color: "#CBD5E1", glowColor: "rgba(203,213,225,0.3)",gradientFrom: "#CBD5E1", gradientTo: "#E2E8F0" },
-  Bronze:  { label: "BRONZE",  color: "#CD7F32", glowColor: "rgba(205,127,50,0.4)", gradientFrom: "#CD7F32", gradientTo: "#D97706" },
-  Iron:    { label: "IRON",    color: "#9CA3AF", glowColor: "rgba(156,163,175,0.3)",gradientFrom: "#9CA3AF", gradientTo: "#D1D5DB" },
+  diamond: { label: "DIAMOND", color: "#818CF8", glowColor: "rgba(129,140,248,0.4)", gradientFrom: "#818CF8", gradientTo: "#7DD3FC", symbol: "✦" },
+  ruby: { label: "RUBY", color: "#EF4444", glowColor: "rgba(239,68,68,0.4)", gradientFrom: "#EF4444", gradientTo: "#F87171", symbol: "♦" },
+  platinum: { label: "PLATINUM", color: "#14B8A6", glowColor: "rgba(20,184,166,0.4)", gradientFrom: "#14B8A6", gradientTo: "#2DD4BF", symbol: "❋" },
+  gold: { label: "GOLD", color: "#FFD700", glowColor: "rgba(255,215,0,0.4)", gradientFrom: "#FFD700", gradientTo: "#FDE047", symbol: "★" },
+  silver: { label: "SILVER", color: "#CBD5E1", glowColor: "rgba(203,213,225,0.3)", gradientFrom: "#CBD5E1", gradientTo: "#E2E8F0", symbol: "◇" },
+  bronze: { label: "BRONZE", color: "#CD7F32", glowColor: "rgba(205,127,50,0.4)", gradientFrom: "#CD7F32", gradientTo: "#D97706", symbol: "◈" },
+  iron: { label: "IRON", color: "#9CA3AF", glowColor: "rgba(156,163,175,0.3)", gradientFrom: "#9CA3AF", gradientTo: "#D1D5DB", symbol: "⬡" },
+  // Legacy uppercase keys (for backward compatibility)
+  Diamond: { label: "DIAMOND", color: "#818CF8", glowColor: "rgba(129,140,248,0.4)", gradientFrom: "#818CF8", gradientTo: "#7DD3FC", symbol: "✦" },
+  Ruby: { label: "RUBY", color: "#EF4444", glowColor: "rgba(239,68,68,0.4)", gradientFrom: "#EF4444", gradientTo: "#F87171", symbol: "♦" },
+  Platinum: { label: "PLATINUM", color: "#14B8A6", glowColor: "rgba(20,184,166,0.4)", gradientFrom: "#14B8A6", gradientTo: "#2DD4BF", symbol: "❋" },
+  Gold: { label: "GOLD", color: "#FFD700", glowColor: "rgba(255,215,0,0.4)", gradientFrom: "#FFD700", gradientTo: "#FDE047", symbol: "★" },
+  Silver: { label: "SILVER", color: "#CBD5E1", glowColor: "rgba(203,213,225,0.3)", gradientFrom: "#CBD5E1", gradientTo: "#E2E8F0", symbol: "◇" },
+  Bronze: { label: "BRONZE", color: "#CD7F32", glowColor: "rgba(205,127,50,0.4)", gradientFrom: "#CD7F32", gradientTo: "#D97706", symbol: "◈" },
+  Iron: { label: "IRON", color: "#9CA3AF", glowColor: "rgba(156,163,175,0.3)", gradientFrom: "#9CA3AF", gradientTo: "#D1D5DB", symbol: "⬡" },
 };
 
 // ── Box-shadow animations per rank ────────────────────────────────────────
 const BOX_ANIM: Record<string, string | undefined> = {
-  Diamond:  "guildDiamondSpectral 3.5s ease-in-out infinite",
-  Gold:     "guildGoldGlow 2s ease-in-out infinite",
-  Silver:   "guildSilverPulse 2s ease-in-out infinite",
-  Bronze:   "guildBronzeFlow 2.5s ease-in-out infinite",
-  Ruby:     "guildHeartbeat 1.1s ease-in-out infinite",
+  diamond: "guildDiamondSpectral 3.5s ease-in-out infinite",
+  gold: "guildGoldGlow 2s ease-in-out infinite",
+  silver: "guildSilverPulse 2s ease-in-out infinite",
+  bronze: "guildBronzeFlow 2.5s ease-in-out infinite",
+  ruby: "guildHeartbeat 1.1s ease-in-out infinite",
+  platinum: "guildPlatinumPulse 1.8s ease-in-out infinite",
+  // Legacy uppercase keys
+  Diamond: "guildDiamondSpectral 3.5s ease-in-out infinite",
+  Gold: "guildGoldGlow 2s ease-in-out infinite",
+  Silver: "guildSilverPulse 2s ease-in-out infinite",
+  Bronze: "guildBronzeFlow 2.5s ease-in-out infinite",
+  Ruby: "guildHeartbeat 1.1s ease-in-out infinite",
   Platinum: "guildPlatinumPulse 1.8s ease-in-out infinite",
 };
+
+// ── Department label mapping ──────────────────────────────────────────────
+const DEPT_LABELS: Record<string, string> = {
+  ceo_office: "CEO Office",
+  engineering: "Engineering",
+  marketing: "Marketing",
+  media: "Media",
+  hr: "HR",
+  pm: "Project Management",
+  qc: "Quality Control",
+  seo: "SEO",
+};
+
+function getDeptLabel(dept?: string | null): string {
+  if (!dept) return "—";
+  return DEPT_LABELS[dept.toLowerCase()] ?? dept;
+}
 
 // ── CSS keyframes ────────────────────────────────────────────────────────
 const ANIM_CSS = `
@@ -79,7 +112,7 @@ const ANIM_CSS = `
 `;
 
 // ── Animated counter ────────────────────────────────────────────────────
-function Counter({ value, delay = 0 }: { value: number; delay?: number }) {
+function Counter({ value }: { value: number }) {
   const [display, setDisplay] = useState(0);
   const [started, setStarted] = useState(false);
 
@@ -134,10 +167,10 @@ function LEDRunner({ color }: { color: string }) {
     return () => clearInterval(iv);
   }, []);
   const segments = [
-    { top: 0,    left: 0,  width: "100%", height: 2,  gradient: `linear-gradient(90deg, transparent 0%, ${color} 50%, transparent 100%)` },
-    { top: 0,    right: 0, height: "100%", width: 2, gradient: `linear-gradient(180deg, transparent 0%, ${color} 50%, transparent 100%)` },
-    { bottom: 0, left: 0,  width: "100%", height: 2, gradient: `linear-gradient(90deg, transparent 0%, ${color} 50%, transparent 100%)` },
-    { top: 0,    left: 0,  height: "100%", width: 2, gradient: `linear-gradient(180deg, transparent 0%, ${color} 50%, transparent 100%)` },
+    { top: 0, left: 0, width: "100%", height: 2, gradient: `linear-gradient(90deg, transparent 0%, ${color} 50%, transparent 100%)` },
+    { top: 0, right: 0, height: "100%", width: 2, gradient: `linear-gradient(180deg, transparent 0%, ${color} 50%, transparent 100%)` },
+    { bottom: 0, left: 0, width: "100%", height: 2, gradient: `linear-gradient(90deg, transparent 0%, ${color} 50%, transparent 100%)` },
+    { top: 0, left: 0, height: "100%", width: 2, gradient: `linear-gradient(180deg, transparent 0%, ${color} 50%, transparent 100%)` },
   ];
   return (
     <>
@@ -154,6 +187,36 @@ function LEDRunner({ color }: { color: string }) {
         </div>
       ))}
     </>
+  );
+}
+
+// ── Social link ────────────────────────────────────────────────────────
+function SocialLink({ label, href, color }: { label: string; href: string; color: string }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      style={{
+        display: "inline-flex", alignItems: "center", gap: 6,
+        padding: "4px 12px", borderRadius: 8,
+        background: `${color}12`, border: `1px solid ${color}30`,
+        color: DS.text2, fontSize: 11, fontFamily: DS.mono,
+        textDecoration: "none", transition: "all 0.15s",
+      }}
+      onMouseEnter={e => {
+        const el = e.currentTarget as HTMLElement;
+        el.style.background = `${color}25`;
+        el.style.color = color;
+      }}
+      onMouseLeave={e => {
+        const el = e.currentTarget as HTMLElement;
+        el.style.background = `${color}12`;
+        el.style.color = DS.text2;
+      }}
+    >
+      {label}
+    </a>
   );
 }
 
@@ -180,53 +243,18 @@ function SectionHead({ icon: Icon, label, color = DS.blue }: { icon: React.Eleme
   );
 }
 
-// ── Skill bar ───────────────────────────────────────────────────────────
-function SkillBar({ label, value, color }: { label: string; value: number; color: string }) {
-  const [animated, setAnimated] = useState(false);
-  return (
-    <div style={{ marginBottom: 16 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-        <span style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.08em" }}>
-          {label.toUpperCase()}
-        </span>
-        <span style={{ color, fontSize: 11, fontFamily: DS.mono, fontWeight: 700 }}>
-          <span
-            onMouseEnter={() => setAnimated(true)}
-            onClick={() => setAnimated(true)}
-          >
-            {animated ? <Counter value={value} /> : "0"}%
-          </span>
-        </span>
-      </div>
-      <div style={{ height: 4, background: DS.bgCard2, borderRadius: 2, overflow: "hidden" }}>
-        <motion.div
-          initial={{ width: 0 }}
-          animate={{ width: animated ? `${value}%` : "0%" }}
-          transition={{ duration: 1, ease: "easeOut", delay: 0.2 }}
-          style={{
-            height: "100%",
-            background: `linear-gradient(90deg, ${color}aa, ${color})`,
-            boxShadow: `0 0 6px ${color}80`,
-            borderRadius: 2,
-          }}
-        />
-      </div>
-    </div>
-  );
-}
-
 // ── Main component ──────────────────────────────────────────────────────
 export function TeamMemberClient({
   locale,
   member,
   expertises,
   related,
-  tLabel,
+  tLabel: _tLabel,
   tRelated,
   tBack,
-  tChallenge,
-  tSolution,
-  tResult,
+  tChallenge: _tChallenge,
+  tSolution: _tSolution,
+  tResult: _tResult,
 }: {
   locale: string;
   member: MemberRecord;
@@ -241,28 +269,53 @@ export function TeamMemberClient({
 }) {
   const [hovered, setHovered] = useState(false);
 
-  const name       = (member.name as string) ?? "Unknown";
-  const role       = (member.role as string) ?? "";
-  const bio        = (member.bio as string) ?? "";
-  const image      = (member.image as string) ?? "";
-  const rank       = (member.rank as string) ?? "Iron";
-  const level      = (member.level as number | undefined);
-  const lpBalance  = (member.availableLp as number | undefined) ?? (member.lpBalance as number | undefined);
-  const currentXp  = (member.currentXp as number | undefined);
-  const maxXp      = (member.maxXp as number | undefined);
-  const missions   = (member.missions as number | undefined);
-  const skills     = (member.skills as Record<string, number> | undefined);
+  const name = (member.name as string) ?? "Unknown";
+  const role = (member.role as string) ?? "";
+  const bio = (member.bio as string) ?? "";
+  const shortBio = (member.shortBio as string) ?? "";
+  const image = (member.image as string) ?? "";
+  const rank = (member.rank as string) ?? "Iron";
+  const level = (member.level as number | undefined);
+  const lpBalance = (member.availableLp as number | undefined) ?? 0;
+  const currentXp = (member.currentXp as number | undefined);
+  const maxXp = (member.maxXp as number | undefined);
   const achievements = (member.achievements as string[] | undefined);
-  const challenge  = (member.challenge as string | undefined) ?? "";
-  const solution   = (member.solution as string | undefined) ?? "";
-  const result_    = (member.result as string | undefined) ?? "";
+  const department = (member.department as string | undefined);
+  const isDeptHead = (member.isDeptHead as boolean | undefined);
+  const email = (member.email as string | undefined);
+  const phone = (member.phone as string | undefined);
+  const joinedDate = (member.joinedDate as string | undefined);
+  const experienceFrom = (member.experienceFrom as number | undefined);
+  const address = (member.address as string | undefined);
+  const quote = (member.quote as string | undefined);
+  const linkedin = (member.linkedin as string | undefined);
+  const github = (member.github as string | undefined);
+  const twitter = (member.twitter as string | undefined);
+  const facebook = (member.facebook as string | undefined);
+  const tiktok = (member.tiktok as string | undefined);
+  const totalSalesCommission = (member.totalSalesCommission as number | undefined) ?? 0;
+  const completedCommission = (member.completedCommission as number | undefined) ?? 0;
+  const pendingCommission = (member.pendingCommission as number | undefined) ?? 0;
 
-  const cfg = RANKS[rank] ?? RANKS.Iron;
+  // DB stores skills as string[] (e.g. ["React","TypeScript"]); show as skill pills
+  const skillsArr = (member.skills as string[] | undefined) ?? [];
+
+  // Normalize rank key: support both lowercase (db) and Titlecase (legacy)
+  const normalizedRank = rank.toLowerCase() as keyof typeof RANKS;
+  const cfg = RANKS[normalizedRank] ?? RANKS[rank] ?? RANKS.Iron;
   const xpPct = (currentXp !== undefined && maxXp !== undefined && maxXp > 0)
     ? Math.round((currentXp / maxXp) * 100)
     : 0;
 
-  const skillEntries = skills ? Object.entries(skills).slice(0, 8) : [];
+  // Format joined date
+  const joinedDisplay = joinedDate
+    ? (() => {
+      try {
+        return new Intl.DateTimeFormat("vi-VN", { month: "short", year: "numeric" })
+          .format(new Date(joinedDate));
+      } catch { return joinedDate; }
+    })()
+    : null;
 
   return (
     <>
@@ -413,7 +466,7 @@ export function TeamMemberClient({
                         backdropFilter: "blur(4px)",
                       }}>
                         <span style={{ color: cfg.color, fontSize: 10 }}>
-                          {rank === "Diamond" ? "✦" : "◈"}
+                          {cfg.symbol ?? "◈"}
                         </span>
                         <span style={{ color: cfg.color, fontSize: 9, fontFamily: DS.mono, letterSpacing: "0.12em", fontWeight: 700 }}>
                           {cfg.label}
@@ -535,10 +588,10 @@ export function TeamMemberClient({
               {/* ── Core stats grid ── */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 16 }}>
                 {[
-                  { label: "RANK",    val: cfg.label,       icon: Award,    color: cfg.color },
-                  { label: "MISSIONS",val: missions ?? 0,    icon: Target,   color: "#EF4444" },
-                  { label: "LEVEL",   val: level ?? 0,       icon: Star,     color: "#F59E0B" },
-                  { label: "XP TOTAL", val: currentXp ?? 0,   icon: Zap,      color: DS.blue },
+                  { label: "RANK", val: cfg.label, icon: Award, color: cfg.color },
+                  { label: "DEPT", val: getDeptLabel(department), icon: Shield, color: "#8B5CF6" },
+                  { label: "LEVEL", val: level ?? 0, icon: Star, color: "#F59E0B" },
+                  { label: "XP TOTAL", val: currentXp ?? 0, icon: Zap, color: DS.blue },
                 ].map(s => (
                   <div key={s.label} style={{
                     background: `${DS.bgCard}80`,
@@ -551,8 +604,8 @@ export function TeamMemberClient({
                       <s.icon size={10} style={{ color: s.color }} />
                       <span style={{ color: DS.text4, fontSize: 8, fontFamily: DS.mono, letterSpacing: "0.15em" }}>{s.label}</span>
                     </div>
-                    <div style={{ color: DS.text, fontSize: 14, fontFamily: DS.heading, fontWeight: 700, textTransform: "uppercase" }}>
-                      <Counter value={s.val as number} />
+                    <div style={{ color: DS.text, fontSize: 14, fontFamily: DS.heading, fontWeight: 700, textTransform: typeof s.val === "number" ? "uppercase" : "none" }}>
+                      {typeof s.val === "number" ? <Counter value={s.val} /> : s.val}
                     </div>
                   </div>
                 ))}
@@ -591,19 +644,36 @@ export function TeamMemberClient({
                 style={{ background: `${DS.bgCard}60`, border: `1px solid ${DS.border}`, borderRadius: 16, padding: 28 }}
               >
                 <SectionHead icon={Star} label="OPERATIVE_MANIFEST" color={cfg.color} />
-                <blockquote style={{
-                  fontSize: "1.125rem", fontFamily: DS.heading,
-                  color: DS.text, lineHeight: 1.7,
-                  borderLeft: `3px solid ${cfg.color}50`,
-                  paddingLeft: 20, marginBottom: 20,
-                  fontStyle: "italic",
-                }}>
-                  "{bio}"
-                </blockquote>
+                {quote ? (
+                  <blockquote style={{
+                    fontSize: "1.125rem", fontFamily: DS.heading,
+                    color: DS.text, lineHeight: 1.7,
+                    borderLeft: `3px solid ${cfg.color}50`,
+                    paddingLeft: 20, marginBottom: 20,
+                    fontStyle: "italic",
+                  }}>
+                    "{quote}"
+                  </blockquote>
+                ) : bio ? (
+                  <blockquote style={{
+                    fontSize: "1.125rem", fontFamily: DS.heading,
+                    color: DS.text, lineHeight: 1.7,
+                    borderLeft: `3px solid ${cfg.color}50`,
+                    paddingLeft: 20, marginBottom: 20,
+                    fontStyle: "italic",
+                  }}>
+                    "{bio}"
+                  </blockquote>
+                ) : null}
+                {shortBio && (
+                  <p style={{ color: DS.text3, fontSize: 14, lineHeight: 1.7, marginBottom: 16 }}>
+                    {shortBio}
+                  </p>
+                )}
                 {/* Expertise */}
-                {expertises.length > 0 && (
+                {(expertises.length > 0 || skillsArr.length > 0) && (
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                    {expertises.map((exp, i) => (
+                    {[...expertises, ...skillsArr].map((exp, i) => (
                       <span key={i} style={{
                         padding: "4px 10px",
                         background: DS.bgCard2,
@@ -619,59 +689,97 @@ export function TeamMemberClient({
                 )}
               </motion.section>
 
-              {/* ── Skills ── */}
-              {skillEntries.length > 0 && (
+              {/* ── Career / Contact Info ── */}
+              {(email || phone || joinedDisplay || address || linkedin || github || facebook || tiktok || experienceFrom) && (
                 <motion.section
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 }}
                   style={{ background: `${DS.bgCard}60`, border: `1px solid ${DS.border}`, borderRadius: 16, padding: 28 }}
                 >
-                  <SectionHead icon={Shield} label="SKILL_ARCHITECTURE" color={cfg.color} />
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 32px" }}>
-                    {skillEntries.map(([skill, val]) => (
-                      <SkillBar key={skill} label={skill} value={val} color={cfg.color} />
-                    ))}
+                  <SectionHead icon={Briefcase} label="OPERATIVE_FILE" color={DS.purple} />
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 16 }}>
+                    {email && (
+                      <div>
+                        <div style={{ fontSize: 9, fontFamily: DS.mono, color: DS.text4, letterSpacing: "0.1em", marginBottom: 4 }}>EMAIL</div>
+                        <div style={{ fontSize: 13, color: DS.text2 }}>{email}</div>
+                      </div>
+                    )}
+                    {phone && (
+                      <div>
+                        <div style={{ fontSize: 9, fontFamily: DS.mono, color: DS.text4, letterSpacing: "0.1em", marginBottom: 4 }}>PHONE</div>
+                        <div style={{ fontSize: 13, color: DS.text2 }}>{phone}</div>
+                      </div>
+                    )}
+                    {department && (
+                      <div>
+                        <div style={{ fontSize: 9, fontFamily: DS.mono, color: DS.text4, letterSpacing: "0.1em", marginBottom: 4 }}>DEPARTMENT</div>
+                        <div style={{ fontSize: 13, color: DS.text2, display: "flex", alignItems: "center", gap: 4 }}>
+                          {getDeptLabel(department)}{isDeptHead && <span style={{ color: "#E6C75F", fontSize: 9 }}>👑</span>}
+                        </div>
+                      </div>
+                    )}
+                    {joinedDisplay && (
+                      <div>
+                        <div style={{ fontSize: 9, fontFamily: DS.mono, color: DS.text4, letterSpacing: "0.1em", marginBottom: 4 }}>JOINED</div>
+                        <div style={{ fontSize: 13, color: DS.text2 }}>{joinedDisplay}</div>
+                      </div>
+                    )}
+                    {experienceFrom && (
+                      <div>
+                        <div style={{ fontSize: 9, fontFamily: DS.mono, color: DS.text4, letterSpacing: "0.1em", marginBottom: 4 }}>EXPERIENCE</div>
+                        <div style={{ fontSize: 13, color: DS.text2 }}>{experienceFrom}+ years</div>
+                      </div>
+                    )}
+                    {address && (
+                      <div>
+                        <div style={{ fontSize: 9, fontFamily: DS.mono, color: DS.text4, letterSpacing: "0.1em", marginBottom: 4 }}>ADDRESS</div>
+                        <div style={{ fontSize: 13, color: DS.text2 }}>{address}</div>
+                      </div>
+                    )}
+                    {(linkedin || github || twitter || facebook || tiktok) && (
+                      <div style={{ gridColumn: "1 / -1" }}>
+                        <div style={{ fontSize: 9, fontFamily: DS.mono, color: DS.text4, letterSpacing: "0.1em", marginBottom: 8 }}>SOCIAL</div>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                          {linkedin && <SocialLink label="LinkedIn" href={linkedin} color="#0A66C2" />}
+                          {github && <SocialLink label="GitHub" href={github} color="#8B5CF6" />}
+                          {twitter && <SocialLink label="Twitter" href={twitter} color="#1DA1F2" />}
+                          {facebook && <SocialLink label="Facebook" href={facebook} color="#1877F2" />}
+                          {tiktok && <SocialLink label="TikTok" href={tiktok} color="#000" />}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </motion.section>
               )}
 
-              {/* ── Challenge / Solution / Result ── */}
-              {(challenge || solution || result_) && (
-                <motion.div
+              {/* ── Commission / Sales ── */}
+              {(totalSalesCommission > 0 || completedCommission > 0 || pendingCommission > 0) && (
+                <motion.section
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.25 }}
-                  style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 16 }}
+                  transition={{ delay: 0.22 }}
+                  style={{ background: `${DS.bgCard}60`, border: `1px solid ${DS.border}`, borderRadius: 16, padding: 28 }}
                 >
-                  {challenge && (
-                    <div style={{ background: DS.bgCard, border: `1px solid rgba(239,68,68,0.2)`, borderRadius: 16, padding: 24 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-                        <div style={{ width: 4, height: 18, background: "#EF4444", borderRadius: 2 }} />
-                        <span style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.15em" }}>{tChallenge.toUpperCase()}</span>
+                  <SectionHead icon={Trophy} label="COMMISSION_RECORD" color="#E6C75F" />
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+                    {[
+                      { label: "Total Commission", val: totalSalesCommission, color: "#E6C75F" },
+                      { label: "Completed", val: completedCommission, color: "#22C55E" },
+                      { label: "Pending", val: pendingCommission, color: "#F59E0B" },
+                    ].map(s => (
+                      <div key={s.label} style={{
+                        background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 10,
+                        padding: "12px", textAlign: "center",
+                      }}>
+                        <div style={{ fontSize: 9, fontFamily: DS.mono, color: DS.text4, marginBottom: 4, letterSpacing: "0.08em" }}>{s.label.toUpperCase()}</div>
+                        <div style={{ fontSize: 18, fontFamily: DS.mono, fontWeight: 700, color: s.color }}>
+                          <Counter value={s.val} />
+                        </div>
                       </div>
-                      <p style={{ color: DS.text3, fontSize: 13, lineHeight: 1.7 }}>{challenge}</p>
-                    </div>
-                  )}
-                  {solution && (
-                    <div style={{ background: DS.bgCard, border: `1px solid rgba(59,130,246,0.2)`, borderRadius: 16, padding: 24 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-                        <div style={{ width: 4, height: 18, background: DS.blue, borderRadius: 2 }} />
-                        <span style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.15em" }}>{tSolution.toUpperCase()}</span>
-                      </div>
-                      <p style={{ color: DS.text3, fontSize: 13, lineHeight: 1.7 }}>{solution}</p>
-                    </div>
-                  )}
-                  {result_ && (
-                    <div style={{ background: DS.bgCard, border: `1px solid rgba(20,184,166,0.2)`, borderRadius: 16, padding: 24 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-                        <div style={{ width: 4, height: 18, background: DS.cyan, borderRadius: 2 }} />
-                        <span style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.15em" }}>{tResult.toUpperCase()}</span>
-                      </div>
-                      <p style={{ color: DS.text3, fontSize: 13, lineHeight: 1.7 }}>{result_}</p>
-                    </div>
-                  )}
-                </motion.div>
+                    ))}
+                  </div>
+                </motion.section>
               )}
 
               {/* ── Achievements ── */}

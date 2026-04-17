@@ -84,23 +84,33 @@ export default async function TeamMemberPage({ params }: Props) {
     })
     .filter(Boolean);
 
+  // Related members: same department first, then by expertise
   const expertiseIds = member.memberExpertise.map((me) => me.expertiseId);
-  const related = await prisma.teamMember.findMany({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const memberDeptKey = (member as any).deptKey as string | undefined;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const related = await (prisma.teamMember.findMany as any)({
     where: {
       isActive: true,
       slug: { not: slug },
       OR: [
-        { roleLevel: member.roleLevel },
+        // Same department
+        ...(memberDeptKey ? [{ deptKey: memberDeptKey }] : []),
+        // Or shared expertise
         ...(expertiseIds.length > 0
           ? [{ memberExpertise: { some: { expertiseId: { in: expertiseIds } } } }]
           : []),
       ],
     },
     take: 4,
-    orderBy: [{ isFeatured: "desc" }, { name: "asc" }],
+    orderBy: [
+      { deptKey: "asc" },
+      { isFeatured: "desc" },
+      { name: "asc" },
+    ],
   });
 
-  const relatedMapped = related.map((m) => {
+  const relatedMapped = related.map((m: any) => {
     const rel = mapLocalizedTeamMember(m, resolvedLocale) as Record<string, string | null | undefined | unknown>;
     return {
       id: m.id,

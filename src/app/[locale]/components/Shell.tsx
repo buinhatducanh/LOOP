@@ -21,7 +21,7 @@ export function Shell({ children, locale }: { children: React.ReactNode; locale:
   return (
     <>
       {showHeader && <SiteHeader locale={locale} />}
-      <div style={{ flex: 1, overflowX: "hidden" }}>
+      <div style={{ flex: 1, overflowX: "hidden", paddingTop: 106 }}>
         {children}
       </div>
       {showHeader && <SiteFooter locale={locale} />}

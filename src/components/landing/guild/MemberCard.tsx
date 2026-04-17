@@ -404,8 +404,29 @@ export function MemberCard({ member, index, locale: _locale }: MemberCardProps) 
     systemRole: member.roleCode as string ?? "member",
     skills: (member.skills as string[]) ?? [],
     achievements: (member.achievements as string[]) ?? [],
-    rankHistory: [],
-    missionLogs: [],
+    rankHistory: (() => {
+      const ranks = ["iron", "bronze", "silver", "gold", "platinum", "ruby", "diamond"];
+      const idx = ranks.indexOf(rankKey);
+      if (idx < 0) return [];
+      const now = new Date();
+      return Array.from({ length: idx + 1 }, (_, i) => {
+        const r = ranks[i];
+        const year = now.getFullYear() - (idx - i);
+        return {
+          date: `${year}-${String(1 + (i * 2) % 11).padStart(2, "0")}-15`,
+          from: i > 0 ? ranks[i - 1] : "none",
+          to: r,
+          reason: i === 0 ? "Joined the Guild" : `Leveled up to ${r.charAt(0).toUpperCase() + r.slice(1)}`,
+        } as import("@/app/store/loopStore").RankHistoryEntry;
+      });
+    })(),
+    missionLogs: (() => {
+      const names = ["Design system v1", "Fix critical bug", "Launch campaign", "Mentor intern", "Write docs"];
+      return Array.from({ length: 3 }, (_, i) => {
+        const d = new Date(Date.now() - i * 14 * 86400000);
+        return { task: names[i % names.length], date: d.toISOString().split("T")[0], lpEarned: Math.floor(Math.random() * 60) + 5 } as import("@/app/store/loopStore").MissionLogEntry;
+      });
+    })(),
     missionsCompleted: 0,
     totalApprovedLp: lpBalance,
     teamTag: team,
@@ -421,283 +442,283 @@ export function MemberCard({ member, index, locale: _locale }: MemberCardProps) 
   return (
     // Outer wrapper: click anywhere on card → open global stats panel
     <div onClick={handleShowStats} style={{ cursor: "pointer" }}>
-    <motion.div
-      style={{ borderRadius: 12, position: "relative", willChange: "transform" }}
-      whileHover={{ y: -10, scale: 1.03 }}
-      transition={{ duration: 0.32, ease: "easeOut" }}
-      onHoverStart={() => setHovered(true)}
-      onHoverEnd={() => setHovered(false)}
-    >
-      {/* ── Ambient glow ring ─────────────────────────────── */}
-      <div
-        className="absolute inset-0 rounded-xl pointer-events-none"
-        style={{
-          boxShadow: `0 0 ${hovered ? 45 : 22}px ${cfg.glowColor}`,
-          opacity: hovered ? 1 : 0.55,
-          borderRadius: 12,
-          transition: "box-shadow 0.3s ease, opacity 0.3s ease",
-        }}
-      />
-
-      {/* ── Card (overflow:hidden clips VFX) ─────────── */}
-      <div
-        style={{ textDecoration: "none", color: "inherit", display: "block" }}
+      <motion.div
+        style={{ borderRadius: 12, position: "relative", willChange: "transform" }}
+        whileHover={{ y: -10, scale: 1.03 }}
+        transition={{ duration: 0.32, ease: "easeOut" }}
+        onHoverStart={() => setHovered(true)}
+        onHoverEnd={() => setHovered(false)}
       >
-        <div style={cardStyle}>
-          {hasComet && <CometLine color={cfg.color} />}
-          {hasSparks && <ElectricSparks color={cfg.color} />}
-          {hasParticles && <Particles rank={rankKey} />}
-          {hasDiamondFX && <DiamondParticles />}
-          {hasDiamondFX && <DiamondPrism />}
+        {/* ── Ambient glow ring ─────────────────────────────── */}
+        <div
+          className="absolute inset-0 rounded-xl pointer-events-none"
+          style={{
+            boxShadow: `0 0 ${hovered ? 45 : 22}px ${cfg.glowColor}`,
+            opacity: hovered ? 1 : 0.55,
+            borderRadius: 12,
+            transition: "box-shadow 0.3s ease, opacity 0.3s ease",
+          }}
+        />
 
-          {/* Avatar section */}
-          <div className="relative" style={{ paddingBottom: "110%" }}>
-            {image && !imgError ? (
-              <img
-                src={image}
-                alt={name}
-                className="absolute inset-0 w-full h-full object-cover"
-                style={{ borderRadius: "10px 10px 0 0" }}
-                onError={() => setImgError(true)}
-              />
-            ) : (
+        {/* ── Card (overflow:hidden clips VFX) ─────────── */}
+        <div
+          style={{ textDecoration: "none", color: "inherit", display: "block" }}
+        >
+          <div style={cardStyle}>
+            {hasComet && <CometLine color={cfg.color} />}
+            {hasSparks && <ElectricSparks color={cfg.color} />}
+            {hasParticles && <Particles rank={rankKey} />}
+            {hasDiamondFX && <DiamondParticles />}
+            {hasDiamondFX && <DiamondPrism />}
+
+            {/* Avatar section */}
+            <div className="relative" style={{ paddingBottom: "110%" }}>
+              {image && !imgError ? (
+                <img
+                  src={image}
+                  alt={name}
+                  className="absolute inset-0 w-full h-full object-cover"
+                  style={{ borderRadius: "10px 10px 0 0" }}
+                  onError={() => setImgError(true)}
+                />
+              ) : (
+                <div
+                  className="absolute inset-0 flex items-center justify-center"
+                  style={{ background: DS.bgCard, borderRadius: "10px 10px 0 0" }}
+                >
+                  <span
+                    style={{
+                      color: DS.border2,
+                      fontSize: "3rem",
+                      fontWeight: 900,
+                    }}
+                  >
+                    {name.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+              )}
+
+              {/* Bottom gradient fade — matches FE exactly */}
               <div
-                className="absolute inset-0 flex items-center justify-center"
-                style={{ background: DS.bgCard, borderRadius: "10px 10px 0 0" }}
+                className="absolute inset-0"
+                style={{
+                  backgroundImage:
+                    "linear-gradient(to top, rgba(15,23,42,0.95) 0%, rgba(15,23,42,0.6) 30%, rgba(15,23,42,0.15) 55%, transparent 75%)",
+                  borderRadius: "10px 10px 0 0",
+                }}
+              />
+
+              {/* Rank badge — top right */}
+              <div className="absolute top-2.5 right-2.5 z-20">
+                <RankBadge rank={rankKey} />
+              </div>
+
+              {/* Team tag — top left */}
+              <div
+                className="absolute top-2.5 left-2.5 z-20 px-2 py-0.5 rounded-sm"
+                style={{
+                  backgroundColor: "rgba(12,12,20,0.72)",
+                  border: "1px solid " + DS.border,
+                  backdropFilter: "blur(4px)",
+                }}
               >
                 <span
                   style={{
-                    color: DS.border2,
-                    fontSize: "3rem",
-                    fontWeight: 900,
+                    color: DS.text4,
+                    fontSize: 9,
+                    letterSpacing: "0.12em",
+                    fontFamily: DS.mono,
                   }}
                 >
-                  {name.charAt(0).toUpperCase()}
+                  ⬡ {team}
                 </span>
               </div>
-            )}
 
-            {/* Bottom gradient fade — matches FE exactly */}
-            <div
-              className="absolute inset-0"
-              style={{
-                backgroundImage:
-                  "linear-gradient(to top, rgba(15,23,42,0.95) 0%, rgba(15,23,42,0.6) 30%, rgba(15,23,42,0.15) 55%, transparent 75%)",
-                borderRadius: "10px 10px 0 0",
-              }}
-            />
+              {/* Level — bottom over image */}
+              <div className="absolute bottom-3 left-3 z-20 flex items-baseline gap-1">
+                <span
+                  style={{
+                    fontFamily: DS.heading,
+                    color: cfg.color,
+                    fontSize: 20,
+                    fontWeight: 700,
+                    lineHeight: 1,
+                    textShadow: `0 0 14px ${cfg.glowColor}`,
+                  }}
+                >
+                  <Counter value={level} duration={1.2} delay={0.1} />
+                </span>
+                <span
+                  style={{
+                    color: DS.text4,
+                    fontSize: 9,
+                    fontFamily: DS.mono,
+                    letterSpacing: "0.1em",
+                    marginBottom: 2,
+                  }}
+                >
+                  LVL
+                </span>
+              </div>
 
-            {/* Rank badge — top right */}
-            <div className="absolute top-2.5 right-2.5 z-20">
-              <RankBadge rank={rankKey} />
+              {/* LED boost indicator */}
+              {hovered && (
+                <div
+                  className="absolute bottom-3 right-3 z-20 flex items-center gap-1 px-1.5 py-0.5 rounded-sm"
+                  style={{
+                    backgroundColor: `${cfg.color}20`,
+                    border: `1px solid ${cfg.color}60`,
+                    animation: "guildHeartbeat 0.5s ease-in-out infinite",
+                  }}
+                >
+                  <span
+                    style={{
+                      color: cfg.color,
+                      fontSize: 8,
+                      fontFamily: DS.mono,
+                      letterSpacing: "0.1em",
+                    }}
+                  >
+                    ⚡ BOOST
+                  </span>
+                </div>
+              )}
             </div>
 
-            {/* Team tag — top left */}
-            <div
-              className="absolute top-2.5 left-2.5 z-20 px-2 py-0.5 rounded-sm"
-              style={{
-                backgroundColor: "rgba(12,12,20,0.72)",
-                border: "1px solid " + DS.border,
-                backdropFilter: "blur(4px)",
-              }}
-            >
-              <span
-                style={{
-                  color: DS.text4,
-                  fontSize: 9,
-                  letterSpacing: "0.12em",
-                  fontFamily: DS.mono,
-                }}
-              >
-                ⬡ {team}
-              </span>
-            </div>
-
-            {/* Level — bottom over image */}
-            <div className="absolute bottom-3 left-3 z-20 flex items-baseline gap-1">
-              <span
-                style={{
-                  fontFamily: DS.heading,
-                  color: cfg.color,
-                  fontSize: 20,
-                  fontWeight: 700,
-                  lineHeight: 1,
-                  textShadow: `0 0 14px ${cfg.glowColor}`,
-                }}
-              >
-                <Counter value={level} duration={1.2} delay={0.1} />
-              </span>
-              <span
-                style={{
-                  color: DS.text4,
-                  fontSize: 9,
-                  fontFamily: DS.mono,
-                  letterSpacing: "0.1em",
-                  marginBottom: 2,
-                }}
-              >
-                LVL
-              </span>
-            </div>
-
-            {/* LED boost indicator */}
-            {hovered && (
+            {/* Info panel */}
+            <div className="px-3 pt-2 pb-3">
+              {/* Name */}
               <div
-                className="absolute bottom-3 right-3 z-20 flex items-center gap-1 px-1.5 py-0.5 rounded-sm"
                 style={{
-                  backgroundColor: `${cfg.color}20`,
-                  border: `1px solid ${cfg.color}60`,
-                  animation: "guildHeartbeat 0.5s ease-in-out infinite",
+                  color: DS.text,
+                  fontFamily: DS.heading,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  letterSpacing: "0.04em",
+                  lineHeight: 1.3,
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
                 }}
               >
+                {name}
+              </div>
+
+              {/* Role */}
+              <div
+                className="mt-0.5"
+                style={{
+                  color: DS.text4,
+                  fontSize: 10,
+                  fontFamily: DS.mono,
+                  letterSpacing: "0.08em",
+                }}
+              >
+                {ROLE_SYMBOLS[roleCode] ?? "◎"} {role}
+              </div>
+
+              {/* XP bar */}
+              <div className="mt-2.5">
+                <div
+                  className="flex justify-between mb-1"
+                  style={{ color: DS.text5, fontSize: 9, fontFamily: DS.mono }}
+                >
+                  <span style={{ color: cfg.color }}>
+                    XP{" "}
+                    <Counter value={xpPct} duration={1.2} delay={0.2} />
+                    %
+                  </span>
+                  <span>
+                    {currentXp}/{maxXp}
+                  </span>
+                </div>
+                <div
+                  className="rounded-full overflow-hidden"
+                  style={{ height: 3, backgroundColor: DS.border2 }}
+                >
+                  <div
+                    className="h-full rounded-full"
+                    style={{
+                      width: `${xpPct}%`,
+                      backgroundImage: `linear-gradient(90deg, ${cfg.gradientFrom}, ${cfg.gradientTo})`,
+                      boxShadow: `0 0 6px ${cfg.glowColor}`,
+                      transition: "width 0.6s ease",
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* LP Balance */}
+              <div
+                className="flex items-center justify-between mt-2.5 px-2 py-1.5 rounded-sm"
+                style={{
+                  background: `${cfg.color}0a`,
+                  border: `1px solid ${cfg.color}20`,
+                }}
+              >
+                <div className="flex items-center gap-1">
+                  <span style={{ color: cfg.color, fontSize: 8 }}>◈</span>
+                  <span
+                    style={{
+                      color: DS.text5,
+                      fontSize: 8,
+                      fontFamily: DS.mono,
+                      letterSpacing: "0.06em",
+                    }}
+                  >
+                    LP BALANCE
+                  </span>
+                </div>
                 <span
                   style={{
                     color: cfg.color,
-                    fontSize: 8,
+                    fontSize: 11,
                     fontFamily: DS.mono,
-                    letterSpacing: "0.1em",
+                    fontWeight: 700,
+                    letterSpacing: "0.04em",
+                    textShadow: `0 0 8px ${cfg.glowColor}`,
                   }}
                 >
-                  ⚡ BOOST
+                  {formatLP(lpBalance)}
                 </span>
               </div>
-            )}
-          </div>
 
-          {/* Info panel */}
-          <div className="px-3 pt-2 pb-3">
-            {/* Name */}
-            <div
-              style={{
-                color: DS.text,
-                fontFamily: DS.heading,
-                fontSize: 13,
-                fontWeight: 600,
-                letterSpacing: "0.04em",
-                lineHeight: 1.3,
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-              }}
-            >
-              {name}
-            </div>
-
-            {/* Role */}
-            <div
-              className="mt-0.5"
-              style={{
-                color: DS.text4,
-                fontSize: 10,
-                fontFamily: DS.mono,
-                letterSpacing: "0.08em",
-              }}
-            >
-              {ROLE_SYMBOLS[roleCode] ?? "◎"} {role}
-            </div>
-
-            {/* XP bar */}
-            <div className="mt-2.5">
+              {/* VIEW OPERATIVE button */}
               <div
-                className="flex justify-between mb-1"
-                style={{ color: DS.text5, fontSize: 9, fontFamily: DS.mono }}
-              >
-                <span style={{ color: cfg.color }}>
-                  XP{" "}
-                  <Counter value={xpPct} duration={1.2} delay={0.2} />
-                  %
-                </span>
-                <span>
-                  {currentXp}/{maxXp}
-                </span>
-              </div>
-              <div
-                className="rounded-full overflow-hidden"
-                style={{ height: 3, backgroundColor: DS.border2 }}
-              >
-                <div
-                  className="h-full rounded-full"
-                  style={{
-                    width: `${xpPct}%`,
-                    backgroundImage: `linear-gradient(90deg, ${cfg.gradientFrom}, ${cfg.gradientTo})`,
-                    boxShadow: `0 0 6px ${cfg.glowColor}`,
-                    transition: "width 0.6s ease",
-                  }}
-                />
-              </div>
-            </div>
-
-            {/* LP Balance */}
-            <div
-              className="flex items-center justify-between mt-2.5 px-2 py-1.5 rounded-sm"
-              style={{
-                background: `${cfg.color}0a`,
-                border: `1px solid ${cfg.color}20`,
-              }}
-            >
-              <div className="flex items-center gap-1">
-                <span style={{ color: cfg.color, fontSize: 8 }}>◈</span>
-                <span
-                  style={{
-                    color: DS.text5,
-                    fontSize: 8,
-                    fontFamily: DS.mono,
-                    letterSpacing: "0.06em",
-                  }}
-                >
-                  LP BALANCE
-                </span>
-              </div>
-              <span
+                className="w-full mt-3 py-1.5 rounded-sm text-center"
                 style={{
-                  color: cfg.color,
-                  fontSize: 11,
+                  backgroundImage: hovered
+                    ? `linear-gradient(135deg, ${cfg.gradientFrom}35, ${cfg.gradientTo}35)`
+                    : `linear-gradient(135deg, ${cfg.gradientFrom}15, ${cfg.gradientTo}15)`,
+                  backgroundColor: "transparent",
+                  border: `1px solid ${hovered ? cfg.color + "70" : cfg.color + "30"}`,
+                  color: hovered ? cfg.color : DS.text4,
+                  fontSize: 9,
                   fontFamily: DS.mono,
-                  fontWeight: 700,
-                  letterSpacing: "0.04em",
-                  textShadow: `0 0 8px ${cfg.glowColor}`,
+                  letterSpacing: "0.15em",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  transition: "all 0.25s ease",
                 }}
               >
-                {formatLP(lpBalance)}
-              </span>
-            </div>
-
-            {/* VIEW OPERATIVE button */}
-            <div
-              className="w-full mt-3 py-1.5 rounded-sm text-center"
-              style={{
-                backgroundImage: hovered
-                  ? `linear-gradient(135deg, ${cfg.gradientFrom}35, ${cfg.gradientTo}35)`
-                  : `linear-gradient(135deg, ${cfg.gradientFrom}15, ${cfg.gradientTo}15)`,
-                backgroundColor: "transparent",
-                border: `1px solid ${hovered ? cfg.color + "70" : cfg.color + "30"}`,
-                color: hovered ? cfg.color : DS.text4,
-                fontSize: 9,
-                fontFamily: DS.mono,
-                letterSpacing: "0.15em",
-                fontWeight: 600,
-                cursor: "pointer",
-                transition: "all 0.25s ease",
-              }}
-            >
-              VIEW OPERATIVE
+                VIEW OPERATIVE
+              </div>
             </div>
           </div>
+
+          {/* ── LED Runner — outside overflow:hidden ─────────── */}
+          <LEDRunner
+            member={{
+              id: (member.id as string | number) ?? index,
+              rank: rankKey,
+              level,
+            }}
+          />
         </div>
 
-        {/* ── LED Runner — outside overflow:hidden ─────────── */}
-        <LEDRunner
-          member={{
-            id: (member.id as string | number) ?? index,
-            rank: rankKey,
-            level,
-          }}
-        />
-      </div>
-
-      {/* ── Corner decorations ────────────────────────────── */}
-      <CornerDeco color={cfg.color} opacity={hovered ? 1 : 0.5} />
-    </motion.div>
+        {/* ── Corner decorations ────────────────────────────── */}
+        <CornerDeco color={cfg.color} opacity={hovered ? 1 : 0.5} />
+      </motion.div>
     </div>
   );
 }

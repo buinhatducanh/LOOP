@@ -12,6 +12,8 @@ import {
   TEAM_MEMBER_FILTER_CONFIG,
 } from "@/lib/api/search-utils";
 import { computeRankFieldsFromLp, xpForLevel } from "@/lib/rank/xp";
+import { signInviteToken, buildInviteUrl } from "@/lib/auth/invite-token";
+import { sendTeamInviteEmail } from "@/lib/email/team-invite";
 
 export async function GET(req: NextRequest) {
   try {
@@ -252,7 +254,63 @@ export async function POST(req: NextRequest) {
       newValues: member,
     });
 
-    return NextResponse.json({ data: addAvatar(member) }, { status: 201 });
+    // ── Auto-send team invite email if member has an email ────────────────────
+    let inviteSent = false;
+    if (member.email) {
+      const inviterName = session.name ?? "LOOP Admin";
+      const inviterEmail = session.email ?? "hello@loop.vn";
+      const deptLabels: Record<string, string> = {
+        engineering: "Phòng Kỹ thuật",
+        design: "Phòng Thiết kế",
+        media: "Phòng Media",
+        marketing: "Phòng Marketing",
+        sales: "Phòng Kinh doanh",
+        finance: "Phòng Tài chính",
+        hr: "Phòng Nhân sự",
+        management: "Ban Quản lý",
+      };
+
+      try {
+        const token = await signInviteToken({
+          memberId: member.id,
+          email: member.email,
+          inviterId: session.userId,
+          inviterName,
+          inviterEmail,
+          memberName: member.name,
+        });
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://loops.vn";
+        const inviteUrl = buildInviteUrl(token, baseUrl);
+
+        const result = await sendTeamInviteEmail({
+          memberName: member.name,
+          memberEmail: member.email,
+          inviterName,
+          inviterEmail,
+          department: deptLabels[member.department] ?? member.department,
+          role: member.role,
+          inviteUrl,
+          expiresDays: 7,
+        });
+        inviteSent = result.success;
+        if (!result.success) {
+          console.warn(`[TEAM] Invite email failed for ${member.email}: ${result.error}`);
+        }
+      } catch (err) {
+        // Non-fatal: member was created, just email failed
+        console.warn("[TEAM] Invite email error:", err);
+      }
+    }
+
+    return NextResponse.json({
+      data: addAvatar(member),
+      inviteSent,
+      message: inviteSent
+        ? `Đã tạo thành viên và gửi email mời đến ${member.email}`
+        : member.email
+        ? `Đã tạo thành viên (email mời gửi thất bại — xem log)`
+        : "Đã tạo thành viên",
+    }, { status: 201 });
   } catch (error) {
     console.error("POST /api/admin/team error:", error);
     return handleError(error);

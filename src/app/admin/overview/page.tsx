@@ -178,12 +178,12 @@ interface OrderRow {
 
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   pending_payment: { label: "Chờ thanh toán", color: "#F59E0B" },
-  paid:           { label: "Đã thanh toán",    color: "#3B82F6" },
-  in_progress:    { label: "Đang thực hiện",   color: "#818CF8" },
-  demo_ready:     { label: "Demo sẵn sàng",     color: "#A78BFA" },
-  client_review:  { label: "Khách review",      color: "#60A5FA" },
-  done:           { label: "Hoàn thành",         color: "#22C55E" },
-  cancelled:      { label: "Đã hủy",            color: "#EF4444" },
+  paid: { label: "Đã thanh toán", color: "#3B82F6" },
+  in_progress: { label: "Đang thực hiện", color: "#818CF8" },
+  demo_ready: { label: "Demo sẵn sàng", color: "#A78BFA" },
+  client_review: { label: "Khách review", color: "#60A5FA" },
+  done: { label: "Hoàn thành", color: "#22C55E" },
+  cancelled: { label: "Đã hủy", color: "#EF4444" },
 };
 
 function OrderRow({ order }: { order: OrderRow }) {
@@ -279,13 +279,14 @@ export default function AdminOverviewPage() {
   const { user } = useAuthStore();
 
   // Fetch orders from API
+  // throwOnError=false: QA/member roles may not have orders:read permission → show empty state
   const { data: ordersData } = useQuery({
     queryKey: qk.orders({ page: 1, limit: 5 }),
     queryFn: async () => {
       const res = await adminApi.get<{
         data: OrderRow[];
         pagination: { total: number };
-      }>("/api/admin/orders", { params: { page: 1, limit: 5 } });
+      }>("/api/admin/orders", { params: { page: 1, limit: 5 }, throwOnError: false });
       return res;
     },
   });
@@ -297,7 +298,7 @@ export default function AdminOverviewPage() {
       const res = await adminApi.get<{
         data: unknown[];
         pagination: { total: number };
-      }>("/api/admin/team", { params: { page: 1, limit: 1 } });
+      }>("/api/admin/team", { params: { page: 1, limit: 1 }, throwOnError: false });
       return res;
     },
   });
@@ -312,7 +313,7 @@ export default function AdminOverviewPage() {
       const res = await adminApi.get<{
         data: unknown[];
         pagination: { total: number };
-      }>("/api/admin/sales-leads", { params: { page: 1, limit: 1 } });
+      }>("/api/admin/sales-leads", { params: { page: 1, limit: 1 }, throwOnError: false });
       return res;
     },
   });
@@ -327,7 +328,7 @@ export default function AdminOverviewPage() {
       const res = await adminApi.get<{
         data: unknown[];
         pagination: { total: number };
-      }>("/api/admin/edu/enrollments", { params: { page: 1, limit: 1 } });
+      }>("/api/admin/edu/enrollments", { params: { page: 1, limit: 1 }, throwOnError: false });
       return res;
     },
   });

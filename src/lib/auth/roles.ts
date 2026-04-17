@@ -528,14 +528,14 @@ export interface Department {
 }
 
 export const DEPARTMENTS: Department[] = [
-  { key: "engineering", name: "Phòng Kỹ thuật (IT)", shortName: "IT",    color: "#3B82F6" },
-  { key: "design",      name: "Phòng Thiết kế",       shortName: "Design", color: "#8B5CF6" },
-  { key: "media",       name: "Phòng Media",           shortName: "MDI",   color: "#EC4899" },
-  { key: "marketing",   name: "Phòng Marketing",       shortName: "MKT",   color: "#F59E0B" },
-  { key: "sales",       name: "Phòng Kinh doanh",      shortName: "SLS",   color: "#22C55E" },
-  { key: "finance",     name: "Phòng Tài chính",       shortName: "FIN",   color: "#14B8A6" },
-  { key: "hr",          name: "Phòng Nhân sự",         shortName: "HR",    color: "#6366F1" },
-  { key: "management",  name: "Ban Quản lý",           shortName: "MGT",    color: "#EAB308" },
+  { key: "engineering", name: "Phòng Kỹ thuật (IT)", shortName: "IT", color: "#3B82F6" },
+  { key: "design", name: "Phòng Thiết kế", shortName: "Design", color: "#8B5CF6" },
+  { key: "media", name: "Phòng Media", shortName: "MDI", color: "#EC4899" },
+  { key: "marketing", name: "Phòng Marketing", shortName: "MKT", color: "#F59E0B" },
+  { key: "sales", name: "Phòng Kinh doanh", shortName: "SLS", color: "#22C55E" },
+  { key: "finance", name: "Phòng Tài chính", shortName: "FIN", color: "#14B8A6" },
+  { key: "hr", name: "Phòng Nhân sự", shortName: "HR", color: "#6366F1" },
+  { key: "management", name: "Ban Quản lý", shortName: "MGT", color: "#EAB308" },
 ];
 
 export const DEPT_COLORS: Record<string, string> = Object.fromEntries(
@@ -561,25 +561,25 @@ export type AdminTab =
 
 /** Baseline tab permissions per system role (CEO gán thêm/bớt sau đó) */
 export const ROLE_BASE_TABS: Record<string, AdminTab[]> = {
-  admin:            ["*"], // all tabs
-  hr:               ["members", "departments", "overview", "notification_center", "quests_events", "academy", "lp_manage"],
-  project_manager:  ["overview","orders","clients","quotation","services","revenue","projects","members","departments","notification_center","leaderboard_admin","lp_manage","quests_events","academy","blog","lp","portfolio","projects_completed"],
-  media:            ["overview","media","blog","orders","projects","clients","academy","services","leaderboard_admin","quests_events","portfolio","revenue"],
-  qa:               ["overview","projects","notification_center","orders","clients","members","academy","leaderboard_admin","lp"],
-  member:           ["overview","notification_center","leaderboard_admin","academy","quests_events"],
-  client:           [],
-  guest:            [],
+  admin: ["*"], // all tabs
+  hr: ["members", "departments", "overview", "notification_center", "quests_events", "academy", "lp_manage"],
+  project_manager: ["overview", "orders", "clients", "quotation", "services", "revenue", "projects", "members", "departments", "notification_center", "leaderboard_admin", "lp_manage", "quests_events", "academy", "blog", "lp", "portfolio", "projects_completed"],
+  media: ["overview", "media", "blog", "orders", "projects", "clients", "academy", "services", "leaderboard_admin", "quests_events", "portfolio", "revenue"],
+  qa: ["overview", "projects", "notification_center", "orders", "clients", "members", "academy", "leaderboard_admin", "lp"],
+  member: ["overview", "notification_center", "leaderboard_admin", "academy", "quests_events"],
+  client: [],
+  guest: [],
 };
 
 /** Automatic tab bonus when member belongs to a department */
 export const DEPT_TAB_BONUS: Record<string, AdminTab[]> = {
   engineering: ["kanban", "lp"],
-  design:     ["figma_demos", "portfolio"],
-  media:      ["media", "blog"],
-  marketing:  ["blog", "projects"],
-  sales:      ["orders", "clients", "quotation", "revenue"],
-  finance:    ["revenue", "lp", "lp_manage", "income_tax", "revenue_split", "off_system_payments"],
-  hr:         ["members", "departments"],
+  design: ["figma_demos", "portfolio"],
+  media: ["media", "blog"],
+  marketing: ["blog", "projects"],
+  sales: ["orders", "clients", "quotation", "revenue"],
+  finance: ["revenue", "lp", "lp_manage", "income_tax", "revenue_split", "off_system_payments"],
+  hr: ["members", "departments"],
   management: ["*"],
 };
 
@@ -693,7 +693,7 @@ export const DEFAULT_ACCESS_TAGS: Record<string, string[]> = {
   ceo: [],
   super_admin: ["kanban", "order-basic", "blog-post", "seo-content", "media-content", "order-manage", "salary", "lp-manage", "finance-view", "hr-manage"],
   admin: ["kanban", "order-basic", "blog-post", "seo-content", "media-content", "order-manage", "lp-manage"],
-  hr:    ["kanban", "order-basic", "hr-manage", "members", "departments"],
+  hr: ["kanban", "order-basic", "hr-manage", "members", "departments"],
   project_manager: ["kanban", "order-basic", "order-manage"],
   media: ["kanban", "order-basic", "blog-post", "media-content"],
   qa: ["kanban", "order-basic"],
@@ -755,6 +755,10 @@ export const DEFAULT_PERMISSIONS: Record<string, Array<{ resource: string; actio
     { resource: "standups", actions: ["read", "create"] },
     { resource: "projects", actions: ["read"] },
     { resource: "edu", actions: ["read"] },
+    // Dashboard overview: orders, team, clients, enrollments
+    { resource: "orders", actions: ["read"] },
+    { resource: "team", actions: ["read"] },
+    { resource: "sales-leads", actions: ["read"] },
   ],
   member: [
     { resource: "standups", actions: ["read", "create"] },

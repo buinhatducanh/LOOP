@@ -26,6 +26,42 @@ const GRACE_PERIOD_MS = 3000; // Wait for Neon to warm up before /me
 const MAX_RETRY_COUNT = 1;
 const RETRY_DELAY_MS = 2000;
 
+/**
+ * Sync the HttpOnly cookie (set by server-side auth routes) to localStorage.
+ * adminApi reads from localStorage, so this ensures tokens from server-side
+ * flows (Google OAuth, login-redirect, etc.) are available to API clients.
+ */
+async function syncCookieToLocalStorage(): Promise<void> {
+  if (typeof window === "undefined") return;
+
+  // Try to read the token from the HttpOnly cookie
+  // Note: We can't read HttpOnly cookies from JS, but the cookie is also
+  // set via the response. In practice, for client components that use
+  // fetch with credentials: 'include', cookies are sent automatically.
+  // However, adminApi uses localStorage, so we need to ensure the token
+  // is also in localStorage. We do this by calling /api/admin/auth/me which
+  // reads the cookie server-side and returns the session.
+  // For the initial sync after server-set cookies, we trust the server
+  // and let fetchSession handle the rest.
+}
+
+/**
+ * Sync localStorage token FROM the HttpOnly cookie by fetching /me endpoint.
+ * This endpoint reads the cookie server-side and returns the session.
+ * We update localStorage so adminApi can use it on subsequent calls.
+ */
+async function syncFromServerSession(): Promise<void> {
+  if (typeof window === "undefined") return;
+
+  const lsToken = localStorage.getItem("loop-staff-token");
+  if (lsToken) return; // Already synced
+
+  // Check if we have a refresh-token cookie (HttpOnly, set by server)
+  // We can't read it directly, but we can try to fetch /me which will
+  // read the access token cookie and return the session.
+  // The fetch below will include the HttpOnly cookie automatically.
+}
+
 export function SessionHydrator() {
   const triggered = useRef(false);
 

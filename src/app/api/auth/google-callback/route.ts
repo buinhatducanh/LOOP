@@ -58,6 +58,10 @@ export async function GET(req: NextRequest) {
     // now matches an active TeamMember, they should be treated as staff.
     // Normalize: lowercase + trim to handle email whitespace / case mismatch.
     const email = oauthUser.email?.toLowerCase().trim();
+    // Read invite cookies early so they can be used in the email-match block
+    const inviteMemberId = req.cookies.get("invite-member-id")?.value ?? null;
+    const inviteEmail = req.cookies.get("invite-email")?.value ?? null;
+
     // Capture ids before any narrowing so closures can safely reference them
     const dbUserId = dbUser?.id ?? null;
     let accountType: "staff" | "customer" = (dbUser?.accountType as "staff" | "customer") ?? "customer";
@@ -66,15 +70,49 @@ export async function GET(req: NextRequest) {
     if (teamMemberMatchId) {
       // User already linked to a TeamMember → staff
       accountType = "staff";
+    } else if (inviteMemberId) {
+      // ── INVITE FLOW: Use the specific memberId from invite cookie ──────────
+      // The invite token guarantees this user was invited as THIS member.
+      // Only link if the OAuth email matches the invite-email cookie.
+      const inviteEmailNormalized = inviteEmail?.toLowerCase().trim();
+      if (email === inviteEmailNormalized) {
+        const invitedMember = await prisma.teamMember.findUnique({
+          where: { id: inviteMemberId },
+          select: { id: true, isActive: true },
+        });
+        if (invitedMember?.isActive) {
+          teamMemberMatchId = invitedMember.id;
+          accountType = "staff";
+          if (dbUserId) {
+            await prisma.$transaction(async (tx) => {
+              if (dbUser?.accountType === "customer") {
+                await tx.user.update({
+                  where: { id: dbUserId },
+                  data: { teamMemberId: inviteMemberId, accountType: "staff", isOnboarded: true },
+                });
+              } else {
+                await tx.user.update({
+                  where: { id: dbUserId },
+                  data: { teamMemberId: inviteMemberId, accountType: "staff" },
+                });
+              }
+            }).catch(() => {/* non-fatal — next login will retry */ });
+          }
+        }
+      }
     } else if (email) {
-      // Check if email matches any active TeamMember → staff
+      // ── FALLBACK: Match by email (existing behavior — pre-created members) ──
+      // Only match if the member is both active AND approved.
+      // Pending members must be approved in admin dashboard before they can log in via Google.
       const teamMemberMatch = await prisma.teamMember.findFirst({
         where: {
           email: { equals: email, mode: "insensitive" },
           isActive: true,
+          requestStatus: "approved",
         },
-        select: { id: true },
+        select: { id: true, requestStatus: true },
       });
+
       if (teamMemberMatch) {
         teamMemberMatchId = teamMemberMatch.id;
         accountType = "staff";
@@ -98,8 +136,27 @@ export async function GET(req: NextRequest) {
                 data: { teamMemberId: tmId, accountType: "staff", isOnboarded: true },
               });
             }
-          }).catch(() => {/* non-fatal — next login will retry */});
+          }).catch(() => {/* non-fatal — next login will retry */ });
         }
+      } else {
+        // Check if a TeamMember with this email exists but is NOT approved.
+        // If so, redirect back to login with a clear error so the user knows their
+        // account is pending approval — rather than silently treating them as a new customer.
+        const pendingMember = await prisma.teamMember.findFirst({
+          where: {
+            email: { equals: email, mode: "insensitive" },
+            isActive: true,
+          },
+          select: { id: true, requestStatus: true },
+        });
+
+        if (pendingMember) {
+          // Member exists but not yet approved → keep them on the login page
+          return NextResponse.redirect(
+            new URL(`/${locale}/dang-nhap?error=member_pending`, req.url)
+          );
+        }
+        // No TeamMember match at all — proceed as normal (will be treated as customer)
       }
     }
 
@@ -163,14 +220,19 @@ export async function GET(req: NextRequest) {
 
     const response = NextResponse.redirect(new URL(dest, req.url));
 
-    // Access token cookie (15 min)
-    response.cookies.set(AUTH_COOKIES.ACCESS_TOKEN, accessToken, {
+    // FIX: Use "loop-staff-token" (HttpOnly) — consistent with all other auth flows
+    // (login form, login-redirect, etc.). AdminLayout, AuthGuard, and adminApi all
+    // read this exact cookie/localStorage key.
+    const staffCookieOptions = {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 15 * 60,
+      sameSite: "lax" as const,
+      maxAge: 7 * 24 * 60 * 60,
       path: "/",
-    });
+    };
+    response.cookies.set("loop-staff-token", accessToken, staffCookieOptions);
+    // Legacy cookie name (some edge code still references this)
+    response.cookies.set("auth-token", accessToken, staffCookieOptions);
     // Refresh token cookie (7 days)
     response.cookies.set(AUTH_COOKIES.REFRESH_TOKEN, refreshToken, {
       httpOnly: true,
@@ -202,6 +264,9 @@ export async function GET(req: NextRequest) {
       "__Host-next-auth.csrf-token",
       "next-auth.session-token",
       "next-auth.csrf-token",
+      // Clear invite cookies after use
+      "invite-member-id",
+      "invite-email",
     ]) {
       response.cookies.set(name, "", {
         httpOnly: true,

@@ -139,9 +139,9 @@ function TechChip({ label, color }: { label: string; color: string }) {
 // ── Mission log item ─────────────────────────────────────────────────────────
 function MissionItem({ title, date, status, color, lpReward }: { title: string; date: string; status: string; color: string; lpReward?: number }) {
   const sc: Record<string, { label: string; c: string }> = {
-    completed: { label: "DONE",   c: "#22C55E" },
-    ongoing:   { label: "ACTIVE", c: "#F59E0B" },
-    failed:    { label: "FAILED", c: "#EF4444" },
+    completed: { label: "DONE", c: "#22C55E" },
+    ongoing: { label: "ACTIVE", c: "#F59E0B" },
+    failed: { label: "FAILED", c: "#EF4444" },
   };
   const s = sc[status] ?? sc.completed;
   return (
@@ -180,7 +180,7 @@ function AchievementBadge({ label, color }: { label: string; color: string }) {
 const ALL_RANKS: RankKey[] = ["iron", "bronze", "silver", "gold", "platinum", "ruby", "diamond"];
 
 function RankTimeline({ member, cfg }: { member: MemberStats; cfg: { color: string } }) {
-  const historyMap = new Map(member.rankHistory.map((e) => [e.to, e]));
+  const historyMap = new Map((member.rankHistory ?? []).map((e) => [e.to, e]));
   const currentRank = normalizeRank(member.rank);
   const currentTier = RANKS[currentRank]?.tier ?? 1;
 
@@ -343,15 +343,15 @@ function TabSparks({ sparks }: { sparks: TabSpark[] }) {
 // ── Tabs ─────────────────────────────────────────────────────────────────────
 type TabId = "tech" | "missions" | "achievements" | "timeline";
 const TABS: { id: TabId; label: string; icon: ReactNode }[] = [
-  { id: "tech",         label: "Tech Tree",   icon: <Zap size={12} /> },
-  { id: "missions",     label: "Missions",    icon: <Target size={12} /> },
-  { id: "achievements", label: "Trophies",    icon: <Trophy size={12} /> },
-  { id: "timeline",     label: "Chronicle",   icon: <GitBranch size={12} /> },
+  { id: "tech", label: "Tech Tree", icon: <Zap size={12} /> },
+  { id: "missions", label: "Missions", icon: <Target size={12} /> },
+  { id: "achievements", label: "Trophies", icon: <Trophy size={12} /> },
+  { id: "timeline", label: "Chronicle", icon: <GitBranch size={12} /> },
 ];
 
 // ── Diamond Crown Badge ─────────────────────────────────────────────────────
 const CROWN_SPARKS_FIXED = [
-  { left: "8%",  delay: "0s",   dur: "2.8s", size: 2.5, color: "#818CF8" },
+  { left: "8%", delay: "0s", dur: "2.8s", size: 2.5, color: "#818CF8" },
   { left: "22%", delay: "1.1s", dur: "3.2s", size: 1.5, color: "#7DD3FC" },
   { left: "38%", delay: "0.5s", dur: "2.5s", size: 2.0, color: "#F0ABFC" },
   { left: "55%", delay: "1.8s", dur: "3.5s", size: 1.5, color: "#FFFFFF" },
@@ -392,8 +392,8 @@ function DiamondCrownBadge() {
             <svg width="26" height="22" viewBox="0 0 26 22" fill="none" style={{ flexShrink: 0 }}>
               <defs>
                 <linearGradient id="hudCrownGradL" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%"   stopColor="#818CF8" />
-                  <stop offset="50%"  stopColor="#7DD3FC" />
+                  <stop offset="0%" stopColor="#818CF8" />
+                  <stop offset="50%" stopColor="#7DD3FC" />
                   <stop offset="100%" stopColor="#F0ABFC" />
                 </linearGradient>
                 <filter id="hudCrownGlow" x="-40%" y="-40%" width="180%" height="180%">
@@ -404,11 +404,11 @@ function DiamondCrownBadge() {
               <path d="M2 20 L5 8 L10.5 14.5 L13 2 L15.5 14.5 L21 8 L24 20 Z" fill="none"
                 stroke="url(#hudCrownGradL)" strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" filter="url(#hudCrownGlow)" />
               <line x1="2" y1="20" x2="24" y2="20" stroke="url(#hudCrownGradL)" strokeWidth="1.8" strokeLinecap="round" />
-              <circle cx="2"  cy="20" r="2" fill="#F0ABFC" opacity="0.9" />
-              <circle cx="13" cy="2"  r="2" fill="#7DD3FC" opacity="0.9" />
+              <circle cx="2" cy="20" r="2" fill="#F0ABFC" opacity="0.9" />
+              <circle cx="13" cy="2" r="2" fill="#7DD3FC" opacity="0.9" />
               <circle cx="24" cy="20" r="2" fill="#818CF8" opacity="0.9" />
-              <circle cx="5"  cy="8"  r="1.2" fill="#FFFFFF" opacity="0.7" />
-              <circle cx="21" cy="8"  r="1.2" fill="#FFFFFF" opacity="0.7" />
+              <circle cx="5" cy="8" r="1.2" fill="#FFFFFF" opacity="0.7" />
+              <circle cx="21" cy="8" r="1.2" fill="#FFFFFF" opacity="0.7" />
             </svg>
             <div>
               <div style={{
@@ -430,11 +430,11 @@ function DiamondCrownBadge() {
               <path d="M2 20 L5 8 L10.5 14.5 L13 2 L15.5 14.5 L21 8 L24 20 Z" fill="none"
                 stroke="url(#hudCrownGradL)" strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" />
               <line x1="2" y1="20" x2="24" y2="20" stroke="url(#hudCrownGradL)" strokeWidth="1.8" strokeLinecap="round" />
-              <circle cx="2"  cy="20" r="2" fill="#818CF8" opacity="0.9" />
-              <circle cx="13" cy="2"  r="2" fill="#7DD3FC" opacity="0.9" />
+              <circle cx="2" cy="20" r="2" fill="#818CF8" opacity="0.9" />
+              <circle cx="13" cy="2" r="2" fill="#7DD3FC" opacity="0.9" />
               <circle cx="24" cy="20" r="2" fill="#F0ABFC" opacity="0.9" />
-              <circle cx="5"  cy="8"  r="1.2" fill="#FFFFFF" opacity="0.7" />
-              <circle cx="21" cy="8"  r="1.2" fill="#FFFFFF" opacity="0.7" />
+              <circle cx="5" cy="8" r="1.2" fill="#FFFFFF" opacity="0.7" />
+              <circle cx="21" cy="8" r="1.2" fill="#FFFFFF" opacity="0.7" />
             </svg>
           </div>
         </div>
@@ -556,21 +556,26 @@ export function HUDPanel() {
 
       {/* Panel */}
       <motion.div
-        className="fixed right-0 top-0 h-full z-50 overflow-y-auto"
-        style={{ width: 400, background: DS.bg, borderLeft: `1px solid ${DS.border}` }}
+        className="fixed right-0 top-0 h-full z-50 overflow-y-auto w-[calc(100vw-48px)] sm:w-[400px]"
+        style={{ background: DS.bg, borderLeft: `1px solid ${DS.border}` }}
         initial={{ x: "100%" }}
         animate={{ x: 0 }}
         exit={{ x: "100%" }}
         transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Mobile drag handle */}
+        <div className="sm:hidden flex justify-center pt-3 pb-2">
+          <div className="w-10 h-1 rounded-full" style={{ background: DS.border }} />
+        </div>
+
         {/* Top accent line */}
         <div className="h-0.5 w-full"
           style={{ background: `linear-gradient(90deg, transparent, ${cfg.color}, transparent)`, opacity: 0.8 }} />
 
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           {/* Header */}
-          <div className="flex items-start justify-between mb-6">
+          <div className="flex items-start justify-between mb-4 sm:mb-6">
             <div className="flex items-center gap-1"
               style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.15em" }}>
               <Shield size={10} />
@@ -578,7 +583,7 @@ export function HUDPanel() {
             </div>
             <button
               onClick={clearActiveMember}
-              className="w-7 h-7 flex items-center justify-center rounded-sm transition-colors"
+              className="w-8 h-8 sm:w-7 sm:h-7 flex items-center justify-center rounded-sm transition-colors"
               style={{ border: `1px solid ${DS.border}`, color: DS.text4 }}
               onMouseEnter={(e) => {
                 const el = e.currentTarget as HTMLElement;
@@ -591,7 +596,8 @@ export function HUDPanel() {
                 el.style.color = DS.text4;
               }}
             >
-              <X size={13} />
+              <X size={14} className="sm:hidden" />
+              <X size={13} className="hidden sm:block" />
             </button>
           </div>
 
@@ -685,8 +691,8 @@ export function HUDPanel() {
           <div className="grid grid-cols-3 gap-2 mb-5">
             {([
               { label: "BALANCE", value: fmtLP(lpBalance), accent: cfg.color },
-              { label: "EARNED",  value: fmtLP(lpTotal),  accent: "#22C55E" },
-              { label: "SPENT",  value: "—",             accent: "#F59E0B" },
+              { label: "EARNED", value: fmtLP(lpTotal), accent: "#22C55E" },
+              { label: "SPENT", value: "—", accent: "#F59E0B" },
             ] as const).map(({ label, value, accent }) => (
               <div key={label} className="text-center px-2 py-2 rounded-lg"
                 style={{ background: DS.bgCard, border: `1px solid ${accent}20` }}>

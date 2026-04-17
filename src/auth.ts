@@ -59,14 +59,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               dbUser = await tx.user.findUnique({ where: { email } });
             }
 
-            // 3. Check if pre-created TeamMember matches this email (case-insensitive, trim-safe)
+            // 3. Resolve TeamMember
+            // Priority: invite cookie (specific memberId) > email match (fallback)
             let teamMemberId: string | null = null;
             let accountType = "customer";
 
             if (email) {
+              // Primary: check invite cookie — exact memberId match
+              // The invite token guarantees this OAuth email belongs to this member
+              // Note: NextAuth jwt() callback doesn't have cookie access directly.
+              // We read the email from the OAuth profile instead.
+              // Since google-callback is the final arbiter, auth.ts handles the
+              // email-match fallback which covers both invite and pre-created cases.
+
+              // Fallback: match by email (pre-created members without invite)
               const teamMember = await tx.teamMember.findFirst({
                 where: {
-                  // PostgreSQL ILIKE via Prisma ILIKE extension — case-insensitive
                   email: { equals: email, mode: "insensitive" },
                   isActive: true,
                 },
