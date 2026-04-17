@@ -18,7 +18,6 @@ import { handleError } from "@/lib/api/response";
 import { prisma } from "@/lib/prisma";
 import { signInviteToken, buildInviteUrl } from "@/lib/auth/invite-token";
 import { sendTeamInviteEmail } from "@/lib/email/team-invite";
-import { getSession } from "@/lib/auth/session";
 
 export async function POST(req: NextRequest) {
   try {

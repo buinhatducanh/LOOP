@@ -25,7 +25,7 @@ import {
   Menu, X, LogIn, LogOut, Zap,
   ChevronDown, Globe, Rocket,
   Search, ArrowRight, Phone, Mail, MapPin, Clock, MessageCircle, Bell,
-  User, LayoutDashboard, Sparkles,
+  User, LayoutDashboard, Sparkles, CheckCheck, ChevronRight,
 } from "lucide-react";
 import { CEO_CONTACT } from "@/lib/constants";
 import { DS, GRD, GLOW } from "@/lib/design-tokens";
@@ -1418,45 +1418,216 @@ export default function SiteHeader({ locale }: { locale: string }) {
             </button>
 
             {/* Notification Bell */}
-            <button
-              className="hide-mobile"
-              title="Thông báo"
-              style={{
-                position: "relative",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                width: 36, height: 36,
-                background: rgba(DS.text, 0.03), border: `1px solid ${rgba(DS.text, 0.06)}`,
-                borderRadius: 10, cursor: "pointer", color: DS.text3,
-                transition: "all 0.15s",
-              }}
-              onMouseEnter={e => {
-                const el = e.currentTarget as HTMLButtonElement;
-                el.style.borderColor = rgba(DS.pink, 0.3);
-                el.style.background = rgba(DS.pink, 0.06);
-                el.style.color = DS.pink;
-              }}
-              onMouseLeave={e => {
-                const el = e.currentTarget as HTMLButtonElement;
-                el.style.borderColor = rgba(DS.text, 0.06);
-                el.style.background = rgba(DS.text, 0.03);
-                el.style.color = DS.text3;
-              }}
-            >
-              <Bell size={15} />
-              {notifCount > 0 && (
-                <div style={{
-                  position: "absolute", top: 3, right: 3,
-                  width: 16, height: 16, borderRadius: "50%",
-                  background: DS.pink,
-                  border: "2px solid rgba(10,10,18,0.98)",
+            <div style={{ position: "relative" }} ref={notifRef}>
+              <button
+                className="hide-mobile"
+                title="Thông báo"
+                onClick={handleOpenNotifs}
+                style={{
+                  position: "relative",
                   display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 8, fontWeight: 700, color: "#fff",
-                  boxShadow: `0 0 6px ${DS.pink}`,
-                }}>
-                  {notifCount}
-                </div>
-              )}
-            </button>
+                  width: 36, height: 36,
+                  background: notifPanelOpen ? rgba(DS.pink, 0.12) : rgba(DS.text, 0.03),
+                  border: `1px solid ${notifPanelOpen ? rgba(DS.pink, 0.4) : rgba(DS.text, 0.06)}`,
+                  borderRadius: 10, cursor: "pointer", color: notifPanelOpen ? DS.pink : DS.text3,
+                  transition: "all 0.15s",
+                }}
+                onMouseEnter={e => {
+                  const el = e.currentTarget as HTMLButtonElement;
+                  el.style.borderColor = rgba(DS.pink, 0.3);
+                  el.style.background = rgba(DS.pink, 0.06);
+                  el.style.color = DS.pink;
+                }}
+                onMouseLeave={e => {
+                  const el = e.currentTarget as HTMLButtonElement;
+                  if (!notifPanelOpen) {
+                    el.style.borderColor = rgba(DS.text, 0.06);
+                    el.style.background = rgba(DS.text, 0.03);
+                    el.style.color = DS.text3;
+                  }
+                }}
+              >
+                <Bell size={15} />
+                {notifCount > 0 && (
+                  <div style={{
+                    position: "absolute", top: 3, right: 3,
+                    width: 16, height: 16, borderRadius: "50%",
+                    background: DS.pink,
+                    border: "2px solid rgba(10,10,18,0.98)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 8, fontWeight: 700, color: "#fff",
+                    boxShadow: `0 0 6px ${DS.pink}`,
+                  }}>
+                    {notifCount}
+                  </div>
+                )}
+              </button>
+
+              {/* Notification Dropdown Panel */}
+              <AnimatePresence>
+                {notifPanelOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -8, scale: 0.97 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -8, scale: 0.97 }}
+                    transition={{ type: "spring", stiffness: 350, damping: 28 }}
+                    style={{
+                      position: "absolute", top: "calc(100% + 8px)", right: 0,
+                      width: 380,
+                      maxHeight: 480,
+                      background: "rgba(10,10,18,0.98)",
+                      border: "1px solid rgba(236,72,153,0.2)",
+                      borderRadius: 16,
+                      backdropFilter: "blur(24px)",
+                      WebkitBackdropFilter: "blur(24px)",
+                      boxShadow: "0 20px 60px rgba(0,0,0,0.7), 0 0 20px rgba(236,72,153,0.08)",
+                      overflow: "hidden", zIndex: 110,
+                      display: "flex", flexDirection: "column",
+                    }}
+                  >
+                    {/* Header */}
+                    <div style={{
+                      padding: "12px 16px",
+                      borderBottom: `1px solid ${DS.border}`,
+                      display: "flex", alignItems: "center", justifyContent: "space-between",
+                    }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <Bell size={14} style={{ color: DS.pink }} />
+                        <span style={{ color: DS.text, fontSize: 13, fontWeight: 700 }}>Thông báo</span>
+                        {accountType === "customer" && (
+                          <span style={{ fontSize: 9, padding: "2px 6px", borderRadius: 4, background: "rgba(59,130,246,0.12)", color: DS.blue, fontFamily: DS.mono }}>Khách hàng</span>
+                        )}
+                        {accountType === "staff" && (
+                          <span style={{ fontSize: 9, padding: "2px 6px", borderRadius: 4, background: "rgba(139,92,246,0.12)", color: DS.cosmicPurple, fontFamily: DS.mono }}>Quản trị</span>
+                        )}
+                      </div>
+                      {notifCount > 0 && (
+                        <button
+                          onClick={markAllAsRead}
+                          style={{
+                            background: "none", border: "none", cursor: "pointer",
+                            color: DS.blue, fontSize: 11, fontFamily: DS.mono,
+                            display: "flex", alignItems: "center", gap: 4,
+                            padding: "4px 8px", borderRadius: 6,
+                            transition: "all 0.15s",
+                          }}
+                          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(59,130,246,0.12)"; }}
+                          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "none"; }}
+                        >
+                          <CheckCheck size={11} /> Đọc hết
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Notification List */}
+                    <div style={{ overflowY: "auto", flex: 1 }}>
+                      {loadingNotifs ? (
+                        <div style={{ padding: "2rem", textAlign: "center" }}>
+                          <div style={{ color: DS.text4, fontSize: 12 }}>Đang tải...</div>
+                        </div>
+                      ) : notifications.length === 0 ? (
+                        <div style={{ padding: "2rem", textAlign: "center" }}>
+                          <Bell size={32} style={{ color: DS.text5, margin: "0 auto 0.5rem", opacity: 0.3 }} />
+                          <div style={{ color: DS.text4, fontSize: 12 }}>Không có thông báo nào</div>
+                        </div>
+                      ) : (
+                        notifications.map((n) => (
+                          <div
+                            key={n.id}
+                            onClick={() => markAsRead(n.id, n.link)}
+                            style={{
+                              display: "flex", alignItems: "flex-start", gap: 10,
+                              padding: "10px 14px",
+                              cursor: "pointer",
+                              background: n.isRead ? "transparent" : "rgba(236,72,153,0.04)",
+                              borderBottom: `1px solid ${DS.border}`,
+                              transition: "background 0.15s",
+                            }}
+                            onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = "rgba(236,72,153,0.08)"; }}
+                            onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = n.isRead ? "transparent" : "rgba(236,72,153,0.04)"; }}
+                          >
+                            {/* Icon */}
+                            <div style={{
+                              width: 32, height: 32, borderRadius: 8, flexShrink: 0,
+                              background: "rgba(236,72,153,0.1)",
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                            }}>
+                              <Bell size={14} style={{ color: DS.pink }} />
+                            </div>
+
+                            {/* Content */}
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
+                                {!n.isRead && (
+                                  <div style={{
+                                    width: 6, height: 6, borderRadius: "50%",
+                                    background: DS.pink, boxShadow: `0 0 4px ${DS.pink}`,
+                                    flexShrink: 0,
+                                  }} />
+                                )}
+                                <span style={{
+                                  color: n.isRead ? DS.text3 : DS.text,
+                                  fontSize: 12, fontWeight: n.isRead ? 500 : 700,
+                                  overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                                }}>
+                                  {n.title}
+                                </span>
+                              </div>
+                              {n.message && (
+                                <div style={{
+                                  color: DS.text4, fontSize: 11, lineHeight: 1.4,
+                                  overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                                }}>
+                                  {n.message}
+                                </div>
+                              )}
+                              {n.time && (
+                                <div style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono, marginTop: 2 }}>
+                                  {n.time}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Arrow */}
+                            <ChevronRight size={12} style={{ color: DS.text5, flexShrink: 0, marginTop: 2 }} />
+                          </div>
+                        ))
+                      )}
+                    </div>
+
+                    {/* Footer */}
+                    {notifications.length > 0 && (
+                      <div style={{
+                        padding: "10px 16px",
+                        borderTop: `1px solid ${DS.border}`,
+                        textAlign: "center",
+                      }}>
+                        <button
+                          onClick={() => {
+                            setNotifPanelOpen(false);
+                            // Navigate to appropriate notification center based on accountType
+                            if (accountType === "customer") {
+                              router.push(`/${locale}/khach-hang?tab=notifications`);
+                            } else {
+                              router.push("/admin/notification_center");
+                            }
+                          }}
+                          style={{
+                            background: "none", border: "none", cursor: "pointer",
+                            color: DS.pink, fontSize: 11, fontFamily: DS.mono,
+                            transition: "opacity 0.15s",
+                          }}
+                          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "0.7"; }}
+                          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "1"; }}
+                        >
+                          Xem tất cả thông báo →
+                        </button>
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
 
             {/* Locale Switcher */}
             <LocaleSwitcher locale={locale} />
