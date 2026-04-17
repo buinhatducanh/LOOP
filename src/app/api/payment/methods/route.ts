@@ -3,21 +3,33 @@
  *
  * Public endpoint — no auth required.
  * Returns available payment methods for the booking wizard.
- * Includes VietQR info if configured, plus static QR codes.
+ * Bank transfer (with static QR) + MoMo + VNPay.
  */
 
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { loadVietQRConfig } from "@/lib/services/payment/vietqr.service";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
- const [bankQr, momoQr, vietqrConfig] = await Promise.all([
- prisma.siteSetting.findUnique({ where: { key: "payment_bank_qr" } }),
+ const [bankConfig, momoQr] = await Promise.all([
+ prisma.siteSetting.findUnique({ where: { key: "payment_bank_info" } }),
  prisma.siteSetting.findUnique({ where: { key: "payment_momo_qr" } }),
- loadVietQRConfig(),
  ]);
+
+ // Parse bank config (stored as JSON in SiteSetting)
+ let bankInfo: {
+ bankName?: string;
+ accountNo?: string;
+ accountName?: string;
+ bankBin?: string;
+ phone?: string;
+ } = {};
+ try {
+ if (bankConfig?.value) {
+ bankInfo = JSON.parse(bankConfig.value);
+ }
+ } catch { /* ignore */ }
 
  const methods: Array<{
  value: string;
@@ -25,47 +37,39 @@ export async function GET() {
  icon: string;
  recommended?: boolean;
  description: string;
- hasDynamicQR?: boolean;
  bankName?: string;
  accountNo?: string;
  accountName?: string;
- bankBin?: string;
+ phone?: string;
  }> = [
  {
- value: "vietqr",
- label: "VietQR",
- icon: "📱",
- recommended: true,
- description: "Quét mã QR bằng app ngân hàng — nhanh nhất",
- hasDynamicQR: true,
- bankName: vietqrConfig?.bankName,
- accountNo: vietqrConfig?.accountNo,
- accountName: vietqrConfig?.accountName,
- bankBin: vietqrConfig?.bankBin,
- },
- {
- value: "bank_transfer",
- label: "Chuyển khoản thủ công",
+ value: "bank",
+ label: "Chuyển khoản",
  icon: "🏦",
- description: "Chuyển khoản theo thông tin tài khoản bên dưới",
- hasDynamicQR: false,
- bankName: vietqrConfig?.bankName,
- accountNo: vietqrConfig?.accountNo,
- accountName: vietqrConfig?.accountName,
- bankBin: vietqrConfig?.bankBin,
+ recommended: true,
+ description: "Quét mã QR bằng app ngân hàng",
+ bankName: bankInfo.bankName,
+ accountNo: bankInfo.accountNo,
+ accountName: bankInfo.accountName,
+ phone: bankInfo.phone,
  },
  {
  value: "momo",
- label: "Ví MoMo",
+ label: "MoMo",
  icon: "💜",
  description: "Thanh toán qua ví MoMo",
- hasDynamicQR: false,
+ },
+ {
+ value: "vnpay",
+ label: "VNPay",
+ icon: "💳",
+ description: "Thanh toán qua VNPay",
  },
  ];
 
  const staticQrInfo = {
  bankTransfer: {
- qrUrl: bankQr?.value || null,
+ qrUrl: bankConfig?.value || null,
  },
  momo: {
  qrUrl: momoQr?.value || null,
@@ -76,7 +80,7 @@ export async function GET() {
  data: {
  methods,
  staticQrInfo,
- vietqrEnabled: !!vietqrConfig,
+ bankInfo,
  },
  });
 }

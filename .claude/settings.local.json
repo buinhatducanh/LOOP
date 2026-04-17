@@ -170,7 +170,11 @@
       "Bash(/d/LOOP_COMPANY/LOOP/patch_khachhang.py:*)",
       "Bash(node -e \"require\\(''''./check_members.js''''\\)\")",
       "Bash(bash add_fields.sh)",
-      "Bash(rm add_fields.sh)"
+      "Bash(rm add_fields.sh)",
+      "Bash(dotenvx om:*)",
+      "Bash(DATABASE_URL=\"postgresql://neondb_owner:npg_5TfHtjP6JcyG@ep-round-cherry-a1852lvb-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require\" npx tsx --tsconfig tsconfig.json scripts/save-bank-info.ts)",
+      "Bash(DATABASE_URL=\"postgresql://neondb_owner:npg_5TfHtjP6JcyG@ep-round-cherry-a1852lvb-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require\" npx tsx --tsconfig tsconfig.json -e \":*)",
+      "Bash(DATABASE_URL=\"postgresql://neondb_owner:npg_5TfHtjP6JcyG@ep-round-cherry-a1852lvb-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require\" npx tsx --tsconfig tsconfig.json scripts/save-momo-info.ts)"
     ],
     "additionalDirectories": []
   }

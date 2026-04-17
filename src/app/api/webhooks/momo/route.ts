@@ -42,15 +42,13 @@ export async function POST(req: NextRequest) {
  if (resultCode === 0 && typeof orderId === "string" && typeof amount === "number") {
  const paymentAmount = Math.round(Number(amount));
 
- // Check if payment already recorded (idempotency)
+ // Check if payment already recorded (idempotency via MoMo transId)
  const { prisma } = await import("@/lib/prisma");
  const existing = await prisma.payment.findFirst({
  where: {
  orderId,
- amount: paymentAmount,
- confirmedAt: {
- gte: new Date(Date.now() - 60_000), // within last minute
- },
+ method: "momo",
+ note: { contains: String(transId) },
  },
  });
 

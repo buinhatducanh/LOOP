@@ -322,17 +322,17 @@ export function BookingWizardClient({ locale }: Props) {
   // ── Wizard state ────────────────────────────────────────────────────────────
   const [step, setStep] = useState(0);
   const [paymentPlan, setPaymentPlan] = useState<"50" | "100">("50");
- const [paymentMethod, setPaymentMethod] = useState("vietqr");
+ const [paymentMethod, setPaymentMethod] = useState("bank");
  const [qrData, setQrData] = useState<{qrDataURL?: string; payUrl?: string; amount?: number; expiresAt?: string; message?: string} | null>(null);
  const [paymentMethods, setPaymentMethods] = useState<{value: string; label: string; icon: string; hasDynamicQR?: boolean; bankName?: string; accountNo?: string; accountName?: string; bankBin?: string}[]>([
- { value: "vietqr", label: "VietQR", icon: "📱", hasDynamicQR: true },
- { value: "bank", label: "Chuyển khoản", icon: "🏦", hasDynamicQR: false },
- { value: "momo", label: "MoMo", icon: "💜", hasDynamicQR: false },
- { value: "vnpay", label: "VNPay", icon: "💳", hasDynamicQR: false },
+ { value: "bank", label: "Chuyển khoản", icon: "🏦" },
+ { value: "momo", label: "MoMo", icon: "💜" },
+ { value: "vnpay", label: "VNPay", icon: "💳" },
  ]);
  const [staticQrInfo, setStaticQrInfo] = useState<{bankTransfer?: {qrUrl?: string | null}; momo?: {qrUrl?: string | null}}>({});
  const [qrLoading, setQrLoading] = useState(false);
  const [qrError, setQrError] = useState("");
+ const [bankInfo, setBankInfo] = useState<{bankName?: string; accountNo?: string; accountName?: string; phone?: string; bankBin?: string} | null>(null);
   // Package selection (website-only — packages are the primary selection)
   const [selectedPackage, setSelectedPackage] = useState<string>("ban-hang"); // default to decoy
 
@@ -436,6 +436,7 @@ export function BookingWizardClient({ locale }: Props) {
  value: m.value === "bank_transfer" ? "bank" : m.value,
  })));
  setStaticQrInfo(json.data.staticQrInfo ?? {});
+ setBankInfo(json.data.bankInfo ?? null);
  }
  })
  .catch(() => { /* keep defaults */ });
@@ -447,15 +448,22 @@ export function BookingWizardClient({ locale }: Props) {
  setQrLoading(true);
  setQrError("");
  try {
- if (paymentMethod === "vietqr") {
- const res = await fetch("/api/payment/vietqr", {
+ if (paymentMethod === "bank" && bankInfo?.bankBin && bankInfo?.accountNo) {
+ // Generate bank transfer QR using our own QR API
+ const res = await fetch("/api/payment/bank-qr", {
  method: "POST",
  headers: { "Content-Type": "application/json" },
- body: JSON.stringify({ orderId: newOrderId, amount }),
+ body: JSON.stringify({
+ bankBin: bankInfo.bankBin,
+ accountNo: bankInfo.accountNo,
+ accountName: bankInfo.accountName,
+ amount,
+ orderRef: `LOOP-${newOrderId.slice(-8).toUpperCase()}`,
+ }),
  });
  const data = await res.json();
- if (!res.ok) throw new Error(data?.error || "VietQR failed");
- setQrData(data.data);
+ if (!res.ok) throw new Error(data?.error || "Tạo QR thất bại");
+ setQrData({ qrDataURL: data.data.qrDataURL, amount: data.data.amount });
  } else if (paymentMethod === "momo") {
  const res = await fetch("/api/payment/momo/create", {
  method: "POST",
@@ -468,7 +476,7 @@ export function BookingWizardClient({ locale }: Props) {
  setQrData(data.data);
  } else if (paymentMethod === "vnpay") {
  const res = await fetch("/api/payment/vnpay/create", {
- method: "POST",
+  method: "POST",
  headers: { "Content-Type": "application/json" },
  body: JSON.stringify({ orderId: newOrderId, amount }),
  });
@@ -476,13 +484,13 @@ export function BookingWizardClient({ locale }: Props) {
  if (!res.ok) throw new Error(data?.error || "VNPay failed");
  if (data.data?.paymentUrl) { window.location.href = data.data.paymentUrl; return; }
  setQrData({ payUrl: data.data?.paymentUrl });
- }
+  }
  } catch (err) {
  setQrError(err instanceof Error ? err.message : "Lỗi thanh toán");
  } finally {
  setQrLoading(false);
  }
-  };
+ };
 
   // ── Derived values ────────────────────────────────────────────────────
   const service = WEBSITE_SERVICE;
@@ -601,9 +609,9 @@ export function BookingWizardClient({ locale }: Props) {
       // QuoteRequest has no orderNumber — use the created row's id as reference
       setNewOrderId(data?.data?.id ?? data?.data?.orderNumber ?? "");
       setSubmitted(true);
-  // Auto-trigger payment QR/link after quote submission
+ // Auto-trigger payment for MoMo/VNPay/bank after quote submission
  const payAmount = paymentPlan === "100" ? total : Math.round(total * 0.5);
- if (payAmount >= 1000) {
+ if (payAmount >= 1000 && (paymentMethod === "bank" || paymentMethod === "momo" || paymentMethod === "vnpay")) {
  setTimeout(() => generatePaymentQr(payAmount), 100);
  }
     } catch (err) {
@@ -1516,17 +1524,88 @@ export function BookingWizardClient({ locale }: Props) {
  </div>
  </div>
 
- {/* Bank transfer static QR fallback */}
+ {/* Bank transfer — show account info + generated QR */}
  {paymentMethod === "bank" && (
  <div className="mb-4 p-4 rounded-xl" style={{ background: `${DS.blue}08`, border: `1px solid ${DS.blue}20` }}>
- <div style={{ color: DS.blue, fontSize: 11, fontFamily: DS.mono, marginBottom: 8 }}>◈ Chuyển khoản thủ công</div>
- {staticQrInfo.bankTransfer?.qrUrl ? (
- <img src={staticQrInfo.bankTransfer.qrUrl} alt="Bank QR" style={{ maxWidth: 200, borderRadius: 8 }} />
+ <div style={{ color: DS.blue, fontSize: 11, fontFamily: DS.mono, marginBottom: 8 }}>◈ Thông tin tài khoản ngân hàng</div>
+ {bankInfo?.accountNo ? (
+ <div className="space-y-2">
+ {/* QR image: generated dynamically or static fallback */}
+ {qrData?.qrDataURL ? (
+ <div className="text-center mb-3">
+ <div style={{ color: DS.green, fontSize: 10, fontFamily: DS.mono, marginBottom: 6 }}>QUÉT MÃ QR ĐỂ CHUYỂN KHOẢN</div>
+ <img src={qrData.qrDataURL} alt="Bank QR" style={{ maxWidth: 200, borderRadius: 12, boxShadow: `0 0 20px ${DS.blue}30` }} />
+ <div style={{ color: DS.text4, fontSize: 11, marginTop: 6 }}>
+ Số tiền: <span style={{ color: DS.blue, fontWeight: 700 }}>{qrData.amount?.toLocaleString()} VND</span>
+ </div>
+ <button
+ onClick={() => {
+ const disc = Math.round(lpDiscount * lpRate.lpPerVnd);
+ const grandTotal = Math.round((currentSubtotal - disc) * (1 + vatRate));
+ const pay = paymentPlan === "100" ? grandTotal : Math.round(grandTotal * 0.5);
+ if (pay >= 1000) generatePaymentQr(pay);
+ }}
+ style={{ marginTop: 8, padding: "6px 16px", borderRadius: 8, fontSize: 11, fontFamily: DS.mono, cursor: "pointer", background: `${DS.blue}15`, border: `1px solid ${DS.blue}40`, color: DS.blue }}
+ >
+ Tạo QR mới
+ </button>
+ </div>
+ ) : qrLoading ? (
+ <div className="text-center py-4">
+ <div style={{ width: 24, height: 24, border: `2px solid ${DS.border}`, borderTop: `2px solid ${DS.blue}`, borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 8px" }} />
+ <div style={{ color: DS.text4, fontSize: 11 }}>Đang tạo mã QR...</div>
+ </div>
  ) : (
- <div style={{ color: DS.text4, fontSize: 12 }}>Admin chưa cấu hình QR ngân hàng.</div>
+ <div className="text-center mb-3">
+ <div style={{ color: DS.text4, fontSize: 11, marginBottom: 6 }}>Quét mã QR bằng app ngân hàng</div>
+ <button
+ onClick={() => {
+ const disc = Math.round(lpDiscount * lpRate.lpPerVnd);
+ const grandTotal = Math.round((currentSubtotal - disc) * (1 + vatRate));
+ const pay = paymentPlan === "100" ? grandTotal : Math.round(grandTotal * 0.5);
+ if (pay >= 1000) generatePaymentQr(pay);
+ }}
+ style={{ padding: "10px 20px", borderRadius: 10, fontSize: 12, fontFamily: DS.mono, cursor: "pointer", background: `${DS.blue}15`, border: `1px solid ${DS.blue}40`, color: DS.blue }}
+ >
+ Tạo mã QR thanh toán
+ </button>
+ </div>
+ )}
+ {/* Account details */}
+ <div className="space-y-1">
+ <div className="flex justify-between text-xs" style={{ color: DS.text4, fontFamily: DS.mono }}>
+ <span>Ngân hàng</span>
+ <span style={{ color: DS.text }}>{bankInfo.bankName || "—"}</span>
+ </div>
+ <div className="flex justify-between text-xs" style={{ color: DS.text4, fontFamily: DS.mono }}>
+ <span>Số TK</span>
+ <span style={{ color: DS.blue, fontWeight: 700 }}>{bankInfo.accountNo || "—"}</span>
+ </div>
+ <div className="flex justify-between text-xs" style={{ color: DS.text4, fontFamily: DS.mono }}>
+ <span>Chủ TK</span>
+ <span style={{ color: DS.text }}>{bankInfo.accountName || "—"}</span>
+ </div>
+ {bankInfo.phone && (
+ <div className="flex justify-between text-xs" style={{ color: DS.text4, fontFamily: DS.mono }}>
+ <span>ĐT</span>
+ <span style={{ color: DS.text }}>{bankInfo.phone}</span>
+ </div>
+ )}
+ </div>
+ {/* Nội dung chuyển khoản */}
+ <div className="mt-3 pt-3" style={{ borderTop: `1px dashed ${DS.border}` }}>
+ <div style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, marginBottom: 4 }}>NỘI DUNG CHUYỂN KHOẢN</div>
+ <div style={{ color: DS.blue, fontSize: 12, fontFamily: DS.mono, fontWeight: 700 }}>
+ Thanh toan don LOOP #{newOrderId?.slice(-6).toUpperCase() || "—"}
+ </div>
+ </div>
+ </div>
+ ) : (
+ <div style={{ color: DS.text4, fontSize: 12 }}>Chưa có thông tin tài khoản.</div>
  )}
  </div>
  )}
+
 
  {/* MoMo static QR fallback */}
  {paymentMethod === "momo" && !qrData && (
@@ -1540,11 +1619,13 @@ export function BookingWizardClient({ locale }: Props) {
  </div>
  )}
 
- {/* QR loading */}
+ {/* QR loading — shown when MoMo/VNPay API is called */}
  {qrLoading && (
  <div className="mb-4 p-4 rounded-xl text-center" style={{ background: DS.bgCard, border: `1px solid ${DS.border}` }}>
  <div style={{ width: 24, height: 24, border: `2px solid ${DS.border}`, borderTop: `2px solid ${DS.green}`, borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 8px" }} />
- <div style={{ color: DS.text3, fontSize: 12 }}>Đang tạo mã QR...</div>
+ <div style={{ color: DS.text3, fontSize: 12 }}>
+ {paymentMethod === "momo" ? "Đang chuyển hướng MoMo..." : "Đang chuyển hướng VNPay..."}
+ </div>
  </div>
  )}
  {qrError && (
@@ -1553,18 +1634,7 @@ export function BookingWizardClient({ locale }: Props) {
  </div>
  )}
 
- {/* VietQR dynamic QR */}
- {qrData?.qrDataURL && (
- <div className="mb-4 p-4 rounded-xl text-center" style={{ background: `${DS.green}06`, border: `1px solid ${DS.green}25` }}>
- <div style={{ color: DS.green, fontSize: 11, fontFamily: DS.mono, marginBottom: 8 }}>◈ Quét mã QR VietQR — {qrData.amount?.toLocaleString()} VND</div>
- <img src={qrData.qrDataURL} alt="Payment QR" style={{ maxWidth: 220, borderRadius: 12, boxShadow: `0 0 20px ${DS.green}30` }} />
- {qrData.expiresAt && (
- <div style={{ color: DS.text4, fontSize: 10, marginTop: 6 }}>Mã QR hết hạn sau 15 phút</div>
- )}
- </div>
- )}
-
-                    {/* LP redemption */}
+ {/* LP redemption */}
                     {lpBalance > 0 && (
                       <div className="mb-4 p-4 rounded-xl" style={{ background: `${DS.purple}08`, border: `1px solid ${DS.purple}20` }}>
                         <div className="flex items-center justify-between mb-2">
