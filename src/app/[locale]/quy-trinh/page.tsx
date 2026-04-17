@@ -135,21 +135,21 @@ function Tag({ label, color = DS.blue }: { label: string; color?: string }) {
 // ═══════════════════════════════════════════════════════════
 export default function CompanyProcessPage() {
   const TOC: { id: SectionId; label: string }[] = [
-    { id: 'intro',          label: '00 · Tổng quan hệ thống' },
-    { id: 'architecture',   label: '01 · Kiến trúc kỹ thuật' },
-    { id: 'roles',          label: '02 · Vai trò & phân quyền' },
-    { id: 'data_models',    label: '03 · Mô hình dữ liệu' },
-    { id: 'order_flow',     label: '04 · Luồng đơn hàng' },
-    { id: 'project_flow',   label: '05 · Luồng quản lý dự án' },
-    { id: 'kanban_flow',    label: '06 · Kanban & Task flow' },
-    { id: 'media_flow',     label: '07 · Media Booking flow' },
-    { id: 'lp_system',      label: '08 · Hệ thống LP' },
-    { id: 'rank_system',    label: '09 · Hệ thống Rank' },
-    { id: 'quest_flow',     label: '10 · Quest & Event flow' },
+    { id: 'intro', label: '00 · Tổng quan hệ thống' },
+    { id: 'architecture', label: '01 · Kiến trúc kỹ thuật' },
+    { id: 'roles', label: '02 · Vai trò & phân quyền' },
+    { id: 'data_models', label: '03 · Mô hình dữ liệu' },
+    { id: 'order_flow', label: '04 · Luồng đơn hàng' },
+    { id: 'project_flow', label: '05 · Luồng quản lý dự án' },
+    { id: 'kanban_flow', label: '06 · Kanban & Task flow' },
+    { id: 'media_flow', label: '07 · Media Booking flow' },
+    { id: 'lp_system', label: '08 · Hệ thống LP' },
+    { id: 'rank_system', label: '09 · Hệ thống Rank' },
+    { id: 'quest_flow', label: '10 · Quest & Event flow' },
     { id: 'notification_flow', label: '11 · Notification flow' },
-    { id: 'permissions',    label: '12 · Ma trận quyền hạn' },
-    { id: 'algorithms',     label: '13 · Thuật toán & Logic' },
-    { id: 'ui_rules',      label: '14 · Quy tắc UI/UX' },
+    { id: 'permissions', label: '12 · Ma trận quyền hạn' },
+    { id: 'algorithms', label: '13 · Thuật toán & Logic' },
+    { id: 'ui_rules', label: '14 · Quy tắc UI/UX' },
   ];
 
   return (
@@ -280,7 +280,7 @@ Fonts:        Plus Jakarta Sans (heading) · JetBrains Mono · DM Sans · Noto S
 │
 ├── pages/
 │   ├── LandingPage.tsx        # Trang chủ (/)
-│   ├── ServicesPage.tsx       # Dịch vụ (/dich-vu)
+│   ├── ServicesPage.tsx       # Dịch vụ (/booking)
 │   ├── PortfolioPage.tsx       # Portfolio (/du-an)
 │   ├── BlogPage.tsx + Detail  # Blog (/blog, /blog/:id)
 │   ├── AcademyPage.tsx + Detail # Học viện (/hoc-vien, /hoc-vien/:id)

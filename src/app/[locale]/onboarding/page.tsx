@@ -406,13 +406,13 @@ function InfinityLogo({ size = 360 }: { size?: number }) {
       {/* Floating sparkle particles */}
       {[
         { cx: 0.28, cy: 0.28, r: 1.8, color: '#06B6D4', delay: 0 },
-        { cx: 0.2,  cy: 0.45, r: 1.2, color: '#3B82F6', delay: 0.8 },
+        { cx: 0.2, cy: 0.45, r: 1.2, color: '#3B82F6', delay: 0.8 },
         { cx: 0.12, cy: 0.65, r: 1.5, color: '#818CF8', delay: 0.4 },
-        { cx: 0.3,  cy: 0.78, r: 1.0, color: '#0EA5E9', delay: 2.0 },
+        { cx: 0.3, cy: 0.78, r: 1.0, color: '#0EA5E9', delay: 2.0 },
         { cx: 1.72, cy: 0.72, r: 1.8, color: '#A855F7', delay: 1.2 },
-        { cx: 1.8,  cy: 0.52, r: 1.2, color: '#E879F9', delay: 0.6 },
-        { cx: 1.7,  cy: 0.28, r: 1.5, color: '#C084FC', delay: 1.8 },
-        { cx: 1.55, cy: 0.8,  r: 1.0, color: '#7DD3FC', delay: 1.0 },
+        { cx: 1.8, cy: 0.52, r: 1.2, color: '#E879F9', delay: 0.6 },
+        { cx: 1.7, cy: 0.28, r: 1.5, color: '#C084FC', delay: 1.8 },
+        { cx: 1.55, cy: 0.8, r: 1.0, color: '#7DD3FC', delay: 1.0 },
         { cx: 0.38, cy: 0.38, r: 0.9, color: '#22D3EE', delay: 0.3 },
         { cx: 1.62, cy: 0.62, r: 0.9, color: '#E879F9', delay: 1.5 },
       ].map((p, i) => (
@@ -434,10 +434,10 @@ function InfinityLogo({ size = 360 }: { size?: number }) {
 
       {/* Cross-shaped star bursts */}
       {[
-        { cx: 0.18, cy: 0.3,  size: 4.5, color: '#06B6D4', delay: 0.5 },
-        { cx: 1.82, cy: 0.7,  size: 4.5, color: '#A855F7', delay: 1.0 },
-        { cx: 1.0,  cy: 0.12, size: 3.5, color: '#818CF8', delay: 0.2 },
-        { cx: 1.0,  cy: 1.88, size: 3.5, color: '#7DD3FC', delay: 1.4 },
+        { cx: 0.18, cy: 0.3, size: 4.5, color: '#06B6D4', delay: 0.5 },
+        { cx: 1.82, cy: 0.7, size: 4.5, color: '#A855F7', delay: 1.0 },
+        { cx: 1.0, cy: 0.12, size: 3.5, color: '#818CF8', delay: 0.2 },
+        { cx: 1.0, cy: 1.88, size: 3.5, color: '#7DD3FC', delay: 1.4 },
       ].map((s, i) => (
         <g key={`star-${i}`}>
           <line
@@ -873,7 +873,7 @@ function SlideGetStarted({ direction, handleComplete }: SlideProps & { handleCom
   ];
 
   const quickActions = [
-    { label: 'Khám phá Dịch vụ', href: '/dich-vu', icon: <Globe size={16} />, color: DS.blue },
+    { label: 'Khám phá Dịch vụ', href: '/booking', icon: <Globe size={16} />, color: DS.blue },
     { label: 'Nhận báo giá Website', href: '/booking', icon: <Play size={16} />, color: DS.green },
     { label: 'Xem Portfolio', href: '/du-an', icon: <Star size={16} />, color: DS.amber },
     { label: 'Gặp đội ngũ', href: '/doi-ngu', icon: <Users size={16} />, color: DS.purple },

@@ -575,7 +575,7 @@ export function PricingTab() {
         <span style={{ fontSize: 18 }}>💡</span>
         <div>
           <p style={{ color: DS.text2, fontSize: 12, fontWeight: 600, marginBottom: 2 }}>
-            Mẹo: Khi tạo gói mới cho dịch vụ đã có đủ 3 cấp, hệ thống sẽ tự động hiển thị trên trang /dich-vu.
+            Mẹo: Khi tạo gói mới cho dịch vụ đã có đủ 3 cấp, hệ thống sẽ tự động hiển thị trên trang /booking.
           </p>
           <p style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono }}>
             PricingTab này điều khiển trực tiếp nội dung trang Bảng Giá công khai. Thay đổi có hiệu lực ngay.

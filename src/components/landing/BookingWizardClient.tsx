@@ -31,23 +31,23 @@ interface WizardService {
 }
 interface PackageFreebie { type: "hosting" | "domain"; label: string; detail?: string; }
 interface WizardPackage {
- id: string;
- slug?: string;
- name: string;
- multiplier: number;
- color: string;
- desc: string;
- features: string[];
- lp: number;
- popular?: boolean;
- price?: number | null;
- priceText?: string;
- isSubscription?: boolean;
- billingPeriod?: string | null;
- type?: string;
- marketPrice?: number;
- savingPct?: number;
- freebies?: PackageFreebie[];
+  id: string;
+  slug?: string;
+  name: string;
+  multiplier: number;
+  color: string;
+  desc: string;
+  features: string[];
+  lp: number;
+  popular?: boolean;
+  price?: number | null;
+  priceText?: string;
+  isSubscription?: boolean;
+  billingPeriod?: string | null;
+  type?: string;
+  marketPrice?: number;
+  savingPct?: number;
+  freebies?: PackageFreebie[];
 }
 interface WizardFeature {
   id: string; label: string; labelEn?: string; price: number;
@@ -115,92 +115,92 @@ const WEB_BASE_PRICE = 1_890_000;
  * Admin truy cập: Admin → Settings → Site Settings
  */
 const WEBSITE_PACKAGES_FALLBACK: WizardPackage[] = [
-	 {
-		id: "landing", slug: "landing", name: "Landing Page",
-		multiplier: 1, color: "#6EB1A8",
-		desc: "Chien dich Marketing, gioi thieu ca nhan, offline. Phu hop landing page, trang gioi thieu ca nhan, san pham don le.",
-		features: [
-		"Giao dien hien dai, chuan Responsive",
-		"Toi uu trai nghiem UI/UX",
-		"Ho tro chinh sua sau ban giao",
-		"Trang gioi thieu SP/Dich vu",
-		"Admin quan ly bai viet",
-		"Form thu thap du lieu KH",
-		"Quan ly tep KH co ban",
-		"Toi uu SEO On-page",
-		],
-		lp: 80,
-		price: 1_890_000,
-		marketPrice: 2_500_000,
-		savingPct: 24,
-		freebies: [
-		{ type: "hosting", label: "Hosting Co Ban", detail: "6 thang" },
-		{ type: "domain", label: "Ten mien .io.vn", detail: "1 nam" },
-		],
-	 },
-	 {
-		id: "ban-hang", slug: "ban-hang", name: "Ban Hang Co Ban",
-		multiplier: 1, color: DS.blue,
-		desc: "Shop online nho & vua, bat dau chuyen doi so. Phu hop cua hang online, boutique, dich vu nho.",
-		features: [
-		"Bao gom moi tinh nang Landing Page",
-		"Danh muc & Chi tiet san pham",
-		"Chuc nang Gio hang thong minh",
-		"Thong ke don hang & Doanh thu",
-		"Tai khoan Admin & Khach hang",
-		"Tang 5 trang noi dung mien phi",
-		],
-		lp: 160, popular: true,
-		price: 3_890_000,
-		marketPrice: 5_500_000,
-		savingPct: 29,
-		freebies: [
-		{ type: "hosting", label: "Hosting Co Ban", detail: "6 thang" },
-		{ type: "domain", label: "Ten mien .com & .io.vn", detail: "1 nam" },
-		],
-	 },
-	 {
-		id: "doanh-nghiep", slug: "doanh-nghiep", name: "Quan Tri Doanh Nghiep",
-		multiplier: 1, color: "#8B5CF6",
-		desc: "Doanh nghiep, he thong ban hang quy mo lon. Phu hop doanh nghiep vua va lon, can quan ly phuc tap.",
-		features: [
-		"Bao gom moi tinh nang Ban Hang",
-		"Gio hang da dich vu/san pham",
-		"SP nang cao (size, mau, thuoc tinh)",
-		"He thong Ma giam gia/Flash sale",
-		"Tich diem & Doi qua thanh vien",
-		"Bo loc & Tim kiem AI thong minh",
-		"Quan ly Kho hang & Nha cung cap",
-		],
-		lp: 240,
-		price: 5_890_000,
-		marketPrice: 8_900_000,
-		savingPct: 34,
-		freebies: [
-		{ type: "hosting", label: "Hosting 3GB", detail: "6 thang" },
-		{ type: "domain", label: "Ten mien .vn & .io.vn", detail: "1 nam" },
-		],
-	 },
-	 {
-		id: "yeu-cau", slug: "yeu-cau", name: "Thiet Ke Theo Yeu Cau",
-		multiplier: 1, color: DS.pink,
-		desc: "Startups, nen tang App-web co logic phuc tap. Phu hop startup, platform, web app co yeu cau dac thu rieng.",
-		features: [
-		"Bao gom moi tinh nang Doanh Nghiep",
-		"UI/UX Doc quyen (Khong mau)",
-		"Tuy chinh chuc nang Core System",
-		"Tich hop Cong thanh toan/Van chuyen",
-		"API ket noi ben thu 3 (Zalo, App...)",
-		"Bao mat da lop & Toi uu Speed cuc han",
-		],
-		lp: 320,
-		price: 7_890_000,
-		marketPrice: 12_000_000,
-		savingPct: 34,
-		freebies: [
-		{ type: "hosting", label: "Thiet lap uu dai", detail: "tuy quy mo du an" },
-		],
-	 },
+  {
+    id: "landing", slug: "landing", name: "Landing Page",
+    multiplier: 1, color: "#6EB1A8",
+    desc: "Chien dich Marketing, gioi thieu ca nhan, offline. Phu hop landing page, trang gioi thieu ca nhan, san pham don le.",
+    features: [
+      "Giao dien hien dai, chuan Responsive",
+      "Toi uu trai nghiem UI/UX",
+      "Ho tro chinh sua sau ban giao",
+      "Trang gioi thieu SP/Dich vu",
+      "Admin quan ly bai viet",
+      "Form thu thap du lieu KH",
+      "Quan ly tep KH co ban",
+      "Toi uu SEO On-page",
+    ],
+    lp: 80,
+    price: 1_890_000,
+    marketPrice: 2_500_000,
+    savingPct: 24,
+    freebies: [
+      { type: "hosting", label: "Hosting Co Ban", detail: "6 thang" },
+      { type: "domain", label: "Ten mien .io.vn", detail: "1 nam" },
+    ],
+  },
+  {
+    id: "ban-hang", slug: "ban-hang", name: "Ban Hang Co Ban",
+    multiplier: 1, color: DS.blue,
+    desc: "Shop online nho & vua, bat dau chuyen doi so. Phu hop cua hang online, boutique, dich vu nho.",
+    features: [
+      "Bao gom moi tinh nang Landing Page",
+      "Danh muc & Chi tiet san pham",
+      "Chuc nang Gio hang thong minh",
+      "Thong ke don hang & Doanh thu",
+      "Tai khoan Admin & Khach hang",
+      "Tang 5 trang noi dung mien phi",
+    ],
+    lp: 160, popular: true,
+    price: 3_890_000,
+    marketPrice: 5_500_000,
+    savingPct: 29,
+    freebies: [
+      { type: "hosting", label: "Hosting Co Ban", detail: "6 thang" },
+      { type: "domain", label: "Ten mien .com & .io.vn", detail: "1 nam" },
+    ],
+  },
+  {
+    id: "doanh-nghiep", slug: "doanh-nghiep", name: "Quan Tri Doanh Nghiep",
+    multiplier: 1, color: "#8B5CF6",
+    desc: "Doanh nghiep, he thong ban hang quy mo lon. Phu hop doanh nghiep vua va lon, can quan ly phuc tap.",
+    features: [
+      "Bao gom moi tinh nang Ban Hang",
+      "Gio hang da dich vu/san pham",
+      "SP nang cao (size, mau, thuoc tinh)",
+      "He thong Ma giam gia/Flash sale",
+      "Tich diem & Doi qua thanh vien",
+      "Bo loc & Tim kiem AI thong minh",
+      "Quan ly Kho hang & Nha cung cap",
+    ],
+    lp: 240,
+    price: 5_890_000,
+    marketPrice: 8_900_000,
+    savingPct: 34,
+    freebies: [
+      { type: "hosting", label: "Hosting 3GB", detail: "6 thang" },
+      { type: "domain", label: "Ten mien .vn & .io.vn", detail: "1 nam" },
+    ],
+  },
+  {
+    id: "yeu-cau", slug: "yeu-cau", name: "Thiet Ke Theo Yeu Cau",
+    multiplier: 1, color: DS.pink,
+    desc: "Startups, nen tang App-web co logic phuc tap. Phu hop startup, platform, web app co yeu cau dac thu rieng.",
+    features: [
+      "Bao gom moi tinh nang Doanh Nghiep",
+      "UI/UX Doc quyen (Khong mau)",
+      "Tuy chinh chuc nang Core System",
+      "Tich hop Cong thanh toan/Van chuyen",
+      "API ket noi ben thu 3 (Zalo, App...)",
+      "Bao mat da lop & Toi uu Speed cuc han",
+    ],
+    lp: 320,
+    price: 7_890_000,
+    marketPrice: 12_000_000,
+    savingPct: 34,
+    freebies: [
+      { type: "hosting", label: "Thiet lap uu dai", detail: "tuy quy mo du an" },
+    ],
+  },
 ];
 
 
@@ -244,13 +244,13 @@ const WEBSITE_FEATURES_FALLBACK: WizardFeature[] = [
 
 /** Extras fallback — nếu API fail. */
 const WEBSITE_EXTRAS_FALLBACK: WizardExtra[] = [
-  { id: "hosting",        label: "Hosting 1 năm",             price: 3_000_000, desc: "Hosting từ Starter → Enterprise — chọn gói phù hợp",    color: DS.purple },
-  { id: "domain",         label: "Tên miền",                   price: 0,          desc: "Đăng ký .com .vn .com.vn — tra cứu & chọn TLD phù hợp", color: DS.cyan   },
-  { id: "maintenance",    label: "Bảo trì & cập nhật 1 năm",   price: 5_000_000, desc: "Cập nhật plugin, backup hàng tuần",                        color: DS.green  },
-  { id: "analytics-setup", label: "Setup Google Analytics 4",   price: 1_500_000, desc: "Track traffic & conversions",                               color: DS.amber  },
-  { id: "training",      label: "Training đội ngũ",             price: 2_000_000, desc: "Training 1-1 với đội ngũ LOOP (3 buổi)",                   color: DS.teal   },
-  { id: "priority",      label: "Priority Support",            price: 3_000_000, desc: "Priority support 24/7 trong 6 tháng đầu",                 color: DS.pink   },
-  { id: "seo-basic",     label: "SEO cơ bản",                  price: 2_000_000, desc: "SEO foundation & Google submission",                          color: DS.gold   },
+  { id: "hosting", label: "Hosting 1 năm", price: 3_000_000, desc: "Hosting từ Starter → Enterprise — chọn gói phù hợp", color: DS.purple },
+  { id: "domain", label: "Tên miền", price: 0, desc: "Đăng ký .com .vn .com.vn — tra cứu & chọn TLD phù hợp", color: DS.cyan },
+  { id: "maintenance", label: "Bảo trì & cập nhật 1 năm", price: 5_000_000, desc: "Cập nhật plugin, backup hàng tuần", color: DS.green },
+  { id: "analytics-setup", label: "Setup Google Analytics 4", price: 1_500_000, desc: "Track traffic & conversions", color: DS.amber },
+  { id: "training", label: "Training đội ngũ", price: 2_000_000, desc: "Training 1-1 với đội ngũ LOOP (3 buổi)", color: DS.teal },
+  { id: "priority", label: "Priority Support", price: 3_000_000, desc: "Priority support 24/7 trong 6 tháng đầu", color: DS.pink },
+  { id: "seo-basic", label: "SEO cơ bản", price: 2_000_000, desc: "SEO foundation & Google submission", color: DS.gold },
 ];
 
 const DEFAULT_LP_RATE: LpRateConfig = {
@@ -323,17 +323,17 @@ export function BookingWizardClient({ locale }: Props) {
   // ── Wizard state ────────────────────────────────────────────────────────────
   const [step, setStep] = useState(0);
   const [paymentPlan, setPaymentPlan] = useState<"50" | "100">("50");
- const [paymentMethod, setPaymentMethod] = useState("bank");
- const [qrData, setQrData] = useState<{qrDataURL?: string; payUrl?: string; amount?: number; expiresAt?: string; message?: string} | null>(null);
- const [paymentMethods, setPaymentMethods] = useState<{value: string; label: string; icon: string; hasDynamicQR?: boolean; bankName?: string; accountNo?: string; accountName?: string; bankBin?: string}[]>([
- { value: "bank", label: "Chuyển khoản", icon: "🏦" },
- { value: "momo", label: "MoMo", icon: "💜" },
- { value: "vnpay", label: "VNPay", icon: "💳" },
- ]);
- const [staticQrInfo, setStaticQrInfo] = useState<{bankTransfer?: {qrUrl?: string | null}; momo?: {qrUrl?: string | null}}>({});
- const [qrLoading, setQrLoading] = useState(false);
- const [qrError, setQrError] = useState("");
- const [bankInfo, setBankInfo] = useState<{bankName?: string; accountNo?: string; accountName?: string; phone?: string; bankBin?: string} | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState("bank");
+  const [qrData, setQrData] = useState<{ qrDataURL?: string; payUrl?: string; amount?: number; expiresAt?: string; message?: string } | null>(null);
+  const [paymentMethods, setPaymentMethods] = useState<{ value: string; label: string; icon: string; hasDynamicQR?: boolean; bankName?: string; accountNo?: string; accountName?: string; bankBin?: string }[]>([
+    { value: "bank", label: "Chuyển khoản", icon: "🏦" },
+    { value: "momo", label: "MoMo", icon: "💜" },
+    { value: "vnpay", label: "VNPay", icon: "💳" },
+  ]);
+  const [staticQrInfo, setStaticQrInfo] = useState<{ bankTransfer?: { qrUrl?: string | null }; momo?: { qrUrl?: string | null } }>({});
+  const [qrLoading, setQrLoading] = useState(false);
+  const [qrError, setQrError] = useState("");
+  const [bankInfo, setBankInfo] = useState<{ bankName?: string; accountNo?: string; accountName?: string; phone?: string; bankBin?: string } | null>(null);
   // Package selection (website-only — packages are the primary selection)
   const [selectedPackage, setSelectedPackage] = useState<string>("ban-hang"); // default to decoy
 
@@ -351,7 +351,7 @@ export function BookingWizardClient({ locale }: Props) {
   const [submitLoading, setSubmitLoading] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [newOrderId, setNewOrderId] = useState("");
- const [showCompareModal, setShowCompareModal] = useState(false);
+  const [showCompareModal, setShowCompareModal] = useState(false);
 
   // ── Wizard config (from BE) ─────────────────────────────────────────────────────
   // Packages, features, addons, hosting, domain → loaded from /api/pricing/config
@@ -427,72 +427,72 @@ export function BookingWizardClient({ locale }: Props) {
     return () => { cancelled = true; };
   }, [locale, email]);
 
- // Load payment methods + static QR from BE
- useEffect(() => {
- fetch("/api/payment/methods")
- .then(r => r.json())
- .then(json => {
- if (json?.data?.methods?.length) {
- setPaymentMethods(json.data.methods.map((m: Record<string, unknown>) => ({
- ...m,
- value: m.value === "bank_transfer" ? "bank" : m.value,
- })));
- setStaticQrInfo(json.data.staticQrInfo ?? {});
- setBankInfo(json.data.bankInfo ?? null);
- }
- })
- .catch(() => { /* keep defaults */ });
- }, []);
+  // Load payment methods + static QR from BE
+  useEffect(() => {
+    fetch("/api/payment/methods")
+      .then(r => r.json())
+      .then(json => {
+        if (json?.data?.methods?.length) {
+          setPaymentMethods(json.data.methods.map((m: Record<string, unknown>) => ({
+            ...m,
+            value: m.value === "bank_transfer" ? "bank" : m.value,
+          })));
+          setStaticQrInfo(json.data.staticQrInfo ?? {});
+          setBankInfo(json.data.bankInfo ?? null);
+        }
+      })
+      .catch(() => { /* keep defaults */ });
+  }, []);
 
- // Generate payment QR / redirect when paymentMethod changes after order creation
- const generatePaymentQr = async (amount: number) => {
- if (!newOrderId) return;
- setQrLoading(true);
- setQrError("");
- try {
- if (paymentMethod === "bank" && bankInfo?.bankBin && bankInfo?.accountNo) {
- // Generate bank transfer QR using our own QR API
- const res = await fetch("/api/payment/bank-qr", {
- method: "POST",
- headers: { "Content-Type": "application/json" },
- body: JSON.stringify({
- bankBin: bankInfo.bankBin,
- accountNo: bankInfo.accountNo,
- accountName: bankInfo.accountName,
- amount,
- orderRef: `LOOP-${newOrderId.slice(-8).toUpperCase()}`,
- }),
- });
- const data = await res.json();
- if (!res.ok) throw new Error(data?.error || "Tạo QR thất bại");
- setQrData({ qrDataURL: data.data.qrDataURL, amount: data.data.amount });
- } else if (paymentMethod === "momo") {
- const res = await fetch("/api/payment/momo/create", {
- method: "POST",
- headers: { "Content-Type": "application/json" },
- body: JSON.stringify({ orderId: newOrderId, amount }),
- });
- const data = await res.json();
- if (!res.ok) throw new Error(data?.error || "MoMo failed");
- if (data.data?.payUrl) { window.location.href = data.data.payUrl; return; }
- setQrData(data.data);
- } else if (paymentMethod === "vnpay") {
- const res = await fetch("/api/payment/vnpay/create", {
-  method: "POST",
- headers: { "Content-Type": "application/json" },
- body: JSON.stringify({ orderId: newOrderId, amount }),
- });
- const data = await res.json();
- if (!res.ok) throw new Error(data?.error || "VNPay failed");
- if (data.data?.paymentUrl) { window.location.href = data.data.paymentUrl; return; }
- setQrData({ payUrl: data.data?.paymentUrl });
-  }
- } catch (err) {
- setQrError(err instanceof Error ? err.message : "Lỗi thanh toán");
- } finally {
- setQrLoading(false);
- }
- };
+  // Generate payment QR / redirect when paymentMethod changes after order creation
+  const generatePaymentQr = async (amount: number) => {
+    if (!newOrderId) return;
+    setQrLoading(true);
+    setQrError("");
+    try {
+      if (paymentMethod === "bank" && bankInfo?.bankBin && bankInfo?.accountNo) {
+        // Generate bank transfer QR using our own QR API
+        const res = await fetch("/api/payment/bank-qr", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            bankBin: bankInfo.bankBin,
+            accountNo: bankInfo.accountNo,
+            accountName: bankInfo.accountName,
+            amount,
+            orderRef: `LOOP-${newOrderId.slice(-8).toUpperCase()}`,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data?.error || "Tạo QR thất bại");
+        setQrData({ qrDataURL: data.data.qrDataURL, amount: data.data.amount });
+      } else if (paymentMethod === "momo") {
+        const res = await fetch("/api/payment/momo/create", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ orderId: newOrderId, amount }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data?.error || "MoMo failed");
+        if (data.data?.payUrl) { window.location.href = data.data.payUrl; return; }
+        setQrData(data.data);
+      } else if (paymentMethod === "vnpay") {
+        const res = await fetch("/api/payment/vnpay/create", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ orderId: newOrderId, amount }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data?.error || "VNPay failed");
+        if (data.data?.paymentUrl) { window.location.href = data.data.paymentUrl; return; }
+        setQrData({ payUrl: data.data?.paymentUrl });
+      }
+    } catch (err) {
+      setQrError(err instanceof Error ? err.message : "Lỗi thanh toán");
+    } finally {
+      setQrLoading(false);
+    }
+  };
 
   // ── Derived values ────────────────────────────────────────────────────
   const service = WEBSITE_SERVICE;
@@ -545,11 +545,11 @@ export function BookingWizardClient({ locale }: Props) {
     // Base price = WEB_BASE_PRICE × package multiplier (all = 1 for now)
     // Fixed package prices — not derived from multiplier
     const PACKAGE_PRICES_SUBMIT: Record<string, number> = {
- landing: 1_890_000,
- "ban-hang": 3_890_000,
- "doanh-nghiep": 5_890_000,
- "yeu-cau": 7_890_000,
-};
+      landing: 1_890_000,
+      "ban-hang": 3_890_000,
+      "doanh-nghiep": 5_890_000,
+      "yeu-cau": 7_890_000,
+    };
 
     const basePrice = pkg ? (PACKAGE_PRICES_SUBMIT[pkg.id] ?? WEB_BASE_PRICE) : WEB_BASE_PRICE;
     // Only charge for non-included features
@@ -611,11 +611,11 @@ export function BookingWizardClient({ locale }: Props) {
       // QuoteRequest has no orderNumber — use the created row's id as reference
       setNewOrderId(data?.data?.id ?? data?.data?.orderNumber ?? "");
       setSubmitted(true);
- // Auto-trigger payment for MoMo/VNPay/bank after quote submission
- const payAmount = paymentPlan === "100" ? total : Math.round(total * 0.5);
- if (payAmount >= 1000 && (paymentMethod === "bank" || paymentMethod === "momo" || paymentMethod === "vnpay")) {
- setTimeout(() => generatePaymentQr(payAmount), 100);
- }
+      // Auto-trigger payment for MoMo/VNPay/bank after quote submission
+      const payAmount = paymentPlan === "100" ? total : Math.round(total * 0.5);
+      if (payAmount >= 1000 && (paymentMethod === "bank" || paymentMethod === "momo" || paymentMethod === "vnpay")) {
+        setTimeout(() => generatePaymentQr(payAmount), 100);
+      }
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : "Đã có lỗi xảy ra");
     } finally {
@@ -659,7 +659,7 @@ export function BookingWizardClient({ locale }: Props) {
     const savingPct = saving > 0 ? Math.round((saving / market) * 100) : 0;
     const isSelected = selectedPackage === pkg.id;
     const color = pkg.color || DS.blue;
- const selColor = DS.green;
+    const selColor = DS.green;
     return { pkg, price, market, saving, savingPct, isSelected, color, selColor };
   });
 
@@ -787,28 +787,28 @@ export function BookingWizardClient({ locale }: Props) {
               transition={{ duration: 0.25, ease: "easeInOut" }}
             >
 
-           {/* ── STEP 0: Package + Features ──────────────────────────── */}
- {step === 0 && (
- <div>
+              {/* ── STEP 0: Package + Features ──────────────────────────── */}
+              {step === 0 && (
+                <div>
 
- {/* ── Section header ── */}
- <div style={{ marginBottom: 28 }}>
- <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 6 }}>
- <div style={{ width: 4, height: 20, background: GRD.primary, borderRadius: 2 }} />
- <h3 style={{ color: DS.text, fontSize: 16, fontFamily: DS.heading, fontWeight: 700, letterSpacing: "0.06em" }}>
- CHỌN GÓI WEBSITE
- </h3>
- <div style={{ flex: 1, height: 1, background: DS.border, maxWidth: 120 }} />
- </div>
- <p style={{ color: DS.text4, fontSize: 13, marginLeft: 16 }}>
- Chọn gói phù hợp với nhu cầu của bạn.{" "}
- <span style={{ color: DS.pink }}>Không phí ẩn, không giới hạn.</span>
- </p>
- </div>
+                  {/* ── Section header ── */}
+                  <div style={{ marginBottom: 28 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 6 }}>
+                      <div style={{ width: 4, height: 20, background: GRD.primary, borderRadius: 2 }} />
+                      <h3 style={{ color: DS.text, fontSize: 16, fontFamily: DS.heading, fontWeight: 700, letterSpacing: "0.06em" }}>
+                        CHỌN GÓI WEBSITE
+                      </h3>
+                      <div style={{ flex: 1, height: 1, background: DS.border, maxWidth: 120 }} />
+                    </div>
+                    <p style={{ color: DS.text4, fontSize: 13, marginLeft: 16 }}>
+                      Chọn gói phù hợp với nhu cầu của bạn.{" "}
+                      <span style={{ color: DS.pink }}>Không phí ẩn, không giới hạn.</span>
+                    </p>
+                  </div>
 
- {/* ── Package cards: grid desktop / horizontal scroll mobile ── */}
- <div style={{ marginBottom: 28 }}>
- <style>{`
+                  {/* ── Package cards: grid desktop / horizontal scroll mobile ── */}
+                  <div style={{ marginBottom: 28 }}>
+                    <style>{`
  @media (max-width: 767px) {
  .pkg-scroll { scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; overflow-x: auto; padding-bottom: 12px; }
  .pkg-card { scroll-snap-align: center; }
@@ -817,888 +817,892 @@ export function BookingWizardClient({ locale }: Props) {
  }
  `}</style>
 
- <div
- style={{
- display: "grid",
- gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 280px), 1fr))",
- gap: 16,
- }}
- className="pkg-scroll"
- >
- {pkgCards.map(({ pkg, price, market, saving, savingPct, isSelected, color, selColor }) => {
- const isPopular = pkg.popular && !isSelected;
- return (
- <motion.button
- key={pkg.id}
- onClick={() => setSelectedPackage(pkg.id)}
- className="pkg-card text-left"
- style={{
- background: isSelected
- ? `linear-gradient(160deg, ${selColor}16 0%, rgba(10,15,30,0.95) 70%)`
-  : "rgba(15,23,42,0.7)",
- border: isSelected
- ? `2px solid ${selColor}`
- : `1px solid ${DS.border}`,
- borderRadius: 20,
- cursor: "pointer",
- position: "relative",
- overflow: "hidden",
- transition: "all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)",
- boxShadow: isSelected
- ? `0 0 40px ${selColor}30, 0 8px 32px rgba(0,0,0,0.4)`
- : "0 4px 16px rgba(0,0,0,0.2)",
- padding: 0,
- }}
- whileHover={{ scale: 1.03, y: -4 }}
- whileTap={{ scale: 0.97 }}
- >
- {/* Top accent strip — accent only when selected */}
- <div style={{
- height: 5,
- background: isSelected
- ? `linear-gradient(90deg, ${selColor}, ${selColor}80)`
- : "rgba(255,255,255,0.07)",
- borderRadius: "20px 20px 0 0",
- transition: "background 0.3s",
- }} />
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 280px), 1fr))",
+                        gap: 16,
+                      }}
+                      className="pkg-scroll"
+                    >
+                      {pkgCards.map(({ pkg, price, market, saving, savingPct, isSelected, color, selColor }) => {
+                        const isPopular = pkg.popular && !isSelected;
+                        return (
+                          <motion.button
+                            key={pkg.id}
+                            onClick={() => setSelectedPackage(pkg.id)}
+                            className="pkg-card text-left"
+                            style={{
+                              background: isSelected
+                                ? `linear-gradient(160deg, ${selColor}16 0%, rgba(10,15,30,0.95) 70%)`
+                                : "rgba(15,23,42,0.7)",
+                              border: isSelected
+                                ? `2px solid ${selColor}`
+                                : `1px solid ${DS.border}`,
+                              borderRadius: 20,
+                              cursor: "pointer",
+                              position: "relative",
+                              overflow: "hidden",
+                              transition: "all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)",
+                              boxShadow: isSelected
+                                ? `0 0 40px ${selColor}30, 0 8px 32px rgba(0,0,0,0.4)`
+                                : "0 4px 16px rgba(0,0,0,0.2)",
+                              padding: 0,
+                            }}
+                            whileHover={{ scale: 1.03, y: -4 }}
+                            whileTap={{ scale: 0.97 }}
+                          >
+                            {/* Top accent strip — accent only when selected */}
+                            <div style={{
+                              height: 5,
+                              background: isSelected
+                                ? `linear-gradient(90deg, ${selColor}, ${selColor}80)`
+                                : "rgba(255,255,255,0.07)",
+                              borderRadius: "20px 20px 0 0",
+                              transition: "background 0.3s",
+                            }} />
 
- {/* Badge */}
- <div style={{ padding: "12px 20px 0", minHeight: isPopular || isSelected ? 34 : 10 }}>
- {isPopular && (
- <div style={{
- display: "inline-block",
- background: "rgba(255,255,255,0.07)",
- color: DS.text3,
- border: "1px solid rgba(255,255,255,0.12)",
- fontSize: 9,
- fontFamily: DS.mono,
- letterSpacing: "0.12em",
- padding: "3px 10px",
- borderRadius: 20,
- marginBottom: 4,
- }}>
- ★ PHỔ BIẾN NHẤT
- </div>
- )}
- {isSelected && (
- <div style={{
- display: "inline-flex",
- alignItems: "center",
- gap: 5,
- background: selColor,
- color: "#fff",
- fontSize: 9,
- fontFamily: DS.mono,
- letterSpacing: "0.12em",
- padding: "3px 10px",
- borderRadius: 20,
- marginBottom: 4,
- }}>
- <Check size={9} style={{ strokeWidth: 3 }} />
- ĐANG CHỌN
- </div>
- )}
- </div>
-
- {/* Card body */}
- <div style={{ padding: "8px 20px 24px" }}>
- {/* Package name — neutral when unselected */}
- <div style={{
- color: isSelected ? selColor : DS.text4,
- fontSize: 10,
- fontFamily: DS.mono,
- letterSpacing: "0.2em",
- marginBottom: 6,
- transition: "color 0.2s",
- }}>
- {pkg.name.toUpperCase()}
- </div>
-
- {/* Price */}
- <div style={{ marginBottom: 8 }}>
- {saving > 0 && (
- <div style={{
- color: DS.text5, fontSize: 11, fontFamily: DS.mono,
- textDecoration: "line-through", marginBottom: 2,
- }}>
- {fmtVND(market)}
- </div>
- )}
- <div style={{
- color: DS.text,
- fontFamily: DS.heading,
- fontSize: 30,
-  fontWeight: 900,
- lineHeight: 1,
- marginBottom: 2,
- }}>
- {fmtVND(price)}
- </div>
- <div style={{ color: DS.text4, fontSize: 10 }}>
- {pkg.billingPeriod || "một lần"}
- </div>
- </div>
-
- {/* Saving badge */}
- {saving > 0 && (
- <div style={{
- display: "inline-block",
- background: "rgba(34,197,94,0.12)",
- border: "1px solid rgba(34,197,94,0.3)",
- color: DS.green,
- fontSize: 9,
- fontFamily: DS.mono,
- padding: "2px 8px",
- borderRadius: 8,
- marginBottom: 14,
- }}>
- −{savingPct}% · Tiết kiệm {fmtVND(saving)}
- </div>
- )}
-
- {/* Description */}
- <p style={{
- color: DS.text3,
- fontSize: 11,
- lineHeight: 1.55,
- marginBottom: 14,
- }}>
- {pkg.desc}
- </p>
-
- {/* Feature list */}
- {pkg.features.length > 0 && (
- <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 6 }}>
- {pkg.features.slice(0, 4).map((feat, i) => (
- <li key={i} style={{
- display: "flex", alignItems: "flex-start", gap: 7,
- color: DS.text3, fontSize: 11, lineHeight: 1.4,
- }}>
- <Check size={12} style={{ color: DS.green, flexShrink: 0, marginTop: 1 }} />
- {feat}
- </li>
- ))}
- {pkg.features.length > 4 && (
- <li style={{ color: DS.text4, fontSize: 10, paddingLeft: 19 }}>
- +{pkg.features.length - 4} tính năng khác
- </li>
- )}
- </ul>)}
-
-
- {/* Freebies */}
- {pkg.freebies && pkg.freebies.length > 0 && (
- <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid rgba(255,255,255,0.08)" }}>
- <div style={{ color: DS.green, fontSize: 9, fontFamily: DS.mono, letterSpacing: "0.15em", marginBottom: 5 }}>QUA TANG DI KEM</div>
- {pkg.freebies.map((fb, fi) => (
- <div key={fi} style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 3 }}>
- <svg width="10" height="10" viewBox="0 0 24 24" fill={DS.green} stroke="none"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
- <span style={{ color: DS.green, fontSize: 9, fontFamily: DS.mono }}>{fb.label}{fb.detail ? ` (${fb.detail})` : ''}</span>
- </div>
- ))}
- </div>
- )}
- </div>
-
- {/* Selected checkmark circle */}
- {isSelected && (
- <div style={{
- position: "absolute", top: 14, right: 14,
- width: 32, height: 32, borderRadius: "50%",
- background: selColor,
- display: "flex", alignItems: "center", justifyContent: "center",
- boxShadow: `0 0 20px ${selColor}70`,
- }}>
- <Check size={16} style={{ color: "#fff", strokeWidth: 3 }} />
- </div>
- )}
- </motion.button>
- );
- })}
- </div>
- </div>
-
- {/* Compare packages button */}
- <div style={{ textAlign: "center", marginBottom: 24 }}>
- <button
- onClick={() => setShowCompareModal(true)}
- style={{
- padding: "10px 24px",
- borderRadius: 12,
- background: "rgba(255,255,255,0.04)",
- border: "1px dashed rgba(255,255,255,0.12)",
- color: DS.text3,
- fontSize: 13,
- fontFamily: DS.mono,
- cursor: "pointer",
- display: "inline-flex",
- alignItems: "center",
- gap: 8,
- }}
- >
- <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
- Xem chi tiet va so sanh cac goi
- </button>
- </div>
-
- {/* ── Selected package summary bar ── */}
-  {selectedPkg && (
- <motion.div
- initial={{ opacity: 0, y: 20 }}
- animate={{ opacity: 1, y: 0 }}
- transition={{ duration: 0.35, ease: "easeOut" }}
- style={{
- background: `linear-gradient(135deg, ${DS.green}0C, ${DS.green}04)`,
- border: `1px solid ${DS.green}30`,
- borderRadius: 20,
- padding: "24px",
- marginBottom: 28,
- position: "relative",
- overflow: "hidden",
- boxShadow: `0 0 40px ${DS.green}12`,
- }}
- >
- {/* Background glow */}
- <div style={{
- position: "absolute", top: -30, right: -30,
- width: 140, height: 140, borderRadius: "50%",
- background: `radial-gradient(circle, ${DS.green}10 0%, transparent 70%)`,
- pointerEvents: "none",
- }} />
-
- <div className="relative">
- {/* Top row: package name + total */}
- <div style={{
- display: "flex", alignItems: "flex-start",
- justifyContent: "space-between", flexWrap: "wrap",
- gap: 16, marginBottom: 16,
- }}>
- <div>
- <div style={{
- color: DS.green, fontSize: 9, fontFamily: DS.mono,
- letterSpacing: "0.22em", marginBottom: 6,
- }}>
- GÓI ĐÃ CHỌN
- </div>
- <div style={{ display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
- <span style={{
- color: DS.text, fontFamily: DS.heading,
- fontSize: 34, fontWeight: 900,
- }}>
- {fmtVND(grandForDisplay)}
- </span>
- <span style={{
- background: `${DS.green}20`,
- color: DS.green, fontSize: 11, fontFamily: DS.mono,
- padding: "3px 10px", borderRadius: 20,
- }}>
- {selectedPkg.name}
- </span>
- </div>
- {selectedPkg.savingPct && selectedPkg.savingPct > 0 && (
- <div style={{
- display: "inline-block",
- background: "rgba(34,197,94,0.12)",
- color: DS.green, fontSize: 10, fontFamily: DS.mono,
- padding: "3px 10px", borderRadius: 20,
- marginTop: 8,
- }}>
- −{selectedPkg.savingPct}% so với giá gốc
- </div>
- )}
- </div>
-
- {/* LP reward */}
- {lpEarnedDisplay > 0 && (
- <div style={{
- background: `linear-gradient(135deg, ${DS.purple}18, ${DS.pink}08)`,
- border: `1px solid ${DS.purple}30`,
- borderRadius: 14, padding: "12px 18px",
- display: "flex", alignItems: "center", gap: 8,
- }}>
- <svg width="16" height="16" viewBox="0 0 24 24" fill={DS.purple} stroke="none">
- <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
- </svg>
- <span style={{ color: DS.purple, fontSize: 12, fontFamily: DS.mono }}>
- +{lpEarnedDisplay.toLocaleString()} LP
- </span>
- </div>
- )}
- </div>
-
- {/* Price breakdown chips */}
- <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
- {currentBasePrice > 0 && (
- <div style={{
- background: `${DS.green}10`,
- border: `1px solid ${DS.green}30`,
- borderRadius: 12, padding: "8px 16px",
- }}>
- <div style={{ color: DS.text4, fontSize: 9, fontFamily: DS.mono, marginBottom: 2 }}>GÓI</div>
- <div style={{ color: DS.green, fontSize: 15, fontFamily: DS.mono, fontWeight: 700 }}>{fmtVND(currentBasePrice)}</div>
- </div>
- )}
- {featTotalForDisplay > 0 && (
- <div style={{ background: `${DS.blue}10`, border: `1px solid ${DS.blue}30`, borderRadius: 12, padding: "8px 16px" }}>
- <div style={{ color: DS.text4, fontSize: 9, fontFamily: DS.mono, marginBottom: 2 }}>TÍNH NĂNG</div>
- <div style={{ color: DS.blue, fontSize: 15, fontFamily: DS.mono, fontWeight: 700 }}>+{fmtVND(featTotalForDisplay)}</div>
- </div>
- )}
- {extraTotalForDisplay > 0 && (
- <div style={{ background: `${DS.purple}10`, border: `1px solid ${DS.purple}30`, borderRadius: 12, padding: "8px 16px" }}>
- <div style={{ color: DS.text4, fontSize: 9, fontFamily: DS.mono, marginBottom: 2 }}>DỊCH VỤ</div>
- <div style={{ color: DS.purple, fontSize: 15, fontFamily: DS.mono, fontWeight: 700 }}>+{fmtVND(extraTotalForDisplay)}</div>
- </div>
- )}
- {hostingTotal > 0 && (
- <div style={{ background: `${DS.amber}10`, border: `1px solid ${DS.amber}30`, borderRadius: 12, padding: "8px 16px" }}>
- <div style={{ color: DS.text4, fontSize: 9, fontFamily: DS.mono, marginBottom: 2 }}>HOSTING</div>
- <div style={{ color: DS.amber, fontSize: 15, fontFamily: DS.mono, fontWeight: 700 }}>+{fmtVND(hostingTotal)}</div>
- </div>
- )}
- {domainTotal > 0 && (
- <div style={{ background: `${DS.cyan}10`, border: `1px solid ${DS.cyan}30`, borderRadius: 12, padding: "8px 16px" }}>
- <div style={{ color: DS.text4, fontSize: 9, fontFamily: DS.mono, marginBottom: 2 }}>DOMAIN</div>
- <div style={{ color: DS.cyan, fontSize: 15, fontFamily: DS.mono, fontWeight: 700 }}>+{fmtVND(domainTotal)}</div>
- </div>
- )}
- {vatAmt > 0 && (
- <div style={{ background: "rgba(148,163,184,0.06)", border: "1px solid rgba(148,163,184,0.2)", borderRadius: 12, padding: "8px 16px" }}>
- <div style={{ color: DS.text4, fontSize: 9, fontFamily: DS.mono, marginBottom: 2 }}>VAT</div>
- <div style={{ color: DS.text3, fontSize: 15, fontFamily: DS.mono, fontWeight: 700 }}>+{fmtVND(vatAmt)}</div>
- </div>
- )}
- {lpDisc.vndDiscount > 0 && (
- <div style={{ background: `${DS.pink}10`, border: `1px solid ${DS.pink}30`, borderRadius: 12, padding: "8px 16px" }}>
- <div style={{ color: DS.text4, fontSize: 9, fontFamily: DS.mono, marginBottom: 2 }}>GIẢM LP</div>
- <div style={{ color: DS.pink, fontSize: 15, fontFamily: DS.mono, fontWeight: 700 }}>−{fmtVND(lpDisc.vndDiscount)}</div>
- </div>
- )}
- </div>
- </div>
- </motion.div>
- )}
-
- {/* ── Feature toggle ── */}
- {selectedPackage && currentFeatureOptions.length > 0 && (
- <div style={{ marginBottom: 32 }}>
- <FeatureToggleTable
- allFeatures={currentFeatureOptions}
- selectedIds={selectedFeatures}
- includedIds={baseFeatures.map(f => f.id)}
- onToggle={toggleFeature}
- packageName={selectedPkg?.name}
- packageColor={pkgColor}
- />
- </div>
- )}
- </div>
- )}
- {/* ── STEP 1: Domain ──────────────────────────────────────── */}
-          {step === 1 && (
-            <div>
-              <div className="mb-6 p-5 rounded-2xl" style={{ background: "rgba(15,23,42,0.7)", border: `1px solid ${DS.cyan}15` }}>
-                <div style={{ color: DS.cyan, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.22em", marginBottom: 8 }}>ĐĂNG KÝ TÊN MIỀN</div>
-                <h3 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 26, fontWeight: 900, letterSpacing: "0.04em", marginBottom: 6 }}>Chọn tên miền cho website</h3>
-                <p style={{ color: DS.text3, fontSize: 14, lineHeight: 1.7 }}>Nhập tên miền bạn mong muốn và chọn đuôi phù hợp. Bạn có thể bỏ qua nếu đã có sẵn tên miền.</p>
-              </div>
-
-              <div className="mb-6">
-                <label style={{ color: DS.text3, fontSize: 12, fontFamily: DS.mono, letterSpacing: "0.1em", display: "block", marginBottom: 8 }}>TÊN MIỀN BẠN MUỐN ĐĂNG KÝ</label>
-                <div className="flex gap-3">
-                  <input value={domainName} onChange={e => setDomainName(e.target.value)} placeholder="ví dụ: mysite.com"
-                    style={{ flex: 1, background: "rgba(15,23,42,0.6)", border: `1px solid ${DS.border}`, borderRadius: 10, padding: "12px 16px", color: DS.text, fontSize: 15, outline: "none", fontFamily: DS.body, boxSizing: "border-box" }} />
-                  {domainPrices.length > 0 && (
-                    <select value={domainName.includes(".") ? "." + domainName.split(".").pop() : ".com"}
-                      onChange={e => { const base = domainName.includes(".") ? domainName.split(".")[0] : domainName; setDomainName(base + e.target.value); }}
-                      style={{ background: "rgba(15,23,42,0.8)", border: `1px solid ${DS.border}`, borderRadius: 10, padding: "12px 14px", color: DS.text, fontSize: 14, fontFamily: DS.mono, outline: "none", cursor: "pointer" }}>
-                      {domainPrices.map(d => <option key={d.extension} value={d.extension} style={{ background: "#0F172A" }}>{d.extension}</option>)}
-                    </select>
-                  )}
-                </div>
-                {(() => {
-                  const matchedExt = domainName.includes(".") ? domainPrices.find(d => domainName.endsWith(d.extension)) : null;
-                  return (<>
-                    {matchedExt && (
-                      <div className="mt-2 flex items-center gap-2">
-                        <Check size={11} style={{ color: DS.green }} />
-                        <span style={{ color: DS.green, fontSize: 11, fontFamily: DS.mono }}>Đăng ký {matchedExt.extension}: {fmtVND(matchedExt.registrationPrice)}/{matchedExt.periodVi}</span>
-                        <span style={{ color: DS.text5, fontSize: 10 }}>— Gia hạn: {fmtVND(matchedExt.renewalPrice)}/năm</span>
-                      </div>
-                    )}
-                    {domainName && !matchedExt && domainName.includes(".") && (
-                      <div className="mt-2"><span style={{ color: DS.amber, fontSize: 11 }}>⚠ Không tìm thấy giá cho .{domainName.split(".").pop()}</span></div>
-                    )}
-                    {domainName && matchedExt?.note && (
-                      <div className="mt-1 px-3 py-2 rounded-lg" style={{ background: "rgba(234,179,8,0.07)", border: "1px solid rgba(234,179,8,0.2)" }}>
-                        <span style={{ color: DS.amber, fontSize: 11 }}>{matchedExt.note}</span>
-                      </div>
-                    )}
-                  </>);
-                })()}
-              </div>
-
-              {/* Purchase timing */}
-              {domainName && domainName.includes(".") && domainPrices.find(d => domainName.endsWith(d.extension)) && (
-                <div className="mb-6 p-4 rounded-xl" style={{ background: "rgba(15,23,42,0.5)", border: `1px solid ${DS.border}` }}>
-                  <div style={{ color: DS.text2, fontSize: 12, fontFamily: DS.mono, marginBottom: 12 }}>BẠN MUỐN ĐĂNG KÝ KHI NÀO?</div>
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    {[{ now: true, label: "Đăng ký ngay bây giờ", desc: "Domain được đăng ký trước khi bàn giao web — website hoạt động ngay khi bàn giao.", color: DS.blue, bg: "rgba(59,130,246,0.1)", border: "1.5px solid rgba(59,130,246,0.4)" },
-                      { now: false, label: "Mua sau khi bàn giao", desc: "Bạn tự chuẩn bị domain riêng — LOOP hỗ trợ kỹ thuật cấu hình miễn phí.", color: DS.purple, bg: "rgba(129,140,248,0.08)", border: "1.5px solid rgba(129,140,248,0.3)" }
-                    ].map(opt => (
-                      <motion.button key={String(opt.now)} onClick={() => setDomainPurchaseNow(opt.now)} className="flex-1 text-left p-4 rounded-xl"
-                        style={{ background: domainPurchaseNow === opt.now ? opt.bg : "rgba(15,23,42,0.3)", border: domainPurchaseNow === opt.now ? opt.border : `1px solid ${DS.border}`, cursor: "pointer" }}
-                        whileHover={{ scale: 1.01 }}>
-                        <div className="flex items-center gap-2 mb-2">
-                          <div className="w-4 h-4 rounded-full flex items-center justify-center" style={{ background: domainPurchaseNow === opt.now ? opt.color : "transparent", border: domainPurchaseNow === opt.now ? "none" : `1.5px solid ${DS.text4}` }}>
-                            {domainPurchaseNow === opt.now && <Check size={9} style={{ color: "#fff" }} />}
-                          </div>
-                          <span style={{ color: DS.text, fontSize: 13, fontWeight: 600 }}>{opt.label}</span>
-                        </div>
-                        <div style={{ color: DS.text4, fontSize: 11, marginLeft: 24 }}>{opt.desc}</div>
-                      </motion.button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Domain price table */}
-              {domainPrices.length > 0 && (
-                <div>
-                  <div style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, marginBottom: 8 }}>BẢNG GIÁ TÊN MIỀN (tham khảo)</div>
-                  <div className="overflow-x-auto rounded-xl" style={{ border: `1px solid ${DS.border}` }}>
-                    <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                      <thead>
-                        <tr style={{ background: "rgba(15,23,42,0.8)" }}>
-                          {["ĐUÔI", "ĐĂNG KÝ", "GIA HẠN", "GHI CHÚ"].map((h, i) => (
-                            <th key={h} style={{ padding: "10px 14px", textAlign: i === 1 || i === 2 ? "right" : "left", color: DS.text4, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.1em", borderBottom: `1px solid ${DS.border}` }}>{h}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {domainPrices.map(d => (
-                          <tr key={d.extension} style={{ borderBottom: `1px solid ${DS.border}` }}>
-                            <td style={{ padding: "10px 14px" }}><span style={{ color: DS.blue, fontFamily: DS.mono, fontSize: 13, fontWeight: 700 }}>{d.extension}</span></td>
-                            <td style={{ padding: "10px 14px", textAlign: "right" }}><span style={{ color: DS.text, fontFamily: DS.mono, fontSize: 12 }}>{fmtVND(d.registrationPrice)}</span></td>
-                            <td style={{ padding: "10px 14px", textAlign: "right" }}><span style={{ color: DS.text4, fontFamily: DS.mono, fontSize: 12 }}>{fmtVND(d.renewalPrice)}</span></td>
-                            <td style={{ padding: "10px 14px" }}><span style={{ color: d.note ? DS.text4 : DS.text5, fontSize: 11 }}>{d.note || "—"}</span></td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* ── STEP 2: Hosting + Add-ons ───────────────────────────── */}
-          {step === 2 && (
-            <div>
-              <div className="mb-6 p-5 rounded-2xl" style={{ background: "rgba(15,23,42,0.7)", border: `1px solid ${DS.purple}15` }}>
-                <div style={{ color: DS.purple, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.22em", marginBottom: 8 }}>HOSTING & DỊCH VỤ BỔ SUNG</div>
-                <h3 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 26, fontWeight: 900, letterSpacing: "0.04em", marginBottom: 6 }}>Hosting & Các dịch vụ bổ sung</h3>
-                <p style={{ color: DS.text3, fontSize: 14, lineHeight: 1.7 }}>Chọn gói hosting và các dịch vụ đi kèm để website hoạt động tối ưu.</p>
-              </div>
-
-              {hostingPlans.length > 0 && (
-                <div style={{ marginBottom: 28 }}>
-                  <div className="flex items-center gap-3 mb-4">
-                    <div style={{ width: 3, height: 16, background: DS.purple, borderRadius: 2 }} />
-                    <h3 style={{ color: DS.text2, fontSize: 12, fontFamily: DS.mono, letterSpacing: "0.14em" }}>HOSTING</h3>
-                    <div style={{ flex: 1, height: 1, background: DS.border }} />
-                    <span style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono }}>Không bắt buộc</span>
-                  </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 10 }}>
-                    {hostingPlans.map(plan => {
-                      const isSelected = selectedExtras.includes("hosting") && selectedHostingPlan === plan.slug;
-                      const hasDiscount = plan.discountPct > 0;
-                      return (
-                        <motion.button key={plan.slug} onClick={() => {
-                          if (isSelected) { setSelectedHostingPlan(""); }
-                          else { setSelectedHostingPlan(plan.slug); if (!selectedExtras.includes("hosting")) toggleExtra("hosting"); }
-                        }} className="text-left p-4 rounded-xl relative"
-                          style={{ background: isSelected ? `${plan.color}0C` : "rgba(15,23,42,0.5)", border: isSelected ? `1.5px solid ${plan.color}50` : `1px solid ${DS.border}`, cursor: "pointer" }}
-                          whileHover={{ scale: 1.02 }}>
-                          {plan.highlighted && <div style={{ position: "absolute", top: 0, left: 0, right: 0, padding: "2px", textAlign: "center", background: GRD.primary, fontSize: 8, color: "#fff", fontFamily: DS.mono, borderRadius: "10px 10px 0 0" }}>★ PHỔ BIẾN NHẤT</div>}
-                          <div style={{ marginTop: plan.highlighted ? 14 : 0 }}>
-                            <div style={{ color: isSelected ? plan.color : DS.text2, fontSize: 12, fontFamily: DS.mono, fontWeight: 700, marginBottom: 4 }}>{plan.name.toUpperCase()}</div>
-                            <div style={{ display: "flex", alignItems: "baseline", gap: 4, marginBottom: 2 }}>
-                              <span style={{ color: DS.text, fontFamily: DS.heading, fontSize: 17, fontWeight: 900 }}>{fmtVND(plan.discountedPrice)}</span>
-                              {hasDiscount && <span className="px-1 py-0.5 rounded text-xs" style={{ background: `${DS.green}15`, color: DS.green, fontFamily: DS.mono }}>-{plan.discountPct}%</span>}
+                            {/* Badge */}
+                            <div style={{ padding: "12px 20px 0", minHeight: isPopular || isSelected ? 34 : 10 }}>
+                              {isPopular && (
+                                <div style={{
+                                  display: "inline-block",
+                                  background: "rgba(255,255,255,0.07)",
+                                  color: DS.text3,
+                                  border: "1px solid rgba(255,255,255,0.12)",
+                                  fontSize: 9,
+                                  fontFamily: DS.mono,
+                                  letterSpacing: "0.12em",
+                                  padding: "3px 10px",
+                                  borderRadius: 20,
+                                  marginBottom: 4,
+                                }}>
+                                  ★ PHỔ BIẾN NHẤT
+                                </div>
+                              )}
+                              {isSelected && (
+                                <div style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: 5,
+                                  background: selColor,
+                                  color: "#fff",
+                                  fontSize: 9,
+                                  fontFamily: DS.mono,
+                                  letterSpacing: "0.12em",
+                                  padding: "3px 10px",
+                                  borderRadius: 20,
+                                  marginBottom: 4,
+                                }}>
+                                  <Check size={9} style={{ strokeWidth: 3 }} />
+                                  ĐANG CHỌN
+                                </div>
+                              )}
                             </div>
-                            {plan.monthlyPrice > 0 && <div style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono }}>~{fmtVND(plan.monthlyPrice)}/tháng · {plan.period}</div>}
-                            {hasDiscount && <div style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono, textDecoration: "line-through" }}>{fmtVND(plan.basePrice)}</div>}
-                            {isSelected && <Check size={12} style={{ color: plan.color, marginTop: 4 }} />}
-                          </div>
-                        </motion.button>
-                      );
-                    })}
-                    <motion.button onClick={() => { setSelectedHostingPlan(""); if (selectedExtras.includes("hosting")) toggleExtra("hosting"); }}
-                      className="text-center flex items-center justify-center"
-                      style={{ background: !selectedExtras.includes("hosting") ? "rgba(255,255,255,0.04)" : "rgba(15,23,42,0.4)", border: !selectedExtras.includes("hosting") ? `1.5px solid ${DS.text4}60` : `1px solid ${DS.border}`, borderRadius: 12, cursor: "pointer" }}
-                      whileHover={{ scale: 1.02 }}>
-                      <span style={{ color: DS.text4, fontSize: 12 }}>Tự chuẩn bị</span>
-                    </motion.button>
-                  </div>
-                </div>
-              )}
 
-              {extraOptions.length > 0 && (
-                <div style={{ marginBottom: 32 }}>
-                  <div className="flex items-center gap-3 mb-4">
-                    <div style={{ width: 3, height: 16, background: DS.amber, borderRadius: 2 }} />
-                    <h3 style={{ color: DS.text2, fontSize: 12, fontFamily: DS.mono, letterSpacing: "0.14em" }}>DỊCH VỤ BỔ SUNG</h3>
-                    <div style={{ flex: 1, height: 1, background: DS.border }} />
-                    <span style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono }}>Tùy chọn</span>
-                  </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 10 }}>
-                    {extraOptions.map(ext => {
-                      const isSelected = selectedExtras.includes(ext.id);
-                      const color = ext.color || DS.amber;
-                      return (
-                        <motion.button key={ext.id} onClick={() => toggleExtra(ext.id)}
-                          className="w-full text-left p-3 rounded-xl flex items-start gap-3"
-                          style={{ background: isSelected ? `${color}0C` : "rgba(15,23,42,0.4)", border: isSelected ? `1.5px solid ${color}50` : `1px solid ${DS.border}`, cursor: "pointer" }}
-                          whileHover={{ scale: 1.01 }}>
-                          <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${color}15`, color }}>
-                            {ext.id === "hosting" ? <Server size={16} /> : ext.id === "domain" ? <Globe size={16} /> : ext.id === "maintenance" ? <Shield size={16} /> : ext.id === "analytics-setup" ? <BarChart3 size={16} /> : ext.id === "training" ? <Users size={16} /> : ext.id === "priority" ? <Sparkles size={16} /> : ext.id === "seo-basic" ? <Target size={16} /> : <Layers size={16} />}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div style={{ color: DS.text, fontSize: 12, fontWeight: 600, marginBottom: 2 }}>{ext.label}</div>
-                            {ext.price > 0 && <div style={{ color, fontSize: 12, fontFamily: DS.mono, fontWeight: 700 }}>+{fmtVND(ext.price)}</div>}
-                            {isSelected && <Check size={12} style={{ color, marginTop: 2 }} />}
-                          </div>
-                        </motion.button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
+                            {/* Card body */}
+                            <div style={{ padding: "8px 20px 24px" }}>
+                              {/* Package name — neutral when unselected */}
+                              <div style={{
+                                color: isSelected ? selColor : DS.text4,
+                                fontSize: 10,
+                                fontFamily: DS.mono,
+                                letterSpacing: "0.2em",
+                                marginBottom: 6,
+                                transition: "color 0.2s",
+                              }}>
+                                {pkg.name.toUpperCase()}
+                              </div>
 
-          {/* ── STEP 3: Contact Info ────────────────────────────────── */}
-          {step === 3 && (
-            <div>
-              <div className="mb-6 p-5 rounded-2xl" style={{ background: "rgba(15,23,42,0.7)", border: `1px solid ${DS.pink}15` }}>
-                <div style={{ color: DS.pink, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.22em", marginBottom: 8 }}>THÔNG TIN LIÊN HỆ</div>
-                <h3 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 26, fontWeight: 900, letterSpacing: "0.04em", marginBottom: 6 }}>Thông tin liên hệ</h3>
-                <p style={{ color: DS.text3, fontSize: 14, lineHeight: 1.7 }}>Điền thông tin để chúng tôi liên hệ tư vấn và gửi báo giá chi tiết.</p>
-              </div>
+                              {/* Price */}
+                              <div style={{ marginBottom: 8 }}>
+                                {saving > 0 && (
+                                  <div style={{
+                                    color: DS.text5, fontSize: 11, fontFamily: DS.mono,
+                                    textDecoration: "line-through", marginBottom: 2,
+                                  }}>
+                                    {fmtVND(market)}
+                                  </div>
+                                )}
+                                <div style={{
+                                  color: DS.text,
+                                  fontFamily: DS.heading,
+                                  fontSize: 30,
+                                  fontWeight: 900,
+                                  lineHeight: 1,
+                                  marginBottom: 2,
+                                }}>
+                                  {fmtVND(price)}
+                                </div>
+                                <div style={{ color: DS.text4, fontSize: 10 }}>
+                                  {pkg.billingPeriod || "một lần"}
+                                </div>
+                              </div>
 
-              <div className="mb-5">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `${DS.pink}15` }}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={DS.pink} strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                  </div>
-                  <h4 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 16, fontWeight: 700, letterSpacing: "0.04em" }}>Thông tin cá nhân</h4>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {[
-                    { label: "Họ và tên *", value: name, set: setName, placeholder: "Nguyễn Văn A" },
-                    { label: "Email công ty *", value: email, set: setEmail, placeholder: "name@company.vn" },
-                    { label: "Số điện thoại *", value: phone, set: setPhone, placeholder: "0901 234 567" },
-                    { label: "Tên công ty", value: company, set: setCompany, placeholder: "Công ty ABC" },
-                  ].map(f => (
-                    <div key={f.label}>
-                      <label style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.1em", display: "block", marginBottom: 6 }}>{f.label}</label>
-                      <input value={f.value} onChange={e => f.set(e.target.value)} placeholder={f.placeholder}
-                        style={{ width: "100%", background: "rgba(15,23,42,0.6)", border: `1px solid ${DS.border}`, borderRadius: 10, padding: "11px 14px", color: DS.text, fontSize: 14, outline: "none", fontFamily: DS.body, boxSizing: "border-box" }} />
+                              {/* Saving badge */}
+                              {saving > 0 && (
+                                <div style={{
+                                  display: "inline-block",
+                                  background: "rgba(34,197,94,0.12)",
+                                  border: "1px solid rgba(34,197,94,0.3)",
+                                  color: DS.green,
+                                  fontSize: 9,
+                                  fontFamily: DS.mono,
+                                  padding: "2px 8px",
+                                  borderRadius: 8,
+                                  marginBottom: 14,
+                                }}>
+                                  −{savingPct}% · Tiết kiệm {fmtVND(saving)}
+                                </div>
+                              )}
+
+                              {/* Description */}
+                              <p style={{
+                                color: DS.text3,
+                                fontSize: 11,
+                                lineHeight: 1.55,
+                                marginBottom: 14,
+                              }}>
+                                {pkg.desc}
+                              </p>
+
+                              {/* Feature list */}
+                              {pkg.features.length > 0 && (
+                                <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 6 }}>
+                                  {pkg.features.slice(0, 4).map((feat, i) => (
+                                    <li key={i} style={{
+                                      display: "flex", alignItems: "flex-start", gap: 7,
+                                      color: DS.text3, fontSize: 11, lineHeight: 1.4,
+                                    }}>
+                                      <Check size={12} style={{ color: DS.green, flexShrink: 0, marginTop: 1 }} />
+                                      {feat}
+                                    </li>
+                                  ))}
+                                  {pkg.features.length > 4 && (
+                                    <li style={{ color: DS.text4, fontSize: 10, paddingLeft: 19 }}>
+                                      +{pkg.features.length - 4} tính năng khác
+                                    </li>
+                                  )}
+                                </ul>)}
+
+
+                              {/* Freebies */}
+                              {pkg.freebies && pkg.freebies.length > 0 && (
+                                <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+                                  <div style={{ color: DS.green, fontSize: 9, fontFamily: DS.mono, letterSpacing: "0.15em", marginBottom: 5 }}>QUA TANG DI KEM</div>
+                                  {pkg.freebies.map((fb, fi) => (
+                                    <div key={fi} style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 3 }}>
+                                      <svg width="10" height="10" viewBox="0 0 24 24" fill={DS.green} stroke="none"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" /></svg>
+                                      <span style={{ color: DS.green, fontSize: 9, fontFamily: DS.mono }}>{fb.label}{fb.detail ? ` (${fb.detail})` : ''}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Selected checkmark circle */}
+                            {isSelected && (
+                              <div style={{
+                                position: "absolute", top: 14, right: 14,
+                                width: 32, height: 32, borderRadius: "50%",
+                                background: selColor,
+                                display: "flex", alignItems: "center", justifyContent: "center",
+                                boxShadow: `0 0 20px ${selColor}70`,
+                              }}>
+                                <Check size={16} style={{ color: "#fff", strokeWidth: 3 }} />
+                              </div>
+                            )}
+                          </motion.button>
+                        );
+                      })}
                     </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="mb-5">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `${DS.blue}15` }}>
-                    <Calendar size={14} style={{ color: DS.blue }} />
                   </div>
-                  <h4 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 16, fontWeight: 700, letterSpacing: "0.04em" }}>Lịch trình</h4>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.1em", display: "block", marginBottom: 6 }}>Ngày bắt đầu</label>
-                    <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
-                      style={{ width: "100%", background: "rgba(15,23,42,0.6)", border: `1px solid ${DS.border}`, borderRadius: 10, padding: "11px 14px", color: DS.text, fontSize: 14, outline: "none", fontFamily: DS.body, boxSizing: "border-box" }} />
-                  </div>
-                  <div>
-                    <label style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.1em", display: "block", marginBottom: 6 }}>Thời gian thực hiện</label>
-                    <div className="flex flex-wrap gap-2">
-                      {[{ val: "2", label: "2 tuần" }, { val: "4", label: "1 tháng" }, { val: "8", label: "2 tháng" }, { val: "12", label: "3 tháng" }, { val: "24", label: "6 tháng" }, { val: "custom", label: t("custom") }].map(d => (
-                        <button key={d.val} onClick={() => setDuration(d.val)}
-                          style={{ padding: "7px 12px", borderRadius: 8, fontSize: 11, fontFamily: DS.mono, cursor: "pointer",
-                            background: duration === d.val ? GRD.primary : "rgba(15,23,42,0.6)",
-                            border: duration === d.val ? "none" : `1px solid ${DS.border}`,
-                            color: duration === d.val ? "#fff" : DS.text3 }}>{d.label}</button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
 
-              <div className="mb-5">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `${DS.purple}15` }}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={DS.purple} strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  {/* Compare packages button */}
+                  <div style={{ textAlign: "center", marginBottom: 24 }}>
+                    <button
+                      onClick={() => setShowCompareModal(true)}
+                      style={{
+                        padding: "10px 24px",
+                        borderRadius: 12,
+                        background: "rgba(255,255,255,0.04)",
+                        border: "1px dashed rgba(255,255,255,0.12)",
+                        color: DS.text3,
+                        fontSize: 13,
+                        fontFamily: DS.mono,
+                        cursor: "pointer",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 8,
+                      }}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
+                      Xem chi tiet va so sanh cac goi
+                    </button>
                   </div>
-                  <h4 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 16, fontWeight: 700, letterSpacing: "0.04em" }}>Ghi chú thêm</h4>
-                </div>
-                <textarea value={talentNote} onChange={e => setTalentNote(e.target.value)} placeholder="Yêu cầu đặc biệt, thông tin bổ sung..." rows={3}
-                  style={{ width: "100%", background: "rgba(15,23,42,0.6)", border: `1px solid ${DS.border}`, borderRadius: 10, padding: "11px 14px", color: DS.text, fontSize: 14, outline: "none", fontFamily: DS.body, boxSizing: "border-box", resize: "vertical" }} />
-              </div>
-            </div>
-          )}
 
-          {/* ── STEP 4: Payment + Submit ────────────────────────────── */}
-          {step === 4 && (
-            <div>
-              {submitError && (
-                <div className="text-center py-8">
-                  <div style={{ color: DS.red, fontSize: 13, marginBottom: 12, padding: "12px 16px", background: "rgba(239,68,68,0.1)", borderRadius: 10, border: "1px solid rgba(239,68,68,0.25)" }}>{submitError}</div>
-                  <button onClick={() => setSubmitError("")} style={{ color: DS.text4, fontSize: 12, background: "none", border: "none", cursor: "pointer", fontFamily: DS.mono }}>{t("closeAndRetry")}</button>
-                </div>
-              )}
+                  {/* ── Selected package summary bar ── */}
+                  {selectedPkg && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.35, ease: "easeOut" }}
+                      style={{
+                        background: `linear-gradient(135deg, ${DS.green}0C, ${DS.green}04)`,
+                        border: `1px solid ${DS.green}30`,
+                        borderRadius: 20,
+                        padding: "24px",
+                        marginBottom: 28,
+                        position: "relative",
+                        overflow: "hidden",
+                        boxShadow: `0 0 40px ${DS.green}12`,
+                      }}
+                    >
+                      {/* Background glow */}
+                      <div style={{
+                        position: "absolute", top: -30, right: -30,
+                        width: 140, height: 140, borderRadius: "50%",
+                        background: `radial-gradient(circle, ${DS.green}10 0%, transparent 70%)`,
+                        pointerEvents: "none",
+                      }} />
 
-              {submitted && (
-                <motion.div className="text-center py-12" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
-                  <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6" style={{ background: "rgba(34,197,94,0.15)", border: "2px solid rgba(34,197,94,0.4)" }}><Check size={36} style={{ color: DS.green }} /></div>
-                  <h3 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 24, fontWeight: 900, letterSpacing: "0.06em", marginBottom: 12 }}>{t("successTitle")}</h3>
-                  {newOrderId && (
-                    <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 rounded-xl" style={{ background: "rgba(59,130,246,0.1)", border: "1px solid rgba(59,130,246,0.25)" }}>
-                      <span style={{ color: DS.text4, fontSize: 12 }}>{t("orderCode")}:</span>
-                      <span style={{ color: DS.blue, fontFamily: DS.mono, fontSize: 14, fontWeight: 700 }}>{newOrderId}</span>
+                      <div className="relative">
+                        {/* Top row: package name + total */}
+                        <div style={{
+                          display: "flex", alignItems: "flex-start",
+                          justifyContent: "space-between", flexWrap: "wrap",
+                          gap: 16, marginBottom: 16,
+                        }}>
+                          <div>
+                            <div style={{
+                              color: DS.green, fontSize: 9, fontFamily: DS.mono,
+                              letterSpacing: "0.22em", marginBottom: 6,
+                            }}>
+                              GÓI ĐÃ CHỌN
+                            </div>
+                            <div style={{ display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
+                              <span style={{
+                                color: DS.text, fontFamily: DS.heading,
+                                fontSize: 34, fontWeight: 900,
+                              }}>
+                                {fmtVND(grandForDisplay)}
+                              </span>
+                              <span style={{
+                                background: `${DS.green}20`,
+                                color: DS.green, fontSize: 11, fontFamily: DS.mono,
+                                padding: "3px 10px", borderRadius: 20,
+                              }}>
+                                {selectedPkg.name}
+                              </span>
+                            </div>
+                            {selectedPkg.savingPct && selectedPkg.savingPct > 0 && (
+                              <div style={{
+                                display: "inline-block",
+                                background: "rgba(34,197,94,0.12)",
+                                color: DS.green, fontSize: 10, fontFamily: DS.mono,
+                                padding: "3px 10px", borderRadius: 20,
+                                marginTop: 8,
+                              }}>
+                                −{selectedPkg.savingPct}% so với giá gốc
+                              </div>
+                            )}
+                          </div>
+
+                          {/* LP reward */}
+                          {lpEarnedDisplay > 0 && (
+                            <div style={{
+                              background: `linear-gradient(135deg, ${DS.purple}18, ${DS.pink}08)`,
+                              border: `1px solid ${DS.purple}30`,
+                              borderRadius: 14, padding: "12px 18px",
+                              display: "flex", alignItems: "center", gap: 8,
+                            }}>
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill={DS.purple} stroke="none">
+                                <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
+                              </svg>
+                              <span style={{ color: DS.purple, fontSize: 12, fontFamily: DS.mono }}>
+                                +{lpEarnedDisplay.toLocaleString()} LP
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Price breakdown chips */}
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+                          {currentBasePrice > 0 && (
+                            <div style={{
+                              background: `${DS.green}10`,
+                              border: `1px solid ${DS.green}30`,
+                              borderRadius: 12, padding: "8px 16px",
+                            }}>
+                              <div style={{ color: DS.text4, fontSize: 9, fontFamily: DS.mono, marginBottom: 2 }}>GÓI</div>
+                              <div style={{ color: DS.green, fontSize: 15, fontFamily: DS.mono, fontWeight: 700 }}>{fmtVND(currentBasePrice)}</div>
+                            </div>
+                          )}
+                          {featTotalForDisplay > 0 && (
+                            <div style={{ background: `${DS.blue}10`, border: `1px solid ${DS.blue}30`, borderRadius: 12, padding: "8px 16px" }}>
+                              <div style={{ color: DS.text4, fontSize: 9, fontFamily: DS.mono, marginBottom: 2 }}>TÍNH NĂNG</div>
+                              <div style={{ color: DS.blue, fontSize: 15, fontFamily: DS.mono, fontWeight: 700 }}>+{fmtVND(featTotalForDisplay)}</div>
+                            </div>
+                          )}
+                          {extraTotalForDisplay > 0 && (
+                            <div style={{ background: `${DS.purple}10`, border: `1px solid ${DS.purple}30`, borderRadius: 12, padding: "8px 16px" }}>
+                              <div style={{ color: DS.text4, fontSize: 9, fontFamily: DS.mono, marginBottom: 2 }}>DỊCH VỤ</div>
+                              <div style={{ color: DS.purple, fontSize: 15, fontFamily: DS.mono, fontWeight: 700 }}>+{fmtVND(extraTotalForDisplay)}</div>
+                            </div>
+                          )}
+                          {hostingTotal > 0 && (
+                            <div style={{ background: `${DS.amber}10`, border: `1px solid ${DS.amber}30`, borderRadius: 12, padding: "8px 16px" }}>
+                              <div style={{ color: DS.text4, fontSize: 9, fontFamily: DS.mono, marginBottom: 2 }}>HOSTING</div>
+                              <div style={{ color: DS.amber, fontSize: 15, fontFamily: DS.mono, fontWeight: 700 }}>+{fmtVND(hostingTotal)}</div>
+                            </div>
+                          )}
+                          {domainTotal > 0 && (
+                            <div style={{ background: `${DS.cyan}10`, border: `1px solid ${DS.cyan}30`, borderRadius: 12, padding: "8px 16px" }}>
+                              <div style={{ color: DS.text4, fontSize: 9, fontFamily: DS.mono, marginBottom: 2 }}>DOMAIN</div>
+                              <div style={{ color: DS.cyan, fontSize: 15, fontFamily: DS.mono, fontWeight: 700 }}>+{fmtVND(domainTotal)}</div>
+                            </div>
+                          )}
+                          {vatAmt > 0 && (
+                            <div style={{ background: "rgba(148,163,184,0.06)", border: "1px solid rgba(148,163,184,0.2)", borderRadius: 12, padding: "8px 16px" }}>
+                              <div style={{ color: DS.text4, fontSize: 9, fontFamily: DS.mono, marginBottom: 2 }}>VAT</div>
+                              <div style={{ color: DS.text3, fontSize: 15, fontFamily: DS.mono, fontWeight: 700 }}>+{fmtVND(vatAmt)}</div>
+                            </div>
+                          )}
+                          {lpDisc.vndDiscount > 0 && (
+                            <div style={{ background: `${DS.pink}10`, border: `1px solid ${DS.pink}30`, borderRadius: 12, padding: "8px 16px" }}>
+                              <div style={{ color: DS.text4, fontSize: 9, fontFamily: DS.mono, marginBottom: 2 }}>GIẢM LP</div>
+                              <div style={{ color: DS.pink, fontSize: 15, fontFamily: DS.mono, fontWeight: 700 }}>−{fmtVND(lpDisc.vndDiscount)}</div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {/* ── Feature toggle ── */}
+                  {selectedPackage && currentFeatureOptions.length > 0 && (
+                    <div style={{ marginBottom: 32 }}>
+                      <FeatureToggleTable
+                        allFeatures={currentFeatureOptions}
+                        selectedIds={selectedFeatures}
+                        includedIds={baseFeatures.map(f => f.id)}
+                        onToggle={toggleFeature}
+                        packageName={selectedPkg?.name}
+                        packageColor={pkgColor}
+                      />
                     </div>
                   )}
-                  <p style={{ color: DS.text3, fontSize: 15, lineHeight: 1.8, maxWidth: 400, margin: "0 auto 32px" }}>{t("successMessage")}</p>
-                  <div className="inline-block px-5 py-3 rounded-xl mb-6" style={{ background: "rgba(129,140,248,0.1)", border: "1px solid rgba(129,140,248,0.3)" }}>
-                    <div style={{ color: DS.purple, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.15em", marginBottom: 4 }}>LP ĐIỂM THƯỞNG ĐĂNG KÝ</div>
-                    <div style={{ color: DS.purple, fontFamily: DS.heading, fontSize: 24, fontWeight: 900 }}>+{lpEarnedDisplay.toLocaleString()} LP</div>
+                </div>
+              )}
+              {/* ── STEP 1: Domain ──────────────────────────────────────── */}
+              {step === 1 && (
+                <div>
+                  <div className="mb-6 p-5 rounded-2xl" style={{ background: "rgba(15,23,42,0.7)", border: `1px solid ${DS.cyan}15` }}>
+                    <div style={{ color: DS.cyan, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.22em", marginBottom: 8 }}>ĐĂNG KÝ TÊN MIỀN</div>
+                    <h3 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 26, fontWeight: 900, letterSpacing: "0.04em", marginBottom: 6 }}>Chọn tên miền cho website</h3>
+                    <p style={{ color: DS.text3, fontSize: 14, lineHeight: 1.7 }}>Nhập tên miền bạn mong muốn và chọn đuôi phù hợp. Bạn có thể bỏ qua nếu đã có sẵn tên miền.</p>
                   </div>
-                </motion.div>
+
+                  <div className="mb-6">
+                    <label style={{ color: DS.text3, fontSize: 12, fontFamily: DS.mono, letterSpacing: "0.1em", display: "block", marginBottom: 8 }}>TÊN MIỀN BẠN MUỐN ĐĂNG KÝ</label>
+                    <div className="flex gap-3">
+                      <input value={domainName} onChange={e => setDomainName(e.target.value)} placeholder="ví dụ: mysite.com"
+                        style={{ flex: 1, background: "rgba(15,23,42,0.6)", border: `1px solid ${DS.border}`, borderRadius: 10, padding: "12px 16px", color: DS.text, fontSize: 15, outline: "none", fontFamily: DS.body, boxSizing: "border-box" }} />
+                      {domainPrices.length > 0 && (
+                        <select value={domainName.includes(".") ? "." + domainName.split(".").pop() : ".com"}
+                          onChange={e => { const base = domainName.includes(".") ? domainName.split(".")[0] : domainName; setDomainName(base + e.target.value); }}
+                          style={{ background: "rgba(15,23,42,0.8)", border: `1px solid ${DS.border}`, borderRadius: 10, padding: "12px 14px", color: DS.text, fontSize: 14, fontFamily: DS.mono, outline: "none", cursor: "pointer" }}>
+                          {domainPrices.map(d => <option key={d.extension} value={d.extension} style={{ background: "#0F172A" }}>{d.extension}</option>)}
+                        </select>
+                      )}
+                    </div>
+                    {(() => {
+                      const matchedExt = domainName.includes(".") ? domainPrices.find(d => domainName.endsWith(d.extension)) : null;
+                      return (<>
+                        {matchedExt && (
+                          <div className="mt-2 flex items-center gap-2">
+                            <Check size={11} style={{ color: DS.green }} />
+                            <span style={{ color: DS.green, fontSize: 11, fontFamily: DS.mono }}>Đăng ký {matchedExt.extension}: {fmtVND(matchedExt.registrationPrice)}/{matchedExt.periodVi}</span>
+                            <span style={{ color: DS.text5, fontSize: 10 }}>— Gia hạn: {fmtVND(matchedExt.renewalPrice)}/năm</span>
+                          </div>
+                        )}
+                        {domainName && !matchedExt && domainName.includes(".") && (
+                          <div className="mt-2"><span style={{ color: DS.amber, fontSize: 11 }}>⚠ Không tìm thấy giá cho .{domainName.split(".").pop()}</span></div>
+                        )}
+                        {domainName && matchedExt?.note && (
+                          <div className="mt-1 px-3 py-2 rounded-lg" style={{ background: "rgba(234,179,8,0.07)", border: "1px solid rgba(234,179,8,0.2)" }}>
+                            <span style={{ color: DS.amber, fontSize: 11 }}>{matchedExt.note}</span>
+                          </div>
+                        )}
+                      </>);
+                    })()}
+                  </div>
+
+                  {/* Purchase timing */}
+                  {domainName && domainName.includes(".") && domainPrices.find(d => domainName.endsWith(d.extension)) && (
+                    <div className="mb-6 p-4 rounded-xl" style={{ background: "rgba(15,23,42,0.5)", border: `1px solid ${DS.border}` }}>
+                      <div style={{ color: DS.text2, fontSize: 12, fontFamily: DS.mono, marginBottom: 12 }}>BẠN MUỐN ĐĂNG KÝ KHI NÀO?</div>
+                      <div className="flex flex-col sm:flex-row gap-3">
+                        {[{ now: true, label: "Đăng ký ngay bây giờ", desc: "Domain được đăng ký trước khi bàn giao web — website hoạt động ngay khi bàn giao.", color: DS.blue, bg: "rgba(59,130,246,0.1)", border: "1.5px solid rgba(59,130,246,0.4)" },
+                        { now: false, label: "Mua sau khi bàn giao", desc: "Bạn tự chuẩn bị domain riêng — LOOP hỗ trợ kỹ thuật cấu hình miễn phí.", color: DS.purple, bg: "rgba(129,140,248,0.08)", border: "1.5px solid rgba(129,140,248,0.3)" }
+                        ].map(opt => (
+                          <motion.button key={String(opt.now)} onClick={() => setDomainPurchaseNow(opt.now)} className="flex-1 text-left p-4 rounded-xl"
+                            style={{ background: domainPurchaseNow === opt.now ? opt.bg : "rgba(15,23,42,0.3)", border: domainPurchaseNow === opt.now ? opt.border : `1px solid ${DS.border}`, cursor: "pointer" }}
+                            whileHover={{ scale: 1.01 }}>
+                            <div className="flex items-center gap-2 mb-2">
+                              <div className="w-4 h-4 rounded-full flex items-center justify-center" style={{ background: domainPurchaseNow === opt.now ? opt.color : "transparent", border: domainPurchaseNow === opt.now ? "none" : `1.5px solid ${DS.text4}` }}>
+                                {domainPurchaseNow === opt.now && <Check size={9} style={{ color: "#fff" }} />}
+                              </div>
+                              <span style={{ color: DS.text, fontSize: 13, fontWeight: 600 }}>{opt.label}</span>
+                            </div>
+                            <div style={{ color: DS.text4, fontSize: 11, marginLeft: 24 }}>{opt.desc}</div>
+                          </motion.button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Domain price table */}
+                  {domainPrices.length > 0 && (
+                    <div>
+                      <div style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, marginBottom: 8 }}>BẢNG GIÁ TÊN MIỀN (tham khảo)</div>
+                      <div className="overflow-x-auto rounded-xl" style={{ border: `1px solid ${DS.border}` }}>
+                        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                          <thead>
+                            <tr style={{ background: "rgba(15,23,42,0.8)" }}>
+                              {["ĐUÔI", "ĐĂNG KÝ", "GIA HẠN", "GHI CHÚ"].map((h, i) => (
+                                <th key={h} style={{ padding: "10px 14px", textAlign: i === 1 || i === 2 ? "right" : "left", color: DS.text4, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.1em", borderBottom: `1px solid ${DS.border}` }}>{h}</th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {domainPrices.map(d => (
+                              <tr key={d.extension} style={{ borderBottom: `1px solid ${DS.border}` }}>
+                                <td style={{ padding: "10px 14px" }}><span style={{ color: DS.blue, fontFamily: DS.mono, fontSize: 13, fontWeight: 700 }}>{d.extension}</span></td>
+                                <td style={{ padding: "10px 14px", textAlign: "right" }}><span style={{ color: DS.text, fontFamily: DS.mono, fontSize: 12 }}>{fmtVND(d.registrationPrice)}</span></td>
+                                <td style={{ padding: "10px 14px", textAlign: "right" }}><span style={{ color: DS.text4, fontFamily: DS.mono, fontSize: 12 }}>{fmtVND(d.renewalPrice)}</span></td>
+                                <td style={{ padding: "10px 14px" }}><span style={{ color: d.note ? DS.text4 : DS.text5, fontSize: 11 }}>{d.note || "—"}</span></td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                </div>
               )}
 
-              {!submitted && !submitError && (
+              {/* ── STEP 2: Hosting + Add-ons ───────────────────────────── */}
+              {step === 2 && (
                 <div>
-                  <div className="mb-6 p-5 rounded-2xl" style={{ background: "rgba(15,23,42,0.7)", border: `1px solid ${DS.green}15` }}>
-                    <div style={{ color: DS.green, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.22em", marginBottom: 8 }}>THANH TOÁN</div>
-                    <h3 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 26, fontWeight: 900, letterSpacing: "0.04em", marginBottom: 6 }}>Phương thức thanh toán</h3>
-                    <p style={{ color: DS.text3, fontSize: 14, lineHeight: 1.7 }}>Chọn hình thức thanh toán và xác nhận đơn hàng.</p>
+                  <div className="mb-6 p-5 rounded-2xl" style={{ background: "rgba(15,23,42,0.7)", border: `1px solid ${DS.purple}15` }}>
+                    <div style={{ color: DS.purple, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.22em", marginBottom: 8 }}>HOSTING & DỊCH VỤ BỔ SUNG</div>
+                    <h3 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 26, fontWeight: 900, letterSpacing: "0.04em", marginBottom: 6 }}>Hosting & Các dịch vụ bổ sung</h3>
+                    <p style={{ color: DS.text3, fontSize: 14, lineHeight: 1.7 }}>Chọn gói hosting và các dịch vụ đi kèm để website hoạt động tối ưu.</p>
                   </div>
 
-                  {/* Order tags */}
-                  <div className="mb-5 p-4 rounded-xl flex items-center justify-between flex-wrap gap-3" style={{ background: "rgba(15,23,42,0.7)", border: `1px solid ${DS.border}` }}>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedPkg && <span className="px-3 py-1.5 rounded-lg text-xs" style={{ background: `${pkgColor}15`, color: pkgColor, border: `1px solid ${pkgColor}30`, fontFamily: DS.mono, fontWeight: 600 }}>{selectedPkg.name}</span>}
-                      {selectedFeatures.length > 0 && <span className="px-3 py-1.5 rounded-lg text-xs" style={{ background: `${DS.cyan}12`, color: DS.cyan, border: `1px solid ${DS.cyan}30`, fontFamily: DS.mono }}>+{selectedFeatures.length} tính năng</span>}
-                      {selectedExtras.length > 0 && <span className="px-3 py-1.5 rounded-lg text-xs" style={{ background: `${DS.purple}12`, color: DS.purple, border: `1px solid ${DS.purple}30`, fontFamily: DS.mono }}>+{selectedExtras.length} dịch vụ</span>}
-                      {domainName && <span className="px-3 py-1.5 rounded-lg text-xs" style={{ background: `${DS.cyan}12`, color: DS.cyan, border: `1px solid ${DS.cyan}30`, fontFamily: DS.mono }}>🌐 {domainName}</span>}
+                  {hostingPlans.length > 0 && (
+                    <div style={{ marginBottom: 28 }}>
+                      <div className="flex items-center gap-3 mb-4">
+                        <div style={{ width: 3, height: 16, background: DS.purple, borderRadius: 2 }} />
+                        <h3 style={{ color: DS.text2, fontSize: 12, fontFamily: DS.mono, letterSpacing: "0.14em" }}>HOSTING</h3>
+                        <div style={{ flex: 1, height: 1, background: DS.border }} />
+                        <span style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono }}>Không bắt buộc</span>
+                      </div>
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 10 }}>
+                        {hostingPlans.map(plan => {
+                          const isSelected = selectedExtras.includes("hosting") && selectedHostingPlan === plan.slug;
+                          const hasDiscount = plan.discountPct > 0;
+                          return (
+                            <motion.button key={plan.slug} onClick={() => {
+                              if (isSelected) { setSelectedHostingPlan(""); }
+                              else { setSelectedHostingPlan(plan.slug); if (!selectedExtras.includes("hosting")) toggleExtra("hosting"); }
+                            }} className="text-left p-4 rounded-xl relative"
+                              style={{ background: isSelected ? `${plan.color}0C` : "rgba(15,23,42,0.5)", border: isSelected ? `1.5px solid ${plan.color}50` : `1px solid ${DS.border}`, cursor: "pointer" }}
+                              whileHover={{ scale: 1.02 }}>
+                              {plan.highlighted && <div style={{ position: "absolute", top: 0, left: 0, right: 0, padding: "2px", textAlign: "center", background: GRD.primary, fontSize: 8, color: "#fff", fontFamily: DS.mono, borderRadius: "10px 10px 0 0" }}>★ PHỔ BIẾN NHẤT</div>}
+                              <div style={{ marginTop: plan.highlighted ? 14 : 0 }}>
+                                <div style={{ color: isSelected ? plan.color : DS.text2, fontSize: 12, fontFamily: DS.mono, fontWeight: 700, marginBottom: 4 }}>{plan.name.toUpperCase()}</div>
+                                <div style={{ display: "flex", alignItems: "baseline", gap: 4, marginBottom: 2 }}>
+                                  <span style={{ color: DS.text, fontFamily: DS.heading, fontSize: 17, fontWeight: 900 }}>{fmtVND(plan.discountedPrice)}</span>
+                                  {hasDiscount && <span className="px-1 py-0.5 rounded text-xs" style={{ background: `${DS.green}15`, color: DS.green, fontFamily: DS.mono }}>-{plan.discountPct}%</span>}
+                                </div>
+                                {plan.monthlyPrice > 0 && <div style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono }}>~{fmtVND(plan.monthlyPrice)}/tháng · {plan.period}</div>}
+                                {hasDiscount && <div style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono, textDecoration: "line-through" }}>{fmtVND(plan.basePrice)}</div>}
+                                {isSelected && <Check size={12} style={{ color: plan.color, marginTop: 4 }} />}
+                              </div>
+                            </motion.button>
+                          );
+                        })}
+                        <motion.button onClick={() => { setSelectedHostingPlan(""); if (selectedExtras.includes("hosting")) toggleExtra("hosting"); }}
+                          className="text-center flex items-center justify-center"
+                          style={{ background: !selectedExtras.includes("hosting") ? "rgba(255,255,255,0.04)" : "rgba(15,23,42,0.4)", border: !selectedExtras.includes("hosting") ? `1.5px solid ${DS.text4}60` : `1px solid ${DS.border}`, borderRadius: 12, cursor: "pointer" }}
+                          whileHover={{ scale: 1.02 }}>
+                          <span style={{ color: DS.text4, fontSize: 12 }}>Tự chuẩn bị</span>
+                        </motion.button>
+                      </div>
                     </div>
-                    <button onClick={() => setStep(0)} className="px-3 py-1.5 rounded-lg text-xs" style={{ color: DS.blue, background: `${DS.blue}10`, border: `1px solid ${DS.blue}30`, fontFamily: DS.mono, cursor: "pointer" }}>← Sửa lựa chọn</button>
+                  )}
+
+                  {extraOptions.length > 0 && (
+                    <div style={{ marginBottom: 32 }}>
+                      <div className="flex items-center gap-3 mb-4">
+                        <div style={{ width: 3, height: 16, background: DS.amber, borderRadius: 2 }} />
+                        <h3 style={{ color: DS.text2, fontSize: 12, fontFamily: DS.mono, letterSpacing: "0.14em" }}>DỊCH VỤ BỔ SUNG</h3>
+                        <div style={{ flex: 1, height: 1, background: DS.border }} />
+                        <span style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono }}>Tùy chọn</span>
+                      </div>
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 10 }}>
+                        {extraOptions.map(ext => {
+                          const isSelected = selectedExtras.includes(ext.id);
+                          const color = ext.color || DS.amber;
+                          return (
+                            <motion.button key={ext.id} onClick={() => toggleExtra(ext.id)}
+                              className="w-full text-left p-3 rounded-xl flex items-start gap-3"
+                              style={{ background: isSelected ? `${color}0C` : "rgba(15,23,42,0.4)", border: isSelected ? `1.5px solid ${color}50` : `1px solid ${DS.border}`, cursor: "pointer" }}
+                              whileHover={{ scale: 1.01 }}>
+                              <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${color}15`, color }}>
+                                {ext.id === "hosting" ? <Server size={16} /> : ext.id === "domain" ? <Globe size={16} /> : ext.id === "maintenance" ? <Shield size={16} /> : ext.id === "analytics-setup" ? <BarChart3 size={16} /> : ext.id === "training" ? <Users size={16} /> : ext.id === "priority" ? <Sparkles size={16} /> : ext.id === "seo-basic" ? <Target size={16} /> : <Layers size={16} />}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div style={{ color: DS.text, fontSize: 12, fontWeight: 600, marginBottom: 2 }}>{ext.label}</div>
+                                {ext.price > 0 && <div style={{ color, fontSize: 12, fontFamily: DS.mono, fontWeight: 700 }}>+{fmtVND(ext.price)}</div>}
+                                {isSelected && <Check size={12} style={{ color, marginTop: 2 }} />}
+                              </div>
+                            </motion.button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ── STEP 3: Contact Info ────────────────────────────────── */}
+              {step === 3 && (
+                <div>
+                  <div className="mb-6 p-5 rounded-2xl" style={{ background: "rgba(15,23,42,0.7)", border: `1px solid ${DS.pink}15` }}>
+                    <div style={{ color: DS.pink, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.22em", marginBottom: 8 }}>THÔNG TIN LIÊN HỆ</div>
+                    <h3 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 26, fontWeight: 900, letterSpacing: "0.04em", marginBottom: 6 }}>Thông tin liên hệ</h3>
+                    <p style={{ color: DS.text3, fontSize: 14, lineHeight: 1.7 }}>Điền thông tin để chúng tôi liên hệ tư vấn và gửi báo giá chi tiết.</p>
                   </div>
 
-                  {/* Payment plan */}
                   <div className="mb-5">
                     <div className="flex items-center gap-3 mb-4">
-                      <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `${DS.green}15` }}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={DS.green} strokeWidth="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                      <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `${DS.pink}15` }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={DS.pink} strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
                       </div>
-                      <h4 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 16, fontWeight: 700, letterSpacing: "0.04em" }}>Hình thức thanh toán</h4>
+                      <h4 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 16, fontWeight: 700, letterSpacing: "0.04em" }}>Thông tin cá nhân</h4>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-                      {([["50", DS.blue, t("paymentPlan50"), t("paymentPlan50Desc")] as const, ["100", DS.green, t("paymentPlan100"), t("paymentPlan100Desc")] as const]).map(([plan, clr, label, desc]) => (
-                        <button key={plan} onClick={() => setPaymentPlan(plan as "50" | "100")}
-                          style={{ padding: "14px 16px", borderRadius: 12, cursor: "pointer", textAlign: "left",
-                            background: paymentPlan === plan ? `${clr}12` : "rgba(15,23,42,0.5)",
-                            border: paymentPlan === plan ? `1.5px solid ${clr}60` : `1px solid ${DS.border}`,
-                            color: paymentPlan === plan ? DS.text : DS.text3 }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                            <div style={{ width: 16, height: 16, borderRadius: "50%", border: `2px solid ${paymentPlan === plan ? clr : DS.text4}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                              {paymentPlan === plan && <div style={{ width: 8, height: 8, borderRadius: "50%", background: clr }} />}
-                            </div>
-                            <span style={{ fontFamily: DS.mono, fontWeight: 700, fontSize: 13 }}>{label}</span>
-                            {plan === "100" && <span style={{ fontSize: 10, padding: "2px 6px", borderRadius: 6, background: `${DS.green}15`, color: DS.green, fontFamily: DS.mono }}>−5%</span>}
-                          </div>
-                          <div style={{ color: DS.text4, fontSize: 11, marginLeft: 24, lineHeight: 1.5 }}>{desc}</div>
-                        </button>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {[
+                        { label: "Họ và tên *", value: name, set: setName, placeholder: "Nguyễn Văn A" },
+                        { label: "Email công ty *", value: email, set: setEmail, placeholder: "name@company.vn" },
+                        { label: "Số điện thoại *", value: phone, set: setPhone, placeholder: "0901 234 567" },
+                        { label: "Tên công ty", value: company, set: setCompany, placeholder: "Công ty ABC" },
+                      ].map(f => (
+                        <div key={f.label}>
+                          <label style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.1em", display: "block", marginBottom: 6 }}>{f.label}</label>
+                          <input value={f.value} onChange={e => f.set(e.target.value)} placeholder={f.placeholder}
+                            style={{ width: "100%", background: "rgba(15,23,42,0.6)", border: `1px solid ${DS.border}`, borderRadius: 10, padding: "11px 14px", color: DS.text, fontSize: 14, outline: "none", fontFamily: DS.body, boxSizing: "border-box" }} />
+                        </div>
                       ))}
                     </div>
-
-                    {/* Payment method */}
-                <div className="mb-4">
- <label style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.1em", display: "block", marginBottom: 8 }}>Hình thức thanh toán</label>
- <div className="flex gap-3 flex-wrap">
- {paymentMethods.map(m => {
- const isActive = paymentMethod === m.value;
- return (
- <button key={m.value}
- onClick={() => { setPaymentMethod(m.value); setQrData(null); setQrError(""); }}
- style={{
- padding: "10px 18px", borderRadius: 10, fontSize: 13, cursor: "pointer",
- background: isActive ? `${DS.green}15` : "rgba(15,23,42,0.5)",
- border: isActive ? `1.5px solid ${DS.green}60` : `1px solid ${DS.border}`,
- color: isActive ? DS.green : DS.text3,
- display: "flex", alignItems: "center", gap: 8, fontFamily: DS.mono, transition: "all 0.2s",
- }}>
- <span style={{ fontSize: 16 }}>{m.icon}</span>{m.label}
- {m.hasDynamicQR && <span style={{ fontSize: 9, padding: "1px 5px", borderRadius: 4, background: `${DS.green}15`, color: DS.green }}>QR</span>}
- </button>
- );
- })}
- </div>
- </div>
-
- {/* Bank transfer — show account info + generated QR */}
- {paymentMethod === "bank" && (
- <div className="mb-4 p-4 rounded-xl" style={{ background: `${DS.blue}08`, border: `1px solid ${DS.blue}20` }}>
- <div style={{ color: DS.blue, fontSize: 11, fontFamily: DS.mono, marginBottom: 8 }}>◈ Thông tin tài khoản ngân hàng</div>
- {bankInfo?.accountNo ? (
- <div className="space-y-2">
- {/* QR image: generated dynamically or static fallback */}
- {qrData?.qrDataURL ? (
- <div className="text-center mb-3">
- <div style={{ color: DS.green, fontSize: 10, fontFamily: DS.mono, marginBottom: 6 }}>QUÉT MÃ QR ĐỂ CHUYỂN KHOẢN</div>
- <img src={qrData.qrDataURL} alt="Bank QR" style={{ maxWidth: 200, borderRadius: 12, boxShadow: `0 0 20px ${DS.blue}30` }} />
- <div style={{ color: DS.text4, fontSize: 11, marginTop: 6 }}>
- Số tiền: <span style={{ color: DS.blue, fontWeight: 700 }}>{qrData.amount?.toLocaleString()} VND</span>
- </div>
- <button
- onClick={() => {
- const disc = Math.round(lpDiscount * lpRate.lpPerVnd);
- const grandTotal = Math.round((currentSubtotal - disc) * (1 + vatRate));
- const pay = paymentPlan === "100" ? grandTotal : Math.round(grandTotal * 0.5);
- if (pay >= 1000) generatePaymentQr(pay);
- }}
- style={{ marginTop: 8, padding: "6px 16px", borderRadius: 8, fontSize: 11, fontFamily: DS.mono, cursor: "pointer", background: `${DS.blue}15`, border: `1px solid ${DS.blue}40`, color: DS.blue }}
- >
- Tạo QR mới
- </button>
- </div>
- ) : qrLoading ? (
- <div className="text-center py-4">
- <div style={{ width: 24, height: 24, border: `2px solid ${DS.border}`, borderTop: `2px solid ${DS.blue}`, borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 8px" }} />
- <div style={{ color: DS.text4, fontSize: 11 }}>Đang tạo mã QR...</div>
- </div>
- ) : (
- <div className="text-center mb-3">
- <div style={{ color: DS.text4, fontSize: 11, marginBottom: 6 }}>Quét mã QR bằng app ngân hàng</div>
- <button
- onClick={() => {
- const disc = Math.round(lpDiscount * lpRate.lpPerVnd);
- const grandTotal = Math.round((currentSubtotal - disc) * (1 + vatRate));
- const pay = paymentPlan === "100" ? grandTotal : Math.round(grandTotal * 0.5);
- if (pay >= 1000) generatePaymentQr(pay);
- }}
- style={{ padding: "10px 20px", borderRadius: 10, fontSize: 12, fontFamily: DS.mono, cursor: "pointer", background: `${DS.blue}15`, border: `1px solid ${DS.blue}40`, color: DS.blue }}
- >
- Tạo mã QR thanh toán
- </button>
- </div>
- )}
- {/* Account details */}
- <div className="space-y-1">
- <div className="flex justify-between text-xs" style={{ color: DS.text4, fontFamily: DS.mono }}>
- <span>Ngân hàng</span>
- <span style={{ color: DS.text }}>{bankInfo.bankName || "—"}</span>
- </div>
- <div className="flex justify-between text-xs" style={{ color: DS.text4, fontFamily: DS.mono }}>
- <span>Số TK</span>
- <span style={{ color: DS.blue, fontWeight: 700 }}>{bankInfo.accountNo || "—"}</span>
- </div>
- <div className="flex justify-between text-xs" style={{ color: DS.text4, fontFamily: DS.mono }}>
- <span>Chủ TK</span>
- <span style={{ color: DS.text }}>{bankInfo.accountName || "—"}</span>
- </div>
- {bankInfo.phone && (
- <div className="flex justify-between text-xs" style={{ color: DS.text4, fontFamily: DS.mono }}>
- <span>ĐT</span>
- <span style={{ color: DS.text }}>{bankInfo.phone}</span>
- </div>
- )}
- </div>
- {/* Nội dung chuyển khoản */}
- <div className="mt-3 pt-3" style={{ borderTop: `1px dashed ${DS.border}` }}>
- <div style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, marginBottom: 4 }}>NỘI DUNG CHUYỂN KHOẢN</div>
- <div style={{ color: DS.blue, fontSize: 12, fontFamily: DS.mono, fontWeight: 700 }}>
- Thanh toan don LOOP #{newOrderId?.slice(-6).toUpperCase() || "—"}
- </div>
- </div>
- </div>
- ) : (
- <div style={{ color: DS.text4, fontSize: 12 }}>Chưa có thông tin tài khoản.</div>
- )}
- </div>
- )}
-
-
- {/* MoMo static QR fallback */}
- {paymentMethod === "momo" && !qrData && (
- <div className="mb-4 p-4 rounded-xl" style={{ background: `${DS.pink}08`, border: `1px solid ${DS.pink}20` }}>
- <div style={{ color: DS.pink, fontSize: 11, fontFamily: DS.mono, marginBottom: 8 }}>◈ Thanh toán MoMo</div>
- {staticQrInfo.momo?.qrUrl ? (
- <img src={staticQrInfo.momo.qrUrl} alt="MoMo QR" style={{ maxWidth: 200, borderRadius: 8 }} />
- ) : (
- <div style={{ color: DS.text4, fontSize: 12 }}>Admin chưa cấu hình QR MoMo.</div>
- )}
- </div>
- )}
-
- {/* QR loading — shown when MoMo/VNPay API is called */}
- {qrLoading && (
- <div className="mb-4 p-4 rounded-xl text-center" style={{ background: DS.bgCard, border: `1px solid ${DS.border}` }}>
- <div style={{ width: 24, height: 24, border: `2px solid ${DS.border}`, borderTop: `2px solid ${DS.green}`, borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 8px" }} />
- <div style={{ color: DS.text3, fontSize: 12 }}>
- {paymentMethod === "momo" ? "Đang chuyển hướng MoMo..." : "Đang chuyển hướng VNPay..."}
- </div>
- </div>
- )}
- {qrError && (
- <div className="mb-4 p-3 rounded-lg" style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)", color: "#FCA5A5", fontSize: 12 }}>
- {qrError}
- </div>
- )}
-
- {/* LP redemption */}
-                    {lpBalance > 0 && (
-                      <div className="mb-4 p-4 rounded-xl" style={{ background: `${DS.purple}08`, border: `1px solid ${DS.purple}20` }}>
-                        <div className="flex items-center justify-between mb-2">
-                          <div>
-                            <div style={{ color: DS.purple, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.1em", marginBottom: 2 }}>◈ Sử dụng LP giảm giá</div>
-                            <div style={{ color: DS.text4, fontSize: 10 }}>Số dư: {lpBalance.toLocaleString()} LP · Tối đa dùng: {maxLpRedeem.toLocaleString()} LP (20%)</div>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <button onClick={() => setLpDiscount(Math.max(0, lpDiscount - 1000))} style={{ width: 28, height: 28, borderRadius: 7, background: `${DS.purple}15`, border: `1px solid ${DS.purple}30`, color: DS.purple, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><Minus size={12} /></button>
-                          <div style={{ color: DS.purple, fontFamily: DS.mono, fontSize: 15, fontWeight: 700, minWidth: 80, textAlign: "center" }}>{lpDiscount.toLocaleString()} LP</div>
-                          <button onClick={() => setLpDiscount(Math.min(maxLpRedeem, lpDiscount + 1000))} style={{ width: 28, height: 28, borderRadius: 7, background: `${DS.purple}15`, border: `1px solid ${DS.purple}30`, color: DS.purple, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><Plus size={12} /></button>
-                        </div>
-                      </div>
-                    )}
                   </div>
 
-                  {/* Submit button */}
-                  <button onClick={handleSubmit} disabled={!name || !email || !phone || submitLoading}
-                    style={{
-                      background: (name && email && phone && !submitLoading) ? GRD.primary : "rgba(255,255,255,0.05)",
-                      color: (name && email && phone && !submitLoading) ? "#fff" : DS.text4,
-                      fontSize: 15, fontWeight: 700, padding: "14px 32px", borderRadius: 14, border: "none",
-                      cursor: (name && email && phone && !submitLoading) ? "pointer" : "not-allowed",
-                      display: "flex", alignItems: "center", gap: 10, justifyContent: "center",
-                      boxShadow: (name && email && phone && !submitLoading) ? "0 0 30px rgba(129,140,248,0.4)" : "none",
-                      transition: "all 0.3s", width: "100%",
-                    }}>
-                    <Shield size={16} />
-                    {submitLoading ? t("submitting") : t("submitButton")}
-                    {!submitLoading && <ArrowRight size={15} />}
-                  </button>
-                  <div style={{ color: DS.text5, fontSize: 11, marginTop: 10, textAlign: "center" }}>
-                    {paymentPlan === "100" ? "Thanh toán 100% ngay — giảm 5%." : t("depositNote")}
+                  <div className="mb-5">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `${DS.blue}15` }}>
+                        <Calendar size={14} style={{ color: DS.blue }} />
+                      </div>
+                      <h4 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 16, fontWeight: 700, letterSpacing: "0.04em" }}>Lịch trình</h4>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.1em", display: "block", marginBottom: 6 }}>Ngày bắt đầu</label>
+                        <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
+                          style={{ width: "100%", background: "rgba(15,23,42,0.6)", border: `1px solid ${DS.border}`, borderRadius: 10, padding: "11px 14px", color: DS.text, fontSize: 14, outline: "none", fontFamily: DS.body, boxSizing: "border-box" }} />
+                      </div>
+                      <div>
+                        <label style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.1em", display: "block", marginBottom: 6 }}>Thời gian thực hiện</label>
+                        <div className="flex flex-wrap gap-2">
+                          {[{ val: "2", label: "2 tuần" }, { val: "4", label: "1 tháng" }, { val: "8", label: "2 tháng" }, { val: "12", label: "3 tháng" }, { val: "24", label: "6 tháng" }, { val: "custom", label: t("custom") }].map(d => (
+                            <button key={d.val} onClick={() => setDuration(d.val)}
+                              style={{
+                                padding: "7px 12px", borderRadius: 8, fontSize: 11, fontFamily: DS.mono, cursor: "pointer",
+                                background: duration === d.val ? GRD.primary : "rgba(15,23,42,0.6)",
+                                border: duration === d.val ? "none" : `1px solid ${DS.border}`,
+                                color: duration === d.val ? "#fff" : DS.text3
+                              }}>{d.label}</button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mb-5">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `${DS.purple}15` }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={DS.purple} strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
+                      </div>
+                      <h4 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 16, fontWeight: 700, letterSpacing: "0.04em" }}>Ghi chú thêm</h4>
+                    </div>
+                    <textarea value={talentNote} onChange={e => setTalentNote(e.target.value)} placeholder="Yêu cầu đặc biệt, thông tin bổ sung..." rows={3}
+                      style={{ width: "100%", background: "rgba(15,23,42,0.6)", border: `1px solid ${DS.border}`, borderRadius: 10, padding: "11px 14px", color: DS.text, fontSize: 14, outline: "none", fontFamily: DS.body, boxSizing: "border-box", resize: "vertical" }} />
                   </div>
                 </div>
               )}
-            </div>
-          )}
+
+              {/* ── STEP 4: Payment + Submit ────────────────────────────── */}
+              {step === 4 && (
+                <div>
+                  {submitError && (
+                    <div className="text-center py-8">
+                      <div style={{ color: DS.red, fontSize: 13, marginBottom: 12, padding: "12px 16px", background: "rgba(239,68,68,0.1)", borderRadius: 10, border: "1px solid rgba(239,68,68,0.25)" }}>{submitError}</div>
+                      <button onClick={() => setSubmitError("")} style={{ color: DS.text4, fontSize: 12, background: "none", border: "none", cursor: "pointer", fontFamily: DS.mono }}>{t("closeAndRetry")}</button>
+                    </div>
+                  )}
+
+                  {submitted && (
+                    <motion.div className="text-center py-12" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
+                      <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6" style={{ background: "rgba(34,197,94,0.15)", border: "2px solid rgba(34,197,94,0.4)" }}><Check size={36} style={{ color: DS.green }} /></div>
+                      <h3 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 24, fontWeight: 900, letterSpacing: "0.06em", marginBottom: 12 }}>{t("successTitle")}</h3>
+                      {newOrderId && (
+                        <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 rounded-xl" style={{ background: "rgba(59,130,246,0.1)", border: "1px solid rgba(59,130,246,0.25)" }}>
+                          <span style={{ color: DS.text4, fontSize: 12 }}>{t("orderCode")}:</span>
+                          <span style={{ color: DS.blue, fontFamily: DS.mono, fontSize: 14, fontWeight: 700 }}>{newOrderId}</span>
+                        </div>
+                      )}
+                      <p style={{ color: DS.text3, fontSize: 15, lineHeight: 1.8, maxWidth: 400, margin: "0 auto 32px" }}>{t("successMessage")}</p>
+                      <div className="inline-block px-5 py-3 rounded-xl mb-6" style={{ background: "rgba(129,140,248,0.1)", border: "1px solid rgba(129,140,248,0.3)" }}>
+                        <div style={{ color: DS.purple, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.15em", marginBottom: 4 }}>LP ĐIỂM THƯỞNG ĐĂNG KÝ</div>
+                        <div style={{ color: DS.purple, fontFamily: DS.heading, fontSize: 24, fontWeight: 900 }}>+{lpEarnedDisplay.toLocaleString()} LP</div>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {!submitted && !submitError && (
+                    <div>
+                      <div className="mb-6 p-5 rounded-2xl" style={{ background: "rgba(15,23,42,0.7)", border: `1px solid ${DS.green}15` }}>
+                        <div style={{ color: DS.green, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.22em", marginBottom: 8 }}>THANH TOÁN</div>
+                        <h3 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 26, fontWeight: 900, letterSpacing: "0.04em", marginBottom: 6 }}>Phương thức thanh toán</h3>
+                        <p style={{ color: DS.text3, fontSize: 14, lineHeight: 1.7 }}>Chọn hình thức thanh toán và xác nhận đơn hàng.</p>
+                      </div>
+
+                      {/* Order tags */}
+                      <div className="mb-5 p-4 rounded-xl flex items-center justify-between flex-wrap gap-3" style={{ background: "rgba(15,23,42,0.7)", border: `1px solid ${DS.border}` }}>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedPkg && <span className="px-3 py-1.5 rounded-lg text-xs" style={{ background: `${pkgColor}15`, color: pkgColor, border: `1px solid ${pkgColor}30`, fontFamily: DS.mono, fontWeight: 600 }}>{selectedPkg.name}</span>}
+                          {selectedFeatures.length > 0 && <span className="px-3 py-1.5 rounded-lg text-xs" style={{ background: `${DS.cyan}12`, color: DS.cyan, border: `1px solid ${DS.cyan}30`, fontFamily: DS.mono }}>+{selectedFeatures.length} tính năng</span>}
+                          {selectedExtras.length > 0 && <span className="px-3 py-1.5 rounded-lg text-xs" style={{ background: `${DS.purple}12`, color: DS.purple, border: `1px solid ${DS.purple}30`, fontFamily: DS.mono }}>+{selectedExtras.length} dịch vụ</span>}
+                          {domainName && <span className="px-3 py-1.5 rounded-lg text-xs" style={{ background: `${DS.cyan}12`, color: DS.cyan, border: `1px solid ${DS.cyan}30`, fontFamily: DS.mono }}>🌐 {domainName}</span>}
+                        </div>
+                        <button onClick={() => setStep(0)} className="px-3 py-1.5 rounded-lg text-xs" style={{ color: DS.blue, background: `${DS.blue}10`, border: `1px solid ${DS.blue}30`, fontFamily: DS.mono, cursor: "pointer" }}>← Sửa lựa chọn</button>
+                      </div>
+
+                      {/* Payment plan */}
+                      <div className="mb-5">
+                        <div className="flex items-center gap-3 mb-4">
+                          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `${DS.green}15` }}>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={DS.green} strokeWidth="2"><rect x="1" y="4" width="22" height="16" rx="2" /><line x1="1" y1="10" x2="23" y2="10" /></svg>
+                          </div>
+                          <h4 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 16, fontWeight: 700, letterSpacing: "0.04em" }}>Hình thức thanh toán</h4>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                          {([["50", DS.blue, t("paymentPlan50"), t("paymentPlan50Desc")] as const, ["100", DS.green, t("paymentPlan100"), t("paymentPlan100Desc")] as const]).map(([plan, clr, label, desc]) => (
+                            <button key={plan} onClick={() => setPaymentPlan(plan as "50" | "100")}
+                              style={{
+                                padding: "14px 16px", borderRadius: 12, cursor: "pointer", textAlign: "left",
+                                background: paymentPlan === plan ? `${clr}12` : "rgba(15,23,42,0.5)",
+                                border: paymentPlan === plan ? `1.5px solid ${clr}60` : `1px solid ${DS.border}`,
+                                color: paymentPlan === plan ? DS.text : DS.text3
+                              }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                                <div style={{ width: 16, height: 16, borderRadius: "50%", border: `2px solid ${paymentPlan === plan ? clr : DS.text4}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                  {paymentPlan === plan && <div style={{ width: 8, height: 8, borderRadius: "50%", background: clr }} />}
+                                </div>
+                                <span style={{ fontFamily: DS.mono, fontWeight: 700, fontSize: 13 }}>{label}</span>
+                                {plan === "100" && <span style={{ fontSize: 10, padding: "2px 6px", borderRadius: 6, background: `${DS.green}15`, color: DS.green, fontFamily: DS.mono }}>−5%</span>}
+                              </div>
+                              <div style={{ color: DS.text4, fontSize: 11, marginLeft: 24, lineHeight: 1.5 }}>{desc}</div>
+                            </button>
+                          ))}
+                        </div>
+
+                        {/* Payment method */}
+                        <div className="mb-4">
+                          <label style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.1em", display: "block", marginBottom: 8 }}>Hình thức thanh toán</label>
+                          <div className="flex gap-3 flex-wrap">
+                            {paymentMethods.map(m => {
+                              const isActive = paymentMethod === m.value;
+                              return (
+                                <button key={m.value}
+                                  onClick={() => { setPaymentMethod(m.value); setQrData(null); setQrError(""); }}
+                                  style={{
+                                    padding: "10px 18px", borderRadius: 10, fontSize: 13, cursor: "pointer",
+                                    background: isActive ? `${DS.green}15` : "rgba(15,23,42,0.5)",
+                                    border: isActive ? `1.5px solid ${DS.green}60` : `1px solid ${DS.border}`,
+                                    color: isActive ? DS.green : DS.text3,
+                                    display: "flex", alignItems: "center", gap: 8, fontFamily: DS.mono, transition: "all 0.2s",
+                                  }}>
+                                  <span style={{ fontSize: 16 }}>{m.icon}</span>{m.label}
+                                  {m.hasDynamicQR && <span style={{ fontSize: 9, padding: "1px 5px", borderRadius: 4, background: `${DS.green}15`, color: DS.green }}>QR</span>}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Bank transfer — show account info + generated QR */}
+                        {paymentMethod === "bank" && (
+                          <div className="mb-4 p-4 rounded-xl" style={{ background: `${DS.blue}08`, border: `1px solid ${DS.blue}20` }}>
+                            <div style={{ color: DS.blue, fontSize: 11, fontFamily: DS.mono, marginBottom: 8 }}>◈ Thông tin tài khoản ngân hàng</div>
+                            {bankInfo?.accountNo ? (
+                              <div className="space-y-2">
+                                {/* QR image: generated dynamically or static fallback */}
+                                {qrData?.qrDataURL ? (
+                                  <div className="text-center mb-3">
+                                    <div style={{ color: DS.green, fontSize: 10, fontFamily: DS.mono, marginBottom: 6 }}>QUÉT MÃ QR ĐỂ CHUYỂN KHOẢN</div>
+                                    <img src={qrData.qrDataURL} alt="Bank QR" style={{ maxWidth: 200, borderRadius: 12, boxShadow: `0 0 20px ${DS.blue}30` }} />
+                                    <div style={{ color: DS.text4, fontSize: 11, marginTop: 6 }}>
+                                      Số tiền: <span style={{ color: DS.blue, fontWeight: 700 }}>{qrData.amount?.toLocaleString()} VND</span>
+                                    </div>
+                                    <button
+                                      onClick={() => {
+                                        const disc = Math.round(lpDiscount * lpRate.lpPerVnd);
+                                        const grandTotal = Math.round((currentSubtotal - disc) * (1 + vatRate));
+                                        const pay = paymentPlan === "100" ? grandTotal : Math.round(grandTotal * 0.5);
+                                        if (pay >= 1000) generatePaymentQr(pay);
+                                      }}
+                                      style={{ marginTop: 8, padding: "6px 16px", borderRadius: 8, fontSize: 11, fontFamily: DS.mono, cursor: "pointer", background: `${DS.blue}15`, border: `1px solid ${DS.blue}40`, color: DS.blue }}
+                                    >
+                                      Tạo QR mới
+                                    </button>
+                                  </div>
+                                ) : qrLoading ? (
+                                  <div className="text-center py-4">
+                                    <div style={{ width: 24, height: 24, border: `2px solid ${DS.border}`, borderTop: `2px solid ${DS.blue}`, borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 8px" }} />
+                                    <div style={{ color: DS.text4, fontSize: 11 }}>Đang tạo mã QR...</div>
+                                  </div>
+                                ) : (
+                                  <div className="text-center mb-3">
+                                    <div style={{ color: DS.text4, fontSize: 11, marginBottom: 6 }}>Quét mã QR bằng app ngân hàng</div>
+                                    <button
+                                      onClick={() => {
+                                        const disc = Math.round(lpDiscount * lpRate.lpPerVnd);
+                                        const grandTotal = Math.round((currentSubtotal - disc) * (1 + vatRate));
+                                        const pay = paymentPlan === "100" ? grandTotal : Math.round(grandTotal * 0.5);
+                                        if (pay >= 1000) generatePaymentQr(pay);
+                                      }}
+                                      style={{ padding: "10px 20px", borderRadius: 10, fontSize: 12, fontFamily: DS.mono, cursor: "pointer", background: `${DS.blue}15`, border: `1px solid ${DS.blue}40`, color: DS.blue }}
+                                    >
+                                      Tạo mã QR thanh toán
+                                    </button>
+                                  </div>
+                                )}
+                                {/* Account details */}
+                                <div className="space-y-1">
+                                  <div className="flex justify-between text-xs" style={{ color: DS.text4, fontFamily: DS.mono }}>
+                                    <span>Ngân hàng</span>
+                                    <span style={{ color: DS.text }}>{bankInfo.bankName || "—"}</span>
+                                  </div>
+                                  <div className="flex justify-between text-xs" style={{ color: DS.text4, fontFamily: DS.mono }}>
+                                    <span>Số TK</span>
+                                    <span style={{ color: DS.blue, fontWeight: 700 }}>{bankInfo.accountNo || "—"}</span>
+                                  </div>
+                                  <div className="flex justify-between text-xs" style={{ color: DS.text4, fontFamily: DS.mono }}>
+                                    <span>Chủ TK</span>
+                                    <span style={{ color: DS.text }}>{bankInfo.accountName || "—"}</span>
+                                  </div>
+                                  {bankInfo.phone && (
+                                    <div className="flex justify-between text-xs" style={{ color: DS.text4, fontFamily: DS.mono }}>
+                                      <span>ĐT</span>
+                                      <span style={{ color: DS.text }}>{bankInfo.phone}</span>
+                                    </div>
+                                  )}
+                                </div>
+                                {/* Nội dung chuyển khoản */}
+                                <div className="mt-3 pt-3" style={{ borderTop: `1px dashed ${DS.border}` }}>
+                                  <div style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, marginBottom: 4 }}>NỘI DUNG CHUYỂN KHOẢN</div>
+                                  <div style={{ color: DS.blue, fontSize: 12, fontFamily: DS.mono, fontWeight: 700 }}>
+                                    Thanh toan don LOOP #{newOrderId?.slice(-6).toUpperCase() || "—"}
+                                  </div>
+                                </div>
+                              </div>
+                            ) : (
+                              <div style={{ color: DS.text4, fontSize: 12 }}>Chưa có thông tin tài khoản.</div>
+                            )}
+                          </div>
+                        )}
+
+
+                        {/* MoMo static QR fallback */}
+                        {paymentMethod === "momo" && !qrData && (
+                          <div className="mb-4 p-4 rounded-xl" style={{ background: `${DS.pink}08`, border: `1px solid ${DS.pink}20` }}>
+                            <div style={{ color: DS.pink, fontSize: 11, fontFamily: DS.mono, marginBottom: 8 }}>◈ Thanh toán MoMo</div>
+                            {staticQrInfo.momo?.qrUrl ? (
+                              <img src={staticQrInfo.momo.qrUrl} alt="MoMo QR" style={{ maxWidth: 200, borderRadius: 8 }} />
+                            ) : (
+                              <div style={{ color: DS.text4, fontSize: 12 }}>Admin chưa cấu hình QR MoMo.</div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* QR loading — shown when MoMo/VNPay API is called */}
+                        {qrLoading && (
+                          <div className="mb-4 p-4 rounded-xl text-center" style={{ background: DS.bgCard, border: `1px solid ${DS.border}` }}>
+                            <div style={{ width: 24, height: 24, border: `2px solid ${DS.border}`, borderTop: `2px solid ${DS.green}`, borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 8px" }} />
+                            <div style={{ color: DS.text3, fontSize: 12 }}>
+                              {paymentMethod === "momo" ? "Đang chuyển hướng MoMo..." : "Đang chuyển hướng VNPay..."}
+                            </div>
+                          </div>
+                        )}
+                        {qrError && (
+                          <div className="mb-4 p-3 rounded-lg" style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)", color: "#FCA5A5", fontSize: 12 }}>
+                            {qrError}
+                          </div>
+                        )}
+
+                        {/* LP redemption */}
+                        {lpBalance > 0 && (
+                          <div className="mb-4 p-4 rounded-xl" style={{ background: `${DS.purple}08`, border: `1px solid ${DS.purple}20` }}>
+                            <div className="flex items-center justify-between mb-2">
+                              <div>
+                                <div style={{ color: DS.purple, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.1em", marginBottom: 2 }}>◈ Sử dụng LP giảm giá</div>
+                                <div style={{ color: DS.text4, fontSize: 10 }}>Số dư: {lpBalance.toLocaleString()} LP · Tối đa dùng: {maxLpRedeem.toLocaleString()} LP (20%)</div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <button onClick={() => setLpDiscount(Math.max(0, lpDiscount - 1000))} style={{ width: 28, height: 28, borderRadius: 7, background: `${DS.purple}15`, border: `1px solid ${DS.purple}30`, color: DS.purple, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><Minus size={12} /></button>
+                              <div style={{ color: DS.purple, fontFamily: DS.mono, fontSize: 15, fontWeight: 700, minWidth: 80, textAlign: "center" }}>{lpDiscount.toLocaleString()} LP</div>
+                              <button onClick={() => setLpDiscount(Math.min(maxLpRedeem, lpDiscount + 1000))} style={{ width: 28, height: 28, borderRadius: 7, background: `${DS.purple}15`, border: `1px solid ${DS.purple}30`, color: DS.purple, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><Plus size={12} /></button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Submit button */}
+                      <button onClick={handleSubmit} disabled={!name || !email || !phone || submitLoading}
+                        style={{
+                          background: (name && email && phone && !submitLoading) ? GRD.primary : "rgba(255,255,255,0.05)",
+                          color: (name && email && phone && !submitLoading) ? "#fff" : DS.text4,
+                          fontSize: 15, fontWeight: 700, padding: "14px 32px", borderRadius: 14, border: "none",
+                          cursor: (name && email && phone && !submitLoading) ? "pointer" : "not-allowed",
+                          display: "flex", alignItems: "center", gap: 10, justifyContent: "center",
+                          boxShadow: (name && email && phone && !submitLoading) ? "0 0 30px rgba(129,140,248,0.4)" : "none",
+                          transition: "all 0.3s", width: "100%",
+                        }}>
+                        <Shield size={16} />
+                        {submitLoading ? t("submitting") : t("submitButton")}
+                        {!submitLoading && <ArrowRight size={15} />}
+                      </button>
+                      <div style={{ color: DS.text5, fontSize: 11, marginTop: 10, textAlign: "center" }}>
+                        {paymentPlan === "100" ? "Thanh toán 100% ngay — giảm 5%." : t("depositNote")}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
             </motion.div>
           </AnimatePresence>
@@ -1741,19 +1745,19 @@ export function BookingWizardClient({ locale }: Props) {
 
         </div>
       </section>
-    {/* Package Comparison Modal */}
- <AnimatePresence>
- {showCompareModal && (
- <PackageComparisonModal
- packages={packages}
- currentPackageId={selectedPackage}
- locale={locale}
- onClose={() => setShowCompareModal(false)}
- onSelect={(id) => { setSelectedPackage(id); setShowCompareModal(false); }}
- />
- )}
- </AnimatePresence>
+      {/* Package Comparison Modal */}
+      <AnimatePresence>
+        {showCompareModal && (
+          <PackageComparisonModal
+            packages={packages}
+            currentPackageId={selectedPackage}
+            locale={locale}
+            onClose={() => setShowCompareModal(false)}
+            onSelect={(id) => { setSelectedPackage(id); setShowCompareModal(false); }}
+          />
+        )}
+      </AnimatePresence>
 
- <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } `}</style></main>
+      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } `}</style></main>
   );
 }

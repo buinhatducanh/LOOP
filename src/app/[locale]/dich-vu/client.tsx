@@ -6,11 +6,11 @@
  * Fetches from /api/services/pricing (server component passes data).
  */
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 import { DS, GRD, GLOW } from "@/lib/design-tokens";
-import { ArrowRight, ChevronDown } from "lucide-react";
+import { ArrowRight, ChevronDown, Eye, X, Check, Minus, ArrowUpDown, Zap } from "lucide-react";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -124,6 +124,72 @@ const FALLBACK_TIERS: ServiceTier[] = [
   { id: "fb-seo-3", serviceKey: "seo", level: 3, name: "Chuyên Nghiệp", nameEn: "Experience", shortDesc: "SEO toàn diện: content, link building, AI", basePrice: 36_000_000, marketPrice: 48_000_000, lpReward: 360, sortOrder: 3, isActive: true },
 ];
 
+// Features comparison data per service (mock — in production comes from API)
+const SERVICE_FEATURES: Record<string, Array<{
+  label: string;
+  labelEn: string;
+  basic: string | boolean;
+  business: string | boolean;
+  experience: string | boolean;
+}>> = {
+  web: [
+    { label: "Số trang", labelEn: "Pages", basic: "5 trang", business: "15 trang", experience: "Không giới hạn" },
+    { label: "Bản đồ site (Sitemap)", labelEn: "Sitemap XML", basic: true, business: true, experience: true },
+    { label: "Google Analytics", labelEn: "Google Analytics", basic: true, business: true, experience: true },
+    { label: "Tối ưu SEO", labelEn: "SEO Optimization", basic: "Cơ bản", business: "Nâng cao", experience: "AI-powered SEO" },
+    { label: "SSL miễn phí", labelEn: "Free SSL", basic: true, business: true, experience: true },
+    { label: "Responsive", labelEn: "Mobile Responsive", basic: true, business: true, experience: true },
+    { label: "Blog / Tin tức", labelEn: "Blog / News", basic: false, business: true, experience: true },
+    { label: "Form liên hệ", labelEn: "Contact Forms", basic: "1 form", business: "3 forms", experience: "Không giới hạn" },
+    { label: "Tích hợp API", labelEn: "API Integration", basic: false, business: true, experience: true },
+    { label: "Tốc độ tải", labelEn: "Page Load Speed", basic: "Trung bình", business: "Nhanh", experience: "≤1.5s" },
+    { label: "Bảo hành", labelEn: "Warranty", basic: "1 tháng", business: "3 tháng", experience: "6 tháng" },
+    { label: "Hỗ trợ ưu tiên", labelEn: "Priority Support", basic: false, business: "Email", experience: "24/7" },
+    { label: "Code nguồn", labelEn: "Source Code", basic: true, business: true, experience: true },
+    { label: "Thiết kế độc quyền", labelEn: "Custom Design", basic: "Template", business: "Bán custom", experience: "100% custom" },
+    { label: "Multi-language", labelEn: "Multi-language", basic: false, business: "2 ngôn ngữ", experience: "5+ ngôn ngữ" },
+  ],
+  app: [
+    { label: "Platform", labelEn: "Platform", basic: "Web App", business: "Web + Mobile Web", experience: "Web + iOS + Android" },
+    { label: "Người dùng", labelEn: "Users", basic: "50 người", business: "500 người", experience: "Không giới hạn" },
+    { label: "API endpoints", labelEn: "API Endpoints", basic: "10 endpoints", business: "50 endpoints", experience: "Không giới hạn" },
+    { label: "Database", labelEn: "Database", basic: "Shared DB", business: "Dedicated DB", experience: "Distributed DB" },
+    { label: "Auth & Roles", labelEn: "Auth & Roles", basic: "Email/Pass", business: "OAuth + Roles", experience: "SSO + MFA + Roles" },
+    { label: "Payment gateway", labelEn: "Payment Gateway", basic: false, business: true, experience: true },
+    { label: "Analytics dashboard", labelEn: "Analytics Dashboard", basic: false, business: true, experience: true },
+    { label: "AI features", labelEn: "AI Features", basic: false, business: false, experience: true },
+    { label: "Email marketing", labelEn: "Email Marketing", basic: false, business: true, experience: true },
+    { label: "Bảo hành", labelEn: "Warranty", basic: "1 tháng", business: "3 tháng", experience: "6 tháng" },
+    { label: "Hosting & Domain", labelEn: "Hosting & Domain", basic: "1 năm", business: "1 năm", experience: "Trọn đời" },
+    { label: "Code nguồn", labelEn: "Source Code", basic: true, business: true, experience: true },
+  ],
+  dashboard: [
+    { label: "Biểu đồ & Báo cáo", labelEn: "Charts & Reports", basic: "10 charts", business: "30 charts", experience: "Không giới hạn" },
+    { label: "Người dùng", labelEn: "Users", basic: "5 users", business: "50 users", experience: "Không giới hạn" },
+    { label: "Xuất dữ liệu", labelEn: "Data Export", basic: "CSV", business: "CSV + PDF + Excel", experience: "CSV + PDF + Excel + API" },
+    { label: "Real-time data", labelEn: "Real-time Data", basic: false, business: true, experience: true },
+    { label: "Custom KPIs", labelEn: "Custom KPIs", basic: false, business: true, experience: true },
+    { label: "Cảnh báo tự động", labelEn: "Auto Alerts", basic: false, business: true, experience: true },
+    { label: "AI Analytics", labelEn: "AI Analytics", basic: false, business: false, experience: true },
+    { label: "Multi-branch", labelEn: "Multi-branch", basic: false, business: true, experience: true },
+    { label: "Mobile app", labelEn: "Mobile App", basic: false, business: false, experience: true },
+    { label: "Bảo hành", labelEn: "Warranty", basic: "1 tháng", business: "3 tháng", experience: "6 tháng" },
+  ],
+  seo: [
+    { label: "Bài viết chuẩn SEO", labelEn: "SEO Articles", basic: "10 bài/tháng", business: "30 bài/tháng", experience: "60 bài/tháng" },
+    { label: "Từ khóa", labelEn: "Keywords", basic: "5 keywords", business: "15 keywords", experience: "40 keywords" },
+    { label: "Backlink", labelEn: "Backlinks", basic: "10 backlinks", business: "50 backlinks", experience: "200 backlinks" },
+    { label: "Google Search Console", labelEn: "GSC Integration", basic: false, business: true, experience: true },
+    { label: "Google Analytics", labelEn: "GA Integration", basic: false, business: true, experience: true },
+    { label: "Local SEO", labelEn: "Local SEO", basic: false, business: true, experience: true },
+    { label: "Technical SEO audit", labelEn: "Technical SEO Audit", basic: "1 lần", business: "Hàng quý", experience: "Hàng tháng" },
+    { label: "Schema markup", labelEn: "Schema Markup", basic: false, business: true, experience: true },
+    { label: "Video SEO", labelEn: "Video SEO", basic: false, business: false, experience: true },
+    { label: "Báo cáo", labelEn: "Reports", basic: "Hàng quý", business: "Hàng tháng", experience: "Hàng tuần + realtime" },
+    { label: "AI content", labelEn: "AI Content", basic: false, business: false, experience: true },
+  ],
+};
+
 const FAQ_ITEMS = [
   {
     q: { vi: "Gói Basic và Business khác nhau thế nào?", en: "What is the difference between Basic and Business?" },
@@ -166,7 +232,303 @@ function getLocaleText(vi: string | null | undefined, en: string | null | undefi
   return ((en ?? vi ?? "") as string);
 }
 
-// ── Package Card ────────────────────────────────────────────────────────────────
+// ── Comparison Modal ────────────────────────────────────────────────────────────
+
+function ComparisonModal({
+  serviceKey,
+  tiers,
+  locale,
+  color,
+  onClose,
+}: {
+  serviceKey: string;
+  tiers: ServiceTier[];
+  locale: string;
+  color: string;
+  onClose: () => void;
+}) {
+  const features = SERVICE_FEATURES[serviceKey] ?? [];
+  const meta = SERVICE_META[serviceKey];
+  const isVi = locale === "vi";
+
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) onClose();
+  };
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={handleBackdropClick}
+        style={{
+          position: "fixed", inset: 0, zIndex: 9999,
+          background: "rgba(0,0,0,0.8)",
+          backdropFilter: "blur(8px)",
+          display: "flex", alignItems: "flex-start", justifyContent: "center",
+          padding: "24px 16px",
+          overflowY: "auto",
+        }}
+      >
+        <motion.div
+          initial={{ opacity: 0, y: 40, scale: 0.96 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 20, scale: 0.97 }}
+          transition={{ type: "spring", damping: 25, stiffness: 300 }}
+          style={{
+            background: DS.bg,
+            border: `1px solid ${DS.border}`,
+            borderRadius: 24,
+            width: "100%",
+            maxWidth: 960,
+            overflow: "hidden",
+            boxShadow: `0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px ${color}20`,
+            position: "relative",
+          }}
+        >
+          {/* Header */}
+          <div style={{
+            padding: "24px 28px 20px",
+            borderBottom: `1px solid ${DS.border}`,
+            background: `linear-gradient(135deg, ${color}12, transparent)`,
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div style={{
+                width: 44, height: 44, borderRadius: 14,
+                background: `${color}20`,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 22,
+              }}>
+                {meta.icon}
+              </div>
+              <div>
+                <h2 style={{
+                  fontFamily: DS.heading, fontSize: 20, fontWeight: 800,
+                  color: DS.text,
+                }}>
+                  {isVi ? "SO SÁNH CHI TIẾT" : "DETAILED COMPARISON"}
+                </h2>
+                <p style={{ color: DS.text4, fontSize: 12, marginTop: 2 }}>
+                  {meta.heroTitle[locale] ?? meta.heroTitle.vi}
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={onClose}
+              style={{
+                width: 40, height: 40, borderRadius: 12,
+                background: DS.bgCard, border: `1px solid ${DS.border}`,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                cursor: "pointer", color: DS.text3, transition: "all 0.2s",
+              }}
+            >
+              <X size={18} />
+            </button>
+          </div>
+
+          {/* Tier headers */}
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "1fr repeat(3, minmax(160px, 1fr))",
+            borderBottom: `1px solid ${DS.border}`,
+            background: "rgba(15,23,42,0.5)",
+          }}>
+            {/* Empty top-left corner */}
+            <div style={{ padding: "20px 20px" }} />
+
+            {tiers.map((tier, idx) => {
+              const tierColor = idx === 1 ? color : DS.text4;
+              const tierLabel = isVi ? TIER_LABELS[tier.level] : TIER_LABELS_EN[tier.level];
+              const savingPct = tier.marketPrice && tier.marketPrice > tier.basePrice
+                ? Math.round((1 - tier.basePrice / tier.marketPrice) * 100)
+                : 0;
+
+              return (
+                <div
+                  key={tier.id}
+                  style={{
+                    padding: "20px 16px",
+                    borderLeft: `1px solid ${DS.border}`,
+                    textAlign: "center",
+                    background: idx === 1 ? `${tierColor}08` : "transparent",
+                  }}
+                >
+                  <div style={{
+                    fontSize: 10, fontFamily: DS.mono,
+                    color: tierColor, letterSpacing: "0.15em",
+                    marginBottom: 8,
+                  }}>
+                    {tier.name.toUpperCase()}
+                  </div>
+
+                  {tier.marketPrice && tier.marketPrice > tier.basePrice && (
+                    <div style={{
+                      color: DS.text5, fontSize: 11, fontFamily: DS.mono,
+                      textDecoration: "line-through",
+                    }}>
+                      {fmtVND(tier.marketPrice)}
+                    </div>
+                  )}
+
+                  <div style={{
+                    fontFamily: DS.heading, fontSize: 22, fontWeight: 900,
+                    color: tierColor, lineHeight: 1.1,
+                  }}>
+                    {fmtVND(tier.basePrice)}
+                  </div>
+
+                  {savingPct > 0 && (
+                    <div style={{
+                      marginTop: 6, display: "inline-block",
+                      padding: "2px 8px", borderRadius: 9999,
+                      background: "rgba(34,197,94,0.12)",
+                      color: "#22C55E", fontSize: 10, fontFamily: DS.mono, fontWeight: 700,
+                    }}>
+                      −{savingPct}%
+                    </div>
+                  )}
+
+                  <Link
+                    href={`/${locale}/booking?service=${serviceKey}&package=${tier.id}`}
+                    onClick={onClose}
+                    style={{
+                      display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
+                      marginTop: 12, padding: "8px 10px",
+                      borderRadius: 10,
+                      background: idx === 1
+                        ? `linear-gradient(135deg, ${tierColor}, ${color})`
+                        : "rgba(255,255,255,0.06)",
+                      color: "#fff", fontWeight: 700, fontSize: 12,
+                      textDecoration: "none", fontFamily: DS.mono,
+                      boxShadow: idx === 1 ? `0 4px 16px ${tierColor}40` : "none",
+                      transition: "all 0.2s",
+                    }}
+                  >
+                    {isVi ? "Chọn gói" : "Select"}
+                    <ArrowRight size={12} />
+                  </Link>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Feature rows */}
+          <div style={{ overflowY: "auto", maxHeight: "calc(90vh - 260px)" }}>
+            {features.map((feature, rowIdx) => {
+              const values = [feature.basic, feature.business, feature.experience] as Array<string | boolean>;
+
+              return (
+                <div
+                  key={rowIdx}
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr repeat(3, minmax(160px, 1fr))",
+                    borderBottom: `1px solid ${DS.border}40`,
+                    transition: "background 0.15s",
+                  }}
+                >
+                  {/* Feature label */}
+                  <div style={{
+                    padding: "13px 20px",
+                    display: "flex", alignItems: "center",
+                    borderRight: `1px solid ${DS.border}40`,
+                  }}>
+                    <span style={{ color: DS.text3, fontSize: 13, lineHeight: 1.4 }}>
+                      {isVi ? feature.label : feature.labelEn}
+                    </span>
+                  </div>
+
+                  {/* Values per tier */}
+                  {values.map((val, colIdx) => {
+                    const isHighlighted = colIdx === 1;
+                    const valColor = isHighlighted ? color : DS.text4;
+
+                    return (
+                      <div
+                        key={colIdx}
+                        style={{
+                          padding: "13px 16px",
+                          borderLeft: `1px solid ${DS.border}40`,
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          background: isHighlighted ? `${color}06` : "transparent",
+                          textAlign: "center",
+                        }}
+                      >
+                        {typeof val === "boolean" ? (
+                          val ? (
+                            <div style={{
+                              width: 24, height: 24, borderRadius: 7,
+                              background: isHighlighted ? `${valColor}20` : "rgba(255,255,255,0.06)",
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                            }}>
+                              <Check size={14} color={valColor} strokeWidth={2.5} />
+                            </div>
+                          ) : (
+                            <div style={{
+                              width: 24, height: 24, borderRadius: 7,
+                              background: "rgba(255,255,255,0.03)",
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                            }}>
+                              <Minus size={14} color={DS.text5} strokeWidth={2} />
+                            </div>
+                          )
+                        ) : (
+                          <span style={{
+                            color: isHighlighted ? valColor : DS.text3,
+                            fontSize: 12, fontFamily: DS.mono,
+                            fontWeight: isHighlighted ? 700 : 400,
+                            lineHeight: 1.3,
+                          }}>
+                            {val}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Footer CTA */}
+          <div style={{
+            padding: "20px 28px",
+            borderTop: `1px solid ${DS.border}`,
+            background: "rgba(15,23,42,0.6)",
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            flexWrap: "wrap", gap: 12,
+          }}>
+            <p style={{ color: DS.text4, fontSize: 12 }}>
+              {isVi
+                ? "Giá đã bao gồm VAT. Thanh toán linh hoạt 50/50."
+                : "Prices include VAT. Flexible 50/50 payment available."}
+            </p>
+            <Link
+              href={`/${locale}/booking?service=${serviceKey}`}
+              onClick={onClose}
+              style={{
+                display: "inline-flex", alignItems: "center", gap: 6,
+                padding: "10px 20px", borderRadius: 12,
+                background: GRD.primary, color: "#fff", fontWeight: 700,
+                textDecoration: "none", fontSize: 13, fontFamily: DS.mono,
+                boxShadow: GLOW.pink,
+              }}
+            >
+              <Zap size={14} />
+              {isVi ? "Đặt dịch vụ ngay" : "Book Now"}
+              <ArrowRight size={13} />
+            </Link>
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+// ── Package Card (Enhanced) ────────────────────────────────────────────────────
 
 function PackageCard({
   tier,
@@ -174,17 +536,20 @@ function PackageCard({
   locale,
   isPopular,
   onSelect,
+  onViewDetail,
 }: {
   tier: ServiceTier;
   serviceKey: string;
   locale: string;
   isPopular: boolean;
   onSelect: () => void;
+  onViewDetail: () => void;
 }) {
   const color = TIER_COLORS[serviceKey] ?? DS.blue;
   const tierLabel = locale === "vi" ? TIER_LABELS[tier.level] : TIER_LABELS_EN[tier.level];
   const name = tier.name || tierLabel;
   const shortDesc = tier.shortDesc ?? "";
+  const isVi = locale === "vi";
 
   const savingPct = tier.marketPrice && tier.marketPrice > tier.basePrice
     ? Math.round((1 - tier.basePrice / tier.marketPrice) * 100)
@@ -192,27 +557,35 @@ function PackageCard({
 
   return (
     <motion.div
-      onClick={onSelect}
       className="text-left relative overflow-hidden cursor-pointer"
       style={{
-        background: isPopular ? `${color}0C` : "rgba(15,23,42,0.7)",
+        background: isPopular
+          ? `linear-gradient(160deg, ${color}10, rgba(15,23,42,0.8))`
+          : "rgba(15,23,42,0.7)",
         border: `2px solid ${isPopular ? color + "50" : DS.border}`,
         borderRadius: 20,
         padding: "24px 20px",
-        boxShadow: isPopular ? `0 0 30px ${color}15` : "none",
-        transition: "all 0.2s",
+        boxShadow: isPopular ? `0 0 40px ${color}12, 0 0 0 1px ${color}20` : "none",
+        transition: "all 0.25s",
+        position: "relative",
       }}
-      whileHover={{ scale: 1.02, boxShadow: `0 0 20px ${color}20` }}
+      whileHover={{
+        scale: 1.02,
+        boxShadow: `0 0 30px ${color}25, 0 8px 32px rgba(0,0,0,0.3)`,
+        borderColor: isPopular ? `${color}80` : `${DS.border}`,
+      }}
     >
       {/* Popular / Selected badge */}
       {isPopular && (
         <div style={{
           position: "absolute", top: 0, left: 0, right: 0,
-          padding: "4px", textAlign: "center",
-          background: GRD.primary,
-          fontSize: 9, color: "#fff", fontFamily: DS.mono, letterSpacing: "0.1em",
+          padding: "4px 8px", textAlign: "center",
+          background: `linear-gradient(90deg, ${color}, ${color}CC)`,
+          display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
+          fontSize: 9, color: "#fff", fontFamily: DS.mono, letterSpacing: "0.12em",
         }}>
-          ★ {locale === "vi" ? "PHỔ BIẾN NHẤT" : "MOST POPULAR"}
+          <Zap size={9} />
+          {isVi ? "PHỔ BIẾN NHẤT" : "MOST POPULAR"}
         </div>
       )}
 
@@ -220,10 +593,31 @@ function PackageCard({
         {/* Tier + Price */}
         <div style={{ marginBottom: 16 }}>
           <div style={{
-            color: color, fontSize: 10, fontFamily: DS.mono,
-            letterSpacing: "0.18em", marginBottom: 6,
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            marginBottom: 8,
           }}>
-            {name.toUpperCase()}
+            <div style={{
+              color: color, fontSize: 10, fontFamily: DS.mono,
+              letterSpacing: "0.18em",
+            }}>
+              {name.toUpperCase()}
+            </div>
+            {/* View detail button */}
+            <button
+              onClick={(e) => { e.stopPropagation(); onViewDetail(); }}
+              title={isVi ? "Xem chi tiết" : "View details"}
+              style={{
+                display: "flex", alignItems: "center", gap: 4,
+                padding: "4px 8px", borderRadius: 8,
+                background: `${color}10`,
+                border: `1px solid ${color}25`,
+                color: color, fontSize: 11, fontFamily: DS.mono,
+                cursor: "pointer", transition: "all 0.2s",
+              }}
+            >
+              <Eye size={11} />
+              {isVi ? "So sánh" : "Compare"}
+            </button>
           </div>
 
           {tier.marketPrice && tier.marketPrice > tier.basePrice && (
@@ -243,16 +637,24 @@ function PackageCard({
             {fmtVND(tier.basePrice)}
           </div>
 
-          {savingPct > 0 && (
-            <div
-              className="inline-block mb-3 px-2 py-0.5 rounded text-[10px] font-bold"
-              style={{ background: "rgba(34,197,94,0.12)", color: "#22C55E", fontFamily: DS.mono }}
-            >
-              −{savingPct}%
-            </div>
-          )}
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            {savingPct > 0 && (
+              <div
+                style={{
+                  padding: "2px 8px", borderRadius: 9999,
+                  background: "rgba(34,197,94,0.12)",
+                  color: "#22C55E", fontSize: 10, fontFamily: DS.mono, fontWeight: 700,
+                }}
+              >
+                −{savingPct}%
+              </div>
+            )}
+            <span style={{ color: DS.text5, fontSize: 11, fontFamily: DS.mono }}>
+              {isVi ? "Giá từ" : "From"}
+            </span>
+          </div>
 
-          <p style={{ color: DS.text3, fontSize: 12, lineHeight: 1.5, marginTop: 4 }}>
+          <p style={{ color: DS.text3, fontSize: 12, lineHeight: 1.5, marginTop: 8 }}>
             {shortDesc}
           </p>
         </div>
@@ -264,14 +666,14 @@ function PackageCard({
           style={{
             display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
             padding: "10px", borderRadius: 12,
-            background: isPopular ? GRD.primary : "rgba(255,255,255,0.06)",
+            background: isPopular ? `linear-gradient(135deg, ${color}, ${color}CC)` : "rgba(255,255,255,0.06)",
             color: "#fff", fontWeight: 700, fontSize: 13,
             textDecoration: "none", fontFamily: DS.mono,
-            boxShadow: isPopular ? "0 4px 16px rgba(236,72,153,0.35)" : "none",
+            boxShadow: isPopular ? `0 4px 16px ${color}35` : "none",
             transition: "all 0.2s",
           }}
         >
-          {locale === "vi" ? "Chọn gói này" : "Select this plan"}
+          {isVi ? "Chọn gói này" : "Select this plan"}
           <ArrowRight size={14} />
         </Link>
 
@@ -279,8 +681,10 @@ function PackageCard({
         <div style={{
           textAlign: "center", marginTop: 10,
           color: DS.purple, fontSize: 11, fontFamily: DS.mono,
+          display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
         }}>
-          ◈ +{tier.lpReward.toLocaleString()} LP
+          <span style={{ fontSize: 12 }}>◈</span>
+          +{tier.lpReward.toLocaleString()} LP
         </div>
       </div>
     </motion.div>
@@ -378,6 +782,10 @@ function TrustStrip({ locale }: { locale: string }) {
 
 export function DichVuClient({ data, locale }: Props) {
   const [activeService, setActiveService] = useState<string>("web");
+  const [selectedTier, setSelectedTier] = useState<string | null>(null);
+  const [showComparison, setShowComparison] = useState(false);
+
+  const isVi = locale === "vi";
 
   // Derive tiers from API or fallback
   const allTiers: ServiceTier[] = data?.tiers ?? FALLBACK_TIERS;
@@ -400,6 +808,16 @@ export function DichVuClient({ data, locale }: Props) {
   // Find the "popular" tier (level 2)
   const popularTierId = serviceTiers.find(t => t.level === 2)?.id;
 
+  const handleViewComparison = useCallback((tierId: string) => {
+    setSelectedTier(tierId);
+    setShowComparison(true);
+  }, []);
+
+  const handleCloseComparison = useCallback(() => {
+    setShowComparison(false);
+    setSelectedTier(null);
+  }, []);
+
   return (
     <main style={{ background: DS.bg, minHeight: "100vh", fontFamily: DS.body }}>
       {/* ── Hero ── */}
@@ -417,7 +835,7 @@ export function DichVuClient({ data, locale }: Props) {
             animate={{ opacity: 1, y: 0 }}
           >
             <span style={{ color: DS.pink, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.22em" }}>
-              {locale === "vi" ? "BẢNG GIÁ 2026" : "PRICING 2026"}
+              {isVi ? "BẢNG GIÁ 2026" : "PRICING 2026"}
             </span>
           </motion.div>
 
@@ -432,7 +850,7 @@ export function DichVuClient({ data, locale }: Props) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
           >
-            {locale === "vi"
+            {isVi
               ? "Giải Pháp Số Toàn Diện"
               : "Comprehensive Digital Solutions"}
           </motion.h1>
@@ -443,7 +861,7 @@ export function DichVuClient({ data, locale }: Props) {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
           >
-            {locale === "vi"
+            {isVi
               ? "Website · App/SaaS · Dashboard · SEO — Basic đến Experience. Miễn phí SSL, bảo hành, bàn giao code nguồn."
               : "Website · App/SaaS · Dashboard · SEO — Basic to Experience. Free SSL, warranty, full source code handover."}
           </motion.p>
@@ -496,9 +914,9 @@ export function DichVuClient({ data, locale }: Props) {
         </div>
       </section>
 
-      {/* ── Package Cards ── */}
+      {/* ── Package Cards (Side-by-Side Comparison) ── */}
       <section style={{ padding: "36px 0 48px" }}>
-        <div className="max-w-5xl mx-auto px-6">
+        <div className="max-w-6xl mx-auto px-6">
           {/* Service headline */}
           <div style={{ textAlign: "center", marginBottom: 28 }}>
             <div style={{
@@ -515,11 +933,11 @@ export function DichVuClient({ data, locale }: Props) {
               color: DS.text2, fontSize: 14, fontFamily: DS.mono,
               letterSpacing: "0.05em",
             }}>
-              {locale === "vi" ? "CHỌN GÓI PHÙ HỢP VỚI BẠN" : "CHOOSE THE RIGHT PLAN FOR YOU"}
+              {isVi ? "SO SÁNH CHI TIẾT 3 GÓI" : "DETAILED COMPARISON — 3 PLANS"}
             </h2>
           </div>
 
-          {/* 3 tier cards */}
+          {/* Escalating 4-column comparison table */}
           <AnimatePresence mode="wait">
             <motion.div
               key={activeService}
@@ -527,27 +945,283 @@ export function DichVuClient({ data, locale }: Props) {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.3 }}
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-                gap: 16,
-              }}
             >
               {serviceTiers.length === 0 ? (
-                <div style={{ gridColumn: "1/-1", textAlign: "center", padding: "4rem", color: DS.text4 }}>
-                  {locale === "vi" ? "Đang cập nhật bảng giá..." : "Updating pricing..."}
+                <div style={{ textAlign: "center", padding: "4rem", color: DS.text4 }}>
+                  {isVi ? "Đang cập nhật bảng giá..." : "Updating pricing..."}
                 </div>
               ) : (
-                serviceTiers.map(tier => (
-                  <PackageCard
-                    key={tier.id}
-                    tier={tier}
-                    serviceKey={activeService}
-                    locale={locale}
-                    isPopular={tier.id === popularTierId}
-                    onSelect={() => {}}
-                  />
-                ))
+                <div style={{
+                  background: "rgba(15,23,42,0.5)",
+                  border: `1px solid ${DS.border}`,
+                  borderRadius: 20,
+                  overflow: "hidden",
+                }}>
+                  {/* 4-column header: Feature | Basic | Business | Experience */}
+                  <div style={{
+                    display: "grid",
+                    gridTemplateColumns: "2fr 1fr 1.4fr 1.8fr",
+                    borderBottom: `2px solid ${DS.border}`,
+                  }}>
+                    {/* Column header — feature label area */}
+                    <div style={{
+                      padding: "20px 20px",
+                      borderRight: `1px solid ${DS.border}40`,
+                      display: "flex", alignItems: "flex-end",
+                    }}>
+                      <span style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono }}>
+                        {isVi ? "TÍNH NĂNG" : "FEATURES"}
+                      </span>
+                    </div>
+
+                    {serviceTiers.map((tier, idx) => {
+                      const isPopular = tier.id === popularTierId;
+                      const tierColor = idx === 1 ? color : idx === 0 ? "#64748B" : color;
+                      // Escalation: each tier is visually "higher" — more shadow, brighter border
+                      const escalationShadow = idx === 0 ? "none" : idx === 1 ? `0 0 20px ${tierColor}15` : `0 0 30px ${tierColor}25`;
+                      const escalationBorder = idx === 0 ? `1px solid ${DS.border}30` : `2px solid ${tierColor}50`;
+                      const escalationBg = idx === 0 ? "transparent" : idx === 1 ? `${tierColor}08` : `${tierColor}12`;
+                      const escalationPadding = idx === 0 ? "20px 14px" : "20px 12px";
+
+                      return (
+                        <div
+                          key={tier.id}
+                          style={{
+                            padding: escalationPadding,
+                            borderLeft: escalationBorder,
+                            background: escalationBg,
+                            textAlign: "center",
+                            position: "relative",
+                            boxShadow: escalationShadow,
+                          }}
+                        >
+                          {isPopular && (
+                            <div style={{
+                              position: "absolute", top: 0, left: 0, right: 0,
+                              padding: "3px 8px",
+                              background: `linear-gradient(90deg, ${color}, ${color}CC)`,
+                              fontSize: 9, color: "#fff", fontFamily: DS.mono,
+                              letterSpacing: "0.1em", display: "flex",
+                              alignItems: "center", justifyContent: "center", gap: 3,
+                            }}>
+                              <Zap size={9} />
+                              {isVi ? "PHỔ BIẾN" : "POPULAR"}
+                            </div>
+                          )}
+                          <div style={{ marginTop: isPopular ? 18 : 0 }}>
+                            <div style={{
+                              fontSize: 10, fontFamily: DS.mono,
+                              color: tierColor, letterSpacing: "0.15em", marginBottom: 6,
+                              fontWeight: idx * 100 + 500,
+                            }}>
+                              {tier.name.toUpperCase()}
+                            </div>
+
+                            {tier.marketPrice && tier.marketPrice > tier.basePrice && (
+                              <div style={{
+                                color: DS.text5, fontSize: 10, fontFamily: DS.mono,
+                                textDecoration: "line-through",
+                              }}>
+                                {fmtVND(tier.marketPrice)}
+                              </div>
+                            )}
+
+                            <div style={{
+                              fontFamily: DS.heading,
+                              fontSize: idx === 0 ? 20 : idx === 1 ? 22 : 24,
+                              fontWeight: idx === 0 ? 700 : idx === 1 ? 800 : 900,
+                              color: tierColor, lineHeight: 1.1,
+                            }}>
+                              {fmtVND(tier.basePrice)}
+                            </div>
+
+                            {(() => {
+                              const savingPct = tier.marketPrice && tier.marketPrice > tier.basePrice
+                                ? Math.round((1 - tier.basePrice / tier.marketPrice) * 100) : 0;
+                              return savingPct > 0 ? (
+                                <div style={{
+                                  marginTop: 4, display: "inline-block",
+                                  padding: "1px 7px", borderRadius: 9999,
+                                  background: "rgba(34,197,94,0.12)",
+                                  color: "#22C55E", fontSize: 9, fontFamily: DS.mono, fontWeight: 700,
+                                }}>
+                                  −{savingPct}%
+                                </div>
+                              ) : null;
+                            })()}
+
+                            <div style={{
+                              marginTop: 6, color: DS.text5, fontSize: 10,
+                              fontFamily: DS.mono, lineHeight: 1.3,
+                            }}>
+                              {tier.shortDesc ?? (isVi ? "Phù hợp nhu cầu cơ bản" : "Essential features")}
+                            </div>
+
+                            <Link
+                              href={`/${locale}/booking?service=${activeService}&package=${tier.id}`}
+                              style={{
+                                display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
+                                marginTop: 10, padding: "8px 10px",
+                                borderRadius: 10,
+                                background: idx === 0
+                                  ? "rgba(255,255,255,0.06)"
+                                  : idx === 1
+                                    ? `linear-gradient(135deg, ${tierColor}, ${color})`
+                                    : `linear-gradient(135deg, ${color}, ${tierColor}CC)`,
+                                color: "#fff", fontWeight: 700, fontSize: 11,
+                                textDecoration: "none", fontFamily: DS.mono,
+                                boxShadow: idx > 0 ? `0 4px 12px ${tierColor}30` : "none",
+                                transition: "all 0.2s",
+                              }}
+                            >
+                              {isVi ? "Chọn gói" : "Select"}
+                              <ArrowRight size={11} />
+                            </Link>
+
+                            <div style={{
+                              marginTop: 6, color: DS.purple, fontSize: 10,
+                              fontFamily: DS.mono, display: "flex",
+                              alignItems: "center", justifyContent: "center", gap: 3,
+                            }}>
+                              ◈ +{tier.lpReward.toLocaleString()} LP
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Feature rows */}
+                  {(SERVICE_FEATURES[activeService] ?? []).map((feature, rowIdx) => {
+                    const values = [feature.basic, feature.business, feature.experience] as Array<string | boolean>;
+
+                    return (
+                      <div
+                        key={rowIdx}
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "2fr 1fr 1.4fr 1.8fr",
+                          borderBottom: `1px solid ${DS.border}20`,
+                          background: rowIdx % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)",
+                        }}
+                      >
+                        {/* Feature label */}
+                        <div style={{
+                          padding: "11px 20px",
+                          borderRight: `1px solid ${DS.border}30`,
+                          display: "flex", alignItems: "center",
+                        }}>
+                          <span style={{ color: DS.text3, fontSize: 12, lineHeight: 1.4 }}>
+                            {isVi ? feature.label : feature.labelEn}
+                          </span>
+                        </div>
+
+                        {/* Values per tier — escalating visual weight */}
+                        {values.map((val, colIdx) => {
+                          const valColor = colIdx === 0 ? "#64748B" : colIdx === 1 ? color : color;
+
+                          return (
+                            <div
+                              key={colIdx}
+                              style={{
+                                padding: "11px 14px",
+                                borderLeft: colIdx === 0 ? `1px solid ${DS.border}20` : `1px solid ${DS.border}40`,
+                                background: colIdx === 0 ? "transparent" : colIdx === 1 ? `${color}04` : `${color}08`,
+                                display: "flex", alignItems: "center", justifyContent: "center",
+                              }}
+                            >
+                              {typeof val === "boolean" ? (
+                                val ? (
+                                  <div style={{
+                                    width: 20, height: 20, borderRadius: 6,
+                                    background: colIdx === 0 ? "rgba(255,255,255,0.05)" : `${valColor}18`,
+                                    display: "flex", alignItems: "center", justifyContent: "center",
+                                  }}>
+                                    <Check size={12} color={valColor} strokeWidth={2.5} />
+                                  </div>
+                                ) : (
+                                  <div style={{
+                                    width: 20, height: 20, borderRadius: 6,
+                                    background: "rgba(255,255,255,0.02)",
+                                    display: "flex", alignItems: "center", justifyContent: "center",
+                                  }}>
+                                    <Minus size={12} color={DS.text5} strokeWidth={2} />
+                                  </div>
+                                )
+                              ) : (
+                                <span style={{
+                                  color: colIdx === 0 ? DS.text4 : valColor,
+                                  fontSize: 11, fontFamily: DS.mono,
+                                  fontWeight: colIdx > 0 ? 700 : 400,
+                                  lineHeight: 1.3,
+                                }}>
+                                  {val}
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })}
+
+                  {/* Footer CTA row */}
+                  <div style={{
+                    display: "grid",
+                    gridTemplateColumns: "2fr 1fr 1.4fr 1.8fr",
+                    borderTop: `2px solid ${DS.border}`,
+                    background: "rgba(15,23,42,0.6)",
+                  }}>
+                    <div style={{ padding: "14px 20px", borderRight: `1px solid ${DS.border}40` }}>
+                      <Link
+                        href={`/${locale}/contact`}
+                        style={{
+                          display: "inline-flex", alignItems: "center", gap: 6,
+                          padding: "7px 14px", borderRadius: 9,
+                          background: `${color}10`, border: `1px solid ${color}30`,
+                          color: color, fontSize: 11, fontFamily: DS.mono,
+                          textDecoration: "none", cursor: "pointer",
+                          transition: "all 0.2s",
+                        }}
+                      >
+                        {isVi ? "Cần tư vấn?" : "Need help?"}
+                      </Link>
+                    </div>
+
+                    {serviceTiers.map((tier, idx) => {
+                      const isPopular = tier.id === popularTierId;
+                      return (
+                        <div
+                          key={tier.id}
+                          style={{
+                            padding: "14px 12px",
+                            borderLeft: `1px solid ${DS.border}40`,
+                            background: idx === 0 ? "transparent" : idx === 1 ? `${color}04` : `${color}08`,
+                            textAlign: "center",
+                          }}
+                        >
+                          <Link
+                            href={`/${locale}/booking?service=${activeService}&package=${tier.id}`}
+                            style={{
+                              display: "inline-flex", alignItems: "center", gap: 4,
+                              padding: "7px 14px", borderRadius: 9,
+                              background: idx === 0
+                                ? "rgba(255,255,255,0.05)"
+                                : GRD.primary,
+                              color: "#fff", fontWeight: 700, fontSize: 11,
+                              textDecoration: "none", fontFamily: DS.mono,
+                              boxShadow: idx > 0 ? GLOW.pink : "none",
+                              transition: "all 0.2s",
+                            }}
+                          >
+                            <Zap size={11} />
+                            {isVi ? "Đặt ngay" : "Book now"}
+                          </Link>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               )}
             </motion.div>
           </AnimatePresence>
@@ -573,10 +1247,10 @@ export function DichVuClient({ data, locale }: Props) {
               background: GRD.heroText, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
               marginBottom: 8,
             }}>
-              {locale === "vi" ? "Câu Hỏi Thường Gặp" : "Frequently Asked Questions"}
+              {isVi ? "Câu Hỏi Thường Gặp" : "Frequently Asked Questions"}
             </h2>
             <p style={{ color: DS.text4, fontSize: 13 }}>
-              {locale === "vi"
+              {isVi
                 ? "Trả lời nhanh những thắc mắc phổ biến nhất"
                 : "Quick answers to the most common questions"}
             </p>
@@ -591,7 +1265,7 @@ export function DichVuClient({ data, locale }: Props) {
           {/* CTA after FAQ */}
           <div style={{ textAlign: "center", marginTop: 36 }}>
             <p style={{ color: DS.text4, fontSize: 13, marginBottom: 16 }}>
-              {locale === "vi"
+              {isVi
                 ? "Không tìm thấy câu trả lời bạn cần?"
                 : "Didn't find the answer you're looking for?"}
             </p>
@@ -606,7 +1280,7 @@ export function DichVuClient({ data, locale }: Props) {
                   boxShadow: GLOW.pink,
                 }}
               >
-                {locale === "vi" ? "Liên hệ tư vấn miễn phí" : "Get free consultation"}
+                {isVi ? "Liên hệ tư vấn miễn phí" : "Get free consultation"}
                 <ArrowRight size={14} />
               </Link>
               <Link
@@ -619,12 +1293,25 @@ export function DichVuClient({ data, locale }: Props) {
                   textDecoration: "none", fontSize: 14, fontFamily: DS.mono,
                 }}
               >
-                {locale === "vi" ? "Đặt dịch vụ ngay" : "Book a service now"}
+                {isVi ? "Đặt dịch vụ ngay" : "Book a service now"}
               </Link>
             </div>
           </div>
         </div>
       </section>
+
+      {/* ── Comparison Modal ── */}
+      <AnimatePresence>
+        {showComparison && (
+          <ComparisonModal
+            serviceKey={activeService}
+            tiers={serviceTiers}
+            locale={locale}
+            color={color}
+            onClose={handleCloseComparison}
+          />
+        )}
+      </AnimatePresence>
     </main>
   );
 }

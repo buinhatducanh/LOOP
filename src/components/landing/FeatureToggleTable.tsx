@@ -2,7 +2,7 @@
 
 /**
  * FeatureToggleTable — Reusable interactive feature selector
- * Used by: BookingWizardClient (step 1) + /dich-vu pricing page
+ * Used by: BookingWizardClient (step 1) + /booking page
  *
  * UX principles for non-tech customers:
  * 1. Every feature has a PLAIN-LANGUAGE description (visible by default, 2 lines)
@@ -130,14 +130,14 @@ function FeatureRow({
   const rowBg = isIncluded
     ? "rgba(20,40,30,0.5)"
     : isSelected
-    ? catStyle.bgLight
-    : "rgba(15,23,42,0.5)";
+      ? catStyle.bgLight
+      : "rgba(15,23,42,0.5)";
 
   const rowBorder = isIncluded
     ? "1px solid rgba(34,197,94,0.18)"
     : isSelected
-    ? `1px solid ${catStyle.border}`
-    : "1px solid rgba(255,255,255,0.05)";
+      ? `1px solid ${catStyle.border}`
+      : "1px solid rgba(255,255,255,0.05)";
 
   return (
     <motion.div
@@ -167,13 +167,13 @@ function FeatureRow({
             background: isIncluded
               ? "rgba(34,197,94,0.15)"
               : isSelected
-              ? catStyle.color
-              : "rgba(255,255,255,0.04)",
+                ? catStyle.color
+                : "rgba(255,255,255,0.04)",
             border: isIncluded
               ? "1.5px solid rgba(34,197,94,0.4)"
               : isSelected
-              ? "none"
-              : "1.5px solid rgba(255,255,255,0.12)",
+                ? "none"
+                : "1.5px solid rgba(255,255,255,0.12)",
             cursor: isDisabled ? "not-allowed" : "pointer",
           }}
         >

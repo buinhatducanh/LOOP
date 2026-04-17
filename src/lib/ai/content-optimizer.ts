@@ -19,12 +19,12 @@ import { z } from 'zod';
 // Minimal stub — @anthropic-ai/sdk is not installed in this project.
 // Functions below fall back to heuristic logic when the client is unavailable.
 const Anthropic = class {
-  constructor(_options: { apiKey?: string }) {}
+  constructor(_options: { apiKey?: string }) { }
   messages = {
     parse: async (_opts: unknown): Promise<null> => null,
     create: async (_opts: unknown): Promise<null> => null,
   };
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 } as any;
 
 // ─── Zod Schemas ────────────────────────────────────────────────────────────
@@ -362,15 +362,15 @@ export async function suggestInternalLinks(
   const staticSuggestions: Array<{ url: string; anchor: string; reason: string }> =
     locale === 'vi'
       ? [
-          { url: `${SITE_URL}/vi/dich-vu`, anchor: 'Dịch vụ thiết kế web', reason: 'Liên quan đến dịch vụ cốt lõi' },
-          { url: `${SITE_URL}/vi/case-study`, anchor: 'Case study', reason: 'Bằng chứng uy tín và kết quả thực tế' },
-          { url: `${SITE_URL}/vi/blog`, anchor: 'Blog', reason: 'Nội dung liên quan trong blog' },
-        ]
+        { url: `${SITE_URL}/vi/booking`, anchor: 'Dịch vụ thiết kế web', reason: 'Liên quan đến dịch vụ cốt lõi' },
+        { url: `${SITE_URL}/vi/case-study`, anchor: 'Case study', reason: 'Bằng chứng uy tín và kết quả thực tế' },
+        { url: `${SITE_URL}/vi/blog`, anchor: 'Blog', reason: 'Nội dung liên quan trong blog' },
+      ]
       : [
-          { url: `${SITE_URL}/services`, anchor: 'web design services', reason: 'Core service offering' },
-          { url: `${SITE_URL}/case-studies`, anchor: 'case studies', reason: 'Social proof and real results' },
-          { url: `${SITE_URL}/blog`, anchor: 'agency blog', reason: 'Related in-depth articles' },
-        ];
+        { url: `${SITE_URL}/services`, anchor: 'web design services', reason: 'Core service offering' },
+        { url: `${SITE_URL}/case-studies`, anchor: 'case studies', reason: 'Social proof and real results' },
+        { url: `${SITE_URL}/blog`, anchor: 'agency blog', reason: 'Related in-depth articles' },
+      ];
 
   if (!apiKey) return staticSuggestions;
 
