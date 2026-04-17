@@ -1511,35 +1511,46 @@ export default function AdminMembersPage() {
   const ALL_TABS = TAB_GROUPS.flatMap((g) => g.tabs);
 
  function MemberFormModal_({ formMember, isAdd, setFormMember, onAddClose }: { formMember: MemberExt | null; isAdd: boolean; setFormMember: (v: MemberExt | null) => void; onAddClose: () => void }) {
-    const [tab, setTab] = useState<0 | 1 | 2 | 3>(0);
-    const [name, setName] = useState(formMember?.name ?? "");
-    const [email, setEmail] = useState(formMember?.email ?? "");
-    const [phone, setPhone] = useState(formMember?.phone ?? "");
-    const [team, setTeam] = useState(formMember?.team ?? "");
-    const [avatar, setAvatar] = useState(formMember?.avatar ?? "");
-    const [avatarPublicId, setAvatarPublicId] = useState((formMember as unknown as Record<string, unknown>)?.imagePublicId as string ?? "");
-    const [bio, setBio] = useState(formMember?.bio ?? "");
-    const [roleInput, setRoleInput] = useState(formMember?.role ?? "");
-    // Selected system role (single select)
-    const [systemRole, setSystemRole] = useState<string>(
-      formMember?.roles?.[0] ?? formMember?.systemRole ?? "member",
-    );
-    // Tab permissions: tabId → "edit" | "view" | "none"
-    const [tabPerms, setTabPerms] = useState<Record<string, TabPerm>>(
-      parseTabPerms(formMember?.tabPermissions ?? []),
-    );
-    const [level, setLevel] = useState(String(formMember?.level ?? 1));
-    const [currentXp, setCurrentXp] = useState(String(formMember?.currentXp ?? 0));
-    // Flag: true when admin explicitly changes rank/level → BE should persist as-is
-    const [rankManuallySet, setRankManuallySet] = useState(false);
-    const [rankKey, setRankKey] = useState<RankKey>(
-      formMember ? getRankFromLevel(formMember.level ?? 1) : "iron",
-    );
-    const [skills, setSkills] = useState<string[]>(
-      formMember?.memberExpertise?.map((e) => e.name) ?? [],
-    );
-    const [skillInput, setSkillInput] = useState("");
-    const [status, setStatus] = useState<MemberStatus>(formMember?.status ?? "active");
+ const [tab, setTab] = useState<0 | 1 | 2 | 3>(0);
+ const [name, setName] = useState("");
+ const [email, setEmail] = useState("");
+ const [phone, setPhone] = useState("");
+ const [team, setTeam] = useState("");
+ const [avatar, setAvatar] = useState("");
+ const [avatarPublicId, setAvatarPublicId] = useState("");
+ const [bio, setBio] = useState("");
+ const [roleInput, setRoleInput] = useState("");
+ const [systemRole, setSystemRole] = useState<string>("member");
+ const [tabPerms, setTabPerms] = useState<Record<string, TabPerm>>({});
+ const [level, setLevel] = useState("1");
+ const [currentXp, setCurrentXp] = useState("0");
+ const [rankManuallySet, setRankManuallySet] = useState(false);
+ const [rankKey, setRankKey] = useState<RankKey>("iron");
+ const [skills, setSkills] = useState<string[]>([]);
+ const [skillInput, setSkillInput] = useState("");
+ const [status, setStatus] = useState<MemberStatus>("active");
+
+ // Sync form state from props. With dynamic key in parent AnimatePresence,
+ // this component remounts when formMember or isAdd changes, so ref is always fresh.
+ // No re-sync mid-edit because the component stays mounted while user types.
+ useEffect(() => {
+ const src = formMember;
+ setName(src?.name ?? "");
+ setEmail(src?.email ?? "");
+ setPhone(src?.phone ?? "");
+ setTeam(src?.team ?? "");
+ setAvatar(src?.avatar ?? "");
+ setAvatarPublicId((src as unknown as Record<string, unknown>)?.imagePublicId as string ?? "");
+ setBio(src?.bio ?? "");
+ setRoleInput(src?.role ?? "");
+ setSystemRole(src?.roles?.[0] ?? src?.systemRole ?? "member");
+ setTabPerms(parseTabPerms(src?.tabPermissions ?? []));
+ setLevel(String(src?.level ?? 1));
+ setCurrentXp(String(src?.currentXp ?? 0));
+ setRankKey(src ? getRankFromLevel(src.level ?? 1) : "iron");
+ setSkills(src?.memberExpertise?.map((e) => e.name) ?? []);
+ setStatus(src?.status ?? "active");
+ }, [formMember]);
 
     const TABS = [
       { id: 0, label: "Thông tin", symbol: "◉" },
@@ -3429,6 +3440,7 @@ export default function AdminMembersPage() {
         {bulkMembers.length > 0 && <BulkLPModal_ />}
         {(formMember !== null || showAddModal) && (
  <MemberFormModal_
+ key={showAddModal ? "form-add" : `form-edit-${formMember?.id ?? "null"}`}
  formMember={showAddModal ? null : formMember}
  isAdd={showAddModal}
  setFormMember={setFormMember}

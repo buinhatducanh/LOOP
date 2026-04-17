@@ -1128,7 +1128,7 @@ export default function SiteHeader({ locale }: { locale: string }) {
             <LocaleSwitcher locale={locale} />
 
             {/* User menu */}
-            {mounted && hasValidToken ? (
+            {mounted && hasValidToken && user ? (
               <div style={{ position: "relative" }} ref={userMenuRef}>
                 <button
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
