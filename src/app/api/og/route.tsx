@@ -1,9 +1,5 @@
 import { ImageResponse } from "next/og";
 import { NextRequest } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { parseLocaleParam, getLocalizedField } from "@/lib/i18n/localization";
-
-export const runtime = "edge";
 
 const LOCALES = ["vi", "en", "ja", "ko", "zh"] as const;
 type Locale = (typeof LOCALES)[number];
@@ -494,29 +490,8 @@ export async function GET(req: NextRequest) {
 
  // ── Blog post OG: /api/og?type=blog-post&slug=...&locale=... ──
  if (type === "blog-post") {
-   const slug = searchParams.get("slug");
-   if (slug) {
-     try {
-       const post = await prisma.blogPost.findFirst({
-         where: { slug, status: "published" },
-         select: {
-           title: true, titleEn: true, titleJa: true, titleKo: true, titleZh: true,
-           excerpt: true, excerptEn: true, excerptJa: true, excerptKo: true, excerptZh: true,
-           coverImage: true,
-         },
-       });
-       if (post) {
-         const resolvedLocale = parseLocaleParam(new URLSearchParams({ lang: locale }));
-         const title = (getLocalizedField(post, "title", resolvedLocale) as string | null) ?? post.title ?? "Blog";
-         const excerpt = (getLocalizedField(post, "excerpt", resolvedLocale) as string | null) ?? "";
-         const image = post.coverImage ?? undefined;
-         return renderBlogPostOg(title, excerpt, image, locale);
-       }
-     } catch {
-       // Fall through to generic rendering
-     }
-   }
-   // Fallback: use explicit title/description params
+   // Edge runtime cannot import prisma (uses Node.js 'pg' module).
+   // Use explicit params for blog post OG — prisma lookup is skipped.
    const title = rawTitle ?? "Blog | LOOP Solutions";
    const excerpt = rawDescription ?? "";
    const image = rawImage ?? undefined;
