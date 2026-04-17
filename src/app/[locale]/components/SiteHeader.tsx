@@ -245,6 +245,7 @@ function LocaleSwitcher({ locale }: { locale: string }) {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => { setMounted(true); }, []);
+// Close on scroll useEffect(() => { if (!open) return; const handler = () => setOpen(false); window.addEventListener("scroll", handler, { passive: true }); return () => window.removeEventListener("scroll", handler); }, [open]);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -358,7 +359,7 @@ function LocaleSwitcher({ locale }: { locale: string }) {
 // ── Mega Dropdown ─────────────────────────────────────────────────────────────
 
 interface MegaItem { label: string; href: string; icon: string; description: string; color: string; }
-interface MegaDropdownGroup { type: "mega"; labelKey: string; triggerLabel: string; items: MegaItem[]; }
+type MobileNavItem = { label: string; href: string; icon: string; description?: string; color?: string };
 
 function MegaDropdown({
   triggerLabel, trigger, items, isOpen, onToggle, onSelect, locale, t,
@@ -370,6 +371,7 @@ function MegaDropdown({
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
   const isReallyOpen = mounted && isOpen;
+useEffect(() => { if (!isReallyOpen) return; const handler = () => onSelect(); window.addEventListener("scroll", handler, { passive: true }); return () => window.removeEventListener("scroll", handler); }, [isReallyOpen, onSelect]);
 
   return (
     <div style={{ position: "relative" }}>
@@ -399,7 +401,7 @@ function MegaDropdown({
             transition={{ type: "spring", stiffness: 350, damping: 28 }}
             onMouseLeave={onSelect}
             style={{
-              position: "fixed", top: 72, left: "50%", transform: "translateX(-50%)",
+              position: "absolute", top: "calc(100% + 8px)", left: 0,
               width: 640,
               background: "rgba(11,14,23,0.98)",
               border: "1px solid rgba(236,72,153,0.2)",
@@ -516,6 +518,7 @@ function NavDropdown({
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
   const isReallyOpen = mounted && isOpen;
+useEffect(() => { if (!isReallyOpen) return; const handler = () => onSelect(); window.addEventListener("scroll", handler, { passive: true }); return () => window.removeEventListener("scroll", handler); }, [isReallyOpen, onSelect]);
 
   return (
     <div style={{ position: "relative" }}>
@@ -634,7 +637,7 @@ export default function SiteHeader({ locale }: { locale: string }) {
     | { type?: never; label: string; href: string }
     | { type: "linkIcon"; label: string; href: string }
     | { type: "dropdown"; labelKey: string; triggerLabel: string; items: NavDropdownItem[] }
-    | MegaDropdownGroup
+    | { type: "mega"; labelKey: string; triggerLabel: string; items: MegaItem[] }
   )> = [
     {
       type: "linkIcon",
@@ -1327,7 +1330,15 @@ export default function SiteHeader({ locale }: { locale: string }) {
                 {navLinks.map((link, idx) => {
                   if (link.type === "mega" || link.type === "dropdown") {
                     const [subOpen, setSubOpen] = useState(false);
-                    const items = link.type === "mega" ? link.items : link.items;
+                    const items = (link as { items: MobileNavItem[] }).items;
+                    const mobileNavItems = items.map(function(item: MobileNavItem) {
+                      return <Link key={item.href} href={item.href}
+                        onClick={() => { setMobileOpen(false); setSubOpen(false); }}
+                        style={{ display: "block", padding: "8px 14px", color: DS.text4, fontSize: 14, textDecoration: "none" }}
+                      >
+                        <span style={{ marginRight: 8 }}>{item.icon}</span>{item.label}
+                      </Link>;
+                    });
                     return (
                       <div key={`m-drop-${link.labelKey ?? idx}`}>
                         <button onClick={() => setSubOpen(v => !v)}
@@ -1344,14 +1355,7 @@ export default function SiteHeader({ locale }: { locale: string }) {
                         <AnimatePresence>
                           {subOpen && (
                             <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }} style={{ overflow: "hidden", paddingLeft: 16 }}>
-                              {items.map(item => (
-                                <Link key={item.href} href={item.href}
-                                  onClick={() => { setMobileOpen(false); setSubOpen(false); }}
-                                  style={{ display: "block", padding: "8px 14px", color: DS.text4, fontSize: 14, textDecoration: "none" }}
-                                >
-                                  <span style={{ marginRight: 8 }}>{item.icon}</span>{item.label}
-                                </Link>
-                              ))}
+                              {mobileNavItems}
                             </motion.div>
                           )}
                         </AnimatePresence>

@@ -18,6 +18,14 @@ export interface PackageFreebie {
  detail?: string;
 }
 
+export interface PackageAcknowledgmentItem {
+ key: string;
+ ackLabel: string;
+ ackLabelEn?: string;
+ icon?: string;
+ sortOrder?: number;
+}
+
 export interface WizardPackage {
  id: string;
  slug?: string;
@@ -37,6 +45,16 @@ export interface WizardPackage {
  savingPct?: number;
  allFeatures?: string[];
  freebies?: PackageFreebie[];
+ /** YouTube video URL for this package */
+ videoUrl?: string | null;
+ /** Thumbnail URL for video */
+ videoThumbnail?: string | null;
+ /** Whether to show the acknowledgment modal */
+ showFeatureAcknowledge?: boolean;
+ /** Raw acknowledgment items from DB */
+ acknowledgmentItems?: PackageAcknowledgmentItem[];
+ /** Map: feature label → acknowledgment item */
+ featureAcknowledgments?: Record<string, PackageAcknowledgmentItem>;
 }
 
 export interface WizardFeature {

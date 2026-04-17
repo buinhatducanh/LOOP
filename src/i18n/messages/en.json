@@ -1367,7 +1367,10 @@
     "noResults": "No matching questions found",
     "stillHaveQuestions": "Still have questions?",
     "contactUs": "Contact us",
-    "backToTop": "Back to top"
+    "backToTop": "Back to top",
+    "badge": "FAQ — LOOP SOLUTIONS",
+    "noResultsHint": "Try changing your search term or category filter",
+    "ctaDesc": "The LOOP team is available 24/7 to assist you. Contact us now for free consultation."
   },
   "teamMember": {
     "tChallenge": "Challenge",

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 import { ChevronDown, Search, ArrowUp, MessageCircle } from "lucide-react";
@@ -151,6 +152,7 @@ export function FaqClient({
   initialFaqs: FaqRecord[];
   initialCategories: string[];
 }) {
+ const t = useTranslations("FaqPage");
   const [activeCategory, setActiveCategory] = useState<CategoryFilter>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [openIds, setOpenIds] = useState<Set<string>>(new Set());
@@ -246,8 +248,7 @@ export function FaqClient({
                   letterSpacing: "0.22em",
                 }}
               >
-                FAQ — LOOP SOLUTIONS
-              </span>
+                {t("badge")}             </span>
             </div>
 
             <h1
@@ -263,7 +264,7 @@ export function FaqClient({
                 lineHeight: 1.1,
               }}
             >
-              CÂU HỎI THƯỜNG GẶP
+              {t("heroTitle")} {t("heroHighlight")}
             </h1>
 
             <p
@@ -275,9 +276,7 @@ export function FaqClient({
                 margin: "0 auto",
               }}
             >
-              Tìm nhanh câu trả lời cho mọi thắc mắc về dịch vụ, quy trình, thanh
-              toán và hệ thống LP của LOOP Solutions.
-            </p>
+         {t("heroDesc")}            </p>
           </div>
         </section>
 
@@ -297,7 +296,7 @@ export function FaqClient({
             />
             <input
               type="text"
-              placeholder="Tìm kiếm câu hỏi..."
+              placeholder={t("searchPlaceholder")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               style={{
@@ -345,7 +344,7 @@ export function FaqClient({
                 transition: "all 0.2s ease",
               }}
             >
-              Tất cả
+              {t("filterAll")}
             </button>
             {displayCategories.map((cat) => {
               const cfg = CATEGORY_CONFIG[cat] ?? CATEGORY_CONFIG.general;
@@ -367,12 +366,7 @@ export function FaqClient({
                     transition: "all 0.2s ease",
                   }}
                 >
-                  {cfg.labelKey === "filterGeneral" ? "Chung" :
-                   cfg.labelKey === "filterServices" ? "Dịch vụ" :
-                   cfg.labelKey === "filterTechnical" ? "Kỹ thuật" :
-                   cfg.labelKey === "filterPayment" ? "Thanh toán" :
-                   cfg.labelKey === "filterLp" ? "Hệ thống LP" :
-                   cfg.labelKey === "filterAcademy" ? "Học viện" : cat}
+                  {t(cfg.labelKey)}
                 </button>
               );
             })}
@@ -398,9 +392,9 @@ export function FaqClient({
               >
                 🔍
               </div>
-              <p style={{ fontSize: 16 }}>Không tìm thấy câu hỏi phù hợp</p>
+              <p style={{ fontSize: 16 }}>{t("noResults")}</p>
               <p style={{ fontSize: 13, marginTop: 6 }}>
-                Thử thay đổi từ khóa hoặc danh mục
+                {t("noResultsHint")}
               </p>
             </div>
           ) : (
@@ -461,7 +455,7 @@ export function FaqClient({
                   marginBottom: 10,
                 }}
               >
-                Vẫn có thắc mắc?
+                {t("stillHaveQuestions")}
               </h3>
               <p
                 style={{
@@ -473,8 +467,7 @@ export function FaqClient({
                   margin: "0 auto 24px",
                 }}
               >
-                Đội ngũ LOOP luôn sẵn sàng hỗ trợ bạn 24/7. Liên hệ ngay để được
-                tư vấn miễn phí.
+           {t("ctaDesc")}
               </p>
               <Link
                 href={`/${locale}/lien-he`}
@@ -495,7 +488,7 @@ export function FaqClient({
                 onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.85")}
                 onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
               >
-                Liên hệ ngay
+                {t("contactUs")}
               </Link>
             </motion.div>
           )}

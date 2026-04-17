@@ -1375,7 +1375,10 @@
     "noResults": "Không tìm thấy câu hỏi phù hợp",
     "stillHaveQuestions": "Vẫn có thắc mắc?",
     "contactUs": "Liên hệ ngay",
-    "backToTop": "Lên đầu trang"
+    "backToTop": "Lên đầu trang",
+    "badge": "FAQ — LOOP SOLUTIONS",
+    "noResultsHint": "Thử thay đổi từ khóa hoặc danh mục",
+    "ctaDesc": "Đội ngũ LOOP luôn sẵn sàng hỗ trợ bạn 24/7. Liên hệ ngay để được tư vấn miễn phí."
   },
   "teamMember": {
     "tChallenge": "Thách thức",

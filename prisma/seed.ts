@@ -161,7 +161,7 @@ async function seedRBAC() {
 // ══════════════════════════════════════════════════════════════════
 
 async function seedDepartments(): Promise<Record<string, string>> {
-  console.log("\n[Departments] Seeding 8 departments...");
+  console.log("\n[Departments] Seeding 6 departments...");
 
   const departments = [
     {
@@ -169,64 +169,48 @@ async function seedDepartments(): Promise<Record<string, string>> {
       name: "Phòng Kỹ thuật",
       shortName: "IT",
       color: "#3B82F6",
-      description: "Phòng Kỹ thuật — Dev, QA, DevOps, xây dựng và duy trì hạ tầng công nghệ.",
+      description: "Phòng Kỹ thuật — Dev, IT Support, xây dựng và duy trì hạ tầng công nghệ.",
       mission: "Xây dựng sản phẩm chất lượng cao, tối ưu hiệu suất và đảm bảo hệ thống ổn định 24/7.",
     },
     {
-      key: "design",
-      name: "Phòng Thiết kế",
-      shortName: "DSE",
-      color: "#8B5CF6",
-      description: "Phòng Thiết kế — UI/UX, Graphic Design, Brand Identity.",
-      mission: "Mang đến trải nghiệm người dùng xuất sắc qua thiết kế đột phá và nhất quán.",
+      key: "qc",
+      name: "Phòng Kiểm soát chất lượng dự án",
+      shortName: "QC",
+      color: "#22C55E",
+      description: "Phòng Kiểm soát chất lượng dự án — QA, Testing, Bug Tracking, đảm bảo chất lượng sản phẩm.",
+      mission: "Đảm bảo chất lượng sản phẩm trước khi bàn giao, phát hiện và ngăn ngừa lỗi.",
+    },
+    {
+      key: "pm",
+      name: "Phòng Quản lý Dự án",
+      shortName: "PM",
+      color: "#EC4899",
+      description: "Phòng Quản lý Dự án — Project Manager, Product Owner, điều phối và giám sát tiến độ dự án.",
+      mission: "Điều phối dự án hiệu quả, đảm bảo tiến độ, chất lượng và sự hài lòng của khách hàng.",
+    },
+    {
+      key: "seo",
+      name: "Phòng SEO",
+      shortName: "SEO",
+      color: "#F59E0B",
+      description: "Phòng SEO — Tối ưu công cụ tìm kiếm, Google Analytics, Content SEO, SEM.",
+      mission: "Tăng thứ hạng website trên công cụ tìm kiếm, thu hút traffic organics và chuyển đổi khách hàng.",
     },
     {
       key: "media",
       name: "Phòng Media",
       shortName: "MED",
-      color: "#EC4899",
-      description: "Phòng Media — Content, Video, Social Media, Photography.",
-      mission: "Sáng tạo nội dung số thu hút, xây dựng thương hiệu LOOP trên mọi nền tảng.",
+      color: "#8B5CF6",
+      description: "Phòng Media — Content, Video, Social Media, Photography, xây dựng thương hiệu.",
+      mission: "Sáng tạo nội dung số thu hút, xây dựng và truyền thông thương hiệu LOOP trên mọi nền tảng.",
     },
     {
-      key: "marketing",
-      name: "Phòng Marketing",
-      shortName: "MKT",
-      color: "#F59E0B",
-      description: "Phòng Marketing — SEO, SEM, Brand Marketing, Email Marketing.",
-      mission: "Thu hút khách hàng tiềm năng, tăng trưởng doanh thu qua các chiến dịch hiệu quả.",
-    },
-    {
-      key: "sales",
-      name: "Phòng Kinh doanh",
-      shortName: "SLS",
-      color: "#22C55E",
-      description: "Phòng Kinh doanh — Bán hàng, Chăm sóc khách hàng, Báo giá.",
-      mission: "Chuyển đổi khách hàng tiềm năng thành đối tác lâu dài của LOOP.",
-    },
-    {
-      key: "finance",
-      name: "Phòng Tài chính",
-      shortName: "FIN",
-      color: "#14B8A6",
-      description: "Phòng Tài chính — Kế toán, Quản lý dòng tiền, LP, Thu nhập.",
-      mission: "Quản lý tài chính minh bạch, tối ưu chi phí và đảm bảo lợi ích cho mọi thành viên.",
-    },
-    {
-      key: "hr",
-      name: "Phòng Nhân sự",
-      shortName: "HR",
-      color: "#6366F1",
-      description: "Phòng Nhân sự — Tuyển dụng, Onboarding, Đào tạo, Văn hóa công ty.",
-      mission: "Xây dựng đội ngũ tài năng, gắn kết và phát triển con người LOOP bền vững.",
-    },
-    {
-      key: "management",
-      name: "Ban Quản lý",
-      shortName: "MGT",
+      key: "ceo_office",
+      name: "Ban Giám đốc",
+      shortName: "CEO",
       color: "#EAB308",
-      description: "Ban Quản lý — CEO, Super Admin, điều phối toàn công ty.",
-      mission: "Định hướng chiến lược, giám sát hoạt động và đảm bảo LOOP phát triển bền vững.",
+      description: "Ban Giám đốc — CEO điều hành, định hướng chiến lược và giám sát toàn công ty.",
+      mission: "Định hướng chiến lược phát triển, đảm bảo LOOP phát triển bền vững và đạt mục tiêu kinh doanh.",
     },
   ];
 
@@ -246,7 +230,7 @@ async function seedDepartments(): Promise<Record<string, string>> {
     deptIds[dept.key] = created.id;
   }
 
-  console.log(`  ✓ 8 departments seeded`);
+  console.log(`  ✓ ${departments.length} departments seeded`);
   return deptIds;
 }
 
@@ -309,78 +293,9 @@ async function seedAdmin() {
 // ══════════════════════════════════════════════════════════════════
 
 async function seedHR() {
-  console.log("\n[HR] Seeding HR account...");
-
-  const passwordHash = await hashPassword("hr123456");
-
-  // upsert: create if not exists, or update role if it already does
-  const hr = await prisma.user.upsert({
-    where: { email: "quynh@loop.vn" },
-    update: {
-      name: "Quỳnh HR",
-      passwordHash,
-      role: "hr",
-      accountType: "staff",
-      isActive: true,
-    },
-    create: {
-      email: "quynh@loop.vn",
-      name: "Quỳnh HR",
-      passwordHash,
-      role: "hr",
-      accountType: "staff",
-      isActive: true,
-    },
-  });
-  console.log(`  ✓ HR upserted: ${hr.email} / hr123456`);
-
-  // Assign hr role (level 2) — can only add members, no delete/approve/lp
-  const hrRole = await prisma.role.findUnique({ where: { name: "hr" } });
-
-  if (hrRole) {
-    await prisma.userRole.upsert({
-      where: { userId_roleId: { userId: hr.id, roleId: hrRole.id } },
-      update: { isActive: true },
-      create: { userId: hr.id, roleId: hrRole.id, isActive: true },
-    });
-    console.log("  ✓ hr role assigned (level 2 — add members only)");
-
-    // Create TeamMember for HR user (no LP, basic rank)
-    const hrMember = await prisma.teamMember.upsert({
-      where: { slug: "quynh-hr" },
-      update: {
-        name: "Quỳnh HR",
-        role: "HR Manager",
-        department: "hr",
-        accessTags: ["kanban", "order-basic", "hr-manage"],
-        isActive: true,
-      },
-      create: {
-        slug: "quynh-hr",
-        name: "Quỳnh HR",
-        role: "HR Manager",
-        department: "hr",
-        accessTags: ["kanban", "order-basic", "hr-manage"],
-        isActive: true,
-        level: 1,
-        currentXp: 0,
-        maxXp: 100,
-        availableLp: 0,
-        lockedLp: 0,
-      },
-    });
-
-    // Link User → TeamMember
-    await prisma.user.update({
-      where: { id: hr.id },
-      data: { teamMemberId: hrMember.id },
-    });
-    console.log(`  ✓ HR TeamMember: ${hrMember.name} (${hrMember.id})`);
-  } else {
-    console.warn("  ⚠ hr role not found — skipping HR user setup");
-  }
-
-  return hr;
+  // REMOVED: Quynh HR = Lê Ngọc Xuân Quỳnh (already seeded in seedAllTeamMembers)
+  console.log("[HR] Skipped — Quynh HR removed (duplicate of Lê Ngọc Xuân Quỳnh)");
+  return null;
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -469,10 +384,9 @@ async function seedMemberRequests() {
 // 3. CEO / Team Member
 // ══════════════════════════════════════════════════════════════════
 
-async function seedCEO() {
+async function seedCEO(deptIds: Record<string, string>) {
   console.log("\n[Team] Seeding CEO...");
 
-  const existing = await prisma.teamMember.findUnique({ where: { slug: "bui-nhat-duc-anh" } });
   const data = {
     slug: "bui-nhat-duc-anh",
     name: "Bùi Nhật Đức Anh",
@@ -486,7 +400,7 @@ async function seedCEO() {
     bio: `"Xuất phát điểm là một Gen Z với tình yêu lớn dành cho việc giải quyết vấn đề, sáng tác âm nhạc và giáo dục, tôi luôn ấp ủ mang đến một làn gió mới cho ngành IT: trẻ trung, tự do và đậm chất nghệ thuật. Bước ra từ giai đoạn thị trường công nghệ đang có dấu hiệu bão hòa, tôi nhận thấy nhiều bạn trẻ đầy năng lượng lại dễ bị cản bước bởi những định kiến về "bằng cấp" hay "điểm số".
 
 Chính vì vậy, tôi quyết định thành lập LOOP. Đây không chỉ là một tổ chức mà còn là một "sân chơi" công bằng, nơi tư duy logic và khả năng xử lý vấn đề thực tế được đặt lên hàng đầu. Tại LOOP, chúng tôi cùng nhau phá vỡ những giới hạn cũ để hết mình theo đuổi đam mê kiến tạo công nghệ trong kỷ nguyên số."`,
-    image: "/images/team/ceo-placeholder.jpg",
+    image: "https://res.cloudinary.com/dhlmvawmi/image/upload/v1776433148/loop_avatars/rhcs4gl3rp51qszisxir.jpg",
     coverImage: "/images/team/ceo-cover-placeholder.jpg",
     quote: "Tư duy xử lý vấn đề quan trọng hơn bất kỳ điểm số hay nhãn mác nào.",
     email: "ducanhnhatbui@gmail.com",
@@ -494,19 +408,19 @@ Chính vì vậy, tôi quyết định thành lập LOOP. Đây không chỉ là
     linkedin: "https://linkedin.com/in/bui-nhat-duc-anh",
     achievements: [],
     skills: ["Leadership", "Product Strategy", "Enterprise Architecture", "Cloud Native"],
-    roleLevel: 0,
+    roleLevel: -1,
     isFeatured: true,
     isActive: true,
     sortOrder: 0,
+    departmentId: deptIds["ceo_office"],
   };
 
-  if (existing) {
-    await prisma.teamMember.update({ where: { id: existing.id }, data });
-    console.log("  ✓ CEO updated");
-  } else {
-    await prisma.teamMember.create({ data });
-    console.log("  ✓ CEO created");
-  }
+  await prisma.teamMember.upsert({
+    where: { email: data.email },
+    update: data,
+    create: data,
+  });
+  console.log("  ✓ CEO upserted");
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -915,10 +829,10 @@ async function seedPointsSystem() {
 
   // Advertisements
   const ads = [
-    { slug: "loop-intro", title: "LOOP Introduction", titleVi: "Giới thiệu về LOOP", description: "Watch our company introduction video", descriptionVi: "Xem video giới thiệu về công ty LOOP", videoUrl: "/videos/loop-intro.mp4", thumbnailUrl: "/images/ads/loop-intro.jpg", duration: 30, points: 5, xpBonus: 1, dailyLimit: 10, watchCooldown: 60, minLevel: 1, requiresPurchase: false, sortOrder: 1 },
-    { slug: "web-design-tips", title: "Web Design Tips", titleVi: "Mẹo thiết kế website", description: "Learn web design tips from experts", descriptionVi: "Học các mẹo thiết kế web từ chuyên gia", videoUrl: "/videos/web-tips.mp4", thumbnailUrl: "/images/ads/web-tips.jpg", duration: 60, points: 10, xpBonus: 2, dailyLimit: 5, watchCooldown: 120, minLevel: 2, requiresPurchase: false, sortOrder: 2 },
-    { slug: "seo-basics", title: "SEO Basics", titleVi: "Cơ bản về SEO", description: "Learn the basics of SEO for your website", descriptionVi: "Học kiến thức cơ bản về SEO cho website của bạn", videoUrl: "/videos/seo-basics.mp4", thumbnailUrl: "/images/ads/seo-basics.jpg", duration: 45, points: 8, xpBonus: 2, dailyLimit: 5, watchCooldown: 120, minLevel: 1, requiresPurchase: false, sortOrder: 3 },
-    { slug: "hosting-benefits", title: "Premium Hosting Benefits", titleVi: "Lợi ích Hosting Premium", description: "Discover premium hosting features", descriptionVi: "Khám phá các tính năng hosting cao cấp", videoUrl: "/videos/hosting-benefits.mp4", thumbnailUrl: "/images/ads/hosting-benefits.jpg", duration: 90, points: 15, xpBonus: 3, dailyLimit: 3, watchCooldown: 300, minLevel: 3, requiresPurchase: true, sortOrder: 4 },
+    { slug: "loop-intro", titleVi: "Giới thiệu về LOOP", descriptionVi: "Xem video giới thiệu về công ty LOOP", videoUrl: "/videos/loop-intro.mp4", thumbnailUrl: "/images/ads/loop-intro.jpg", duration: 30, points: 5, xpBonus: 1, dailyLimit: 10, watchCooldown: 60, minLevel: 1, requiresPurchase: false, sortOrder: 1 },
+    { slug: "web-design-tips", titleVi: "Mẹo thiết kế website", descriptionVi: "Học các mẹo thiết kế web từ chuyên gia", videoUrl: "/videos/web-tips.mp4", thumbnailUrl: "/images/ads/web-tips.jpg", duration: 60, points: 10, xpBonus: 2, dailyLimit: 5, watchCooldown: 120, minLevel: 2, requiresPurchase: false, sortOrder: 2 },
+    { slug: "seo-basics", titleVi: "Cơ bản về SEO", descriptionVi: "Học kiến thức cơ bản về SEO cho website của bạn", videoUrl: "/videos/seo-basics.mp4", thumbnailUrl: "/images/ads/seo-basics.jpg", duration: 45, points: 8, xpBonus: 2, dailyLimit: 5, watchCooldown: 120, minLevel: 1, requiresPurchase: false, sortOrder: 3 },
+    { slug: "hosting-benefits", titleVi: "Lợi ích Hosting Premium", descriptionVi: "Khám phá các tính năng hosting cao cấp", videoUrl: "/videos/hosting-benefits.mp4", thumbnailUrl: "/images/ads/hosting-benefits.jpg", duration: 90, points: 15, xpBonus: 3, dailyLimit: 3, watchCooldown: 300, minLevel: 3, requiresPurchase: true, sortOrder: 4 },
   ];
   for (const ad of ads) {
     await prisma.advertisement.upsert({ where: { slug: ad.slug }, update: ad, create: ad });
@@ -961,6 +875,24 @@ async function seedExpertises() {
     // Design & Others
     { name: "UI/UX Design", category: "design", icon: "PenTool", sortOrder: 31 },
     { name: "Figma", category: "design", icon: "Figma", sortOrder: 32 },
+    { name: "Media", category: "media", icon: "Video", sortOrder: 35 },
+    { name: "Video Production", category: "media", icon: "Film", sortOrder: 36 },
+    { name: "Photography", category: "media", icon: "Camera", sortOrder: 37 },
+    { name: "Branding", category: "media", icon: "Sparkles", sortOrder: 38 },
+    { name: "SEO", category: "seo", icon: "Search", sortOrder: 45 },
+    { name: "Google Analytics", category: "seo", icon: "BarChart", sortOrder: 46 },
+    { name: "Google Search Console", category: "seo", icon: "SearchCheck", sortOrder: 47 },
+    { name: "Content Marketing", category: "marketing", icon: "FileText", sortOrder: 51 },
+    { name: "Social Media", category: "marketing", icon: "Share2", sortOrder: 52 },
+    { name: "Manual Testing", category: "qa", icon: "CheckCircle", sortOrder: 61 },
+    { name: "Bug Tracking", category: "qa", icon: "Bug", sortOrder: 62 },
+    { name: "API Testing", category: "qa", icon: "Plug", sortOrder: 63 },
+    { name: "Test Automation", category: "qa", icon: "Zap", sortOrder: 64 },
+    { name: "Performance Testing", category: "qa", icon: "Gauge", sortOrder: 65 },
+    { name: "Regression Testing", category: "qa", icon: "RefreshCw", sortOrder: 66 },
+    { name: "Selenium", category: "qa", icon: "Automation", sortOrder: 67 },
+    { name: "Postman", category: "qa", icon: "Send", sortOrder: 68 },
+    { name: "Documentation", category: "qa", icon: "FileText", sortOrder: 69 },
     { name: "Agile/Scrum", category: "management", icon: "Kanban", sortOrder: 41 },
     { name: "System Architecture", category: "architecture", icon: "Component", sortOrder: 42 },
   ];
@@ -2127,7 +2059,7 @@ async function seedCompanyEvents() {
 const MEMBER_SYSTEM_ROLE: Record<string, string> = {
  "nguyen-phuc-thuan": "project_manager",
  "tran-vu-hung": "project_manager",
- "le-ngoc-xuan-quynh": "member",
+ "le-ngoc-xuan-quynh": "project_manager",
  "duong-gia-lac": "member",
  "nguyen-trong-quy": "member",
  "do-tan-tai": "member",
@@ -2139,13 +2071,10 @@ const MEMBER_SYSTEM_ROLE: Record<string, string> = {
  "tran-vo-thuy-duong": "media",
  "nguyen-phuc-thinh": "media",
 };
-// ── Seed all 10 team members (CEO already seeded) ────────────────────────────
+// ── Seed all 13 team members (CEO already seeded separately) ─────────────────
 async function seedAllTeamMembers(deptIds: Record<string, string>) {
-  console.log("\n[R2-TeamMembers] Seeding 13 team members (Iron Lv1) with department FK...");
+  console.log("\n[R2-TeamMembers] Seeding 13 team members with new department structure...");
 
-  // memberData.ts canonical LP values (source of truth per fe-reseed-plan)
-  // Giảm còn 10 members cho test (giữ nguyên canonical LP values)
- 
  // ── RBAC constants ──────────────────────────────────────────────────────────
  const ROLE_TABS: Record<string, string[]> = {
  project_manager: ["overview","orders","clients","quotation","services","revenue","projects","members","departments","notification_center","leaderboard_admin","lp_manage","quests_events","academy","blog","lp","portfolio","projects_completed","kanban","figma_demos","analytics"],
@@ -2164,25 +2093,31 @@ async function seedAllTeamMembers(deptIds: Record<string, string>) {
  };
 
  const members = [
- // 13 team members — all Iron Lv1 (CEO seeded separately with max level)
- // Management — PM
- { slug: "nguyen-phuc-thuan", name: "Nguyễn Phúc Thuần", title: "Project Manager", bio: "Điều phối và quản lý dự án.", shortBio: "PM — Quản lý dự án.", level: 1, rank: "iron", availableLp: 0, currentXp: 0, maxXp: 100, isActive: true, isFeatured: false, sortOrder: 1, deptKey: "management" },
- { slug: "tran-vu-hung", name: "Trần Vũ Hùng", title: "Project Manager", bio: "Quản lý tiến độ dự án.", shortBio: "PM — Quản lý tiến độ.", level: 1, rank: "iron", availableLp: 0, currentXp: 0, maxXp: 100, isActive: true, isFeatured: false, sortOrder: 2, deptKey: "management" },
- { slug: "le-ngoc-xuan-quynh", name: "Lê Ngọc Xuân Quỳnh", title: "PM Tập Sự", bio: "Hỗ trợ quản lý dự án.", shortBio: "PM tập sự.", level: 1, rank: "iron", availableLp: 0, currentXp: 0, maxXp: 100, isActive: true, isFeatured: false, sortOrder: 3, deptKey: "management" },
- // Engineering — Dev / SEO
- { slug: "duong-gia-lac", name: "Dương Gia Lạc", title: "SEO & Developer", bio: "SEO và phát triển web.", shortBio: "SEO & Dev.", level: 1, rank: "iron", availableLp: 0, currentXp: 0, maxXp: 100, isActive: true, isFeatured: false, sortOrder: 4, deptKey: "engineering" },
- { slug: "nguyen-trong-quy", name: "Nguyễn Trọng Quý", title: "Developer", bio: "Phát triển web.", shortBio: "Dev.", level: 1, rank: "iron", availableLp: 0, currentXp: 0, maxXp: 100, isActive: true, isFeatured: false, sortOrder: 5, deptKey: "engineering" },
- { slug: "do-tan-tai", name: "Đỗ Tấn Tài", title: "Developer", bio: "Phát triển phần mềm.", shortBio: "Dev.", level: 1, rank: "iron", availableLp: 0, currentXp: 0, maxXp: 100, isActive: true, isFeatured: false, sortOrder: 6, deptKey: "engineering" },
- // Engineering — IT Support
-  { slug: "nguyen-minh-tri", name: "Nguyễn Minh Trí", title: "IT Support", bio: "Hỗ trợ hạ tầng kỹ thuật.", shortBio: "IT Support.", level: 1, rank: "iron", availableLp: 0, currentXp: 0, maxXp: 100, isActive: true, isFeatured: false, sortOrder: 7, deptKey: "engineering" },
- // Engineering — QA
- { slug: "le-van-thuan", name: "Lê Văn Thuận", title: "QA Engineer", bio: "Kiểm thử chất lượng sản phẩm.", shortBio: "QA.", level: 1, rank: "iron", availableLp: 0, currentXp: 0, maxXp: 100, isActive: true, isFeatured: false, sortOrder: 8, deptKey: "engineering" },
- { slug: "tran-hoang-anh", name: "Trần Hoàng Anh", title: "QA Engineer", bio: "Kiểm thử chức năng.", shortBio: "QA.", level: 1, rank: "iron", availableLp: 0, currentXp: 0, maxXp: 100, isActive: true, isFeatured: false, sortOrder: 9, deptKey: "engineering" },
- { slug: "ha-the-anh", name: "Hà Thế Anh", title: "QA Engineer", bio: "Kiểm thử phần mềm.", shortBio: "QA.", level: 1, rank: "iron", availableLp: 0, currentXp: 0, maxXp: 100, isActive: true, isFeatured: false, sortOrder: 10, deptKey: "engineering" },
- { slug: "luong-hoang-thong", name: "Lương Hoàng Thông", title: "QA Engineer", bio: "Kiểm thử và đảm bảo chất lượng.", shortBio: "QA.", level: 1, rank: "iron", availableLp: 0, currentXp: 0, maxXp: 100, isActive: true, isFeatured: false, sortOrder: 11, deptKey: "engineering" },
- // Marketing
- { slug: "tran-vo-thuy-duong", name: "Trần Võ Thuỳ Dương", title: "Marketing Staff", bio: "Nhân viên Marketing.", shortBio: "Marketing.", level: 1, rank: "iron", availableLp: 0, currentXp: 0, maxXp: 100, isActive: true, isFeatured: false, sortOrder: 12, deptKey: "marketing" },
- { slug: "nguyen-phuc-thinh", name: "Nguyễn Phúc Thịnh", title: "Marketing Staff", bio: "Nhân viên Marketing.", shortBio: "Marketing.", level: 1, rank: "iron", availableLp: 0, currentXp: 0, maxXp: 100, isActive: true, isFeatured: false, sortOrder: 13, deptKey: "marketing" },
+ // ── Ban Giám đốc ────────────────────────────────────────────────────────────
+ // CEO already seeded in seedCEO() — no member here
+
+ // ── Phòng Quản lý Dự án (PM) ───────────────────────────────────────────────
+ { slug: "nguyen-phuc-thuan", name: "Nguyễn Phúc Thuần", title: "Project Manager", bio: "Điều phối và quản lý dự án, đảm bảo tiến độ và chất lượng.", shortBio: "PM — Quản lý dự án.", level: 1, rank: "iron", availableLp: 0, currentXp: 0, maxXp: 100, isActive: true, isFeatured: false, sortOrder: 1, deptKey: "pm" },
+ { slug: "tran-vu-hung", name: "Trần Vũ Hùng", title: "Project Manager", bio: "Quản lý tiến độ và phối hợp các bên liên quan.", shortBio: "PM — Quản lý tiến độ.", level: 1, rank: "iron", availableLp: 0, currentXp: 0, maxXp: 100, isActive: true, isFeatured: false, sortOrder: 2, deptKey: "pm" },
+ { slug: "le-ngoc-xuan-quynh", name: "Lê Ngọc Xuân Quỳnh", title: "PM Tập Sự", bio: "Hỗ trợ quản lý dự án, học hỏi và phát triển kỹ năng PM.", shortBio: "PM tập sự.", level: 1, rank: "iron", availableLp: 0, currentXp: 0, maxXp: 100, isActive: true, isFeatured: false, sortOrder: 3, deptKey: "pm" },
+
+ // ── Phòng Kỹ thuật (IT) ───────────────────────────────────────────────────
+ { slug: "nguyen-trong-quy", name: "Nguyễn Trọng Quý", title: "Developer", bio: "Phát triển web và ứng dụng.", shortBio: "Dev.", level: 1, rank: "iron", availableLp: 0, currentXp: 0, maxXp: 100, isActive: true, isFeatured: false, sortOrder: 4, deptKey: "engineering" },
+ { slug: "do-tan-tai", name: "Đỗ Tấn Tài", title: "Developer", bio: "Phát triển phần mềm và tối ưu hiệu suất.", shortBio: "Dev.", level: 1, rank: "iron", availableLp: 0, currentXp: 0, maxXp: 100, isActive: true, isFeatured: false, sortOrder: 5, deptKey: "engineering" },
+ { slug: "nguyen-minh-tri", name: "Nguyễn Minh Trí", title: "IT Support", bio: "Hỗ trợ hạ tầng kỹ thuật, quản trị hệ thống.", shortBio: "IT Support.", level: 1, rank: "iron", availableLp: 0, currentXp: 0, maxXp: 100, isActive: true, isFeatured: false, sortOrder: 6, deptKey: "engineering" },
+
+ // ── Phòng Kiểm soát chất lượng dự án (QC) ────────────────────────────────
+ { slug: "le-van-thuan", name: "Lê Văn Thuận", title: "QA Engineer", bio: "Kiểm thử chất lượng sản phẩm, phát hiện và báo cáo lỗi.", shortBio: "QA Engineer.", level: 1, rank: "iron", availableLp: 0, currentXp: 0, maxXp: 100, isActive: true, isFeatured: false, sortOrder: 7, deptKey: "qc" },
+ { slug: "tran-hoang-anh", name: "Trần Hoàng Anh", title: "QA Engineer", bio: "Kiểm thử chức năng và hồ sơ lỗi.", shortBio: "QA Engineer.", level: 1, rank: "iron", availableLp: 0, currentXp: 0, maxXp: 100, isActive: true, isFeatured: false, sortOrder: 8, deptKey: "qc" },
+ { slug: "ha-the-anh", name: "Hà Thế Anh", title: "QA Engineer", bio: "Kiểm thử phần mềm và đảm bảo chất lượng.", shortBio: "QA Engineer.", level: 1, rank: "iron", availableLp: 0, currentXp: 0, maxXp: 100, isActive: true, isFeatured: false, sortOrder: 9, deptKey: "qc" },
+ { slug: "luong-hoang-thong", name: "Lương Hoàng Thông", title: "QA Engineer", bio: "Kiểm thử và đảm bảo chất lượng sản phẩm.", shortBio: "QA Engineer.", level: 1, rank: "iron", availableLp: 0, currentXp: 0, maxXp: 100, isActive: true, isFeatured: false, sortOrder: 10, deptKey: "qc" },
+
+ // ── Phòng SEO ──────────────────────────────────────────────────────────────
+ { slug: "duong-gia-lac", name: "Dương Gia Lạc", title: "SEO & Developer", bio: "Tối ưu SEO, phân tích Google Analytics và phát triển web.", shortBio: "SEO Specialist.", level: 1, rank: "iron", availableLp: 0, currentXp: 0, maxXp: 100, isActive: true, isFeatured: false, sortOrder: 11, deptKey: "seo" },
+
+ // ── Phòng Media ────────────────────────────────────────────────────────────
+ { slug: "nguyen-phuc-thinh", name: "Nguyễn Phúc Thịnh", title: "Trưởng phòng Media", bio: "Trưởng phòng Media — quản lý nội dung, video, social media và truyền thông.", shortBio: "Trưởng phòng Media.", level: 15, rank: "bronze", availableLp: 0, currentXp: 0, maxXp: 100, isActive: true, isFeatured: false, sortOrder: 12, deptKey: "media" },
+ { slug: "tran-vo-thuy-duong", name: "Trần Võ Thuỳ Dương", title: "Đại sứ Truyền thông", bio: "Đại sứ truyền thông và marketing, xây dựng thương hiệu LOOP.", shortBio: "Đại sứ Truyền thông.", level: 1, rank: "iron", availableLp: 0, currentXp: 0, maxXp: 100, isActive: true, isFeatured: false, sortOrder: 13, deptKey: "media" },
 ];
 
   const memberCUIDs: Record<string, string> = {};
@@ -2292,16 +2227,16 @@ async function seedMemberExpertise(memberCUIDs: Record<string, string>) {
   "nguyen-phuc-thuan": ["Project Management", "Jira", "Scrum", "Notion"],
  "tran-vu-hung": ["Project Management", "Agile", "Trello", "Slack"],
  "le-ngoc-xuan-quynh": ["Project Management", "Notion", "Communication"],
- "duong-gia-lac": ["SEO", "Google Analytics", "React", "Next.js"],
- "nguyen-trong-quy": ["Frontend", "JavaScript", "CSS"],
- "do-tan-tai": ["Frontend", "React", "TypeScript"],
- "nguyen-minh-tri": ["IT Support", "Hardware", "Networking", "Linux"],
- "le-van-thuan": ["QA", "Manual Testing", "Jira", "Bug Tracking"],
+ "duong-gia-lac": ["SEO", "Google Analytics", "Google Search Console", "React", "Next.js"],
+ "nguyen-trong-quy": ["Frontend", "JavaScript", "CSS", "React"],
+ "do-tan-tai": ["Frontend", "React", "TypeScript", "Next.js"],
+ "nguyen-minh-tri": ["IT Support", "Hardware", "Networking", "Linux", "Docker"],
+ "le-van-thuan": ["QA", "Manual Testing", "Jira", "Bug Tracking", "API Testing"],
   "tran-hoang-anh": ["QA", "Test Automation", "Selenium", "Jira"],
  "ha-the-anh": ["QA", "Performance Testing", "Postman", "API Testing"],
  "luong-hoang-thong": ["QA", "Regression Testing", "Jira", "Documentation"],
- "tran-vo-thuy-duong": ["Marketing", "Content Marketing", "Social Media"],
- "nguyen-phuc-thinh": ["Marketing", "SEO", "Google Analytics", "Content"],
+ "tran-vo-thuy-duong": ["Marketing", "Content Marketing", "Social Media", "Branding"],
+ "nguyen-phuc-thinh": ["Media", "Video Production", "Social Media", "Photography", "Branding"],
 };
 
   // Get all expertises
@@ -2861,6 +2796,29 @@ async function seedR2(deptIds: Record<string, string>) {
   const memberCUIDs = await seedAllTeamMembers(deptIds);
   const teamUserIds = await seedTeamUsers(memberCUIDs);
   await seedMemberExpertise(memberCUIDs);
+
+  // ── Update department heads ────────────────────────────────────────────────
+  // CEO is the head of Ban Giám đốc
+  const ceoId = memberCUIDs["bui-nhat-duc-anh"];
+  if (ceoId) {
+    await prisma.department.updateMany({
+      where: { key: "ceo_office" },
+      data: { headId: ceoId },
+    });
+  }
+  // Trưởng phòng Media — Nguyễn Phúc Thịnh
+  const mediaHeadId = memberCUIDs["nguyen-phuc-thinh"];
+  if (mediaHeadId) {
+    await prisma.department.updateMany({
+      where: { key: "media" },
+      data: { headId: mediaHeadId },
+    });
+    await prisma.teamMember.updateMany({
+      where: { slug: "nguyen-phuc-thinh" },
+      data: { isDeptHead: true },
+    });
+  }
+  console.log("  ✓ Department heads updated");
   // NOTE: seedRankEffects() and seedMemberOverrides() removed —
   // Effects are FIXED in code (guildMemberData.ts) per rank tier.
   // DB RankEffect + MemberEffectOverride tables are kept for future use
@@ -3106,6 +3064,81 @@ async function seedAboutSections() {
   console.log(`  ✅ Seeded ${sections.length} AboutSections (vi/en/ja/ko/zh)`);
 }
 
+
+// ══════════════════════════════════════════════════════════════════
+// 17b. FAQs
+// ══════════════════════════════════════════════════════════════════
+
+async function seedFaqs() {
+  console.log("\n[FAQs] Seeding FAQ entries...");
+
+  function faqId(q: string): string {
+    return q.toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "").slice(0, 50);
+  }
+
+  // Faq model: question/answer = VI (default), questionEn/answerEn = EN translation
+  const faqData = [
+    // general
+    { question: "LOOP Solutions là công ty gì?", answer: "Công ty chuyên cung cấp giải pháp chuyển đổi số toàn diện — từ thiết kế website, phát triển ứng dụng web/app, hệ thống dashboard analytics đến dịch vụ SEO và media production.", questionEn: "What is LOOP Solutions?", answerEn: "A comprehensive digital transformation company providing website design, web/app development, analytics dashboards, SEO, and media production services.", category: "general", sortOrder: 1 },
+    { question: "LOOP Solutions hoạt động từ khi nào?", answer: "Thành lập năm 2024. Tập trung phục vụ doanh nghiệp Việt Nam với đội ngũ 27 chuyên gia trẻ và tinh thần khởi nghiệp.", questionEn: "When was LOOP Solutions founded?", answerEn: "Founded in 2024. Focused on serving Vietnamese businesses with a team of 27 young experts and an entrepreneurial spirit.", category: "general", sortOrder: 2 },
+    { question: "Liên hệ LOOP Solutions bằng cách nào?", answer: "Qua form liên hệ tại /lien-he, email contact@loops.vn, hoặc hotline trong giờ hành chính.", questionEn: "How can I contact LOOP Solutions?", answerEn: "Via the contact form at /contact, email contact@loops.vn, or hotline during business hours.", category: "general", sortOrder: 3 },
+    { question: "LOOP có hỗ trợ khách hàng nước ngoài không?", answer: "Có. Đội ngũ LOOP có thể giao tiếp bằng tiếng Anh, tiếng Nhật, tiếng Hàn và tiếng Trung.", questionEn: "Does LOOP support international clients?", answerEn: "Yes. The LOOP team can communicate in English, Japanese, Korean, and Chinese.", category: "general", sortOrder: 4 },
+    // services
+    { question: "LOOP cung cấp dịch vụ gì?", answer: "4 nhóm chính: (1) Thiết kế & phát triển Website, (2) Phát triển App/SaaS, (3) Dashboard & Hệ thống quản lý, (4) SEO & Media Production.", questionEn: "What services does LOOP provide?", answerEn: "4 main groups: (1) Website Design & Development, (2) App/SaaS Development, (3) Dashboard & Management Systems, (4) SEO & Media Production.", category: "services", sortOrder: 1 },
+    { question: "Thời gian hoàn thành dự án website?", answer: "Landing page: 5–7 ngày. Website 5–10 trang: 2–3 tuần. E-commerce hoặc phức tạp: 1–3 tháng tùy quy mô.", questionEn: "How long does it take to complete a website?", answerEn: "Landing page: 5–7 days. 5–10 page website: 2–3 weeks. E-commerce or complex: 1–3 months depending on scope.", category: "services", sortOrder: 2 },
+    { question: "Giá thiết kế website bắt đầu từ bao nhiêu?", answer: "Gói Cơ bản: từ 5 triệu VNĐ (landing page). Gói Doanh nghiệp: từ 15 triệu VNĐ. Gói E-commerce: từ 30 triệu VNĐ.", questionEn: "What is the starting price for website design?", answerEn: "Basic Package: from 5 million VND (landing page). Business Package: from 15 million VND. E-commerce Package: from 30 million VND.", category: "services", sortOrder: 3 },
+    { question: "LOOP có dịch vụ bảo trì sau bàn giao không?", answer: "Có. Gói bảo trì hàng tháng từ 500,000 VNĐ — bao gồm cập nhật nội dung, bảo mật, backup và hỗ trợ kỹ thuật.", questionEn: "Does LOOP provide post-delivery maintenance?", answerEn: "Yes. Monthly maintenance packages from 500,000 VND — including content updates, security, backup and technical support.", category: "services", sortOrder: 4 },
+    { question: "Tôi có được cung cấp source code không?", answer: "Có. Sau khi thanh toán 100%, toàn bộ source code và tài liệu kỹ thuật sẽ được bàn giao cho khách hàng.", questionEn: "Will I receive the source code?", answerEn: "Yes. After 100% payment, all source code and technical documentation will be delivered to the client.", category: "services", sortOrder: 5 },
+    // technical
+    { question: "LOOP sử dụng công nghệ gì?", answer: "Frontend: Next.js, React, TailwindCSS. Backend: Node.js, PostgreSQL. Hosting: Vercel, AWS. Các công nghệ khác tùy yêu cầu dự án.", questionEn: "What technologies does LOOP use?", answerEn: "Frontend: Next.js, React, TailwindCSS. Backend: Node.js, PostgreSQL. Hosting: Vercel, AWS. Other technologies as needed per project.", category: "technical", sortOrder: 1 },
+    { question: "Website có tương thích di động không?", answer: "Mobile-first responsive design là tiêu chuẩn mặc định. Mọi sản phẩm đều tương thích hoàn hảo trên smartphone và tablet.", questionEn: "Are websites mobile-friendly?", answerEn: "Mobile-first responsive design is our default standard. All products are perfectly compatible on smartphones and tablets.", category: "technical", sortOrder: 2 },
+    { question: "Website có được tối ưu SEO ngay không?", answer: "Có. SEO on-page được triển khai từ đầu — meta tags, structured data, tốc độ tải trang, semantic HTML và sitemap.", questionEn: "Are websites SEO-optimized from the start?", answerEn: "Yes. SEO on-page is implemented from the start — meta tags, structured data, page load speed, semantic HTML and sitemap.", category: "technical", sortOrder: 3 },
+    { question: "Hệ thống bảo mật của LOOP thế nào?", answer: "Bảo mật đa lớp: SSL/HTTPS, CSP headers, input sanitization, parameterized queries (SQL injection prevention), rate limiting và monitoring.", questionEn: "How secure are LOOP's systems?", answerEn: "Multi-layer security: SSL/HTTPS, CSP headers, input sanitization, parameterized queries (SQL injection prevention), rate limiting and monitoring.", category: "technical", sortOrder: 4 },
+    // payment
+    { question: "Tôi thanh toán bằng cách nào?", answer: "Chuyển khoản ngân hàng hoặc VietQR. Thanh toán 50% khi ký hợp đồng, 50% còn lại khi bàn giao.", questionEn: "What payment methods are accepted?", answerEn: "Bank transfer or VietQR. 50% payment upon contract signing, 50% upon delivery.", category: "payment", sortOrder: 1 },
+    { question: "Chính sách đặt cọc và hoàn tiền?", answer: "Đặt cọc 50% trước khi bắt đầu. Hoàn tiền theo thỏa thuận trong hợp đồng — chia theo giai đoạn hoàn thành.", questionEn: "What is the deposit and refund policy?", answerEn: "50% deposit before starting. Refund according to contract terms — split by completion stages.", category: "payment", sortOrder: 2 },
+    { question: "Tôi có được xuất hóa đơn GTGT không?", answer: "Có. Xuất hóa đơn GTGT 10% theo quy định pháp luật Việt Nam.", questionEn: "Can I get a VAT invoice?", answerEn: "Yes. VAT invoice at 10% issued according to Vietnamese law.", category: "payment", sortOrder: 3 },
+    // lp
+    { question: "Điểm LP (Loop Points) là gì?", answer: "Hệ thống tích điểm nội bộ dành cho khách hàng LOOP. Tích điểm từ mua dịch vụ, hoàn thành nhiệm vụ, giới thiệu bạn bè và nhiều hoạt động khác.", questionEn: "What are LP (Loop Points)?", answerEn: "An internal loyalty points system for LOOP clients. Earn points by purchasing services, completing quests, referring friends, and more.", category: "lp", sortOrder: 1 },
+    { question: "Tỷ giá quy đổi LP?", answer: "1,000 LP = 500,000 VNĐ giảm giá. Tỷ giá có thể thay đổi theo chính sách LOOP.", questionEn: "What is the LP exchange rate?", answerEn: "1,000 LP = 500,000 VND discount. Exchange rate may change according to LOOP policy.", category: "lp", sortOrder: 2 },
+    { question: "Làm sao để tích thêm LP?", answer: "4 cách: (1) Mua dịch vụ tại LOOP, (2) Hoàn thành quest nhiệm vụ trên website, (3) Giới thiệu khách hàng mới, (4) Điểm danh hàng ngày.", questionEn: "How do I earn more LP?", answerEn: "4 ways: (1) Purchase LOOP services, (2) Complete quests on the website, (3) Refer new clients, (4) Daily check-in.", category: "lp", sortOrder: 3 },
+    // academy
+    { question: "LOOP Academy là gì?", answer: "Nền tảng đào tạo nội bộ của LOOP Solutions — cung cấp các khóa học chuyên sâu về web development, UX design, SEO và digital marketing cho nhân viên và học viên.", questionEn: "What is LOOP Academy?", answerEn: "LOOP Solutions' internal training platform — providing in-depth courses on web development, UX design, SEO and digital marketing for staff and learners.", category: "academy", sortOrder: 1 },
+    { question: "Khóa học có miễn phí không?", answer: "Tùy khóa. Một số khóa miễn phí 100%, một số có thể thanh toán bằng VNĐ hoặc LP (điểm thưởng nội bộ).", questionEn: "Are courses free?", answerEn: "Depending on the course. Some courses are 100% free, some can be paid with VND or LP (internal loyalty points).", category: "academy", sortOrder: 2 },
+    { question: "Tôi nhận được chứng chỉ khi hoàn thành khóa học không?", answer: "Có. Chứng chỉ hoàn thành được cấp khi học viên đạt 100% tiến độ khóa học.", questionEn: "Will I receive a certificate upon completion?", answerEn: "Yes. A completion certificate is issued when the learner achieves 100% course progress.", category: "academy", sortOrder: 3 },
+  ];
+
+  let count = 0;
+  for (const f of faqData) {
+    const id = faqId(f.question);
+    await prisma.faq.upsert({
+      where: { id },
+      update: {
+        question: f.question,
+        answer: f.answer,
+        questionEn: f.questionEn,
+        answerEn: f.answerEn,
+        category: f.category,
+        sortOrder: f.sortOrder,
+        isActive: true,
+      },
+      create: {
+        id,
+        question: f.question,
+        answer: f.answer,
+        questionEn: f.questionEn,
+        answerEn: f.answerEn,
+        category: f.category,
+        sortOrder: f.sortOrder,
+        isActive: true,
+      },
+    });
+    count++;
+  }
+  console.log(`  ✅ Seeded ${count} FAQ entries (VI + EN)`);
+}
+
+
 // 17. Blog Tags
 // ══════════════════════════════════════════════════════════════════
 
@@ -3159,10 +3192,10 @@ async function main() {
     }
     const deptIds = await seedDepartments();
     await seedAdmin();
-    await seedHR();
+    // await seedHR(); // REMOVED: Quynh HR was a duplicate of Lê Ngọc Xuân Quỳnh
     await seedAccessTags();
     await seedMemberRequests();
-    await seedCEO();
+    await seedCEO(deptIds);
     await seedServiceAttributes();
     await seedPricing();
     await seedPointsSystem();
@@ -3178,6 +3211,7 @@ async function main() {
     await seedBlogTags();
     await seedR2(deptIds); // <-- NEW: R2 unified demo data (pass deptIds for FK)
     await seedAboutSections();
+    await seedFaqs();
  // ─── P1: Web Package Pricing ────────────────────────────────────────────────
  console.log("\n[WEB PACKAGE] Hosting Plans + Domain Prices...");
  await prisma.pricingHostingPlan.upsert({ where:{slug:"professional"}, update:{}, create:{slug:"professional",name:"Professional",nameVi:"Gói Chuyên nghiệp",monthlyPrice:199000,months:12,discountPct:10,period:"1 năm",periodVi:"12 tháng",features:["SSD 30GB","SSL miễn phí","Email 5 hộp thư","Backup hàng ngày","CDN miễn phí","Hỗ trợ 24/7"],featuresVi:["SSD 30GB","SSL miễn phí","Email 5 hộp thư","Backup hàng ngày","CDN miễn phí","Hỗ trợ 24/7"],color:"#EC4899",sortOrder:2} });
@@ -3186,7 +3220,7 @@ async function main() {
 
 
     // Verify counts
-    const [tm, us, pr, ord, pm, ef, ov, lp, tx, qp, ec, tsk, q, ev, exp, me, svc, at, mr, st, bt, hp, dp] = await Promise.all([
+    const [tm, us, pr, ord, pm, ef, ov, lp, tx, qp, ec, tsk, q, ev, exp, me, svc, at, mr, st, bt, hp, dp, faq] = await Promise.all([
       prisma.teamMember.count(),
       prisma.user.count(),
       prisma.project.count(),
@@ -3211,9 +3245,10 @@ async function main() {
       prisma.blogTag.count(),
  prisma.pricingHostingPlan.count(),
  prisma.pricingDomainPrice.count(),
+ prisma.faq.count(),
     ]);
-    console.log("\n[VERIFY] TM=%d US=%d PR=%d OR=%d PM=%d | LP=%d TX=%d QP=%d | EC=%d TS=%d Q=%d EV=%d | EXP=%d ME=%d | SVC=%d | AT=%d MR=%d ST=%d | BT=%d | HP=%d DP=%d",
-      tm, us, pr, ord, pm, lp, tx, qp, ec, tsk, q, ev, exp, me, svc, at, mr, st, bt);
+    console.log("\n[VERIFY] TM=%d US=%d PR=%d OR=%d PM=%d | LP=%d TX=%d QP=%d | EC=%d TS=%d Q=%d EV=%d | EXP=%d ME=%d | SVC=%d | AT=%d MR=%d ST=%d | BT=%d | HP=%d DP=%d | FAQ=%d",
+      tm, us, pr, ord, pm, lp, tx, qp, ec, tsk, q, ev, exp, me, svc, at, mr, st, bt, faq);
     console.log("  (EF=%d OV=%d — effects in code, not DB)", ef, ov);
 
     console.log("\n" + "=".repeat(50));

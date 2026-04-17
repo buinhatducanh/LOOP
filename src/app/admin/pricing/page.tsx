@@ -13,6 +13,7 @@
  *   5. Add-ons      — AddonService list + toggle + delete
  */
 
+import { AcknowledgmentsTab } from "./acknowledgments/AcknowledgmentsTab";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "motion/react";
@@ -21,7 +22,7 @@ import { DS, GRD } from "@/lib/design-tokens";
 import { useAdminTranslations } from "@/i18n/admin/useAdminTranslations";
 import {
   Settings, Layers, Server, Package as PackageIcon, PlusCircle,
-  Save, Trash2, RefreshCw, Loader2, Edit2, X, Globe, HardDrive,
+  Save, Trash2, RefreshCw, Loader2, Edit2, X, Globe, CheckSquare, HardDrive,
 } from "lucide-react";
 
 // ── Types ───────────────────────────────────────────────────────────────────────
@@ -137,6 +138,7 @@ const TABS = [
   { key: "addons",       label: "Dịch vụ thêm",       icon: <PlusCircle size={14} /> },
  { key: "hosting", label: "Hosting", icon: <HardDrive size={14} /> },
  { key: "domain-prices", label: "Tên miền", icon: <Globe size={14} /> },
+ { key: "acknowledgments", label: "Acknowledgments", icon: <CheckSquare size={14} /> },
 ];
 
 const fmtVND = (n: number) =>
@@ -1401,6 +1403,7 @@ export default function PricingPage() {
           {tab === "infra-tiers"  && <InfraTiersTab />}
           {tab === "packages"    && <PackagesTab />}
           {tab === "addons"       && <AddonsTab />}
+ {tab === "acknowledgments" && <AcknowledgmentsTab />}
         </motion.div>
       </AnimatePresence>
     </div>

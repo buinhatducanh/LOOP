@@ -16,6 +16,7 @@ import { useTranslations } from "next-intl";
 import { motion, AnimatePresence } from "motion/react";
 import { DS, GRD } from "@/lib/design-tokens";
 import { FeatureToggleTable } from "./FeatureToggleTable";
+import { PackageComparisonModal } from "./PackageComparisonModal";
 import {
   Globe, Code2, BarChart3, Target, Check, ArrowRight, ArrowLeft,
   Users, Calendar, Layers, Sparkles, Shield, Plus, Minus, X, ExternalLink, Zap, Eye, Server,
@@ -350,6 +351,7 @@ export function BookingWizardClient({ locale }: Props) {
   const [submitLoading, setSubmitLoading] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [newOrderId, setNewOrderId] = useState("");
+ const [showCompareModal, setShowCompareModal] = useState(false);
 
   // ── Wizard config (from BE) ─────────────────────────────────────────────────────
   // Packages, features, addons, hosting, domain → loaded from /api/pricing/config
@@ -1014,6 +1016,29 @@ export function BookingWizardClient({ locale }: Props) {
  );
  })}
  </div>
+ </div>
+
+ {/* Compare packages button */}
+ <div style={{ textAlign: "center", marginBottom: 24 }}>
+ <button
+ onClick={() => setShowCompareModal(true)}
+ style={{
+ padding: "10px 24px",
+ borderRadius: 12,
+ background: "rgba(255,255,255,0.04)",
+ border: "1px dashed rgba(255,255,255,0.12)",
+ color: DS.text3,
+ fontSize: 13,
+ fontFamily: DS.mono,
+ cursor: "pointer",
+ display: "inline-flex",
+ alignItems: "center",
+ gap: 8,
+ }}
+ >
+ <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+ Xem chi tiet va so sanh cac goi
+ </button>
  </div>
 
  {/* ── Selected package summary bar ── */}
@@ -1716,6 +1741,19 @@ export function BookingWizardClient({ locale }: Props) {
 
         </div>
       </section>
-    <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } `}</style></main>
+    {/* Package Comparison Modal */}
+ <AnimatePresence>
+ {showCompareModal && (
+ <PackageComparisonModal
+ packages={packages}
+ currentPackageId={selectedPackage}
+ locale={locale}
+ onClose={() => setShowCompareModal(false)}
+ onSelect={(id) => { setSelectedPackage(id); setShowCompareModal(false); }}
+ />
+ )}
+ </AnimatePresence>
+
+ <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } `}</style></main>
   );
 }

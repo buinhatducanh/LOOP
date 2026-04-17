@@ -1319,5 +1319,25 @@
     "filterSeo": "SEO",
     "filterMedia": "Media",
     "filterAllServices": "All services"
+  },
+  "FaqPage": {
+    "badge": "FAQ — LOOP SOLUTIONS",
+    "noResultsHint": "",
+    "ctaDesc": "",
+    "heroHighlight": "FAQ",
+    "heroTitle": "Frequently Asked Questions",
+    "heroDesc": "Find quick answers to your questions about LOOP services, processes, and policies.",
+    "filterAll": "All",
+    "filterGeneral": "General",
+    "filterServices": "Services",
+    "filterTechnical": "Technical",
+    "filterPayment": "Payment",
+    "filterLp": "LP System",
+    "filterAcademy": "Academy",
+    "noResults": "No matching questions found",
+    "stillHaveQuestions": "Still have questions?",
+    "contactUs": "Contact Us",
+    "backToTop": "Back to top",
+    "searchPlaceholder": "Search questions..."
   }
 }

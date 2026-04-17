@@ -630,9 +630,13 @@ model ServicePackage {
   /// Maps this package to a ServiceTier: "web" | "app" | "dashboard" | "seo"
   serviceKey     String?        @map("service_key")
   /// Tier level: 1=Basic, 2=Business, 3=Experience — matches ServiceTier.level
-  tierLevel      Int            @default(1) @map("tier_level")
-  mediaBookings  MediaBooking[]
-  orders         Order[]
+ tierLevel Int  @default(1) @map("tier_level")
+ videoUrl String? @map("video_url")
+ videoThumbnail String? @map("video_thumbnail")
+ showFeatureAcknowledge Boolean @default(true) @map("show_feature_acknowledge")
+ acknowledgmentItems Json? @map("acknowledgment_items")
+ mediaBookings MediaBooking[]
+ orders Order[]
 
   @@map("service_packages")
 }

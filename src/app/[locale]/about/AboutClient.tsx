@@ -253,9 +253,11 @@ type DbSection = {
 };
 
 function db<T>(arr: any[], key: string, fallback: T): T {
-  const item = arr.find((s: DbSection) => s.sectionType === key);
-  if (!item || !item.stats) return fallback;
-  return item.stats as T;
+ const item = arr.find((s: DbSection) => s.sectionType === key);
+ if (!item) return fallback;
+ const val = (item as Record<string, unknown>)[key];
+ if (val === undefined || val === null) return fallback;
+ return val as T;
 }
 
 type AboutClientProps = { locale: string; dbSections?: DbSection[] };
@@ -319,11 +321,15 @@ export default function AboutClient({ locale, dbSections = [] }: AboutClientProp
     ];
   })();
 
-  const teamPreview: TeamMemberProps[] = [
-    { name: "CEO", role: "Chief Executive Officer", department: "Management", avatar: "", deptColor: DS.gold },
-    { name: "CTO", role: "Chief Technology Officer", department: "Engineering", avatar: "", deptColor: DS.cosmicBlue },
-    { name: "COO", role: "Chief Operations Officer", department: "Management", avatar: "", deptColor: DS.pink },
-  ];
+  const teamPreview: TeamMemberProps[] = (() => {
+ const raw = db<Array<{name: string; role: string; department: string; avatar: string; deptColor: string}>>(dbSections, "teamPreview", []);
+ if (raw.length > 0) return raw;
+ return [
+ { name: "CEO", role: "Chief Executive Officer", department: "Management", avatar: "", deptColor: DS.gold },
+ { name: "CTO", role: "Chief Technology Officer", department: "Engineering", avatar: "", deptColor: DS.cosmicBlue },
+ { name: "COO", role: "Chief Operations Officer", department: "Management", avatar: "", deptColor: DS.pink },
+ ];
+ })();
 
   return (
     <div style={{ background: DS.bg, minHeight: "100vh" }}>

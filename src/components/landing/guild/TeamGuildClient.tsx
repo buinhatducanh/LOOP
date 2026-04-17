@@ -24,7 +24,7 @@ import { SearchSortBar, type SortOption } from "./SearchSortBar";
 import { GuildAnimations } from "./GuildAnimations";
 import { HUDPanel } from "./HUDPanel";
 import { RANKS, normalizeRank, formatLP, type RankKey } from "./guildMemberData";
-import { Shield, Users, Trophy, ChevronRight, ArrowRight } from "lucide-react";
+import { Users, Trophy, ChevronRight, ArrowRight } from "lucide-react";
 import { DS, GRD, GLOW } from "@/lib/design-tokens";
 
 type MemberRecord = Record<string, unknown>;
@@ -309,16 +309,10 @@ function HeroSection({ members, hero, locale }: HeroSectionProps) {
             className="flex items-center justify-center gap-4 flex-wrap"
           >
             <Link
-              href={`/${locale}/booking`}
+ href={`/${locale}/nhan-vien`}
               style={{ background: GRD.primary, color: DS.text, fontSize: 14, fontWeight: 700, padding: "12px 28px", borderRadius: 12, textDecoration: "none", boxShadow: GLOW.purple, display: "flex", alignItems: "center", gap: 8 }}
             >
               Làm việc cùng chúng tôi <ArrowRight size={15} />
-            </Link>
-            <Link
-              href={`/${locale}/admin`}
-              style={{ color: DS.text4, fontSize: 13, padding: "11px 22px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.1)", textDecoration: "none", display: "flex", alignItems: "center", gap: 6, backdropFilter: "blur(8px)" }}
-            >
-              <Shield size={13} style={{ color: DS.text4 }} /> Admin Panel
             </Link>
           </motion.div>
         </div>
