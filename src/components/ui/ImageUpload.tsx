@@ -5,7 +5,7 @@ import { DS } from "@/lib/design-tokens";
 
 interface ImageUploadProps {
   value?: string;
-  onChange: (url: string) => void;
+  onChange: (url: string, publicId?: string) => void;
   label?: string;
   folder?: string;
   aspectRatio?: "square" | "video" | "auto";
@@ -18,6 +18,8 @@ interface ImageUploadProps {
    * and the replace/remove buttons show disabled style.
    */
   disabled?: boolean;
+  /** Current publicId — used to auto-delete old image when replacing */
+  publicId?: string;
 }
 
 const ASPECT = {
@@ -25,6 +27,25 @@ const ASPECT = {
   video: "aspect-video",
   auto: "",
 };
+
+async function deleteCloudinaryImage(publicId: string, retry = 1): Promise<void> {
+ try {
+ const res = await fetch(`/api/admin/upload?publicId=${encodeURIComponent(publicId)}`, {
+ method: "DELETE",
+ });
+ if (!res.ok) {
+ const json = await res.json().catch(() => ({}));
+ console.error(`[ImageUpload] Failed to delete Cloudinary image publicId="${publicId}", status=${res.status}:`, json?.error ?? "unknown error");
+ }
+ } catch (err) {
+ const msg = err instanceof Error ? err.message : String(err);
+ if (retry > 0) {
+ await new Promise((r) => setTimeout(r, 1000));
+ return deleteCloudinaryImage(publicId, retry - 1);
+ }
+ console.error(`[ImageUpload] Failed to delete Cloudinary image publicId="${publicId}" after retry:`, msg);
+ }
+}
 
 export function ImageUpload({
   value,
@@ -35,6 +56,7 @@ export function ImageUpload({
   previewOnly = false,
   currentImage,
   disabled = false,
+  publicId,
 }: ImageUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
@@ -51,6 +73,11 @@ export function ImageUpload({
     const blobUrl = URL.createObjectURL(file);
     setLocalPreview(blobUrl); // show local preview immediately
     try {
+      // Auto-delete old image if we have its publicId
+      if (publicId) {
+        await deleteCloudinaryImage(publicId);
+      }
+
       const fd = new FormData();
       fd.append("file", file);
       fd.append("folder", folder);
@@ -59,7 +86,9 @@ export function ImageUpload({
       if (!res.ok) throw new Error(json?.error || "Upload failed");
       // ok() wraps result in { data } — extract the upload result from it
       const uploadData = json?.data ?? json;
-      onChange((uploadData.url ?? uploadData.secure_url) as string);
+      const newUrl = (uploadData.url ?? uploadData.secure_url) as string;
+      const newPublicId = uploadData.publicId as string | undefined;
+      onChange(newUrl, newPublicId);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Upload failed");
       setLocalPreview(null); // clear preview on error
@@ -88,6 +117,15 @@ export function ImageUpload({
     setIsDragOver(false);
     const file = e.dataTransfer.files[0];
     if (file) onFileChange(file);
+  };
+
+  const handleRemove = async () => {
+    // Delete from Cloudinary if we have publicId
+    if (publicId) {
+      await deleteCloudinaryImage(publicId);
+    }
+    onChange("", undefined);
+    setLocalPreview(null);
   };
 
   if (previewOnly) {
@@ -146,7 +184,7 @@ export function ImageUpload({
             {/* Remove button */}
             <button
               type="button"
-              onClick={() => { onChange(""); setLocalPreview(null); }}
+              onClick={handleRemove}
               disabled={loading || disabled}
               style={{
                 padding: "5px 10px", borderRadius: 7, fontSize: 11,

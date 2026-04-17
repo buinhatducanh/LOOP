@@ -109,7 +109,11 @@ export async function middleware(req: NextRequest) {
   if (pathname === "/admin" || pathname.startsWith("/admin/")) {
     // /admin/login is always public — no auth required
     if (pathname === "/admin/login") {
-      return NextResponse.next();
+      const requestHeaders = new Headers(req.headers);
+      requestHeaders.set("x-pathname", pathname);
+      return NextResponse.next({
+        request: { headers: requestHeaders },
+      });
     }
 
     // ── Pass through to client-side AuthGuard for all admin routes ────────────

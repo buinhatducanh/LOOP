@@ -3,16 +3,18 @@
 /**
  * Admin Login Page — /admin/login
  *
+ * Cosmic full-page design with animated background.
  * Public: shows login form for unauthenticated users.
- * Already-authenticated users are auto-redirected to /admin/overview.
- *
- * Redesigned: shared animated background with client auth page.
+ * Already-authenticated users with valid token are auto-redirected to /admin/overview.
  */
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { AdminLoginModal } from "@/components/admin/AdminLoginModal";
+import { useEffect, useState, useMemo, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { motion } from "motion/react";
+import { AdminLoginForm } from "@/components/admin/AdminLoginForm";
 import { DS } from "@/lib/design-tokens";
-import { motion, useMotionValue, useSpring, useTransform } from "motion/react";
+import { isTokenValid } from "@/lib/utils/token-utils";
+import { useAuthStore } from "@/app/store/authStore";
 
 function hexRgba(hex: string, alpha: number): string {
  const h = hex.replace("#", "");
@@ -22,23 +24,31 @@ function hexRgba(hex: string, alpha: number): string {
  return `rgba(${r},${g},${b},${alpha})`;
 }
 
-function Particle({ x, y, size, delay, duration, opacity }: {
- x: number; y: number; size: number; delay: number; duration: number; opacity: number;
-}) {
+type ParticleData = {
+ id: number;
+ x: number; y: number; size: number; delay: number;
+ duration: number; opacity: number;
+ colorType: 0 | 1; // 0 = pink, 1 = purple — deterministic
+};
+
+function Particle({ x, y, size, delay, duration, opacity, colorType }: ParticleData) {
+ const bg = colorType === 0
+ ? `radial-gradient(circle, ${DS.pink}, transparent)`
+ : `radial-gradient(circle, ${DS.cosmicPurple}, transparent)`;
+ const shadow = colorType === 0
+ ? `0 0 ${size * 2}px ${hexRgba(DS.pink, 0.3)}`
+ : `0 0 ${size * 2}px ${hexRgba(DS.cosmicPurple, 0.3)}`;
+
  return (
  <motion.div
  initial={{ opacity: 0, scale: 0 }}
  animate={{ opacity: [0, opacity, opacity * 0.5, opacity], scale: [0, 1, 0.7, 1], y: [-15, -50, -15] }}
- transition={{ opacity: { delay, duration, times: [0, 0.3, 0.7, 1], repeat: Infinity, repeatDelay: Math.random() * 3 + 2 }, scale: { delay, duration, repeat: Infinity }, y: { delay, duration, repeat: Infinity } }}
+ transition={{ opacity: { delay, duration, times: [0, 0.3, 0.7, 1], repeat: Infinity, repeatDelay: delay * 0.8 }, scale: { delay, duration, repeat: Infinity }, y: { delay, duration, repeat: Infinity } }}
  style={{
  position: "absolute", left: `${x}%`, top: `${y}%`,
  width: size, height: size, borderRadius: "50%",
- background: Math.random() > 0.5
- ? `radial-gradient(circle, ${DS.pink}, transparent)`
- : `radial-gradient(circle, ${DS.cosmicPurple}, transparent)`,
- boxShadow: Math.random() > 0.5
- ? `0 0 ${size * 2}px ${hexRgba(DS.pink, 0.3)}`
- : `0 0 ${size * 2}px ${hexRgba(DS.cosmicPurple, 0.3)}`,
+ background: bg,
+ boxShadow: shadow,
  pointerEvents: "none",
  }}
  />
@@ -46,33 +56,18 @@ function Particle({ x, y, size, delay, duration, opacity }: {
 }
 
 function AdminAnimatedBg() {
- const mouseX = useMotionValue(0);
- const mouseY = useMotionValue(0);
- const springX = useSpring(mouseX, { stiffness: 25, damping: 18 });
- const springY = useSpring(mouseY, { stiffness: 25, damping: 18 });
- const ring1X = useTransform(springX, [-1, 1], [-25, 25]);
- const ring1Y = useTransform(springY, [-1, 1], [-15, 15]);
- const ring2X = useTransform(springX, [-1, 1], [-14, 14]);
- const ring2Y = useTransform(springY, [-1, 1], [-9, 9]);
-
- useEffect(() => {
- const onMove = (e: MouseEvent) => {
- mouseX.set((e.clientX / window.innerWidth - 0.5) * 2);
- mouseY.set((e.clientY / window.innerHeight - 0.5) * 2);
- };
- window.addEventListener("mousemove", onMove);
- return () => window.removeEventListener("mousemove", onMove);
- }, []);
-
- const particles = Array.from({ length: 40 }, (_, i) => ({
+ // Deterministic particle positions — avoids SSR/hydration mismatch.
+ // Uses index-based pseudo-random so server and client render identically.
+ const particles = useMemo<ParticleData[]>(() => Array.from({ length: 40 }, (_, i) => ({
  id: i,
- x: Math.random() * 100,
- y: Math.random() * 100,
- size: Math.random() * 3 + 2,
- delay: Math.random() * 4,
- duration: Math.random() * 5 + 6,
- opacity: Math.random() * 0.4 + 0.15,
- }));
+ x: ((i * 17 + 7) % 97) + ((i * 3) % 3),
+ y: ((i * 23 + 11) % 94) + ((i * 7) % 6),
+ size: 2 + ((i * 5) % 4),
+ delay: 0.5 + ((i * 3) % 8) * 0.5,
+ duration: 6 + ((i * 7) % 10),
+ opacity: 0.15 + (((i * 3) % 8) / 20),
+ colorType: (i % 2) as 0 | 1,
+ })), []);
 
  return (
  <div style={{ position: "fixed", inset: 0, overflow: "hidden", pointerEvents: "none" }}>
@@ -84,23 +79,18 @@ function AdminAnimatedBg() {
  }} />
 
  {/* Grid */}
- <motion.div
- style={{
+ <div style={{
  position: "absolute", inset: "-20%",
  backgroundImage: `linear-gradient(${hexRgba(DS.cosmicPurple, 0.04)} 1px, transparent 1px), linear-gradient(90deg, ${hexRgba(DS.cosmicPurple, 0.04)} 1px, transparent 1px)`,
  backgroundSize: "80px 80px",
- x: useTransform(springX, [-1, 1], [-12, 12]),
- y: useTransform(springY, [-1, 1], [-8, 8]),
- }}
- />
+ }} />
 
  {particles.map((p) => <Particle key={p.id} {...p} />)}
 
- {/* Rings */}
+ {/* Ring 1 */}
  <motion.div
  style={{
  position: "absolute", top: "50%", left: "50%",
- x: ring1X, y: ring1Y,
  translateX: "-50%", translateY: "-50%",
  width: 600, height: 600, borderRadius: "50%",
  border: `1px solid ${hexRgba(DS.cosmicPurple, 0.1)}`,
@@ -108,10 +98,10 @@ function AdminAnimatedBg() {
  animate={{ rotate: 360 }}
  transition={{ duration: 90, repeat: Infinity, ease: "linear" }}
  />
+ {/* Ring 2 */}
  <motion.div
  style={{
  position: "absolute", top: "50%", left: "50%",
- x: ring2X, y: ring2Y,
  translateX: "-50%", translateY: "-50%",
  width: 380, height: 380, borderRadius: "40%",
  border: `1px solid ${hexRgba(DS.pink, 0.08)}`,
@@ -140,23 +130,36 @@ function AdminAnimatedBg() {
 
 function hasStoredToken(): boolean {
  if (typeof window === "undefined") return false;
- return !!localStorage.getItem("loop-staff-token");
+ const token = localStorage.getItem("loop-staff-token");
+ return isTokenValid(token);
 }
 
-export default function AdminLoginPage() {
+function AdminLoginContent() {
  const [mounted, setMounted] = useState(false);
  const router = useRouter();
+ const searchParams = useSearchParams();
 
  useEffect(() => {
+ // Loop prevention: If AdminLayout server-side rejected the session (e.g. cookie missing/expired),
+ // it redirects here with ?reason=expired. We MUST clear stale client data instead of auto-redirecting back.
+ if (searchParams.get("reason") === "expired") {
+ localStorage.removeItem("loop-staff-token");
+ useAuthStore.getState().logout(); // sync condition with Zustand
+ setMounted(true);
+ // Cleanly strip the query param so refresh doesn't trigger it again
+ // DO NOT use window.history.replaceState in App Router as it causes RSC infinite fetch loop!
+ router.replace("/admin/login", { scroll: false });
+ return;
+ }
+
  if (hasStoredToken()) {
  router.replace("/admin/overview");
  return;
  }
  setMounted(true);
- }, []);
+ }, [searchParams, router]);
 
  return (
- <>
  <div
  style={{
  background: DS.bg,
@@ -173,35 +176,105 @@ export default function AdminLoginPage() {
 
  {mounted && (
  <motion.div
- initial={{ opacity: 0, scale: 0.93, y: 20 }}
+ initial={{ opacity: 0, scale: 0.93, y: 24 }}
  animate={{ opacity: 1, scale: 1, y: 0 }}
- transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
- style={{ position: "relative", zIndex: 10, width: "100%", maxWidth: 460, margin: "1rem" }}
+ transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+ style={{
+ width: "100%",
+ maxWidth: 480,
+ margin: "1rem",
+ position: "relative",
+ zIndex: 10,
+ }}
  >
+ {/* Outer glow */}
  <div style={{
  position: "absolute", inset: -1,
- background: `linear-gradient(135deg, ${hexRgba(DS.cosmicPurple, 0.25)}, ${hexRgba(DS.pink, 0.15)})`,
- borderRadius: "1.5rem",
- opacity: 0.5,
+ background: `linear-gradient(135deg, ${hexRgba(DS.cosmicPurple, 0.3)}, ${hexRgba(DS.pink, 0.2)}, ${hexRgba(DS.cosmicCyan, 0.15)})`,
+ borderRadius: "1.625rem",
+ opacity: 0.6,
  filter: "blur(1px)",
  }} />
+
+ {/* Card */}
  <div style={{
- background: "rgba(13,21,38,0.9)",
- backdropFilter: "blur(28px)",
- WebkitBackdropFilter: "blur(28px)",
+ background: "rgba(13,21,38,0.88)",
+ backdropFilter: "blur(32px)",
+ WebkitBackdropFilter: "blur(32px)",
  borderRadius: "1.5rem",
  border: `1px solid ${hexRgba(DS.cosmicPurple, 0.2)}`,
+ boxShadow: `0 0 0 1px ${hexRgba(DS.cosmicPurple, 0.06)} inset, 0 40px 80px rgba(0,0,0,0.5), 0 0 100px ${hexRgba(DS.cosmicPurple, 0.05)}`,
  padding: "2.5rem",
- boxShadow: `0 40px 80px rgba(0,0,0,0.5), 0 0 80px ${hexRgba(DS.cosmicPurple, 0.04)}`,
+ position: "relative",
  }}>
- <AdminLoginModal
- autoOpen
- children={<div style={{ display: "none" }} />}
+ {/* Logo */}
+ <motion.div
+ initial={{ opacity: 0, y: -12 }}
+ animate={{ opacity: 1, y: 0 }}
+ transition={{ delay: 0.15, duration: 0.4 }}
+ style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.75rem", marginBottom: "1.75rem" }}
+ >
+ <img
+ src="/assets/design-company/logo-cosmic-infinity.png"
+ alt="LOOP"
+ style={{ width: 40, height: 40, objectFit: "contain" }}
  />
+ <div>
+ <div style={{ color: DS.text, fontFamily: DS.heading, fontSize: 20, fontWeight: 900, letterSpacing: "0.12em" }}>LOOP</div>
+ <div style={{ color: DS.text5, fontSize: "0.625rem", fontFamily: DS.mono, letterSpacing: "0.2em" }}>SOLUTIONS</div>
+ </div>
+ <div style={{
+ marginLeft: "0.5rem", padding: "0.25rem 0.625rem", borderRadius: 999,
+ background: `${hexRgba(DS.pink, 0.1)}`, border: `1px solid ${hexRgba(DS.pink, 0.25)}`,
+ fontFamily: DS.mono, fontSize: "0.5625rem", color: DS.pink,
+ letterSpacing: "0.1em", display: "flex", alignItems: "center", gap: "0.25rem",
+ }}>
+ <div style={{ width: 5, height: 5, borderRadius: "50%", background: DS.pink, boxShadow: `0 0 6px ${DS.pink}` }} />
+ SEASON III
+ </div>
+ </motion.div>
+
+ {/* Form */}
+ <AdminLoginForm />
  </div>
  </motion.div>
  )}
+
+ {/* Back to home */}
+ <motion.div
+ initial={{ opacity: 0 }}
+ animate={{ opacity: 1 }}
+ transition={{ delay: 0.8 }}
+ style={{
+ position: "fixed", bottom: "1.5rem", left: "50%", transform: "translateX(-50%)",
+ zIndex: 20, display: "flex", alignItems: "center", gap: "0.375rem",
+ }}
+ >
+ <Link
+ href="/"
+ style={{
+ display: "flex", alignItems: "center", gap: "0.375rem",
+ color: DS.text5, fontSize: "0.8125rem", textDecoration: "none",
+ transition: "color 0.15s",
+ }}
+ onMouseEnter={(e) => (e.currentTarget.style.color = DS.text)}
+ onMouseLeave={(e) => (e.currentTarget.style.color = DS.text5)}
+ >
+ <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+ <polyline points="15 18 9 12 15 6"/>
+ </svg>
+ Quay về trang chủ
+ </Link>
+ </motion.div>
+
  </div>
- </>
  );
+}
+
+export default function AdminLoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <AdminLoginContent />
+    </Suspense>
+  );
 }

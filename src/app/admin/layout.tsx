@@ -17,7 +17,7 @@
  * Soft navigation: Zustand hydrated → AuthGuard allows → re-verify on next /me
  */
 
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { jwtVerify } from "jose";
 import { DM_Sans, Plus_Jakarta_Sans } from "next/font/google";
@@ -44,6 +44,12 @@ import "@/styles/globals.css";
  * Only renders the admin UI if the token is cryptographically valid AND not expired.
  */
 async function verifyAdminSession(): Promise<void> {
+ // Prevent loop: /admin/login is also caught by this layout!
+ const reqHeaders = await headers();
+ if (reqHeaders.get("x-pathname") === "/admin/login") {
+ return; // Let AuthGuard and the page handle logic, do NOT force redirect
+ }
+
  // Read token from HttpOnly cookie (server-side, no localStorage dependency)
  const cookieStore = await cookies();
  const token =
@@ -52,14 +58,14 @@ async function verifyAdminSession(): Promise<void> {
  null;
 
  if (!token) {
- redirect("/admin/login");
+ redirect("/admin/login?reason=expired");
  }
 
  // Require JWT_SECRET (or AUTH_SECRET as fallback for local dev)
  const secret = process.env.JWT_SECRET ?? process.env.AUTH_SECRET;
  if (!secret) {
  console.error("[AdminLayout] JWT_SECRET not configured — blocking access");
- redirect("/admin/login");
+ redirect("/admin/login?reason=expired");
  }
 
  // Full JWT verification: signature + expiry check via jose
@@ -74,14 +80,14 @@ async function verifyAdminSession(): Promise<void> {
  payload = verifiedPayload as Record<string, unknown>;
  } catch {
  // Token is invalid (malformed), signature mismatch, or expired — redirect to login
- redirect("/admin/login");
+ redirect("/admin/login?reason=expired");
  return; // unreachable but satisfies TypeScript
  }
 
  // Verify account type is staff (belt-and-suspenders with middleware)
  const acc = payload.acc as string | undefined;
  if (acc === "customer") {
- redirect("/admin/login");
+ redirect("/admin/login?reason=expired");
  }
 }
 

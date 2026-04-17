@@ -19,7 +19,7 @@
  * - Submit button glow pulse
  * - Input focus glow expansion
  */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
@@ -31,6 +31,7 @@ import {
 import { toast } from "sonner";
 import { DS, GRD } from "@/lib/design-tokens";
 import { useAuthStore } from "@/app/store/authStore";
+import { isTokenValid } from "@/lib/utils/token-utils";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 function hexRgba(hex: string, alpha: number): string {
@@ -42,21 +43,30 @@ function hexRgba(hex: string, alpha: number): string {
 }
 
 // ── Particle ──────────────────────────────────────────────────────────────────
-function Particle({ x, y, size, delay, duration, opacity }: {
- x: number; y: number; size: number; delay: number; duration: number; opacity: number;
-}) {
+type ParticleData = {
+ id: number;
+ x: number; y: number; size: number; delay: number;
+ duration: number; opacity: number; colorType: 0 | 1;
+};
+
+function Particle({ x, y, size, delay, duration, opacity, colorType }: ParticleData) {
+ const bg = colorType === 0
+ ? `radial-gradient(circle, ${DS.pink}, transparent)`
+ : `radial-gradient(circle, ${DS.cosmicPurple}, transparent)`;
+ const shadow = colorType === 0
+ ? `0 0 ${size * 2}px ${hexRgba(DS.pink, 0.4)}`
+ : `0 0 ${size * 2}px ${hexRgba(DS.cosmicPurple, 0.4)}`;
+
  return (
  <motion.div
  initial={{ opacity: 0, scale: 0, y: 0 }}
  animate={{ opacity: [0, opacity, opacity * 0.6, opacity], scale: [0, 1, 0.8, 1], y: [-20, -60, -20] }}
- transition={{ opacity: { delay, duration, times: [0, 0.3, 0.7, 1], repeat: Infinity, repeatDelay: Math.random() * 3 + 2 }, scale: { delay, duration, repeat: Infinity }, y: { delay, duration, repeat: Infinity } }}
+ transition={{ opacity: { delay, duration, times: [0, 0.3, 0.7, 1], repeat: Infinity, repeatDelay: delay * 0.7 }, scale: { delay, duration, repeat: Infinity }, y: { delay, duration, repeat: Infinity } }}
  style={{
  position: "absolute", left: `${x}%`, top: `${y}%`,
  width: size, height: size, borderRadius: "50%",
- background: Math.random() > 0.5
- ? `radial-gradient(circle, ${DS.pink}, transparent)`
- : `radial-gradient(circle, ${DS.cosmicPurple}, transparent)`,
- boxShadow: Math.random() > 0.5 ? `0 0 ${size * 2}px ${hexRgba(DS.pink, 0.4)}` : `0 0 ${size * 2}px ${hexRgba(DS.cosmicPurple, 0.4)}`,
+ background: bg,
+ boxShadow: shadow,
  pointerEvents: "none",
  }}
  />
@@ -88,15 +98,16 @@ function AnimatedBackground() {
  return () => window.removeEventListener("mousemove", onMove);
  }, []);
 
- const particles = Array.from({ length: 55 }, (_, i) => ({
+ const particles = useMemo<ParticleData[]>(() => Array.from({ length: 55 }, (_, i) => ({
  id: i,
- x: Math.random() * 100,
- y: Math.random() * 100,
- size: Math.random() * 4 + 2,
- delay: Math.random() * 4,
- duration: Math.random() * 4 + 6,
- opacity: Math.random() * 0.5 + 0.2,
- }));
+ x: ((i * 23 + 11) % 96) + ((i * 7) % 4),
+ y: ((i * 31 + 13) % 93) + ((i * 5) % 7),
+ size: 2 + ((i * 7) % 5),
+ delay: ((i * 3) % 8) * 0.5,
+ duration: 6 + ((i * 5) % 8),
+ opacity: 0.2 + (((i * 3) % 10) / 20),
+ colorType: (i % 2) as 0 | 1,
+ })), []);
 
  return (
  <div style={{ position: "fixed", inset: 0, overflow: "hidden", pointerEvents: "none" }}>
@@ -966,6 +977,10 @@ export default function AuthPage() {
  // Skip to dashboard if already logged in
  useEffect(() => {
  if (!isAuthenticated || !accountType) return;
+ // Guard: only redirect if the stored JWT is not expired.
+ // Prevents redirect loop when localStorage has stale token but session expired.
+ const storedToken = localStorage.getItem("auth-token");
+ if (!isTokenValid(storedToken)) return;
  const dest = accountType === "staff" ? "/admin/overview" : `/${locale}/khach-hang`;
  router.replace(dest);
  }, [isAuthenticated, accountType, locale, router]);

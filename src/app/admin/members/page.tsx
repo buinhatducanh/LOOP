@@ -1517,6 +1517,7 @@ export default function AdminMembersPage() {
     const [phone, setPhone] = useState(formMember?.phone ?? "");
     const [team, setTeam] = useState(formMember?.team ?? "");
     const [avatar, setAvatar] = useState(formMember?.avatar ?? "");
+    const [avatarPublicId, setAvatarPublicId] = useState((formMember as unknown as Record<string, unknown>)?.imagePublicId as string ?? "");
     const [bio, setBio] = useState(formMember?.bio ?? "");
     const [roleInput, setRoleInput] = useState(formMember?.role ?? "");
     // Selected system role (single select)
@@ -1591,6 +1592,7 @@ export default function AdminMembersPage() {
         slug,
         phone: phone.trim() || null, bio: bio.trim() || null,
         avatar: avatar.trim() || null,
+        imagePublicId: avatarPublicId || null,
         department: team,
         isActive: status === "active",
         memberExpertise: skills.map((s) => ({ name: s })),
@@ -1775,44 +1777,19 @@ export default function AdminMembersPage() {
 
               {/* Avatar */}
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
-                <div style={{
-                  width: 72, height: 72, borderRadius: "50%",
-                  background: avatar
-                    ? `url(${avatar}) center/cover no-repeat`
-                    : `linear-gradient(135deg, ${DS.blue}44, ${DS.purple}44)`,
-                  border: `2px solid ${DS.blue}55`,
-                  boxShadow: `0 0 20px ${DS.blue}22`,
-                  overflow: "hidden",
-                  cursor: "pointer", position: "relative",
-                }}
-                  onClick={() => {
-                    const url = prompt("Nhập URL avatar:");
-                    if (url) setAvatar(url);
-                  }}
-                >
-                  {!avatar && (
-                    <div style={{
-                      position: "absolute", inset: 0,
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                    }}>
-                      <UserCheck size={24} color={DS.text3} />
-                    </div>
-                  )}
-                </div>
-                <div style={{ fontFamily: DS.mono, fontSize: 10, color: DS.text3, textAlign: "center" }}>
-                  {avatar ? "Nhấn để đổi ảnh" : "Nhấn để thêm ảnh"}
-                </div>
-                {avatar && (
-                  <button
-                    onClick={() => setAvatar("")}
-                    style={{
-                      fontFamily: DS.mono, fontSize: 10, color: DS.red,
-                      background: "none", border: "none", cursor: "pointer", padding: 0,
+                <div style={{ width: 90 }}>
+                  <ImageUpload
+                    value={avatar}
+                    publicId={avatarPublicId}
+                    folder="loop-uploads/members"
+                    aspectRatio="square"
+                    disabled={isMutating}
+                    onChange={(url, publicId) => {
+                      setAvatar(url);
+                      setAvatarPublicId(publicId ?? "");
                     }}
-                  >
-                    Gỡ ảnh
-                  </button>
-                )}
+                  />
+                </div>
               </div>
 
               {/* Name preview */}

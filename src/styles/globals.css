@@ -341,3 +341,16 @@
   animation: constellation-pulse 8s ease-in-out infinite;
 }
 
+/* Admin login responsive card */
+@media (max-width: 640px) {
+ .admin-login-card {
+ padding: 1.75rem !important;
+ }
+}
+
+/* Admin login responsive card */
+@media (max-width: 640px) {
+ .admin-login-card {
+ padding: 1.75rem !important;
+ }
+}

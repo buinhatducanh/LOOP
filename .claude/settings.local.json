@@ -168,7 +168,9 @@
       "Bash(PYTHONIOENCODING=utf-8 python -c \"import sys; print\\(sys.stdin.read\\(\\)\\)\")",
       "Bash(ls /d/LOOP_COMPANY/LOOP/src/app/\\\\\\(public\\\\\\)/figma/review/[token]/)",
       "Bash(/d/LOOP_COMPANY/LOOP/patch_khachhang.py:*)",
-      "Bash(node -e \"require\\(''''./check_members.js''''\\)\")"
+      "Bash(node -e \"require\\(''''./check_members.js''''\\)\")",
+      "Bash(bash add_fields.sh)",
+      "Bash(rm add_fields.sh)"
     ],
     "additionalDirectories": []
   }

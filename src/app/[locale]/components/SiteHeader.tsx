@@ -612,16 +612,24 @@ export default function SiteHeader({ locale }: { locale: string }) {
   const userMenuRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
   const navRef = useRef<HTMLElement>(null);
-  const roleLabels = getRoleLabels(t);
-  const mounted = useMounted();
+ const roleLabels = getRoleLabels(t);
+ const mounted = useMounted();
+ const [hasValidToken, setHasValidToken] = useState(false);
 
-  // Scroll detection
-  useEffect(() => {
-    const handler = () => setScrolled(window.scrollY > 40);
-    window.addEventListener("scroll", handler, { passive: true });
-    return () => window.removeEventListener("scroll", handler);
+ // Check token validity from localStorage on mount and when accountType changes
+ useEffect(() => {
+  if (!mounted) return;
+  const tokenKey = accountType === "customer" ? "loop-customer-token" : "loop-staff-token";
+  const token = typeof window !== "undefined" ? localStorage.getItem(tokenKey) : null;
+  setHasValidToken(!!token);
+ }, [mounted, accountType]);
+
+ // Scroll detection
+ useEffect(() => {
+  const handler = () => setScrolled(window.scrollY > 40);
+  window.addEventListener("scroll", handler, { passive: true });
+  return () => window.removeEventListener("scroll", handler);
   }, []);
-
   const navLinks: Array<(
     | { type?: never; label: string; href: string }
     | { type: "linkIcon"; label: string; href: string }
@@ -1120,7 +1128,7 @@ export default function SiteHeader({ locale }: { locale: string }) {
             <LocaleSwitcher locale={locale} />
 
             {/* User menu */}
-            {mounted && isAuthenticated && user ? (
+            {mounted && hasValidToken ? (
               <div style={{ position: "relative" }} ref={userMenuRef}>
                 <button
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
@@ -1209,7 +1217,7 @@ export default function SiteHeader({ locale }: { locale: string }) {
                         </>
                       )}
 
-                      {user.role !== "client" && (
+                      {hasValidToken && accountType === "staff" && (
                         <>
                           <Link href="/admin/overview" onClick={() => setUserMenuOpen(false)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", color: DS.text3, fontSize: 13, textDecoration: "none" }}
                             onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(236,72,153,0.06)"; (e.currentTarget as HTMLElement).style.color = DS.text; }}

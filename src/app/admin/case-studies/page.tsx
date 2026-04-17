@@ -12,6 +12,7 @@ import {
   X, ChevronDown, RefreshCw, ExternalLink,
 } from "lucide-react";
 import { DS } from "@/lib/design-tokens";
+import { ImageUpload } from "@/components/ui/ImageUpload";
 
 type CaseStudy = Record<string, unknown>;
 
@@ -35,6 +36,7 @@ const EMPTY_FORM = {
   client: "",
   year: "",
   image: "",
+  imagePublicId: "",
   industry: "",
   projectScope: "",
   teamSize: "",
@@ -47,7 +49,8 @@ const EMPTY_FORM = {
   roiMetric: "",
   primaryMetric: "",
   videoUrl: "",
-  galleryImages: "",
+  galleryImages: [] as string[],
+  galleryPublicIds: [] as string[],
   isPublished: false,
 };
 
@@ -90,6 +93,7 @@ function AdminModal({
         client: (editItem.client as string) ?? "",
         year: String(editItem.year ?? ""),
         image: (editItem.image as string) ?? "",
+        imagePublicId: (editItem.imagePublicId as string) ?? "",
         industry: (editItem.industry as string) ?? "",
         projectScope: (editItem.projectScope as string) ?? "",
         teamSize: String(editItem.teamSize ?? ""),
@@ -103,8 +107,11 @@ function AdminModal({
         primaryMetric: (editItem.primaryMetric as string) ?? "",
         videoUrl: (editItem.videoUrl as string) ?? "",
         galleryImages: Array.isArray(editItem.galleryImages)
-          ? (editItem.galleryImages as string[]).join(", ")
-          : "",
+          ? (editItem.galleryImages as string[])
+          : [],
+        galleryPublicIds: Array.isArray(editItem.galleryPublicIds)
+          ? (editItem.galleryPublicIds as string[])
+          : [],
         isPublished: Boolean(editItem.isPublished),
       });
     } else {
@@ -156,6 +163,7 @@ function AdminModal({
       client: form.client || null,
       year: form.year || null,
       image: form.image || null,
+      imagePublicId: form.imagePublicId || null,
       industry: form.industry || null,
       projectScope: form.projectScope || null,
       teamSize: form.teamSize ? parseInt(form.teamSize, 10) : null,
@@ -168,9 +176,7 @@ function AdminModal({
       roiMetric: form.roiMetric || null,
       primaryMetric: form.primaryMetric || null,
       videoUrl: form.videoUrl || null,
-      galleryImages: form.galleryImages
-        ? form.galleryImages.split(",").map((s) => s.trim()).filter(Boolean)
-        : [],
+      galleryImages: form.galleryImages.filter(Boolean),
       isPublished: form.isPublished,
       isCaseStudy: true,
     };
@@ -310,10 +316,16 @@ function AdminModal({
             </div>
           </div>
 
-          {/* Image */}
+          {/* Image — Cloudinary upload */}
           <div>
-            <label style={labelStyle}>Ảnh chính (URL)</label>
-            <input style={inputStyle} value={form.image} onChange={(e) => setForm({ ...form, image: e.target.value })} placeholder="https://..." />
+            <ImageUpload
+              label="ẢNH CHÍNH"
+              value={form.image}
+              publicId={form.imagePublicId}
+              folder="loop-uploads/case-studies"
+              aspectRatio="video"
+              onChange={(url, publicId) => setForm({ ...form, image: url, imagePublicId: publicId ?? "" })}
+            />
           </div>
 
           {/* Industry + Scope */}
@@ -393,10 +405,46 @@ function AdminModal({
             <input style={inputStyle} value={form.videoUrl} onChange={(e) => setForm({ ...form, videoUrl: e.target.value })} placeholder="https://www.youtube.com/embed/..." />
           </div>
 
-          {/* Gallery Images */}
+          {/* Gallery Images — multi Cloudinary upload */}
           <div>
-            <label style={labelStyle}>Gallery Images (comma-separated URLs)</label>
-            <textarea style={{ ...inputStyle, resize: "vertical", minHeight: 60 }} value={form.galleryImages} onChange={(e) => setForm({ ...form, galleryImages: e.target.value })} placeholder="https://..., https://..., https://..." />
+            <label style={labelStyle}>Gallery Images</label>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 10, marginTop: 6 }}>
+              {form.galleryImages.map((url, idx) => (
+                <div key={idx} style={{ position: "relative", borderRadius: 8, overflow: "hidden", border: `1px solid ${DS.border}`, aspectRatio: "16/10" }}>
+                  <img src={url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const pid = form.galleryPublicIds[idx];
+                      if (pid) {
+  try { const res = await fetch(`/api/admin/upload?publicId=${encodeURIComponent(pid)}`, { method: "DELETE" }); if (!res.ok) console.error(`[case-studies] Failed to delete gallery image publicId="${pid}", status=${res.status}`); } catch (err) { console.error("[case-studies] Gallery image delete error:", err instanceof Error ? err.message : String(err)); }
+                      }
+                      const newImages = form.galleryImages.filter((_, i) => i !== idx);
+                      const newPids = form.galleryPublicIds.filter((_, i) => i !== idx);
+                      setForm({ ...form, galleryImages: newImages, galleryPublicIds: newPids });
+                    }}
+                    style={{ position: "absolute", top: 4, right: 4, width: 22, height: 22, borderRadius: 6, background: "rgba(239,68,68,0.85)", border: "none", color: "#fff", cursor: "pointer", fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center" }}
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+              {/* Add new image tile */}
+              <ImageUpload
+                value=""
+                folder="loop-uploads/case-studies/gallery"
+                aspectRatio="video"
+                onChange={(url, publicId) => {
+                  if (url) {
+                    setForm({
+                      ...form,
+                      galleryImages: [...form.galleryImages, url],
+                      galleryPublicIds: [...form.galleryPublicIds, publicId ?? ""],
+                    });
+                  }
+                }}
+              />
+            </div>
           </div>
 
           {/* Published toggle */}
