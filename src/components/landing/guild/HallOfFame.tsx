@@ -615,10 +615,21 @@ export function HallOfFame({ first, second, third, locale }: HallOfFameProps) {
         </div>
 
         {/* Cards grid */}
-        <div className="grid grid-cols-3 gap-6 max-w-4xl mx-auto max-md:grid-cols-1 max-lg:grid-cols-3 max-sm:grid-cols-1">
-          <HolographicCard member={first} award="NGÔI VÀNG" icon={<Trophy size={12} />} accentColor={DS.amber} delay={0.1} locale={locale} />
-          <HolographicCard member={second} award="NGÔI BẠC" icon={<Zap size={12} />} accentColor="#CBD5E1" delay={0.25} locale={locale} />
-          <HolographicCard member={third} award="NGÔI ĐỒNG" icon={<Target size={12} />} accentColor="#CD7F32" delay={0.4} locale={locale} />
+        <div className="flex flex-row max-md:flex-col gap-4 md:gap-6 max-w-4xl mx-auto items-end max-md:items-center pb-8 md:pt-6">
+          {/* Silver */}
+          <div className="flex-1 w-full max-w-[300px] transform md:scale-95 md:origin-bottom relative z-10 max-md:order-2">
+            <HolographicCard member={second} award="NGÔI BẠC" icon={<Zap size={12} />} accentColor="#CBD5E1" delay={0.25} locale={locale} />
+          </div>
+          
+          {/* Gold */}
+          <div className="flex-1 w-full max-w-[300px] transform md:scale-[1.15] md:origin-bottom relative z-20 max-md:order-1 max-md:mb-4 md:-translate-y-2 drop-shadow-2xl">
+            <HolographicCard member={first} award="NGÔI VÀNG" icon={<Trophy size={12} />} accentColor={DS.amber} delay={0.1} locale={locale} />
+          </div>
+
+          {/* Bronze */}
+          <div className="flex-1 w-full max-w-[300px] transform md:scale-[0.85] md:origin-bottom relative z-0 max-md:order-3 max-md:-mt-2">
+            <HolographicCard member={third} award="NGÔI ĐỒNG" icon={<Target size={12} />} accentColor="#CD7F32" delay={0.4} locale={locale} />
+          </div>
         </div>
 
         {/* Bottom ornament */}
