@@ -59,7 +59,7 @@ export async function PUT(
           slug: data.slug,
           name: data.name,
           nameVi: data.nameVi,
-          description: data.description ?? null,
+         
           descriptionVi: data.descriptionVi ?? null,
           category: data.category,
           categoryVi: data.categoryVi,
