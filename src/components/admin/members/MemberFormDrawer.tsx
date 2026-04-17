@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { DS } from "@/lib/design-tokens";
 import { ImageUpload } from "@/components/ui/ImageUpload";
@@ -8,9 +8,11 @@ import { X, Check, Loader2 } from "lucide-react";
 import { RANKS, getRankFromLevel, type RankKey } from "@/lib/rank/ranks";
 import type { MemberExt, MemberStatus } from "@/app/admin/members/types";
 import { STATUS_CFG } from "@/app/admin/members/types";
+import { useQuery } from "@tanstack/react-query";
+import { adminApi } from "@/lib/api/client";
+import { parseTabPerms, serializeTabPerms, type TabPerm } from "@/app/admin/members/utils";
 
 // ── Types & Constants ────────────────────────────────────────────────────────
-export type TabPerm = "view" | "edit" | "none";
 
 const SYSTEM_ROLES = [
   { id: "member", label: "Member", symbol: "⬡", color: "#94A3B8", desc: "Nhân viên thường", icon: "◉" },
@@ -89,21 +91,16 @@ const ROLE_DEFAULT_TABS: Record<string, string[]> = {
 
 const ALL_TABS = TAB_GROUPS.flatMap((g) => g.tabs);
 
-export function parseTabPerms(stored: string[]): Record<string, TabPerm> {
-  const result: Record<string, TabPerm> = {};
-  for (const t of stored) {
-    if (t.endsWith(".view")) result[t.slice(0, -5)] = "view";
-    else if (t.endsWith(".edit")) result[t.slice(0, -5)] = "edit";
-    else result[t] = "edit";
-  }
-  return result;
-}
-
-export function serializeTabPerms(perms: Record<string, TabPerm>): string[] {
-  return Object.entries(perms)
-    .filter(([, v]) => v !== "none")
-    .flatMap(([tab, v]) => v === "edit" ? [tab] : [`${tab}.view`]);
-}
+const DEPT_ROLE_MAP: Record<string, string> = {
+  hr: "hr",
+  engineering: "project_manager",
+  design: "project_manager",
+  media: "member",
+  marketing: "member",
+  sales: "member",
+  finance: "admin",
+  management: "admin",
+};
 
 // ── Drawer Component ─────────────────────────────────────────────────────────────
 
@@ -129,6 +126,10 @@ export function MemberFormDrawer({
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [team, setTeam] = useState("");
+  const [joinedDate, setJoinedDate] = useState("");
+  const [bankName, setBankName] = useState("");
+  const [bankAccount, setBankAccount] = useState("");
+  const [bankAccountName, setBankAccountName] = useState("");
   const [avatar, setAvatar] = useState("");
   const [avatarPublicId, setAvatarPublicId] = useState("");
   const [bio, setBio] = useState("");
@@ -143,23 +144,43 @@ export function MemberFormDrawer({
   const [skillInput, setSkillInput] = useState("");
   const [status, setStatus] = useState<MemberStatus>("active");
   const [errorMsg, setErrorMsg] = useState("");
+  const lastIdRef = useRef<string | null>(null);
+
+  const { data: deptRes } = useQuery({
+    queryKey: ["admin_departments"],
+    queryFn: () => adminApi.get("/admin/departments?limit=100") as any,
+    enabled: isOpen,
+  });
+  const departments = (deptRes as any)?.data?.data ?? (deptRes as any)?.data ?? [];
 
   useEffect(() => {
-    if (isOpen) {
+    if (!isOpen) {
+      lastIdRef.current = null;
+      return;
+    }
+
+    const currentId = member?.id ?? (isAdd ? "new" : null);
+    if (currentId !== lastIdRef.current) {
+      lastIdRef.current = currentId;
+
       const src = member;
       setName(src?.name ?? "");
       setEmail(src?.email ?? "");
       setPhone(src?.phone ?? "");
       setTeam(src?.team ?? "");
+      setJoinedDate(src?.joinedDate ? src.joinedDate.split("T")[0] : "");
+      setBankName(src?.bankName ?? "");
+      setBankAccount(src?.bankAccount ?? "");
+      setBankAccountName(src?.bankAccountName ?? "");
       setAvatar(src?.avatar ?? "");
-      setAvatarPublicId((src as unknown as Record<string, unknown>)?.imagePublicId as string ?? "");
+      setAvatarPublicId(src?.imagePublicId ?? "");
       setBio(src?.bio ?? "");
       setRoleInput(src?.role ?? "");
       setSystemRole(src?.roles?.[0] ?? src?.systemRole ?? "member");
       setTabPerms(parseTabPerms(src?.tabPermissions ?? []));
       setLevel(String(src?.level ?? 1));
       setCurrentXp(String(src?.currentXp ?? 0));
-      setRankKey(src ? getRankFromLevel(src.level ?? 1) : "iron");
+      setRankKey(src?.rank ? (src.rank.toLowerCase() as RankKey) : src ? getRankFromLevel(src.level ?? 1) : "iron");
       setSkills(src?.memberExpertise?.map((e) => e.name) ?? []);
       setStatus(src?.status ?? "active");
       setTab(0);
@@ -177,7 +198,6 @@ export function MemberFormDrawer({
 
   const lvlNum = parseInt(level) || 1;
   const rankCfg = RANKS[rankKey];
-  const sysRoleCfg = SYSTEM_ROLES.find((r) => r.id === systemRole) ?? SYSTEM_ROLES[0];
 
   const applyRolePreset = (roleId: string) => {
     setSystemRole(roleId);
@@ -216,6 +236,10 @@ export function MemberFormDrawer({
       tabPermissions: serializeTabPerms(tabPerms),
       slug,
       phone: phone.trim() || null, bio: bio.trim() || null,
+      joinedDate: joinedDate || null,
+      bankName: bankName.trim() || null,
+      bankAccount: bankAccount.trim() || null,
+      bankAccountName: bankAccountName.trim() || null,
       avatar: avatar.trim() || null,
       imagePublicId: avatarPublicId || null,
       department: team,
@@ -351,6 +375,7 @@ export function MemberFormDrawer({
                     <div style={{ display: "flex", gap: 20, alignItems: "center" }}>
                       <ImageUpload
                         value={avatar}
+                        publicId={avatarPublicId}
                         onChange={(url, pubId) => { setAvatar(url); setAvatarPublicId(pubId ?? ""); }}
                         label="Avatar nhân sự" folder="loop_avatars" aspectRatio="square"
                       />
@@ -383,8 +408,8 @@ export function MemberFormDrawer({
                       </div>
                       <div>
                         <label style={{ display: "block", marginBottom: 6, color: DS.text2, fontSize: 12, fontFamily: DS.mono }}>Email *</label>
-                        <input value={email} onChange={(e) => setEmail(e.target.value)} disabled={!isAdd} type="email"
-                          style={{ width: "100%", padding: "12px", borderRadius: 8, border: `1px solid ${DS.border}`, background: isAdd ? DS.bgCard : DS.border, color: isAdd ? DS.text : DS.text3, outline: "none" }}
+                        <input value={email} onChange={(e) => setEmail(e.target.value)} type="email"
+                          style={{ width: "100%", padding: "12px", borderRadius: 8, border: `1px solid ${DS.border}`, background: DS.bgCard, color: DS.text, outline: "none" }}
                           placeholder="email@loops.vn" />
                       </div>
                       <div>
@@ -394,10 +419,39 @@ export function MemberFormDrawer({
                           placeholder="0912..." />
                       </div>
                       <div>
+                        <label style={{ display: "block", marginBottom: 6, color: DS.text2, fontSize: 12, fontFamily: DS.mono }}>Ngày tham gia</label>
+                        <input value={joinedDate} onChange={(e) => setJoinedDate(e.target.value)} type="date"
+                          style={{ width: "100%", padding: "12px", borderRadius: 8, border: `1px solid ${DS.border}`, background: DS.bgCard, color: DS.text, outline: "none", colorScheme: "dark" }} />
+                      </div>
+                      <div>
                         <label style={{ display: "block", marginBottom: 6, color: DS.text2, fontSize: 12, fontFamily: DS.mono }}>Phòng ban</label>
-                        <input value={team} onChange={(e) => setTeam(e.target.value)}
-                          style={{ width: "100%", padding: "12px", borderRadius: 8, border: `1px solid ${DS.border}`, background: DS.bgCard, color: DS.text, outline: "none" }}
-                          placeholder="engineering, design..." />
+                        <select
+                          value={team}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setTeam(val);
+                            if (val) {
+                              const autoRole = DEPT_ROLE_MAP[val.toLowerCase()] || "member";
+                              applyRolePreset(autoRole);
+                            }
+                          }}
+                          style={{ width: "100%", padding: "12px", borderRadius: 8, border: `1px solid ${DS.border}`, background: DS.bgCard, color: DS.text, outline: "none", appearance: "none" }}
+                        >
+                          <option value="">-- Chọn phòng ban --</option>
+                          <option value="engineering">Phòng Kỹ thuật (Engineering)</option>
+                          <option value="design">Phòng Thiết kế (Design)</option>
+                          <option value="media">Phòng Media</option>
+                          <option value="marketing">Phòng Marketing</option>
+                          <option value="sales">Phòng Kinh doanh (Sales)</option>
+                          <option value="finance">Phòng Tài chính (Finance)</option>
+                          <option value="hr">Phòng Nhân sự (HR)</option>
+                          {departments.map((d: any, idx: number) => {
+                            const keys = ["engineering", "design", "media", "marketing", "sales", "finance", "hr"];
+                            if (keys.includes(d.key?.toLowerCase() || "")) return null;
+                            const dKey = d.key || d.id || `dept-${idx}`;
+                            return <option key={dKey} value={d.key ?? d.name}>{d.name}</option>;
+                          })}
+                        </select>
                       </div>
                       <div style={{ gridColumn: "1 / -1" }}>
                         <label style={{ display: "block", marginBottom: 6, color: DS.text2, fontSize: 12, fontFamily: DS.mono }}>Chức danh thực tế</label>
@@ -410,6 +464,33 @@ export function MemberFormDrawer({
                         <textarea value={bio} onChange={(e) => setBio(e.target.value)}
                           style={{ width: "100%", padding: "12px", borderRadius: 8, border: `1px solid ${DS.border}`, background: DS.bgCard, color: DS.text, outline: "none", minHeight: 80, resize: "vertical" }}
                           placeholder="Thông tin thêm về nhân sự..." />
+                      </div>
+
+                      <div style={{ gridColumn: "1 / -1", marginTop: 8 }}>
+                        <h4 style={{ color: DS.text, fontSize: 13, marginBottom: 12, fontFamily: DS.mono, textTransform: "uppercase", display: "flex", alignItems: "center", gap: 8 }}>
+                          <span style={{ width: 8, height: 8, borderRadius: "50%", background: DS.green }}></span>
+                          Thông tin thanh toán (Off-system)
+                        </h4>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, background: "rgba(0,0,0,0.1)", padding: 16, borderRadius: 12, border: `1px solid ${DS.border}` }}>
+                          <div style={{ gridColumn: "1 / -1" }}>
+                            <label style={{ display: "block", marginBottom: 6, color: DS.text2, fontSize: 12, fontFamily: DS.mono }}>Ngân hàng (* Vd: Vietcombank)</label>
+                            <input value={bankName} onChange={(e) => setBankName(e.target.value)}
+                              style={{ width: "100%", padding: "12px", borderRadius: 8, border: `1px solid ${DS.border}`, background: DS.bgCard, color: DS.text, outline: "none" }}
+                              placeholder="Tên ngân hàng / Chi nhánh" />
+                          </div>
+                          <div>
+                            <label style={{ display: "block", marginBottom: 6, color: DS.text2, fontSize: 12, fontFamily: DS.mono }}>Số tài khoản</label>
+                            <input value={bankAccount} onChange={(e) => setBankAccount(e.target.value)}
+                              style={{ width: "100%", padding: "12px", borderRadius: 8, border: `1px solid ${DS.border}`, background: DS.bgCard, color: DS.text, outline: "none" }}
+                              placeholder="0123456789" />
+                          </div>
+                          <div>
+                            <label style={{ display: "block", marginBottom: 6, color: DS.text2, fontSize: 12, fontFamily: DS.mono }}>Tên chủ tài khoản</label>
+                            <input value={bankAccountName} onChange={(e) => setBankAccountName(e.target.value)}
+                              style={{ width: "100%", padding: "12px", borderRadius: 8, border: `1px solid ${DS.border}`, background: DS.bgCard, color: DS.text, outline: "none" }}
+                              placeholder="NGUYEN VAN A" />
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </motion.div>
@@ -489,7 +570,14 @@ export function MemberFormDrawer({
                     </div>
                     <div>
                       <label style={{ display: "block", marginBottom: 6, color: DS.text2, fontSize: 12 }}>Level hiện tại</label>
-                      <input type="number" value={level} onChange={(e) => { setLevel(e.target.value); setRankManuallySet(true); }}
+                      <input type="number" value={level} 
+                        onChange={(e) => { 
+                          const val = e.target.value;
+                          setLevel(val); 
+                          const newLvl = parseInt(val) || 1;
+                          setRankKey(getRankFromLevel(newLvl));
+                          setRankManuallySet(true); 
+                        }}
                         style={{ width: "100%", padding: "12px", borderRadius: 8, border: `1px solid ${DS.border}`, background: DS.bgCard, color: DS.text, outline: "none" }} />
                     </div>
                     <div>
@@ -500,9 +588,13 @@ export function MemberFormDrawer({
                     <div>
                       <label style={{ display: "block", marginBottom: 12, color: DS.text2, fontSize: 12 }}>Hạng (Rank)</label>
                       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                        {(Object.entries(RANKS) as [RankKey, { label: string, color: string, symbol: string }][]).map(([k, cfg]) => (
+                        {(Object.entries(RANKS) as [RankKey, { label: string, color: string, symbol: string, minLevel: number }][]).map(([k, cfg]) => (
                           <div
-                            key={k} onClick={() => { setRankKey(k); setRankManuallySet(true); }}
+                            key={k} onClick={() => { 
+                              setRankKey(k); 
+                              setLevel(String(cfg.minLevel));
+                              setRankManuallySet(true); 
+                            }}
                             style={{
                               padding: "12px", borderRadius: 8, cursor: "pointer",
                               border: `1px solid ${rankKey === k ? cfg.color : DS.border}`,
@@ -549,8 +641,8 @@ export function MemberFormDrawer({
                       
                       <div style={{ display: "flex", flexWrap: "wrap", gap: 8, padding: "16px", background: DS.bgCard, borderRadius: 12, border: `1px solid ${DS.border}`, minHeight: 100 }}>
                         {skills.length === 0 && <div style={{ color: DS.text4, fontSize: 12, margin: "auto" }}>Chưa có kỹ năng nào</div>}
-                        {skills.map((s) => (
-                          <div key={s} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 20, background: DS.blue + "22", border: `1px solid ${DS.blue}55`, color: DS.blue, fontSize: 12, fontFamily: DS.mono }}>
+                        {skills.map((s, idx) => (
+                          <div key={`${s}-${idx}`} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 20, background: DS.blue + "22", border: `1px solid ${DS.blue}55`, color: DS.blue, fontSize: 12, fontFamily: DS.mono }}>
                             {s}
                             <button onClick={() => setSkills(skills.filter((x) => x !== s))} style={{ background: "transparent", border: "none", color: DS.blue, cursor: "pointer", padding: 0, display: "flex" }}>
                               <X size={12} />

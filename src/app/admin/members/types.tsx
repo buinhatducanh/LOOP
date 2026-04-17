@@ -23,6 +23,9 @@ export interface TeamMemberBE {
   bio?: string | null;
   createdAt: string;
   joinedDate?: string;
+  bankName?: string | null;
+  bankAccount?: string | null;
+  bankAccountName?: string | null;
   missionsCompleted?: number;
   memberExpertise?: { name: string }[];
   lpTransactions?: Array<{
@@ -34,11 +37,12 @@ export interface TeamMemberBE {
     createdAt: string;
   }>;
   isActive?: boolean;
+  imagePublicId?: string | null;
 }
 
 export type MemberStatus = "active" | "inactive" | "on-leave" | "probation";
 export type ViewMode = "table" | "grid";
-export type SortKey = "name" | "level" | "lpBalance" | "missions" | "rank" | "role" | "team";
+export type SortKey = "name" | "level" | "lpBalance" | "missions" | "rank" | "role" | "team" | "status";
 export type ToastType = "success" | "error" | "info" | "warning";
 
 export interface ToastItem { id: number; msg: string; type: ToastType; }

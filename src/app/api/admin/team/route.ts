@@ -164,7 +164,7 @@ export async function POST(req: NextRequest) {
     // Convert empty strings to null for optional fields (except required fields)
     // Also convert date strings (dd/mm/yyyy) to proper ISO format
     const requiredFields = ['name', 'slug', 'role'];
-    const dateFields = ['birthDate', 'contractStart'];
+    const dateFields = ['birthDate', 'contractStart', 'joinedDate'];
     const cleanedData = Object.fromEntries(
       Object.entries(memberData).map(([key, value]) => {
         if (requiredFields.includes(key)) {

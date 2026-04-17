@@ -474,9 +474,15 @@ model TeamMember {
   address                String?                @map("address")
   cccd                   String?                @map("cccd")
   contractStart          DateTime?              @map("contract_start")
+  joinedDate             DateTime?              @map("joined_date")
   experienceFrom         Int?                   @map("experience_from")
   facebook               String?                @map("facebook")
   tiktok                 String?                @map("tiktok")
+  
+  // Banking off-system info
+  bankName               String?                @map("bank_name")
+  bankAccount            String?                @map("bank_account")
+  bankAccountName        String?                @map("bank_account_name")
   currentXp              Int                    @default(0) @map("current_xp")
   level                  Int                    @default(1) @map("level")
   /// Tổng LP commission đã nhận

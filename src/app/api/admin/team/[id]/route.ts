@@ -150,7 +150,7 @@ export async function PUT(
       }
 
       // Date fields: parse dd/mm/yyyy → Date
-      if ((prismaKey === "birthDate" || prismaKey === "contractStart") && typeof value === "string") {
+      if ((prismaKey === "birthDate" || prismaKey === "contractStart" || prismaKey === "joinedDate") && typeof value === "string") {
         const parts = value.split("/");
         if (parts.length === 3) {
           const [day, month, year] = parts;

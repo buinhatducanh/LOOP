@@ -2260,11 +2260,12 @@ export default function AdminMembersPage() {
 
       {/* Modals */}
       <AnimatePresence>
-        {showApprovalModal && <ApprovalModal_ />}
-        {detailMember && <MemberDetailModal_ m={detailMember} />}
-        {lpMember && <LPAwardModal_ m={lpMember} />}
-        {bulkMembers.length > 0 && <BulkLPModal_ />}
+        {showApprovalModal && <ApprovalModal_ key="modal-approval" />}
+        {detailMember && <MemberDetailModal_ key="modal-detail" m={detailMember} />}
+        {lpMember && <LPAwardModal_ key="modal-award" m={lpMember} />}
+        {bulkMembers.length > 0 && <BulkLPModal_ key="modal-bulk" />}
         <MemberFormDrawer
+          key="modal-form"
           isOpen={showAddModal || !!formMember}
           isAdd={showAddModal}
           member={formMember}
@@ -2275,7 +2276,7 @@ export default function AdminMembersPage() {
           }}
           isMutating={createMutation.isPending || updateMutation.isPending}
         />
-        {deleteMember && <DeleteConfirmModal_ m={deleteMember} />}
+        {deleteMember && <DeleteConfirmModal_ key="modal-delete" m={deleteMember} />}
       </AnimatePresence>
 
       <style>{`
