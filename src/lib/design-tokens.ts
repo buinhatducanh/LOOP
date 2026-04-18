@@ -186,7 +186,7 @@ export const GLOW = {
 
 export const NAV_LINKS = [
   { label: "Trang chủ", href: "/" },
-  { label: "Dịch vụ", href: "/booking" },
+  { label: "Dịch vụ", href: "/thiet-ke-website" },
   { label: "Media", href: "/media" },
   { label: "Dự án", href: "/du-an" },
   { label: "Đội ngũ", href: "/doi-ngu" },

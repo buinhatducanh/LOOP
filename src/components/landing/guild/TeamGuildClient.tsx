@@ -126,7 +126,7 @@ function CTABanner({ locale }: { locale: string }) {
         </p>
         <div className="flex items-center justify-center gap-4 flex-wrap">
           <Link
-            href={`/${locale}/booking`}
+            href={`/${locale}/thiet-ke-website`}
             style={{ background: GRD.primary, color: DS.text, fontSize: 14, fontWeight: 700, padding: "12px 28px", borderRadius: 12, textDecoration: "none", boxShadow: GLOW.purple, display: "flex", alignItems: "center", gap: 8 }}
           >
             Nhận báo giá Website <ChevronRight size={15} />

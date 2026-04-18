@@ -86,7 +86,7 @@ function mapPackage(
  allPackages: typeof arguments[0][],
 ) {
  const pkgPrice = p.price ?? 0;
- const marketPrice = marketPrices[p.slug] ?? pkgPrice;
+ const marketPrice = p.marketPrice ?? marketPrices[p.slug] ?? pkgPrice;
  const saving = marketPrice - pkgPrice;
 
  // Compute allFeatures: union of features up to and including this package
@@ -133,6 +133,13 @@ function mapPackage(
  showFeatureAcknowledge: p.showFeatureAcknowledge ?? true,
  acknowledgmentItems: ackItems,
  featureAcknowledgments,
+ /** Admin-managed fields */
+ tagline: p.tagline ?? "",
+ taglineVi: p.tagline ?? "",
+ color: p.color ?? "#3B82F6",
+ pages: p.pages ?? "8",
+ pagesVi: p.pagesVi ?? "8",
+ isPopular: p.isPopular ?? false,
  };
 }
 

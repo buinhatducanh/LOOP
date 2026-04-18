@@ -472,7 +472,7 @@ export function MediaClient({ locale, projects }: { locale: string; projects: Me
             Bạn cần dịch vụ media chuyên nghiệp cho doanh nghiệp?
           </p>
           <Link
-            href={`/${locale}/media/booking`}
+            href={`/${locale}/thiet-ke-website`}
             style={{
               display: "inline-flex", gap: 8, alignItems: "center",
               background: GRD.primary, color: "#fff", textDecoration: "none",

@@ -382,7 +382,7 @@ function HeroSection({ locale }: { locale: string }) {
             style={{ display: "flex", flexWrap: "wrap", gap: "1rem", marginBottom: "3rem" }}
           >
             <Link
-              href={`/${locale}/booking`}
+              href={`/${locale}/thiet-ke-website`}
               style={{
                 background: GRD.primary, color: "#fff", fontSize: "0.9375rem",
                 fontWeight: 700, padding: "0.875rem 2rem", borderRadius: "0.875rem",
@@ -911,7 +911,7 @@ function CTASection({ locale }: { locale: string }) {
         </p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem", justifyContent: "center" }}>
           <Link
-            href={`/${locale}/booking`}
+            href={`/${locale}/thiet-ke-website`}
             style={{
               background: GRD.primary, color: "#fff", fontSize: "1rem",
               fontWeight: 700, padding: "1rem 2rem", borderRadius: "0.875rem",

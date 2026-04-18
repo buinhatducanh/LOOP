@@ -14,7 +14,7 @@ import { test, expect } from "@playwright/test";
 test.describe("Booking Wizard — Customer Flow", () => {
 
   test("loads the booking page and fetches pricing config", async ({ page }) => {
-    const response = await page.goto("/vi/booking");
+    const response = await page.goto("/vi/thiet-ke-website");
 
     // Page should load without crash
     expect(response?.status()).toBeLessThan(400);
@@ -24,7 +24,7 @@ test.describe("Booking Wizard — Customer Flow", () => {
   });
 
   test("pricing config includes vatRate from API", async ({ page }) => {
-    await page.goto("/vi/booking");
+    await page.goto("/vi/thiet-ke-website");
 
     // Wait for config to load
     await page.waitForResponse(
@@ -39,7 +39,7 @@ test.describe("Booking Wizard — Customer Flow", () => {
   });
 
   test("selects a service and moves to package step", async ({ page }) => {
-    await page.goto("/vi/booking");
+    await page.goto("/vi/thiet-ke-website");
 
     // Click on the first service card
     const firstService = page.locator('[data-testid="service-card"]').first();
@@ -62,7 +62,7 @@ test.describe("Booking Wizard — Customer Flow", () => {
   });
 
   test("contact form validates required fields", async ({ page }) => {
-    await page.goto("/vi/booking");
+    await page.goto("/vi/thiet-ke-website");
 
     // Click first service to advance to step 1
     await page.locator("button").filter({ hasText: /Website|Web/i }).first().click();
@@ -94,7 +94,7 @@ test.describe("Booking Wizard — Customer Flow", () => {
   test("submits with valid data and creates QuoteRequest", async ({ page }) => {
     const randomEmail = `test_${Date.now()}@example.com`;
 
-    await page.goto("/vi/booking");
+    await page.goto("/vi/thiet-ke-website");
 
     // Step 0: Select first service
     await page.locator("button").filter({ hasText: /Website|Web/i }).first().click();

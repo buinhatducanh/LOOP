@@ -285,7 +285,7 @@ Fonts:        Plus Jakarta Sans (heading) · JetBrains Mono · DM Sans · Noto S
 │   ├── BlogPage.tsx + Detail  # Blog (/blog, /blog/:id)
 │   ├── AcademyPage.tsx + Detail # Học viện (/hoc-vien, /hoc-vien/:id)
 │   ├── ContactPage.tsx         # Liên hệ (/lien-he)
-│   ├── BookingWizardPage.tsx   # Nhận báo giá Website (/booking)
+│   ├── BookingWizardPage.tsx   # Nhận báo giá Website (/thiet-ke-website)
 │   ├── MediaBookingPage.tsx    # Media (/media)
 │   ├── LeaderboardPage.tsx     # BXH public (/bang-xep-hang)
 │   ├── AuthPage.tsx            # Đăng nhập/Đăng ký

@@ -177,7 +177,7 @@ export default function SiteFooter({ locale = "vi" }: { locale?: string }) {
         { label: t("servicesLinks.appDev"),          href: `/${locale}/services` },
         { label: t("servicesLinks.saas"),             href: `/${locale}/services` },
         { label: t("servicesLinks.seoMarketing"),    href: `/${locale}/services` },
-        { label: t("servicesLinks.bookConsultation"), href: `/${locale}/booking` },
+        { label: t("servicesLinks.bookConsultation"), href: `/${locale}/thiet-ke-website` },
       ],
     },
     {
@@ -307,7 +307,7 @@ export default function SiteFooter({ locale = "vi" }: { locale?: string }) {
 
             <div style={{ display: "flex", flexWrap: "wrap", gap: "0.875rem" }}>
               <Link
-                href={`/${locale}/booking`}
+                href={`/${locale}/thiet-ke-website`}
                 style={{
                   display: "inline-flex", alignItems: "center", gap: "0.5rem",
                   background: GRD.primary, color: "#fff",

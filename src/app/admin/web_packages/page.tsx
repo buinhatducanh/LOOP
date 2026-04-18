@@ -26,24 +26,24 @@ import {
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-/** API shape (Prisma PricingWebPackage) */
+/** API shape (Prisma ServicePackage) */
 type ApiPackage = {
  id: string;
  slug: string;
- name: string;
- nameVi: string;
- tagline: string;
- taglineVi: string;
- price: number;
- currency: string;
- period: string;
- periodVi: string;
- highlighted: boolean;
- cta: string;
- ctaVi: string;
-  color: string;
- pages: number;
- pagesVi: number;
+ title: string;
+ titleVi?: string;
+ shortDesc: string;
+ shortDescVi?: string;
+ tagline?: string;
+ taglineVi?: string;
+ price?: number;
+ priceText?: string;
+ features: string[];
+ color?: string;
+ pages?: string;
+ pagesVi?: string;
+ marketPrice?: number;
+ isPopular?: boolean;
  sortOrder: number;
  isActive: boolean;
  createdAt: string;
@@ -52,41 +52,41 @@ type ApiPackage = {
 
 /** UI shape used throughout the component */
 type WebPackage = {
- id: string;
- slug: string;
- name: string;
- nameVi: string;
- industry: string;
- icon: string;
- color: string;
- tagline: string;
- taglineVi: string;
- description: string;
- category: string;
- trialDays: number;
- trialPrice: number;
- fullPrice: number;
- price: number;
- activateTime: string;
- lp: number;
- badge: string;
- badgeColor: string;
- features: string[];
- demoFeatures: string[];
- highlighted: boolean;
- cta: string;
- ctaVi: string;
- pages: number;
- pagesVi: number;
- sortOrder: number;
- isActive: boolean;
- createdAt: string;
- currency: string;
- period: string;
- periodVi: string;
- orderCount: number;
- trialRequests: number;
- revenue: number;
+	id: string;
+	slug: string;
+	name: string;
+	nameVi: string;
+	industry: string;
+	icon: string;
+	color: string;
+	tagline: string;
+	taglineVi: string;
+	description: string;
+	category: string;
+	trialDays: number;
+	trialPrice: number;
+	fullPrice: number;
+	price: number;
+	activateTime: string;
+	lp: number;
+	badge: string;
+	badgeColor: string;
+	features: string[];
+	demoFeatures: string[];
+	highlighted: boolean;
+	cta: string;
+	ctaVi: string;
+	pages: number;
+	pagesVi: number;
+	sortOrder: number;
+	isActive: boolean;
+	createdAt: string;
+	currency: string;
+	period: string;
+	periodVi: string;
+	orderCount: number;
+	trialRequests: number;
+	revenue: number;
 };
 
 /** CustomerWebsite record shape from API */
@@ -122,13 +122,10 @@ type CustomerWebsite = {
 // ── Default init data (fallback when API empty) ────────────────────────────────
 
 const INIT_PACKAGES: WebPackage[] = [
- { id: "nha-hang", slug: "website-nha-hang", name: "Website Nhà hàng", nameVi: "Website Nhà hàng", industry: "Website Nhà hàng", icon: "🍽️", color: "#EF4444", tagline: "Đặt bàn · Giao hàng · Quản lý", taglineVi: "Đặt bàn · Giao hàng · Quản lý", description: "", category: "ăn uống", trialDays: 7, trialPrice: 0, fullPrice: 8_800_000, price: 8_800_000, activateTime: "2 giờ", highlighted: false, cta: "Chọn gói", ctaVi: "Chọn gói", pages: 8, pagesVi: 8, sortOrder: 1, isActive: true, createdAt: "", badge: "HOT", badgeColor: "#EF4444", currency: "VND", period: "one-time", periodVi: "Một lần", features: ["Website demo đẹp", "Menu online", "Đặt bàn trực tuyến", "Giao hàng tích hợp", "Quản lý đơn hàng", "Hỗ trợ SEO cơ bản", "Giao diện mobile", "Báo cáo doanh thu"], demoFeatures: ["Đặt bàn", "Menu online", "Giao hàng"], lp: 500, orderCount: 14, trialRequests: 38, revenue: 123_200_000 },
- { id: "spa-salon", slug: "website-spa-salon", name: "Website Tiệm tóc/Spa", nameVi: "Website Tiệm tóc/Spa", industry: "Website Tiệm tóc/Spa", icon: "💇", color: "#EC4899", tagline: "Đặt lịch · Tích điểm · Nhắc nhắc", taglineVi: "Đặt lịch · Tích điểm · Nhắc nhắc", description: "", category: "sức khỏe", trialDays: 5, trialPrice: 0, fullPrice: 6_600_000, price: 6_600_000, activateTime: "2 giờ", highlighted: false, cta: "Chọn gói", ctaVi: "Chọn gói", pages: 8, pagesVi: 8, sortOrder: 2, isActive: true, createdAt: "", badge: "SALE", badgeColor: "#F59E0B", currency: "VND", period: "one-time", periodVi: "Một lần", features: ["Website spa mẫu", "Đặt lịch online", "Hệ thống tích điểm", "Nhắc lịch tự động", "Quản lý khách hàng", "Tích hợp Google Maps", "Giao diện di động", "Bảng giá dịch vụ"], demoFeatures: ["Đặt lịch", "Tích điểm", "Nhắc lịch"], lp: 350, orderCount: 11, trialRequests: 29, revenue: 72_600_000 },
-  { id: "khach-san", slug: "website-khach-san", name: "Website Khách sạn", nameVi: "Website Khách sạn", industry: "Website Khách sạn", icon: "🏨", color: "#3B82F6", tagline: "Booking trực tuyến · Quản lý phòng", taglineVi: "Booking trực tuyến · Quản lý phòng", description: "", category: "lưu trú", trialDays: 7, trialPrice: 0, fullPrice: 15_000_000, price: 15_000_000, activateTime: "4 giờ", highlighted: false, cta: "Chọn gói", ctaVi: "Chọn gói", pages: 8, pagesVi: 8, sortOrder: 3, isActive: true, createdAt: "", badge: "", badgeColor: "#3B82F6", currency: "VND", period: "one-time", periodVi: "Một lần", features: ["Giao diện sang trọng", "Booking trực tuyến", "Quản lý phòng trống", "Thanh toán tích hợp", "Đánh giá khách hàng", "Hỗ trợ đa ngôn ngữ", "Tích hợp OTA", "Báo cáo chi tiết"], demoFeatures: ["Booking", "Quản lý phòng", "Thanh toán"], lp: 800, orderCount: 6, trialRequests: 18, revenue: 90_000_000 },
- { id: "cuahang", slug: "website-cua-hang", name: "Website Cửa hàng", nameVi: "Website Cửa hàng", industry: "Website Cửa hàng", icon: "🏪", color: "#22C55E", tagline: "Bán hàng · Kho · Giao hàng", taglineVi: "Bán hàng · Kho · Giao hàng", description: "", category: "mua sắm", trialDays: 5, trialPrice: 0, fullPrice: 9_900_000, price: 9_900_000, activateTime: "2 giờ", highlighted: false, cta: "Chọn gói", ctaVi: "Chọn gói", pages: 8, pagesVi: 8, sortOrder: 4, isActive: true, createdAt: "", badge: "NEW", badgeColor: "#22C55E", currency: "VND", period: "one-time", periodVi: "Một lần", features: ["Website bán hàng", "Quản lý kho", "Tích hợp vận chuyển", "Mã giảm giá", "Đánh giá sản phẩm", "So sánh giá", "Giao diện mobile", "Hỗ trợ đa cửa hàng"], demoFeatures: ["Bán hàng", "Kho hàng", "Vận chuyển"], lp: 500, orderCount: 9, trialRequests: 26, revenue: 89_100_000 },
- { id: "coffe", slug: "website-quan-ca-phe", name: "Website Quán Cà phê", nameVi: "Website Quán Cà phê", industry: "Website Quán Cà phê", icon: "☕", color: "#92400E", tagline: "Đặt món · Tích hợp giao hàng", taglineVi: "Đặt món · Tích hợp giao hàng", description: "", category: "ăn uống", trialDays: 7, trialPrice: 0, fullPrice: 7_700_000, price: 7_700_000, activateTime: "2 giờ", highlighted: false, cta: "Chọn gói", ctaVi: "Chọn gói", pages: 8, pagesVi: 8, sortOrder: 5, isActive: true, createdAt: "", badge: "", badgeColor: "#92400E", currency: "VND", period: "one-time", periodVi: "Một lần", features: ["Website quán cà phê", "Đặt món online", "Giao hàng tích hợp", "Hệ thống tích điểm", "Thanh toán online", "Menu động", "Blog ẩm thực", "Hỗ trợ đa ngôn ngữ"], demoFeatures: ["Đặt món", "Tích điểm", "Giao hàng"], lp: 400, orderCount: 7, trialRequests: 20, revenue: 53_900_000 },
- { id: "phongkham", slug: "website-phong-kham", name: "Website Phòng khám", nameVi: "Website Phòng khám", industry: "Website Phòng khám", icon: "🏥", color: "#14B8A6", tagline: "Đặt lịch khám · Hồ sơ bệnh nhân", taglineVi: "Đặt lịch khám · Hồ sơ bệnh nhân", description: "", category: "sức khỏe", trialDays: 7, trialPrice: 0, fullPrice: 12_000_000, price: 12_000_000, activateTime: "4 giờ", highlighted: false, cta: "Chọn gói", ctaVi: "Chọn gói", pages: 8, pagesVi: 8, sortOrder: 6, isActive: true, createdAt: "", badge: "", badgeColor: "#14B8A6", currency: "VND", period: "one-time", periodVi: "Một lần", features: ["Đặt lịch khám online", "Hồ sơ bệnh nhân", "Kê đơn điện tử", "Thanh toán bảo hiểm", "Nhắc lịch tái khám", "Báo cáo thống kê", "Tư vấn trực tuyến", "Hỗ trợ đa ngôn ngữ"], demoFeatures: ["Đặt lịch", "Hồ sơ", "Kê đơn"], lp: 600, orderCount: 4, trialRequests: 12, revenue: 48_000_000 },
- { id: "bds", slug: "website-bat-dong-san", name: "Website Bất động sản", nameVi: "Website Bất động sản", industry: "Website Bất động sản", icon: "🏠", color: "#8B5CF6", tagline: "Dự án · Môi giới · Listing", taglineVi: "Dự án · Môi giới · Listing", description: "", category: "bất động sản", trialDays: 5, trialPrice: 0, fullPrice: 22_000_000, price: 22_000_000, activateTime: "6 giờ", highlighted: false, cta: "Chọn gói", ctaVi: "Chọn gói", pages: 8, pagesVi: 8, sortOrder: 7, isActive: false, createdAt: "", badge: "", badgeColor: "#8B5CF6", currency: "VND", period: "one-time", periodVi: "Một lần", features: ["Website bất động sản", "Dự án 3D", "Listing sản phẩm", "Tìm kiếm nâng cao", "Bản đồ tích hợp", "Virtual tour 360°", "Môi giới CRM", "Báo cáo hiệu quả"], demoFeatures: ["Listing", "Bản đồ", "Virtual tour"], lp: 1200, orderCount: 2, trialRequests: 7, revenue: 44_000_000 },
+	 { id: "landing", slug: "landing", name: "Landing Page", nameVi: "Landing Page", industry: "Landing Page", icon: "🌐", color: "#6EB1A8", tagline: "Chiến dịch Marketing, giới thiệu cá nhân, offline", taglineVi: "Chiến dịch Marketing, giới thiệu cá nhân, offline", description: "", category: "website", trialDays: 7, trialPrice: 0, fullPrice: 2500000, price: 1890000, activateTime: "2 giờ", lp: 0, badge: "", badgeColor: "#6EB1A8", currency: "VND", period: "one-time", periodVi: "Một lần", features: ["Giao diện Hiện đại, Responsive", "Tối ưu Trải nghiệm UI/UX", "Hỗ trợ chỉnh sửa sau bàn giao", "Trang giới thiệu SP/Dịch vụ", "Admin quản lý bài viết", "Form thu thập dữ liệu KH", "Quản lý tệp KH cơ bản", "Tối ưu SEO On-page"], demoFeatures: [], isPopular: false, cta: "Chọn gói", ctaVi: "Chọn gói", pages: 8, pagesVi: 8, sortOrder: 1, isActive: true, createdAt: "", orderCount: 0, trialRequests: 0, revenue: 0 },
+	 { id: "ban-hang", slug: "ban-hang", name: "Bán Hàng Cơ Bản", nameVi: "Bán Hàng Cơ Bản", industry: "Bán Hàng Cơ Bản", icon: "🌐", color: "#3B82F6", tagline: "Shop online nhỏ & vừa, bắt đầu chuyển đổi số", taglineVi: "Shop online nhỏ & vừa, bắt đầu chuyển đổi số", description: "", category: "website", trialDays: 7, trialPrice: 0, fullPrice: 5500000, price: 3890000, activateTime: "2 giờ", lp: 0, badge: "PHỔ BIẾN", badgeColor: "#3B82F6", currency: "VND", period: "one-time", periodVi: "Một lần", features: ["Bao gồm mọi tính năng Landing Page", "Danh mục & Chi tiết sản phẩm", "Chức năng Giỏ hàng thông minh", "Thống kê đơn hàng & Doanh thu", "Tài khoản Admin & Khách hàng", "Tặng 5 trang nội dung miễn phí"], demoFeatures: [], highlighted: true, cta: "Chọn gói", ctaVi: "Chọn gói", pages: 8, pagesVi: 8, sortOrder: 2, isActive: true, createdAt: "", orderCount: 0, trialRequests: 0, revenue: 0 },
+	 { id: "doanh-nghiep", slug: "doanh-nghiep", name: "Quản Trị Doanh Nghiệp", nameVi: "Quản Trị Doanh Nghiệp", industry: "Quản Trị Doanh Nghiệp", icon: "🌐", color: "#8B5CF6", tagline: "Doanh nghiệp vừa và lớn, quản lý phức tạp", taglineVi: "Doanh nghiệp vừa và lớn, quản lý phức tạp", description: "", category: "website", trialDays: 7, trialPrice: 0, fullPrice: 8900000, price: 5890000, activateTime: "2 giờ", lp: 0, badge: "", badgeColor: "#8B5CF6", currency: "VND", period: "one-time", periodVi: "Một lần", features: ["Bao gồm mọi tính năng Bán Hàng", "Giỏ hàng đa dịch vụ/sản phẩm", "SP nâng cao (size, màu, thuộc tính)", "Hệ thống Mã giảm giá/Flash sale", "Tích điểm & Đổi quà thành viên", "Bộ lọc & Tìm kiếm AI thông minh", "Quản lý Kho hàng & Nhà cung cấp"], demoFeatures: [], isPopular: false, cta: "Chọn gói", ctaVi: "Chọn gói", pages: 8, pagesVi: 8, sortOrder: 3, isActive: true, createdAt: "", orderCount: 0, trialRequests: 0, revenue: 0 },
+	 { id: "yeu-cau", slug: "yeu-cau", name: "Theo Yêu Cầu", nameVi: "Theo Yêu Cầu", industry: "Theo Yêu Cầu", icon: "🌐", color: "#EC4899", tagline: "Startups, platform, logic đặc thù riêng", taglineVi: "Startups, platform, logic đặc thù riêng", description: "", category: "website", trialDays: 7, trialPrice: 0, fullPrice: 12000000, price: 7890000, activateTime: "2 giờ", lp: 0, badge: "", badgeColor: "#EC4899", currency: "VND", period: "one-time", periodVi: "Một lần", features: ["Bao gồm mọi tính năng Doanh Nghiệp", "UI/UX Độc quyền (Không mẫu)", "Tùy chỉnh chức năng Core System", "Tích hợp Cổng thanh toán/Vận chuyển", "API kết nối bên thứ 3 (Zalo, App...)", "Bảo mật đa lớp & Tối ưu Speed cực hạn"], demoFeatures: [], isPopular: false, cta: "Chọn gói", ctaVi: "Chọn gói", pages: 8, pagesVi: 8, sortOrder: 4, isActive: true, createdAt: "", orderCount: 0, trialRequests: 0, revenue: 0 },
 ];
 
 const CATEGORIES = ["ăn uống", "sức khỏe", "lưu trú", "mua sắm", "giáo dục", "bất động sản"];
@@ -143,24 +140,24 @@ function toUIPackage(p: ApiPackage): WebPackage {
  slug: p.slug ?? p.id,
  name: p.name ?? p.nameVi ?? "",
  nameVi: p.nameVi ?? p.name ?? "",
- industry: p.nameVi ?? p.name ?? "",
- icon: String((p as Record<string, unknown>).icon ?? "🌐"),
+ industry: p.shortDesc ?? p.titleVi ?? p.title ?? "",
+ icon: "🌐",
  color: p.color ?? "#3B82F6",
  tagline: p.tagline ?? p.taglineVi ?? "",
  taglineVi: p.taglineVi ?? p.tagline ?? "",
- description: String((p as Record<string, unknown>).description ?? ""),
- category: String((p as Record<string, unknown>).category ?? "ăn uống"),
+ description: p.shortDesc ?? "",
+ category: "website",
  trialDays: Number((p as Record<string, unknown>).trialDays ?? 7),
  trialPrice: Number((p as Record<string, unknown>).trialPrice ?? 0),
  fullPrice: p.price ?? 0,
  price: p.price ?? 0,
  activateTime: String((p as Record<string, unknown>).activateTime ?? "2 giờ"),
  lp: Number((p as Record<string, unknown>).lp ?? 500),
- badge: String((p as Record<string, unknown>).badge ?? ""),
- badgeColor: String((p as Record<string, unknown>).badgeColor ?? p.color ?? "#3B82F6"),
- features: (Array.isArray((p as Record<string, unknown>).features) ? (p as Record<string, unknown>).features : []) as string[],
- demoFeatures: (Array.isArray((p as Record<string, unknown>).demoFeatures) ? (p as Record<string, unknown>).demoFeatures : []) as string[],
- highlighted: p.highlighted ?? false,
+ badge: (p.isPopular ?? false) ? "PHỔ BIẾN" : "",
+ badgeColor: p.color ?? "#3B82F6",
+ features: p.features ?? [],
+ demoFeatures: [],
+ highlighted: p.isPopular ?? false,
  cta: p.cta ?? "Chọn gói",
  ctaVi: p.ctaVi ?? p.cta ?? "Chọn gói",
  pages: p.pages ?? 0,
@@ -168,9 +165,9 @@ function toUIPackage(p: ApiPackage): WebPackage {
  sortOrder: p.sortOrder ?? 0,
  isActive: p.isActive ?? true,
  createdAt: p.createdAt ?? "",
- currency: p.currency ?? "VND",
- period: p.period ?? "one-time",
- periodVi: p.periodVi ?? "Một lần",
+ currency: "VND",
+ period: "one-time",
+ periodVi: "Một lần",
  orderCount: Number((p as Record<string, unknown>).orderCount ?? 0),
  trialRequests: Number((p as Record<string, unknown>).trialRequests ?? 0),
  revenue: Number((p as Record<string, unknown>).revenue ?? 0),
@@ -186,11 +183,13 @@ function formToApiPayload(form: Partial<WebPackage>): Record<string, unknown> {
  nameVi: form.industry ?? form.name ?? "",
  tagline: form.tagline ?? "",
  taglineVi: form.tagline ?? "",
- price: form.fullPrice ?? form.price ?? 0,
+ price: form.price ?? 0,
+	 marketPrice: form.fullPrice ?? form.price ?? 0,
+	 marketPrice: form.fullPrice ?? form.price ?? 0,
  currency: "VND",
  period: "one-time",
  periodVi: "Một lần",
- highlighted: false,
+ isPopular: false,
  cta: "Chọn gói",
  ctaVi: "Chọn gói",
  color: form.color ?? "#3B82F6",
@@ -320,7 +319,7 @@ function EditModal({
  <div style={{ color: DS.text5, fontSize: 11 }}>{form.tagline}</div>
  </div>
  <div style={{ marginLeft: "auto", textAlign: "right" }}>
- <div style={{ color: DS.green, fontSize: 11, fontFamily: DS.mono }}>FREE {form.trialDays}N</div>
+ <div style={{ color: DS.green, fontSize: 11, fontFamily: DS.mono }}>{pkg.pages || 8} trang</div>
  <div style={{ color: pkg.color, fontSize: 15, fontWeight: 800 }}>{Number(form.fullPrice).toLocaleString("vi-VN")} VNĐ</div>
   </div>
  </div>

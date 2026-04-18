@@ -392,7 +392,7 @@ function ComparisonModal({
                   )}
 
                   <Link
-                    href={`/${locale}/booking?service=${serviceKey}&package=${tier.id}`}
+                    href={`/${locale}/thiet-ke-website?service=${serviceKey}&package=${tier.id}`}
                     onClick={onClose}
                     style={{
                       display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
@@ -507,7 +507,7 @@ function ComparisonModal({
                 : "Prices include VAT. Flexible 50/50 payment available."}
             </p>
             <Link
-              href={`/${locale}/booking?service=${serviceKey}`}
+              href={`/${locale}/thiet-ke-website?service=${serviceKey}`}
               onClick={onClose}
               style={{
                 display: "inline-flex", alignItems: "center", gap: 6,
@@ -661,7 +661,7 @@ function PackageCard({
 
         {/* CTA */}
         <Link
-          href={`/${locale}/booking?service=${serviceKey}&package=${tier.id}`}
+          href={`/${locale}/thiet-ke-website?service=${serviceKey}&package=${tier.id}`}
           onClick={e => e.stopPropagation()}
           style={{
             display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
@@ -1058,7 +1058,7 @@ export function DichVuClient({ data, locale }: Props) {
                             </div>
 
                             <Link
-                              href={`/${locale}/booking?service=${activeService}&package=${tier.id}`}
+                              href={`/${locale}/thiet-ke-website?service=${activeService}&package=${tier.id}`}
                               style={{
                                 display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
                                 marginTop: 10, padding: "8px 10px",
@@ -1201,7 +1201,7 @@ export function DichVuClient({ data, locale }: Props) {
                           }}
                         >
                           <Link
-                            href={`/${locale}/booking?service=${activeService}&package=${tier.id}`}
+                            href={`/${locale}/thiet-ke-website?service=${activeService}&package=${tier.id}`}
                             style={{
                               display: "inline-flex", alignItems: "center", gap: 4,
                               padding: "7px 14px", borderRadius: 9,
@@ -1284,7 +1284,7 @@ export function DichVuClient({ data, locale }: Props) {
                 <ArrowRight size={14} />
               </Link>
               <Link
-                href={`/${locale}/booking`}
+                href={`/${locale}/thiet-ke-website`}
                 style={{
                   display: "inline-flex", alignItems: "center", gap: 6,
                   padding: "10px 24px", borderRadius: 12,

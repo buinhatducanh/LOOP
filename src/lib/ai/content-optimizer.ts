@@ -362,7 +362,7 @@ export async function suggestInternalLinks(
   const staticSuggestions: Array<{ url: string; anchor: string; reason: string }> =
     locale === 'vi'
       ? [
-        { url: `${SITE_URL}/vi/booking`, anchor: 'Dịch vụ thiết kế web', reason: 'Liên quan đến dịch vụ cốt lõi' },
+        { url: `${SITE_URL}/vi/thiet-ke-website`, anchor: 'Dịch vụ thiết kế web', reason: 'Liên quan đến dịch vụ cốt lõi' },
         { url: `${SITE_URL}/vi/case-study`, anchor: 'Case study', reason: 'Bằng chứng uy tín và kết quả thực tế' },
         { url: `${SITE_URL}/vi/blog`, anchor: 'Blog', reason: 'Nội dung liên quan trong blog' },
       ]

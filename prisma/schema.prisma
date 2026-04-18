@@ -659,6 +659,17 @@ model ServicePackage {
   videoThumbnail         String?        @map("video_thumbnail")
   showFeatureAcknowledge Boolean        @default(true) @map("show_feature_acknowledge")
   acknowledgmentItems    Json?          @map("acknowledgment_items")
+  /// Tagline hiển thị trên card gói (mô tả ngắn)
+  tagline                String?        @map("tagline")
+  /// Màu chủ đạo của gói (hex)
+  color                  String?        @map("color")
+  /// Số trang mặc định
+  pages                  String?        @map("pages")
+  pagesVi                String?        @map("pages_vi")
+  /// Giá gốc (để tính % tiết kiệm hiển thị)
+  marketPrice            Int?           @map("market_price")
+  /// Đánh dấu gói phổ biến
+  isPopular              Boolean        @default(false) @map("is_popular")
   mediaBookings          MediaBooking[]
   orders                 Order[]
 

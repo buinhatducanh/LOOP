@@ -332,7 +332,7 @@ function ServicesSectionInner({ locale }: { locale: string }) {
 
         <div style={{ textAlign: "center", marginTop: "2.5rem" }}>
           <Link
-            href={`/${locale}/booking`}
+            href={`/${locale}/thiet-ke-website`}
             style={{
               display: "inline-flex",
               alignItems: "center",

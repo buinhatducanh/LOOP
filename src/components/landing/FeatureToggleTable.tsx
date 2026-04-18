@@ -2,7 +2,7 @@
 
 /**
  * FeatureToggleTable — Reusable interactive feature selector
- * Used by: BookingWizardClient (step 1) + /booking page
+ * Used by: BookingWizardClient (step 1) + /thiet-ke-website page
  *
  * UX principles for non-tech customers:
  * 1. Every feature has a PLAIN-LANGUAGE description (visible by default, 2 lines)

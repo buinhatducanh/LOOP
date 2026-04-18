@@ -350,7 +350,7 @@ function MegaDropdown({
 
             {/* CTA strip */}
             <div style={{ padding: "10px 20px 16px", borderTop: "1px solid rgba(107,61,245,0.12)" }}>
-              <Link href={`/${locale}/booking`} onClick={onSelect} style={{ textDecoration: "none" }}>
+              <Link href={`/${locale}/thiet-ke-website`} onClick={onSelect} style={{ textDecoration: "none" }}>
                 <div style={{
                   display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
                   padding: "10px 16px", borderRadius: 12,
@@ -521,7 +521,7 @@ export default function SiteHeader({ locale }: { locale: string }) {
         labelKey: "servicesDropdown",
         triggerLabel: t("servicesDropdown"),
         items: [
-          { label: t("serviceWebsite"), href: `/${locale}/booking`, icon: "🌐", description: "Thiết kế & phát triển website chuyên nghiệp, tối ưu SEO, responsive trên mọi thiết bị.", color: DS.cosmicBlue },
+          { label: t("serviceWebsite"), href: `/${locale}/thiet-ke-website`, icon: "🌐", description: "Thiết kế & phát triển website chuyên nghiệp, tối ưu SEO, responsive trên mọi thiết bị.", color: DS.cosmicBlue },
           { label: t("serviceApp"), href: `/${locale}/services?cat=app`, icon: "📱", description: "Xây dựng ứng dụng di động & phần mềm SaaS với trải nghiệm người dùng hiện đại.", color: DS.cosmicPurple },
           { label: t("serviceDashboard"), href: `/${locale}/services?cat=dashboard`, icon: "📊", description: "Hệ thống dashboard quản trị, phân tích dữ liệu trực quan, báo cáo thông minh.", color: DS.cyan },
           { label: t("serviceSeo"), href: `/${locale}/services?cat=seo`, icon: "🎯", description: "Tối ưu hóa công cụ tìm kiếm, quảng cáo Google & TikTok, tăng trưởng doanh thu bền vững.", color: DS.amber },
@@ -1120,7 +1120,7 @@ export default function SiteHeader({ locale }: { locale: string }) {
             )}
 
             {/* CTA */}
-            <Link href={`/${locale}/booking`} className="hide-mobile"
+            <Link href={`/${locale}/thiet-ke-website`} className="hide-mobile"
               style={{
                 display: "flex", alignItems: "center", gap: 6,
                 background: GRD.primary, color: "#fff",
@@ -1224,7 +1224,7 @@ export default function SiteHeader({ locale }: { locale: string }) {
                   <Search size={14} /> <span style={{ flex: 1, textAlign: "left" }}>Tìm kiếm...</span>
                   <kbd style={{ fontSize: 9, fontFamily: DS.mono, color: DS.text5, background: rgba(DS.text, 0.04), borderRadius: 4, padding: "1px 5px" }}>⌘K</kbd>
                 </button>
-                <Link href={`/${locale}/booking`} onClick={() => setMobileOpen(false)}
+                <Link href={`/${locale}/thiet-ke-website`} onClick={() => setMobileOpen(false)}
                   style={{
                     marginTop: 8, padding: "12px", borderRadius: 12,
                     background: GRD.primary, color: "#fff",

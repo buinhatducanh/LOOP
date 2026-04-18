@@ -2,7 +2,7 @@
 
 /**
  * SEOPackageFeatureTable — User-facing SEO feature matrix table
- * Displayed on /booking page after selecting an SEO package
+ * Displayed on /thiet-ke-website page after selecting an SEO package
  * Shows which features are included/excluded per SEO tier
  */
 

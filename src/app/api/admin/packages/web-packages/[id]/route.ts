@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { handleError, ok } from "@/lib/api/response";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
@@ -14,41 +14,41 @@ export async function PUT(
     const { id } = await params;
     const data = await req.json();
 
-    const old = await prisma.pricingWebPackage.findUnique({ where: { id } });
-    const pkg = await prisma.pricingWebPackage.update({
+    const old = await prisma.servicePackage.findUnique({ where: { id } });
+    const pkg = await prisma.servicePackage.update({
       where: { id },
       data: {
         slug: data.slug,
-        name: data.name,
-        nameVi: data.nameVi,
-        tagline: data.tagline,
-        taglineVi: data.taglineVi,
-        price: data.price,
-        currency: data.currency,
-        period: data.period,
-        periodVi: data.periodVi,
-        highlighted: data.highlighted,
-        cta: data.cta,
-        ctaVi: data.ctaVi,
-        color: data.color,
-        pages: data.pages,
-        pagesVi: data.pagesVi,
-        sortOrder: data.sortOrder,
-        isActive: data.isActive,
+        title: data.title ?? data.name ?? data.nameVi ?? "",
+        titleVi: data.nameVi ?? data.title ?? "",
+        shortDesc: data.shortDesc ?? data.tagline ?? "",
+        shortDescVi: data.taglineVi ?? data.shortDesc ?? "",
+        price: data.price ?? data.marketPrice ?? 0,
+        priceText: data.priceText ?? "",
+        features: Array.isArray(data.features) ? data.features : [],
+        sortOrder: data.sortOrder ?? 0,
+        isActive: data.isActive ?? true,
+        tagline: data.tagline ?? null,
+        taglineVi: data.taglineVi ?? null,
+        color: data.color ?? "#3B82F6",
+        pages: data.pages ?? null,
+        pagesVi: data.pagesVi ?? null,
+        marketPrice: data.marketPrice ?? null,
+        isPopular: data.isPopular ?? data.highlighted ?? false,
       },
     });
 
     await createAuditLog({
       userId: session.userId,
       action: "update",
-      resource: "pricing_web_packages",
+      resource: "service_package",
       resourceId: id,
       oldValues: old as unknown as Record<string, unknown>,
       newValues: data,
     });
 
-    revalidatePath("/vi/pricing");
-    revalidatePath("/en/pricing");
+    revalidatePath("/vi/thiet-ke-website");
+    revalidatePath("/en/thiet-ke-website");
 
     return NextResponse.json({ data: pkg });
   } catch (error) {
@@ -64,19 +64,19 @@ export async function DELETE(
     const session = await requirePermission("packages", "delete");
     const { id } = await params;
 
-    const old = await prisma.pricingWebPackage.findUnique({ where: { id } });
-    await prisma.pricingWebPackage.delete({ where: { id } });
+    const old = await prisma.servicePackage.findUnique({ where: { id } });
+    await prisma.servicePackage.delete({ where: { id } });
 
     await createAuditLog({
       userId: session.userId,
       action: "delete",
-      resource: "pricing_web_packages",
+      resource: "service_package",
       resourceId: id,
       oldValues: old as unknown as Record<string, unknown>,
     });
 
-    revalidatePath("/vi/pricing");
-    revalidatePath("/en/pricing");
+    revalidatePath("/vi/thiet-ke-website");
+    revalidatePath("/en/thiet-ke-website");
 
     return ok({ success: true });
   } catch (error) {

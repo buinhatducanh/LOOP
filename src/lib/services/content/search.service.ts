@@ -681,7 +681,7 @@ export async function globalSearch(
           description: desc ?? null,
           category: locale === "vi" ? (t.categoryVi ?? t.category) : t.category,
           thumbnail: t.thumbnail ?? null,
-          href: `/${locale}/booking`,
+          href: `/${locale}/thiet-ke-website`,
           score: scoreItem(query, name, desc, "webTemplates"),
         };
       })
@@ -704,7 +704,7 @@ export async function globalSearch(
           id: p.id, slug: p.slug, name, tagline,
           price: p.price,
           period: p.period,
-          href: `/${locale}/booking`,
+          href: `/${locale}/thiet-ke-website`,
           score: scoreItem(query, name, tagline, "pricingPackages"),
         };
       })
@@ -717,7 +717,7 @@ export async function globalSearch(
         nameVi: a.nameVi ?? null,
         nameEn: a.nameEn ?? null,
         description: locale === "vi" ? (a.descriptionVi ?? a.description) : a.description,
-        href: `/${locale}/booking`,
+        href: `/${locale}/thiet-ke-website`,
         score: scoreItem(query, a.name, a.description, "addonServices"),
       }))
       .sort((a, b) => (b.score ?? 0) - (a.score ?? 0)),

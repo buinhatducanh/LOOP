@@ -2,7 +2,7 @@
 
 /**
  * Booking Wizard Client Component — Next.js / BE
- * Route: /{locale}/booking
+ * Route: /{locale}/thiet-ke-website
  *
  * 5-step wizard:
  *   0 Package+Features  1 Domain  2 Hosting+Add-ons  3 Contact  4 Payment+Submit

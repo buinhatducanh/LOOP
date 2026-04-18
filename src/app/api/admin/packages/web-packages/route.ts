@@ -11,11 +11,12 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const search = searchParams.get("search") || "";
 
+    // Query ServicePackage (type = "website") instead of PricingWebPackage
     const where = search
-      ? { name: { contains: search, mode: "insensitive" as const } }
-      : {};
+      ? { title: { contains: search, mode: "insensitive" as const }, type: "website" }
+      : { type: "website" };
 
-    const packages = await prisma.pricingWebPackage.findMany({
+    const packages = await prisma.servicePackage.findMany({
       where,
       orderBy: { sortOrder: "asc" },
     });
@@ -31,38 +32,40 @@ export async function POST(req: NextRequest) {
     const session = await requirePermission("packages", "create");
     const data = await req.json();
 
-    const pkg = await prisma.pricingWebPackage.create({
+    const pkg = await prisma.servicePackage.create({
       data: {
         slug: data.slug,
-        name: data.name,
-        nameVi: data.nameVi,
-        tagline: data.tagline,
-        taglineVi: data.taglineVi,
-        price: data.price,
-        currency: data.currency || "VND",
-        period: data.period,
-        periodVi: data.periodVi,
-        highlighted: data.highlighted ?? false,
-        cta: data.cta,
-        ctaVi: data.ctaVi,
-        color: data.color || "#3B82F6",
-        pages: data.pages,
-        pagesVi: data.pagesVi,
-        sortOrder: data.sortOrder || 0,
+        title: data.title ?? data.name ?? data.nameVi ?? "",
+        titleVi: data.nameVi ?? data.title ?? "",
+        shortDesc: data.shortDesc ?? data.tagline ?? "",
+        shortDescVi: data.taglineVi ?? data.shortDesc ?? "",
+        type: "website",
+        price: data.price ?? data.marketPrice ?? 0,
+        priceText: data.priceText ?? "",
+        features: Array.isArray(data.features) ? data.features : [],
+        isSubscription: false,
+        sortOrder: data.sortOrder ?? 0,
         isActive: data.isActive ?? true,
+        tagline: data.tagline ?? null,
+        taglineVi: data.taglineVi ?? null,
+        color: data.color ?? "#3B82F6",
+        pages: data.pages ?? null,
+        pagesVi: data.pagesVi ?? null,
+        marketPrice: data.marketPrice ?? null,
+        isPopular: data.isPopular ?? data.highlighted ?? false,
       },
     });
 
     await createAuditLog({
       userId: session.userId,
       action: "create",
-      resource: "pricing_web_packages",
+      resource: "service_package",
       resourceId: pkg.id,
       newValues: data,
     });
 
-    revalidatePath("/vi/pricing");
-    revalidatePath("/en/pricing");
+    revalidatePath("/vi/thiet-ke-website");
+    revalidatePath("/en/thiet-ke-website");
 
     return NextResponse.json({ data: pkg }, { status: 201 });
   } catch (error) {

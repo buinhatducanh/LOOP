@@ -386,7 +386,7 @@ export default function TestimonialsClient({
           <p style={{ color: "rgba(255,255,255,0.85)", marginBottom: "2rem", lineHeight: 1.7 }}>
             Trở thành một trong những khách hàng tiếp theo của LOOP Solutions.
           </p>
-          <Link href={`/${locale}/booking`} style={{
+          <Link href={`/${locale}/thiet-ke-website`} style={{
             display: "inline-flex",
             alignItems: "center",
             gap: "0.5rem",

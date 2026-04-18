@@ -1596,7 +1596,7 @@ export function ServicesClient({
                         </div>
                       </div>
                       <Link
-                        href={`/${locale}/booking?service=${svc.id}`}
+                        href={`/${locale}/thiet-ke-website?service=${svc.id}`}
                         style={{
                           display: "flex", alignItems: "center", gap: 7,
                           background: GRD.primary, color: "#fff",
