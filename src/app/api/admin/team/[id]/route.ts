@@ -122,7 +122,7 @@ export async function PUT(
     // Map FE field names → Prisma field names
     const fieldMap: Record<string, string> = {
       avatar:   "image",
-      team:     "department",
+      // departmentId (FE) → departmentId (Prisma) — passed through as-is
     };
 
     // Build update payload: only fields that are present in the request body.
@@ -139,13 +139,6 @@ export async function PUT(
       // Empty string → null for optional fields
       if (value === "") {
         updateData[prismaKey] = null;
-        continue;
-      }
-
-      // Skip department if null/undefined (FE sent null / field not present).
-      // We must NOT overwrite it with null — Prisma requires a non-null default
-      // and existing department should only be changed intentionally.
-      if (prismaKey === "department" && !value) {
         continue;
       }
 

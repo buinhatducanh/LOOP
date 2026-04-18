@@ -145,24 +145,24 @@ model AdminNotification {
 
 /// Notification templates — supports i18n and admin customization.
 /// Falls back to hardcoded defaults when no template exists.
- model NotificationTemplate {
-  id String @id @default(cuid())
+model NotificationTemplate {
+  id        String   @id @default(cuid())
   /// Template key matching AdminNotification.type or Notification.type
-  key String @unique @map("template_key")
+  key       String   @unique @map("template_key")
   /// UI locale code: vi | en | ja | ko | zh
-  locale String @default("vi")
+  locale    String   @default("vi")
   /// Notification title — supports {{variable}} placeholders
-  title String
+  title     String
   /// Notification message body — supports {{variable}} placeholders
-  message String @db.Text
+  message   String   @db.Text
   /// Whether this template is active (admin can disable per locale)
-  isActive Boolean @default(true) @map("is_active")
+  isActive  Boolean  @default(true) @map("is_active")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
- 
+
   @@unique([key, locale])
   @@map("notification_templates")
- }
+}
 
 model User {
   id                   String             @id @default(cuid())
@@ -190,10 +190,10 @@ model User {
   /// Daily login streak for staff (resets to 1 if a day is missed)
   loginStreak          Int                @default(0) @map("login_streak")
   /// 2FA TOTP
- totpSecret String? @map("totp_secret")
- totpEnabled Boolean @default(false) @map("totp_enabled")
+  totpSecret           String?            @map("totp_secret")
+  totpEnabled          Boolean            @default(false) @map("totp_enabled")
   /// Hashed backup codes (up to 8)
- totpBackupCodes String? @map("totp_backup_codes")
+  totpBackupCodes      String?            @map("totp_backup_codes")
   createdAt            DateTime           @default(now()) @map("created_at")
   updatedAt            DateTime           @updatedAt @map("updated_at")
   teamMemberId         String?            @unique @map("team_member_id")
@@ -213,8 +213,9 @@ model User {
   userRoleApprovals    UserRoleApproval[]
   otps                 OtpCode[]
 
- reviews ProjectReview[]
- supportTickets SupportTicket[]
+  reviews        ProjectReview[]
+  supportTickets SupportTicket[]
+
   @@map("users")
 }
 
@@ -283,25 +284,25 @@ model Service {
 
 model ServiceTier {
   id          String   @id @default(cuid())
-  serviceKey  String              @map("service_key")
-  level       Int                 @map("tier_level")
+  serviceKey  String   @map("service_key")
+  level       Int      @map("tier_level")
   name        String
-  nameEn      String?             @map("name_en")
-  nameJa      String?             @map("name_ja")
-  nameKo      String?             @map("name_ko")
-  nameZh      String?             @map("name_zh")
-  shortDesc   String?             @map("short_desc")
-  shortDescEn String?             @map("short_desc_en")
-  shortDescJa String?             @map("short_desc_ja")
-  shortDescKo String?             @map("short_desc_ko")
-  shortDescZh String?             @map("short_desc_zh")
-  basePrice   Int                 @map("base_price")
-  marketPrice Int?                @map("market_price")
-  lpReward    Int                 @default(50) @map("lp_reward")
-  sortOrder   Int                 @default(0) @map("sort_order")
-  isActive    Boolean             @default(true) @map("is_active")
-  createdAt   DateTime           @default(now()) @map("created_at")
-  updatedAt   DateTime           @updatedAt @map("updated_at")
+  nameEn      String?  @map("name_en")
+  nameJa      String?  @map("name_ja")
+  nameKo      String?  @map("name_ko")
+  nameZh      String?  @map("name_zh")
+  shortDesc   String?  @map("short_desc")
+  shortDescEn String?  @map("short_desc_en")
+  shortDescJa String?  @map("short_desc_ja")
+  shortDescKo String?  @map("short_desc_ko")
+  shortDescZh String?  @map("short_desc_zh")
+  basePrice   Int      @map("base_price")
+  marketPrice Int?     @map("market_price")
+  lpReward    Int      @default(50) @map("lp_reward")
+  sortOrder   Int      @default(0) @map("sort_order")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
   @@unique([serviceKey, level])
   @@index([serviceKey, isActive])
@@ -309,63 +310,63 @@ model ServiceTier {
 }
 
 model Project {
-  id            String      @id @default(cuid())
-  slug          String      @unique
-  title         String
-  category      String
-  client        String
-  year          String
-  image         String
-  imagePublicId    String?  @map("image_public_id")
-  description   String
-  techStack     String[]    @map("tech_stack")
-  features      String[]
-  results       String
-  screenshots   String[]
-  screenshotsPublicIds String[] @map("gallery_public_ids")
-  isPublished   Boolean     @default(true) @map("is_published")
-  sortOrder     Int         @default(0) @map("sort_order")
-  createdAt     DateTime    @default(now()) @map("created_at")
-  updatedAt     DateTime    @updatedAt @map("updated_at")
-  serviceId     String?     @map("service_id")
-  teamMemberId  String?     @map("team_member_id")
-  descriptionEn String?     @map("description_en")
-  descriptionJa String?     @map("description_ja")
-  descriptionKo String?     @map("description_ko")
-  descriptionZh String?     @map("description_zh")
-  resultsEn     String?     @map("results_en")
-  resultsJa     String?     @map("results_ja")
-  resultsKo     String?     @map("results_ko")
-  resultsZh     String?     @map("results_zh")
-  titleEn       String?     @map("title_en")
-  titleJa       String?     @map("title_ja")
-  titleKo       String?     @map("title_ko")
-  titleZh       String?     @map("title_zh")
-  techStackEn   String[]    @map("tech_stack_en")
-  techStackJa   String[]    @map("tech_stack_ja")
-  techStackKo   String[]    @map("tech_stack_ko")
-  techStackZh   String[]    @map("tech_stack_zh")
-  featuresEn    String[]    @map("features_en")
-  featuresJa    String[]    @map("features_ja")
-  featuresKo    String[]    @map("features_ko")
-  featuresZh    String[]    @map("features_zh")
-  service       Service?    @relation(fields: [serviceId], references: [id])
-  teamMember    TeamMember? @relation(fields: [teamMemberId], references: [id])
+  id                   String      @id @default(cuid())
+  slug                 String      @unique
+  title                String
+  category             String
+  client               String
+  year                 String
+  image                String
+  imagePublicId        String?     @map("image_public_id")
+  description          String
+  techStack            String[]    @map("tech_stack")
+  features             String[]
+  results              String
+  screenshots          String[]
+  screenshotsPublicIds String[]    @map("gallery_public_ids")
+  isPublished          Boolean     @default(true) @map("is_published")
+  sortOrder            Int         @default(0) @map("sort_order")
+  createdAt            DateTime    @default(now()) @map("created_at")
+  updatedAt            DateTime    @updatedAt @map("updated_at")
+  serviceId            String?     @map("service_id")
+  teamMemberId         String?     @map("team_member_id")
+  descriptionEn        String?     @map("description_en")
+  descriptionJa        String?     @map("description_ja")
+  descriptionKo        String?     @map("description_ko")
+  descriptionZh        String?     @map("description_zh")
+  resultsEn            String?     @map("results_en")
+  resultsJa            String?     @map("results_ja")
+  resultsKo            String?     @map("results_ko")
+  resultsZh            String?     @map("results_zh")
+  titleEn              String?     @map("title_en")
+  titleJa              String?     @map("title_ja")
+  titleKo              String?     @map("title_ko")
+  titleZh              String?     @map("title_zh")
+  techStackEn          String[]    @map("tech_stack_en")
+  techStackJa          String[]    @map("tech_stack_ja")
+  techStackKo          String[]    @map("tech_stack_ko")
+  techStackZh          String[]    @map("tech_stack_zh")
+  featuresEn           String[]    @map("features_en")
+  featuresJa           String[]    @map("features_ja")
+  featuresKo           String[]    @map("features_ko")
+  featuresZh           String[]    @map("features_zh")
+  service              Service?    @relation(fields: [serviceId], references: [id])
+  teamMember           TeamMember? @relation(fields: [teamMemberId], references: [id])
 
   // Case study fields (P0 — 2026-04-11)
-  isCaseStudy   Boolean     @default(false) @map("is_case_study")
-  industry      String?                // fintech | retail | manufacturing | healthcare | education | logistics | other
-  projectScope String?                // "MVP", "Full platform", "Migration", ...
-  teamSize      Int?                  @map("team_size")
-  duration      String?               // "3 tháng", "6 tuần", ...
-  challenge     String?               // Business challenge
-  solution      String?               // Methodology & approach
-  clientQuote   String?               @map("client_quote")
-  clientRole    String?               @map("client_role")  // "CEO", "CTO", ...
-  roiMetric     String?               @map("roi_metric")    // "300% ROI in 6 months"
-  primaryMetric String?               @map("primary_metric") // "conversion_rate_up_45%"
-  videoUrl      String?               @map("video_url")
-  galleryImages String[]              @map("gallery_images")
+  isCaseStudy   Boolean  @default(false) @map("is_case_study")
+  industry      String? // fintech | retail | manufacturing | healthcare | education | logistics | other
+  projectScope  String? // "MVP", "Full platform", "Migration", ...
+  teamSize      Int?     @map("team_size")
+  duration      String? // "3 tháng", "6 tuần", ...
+  challenge     String? // Business challenge
+  solution      String? // Methodology & approach
+  clientQuote   String?  @map("client_quote")
+  clientRole    String?  @map("client_role") // "CEO", "CTO", ...
+  roiMetric     String?  @map("roi_metric") // "300% ROI in 6 months"
+  primaryMetric String?  @map("primary_metric") // "conversion_rate_up_45%"
+  videoUrl      String?  @map("video_url")
+  galleryImages String[] @map("gallery_images")
 
   @@map("projects")
 }
@@ -433,52 +434,52 @@ model ContactMessage {
 }
 
 model TeamMember {
-  id                     String                 @id @default(cuid())
-  slug                   String                 @unique
-  name                   String
-  role                   String
+  id                 String      @id @default(cuid())
+  slug               String      @unique
+  name               String
+  role               String
   /// Department: engineering/design/media/marketing/sales/finance/hr/management
-  department             String                 @default("engineering") @map("department")
-  departmentId           String?                @map("department_id")
-  departmentRelation     Department?            @relation(fields: [departmentId], references: [id])
-  tabPermissions         String[]               @default([]) @map("tab_permissions")
-  isDeptHead             Boolean                @default(false) @map("is_dept_head")
+  department         String      @default("engineering") @map("department")
+  departmentId       String?     @map("department_id")
+  departmentRelation Department? @relation(fields: [departmentId], references: [id])
+  tabPermissions     String[]    @default([]) @map("tab_permissions")
+  isDeptHead         Boolean     @default(false) @map("is_dept_head")
   /// Access tags granted by CEO during onboarding
-  accessTags             String[]               @default([]) @map("access_tags")
+  accessTags         String[]    @default([]) @map("access_tags")
   /// Onboarding status: pending = waiting CEO approval, approved = active
-  requestStatus          String                 @default("approved") @map("request_status")
-  bio                    String?
-  shortBio               String?                @map("short_bio")
-  imagePublicId          String?                @map("image_public_id")
-  image                  String?
-  achievements           String[]
-  linkedin               String?
-  twitter                String?
-  github                 String?
-  sortOrder              Int                    @default(0) @map("sort_order")
-  isActive               Boolean                @default(true) @map("is_active")
-  createdAt              DateTime               @default(now()) @map("created_at")
-  updatedAt              DateTime               @updatedAt @map("updated_at")
-  roleLevel              Int                    @default(4) @map("role_level")
-  coverImagePublicId     String?                @map("cover_image_public_id")
-  coverImage             String?                @map("cover_image")
-  quote                  String?
-  email                  String? @unique
-  phone                  String?
-  skills                 String[]
-  experience             String?
-  social                 Json?
-  isWorking              Boolean                @default(true) @map("is_working")
-  isFeatured             Boolean                @default(false) @map("is_featured")
-  birthDate              DateTime?              @map("birth_date")
-  address                String?                @map("address")
-  cccd                   String?                @map("cccd")
-  contractStart          DateTime?              @map("contract_start")
-  joinedDate             DateTime?              @map("joined_date")
-  experienceFrom         Int?                   @map("experience_from")
-  facebook               String?                @map("facebook")
-  tiktok                 String?                @map("tiktok")
-  
+  requestStatus      String      @default("approved") @map("request_status")
+  bio                String?
+  shortBio           String?     @map("short_bio")
+  imagePublicId      String?     @map("image_public_id")
+  image              String?
+  achievements       String[]
+  linkedin           String?
+  twitter            String?
+  github             String?
+  sortOrder          Int         @default(0) @map("sort_order")
+  isActive           Boolean     @default(true) @map("is_active")
+  createdAt          DateTime    @default(now()) @map("created_at")
+  updatedAt          DateTime    @updatedAt @map("updated_at")
+  roleLevel          Int         @default(4) @map("role_level")
+  coverImagePublicId String?     @map("cover_image_public_id")
+  coverImage         String?     @map("cover_image")
+  quote              String?
+  email              String?     @unique
+  phone              String?
+  skills             String[]
+  experience         String?
+  social             Json?
+  isWorking          Boolean     @default(true) @map("is_working")
+  isFeatured         Boolean     @default(false) @map("is_featured")
+  birthDate          DateTime?   @map("birth_date")
+  address            String?     @map("address")
+  cccd               String?     @map("cccd")
+  contractStart      DateTime?   @map("contract_start")
+  joinedDate         DateTime?   @map("joined_date")
+  experienceFrom     Int?        @map("experience_from")
+  facebook           String?     @map("facebook")
+  tiktok             String?     @map("tiktok")
+
   // Banking off-system info
   bankName               String?                @map("bank_name")
   bankAccount            String?                @map("bank_account")
@@ -486,11 +487,11 @@ model TeamMember {
   currentXp              Int                    @default(0) @map("current_xp")
   level                  Int                    @default(1) @map("level")
   /// Tổng LP commission đã nhận
- totalSalesCommission Int @default(0) @map("total_sales_commission")
+  totalSalesCommission   Int                    @default(0) @map("total_sales_commission")
   /// LP commission đang chờ (chưa done)
- pendingCommission Int @default(0) @map("pending_commission")
+  pendingCommission      Int                    @default(0) @map("pending_commission")
   /// LP commission đã nhận (done)
- completedCommission Int @default(0) @map("completed_commission")
+  completedCommission    Int                    @default(0) @map("completed_commission")
   maxXp                  Int                    @default(100) @map("max_xp")
   rank                   String                 @default("iron") @map("rank")
   availableLp            Int                    @default(0) @map("available_lp")
@@ -534,7 +535,7 @@ model TeamMember {
   user                   User?
   offSystemSplits        OffSystemSplit[]
   /// Sales commission events (audit trail)
- salesCommissionEvents SalesCommissionEvent[] @relation("SalesCommissionMember")
+  salesCommissionEvents  SalesCommissionEvent[] @relation("SalesCommissionMember")
 
   @@index([departmentId])
   @@index([isActive])
@@ -547,20 +548,20 @@ model TeamMember {
 }
 
 model Department {
-  id          String       @id @default(cuid())
-  key         String?      @unique
+  id          String   @id @default(cuid())
+  key         String?  @unique
   name        String?
   shortName   String?
   color       String?
   description String?
   mission     String?
   headId      String?
-  memberCount Int?         @default(0) @map("member_count")
-  createdAt   DateTime     @default(now()) @map("created_at")
-  updatedAt   DateTime     @updatedAt @map("updated_at")
+  memberCount Int?     @default(0) @map("member_count")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
   members TeamMember[]
-  quests   Quest[]
+  quests  Quest[]
 
   @@index([headId])
   @@map("departments")
@@ -605,91 +606,91 @@ model MemberExpertise {
 }
 
 model ServicePackage {
-  id             String         @id @default(cuid())
-  slug           String         @unique
-  title          String
-  titleEn        String?        @map("title_en")
-  titleJa        String?        @map("title_ja")
-  titleKo        String?        @map("title_ko")
-  titleZh        String?        @map("title_zh")
-  shortDesc      String         @map("short_desc")
-  shortDescEn    String?        @map("short_desc_en")
-  shortDescJa    String?        @map("short_desc_ja")
-  shortDescKo    String?        @map("short_desc_ko")
-  shortDescZh    String?        @map("short_desc_zh")
-  type           String
-  price          Int?
-  priceText      String?        @map("price_text")
-  features       String[]
-  isSubscription Boolean        @default(false) @map("is_subscription")
-  billingPeriod  String?        @map("billing_period")
-  sortOrder      Int            @default(0) @map("sort_order")
-  isActive       Boolean        @default(true) @map("is_active")
-  createdAt      DateTime       @default(now()) @map("created_at")
-  updatedAt      DateTime       @updatedAt @map("updated_at")
+  id                     String         @id @default(cuid())
+  slug                   String         @unique
+  title                  String
+  titleEn                String?        @map("title_en")
+  titleJa                String?        @map("title_ja")
+  titleKo                String?        @map("title_ko")
+  titleZh                String?        @map("title_zh")
+  shortDesc              String         @map("short_desc")
+  shortDescEn            String?        @map("short_desc_en")
+  shortDescJa            String?        @map("short_desc_ja")
+  shortDescKo            String?        @map("short_desc_ko")
+  shortDescZh            String?        @map("short_desc_zh")
+  type                   String
+  price                  Int?
+  priceText              String?        @map("price_text")
+  features               String[]
+  isSubscription         Boolean        @default(false) @map("is_subscription")
+  billingPeriod          String?        @map("billing_period")
+  sortOrder              Int            @default(0) @map("sort_order")
+  isActive               Boolean        @default(true) @map("is_active")
+  createdAt              DateTime       @default(now()) @map("created_at")
+  updatedAt              DateTime       @updatedAt @map("updated_at")
   /// Maps this package to a ServiceTier: "web" | "app" | "dashboard" | "seo"
-  serviceKey     String?        @map("service_key")
+  serviceKey             String?        @map("service_key")
   /// Tier level: 1=Basic, 2=Business, 3=Experience — matches ServiceTier.level
- tierLevel Int  @default(1) @map("tier_level")
- videoUrl String? @map("video_url")
- videoThumbnail String? @map("video_thumbnail")
- showFeatureAcknowledge Boolean @default(true) @map("show_feature_acknowledge")
- acknowledgmentItems Json? @map("acknowledgment_items")
- mediaBookings MediaBooking[]
- orders Order[]
+  tierLevel              Int            @default(1) @map("tier_level")
+  videoUrl               String?        @map("video_url")
+  videoThumbnail         String?        @map("video_thumbnail")
+  showFeatureAcknowledge Boolean        @default(true) @map("show_feature_acknowledge")
+  acknowledgmentItems    Json?          @map("acknowledgment_items")
+  mediaBookings          MediaBooking[]
+  orders                 Order[]
 
   @@map("service_packages")
 }
 
 model Order {
-  id                    String                @id @default(cuid())
-  orderNumber           String                @unique @map("order_number")
-  orderType             String                @default("package") @map("order_type")
-  packageId             String?               @map("package_id")
-  templateId            String?               @map("template_id")
-  customerName          String                @map("customer_name")
-  customerEmail         String                @map("customer_email")
-  customerPhone         String?               @map("customer_phone")
-  companyName           String?               @map("company_name")
+  id                    String                 @id @default(cuid())
+  orderNumber           String                 @unique @map("order_number")
+  orderType             String                 @default("package") @map("order_type")
+  packageId             String?                @map("package_id")
+  templateId            String?                @map("template_id")
+  customerName          String                 @map("customer_name")
+  customerEmail         String                 @map("customer_email")
+  customerPhone         String?                @map("customer_phone")
+  companyName           String?                @map("company_name")
   requirements          String?
-  brandGuidelines       String?               @map("brand_guidelines")
-  status                String                @default("pending")
-  paymentStatus         String                @default("unpaid") @map("payment_status")
-  totalAmount           Int?                  @map("total_amount")
-  createdAt             DateTime              @default(now()) @map("created_at")
-  updatedAt             DateTime              @updatedAt @map("updated_at")
-  basePrice             Int?                  @map("base_price")
-  systemCalculatedPrice Int?                  @map("system_calculated_price")
-  adminOverridePrice    Int?                  @map("admin_override_price")
-  adminPriceNote        String?               @map("admin_price_note")
-  finalPrice            Int?                  @map("final_price")
-  totalXp               Int                   @default(0) @map("total_xp")
-  rewardLevel           Int                   @default(1) @map("reward_level")
-  paymentMethod         String?               @map("payment_method")
-  paidAmount            Int                   @default(0) @map("paid_amount")
-  domainName            String?               @map("domain_name")
-  completedAt           DateTime?             @map("completed_at")
-  gitRepoUrl            String?               @map("git_repo_url")
-  gitWebhookSecret      String?               @map("git_webhook_secret")
-  isActiveProject       Boolean               @default(false) @map("is_active_project")
-  projectStatus         String?               @map("project_status")
-  seoMaxLp              Int                   @default(100) @map("seo_max_lp")
-  startedAt             DateTime?             @map("started_at")
-  totalProjectLp        Int                   @default(0) @map("total_project_lp")
-  salesLeadId           String?               @map("sales_lead_id")
+  brandGuidelines       String?                @map("brand_guidelines")
+  status                String                 @default("pending")
+  paymentStatus         String                 @default("unpaid") @map("payment_status")
+  totalAmount           Int?                   @map("total_amount")
+  createdAt             DateTime               @default(now()) @map("created_at")
+  updatedAt             DateTime               @updatedAt @map("updated_at")
+  basePrice             Int?                   @map("base_price")
+  systemCalculatedPrice Int?                   @map("system_calculated_price")
+  adminOverridePrice    Int?                   @map("admin_override_price")
+  adminPriceNote        String?                @map("admin_price_note")
+  finalPrice            Int?                   @map("final_price")
+  totalXp               Int                    @default(0) @map("total_xp")
+  rewardLevel           Int                    @default(1) @map("reward_level")
+  paymentMethod         String?                @map("payment_method")
+  paidAmount            Int                    @default(0) @map("paid_amount")
+  domainName            String?                @map("domain_name")
+  completedAt           DateTime?              @map("completed_at")
+  gitRepoUrl            String?                @map("git_repo_url")
+  gitWebhookSecret      String?                @map("git_webhook_secret")
+  isActiveProject       Boolean                @default(false) @map("is_active_project")
+  projectStatus         String?                @map("project_status")
+  seoMaxLp              Int                    @default(100) @map("seo_max_lp")
+  startedAt             DateTime?              @map("started_at")
+  totalProjectLp        Int                    @default(0) @map("total_project_lp")
+  salesLeadId           String?                @map("sales_lead_id")
   /// *
   ///    * Referral code used to create this order
-  referralCodeId        String?               @map("referral_code_id")
+  referralCodeId        String?                @map("referral_code_id")
   /// *
   ///    * Infrastructure tier (Basic/Pro/Enterprise) applied to this order
-  infrastructureTierId  String?               @map("infrastructure_tier_id")
+  infrastructureTierId  String?                @map("infrastructure_tier_id")
   /// *
   ///    * LP allocation from quote (% per role) — used to distribute LP when order is paid
-  lpAllocation          Json?                 @map("lp_allocation")
+  lpAllocation          Json?                  @map("lp_allocation")
   /// LP used by customer to offset totalAmount (captured from QuoteRequest)
-  lpUsed                Int                   @default(0) @map("lp_used")
+  lpUsed                Int                    @default(0) @map("lp_used")
   /// LP reward to customer on order completion (manual entry by admin/PM)
-  lpReward              Int                   @default(0) @map("lp_reward")
+  lpReward              Int                    @default(0) @map("lp_reward")
   backlogs              Backlog[]
   blogPosts             BlogPost[]
   customerWebsites      CustomerWebsite[]
@@ -706,11 +707,11 @@ model Order {
   selectedAttributes    OrderAttribute[]
   orderRewards          OrderReward[]
   statusHistory         OrderStatusHistory[]
-  infrastructureTier    InfrastructureTier?   @relation("OrderInfrastructure", fields: [infrastructureTierId], references: [id])
-  package               ServicePackage?       @relation(fields: [packageId], references: [id])
-  referralCode          ReferralCode?         @relation("ReferralCodeOrders", fields: [referralCodeId], references: [id])
-  salesLead             SalesLead?            @relation(fields: [salesLeadId], references: [id])
-  template              WebTemplate?          @relation(fields: [templateId], references: [id])
+  infrastructureTier    InfrastructureTier?    @relation("OrderInfrastructure", fields: [infrastructureTierId], references: [id])
+  package               ServicePackage?        @relation(fields: [packageId], references: [id])
+  referralCode          ReferralCode?          @relation("ReferralCodeOrders", fields: [referralCodeId], references: [id])
+  salesLead             SalesLead?             @relation(fields: [salesLeadId], references: [id])
+  template              WebTemplate?           @relation(fields: [templateId], references: [id])
   payments              Payment[]
   projectMembers        ProjectMember[]
   portalTokens          ProjectPortalToken[]
@@ -718,117 +719,123 @@ model Order {
   slaRules              SlaRule[]
   socialPosts           SocialPost[]
   offSystemPayments     OffSystemPayment[]
-  taskKanbans          TaskKanban[]
-  externalProject      ExternalProject?  @relation("OrderExternalProject", fields: [externalProjectId], references: [id])
-  externalProjectId    String?           @unique @map("external_project_id")
+  taskKanbans           TaskKanban[]
+  externalProject       ExternalProject?       @relation("OrderExternalProject", fields: [externalProjectId], references: [id])
+  externalProjectId     String?                @unique @map("external_project_id")
+  salesRepId            String?                @map("sales_rep_id")
+  /// LP earned from main service (10% direct commission)
+  salesDirectCommission Int                    @default(0) @map("sales_direct_commission")
+  /// LP earned from addons (5% addon commission)
+  salesAddonCommission  Int                    @default(0) @map("sales_addon_commission")
+  /// Whether commission has been credited to salesRep
+  commissionPaid        Boolean                @default(false) @map("commission_paid")
+  /// When commission was credited
+  commissionPaidAt      DateTime?              @map("commission_paid_at")
+  /// Sales commission events for this order
+  salesCommissionEvents SalesCommissionEvent[] @relation("SalesCommissionOrder")
+  reviews               ProjectReview[]
+  supportTickets        SupportTicket[]
+  orderRevenueLines     OrderRevenueLine[]
 
   @@index([status, createdAt])
   @@index([orderType, status])
   @@index([customerEmail])
   @@index([referralCodeId])
   @@map("orders")
- salesRepId String? @map("sales_rep_id")
-  /// LP earned from main service (10% direct commission)
- salesDirectCommission Int @default(0) @map("sales_direct_commission")
-  /// LP earned from addons (5% addon commission)
- salesAddonCommission Int @default(0) @map("sales_addon_commission")
-  /// Whether commission has been credited to salesRep
- commissionPaid Boolean @default(false) @map("commission_paid")
-  /// When commission was credited
- commissionPaidAt DateTime? @map("commission_paid_at")
-  /// Sales commission events for this order
- salesCommissionEvents SalesCommissionEvent[] @relation("SalesCommissionOrder")
- reviews ProjectReview[]
- supportTickets SupportTicket[]
- orderRevenueLines OrderRevenueLine[]
 }
+
 /// ProjectReview — customer reviews of completed orders
 model ProjectReview {
- id  String @id @default(cuid())
- orderId String @map("order_id")
- userId String @map("user_id")
- rating Int
- title String?
- comment String?
- aspects Json?
- createdAt DateTime @default(now()) @map("created_at")
- updatedAt DateTime @updatedAt @map("updated_at")
- order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
- user User @relation(fields: [userId], references: [id], onDelete: Cascade)
- @@unique([orderId, userId])
- @@index([userId])
- @@index([orderId])
- @@map("project_reviews")
+  id        String   @id @default(cuid())
+  orderId   String   @map("order_id")
+  userId    String   @map("user_id")
+  rating    Int
+  title     String?
+  comment   String?
+  aspects   Json?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([orderId, userId])
+  @@index([userId])
+  @@index([orderId])
+  @@map("project_reviews")
 }
+
 /// SupportTicket — customer support tickets
 model SupportTicket {
- id String @id @default(cuid())
- userId String @map("user_id")
- orderId String? @map("order_id")
- subject String
- description String
- priority String @default("normal")
- status String @default("open")
- createdAt DateTime @default(now()) @map("created_at")
- updatedAt DateTime @updatedAt @map("updated_at")
- user User @relation(fields: [userId], references: [id], onDelete: Cascade)
- order Order? @relation(fields: [orderId], references: [id], onDelete: SetNull)
- @@index([userId])
- @@index([orderId])
- @@index([status])
- @@map("support_tickets")
+  id          String   @id @default(cuid())
+  userId      String   @map("user_id")
+  orderId     String?  @map("order_id")
+  subject     String
+  description String
+  priority    String   @default("normal")
+  status      String   @default("open")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  order       Order?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([orderId])
+  @@index([status])
+  @@map("support_tickets")
 }
+
 /// OrderRevenueLine — VAT/tax line items for orders (domain, hosting, web packages)
 model OrderRevenueLine {
- id String @id @default(cuid())
- orderId String @map("order_id")
- category String
- serviceName String @map("service_name")
- packageRef String? @map("package_ref")
- quantity Int @default(1)
- unitPrice Float @map("unit_price")
- totalPrice Float @map("total_price")
- periodMonths Int? @map("period_months")
- taxable Boolean @default(true)
- taxRate Float @default(0) @map("tax_rate")
- taxAmount Float @default(0) @map("tax_amount")
- createdAt DateTime @default(now()) @map("created_at")
- updatedAt DateTime @updatedAt @map("updated_at")
- order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
- @@index([orderId])
- @@index([category])
- @@map("order_revenue_lines")
+  id           String   @id @default(cuid())
+  orderId      String   @map("order_id")
+  category     String
+  serviceName  String   @map("service_name")
+  packageRef   String?  @map("package_ref")
+  quantity     Int      @default(1)
+  unitPrice    Float    @map("unit_price")
+  totalPrice   Float    @map("total_price")
+  periodMonths Int?     @map("period_months")
+  taxable      Boolean  @default(true)
+  taxRate      Float    @default(0) @map("tax_rate")
+  taxAmount    Float    @default(0) @map("tax_amount")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  order        Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([category])
+  @@map("order_revenue_lines")
 }
 
 /// ExternalProject — dự án tiếp nhận từ bên ngoài hệ thống (ký HĐ bên ngoài / sales mua hộ)
 /// Gắn với Order qua externalProjectId; Order có isActiveProject = true thì Kanban hoạt động.
 model ExternalProject {
-  id               String   @id @default(cuid())
+  id            String    @id @default(cuid())
   /// "external" = ký kết ngoài hệ thống; "sales_assisted" = sales mua hộ cho KH
-  type             String   @default("external")  @map("type")
-  orderId          String?  @unique @map("order_id")
+  type          String    @default("external") @map("type")
+  orderId       String?   @unique @map("order_id")
   /// Thông tin hợp đồng bên ngoài
-  contractRef      String?  @map("contract_ref")
-  contractParty    String?  @map("contract_party")
-  signedAt         DateTime? @map("signed_at")
+  contractRef   String?   @map("contract_ref")
+  contractParty String?   @map("contract_party")
+  signedAt      DateTime? @map("signed_at")
   /// Thông tin khách hàng (lưu lại để tạo Order)
-  customerName     String
-  customerEmail    String
-  customerPhone    String?
-  companyName      String?
-  requirements     String?
+  customerName  String
+  customerEmail String
+  customerPhone String?
+  companyName   String?
+  requirements  String?
   /// Giá (optional — external project có thể chưa có giá)
-  totalAmount      Int?
+  totalAmount   Int?
   /// Ghi chú riêng của sales (cho sales_assisted)
-  salesNote        String?  @map("sales_note")
+  salesNote     String?   @map("sales_note")
   /// active | pending_approval | paused | completed | cancelled
-  status           String   @default("active")  @map("status")
+  status        String    @default("active") @map("status")
   /// Ai tạo
-  createdBy        String   @map("created_by")
-  createdAt        DateTime @default(now()) @map("created_at")
-  updatedAt        DateTime @updatedAt @map("updated_at")
+  createdBy     String    @map("created_by")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
 
-  order           Order?  @relation("OrderExternalProject")
+  order Order? @relation("OrderExternalProject")
 
   @@index([type])
   @@index([status])
@@ -893,14 +900,14 @@ model SiteSetting {
 /// Keys: pm | designer | dev | qa | seo
 /// Seeded on first run. FK used by ProjectMember.projectRoleKey.
 model ProjectRole {
-  id        String   @id @default(cuid())
-  key       String   @unique @map("key")
+  id        String          @id @default(cuid())
+  key       String          @unique @map("key")
   label     String
-  color     String   @default("#3B82F6")
-  sortOrder Int      @default(0)
-  isActive  Boolean  @default(true) @map("is_active")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  color     String          @default("#3B82F6")
+  sortOrder Int             @default(0)
+  isActive  Boolean         @default(true) @map("is_active")
+  createdAt DateTime        @default(now()) @map("created_at")
+  updatedAt DateTime        @updatedAt @map("updated_at")
   members   ProjectMember[]
 
   @@index([key])
@@ -945,7 +952,7 @@ model TaskKanban {
   qaId        String?   @map("qa_id")
   envFileId   String?   @map("env_file_id")
   completedAt DateTime? @map("completed_at")
-  dueDate DateTime? @map("due_date")
+  dueDate     DateTime? @map("due_date")
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
   order       Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
@@ -957,38 +964,39 @@ model TaskKanban {
 }
 
 model HomeSlider {
-  id         String   @id @default(cuid())
+  id            String   @id @default(cuid())
   image         String
   imagePublicId String?  @map("image_public_id")
   title         String?
-  subtitle   String?
-  link       String?
-  sortOrder  Int      @default(0) @map("sort_order")
-  isActive   Boolean  @default(true) @map("is_active")
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
-  subtitleEn String?  @map("subtitle_en")
-  subtitleJa String?  @map("subtitle_ja")
-  subtitleKo String?  @map("subtitle_ko")
-  subtitleZh String?  @map("subtitle_zh")
-  titleEn    String?  @map("title_en")
-  titleJa    String?  @map("title_ja")
-  titleKo    String?  @map("title_ko")
-  titleZh    String?  @map("title_zh")
+  subtitle      String?
+  link          String?
+  sortOrder     Int      @default(0) @map("sort_order")
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  subtitleEn    String?  @map("subtitle_en")
+  subtitleJa    String?  @map("subtitle_ja")
+  subtitleKo    String?  @map("subtitle_ko")
+  subtitleZh    String?  @map("subtitle_zh")
+  titleEn       String?  @map("title_en")
+  titleJa       String?  @map("title_ja")
+  titleKo       String?  @map("title_ko")
+  titleZh       String?  @map("title_zh")
 
   @@map("home_sliders")
 }
+
 model HomeVideo {
-  id                 String   @id @default(cuid())
-  videoUrl           String
-  thumbnail          String?
-  thumbnailPublicId  String?  @map("thumbnail_public_id")
-  title              String?
-  description        String?
-  isActive           Boolean  @default(true) @map("is_active")
-  sortOrder          Int      @default(0) @map("sort_order")
-  createdAt          DateTime @default(now()) @map("created_at")
-  updatedAt          DateTime @updatedAt @map("updated_at")
+  id                String   @id @default(cuid())
+  videoUrl          String
+  thumbnail         String?
+  thumbnailPublicId String?  @map("thumbnail_public_id")
+  title             String?
+  description       String?
+  isActive          Boolean  @default(true) @map("is_active")
+  sortOrder         Int      @default(0) @map("sort_order")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
 
   @@map("home_videos")
 }
@@ -1029,6 +1037,8 @@ model ServiceAttribute {
   isUpgradeable      Boolean                @default(false) @map("is_upgradeable")
   /// Scopes this attribute to a specific service: "web" | "app" | "dashboard" | "seo". null = shared (applies to all).
   serviceKey         String?                @map("service_key")
+  /// URL video hướng dẫn tính năng (YouTube/Vimeo/etc.)
+  videoUrl           String?                @map("video_url")
   orderAttributes    OrderAttribute[]
   parent             ServiceAttribute?      @relation("FeatureHierarchy", fields: [parentId], references: [id])
   children           ServiceAttribute[]     @relation("FeatureHierarchy")
@@ -1042,33 +1052,33 @@ model ServiceAttribute {
 }
 
 model WebTemplate {
-  id                String                 @id @default(cuid())
-  slug              String                 @unique
-  name              String
-  nameVi            String                 @map("name_vi")
-  descriptionVi     String?                @map("description_vi")
-  category          String
-  categoryVi        String                 @map("category_vi")
-  thumbnailPublicId    String?  @map("thumbnail_public_id")
-  screenshotsPublicIds String[] @map("screenshots_public_ids")
-  thumbnail         String
-  screenshots       String[]
-  demoUrl           String                 @map("demo_url")
-  price             Int
-  originalPrice     Int?                   @map("original_price")
-  currency          String                 @default("VND")
-  technologies      String[]
-  deliveryTime      String                 @map("delivery_time")
-  highlighted       Boolean                @default(false)
-  sortOrder         Int                    @default(0) @map("sort_order")
-  isActive          Boolean                @default(true) @map("is_active")
-  createdAt         DateTime               @default(now()) @map("created_at")
-  updatedAt         DateTime               @updatedAt @map("updated_at")
-  level             Int                    @default(1)
-  levelLabel        String?                @map("level_label")
-  levelLabelVi      String?                @map("level_label_vi")
-  orders            Order[]
-  bundledAttributes WebTemplateAttribute[]
+  id                   String                 @id @default(cuid())
+  slug                 String                 @unique
+  name                 String
+  nameVi               String                 @map("name_vi")
+  descriptionVi        String?                @map("description_vi")
+  category             String
+  categoryVi           String                 @map("category_vi")
+  thumbnailPublicId    String?                @map("thumbnail_public_id")
+  screenshotsPublicIds String[]               @map("screenshots_public_ids")
+  thumbnail            String
+  screenshots          String[]
+  demoUrl              String                 @map("demo_url")
+  price                Int
+  originalPrice        Int?                   @map("original_price")
+  currency             String                 @default("VND")
+  technologies         String[]
+  deliveryTime         String                 @map("delivery_time")
+  highlighted          Boolean                @default(false)
+  sortOrder            Int                    @default(0) @map("sort_order")
+  isActive             Boolean                @default(true) @map("is_active")
+  createdAt            DateTime               @default(now()) @map("created_at")
+  updatedAt            DateTime               @updatedAt @map("updated_at")
+  level                Int                    @default(1)
+  levelLabel           String?                @map("level_label")
+  levelLabelVi         String?                @map("level_label_vi")
+  orders               Order[]
+  bundledAttributes    WebTemplateAttribute[]
 
   @@index([level, isActive])
   @@index([category, isActive])
@@ -1303,55 +1313,55 @@ model FeatureVariant {
 }
 
 model QuoteRequest {
-  id            String   @id @default(cuid())
-  customerName  String   @map("customer_name")
-  customerEmail String   @map("customer_email")
-  customerPhone String?  @map("customer_phone")
-  companyName   String?  @map("company_name")
-  selectedItems Json     @map("selected_items")
-  totalAmount   Int      @map("total_amount")
+  id                 String   @id @default(cuid())
+  customerName       String   @map("customer_name")
+  customerEmail      String   @map("customer_email")
+  customerPhone      String?  @map("customer_phone")
+  companyName        String?  @map("company_name")
+  selectedItems      Json     @map("selected_items")
+  totalAmount        Int      @map("total_amount")
   /// LP used by customer to offset totalAmount (max 20% enforced server-side)
-  lpUsed        Int      @default(0) @map("lp_used")
-  paymentPlan   String?  @map("payment_plan")
-  notes         String?
-  status        String   @default("new")
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
+  lpUsed             Int      @default(0) @map("lp_used")
+  paymentPlan        String?  @map("payment_plan")
+  notes              String?
+  status             String   @default("new")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
   /// Optional: pre-selected hosting plan slug
-  hostingPlanSlug String? @map("hosting_plan_slug")
+  hostingPlanSlug    String?  @map("hosting_plan_slug")
   /// Optional: pre-selected domain name
-  domainName    String?  @map("domain_name")
+  domainName         String?  @map("domain_name")
   /// Whether domain will be purchased now or deferred until handover
-  domainPurchaseTime String? @default("now") @map("domain_purchase_time")
+  domainPurchaseTime String?  @default("now") @map("domain_purchase_time")
   /// Links to Quotes created from this request (reverse of Quote.quoteRequest)
-  quotes        Quote[]
+  quotes             Quote[]
 
   @@map("quote_requests")
 }
 
 model PricingWebPackage {
-  id          String   @id @default(cuid())
-  slug        String   @unique
-  name        String
-  nameVi      String   @map("name_vi")
-  tagline     String
-  taglineVi   String   @map("tagline_vi")
-  price       Int
-  currency    String   @default("VND")
-  period      String
-  periodVi    String   @map("period_vi")
-  highlighted Boolean  @default(false)
-  cta         String
-  ctaVi       String   @map("cta_vi")
-  color       String   @default("#3B82F6")
-  pages       String
-  pagesVi     String   @map("pages_vi")
- templateRepoUrl String? @map("template_repo_url")
-  sortOrder   Int      @default(0) @map("sort_order")
-  isActive    Boolean  @default(true) @map("is_active")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-  websites    CustomerWebsite[]
+  id              String            @id @default(cuid())
+  slug            String            @unique
+  name            String
+  nameVi          String            @map("name_vi")
+  tagline         String
+  taglineVi       String            @map("tagline_vi")
+  price           Int
+  currency        String            @default("VND")
+  period          String
+  periodVi        String            @map("period_vi")
+  highlighted     Boolean           @default(false)
+  cta             String
+  ctaVi           String            @map("cta_vi")
+  color           String            @default("#3B82F6")
+  pages           String
+  pagesVi         String            @map("pages_vi")
+  templateRepoUrl String?           @map("template_repo_url")
+  sortOrder       Int               @default(0) @map("sort_order")
+  isActive        Boolean           @default(true) @map("is_active")
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+  websites        CustomerWebsite[]
 
   @@map("pricing_web_packages")
 }
@@ -1384,29 +1394,29 @@ model PricingComparisonFeature {
 }
 
 model PricingHostingPlan {
-  id          String   @id @default(cuid())
-  slug        String   @unique
-  name        String
-  nameVi      String   @map("name_vi")
+  id           String            @id @default(cuid())
+  slug         String            @unique
+  name         String
+  nameVi       String            @map("name_vi")
   /// Base monthly price (used to compute period-prorated prices).
-  monthlyPrice Int     @map("monthly_price")
+  monthlyPrice Int               @map("monthly_price")
   /// Human-readable period label, e.g. "1 năm", "2 năm".
-  period      String
-  periodVi    String   @map("period_vi")
+  period       String
+  periodVi     String            @map("period_vi")
   /// Number of months this plan is billed for (e.g. 6, 12, 24).
-  months      Int      @default(12)
+  months       Int               @default(12)
   /// Discount % applied when purchasing this plan upfront.
   /// E.g. 10 = 10% off the sum of monthlyPrice × months.
-  discountPct Float    @default(0) @map("discount_pct")
-  features    String[]
-  featuresVi  String[] @map("features_vi")
-  highlighted Boolean  @default(false)
-  color       String   @default("#3B82F6")
-  sortOrder   Int      @default(0) @map("sort_order")
-  isActive    Boolean  @default(true) @map("is_active")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
- websites CustomerWebsite[] @relation("HostingPlanWebsite")
+  discountPct  Float             @default(0) @map("discount_pct")
+  features     String[]
+  featuresVi   String[]          @map("features_vi")
+  highlighted  Boolean           @default(false)
+  color        String            @default("#3B82F6")
+  sortOrder    Int               @default(0) @map("sort_order")
+  isActive     Boolean           @default(true) @map("is_active")
+  createdAt    DateTime          @default(now()) @map("created_at")
+  updatedAt    DateTime          @updatedAt @map("updated_at")
+  websites     CustomerWebsite[] @relation("HostingPlanWebsite")
 
   @@map("pricing_hosting_plans")
 }
@@ -1594,52 +1604,52 @@ model LandingSection {
 }
 
 model CustomerWebsite {
-  id              String            @id @default(cuid())
-  orderId         String?           @map("order_id")
-  packageId       String?           @map("package_id")
-  domain          String?
-  subdomain       String?           @map("subdomain")
-  name            String
-  description     String?
-  hostingProvider String?           @map("hosting_provider")
-  hostingUrl      String?           @map("hosting_url")
-  customerId      String?           @map("customer_id")
-  customerName    String?           @map("customer_name")
-  customerEmail   String?           @map("customer_email")
-  customerPhone   String?           @map("customer_phone")
-  status          String            @default("active")
-  configStatus    String            @default("pending_config") @map("config_status")
-  isMonitored     Boolean           @default(true) @map("is_monitored")
-  deployedAt      DateTime?         @map("deployed_at")
- vercelProjectId String? @map("vercel_project_id")
- vercelProjectUrl String? @map("vercel_project_url")
-  deployedUrl     String?           @map("deployed_url")
-  expiresAt       DateTime?         @map("expires_at")
-  createdAt       DateTime          @default(now()) @map("created_at")
-  updatedAt       DateTime          @updatedAt @map("updated_at")
+  id                String              @id @default(cuid())
+  orderId           String?             @map("order_id")
+  packageId         String?             @map("package_id")
+  domain            String?
+  subdomain         String?             @map("subdomain")
+  name              String
+  description       String?
+  hostingProvider   String?             @map("hosting_provider")
+  hostingUrl        String?             @map("hosting_url")
+  customerId        String?             @map("customer_id")
+  customerName      String?             @map("customer_name")
+  customerEmail     String?             @map("customer_email")
+  customerPhone     String?             @map("customer_phone")
+  status            String              @default("active")
+  configStatus      String              @default("pending_config") @map("config_status")
+  isMonitored       Boolean             @default(true) @map("is_monitored")
+  deployedAt        DateTime?           @map("deployed_at")
+  vercelProjectId   String?             @map("vercel_project_id")
+  vercelProjectUrl  String?             @map("vercel_project_url")
+  deployedUrl       String?             @map("deployed_url")
+  expiresAt         DateTime?           @map("expires_at")
+  createdAt         DateTime            @default(now()) @map("created_at")
+  updatedAt         DateTime            @updatedAt @map("updated_at")
   /// eKYC fields — stored unencrypted; application-level encryption recommended for PII
-  ekycName        String?           @map("ekyc_name")
-  ekycIdNumber    String?           @map("ekyc_id_number")
-  ekycDob         String?           @map("ekyc_dob")
-  ekycAddress     String?           @map("ekyc_address")
-/// Domain purchase fields
-  registeredAt DateTime? @map("registered_at")
-  domainTermMonths Int?  @map("domain_term_months")
-  domainCost Float? @map("domain_cost")
-  domainTld String? @map("domain_tld")
-  autoRenewDomain Boolean @default(false) @map("auto_renew_domain")
-  domainExpiresAt DateTime? @map("domain_expires_at")
+  ekycName          String?             @map("ekyc_name")
+  ekycIdNumber      String?             @map("ekyc_id_number")
+  ekycDob           String?             @map("ekyc_dob")
+  ekycAddress       String?             @map("ekyc_address")
+  /// Domain purchase fields
+  registeredAt      DateTime?           @map("registered_at")
+  domainTermMonths  Int?                @map("domain_term_months")
+  domainCost        Float?              @map("domain_cost")
+  domainTld         String?             @map("domain_tld")
+  autoRenewDomain   Boolean             @default(false) @map("auto_renew_domain")
+  domainExpiresAt   DateTime?           @map("domain_expires_at")
   /// Hosting purchase fields
-  hostingPlanId String? @map("hosting_plan_id")
-  hostingPlan PricingHostingPlan? @relation("HostingPlanWebsite", fields: [hostingPlanId], references: [id])
-  hostingTermMonths Int? @map("hosting_term_months")
-  hostingCost Float? @map("hosting_cost")
-  autoRenewHosting Boolean @default(false) @map("auto_renew_hosting")
-  hostingExpiresAt DateTime? @map("hosting_expires_at")
-  order           Order?            @relation(fields: [orderId], references: [id])
-  package         PricingWebPackage? @relation(fields: [packageId], references: [id])
-  pageViews       WebsitePageView[]
-  websiteStats    WebsiteStats[]
+  hostingPlanId     String?             @map("hosting_plan_id")
+  hostingPlan       PricingHostingPlan? @relation("HostingPlanWebsite", fields: [hostingPlanId], references: [id])
+  hostingTermMonths Int?                @map("hosting_term_months")
+  hostingCost       Float?              @map("hosting_cost")
+  autoRenewHosting  Boolean             @default(false) @map("auto_renew_hosting")
+  hostingExpiresAt  DateTime?           @map("hosting_expires_at")
+  order             Order?              @relation(fields: [orderId], references: [id])
+  package           PricingWebPackage?  @relation(fields: [packageId], references: [id])
+  pageViews         WebsitePageView[]
+  websiteStats      WebsiteStats[]
 
   @@index([status])
   @@index([customerEmail])
@@ -1689,37 +1699,37 @@ model WebsitePageView {
 
 // About page sections — admin can CRUD each section
 model AboutSection {
-  id          String   @id @default(cuid())
-  sectionType String              // "hero" | "stats" | "story" | "timeline" | "values" | "team_preview" | "cta"
-  locale     String   @default("vi") @map("locale")
+  id              String   @id @default(cuid())
+  sectionType     String // "hero" | "stats" | "story" | "timeline" | "values" | "team_preview" | "cta"
+  locale          String   @default("vi") @map("locale")
   // Hero
-  badge      String?
-  title      String?
-  titleHighlight String?         @map("title_highlight")
-  subtitle   String?
-  description String?
-  ctaText    String?            @map("cta_text")
-  ctaLink    String?            @map("cta_link")
-  cta2Text   String?            @map("cta_2_text")
-  cta2Link   String?            @map("cta_2_link")
+  badge           String?
+  title           String?
+  titleHighlight  String?  @map("title_highlight")
+  subtitle        String?
+  description     String?
+  ctaText         String?  @map("cta_text")
+  ctaLink         String?  @map("cta_link")
+  cta2Text        String?  @map("cta_2_text")
+  cta2Link        String?  @map("cta_2_link")
   // Stats — JSON array of {value, label, icon, color}
-  stats      Json?
+  stats           Json?
   // Story paragraphs — JSON array of strings
-  story      Json?
+  story           Json?
   // Timeline — JSON array of {year, title, description}
-  timeline   Json?
+  timeline        Json?
   // Values — JSON array of {icon, title, description, color}
-  values     Json?
+  values          Json?
   // Team preview — JSON array of {name, role, department, avatar, deptColor}
-  teamPreview Json?             @map("team_preview")
+  teamPreview     Json?    @map("team_preview")
   // CTA section
-  ctaSectionTitle String?       @map("cta_section_title")
-  ctaSectionSub   String?        @map("cta_section_sub")
+  ctaSectionTitle String?  @map("cta_section_title")
+  ctaSectionSub   String?  @map("cta_section_sub")
   // General
-  isActive   Boolean  @default(true)  @map("is_active")
-  sortOrder  Int      @default(0)      @map("sort_order")
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt       @map("updated_at")
+  isActive        Boolean  @default(true) @map("is_active")
+  sortOrder       Int      @default(0) @map("sort_order")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
 
   @@unique([sectionType, locale])
   @@index([locale, isActive])
@@ -1752,12 +1762,12 @@ model CustomerPoint {
 /// Tracks VIP tier for each customer based on spending + VIP points.
 /// Tier auto-promotes (never demotes) when conditions are met.
 model ClientVipStatus {
-  id            String    @id @default(cuid())
-  userId        String?   @unique @map("user_id")
-  userEmail     String    @unique @map("user_email")
-  tier          String    @default("regular")  // regular | vip1 | vip2 | vip3
-  totalSpending Float    @default(0)          // VNĐ — sum of Order.paidAmount (paid orders)
-  vipPoints     Int      @default(0)          // accumulated from client quests
+  id            String   @id @default(cuid())
+  userId        String?  @unique @map("user_id")
+  userEmail     String   @unique @map("user_email")
+  tier          String   @default("regular") // regular | vip1 | vip2 | vip3
+  totalSpending Float    @default(0) // VNĐ — sum of Order.paidAmount (paid orders)
+  vipPoints     Int      @default(0) // accumulated from client quests
   updatedAt     DateTime @updatedAt @map("updated_at")
 
   @@map("client_vip_status")
@@ -1807,25 +1817,25 @@ model PointActivity {
 }
 
 model Advertisement {
-  id               String   @id @default(cuid())
-  slug             String   @unique
-  titleVi          String   @map("title_vi")
-  description      String?
-  descriptionVi    String?  @map("description_vi")
-  videoUrl         String   @map("video_url")
-  thumbnailPublicId  String?  @map("thumbnail_public_id")
-  thumbnailUrl     String?  @map("thumbnail_url")
-  duration         Int
-  points           Int      @default(10)
-  xpBonus          Int      @default(0) @map("xp_bonus")
-  dailyLimit       Int      @default(5) @map("daily_limit")
-  watchCooldown    Int      @default(3600) @map("watch_cooldown")
-  isActive         Boolean  @default(true) @map("is_active")
-  sortOrder        Int      @default(0) @map("sort_order")
-  minLevel         Int      @default(1) @map("min_level")
-  requiresPurchase Boolean  @default(false) @map("requires_purchase")
-  createdAt        DateTime @default(now()) @map("created_at")
-  updatedAt        DateTime @updatedAt @map("updated_at")
+  id                String   @id @default(cuid())
+  slug              String   @unique
+  titleVi           String   @map("title_vi")
+  description       String?
+  descriptionVi     String?  @map("description_vi")
+  videoUrl          String   @map("video_url")
+  thumbnailPublicId String?  @map("thumbnail_public_id")
+  thumbnailUrl      String?  @map("thumbnail_url")
+  duration          Int
+  points            Int      @default(10)
+  xpBonus           Int      @default(0) @map("xp_bonus")
+  dailyLimit        Int      @default(5) @map("daily_limit")
+  watchCooldown     Int      @default(3600) @map("watch_cooldown")
+  isActive          Boolean  @default(true) @map("is_active")
+  sortOrder         Int      @default(0) @map("sort_order")
+  minLevel          Int      @default(1) @map("min_level")
+  requiresPurchase  Boolean  @default(false) @map("requires_purchase")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
 
   @@map("advertisements")
 }
@@ -2068,36 +2078,36 @@ model LpAward {
 
 /// Sales LP commission events — audit trail for sales commission credits.
 model SalesCommissionEvent {
- id String @id @default(cuid())
+  id            String   @id @default(cuid())
   /// TeamMember.id — nhân viên nhận commission
- salesRepId String @map("sales_rep_id")
+  salesRepId    String   @map("sales_rep_id")
   /// Loại nguồn: "order" | "enrollment" | "media_booking"
- referenceType String @map("reference_type")
+  referenceType String   @map("reference_type")
   /// Order.id / Enrollment.id / ...
- referenceId String @map("reference_id")
+  referenceId   String   @map("reference_id")
   /// LP từ dịch vụ chính (10%)
- directLp Int @default(0) @map("direct_lp")
+  directLp      Int      @default(0) @map("direct_lp")
   /// LP từ addon (5%)
- addonLp Int @default(0) @map("addon_lp")
+  addonLp       Int      @default(0) @map("addon_lp")
   /// Tổng LP đã credited
- totalLp Int @map("total_lp")
+  totalLp       Int      @map("total_lp")
   /// Thời điểm credited
- paidAt DateTime @default(now()) @map("paid_at")
+  paidAt        DateTime @default(now()) @map("paid_at")
 
- salesRep TeamMember @relation("SalesCommissionMember", fields: [salesRepId], references: [id])
+  salesRep     TeamMember  @relation("SalesCommissionMember", fields: [salesRepId], references: [id])
   /// Back-ref to Order (nullable)
- order Order? @relation("SalesCommissionOrder", fields: [orderId], references: [id])
- orderId String? @map("order_id")
+  order        Order?      @relation("SalesCommissionOrder", fields: [orderId], references: [id])
+  orderId      String?     @map("order_id")
   /// Back-ref to Enrollment (nullable)
- enrollment Enrollment? @relation("SalesCommissionEnrollment", fields: [enrollmentId], references: [id])
- enrollmentId String? @map("enrollment_id")
+  enrollment   Enrollment? @relation("SalesCommissionEnrollment", fields: [enrollmentId], references: [id])
+  enrollmentId String?     @map("enrollment_id")
 
- @@index([salesRepId])
- @@index([orderId])
- @@index([enrollmentId])
- @@index([referenceType, referenceId])
- @@index([paidAt])
- @@map("sales_commission_events")
+  @@index([salesRepId])
+  @@index([orderId])
+  @@index([enrollmentId])
+  @@index([referenceType, referenceId])
+  @@index([paidAt])
+  @@map("sales_commission_events")
 }
 
 /// Figma demo review workflow per project.
@@ -2161,52 +2171,52 @@ model EnvFileHistory {
 
 /// SEO blog posts per project.
 model BlogPost {
-  id          String     @id @default(cuid())
-  title       String
-  slug        String
-  content     String?
-  authorId    String     @map("author_id")
-  coverImagePublicId String?    @map("cover_image_public_id")
-  status      String     @default("draft") @map("status")
-  seoTitle    String?    @map("seo_title")
-  seoDesc     String?    @map("seo_desc")
-  publishedAt DateTime?  @map("published_at")
-  createdAt   DateTime   @default(now()) @map("created_at")
-  updatedAt   DateTime   @updatedAt @map("updated_at")
-  coverImage  String?    @map("cover_image")
-  excerpt     String?
-  lpAwardedAt DateTime?  @map("lp_awarded_at")
-  lpEarned    Boolean    @default(false) @map("lp_earned")
-  projectId   String     @map("project_id")
-  contentEn   String?    @map("content_en")
-  contentJa   String?    @map("content_ja")
-  contentKo   String?    @map("content_ko")
-  contentZh   String?    @map("content_zh")
-  excerptEn   String?    @map("excerpt_en")
-  excerptJa   String?    @map("excerpt_ja")
-  excerptKo   String?    @map("excerpt_ko")
-  excerptZh   String?    @map("excerpt_zh")
-  seoDescEn   String?    @map("seo_desc_en")
-  seoDescJa   String?    @map("seo_desc_ja")
-  seoDescKo   String?    @map("seo_desc_ko")
-  seoDescZh   String?    @map("seo_desc_zh")
-  seoTitleEn  String?    @map("seo_title_en")
-  seoTitleJa  String?    @map("seo_title_ja")
-  seoTitleKo  String?    @map("seo_title_ko")
-  seoTitleZh  String?    @map("seo_title_zh")
-  titleEn     String?    @map("title_en")
-  titleJa     String?    @map("title_ja")
-  titleKo     String?    @map("title_ko")
-  titleZh     String?    @map("title_zh")
+  id                 String        @id @default(cuid())
+  title              String
+  slug               String
+  content            String?
+  authorId           String        @map("author_id")
+  coverImagePublicId String?       @map("cover_image_public_id")
+  status             String        @default("draft") @map("status")
+  seoTitle           String?       @map("seo_title")
+  seoDesc            String?       @map("seo_desc")
+  publishedAt        DateTime?     @map("published_at")
+  createdAt          DateTime      @default(now()) @map("created_at")
+  updatedAt          DateTime      @updatedAt @map("updated_at")
+  coverImage         String?       @map("cover_image")
+  excerpt            String?
+  lpAwardedAt        DateTime?     @map("lp_awarded_at")
+  lpEarned           Boolean       @default(false) @map("lp_earned")
+  projectId          String        @map("project_id")
+  contentEn          String?       @map("content_en")
+  contentJa          String?       @map("content_ja")
+  contentKo          String?       @map("content_ko")
+  contentZh          String?       @map("content_zh")
+  excerptEn          String?       @map("excerpt_en")
+  excerptJa          String?       @map("excerpt_ja")
+  excerptKo          String?       @map("excerpt_ko")
+  excerptZh          String?       @map("excerpt_zh")
+  seoDescEn          String?       @map("seo_desc_en")
+  seoDescJa          String?       @map("seo_desc_ja")
+  seoDescKo          String?       @map("seo_desc_ko")
+  seoDescZh          String?       @map("seo_desc_zh")
+  seoTitleEn         String?       @map("seo_title_en")
+  seoTitleJa         String?       @map("seo_title_ja")
+  seoTitleKo         String?       @map("seo_title_ko")
+  seoTitleZh         String?       @map("seo_title_zh")
+  titleEn            String?       @map("title_en")
+  titleJa            String?       @map("title_ja")
+  titleKo            String?       @map("title_ko")
+  titleZh            String?       @map("title_zh")
   /// YouTube / Vimeo embed URL for video posts
-  videoUrl    String?    @map("video_url")
+  videoUrl           String?       @map("video_url")
   /// Canonical URL for duplicate content (SEO)
-  canonicalUrl String?   @map("canonical_url")
+  canonicalUrl       String?       @map("canonical_url")
   /// External links cited in the article (JSON: [{url, label}])
-  backlinks   String?    @map("backlinks")
-  author      TeamMember @relation(fields: [authorId], references: [id])
-  project     Order      @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  tags        BlogPostTag[]
+  backlinks          String?       @map("backlinks")
+  author             TeamMember    @relation(fields: [authorId], references: [id])
+  project            Order         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tags               BlogPostTag[]
 
   @@unique([projectId, slug])
   @@index([projectId])
@@ -2218,30 +2228,30 @@ model BlogPost {
 
 /// Tag phân loại bài viết blog (VD: "SEO", "Web Design", "Marketing")
 model BlogTag {
-  id        String   @id @default(cuid())
-  key       String   @unique  @map("tag_key")   // "seo", "web-design", "marketing"
-  name      String             // "SEO"
-  nameEn    String?  @map("name_en")
-  nameJa    String?  @map("name_ja")
-  nameKo    String?  @map("name_ko")
-  nameZh    String?  @map("name_zh")
-  color     String   @default("#3B82F6") // màu hiển thị
-  sortOrder Int      @default(0) @map("sort_order")
+  id        String        @id @default(cuid())
+  key       String        @unique @map("tag_key") // "seo", "web-design", "marketing"
+  name      String // "SEO"
+  nameEn    String?       @map("name_en")
+  nameJa    String?       @map("name_ja")
+  nameKo    String?       @map("name_ko")
+  nameZh    String?       @map("name_zh")
+  color     String        @default("#3B82F6") // màu hiển thị
+  sortOrder Int           @default(0) @map("sort_order")
   posts     BlogPostTag[]
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt DateTime      @default(now()) @map("created_at")
+  updatedAt DateTime      @updatedAt @map("updated_at")
 
   @@map("blog_tags")
 }
 
 /// Join table: nhiều tag cho mỗi bài viết
 model BlogPostTag {
-  id        String   @id @default(cuid())
-  blogPostId String  @map("blog_post_id")
-  tagId     String  @map("tag_id")
-  blogPost  BlogPost @relation(fields: [blogPostId], references: [id], onDelete: Cascade)
-  tag       BlogTag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now()) @map("created_at")
+  id         String   @id @default(cuid())
+  blogPostId String   @map("blog_post_id")
+  tagId      String   @map("tag_id")
+  blogPost   BlogPost @relation(fields: [blogPostId], references: [id], onDelete: Cascade)
+  tag        BlogTag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now()) @map("created_at")
 
   @@unique([blogPostId, tagId])
   @@index([tagId])
@@ -2326,28 +2336,28 @@ model GscMetric {
 
 /// Project handover checklist delivered to client.
 model HandoverPackage {
-  id           String    @id @default(cuid())
-  projectId    String    @map("project_id")
-  status       String    @default("draft") @map("status")
-  handoverDate DateTime? @map("handover_date")
-  items        Json      @default("[]") @map("items")
-  notes        String?
+  id            String    @id @default(cuid())
+  projectId     String    @map("project_id")
+  status        String    @default("draft") @map("status")
+  handoverDate  DateTime? @map("handover_date")
+  items         Json      @default("[]") @map("items")
+  notes         String?
   /// Figma source file URL saved when client approves final design
-  figmaUrl     String?   @map("figma_url")
+  figmaUrl      String?   @map("figma_url")
   /// GitHub repository URL with source code
-  githubUrl    String?   @map("github_url")
+  githubUrl     String?   @map("github_url")
   /// Deployed website URL
-  deploymentUrl String?  @map("deployment_url")
+  deploymentUrl String?   @map("deployment_url")
   /// Scope summary: { features: string[], pointCount: number, customRequests: string[] }
-  scope        Json?    @map("scope")
+  scope         Json?     @map("scope")
   /// Customer notes submitted during handover review
-  customerNotes String?  @map("customer_notes")
+  customerNotes String?   @map("customer_notes")
   /// Internal admin/PM notes
-  adminNotes   String?  @map("admin_notes")
-  deliveredBy  String?   @map("delivered_by")
-  createdAt    DateTime  @default(now()) @map("created_at")
-  updatedAt    DateTime  @updatedAt @map("updated_at")
-  project      Order     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  adminNotes    String?   @map("admin_notes")
+  deliveredBy   String?   @map("delivered_by")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  project       Order     @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@index([projectId])
   @@map("handover_packages")
@@ -2397,28 +2407,28 @@ model MaintenanceContract {
 
 /// Instructor profile for internal/external teaching staff.
 model Instructor {
-  id            String      @id @default(cuid())
-  memberId      String?     @unique @map("member_id")
-  userId        String?     @unique @map("user_id")
-  name          String
-  bio           String?
-  bioEn         String?     @map("bio_en")
-  bioJa         String?     @map("bio_ja")
-  bioKo         String?     @map("bio_ko")
-  bioZh         String?     @map("bio_zh")
-  email         String?
-  phone         String?
-  specialties   String[]
-  rating        Float       @default(0)
-  totalStudents Int         @default(0) @map("total_students")
-  isActive      Boolean     @default(true) @map("is_active")
-  createdAt     DateTime    @default(now()) @map("created_at")
-  updatedAt     DateTime    @updatedAt @map("updated_at")
-  avatar         String?  @map("avatar")
-  avatarPublicId String?  @map("avatar_public_id")
-  courses       Course[]
-  member        TeamMember? @relation(fields: [memberId], references: [id])
-  user          User?       @relation("InstructorToUser", fields: [userId], references: [id])
+  id             String      @id @default(cuid())
+  memberId       String?     @unique @map("member_id")
+  userId         String?     @unique @map("user_id")
+  name           String
+  bio            String?
+  bioEn          String?     @map("bio_en")
+  bioJa          String?     @map("bio_ja")
+  bioKo          String?     @map("bio_ko")
+  bioZh          String?     @map("bio_zh")
+  email          String?
+  phone          String?
+  specialties    String[]
+  rating         Float       @default(0)
+  totalStudents  Int         @default(0) @map("total_students")
+  isActive       Boolean     @default(true) @map("is_active")
+  createdAt      DateTime    @default(now()) @map("created_at")
+  updatedAt      DateTime    @updatedAt @map("updated_at")
+  avatar         String?     @map("avatar")
+  avatarPublicId String?     @map("avatar_public_id")
+  courses        Course[]
+  member         TeamMember? @relation(fields: [memberId], references: [id])
+  user           User?       @relation("InstructorToUser", fields: [userId], references: [id])
 
   @@index([isActive])
   @@map("instructors")
@@ -2447,13 +2457,13 @@ model Course {
   lpReward           Int          @default(0) @map("lp_reward")
   maxStudents        Int          @default(1) @map("max_students")
   durationWeeks      Int          @default(4) @map("duration_weeks")
-  status String @default("draft")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  price Int @default(0)
-  thumbnail  String? @map("thumbnail")
-  thumbnailPublicId String? @map("thumbnail_public_id")
-  instructor Instructor @relation(fields: [instructorId], references: [id], onDelete: Cascade)
+  status             String       @default("draft")
+  createdAt          DateTime     @default(now()) @map("created_at")
+  updatedAt          DateTime     @updatedAt @map("updated_at")
+  price              Int          @default(0)
+  thumbnail          String?      @map("thumbnail")
+  thumbnailPublicId  String?      @map("thumbnail_public_id")
+  instructor         Instructor   @relation(fields: [instructorId], references: [id], onDelete: Cascade)
   instructorMember   TeamMember?  @relation("CourseToInstructorMember", fields: [instructorMemberId], references: [id])
   instructorUser     User?        @relation("CourseToInstructorUser", fields: [instructorUserId], references: [id])
   enrollments        Enrollment[]
@@ -2495,38 +2505,38 @@ model Lesson {
 
 /// Enrollment of a student into a course (student can be a User or TeamMember).
 model Enrollment {
-  id                String            @id @default(cuid())
-  courseId          String            @map("course_id")
-  userId            String?           @map("user_id")
-  memberId          String?           @map("member_id")
-  assigneeLpPercent Int               @default(100) @map("assignee_lp_percent")
-  paidAmount        Int               @default(0) @map("paid_amount")
-  enrolledAt        DateTime          @default(now()) @map("enrolled_at")
-  status            String            @default("active")
-  completedLessons  Json?             @default("[]") @map("completed_lessons")
-  progressPercent   Int               @default(0) @map("progress_percent")
-  createdAt         DateTime          @default(now()) @map("created_at")
-  updatedAt         DateTime          @updatedAt @map("updated_at")
-  attendances       Attendance[]
-  payments          EduPayment[]
-  course            Course            @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  member            TeamMember?       @relation("EnrollmentTeamMember", fields: [memberId], references: [id])
-  user              User?             @relation("EnrollmentUser", fields: [userId], references: [id])
-  feedbacks         Feedback[]
-  progresses        StudentProgress[]
+  id                    String                 @id @default(cuid())
+  courseId              String                 @map("course_id")
+  userId                String?                @map("user_id")
+  memberId              String?                @map("member_id")
+  assigneeLpPercent     Int                    @default(100) @map("assignee_lp_percent")
+  paidAmount            Int                    @default(0) @map("paid_amount")
+  enrolledAt            DateTime               @default(now()) @map("enrolled_at")
+  status                String                 @default("active")
+  completedLessons      Json?                  @default("[]") @map("completed_lessons")
+  progressPercent       Int                    @default(0) @map("progress_percent")
+  createdAt             DateTime               @default(now()) @map("created_at")
+  updatedAt             DateTime               @updatedAt @map("updated_at")
+  attendances           Attendance[]
+  payments              EduPayment[]
+  course                Course                 @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  member                TeamMember?            @relation("EnrollmentTeamMember", fields: [memberId], references: [id])
+  user                  User?                  @relation("EnrollmentUser", fields: [userId], references: [id])
+  feedbacks             Feedback[]
+  progresses            StudentProgress[]
+  salesRepId            String?                @map("sales_rep_id")
+  /// Whether academy commission has been credited
+  commissionPaid        Boolean                @default(false) @map("commission_paid")
+  /// When commission was credited
+  commissionPaidAt      DateTime?              @map("commission_paid_at")
+  /// Sales commission events for this enrollment
+  salesCommissionEvents SalesCommissionEvent[] @relation("SalesCommissionEnrollment")
 
   @@index([courseId])
   @@index([userId])
   @@index([memberId])
   @@index([status])
   @@map("enrollments")
- salesRepId String? @map("sales_rep_id")
-  /// Whether academy commission has been credited
- commissionPaid Boolean @default(false) @map("commission_paid")
-  /// When commission was credited
- commissionPaidAt DateTime? @map("commission_paid_at")
-  /// Sales commission events for this enrollment
- salesCommissionEvents SalesCommissionEvent[] @relation("SalesCommissionEnrollment")
 }
 
 /// Payment record for EDU enrollments (tuition transactions).
@@ -2822,29 +2832,29 @@ model MemberEffectOverride {
 
 // ── Quests ─────────────────────────────────────────────────────────────────────
 model Quest {
-  id             String       @id @default(cuid())
-  title          String
-  description    String
-  lpReward       Int          @map("lp_reward")
-  xpReward       Int          @default(0) @map("xp_reward")
+  id           String      @id @default(cuid())
+  title        String
+  description  String
+  lpReward     Int         @map("lp_reward")
+  xpReward     Int         @default(0) @map("xp_reward")
   /// * Frequency: daily | weekly | monthly | one_time | event | seasonal
-  frequency      String
+  frequency    String
   /// * Category: engagement | project | social | learning | achievement
-  category       String
+  category     String
   /// * Scope: company (all staff) | department (same dept) | personal (per member)
-  scope          String       @default("company")
-  departmentId   String?      @map("department_id")   // null = company-wide or personal
-  department     Department?  @relation(fields: [departmentId], references: [id])
-  icon           String
-  color          String
-  target         Int          @default(1)
-  forRoles       String[]     @map("for_roles")
-  isActive       Boolean      @default(true) @map("is_active")
-  sortOrder      Int          @default(0) @map("sort_order")
-  createdAt      DateTime     @default(now()) @map("created_at")
-  updatedAt      DateTime      @updatedAt @map("updated_at")
+  scope        String      @default("company")
+  departmentId String?     @map("department_id") // null = company-wide or personal
+  department   Department? @relation(fields: [departmentId], references: [id])
+  icon         String
+  color        String
+  target       Int         @default(1)
+  forRoles     String[]    @map("for_roles")
+  isActive     Boolean     @default(true) @map("is_active")
+  sortOrder    Int         @default(0) @map("sort_order")
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
 
-  participants   QuestParticipant[]
+  participants QuestParticipant[]
 
   @@map("quests")
 }
@@ -3181,8 +3191,8 @@ model OffSystemSplit {
 
 model PermissionAudit {
   id           String   @id @default(cuid())
-  targetUserId String  @map("target_user_id")
-  grantedBy    String  @map("granted_by")
+  targetUserId String   @map("target_user_id")
+  grantedBy    String   @map("granted_by")
   permission   String
   department   String?
   action       String
@@ -3194,24 +3204,24 @@ model PermissionAudit {
 
 // ─── P0: FAQ ───────────────────────────────────────────────────────────────────
 model Faq {
-  id          String   @id @default(cuid())
-  question    String
-  answer      String   @db.Text
-  category    String   @default("general") // general | services | technical | payment | lp | academy
-  sortOrder   Int      @default(0) @map("sort_order")
-  isActive    Boolean  @default(true) @map("is_active")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id        String   @id @default(cuid())
+  question  String
+  answer    String   @db.Text
+  category  String   @default("general") // general | services | technical | payment | lp | academy
+  sortOrder Int      @default(0) @map("sort_order")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   // i18n
-  questionEn  String?  @map("question_en")
-  questionJa  String?  @map("question_ja")
-  questionKo  String?  @map("question_ko")
-  questionZh  String?  @map("question_zh")
-  answerEn    String?  @map("answer_en")  @db.Text
-  answerJa    String?  @map("answer_ja")  @db.Text
-  answerKo    String?  @map("answer_ko")  @db.Text
-  answerZh    String?  @map("answer_zh")  @db.Text
+  questionEn String? @map("question_en")
+  questionJa String? @map("question_ja")
+  questionKo String? @map("question_ko")
+  questionZh String? @map("question_zh")
+  answerEn   String? @map("answer_en") @db.Text
+  answerJa   String? @map("answer_ja") @db.Text
+  answerKo   String? @map("answer_ko") @db.Text
+  answerZh   String? @map("answer_zh") @db.Text
 
   @@index([category, isActive])
   @@index([isActive, sortOrder])
@@ -3220,32 +3230,33 @@ model Faq {
 
 // ─── P1: Careers ───────────────────────────────────────────────────────────────
 model JobPosting {
-  id           String    @id @default(cuid())
-  title        String
-  department   String    // engineering | design | media | marketing | sales | finance | hr | management
-  role         String    // junior | mid | senior | lead | manager
-  employmentType String @default("full_time") @map("employment_type") // full_time | part_time | contract | internship
-  location     String    @default("Ho Chi Minh City, Vietnam")
-  salaryMin    Int?      @map("salary_min")
-  salaryMax    Int?      @map("salary_max")
-  salaryCurrency String @default("VND") @map("salary_currency")
-  description  String    @db.Text
-  requirements String    @db.Text
-  benefits     String    @db.Text
-  status       String    @default("open") @map("status") // open | closed | draft
-  isActive     Boolean   @default(true) @map("is_active")
-  sortOrder    Int       @default(0) @map("sort_order")
-  createdAt    DateTime  @default(now()) @map("created_at")
-  updatedAt    DateTime  @updatedAt @map("updated_at")
-  expiresAt    DateTime? @map("expires_at")
+  id             String    @id @default(cuid())
+  title          String
+  department     String // engineering | design | media | marketing | sales | finance | hr | management
+  role           String // junior | mid | senior | lead | manager
+  employmentType String    @default("full_time") @map("employment_type") // full_time | part_time | contract | internship
+  location       String    @default("Ho Chi Minh City, Vietnam")
+  salaryMin      Int?      @map("salary_min")
+  salaryMax      Int?      @map("salary_max")
+  salaryCurrency String    @default("VND") @map("salary_currency")
+  description    String    @db.Text
+  requirements   String    @db.Text
+  benefits       String    @db.Text
+  status         String    @default("open") @map("status") // open | closed | draft
+  isActive       Boolean   @default(true) @map("is_active")
+  sortOrder      Int       @default(0) @map("sort_order")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  expiresAt      DateTime? @map("expires_at")
 
   // i18n
-  titleEn      String?   @map("title_en")
-  descEn       String?  @map("desc_en") @db.Text
-  reqEn        String?   @map("req_en")  @db.Text
-  benEn        String?   @map("ben_en")  @db.Text
+  titleEn String? @map("title_en")
+  descEn  String? @map("desc_en") @db.Text
+  reqEn   String? @map("req_en") @db.Text
+  benEn   String? @map("ben_en") @db.Text
 
   applications JobApplication[]
+
   @@index([status, isActive])
   @@index([department, status])
   @@index([isActive, sortOrder])
@@ -3253,19 +3264,19 @@ model JobPosting {
 }
 
 model JobApplication {
-  id            String    @id @default(cuid())
-  jobPostingId  String    @map("job_posting_id")
+  id           String     @id @default(cuid())
+  jobPostingId String     @map("job_posting_id")
   name         String
   email        String
   phone        String?
-  linkedinUrl  String?   @map("linkedin_url")
-  portfolioUrl  String?   @map("portfolio_url")
-  coverLetter  String?   @map("cover_letter") @db.Text
-  resumeUrl    String?   @map("resume_url")
-  status       String    @default("applied") @map("status") // applied | screening | interview | offer | hired | rejected
-  note         String?   @map("note") @db.Text
-  createdAt    DateTime  @default(now()) @map("created_at")
-  updatedAt    DateTime  @updatedAt @map("updated_at")
+  linkedinUrl  String?    @map("linkedin_url")
+  portfolioUrl String?    @map("portfolio_url")
+  coverLetter  String?    @map("cover_letter") @db.Text
+  resumeUrl    String?    @map("resume_url")
+  status       String     @default("applied") @map("status") // applied | screening | interview | offer | hired | rejected
+  note         String?    @map("note") @db.Text
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
   jobPosting   JobPosting @relation(fields: [jobPostingId], references: [id], onDelete: Cascade)
 
   @@index([jobPostingId, status])
@@ -3275,20 +3286,20 @@ model JobApplication {
 
 // ─── P1: Contracts ─────────────────────────────────────────────────────────────
 model Contract {
-  id          String    @id @default(cuid())
-  title       String
-  orderId     String?    @map("order_id")
-  customerId  String?    @map("customer_id")
-  status      String    @default("draft") @map("status") // draft | sent | signed | expired | cancelled
-  fileUrl     String?    @map("file_url")
-  value       Int?       // Contract value in VND
-  sentAt      DateTime?  @map("sent_at")
-  signedAt    DateTime?  @map("signed_at")
-  expiresAt   DateTime?  @map("expires_at")
-  createdBy   String     @map("created_by")
-  createdAt   DateTime   @default(now()) @map("created_at")
-  updatedAt   DateTime   @updatedAt @map("updated_at")
-  note        String?    @map("note") @db.Text
+  id         String    @id @default(cuid())
+  title      String
+  orderId    String?   @map("order_id")
+  customerId String?   @map("customer_id")
+  status     String    @default("draft") @map("status") // draft | sent | signed | expired | cancelled
+  fileUrl    String?   @map("file_url")
+  value      Int? // Contract value in VND
+  sentAt     DateTime? @map("sent_at")
+  signedAt   DateTime? @map("signed_at")
+  expiresAt  DateTime? @map("expires_at")
+  createdBy  String    @map("created_by")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+  note       String?   @map("note") @db.Text
 
   @@index([status])
   @@index([orderId])
@@ -3308,7 +3319,7 @@ model Invoice {
   totalAmount   Int       @default(0) @map("total_amount")
   currency      String    @default("VND")
   status        String    @default("draft") @map("status") // draft | sent | paid | overdue | cancelled
-   dueDate       DateTime? @map("due_date")
+  dueDate       DateTime? @map("due_date")
   paidAt        DateTime? @map("paid_at")
   paidMethod    String?   @map("paid_method") // bank_transfer | cash | vn_pay | momo
   description   String?   @map("description")
@@ -3317,7 +3328,8 @@ model Invoice {
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
 
-  lineItems     InvoiceLineItem[]
+  lineItems InvoiceLineItem[]
+
   @@index([status, type])
   @@index([orderId])
   @@index([customerId])
@@ -3340,7 +3352,7 @@ model InvoiceLineItem {
 
 model Expense {
   id          String    @id @default(cuid())
-  category    String    // software | hardware | marketing | salary | office | travel | other
+  category    String // software | hardware | marketing | salary | office | travel | other
   description String
   amount      Int
   currency    String    @default("VND")
@@ -3363,20 +3375,21 @@ model Expense {
 
 // ─── P2: Knowledge Base ────────────────────────────────────────────────────────
 model KnowledgeArticle {
-  id          String    @id @default(cuid())
+  id          String   @id @default(cuid())
   title       String
-  slug        String    @unique
-  category    String    @default("general") @map("category") // engineering | design | hr | processes | general
-  content     String    @db.Text
+  slug        String   @unique
+  category    String   @default("general") @map("category") // engineering | design | hr | processes | general
+  content     String   @db.Text
   excerpt     String?
-  authorId    String?   @map("author_id")
-  isPinned    Boolean   @default(false) @map("is_pinned")
-  isPublished Boolean   @default(false) @map("is_published")
-  viewCount   Int       @default(0) @map("view_count")
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
+  authorId    String?  @map("author_id")
+  isPinned    Boolean  @default(false) @map("is_pinned")
+  isPublished Boolean  @default(false) @map("is_published")
+  viewCount   Int      @default(0) @map("view_count")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
-  tags        String[]
+  tags String[]
+
   @@index([category, isPublished])
   @@index([isPinned])
   @@map("knowledge_articles")
@@ -3385,8 +3398,8 @@ model KnowledgeArticle {
 // ─── P2: Leave Request ────────────────────────────────────────────────────────
 model LeaveRequest {
   id          String    @id @default(cuid())
-  memberId     String    @map("member_id")
-  type        String    // annual | sick | unpaid | maternity | paternity | bereavement
+  memberId    String    @map("member_id")
+  type        String // annual | sick | unpaid | maternity | paternity | bereavement
   startDate   DateTime  @map("start_date")
   endDate     DateTime  @map("end_date")
   days        Int       @default(1)
@@ -3402,4 +3415,3 @@ model LeaveRequest {
   @@index([status])
   @@map("leave_requests")
 }
-

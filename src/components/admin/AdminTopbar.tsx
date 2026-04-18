@@ -1,15 +1,11 @@
 "use client";
 
-import { useAdminTranslations } from "@/i18n/admin/useAdminTranslations";
 import { useAuthStore } from "@/app/store/authStore";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { LogOut } from "lucide-react";
 
 export function AdminTopbar() {
-  const { t } = useAdminTranslations();
-  const { user, logout } = useAuthStore();
-  const router = useRouter();
+  const { logout } = useAuthStore();
   const [loggingOut, setLoggingOut] = useState(false);
 
   const handleLogout = async () => {
@@ -20,13 +16,7 @@ export function AdminTopbar() {
     } finally {
       setLoggingOut(false);
     }
-    // logout() đã clear localStorage + Zustand → browser về homepage
-    router.push("/");
   };
-
-  const avatar = user?.avatar;
-  const name = user?.name ?? user?.email ?? "Admin";
-  const shortName = (user as { shortName?: string })?.shortName ?? name.slice(0, 2).toUpperCase();
 
   return (
     <header
@@ -44,66 +34,9 @@ export function AdminTopbar() {
         zIndex: 30,
       }}
     >
-      {/* User info */}
-      {user && (
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "0.375rem",
-            marginRight: "auto",
-          }}
-        >
-          {/* Avatar */}
-          <div
-            style={{
-              width: 28,
-              height: 28,
-              borderRadius: "50%",
-              overflow: "hidden",
-              background: "rgba(59,130,246,0.2)",
-              border: "1px solid rgba(59,130,246,0.4)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "0.625rem",
-              fontWeight: 700,
-              color: "#3B82F6",
-              fontFamily: "'JetBrains Mono', monospace",
-              flexShrink: 0,
-            }}
-          >
-            {avatar ? (
-              <img
-                src={avatar}
-                alt={name}
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
-              />
-            ) : (
-              shortName
-            )}
-          </div>
-          {/* Name */}
-          <span
-            style={{
-              color: "var(--figma-text3, #94A3B8)",
-              fontSize: "0.75rem",
-              fontWeight: 500,
-              maxWidth: 120,
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-            }}
-          >
-            {name}
-          </span>
-        </div>
-      )}
-
       {/* Home */}
       <a
         href="/"
-        title={t("sidebar.nav.goHome")}
         style={{
           display: "flex",
           alignItems: "center",
@@ -131,7 +64,7 @@ export function AdminTopbar() {
         </svg>
       </a>
 
-      {/* Logout button */}
+      {/* Logout */}
       <button
         onClick={handleLogout}
         disabled={loggingOut}

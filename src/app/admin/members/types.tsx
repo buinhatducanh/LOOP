@@ -18,6 +18,7 @@ export interface TeamMemberBE {
   systemRole?: string | null;
   roles?: string[];
   department?: string;
+  departmentId?: string | null;
   tabPermissions?: string[];
   phone?: string | null;
   bio?: string | null;

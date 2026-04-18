@@ -1041,26 +1041,31 @@ async function seedServices() {
 }
 
 // ══════════════════════════════════════════════════════════════════
-// 9b. Service Tiers — 4 services × 3 tiers (Basic/Business/Experience)
+// 9b. Service Tiers — Web: 4 tiers | App/Dashboard/SEO: 3 tiers each
 // ══════════════════════════════════════════════════════════════════
 
 async function seedServiceTiers() {
-  console.log("\n[ServiceTiers] Seeding 4 services × 3 tiers...");
+  console.log("\n[ServiceTiers] Seeding web (4 tiers) + app/dashboard/seo (3 tiers each)...");
 
   const tiers = [
     // ── WEB ──────────────────────────────────────────────────────
-    { serviceKey: "web", level: 1, name: "Cơ Bản", nameEn: "Basic",
-      shortDesc: "Phù hợp khởi nghiệp, website giới thiệu doanh nghiệp nhỏ",
-      shortDescEn: "Perfect for startups and small business websites",
-      basePrice: 3_890_000, marketPrice: 5_500_000, lpReward: 50, sortOrder: 1 },
-    { serviceKey: "web", level: 2, name: "Doanh Nghiệp", nameEn: "Business",
-      shortDesc: "Thiết kế tùy chỉnh theo thương hiệu, doanh nghiệp vừa và lớn",
-      shortDescEn: "Custom branding design for medium and large businesses",
-      basePrice: 5_890_000, marketPrice: 8_900_000, lpReward: 80, sortOrder: 2 },
-    { serviceKey: "web", level: 3, name: "Chuyên Nghiệp", nameEn: "Experience",
-      shortDesc: "Giao diện độc quyền Next.js, giải pháp toàn diện",
-      shortDescEn: "Exclusive Next.js design, comprehensive solution",
-      basePrice: 9_890_000, marketPrice: 12_000_000, lpReward: 120, sortOrder: 3 },
+    // 4-tiers: Landing Page | Bán Hàng Cơ Bản | Doanh Nghiệp | Theo Yêu Cầu
+    { serviceKey: "web", level: 1, name: "Landing Page", nameEn: "Landing Page",
+      shortDesc: "Chạy quảng cáo nhanh 1 sản phẩm/dịch vụ cụ thể",
+      shortDescEn: "Quick landing page for a single product or service campaign",
+      basePrice: 1_890_000, marketPrice: 2_500_000, lpReward: 30, sortOrder: 1 },
+    { serviceKey: "web", level: 2, name: "Bán Hàng Cơ Bản", nameEn: "Basic E-commerce",
+      shortDesc: "Cửa hàng nhỏ muốn có kênh trưng bày và chốt đơn tự động",
+      shortDescEn: "Small store needing a showcase channel and automated sales",
+      basePrice: 3_890_000, marketPrice: 5_500_000, lpReward: 50, sortOrder: 2 },
+    { serviceKey: "web", level: 3, name: "Doanh Nghiệp", nameEn: "Business",
+      shortDesc: "Công ty cần hồ sơ năng lực số chuyên nghiệp để tăng uy tín",
+      shortDescEn: "Company needing a professional digital portfolio to boost credibility",
+      basePrice: 5_890_000, marketPrice: 8_900_000, lpReward: 80, sortOrder: 3 },
+    { serviceKey: "web", level: 4, name: "Theo Yêu Cầu", nameEn: "Custom",
+      shortDesc: "Hệ thống lớn, luồng kinh doanh đặc thù cần đo ni đóng giày",
+      shortDescEn: "Large system or bespoke business flow requiring custom development",
+      basePrice: 7_890_000, marketPrice: 9_900_000, lpReward: 120, sortOrder: 4 },
 
     // ── APP/SaaS ─────────────────────────────────────────────────
     { serviceKey: "app", level: 1, name: "Cơ Bản", nameEn: "Basic",

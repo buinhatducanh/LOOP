@@ -216,6 +216,7 @@ export async function getSessionFromBearer(
       departmentId: (payload?.did as string | undefined) ?? null,
       departmentKey: (payload?.dk as string | undefined) ?? null,
       departmentPermissions: {},
+      tabPermissions: (payload?.tbp as string[] | undefined) ?? [],
     };
   }
 }
@@ -229,7 +230,13 @@ export async function getSession(): Promise<SessionUser | null> {
 
   // ── Credentials login: use custom JWT only (skip NextAuth entirely) ──
   if (authMethod === "credentials" || authMethod === "google") {
-    const token = cookieStore.get("auth-token")?.value;
+    // Match AdminLayout behavior: try loop-staff-token first (set by login),
+    // then auth-token (legacy). This prevents 401 on /me when auth-token is
+    // missing but loop-staff-token exists (e.g. cookie domain/path mismatch).
+    const token =
+      cookieStore.get("loop-staff-token")?.value ??
+      cookieStore.get("auth-token")?.value ??
+      null;
     if (!token) return null;
 
     // ── Try new token format (jose / token.ts) ──────────────────────────────────

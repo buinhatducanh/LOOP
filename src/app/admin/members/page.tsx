@@ -96,12 +96,22 @@ const DEPT_COLORS: Record<string, string> = {
 
 function deptLabel(key?: string | null) {
   if (!key) return "—";
-  const k = key.toLowerCase();
-  return DEPARTMENTS_VI[k] ?? capitalize(key);
+  return key;
 }
 function deptColor(key?: string | null) {
   if (!key) return DS.text4;
-  return DEPT_COLORS[key.toLowerCase()] ?? DS.text4;
+  // Reverse lookup: full name → key → color
+  const reverseNameMap: Record<string, string> = {
+    "Phòng Kỹ thuật": "engineering",
+    "Phòng Thiết kế": "design",
+    "Phòng Media": "media",
+    "Phòng Marketing": "marketing",
+    "Phòng Kinh doanh": "sales",
+    "Phòng Tài chính": "finance",
+    "Phòng Nhân sự": "hr",
+  };
+  const resolved = reverseNameMap[key] ?? key.toLowerCase();
+  return DEPT_COLORS[resolved] ?? DS.text4;
 }
 
 const fmtLP = (n?: number) => {
@@ -280,10 +290,50 @@ export default function AdminMembersPage() {
     queryFn: () => adminApi.get<{ data: TeamMemberBE[]; pagination?: unknown }>("/api/admin/team?limit=100"),
   });
 
+  // ── Fetch departments ─────────────────────────────────────────────────────────
+  const { data: deptRes } = useQuery({
+    queryKey: ["admin_departments"],
+    queryFn: () => adminApi.get<{
+      data: { id: string; key: string; name: string; shortName: string; color: string; memberCount: number; members: unknown[] }[];
+    }>("/api/admin/departments?limit=100"),
+  });
+
+  // deptId → { key, name } map (for resolving department names)
+  const deptIdMap = useMemo(() => {
+    const depts = deptRes && "data" in deptRes ? (deptRes as { data: { id: string; key: string; name: string; shortName: string; color: string }[] }).data : [];
+    return new Map(depts.map((d) => [d.id, d]));
+  }, [deptRes]);
+
+  // dept key → { key, name } map (for resolving from scalar department field)
+  const deptKeyMap = useMemo(() => {
+    const depts = deptIdMap.size > 0
+      ? Array.from(deptIdMap.values())
+      : deptRes && "data" in deptRes ? (deptRes as { data: { id: string; key: string; name: string }[] }).data : [];
+    return new Map(depts.map((d) => [d.key, d]));
+  }, [deptIdMap, deptRes]);
+
+  // List of departments for the drawer dropdown
+  const departments = useMemo(() => {
+    const depts = deptRes && "data" in deptRes ? (deptRes as { data: { id: string; key: string; name: string }[] }).data : [];
+    return depts;
+  }, [deptRes]);
+
   const members: MemberExt[] = useMemo(() => {
     const arr = rawData && "data" in rawData ? (rawData as { data: TeamMemberBE[] }).data : (Array.isArray(rawData) ? rawData : []);
-    return arr.map(toMemberExt);
-  }, [rawData]);
+    return arr.map((m) => {
+      // Resolve correct department display name using deptId (FK) first, then dept (scalar) as fallback
+      const deptName = (() => {
+        if (m.departmentId && deptIdMap.size > 0) {
+          const byId = deptIdMap.get(m.departmentId);
+          if (byId) return byId.name;
+        }
+        const byKey = deptKeyMap.get(m.department ?? "");
+        if (byKey) return byKey.name;
+        return m.department ?? "engineering";
+      })();
+      return toMemberExt({ ...m, team: deptName } as TeamMemberBE);
+    });
+  }, [rawData, deptIdMap, deptKeyMap]);
 
   // ── Filter + Sort ───────────────────────────────────────────────────────────
   const filtered = useMemo(() => {
@@ -355,14 +405,17 @@ export default function AdminMembersPage() {
       showToast("Thêm thành viên thành công");
       closeAllForms();
     },
-    onError: () => showToast("Thêm thành viên thất bại", "error"),
+    onError: (err: unknown) => {
+      const msg = (err as Error)?.message ?? "Thêm thành viên thất bại";
+      showToast(msg, "error");
+    },
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, body }: { id: string; body: Record<string, unknown> }) =>
-      adminApi.put<{ data: TeamMemberBE }>(`/api/admin/team/${id}`, body),
+      adminApi.put<{ data: TeamMemberBE } & { _diag?: { persistedLevel?: number; persistedRank?: string; updateDataKeys?: string[]; persistedCurrentXp?: number; persistedAvailableLp?: number } }>(`/api/admin/team/${id}`, body),
     onSuccess: (res) => {
-      // Patch cache with fresh data from API (includes updated avatar)
+      // Patch cache with fresh data from API
       queryClient.setQueryData<{ data: TeamMemberBE[] }>(
         qk.adminMembers(),
         (old) => {
@@ -376,15 +429,17 @@ export default function AdminMembersPage() {
         }
       );
       queryClient.invalidateQueries({ queryKey: qk.adminMembers() });
-      // Show diagnostic info from BE to understand what was persisted
-      const diag = res && "_diag" in res ? (res as { _diag?: { persistedLevel?: number; persistedRank?: string; updateDataKeys?: string[] } })._diag : null;
+      const diag = res && "_diag" in res ? (res as { _diag?: { persistedLevel?: number; persistedRank?: string; updateDataKeys?: string[]; persistedCurrentXp?: number; persistedAvailableLp?: number } })._diag : null;
       const diagMsg = diag
-        ? ` [rank=${diag.persistedRank}, level=${diag.persistedLevel}, keys=${diag.updateDataKeys?.join(",")}]`
+        ? ` [rank=${diag.persistedRank}, level=${diag.persistedLevel}, xp=${diag.persistedCurrentXp}, lp=${diag.persistedAvailableLp}, keys=${diag.updateDataKeys?.join(",")}]`
         : "";
       showToast("Cập nhật thành viên thành công" + diagMsg);
       setFormMember(null);
     },
-    onError: () => showToast("Cập nhật thất bại", "error"),
+    onError: (err: unknown) => {
+      const msg = (err as Error)?.message ?? "Cập nhật thất bại";
+      showToast(msg, "error");
+    },
   });
 
   const deleteMutation = useMutation({
@@ -394,7 +449,10 @@ export default function AdminMembersPage() {
       showToast("Xóa thành viên thành công");
       setDeleteMember(null);
     },
-    onError: () => showToast("Xóa thất bại", "error"),
+    onError: (err: unknown) => {
+      const msg = (err as Error)?.message ?? "Xóa thất bại";
+      showToast(msg, "error");
+    },
   });
 
   const bulkDeleteMutation = useMutation({
@@ -1962,7 +2020,7 @@ export default function AdminMembersPage() {
 
         {/* Team filter */}
         <div style={{ display: "flex", gap: 4 }}>
-          {[...DEPARTMENTS_EN, "All"].map((t) => (
+          {["All", ...Object.values(DEPARTMENTS_VI)].map((t) => (
             <button
               key={t}
               onClick={() => setTeamFilter(t)}
@@ -2269,6 +2327,7 @@ export default function AdminMembersPage() {
           isOpen={showAddModal || !!formMember}
           isAdd={showAddModal}
           member={formMember}
+          departments={departments}
           onClose={closeAllForms}
           onSubmit={(body, isAddMode, id) => {
             if (isAddMode) createMutation.mutate(body);

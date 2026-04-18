@@ -8,8 +8,6 @@ import { X, Check, Loader2 } from "lucide-react";
 import { RANKS, getRankFromLevel, type RankKey } from "@/lib/rank/ranks";
 import type { MemberExt, MemberStatus } from "@/app/admin/members/types";
 import { STATUS_CFG } from "@/app/admin/members/types";
-import { useQuery } from "@tanstack/react-query";
-import { adminApi } from "@/lib/api/client";
 import { parseTabPerms, serializeTabPerms, type TabPerm } from "@/app/admin/members/utils";
 
 // ── Types & Constants ────────────────────────────────────────────────────────
@@ -108,6 +106,11 @@ export interface MemberFormDrawerProps {
   isOpen: boolean;
   isAdd: boolean;
   member: MemberExt | null;
+  /**
+   * List of departments from /api/admin/departments.
+   * Each item: { id: string (deptId), key: string ("engineering"), name: string ("Phòng Kỹ thuật") }
+   */
+  departments?: { id: string; key: string; name: string }[];
   onClose: () => void;
   onSubmit: (body: Record<string, unknown>, isAdd: boolean, formMemberId?: string) => void;
   isMutating: boolean;
@@ -117,6 +120,7 @@ export function MemberFormDrawer({
   isOpen,
   isAdd,
   member,
+  departments = [],
   onClose,
   onSubmit,
   isMutating,
@@ -146,13 +150,6 @@ export function MemberFormDrawer({
   const [errorMsg, setErrorMsg] = useState("");
   const lastIdRef = useRef<string | null>(null);
 
-  const { data: deptRes } = useQuery({
-    queryKey: ["admin_departments"],
-    queryFn: () => adminApi.get("/admin/departments?limit=100") as any,
-    enabled: isOpen,
-  });
-  const departments = (deptRes as any)?.data?.data ?? (deptRes as any)?.data ?? [];
-
   useEffect(() => {
     if (!isOpen) {
       lastIdRef.current = null;
@@ -164,10 +161,23 @@ export function MemberFormDrawer({
       lastIdRef.current = currentId;
 
       const src = member;
+
+      // Resolve department: try departmentId (FK) first, then department (scalar) as fallback
+      // team state = department key (e.g. "engineering", "media") matching <option value>
+      let resolvedDept = "";
+      if (src?.departmentId && departments.length > 0) {
+        const deptById = departments.find((d) => d.id === src.departmentId);
+        if (deptById) resolvedDept = deptById.key;
+      }
+      if (!resolvedDept && src?.team) {
+        const deptByKey = departments.find((d) => d.key === src.team?.toLowerCase());
+        resolvedDept = deptByKey ? deptByKey.key : src.team?.toLowerCase() ?? "";
+      }
+
       setName(src?.name ?? "");
       setEmail(src?.email ?? "");
       setPhone(src?.phone ?? "");
-      setTeam(src?.team ?? "");
+      setTeam(resolvedDept);
       setJoinedDate(src?.joinedDate ? src.joinedDate.split("T")[0] : "");
       setBankName(src?.bankName ?? "");
       setBankAccount(src?.bankAccount ?? "");
@@ -187,7 +197,7 @@ export function MemberFormDrawer({
       setErrorMsg("");
       setRankManuallySet(false);
     }
-  }, [isOpen, member, isAdd]);
+  }, [isOpen, member, isAdd, departments]);
 
   const TABS = [
     { id: 0, label: "Thông tin", symbol: "◉" },
@@ -224,12 +234,12 @@ export function MemberFormDrawer({
 
   const handleSubmit = () => {
     setErrorMsg("");
-    if (!name.trim() || !email.trim()) { 
-      setErrorMsg("Vui lòng nhập tên và email"); 
-      return; 
+    if (!name.trim() || !email.trim()) {
+      setErrorMsg("Vui lòng nhập tên và email");
+      return;
     }
     const slug = name.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
-    
+
     const base: Record<string, unknown> = {
       name: name.trim(), email: email.trim(), role: roleInput.trim(),
       roles: [systemRole],
@@ -242,7 +252,11 @@ export function MemberFormDrawer({
       bankAccountName: bankAccountName.trim() || null,
       avatar: avatar.trim() || null,
       imagePublicId: avatarPublicId || null,
-      department: team,
+      // Only send departmentId (FK) — source of truth. No scalar department field.
+      departmentId: (() => {
+        const dept = departments.find((d) => d.key === team);
+        return dept?.id ?? null;
+      })(),
       isActive: status === "active",
       memberExpertise: skills.map((s) => ({ name: s })),
     };
@@ -346,7 +360,7 @@ export function MemberFormDrawer({
 
             {/* Content Scrollable */}
             <div style={{ flex: 1, overflowY: "auto", padding: "24px" }}>
-              
+
               {/* Main Tabs Navigation */}
               <div style={{ display: "flex", gap: 8, marginBottom: 24, paddingBottom: 16, borderBottom: `1px solid ${DS.border}`, overflowX: "auto" }}>
                 {TABS.map((t) => (
@@ -369,7 +383,7 @@ export function MemberFormDrawer({
 
               {/* TABS CONTENT */}
               <div style={{ minHeight: "60vh" }}>
-                
+
                 {tab === 0 && (
                   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
                     <div style={{ display: "flex", gap: 20, alignItems: "center" }}>
@@ -438,19 +452,24 @@ export function MemberFormDrawer({
                           style={{ width: "100%", padding: "12px", borderRadius: 8, border: `1px solid ${DS.border}`, background: DS.bgCard, color: DS.text, outline: "none", appearance: "none" }}
                         >
                           <option value="">-- Chọn phòng ban --</option>
-                          <option value="engineering">Phòng Kỹ thuật (Engineering)</option>
-                          <option value="design">Phòng Thiết kế (Design)</option>
-                          <option value="media">Phòng Media</option>
-                          <option value="marketing">Phòng Marketing</option>
-                          <option value="sales">Phòng Kinh doanh (Sales)</option>
-                          <option value="finance">Phòng Tài chính (Finance)</option>
-                          <option value="hr">Phòng Nhân sự (HR)</option>
-                          {departments.map((d: any, idx: number) => {
-                            const keys = ["engineering", "design", "media", "marketing", "sales", "finance", "hr"];
-                            if (keys.includes(d.key?.toLowerCase() || "")) return null;
-                            const dKey = d.key || d.id || `dept-${idx}`;
-                            return <option key={dKey} value={d.key ?? d.name}>{d.name}</option>;
-                          })}
+                          {departments.length > 0 ? (
+                            departments.map((d) => (
+                              <option key={d.key} value={d.key}>
+                                {d.name}
+                              </option>
+                            ))
+                          ) : (
+                            // Fallback if departments not yet loaded
+                            <>
+                              <option value="engineering">Phòng Kỹ thuật (Engineering)</option>
+                              <option value="design">Phòng Thiết kế (Design)</option>
+                              <option value="media">Phòng Media</option>
+                              <option value="marketing">Phòng Marketing</option>
+                              <option value="sales">Phòng Kinh doanh (Sales)</option>
+                              <option value="finance">Phòng Tài chính (Finance)</option>
+                              <option value="hr">Phòng Nhân sự (HR)</option>
+                            </>
+                          )}
                         </select>
                       </div>
                       <div style={{ gridColumn: "1 / -1" }}>
@@ -570,13 +589,13 @@ export function MemberFormDrawer({
                     </div>
                     <div>
                       <label style={{ display: "block", marginBottom: 6, color: DS.text2, fontSize: 12 }}>Level hiện tại</label>
-                      <input type="number" value={level} 
-                        onChange={(e) => { 
+                      <input type="number" value={level}
+                        onChange={(e) => {
                           const val = e.target.value;
-                          setLevel(val); 
+                          setLevel(val);
                           const newLvl = parseInt(val) || 1;
                           setRankKey(getRankFromLevel(newLvl));
-                          setRankManuallySet(true); 
+                          setRankManuallySet(true);
                         }}
                         style={{ width: "100%", padding: "12px", borderRadius: 8, border: `1px solid ${DS.border}`, background: DS.bgCard, color: DS.text, outline: "none" }} />
                     </div>
@@ -590,10 +609,10 @@ export function MemberFormDrawer({
                       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                         {(Object.entries(RANKS) as [RankKey, { label: string, color: string, symbol: string, minLevel: number }][]).map(([k, cfg]) => (
                           <div
-                            key={k} onClick={() => { 
-                              setRankKey(k); 
+                            key={k} onClick={() => {
+                              setRankKey(k);
                               setLevel(String(cfg.minLevel));
-                              setRankManuallySet(true); 
+                              setRankManuallySet(true);
                             }}
                             style={{
                               padding: "12px", borderRadius: 8, cursor: "pointer",
@@ -613,7 +632,7 @@ export function MemberFormDrawer({
 
                 {tab === 3 && (
                   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-                     <div>
+                    <div>
                       <label style={{ display: "block", marginBottom: 6, color: DS.text2, fontSize: 12, fontFamily: DS.mono }}>Danh sách thẻ Kỹ năng</label>
                       <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
                         <input
@@ -638,7 +657,7 @@ export function MemberFormDrawer({
                           Thêm
                         </button>
                       </div>
-                      
+
                       <div style={{ display: "flex", flexWrap: "wrap", gap: 8, padding: "16px", background: DS.bgCard, borderRadius: 12, border: `1px solid ${DS.border}`, minHeight: 100 }}>
                         {skills.length === 0 && <div style={{ color: DS.text4, fontSize: 12, margin: "auto" }}>Chưa có kỹ năng nào</div>}
                         {skills.map((s, idx) => (

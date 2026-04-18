@@ -16,7 +16,8 @@ import { useTranslations } from "next-intl";
 import { motion, AnimatePresence } from "motion/react";
 import { DS, GRD } from "@/lib/design-tokens";
 import { FeatureToggleTable } from "./FeatureToggleTable";
-import { PackageComparisonModal } from "./PackageComparisonModal";
+import { SEOPackageFeatureTable, type SEOFeature, type SEOPackageTier } from "./SEOPackageFeatureTable";
+import { WebPackageFeatureTable, type WebPackageFeature, type WebPackageTier } from "./WebPackageFeatureTable";
 import {
   Globe, Code2, BarChart3, Target, Check, ArrowRight, ArrowLeft,
   Users, Calendar, Layers, Sparkles, Shield, Plus, Minus, X, ExternalLink, Zap, Eye, Server,
@@ -99,109 +100,21 @@ interface WizardDomainPrice {
   noteVi: string;
   isAvailable: boolean;
 }
+
+interface DomainSearchResult {
+  extension: string;
+  registrationPrice: number;
+  renewalPrice: number;
+  periodVi: string;
+  note: string;
+  available: boolean; // simulated — real API would check WHOIS
+  selected: boolean;
+}
 interface LpRateConfig {
   lpPerVnd: number; vndPerLp: number;
   maxDiscountPercent: number; lpEarnPerMillion: number;
 }
 
-// ── Fallback constants (website-only, used when API fails) ────────────────────────
-
-/** Base price — chỉ dùng trong fallback. Giá thực tế từ DB → SiteSetting */
-const WEB_BASE_PRICE = 1_890_000;
-
-/**
- * Website-only package fallback — hiển thị khi API /pricing/config fail.
- * Giá, nội dung, mô tả, khuyến mãi: SỬA TẠI DB → ServicePackage table + SiteSetting "website_pricing_config"
- * Admin truy cập: Admin → Settings → Site Settings
- */
-const WEBSITE_PACKAGES_FALLBACK: WizardPackage[] = [
-  {
-    id: "landing", slug: "landing", name: "Landing Page",
-    multiplier: 1, color: "#6EB1A8",
-    desc: "Chien dich Marketing, gioi thieu ca nhan, offline. Phu hop landing page, trang gioi thieu ca nhan, san pham don le.",
-    features: [
-      "Giao dien hien dai, chuan Responsive",
-      "Toi uu trai nghiem UI/UX",
-      "Ho tro chinh sua sau ban giao",
-      "Trang gioi thieu SP/Dich vu",
-      "Admin quan ly bai viet",
-      "Form thu thap du lieu KH",
-      "Quan ly tep KH co ban",
-      "Toi uu SEO On-page",
-    ],
-    lp: 80,
-    price: 1_890_000,
-    marketPrice: 2_500_000,
-    savingPct: 24,
-    freebies: [
-      { type: "hosting", label: "Hosting Co Ban", detail: "6 thang" },
-      { type: "domain", label: "Ten mien .io.vn", detail: "1 nam" },
-    ],
-  },
-  {
-    id: "ban-hang", slug: "ban-hang", name: "Ban Hang Co Ban",
-    multiplier: 1, color: DS.blue,
-    desc: "Shop online nho & vua, bat dau chuyen doi so. Phu hop cua hang online, boutique, dich vu nho.",
-    features: [
-      "Bao gom moi tinh nang Landing Page",
-      "Danh muc & Chi tiet san pham",
-      "Chuc nang Gio hang thong minh",
-      "Thong ke don hang & Doanh thu",
-      "Tai khoan Admin & Khach hang",
-      "Tang 5 trang noi dung mien phi",
-    ],
-    lp: 160, popular: true,
-    price: 3_890_000,
-    marketPrice: 5_500_000,
-    savingPct: 29,
-    freebies: [
-      { type: "hosting", label: "Hosting Co Ban", detail: "6 thang" },
-      { type: "domain", label: "Ten mien .com & .io.vn", detail: "1 nam" },
-    ],
-  },
-  {
-    id: "doanh-nghiep", slug: "doanh-nghiep", name: "Quan Tri Doanh Nghiep",
-    multiplier: 1, color: "#8B5CF6",
-    desc: "Doanh nghiep, he thong ban hang quy mo lon. Phu hop doanh nghiep vua va lon, can quan ly phuc tap.",
-    features: [
-      "Bao gom moi tinh nang Ban Hang",
-      "Gio hang da dich vu/san pham",
-      "SP nang cao (size, mau, thuoc tinh)",
-      "He thong Ma giam gia/Flash sale",
-      "Tich diem & Doi qua thanh vien",
-      "Bo loc & Tim kiem AI thong minh",
-      "Quan ly Kho hang & Nha cung cap",
-    ],
-    lp: 240,
-    price: 5_890_000,
-    marketPrice: 8_900_000,
-    savingPct: 34,
-    freebies: [
-      { type: "hosting", label: "Hosting 3GB", detail: "6 thang" },
-      { type: "domain", label: "Ten mien .vn & .io.vn", detail: "1 nam" },
-    ],
-  },
-  {
-    id: "yeu-cau", slug: "yeu-cau", name: "Thiet Ke Theo Yeu Cau",
-    multiplier: 1, color: DS.pink,
-    desc: "Startups, nen tang App-web co logic phuc tap. Phu hop startup, platform, web app co yeu cau dac thu rieng.",
-    features: [
-      "Bao gom moi tinh nang Doanh Nghiep",
-      "UI/UX Doc quyen (Khong mau)",
-      "Tuy chinh chuc nang Core System",
-      "Tich hop Cong thanh toan/Van chuyen",
-      "API ket noi ben thu 3 (Zalo, App...)",
-      "Bao mat da lop & Toi uu Speed cuc han",
-    ],
-    lp: 320,
-    price: 7_890_000,
-    marketPrice: 12_000_000,
-    savingPct: 34,
-    freebies: [
-      { type: "hosting", label: "Thiet lap uu dai", detail: "tuy quy mo du an" },
-    ],
-  },
-];
 
 
 
@@ -209,7 +122,7 @@ const WEBSITE_PACKAGES_FALLBACK: WizardPackage[] = [
 const WEBSITE_SERVICE: WizardService = {
   id: "web", title: "Thiết kế & Phát triển Website",
   desc: "Landing page, corporate site, e-commerce — chuẩn React/Next.js, tốc độ cao.",
-  color: DS.blue, basePrice: WEB_BASE_PRICE,
+  color: DS.blue, basePrice: 1_890_000,
 };
 
 /** Feature fallback — nếu API fail, chỉ hiện web features.
@@ -351,11 +264,18 @@ export function BookingWizardClient({ locale }: Props) {
   const [submitLoading, setSubmitLoading] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [newOrderId, setNewOrderId] = useState("");
-  const [showCompareModal, setShowCompareModal] = useState(false);
 
-  // ── Wizard config (from BE) ─────────────────────────────────────────────────────
-  // Packages, features, addons, hosting, domain → loaded from /api/pricing/config
-  const [packages, setPackages] = useState<WizardPackage[]>(WEBSITE_PACKAGES_FALLBACK);
+  /**
+   * Initial state — fallback packages shown while API loads.
+   * After API responds, packages are replaced with real DB data.
+   * Prices / content must be edited in DB → ServicePackage table.
+   */
+  const [packages, setPackages] = useState<WizardPackage[]>([
+    { id: "landing", slug: "landing", name: "Landing Page", multiplier: 1, color: "#6EB1A8", desc: "Chiến dịch Marketing, giới thiệu cá nhân, offline. Phù hợp landing page, trang giới thiệu cá nhân, sản phẩm đơn lẻ.", features: ["Giao diện Hiện đại, Responsive", "Tối ưu Trải nghiệm UI/UX", "Hỗ trợ chỉnh sửa sau bàn giao", "Trang giới thiệu SP/Dịch vụ", "Admin quản lý bài viết", "Form thu thập dữ liệu KH", "Quản lý tệp KH cơ bản", "Tối ưu SEO On-page"], lp: 80, price: 1_890_000, marketPrice: 2_500_000, savingPct: 24 },
+    { id: "ban-hang", slug: "ban-hang", name: "Bán Hàng Cơ Bản", multiplier: 1, color: DS.blue, desc: "Shop online nhỏ & vừa, bắt đầu chuyển đổi số. Phù hợp cửa hàng online, boutique, dịch vụ nhỏ.", features: ["Bao gồm mọi tính năng Landing Page", "Danh mục & Chi tiết sản phẩm", "Chức năng Giỏ hàng thông minh", "Thống kê đơn hàng & Doanh thu", "Tài khoản Admin & Khách hàng", "Tặng 5 trang nội dung miễn phí"], lp: 160, popular: true, price: 3_890_000, marketPrice: 5_500_000, savingPct: 29 },
+    { id: "doanh-nghiep", slug: "doanh-nghiep", name: "Quản Trị Doanh Nghiệp", multiplier: 1, color: "#8B5CF6", desc: "Doanh nghiệp, hệ thống bán hàng quy mô lớn. Phù hợp doanh nghiệp vừa và lớn, cần quản lý phức tạp.", features: ["Bao gồm mọi tính năng Bán Hàng", "Giỏ hàng đa dịch vụ/sản phẩm", "SP nâng cao (size, màu, thuộc tính)", "Hệ thống Mã giảm giá/Flash sale", "Tích điểm & Đổi quà thành viên", "Bộ lọc & Tìm kiếm AI thông minh", "Quản lý Kho hàng & Nhà cung cấp"], lp: 240, price: 5_890_000, marketPrice: 8_900_000, savingPct: 34 },
+    { id: "yeu-cau", slug: "yeu-cau", name: "Theo Yêu Cầu", multiplier: 1, color: DS.pink, desc: "Startups, nền tảng App-web có logic phức tạp. Phù hợp startup, platform, web app có yêu cầu đặc thù riêng.", features: ["Bao gồm mọi tính năng Doanh Nghiệp", "UI/UX Độc quyền (Không mẫu)", "Tùy chỉnh chức năng Core System", "Tích hợp Cổng thanh toán/Vận chuyển", "API kết nối bên thứ 3 (Zalo, App...)", "Bảo mật đa lớp & Tối ưu Speed cực hạn"], lp: 320, price: 7_890_000, marketPrice: 12_000_000, savingPct: 34 },
+  ]);
   const [featureOptions, setFeatureOptions] = useState<Record<string, WizardFeature[]>>({
     web: WEBSITE_FEATURES_FALLBACK,
   });
@@ -363,14 +283,149 @@ export function BookingWizardClient({ locale }: Props) {
   const [hostingPlans, setHostingPlans] = useState<WizardHostingPlan[]>([]);
   const [domainPrices, setDomainPrices] = useState<WizardDomainPrice[]>([]);
   const [selectedHostingPlan, setSelectedHostingPlan] = useState<string>("");
-  const [domainName, setDomainName] = useState("");
-  const [domainPurchaseNow, setDomainPurchaseNow] = useState(true);
+  const [domainQuery, setDomainQuery] = useState("");
+  const [domainSelectedTld, setDomainSelectedTld] = useState(".com");
+  const [domainSearchResults, setDomainSearchResults] = useState<DomainSearchResult[]>([]);
+  const [selectedDomains, setSelectedDomains] = useState<DomainSearchResult[]>([]);
+  const [isSearchingDomain, setIsSearchingDomain] = useState(false);
   const [lpRate, setLpRate] = useState<LpRateConfig>(DEFAULT_LP_RATE);
   const [vatRate, setVatRate] = useState(0.10);
   const [maxLpRedeem, setMaxLpRedeem] = useState(0);
 
   // LP balance — fetched from /api/pricing/config?email= when customer enters email
   const [lpBalance, setLpBalance] = useState(0);
+
+  // ── SEO service state (Step 0 — website booking) ─────────────────────────────
+  const [selectedSeoTier, setSelectedSeoTier] = useState<number>(0); // 0 = not selected, 1/2/3 = tier level
+
+  // ── Web package feature table state ──────────────────────────────────────────
+  /** Map from package id → tier level (1-4) for WebPackageFeatureTable */
+  const PKG_TO_TIER: Record<string, number> = {
+    landing: 1, "ban-hang": 2, "doanh-nghiep": 3, "yeu-cau": 4,
+  };
+  const TIER_TO_PKG: Record<number, string> = {
+    1: "landing", 2: "ban-hang", 3: "doanh-nghiep", 4: "yeu-cau",
+  };
+
+  /** Current selected web tier — synced with selectedPackage */
+  const currentWebTier = PKG_TO_TIER[selectedPackage] ?? 0;
+
+  /**
+   * Web package tiers derived from packages loaded from DB.
+   * Uses DB prices if available; falls back to hardcoded values.
+   * DB slug → tier level: landing=1, ban-hang=2, doanh-nghiep=3, yeu-cau=4
+   */
+  const DB_SLUG_TO_TIER: Record<string, number> = {
+    landing: 1, "ban-hang": 2, "doanh-nghiep": 3, "yeu-cau": 4,
+  };
+  const TIER_TO_DBUUID: Record<number, string> = {
+    1: "landing", 2: "ban-hang", 3: "doanh-nghiep", 4: "yeu-cau",
+  };
+  const TIER_COLORS_WEB: Record<number, string> = {
+    1: "#6EB1A8", 2: DS.blue, 3: "#8B5CF6", 4: DS.pink,
+  };
+  const TIER_NAMES_WEB: Record<number, string> = {
+    1: "Landing Page", 2: "Bán Hàng Cơ Bản", 3: "Doanh Nghiệp", 4: "Theo Yêu Cầu",
+  };
+
+  /** Known DB prices by slug — these are the real prices stored in ServicePackage DB */
+  const DB_PACKAGE_PRICES: Record<string, { basePrice: number; marketPrice: number; name: string; nameVi: string }> = {
+    landing: { basePrice: 1_890_000, marketPrice: 2_500_000, name: "Landing Page", nameVi: "Thiết kế Landing Page" },
+    "ban-hang": { basePrice: 3_890_000, marketPrice: 5_500_000, name: "Bán Hàng Cơ Bản", nameVi: "Bán Hàng Cơ Bản" },
+    "doanh-nghiep": { basePrice: 5_890_000, marketPrice: 8_900_000, name: "Doanh Nghiệp", nameVi: "Thiết Kế Website Doanh Nghiệp" },
+    "yeu-cau": { basePrice: 7_890_000, marketPrice: 12_000_000, name: "Theo Yêu Cầu", nameVi: "Thiết Kế Theo Yêu Cầu" },
+  };
+
+  /** Build webTiers — uses DB prices from DB_PACKAGE_PRICES keyed by slug */
+  const webTiers: WebPackageTier[] = [1, 2, 3, 4].map(level => {
+    const slug = TIER_TO_DBUUID[level]!;
+    const dbInfo = DB_PACKAGE_PRICES[slug];
+    // Try to get from API packages (slug match), else fall back to known DB values
+    const apiPkg = packages.find(p => (p.slug ?? "") === slug);
+    const priceFromApi = apiPkg?.price ?? apiPkg?.marketPrice;
+    const basePrice = priceFromApi ?? dbInfo.basePrice;
+    const marketPrice = apiPkg?.marketPrice ?? dbInfo.marketPrice;
+    return {
+      level,
+      name: apiPkg?.name ?? dbInfo.name,
+      shortDesc: apiPkg?.desc ?? "",
+      basePrice,
+      marketPrice,
+      color: TIER_COLORS_WEB[level],
+    };
+  });
+
+  /** Website feature matrix — maps to 4 tiers */
+  const webFeatures: WebPackageFeature[] = [
+    // ── 1. Giao diện & Hiển thị ────────────────────────────────
+    { id: "ui-responsive", label: "Tự động co giãn màn hình", labelEn: "Responsive Display", description: "Hiển thị đẹp trên cả điện thoại, iPad và máy tính — chuẩn mobile-first, không cần phóng to/thu nhỏ.", category: "Giao diện", includedTiers: [1, 2, 3, 4] },
+    { id: "ui-nav", label: "Bố cục điều hướng thông minh", labelEn: "Smart Navigation Layout", description: "Sắp xếp nút bấm hợp lý để giữ chân khách ở lại lâu hơn, tăng thời gian trên trang.", category: "Giao diện", includedTiers: [1, 2, 3, 4] },
+    { id: "ui-custom", label: "Vẽ giao diện độc quyền riêng", labelEn: "Custom Exclusive Design", description: "Không dùng mẫu có sẵn, vẽ riêng theo đúng nhận diện thương hiệu — phù hợp doanh nghiệp cần khác biệt hoàn toàn.", category: "Giao diện", extraPrice: 3_000_000, includedTiers: [3, 4] },
+    { id: "ui-animation", label: "Hiệu ứng chuyển động", labelEn: "Animation & Micro-interactions", description: "Ảnh nổi lên, nút bấm phát sáng khi lướt chuột — tạo cảm giác cao cấp, chuyên nghiệp.", category: "Giao diện", includedTiers: [2, 3, 4] },
+
+    // ── 2. Tính năng Cốt lõi ──────────────────────────────────
+    { id: "core-form", label: "Biểu mẫu thu thập khách", labelEn: "Lead Capture Forms", description: "Khách điền Tên/SĐT, dữ liệu báo thẳng về email của bạn — thu thập khách hàng tiềm năng tự động.", category: "Tính năng cốt lõi", includedTiers: [1, 2, 3, 4] },
+    { id: "core-blog", label: "Trang Blog & Tin tức", labelEn: "Blog & News Pages", description: "Nơi đăng tải bài viết chia sẻ kiến thức, mẹo vặt, tin công ty — tăng SEO, giữ khách ở lại lâu hơn.", category: "Tính năng cốt lõi", includedTiers: [2, 3, 4] },
+    { id: "core-cms", label: "Hệ thống Quản trị (CMS)", labelEn: "Content Management System", description: "Giao diện thao tác như dùng Word — tự thay chữ, ảnh, sản phẩm không cần biết code.", category: "Tính năng cốt lõi", extraPrice: 5_000_000, includedTiers: [2, 3, 4] },
+    { id: "core-i18n", label: "Dịch thuật Đa ngôn ngữ", labelEn: "Multi-language (i18n)", description: "Thêm nút chuyển đổi tiếng Anh, Nhật, Hàn... cho khách quốc tế — mở rộng thị trường ra quốc tế.", category: "Tính năng cốt lõi", extraPrice: 3_000_000, includedTiers: [2, 3, 4] },
+
+    // ── 3. Quản trị & Vận hành Nội bộ ─────────────────────────
+    { id: "admin-roles", label: "Tài khoản & Phân quyền", labelEn: "Account & Role-based Access", description: "Cấp quyền riêng cho nhân viên — VD: chỉ được đăng bài, không được xem doanh thu.", category: "Quản trị", includedTiers: [2, 3, 4] },
+    { id: "admin-dashboard", label: "Bảng biểu đồ Thống kê", labelEn: "Admin Dashboard & Charts", description: "Màn hình tổng quan xem hôm nay có bao nhiêu người vào, bán được bao nhiêu — real-time.", category: "Quản trị", includedTiers: [2, 3, 4] },
+    { id: "admin-ai", label: "Tìm kiếm Thông minh (AI)", labelEn: "AI-powered Smart Search", description: "Khách gõ sai chính tả hay không dấu hệ thống vẫn hiểu và gợi ý đúng — tăng trải nghiệm, giảm bounce rate.", category: "Quản trị", extraPrice: 4_000_000, includedTiers: [3, 4] },
+
+    // ── 4. Khả năng Marketing & Lên Top Google (SEO) ───────────
+    { id: "seo-config", label: "Cấu hình Chuẩn SEO", labelEn: "Standard SEO Configuration", description: "Đảm bảo các tiêu chuẩn kỹ thuật để Google dễ dàng đẩy web lên trang nhất.", category: "SEO & Marketing", includedTiers: [1, 2, 3, 4] },
+    { id: "seo-social", label: "Hiển thị đẹp trên Mạng xã hội", labelEn: "Social Media Preview", description: "Hình ảnh, tiêu đề hiển thị chuẩn kích thước khi share link qua Zalo, Facebook, LinkedIn.", category: "SEO & Marketing", includedTiers: [1, 2, 3, 4] },
+    { id: "seo-analytics", label: "Lắp đặt Công cụ đo lường Google", labelEn: "Google Analytics & GSC Setup", description: "Giúp bạn biết khách hàng đến từ đâu, độ tuổi nào, thích xem gì nhất — data-driven decisions.", category: "SEO & Marketing", extraPrice: 1_500_000, includedTiers: [1, 2, 3, 4] },
+    { id: "seo-ai", label: "Trợ lý AI Viết bài", labelEn: "AI Content Marketing Assistant", description: "Tích hợp AI tự động soạn thảo bài viết chuẩn marketing ngay trong trang quản trị — tiết kiệm 80% thời gian.", category: "SEO & Marketing", extraPrice: 6_000_000, includedTiers: [3, 4] },
+
+    // ── 5. Cỗ máy Thương mại & Chốt đơn ───────────────────────
+    { id: "ecom-categories", label: "Quản lý Danh mục", labelEn: "Product Category Management", description: "Phân loại hàng hóa khoa học, hiển thị nhiều ảnh, màu sắc, kích cỡ (size) — khách dễ tìm sản phẩm.", category: "Thương mại", extraPrice: 5_000_000, includedTiers: [2, 3, 4] },
+    { id: "ecom-cart", label: "Giỏ hàng & Đặt hàng", labelEn: "Shopping Cart & Checkout", description: "Khách gom nhiều đồ, điền thông tin nhận hàng và tự động tính tổng tiền — chốt đơn tức thì.", category: "Thương mại", extraPrice: 12_000_000, includedTiers: [3, 4] },
+    { id: "ecom-coupons", label: "Tạo Mã giảm giá & Giờ vàng", labelEn: "Coupons & Flash Sales", description: "Làm các coupon giảm 50k, đồng hồ đếm ngược kích thích mua ngay — tăng tỷ lệ chuyển đổi.", category: "Thương mại", extraPrice: 3_000_000, includedTiers: [3, 4] },
+    { id: "ecom-loyalty", label: "Tích điểm Thành viên", labelEn: "Loyalty Points System", description: "Khách mua nhiều được cộng điểm để đổi lấy ưu đãi cho lần sau — tăng giá trị trọn đời (LTV).", category: "Thương mại", extraPrice: 5_000_000, includedTiers: [3, 4] },
+    { id: "ecom-inventory", label: "Quản lý tồn Kho tự động", labelEn: "Auto Inventory Management", description: "Tự động trừ số lượng khi có đơn, báo đỏ khi hàng sắp hết — không lo oversell.", category: "Thương mại", extraPrice: 4_000_000, includedTiers: [3, 4] },
+
+    // ── 6. Nâng cao, Tốc độ & Bảo mật ────────────────────────
+    { id: "adv-security", label: "Bảo mật Đa lớp & Chống Hacker", labelEn: "Multi-layer Security & SSL", description: "Ổ khóa xanh (SSL) bảo vệ dữ liệu khách hàng tuyệt đối — HTTPS, chống DDoS, backup tự động.", category: "Nâng cao", includedTiers: [1, 2, 3, 4] },
+    { id: "adv-speed", label: "Ép xung Tốc độ tải trang", labelEn: "Page Speed Optimization", description: "Dùng công nghệ nén ảnh, website mở lên ngay lập tức dưới 3 giây — Google yêu web nhanh.", category: "Nâng cao", extraPrice: 2_000_000, includedTiers: [2, 3, 4] },
+    { id: "adv-api", label: "Kết nối Phần mềm thứ 3", labelEn: "3rd-party Software Integration", description: "Tự động đẩy dữ liệu sang phần mềm bạn đang dùng (MISA, KiotViet, GHTK...) — đồng bộ không cần nhập tay.", category: "Nâng cao", extraPrice: 6_000_000, includedTiers: [3, 4] },
+    { id: "adv-payments", label: "Tích hợp Cổng quét mã Thanh toán", labelEn: "Payment Gateway Integration", description: "Khách trả tiền trực tiếp qua MoMo, VNPay, ZaloPay, quẹt thẻ Visa — thanh toán đa kênh, an toàn.", category: "Nâng cao", extraPrice: 5_000_000, includedTiers: [3, 4] },
+  ];
+
+  /** SEO tiers loaded from DB — fallback sample data */
+  const [seoTiers, setSeoTiers] = useState<SEOPackageTier[]>([
+    { level: 1, name: "SEO Cơ Bản", shortDesc: "Tối ưu từ khóa cơ bản, báo cáo tháng", basePrice: 2_000_000 },
+    { level: 2, name: "SEO Doanh Nghiệp", shortDesc: "Nghiên cứu sâu, 10 từ khóa, audit kỹ thuật", basePrice: 5_000_000 },
+    { level: 3, name: "SEO Chuyên Nghiệp", shortDesc: "Full SEO, 30 từ khóa, content AI, báo cáo tuần", basePrice: 9_000_000 },
+  ]);
+
+  /** SEO features with tier inclusion matrix */
+  const [seoFeatures, setSeoFeatures] = useState<SEOFeature[]>([
+    // Tối ưu On-page
+    { id: "seo-title", label: "Tối ưu Title & Meta Description", labelEn: "Title & Meta Tag Optimization", description: "Tối ưu thẻ title, meta description cho mỗi trang để tăng tỷ lệ click (CTR) trên Google.", category: "Tối ưu On-page", includedTiers: [1, 2, 3] },
+    { id: "seo-heading", label: "Cấu trúc Heading (H1-H6)", labelEn: "Heading Structure", description: "Sắp xếp đúng hierarchy H1→H6 giúp Google hiểu nội dung và phân cấp thông tin trên trang.", category: "Tối ưu On-page", includedTiers: [1, 2, 3] },
+    { id: "seo-schema", label: "Schema Markup (Structured Data)", labelEn: "Schema.org Structured Data", description: "Thêm dữ liệu có cấu trúc (Organization, FAQ, Product...) giúp Google hiểu rõ nội dung và hiển thị Rich Snippet.", category: "Tối ưu On-page", extraPrice: 1_500_000, includedTiers: [2, 3] },
+    { id: "seo-speed", label: "Tối ưu Tốc độ Tải Trang (Core Web Vitals)", labelEn: "Page Speed Optimization", description: "Tối ưu LCP, FID, CLS — các chỉ số Core Web Vitals ảnh hưởng trực tiếp đến thứ hạng Google.", category: "Tối ưu On-page", extraPrice: 2_000_000, includedTiers: [2, 3] },
+    { id: "seo-mobile", label: "Tối ưu Mobile-First", labelEn: "Mobile-First Optimization", description: "Đảm bảo website hiển thị và hoạt động tốt trên thiết bị di động — yếu tố xếp hạng quan trọng của Google.", category: "Tối ưu On-page", includedTiers: [1, 2, 3] },
+    // Tối ưu Off-page
+    { id: "off-guestpost", label: "Guest Post / Backlink chất lượng", labelEn: "Guest Posting & Quality Backlinks", description: "Xây dựng backlink từ website uy tín, DA cao để tăng Domain Authority và thứ hạng từ khóa.", category: "Tối ưu Off-page", extraPrice: 3_000_000, includedTiers: [2, 3] },
+    { id: "off-social", label: "Chia sẻ Mạng Xã Hội (Social Signals)", labelEn: "Social Media Sharing", description: "Tối ưu Open Graph, chia sẻ nội dung lên Facebook, Zalo OA để tăng tín hiệu xã hội.", category: "Tối ưu Off-page", includedTiers: [1, 2, 3] },
+    { id: "off-nap", label: "Quản lý NAP (Name, Address, Phone)", labelEn: "NAP Citation Management", description: "Đảm bảo thông tin doanh nghiệp nhất quán trên Google Business, các thư mục và bản đồ.", category: "Tối ưu Off-page", extraPrice: 1_000_000, includedTiers: [2, 3] },
+    // Nghiên cứu từ khóa
+    { id: "kw-basic", label: "Nghiên cứu 5 Từ Khóa Cạnh Tranh Thấp", labelEn: "5 Low-Competition Keywords", description: "Phân tích và chọn 5 từ khóa có lượng tìm kiếm ổn định, cạnh tranh thấp, phù hợp với website mới.", category: "Nghiên cứu từ khóa", includedTiers: [1, 2, 3] },
+    { id: "kw-medium", label: "Nghiên cứu 15 Từ Khóa Trung Bình", labelEn: "15 Medium-Competition Keywords", description: "Phân tích chuyên sâu 15 từ khóa bao gồm short-tail và long-tail, có chiến lược nội dung đi kèm.", category: "Nghiên cứu từ khóa", extraPrice: 1_500_000, includedTiers: [2, 3] },
+    { id: "kw-advanced", label: "Nghiên cứu 30+ Từ Khóa Chiến Lược", labelEn: "30+ Strategic Keywords", description: "Phân tích toàn diện 30+ từ khóa kèm content cluster, competitor analysis và topical authority strategy.", category: "Nghiên cứu từ khóa", extraPrice: 3_000_000, includedTiers: [3] },
+    // Phân tích kỹ thuật
+    { id: "tech-audit", label: "SEO Audit Toàn Diện", labelEn: "Full SEO Technical Audit", description: "Kiểm tra 50+ yếu tố kỹ thuật: sitemap, robots.txt, canonical, broken links, duplicate content...", category: "Phân tích kỹ thuật", includedTiers: [1, 2, 3] },
+    { id: "tech-core", label: "Sửa Lỗi Core Web Vitals", labelEn: "Core Web Vitals Fix", description: "Khắc phục các lỗi LCP, CLS, FID ảnh hưởng đến thứ hạng và trải nghiệm người dùng.", category: "Phân tích kỹ thuật", extraPrice: 2_500_000, includedTiers: [2, 3] },
+    { id: "tech-gsc", label: "Google Search Console Setup & Monitoring", labelEn: "GSC Setup & Monitoring", description: "Cấu hình GSC, theo dõi hiệu suất, phát hiện lỗi indexing và cơ hội cải thiện thứ hạng.", category: "Phân tích kỹ thuật", extraPrice: 500_000, includedTiers: [2, 3] },
+    // Báo cáo
+    { id: "rpt-monthly", label: "Báo Cáo Tháng (Google Analytics)", labelEn: "Monthly Performance Report", description: "Báo cáo chi tiết hàng tháng: thứ hạng từ khóa, lưu lượng organic, tỷ lệ click, hành vi người dùng.", category: "Báo cáo", includedTiers: [1, 2, 3] },
+    { id: "rpt-weekly", label: "Báo Cáo Tuần (Dashboard SEO)", labelEn: "Weekly SEO Dashboard", description: "Dashboard SEO theo dõi real-time: rankings, traffic, backlinks, technical issues — cập nhật hàng tuần.", category: "Báo cáo", extraPrice: 1_000_000, includedTiers: [2, 3] },
+    { id: "rpt-ranktracker", label: "Rank Tracker 30+ Keywords", labelEn: "Rank Tracking for 30+ Keywords", description: "Theo dõi vị trí thứ hạng của 30+ từ khóa trên Google, Bing hàng ngày với biểu đồ xu hướng.", category: "Báo cáo", extraPrice: 2_000_000, includedTiers: [3] },
+  ]);
 
   // Filtered feature options — always "web" since website-only
   const currentFeatureOptions: WizardFeature[] = featureOptions["web"] ?? [];
@@ -498,9 +553,9 @@ export function BookingWizardClient({ locale }: Props) {
   const service = WEBSITE_SERVICE;
   const selectedPkg = packages.find(p => p.id === selectedPackage);
 
-  // Base price: use pkg.price from DB, fallback WEB_BASE_PRICE
+  // Base price: from DB_PACKAGE_PRICES keyed by pkg.id (the slug)
   const currentBasePrice = selectedPkg
-    ? (selectedPkg.price ?? selectedPkg.marketPrice ?? WEB_BASE_PRICE)
+    ? (DB_PACKAGE_PRICES[selectedPkg.id]?.basePrice ?? selectedPkg.price ?? selectedPkg.marketPrice ?? 1_890_000)
     : 0;
 
   // Filter: only count non-included features for price
@@ -510,9 +565,7 @@ export function BookingWizardClient({ locale }: Props) {
   const currentExtraPrice = extraOptions.filter(e => selectedExtras.includes(e.id)).reduce((s, e) => s + e.price, 0);
   const selectedHosting = hostingPlans.find(h => h.slug === selectedHostingPlan);
   const hostingCost = selectedHosting?.discountedPrice ?? 0;
-  const domainCost = domainPurchaseNow && domainName
-    ? (domainPrices.find(d => domainName.endsWith(d.extension))?.registrationPrice ?? 0)
-    : 0;
+  const domainCost = selectedDomains.reduce((s, d) => s + d.registrationPrice, 0);
   const currentSubtotal = currentBasePrice + extraFeaturePrice + currentExtraPrice + hostingCost + domainCost;
 
   useEffect(() => {
@@ -527,6 +580,52 @@ export function BookingWizardClient({ locale }: Props) {
     setSelectedFeatures(prev => prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id]);
   const toggleExtra = (id: string) =>
     setSelectedExtras(prev => prev.includes(id) ? prev.filter(e => e !== id) : [...prev, id]);
+
+  // ── Domain search ─────────────────────────────────────────────
+  const handleDomainSearch = async () => {
+    if (!domainQuery || domainPrices.length === 0) return;
+    setIsSearchingDomain(true);
+    setDomainSearchResults([]);
+    try {
+      const res = await fetch(
+        `/api/pricing/domain-search?q=${encodeURIComponent(domainQuery)}`,
+        { signal: AbortSignal.timeout(10_000) }
+      );
+      const json = await res.json();
+
+      // Map API results to our DomainSearchResult[] using local pricing
+      const domainData = json?.data?.domains ?? [];
+      const results: DomainSearchResult[] = domainPrices.map(price => {
+        const apiResult = domainData.find((d: { domain: string; available: boolean; reason?: string; price: number }) =>
+          d.domain === domainQuery + price.extension
+        );
+        return {
+          extension: price.extension,
+          registrationPrice: apiResult?.price ?? price.registrationPrice,
+          renewalPrice: price.renewalPrice,
+          periodVi: price.periodVi,
+          note: price.note,
+          available: apiResult?.available ?? false,
+          selected: false,
+        };
+      });
+      setDomainSearchResults(results);
+    } catch {
+      // On error, fall back to all available with local prices
+      const results: DomainSearchResult[] = domainPrices.map(price => ({
+        extension: price.extension,
+        registrationPrice: price.registrationPrice,
+        renewalPrice: price.renewalPrice,
+        periodVi: price.periodVi,
+        note: price.note,
+        available: true,
+        selected: false,
+      }));
+      setDomainSearchResults(results);
+    } finally {
+      setIsSearchingDomain(false);
+    }
+  };
 
   const canNext = () => {
     if (step === 0) return !!selectedPackage;      // must select a package
@@ -551,15 +650,13 @@ export function BookingWizardClient({ locale }: Props) {
       "yeu-cau": 7_890_000,
     };
 
-    const basePrice = pkg ? (PACKAGE_PRICES_SUBMIT[pkg.id] ?? WEB_BASE_PRICE) : WEB_BASE_PRICE;
+    const basePrice = pkg ? (PACKAGE_PRICES_SUBMIT[pkg.id] ?? DB_PACKAGE_PRICES[pkg.id]?.basePrice ?? 1_890_000) : 1_890_000;
     // Only charge for non-included features
     const featPrices = featOpts
       .filter(f => selectedFeatures.includes(f.id) && !f.includedInBase)
       .reduce((s, f) => s + f.price, 0);
     const extraPricesTotal = extraOptions.filter(e => selectedExtras.includes(e.id)).reduce((s, e) => s + e.price, 0);
-    const domainTotalCost = domainPurchaseNow && domainName
-      ? (domainPrices.find(d => domainName.endsWith(d.extension))?.registrationPrice ?? 0)
-      : 0;
+    const domainTotalCost = selectedDomains.reduce((s, d) => s + d.registrationPrice, 0);
     const hostingTotalCost = selectedHosting?.discountedPrice ?? 0;
     const subtotal = basePrice + featPrices + extraPricesTotal + hostingTotalCost + domainTotalCost;
     // Deduct LP discount from total (lpDiscount already capped at 20% in useEffect)
@@ -602,8 +699,8 @@ export function BookingWizardClient({ locale }: Props) {
           paymentPlan,
           notes: `Dịch vụ: ${svc?.title ?? ""} | Tính năng: ${selectedFeatures.length} | Ghi chú đội ngũ: ${talentNote || "—"} | Bắt đầu: ${startDate || "—"} | Thời gian: ${duration || "—"}`,
           hostingPlanSlug: selectedHosting?.slug || undefined,
-          domainName: domainName || undefined,
-          domainPurchaseTime: domainPurchaseNow ? "now" : "after_handover",
+          domainNames: selectedDomains.map(d => domainQuery + d.extension),
+          domainTotal: selectedDomains.reduce((s, d) => s + d.registrationPrice, 0),
         }),
       });
       const data = await res.json();
@@ -640,8 +737,7 @@ export function BookingWizardClient({ locale }: Props) {
     .reduce((s, f) => s + f.price, 0);
   const extraTotalForDisplay = extraOptions.filter(e => selectedExtras.includes(e.id)).reduce((s, e) => s + e.price, 0);
   const hostingTotal = selectedHosting?.discountedPrice ?? 0;
-  const domainTotal = domainPurchaseNow && domainName
-    ? (domainPrices.find(d => domainName.endsWith(d.extension))?.registrationPrice ?? 0) : 0;
+  const domainTotal = selectedDomains.reduce((s, d) => s + d.registrationPrice, 0);
   const subtotalForDisplay = currentBasePrice + featTotalForDisplay + extraTotalForDisplay + hostingTotal + domainTotal;
   const lpDisc = calcLpDiscount(subtotalForDisplay, lpDiscount, lpBalance, lpRate);
   const vatAmt = Math.round((subtotalForDisplay - lpDisc.vndDiscount) * vatRate);
@@ -650,7 +746,7 @@ export function BookingWizardClient({ locale }: Props) {
   const pkgColor = selectedPkg?.color ?? DS.blue;
 
   // ── Inline package selector ──────────────────────────────────────────────────
-  const getPkgPrice = (pkg: WizardPackage) => pkg.price ?? pkg.marketPrice ?? WEB_BASE_PRICE;
+  const getPkgPrice = (pkg: WizardPackage) => pkg.price ?? pkg.marketPrice ?? DB_PACKAGE_PRICES[pkg.id]?.basePrice ?? 1_890_000;
 
   const pkgCards = packages.map(pkg => {
     const price = getPkgPrice(pkg);
@@ -806,239 +902,17 @@ export function BookingWizardClient({ locale }: Props) {
                     </p>
                   </div>
 
-                  {/* ── Package cards: grid desktop / horizontal scroll mobile ── */}
+                  {/* ── Package feature matrix table (4 columns × feature rows) ── */}
                   <div style={{ marginBottom: 28 }}>
-                    <style>{`
- @media (max-width: 767px) {
- .pkg-scroll { scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; overflow-x: auto; padding-bottom: 12px; }
- .pkg-card { scroll-snap-align: center; }
- .pkg-card:first-child { scroll-snap-align: start; }
- .pkg-card:last-child { scroll-snap-align: end; }
- }
- `}</style>
-
-                    <div
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 280px), 1fr))",
-                        gap: 16,
+                    <WebPackageFeatureTable
+                      features={webFeatures}
+                      selectedTier={currentWebTier}
+                      tiers={webTiers}
+                      onSelectTier={(tier) => {
+                        const pkgId = TIER_TO_PKG[tier];
+                        if (pkgId) setSelectedPackage(pkgId);
                       }}
-                      className="pkg-scroll"
-                    >
-                      {pkgCards.map(({ pkg, price, market, saving, savingPct, isSelected, color, selColor }) => {
-                        const isPopular = pkg.popular && !isSelected;
-                        return (
-                          <motion.button
-                            key={pkg.id}
-                            onClick={() => setSelectedPackage(pkg.id)}
-                            className="pkg-card text-left"
-                            style={{
-                              background: isSelected
-                                ? `linear-gradient(160deg, ${selColor}16 0%, rgba(10,15,30,0.95) 70%)`
-                                : "rgba(15,23,42,0.7)",
-                              border: isSelected
-                                ? `2px solid ${selColor}`
-                                : `1px solid ${DS.border}`,
-                              borderRadius: 20,
-                              cursor: "pointer",
-                              position: "relative",
-                              overflow: "hidden",
-                              transition: "all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)",
-                              boxShadow: isSelected
-                                ? `0 0 40px ${selColor}30, 0 8px 32px rgba(0,0,0,0.4)`
-                                : "0 4px 16px rgba(0,0,0,0.2)",
-                              padding: 0,
-                            }}
-                            whileHover={{ scale: 1.03, y: -4 }}
-                            whileTap={{ scale: 0.97 }}
-                          >
-                            {/* Top accent strip — accent only when selected */}
-                            <div style={{
-                              height: 5,
-                              background: isSelected
-                                ? `linear-gradient(90deg, ${selColor}, ${selColor}80)`
-                                : "rgba(255,255,255,0.07)",
-                              borderRadius: "20px 20px 0 0",
-                              transition: "background 0.3s",
-                            }} />
-
-                            {/* Badge */}
-                            <div style={{ padding: "12px 20px 0", minHeight: isPopular || isSelected ? 34 : 10 }}>
-                              {isPopular && (
-                                <div style={{
-                                  display: "inline-block",
-                                  background: "rgba(255,255,255,0.07)",
-                                  color: DS.text3,
-                                  border: "1px solid rgba(255,255,255,0.12)",
-                                  fontSize: 9,
-                                  fontFamily: DS.mono,
-                                  letterSpacing: "0.12em",
-                                  padding: "3px 10px",
-                                  borderRadius: 20,
-                                  marginBottom: 4,
-                                }}>
-                                  ★ PHỔ BIẾN NHẤT
-                                </div>
-                              )}
-                              {isSelected && (
-                                <div style={{
-                                  display: "inline-flex",
-                                  alignItems: "center",
-                                  gap: 5,
-                                  background: selColor,
-                                  color: "#fff",
-                                  fontSize: 9,
-                                  fontFamily: DS.mono,
-                                  letterSpacing: "0.12em",
-                                  padding: "3px 10px",
-                                  borderRadius: 20,
-                                  marginBottom: 4,
-                                }}>
-                                  <Check size={9} style={{ strokeWidth: 3 }} />
-                                  ĐANG CHỌN
-                                </div>
-                              )}
-                            </div>
-
-                            {/* Card body */}
-                            <div style={{ padding: "8px 20px 24px" }}>
-                              {/* Package name — neutral when unselected */}
-                              <div style={{
-                                color: isSelected ? selColor : DS.text4,
-                                fontSize: 10,
-                                fontFamily: DS.mono,
-                                letterSpacing: "0.2em",
-                                marginBottom: 6,
-                                transition: "color 0.2s",
-                              }}>
-                                {pkg.name.toUpperCase()}
-                              </div>
-
-                              {/* Price */}
-                              <div style={{ marginBottom: 8 }}>
-                                {saving > 0 && (
-                                  <div style={{
-                                    color: DS.text5, fontSize: 11, fontFamily: DS.mono,
-                                    textDecoration: "line-through", marginBottom: 2,
-                                  }}>
-                                    {fmtVND(market)}
-                                  </div>
-                                )}
-                                <div style={{
-                                  color: DS.text,
-                                  fontFamily: DS.heading,
-                                  fontSize: 30,
-                                  fontWeight: 900,
-                                  lineHeight: 1,
-                                  marginBottom: 2,
-                                }}>
-                                  {fmtVND(price)}
-                                </div>
-                                <div style={{ color: DS.text4, fontSize: 10 }}>
-                                  {pkg.billingPeriod || "một lần"}
-                                </div>
-                              </div>
-
-                              {/* Saving badge */}
-                              {saving > 0 && (
-                                <div style={{
-                                  display: "inline-block",
-                                  background: "rgba(34,197,94,0.12)",
-                                  border: "1px solid rgba(34,197,94,0.3)",
-                                  color: DS.green,
-                                  fontSize: 9,
-                                  fontFamily: DS.mono,
-                                  padding: "2px 8px",
-                                  borderRadius: 8,
-                                  marginBottom: 14,
-                                }}>
-                                  −{savingPct}% · Tiết kiệm {fmtVND(saving)}
-                                </div>
-                              )}
-
-                              {/* Description */}
-                              <p style={{
-                                color: DS.text3,
-                                fontSize: 11,
-                                lineHeight: 1.55,
-                                marginBottom: 14,
-                              }}>
-                                {pkg.desc}
-                              </p>
-
-                              {/* Feature list */}
-                              {pkg.features.length > 0 && (
-                                <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 6 }}>
-                                  {pkg.features.slice(0, 4).map((feat, i) => (
-                                    <li key={i} style={{
-                                      display: "flex", alignItems: "flex-start", gap: 7,
-                                      color: DS.text3, fontSize: 11, lineHeight: 1.4,
-                                    }}>
-                                      <Check size={12} style={{ color: DS.green, flexShrink: 0, marginTop: 1 }} />
-                                      {feat}
-                                    </li>
-                                  ))}
-                                  {pkg.features.length > 4 && (
-                                    <li style={{ color: DS.text4, fontSize: 10, paddingLeft: 19 }}>
-                                      +{pkg.features.length - 4} tính năng khác
-                                    </li>
-                                  )}
-                                </ul>)}
-
-
-                              {/* Freebies */}
-                              {pkg.freebies && pkg.freebies.length > 0 && (
-                                <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid rgba(255,255,255,0.08)" }}>
-                                  <div style={{ color: DS.green, fontSize: 9, fontFamily: DS.mono, letterSpacing: "0.15em", marginBottom: 5 }}>QUA TANG DI KEM</div>
-                                  {pkg.freebies.map((fb, fi) => (
-                                    <div key={fi} style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 3 }}>
-                                      <svg width="10" height="10" viewBox="0 0 24 24" fill={DS.green} stroke="none"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" /></svg>
-                                      <span style={{ color: DS.green, fontSize: 9, fontFamily: DS.mono }}>{fb.label}{fb.detail ? ` (${fb.detail})` : ''}</span>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-
-                            {/* Selected checkmark circle */}
-                            {isSelected && (
-                              <div style={{
-                                position: "absolute", top: 14, right: 14,
-                                width: 32, height: 32, borderRadius: "50%",
-                                background: selColor,
-                                display: "flex", alignItems: "center", justifyContent: "center",
-                                boxShadow: `0 0 20px ${selColor}70`,
-                              }}>
-                                <Check size={16} style={{ color: "#fff", strokeWidth: 3 }} />
-                              </div>
-                            )}
-                          </motion.button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Compare packages button */}
-                  <div style={{ textAlign: "center", marginBottom: 24 }}>
-                    <button
-                      onClick={() => setShowCompareModal(true)}
-                      style={{
-                        padding: "10px 24px",
-                        borderRadius: 12,
-                        background: "rgba(255,255,255,0.04)",
-                        border: "1px dashed rgba(255,255,255,0.12)",
-                        color: DS.text3,
-                        fontSize: 13,
-                        fontFamily: DS.mono,
-                        cursor: "pointer",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 8,
-                      }}
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
-                      Xem chi tiet va so sanh cac goi
-                    </button>
+                    />
                   </div>
 
                   {/* ── Selected package summary bar ── */}
@@ -1192,77 +1066,338 @@ export function BookingWizardClient({ locale }: Props) {
                       />
                     </div>
                   )}
+
+                  {/* ── SEO Service: Bổ sung dịch vụ SEO ─────────────────── */}
+                  <div style={{ marginBottom: 32 }}>
+                    {/* SEO section header */}
+                    <div style={{ marginBottom: 16 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 6 }}>
+                        <div style={{ width: 4, height: 20, background: "#F59E0B", borderRadius: 2 }} />
+                        <h3 style={{ color: DS.text, fontSize: 16, fontFamily: DS.heading, fontWeight: 700, letterSpacing: "0.06em" }}>
+                          BỔ SUNG DỊCH VỤ SEO
+                        </h3>
+                        <div style={{ flex: 1, height: 1, background: DS.border, maxWidth: 120 }} />
+                      </div>
+                      <p style={{ color: DS.text4, fontSize: 13, marginLeft: 16 }}>
+                        Thêm dịch vụ SEO chuẩn Google để website của bạn dễ dàng được tìm thấy.{" "}
+                        <span style={{ color: "#F59E0B" }}>Tăng thứ hạng từ khóa, lưu lượng organic.</span>
+                      </p>
+                    </div>
+
+                    {/* SEO tier selector */}
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 200px), 1fr))", gap: 12, marginBottom: 20 }}>
+                      {seoTiers.map(tier => {
+                        const isSelected = selectedSeoTier === tier.level;
+                        const tierColors = ["", "#94A3B8", "#4F7DF3", "#F59E0B"];
+                        const color = tierColors[tier.level] ?? "#94A3B8";
+                        return (
+                          <motion.button
+                            key={tier.level}
+                            onClick={() => setSelectedSeoTier(selectedSeoTier === tier.level ? 0 : tier.level)}
+                            style={{
+                              background: isSelected ? `${color}15` : "rgba(15,23,42,0.5)",
+                              border: isSelected ? `2px solid ${color}60` : `1px solid ${DS.border}`,
+                              borderRadius: 14, padding: "16px 14px", cursor: "pointer",
+                              textAlign: "left", position: "relative", overflow: "hidden",
+                              transition: "all 0.2s",
+                            }}
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                          >
+                            {isSelected && (
+                              <div style={{
+                                position: "absolute", top: 10, right: 10,
+                                width: 22, height: 22, borderRadius: "50%",
+                                background: color, display: "flex", alignItems: "center", justifyContent: "center",
+                              }}>
+                                <Check size={12} style={{ color: "#fff", strokeWidth: 3 }} />
+                              </div>
+                            )}
+                            <div style={{ color: isSelected ? color : DS.text4, fontSize: 9, fontFamily: DS.mono, letterSpacing: "0.15em", marginBottom: 6, transition: "color 0.2s" }}>
+                              {tier.name.toUpperCase()}
+                            </div>
+                            <div style={{ color: DS.text, fontFamily: DS.heading, fontSize: 18, fontWeight: 800, marginBottom: 4 }}>
+                              {fmtVND(tier.basePrice)}
+                            </div>
+                            <div style={{ color: DS.text4, fontSize: 10, lineHeight: 1.4 }}>
+                              {tier.shortDesc}
+                            </div>
+                          </motion.button>
+                        );
+                      })}
+                    </div>
+
+                    {/* SEO Feature Matrix — only shown when a tier is selected */}
+                    {selectedSeoTier > 0 && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <SEOPackageFeatureTable
+                          features={seoFeatures}
+                          selectedTier={selectedSeoTier}
+                          tiers={seoTiers}
+                        />
+                      </motion.div>
+                    )}
+
+                    {/* SEO hint */}
+                    {selectedSeoTier === 0 && (
+                      <div style={{
+                        padding: "14px 16px", borderRadius: 12,
+                        background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.2)",
+                        display: "flex", alignItems: "center", gap: 10,
+                      }}>
+                        <span style={{ fontSize: 18 }}>💡</span>
+                        <div>
+                          <p style={{ color: DS.text2, fontSize: 12, fontWeight: 600, marginBottom: 2 }}>
+                            Bạn chưa chọn gói SEO
+                          </p>
+                          <p style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono }}>
+                            Chọn một gói SEO bên trên để xem chi tiết tính năng. Bạn có thể đặt SEO cùng website trong cùng một đơn hàng.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
               {/* ── STEP 1: Domain ──────────────────────────────────────── */}
               {step === 1 && (
                 <div>
+                  {/* Header */}
                   <div className="mb-6 p-5 rounded-2xl" style={{ background: "rgba(15,23,42,0.7)", border: `1px solid ${DS.cyan}15` }}>
                     <div style={{ color: DS.cyan, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.22em", marginBottom: 8 }}>ĐĂNG KÝ TÊN MIỀN</div>
-                    <h3 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 26, fontWeight: 900, letterSpacing: "0.04em", marginBottom: 6 }}>Chọn tên miền cho website</h3>
-                    <p style={{ color: DS.text3, fontSize: 14, lineHeight: 1.7 }}>Nhập tên miền bạn mong muốn và chọn đuôi phù hợp. Bạn có thể bỏ qua nếu đã có sẵn tên miền.</p>
+                    <h3 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 26, fontWeight: 900, letterSpacing: "0.04em", marginBottom: 6 }}>Kiểm tra & đăng ký tên miền</h3>
+                    <p style={{ color: DS.text3, fontSize: 14, lineHeight: 1.7 }}>
+                      Nhập tên miền bạn mong muốn — chúng tôi kiểm tra tất cả đuôi (.com, .vn...) cùng lúc. Bạn có thể chọn nhiều tên miền để bảo vệ thương hiệu.
+                    </p>
                   </div>
 
-                  <div className="mb-6">
-                    <label style={{ color: DS.text3, fontSize: 12, fontFamily: DS.mono, letterSpacing: "0.1em", display: "block", marginBottom: 8 }}>TÊN MIỀN BẠN MUỐN ĐĂNG KÝ</label>
-                    <div className="flex gap-3">
-                      <input value={domainName} onChange={e => setDomainName(e.target.value)} placeholder="ví dụ: mysite.com"
-                        style={{ flex: 1, background: "rgba(15,23,42,0.6)", border: `1px solid ${DS.border}`, borderRadius: 10, padding: "12px 16px", color: DS.text, fontSize: 15, outline: "none", fontFamily: DS.body, boxSizing: "border-box" }} />
+                  {/* ── Search bar ── */}
+                  <div className="mb-6 p-5 rounded-2xl" style={{ background: "rgba(15,23,42,0.5)", border: `1px solid ${DS.cyan}20` }}>
+                    <div style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.1em", marginBottom: 10 }}>TÊN MIỀN BẠN MUỐN ĐĂNG KÝ</div>
+
+                    {/* Input row: name + TLD dropdown + search button */}
+                    <div className="flex gap-3 mb-4">
+                      <input
+                        value={domainQuery}
+                        onChange={e => setDomainQuery(e.target.value.replace(/[^a-zA-Z0-9À-ỹ]/g, ""))}
+                        onKeyDown={e => e.key === "Enter" && domainQuery && handleDomainSearch()}
+                        placeholder="ví dụ: mysite"
+                        style={{
+                          flex: 1,
+                          background: "rgba(15,23,42,0.6)",
+                          border: `1px solid ${DS.border}`,
+                          borderRadius: 10,
+                          padding: "12px 16px",
+                          color: DS.text,
+                          fontSize: 16,
+                          fontWeight: 600,
+                          outline: "none",
+                          fontFamily: DS.body,
+                          boxSizing: "border-box",
+                        }}
+                      />
                       {domainPrices.length > 0 && (
-                        <select value={domainName.includes(".") ? "." + domainName.split(".").pop() : ".com"}
-                          onChange={e => { const base = domainName.includes(".") ? domainName.split(".")[0] : domainName; setDomainName(base + e.target.value); }}
-                          style={{ background: "rgba(15,23,42,0.8)", border: `1px solid ${DS.border}`, borderRadius: 10, padding: "12px 14px", color: DS.text, fontSize: 14, fontFamily: DS.mono, outline: "none", cursor: "pointer" }}>
-                          {domainPrices.map(d => <option key={d.extension} value={d.extension} style={{ background: "#0F172A" }}>{d.extension}</option>)}
+                        <select
+                          value={domainSelectedTld}
+                          onChange={e => setDomainSelectedTld(e.target.value)}
+                          style={{
+                            background: "rgba(15,23,42,0.8)",
+                            border: `1px solid ${DS.border}`,
+                            borderRadius: 10,
+                            padding: "12px 14px",
+                            color: DS.text,
+                            fontSize: 14,
+                            fontFamily: DS.mono,
+                            outline: "none",
+                            cursor: "pointer",
+                          }}
+                        >
+                          {domainPrices.map(d => (
+                            <option key={d.extension} value={d.extension} style={{ background: "#0F172A" }}>
+                              {d.extension}
+                            </option>
+                          ))}
                         </select>
                       )}
+                      <motion.button
+                        onClick={handleDomainSearch}
+                        disabled={!domainQuery || isSearchingDomain}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        style={{
+                          padding: "12px 24px",
+                          borderRadius: 10,
+                          background: !domainQuery || isSearchingDomain ? "rgba(59,130,246,0.2)" : DS.blue,
+                          border: "none",
+                          color: !domainQuery ? DS.text4 : "#fff",
+                          fontSize: 14,
+                          fontWeight: 700,
+                          fontFamily: DS.mono,
+                          cursor: !domainQuery || isSearchingDomain ? "not-allowed" : "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                          whiteSpace: "nowrap",
+                          transition: "all 0.15s",
+                        }}
+                      >
+                        {isSearchingDomain ? (
+                          <>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: "spin 0.8s linear infinite" }}>
+                              <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                            </svg>
+                            Đang kiểm tra...
+                          </>
+                        ) : (
+                          <>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                              <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+                            </svg>
+                            Tìm kiếm
+                          </>
+                        )}
+                      </motion.button>
                     </div>
-                    {(() => {
-                      const matchedExt = domainName.includes(".") ? domainPrices.find(d => domainName.endsWith(d.extension)) : null;
-                      return (<>
-                        {matchedExt && (
-                          <div className="mt-2 flex items-center gap-2">
-                            <Check size={11} style={{ color: DS.green }} />
-                            <span style={{ color: DS.green, fontSize: 11, fontFamily: DS.mono }}>Đăng ký {matchedExt.extension}: {fmtVND(matchedExt.registrationPrice)}/{matchedExt.periodVi}</span>
-                            <span style={{ color: DS.text5, fontSize: 10 }}>— Gia hạn: {fmtVND(matchedExt.renewalPrice)}/năm</span>
+
+                    {/* Search hint */}
+                    {!domainSearchResults.length && !isSearchingDomain && domainQuery && (
+                      <p style={{ color: DS.text4, fontSize: 12, fontFamily: DS.mono }}>
+                        Nhấn <strong style={{ color: DS.text3 }}>Tìm kiếm</strong> để kiểm tra tất cả đuôi tên miền cho "{domainQuery}"
+                      </p>
+                    )}
+
+                    {/* Search results */}
+                    {domainSearchResults.length > 0 && (
+                      <div>
+                        <div style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, marginBottom: 10 }}>
+                          Kết quả cho "{domainQuery}" — chọn tên miền bạn muốn đăng ký:
+                        </div>
+
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 10, marginBottom: 16 }}>
+                          {domainSearchResults.map(result => {
+                            const fullDomain = domainQuery + result.extension;
+                            const isSelected = selectedDomains.some(d => d.extension === result.extension);
+                            return (
+                              <motion.div
+                                key={result.extension}
+                                onClick={() => {
+                                  if (result.available) {
+                                    setSelectedDomains(prev =>
+                                      isSelected
+                                        ? prev.filter(d => d.extension !== result.extension)
+                                        : [...prev, result]
+                                    );
+                                  }
+                                }}
+                                whileHover={result.available ? { scale: 1.02 } : {}}
+                                style={{
+                                  padding: "14px",
+                                  borderRadius: 12,
+                                  background: isSelected
+                                    ? `rgba(34,197,94,0.1)`
+                                    : result.available
+                                      ? "rgba(15,23,42,0.6)"
+                                      : "rgba(15,23,42,0.3)",
+                                  border: isSelected
+                                    ? "1.5px solid rgba(34,197,94,0.5)"
+                                    : result.available
+                                      ? "1.5px solid rgba(255,255,255,0.08)"
+                                      : "1px solid rgba(255,255,255,0.04)",
+                                  cursor: result.available ? "pointer" : "not-allowed",
+                                  opacity: result.available ? 1 : 0.5,
+                                  transition: "all 0.15s",
+                                }}
+                              >
+                                <div className="flex items-start justify-between gap-2 mb-2">
+                                  <div>
+                                    <div style={{ color: isSelected ? DS.green : DS.text, fontSize: 14, fontWeight: 700, fontFamily: DS.mono }}>
+                                      {fullDomain}
+                                    </div>
+                                    {result.note && (
+                                      <div style={{ color: DS.amber, fontSize: 10, fontFamily: DS.mono, marginTop: 2 }}>
+                                        {result.note}
+                                      </div>
+                                    )}
+                                  </div>
+                                  {isSelected && (
+                                    <div style={{ width: 20, height: 20, borderRadius: "50%", background: DS.green, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                                      <Check size={11} style={{ color: "#fff" }} strokeWidth={3} />
+                                    </div>
+                                  )}
+                                </div>
+                                <div style={{ color: isSelected ? DS.green : DS.text3, fontSize: 13, fontFamily: DS.mono, fontWeight: 700 }}>
+                                  {fmtVND(result.registrationPrice)}
+                                </div>
+                                <div style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono }}>
+                                  Gia hạn: {fmtVND(result.renewalPrice)}/năm
+                                </div>
+                                {!result.available && (
+                                  <div style={{ color: DS.red, fontSize: 10, fontFamily: DS.mono, marginTop: 4 }}>
+                                    Đã được đăng ký
+                                  </div>
+                                )}
+                              </motion.div>
+                            );
+                          })}
+                        </div>
+
+                        {/* Selected domains summary */}
+                        {selectedDomains.length > 0 && (
+                          <div className="mb-4 p-4 rounded-xl" style={{ background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.25)" }}>
+                            <div className="flex items-center gap-2 mb-3">
+                              <Check size={14} style={{ color: DS.green }} />
+                              <span style={{ color: DS.green, fontSize: 12, fontFamily: DS.mono, fontWeight: 700 }}>
+                                {selectedDomains.length} tên miền đã chọn
+                              </span>
+                              <span style={{ color: DS.green, fontSize: 13, fontFamily: DS.mono, marginLeft: "auto" }}>
+                                Tổng: <strong>{fmtVND(selectedDomains.reduce((s, d) => s + d.registrationPrice, 0))}</strong>
+                              </span>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              {selectedDomains.map(d => (
+                                <span
+                                  key={d.extension}
+                                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs"
+                                  style={{ background: `${DS.green}15`, color: DS.green, border: "1px solid rgba(34,197,94,0.3)", fontFamily: DS.mono }}
+                                >
+                                  🌐 {domainQuery}{d.extension}
+                                  <button
+                                    onClick={e => { e.stopPropagation(); setSelectedDomains(prev => prev.filter(x => x.extension !== d.extension)); }}
+                                    style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", color: DS.green, opacity: 0.7 }}
+                                  >
+                                    <X size={10} />
+                                  </button>
+                                </span>
+                              ))}
+                            </div>
                           </div>
                         )}
-                        {domainName && !matchedExt && domainName.includes(".") && (
-                          <div className="mt-2"><span style={{ color: DS.amber, fontSize: 11 }}>⚠ Không tìm thấy giá cho .{domainName.split(".").pop()}</span></div>
-                        )}
-                        {domainName && matchedExt?.note && (
-                          <div className="mt-1 px-3 py-2 rounded-lg" style={{ background: "rgba(234,179,8,0.07)", border: "1px solid rgba(234,179,8,0.2)" }}>
-                            <span style={{ color: DS.amber, fontSize: 11 }}>{matchedExt.note}</span>
+
+                        {/* eKYC Notice */}
+                        <div className="p-4 rounded-xl" style={{ background: "rgba(234,179,8,0.06)", border: "1px solid rgba(234,179,8,0.2)" }}>
+                          <div className="flex items-start gap-3">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={DS.amber} strokeWidth="2" style={{ flexShrink: 0, marginTop: 2 }}>
+                              <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+                            </svg>
+                            <div>
+                              <div style={{ color: DS.amber, fontSize: 12, fontWeight: 700, fontFamily: DS.mono, marginBottom: 4 }}>
+                                Thông tin cần thiết sau khi duyệt website
+                              </div>
+                              <p style={{ color: DS.text4, fontSize: 12, lineHeight: 1.6 }}>
+                                Sau giai đoạn khách hàng duyệt trang web, bàn giao và trả 100% chi phí — tên miền sẽ cần thông tin <strong style={{ color: DS.text3 }}>đại diện cá nhân đứng tên trang web</strong> theo quy định Bộ Công Thương. Chúng tôi sẽ liên hệ để thu thập thông tin này.
+                              </p>
+                            </div>
                           </div>
-                        )}
-                      </>);
-                    })()}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
-                  {/* Purchase timing */}
-                  {domainName && domainName.includes(".") && domainPrices.find(d => domainName.endsWith(d.extension)) && (
-                    <div className="mb-6 p-4 rounded-xl" style={{ background: "rgba(15,23,42,0.5)", border: `1px solid ${DS.border}` }}>
-                      <div style={{ color: DS.text2, fontSize: 12, fontFamily: DS.mono, marginBottom: 12 }}>BẠN MUỐN ĐĂNG KÝ KHI NÀO?</div>
-                      <div className="flex flex-col sm:flex-row gap-3">
-                        {[{ now: true, label: "Đăng ký ngay bây giờ", desc: "Domain được đăng ký trước khi bàn giao web — website hoạt động ngay khi bàn giao.", color: DS.blue, bg: "rgba(59,130,246,0.1)", border: "1.5px solid rgba(59,130,246,0.4)" },
-                        { now: false, label: "Mua sau khi bàn giao", desc: "Bạn tự chuẩn bị domain riêng — LOOP hỗ trợ kỹ thuật cấu hình miễn phí.", color: DS.purple, bg: "rgba(129,140,248,0.08)", border: "1.5px solid rgba(129,140,248,0.3)" }
-                        ].map(opt => (
-                          <motion.button key={String(opt.now)} onClick={() => setDomainPurchaseNow(opt.now)} className="flex-1 text-left p-4 rounded-xl"
-                            style={{ background: domainPurchaseNow === opt.now ? opt.bg : "rgba(15,23,42,0.3)", border: domainPurchaseNow === opt.now ? opt.border : `1px solid ${DS.border}`, cursor: "pointer" }}
-                            whileHover={{ scale: 1.01 }}>
-                            <div className="flex items-center gap-2 mb-2">
-                              <div className="w-4 h-4 rounded-full flex items-center justify-center" style={{ background: domainPurchaseNow === opt.now ? opt.color : "transparent", border: domainPurchaseNow === opt.now ? "none" : `1.5px solid ${DS.text4}` }}>
-                                {domainPurchaseNow === opt.now && <Check size={9} style={{ color: "#fff" }} />}
-                              </div>
-                              <span style={{ color: DS.text, fontSize: 13, fontWeight: 600 }}>{opt.label}</span>
-                            </div>
-                            <div style={{ color: DS.text4, fontSize: 11, marginLeft: 24 }}>{opt.desc}</div>
-                          </motion.button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Domain price table */}
+                  {/* Domain price reference table */}
                   {domainPrices.length > 0 && (
                     <div>
                       <div style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, marginBottom: 8 }}>BẢNG GIÁ TÊN MIỀN (tham khảo)</div>
@@ -1495,7 +1630,7 @@ export function BookingWizardClient({ locale }: Props) {
                           {selectedPkg && <span className="px-3 py-1.5 rounded-lg text-xs" style={{ background: `${pkgColor}15`, color: pkgColor, border: `1px solid ${pkgColor}30`, fontFamily: DS.mono, fontWeight: 600 }}>{selectedPkg.name}</span>}
                           {selectedFeatures.length > 0 && <span className="px-3 py-1.5 rounded-lg text-xs" style={{ background: `${DS.cyan}12`, color: DS.cyan, border: `1px solid ${DS.cyan}30`, fontFamily: DS.mono }}>+{selectedFeatures.length} tính năng</span>}
                           {selectedExtras.length > 0 && <span className="px-3 py-1.5 rounded-lg text-xs" style={{ background: `${DS.purple}12`, color: DS.purple, border: `1px solid ${DS.purple}30`, fontFamily: DS.mono }}>+{selectedExtras.length} dịch vụ</span>}
-                          {domainName && <span className="px-3 py-1.5 rounded-lg text-xs" style={{ background: `${DS.cyan}12`, color: DS.cyan, border: `1px solid ${DS.cyan}30`, fontFamily: DS.mono }}>🌐 {domainName}</span>}
+                          {selectedDomains.length > 0 && <span className="px-3 py-1.5 rounded-lg text-xs" style={{ background: `${DS.cyan}12`, color: DS.cyan, border: `1px solid ${DS.cyan}30`, fontFamily: DS.mono }}>🌐 {domainQuery} + {selectedDomains.length} tên miền</span>}
                         </div>
                         <button onClick={() => setStep(0)} className="px-3 py-1.5 rounded-lg text-xs" style={{ color: DS.blue, background: `${DS.blue}10`, border: `1px solid ${DS.blue}30`, fontFamily: DS.mono, cursor: "pointer" }}>← Sửa lựa chọn</button>
                       </div>
@@ -1745,18 +1880,6 @@ export function BookingWizardClient({ locale }: Props) {
 
         </div>
       </section>
-      {/* Package Comparison Modal */}
-      <AnimatePresence>
-        {showCompareModal && (
-          <PackageComparisonModal
-            packages={packages}
-            currentPackageId={selectedPackage}
-            locale={locale}
-            onClose={() => setShowCompareModal(false)}
-            onSelect={(id) => { setSelectedPackage(id); setShowCompareModal(false); }}
-          />
-        )}
-      </AnimatePresence>
 
       <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } `}</style></main>
   );

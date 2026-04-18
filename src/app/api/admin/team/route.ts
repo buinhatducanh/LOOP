@@ -22,26 +22,34 @@ export async function GET(req: NextRequest) {
     const { where, orderBy } = buildQueryFromParams(searchParams, TEAM_MEMBER_FILTER_CONFIG);
     const { page, limit } = parsePagination(searchParams);
 
-    const [members, total] = await Promise.all([
-      prisma.teamMember.findMany({
-        where,
-        orderBy,
-        skip: (page - 1) * limit,
-        take: limit,
-        include: {
-          memberExpertise: {
-            include: {
-              expertise: true,
+    // Pre-fetch departments for label resolution
+    const [departments, [members, total]] = await Promise.all([
+      prisma.department.findMany({ select: { id: true, key: true, name: true } }),
+      Promise.all([
+        prisma.teamMember.findMany({
+          where,
+          orderBy,
+          skip: (page - 1) * limit,
+          take: limit,
+          include: {
+            departmentRelation: { select: { id: true, key: true, name: true } },
+            memberExpertise: {
+              include: {
+                expertise: true,
+              },
+            },
+            lpTransactions: {
+              orderBy: { createdAt: "desc" },
+              take: 30,
             },
           },
-          lpTransactions: {
-            orderBy: { createdAt: "desc" },
-            take: 30,
-          },
-        },
-      }),
-      prisma.teamMember.count({ where }),
+        }),
+        prisma.teamMember.count({ where }),
+      ]),
     ]);
+
+    const deptIdToName = new Map(departments.map((d) => [d.id, d.name]));
+    const deptKeyToName = new Map(departments.map((d) => [d.key, d.name]));
 
     // ── Aggregate approved LP per member and compute rank fields ───────────
     const memberIds = members.map((m) => m.id);
@@ -103,6 +111,19 @@ export async function GET(req: NextRequest) {
         rank = m.rank ?? "iron";
       }
       const userInfo = userMap.get(m.id);
+
+      // Resolve department label from FK (departmentRelation) — source of truth.
+      // Falls back to legacy scalar department field if FK is null.
+      let deptName = "";
+      if (m.departmentRelation?.id) {
+        deptName = deptIdToName.get(m.departmentRelation.id) ?? m.departmentRelation.name ?? m.departmentRelation.key ?? "";
+      } else if (m.departmentRelation?.key) {
+        deptName = deptKeyToName.get(m.departmentRelation.key) ?? m.departmentRelation.key;
+      } else if (m.department) {
+        // legacy scalar fallback (pre-FK data)
+        deptName = m.department;
+      }
+
       return addAvatar({
         ...m,
         // Expose level/XP/rank as stored (admin-set overrides take precedence
@@ -121,6 +142,9 @@ export async function GET(req: NextRequest) {
         roles: userInfo?.roles ?? [],
         // Rich transaction history — powers the stats panel rank history + mission logs
         lpTransactions: m.lpTransactions ?? [],
+        // Department from FK (source of truth) + display name
+        departmentId: m.departmentRelation?.id ?? null,
+        department: deptName,
       });
     });
 
