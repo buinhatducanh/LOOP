@@ -56,9 +56,10 @@ async function backup() {
   // Build lookup maps
   const expMap: Record<string, string[]> = {};
   for (const me of memberExpertise) {
-    if (!me.teamMemberId) continue;
-    if (!expMap[me.teamMemberId]) expMap[me.teamMemberId] = [];
-    expMap[me.teamMemberId].push(me.expertise.name);
+    const memberId = (me as unknown as { teamMemberId?: string }).teamMemberId ?? me.memberId;
+    if (!memberId) continue;
+    if (!expMap[memberId]) expMap[memberId] = [];
+    expMap[memberId].push(me.expertise.name);
   }
   const userMap: Record<string, object> = {};
   for (const u of users) {
@@ -92,22 +93,22 @@ async function backup() {
     shortBioKo: m.shortBioKo,
     shortBioZh: m.shortBioZh,
     image: m.image,
-    imageJa: m.imageJa,
-    imageKo: m.imageKo,
-    imageZh: m.imageZh,
     coverImage: m.coverImage,
     quote: m.quote,
     email: m.email,
     phone: m.phone,
     linkedin: m.linkedin,
+    twitter: m.twitter,
+    github: m.github,
+    facebook: m.facebook,
+    tiktok: m.tiktok,
     achievements: m.achievements,
     skills: m.skills,
-    socialLinks: m.socialLinks,
+    experience: m.experience,
     level: m.level,
     rank: m.rank,
     currentXp: m.currentXp,
     maxXp: m.maxXp,
-    totalXp: m.totalXp,
     availableLp: m.availableLp,
     lockedLp: m.lockedLp,
     isActive: m.isActive,
