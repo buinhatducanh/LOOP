@@ -30,7 +30,6 @@ interface Neon {
 const BR = 12; // border-radius of card
 
 function buildNeons(rank: RankKey, level: number, memberId: string | number): Neon[] {
-  const baseColor = "#818CF8"; // fallback
   const list: Neon[] = [];
 
   let mainCount: number;
@@ -39,36 +38,37 @@ function buildNeons(rank: RankKey, level: number, memberId: string | number): Ne
   let hasGlow: boolean;
   let glowBlur: number;
   let sw: number;
+  let baseColor: string;
 
   switch (rank) {
     case "iron":
       mainCount = level <= 4 ? 1 : level <= 9 ? 2 : 3;
-      speed = 8; trail = 0.04; hasGlow = false; glowBlur = 0; sw = 1.5;
+      speed = 10; trail = 0.04; hasGlow = false; glowBlur = 0; sw = 1.5; baseColor = "#9CA3AF";
       break;
     case "bronze":
       mainCount = level <= 19 ? 1 : level <= 24 ? 2 : 3;
-      speed = 5.5; trail = 0.08; hasGlow = false; glowBlur = 0; sw = 1.5;
+      speed = 7; trail = 0.08; hasGlow = false; glowBlur = 0; sw = 1.5; baseColor = "#CD7F32";
       break;
     case "silver":
       mainCount = level <= 39 ? 1 : level <= 44 ? 2 : 3;
-      speed = 4.0; trail = 0.13; hasGlow = true; glowBlur = 2.5; sw = 1.5;
+      speed = 5; trail = 0.13; hasGlow = true; glowBlur = 2.5; sw = 1.5; baseColor = "#CBD5E1";
       break;
     case "gold":
       mainCount = level <= 59 ? 1 : level <= 64 ? 2 : 3;
-      speed = 3.0; trail = 0.19; hasGlow = true; glowBlur = 5; sw = 2;
+      speed = 4; trail = 0.19; hasGlow = true; glowBlur = 5; sw = 2; baseColor = "#FFD700";
       break;
     case "platinum":
       mainCount = level <= 79 ? 1 : level <= 84 ? 2 : 3;
-      speed = 2.5; trail = 0.22; hasGlow = true; glowBlur = 7; sw = 2;
+      speed = 3.2; trail = 0.22; hasGlow = true; glowBlur = 7; sw = 2; baseColor = "#14B8A6";
       break;
     case "ruby":
       mainCount = level <= 99 ? 1 : level <= 104 ? 2 : 3;
-      speed = 1.8; trail = 0.17; hasGlow = true; glowBlur = 9; sw = 2;
+      speed = 2.5; trail = 0.17; hasGlow = true; glowBlur = 9; sw = 2; baseColor = "#EF4444";
       break;
     default: {
       // diamond — 5 layers
       mainCount = 5;
-      speed = 1.0; trail = 0.35; hasGlow = true; glowBlur = 14; sw = 1.8;
+      speed = 1.5; trail = 0.35; hasGlow = true; glowBlur = 14; sw = 1.8; baseColor = "#818CF8";
     }
   }
 
@@ -187,8 +187,18 @@ export const LEDRunner = memo(function LEDRunner({
   }
 
   const [w, h] = dims;
-  const pd = clockwisePath(w, h, BR);
-  const P = calcPerimeter(w, h, BR);
+  // Inset=8: path stroke sits 8px inward from card edge — glow blur max 14px
+  // stays within 12px border-radius boundary → no corner clipping
+  const inset = 8;
+  if (w < inset * 2 + 32 || h < inset * 2 + 32) {
+    return (
+      <div ref={divRef} aria-hidden="true" style={{ position: "absolute", inset: 0, zIndex: 12 }} />
+    );
+  }
+  const iw = w - inset * 2;
+  const ih = h - inset * 2;
+  const pd = clockwisePath(iw, ih, BR);
+  const P = calcPerimeter(iw, ih, BR);
   const mainCount = neons.filter((n) => !n.isPreview).length;
   let mainSeen = 0;
 
@@ -198,7 +208,12 @@ export const LEDRunner = memo(function LEDRunner({
       aria-hidden="true"
       style={{ position: "absolute", inset: 0, pointerEvents: "none", borderRadius: BR, zIndex: 12 }}
     >
-      <svg width="100%" height="100%" style={{ position: "absolute", inset: 0, overflow: "visible" }}>
+      <svg
+        width="100%"
+        height="100%"
+        viewBox={`0 0 ${w - inset * 2} ${h - inset * 2}`}
+        style={{ position: "absolute", inset: 0, overflow: "visible" }}
+      >
         <defs>
           {member.rank === "diamond" && (
             <linearGradient id={`diamond-grad-${member.id}`} x1="0%" y1="0%" x2="100%" y2="100%">

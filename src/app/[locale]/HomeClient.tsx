@@ -536,6 +536,12 @@ function HeroSection({ locale }: { locale: string }) {
  </motion.div>
 
  {/* Floating Diamond badge — top right */}
+ <style>{`
+ @keyframes diamond-glow-pulse {
+   0%, 100% { box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 16px rgba(129,140,248,0.25); }
+   50% { box-shadow: 0 8px 36px rgba(0,0,0,0.5), 0 0 28px rgba(129,140,248,0.4); }
+ }
+ `}</style>
  <motion.div
  style={{
  position: "absolute", top: "-2rem", left: "-1.25rem",
@@ -543,16 +549,11 @@ function HeroSection({ locale }: { locale: string }) {
  background: "rgba(1,21,50,0.60)",
  border: "1px solid rgba(129,140,248,0.5)",
  backdropFilter: "blur(20px)",
- boxShadow: "0 8px 32px rgba(0,0,0,0.5), 0 0 20px rgba(129,140,248,0.3)",
+ animation: "diamond-glow-pulse 2.5s ease-in-out infinite",
  }}
  animate={{
  y: [0, -4, 0],
  opacity: [0.9, 1, 0.9],
- boxShadow: [
- "0 8px 32px rgba(0,0,0,0.5), 0 0 16px rgba(129,140,248,0.25)",
- "0 8px 36px rgba(0,0,0,0.5), 0 0 28px rgba(129,140,248,0.4)",
- "0 8px 32px rgba(0,0,0,0.5), 0 0 16px rgba(129,140,248,0.25)",
- ],
  }}
  transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
  >

@@ -545,6 +545,8 @@ model TeamMember {
   @@index([departmentId, isActive])
   @@index([rank, isActive])
   @@map("team_members")
+  /// Multi-department: member co the tham gia nhieu phong ban cung luc
+  memberDepartments      MemberDepartment[]
 }
 
 model Department {
@@ -560,11 +562,32 @@ model Department {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
-  members TeamMember[]
-  quests  Quest[]
+  /// Junction table — member đă tham gia nhiều phòng ban
+  memberDepartments MemberDepartment[]
+  /// Reverse FK for TeamMember.departmentId (Truong phong)
+  members          TeamMember[]
+  quests         Quest[]
 
   @@index([headId])
   @@map("departments")
+}
+
+/// Junction table: thành viên có thể thuộc nhiều phòng ban
+/// departmentId = phòng ban tham gia (nullable = chưa phân phòng)
+model MemberDepartment {
+  id           String      @id @default(cuid())
+  memberId     String      @map("member_id")
+  member       TeamMember  @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  departmentId String?     @map("department_id")
+  department   Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  /// Phòng ban này là primary (hiển thị chính)
+  isPrimary    Boolean     @default(false) @map("is_primary")
+  joinedAt     DateTime    @default(now()) @map("joined_at")
+
+  @@unique([memberId, departmentId])
+  @@index([memberId])
+  @@index([departmentId])
+  @@map("member_departments")
 }
 
 model Expertise {

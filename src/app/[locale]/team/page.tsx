@@ -11,6 +11,7 @@ import { routing } from "@/i18n/routing";
 import { prisma } from "@/lib/prisma";
 import { parseLocaleParam, mapLocalizedTeamMember } from "@/lib/i18n/localization";
 import { TeamGuildClient } from "@/components/landing/guild/TeamGuildClient";
+import { computeRankFieldsFromLp } from "@/lib/rank/xp";
 import type { Metadata } from "next";
 
 type Props = { params: Promise<{ locale: string }> };
@@ -81,7 +82,57 @@ export default async function TeamPage({ params }: Props) {
       },
       orderBy: [{ isFeatured: "desc" }, { name: "asc" }],
     });
-    members = (raw as Record<string, unknown>[]).map((m) => mapLocalizedTeamMember(m, resolvedLocale));
+
+    // Aggregate LP from both sources per member (same logic as leaderboard)
+    const memberIds = raw.map((m) => m.id);
+    const [awardAggs, txAggs] = await Promise.all([
+      memberIds.length > 0
+        ? prisma.lpAward.groupBy({
+            by: ["memberId"],
+            where: { memberId: { in: memberIds }, status: "approved" },
+            _sum: { lpAmount: true },
+          })
+        : Promise.resolve([]),
+      memberIds.length > 0
+        ? prisma.lpTransaction.groupBy({
+            by: ["memberId"],
+            where: {
+              memberId: { in: memberIds },
+              type: "award",
+              status: "completed",
+              amount: { gt: 0 },
+            },
+            _sum: { amount: true },
+          })
+        : Promise.resolve([]),
+    ]);
+
+    // Build LP map
+    const lpMap = new Map<string, number>();
+    for (const a of awardAggs) {
+      lpMap.set(a.memberId, (lpMap.get(a.memberId) ?? 0) + (a._sum.lpAmount ?? 0));
+    }
+    for (const t of txAggs) {
+      lpMap.set(t.memberId, (lpMap.get(t.memberId) ?? 0) + (t._sum.amount ?? 0));
+    }
+
+    // Compute rank + enrich member data (same fallback logic as leaderboard)
+    members = raw.map((m) => {
+      const totalLp = lpMap.get(m.id) ?? 0;
+      const computed = computeRankFieldsFromLp(totalLp);
+
+      // Use persisted DB fields if they have real data; fall back to computed
+      const level = m.level > 1 || (m.currentXp ?? 0) > 0 ? m.level : computed.level;
+      const currentXp = (m.currentXp ?? 0) > 0 ? m.currentXp : computed.currentXp;
+      const maxXp = m.maxXp >= 100 ? m.maxXp : computed.maxXp;
+      const rank = m.rank && m.rank !== "iron" ? m.rank : computed.rank;
+
+      return {
+        ...mapLocalizedTeamMember({ ...m, level, rank, currentXp, maxXp }, resolvedLocale),
+        availableLp: m.availableLp ?? 0,
+        lockedLp: m.lockedLp ?? 0,
+      };
+    });
   } catch {
     members = [];
   }

@@ -51,15 +51,29 @@ export async function GET(req: NextRequest) {
     const deptIdToName = new Map(departments.map((d) => [d.id, d.name]));
     const deptKeyToName = new Map(departments.map((d) => [d.key, d.name]));
 
-    // ── Aggregate approved LP per member and compute rank fields ───────────
+    // ── Aggregate LP from BOTH sources per member and compute rank fields ───
     const memberIds = members.map((m) => m.id);
 
-    const [lpAggregates, users] = await Promise.all([
-      prisma.lpAward.groupBy({
-        by: ["memberId"],
-        where: { memberId: { in: memberIds }, status: "approved" },
-        _sum: { lpAmount: true },
-      }),
+    const [awardAggs, txAggs, users] = await Promise.all([
+      memberIds.length > 0
+        ? prisma.lpAward.groupBy({
+            by: ["memberId"],
+            where: { memberId: { in: memberIds }, status: "approved" },
+            _sum: { lpAmount: true },
+          })
+        : Promise.resolve([]),
+      memberIds.length > 0
+        ? prisma.lpTransaction.groupBy({
+            by: ["memberId"],
+            where: {
+              memberId: { in: memberIds },
+              type: "award",
+              status: "completed",
+              amount: { gt: 0 },
+            },
+            _sum: { amount: true },
+          })
+        : Promise.resolve([]),
       // Join User to get system role + ALL junction roles (UserRole junction table)
       prisma.user.findMany({
         where: { teamMemberId: { in: memberIds } },
@@ -72,9 +86,14 @@ export async function GET(req: NextRequest) {
       }),
     ]);
 
-    const lpMap = new Map<string, number>(
-      lpAggregates.map((a) => [a.memberId, a._sum.lpAmount ?? 0])
-    );
+    // Merge both sources into lpMap
+    const lpMap = new Map<string, number>();
+    for (const a of awardAggs) {
+      lpMap.set(a.memberId, (lpMap.get(a.memberId) ?? 0) + (a._sum.lpAmount ?? 0));
+    }
+    for (const t of txAggs) {
+      lpMap.set(t.memberId, (lpMap.get(t.memberId) ?? 0) + (t._sum.amount ?? 0));
+    }
 
     // userMap: teamMemberId → { role, roles[] }
     const userMap = new Map<string, { role: string; roles: string[] }>();
