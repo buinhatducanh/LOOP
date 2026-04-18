@@ -28,25 +28,32 @@ import { academyLogger } from "@/lib/logger";
 import { withIdempotency } from "@/lib/idempotency";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { syncRankFields } from "@/lib/rank/xp";
+import { requireAuth } from "@/lib/auth/permissions";
+import { LP_VND_RATE } from "@/lib/constants";
 
-const LP_VND_RATE = 20_000; // legacy — use @/lib/constants in new code
 const MAX_LP_PAYMENT_RATIO = 0.5; // max 50% of course price can be paid with LP
 
 // GET /api/academy/enroll — get user's enrollments
 export async function GET(req: NextRequest) {
   try {
+    const session = await requireAuth(req);
     const { searchParams } = new URL(req.url);
     const userId = searchParams.get("userId");
     const memberId = searchParams.get("memberId");
 
-    if (!userId && !memberId) {
+    // Auth: session user can only read their own enrollments unless admin
+    const isAdmin = session.roleLevel <= 1;
+    const targetUserId = isAdmin ? (userId ?? session.userId) : session.userId;
+    const targetMemberId = isAdmin ? memberId : session.teamMemberId;
+
+    if (!targetUserId && !targetMemberId) {
       return badRequest("userId or memberId is required");
     }
 
     const enrollments = await prisma.enrollment.findMany({
       where: {
-        ...(userId ? { userId } : {}),
-        ...(memberId ? { memberId } : {}),
+        ...(targetUserId ? { userId: targetUserId } : {}),
+        ...(targetMemberId ? { memberId: targetMemberId } : {}),
       },
       include: {
         course: {
@@ -77,7 +84,8 @@ export async function GET(req: NextRequest) {
 export const POST = withIdempotency(
   "create_enrollment",
   async (req: NextRequest) => {
-    // ── Rate limit: 20/min per IP ─────────────────────────────────────────────
+    // ── Auth + Rate limit: 20/min per IP ──────────────────────────────────────
+    const session = await requireAuth(req);
     const rateLimitResult = await applyRateLimit(req, "public");
     if (!rateLimitResult.allowed) return rateLimitResult.response!;
 
@@ -91,7 +99,11 @@ export const POST = withIdempotency(
         lpAmount = 0,
       } = body;
 
-      if (!courseId || (!userId && !memberId)) {
+      // Determine actor: staff uses session.teamMemberId, customer uses session.userId
+      const actorMemberId = memberId ?? session.teamMemberId;
+      const actorUserId = userId ?? session.userId;
+
+      if (!courseId || (!actorUserId && !actorMemberId)) {
         return badRequest("courseId and userId or memberId are required");
       }
 
@@ -110,14 +122,14 @@ export const POST = withIdempotency(
       const existing = await prisma.enrollment.findFirst({
         where: {
           courseId,
-          ...(userId ? { userId } : {}),
-          ...(memberId ? { memberId } : {}),
+          ...(actorUserId ? { userId: actorUserId } : {}),
+          ...(actorMemberId ? { memberId: actorMemberId } : {}),
           status: { in: ["active", "completed"] },
         },
       });
       if (existing) return conflict("Already enrolled in this course");
 
-      // Validate LP amount
+      // LP payment limits
       const maxLpAllowed = Math.floor((course.price / LP_VND_RATE) * MAX_LP_PAYMENT_RATIO);
       if (paymentMethod === "lp" && lpAmount < maxLpAllowed) {
         return badRequest(
@@ -141,29 +153,66 @@ export const POST = withIdempotency(
         paidAmount = course.price - lpCost * LP_VND_RATE;
       }
 
-      // Use transaction to ensure atomicity
+      // ── Transaction: enrollment + LP deduction + ledger entry ──────────────
       const enrollment = await prisma.$transaction(async (tx) => {
         if (lpCost > 0) {
-          if (memberId) {
-            const member = await tx.teamMember.update({
-              where: { id: memberId },
+          if (actorMemberId) {
+            // Staff: atomic LP deduction with TOCTOU guard
+            const result = await tx.teamMember.updateMany({
+              where: {
+                id: actorMemberId,
+                availableLp: { gte: lpCost },
+              },
               data: { availableLp: { decrement: lpCost } },
             });
-            if (member.availableLp < 0) throw new Error("Insufficient LP balance");
-          } else if (userId) {
-            const point = await tx.customerPoint.findFirst({ where: { userId }, select: { id: true, balance: true } });
-            if (!point || point.balance < lpCost) throw new Error("Insufficient LP balance");
-            await tx.customerPoint.update({
-              where: { id: point.id },
-              data: { balance: { decrement: lpCost }, totalSpent: { increment: lpCost } },
+            if (result.count === 0) {
+              throw new Error("Insufficient LP balance");
+            }
+
+            // Get updated balance for ledger
+            const member = await tx.teamMember.findUnique({
+              where: { id: actorMemberId },
+              select: { availableLp: true, name: true },
             });
+
+            // LP ledger entry
+            await tx.lpTransaction.create({
+              data: {
+                memberId: actorMemberId,
+                amount: -lpCost,
+                balanceAfter: member!.availableLp,
+                type: "spent",
+                status: "completed",
+                description: `Học phí khóa học: ${course.titleVi || course.title}`,
+                source: "academy_enrollment",
+                referenceId: courseId,
+                referenceType: "Course",
+                createdBy: session.userId,
+              },
+            });
+          } else if (actorUserId) {
+            // Customer: atomic LP deduction on CustomerPoint
+            const result = await tx.customerPoint.updateMany({
+              where: {
+                userId: actorUserId,
+                balance: { gte: lpCost },
+              },
+              data: {
+                balance: { decrement: lpCost },
+                totalSpent: { increment: lpCost },
+              },
+            });
+            if (result.count === 0) {
+              throw new Error("Insufficient LP balance");
+            }
           }
         }
+
         return tx.enrollment.create({
           data: {
             courseId,
-            userId: userId ?? null,
-            memberId: memberId ?? null,
+            userId: actorUserId ?? null,
+            memberId: actorMemberId ?? null,
             paidAmount,
             status: "active",
           },
@@ -175,9 +224,9 @@ export const POST = withIdempotency(
         });
       });
 
-      // P2-7: After LP deduction (member spending LP on education), sync rank fields
-      if (lpCost > 0 && memberId) {
-        await syncRankFields(memberId);
+      // After LP deduction (member spending LP on education), sync rank fields
+      if (lpCost > 0 && actorMemberId) {
+        await syncRankFields(actorMemberId);
       }
 
       academyLogger.info("Academy enrollment successful", {

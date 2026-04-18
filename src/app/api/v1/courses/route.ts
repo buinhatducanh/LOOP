@@ -38,6 +38,7 @@ export async function GET(req: Request) {
               rating: true,
               totalStudents: true,
               memberId: true,
+              avatar: true,
             },
           },
           _count: {
@@ -76,7 +77,7 @@ export async function GET(req: Request) {
             ? {
                 id: c.instructor.id,
                 name: c.instructor.name,
-                avatar: null, // Instructor model has no avatar field; FE uses dicebear fallback
+                avatar: c.instructor.avatar ?? null,
               }
             : null,
           instructorMemberId: c.instructorMemberId,

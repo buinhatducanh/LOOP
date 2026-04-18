@@ -31,6 +31,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { handleError, badRequest, notFound, ok } from "@/lib/api/response";
+import { requireAuth } from "@/lib/auth/permissions";
 
 // Simple sandbox: captures console.log output + error messages
 function runSandbox(code: string, language: string): { output: string; passed: boolean } {
@@ -75,6 +76,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await requireAuth(req);
     const { id: lessonId } = await params;
     const body = await req.json();
     const { userId, memberId, code, language = "javascript" } = body;
@@ -100,8 +102,8 @@ export async function POST(
     const exercise = await prisma.lessonExercise.create({
       data: {
         lessonId,
-        userId: userId ?? null,
-        memberId: memberId ?? null,
+        userId: (userId ?? session.userId) ?? null,
+        memberId: (memberId ?? session.teamMemberId) ?? null,
         code,
         language,
         output,

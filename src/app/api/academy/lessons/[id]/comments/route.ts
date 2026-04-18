@@ -30,6 +30,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { handleError, badRequest, notFound, ok, list, buildPagination } from "@/lib/api/response";
+import { requireAuth } from "@/lib/auth/permissions";
 
 // ─── Shared types ────────────────────────────────────────────────────────────
 
@@ -118,6 +119,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    await requireAuth(req);
     const { id: lessonId } = await params;
 
     const { searchParams } = req.nextUrl;
@@ -154,6 +156,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await requireAuth(req);
     const { id: lessonId } = await params;
     const body = await req.json();
     const { userId, memberId, content } = body;

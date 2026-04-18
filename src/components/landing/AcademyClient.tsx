@@ -1,6 +1,9 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { apiClient } from "@/lib/api/client";
+import { useAuthStore } from "@/app/store/authStore";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 import { DS, GRD } from "@/lib/design-tokens";
@@ -46,7 +49,11 @@ function useAcademyT(): AcademyI18n["t"] {
 
 // ─── Data ────────────────────────────────────────────────────────────────────
 
-const USER_LP = 15200;
+const LP_VND_RATE = 20_000; // 1 LP = 20,000 VND (khớp với BE @/lib/constants)
+function useUserLp(): number {
+  const user = useAuthStore((s) => s.user);
+  return user?.availableLp ?? 0;
+}
 
 const PATHS = [
   {
@@ -135,7 +142,7 @@ const FAQS = [
   },
   {
     q: "Thanh toán bằng LP được không?",
-    a: "Có. Bạn có thể dùng 100% LP, hoặc kết hợp LP + VNĐ. Tỷ lệ: 1,000 LP = 500,000 VNĐ.",
+    a: "Có. Bạn có thể dùng 100% LP, hoặc kết hợp LP + VNĐ. Tỷ lệ: 1 LP = 20,000 VNĐ (tối đa 50% giá khóa học bằng LP).",
   },
   {
     q: "Khóa học có cập nhật không?",
@@ -357,19 +364,29 @@ function PaymentModal({
   const [mode, setMode] = useState<"vnd" | "lp-partial" | "lp-full">("vnd");
   const [processing, setProcessing] = useState(false);
   const [done, setDone] = useState(false);
+  const [error, setError] = useState("");
 
-  const lpPartialPay = course.lpPrice ?? 0;
-  const lpFullPay = course.lpFullPrice ?? 0;
+  // LP calculations: 1 LP = 20,000 VND
+  const lpFullPay = Math.ceil((course.price ?? 0) / LP_VND_RATE);
+  const lpPartialPay = Math.ceil(lpFullPay * 0.5);
   const vndPartial = ((course.price ?? 0) * 0.5).toFixed(0);
 
-  const canPayLpFull = USER_LP >= lpFullPay;
-  const canPayLpPartial = USER_LP >= lpPartialPay;
+  const canPayLpFull = userLp >= lpFullPay;
+  const canPayLpPartial = userLp >= lpPartialPay;
 
   const handleEnroll = async () => {
     setProcessing(true);
-    await new Promise((r) => setTimeout(r, 1500));
-    setProcessing(false);
-    setDone(true);
+    setError("");
+    try {
+      const paymentMethod = mode === "vnd" ? "vnd" : mode === "lp-partial" ? "mixed" : "lp";
+      const lpAmount = mode === "lp-partial" ? lpPartialPay : mode === "lp-full" ? lpFullPay : 0;
+      await apiClient.post("/api/academy/enroll", { courseId: course.id, paymentMethod, lpAmount });
+      setProcessing(false);
+      setDone(true);
+    } catch (err: unknown) {
+      setProcessing(false);
+      setError(err instanceof Error ? err.message : "Dang ky that bai. Vui long thu lai.");
+    }
   };
 
   return (
@@ -461,14 +478,17 @@ function PaymentModal({
                     <span style={{ color: DS.purple, fontFamily: DS.mono, fontWeight: 800, fontSize: 14 }}>{lpFullPay.toLocaleString()} LP</span>
                   </div>
                   <div style={{ marginTop: 6, display: "flex", alignItems: "center", gap: 4 }}>
-                    <span style={{ color: DS.cyan, fontSize: 11, fontFamily: DS.mono }}>{USER_LP.toLocaleString()} LP</span>
+                    <span style={{ color: DS.cyan, fontSize: 11, fontFamily: DS.mono }}>{userLp.toLocaleString()} LP</span>
                     <div style={{ flex: 1, height: 4, background: DS.border, borderRadius: 2 }}>
-                      <div style={{ width: `${Math.min((USER_LP / lpFullPay) * 100, 100)}%`, height: "100%", background: DS.cyan, borderRadius: 2 }} />
+                      <div style={{ width: `${Math.min((userLp / lpFullPay) * 100, 100)}%`, height: "100%", background: DS.cyan, borderRadius: 2 }} />
                     </div>
                   </div>
                 </label>
               </div>
 
+              {error && (
+                <div style={{ color: DS.red, fontSize: 12, textAlign: "center", marginBottom: 8 }}>{error}</div>
+              )}
               <button
                 onClick={handleEnroll}
                 disabled={processing}
@@ -728,13 +748,44 @@ function InstructorCard({ ins }: { ins: typeof INSTRUCTORS[0] }) {
 
 export function AcademyClient({ locale }: { locale: string }) {
   const t = useTranslations("Academy");
+  const userLp = useUserLp();
   const [search, setSearch] = useState("");
   const [cat, setCat] = useState("");
   const [level, setLevel] = useState("");
   const [enrolling, setEnrolling] = useState<Course | null>(null);
 
+  // Fetch real courses from API (fallback to MOCK_COURSES if loading/error)
+  const { data: apiData } = useQuery({
+    queryKey: ["v1", "courses"],
+    queryFn: () => apiClient.get<{ data: any[] }>("/api/v1/courses"),
+  });
+
+  const courses = useMemo(() => {
+    if (apiData?.data?.length) {
+      return apiData.data.map((c) => ({
+        ...c,
+        id: c.id,
+        slug: c.slug ?? c.id,
+        price: c.price ?? 0,
+        lpPrice: c.lpPrice ?? Math.ceil((c.price ?? 0) / LP_VND_RATE * 0.5),
+        lpFullPrice: c.lpFullPrice ?? Math.ceil((c.price ?? 0) / LP_VND_RATE),
+        level: c.level ?? "Beginner",
+        rating: c.instructor?.rating ?? 0,
+        reviews: c.instructor?.totalStudents ?? 0,
+        totalStudents: c._count?.enrollments ?? 0,
+        lectureCount: c._count?.lessons ?? 0,
+        isFeatured: false,
+        hasCertificate: true,
+        tags: [],
+        instructor: c.instructor?.name ?? "",
+        instructorImage: c.instructor?.avatar ?? "",
+      }));
+    }
+    return MOCK_COURSES;
+  }, [apiData]);
+
   const filtered = useMemo(() => {
-    return MOCK_COURSES.filter((c) => {
+    return courses.filter((c) => {
       const q = search.toLowerCase();
       const matchSearch =
         !q ||
@@ -785,7 +836,7 @@ export function AcademyClient({ locale }: { locale: string }) {
               {t("lpBalance")}
             </span>
             <span style={{ color: DS.cyan, fontFamily: DS.mono, fontWeight: 800, fontSize: 16 }}>
-              {USER_LP.toLocaleString()} LP
+              {userLp.toLocaleString()} LP
             </span>
             <Link href={`/${locale}`} style={{ color: DS.blue, fontSize: 12, fontFamily: DS.mono, display: "flex", alignItems: "center", gap: 4 }}>
               {t("recharge")} <ArrowRight size={12} />

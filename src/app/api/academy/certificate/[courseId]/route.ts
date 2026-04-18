@@ -40,16 +40,18 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { handleError, badRequest, notFound } from "@/lib/api/response";
 import { createHash } from "crypto";
+import { requireAuth } from "@/lib/auth/permissions";
 
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ courseId: string }> }
 ) {
   try {
+    const session = await requireAuth(req);
     const { courseId } = await params;
     const { searchParams } = new URL(req.url);
-    const userId = searchParams.get("userId");
-    const memberId = searchParams.get("memberId");
+    const userId = searchParams.get("userId") ?? session.userId;
+    const memberId = searchParams.get("memberId") ?? session.teamMemberId;
 
     if (!userId && !memberId) {
       return badRequest("userId or memberId is required");
