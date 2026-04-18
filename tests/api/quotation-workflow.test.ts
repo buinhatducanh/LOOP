@@ -13,6 +13,9 @@ const mockPrisma = {
   serviceAttribute: { findMany: vi.fn() },
   addonService: { findMany: vi.fn() },
   infrastructureTier: { findMany: vi.fn() },
+  pricingHostingPlan: { findMany: vi.fn() },
+  pricingDomainPrice: { findMany: vi.fn() },
+  clientVipStatus: { findUnique: vi.fn(), create: vi.fn() },
   quoteRequest: { findUnique: vi.fn(), create: vi.fn(), update: vi.fn() },
   salesLead: { findFirst: vi.fn(), create: vi.fn() },
   quote: { create: vi.fn(), findMany: vi.fn(), count: vi.fn() },
@@ -37,6 +40,10 @@ beforeEach(() => {
   mockPrisma.serviceAttribute.findMany.mockResolvedValue([]);
   mockPrisma.addonService.findMany.mockResolvedValue([]);
   mockPrisma.infrastructureTier.findMany.mockResolvedValue([]);
+  mockPrisma.pricingHostingPlan.findMany.mockResolvedValue([]);
+  mockPrisma.pricingDomainPrice.findMany.mockResolvedValue([]);
+  mockPrisma.clientVipStatus.findUnique.mockResolvedValue(null);
+  mockPrisma.clientVipStatus.create.mockResolvedValue({ userEmail: "qa@example.com", tier: "regular" });
   mockPrisma.quoteRequest.findUnique.mockResolvedValue(null);
   mockPrisma.quoteRequest.create.mockResolvedValue(null);
   mockPrisma.quoteRequest.update.mockResolvedValue(null);

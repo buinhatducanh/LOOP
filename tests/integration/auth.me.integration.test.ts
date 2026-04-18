@@ -5,6 +5,12 @@ vi.mock("@/lib/auth/permissions", () => ({
   getSession: vi.fn(),
 }));
 
+vi.mock("@/lib/logger", () => ({
+  authLogger: { withSLO: vi.fn((msg, meta, fn) => fn() },
+  lpLogger: { warn: vi.fn(), error: vi.fn() },
+  orderLogger: { error: vi.fn() },
+}));
+
 describe("GET /api/admin/auth/me integration-style", () => {
   it("returns 401 when no session", async () => {
     const { getSession } = await import("@/lib/auth/permissions");

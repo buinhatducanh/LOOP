@@ -41,6 +41,21 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
     const existing = await prisma.revenueSplitConfig.findUnique({ where: { id } });
     if (!existing) return notFound("Config not found");
 
+    // BUG-02 FIX: validate SUM of active non-company configs <= 100
+    if (percentage !== undefined) {
+      const activeConfigs = await prisma.revenueSplitConfig.findMany({
+        where: { isActive: true, key: { not: "company" }, id: { not: id } },
+        select: { percentage: true },
+      });
+      const currentSum = activeConfigs.reduce((s, c) => s + c.percentage, 0);
+      if (currentSum + percentage > 100) {
+        return badRequest(
+          `Total percentage would be ${currentSum + percentage}% (limit: 100%). ` +
+          `Current sum (excluding this): ${currentSum}%. Please reduce other roles first.`
+        );
+      }
+    }
+
     // Recalculate: if changing one role's %, other roles stay as-is (admin manages totals)
     // No auto-rebalancing — admin must manually ensure sum ≤ 100
     const updated = await prisma.revenueSplitConfig.update({

@@ -1,9 +1,11 @@
 {
   "sidebar": {
     "groups": {
-      "management": "관리",
-      "products": "제품",
+      "website": "웹사이트 관리",
+      "operations": "운영",
+      "content": "콘텐츠",
       "finance": "재무",
+      "rewards": "보상",
       "system": "시스템"
     },
     "nav": {
@@ -29,6 +31,9 @@
       "lp": "LP 재무",
       "lp_manage": "LP 관리",
       "income_tax": "수입 및 세금",
+      "website": "웹사이트 관리",
+      "website_templates": "웹 템플릿",
+      "website_websites": "고객 웹사이트",
       "web_packages": "웹 패키지",
       "domain_prices": "도메인 가격",
       "addon_services": "추가 서비스",

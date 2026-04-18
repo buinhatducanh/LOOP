@@ -50,7 +50,7 @@ describe("message file structure", () => {
     const vi = await import("../../src/i18n/messages/vi.json");
     const namespaces = Object.keys(vi.default);
 
-    const required = ["nav", "home", "services", "portfolio", "blog", "team", "about", "contact", "common", "errors", "footer"];
+    const required = ["common", "home", "about", "services", "portfolio", "blog", "team", "contact", "auth", "footer"];
     for (const ns of required) {
       expect(namespaces).toContain(ns);
     }
@@ -77,7 +77,7 @@ describe("middleware routing logic", () => {
   it("should reject invalid locale prefixes", () => {
     expect(LOCALE_PREFIXES.includes("fr")).toBe(false);
     expect(LOCALE_PREFIXES.includes("de")).toBe(false);
-    expect(LOCALE_PREFIXES.includes("zh")).toBe(false);
+    expect(LOCALE_PREFIXES.includes("zh")).toBe(true); // zh is now a supported locale
   });
 
   it("should have default locale as VI", () => {

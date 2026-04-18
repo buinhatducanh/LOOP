@@ -12,6 +12,13 @@ export default defineConfig({
       "tests/**/*.test.{ts,tsx}",
       "tests/**/*.spec.{ts,tsx}",
     ],
+    exclude: [
+      "node_modules/**",
+      "src/test/**",
+      "src/generated/**",
+      "*.config.*",
+      "tests/e2e/**",   // Playwright E2E — run with `npm run e2e` not `vitest`
+    ],
     coverage: {
       provider: "v8",
       reporter: ["text", "html", "lcov"],

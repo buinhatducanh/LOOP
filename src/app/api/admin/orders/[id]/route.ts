@@ -54,7 +54,7 @@ export async function PUT(
     // Validate status if being updated — must be a known status for this order type
     if (data.status !== undefined) {
       const orderType = (existing.orderType as string) ?? "custom";
-      const validStatuses = orderType === "template" || orderType === "web-package"
+      const validStatuses = orderType === "template" || orderType === "web_package"
         ? TEMPLATE_ORDER_STATUSES
         : CUSTOM_ORDER_STATUSES;
 

@@ -26,8 +26,8 @@ describe("json-ld", () => {
       expect(org["@context"]).toBe("https://schema.org");
       expect(org["@type"]).toBe("Organization");
       expect(org.name).toBe("LOOP");
-      expect(org.url).toBe("https://loop.vn");
-      expect(org.logo).toBe("https://loop.vn/logo.png");
+      expect(org.url).toBe("https://www.loops.vn");
+      expect(org.logo).toBe("https://www.loops.vn/logo.png");
       expect(org.foundingDate).toBe("2016");
     });
 
@@ -108,7 +108,7 @@ describe("json-ld", () => {
       expect(member.name).toBe("Nguyễn Văn A");
       expect(member.jobTitle).toBe("Frontend Developer");
       expect(member.description).toBe("React expert with 5 years experience");
-      expect(member.url).toBe("https://loop.vn/team/nguyen-van-a");
+      expect(member.url).toBe("https://www.loops.vn/team/nguyen-van-a");
       expect(member.worksFor!["@type"]).toBe("Organization");
     });
   });
@@ -128,7 +128,7 @@ describe("json-ld", () => {
       expect(post.author["@type"]).toBe("Person");
       expect(post.author.name).toBe("Jane Doe");
       expect(post.publisher["@type"]).toBe("Organization");
-      expect(post.mainEntityOfPage!["@id"]).toBe("https://loop.vn/blog/top-10-web-design-trends-2026");
+      expect(post.mainEntityOfPage!["@id"]).toBe("https://www.loops.vn/blog/top-10-web-design-trends-2026");
     });
 
     it("handles missing publishedAt", () => {
@@ -170,7 +170,7 @@ describe("json-ld", () => {
       expect(crumbs.itemListElement).toHaveLength(3);
       expect(crumbs.itemListElement[0].position).toBe(1);
       expect(crumbs.itemListElement[0].name).toBe("Home");
-      expect(crumbs.itemListElement[0].item).toBe("https://loop.vn/");
+      expect(crumbs.itemListElement[0].item).toBe("https://www.loops.vn/");
     });
 
     it("handles root-only breadcrumb", () => {
@@ -385,7 +385,7 @@ describe("json-ld", () => {
     it("uses defaults when optional fields missing", () => {
       const lb = buildLocalBusinessJsonLd({});
       expect(lb.name).toBe("LOOP");
-      expect(lb.url).toBe("https://loop.vn");
+      expect(lb.url).toBe("https://www.loops.vn");
       expect(lb.address).toBeUndefined();
     });
   });

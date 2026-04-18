@@ -1,9 +1,11 @@
 {
   "sidebar": {
     "groups": {
-      "management": "管理",
-      "products": "产品",
+      "website": "网站管理",
+      "operations": "运营",
+      "content": "内容",
       "finance": "财务",
+      "rewards": "奖励",
       "system": "系统"
     },
     "nav": {
@@ -29,6 +31,9 @@
       "lp": "LP 财务",
       "lp_manage": "LP 管理",
       "income_tax": "收入与税务",
+      "website": "网站管理",
+      "website_templates": "网站模板",
+      "website_websites": "客户网站",
       "web_packages": "网页套餐",
       "domain_prices": "域名价格",
       "addon_services": "附加服务",

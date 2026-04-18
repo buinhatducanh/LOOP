@@ -1,9 +1,11 @@
 {
   "sidebar": {
     "groups": {
-      "management": "MANAGEMENT",
-      "products": "PRODUCTS",
+      "website": "WEBSITE MANAGEMENT",
+      "operations": "OPERATIONS",
+      "content": "CONTENT",
       "finance": "FINANCE",
+      "rewards": "REWARDS",
       "system": "SYSTEM"
     },
     "nav": {
@@ -29,6 +31,9 @@
       "lp": "LP Finance",
       "lp_manage": "LP Management",
       "income_tax": "Income & Tax",
+      "website": "Website Management",
+      "website_templates": "Web Templates",
+      "website_websites": "Customer Websites",
       "web_packages": "Web Packages",
       "domain_prices": "Domain Prices",
       "addon_services": "Add-on Services",
@@ -40,7 +45,7 @@
       "settings": "Settings",
       "revenue_split": "Revenue Split",
       "off_system_payments": "Off-System Payments",
- "commission": "Sales Commission",
+      "commission": "Sales Commission",
       "goHome": "Go to Home"
     },
     "footer": {
@@ -189,7 +194,6 @@
     "title": "Admin",
     "dashboard": "Dashboard"
   },
-
   "orders": {
     "title": "Order Management",
     "titleCount": "{n} orders",
@@ -241,7 +245,6 @@
     "detailStatus": "Status",
     "detailDate": "Created"
   },
-
   "services": {
     "title": "Services",
     "titleCount": "{n} services",
@@ -272,7 +275,6 @@
     "formBtnCancel": "Cancel",
     "errSaveFailed": "Update failed"
   },
-
   "portfolio": {
     "title": "Portfolio",
     "titleCount": "{n} projects",
@@ -303,7 +305,6 @@
     "errSaveFailed": "Update failed",
     "confirmDelete": "Delete \"{title}\"?"
   },
-
   "clients": {
     "title": "Clients & Sales",
     "titleCount": "{n} clients",
@@ -347,7 +348,6 @@
     "errDeleteFailed": "Delete failed",
     "confirmDelete": "Delete this client?"
   },
-
   "blog": {
     "title": "Blog & Articles",
     "titleCount": "{n} articles",
@@ -387,7 +387,6 @@
     "errDeleteFailed": "Delete failed",
     "confirmDelete": "Delete this article?"
   },
-
   "quotation": {
     "title": "Quotation",
     "titleCount": "{n} quotes · {n} requests",
@@ -446,7 +445,6 @@
     "errCreateFailed": "Create failed",
     "errSaveFailed": "Update failed"
   },
-
   "media": {
     "title": "Media Booking",
     "titleCount": "{n} bookings",
@@ -544,7 +542,6 @@
     "portfolioOpenOriginal": "Open original",
     "portfolioViewAll": "View all"
   },
-
   "academy": {
     "title": "Academy",
     "subtitle": "Manage courses, instructors, enrollments",
@@ -629,7 +626,6 @@
     "confirmDeleteEnrollment": "Delete this enrollment?",
     "statusDraft": "Draft"
   },
-
   "quests_events": {
     "title": "Quests & Events",
     "titleCount": "{n} quests · {n} events",
@@ -691,7 +687,6 @@
     "confirmDelete": "Confirm deletion?",
     "confirmDeleteWarn": "This action cannot be undone."
   },
-
   "settings": {
     "title": "System Settings",
     "titleCount": "{n} settings",
@@ -714,7 +709,6 @@
     "default": "Default",
     "setDefault": "Set default"
   },
-
   "topbar": {
     "searchPlaceholder": "Quick search...",
     "logout": "Logout"

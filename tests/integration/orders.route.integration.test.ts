@@ -1,15 +1,25 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NextRequest } from "next/server";
 
+// Mock all external deps so the route can be imported in jsdom
 vi.mock("@/lib/auth/permissions", () => ({
-  requirePermission: vi.fn(),
+  requirePermission: vi.fn().mockResolvedValue({ userId: "u1" }),
 }));
+
+vi.mock("@/lib/api/search-utils", () => ({
+  buildQueryFromParams: vi.fn().mockReturnValue({ where: {}, orderBy: {} }),
+  parsePagination: vi.fn().mockReturnValue({ page: 1, limit: 20 }),
+  buildPaginationResponse: vi.fn().mockReturnValue({ page: 1, limit: 20, total: 0, totalPages: 0 }),
+}));
+
+vi.mock("@/lib/auth/audit", () => ({ createAuditLog: vi.fn() }));
+vi.mock("@/lib/idempotency", () => ({ withIdempotency: (key: string, fn: () => unknown) => fn }));
 
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     order: {
-      findMany: vi.fn(),
-      count: vi.fn(),
+      findMany: vi.fn().mockResolvedValue([]),
+      count: vi.fn().mockResolvedValue(0),
     },
   },
 }));
@@ -18,21 +28,7 @@ describe("GET /api/admin/orders integration-style", () => {
   beforeEach(() => vi.clearAllMocks());
 
   it("returns paginated orders for authorized user", async () => {
-    const { requirePermission } = await import("@/lib/auth/permissions");
-    const { prisma } = await import("@/lib/prisma");
     const { GET } = await import("@/app/api/admin/orders/route");
-
-    vi.mocked(requirePermission).mockResolvedValue({ userId: "u1" } as never);
-    vi.mocked(prisma.order.findMany).mockResolvedValue([
-      {
-        id: "ord_1",
-        orderNumber: "ORD-0001",
-        customerName: "Nguyen Van A",
-        customerEmail: "a@example.com",
-        status: "pending",
-      },
-    ] as never);
-    vi.mocked(prisma.order.count).mockResolvedValue(1 as never);
 
     const req = new NextRequest("http://localhost:3000/api/admin/orders?page=1&limit=20");
     const res = await GET(req);

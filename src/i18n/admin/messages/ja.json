@@ -1,9 +1,11 @@
 {
   "sidebar": {
     "groups": {
-      "management": "管理",
-      "products": "製品",
+      "website": "ウェブサイト管理",
+      "operations": "運営",
+      "content": "コンテンツ",
       "finance": "財務",
+      "rewards": "報酬",
       "system": "システム"
     },
     "nav": {
@@ -29,6 +31,9 @@
       "lp": "LP 財務",
       "lp_manage": "LP 管理",
       "income_tax": "収入と税",
+      "website": "ウェブサイト管理",
+      "website_templates": "ウェブテンプレート",
+      "website_websites": "顧客ウェブサイト",
       "web_packages": "ウェブパッケージ",
       "domain_prices": "ドメイン料金",
       "addon_services": "アドオンサービス",

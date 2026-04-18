@@ -1,9 +1,11 @@
 {
   "sidebar": {
     "groups": {
-      "management": "QUẢN LÝ",
-      "products": "SẢN PHẨM",
+      "website": "QUẢN LÍ WEBSITE",
+      "operations": "VẬN HÀNH",
+      "content": "NỘI DUNG",
       "finance": "TÀI CHÍNH",
+      "rewards": "PHẦN THƯỞNG",
       "system": "HỆ THỐNG"
     },
     "nav": {
@@ -29,6 +31,9 @@
       "lp": "Tài chính LP",
       "lp_manage": "Quản lý LP",
       "income_tax": "Thu nhập & Thuế",
+      "website": "Quản lý Website",
+      "website_templates": "Gói Web Mẫu",
+      "website_websites": "Websites Khách hàng",
       "web_packages": "Gói Web",
       "domain_prices": "Giá tên miền",
       "addon_services": "Dịch vụ bổ sung",
@@ -40,7 +45,7 @@
       "settings": "Cài đặt",
       "revenue_split": "Chia doanh thu",
       "off_system_payments": "Chi phí ngoài",
- "commission": "Hoa hồng Sales",
+      "commission": "Hoa hồng Sales",
       "goHome": "Về trang chủ"
     },
     "footer": {
@@ -189,7 +194,6 @@
     "title": "Quản trị",
     "dashboard": "Dashboard"
   },
-
   "orders": {
     "title": "Quản lý đơn hàng",
     "titleCount": "{n} đơn hàng",
@@ -241,7 +245,6 @@
     "detailStatus": "Trạng thái",
     "detailDate": "Ngày tạo"
   },
-
   "services": {
     "title": "Dịch vụ",
     "titleCount": "{n} dịch vụ",
@@ -272,7 +275,6 @@
     "formBtnCancel": "Hủy",
     "errSaveFailed": "Cập nhật thất bại"
   },
-
   "portfolio": {
     "title": "Portfolio",
     "titleCount": "{n} dự án",
@@ -303,7 +305,6 @@
     "errSaveFailed": "Cập nhật thất bại",
     "confirmDelete": "Xóa \"{title}\"?"
   },
-
   "clients": {
     "title": "Khách hàng & Sales",
     "titleCount": "{n} khách hàng",
@@ -347,7 +348,6 @@
     "errDeleteFailed": "Xóa thất bại",
     "confirmDelete": "Xóa khách hàng này?"
   },
-
   "blog": {
     "title": "Blog & Bài viết",
     "titleCount": "{n} bài viết",
@@ -387,7 +387,6 @@
     "errDeleteFailed": "Xóa thất bại",
     "confirmDelete": "Xóa bài này?"
   },
-
   "quotation": {
     "title": "Báo giá",
     "titleCount": "{n} báo giá · {n} yêu cầu",
@@ -446,7 +445,6 @@
     "errCreateFailed": "Tạo thất bại",
     "errSaveFailed": "Cập nhật thất bại"
   },
-
   "media": {
     "title": "Quản lý Media Booking",
     "titleCount": "{n} booking",
@@ -544,7 +542,6 @@
     "portfolioOpenOriginal": "Mở file gốc",
     "portfolioViewAll": "Xem tất cả"
   },
-
   "academy": {
     "title": "Học viện",
     "subtitle": "Quản lý khóa học, giảng viên, đăng ký",
@@ -629,7 +626,6 @@
     "confirmDeleteEnrollment": "Xóa đăng ký này?",
     "statusDraft": "Bản nháp"
   },
-
   "quests_events": {
     "title": "Nhiệm vụ & Sự kiện",
     "titleCount": "{n} quests · {n} sự kiện",
@@ -691,7 +687,6 @@
     "confirmDelete": "Xác nhận xóa?",
     "confirmDeleteWarn": "Hành động này không thể hoàn tác."
   },
-
   "settings": {
     "title": "Cài đặt hệ thống",
     "titleCount": "{n} cài đặt",
@@ -714,7 +709,6 @@
     "default": "Mặc định",
     "setDefault": "Đặt mặc định"
   },
-
   "topbar": {
     "searchPlaceholder": "Tìm kiếm nhanh...",
     "logout": "Đăng xuất"

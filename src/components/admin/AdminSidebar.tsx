@@ -94,7 +94,7 @@ function useStoreSnapshot() {
       }
       return cacheRef.current;
     },
- () => serverSnapshotRef.current,
+    () => serverSnapshotRef.current,
   );
 
   return cacheRef.current!;
@@ -116,33 +116,32 @@ type NavGroup = {
 
 const SIDEBAR_GROUPS_CONFIG: NavGroup[] = [
   {
-    labelKey: "sidebar.groups.management",
+    labelKey: "sidebar.groups.website",
+    items: [
+      { id: "web_packages", icon: <Package size={16} />, labelKey: "sidebar.nav.web_packages" },
+      { id: "domain_prices", icon: <Globe size={16} />, labelKey: "sidebar.nav.domain_prices" },
+    ],
+  },
+  {
+    labelKey: "sidebar.groups.operations",
     items: [
       { id: "overview", icon: <LayoutDashboard size={16} />, labelKey: "sidebar.nav.overview" },
       { id: "orders", icon: <ShoppingCart size={16} />, labelKey: "sidebar.nav.orders" },
-      { id: "members", icon: <Users size={16} />, labelKey: "sidebar.nav.members" },
-      { id: "departments", icon: <Building2 size={16} />, labelKey: "sidebar.nav.departments" },
       { id: "projects", icon: <FolderKanban size={16} />, labelKey: "sidebar.nav.projects" },
       { id: "project_intake", icon: <FilePlus size={16} />, labelKey: "sidebar.nav.project_intake" },
+      { id: "projects_completed", icon: <FolderCheck size={16} />, labelKey: "sidebar.nav.projects_completed" },
       { id: "leaderboard_admin", icon: <BarChart2 size={16} />, labelKey: "sidebar.nav.leaderboard_admin" },
     ],
   },
   {
-    labelKey: "sidebar.groups.products",
+    labelKey: "sidebar.groups.content",
     items: [
       { id: "services", icon: <Briefcase size={16} />, labelKey: "sidebar.nav.services" },
       { id: "media", icon: <Camera size={16} />, labelKey: "sidebar.nav.media" },
-      { id: "quotation", icon: <Receipt size={16} />, labelKey: "sidebar.nav.quotation" },
-      { id: "portfolio", icon: <Package size={16} />, labelKey: "sidebar.nav.portfolio" },
-      { id: "projects_completed", icon: <FolderCheck size={16} />, labelKey: "sidebar.nav.projects_completed" },
-      { id: "web_packages", icon: <Package size={16} />, labelKey: "sidebar.nav.web_packages" },
-      { id: "domain_prices", icon: <Globe size={16} />, labelKey: "sidebar.nav.domain_prices" },
-      { id: "addon_services", icon: <Layers size={16} />, labelKey: "sidebar.nav.addon_services" },
-      { id: "academy", icon: <BookOpen size={16} />, labelKey: "sidebar.nav.academy" },
       { id: "blog", icon: <FileText size={16} />, labelKey: "sidebar.nav.blog" },
+      { id: "portfolio", icon: <Package size={16} />, labelKey: "sidebar.nav.portfolio" },
       { id: "faq", icon: <HelpCircle size={16} />, labelKey: "sidebar.nav.faq" },
       { id: "figma_demos", icon: <Monitor size={16} />, labelKey: "sidebar.nav.figma_demos" },
-      { id: "about", icon: <Info size={16} />, labelKey: "sidebar.nav.about" },
     ],
   },
   {
@@ -150,17 +149,26 @@ const SIDEBAR_GROUPS_CONFIG: NavGroup[] = [
     items: [
       { id: "revenue", icon: <DollarSign size={16} />, labelKey: "sidebar.nav.revenue" },
       { id: "clients", icon: <UserCheck size={16} />, labelKey: "sidebar.nav.clients" },
+      { id: "quotation", icon: <Receipt size={16} />, labelKey: "sidebar.nav.quotation" },
       { id: "revenue_split", icon: <Calculator size={16} />, labelKey: "sidebar.nav.revenue_split" },
       { id: "off_system_payments", icon: <Wallet size={16} />, labelKey: "sidebar.nav.off_system_payments" },
+      { id: "commission", icon: <TrendingUp size={16} />, labelKey: "sidebar.nav.commission" },
+    ],
+  },
+  {
+    labelKey: "sidebar.groups.rewards",
+    items: [
       { id: "lp", icon: <Wallet size={16} />, labelKey: "sidebar.nav.lp" },
       { id: "lp_manage", icon: <Zap size={16} />, labelKey: "sidebar.nav.lp_manage" },
       { id: "income_tax", icon: <Calculator size={16} />, labelKey: "sidebar.nav.income_tax" },
- { id: "commission", icon: <TrendingUp size={16} />, labelKey: "sidebar.nav.commission" },
     ],
   },
   {
     labelKey: "sidebar.groups.system",
     items: [
+      { id: "members", icon: <Users size={16} />, labelKey: "sidebar.nav.members" },
+      { id: "departments", icon: <Building2 size={16} />, labelKey: "sidebar.nav.departments" },
+      { id: "academy", icon: <BookOpen size={16} />, labelKey: "sidebar.nav.academy" },
       { id: "effects", icon: <Sparkles size={16} />, labelKey: "sidebar.nav.effects" },
       { id: "quests_events", icon: <Star size={16} />, labelKey: "sidebar.nav.quests_events" },
       { id: "notification_center", icon: <Bell size={16} />, labelKey: "sidebar.nav.notification_center" },
@@ -407,8 +415,8 @@ export function AdminSidebar({ userName, userAvatar, userRole, userRank, userLpB
             }}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-              <polyline points="9 22 9 12 15 12 15 22"/>
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+              <polyline points="9 22 9 12 15 12 15 22" />
             </svg>
           </a>
 

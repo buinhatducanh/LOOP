@@ -66,29 +66,29 @@ export async function POST(
       });
 
       // 2. Side effects per target column
-       if (column === "in_review") {
- // Notify QA member when task enters review
- // qaId is a TeamMember.id — look up the associated User to create notification
- if (updatedTask.qaId) {
- const qaUser = await tx.user.findFirst({
- where: { teamMemberId: updatedTask.qaId },
- select: { id: true, name: true },
- });
- if (qaUser) {
- await tx.notification.create({
- data: {
- userId: qaUser.id,
- type: "task_review",
- title: "Task cần Review",
- message: `Task "${updatedTask.title}" (Dự án ${task.order.orderNumber}) đã chuyển sang Review và cần bạn kiểm tra.`,
- link: `/admin/kanban?orderId=${updatedTask.orderId}`,
- },
- });
- }
- }
- }
+      if (column === "in_review") {
+        // Notify QA member when task enters review
+        // qaId is a TeamMember.id — look up the associated User to create notification
+        if (updatedTask.qaId) {
+          const qaUser = await tx.user.findFirst({
+            where: { teamMemberId: updatedTask.qaId },
+            select: { id: true, name: true },
+          });
+          if (qaUser) {
+            await tx.notification.create({
+              data: {
+                userId: qaUser.id,
+                type: "task_review",
+                title: "Task cần Review",
+                message: `Task "${updatedTask.title}" (Dự án ${task.order.orderNumber}) đã chuyển sang Review và cần bạn kiểm tra.`,
+                link: `/admin/projects/${updatedTask.orderId}/kanban`,
+              },
+            });
+          }
+        }
+      }
 
- if (column === "done") {
+      if (column === "done") {
         // Auto-create pending LP award for assignee
         if (updatedTask.lp > 0 && updatedTask.assigneeId) {
           await tx.lpAward.create({
@@ -106,17 +106,16 @@ export async function POST(
 
         // Notify assignee
         if (updatedTask.assigneeId) {
-          const msg = `Chúc mừng! Task "${updatedTask.title}" (Dự án ${task.order.orderNumber}) đã được đánh dấu hoàn thành.${
-            updatedTask.lp > 0
-              ? ` Bạn sẽ nhận được ${updatedTask.lp.toLocaleString("vi-VN")} LP sau khi được duyệt.`
-              : ""
-          }`;
+          const msg = `Chúc mừng! Task "${updatedTask.title}" (Dự án ${task.order.orderNumber}) đã được đánh dấu hoàn thành.${updatedTask.lp > 0
+            ? ` Bạn sẽ nhận được ${updatedTask.lp.toLocaleString("vi-VN")} LP sau khi được duyệt.`
+            : ""
+            }`;
           await tx.adminNotification.create({
             data: {
               type: "task_done",
               title: "Task hoàn thành",
               message: msg,
-              link: `/admin/kanban?orderId=${updatedTask.orderId}`,
+              link: `/admin/projects/${updatedTask.orderId}/kanban`,
               priority: "normal",
               isRead: false,
             },
@@ -135,7 +134,7 @@ export async function POST(
               type: "task_done",
               title: "Task hoàn thành",
               message: `Task "${updatedTask.title}" trong dự án ${task.order.orderNumber} (${task.order.customerName}) đã hoàn thành.`,
-              link: `/admin/kanban?orderId=${updatedTask.orderId}`,
+              link: `/admin/projects/${updatedTask.orderId}/kanban`,
               priority: "normal",
               isRead: false,
             })),

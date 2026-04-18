@@ -185,16 +185,24 @@ export function buildLpAwardsFromOrder(
   }
 
   const awards: { memberId: string; lpAmount: number; source: string }[] = [];
+  // BUG-05 FIX: Use basis points (10000 = 100%) for integer math — avoids floating point
+  const basisPoints = 10000;
+  const paidBp = paidAmount * basisPoints;
 
   for (const [role, percent] of Object.entries(lpAllocation)) {
     const memberIds = membersByRole.get(role) ?? [];
     if (memberIds.length === 0) {
-      // Log warning so ops knows this role's LP share was not distributed
-      console.warn(`[LP Distribution] Order ${orderId}: role "${role}" has ${percent}% allocation but no assigned members. LP not distributed for this share.`);
+      // BUG-05 FIX: Compute unassigned LP so ops can see it in audit
+      const unassignedLp = Math.floor(paidBp * percent / 100 / basisPoints);
+      console.warn(
+        `[LP Distribution] Order ${orderId}: role "${role}" has ${percent}% allocation ` +
+        `but no assigned members. Unassigned LP: ${unassignedLp.toLocaleString("vi-VN")}.`
+      );
       continue;
     }
 
-    const totalLpForRole = Math.floor(paidAmount * (percent / 100));
+    // Integer math: paidAmount × percent% in LP
+    const totalLpForRole = Math.floor((paidBp * percent) / 100 / basisPoints);
     const lpPerMember = Math.floor(totalLpForRole / memberIds.length);
 
     for (const memberId of memberIds) {

@@ -49,6 +49,19 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // BUG-02 FIX: validate SUM of active non-company configs <= 100
+    const activeConfigs = await prisma.revenueSplitConfig.findMany({
+      where: { isActive: true, key: { not: "company" } },
+      select: { percentage: true },
+    });
+    const currentSum = activeConfigs.reduce((s, c) => s + c.percentage, 0);
+    if (currentSum + percentage > 100) {
+      return badRequest(
+        `Total percentage would be ${currentSum + percentage}% (limit: 100%). ` +
+        `Current sum: ${currentSum}%. Please reduce other roles first.`
+      );
+    }
+
     const config = await prisma.revenueSplitConfig.create({
       data: { key, label, percentage, isActive: isActive ?? true },
     });

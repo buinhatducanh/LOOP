@@ -29,9 +29,9 @@ export async function GET(
     });
 
     if (!handover) {
-      return NextResponse.json({ error: "Handover package not found" }, { status: 404 });
+      // Return null instead of 404 — "not created yet" is not an error
+      return NextResponse.json({ data: null });
     }
-
     return NextResponse.json({ data: handover });
   } catch (error) {
     return handleError(error);

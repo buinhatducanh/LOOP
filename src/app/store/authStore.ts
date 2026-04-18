@@ -241,12 +241,12 @@ const MEMBER_TABS: AdminTab[] = [
 // Department bonus tab grants (tự động thêm khi member thuộc phòng ban)
 export const DEPT_TAB_BONUS: Record<string, AdminTab[]> = {
   engineering: ["kanban", "lp"],
-  design:     ["figma_demos", "portfolio"],
-  media:      ["media", "blog"],
-  marketing:  ["blog", "projects"],
-  sales:      ["orders", "clients", "quotation", "revenue"],
-  finance:    ["revenue", "lp", "lp_manage", "income_tax", "revenue_split", "off_system_payments", "commission"],
-  hr:         ["members", "departments"],
+  design: ["figma_demos", "portfolio"],
+  media: ["media", "blog"],
+  marketing: ["blog", "projects"],
+  sales: ["orders", "clients", "quotation", "revenue"],
+  finance: ["revenue", "lp", "lp_manage", "income_tax", "revenue_split", "off_system_payments", "commission"],
+  hr: ["members", "departments"],
   management: ["*"],
 };
 
@@ -409,279 +409,279 @@ export const useAuthStore = create<AuthStore>()(
       lastCheckIn: null,
 
       login: async (email: string, password: string): Promise<boolean> => {
-    set({ isLoading: true, error: null });
-    try {
-      const res = await apiClient.post<{ user: EnrichedSession; token: string } | ApiErrorResponse>(
-        "/api/admin/auth/login",
-        { email, password },
-        { throwOnError: false, withCredentials: true }
-      );
-
-      if ("error" in res) {
-        set({ isLoading: false, error: res.error });
-        return false;
-      }
-
-      // Update store immediately from login response (no extra /me call)
-      const successPayload = res as { user: EnrichedSession; token: string };
-      const session = successPayload.user;
-
-      // Persist JWT token in localStorage — split auth: Option C
-      // Staff token: "loop-staff-token" | Customer token: "loop-customer-token"
-      // Use the accountType from the API response to store in the correct key.
-      // This ensures /api/portal/* calls find the correct token for customers.
-      if (typeof window !== "undefined" && successPayload.token) {
+        set({ isLoading: true, error: null });
         try {
-          const tokenKey = session.accountType === "customer"
-            ? "loop-customer-token"
-            : "loop-staff-token";
-          localStorage.setItem(tokenKey, successPayload.token);
-        } catch {
-          // Storage unavailable (private browsing, quota) — cookie will still work
-        }
-      }
+          const res = await apiClient.post<{ user: EnrichedSession; token: string } | ApiErrorResponse>(
+            "/api/admin/auth/login",
+            { email, password },
+            { throwOnError: false, withCredentials: true }
+          );
 
-      const authUser = sessionToAuthUser(session);
-      const role = mapRoleLevelToUserRole(session.roleLevel, session.accountType);
+          if ("error" in res) {
+            set({ isLoading: false, error: res.error });
+            return false;
+          }
 
-      set({
-        user: authUser,
-        isAuthenticated: true,
-        isLoading: false,
-        error: null,
-        role,
-        accountType: session.accountType,
-        _department: session._department,
-        departmentKey: session.departmentKey,     // v4.0
-        isDeptHead: session.isDeptHead,           // v4.0
-        tabPermissions: session.tabPermissions,   // v4.0
-        accessibleTabs: getAccessibleTabs(role, session.departmentKey),
-        sessionHydrated: true,       // R2: login payload IS the server session — mark hydrated
-        tokenExpiry: Date.now() + 15 * 60 * 1000, // R2: access token TTL = 15 min
-      });
-      return true;
-    } catch (err) {
-      const isAbort = err instanceof Error && (err.name === "AbortError" || err.name === "TimeoutError");
-      const message = isAbort
-        ? "Yêu cầu bị timeout. Vui lòng thử lại sau."
-        : err instanceof Error ? err.message : "Đăng nhập thất bại";
-      set({ isLoading: false, error: message });
-      return false;
-    }
-  },
+          // Update store immediately from login response (no extra /me call)
+          const successPayload = res as { user: EnrichedSession; token: string };
+          const session = successPayload.user;
 
-  loginAs: (user) => {
-    const role = user.role;
-    set({
-      user,
-      isAuthenticated: true,
-      isLoading: false,
-      error: null,
-      role,
-      accountType: user.accountType,
-      _department: user._department,
-      departmentKey: user.departmentKey,       // v4.0
-      isDeptHead: user.isDeptHead,             // v4.0
-      tabPermissions: user.tabPermissions,     // v4.0
-      accessibleTabs: getAccessibleTabs(role, user.departmentKey),
-      sessionHydrated: true,    // R2: programmatic login — trust the caller
-      tokenExpiry: Date.now() + 15 * 60 * 1000, // R2: default 15-min TTL
-    });
-  },
-
-  logout: async (): Promise<void> => {
-    set({ isLoading: true });
-
-    // Read both tokens so we can clear the right one based on accountType
-    const store = useAuthStore.getState();
-    const isStaff = store.accountType === "staff";
-    const tokenKey = isStaff ? "loop-staff-token" : "loop-customer-token";
-    const token =
-      typeof window !== "undefined" ? localStorage.getItem(tokenKey) : null;
-
-    try {
-      const doLogout = async () => {
-        const headers: Record<string, string> = { "Content-Type": "application/json" };
-        if (token) headers["Authorization"] = `Bearer ${token}`;
-        const res = await fetch("/api/admin/auth/logout", {
-          method: "POST",
-          headers,
-          credentials: "include",
-        });
-        return res.json();
-      };
-
-      const timeout = new Promise<null>((_, reject) =>
-        setTimeout(() => reject(new Error("timeout")), 8_000)
-      );
-      await Promise.race([doLogout(), timeout]);
-    } catch {
-      // Ignore network errors — always clear session client-side
-    } finally {
-      // ── Clear all auth storage (triệt để) ───────────────────────────────
-      if (typeof window !== "undefined") {
-        // localStorage tokens
-        localStorage.removeItem("loop-staff-token");
-        localStorage.removeItem("loop-customer-token");
-        localStorage.removeItem("loop-staff-email"); // remembered email
-        // Zustand persist key
-        localStorage.removeItem("loop-auth");
-      }
-
-      // ── Clear React Query cache ────────────────────────────────────────
-      // Import động để tránh circular import và SSR issues
-      if (typeof window !== "undefined") {
-        try {
-          const { QueryClient } = await import("@tanstack/react-query");
-          const qc = new QueryClient();
-          qc.clear();
-        } catch {
-          // Non-fatal — cache will expire on next load anyway
-        }
-      }
-
-      set({
-        user: null,
-        isAuthenticated: false,
-        isLoading: false,
-        error: null,
-        role: "guest",
-        accountType: null,
-        _department: undefined,
-        departmentKey: undefined,
-        isDeptHead: undefined,
-        tabPermissions: undefined,
-        accessibleTabs: [],
-        sessionHydrated: false,
-        tokenExpiry: null,
-      });
-    }
-  },
-
-  fetchSession: async (): Promise<void> => {
-    try {
-      const res = await adminApi.get<{ user: EnrichedSession } | ApiErrorResponse>(
-        "/api/admin/auth/me",
-        { throwOnError: false }
-      );
-
-      if ("error" in res || !("user" in res)) {
-        // R2: /me failed → clear session + mark NOT hydrated
-        set({
-          isAuthenticated: false, user: null, role: "guest",
-          accountType: null, accessibleTabs: [], sessionHydrated: true,
-        });
-        return;
-      }
-
-      const session = res.user;
-      const authUser = sessionToAuthUser(session);
-      const role = mapRoleLevelToUserRole(session.roleLevel, session.accountType);
-
-      // R2: sync token expiry on every successful /me response
-      set({
-        user: authUser,
-        isAuthenticated: true,
-        isLoading: false,
-        error: null,
-        role,
-        accountType: session.accountType,
-        _department: session._department,
-        departmentKey: session.departmentKey,     // v4.0
-        isDeptHead: session.isDeptHead,           // v4.0
-        tabPermissions: session.tabPermissions,   // v4.0
-        accessibleTabs: getAccessibleTabs(role, session.departmentKey),
-        sessionHydrated: true,         // R2: server confirmed valid session
-        tokenExpiry: Date.now() + 15 * 60 * 1000, // R2: refresh expiry on each /me
-      });
-    } catch (err) {
-      if (err instanceof Error) {
-        console.warn("[AuthStore] fetchSession failed:", err.message);
-      }
-      // R2: on error → keep cached auth but mark NOT hydrated (will retry)
-      set({ sessionHydrated: true });
-    }
-  },
-
-  setLoading: (v) => set({ isLoading: v }),
-
-  clearError: () => set({ error: null }),
-
-  // ── Quest actions ──────────────────────────────────────────────────────────
-
-  /**
-   * Daily check-in quest — marks q-daily-1 as complete.
-   * Async fire-and-forget: calls BE to award LP + XP; errors handled silently.
-   * Callers do NOT need to await — state is updated optimistically on the FE.
-   */
-  checkIn: async () => {
-    const today = new Date().toDateString();
-    const { lastCheckIn, dailyStreak, quests } = get();
-    if (lastCheckIn === today) return;
-
-    const newStreak =
-      lastCheckIn === new Date(Date.now() - 86400000).toDateString()
-        ? dailyStreak + 1
-        : 1;
-
-    set({
-      lastCheckIn: today,
-      dailyStreak: newStreak,
-      quests: quests.map((q) =>
-        q.id === "q-daily-1" ? { ...q, progress: 1, status: "completed" as QuestStatus } : q
-      ),
-    });
-
-    // Call BE to award LP + XP for staff (silent — FE state already updated optimistically)
-    const dailyQuest = quests.find((q) => q.id === "q-daily-1");
-    try {
-      const res = await apiClient.post<{
-        data: { lpEarned: number; xpEarned: number; loginStreak: number };
-      }>("/api/admin/quests/daily-login", { questId: dailyQuest?.id });
-      // Update quest with actual rewards from BE
-      set((s) => ({
-        quests: s.quests.map((q) =>
-          q.id === "q-daily-1"
-            ? { ...q, lpEarned: res.data.lpEarned, xpEarned: res.data.xpEarned }
-            : q
-        ),
-      }));
-    } catch {
-      // Silently ignore — FE state already reflects successful check-in
-    }
-  },
-
-  updateQuestProgress: (questId, progress) =>
-    set((s) => ({
-      quests: s.quests.map((q) =>
-        q.id === questId
-          ? {
-              ...q,
-              progress: Math.min(progress, q.target),
-              status:
-                progress >= q.target ? ("completed" as QuestStatus) : ("in_progress" as QuestStatus),
+          // Persist JWT token in localStorage — split auth: Option C
+          // Staff token: "loop-staff-token" | Customer token: "loop-customer-token"
+          // Use the accountType from the API response to store in the correct key.
+          // This ensures /api/portal/* calls find the correct token for customers.
+          if (typeof window !== "undefined" && successPayload.token) {
+            try {
+              const tokenKey = session.accountType === "customer"
+                ? "loop-customer-token"
+                : "loop-staff-token";
+              localStorage.setItem(tokenKey, successPayload.token);
+            } catch {
+              // Storage unavailable (private browsing, quota) — cookie will still work
             }
-          : q
-      ),
-    })),
+          }
 
-  completeQuest: (questId) =>
-    set((s) => ({
-      quests: s.quests.map((q) =>
-        q.id === questId ? { ...q, progress: q.target, status: "completed" as QuestStatus } : q
-      ),
-    })),
+          const authUser = sessionToAuthUser(session);
+          const role = mapRoleLevelToUserRole(session.roleLevel, session.accountType);
 
-  // ── Helpers ──────────────────────────────────────────────────────────────
+          set({
+            user: authUser,
+            isAuthenticated: true,
+            isLoading: false,
+            error: null,
+            role,
+            accountType: session.accountType,
+            _department: session._department,
+            departmentKey: session.departmentKey,     // v4.0
+            isDeptHead: session.isDeptHead,           // v4.0
+            tabPermissions: session.tabPermissions,   // v4.0
+            accessibleTabs: getAccessibleTabs(role, session.departmentKey),
+            sessionHydrated: true,       // R2: login payload IS the server session — mark hydrated
+            tokenExpiry: Date.now() + 15 * 60 * 1000, // R2: access token TTL = 15 min
+          });
+          return true;
+        } catch (err) {
+          const isAbort = err instanceof Error && (err.name === "AbortError" || err.name === "TimeoutError");
+          const message = isAbort
+            ? "Yêu cầu bị timeout. Vui lòng thử lại sau."
+            : err instanceof Error ? err.message : "Đăng nhập thất bại";
+          set({ isLoading: false, error: message });
+          return false;
+        }
+      },
 
-  getQuestsForRole: (role) => get().quests.filter((q) => q.forRoles.includes(role)),
+      loginAs: (user) => {
+        const role = user.role;
+        set({
+          user,
+          isAuthenticated: true,
+          isLoading: false,
+          error: null,
+          role,
+          accountType: user.accountType,
+          _department: user._department,
+          departmentKey: user.departmentKey,       // v4.0
+          isDeptHead: user.isDeptHead,             // v4.0
+          tabPermissions: user.tabPermissions,     // v4.0
+          accessibleTabs: getAccessibleTabs(role, user.departmentKey),
+          sessionHydrated: true,    // R2: programmatic login — trust the caller
+          tokenExpiry: Date.now() + 15 * 60 * 1000, // R2: default 15-min TTL
+        });
+      },
 
-  getActiveEvents: () => get().events.filter((e) => e.active),
+      logout: async (): Promise<void> => {
+        set({ isLoading: true });
+
+        // Read both tokens so we can clear the right one based on accountType
+        const store = useAuthStore.getState();
+        const isStaff = store.accountType === "staff";
+        const tokenKey = isStaff ? "loop-staff-token" : "loop-customer-token";
+        const token =
+          typeof window !== "undefined" ? localStorage.getItem(tokenKey) : null;
+
+        try {
+          const doLogout = async () => {
+            const headers: Record<string, string> = { "Content-Type": "application/json" };
+            if (token) headers["Authorization"] = `Bearer ${token}`;
+            const res = await fetch("/api/admin/auth/logout", {
+              method: "POST",
+              headers,
+              credentials: "include",
+            });
+            return res.json();
+          };
+
+          const timeout = new Promise<null>((_, reject) =>
+            setTimeout(() => reject(new Error("timeout")), 8_000)
+          );
+          await Promise.race([doLogout(), timeout]);
+        } catch {
+          // Ignore network errors — always clear session client-side
+        } finally {
+          // ── Clear all auth storage (triệt để) ───────────────────────────────
+          if (typeof window !== "undefined") {
+            // localStorage tokens
+            localStorage.removeItem("loop-staff-token");
+            localStorage.removeItem("loop-customer-token");
+            localStorage.removeItem("loop-staff-email"); // remembered email
+            // Zustand persist key
+            localStorage.removeItem("loop-auth");
+          }
+
+          // ── Clear React Query cache ────────────────────────────────────────
+          // Import động để tránh circular import và SSR issues
+          if (typeof window !== "undefined") {
+            try {
+              const { QueryClient } = await import("@tanstack/react-query");
+              const qc = new QueryClient();
+              qc.clear();
+            } catch {
+              // Non-fatal — cache will expire on next load anyway
+            }
+          }
+
+          set({
+            user: null,
+            isAuthenticated: false,
+            isLoading: false,
+            error: null,
+            role: "guest",
+            accountType: null,
+            _department: undefined,
+            departmentKey: undefined,
+            isDeptHead: undefined,
+            tabPermissions: undefined,
+            accessibleTabs: [],
+            sessionHydrated: false,
+            tokenExpiry: null,
+          });
+        }
+      },
+
+      fetchSession: async (): Promise<void> => {
+        try {
+          const res = await adminApi.get<{ user: EnrichedSession } | ApiErrorResponse>(
+            "/api/admin/auth/me",
+            { throwOnError: false }
+          );
+
+          if ("error" in res || !("user" in res)) {
+            // R2: /me failed → clear session + mark NOT hydrated
+            set({
+              isAuthenticated: false, user: null, role: "guest",
+              accountType: null, accessibleTabs: [], sessionHydrated: true,
+            });
+            return;
+          }
+
+          const session = res.user;
+          const authUser = sessionToAuthUser(session);
+          const role = mapRoleLevelToUserRole(session.roleLevel, session.accountType);
+
+          // R2: sync token expiry on every successful /me response
+          set({
+            user: authUser,
+            isAuthenticated: true,
+            isLoading: false,
+            error: null,
+            role,
+            accountType: session.accountType,
+            _department: session._department,
+            departmentKey: session.departmentKey,     // v4.0
+            isDeptHead: session.isDeptHead,           // v4.0
+            tabPermissions: session.tabPermissions,   // v4.0
+            accessibleTabs: getAccessibleTabs(role, session.departmentKey),
+            sessionHydrated: true,         // R2: server confirmed valid session
+            tokenExpiry: Date.now() + 15 * 60 * 1000, // R2: refresh expiry on each /me
+          });
+        } catch (err) {
+          if (err instanceof Error) {
+            console.warn("[AuthStore] fetchSession failed:", err.message);
+          }
+          // R2: on error → keep cached auth but mark NOT hydrated (will retry)
+          set({ sessionHydrated: true });
+        }
+      },
+
+      setLoading: (v) => set({ isLoading: v }),
+
+      clearError: () => set({ error: null }),
+
+      // ── Quest actions ──────────────────────────────────────────────────────────
+
+      /**
+       * Daily check-in quest — marks q-daily-1 as complete.
+       * Async fire-and-forget: calls BE to award LP + XP; errors handled silently.
+       * Callers do NOT need to await — state is updated optimistically on the FE.
+       */
+      checkIn: async () => {
+        const today = new Date().toDateString();
+        const { lastCheckIn, dailyStreak, quests } = get();
+        if (lastCheckIn === today) return;
+
+        const newStreak =
+          lastCheckIn === new Date(Date.now() - 86400000).toDateString()
+            ? dailyStreak + 1
+            : 1;
+
+        set({
+          lastCheckIn: today,
+          dailyStreak: newStreak,
+          quests: quests.map((q) =>
+            q.id === "q-daily-1" ? { ...q, progress: 1, status: "completed" as QuestStatus } : q
+          ),
+        });
+
+        // Call BE to award LP + XP for staff (silent — FE state already updated optimistically)
+        const dailyQuest = quests.find((q) => q.id === "q-daily-1");
+        try {
+          const res = await apiClient.post<{
+            data: { lpEarned: number; xpEarned: number; loginStreak: number };
+          }>("/api/admin/quests/daily-login", { questId: dailyQuest?.id });
+          // Update quest with actual rewards from BE
+          set((s) => ({
+            quests: s.quests.map((q) =>
+              q.id === "q-daily-1"
+                ? { ...q, lpEarned: res.data.lpEarned, xpEarned: res.data.xpEarned }
+                : q
+            ),
+          }));
+        } catch {
+          // Silently ignore — FE state already reflects successful check-in
+        }
+      },
+
+      updateQuestProgress: (questId, progress) =>
+        set((s) => ({
+          quests: s.quests.map((q) =>
+            q.id === questId
+              ? {
+                ...q,
+                progress: Math.min(progress, q.target),
+                status:
+                  progress >= q.target ? ("completed" as QuestStatus) : ("in_progress" as QuestStatus),
+              }
+              : q
+          ),
+        })),
+
+      completeQuest: (questId) =>
+        set((s) => ({
+          quests: s.quests.map((q) =>
+            q.id === questId ? { ...q, progress: q.target, status: "completed" as QuestStatus } : q
+          ),
+        })),
+
+      // ── Helpers ──────────────────────────────────────────────────────────────
+
+      getQuestsForRole: (role) => get().quests.filter((q) => q.forRoles.includes(role)),
+
+      getActiveEvents: () => get().events.filter((e) => e.active),
     }),
     {
       name: PERSIST_KEY,
       storage: createJSONStorage(() => {
-        if (typeof window === "undefined") return { getItem: () => null, setItem: () => {}, removeItem: () => {} };
+        if (typeof window === "undefined") return { getItem: () => null, setItem: () => { }, removeItem: () => { } };
         return localStorage;
       }),
       partialize: (state) => ({

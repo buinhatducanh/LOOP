@@ -59,7 +59,7 @@ const TEMPLATE_TRANSITIONS: Record<string, string[]> = {
 };
 
 function getTransitions(orderType: string, status: string): readonly string[] {
-    const map = orderType === "template" || orderType === "web-package"
+    const map = orderType === "template" || orderType === "web_package"
         ? TEMPLATE_TRANSITIONS
         : CUSTOM_TRANSITIONS;
     return map[status] ?? [];
@@ -977,7 +977,7 @@ function OrderDetailModal({ order, onClose }: { order: Order | null; onClose: ()
     const total = order.finalPrice ?? order.totalAmount ?? 0;
     const paid = order.paidAmount ?? 0;
     const remaining = Math.max(0, total - paid);
-    const statusFlow = order.orderType === "template" || order.orderType === "web-package" ? TEMPLATE_FLOW : CUSTOM_FLOW;
+    const statusFlow = order.orderType === "template" || order.orderType === "web_package" ? TEMPLATE_FLOW : CUSTOM_FLOW;
 
     type HistoryItem = { fromStatus: string; toStatus: string; note: string | null; createdAt: string };
     type DemoItem = { id: string; figmaUrl: string; status: string; createdAt: string; approvedAt: string | null };
@@ -1335,7 +1335,7 @@ export default function OrdersPage() {
         onError: (err: unknown) => alert(err instanceof Error ? err.message : "Gửi demo thất bại"),
     });
 
-    const currentFlow = orderTypeFilter === "template" || orderTypeFilter === "web-package" ? TEMPLATE_FLOW : CUSTOM_FLOW;
+    const currentFlow = orderTypeFilter === "template" || orderTypeFilter === "web_package" ? TEMPLATE_FLOW : CUSTOM_FLOW;
 
     return (
         <div>
