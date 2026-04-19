@@ -2,6 +2,7 @@
  * Booking Wizard — shared types
  * Matches the shape returned by GET /api/pricing/config
  */
+import type { SEOFeature, SEOPackageTier } from "@/components/landing/SEOPackageFeatureTable";
 
 export interface WizardService {
  id: string;
@@ -45,16 +46,18 @@ export interface WizardPackage {
  savingPct?: number;
  allFeatures?: string[];
  freebies?: PackageFreebie[];
- /** YouTube video URL for this package */
  videoUrl?: string | null;
- /** Thumbnail URL for video */
  videoThumbnail?: string | null;
- /** Whether to show the acknowledgment modal */
  showFeatureAcknowledge?: boolean;
- /** Raw acknowledgment items from DB */
  acknowledgmentItems?: PackageAcknowledgmentItem[];
- /** Map: feature label → acknowledgment item */
  featureAcknowledgments?: Record<string, PackageAcknowledgmentItem>;
+ // Admin-managed fields from ServicePackage
+ tagline?: string | null;
+ pages?: string | null;
+ pagesVi?: string | null;
+ isPopular?: boolean;
+ serviceKey?: string | null;
+ tierLevel?: number;
 }
 
 export interface WizardFeature {
@@ -143,6 +146,29 @@ export interface LpRateConfig {
  lpEarnPerMillion: number;
 }
 
+/** SEO package tier from /api/pricing/config (ServiceTier serviceKey=seo) */
+export interface SeoTier {
+ level: number;
+ name: string;
+ nameEn?: string;
+ shortDesc: string;
+ basePrice: number;
+ marketPrice?: number;
+ lpReward: number;
+}
+
+/** SEO feature from /api/pricing/config (ServiceAttribute serviceKey=seo) */
+export interface SeoFeature {
+ id: string;
+ label: string;
+ labelEn?: string;
+ description: string;
+ category: string;
+ extraPrice?: number;
+ /** Tier levels that include this feature: [1,2,3] */
+ includedTiers: number[];
+}
+
 /** Full response from GET /api/pricing/config */
 export interface PricingConfig {
  basePrice: number;
@@ -179,4 +205,7 @@ export interface PricingConfig {
  totalSpending: number;
  vipPoints: number;
  } | null;
+ /** SEO tiers + features — wired from DB */
+ seoTiers?: SEOPackageTier[];
+ seoFeatures?: SEOFeature[];
 }

@@ -364,7 +364,7 @@ export function MemberCard({ member, index, locale: _locale }: MemberCardProps) 
   const slug = (member.slug as string) ?? String(member.id ?? index);
   const role = (member.role as string) ?? "";
   const roleCode = (member.roleCode as string) ?? "BOW";
-  const team = (member.team as string) ?? "Alpha";
+  const team = (member.department as string) ?? "Alpha";
   const image = (member.image as string) ?? "";
   const level = (member.level as number) ?? 1;
   const lpBalance = (member.availableLp as number) ?? 0;

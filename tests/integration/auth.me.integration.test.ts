@@ -6,7 +6,7 @@ vi.mock("@/lib/auth/permissions", () => ({
 }));
 
 vi.mock("@/lib/logger", () => ({
-  authLogger: { withSLO: vi.fn((msg, meta, fn) => fn() },
+  authLogger: { withSLO: vi.fn((msg, meta, fn) => fn()) },
   lpLogger: { warn: vi.fn(), error: vi.fn() },
   orderLogger: { error: vi.fn() },
 }));

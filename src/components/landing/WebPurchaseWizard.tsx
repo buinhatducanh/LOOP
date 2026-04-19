@@ -132,6 +132,7 @@ export function WebPurchaseWizard({ locale, isAuthenticated, t }: Props) {
  const [domainError, setDomainError] = useState("");
  const [selectedDomains, setSelectedDomains] = useState<DomainResult[]>([]); // chọn nhiều
  const [hasSearched, setHasSearched] = useState(false); // đã bấm kiểm tra chưa
+ const [dbTldOptions, setDbTldOptions] = useState<{ extension: string; registrationPrice: number; noteVi?: string | null }[]>([]);
 
  // ── Step 4: Hosting ─────────────────────────────────────────────────────────
  const [hostingPlans, setHostingPlans] = useState<HostingPlan[]>([]);
@@ -171,10 +172,30 @@ export function WebPurchaseWizard({ locale, isAuthenticated, t }: Props) {
  if (res.ok) {
  const json = await res.json();
  setHostingPlans(json.data?.hostingPlans ?? []);
+ setDbTldOptions(json.data?.domainPrices ?? []);
  }
  } catch { /* non-critical */ }
  setHostingLoading(false);
  }, []);
+
+ // ─── Load TLD options from DB (run once) ───────────────────────────────────
+ const [tldLoaded, setTldLoaded] = useState(false);
+ useEffect(() => {
+ if (tldLoaded) return;
+ setTldLoaded(true);
+ fetch("/api/pricing/hosting-plans")
+ .then((r) => r.ok ? r.json() : null)
+ .then((j) => {
+ if (!j?.data?.domainPrices?.length) return;
+ setDbTldOptions(j.data.domainPrices);
+ // Set first TLD as default if current default not in list
+ const first = j.data.domainPrices[0];
+ if (first && !j.data.domainPrices.find((d: { extension: string }) => d.extension === domainPrimaryTld)) {
+ setDomainPrimaryTld(first.extension);
+ }
+ })
+ .catch(() => {});
+ }, [tldLoaded, domainPrimaryTld]);
 
  // ─── Search domain (user clicks "Kiểm tra") ───────────────────────────────
  const searchDomain = useCallback(async () => {
@@ -191,7 +212,23 @@ export function WebPurchaseWizard({ locale, isAuthenticated, t }: Props) {
  const res = await fetch(`/api/pricing/domain-search?${params}`);
  if (res.ok) {
  const json = await res.json();
- setDomainResults(json.data?.domains ?? []);
+ // Sort: primary TLD domain first, then others
+ const domains: DomainResult[] = json.data?.domains ?? [];
+ const primary = `${domainBrand}.${domainPrimaryTld}`;
+ domains.sort((a, b) => {
+ if (a.domain === primary) return -1;
+ if (b.domain === primary) return 1;
+ return 0;
+ });
+ setDomainResults(domains);
+ // Auto-select primary domain if available
+ const primaryResult = domains.find((d) => d.domain === primary);
+ if (primaryResult?.available) {
+ setSelectedDomains((prev) => {
+ if (prev.some((x) => x.domain === primary)) return prev;
+ return [...prev, primaryResult];
+ });
+ }
  } else {
  setDomainError("Tìm kiếm thất bại");
  }
@@ -539,7 +576,7 @@ export function WebPurchaseWizard({ locale, isAuthenticated, t }: Props) {
  className="flex-1 rounded-xl border border-slate-700 bg-slate-900/80 px-4 py-3 font-mono text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
  />
 
- {/* TLD dropdown */}
+ {/* TLD dropdown — load from DB */}
  <select
  value={domainPrimaryTld}
  onChange={(e) => {
@@ -551,6 +588,14 @@ export function WebPurchaseWizard({ locale, isAuthenticated, t }: Props) {
  className="rounded-xl border border-slate-700 bg-slate-900/80 px-4 py-3 font-mono text-white focus:border-indigo-500 focus:outline-none cursor-pointer"
  style={{ minWidth: 110 }}
  >
+ {dbTldOptions.length > 0 ? (
+ dbTldOptions.map((tld) => (
+ <option key={tld.extension} value={tld.extension}>
+ .{tld.extension}
+ </option>
+ ))
+ ) : (
+ <>
  <option value="vn">.vn</option>
  <option value="com.vn">.com.vn</option>
  <option value="com">.com</option>
@@ -560,6 +605,8 @@ export function WebPurchaseWizard({ locale, isAuthenticated, t }: Props) {
  <option value="org">.org</option>
  <option value="info">.info</option>
  <option value="biz">.biz</option>
+ </>
+ )}
  </select>
 
  {/* Kiểm tra button */}

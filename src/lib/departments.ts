@@ -48,6 +48,10 @@ export async function getDepartments(): Promise<DepartmentRecord[]> {
   const departments = await prisma.department.findMany({
     include: {
       _count: { select: { members: true } },
+      memberDepartments: {
+        where: { isDeptHead: true },
+        select: { memberId: true },
+      },
     },
     orderBy: { key: "asc" },
   });
@@ -60,7 +64,7 @@ export async function getDepartments(): Promise<DepartmentRecord[]> {
     color: d.color ?? "#3B82F6",
     description: d.description ?? null,
     mission: d.mission ?? null,
-    headId: d.headId ?? null,
+    headId: d.memberDepartments[0]?.memberId ?? null,
     memberCount: d._count.members,
   }));
   _cacheAt = now;
@@ -111,10 +115,23 @@ export async function getDepartmentMembers(deptId: string): Promise<
       level: true,
       role: true,
       departmentId: true,
-      isDeptHead: true,
       tabPermissions: true,
+      memberDepartments: {
+        where: { departmentId: deptId },
+        select: { isDeptHead: true },
+      },
     },
     orderBy: { sortOrder: "asc" },
   });
-  return members;
+  return members.map((m) => ({
+    id: m.id,
+    name: m.name,
+    image: m.image,
+    rank: m.rank,
+    level: m.level,
+    role: m.role,
+    departmentId: m.departmentId,
+    isDeptHead: m.memberDepartments.some((md) => md.isDeptHead),
+    tabPermissions: m.tabPermissions,
+  }));
 }

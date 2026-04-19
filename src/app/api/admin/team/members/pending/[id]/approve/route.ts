@@ -154,19 +154,17 @@ export async function POST(
           },
         });
 
-        // FIX P1-9: Auto-set as department head if no head exists yet
+        // FIX P1-9: Auto-set as department head if no head exists yet (via MemberDepartment junction)
         if (memberRequest.department) {
           const dept = await tx.department.findUnique({
             where: { key: memberRequest.department },
+            include: { memberDepartments: { where: { isDeptHead: true } } },
           });
-          if (dept && !dept.headId) {
-            await tx.teamMember.update({
-              where: { id: teamMember.id },
-              data: { isDeptHead: true },
-            });
-            await tx.department.update({
-              where: { id: dept.id },
-              data: { headId: teamMember.id },
+          if (dept && dept.memberDepartments.length === 0) {
+            await tx.memberDepartment.upsert({
+              where: { memberId_departmentId: { memberId: teamMember.id, departmentId: dept.id } },
+              update: { isDeptHead: true, isPrimary: true },
+              create: { memberId: teamMember.id, departmentId: dept.id, isDeptHead: true, isPrimary: true },
             });
           }
         }

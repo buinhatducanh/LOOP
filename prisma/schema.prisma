@@ -443,7 +443,8 @@ model TeamMember {
   departmentId       String?     @map("department_id")
   departmentRelation Department? @relation(fields: [departmentId], references: [id])
   tabPermissions     String[]    @default([]) @map("tab_permissions")
-  isDeptHead         Boolean     @default(false) @map("is_dept_head")
+  /// Chức danh — do HR/Admin nhập tay (VD: "Lập trình viên", "Senior Designer")
+  position           String?
   /// Access tags granted by CEO during onboarding
   accessTags         String[]    @default([]) @map("access_tags")
   /// Onboarding status: pending = waiting CEO approval, approved = active
@@ -536,17 +537,32 @@ model TeamMember {
   offSystemSplits        OffSystemSplit[]
   /// Sales commission events (audit trail)
   salesCommissionEvents  SalesCommissionEvent[] @relation("SalesCommissionMember")
+  /// Multi-department: member co the tham gia nhieu phong ban cung luc
+  memberDepartments      MemberDepartment[]
 
   @@index([departmentId])
   @@index([isActive])
   @@index([rank])
   @@index([requestStatus])
-  @@index([isDeptHead])
   @@index([departmentId, isActive])
   @@index([rank, isActive])
   @@map("team_members")
-  /// Multi-department: member co the tham gia nhieu phong ban cung luc
-  memberDepartments      MemberDepartment[]
+}
+
+model Division {
+  id          String       @id @default(cuid())
+  key         String       @unique
+  name        String
+  shortName   String
+  color       String       @default("#3B82F6")
+  description String?
+  sortOrder   Int          @default(0)
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+  departments Department[]
+
+  @@index([key])
+  @@map("divisions")
 }
 
 model Department {
@@ -557,18 +573,17 @@ model Department {
   color       String?
   description String?
   mission     String?
-  headId      String?
-  memberCount Int?     @default(0) @map("member_count")
+  sortOrder   Int      @default(0) @map("sort_order")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
-  /// Junction table — member đă tham gia nhiều phòng ban
+  divisionId  String?   @map("division_id")
+  division    Division? @relation(fields: [divisionId], references: [id])
   memberDepartments MemberDepartment[]
-  /// Reverse FK for TeamMember.departmentId (Truong phong)
-  members          TeamMember[]
-  quests         Quest[]
+  members           TeamMember[]
+  quests            Quest[]
 
-  @@index([headId])
+  @@index([divisionId])
   @@map("departments")
 }
 
@@ -580,6 +595,10 @@ model MemberDepartment {
   member       TeamMember  @relation(fields: [memberId], references: [id], onDelete: Cascade)
   departmentId String?     @map("department_id")
   department   Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  /// Chức danh trong phòng ban này — do HR/Admin nhập
+  position     String?
+  /// Trưởng phòng = đúng 1 member có isDeptHead=true trong phòng
+  isDeptHead   Boolean     @default(false) @map("is_dept_head")
   /// Phòng ban này là primary (hiển thị chính)
   isPrimary    Boolean     @default(false) @map("is_primary")
   joinedAt     DateTime    @default(now()) @map("joined_at")
@@ -1073,6 +1092,9 @@ model ServiceAttribute {
   serviceKey         String?                @map("service_key")
   /// URL video hướng dẫn tính năng (YouTube/Vimeo/etc.)
   videoUrl           String?                @map("video_url")
+  /// JSON array of tier levels that include this feature, e.g. "[1,2,3]".
+  /// Used by SEO feature matrix: which paid SEO tiers include this feature.
+  includedTiers      String?                @map("included_tiers")
   orderAttributes    OrderAttribute[]
   parent             ServiceAttribute?      @relation("FeatureHierarchy", fields: [parentId], references: [id])
   children           ServiceAttribute[]     @relation("FeatureHierarchy")

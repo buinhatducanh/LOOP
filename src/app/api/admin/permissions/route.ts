@@ -27,7 +27,7 @@ export async function GET(req: Request) {
         name: true,
         role: true,
         departmentId: true,
-        isDeptHead: true,
+        memberDepartments: { select: { isDeptHead: true } },
         tabPermissions: true,
       },
     });
@@ -39,7 +39,7 @@ export async function GET(req: Request) {
       name: member.name ?? "",
       role: member.role ?? "",
       departmentId: member.departmentId ?? null,
-      isDeptHead: member.isDeptHead ?? false,
+      isDeptHead: (member.memberDepartments ?? []).some((md) => md.isDeptHead) ?? false,
       tabPermissions: member.tabPermissions ?? [],
     });
   } catch (err) {

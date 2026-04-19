@@ -52,7 +52,7 @@ function useAcademyT(): AcademyI18n["t"] {
 const LP_VND_RATE = 20_000; // 1 LP = 20,000 VND (khớp với BE @/lib/constants)
 function useUserLp(): number {
   const user = useAuthStore((s) => s.user);
-  return user?.availableLp ?? 0;
+  return user?.lpBalance ?? 0;
 }
 
 const PATHS = [
@@ -361,6 +361,7 @@ function PaymentModal({
   onClose: () => void;
 }) {
   const t = useAcademyT();
+  const userLp = useUserLp();
   const [mode, setMode] = useState<"vnd" | "lp-partial" | "lp-full">("vnd");
   const [processing, setProcessing] = useState(false);
   const [done, setDone] = useState(false);
@@ -791,7 +792,7 @@ export function AcademyClient({ locale }: { locale: string }) {
         !q ||
         c.title.toLowerCase().includes(q) ||
         (c.shortDescription ?? "").toLowerCase().includes(q) ||
-        (c.tags ?? []).some((t) => t.toLowerCase().includes(q));
+        (c.tags ?? []).some((t: string) => t.toLowerCase().includes(q));
       const matchCat = cat === "" || c.category === cat;
       const matchLevel = level === "" || c.level === level;
       return matchSearch && matchCat && matchLevel;

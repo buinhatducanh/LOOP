@@ -137,7 +137,8 @@ export async function getSessionFromBearer(
         teamMember: {
           select: {
             rank: true, availableLp: true, lockedLp: true, accessTags: true,
-            departmentId: true, isDeptHead: true,
+            departmentId: true,
+            memberDepartments: { select: { isDeptHead: true } },
             tabPermissions: true,
           },
         },
@@ -189,7 +190,7 @@ export async function getSessionFromBearer(
       isOnboarded: user.isOnboarded,
       departmentId,
       departmentKey,
-      isDeptHead: teamMember?.isDeptHead ?? false,
+      isDeptHead: (teamMember?.memberDepartments ?? []).some((md: any) => md.isDeptHead) ?? false,
       departmentPermissions,
       tabPermissions: teamMember?.tabPermissions ?? [],
     };
@@ -283,7 +284,8 @@ export async function getSession(): Promise<SessionUser | null> {
           teamMember: {
             select: {
               rank: true, availableLp: true, lockedLp: true, accessTags: true,
-              departmentId: true, isDeptHead: true,
+              departmentId: true,
+              memberDepartments: { select: { isDeptHead: true } },
             },
           },
         },
@@ -334,7 +336,7 @@ export async function getSession(): Promise<SessionUser | null> {
         isOnboarded: user.isOnboarded,
         departmentId,
         departmentKey,
-        isDeptHead: teamMember?.isDeptHead ?? false,
+        isDeptHead: (teamMember?.memberDepartments ?? []).some((md: any) => md.isDeptHead) ?? false,
         departmentPermissions,
         tabPermissions: user.teamMemberId
           ? (await prisma.teamMember.findUnique({
@@ -386,7 +388,8 @@ export async function getSession(): Promise<SessionUser | null> {
         teamMember: {
           select: {
             rank: true, availableLp: true, lockedLp: true, accessTags: true,
-            departmentId: true, isDeptHead: true,
+            departmentId: true,
+            memberDepartments: { select: { isDeptHead: true } },
             tabPermissions: true,
           },
         },
@@ -438,7 +441,7 @@ export async function getSession(): Promise<SessionUser | null> {
       isOnboarded: user.isOnboarded,
       departmentId,
       departmentKey,
-      isDeptHead: teamMember?.isDeptHead ?? false,
+      isDeptHead: (teamMember?.memberDepartments ?? []).some((md: any) => md.isDeptHead) ?? false,
       departmentPermissions,
       tabPermissions: teamMember?.tabPermissions ?? [],
     };

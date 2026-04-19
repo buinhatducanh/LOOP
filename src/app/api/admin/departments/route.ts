@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireAuth } from "@/lib/auth/permissions";
+import { requirePermission } from "@/lib/auth/permissions";
 import { prisma } from "@/lib/prisma";
 import { handleError, ok, list, badRequest } from "@/lib/api";
 import { buildPagination } from "@/lib/api/response";
@@ -8,7 +8,7 @@ import { addAvatar } from "@/lib/api/mappings";
 // GET /api/admin/departments — list all departments with members
 export async function GET(req: Request) {
   try {
-    await requireAuth();
+    await requirePermission("team", "read");
     const { searchParams } = new URL(req.url);
     const page = Math.max(1, parseInt(searchParams.get("page") ?? "1"));
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") ?? "20")));
@@ -16,25 +16,22 @@ export async function GET(req: Request) {
     const [departments, total] = await Promise.all([
       prisma.department.findMany({
         include: {
-          members: {
-            select: {
-              id: true,
-              name: true,
-              image: true,
-              rank: true,
-              level: true,
-              role: true,
-              department: true,
-              departmentId: true,
-              isDeptHead: true,
-              tabPermissions: true,
+          division: { select: { id: true, key: true, name: true, shortName: true } },
+          memberDepartments: {
+            include: {
+              member: {
+                select: {
+                  id: true, name: true, image: true, rank: true,
+                  level: true, role: true, department: true,
+                  departmentId: true, tabPermissions: true,
+                },
+              },
             },
-            orderBy: { sortOrder: "asc" },
           },
         },
         skip: (page - 1) * limit,
         take: limit,
-        orderBy: { key: "asc" },
+        orderBy: { sortOrder: "asc" },
       }),
       prisma.department.count(),
     ]);
@@ -47,9 +44,21 @@ export async function GET(req: Request) {
       color: dept.color ?? "#3B82F6",
       description: dept.description ?? "",
       mission: dept.mission ?? "",
-      headId: dept.headId,
-      memberCount: dept.members.length,
-      members: dept.members.map(addAvatar),
+      memberCount: dept.memberDepartments.length,
+      // Division info
+      divisionId: dept.division?.id ?? null,
+      division: dept.division
+        ? { id: dept.division.id, key: dept.division.key, name: dept.division.name, shortName: dept.division.shortName }
+        : null,
+      // Members from junction (new way)
+      members: dept.memberDepartments.map((md) => addAvatar({
+        ...md.member,
+        position: md.position,
+        isDeptHead: md.isDeptHead,
+        isPrimary: md.isPrimary,
+      })),
+      // Head: member with isDeptHead=true in this department
+      headId: dept.memberDepartments.find((md) => md.isDeptHead)?.member.id ?? null,
       createdAt: dept.createdAt,
       updatedAt: dept.updatedAt,
     }));
@@ -63,35 +72,32 @@ export async function GET(req: Request) {
 // POST /api/admin/departments — create department
 export async function POST(req: Request) {
   try {
-    await requireAuth();
+    await requirePermission("team", "create");
     const body = await req.json();
 
-    const { key, name, shortName, color, description, mission } = body;
+    const { key, name, shortName, color, description, mission, divisionId } = body;
 
     if (!key) return badRequest("key is required");
-
-    if (name == null && shortName == null) {
-      return badRequest("name or shortName is required");
-    }
-
-    if (name == null) {
-      return badRequest("name is required");
-    }
-    if (shortName == null) {
-      return badRequest("shortName is required");
-    }
+    if (!name) return badRequest("name is required");
+    if (!shortName) return badRequest("shortName is required");
 
     const existing = await prisma.department.findUnique({ where: { key } });
     if (existing) return badRequest(`Department with key "${key}" already exists`);
 
+    if (divisionId) {
+      const div = await prisma.division.findUnique({ where: { id: divisionId } });
+      if (!div) return badRequest("Division not found");
+    }
+
     const department = await prisma.department.create({
       data: {
         key,
-        name: name ?? "",
-        shortName: shortName ?? "",
+        name,
+        shortName,
         color: color ?? "#3B82F6",
         description: description ?? null,
         mission: mission ?? null,
+        divisionId: divisionId ?? null,
       },
     });
 

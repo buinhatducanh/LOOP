@@ -518,24 +518,54 @@ export function getRoleLevelLabel(level: number): { vi: string; en: string } {
   return { vi: `Cấp ${level}`, en: `Level ${level}` };
 }
 
-// ─── Department System (v4.0) ─────────────────────────────────────────────────
+// ─── Division + Department System (v5.0 — Ban-Phòng hierarchy) ──────────────────
+
+export interface Division {
+  key: string;       // "ky-thuat" | "kinh-doanh" | "tai-chinh" | "truyen-thong" | "giam-doc"
+  name: string;      // "Ban Kỹ thuật"
+  shortName: string; // "KT"
+  color: string;     // "#3B82F6"
+}
+
+export const DIVISIONS: Division[] = [
+  { key: "ky-thuat", name: "Ban Kỹ thuật", shortName: "KT", color: "#3B82F6" },
+  { key: "kinh-doanh", name: "Ban Kinh doanh", shortName: "KD", color: "#22C55E" },
+  { key: "tai-chinh", name: "Ban Tài chính", shortName: "TC", color: "#14B8A6" },
+  { key: "truyen-thong", name: "Ban Truyền thông", shortName: "TT", color: "#EC4899" },
+  { key: "giam-doc", name: "Ban Giám đốc", shortName: "CEO", color: "#EAB308" },
+];
+
+export const DIVISION_COLORS: Record<string, string> = Object.fromEntries(
+  DIVISIONS.map(d => [d.key, d.color])
+);
 
 export interface Department {
-  key: string;          // "engineering" | "design" | "media" | ...
-  name: string;         // "Phòng Kỹ thuật"
-  shortName: string;    // "IT"
-  color: string;        // "#3B82F6"
+  key: string;          // "dev" | "pm" | "qa" | "ui-design" | ...
+  name: string;         // "Phòng Lập trình"
+  shortName: string;    // "DEV"
+  color: string;         // "#3B82F6"
+  divisionKey: string;   // parent division key
 }
 
 export const DEPARTMENTS: Department[] = [
-  { key: "engineering", name: "Phòng Kỹ thuật (IT)", shortName: "IT", color: "#3B82F6" },
-  { key: "design", name: "Phòng Thiết kế", shortName: "Design", color: "#8B5CF6" },
-  { key: "media", name: "Phòng Media", shortName: "MDI", color: "#EC4899" },
-  { key: "marketing", name: "Phòng Marketing", shortName: "MKT", color: "#F59E0B" },
-  { key: "sales", name: "Phòng Kinh doanh", shortName: "SLS", color: "#22C55E" },
-  { key: "finance", name: "Phòng Tài chính", shortName: "FIN", color: "#14B8A6" },
-  { key: "hr", name: "Phòng Nhân sự", shortName: "HR", color: "#6366F1" },
-  { key: "management", name: "Ban Quản lý", shortName: "MGT", color: "#EAB308" },
+  // Ban Kỹ thuật
+  { key: "dev", name: "Phòng Lập trình", shortName: "DEV", color: "#3B82F6", divisionKey: "ky-thuat" },
+  { key: "pm", name: "Phòng Quản trị Dự án", shortName: "PM", color: "#EC4899", divisionKey: "ky-thuat" },
+  { key: "qa", name: "Phòng Đảm bảo Chất lượng", shortName: "QA", color: "#22C55E", divisionKey: "ky-thuat" },
+  { key: "ui-design", name: "Phòng Thiết kế Giao diện", shortName: "UI", color: "#8B5CF6", divisionKey: "ky-thuat" },
+  { key: "system-admin", name: "Phòng Quản trị Hệ thống", shortName: "SYS", color: "#06B6D4", divisionKey: "ky-thuat" },
+  // Ban Kinh doanh
+  { key: "marketing", name: "Phòng Marketing", shortName: "MKT", color: "#F59E0B", divisionKey: "kinh-doanh" },
+  { key: "sales", name: "Phòng Sales", shortName: "SLS", color: "#14B8A6", divisionKey: "kinh-doanh" },
+  // Ban Tài chính
+  { key: "ke-toan", name: "Phòng Kế toán", shortName: "KT", color: "#14B8A6", divisionKey: "tai-chinh" },
+  // Ban Truyền thông
+  { key: "media", name: "Phòng Media", shortName: "MED", color: "#EC4899", divisionKey: "truyen-thong" },
+  { key: "brand", name: "Phòng Truyền thông Thương hiệu", shortName: "BRAND", color: "#B07CC6", divisionKey: "truyen-thong" },
+  { key: "kol", name: "Phòng KOL", shortName: "KOL", color: "#F472B6", divisionKey: "truyen-thong" },
+  { key: "koc", name: "Phòng KOC", shortName: "KOC", color: "#FDA4AF", divisionKey: "truyen-thong" },
+  // Ban Giám đốc
+  { key: "ceo-office", name: "Ban Giám đốc", shortName: "CEO", color: "#EAB308", divisionKey: "giam-doc" },
 ];
 
 export const DEPT_COLORS: Record<string, string> = Object.fromEntries(
@@ -571,16 +601,26 @@ export const ROLE_BASE_TABS: Record<string, AdminTab[]> = {
   guest: [],
 };
 
-/** Automatic tab bonus when member belongs to a department */
+/** Automatic tab bonus when member belongs to a department (v5.0 — Ban-Phòng) */
 export const DEPT_TAB_BONUS: Record<string, AdminTab[]> = {
-  engineering: ["kanban", "lp"],
-  design: ["figma_demos", "portfolio"],
-  media: ["media", "blog"],
+  // Ban Kỹ thuật
+  dev: ["kanban", "lp"],
+  pm: ["orders", "clients", "quotation", "projects", "kanban"],
+  qa: ["projects", "kanban"],
+  "ui-design": ["figma_demos", "portfolio"],
+  "system-admin": ["kanban", "lp"],
+  // Ban Kinh doanh
   marketing: ["blog", "projects"],
   sales: ["orders", "clients", "quotation", "revenue"],
-  finance: ["revenue", "lp", "lp_manage", "income_tax", "revenue_split", "off_system_payments"],
-  hr: ["members", "departments"],
-  management: ["*"],
+  // Ban Tài chính
+  "ke-toan": ["revenue", "lp", "lp_manage", "income_tax", "revenue_split", "off_system_payments"],
+  // Ban Truyền thông
+  media: ["media", "blog"],
+  brand: ["blog", "media"],
+  kol: ["blog", "media"],
+  koc: ["blog", "media"],
+  // Ban Giám đốc
+  "ceo-office": ["*"],
 };
 
 /** Dept head bonus permissions (bonus trên base role) */

@@ -4,8 +4,8 @@
  * Booking Wizard Client Component — Next.js / BE
  * Route: /{locale}/thiet-ke-website
  *
- * 5-step wizard:
- *   0 Package+Features  1 Domain  2 Hosting+Add-ons  3 Contact  4 Payment+Submit
+ * 6-step wizard:
+ *   0 Package+Features  1 Domain  2 SEO  3 Hosting+Add-ons  4 Contact  5 Payment+Submit
  *
  * Uses: DS/GRD/GLOW design tokens, motion/react, lucide-react, next-intl
  */
@@ -49,6 +49,12 @@ interface WizardPackage {
   marketPrice?: number;
   savingPct?: number;
   freebies?: PackageFreebie[];
+  tagline?: string | null;
+  pages?: string | null;
+  pagesVi?: string | null;
+  isPopular?: boolean;
+  serviceKey?: string | null;
+  tierLevel?: number;
 }
 interface WizardFeature {
   id: string; label: string; labelEn?: string; price: number;
@@ -273,8 +279,8 @@ export function BookingWizardClient({ locale }: Props) {
   const [packages, setPackages] = useState<WizardPackage[]>([
     { id: "landing", slug: "landing", name: "Landing Page", multiplier: 1, color: "#6EB1A8", desc: "Chiến dịch Marketing, giới thiệu cá nhân, offline. Phù hợp landing page, trang giới thiệu cá nhân, sản phẩm đơn lẻ.", features: ["Giao diện Hiện đại, Responsive", "Tối ưu Trải nghiệm UI/UX", "Hỗ trợ chỉnh sửa sau bàn giao", "Trang giới thiệu SP/Dịch vụ", "Admin quản lý bài viết", "Form thu thập dữ liệu KH", "Quản lý tệp KH cơ bản", "Tối ưu SEO On-page"], lp: 80, price: 1_890_000, marketPrice: 2_500_000, savingPct: 24 },
     { id: "ban-hang", slug: "ban-hang", name: "Bán Hàng Cơ Bản", multiplier: 1, color: DS.blue, desc: "Shop online nhỏ & vừa, bắt đầu chuyển đổi số. Phù hợp cửa hàng online, boutique, dịch vụ nhỏ.", features: ["Bao gồm mọi tính năng Landing Page", "Danh mục & Chi tiết sản phẩm", "Chức năng Giỏ hàng thông minh", "Thống kê đơn hàng & Doanh thu", "Tài khoản Admin & Khách hàng", "Tặng 5 trang nội dung miễn phí"], lp: 160, popular: true, price: 3_890_000, marketPrice: 5_500_000, savingPct: 29 },
-    { id: "doanh-nghiep", slug: "doanh-nghiep", name: "Quản Trị Doanh Nghiệp", multiplier: 1, color: "#8B5CF6", desc: "Doanh nghiệp, hệ thống bán hàng quy mô lớn. Phù hợp doanh nghiệp vừa và lớn, cần quản lý phức tạp.", features: ["Bao gồm mọi tính năng Bán Hàng", "Giỏ hàng đa dịch vụ/sản phẩm", "SP nâng cao (size, màu, thuộc tính)", "Hệ thống Mã giảm giá/Flash sale", "Tích điểm & Đổi quà thành viên", "Bộ lọc & Tìm kiếm AI thông minh", "Quản lý Kho hàng & Nhà cung cấp"], lp: 240, price: 5_890_000, marketPrice: 8_900_000, savingPct: 34 },
-    { id: "yeu-cau", slug: "yeu-cau", name: "Theo Yêu Cầu", multiplier: 1, color: DS.pink, desc: "Startups, nền tảng App-web có logic phức tạp. Phù hợp startup, platform, web app có yêu cầu đặc thù riêng.", features: ["Bao gồm mọi tính năng Doanh Nghiệp", "UI/UX Độc quyền (Không mẫu)", "Tùy chỉnh chức năng Core System", "Tích hợp Cổng thanh toán/Vận chuyển", "API kết nối bên thứ 3 (Zalo, App...)", "Bảo mật đa lớp & Tối ưu Speed cực hạn"], lp: 320, price: 7_890_000, marketPrice: 12_000_000, savingPct: 34 },
+    { id: "doanh-nghiep", slug: "doanh-nghiep", name: "Quản Trị Doanh Nghiệp", multiplier: 1, color: "#8B5CF6", desc: "E-commerce toàn diện + vận hành nội bộ. Phù hợp doanh nghiệp vừa và lớn, quản lý kho hàng, nhà cung cấp, khách hàng VIP.", features: ["Bao gồm mọi tính năng Bán Hàng", "Giỏ hàng đa dịch vụ/sản phẩm", "Quản lý Kho hàng & Nhà cung cấp", "Tích điểm & Đổi quà thành viên", "Hệ thống Mã giảm giá/Flash sale", "Tìm kiếm AI thông minh", "Giao diện tùy chỉnh theo thương hiệu"], lp: 240, price: 7_890_000, marketPrice: 11_900_000, savingPct: 34 },
+    { id: "yeu-cau", slug: "yeu-cau", name: "Theo Yêu Cầu", multiplier: 1, color: DS.pink, desc: "Startups, platform, app-web có logic phức tạp. Phù hợp startup, platform, web app có yêu cầu đặc thù riêng.", features: ["Bao gồm mọi tính năng Doanh Nghiệp", "UI/UX Độc quyền (Không mẫu)", "Tùy chỉnh chức năng Core System", "Tích hợp ERP/MISA/KiotViet/GHTK", "API kết nối bên thứ 3 (Zalo, App...)", "Bảo mật đa lớp & Tối ưu Speed cực hạn", "Hỗ trợ ưu tiên 24/7"], lp: 320, price: 12_900_000, marketPrice: 18_000_000, savingPct: 28 },
   ]);
   const [featureOptions, setFeatureOptions] = useState<Record<string, WizardFeature[]>>({
     web: WEBSITE_FEATURES_FALLBACK,
@@ -295,8 +301,11 @@ export function BookingWizardClient({ locale }: Props) {
   // LP balance — fetched from /api/pricing/config?email= when customer enters email
   const [lpBalance, setLpBalance] = useState(0);
 
-  // ── SEO service state (Step 0 — website booking) ─────────────────────────────
-  const [selectedSeoTier, setSelectedSeoTier] = useState<number>(0); // 0 = not selected, 1/2/3 = tier level
+  // ── SEO service state (Step 2 — dedicated SEO step after Domain) ─────────────────
+  /** Free SEO bundled with website purchase (brand keyword + GSC verification) */
+  const [selectedFreeSeo, setSelectedFreeSeo] = useState<boolean>(false);
+  /** Paid monthly SEO tier: 1 = Cơ bản 900k, 2 = Nâng cao 1.8m, 3 = Chuyên nghiệp 3.6m */
+  const [selectedSeoTier, setSelectedSeoTier] = useState<number>(0); // 0 = none, 1/2/3 = paid tier
 
   // ── Web package feature table state ──────────────────────────────────────────
   /** Map from package id → tier level (1-4) for WebPackageFeatureTable */
@@ -332,8 +341,8 @@ export function BookingWizardClient({ locale }: Props) {
   const DB_PACKAGE_PRICES: Record<string, { basePrice: number; marketPrice: number; name: string; nameVi: string }> = {
     landing: { basePrice: 1_890_000, marketPrice: 2_500_000, name: "Landing Page", nameVi: "Thiết kế Landing Page" },
     "ban-hang": { basePrice: 3_890_000, marketPrice: 5_500_000, name: "Bán Hàng Cơ Bản", nameVi: "Bán Hàng Cơ Bản" },
-    "doanh-nghiep": { basePrice: 5_890_000, marketPrice: 8_900_000, name: "Doanh Nghiệp", nameVi: "Thiết Kế Website Doanh Nghiệp" },
-    "yeu-cau": { basePrice: 7_890_000, marketPrice: 12_000_000, name: "Theo Yêu Cầu", nameVi: "Thiết Kế Theo Yêu Cầu" },
+    "doanh-nghiep": { basePrice: 7_890_000, marketPrice: 11_900_000, name: "Doanh Nghiệp", nameVi: "Thiết Kế Website Doanh Nghiệp" },
+    "yeu-cau": { basePrice: 12_900_000, marketPrice: 18_000_000, name: "Theo Yêu Cầu", nameVi: "Thiết Kế Theo Yêu Cầu" },
   };
 
   /** Build webTiers — uses DB prices from DB_PACKAGE_PRICES keyed by slug */
@@ -351,7 +360,7 @@ export function BookingWizardClient({ locale }: Props) {
       shortDesc: apiPkg?.desc ?? "",
       basePrice,
       marketPrice,
-      color: TIER_COLORS_WEB[level],
+      color: (apiPkg?.color as string) ?? TIER_COLORS_WEB[level],
     };
   });
 
@@ -382,7 +391,7 @@ export function BookingWizardClient({ locale }: Props) {
 
     // ── 5. Cỗ máy Thương mại & Chốt đơn ───────────────────────
     { id: "ecom-categories", label: "Quản lý Danh mục", labelEn: "Product Category Management", description: "Phân loại hàng hóa khoa học, hiển thị nhiều ảnh, màu sắc, kích cỡ (size) — khách dễ tìm sản phẩm.", category: "Thương mại", extraPrice: 5_000_000, includedTiers: [2, 3, 4] },
-    { id: "ecom-cart", label: "Giỏ hàng & Đặt hàng", labelEn: "Shopping Cart & Checkout", description: "Khách gom nhiều đồ, điền thông tin nhận hàng và tự động tính tổng tiền — chốt đơn tức thì.", category: "Thương mại", extraPrice: 12_000_000, includedTiers: [3, 4] },
+    { id: "ecom-cart", label: "Giỏ hàng & Đặt hàng", labelEn: "Shopping Cart & Checkout", description: "Khách gom nhiều đồ, điền thông tin nhận hàng và tự động tính tổng tiền — chốt đơn tức thì. Tích hợp sẵn trong gói này.", category: "Thương mại", extraPrice: 12_000_000, includedTiers: [2, 3, 4] },
     { id: "ecom-coupons", label: "Tạo Mã giảm giá & Giờ vàng", labelEn: "Coupons & Flash Sales", description: "Làm các coupon giảm 50k, đồng hồ đếm ngược kích thích mua ngay — tăng tỷ lệ chuyển đổi.", category: "Thương mại", extraPrice: 3_000_000, includedTiers: [3, 4] },
     { id: "ecom-loyalty", label: "Tích điểm Thành viên", labelEn: "Loyalty Points System", description: "Khách mua nhiều được cộng điểm để đổi lấy ưu đãi cho lần sau — tăng giá trị trọn đời (LTV).", category: "Thương mại", extraPrice: 5_000_000, includedTiers: [3, 4] },
     { id: "ecom-inventory", label: "Quản lý tồn Kho tự động", labelEn: "Auto Inventory Management", description: "Tự động trừ số lượng khi có đơn, báo đỏ khi hàng sắp hết — không lo oversell.", category: "Thương mại", extraPrice: 4_000_000, includedTiers: [3, 4] },
@@ -390,41 +399,41 @@ export function BookingWizardClient({ locale }: Props) {
     // ── 6. Nâng cao, Tốc độ & Bảo mật ────────────────────────
     { id: "adv-security", label: "Bảo mật Đa lớp & Chống Hacker", labelEn: "Multi-layer Security & SSL", description: "Ổ khóa xanh (SSL) bảo vệ dữ liệu khách hàng tuyệt đối — HTTPS, chống DDoS, backup tự động.", category: "Nâng cao", includedTiers: [1, 2, 3, 4] },
     { id: "adv-speed", label: "Ép xung Tốc độ tải trang", labelEn: "Page Speed Optimization", description: "Dùng công nghệ nén ảnh, website mở lên ngay lập tức dưới 3 giây — Google yêu web nhanh.", category: "Nâng cao", extraPrice: 2_000_000, includedTiers: [2, 3, 4] },
-    { id: "adv-api", label: "Kết nối Phần mềm thứ 3", labelEn: "3rd-party Software Integration", description: "Tự động đẩy dữ liệu sang phần mềm bạn đang dùng (MISA, KiotViet, GHTK...) — đồng bộ không cần nhập tay.", category: "Nâng cao", extraPrice: 6_000_000, includedTiers: [3, 4] },
+    { id: "adv-api", label: "Kết nối Phần mềm thứ 3", labelEn: "3rd-party Software Integration", description: "Tự động đẩy dữ liệu sang phần mềm bạn đang dùng (MISA, KiotViet, GHTK...) — đồng bộ không cần nhập tay. Chỉ có ở gói Doanh Nghiệp trở lên.", category: "Nâng cao", extraPrice: 6_000_000, includedTiers: [3, 4] },
     { id: "adv-payments", label: "Tích hợp Cổng quét mã Thanh toán", labelEn: "Payment Gateway Integration", description: "Khách trả tiền trực tiếp qua MoMo, VNPay, ZaloPay, quẹt thẻ Visa — thanh toán đa kênh, an toàn.", category: "Nâng cao", extraPrice: 5_000_000, includedTiers: [3, 4] },
   ];
 
-  /** SEO tiers loaded from DB — fallback sample data */
+  /** SEO tiers — monthly subscription pricing (2026-04-19) */
   const [seoTiers, setSeoTiers] = useState<SEOPackageTier[]>([
-    { level: 1, name: "SEO Cơ Bản", shortDesc: "Tối ưu từ khóa cơ bản, báo cáo tháng", basePrice: 2_000_000 },
-    { level: 2, name: "SEO Doanh Nghiệp", shortDesc: "Nghiên cứu sâu, 10 từ khóa, audit kỹ thuật", basePrice: 5_000_000 },
-    { level: 3, name: "SEO Chuyên Nghiệp", shortDesc: "Full SEO, 30 từ khóa, content AI, báo cáo tuần", basePrice: 9_000_000 },
+    { level: 1, name: "SEO Cơ Bản", shortDesc: "5 bài/tháng · 1 từ khóa focus", basePrice: 900_000 },
+    { level: 2, name: "SEO Nâng Cao", shortDesc: "10 bài/tháng · 2 từ khóa focus", basePrice: 1_800_000 },
+    { level: 3, name: "SEO Chuyên Nghiệp", shortDesc: "20 bài/tháng · 3 từ khóa + đối thủ", basePrice: 3_600_000 },
   ]);
 
   /** SEO features with tier inclusion matrix */
-  const [seoFeatures, setSeoFeatures] = useState<SEOFeature[]>([
+  const [seoFeatures, setSEOFeatures] = useState<SEOFeature[]>([
     // Tối ưu On-page
-    { id: "seo-title", label: "Tối ưu Title & Meta Description", labelEn: "Title & Meta Tag Optimization", description: "Tối ưu thẻ title, meta description cho mỗi trang để tăng tỷ lệ click (CTR) trên Google.", category: "Tối ưu On-page", includedTiers: [1, 2, 3] },
-    { id: "seo-heading", label: "Cấu trúc Heading (H1-H6)", labelEn: "Heading Structure", description: "Sắp xếp đúng hierarchy H1→H6 giúp Google hiểu nội dung và phân cấp thông tin trên trang.", category: "Tối ưu On-page", includedTiers: [1, 2, 3] },
-    { id: "seo-schema", label: "Schema Markup (Structured Data)", labelEn: "Schema.org Structured Data", description: "Thêm dữ liệu có cấu trúc (Organization, FAQ, Product...) giúp Google hiểu rõ nội dung và hiển thị Rich Snippet.", category: "Tối ưu On-page", extraPrice: 1_500_000, includedTiers: [2, 3] },
-    { id: "seo-speed", label: "Tối ưu Tốc độ Tải Trang (Core Web Vitals)", labelEn: "Page Speed Optimization", description: "Tối ưu LCP, FID, CLS — các chỉ số Core Web Vitals ảnh hưởng trực tiếp đến thứ hạng Google.", category: "Tối ưu On-page", extraPrice: 2_000_000, includedTiers: [2, 3] },
-    { id: "seo-mobile", label: "Tối ưu Mobile-First", labelEn: "Mobile-First Optimization", description: "Đảm bảo website hiển thị và hoạt động tốt trên thiết bị di động — yếu tố xếp hạng quan trọng của Google.", category: "Tối ưu On-page", includedTiers: [1, 2, 3] },
+    { id: "seo-title", label: "Tối ưu Title & Meta Description", labelEn: "Title & Meta Tag Optimization", description: "Tối ưu thẻ title, meta description cho mỗi trang để tăng tỷ lệ click (CTR) trên Google.", category: "Tối ưu On-page", includedTiers: [1, 2, 3, 4] },
+    { id: "seo-heading", label: "Cấu trúc Heading (H1-H6)", labelEn: "Heading Structure", description: "Sắp xếp đúng hierarchy H1→H6 giúp Google hiểu nội dung và phân cấp thông tin trên trang.", category: "Tối ưu On-page", includedTiers: [1, 2, 3, 4] },
+    { id: "seo-schema", label: "Schema Markup (Structured Data)", labelEn: "Schema.org Structured Data", description: "Thêm dữ liệu có cấu trúc (Organization, FAQ, Product...) giúp Google hiểu rõ nội dung và hiển thị Rich Snippet.", category: "Tối ưu On-page", extraPrice: 1_500_000, includedTiers: [2, 3, 4] },
+    { id: "seo-speed", label: "Tối ưu Tốc độ Tải Trang (Core Web Vitals)", labelEn: "Page Speed Optimization", description: "Tối ưu LCP, FID, CLS — các chỉ số Core Web Vitals ảnh hưởng trực tiếp đến thứ hạng Google.", category: "Tối ưu On-page", extraPrice: 2_000_000, includedTiers: [2, 3, 4] },
+    { id: "seo-mobile", label: "Tối ưu Mobile-First", labelEn: "Mobile-First Optimization", description: "Đảm bảo website hiển thị và hoạt động tốt trên thiết bị di động — yếu tố xếp hạng quan trọng của Google.", category: "Tối ưu On-page", includedTiers: [1, 2, 3, 4] },
     // Tối ưu Off-page
-    { id: "off-guestpost", label: "Guest Post / Backlink chất lượng", labelEn: "Guest Posting & Quality Backlinks", description: "Xây dựng backlink từ website uy tín, DA cao để tăng Domain Authority và thứ hạng từ khóa.", category: "Tối ưu Off-page", extraPrice: 3_000_000, includedTiers: [2, 3] },
-    { id: "off-social", label: "Chia sẻ Mạng Xã Hội (Social Signals)", labelEn: "Social Media Sharing", description: "Tối ưu Open Graph, chia sẻ nội dung lên Facebook, Zalo OA để tăng tín hiệu xã hội.", category: "Tối ưu Off-page", includedTiers: [1, 2, 3] },
-    { id: "off-nap", label: "Quản lý NAP (Name, Address, Phone)", labelEn: "NAP Citation Management", description: "Đảm bảo thông tin doanh nghiệp nhất quán trên Google Business, các thư mục và bản đồ.", category: "Tối ưu Off-page", extraPrice: 1_000_000, includedTiers: [2, 3] },
+    { id: "off-guestpost", label: "Guest Post / Backlink chất lượng", labelEn: "Guest Posting & Quality Backlinks", description: "Xây dựng backlink từ website uy tín, DA cao để tăng Domain Authority và thứ hạng từ khóa.", category: "Tối ưu Off-page", extraPrice: 3_000_000, includedTiers: [2, 3, 4] },
+    { id: "off-social", label: "Chia sẻ Mạng Xã Hội (Social Signals)", labelEn: "Social Media Sharing", description: "Tối ưu Open Graph, chia sẻ nội dung lên Facebook, Zalo OA để tăng tính hiệu xã hội.", category: "Tối ưu Off-page", includedTiers: [1, 2, 3, 4] },
+    { id: "off-nap", label: "Quản lý NAP (Name, Address, Phone)", labelEn: "NAP Citation Management", description: "Đảm bảo thông tin doanh nghiệp nhất quán trên Google Business, các thư mục và bản đồ.", category: "Tối ưu Off-page", extraPrice: 1_000_000, includedTiers: [2, 3, 4] },
     // Nghiên cứu từ khóa
-    { id: "kw-basic", label: "Nghiên cứu 5 Từ Khóa Cạnh Tranh Thấp", labelEn: "5 Low-Competition Keywords", description: "Phân tích và chọn 5 từ khóa có lượng tìm kiếm ổn định, cạnh tranh thấp, phù hợp với website mới.", category: "Nghiên cứu từ khóa", includedTiers: [1, 2, 3] },
-    { id: "kw-medium", label: "Nghiên cứu 15 Từ Khóa Trung Bình", labelEn: "15 Medium-Competition Keywords", description: "Phân tích chuyên sâu 15 từ khóa bao gồm short-tail và long-tail, có chiến lược nội dung đi kèm.", category: "Nghiên cứu từ khóa", extraPrice: 1_500_000, includedTiers: [2, 3] },
-    { id: "kw-advanced", label: "Nghiên cứu 30+ Từ Khóa Chiến Lược", labelEn: "30+ Strategic Keywords", description: "Phân tích toàn diện 30+ từ khóa kèm content cluster, competitor analysis và topical authority strategy.", category: "Nghiên cứu từ khóa", extraPrice: 3_000_000, includedTiers: [3] },
+    { id: "kw-basic", label: "Nghiên cứu 5 Từ Khóa Cạnh Tranh Thấp", labelEn: "5 Low-Competition Keywords", description: "Phân tích và chọn 5 từ khóa có lượng tìm kiếm ổn định, cạnh tranh thấp, phù hợp với website mới.", category: "Nghiên cứu từ khóa", includedTiers: [1, 2, 3, 4] },
+    { id: "kw-medium", label: "Nghiên cứu 15 Từ Khóa Trung Bình", labelEn: "15 Medium-Competition Keywords", description: "Phân tích chuyên sâu 15 từ khóa bao gồm short-tail và long-tail, có chiến lược nội dung đi kèm.", category: "Nghiên cứu từ khóa", extraPrice: 1_500_000, includedTiers: [2, 3, 4] },
+    { id: "kw-advanced", label: "Nghiên cứu 30+ Từ Khóa Chiến Lược", labelEn: "30+ Strategic Keywords", description: "Phân tích toàn diện 30+ từ khóa kèm content cluster, competitor analysis và topical authority strategy.", category: "Nghiên cứu từ khóa", extraPrice: 3_000_000, includedTiers: [3, 4] },
     // Phân tích kỹ thuật
-    { id: "tech-audit", label: "SEO Audit Toàn Diện", labelEn: "Full SEO Technical Audit", description: "Kiểm tra 50+ yếu tố kỹ thuật: sitemap, robots.txt, canonical, broken links, duplicate content...", category: "Phân tích kỹ thuật", includedTiers: [1, 2, 3] },
-    { id: "tech-core", label: "Sửa Lỗi Core Web Vitals", labelEn: "Core Web Vitals Fix", description: "Khắc phục các lỗi LCP, CLS, FID ảnh hưởng đến thứ hạng và trải nghiệm người dùng.", category: "Phân tích kỹ thuật", extraPrice: 2_500_000, includedTiers: [2, 3] },
-    { id: "tech-gsc", label: "Google Search Console Setup & Monitoring", labelEn: "GSC Setup & Monitoring", description: "Cấu hình GSC, theo dõi hiệu suất, phát hiện lỗi indexing và cơ hội cải thiện thứ hạng.", category: "Phân tích kỹ thuật", extraPrice: 500_000, includedTiers: [2, 3] },
+    { id: "tech-audit", label: "SEO Audit Toàn Diện", labelEn: "Full SEO Technical Audit", description: "Kiểm tra 50+ yếu tố kỹ thuật: sitemap, robots.txt, canonical, broken links, duplicate content...", category: "Phân tích kỹ thuật", includedTiers: [1, 2, 3, 4] },
+    { id: "tech-core", label: "Sửa Lỗi Core Web Vitals", labelEn: "Core Web Vitals Fix", description: "Khắc phục các lỗi LCP, CLS, FID ảnh hưởng đến thứ hạng và trải nghiệm người dùng.", category: "Phân tích kỹ thuật", extraPrice: 2_500_000, includedTiers: [2, 3, 4] },
+    { id: "tech-gsc", label: "Google Search Console Setup & Monitoring", labelEn: "GSC Setup & Monitoring", description: "Cấu hình GSC, theo dõi hiệu suất, phát hiện lỗi indexing và cơ hội cải thiện thứ hạng.", category: "Phân tích kỹ thuật", extraPrice: 500_000, includedTiers: [2, 3, 4] },
     // Báo cáo
-    { id: "rpt-monthly", label: "Báo Cáo Tháng (Google Analytics)", labelEn: "Monthly Performance Report", description: "Báo cáo chi tiết hàng tháng: thứ hạng từ khóa, lưu lượng organic, tỷ lệ click, hành vi người dùng.", category: "Báo cáo", includedTiers: [1, 2, 3] },
-    { id: "rpt-weekly", label: "Báo Cáo Tuần (Dashboard SEO)", labelEn: "Weekly SEO Dashboard", description: "Dashboard SEO theo dõi real-time: rankings, traffic, backlinks, technical issues — cập nhật hàng tuần.", category: "Báo cáo", extraPrice: 1_000_000, includedTiers: [2, 3] },
-    { id: "rpt-ranktracker", label: "Rank Tracker 30+ Keywords", labelEn: "Rank Tracking for 30+ Keywords", description: "Theo dõi vị trí thứ hạng của 30+ từ khóa trên Google, Bing hàng ngày với biểu đồ xu hướng.", category: "Báo cáo", extraPrice: 2_000_000, includedTiers: [3] },
+    { id: "rpt-monthly", label: "Báo Cáo Tháng (Google Analytics)", labelEn: "Monthly Performance Report", description: "Báo cáo chi tiết hàng tháng: thứ hạng từ khóa, lưu lượng organic, tỷ lệ click, hành vi người dùng.", category: "Báo cáo", includedTiers: [1, 2, 3, 4] },
+    { id: "rpt-weekly", label: "Báo Cáo Tuần (Dashboard SEO)", labelEn: "Weekly SEO Dashboard", description: "Dashboard SEO theo dõi real-time: rankings, traffic, backlinks, technical issues — cập nhật hàng tuần.", category: "Báo cáo", extraPrice: 1_000_000, includedTiers: [2, 3, 4] },
+    { id: "rpt-ranktracker", label: "Rank Tracker 30+ Keywords", labelEn: "Rank Tracking for 30+ Keywords", description: "Theo dõi vị trí thứ hạng của 30+ từ khóa trên Google, Bing hàng ngày với biểu đồ xu hướng.", category: "Báo cáo", extraPrice: 2_000_000, includedTiers: [3, 4] },
   ]);
 
   // Filtered feature options — always "web" since website-only
@@ -446,7 +455,7 @@ export function BookingWizardClient({ locale }: Props) {
           // Merge popular flag từ DB (hoặc hardcode "business" là popular mặc định)
           const withPopular = webPkgs.map((p: WizardPackage) => ({
             ...p,
-            popular: p.popular ?? (p.slug === "business"),
+            popular: p.popular ?? false,
           }));
           if (withPopular.length > 0) setPackages(withPopular);
         }
@@ -460,6 +469,18 @@ export function BookingWizardClient({ locale }: Props) {
             grouped[cat]!.push(f);
           }
           if (Object.keys(grouped).length) setFeatureOptions(grouped);
+        }
+
+        // ── Custom features: merge tier="custom" features from DB into web options ──
+        const customFeatures = cfg.features?.filter((f: WizardFeature) => f.tier === "custom") ?? [];
+        if (customFeatures.length > 0) {
+          setFeatureOptions(prev => {
+            const existingIds = new Set((prev["web"] ?? []).map((f: WizardFeature) => f.id));
+            const newCustom = customFeatures.filter((f: WizardFeature) => !existingIds.has(f.id));
+            if (!newCustom.length) return prev;
+            const existing = prev["web"] ?? [];
+            return { ...prev, web: [...existing, ...newCustom] };
+          });
         }
 
         // ── Addons ──
@@ -476,6 +497,19 @@ export function BookingWizardClient({ locale }: Props) {
         // ── Customer LP balance (if email provided) ──
         if (email && cfg.customerLp) {
           setLpBalance(cfg.customerLp.balance ?? 0);
+        }
+
+        // ── SEO tiers + features from DB (wired via /api/pricing/config) ──
+        if (cfg.seoTiers?.length) {
+          setSeoTiers(cfg.seoTiers.map((t) => ({
+            level: t.level,
+            name: t.name,
+            shortDesc: t.shortDesc ?? '',
+            basePrice: t.basePrice,
+          })));
+        }
+        if (cfg.seoFeatures?.length) {
+          setSEOFeatures(cfg.seoFeatures as SEOFeature[]);
         }
       })
       .catch(() => { /* keep fallback */ });
@@ -630,9 +664,10 @@ export function BookingWizardClient({ locale }: Props) {
   const canNext = () => {
     if (step === 0) return !!selectedPackage;      // must select a package
     if (step === 1) return true;                    // domain is optional
-    if (step === 2) return true;                    // hosting + addons optional
-    if (step === 3) return !!(name && email && phone); // contact info required
-    if (step === 4) return true;
+    if (step === 2) return true;                    // SEO is optional (free tier or paid)
+    if (step === 3) return true;                    // hosting + addons optional
+    if (step === 4) return !!(name && email && phone); // contact info required
+    if (step === 5) return true;
     return true;
   };
 
@@ -646,8 +681,8 @@ export function BookingWizardClient({ locale }: Props) {
     const PACKAGE_PRICES_SUBMIT: Record<string, number> = {
       landing: 1_890_000,
       "ban-hang": 3_890_000,
-      "doanh-nghiep": 5_890_000,
-      "yeu-cau": 7_890_000,
+      "doanh-nghiep": 7_890_000,
+      "yeu-cau": 12_900_000,
     };
 
     const basePrice = pkg ? (PACKAGE_PRICES_SUBMIT[pkg.id] ?? DB_PACKAGE_PRICES[pkg.id]?.basePrice ?? 1_890_000) : 1_890_000;
@@ -685,6 +720,44 @@ export function BookingWizardClient({ locale }: Props) {
     try {
       setSubmitLoading(true);
       setSubmitError("");
+
+      // Detect source: if any selected feature has tier === "custom" → "custom"
+      const source = selectedFeatures.some(id => {
+        const feat = featOpts.find(f => f.id === id);
+        return feat?.tier === "custom";
+      }) ? "custom" : "fixed";
+
+      const pricingBreakdown = {
+        package: {
+          slug: pkg?.slug ?? selectedPackage,
+          name: pkg?.name ?? "",
+          price: basePrice,
+          marketPrice: pkg?.marketPrice ?? basePrice,
+          color: (pkg as WizardPackage)?.color ?? null,
+        },
+        features: paidFeatureItems,
+        extras: extraOptions.filter(e => selectedExtras.includes(e.id)).map(e => ({
+          id: e.id, label: e.label, price: e.price,
+        })),
+        hosting: selectedHosting ? {
+          slug: selectedHosting.slug,
+          name: selectedHosting.name,
+          price: selectedHosting.discountedPrice,
+        } : null,
+        domains: selectedDomains.map(d => ({
+          extension: d.extension,
+          name: domainQuery + d.extension,
+          price: d.registrationPrice,
+        })),
+        lpDiscount: vndDiscount,
+        lpUsed: lpDiscount,
+        vatRate,
+        vatAmount: Math.round((subtotal - vndDiscount) * vatRate),
+        subtotal,
+        total,
+        source,
+      };
+
       const res = await fetch("/api/pricing/quote", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -695,12 +768,14 @@ export function BookingWizardClient({ locale }: Props) {
           companyName: company || undefined,
           selectedItems,
           totalAmount: total,
-          lpUsed: lpDiscount,  // LP discount applied by customer
+          lpUsed: lpDiscount,
           paymentPlan,
           notes: `Dịch vụ: ${svc?.title ?? ""} | Tính năng: ${selectedFeatures.length} | Ghi chú đội ngũ: ${talentNote || "—"} | Bắt đầu: ${startDate || "—"} | Thời gian: ${duration || "—"}`,
           hostingPlanSlug: selectedHosting?.slug || undefined,
           domainNames: selectedDomains.map(d => domainQuery + d.extension),
           domainTotal: selectedDomains.reduce((s, d) => s + d.registrationPrice, 0),
+          source,
+          pricingBreakdown,
         }),
       });
       const data = await res.json();
@@ -724,9 +799,10 @@ export function BookingWizardClient({ locale }: Props) {
   const STEP_LABELS = [
     t("bookingPackage"),  // Step 0: Package + Features
     t("bookingDomain"),   // Step 1: Domain
-    t("bookingHosting"),  // Step 2: Hosting + Add-ons
-    t("bookingContact"),  // Step 3: Contact info
-    t("bookingPayment"),  // Step 4: Payment + Submit
+    t("bookingSeo"),     // Step 2: SEO (NEW — dedicated step after domain)
+    t("bookingHosting"),  // Step 3: Hosting + Add-ons
+    t("bookingContact"),  // Step 4: Contact info
+    t("bookingPayment"),  // Step 5: Payment + Submit
   ];
 
   // ── Step-based wizard layout ─────────────────────────────────────────
@@ -1067,100 +1143,6 @@ export function BookingWizardClient({ locale }: Props) {
                     </div>
                   )}
 
-                  {/* ── SEO Service: Bổ sung dịch vụ SEO ─────────────────── */}
-                  <div style={{ marginBottom: 32 }}>
-                    {/* SEO section header */}
-                    <div style={{ marginBottom: 16 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 6 }}>
-                        <div style={{ width: 4, height: 20, background: "#F59E0B", borderRadius: 2 }} />
-                        <h3 style={{ color: DS.text, fontSize: 16, fontFamily: DS.heading, fontWeight: 700, letterSpacing: "0.06em" }}>
-                          BỔ SUNG DỊCH VỤ SEO
-                        </h3>
-                        <div style={{ flex: 1, height: 1, background: DS.border, maxWidth: 120 }} />
-                      </div>
-                      <p style={{ color: DS.text4, fontSize: 13, marginLeft: 16 }}>
-                        Thêm dịch vụ SEO chuẩn Google để website của bạn dễ dàng được tìm thấy.{" "}
-                        <span style={{ color: "#F59E0B" }}>Tăng thứ hạng từ khóa, lưu lượng organic.</span>
-                      </p>
-                    </div>
-
-                    {/* SEO tier selector */}
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 200px), 1fr))", gap: 12, marginBottom: 20 }}>
-                      {seoTiers.map(tier => {
-                        const isSelected = selectedSeoTier === tier.level;
-                        const tierColors = ["", "#94A3B8", "#4F7DF3", "#F59E0B"];
-                        const color = tierColors[tier.level] ?? "#94A3B8";
-                        return (
-                          <motion.button
-                            key={tier.level}
-                            onClick={() => setSelectedSeoTier(selectedSeoTier === tier.level ? 0 : tier.level)}
-                            style={{
-                              background: isSelected ? `${color}15` : "rgba(15,23,42,0.5)",
-                              border: isSelected ? `2px solid ${color}60` : `1px solid ${DS.border}`,
-                              borderRadius: 14, padding: "16px 14px", cursor: "pointer",
-                              textAlign: "left", position: "relative", overflow: "hidden",
-                              transition: "all 0.2s",
-                            }}
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                          >
-                            {isSelected && (
-                              <div style={{
-                                position: "absolute", top: 10, right: 10,
-                                width: 22, height: 22, borderRadius: "50%",
-                                background: color, display: "flex", alignItems: "center", justifyContent: "center",
-                              }}>
-                                <Check size={12} style={{ color: "#fff", strokeWidth: 3 }} />
-                              </div>
-                            )}
-                            <div style={{ color: isSelected ? color : DS.text4, fontSize: 9, fontFamily: DS.mono, letterSpacing: "0.15em", marginBottom: 6, transition: "color 0.2s" }}>
-                              {tier.name.toUpperCase()}
-                            </div>
-                            <div style={{ color: DS.text, fontFamily: DS.heading, fontSize: 18, fontWeight: 800, marginBottom: 4 }}>
-                              {fmtVND(tier.basePrice)}
-                            </div>
-                            <div style={{ color: DS.text4, fontSize: 10, lineHeight: 1.4 }}>
-                              {tier.shortDesc}
-                            </div>
-                          </motion.button>
-                        );
-                      })}
-                    </div>
-
-                    {/* SEO Feature Matrix — only shown when a tier is selected */}
-                    {selectedSeoTier > 0 && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3 }}
-                      >
-                        <SEOPackageFeatureTable
-                          features={seoFeatures}
-                          selectedTier={selectedSeoTier}
-                          tiers={seoTiers}
-                        />
-                      </motion.div>
-                    )}
-
-                    {/* SEO hint */}
-                    {selectedSeoTier === 0 && (
-                      <div style={{
-                        padding: "14px 16px", borderRadius: 12,
-                        background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.2)",
-                        display: "flex", alignItems: "center", gap: 10,
-                      }}>
-                        <span style={{ fontSize: 18 }}>💡</span>
-                        <div>
-                          <p style={{ color: DS.text2, fontSize: 12, fontWeight: 600, marginBottom: 2 }}>
-                            Bạn chưa chọn gói SEO
-                          </p>
-                          <p style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono }}>
-                            Chọn một gói SEO bên trên để xem chi tiết tính năng. Bạn có thể đặt SEO cùng website trong cùng một đơn hàng.
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
                 </div>
               )}
               {/* ── STEP 1: Domain ──────────────────────────────────────── */}
@@ -1427,8 +1409,172 @@ export function BookingWizardClient({ locale }: Props) {
                 </div>
               )}
 
-              {/* ── STEP 2: Hosting + Add-ons ───────────────────────────── */}
+              {/* ── STEP 2: SEO — Dedicated SEO step after Domain ─────────── */}
               {step === 2 && (
+                <div>
+                  {/* Header */}
+                  <div className="mb-6 p-5 rounded-2xl" style={{ background: "rgba(15,23,42,0.7)", border: `1px solid ${DS.amber}15` }}>
+                    <div style={{ color: DS.amber, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.22em", marginBottom: 8 }}>SEO — TỐI ƯU TÌM KIẾM</div>
+                    <h3 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 26, fontWeight: 900, letterSpacing: "0.04em", marginBottom: 6 }}>Đẩy website lên Top Google</h3>
+                    <p style={{ color: DS.text3, fontSize: 14, lineHeight: 1.7 }}>
+                      Chọn gói SEO phù hợp để website của bạn được tìm thấy trên Google. Gói Khởi động Miễn phí được tặng kèm khi mua website.
+                    </p>
+                  </div>
+
+                  {/* SEO tier cards */}
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 200px), 1fr))", gap: 12, marginBottom: 24 }}>
+                    {/* FREE tier — bundled with website purchase */}
+                    <motion.button
+                      onClick={() => {
+                        if (selectedFreeSeo) { setSelectedFreeSeo(false); setSelectedSeoTier(0); }
+                        else { setSelectedFreeSeo(true); setSelectedSeoTier(0); }
+                      }}
+                      style={{
+                        background: selectedFreeSeo ? `${DS.green}12` : "rgba(15,23,42,0.5)",
+                        border: selectedFreeSeo ? `2px solid ${DS.green}50` : `1px solid ${DS.border}`,
+                        borderRadius: 16, padding: "18px 16px", cursor: "pointer",
+                        textAlign: "left", position: "relative", overflow: "hidden",
+                        transition: "all 0.2s",
+                      }}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      {selectedFreeSeo && (
+                        <div style={{
+                          position: "absolute", top: 10, right: 10,
+                          width: 22, height: 22, borderRadius: "50%",
+                          background: DS.green, display: "flex", alignItems: "center", justifyContent: "center",
+                        }}>
+                          <Check size={12} style={{ color: "#fff", strokeWidth: 3 }} />
+                        </div>
+                      )}
+                      <div style={{ color: DS.green, fontSize: 9, fontFamily: DS.mono, letterSpacing: "0.15em", marginBottom: 6 }}>
+                        KHỞI ĐỘNG — MIỄN PHÍ
+                      </div>
+                      <div style={{ color: DS.text, fontFamily: DS.heading, fontSize: 18, fontWeight: 800, marginBottom: 4 }}>
+                        0đ
+                      </div>
+                      <div style={{ color: DS.text4, fontSize: 10, lineHeight: 1.4, marginBottom: 10 }}>
+                        5 bài viết chuẩn SEO · Từ khóa thương hiệu · Xác minh Google Search Console
+                      </div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                        {["5 bài viết chuẩn SEO", "Từ khóa thương hiệu lên search", "Xác minh Google Search Console", "SSL tăng hiệu quả SEO"].map(f => (
+                          <div key={f} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            <Check size={10} style={{ color: DS.green, flexShrink: 0 }} />
+                            <span style={{ color: DS.text3, fontSize: 10 }}>{f}</span>
+                          </div>
+                        ))}
+                      </div>
+                      {selectedFreeSeo && (
+                        <div style={{ marginTop: 10, padding: "6px 10px", borderRadius: 8, background: `${DS.green}15`, border: `1px solid ${DS.green}30` }}>
+                          <span style={{ color: DS.green, fontSize: 10, fontFamily: DS.mono, fontWeight: 700 }}>✓ Đã chọn — Tặng kèm website</span>
+                        </div>
+                      )}
+                    </motion.button>
+
+                    {/* Paid SEO tiers */}
+                    {seoTiers.map(tier => {
+                      const isSelected = selectedSeoTier === tier.level;
+                      const tierColors = ["", "#94A3B8", "#4F7DF3", "#F59E0B"];
+                      const color = tierColors[tier.level] ?? "#94A3B8";
+                      const tierArticles = ["", "5", "10", "20"];
+                      return (
+                        <motion.button
+                          key={tier.level}
+                          onClick={() => {
+                            if (isSelected) { setSelectedSeoTier(0); setSelectedFreeSeo(false); }
+                            else { setSelectedSeoTier(tier.level); setSelectedFreeSeo(false); }
+                          }}
+                          style={{
+                            background: isSelected ? `${color}12` : "rgba(15,23,42,0.5)",
+                            border: isSelected ? `2px solid ${color}50` : `1px solid ${DS.border}`,
+                            borderRadius: 16, padding: "18px 16px", cursor: "pointer",
+                            textAlign: "left", position: "relative", overflow: "hidden",
+                            transition: "all 0.2s",
+                          }}
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                        >
+                          {isSelected && (
+                            <div style={{
+                              position: "absolute", top: 10, right: 10,
+                              width: 22, height: 22, borderRadius: "50%",
+                              background: color, display: "flex", alignItems: "center", justifyContent: "center",
+                            }}>
+                              <Check size={12} style={{ color: "#fff", strokeWidth: 3 }} />
+                            </div>
+                          )}
+                          {tier.level === 3 && (
+                            <div style={{ position: "absolute", top: 10, left: 10, padding: "2px 8px", borderRadius: 6, background: `${DS.amber}20`, border: `1px solid ${DS.amber}40` }}>
+                              <span style={{ color: DS.amber, fontSize: 9, fontFamily: DS.mono, fontWeight: 700 }}>PHỔ BIẾN</span>
+                            </div>
+                          )}
+                          <div style={{ color: isSelected ? color : DS.text4, fontSize: 9, fontFamily: DS.mono, letterSpacing: "0.15em", marginBottom: 6, marginTop: tier.level === 3 ? 20 : 0, transition: "color 0.2s" }}>
+                            {tier.name.toUpperCase()}
+                          </div>
+                          <div style={{ color: DS.text, fontFamily: DS.heading, fontSize: 18, fontWeight: 800, marginBottom: 2 }}>
+                            {fmtVND(tier.basePrice)}
+                            <span style={{ color: DS.text4, fontSize: 10, fontWeight: 400 }}>/tháng</span>
+                          </div>
+                          <div style={{ color: color, fontSize: 10, fontFamily: DS.mono, marginBottom: 8 }}>
+                            {tierArticles[tier.level]} bài/tháng · {tier.shortDesc}
+                          </div>
+                          <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                            {[
+                              tier.level === 1 ? "5 bài viết chuẩn SEO" : tier.level === 2 ? "10 bài viết chuẩn SEO" : "20 bài viết chuẩn SEO",
+                              tier.level === 1 ? "1 từ khóa focus" : tier.level === 2 ? "2 từ khóa focus" : "3 từ khóa focus + đối thủ",
+                              "Audit kỹ thuật SEO",
+                              "Báo cáo tháng",
+                            ].map(f => (
+                              <div key={f} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                <Check size={10} style={{ color, flexShrink: 0 }} />
+                                <span style={{ color: DS.text3, fontSize: 10 }}>{f}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </motion.button>
+                      );
+                    })}
+                  </div>
+
+                  {/* SEO Feature Matrix — shown when paid tier selected */}
+                  {selectedSeoTier > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <SEOPackageFeatureTable
+                        features={seoFeatures}
+                        selectedTier={selectedSeoTier}
+                        tiers={seoTiers}
+                      />
+                    </motion.div>
+                  )}
+
+                  {/* SEO hint when nothing selected */}
+                  {selectedSeoTier === 0 && !selectedFreeSeo && (
+                    <div style={{
+                      padding: "14px 16px", borderRadius: 12,
+                      background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.2)",
+                      display: "flex", alignItems: "center", gap: 10,
+                    }}>
+                      <span style={{ fontSize: 18 }}>💡</span>
+                      <div>
+                        <p style={{ color: DS.text2, fontSize: 12, fontWeight: 600, marginBottom: 2 }}>
+                          Bạn chưa chọn gói SEO nào
+                        </p>
+                        <p style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono }}>
+                          Chọn "Khởi động Miễn phí" để nhận ngay 5 bài viết chuẩn SEO + xác minh Google. Hoặc chọn gói có phí để nhận nhiều bài viết hơn mỗi tháng.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ── STEP 3: Hosting + Add-ons ───────────────────────────── */}
+              {step === 3 && (
                 <div>
                   <div className="mb-6 p-5 rounded-2xl" style={{ background: "rgba(15,23,42,0.7)", border: `1px solid ${DS.purple}15` }}>
                     <div style={{ color: DS.purple, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.22em", marginBottom: 8 }}>HOSTING & DỊCH VỤ BỔ SUNG</div>
@@ -1513,8 +1659,8 @@ export function BookingWizardClient({ locale }: Props) {
                 </div>
               )}
 
-              {/* ── STEP 3: Contact Info ────────────────────────────────── */}
-              {step === 3 && (
+              {/* ── STEP 4: Contact Info ────────────────────────────────── */}
+              {step === 4 && (
                 <div>
                   <div className="mb-6 p-5 rounded-2xl" style={{ background: "rgba(15,23,42,0.7)", border: `1px solid ${DS.pink}15` }}>
                     <div style={{ color: DS.pink, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.22em", marginBottom: 8 }}>THÔNG TIN LIÊN HỆ</div>
@@ -1588,8 +1734,8 @@ export function BookingWizardClient({ locale }: Props) {
                 </div>
               )}
 
-              {/* ── STEP 4: Payment + Submit ────────────────────────────── */}
-              {step === 4 && (
+              {/* ── STEP 5: Payment + Submit ────────────────────────────── */}
+              {step === 5 && (
                 <div>
                   {submitError && (
                     <div className="text-center py-8">
@@ -1858,7 +2004,7 @@ export function BookingWizardClient({ locale }: Props) {
                 }}>
                 <ArrowLeft size={15} /> Quay lại
               </button>
-              {step < 4 && (
+              {step < 5 && (
                 <button
                   onClick={() => { if (canNext()) setStep(s => s + 1); }}
                   disabled={!canNext()}

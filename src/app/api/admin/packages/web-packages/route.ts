@@ -35,24 +35,15 @@ export async function POST(req: NextRequest) {
     const pkg = await prisma.servicePackage.create({
       data: {
         slug: data.slug,
-        title: data.title ?? data.name ?? data.nameVi ?? "",
-        titleVi: data.nameVi ?? data.title ?? "",
+        title: data.title ?? data.name ?? "",
         shortDesc: data.shortDesc ?? data.tagline ?? "",
-        shortDescVi: data.taglineVi ?? data.shortDesc ?? "",
         type: "website",
-        price: data.price ?? data.marketPrice ?? 0,
+        price: data.price ?? 0,
         priceText: data.priceText ?? "",
         features: Array.isArray(data.features) ? data.features : [],
         isSubscription: false,
         sortOrder: data.sortOrder ?? 0,
         isActive: data.isActive ?? true,
-        tagline: data.tagline ?? null,
-        taglineVi: data.taglineVi ?? null,
-        color: data.color ?? "#3B82F6",
-        pages: data.pages ?? null,
-        pagesVi: data.pagesVi ?? null,
-        marketPrice: data.marketPrice ?? null,
-        isPopular: data.isPopular ?? data.highlighted ?? false,
       },
     });
 

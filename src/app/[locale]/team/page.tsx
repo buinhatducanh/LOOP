@@ -68,6 +68,8 @@ export default async function TeamPage({ params }: Props) {
         slug: true,
         name: true,
         role: true,
+        department: true,
+        departmentId: true,
         bio: true,
         shortBio: true,
         image: true,

@@ -185,7 +185,16 @@
       "Bash(src/app/[locale]/components/SiteHeader.tsx)",
       "Bash(npx tsx -e \":*)",
       "Bash(grep -c '\"\"loading\"\"\\\\|\"\"errorState\"\"\\\\|\"\"recentSearches\"\"\\\\|\"\"clearRecent\"\"\\\\|\"\"viewAll\"\"\\\\|\"\"totalResults\"\"\\\\|\"\"trending\"\"\\\\|\"\"noResults\"\"' src/i18n/messages/vi.json)",
-      "Bash(grep -c '\"\"loading\"\"\\\\|\"\"errorState\"\"\\\\|\"\"recentSearches\"\"\\\\|\"\"clearRecent\"\"\\\\|\"\"viewAll\"\"\\\\|\"\"totalResults\"\"\\\\|\"\"trending\"\"\\\\|\"\"noResults\"\"' src/i18n/messages/en.json)"
+      "Bash(grep -c '\"\"loading\"\"\\\\|\"\"errorState\"\"\\\\|\"\"recentSearches\"\"\\\\|\"\"clearRecent\"\"\\\\|\"\"viewAll\"\"\\\\|\"\"totalResults\"\"\\\\|\"\"trending\"\"\\\\|\"\"noResults\"\"' src/i18n/messages/en.json)",
+      "WebFetch(domain:inet.vn)",
+      "WebFetch(domain:www.namecheap.com)",
+      "WebFetch(domain:tenmien.vn)",
+      "WebFetch(domain:matbao.vn)",
+      "WebFetch(domain:nhanhoa.com.vn)",
+      "WebFetch(domain:nhanhoa.com)",
+      "WebFetch(domain:www.godaddy.com)",
+      "Bash(py:*)",
+      "Bash(py -c \":*)"
     ],
     "additionalDirectories": []
   }

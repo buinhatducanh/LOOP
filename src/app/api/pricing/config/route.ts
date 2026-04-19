@@ -80,13 +80,23 @@ function mapPackage(
  videoThumbnail?: string | null;
  showFeatureAcknowledge?: boolean;
  acknowledgmentItems?: unknown;
+ // Admin-managed fields
+ isPopular?: boolean | null;
+ tagline?: string | null;
+ color?: string | null;
+ pages?: string | null;
+ pagesVi?: string | null;
+ marketPrice?: number | null;
+ serviceKey?: string | null;
+ tierLevel?: number | null;
+ lpReward?: number | null;
  },
  locale: Locale,
  marketPrices: Record<string, number>,
  allPackages: typeof arguments[0][],
 ) {
  const pkgPrice = p.price ?? 0;
- const marketPrice = p.marketPrice ?? marketPrices[p.slug] ?? pkgPrice;
+ const marketPrice = marketPrices[p.slug] ?? pkgPrice;
  const saving = marketPrice - pkgPrice;
 
  // Compute allFeatures: union of features up to and including this package
@@ -133,13 +143,14 @@ function mapPackage(
  showFeatureAcknowledge: p.showFeatureAcknowledge ?? true,
  acknowledgmentItems: ackItems,
  featureAcknowledgments,
- /** Admin-managed fields */
- tagline: p.tagline ?? "",
- taglineVi: p.tagline ?? "",
- color: p.color ?? "#3B82F6",
- pages: p.pages ?? "8",
- pagesVi: p.pagesVi ?? "8",
+ /** Admin-managed fields from ServicePackage */
  isPopular: p.isPopular ?? false,
+ tagline: p.tagline ?? null,
+ color: p.color ?? null,
+ pages: p.pages ?? null,
+ pagesVi: p.pagesVi ?? null,
+ serviceKey: p.serviceKey ?? null,
+ tierLevel: p.tierLevel ?? 1,
  };
 }
 
@@ -321,7 +332,7 @@ export async function GET(request: Request) {
     const [
       packages, features, addons, infraTiers, hostingPlans, domainPrices,
       basePriceSetting, vatSetting, websitePricingConfig, lpRateSetting,
-      customerLp,
+      customerLp, freebiesSetting, seoTiers, seoFeatures, seoMatrix,
     ] = await Promise.all([
       prisma.servicePackage.findMany({
         where: { isActive: true },
@@ -346,10 +357,18 @@ export async function GET(request: Request) {
           billingPeriod: true,
           type: true,
           sortOrder: true,
- videoUrl: true,
- videoThumbnail: true,
- showFeatureAcknowledge: true,
- acknowledgmentItems: true,
+          videoUrl: true,
+          videoThumbnail: true,
+          showFeatureAcknowledge: true,
+          acknowledgmentItems: true,
+          isPopular: true,
+          tagline: true,
+          color: true,
+          pages: true,
+          pagesVi: true,
+          marketPrice: true,
+          serviceKey: true,
+          tierLevel: true,
         },
       }),
 
@@ -487,22 +506,73 @@ export async function GET(request: Request) {
         where: { userEmail: email },
         select: { balance: true, totalEarned: true, totalSpent: true, level: true },
       }) : Promise.resolve(null),
-     prisma.siteSetting.findUnique({ where: { key: "package_freebies" }, select: { value: true } }),]);
+      prisma.siteSetting.findUnique({ where: { key: "package_freebies" }, select: { value: true } }),
+
+      // SEO tiers (ServiceTier where serviceKey = "seo")
+      prisma.serviceTier.findMany({
+        where: { serviceKey: "seo", isActive: true },
+        orderBy: { level: "asc" },
+      }),
+
+      // SEO features (ServiceAttribute where serviceKey = "seo")
+      prisma.serviceAttribute.findMany({
+        where: { serviceKey: "seo", isActive: true },
+        orderBy: { sortOrder: "asc" },
+      }),
+
+      // SEO feature matrix from SiteSetting
+      prisma.siteSetting.findUnique({
+        where: { key: "seo_feature_matrix" },
+        select: { value: true },
+      }),
+    ]);
 
     const basePrice = basePriceSetting ? parseInt(basePriceSetting.value, 10) : 3_000_000;
     const vatRate = vatSetting ? parseFloat(vatSetting.value) : 0.10;
     const lpToVnd = lpRateSetting ? (JSON.parse(lpRateSetting.value).lp_to_vnd ?? 1000) : 1000;
     const lpEarnPerMillion = Math.ceil(1_000_000 * 0.10 / lpToVnd);
 
- // Package freebies
- const freebiesSetting = await prisma.siteSetting.findUnique({
- where: { key: "package_freebies" },
- select: { value: true },
- });
- let packageFreebies: Record<string, { hosting?: string; domain?: string[]; note: string }> = {};
- if (freebiesSetting?.value) {
- try { packageFreebies = JSON.parse(freebiesSetting.value); } catch {}
- }
+    // Package freebies
+    let packageFreebies: Record<string, { hosting?: string; domain?: string[]; note: string }> = {};
+    if (freebiesSetting?.value) {
+      try { packageFreebies = JSON.parse(freebiesSetting.value); } catch {}
+    }
+
+    // SEO tiers — map to wizard format (no includedTiers needed for tiers themselves)
+    const wizardSeoTiers = (seoTiers ?? []).map((t) => ({
+      level: t.level,
+      name: getLocalizedName(locale, t.name, t.name, t.nameEn, t.nameJa, t.nameKo, t.nameZh),
+      nameEn: t.nameEn ?? t.name,
+      shortDesc: getLocalizedName(
+        locale,
+        t.shortDesc ?? "",
+        t.shortDesc ?? "",
+        t.shortDescEn ?? t.shortDesc ?? "",
+        t.shortDescJa ?? t.shortDesc ?? "",
+        t.shortDescKo ?? t.shortDesc ?? "",
+        t.shortDescZh ?? t.shortDesc ?? ""
+      ),
+      basePrice: t.basePrice,
+      marketPrice: t.marketPrice ?? undefined,
+      lpReward: t.lpReward,
+    }));
+
+    // SEO feature matrix — override includedTiers per feature from SiteSetting
+    let seoFeatureMatrix: Record<string, number[]> = {};
+    if (seoMatrix?.value) {
+      try { seoFeatureMatrix = JSON.parse(seoMatrix.value); } catch {}
+    }
+
+    // SEO features — includedTiers from SiteSetting matrix
+    const wizardSeoFeatures = (seoFeatures ?? []).map((f) => ({
+      id: f.id,
+      label: getLocalizedName(locale, f.name, f.nameVi, f.nameEn, f.nameJa, f.nameKo, f.nameZh),
+      labelEn: f.nameEn ?? f.nameVi ?? f.name,
+      description: f.descriptionVi ?? f.description ?? "",
+      category: getLocalizedName(locale, f.category, f.categoryVi, f.categoryEn, f.categoryJa, f.categoryKo, f.categoryZh),
+      extraPrice: f.price > 0 ? f.price : undefined,
+      includedTiers: seoFeatureMatrix[f.id] ?? [],
+    }));
 
     // Parse website marketing pricing config
     // Expected shape:
@@ -598,12 +668,15 @@ export async function GET(request: Request) {
         }, {}),
         vatRate,
          /** Package freebies per slug */
- packageFreebies,
+        packageFreebies,
 /** Marketing data — loaded from SiteSetting "website_pricing_config" */
         marketing: {
           promotion: promotion?.active ? promotion : undefined,
           slotsLeft: slotsLeft ?? undefined,
         },
+        /** SEO tiers + features — wired from DB (ServiceTier + ServiceAttribute serviceKey=seo) */
+        seoTiers: wizardSeoTiers,
+        seoFeatures: wizardSeoFeatures,
         meta: {
           locale,
           cached: true,

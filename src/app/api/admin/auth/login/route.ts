@@ -75,7 +75,7 @@ type LoginUser = {
  availableLp?: number | null;
  tabPermissions?: string[];
  departmentId?: string | null;
- isDeptHead?: boolean;
+ memberDepartments?: { isDeptHead: boolean }[];
  } | null;
 };
 
@@ -157,7 +157,7 @@ export async function POST(req: NextRequest) {
  availableLp: true,
  tabPermissions: true,
  departmentId: true,
- isDeptHead: true,
+ memberDepartments: { select: { isDeptHead: true } },
  },
  },
  },
@@ -268,7 +268,7 @@ export async function POST(req: NextRequest) {
  accessTags: user.teamMember?.accessTags ?? [],
   tabPermissions: user.teamMember?.tabPermissions ?? [],
  departmentId: user.teamMember?.departmentId ?? null,
- isDeptHead: user.teamMember?.isDeptHead ?? false,
+ isDeptHead: (user.teamMember?.memberDepartments ?? []).some((md: any) => md.isDeptHead) ?? false,
  accountType,
  isOnboarded: resolvedIsOnboarded,
  rank: user.teamMember?.rank ?? undefined,
@@ -302,7 +302,7 @@ export async function POST(req: NextRequest) {
  accessTags: user.teamMember?.accessTags ?? [],
  tabPermissions: user.teamMember?.tabPermissions ?? [],
  departmentId: user.teamMember?.departmentId ?? null,
- isDeptHead: user.teamMember?.isDeptHead ?? false,
+ isDeptHead: (user.teamMember?.memberDepartments ?? []).some((md: any) => md.isDeptHead) ?? false,
  isOnboarded: resolvedIsOnboarded,
  rank: user.teamMember?.rank,
  availableLp: user.teamMember?.availableLp,

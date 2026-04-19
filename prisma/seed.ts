@@ -157,81 +157,100 @@ async function seedRBAC() {
 }
 
 // ══════════════════════════════════════════════════════════════════
-// 2. Departments
+// 2. Divisions + Departments (Ban-Phòng hierarchy)
 // ══════════════════════════════════════════════════════════════════
 
-async function seedDepartments(): Promise<Record<string, string>> {
-  console.log("\n[Departments] Seeding 6 departments...");
+async function seedDivisions(): Promise<Record<string, string>> {
+  console.log("\n[Divisions] Seeding 5 divisions...");
 
-  const departments = [
-    {
-      key: "engineering",
-      name: "Phòng Kỹ thuật",
-      shortName: "IT",
-      color: "#3B82F6",
-      description: "Phòng Kỹ thuật — Dev, IT Support, xây dựng và duy trì hạ tầng công nghệ.",
-      mission: "Xây dựng sản phẩm chất lượng cao, tối ưu hiệu suất và đảm bảo hệ thống ổn định 24/7.",
-    },
-    {
-      key: "qc",
-      name: "Phòng Kiểm soát chất lượng dự án",
-      shortName: "QC",
-      color: "#22C55E",
-      description: "Phòng Kiểm soát chất lượng dự án — QA, Testing, Bug Tracking, đảm bảo chất lượng sản phẩm.",
-      mission: "Đảm bảo chất lượng sản phẩm trước khi bàn giao, phát hiện và ngăn ngừa lỗi.",
-    },
-    {
-      key: "pm",
-      name: "Phòng Quản lý Dự án",
-      shortName: "PM",
-      color: "#EC4899",
-      description: "Phòng Quản lý Dự án — Project Manager, Product Owner, điều phối và giám sát tiến độ dự án.",
-      mission: "Điều phối dự án hiệu quả, đảm bảo tiến độ, chất lượng và sự hài lòng của khách hàng.",
-    },
-    {
-      key: "seo",
-      name: "Phòng SEO",
-      shortName: "SEO",
-      color: "#F59E0B",
-      description: "Phòng SEO — Tối ưu công cụ tìm kiếm, Google Analytics, Content SEO, SEM.",
-      mission: "Tăng thứ hạng website trên công cụ tìm kiếm, thu hút traffic organics và chuyển đổi khách hàng.",
-    },
-    {
-      key: "media",
-      name: "Phòng Media",
-      shortName: "MED",
-      color: "#8B5CF6",
-      description: "Phòng Media — Content, Video, Social Media, Photography, xây dựng thương hiệu.",
-      mission: "Sáng tạo nội dung số thu hút, xây dựng và truyền thông thương hiệu LOOP trên mọi nền tảng.",
-    },
-    {
-      key: "ceo_office",
-      name: "Ban Giám đốc",
-      shortName: "CEO",
-      color: "#EAB308",
-      description: "Ban Giám đốc — CEO điều hành, định hướng chiến lược và giám sát toàn công ty.",
-      mission: "Định hướng chiến lược phát triển, đảm bảo LOOP phát triển bền vững và đạt mục tiêu kinh doanh.",
-    },
+  const divisions = [
+    { key: "ky-thuat", name: "Ban Kỹ thuật", shortName: "KT", color: "#3B82F6", description: "Phát triển sản phẩm, quản trị dự án, đảm bảo chất lượng và hạ tầng kỹ thuật.", sortOrder: 1 },
+    { key: "kinh-doanh", name: "Ban Kinh doanh", shortName: "KD", color: "#22C55E", description: "Marketing, bán hàng và phát triển khách hàng.", sortOrder: 2 },
+    { key: "tai-chinh", name: "Ban Tài chính", shortName: "TC", color: "#14B8A6", description: "Kế toán, tài chính và quản lý doanh thu.", sortOrder: 3 },
+    { key: "truyen-thong", name: "Ban Truyền thông", shortName: "TT", color: "#EC4899", description: "Media, truyền thông thương hiệu, KOL và KOC.", sortOrder: 4 },
+    { key: "giam-doc", name: "Ban Giám đốc", shortName: "CEO", color: "#EAB308", description: "Điều hành, định hướng chiến lược và giám sát toàn công ty.", sortOrder: 5 },
+  ];
+
+  const divIds: Record<string, string> = {};
+  for (const div of divisions) {
+    const created = await prisma.division.upsert({
+      where: { key: div.key },
+      update: { name: div.name, shortName: div.shortName, color: div.color, description: div.description, sortOrder: div.sortOrder },
+      create: div,
+    });
+    divIds[div.key] = created.id;
+  }
+  console.log(`  ✓ ${divisions.length} divisions seeded`);
+  return divIds;
+}
+
+async function seedDepartments(divIds: Record<string, string>): Promise<Record<string, string>> {
+  console.log("\n[Departments] Seeding 13 departments under divisions...");
+
+  const deptDefs = [
+    { key: "dev", divisionKey: "ky-thuat", name: "Phòng Lập trình", shortName: "DEV", color: "#3B82F6", description: "Phát triển web, app và hệ thống.", mission: "Xây dựng sản phẩm chất lượng cao." },
+    { key: "pm", divisionKey: "ky-thuat", name: "Phòng Quản trị Dự án", shortName: "PM", color: "#EC4899", description: "Project Manager, điều phối và giám sát tiến độ dự án.", mission: "Đảm bảo tiến độ và chất lượng dự án." },
+    { key: "qa", divisionKey: "ky-thuat", name: "Phòng Đảm bảo Chất lượng", shortName: "QA", color: "#22C55E", description: "QA, Testing, Bug Tracking.", mission: "Đảm bảo chất lượng trước bàn giao." },
+    { key: "ui-design", divisionKey: "ky-thuat", name: "Phòng Thiết kế Giao diện", shortName: "UI", color: "#8B5CF6", description: "UI/UX Design, Figma, thiết kế trải nghiệm người dùng.", mission: "Tạo giao diện đẹp và trải nghiệm xuất sắc." },
+    { key: "system-admin", divisionKey: "ky-thuat", name: "Phòng Quản trị Hệ thống", shortName: "SYS", color: "#06B6D4", description: "Quản trị hệ thống, server, CI/CD và DevOps.", mission: "Hạ tầng ổn định và bảo mật 24/7." },
+    { key: "marketing", divisionKey: "kinh-doanh", name: "Phòng Marketing", shortName: "MKT", color: "#F59E0B", description: "SEO, SEM, content marketing, phân tích dữ liệu.", mission: "Thu hút và chuyển đổi khách hàng." },
+    { key: "sales", divisionKey: "kinh-doanh", name: "Phòng Sales", shortName: "SLS", color: "#14B8A6", description: "Kinh doanh, tư vấn và chốt deal.", mission: "Đạt doanh thu mục tiêu." },
+    { key: "ke-toan", divisionKey: "tai-chinh", name: "Phòng Kế toán", shortName: "KT", color: "#14B8A6", description: "Kế toán, thuế, báo cáo tài chính.", mission: "Quản lý tài chính minh bạch và chính xác." },
+    { key: "media", divisionKey: "truyen-thong", name: "Phòng Media", shortName: "MED", color: "#EC4899", description: "Content, video, social media.", mission: "Sáng tạo nội dung thu hút." },
+    { key: "brand", divisionKey: "truyen-thong", name: "Phòng Truyền thông Thương hiệu", shortName: "BRAND", color: "#B07CC6", description: "Xây dựng và quản lý thương hiệu LOOP.", mission: "Nâng cao giá trị thương hiệu." },
+    { key: "kol", divisionKey: "truyen-thong", name: "Phòng KOL", shortName: "KOL", color: "#F472B6", description: "Quản lý KOL và influencer marketing.", mission: "Mở rộng tiếp cận qua KOL." },
+    { key: "koc", divisionKey: "truyen-thong", name: "Phòng KOC", shortName: "KOC", color: "#FDA4AF", description: "Micro-influencer và content creator.", mission: "Tạo nội dung authentic từ cộng đồng." },
+    { key: "ceo-office", divisionKey: "giam-doc", name: "Ban Giám đốc", shortName: "CEO", color: "#EAB308", description: "CEO điều hành, định hướng chiến lược.", mission: "Định hướng chiến lược phát triển bền vững." },
   ];
 
   const deptIds: Record<string, string> = {};
-  for (const dept of departments) {
+  for (const dept of deptDefs) {
+    const { divisionKey, ...deptData } = dept;
     const created = await prisma.department.upsert({
       where: { key: dept.key },
-      update: {
-        name: dept.name,
-        shortName: dept.shortName,
-        color: dept.color,
-        description: dept.description,
-        mission: dept.mission,
-      },
-      create: dept,
+      update: { name: deptData.name, shortName: deptData.shortName, color: deptData.color, description: deptData.description, mission: deptData.mission, divisionId: divIds[divisionKey] },
+      create: { ...deptData, divisionId: divIds[divisionKey] },
     });
     deptIds[dept.key] = created.id;
   }
-
-  console.log(`  ✓ ${departments.length} departments seeded`);
+  console.log(`  ✓ ${deptDefs.length} departments seeded under divisions`);
   return deptIds;
+}
+
+/// Member → primary department key mapping (for MemberDepartment junction)
+const MEMBER_DEPT_PRIMARY: Record<string, { deptKey: string; isDeptHead: boolean; position: string }> = {
+  "bui-nhat-duc-anh": { deptKey: "ceo-office", isDeptHead: true, position: "CEO" },
+  "nguyen-phuc-thuan": { deptKey: "pm", isDeptHead: false, position: "Project Manager" },
+  "tran-vu-hung": { deptKey: "pm", isDeptHead: false, position: "Project Manager" },
+  "le-ngoc-xuan-quynh": { deptKey: "pm", isDeptHead: false, position: "PM Tập Sự" },
+  "nguyen-trong-quy": { deptKey: "dev", isDeptHead: false, position: "Developer" },
+  "do-tan-tai": { deptKey: "dev", isDeptHead: false, position: "Developer" },
+  "nguyen-minh-tri": { deptKey: "system-admin", isDeptHead: false, position: "IT Support" },
+  "le-van-thuan": { deptKey: "qa", isDeptHead: false, position: "QA Engineer" },
+  "tran-hoang-anh": { deptKey: "qa", isDeptHead: false, position: "QA Engineer" },
+  "ha-the-anh": { deptKey: "qa", isDeptHead: false, position: "QA Engineer" },
+  "luong-hoang-thong": { deptKey: "qa", isDeptHead: false, position: "QA Engineer" },
+  "duong-gia-lac": { deptKey: "marketing", isDeptHead: false, position: "SEO Specialist" },
+  "nguyen-phuc-thinh": { deptKey: "media", isDeptHead: true, position: "Trưởng phòng Media" },
+  "tran-vo-thuy-duong": { deptKey: "media", isDeptHead: false, position: "Content Creator" },
+};
+
+async function seedMemberDepartments(memberCUIDs: Record<string, string>, deptIds: Record<string, string>) {
+  console.log("\n[MemberDepartments] Seeding member-department junction records...");
+  let count = 0;
+  for (const [slug, memberId] of Object.entries(memberCUIDs)) {
+    const mapping = MEMBER_DEPT_PRIMARY[slug];
+    if (!mapping) continue;
+    const deptId = deptIds[mapping.deptKey];
+    if (!deptId) continue;
+    await prisma.memberDepartment.upsert({
+      where: { memberId_departmentId: { memberId, departmentId: deptId } },
+      update: { position: mapping.position, isDeptHead: mapping.isDeptHead, isPrimary: true },
+      create: { memberId, departmentId: deptId, position: mapping.position, isDeptHead: mapping.isDeptHead, isPrimary: true },
+    });
+    count++;
+  }
+  console.log(`  ✓ ${count} member-department records seeded`);
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -412,7 +431,9 @@ Chính vì vậy, tôi quyết định thành lập LOOP. Đây không chỉ là
     isFeatured: true,
     isActive: true,
     sortOrder: 0,
-    departmentId: deptIds["ceo_office"],
+    departmentId: deptIds["ceo-office"],
+    department: "ceo-office",
+    position: "CEO",
   };
 
   await prisma.teamMember.upsert({
@@ -554,6 +575,51 @@ async function seedServiceAttributes() {
   }
 
   console.log("  ✓ Service attributes seeded");
+
+  // ── Custom Features (tier="custom") — for "Theo Yêu Cầu" package ──────
+  await upsertAttr({
+    slug: "custom-code",
+    name: "Custom Development",
+    nameVi: "Code tùy chỉnh theo yêu cầu riêng",
+    description: "Logic nghiệp vụ riêng biệt — startup, platform, web app có workflow không có trong gói có sẵn.",
+    descriptionVi: "Logic nghiệp vụ riêng biệt — startup, platform, web app có workflow không có trong gói có sẵn.",
+    category: "Tùy chỉnh",
+    categoryVi: "Tùy chỉnh",
+    price: 12_900_000,
+    isRequired: true,
+    tier: "custom",
+    sortOrder: 1,
+    includedInBase: false,
+  });
+  await upsertAttr({
+    slug: "custom-api",
+    name: "Custom API & Backend",
+    nameVi: "API & Backend tùy chỉnh",
+    description: "REST API kết nối hệ thống hiện có của bạn với website mới.",
+    descriptionVi: "REST API kết nối hệ thống hiện có của bạn với website mới.",
+    category: "Tùy chỉnh",
+    categoryVi: "Tùy chỉnh",
+    price: 8_000_000,
+    isRequired: false,
+    tier: "custom",
+    sortOrder: 2,
+    includedInBase: false,
+  });
+  await upsertAttr({
+    slug: "custom-support",
+    name: "White-glove Support",
+    nameVi: "Hỗ trợ ưu tiên 24/7",
+    description: "Đội ngũ chuyên gia riêng — SLA phản hồi trong 2 giờ.",
+    descriptionVi: "Đội ngũ chuyên gia riêng — SLA phản hồi trong 2 giờ.",
+    category: "Tùy chỉnh",
+    categoryVi: "Tùy chỉnh",
+    price: 0,
+    isRequired: false,
+    tier: "custom",
+    sortOrder: 3,
+    includedInBase: true,
+  });
+  console.log("  ✓ Custom features (tier=custom) seeded");
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -2221,28 +2287,30 @@ async function seedAllTeamMembers(deptIds: Record<string, string>) {
  // ── Ban Giám đốc ────────────────────────────────────────────────────────────
  // CEO already seeded in seedCEO() — no member here
 
- // ── Phòng Quản lý Dự án (PM) ───────────────────────────────────────────────
+ // ── Phòng Quản trị Dự án (PM) ──────────────────────────────────────────────
  { slug: "nguyen-phuc-thuan", name: "Nguyễn Phúc Thuần", title: "Project Manager", bio: "Điều phối và quản lý dự án, đảm bảo tiến độ và chất lượng.", shortBio: "PM — Quản lý dự án.", level: 1, rank: "iron", availableLp: 0, currentXp: 0, maxXp: 100, isActive: true, isFeatured: false, sortOrder: 1, deptKey: "pm" },
  { slug: "tran-vu-hung", name: "Trần Vũ Hùng", title: "Project Manager", bio: "Quản lý tiến độ và phối hợp các bên liên quan.", shortBio: "PM — Quản lý tiến độ.", level: 1, rank: "iron", availableLp: 0, currentXp: 0, maxXp: 100, isActive: true, isFeatured: false, sortOrder: 2, deptKey: "pm" },
  { slug: "le-ngoc-xuan-quynh", name: "Lê Ngọc Xuân Quỳnh", title: "PM Tập Sự", bio: "Hỗ trợ quản lý dự án, học hỏi và phát triển kỹ năng PM.", shortBio: "PM tập sự.", level: 1, rank: "iron", availableLp: 0, currentXp: 0, maxXp: 100, isActive: true, isFeatured: false, sortOrder: 3, deptKey: "pm" },
 
- // ── Phòng Kỹ thuật (IT) ───────────────────────────────────────────────────
- { slug: "nguyen-trong-quy", name: "Nguyễn Trọng Quý", title: "Developer", bio: "Phát triển web và ứng dụng.", shortBio: "Dev.", level: 1, rank: "iron", availableLp: 0, currentXp: 0, maxXp: 100, isActive: true, isFeatured: false, sortOrder: 4, deptKey: "engineering" },
- { slug: "do-tan-tai", name: "Đỗ Tấn Tài", title: "Developer", bio: "Phát triển phần mềm và tối ưu hiệu suất.", shortBio: "Dev.", level: 1, rank: "iron", availableLp: 0, currentXp: 0, maxXp: 100, isActive: true, isFeatured: false, sortOrder: 5, deptKey: "engineering" },
- { slug: "nguyen-minh-tri", name: "Nguyễn Minh Trí", title: "IT Support", bio: "Hỗ trợ hạ tầng kỹ thuật, quản trị hệ thống.", shortBio: "IT Support.", level: 1, rank: "iron", availableLp: 0, currentXp: 0, maxXp: 100, isActive: true, isFeatured: false, sortOrder: 6, deptKey: "engineering" },
+ // ── Phòng Lập trình (DEV) ─────────────────────────────────────────────────
+ { slug: "nguyen-trong-quy", name: "Nguyễn Trọng Quý", title: "Developer", bio: "Phát triển web và ứng dụng.", shortBio: "Dev.", level: 1, rank: "iron", availableLp: 0, currentXp: 0, maxXp: 100, isActive: true, isFeatured: false, sortOrder: 4, deptKey: "dev" },
+ { slug: "do-tan-tai", name: "Đỗ Tấn Tài", title: "Developer", bio: "Phát triển phần mềm và tối ưu hiệu suất.", shortBio: "Dev.", level: 1, rank: "iron", availableLp: 0, currentXp: 0, maxXp: 100, isActive: true, isFeatured: false, sortOrder: 5, deptKey: "dev" },
 
- // ── Phòng Kiểm soát chất lượng dự án (QC) ────────────────────────────────
- { slug: "le-van-thuan", name: "Lê Văn Thuận", title: "QA Engineer", bio: "Kiểm thử chất lượng sản phẩm, phát hiện và báo cáo lỗi.", shortBio: "QA Engineer.", level: 1, rank: "iron", availableLp: 0, currentXp: 0, maxXp: 100, isActive: true, isFeatured: false, sortOrder: 7, deptKey: "qc" },
- { slug: "tran-hoang-anh", name: "Trần Hoàng Anh", title: "QA Engineer", bio: "Kiểm thử chức năng và hồ sơ lỗi.", shortBio: "QA Engineer.", level: 1, rank: "iron", availableLp: 0, currentXp: 0, maxXp: 100, isActive: true, isFeatured: false, sortOrder: 8, deptKey: "qc" },
- { slug: "ha-the-anh", name: "Hà Thế Anh", title: "QA Engineer", bio: "Kiểm thử phần mềm và đảm bảo chất lượng.", shortBio: "QA Engineer.", level: 1, rank: "iron", availableLp: 0, currentXp: 0, maxXp: 100, isActive: true, isFeatured: false, sortOrder: 9, deptKey: "qc" },
- { slug: "luong-hoang-thong", name: "Lương Hoàng Thông", title: "QA Engineer", bio: "Kiểm thử và đảm bảo chất lượng sản phẩm.", shortBio: "QA Engineer.", level: 1, rank: "iron", availableLp: 0, currentXp: 0, maxXp: 100, isActive: true, isFeatured: false, sortOrder: 10, deptKey: "qc" },
+ // ── Phòng Quản trị Hệ thống (SYS) ───────────────────────────────────────
+ { slug: "nguyen-minh-tri", name: "Nguyễn Minh Trí", title: "IT Support", bio: "Hỗ trợ hạ tầng kỹ thuật, quản trị hệ thống.", shortBio: "IT Support.", level: 1, rank: "iron", availableLp: 0, currentXp: 0, maxXp: 100, isActive: true, isFeatured: false, sortOrder: 6, deptKey: "system-admin" },
 
- // ── Phòng SEO ──────────────────────────────────────────────────────────────
- { slug: "duong-gia-lac", name: "Dương Gia Lạc", title: "SEO & Developer", bio: "Tối ưu SEO, phân tích Google Analytics và phát triển web.", shortBio: "SEO Specialist.", level: 1, rank: "iron", availableLp: 0, currentXp: 0, maxXp: 100, isActive: true, isFeatured: false, sortOrder: 11, deptKey: "seo" },
+ // ── Phòng Đảm bảo Chất lượng (QA) ─────────────────────────────────────────
+ { slug: "le-van-thuan", name: "Lê Văn Thuận", title: "QA Engineer", bio: "Kiểm thử chất lượng sản phẩm, phát hiện và báo cáo lỗi.", shortBio: "QA Engineer.", level: 1, rank: "iron", availableLp: 0, currentXp: 0, maxXp: 100, isActive: true, isFeatured: false, sortOrder: 7, deptKey: "qa" },
+ { slug: "tran-hoang-anh", name: "Trần Hoàng Anh", title: "QA Engineer", bio: "Kiểm thử chức năng và hồ sơ lỗi.", shortBio: "QA Engineer.", level: 1, rank: "iron", availableLp: 0, currentXp: 0, maxXp: 100, isActive: true, isFeatured: false, sortOrder: 8, deptKey: "qa" },
+ { slug: "ha-the-anh", name: "Hà Thế Anh", title: "QA Engineer", bio: "Kiểm thử phần mềm và đảm bảo chất lượng.", shortBio: "QA Engineer.", level: 1, rank: "iron", availableLp: 0, currentXp: 0, maxXp: 100, isActive: true, isFeatured: false, sortOrder: 9, deptKey: "qa" },
+ { slug: "luong-hoang-thong", name: "Lương Hoàng Thông", title: "QA Engineer", bio: "Kiểm thử và đảm bảo chất lượng sản phẩm.", shortBio: "QA Engineer.", level: 1, rank: "iron", availableLp: 0, currentXp: 0, maxXp: 100, isActive: true, isFeatured: false, sortOrder: 10, deptKey: "qa" },
+
+ // ── Phòng Marketing ───────────────────────────────────────────────────────
+ { slug: "duong-gia-lac", name: "Dương Gia Lạc", title: "SEO Specialist", bio: "Tối ưu SEO, phân tích Google Analytics và phát triển web.", shortBio: "SEO Specialist.", level: 1, rank: "iron", availableLp: 0, currentXp: 0, maxXp: 100, isActive: true, isFeatured: false, sortOrder: 11, deptKey: "marketing" },
 
  // ── Phòng Media ────────────────────────────────────────────────────────────
  { slug: "nguyen-phuc-thinh", name: "Nguyễn Phúc Thịnh", title: "Trưởng phòng Media", bio: "Trưởng phòng Media — quản lý nội dung, video, social media và truyền thông.", shortBio: "Trưởng phòng Media.", level: 15, rank: "bronze", availableLp: 0, currentXp: 0, maxXp: 100, isActive: true, isFeatured: false, sortOrder: 12, deptKey: "media" },
- { slug: "tran-vo-thuy-duong", name: "Trần Võ Thuỳ Dương", title: "Đại sứ Truyền thông", bio: "Đại sứ truyền thông và marketing, xây dựng thương hiệu LOOP.", shortBio: "Đại sứ Truyền thông.", level: 1, rank: "iron", availableLp: 0, currentXp: 0, maxXp: 100, isActive: true, isFeatured: false, sortOrder: 13, deptKey: "media" },
+ { slug: "tran-vo-thuy-duong", name: "Trần Võ Thuỳ Dương", title: "Content Creator", bio: "Đại sứ truyền thông và marketing, xây dựng thương hiệu LOOP.", shortBio: "Content Creator.", level: 1, rank: "iron", availableLp: 0, currentXp: 0, maxXp: 100, isActive: true, isFeatured: false, sortOrder: 13, deptKey: "media" },
 ];
 
   const memberCUIDs: Record<string, string> = {};
@@ -2262,6 +2330,8 @@ async function seedAllTeamMembers(deptIds: Record<string, string>) {
           currentXp: m.currentXp, maxXp: m.maxXp,
           isActive: m.isActive, isFeatured: m.isFeatured, sortOrder: m.sortOrder,
           departmentId: deptId,
+          department: m.deptKey,
+          position: m.title,
           roleLevel: ROLE_LEVELS[MEMBER_SYSTEM_ROLE[m.slug] ?? "member"],
           tabPermissions: ROLE_TABS[MEMBER_SYSTEM_ROLE[m.slug] ?? "member"],
           accessTags: ROLE_TAGS[MEMBER_SYSTEM_ROLE[m.slug] ?? "member"],
@@ -2281,6 +2351,8 @@ async function seedAllTeamMembers(deptIds: Record<string, string>) {
           currentXp: m.currentXp, maxXp: m.maxXp,
           isActive: m.isActive, isFeatured: m.isFeatured, sortOrder: m.sortOrder,
           departmentId: deptId,
+          department: m.deptKey,
+          position: m.title,
           roleLevel: ROLE_LEVELS[MEMBER_SYSTEM_ROLE[m.slug] ?? "member"],
           tabPermissions: ROLE_TABS[MEMBER_SYSTEM_ROLE[m.slug] ?? "member"],
           accessTags: ROLE_TAGS[MEMBER_SYSTEM_ROLE[m.slug] ?? "member"],
@@ -2921,29 +2993,8 @@ async function seedR2(deptIds: Record<string, string>) {
   const memberCUIDs = await seedAllTeamMembers(deptIds);
   const teamUserIds = await seedTeamUsers(memberCUIDs);
   await seedMemberExpertise(memberCUIDs);
-
-  // ── Update department heads ────────────────────────────────────────────────
-  // CEO is the head of Ban Giám đốc
-  const ceoId = memberCUIDs["bui-nhat-duc-anh"];
-  if (ceoId) {
-    await prisma.department.updateMany({
-      where: { key: "ceo_office" },
-      data: { headId: ceoId },
-    });
-  }
-  // Trưởng phòng Media — Nguyễn Phúc Thịnh
-  const mediaHeadId = memberCUIDs["nguyen-phuc-thinh"];
-  if (mediaHeadId) {
-    await prisma.department.updateMany({
-      where: { key: "media" },
-      data: { headId: mediaHeadId },
-    });
-    await prisma.teamMember.updateMany({
-      where: { slug: "nguyen-phuc-thinh" },
-      data: { isDeptHead: true },
-    });
-  }
-  console.log("  ✓ Department heads updated");
+  // Seed member-department junction (position + isDeptHead per department)
+  await seedMemberDepartments(memberCUIDs, deptIds);
   // NOTE: seedRankEffects() and seedMemberOverrides() removed —
   // Effects are FIXED in code (guildMemberData.ts) per rank tier.
   // DB RankEffect + MemberEffectOverride tables are kept for future use
@@ -3315,7 +3366,8 @@ async function main() {
         create: { key, label: labels[key], color: colors[key], sortOrder: projectRoleKeys.indexOf(key) + 1 },
       });
     }
-    const deptIds = await seedDepartments();
+    const divIds = await seedDivisions();
+    const deptIds = await seedDepartments(divIds);
     await seedAdmin();
     // await seedHR(); // REMOVED: Quynh HR was a duplicate of Lê Ngọc Xuân Quỳnh
     await seedAccessTags();

@@ -14,6 +14,8 @@ import { DS, GRD } from "@/lib/design-tokens";
 import { useAdminTranslations } from "@/i18n/admin/useAdminTranslations";
 import { FileText, RefreshCw, Plus, Check, Clock, XCircle, X, AlertTriangle } from "lucide-react";
 
+const [expandedRow, setExpandedRow] = useState<string | null>(null);
+
 const fmtVND = (n: number) =>
   new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(n);
 
@@ -63,6 +65,10 @@ type QuoteRequest = {
   notes?: string;
   status: string;
   createdAt: string;
+  /** "fixed" = standard wizard, "custom" = custom-code/custom-api selected */
+  source?: string;
+  /** Full pricing breakdown sent by wizard */
+  pricingBreakdown?: Record<string, unknown>;
 };
 
 const WORKFLOW_ACTIONS: Record<string, Record<string, string>> = {
@@ -398,24 +404,40 @@ export default function QuotationPage() {
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr style={{ borderBottom: `1px solid ${DS.border}` }}>
-                    {[t("quotation.colCustomer"), t("quotation.colEmail"), t("quotation.colCompany"), t("quotation.colDate"), t("quotation.colStatus"), t("quotation.colActions")].map(h => (
+                    {[t("quotation.colCustomer"), t("quotation.colEmail"), t("quotation.colCompany"), "Nguồn", t("quotation.colDate"), t("quotation.colStatus"), t("quotation.colActions")].map(h => (
                       <th key={h} style={{ textAlign: "left", padding: "10px 16px", color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.1em", textTransform: "uppercase" }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {requests.map(r => (
+                    <>
                     <tr key={r.id} style={{ borderBottom: `1px solid ${DS.border}` }}>
                       <td style={{ padding: "12px 16px", color: DS.text, fontSize: 13, fontWeight: 600 }}>{r.customerName}</td>
                       <td style={{ padding: "12px 16px", color: DS.blue, fontSize: 12, fontFamily: DS.mono }}>{r.customerEmail}</td>
                       <td style={{ padding: "12px 16px", color: DS.text3, fontSize: 12 }}>{r.companyName ?? "—"}</td>
+                      <td style={{ padding: "12px 16px" }}>
+                        {r.source === "custom" ? (
+                          <span style={{ background: "rgba(236,72,153,0.12)", color: DS.pink, padding: "2px 8px", borderRadius: 9999, fontSize: 10, fontFamily: DS.mono, fontWeight: 600 }}>Custom</span>
+                        ) : (
+                          <span style={{ background: "rgba(59,130,246,0.1)", color: DS.blue, padding: "2px 8px", borderRadius: 9999, fontSize: 10, fontFamily: DS.mono, fontWeight: 600 }}>Fixed</span>
+                        )}
+                      </td>
                       <td style={{ padding: "12px 16px", color: DS.text4, fontSize: 12, fontFamily: DS.mono }}>{fmtDate(r.createdAt)}</td>
                       <td style={{ padding: "12px 16px" }}>
                         <span style={{ background: STATUS_CFG[r.status]?.bg ?? "transparent", color: STATUS_CFG[r.status]?.color ?? DS.text4, padding: "2px 10px", borderRadius: 9999, fontSize: 11, fontFamily: DS.mono, fontWeight: 600 }}>
                           {t(`quotation.status${r.status.charAt(0).toUpperCase() + r.status.slice(1)}` as `quotation.status${string}`)}
                         </span>
                       </td>
-                      <td style={{ padding: "12px 16px" }}>
+                      <td style={{ padding: "12px 16px", display: "flex", gap: 6, flexWrap: "wrap" }}>
+                        {r.pricingBreakdown && (
+                          <button
+                            onClick={() => setExpandedRow(expandedRow === r.id ? null : r.id)}
+                            style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 10px", background: "rgba(107,61,245,0.1)", border: "1px solid rgba(107,61,245,0.3)", borderRadius: 8, color: DS.cosmicPurple, cursor: "pointer", fontSize: 11, fontFamily: DS.mono, fontWeight: 600 }}
+                          >
+                            {expandedRow === r.id ? "Ẩn" : "Xem giá"}
+                          </button>
+                        )}
                         {r.status !== "quoted" && (
                           <button
                             onClick={() => {
@@ -430,6 +452,19 @@ export default function QuotationPage() {
                         )}
                       </td>
                     </tr>
+                    {expandedRow === r.id && r.pricingBreakdown && (
+                      <tr key={`${r.id}-breakdown`} style={{ background: "rgba(0,0,0,0.25)" }}>
+                        <td colSpan={7} style={{ padding: "12px 16px" }}>
+                          <div style={{ background: DS.bg, border: `1px solid ${DS.border}`, borderRadius: 8, padding: "12px 16px" }}>
+                            <div style={{ color: DS.text4, marginBottom: 8, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase" as const, fontFamily: DS.mono }}>Pricing Breakdown</div>
+                            <pre style={{ margin: 0, fontFamily: DS.mono, fontSize: 11, color: DS.text2, whiteSpace: "pre-wrap" as const, wordBreak: "break-all" as const }}>
+                              {JSON.stringify(r.pricingBreakdown, null, 2)}
+                            </pre>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                    </>
                   ))}
                 </tbody>
               </table>

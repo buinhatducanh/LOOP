@@ -86,8 +86,7 @@ export default async function TeamMemberPage({ params }: Props) {
 
   // Related members: same department first, then by expertise
   const expertiseIds = member.memberExpertise.map((me) => me.expertiseId);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const memberDeptKey = (member as any).deptKey as string | undefined;
+  const memberDeptKey = member.department;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const related = await (prisma.teamMember.findMany as any)({
     where: {
@@ -95,7 +94,7 @@ export default async function TeamMemberPage({ params }: Props) {
       slug: { not: slug },
       OR: [
         // Same department
-        ...(memberDeptKey ? [{ deptKey: memberDeptKey }] : []),
+        ...(memberDeptKey ? [{ department: memberDeptKey }] : []),
         // Or shared expertise
         ...(expertiseIds.length > 0
           ? [{ memberExpertise: { some: { expertiseId: { in: expertiseIds } } } }]
@@ -104,7 +103,7 @@ export default async function TeamMemberPage({ params }: Props) {
     },
     take: 4,
     orderBy: [
-      { deptKey: "asc" },
+      { department: "asc" },
       { isFeatured: "desc" },
       { name: "asc" },
     ],

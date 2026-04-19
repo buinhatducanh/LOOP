@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
  teamMember: {
  select: {
  accessTags: true, rank: true, availableLp: true,
- tabPermissions: true, departmentId: true, isDeptHead: true,
+ tabPermissions: true, departmentId: true, memberDepartments: { select: { isDeptHead: true } },
  },
  },
  },
@@ -171,7 +171,7 @@ export async function POST(req: NextRequest) {
  accessTags: user.teamMember?.accessTags ?? [],
  tabPermissions: user.teamMember?.tabPermissions ?? [],
  departmentId: user.teamMember?.departmentId ?? null,
- isDeptHead: user.teamMember?.isDeptHead ?? false,
+ isDeptHead: (user.teamMember?.memberDepartments ?? []).some((md: any) => md.isDeptHead) ?? false,
  accountType,
  isOnboarded: user.isOnboarded,
  rank: user.teamMember?.rank ?? undefined,

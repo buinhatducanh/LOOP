@@ -18,23 +18,38 @@ export async function PUT(
     const pkg = await prisma.servicePackage.update({
       where: { id },
       data: {
+        // Core fields
         slug: data.slug,
-        title: data.title ?? data.name ?? data.nameVi ?? "",
-        titleVi: data.nameVi ?? data.title ?? "",
+        title: data.title ?? data.name ?? "",
         shortDesc: data.shortDesc ?? data.tagline ?? "",
-        shortDescVi: data.taglineVi ?? data.shortDesc ?? "",
-        price: data.price ?? data.marketPrice ?? 0,
+        price: data.price ?? 0,
         priceText: data.priceText ?? "",
         features: Array.isArray(data.features) ? data.features : [],
         sortOrder: data.sortOrder ?? 0,
         isActive: data.isActive ?? true,
+        // Admin-managed fields
+        isPopular: data.isPopular ?? false,
         tagline: data.tagline ?? null,
-        taglineVi: data.taglineVi ?? null,
-        color: data.color ?? "#3B82F6",
+        color: data.color ?? null,
         pages: data.pages ?? null,
         pagesVi: data.pagesVi ?? null,
         marketPrice: data.marketPrice ?? null,
-        isPopular: data.isPopular ?? data.highlighted ?? false,
+        isSubscription: data.isSubscription ?? false,
+        billingPeriod: data.billingPeriod ?? null,
+        videoUrl: data.videoUrl ?? null,
+        videoThumbnail: data.videoThumbnail ?? null,
+        serviceKey: data.serviceKey ?? null,
+        tierLevel: data.tierLevel ?? 1,
+        // Localized titles
+        titleEn: data.titleEn ?? null,
+        titleJa: data.titleJa ?? null,
+        titleKo: data.titleKo ?? null,
+        titleZh: data.titleZh ?? null,
+        // Localized descriptions
+        shortDescEn: data.shortDescEn ?? null,
+        shortDescJa: data.shortDescJa ?? null,
+        shortDescKo: data.shortDescKo ?? null,
+        shortDescZh: data.shortDescZh ?? null,
       },
     });
 
@@ -50,7 +65,7 @@ export async function PUT(
     revalidatePath("/vi/thiet-ke-website");
     revalidatePath("/en/thiet-ke-website");
 
-    return NextResponse.json({ data: pkg });
+    return ok(pkg);
   } catch (error) {
     return handleError(error);
   }

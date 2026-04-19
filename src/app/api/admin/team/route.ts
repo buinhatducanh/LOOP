@@ -38,6 +38,11 @@ export async function GET(req: NextRequest) {
                 expertise: true,
               },
             },
+            memberDepartments: {
+              include: {
+                department: { select: { id: true, key: true, name: true, shortName: true, color: true } },
+              },
+            },
             lpTransactions: {
               orderBy: { createdAt: "desc" },
               take: 30,
@@ -164,6 +169,19 @@ export async function GET(req: NextRequest) {
         // Department from FK (source of truth) + display name
         departmentId: m.departmentRelation?.id ?? null,
         department: deptName,
+        // Position — chức danh do HR/Admin nhập
+        position: m.position,
+        // Multi-department — all departments member belongs to (from junction)
+        departments: (m.memberDepartments ?? []).filter((md) => md.department != null).map((md) => ({
+          id: md.department!.id,
+          key: md.department!.key ?? "",
+          name: md.department!.name ?? "",
+          shortName: md.department!.shortName ?? "",
+          color: md.department!.color ?? "",
+          position: md.position,
+          isDeptHead: md.isDeptHead,
+          isPrimary: md.isPrimary,
+        })),
       });
     });
 

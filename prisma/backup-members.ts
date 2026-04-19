@@ -117,7 +117,6 @@ async function backup() {
     roleLevel: m.roleLevel,
     tabPermissions: m.tabPermissions,
     accessTags: m.accessTags,
-    isDeptHead: m.isDeptHead,
     departmentId: m.departmentId,
     department: m.departmentId ? deptMap[m.departmentId] : null,
     expertises: expMap[m.id] ?? [],

@@ -1,15 +1,17 @@
-import { NextResponse } from "next/server";
+/**
+ * Set department head via MemberDepartment junction
+ * Route: PUT /api/admin/departments/[id]/head
+ */
+import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth/permissions";
 import { prisma } from "@/lib/prisma";
 import { handleError, ok, notFound, badRequest } from "@/lib/api";
 import { AuthError, isSuperAdmin } from "@/lib/auth/permissions";
 import { isCeo } from "@/lib/auth/roles";
 
-// PUT /api/admin/departments/[id]/head
-export async function PUT(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+type Params = { params: Promise<{ id: string }> };
+
+export async function PUT(req: NextRequest, { params }: Params) {
   try {
     const session = await requireAuth();
     if (!isCeo(session.role) && !isSuperAdmin(session)) {
@@ -23,52 +25,58 @@ export async function PUT(
     const department = await prisma.department.findUnique({ where: { id } });
     if (!department) return notFound("Department not found");
 
-    if (headId) {
-      const member = await prisma.teamMember.findUnique({ where: { id: headId } });
-      if (!member) return notFound("Member not found");
-      if (member.departmentId && member.departmentId !== id) {
-        return badRequest("Member belongs to a different department");
-      }
-    }
-
     await prisma.$transaction(async (tx) => {
-      if (department.headId) {
-        await tx.teamMember.update({
-          where: { id: department.headId },
-          data: { isDeptHead: false },
-        }).catch(() => { /* previous head may not exist */ });
-      }
+      // Clear existing head in this department's junction records
+      await tx.memberDepartment.updateMany({
+        where: { departmentId: id, isDeptHead: true },
+        data: { isDeptHead: false },
+      }).catch(() => { /* ignore if none */ });
+
       if (headId) {
-        await tx.teamMember.update({
-          where: { id: headId },
-          data: { isDeptHead: true, departmentId: id },
+        const member = await tx.teamMember.findUnique({ where: { id: headId } });
+        if (!member) throw new Error("Member not found");
+
+        // Upsert the member-department record for this head
+        await tx.memberDepartment.upsert({
+          where: { memberId_departmentId: { memberId: headId, departmentId: id } },
+          update: { isDeptHead: true, isPrimary: true },
+          create: { memberId: headId, departmentId: id, isDeptHead: true, isPrimary: true },
         });
       }
-      await tx.department.update({
-        where: { id },
-        data: { headId: headId ?? null },
-      });
     });
 
+    // Return updated department with members
     const updated = await prisma.department.findUnique({
       where: { id },
       include: {
-        members: {
-          select: {
-            id: true, name: true, image: true, rank: true,
-            level: true, role: true, isDeptHead: true,
+        memberDepartments: {
+          include: {
+            member: { select: { id: true, name: true, image: true, rank: true, level: true, role: true } },
           },
         },
       },
     });
 
+    const members = updated?.memberDepartments.map((md) => ({
+      ...md.member,
+      position: md.position,
+      isDeptHead: md.isDeptHead,
+      isPrimary: md.isPrimary,
+    })) ?? [];
+
     return ok({
-      ...updated,
-      name: updated?.name ?? "",
-      shortName: updated?.shortName ?? "",
-      color: updated?.color ?? "#3B82F6",
+      id: department.id,
+      key: department.key ?? "",
+      name: department.name ?? "",
+      shortName: department.shortName ?? "",
+      color: department.color ?? "#3B82F6",
+      memberCount: members.length,
+      members,
     });
   } catch (err) {
+    if (err instanceof Error && err.message === "Member not found") {
+      return notFound("Member not found");
+    }
     return handleError(err);
   }
 }

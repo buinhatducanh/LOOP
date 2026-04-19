@@ -1,44 +1,51 @@
-import { NextResponse } from "next/server";
-import { requireAuth } from "@/lib/auth/permissions";
+/**
+ * Single Department CRUD API
+ * Route: /api/admin/departments/[id]
+ */
+import { NextRequest, NextResponse } from "next/server";
+import { requirePermission } from "@/lib/auth/permissions";
 import { prisma } from "@/lib/prisma";
 import { handleError, ok, notFound, badRequest } from "@/lib/api";
 import { addAvatar } from "@/lib/api/mappings";
 
+type Params = { params: Promise<{ id: string }> };
+
 // GET /api/admin/departments/[id]
-export async function GET(
-  _req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(_req: NextRequest, { params }: Params) {
   try {
-    await requireAuth();
+    await requirePermission("team", "read");
     const { id } = await params;
 
     const department = await prisma.department.findUnique({
       where: { id },
       include: {
-        members: {
-          select: {
-            id: true,
-            name: true,
-            image: true,
-            rank: true,
-            level: true,
-            role: true,
-            department: true,
-            departmentId: true,
-            isDeptHead: true,
-            tabPermissions: true,
-            availableLp: true,
-            lockedLp: true,
-            currentXp: true,
-            maxXp: true,
+        division: { select: { id: true, key: true, name: true, shortName: true, color: true } },
+        memberDepartments: {
+          include: {
+            member: {
+              select: {
+                id: true, name: true, image: true, rank: true, level: true,
+                role: true, department: true, departmentId: true,
+                tabPermissions: true, availableLp: true, lockedLp: true,
+                currentXp: true, maxXp: true,
+              },
+            },
           },
-          orderBy: { sortOrder: "asc" },
+          orderBy: { joinedAt: "asc" },
         },
       },
     });
 
     if (!department) return notFound("Department not found");
+
+    const members = department.memberDepartments.map((md) =>
+      addAvatar({
+        ...md.member,
+        position: md.position,
+        isDeptHead: md.isDeptHead,
+        isPrimary: md.isPrimary,
+      })
+    );
 
     return ok({
       id: department.id,
@@ -48,9 +55,11 @@ export async function GET(
       color: department.color ?? "#3B82F6",
       description: department.description ?? "",
       mission: department.mission ?? "",
-      headId: department.headId,
-      memberCount: department.members.length,
-      members: department.members.map(addAvatar),
+      divisionId: department.division?.id ?? null,
+      division: department.division,
+      memberCount: department.memberDepartments.length,
+      members,
+      headId: department.memberDepartments.find((md) => md.isDeptHead)?.member.id ?? null,
       createdAt: department.createdAt,
       updatedAt: department.updatedAt,
     });
@@ -60,61 +69,62 @@ export async function GET(
 }
 
 // PUT /api/admin/departments/[id]
-export async function PUT(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PUT(req: NextRequest, { params }: Params) {
   try {
-    await requireAuth();
+    await requirePermission("team", "update");
     const { id } = await params;
     const body = await req.json();
 
     const existing = await prisma.department.findUnique({ where: { id } });
     if (!existing) return notFound("Department not found");
 
-    const { name, shortName, color, description, mission } = body;
+    const { name, shortName, color, description, mission, divisionId, sortOrder } = body;
+
+    // Validate divisionId if provided
+    if (divisionId !== undefined) {
+      if (divisionId === null) {
+        // OK — unassign from division
+      } else {
+        const div = await prisma.division.findUnique({ where: { id: divisionId } });
+        if (!div) return badRequest("Division not found");
+      }
+    }
 
     const updated = await prisma.department.update({
       where: { id },
       data: {
-        ...(name !== undefined && { name: name ?? null }),
-        ...(shortName !== undefined && { shortName: shortName ?? null }),
-        ...(color !== undefined && { color: color ?? null }),
-        ...(description !== undefined && { description: description ?? null }),
-        ...(mission !== undefined && { mission: mission ?? null }),
+        ...(name !== undefined && { name }),
+        ...(shortName !== undefined && { shortName }),
+        ...(color !== undefined && { color }),
+        ...(description !== undefined && { description }),
+        ...(mission !== undefined && { mission }),
+        ...(divisionId !== undefined && { divisionId }),
+        ...(sortOrder !== undefined && { sortOrder }),
       },
     });
 
-    return ok({
-      ...updated,
-      name: updated.name ?? "",
-      shortName: updated.shortName ?? "",
-      color: updated.color ?? "#3B82F6",
-      description: updated.description ?? "",
-      mission: updated.mission ?? "",
-    });
+    return ok(updated);
   } catch (err) {
     return handleError(err);
   }
 }
 
 // DELETE /api/admin/departments/[id]
-export async function DELETE(
-  _req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function DELETE(_req: NextRequest, { params }: Params) {
   try {
-    await requireAuth();
+    await requirePermission("team", "delete");
     const { id } = await params;
 
     const department = await prisma.department.findUnique({
       where: { id },
-      include: { _count: { select: { members: true } } },
+      include: { _count: { select: { memberDepartments: true } } },
     });
 
     if (!department) return notFound("Department not found");
-    if (department._count.members > 0) {
-      return badRequest("Cannot delete department with members — reassign members first");
+    if (department._count.memberDepartments > 0) {
+      return badRequest(
+        `Cannot delete department with ${department._count.memberDepartments} members — reassign them first`
+      );
     }
 
     await prisma.department.delete({ where: { id } });

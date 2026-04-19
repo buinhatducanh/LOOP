@@ -1,5 +1,6 @@
 import { ok, badRequest, serverError } from "@/lib/api/response";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@/generated/prisma";
 import { z } from "zod";
 import type { NextRequest } from "next/server";
 

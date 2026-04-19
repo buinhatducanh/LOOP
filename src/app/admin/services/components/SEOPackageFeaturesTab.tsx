@@ -70,7 +70,7 @@ type ServiceAttribute = {
     videoUrl?: string;
 };
 
-type FeatureMatrix = Record<string, boolean>; // { [featureId]: boolean }
+// { [featureId]: boolean }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -155,9 +155,9 @@ function FeatureModal({
             };
 
             if (isEdit) {
-                await adminApi.put("/api/admin/pricing/features", payload);
+                await adminApi.put("/api/admin/custom-features", payload);
             } else {
-                await adminApi.post("/api/admin/pricing/features", payload);
+                await adminApi.post("/api/admin/custom-features", payload);
             }
         },
         onSuccess: () => {
@@ -452,7 +452,7 @@ function FeatureRow({
 }: {
     feature: ServiceAttribute;
     seoTiers: ServiceTier[];
-    matrix: FeatureMatrix;
+    matrix: Record<string, number[]>;
     onToggleCell: (featureId: string, tierLevel: number) => void;
     onEdit: (f: ServiceAttribute) => void;
     onDelete: (f: ServiceAttribute) => void;
@@ -551,7 +551,7 @@ function FeatureRow({
             {seoTiers.map((tier) => (
                 <MatrixCell
                     key={tier.id}
-                    checked={matrix[feature.id + "_" + tier.level] ?? false}
+                    checked={(matrix[feature.id] ?? []).includes(tier.level)}
                     tierColor={SEO_TIER_COLORS[tier.level] ?? DS.blue}
                     onToggle={() => onToggleCell(feature.id, tier.level)}
                 />
@@ -610,7 +610,7 @@ function DeleteModal({
     const qc = useQueryClient();
     const del = useMutation({
         mutationFn: async () => {
-            await adminApi.delete("/api/admin/pricing/features", { params: { id: feature.id } });
+            await adminApi.delete("/api/admin/custom-features", { params: { id: feature.id } });
         },
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: qk.adminSeoFeatures() });
@@ -721,7 +721,7 @@ export function SEOPackageFeaturesTab() {
             const res = await adminApi.get<{
                 data: ServiceAttribute[];
                 pagination: { page: number; limit: number; total: number };
-            }>("/api/admin/pricing/features", { params: { isActive: undefined } });
+            }>("/api/admin/custom-features", { params: { isActive: undefined } });
             return res;
         },
     });
@@ -778,27 +778,46 @@ export function SEOPackageFeaturesTab() {
         return a.localeCompare(b);
     });
 
-    // Matrix: { "featureId_tierLevel": boolean }
-    // Loaded from localStorage for now — in production this would come from the API
-    const [matrix, setMatrix] = useState<FeatureMatrix>(() => {
+    // Matrix: { featureId: number[] } — tier levels this feature is included in
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [matrix, setMatrix] = useState<Record<string, number[]>>(getStoredMatrix());
+    function getStoredMatrix(): Record<string, number[]> {
         if (typeof window === "undefined") return {};
         try {
-            return JSON.parse(localStorage.getItem("seo-feature-matrix") ?? "{}");
+            const raw = localStorage.getItem("seo-feature-matrix");
+            return raw ? JSON.parse(raw) : {};
         } catch {
             return {};
         }
+    }
+
+    const saveMatrixMutation = useMutation({
+        mutationFn: async (next: Record<string, number[]>) => {
+            await adminApi.post("/api/admin/seo-feature-matrix", { matrix: next });
+        },
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ["admin", "seo-feature-matrix"] });
+        },
     });
 
-    const saveMatrix = (next: FeatureMatrix) => {
+    const saveMatrix = (next: Record<string, number[]>) => {
         setMatrix(next);
         if (typeof window !== "undefined") {
             localStorage.setItem("seo-feature-matrix", JSON.stringify(next));
         }
+        saveMatrixMutation.mutate(next);
     };
 
     const toggleCell = (featureId: string, tierLevel: number) => {
-        const key = featureId + "_" + tierLevel;
-        saveMatrix({ ...matrix, [key]: !matrix[key] });
+        const current = matrix[featureId] ?? [];
+        const has = current.includes(tierLevel);
+        const next = {
+            ...matrix,
+            [featureId]: has
+                ? current.filter(t => t !== tierLevel)
+                : [...current, tierLevel].sort((a, b) => a - b),
+        };
+        saveMatrix(next);
     };
 
     const toggleCategory = (cat: string) => {
@@ -810,13 +829,14 @@ export function SEOPackageFeaturesTab() {
 
     // Matrix summary
     const matrixSummary = useMemo(() => {
-        const counts: Record<string, number> = {};
+        const counts: Record<number, number> = {};
         for (const tier of seoTiers) {
             counts[tier.level] = 0;
         }
         for (const f of seoFeatures) {
+            const tiers = matrix[f.id] ?? [];
             for (const tier of seoTiers) {
-                if (matrix[f.id + "_" + tier.level]) counts[tier.level]++;
+                if (tiers.includes(tier.level)) counts[tier.level]++;
             }
         }
         return counts;

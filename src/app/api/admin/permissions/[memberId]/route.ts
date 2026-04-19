@@ -23,7 +23,7 @@ export async function PUT(
     const member = await prisma.teamMember.findUnique({ where: { id: memberId } });
     if (!member) return notFound("Member not found");
 
-    // Sequential writes (PrismaNeon HTTP adapter does NOT support $transaction)
+    // Audit log
     await prisma.permissionAudit.create({
       data: {
         targetUserId: memberId,
@@ -34,15 +34,39 @@ export async function PUT(
       },
     }).catch(() => { /* audit log non-critical */ });
 
+    // Update member fields (isDeptHead is now managed via MemberDepartment junction, not TeamMember)
     const updated = await prisma.teamMember.update({
       where: { id: memberId },
       data: {
         ...(tabPermissions !== undefined && { tabPermissions: tabPermissions ?? [] }),
         ...(departmentId !== undefined && { departmentId: departmentId ?? null }),
-        ...(isDeptHead !== undefined && { isDeptHead: isDeptHead ?? false }),
         ...(systemRole !== undefined && { role: systemRole ?? member.role }),
         ...(roleLevel !== undefined && { roleLevel: roleLevel ?? member.roleLevel }),
       },
+    });
+
+    // Handle isDeptHead via MemberDepartment junction
+    if (isDeptHead !== undefined && departmentId) {
+      // Clear all existing heads in this department first
+      await prisma.memberDepartment.updateMany({
+        where: { departmentId, isDeptHead: true },
+        data: { isDeptHead: false },
+      }).catch(() => { /* ignore */ });
+
+      if (isDeptHead === true) {
+        // Set this member as head of the department
+        await prisma.memberDepartment.upsert({
+          where: { memberId_departmentId: { memberId, departmentId } },
+          update: { isDeptHead: true, isPrimary: true },
+          create: { memberId, departmentId, isDeptHead: true, isPrimary: true },
+        });
+      }
+    }
+
+    // Read back isDeptHead from junction for the primary department
+    const primaryJunction = await prisma.memberDepartment.findFirst({
+      where: { memberId, isPrimary: true },
+      select: { isDeptHead: true },
     });
 
     return ok({
@@ -51,7 +75,7 @@ export async function PUT(
       role: updated.role ?? "",
       roleLevel: updated.roleLevel ?? 4,
       departmentId: updated.departmentId ?? null,
-      isDeptHead: updated.isDeptHead ?? false,
+      isDeptHead: primaryJunction?.isDeptHead ?? false,
       tabPermissions: updated.tabPermissions ?? [],
     });
   } catch (err) {

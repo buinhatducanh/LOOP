@@ -21,9 +21,14 @@ export interface SEOFeature {
     label: string;
     labelEn?: string;
     description: string;
+    descriptionVi?: string;
     category: string;
+    categoryVi?: string;
     extraPrice?: number;
     videoUrl?: string;
+    serviceKey?: string;
+    nameVi?: string;
+    nameEn?: string;
     includedTiers: number[]; // tier levels that include this feature: [1] = Basic, [2] = Business, [3] = Experience
 }
 
@@ -33,6 +38,8 @@ export interface SEOPackageTier {
     shortDesc: string;
     basePrice: number;
     marketPrice?: number;
+    serviceKey?: string;
+    isActive?: boolean;
 }
 
 // ── Category config ───────────────────────────────────────────────────────────

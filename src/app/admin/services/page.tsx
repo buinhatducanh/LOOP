@@ -9,11 +9,12 @@ import { adminApi } from "@/lib/api/client";
 import { DS, GRD } from "@/lib/design-tokens";
 import {
   Plus, Edit2, Search, RefreshCw,
-  X, Globe, DollarSign,
+  X, Globe, DollarSign, Target,
 } from "lucide-react";
 import { AnimatePresence } from "motion/react";
 import { ImageUpload } from "@/components/ui/ImageUpload";
 import { PricingTab } from "./components/PricingTab";
+import { SEOPackagesTab } from "./components/SEOPackagesTab";
 
 type Service = {
   id: string;
@@ -128,7 +129,7 @@ export default function ServicesTabPage() {
   const [search, setSearch] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   const [editService, setEditService] = useState<Service | null>(null);
-  const [activeTab, setActiveTab] = useState<"services" | "pricing">("services");
+  const [activeTab, setActiveTab] = useState<"services" | "pricing" | "seo">("services");
 
   const { data, isLoading, isFetching } = useQuery({
     queryKey: qk.adminServices({ page, limit: 20, search }),
@@ -182,11 +183,26 @@ export default function ServicesTabPage() {
             NEW
           </span>
         </button>
+        <button
+          onClick={() => setActiveTab("seo")}
+          style={{
+            display: "flex", alignItems: "center", gap: 6, padding: "10px 18px",
+            borderBottom: activeTab === "seo" ? `2px solid ${DS.amber}` : "2px solid transparent",
+            background: "none", border: "none", borderRadius: 0,
+            color: activeTab === "seo" ? DS.text : DS.text4,
+            cursor: "pointer", fontSize: 13, fontWeight: 600,
+            transition: "all 0.15s",
+          }}
+        >
+          <Target size={14} style={{ color: DS.amber }} /> Gói SEO
+        </button>
       </div>
 
       {/* Tab content */}
       {activeTab === "pricing" ? (
         <PricingTab />
+      ) : activeTab === "seo" ? (
+        <SEOPackagesTab />
       ) : (
         <>
           {/* Header */}

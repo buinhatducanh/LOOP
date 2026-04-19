@@ -298,7 +298,7 @@ function HolographicCard({
     })(),
     missionsCompleted: achievements,
     totalApprovedLp: lpBalance,
-    teamTag: (member.team as string) ?? "Loop",
+    teamTag: (member.department as string) ?? "Loop",
     status: "active",
   };
 

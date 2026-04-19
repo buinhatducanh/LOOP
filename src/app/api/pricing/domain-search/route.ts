@@ -71,13 +71,18 @@ export async function GET(req: Request) {
  purchased.map((r) => r.domain?.toLowerCase()).filter(Boolean) as string[],
  );
 
- // ── Step 3: Load pricing from DB ─────────────────────────────────────────
+ // ── Step 3: Load pricing + active extensions from DB ────────────────────────
  const dbPrices = await prisma.pricingDomainPrice.findMany({
  where: { isActive: true },
  select: { extension: true, registrationPrice: true },
+ orderBy: { sortOrder: "asc" },
  });
  const priceMap = Object.fromEntries(dbPrices.map((p) => [p.extension, p.registrationPrice]));
- const tldOptions = ["com.vn", "vn", "com", "net", "io", "co", "org", "info", "biz"];
+ // Use active extensions from DB — fallback to common TLDs if DB is empty
+ const dbExtensions = dbPrices.map((p) => p.extension);
+ const tldOptions = dbExtensions.length > 0
+ ? dbExtensions
+ : ["com.vn", "vn", "com", "net", "io", "co", "org", "info", "biz"];
 
  const results = await Promise.all(
  tldOptions.map(async (tld) => {
@@ -110,6 +115,14 @@ export async function GET(req: Request) {
  };
  }),
  );
+
+ // Sort: primary TLD (from query param) first, then by DB sortOrder
+ const primaryDomain = `${keyword}.${query}`;
+ results.sort((a, b) => {
+ if (a.domain === primaryDomain) return -1;
+ if (b.domain === primaryDomain) return 1;
+ return 0;
+ });
 
  return ok({ domains: results, invalid: false });
  } catch (err) {

@@ -47,6 +47,18 @@ type ApiPackage = {
  sortOrder: number;
  isActive: boolean;
  createdAt: string;
+ name?: string;
+ nameVi?: string;
+ shortDesc2?: string;
+ trialDays?: number;
+ trialPrice?: number;
+ activateTime?: string;
+ lp?: number;
+ cta?: string;
+ ctaVi?: string;
+ orderCount?: number;
+ trialRequests?: number;
+ revenue?: number;
  [key: string]: unknown;
 };
 
@@ -73,7 +85,8 @@ type WebPackage = {
 	badgeColor: string;
 	features: string[];
 	demoFeatures: string[];
-	highlighted: boolean;
+	isPopular?: boolean;
+	highlighted?: boolean;
 	cta: string;
 	ctaVi: string;
 	pages: number;
@@ -160,8 +173,8 @@ function toUIPackage(p: ApiPackage): WebPackage {
  highlighted: p.isPopular ?? false,
  cta: p.cta ?? "Chọn gói",
  ctaVi: p.ctaVi ?? p.cta ?? "Chọn gói",
- pages: p.pages ?? 0,
- pagesVi: p.pagesVi ?? p.pages ?? 0,
+ pages: Number(p.pages ?? 0),
+ pagesVi: Number(p.pagesVi ?? p.pages ?? 0),
  sortOrder: p.sortOrder ?? 0,
  isActive: p.isActive ?? true,
  createdAt: p.createdAt ?? "",
@@ -184,7 +197,6 @@ function formToApiPayload(form: Partial<WebPackage>): Record<string, unknown> {
  tagline: form.tagline ?? "",
  taglineVi: form.tagline ?? "",
  price: form.price ?? 0,
-	 marketPrice: form.fullPrice ?? form.price ?? 0,
 	 marketPrice: form.fullPrice ?? form.price ?? 0,
  currency: "VND",
  period: "one-time",
