@@ -442,31 +442,19 @@ export default function SiteHeader({ locale }: { locale: string }) {
     return () => document.removeEventListener("mousedown", handler);
   }, [userMenuOpen, notifPanelOpen, openDropdown]);
 
-  // Notification poll
-  const fetchUnreadCount = useCallback(async () => {
-    const authStore = useAuthStore.getState();
-    if (!authStore.isAuthenticated) return;
-    const { accountType: at, tokenExpiry } = authStore;
-    if (!at || (tokenExpiry && Date.now() > tokenExpiry)) return;
-    try {
-      const tokenKey = at === "customer" ? "loop-customer-token" : "loop-staff-token";
-      const token = typeof window !== "undefined" ? localStorage.getItem(tokenKey) : null;
-      if (!token) return;
-      const res = await fetch("/api/notifications/unread-count", { headers: { Authorization: `Bearer ${token}` } });
-      if (res.ok) {
-        const data = await res.json();
-        setNotifCount(data.data?.count || 0);
-      }
-    } catch { /* silent */ }
-  }, []);
-
+  // Fetch unread count once on mount (no polling)
   useEffect(() => {
-    fetchUnreadCount();
-    if (isAuthenticated) {
-      const interval = setInterval(fetchUnreadCount, 30000);
-      return () => clearInterval(interval);
-    }
-  }, [isAuthenticated, fetchUnreadCount]);
+    if (!mounted || !isAuthenticated) return;
+    const { accountType: at, tokenExpiry } = useAuthStore.getState();
+    if (!at || (tokenExpiry && Date.now() > tokenExpiry)) return;
+    const tokenKey = at === "customer" ? "loop-customer-token" : "loop-staff-token";
+    const token = localStorage.getItem(tokenKey);
+    if (!token) return;
+    fetch("/api/notifications/unread-count", { headers: { Authorization: `Bearer ${token}` } })
+      .then(res => res.ok ? res.json() : null)
+      .then(data => { if (data) setNotifCount(data.data?.count || 0); })
+      .catch(() => { /* silent */ });
+  }, [mounted, isAuthenticated]);
 
   const handleLogout = async () => {
     await logout();

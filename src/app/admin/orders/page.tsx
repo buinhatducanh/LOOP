@@ -780,7 +780,7 @@ function ProjectMembersModal({ order, onClose }: { order: Order | null; onClose:
             await adminApi.delete(`/api/admin/projects/${order.id}/members`, { body: JSON.stringify({ memberId }) });
         },
         onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "projects", order.id, "members"] }),
-        onError: (err: unknown) => alert(err instanceof Error ? err.message : "Xóa thất bại"),
+        onError: (err: unknown) => setAddError(err instanceof Error ? err.message : "Xóa thất bại"),
     });
 
     return (
@@ -967,7 +967,7 @@ function SalesRepModal({ order, onClose, onSuccess }: { order: Order | null; onC
 // ───────────────────────────────────────────────────────────────────────────────
 type DetailTab = "overview" | "history" | "demos" | "handover";
 
-function OrderDetailModal({ order, onClose }: { order: Order | null; onClose: () => void }) {
+function OrderDetailModal({ order, onClose, setToast }: { order: Order | null; onClose: () => void; setToast?: (t: { message: string; type: "success" | "error" } | null) => void }) {
     const { t } = useAdminTranslations();
     const qc = useQueryClient();
     const [activeTab, setActiveTab] = useState<DetailTab>("overview");
@@ -1005,6 +1005,7 @@ function OrderDetailModal({ order, onClose }: { order: Order | null; onClose: ()
     const [handoverForm, setHandoverForm] = useState({ figmaUrl: "", githubUrl: "", deploymentUrl: "", notes: "" });
     const [savingHandover, setSavingHandover] = useState(false);
     const [handoverError, setHandoverError] = useState("");
+    const [handoverSuccess, setHandoverSuccess] = useState("");
 
     const saveHandover = useMutation({
         mutationFn: async () => {
@@ -1019,7 +1020,8 @@ function OrderDetailModal({ order, onClose }: { order: Order | null; onClose: ()
         onSuccess: () => {
             refetchHandover();
             setHandoverError("");
-            alert("Đã lưu handover thành công");
+            setHandoverSuccess("Đã lưu handover thành công");
+            setTimeout(() => setHandoverSuccess(""), 3000);
         },
         onError: (err: unknown) => setHandoverError(err instanceof Error ? err.message : "Lưu thất bại"),
     });
@@ -1278,6 +1280,7 @@ export default function OrdersPage() {
     const [paymentOrder, setPaymentOrder] = useState<Order | null>(null);
     const [assignMemberOrder, setAssignMemberOrder] = useState<Order | null>(null);
     const [salesRepOrder, setSalesRepOrder] = useState<Order | null>(null);
+    const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
     const { data, isLoading, isFetching } = useQuery({
         queryKey: qk.orders({ page, limit: 20, search, status: statusFilter }),
@@ -1310,7 +1313,7 @@ export default function OrdersPage() {
             return res;
         },
         onSuccess: () => qc.invalidateQueries({ queryKey: qk.orders() }),
-        onError: (err: unknown) => alert(err instanceof Error ? err.message : "Chuyển trạng thái thất bại"),
+        onError: (err: unknown) => setToast({ message: err instanceof Error ? err.message : "Chuyển trạng thái thất bại", type: "error" }),
     });
 
     const deleteMutation = useMutation({
@@ -1318,7 +1321,7 @@ export default function OrdersPage() {
             await adminApi.delete(`/api/admin/orders/${id}`);
         },
         onSuccess: () => { qc.invalidateQueries({ queryKey: qk.orders() }); setDeleteOrder(null); },
-        onError: (err: unknown) => alert(err instanceof Error ? err.message : "Xóa thất bại"),
+        onError: (err: unknown) => setToast({ message: err instanceof Error ? err.message : "Xóa thất bại", type: "error" }),
     });
 
     const sendDemoMutation = useMutation({
@@ -1332,12 +1335,13 @@ export default function OrdersPage() {
             qc.invalidateQueries({ queryKey: qk.orders() });
             setSendDemoOrder(null);
         },
-        onError: (err: unknown) => alert(err instanceof Error ? err.message : "Gửi demo thất bại"),
+        onError: (err: unknown) => setToast({ message: err instanceof Error ? err.message : "Gửi demo thất bại", type: "error" }),
     });
 
     const currentFlow = orderTypeFilter === "template" || orderTypeFilter === "web_package" ? TEMPLATE_FLOW : CUSTOM_FLOW;
 
     return (
+        <>
         <div>
             {/* Header */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
@@ -1456,7 +1460,7 @@ export default function OrdersPage() {
 
             {/* Modals */}
             {!!selectedOrder && (
-                <OrderDetailModal order={selectedOrder} onClose={() => setSelectedOrder(null)} />
+                <OrderDetailModal order={selectedOrder} onClose={() => setSelectedOrder(null)} setToast={setToast} />
             )}
             {showCreateModal && (
                 <OrderEditModal order={null} onClose={() => setShowCreateModal(false)} onSuccess={() => { qc.invalidateQueries({ queryKey: qk.orders() }); setShowCreateModal(false); }} />
@@ -1480,5 +1484,18 @@ export default function OrdersPage() {
                 <SalesRepModal order={salesRepOrder} onClose={() => setSalesRepOrder(null)} onSuccess={() => qc.invalidateQueries({ queryKey: qk.orders() })} />
             )}
         </div>
+        {toast && (
+            <div style={{
+                position: "fixed", bottom: 24, right: 24, zIndex: 9999,
+                background: DS.bgCard, border: `1px solid ${toast.type === "error" ? DS.red : DS.green}`,
+                borderRadius: 12, padding: "12px 20px", minWidth: 260,
+                boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+            }}>
+                <div style={{ color: toast.type === "error" ? DS.red : DS.green, fontSize: 13, fontFamily: DS.mono }}>
+                    {toast.message}
+                </div>
+            </div>
+        )}
+        </>
     );
 }

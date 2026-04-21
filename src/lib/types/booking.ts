@@ -208,4 +208,6 @@ export interface PricingConfig {
  /** SEO tiers + features — wired from DB */
  seoTiers?: SEOPackageTier[];
  seoFeatures?: SEOFeature[];
+ /** Web features — loaded from FeatureGroup+Feature DB (serviceKey=web) */
+ webFeatures?: SeoFeature[];
 }

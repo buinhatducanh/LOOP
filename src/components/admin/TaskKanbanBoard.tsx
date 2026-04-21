@@ -321,9 +321,10 @@ interface TaskFormModalProps {
   members: { id: string; name: string; projectRoleKey: string }[];
   onClose: () => void;
   onSuccess: () => void;
+  onToast?: (msg: string) => void;
 }
 
-function TaskFormModal({ mode, initialTask, orderId, members, onClose, onSuccess }: TaskFormModalProps) {
+function TaskFormModal({ mode, initialTask, orderId, members, onClose, onSuccess, onToast }: TaskFormModalProps) {
   const [form, setForm] = useState<CreateTaskData>({
     title: initialTask?.title ?? "",
     description: initialTask?.description ?? "",
@@ -366,7 +367,7 @@ function TaskFormModal({ mode, initialTask, orderId, members, onClose, onSuccess
       return (res as { data: TaskKanban }).data;
     },
     onSuccess: () => { onSuccess(); onClose(); },
-    onError: () => alert("Cập nhật thất bại"),
+    onError: () => { if (onToast) onToast("Cập nhật thất bại"); },
   });
 
   const handleSubmit = () => {
@@ -726,6 +727,7 @@ interface TaskKanbanBoardProps {
 
 export function TaskKanbanBoard({ orderId, members = [], className = "" }: TaskKanbanBoardProps) {
   const qc = useQueryClient();
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
   const { data: tasks = [], isLoading } = useQuery<TaskKanban[]>({
     queryKey: ["task-kanban", orderId],
@@ -737,10 +739,7 @@ export function TaskKanbanBoard({ orderId, members = [], className = "" }: TaskK
     mutationFn: ({ id, column }: { id: string; column: KanbanColumn }) =>
       adminApi.post(`/admin/task-kanban/${id}/transition`, { column }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["task-kanban", orderId] }),
-    onError: (err: unknown) => {
-      const msg = err instanceof Error ? err.message : "Chuyển cột thất bại";
-      alert(msg);
-    },
+    onError: (err: unknown) => { setToast({ message: err instanceof Error ? err.message : "Chuyển cột thất bại", type: "error" }); },
   });
 
   const [showCreate, setShowCreate] = useState(false);
@@ -958,6 +957,7 @@ export function TaskKanbanBoard({ orderId, members = [], className = "" }: TaskK
             members={members}
             onClose={() => setShowCreate(false)}
             onSuccess={handleSuccess}
+            onToast={(msg) => setToast({ message: msg, type: "error" })}
           />
         )}
         {showBulkCreate && (
@@ -975,10 +975,23 @@ export function TaskKanbanBoard({ orderId, members = [], className = "" }: TaskK
             initialTask={showEdit}
             members={members}
             onClose={() => setShowEdit(null)}
-            onSuccess={handleSuccess}
+            onSuccess={() => { handleSuccess(); setShowEdit(null); }}
+            onToast={(msg) => setToast({ message: msg, type: "error" })}
           />
         )}
       </AnimatePresence>
+      {toast && (
+        <div style={{
+          position: "fixed", bottom: 24, right: 24, zIndex: 9999,
+          background: DS.bgCard, border: `1px solid ${toast.type === "error" ? DS.red : DS.green}`,
+          borderRadius: 12, padding: "12px 20px", minWidth: 260,
+          boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+        }}>
+          <div style={{ color: toast.type === "error" ? DS.red : DS.green, fontSize: 13, fontFamily: DS.mono }}>
+            {toast.message}
+          </div>
+        </div>
+      )}
     </>
   );
 }

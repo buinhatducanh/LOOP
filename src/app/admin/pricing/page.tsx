@@ -171,6 +171,7 @@ function Toggle({ checked, onChange, size = 20 }: { checked: boolean; onChange: 
 function SettingsTab() {
   const _t = useAdminTranslations();
   const qc = useQueryClient();
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
   const { data, isLoading, isFetching } = useQuery<{ data: PricingSetting[] }>({
     queryKey: ["admin", "pricing", "settings"],
@@ -181,8 +182,8 @@ function SettingsTab() {
     mutationFn: async (settings: { key: string; value: string }[]) => {
       await adminApi.put("/api/admin/pricing/settings", { settings });
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "pricing", "settings"] }),
-    onError: (err: unknown) => { alert(err instanceof Error ? err.message : "Lưu thất bại"); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin", "pricing", "settings"] }); setToast({ message: "Lưu thành công", type: "success" }); },
+    onError: (err: unknown) => { setToast({ message: err instanceof Error ? err.message : "Lưu thất bại", type: "error" }); },
   });
 
   const settings: PricingSetting[] = data?.data ?? [];
@@ -222,6 +223,7 @@ function SettingsTab() {
   const hasChanges = Object.values(dirty).some(Boolean);
 
   return (
+    <>
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
         <div>
@@ -294,6 +296,14 @@ function SettingsTab() {
         </div>
       )}
     </div>
+    {toast && (
+      <div style={{ position: "fixed", bottom: 24, right: 24, zIndex: 9999, display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", borderRadius: 12, background: "#0F172A", border: `1px solid ${toast.type === "success" ? "#22C55E" : "#CC3344"}50`, boxShadow: "0 8px 32px rgba(0,0,0,0.5)", maxWidth: 320 }}>
+        <span style={{ color: toast.type === "success" ? "#22C55E" : "#CC3344", fontSize: 16 }}>{toast.type === "success" ? "✓" : "✗"}</span>
+        <span style={{ color: "#fff", fontSize: 13 }}>{toast.message}</span>
+        <button onClick={() => setToast(null)} style={{ background: "none", border: "none", cursor: "pointer", padding: 2, color: "#94A3B8" }}><X size={14} /></button>
+      </div>
+    )}
+  </>
   );
 }
 
@@ -517,6 +527,7 @@ function FeatureFormModal({
 
 function FeaturesTab() {
   const qc = useQueryClient();
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
   const { data, isLoading } = useQuery<{ data: Feature[]; pagination: { total: number } }>({
     queryKey: ["admin", "pricing", "features"],
@@ -530,7 +541,7 @@ function FeaturesTab() {
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => { await adminApi.delete(`/api/admin/service-attributes/${id}`); },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "pricing", "features"] }),
-    onError: (err: unknown) => { alert(err instanceof Error ? err.message : "Xóa thất bại"); },
+    onError: (err: unknown) => { setToast({ message: err instanceof Error ? err.message : "Xóa thất bại", type: "error" }); },
   });
 
   const toggleMutation = useMutation({
@@ -538,7 +549,7 @@ function FeaturesTab() {
       await adminApi.put(`/api/admin/service-attributes/${id}`, { isActive });
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "pricing", "features"] }),
-    onError: (err: unknown) => { alert(err instanceof Error ? err.message : "Cập nhật thất bại"); },
+    onError: (err: unknown) => { setToast({ message: err instanceof Error ? err.message : "Cập nhật thất bại", type: "error" }); },
   });
 
   const features: Feature[] = data?.data ?? [];
@@ -551,6 +562,7 @@ function FeaturesTab() {
   });
 
   return (
+    <>
     <div>
       {editingFeature !== undefined && (
         <FeatureFormModal
@@ -659,6 +671,14 @@ function FeaturesTab() {
         </div>
       )}
     </div>
+    {toast && (
+      <div style={{ position: "fixed", bottom: 24, right: 24, zIndex: 9999, display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", borderRadius: 12, background: "#0F172A", border: `1px solid ${toast.type === "success" ? "#22C55E" : "#CC3344"}50`, boxShadow: "0 8px 32px rgba(0,0,0,0.5)", maxWidth: 320 }}>
+        <span style={{ color: toast.type === "success" ? "#22C55E" : "#CC3344", fontSize: 16 }}>{toast.type === "success" ? "✓" : "✗"}</span>
+        <span style={{ color: "#fff", fontSize: 13 }}>{toast.message}</span>
+        <button onClick={() => setToast(null)} style={{ background: "none", border: "none", cursor: "pointer", padding: 2, color: "#94A3B8" }}><X size={14} /></button>
+      </div>
+    )}
+  </>
   );
 }
 
@@ -734,6 +754,7 @@ function InfraTiersTab() {
 
 function PackagesTab() {
   const qc = useQueryClient();
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
   const { data, isLoading } = useQuery<{ data: Package[]; pagination: { total: number } }>({
     queryKey: ["admin", "pricing", "packages"],
@@ -750,10 +771,11 @@ function PackagesTab() {
       await adminApi.put(`/api/admin/pricing/packages`, { id, isActive });
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "pricing", "packages"] }),
-    onError: (err: unknown) => { alert(err instanceof Error ? err.message : "Cập nhật thất bại"); },
+    onError: (err: unknown) => { setToast({ message: err instanceof Error ? err.message : "Cập nhật thất bại", type: "error" }); },
   });
 
   return (
+    <>
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
         <div>
@@ -828,6 +850,14 @@ function PackagesTab() {
         </div>
       )}
     </div>
+    {toast && (
+      <div style={{ position: "fixed", bottom: 24, right: 24, zIndex: 9999, display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", borderRadius: 12, background: "#0F172A", border: `1px solid ${toast.type === "success" ? "#22C55E" : "#CC3344"}50`, boxShadow: "0 8px 32px rgba(0,0,0,0.5)", maxWidth: 320 }}>
+        <span style={{ color: toast.type === "success" ? "#22C55E" : "#CC3344", fontSize: 16 }}>{toast.type === "success" ? "✓" : "✗"}</span>
+        <span style={{ color: "#fff", fontSize: 13 }}>{toast.message}</span>
+        <button onClick={() => setToast(null)} style={{ background: "none", border: "none", cursor: "pointer", padding: 2, color: "#94A3B8" }}><X size={14} /></button>
+      </div>
+    )}
+  </>
   );
 }
 
@@ -835,6 +865,7 @@ function PackagesTab() {
 
 function AddonsTab() {
   const qc = useQueryClient();
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
   const { data, isLoading } = useQuery<{ data: Addon[]; pagination: { total: number } }>({
     queryKey: ["admin", "pricing", "addons"],
@@ -844,7 +875,7 @@ function AddonsTab() {
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => { await adminApi.delete(`/api/admin/pricing/addons?id=${id}`); },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "pricing", "addons"] }),
-    onError: (err: unknown) => { alert(err instanceof Error ? err.message : "Xóa thất bại"); },
+    onError: (err: unknown) => { setToast({ message: err instanceof Error ? err.message : "Xóa thất bại", type: "error" }); },
   });
 
   const toggleMutation = useMutation({
@@ -852,12 +883,13 @@ function AddonsTab() {
       await adminApi.put(`/api/admin/pricing/addons`, { id, isActive });
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "pricing", "addons"] }),
-    onError: (err: unknown) => { alert(err instanceof Error ? err.message : "Cập nhật thất bại"); },
+    onError: (err: unknown) => { setToast({ message: err instanceof Error ? err.message : "Cập nhật thất bại", type: "error" }); },
   });
 
   const addons: Addon[] = data?.data ?? [];
 
   return (
+    <>
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
         <div>
@@ -918,6 +950,14 @@ function AddonsTab() {
         </div>
       )}
     </div>
+    {toast && (
+      <div style={{ position: "fixed", bottom: 24, right: 24, zIndex: 9999, display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", borderRadius: 12, background: "#0F172A", border: `1px solid ${toast.type === "success" ? "#22C55E" : "#CC3344"}50`, boxShadow: "0 8px 32px rgba(0,0,0,0.5)", maxWidth: 320 }}>
+        <span style={{ color: toast.type === "success" ? "#22C55E" : "#CC3344", fontSize: 16 }}>{toast.type === "success" ? "✓" : "✗"}</span>
+        <span style={{ color: "#fff", fontSize: 13 }}>{toast.message}</span>
+        <button onClick={() => setToast(null)} style={{ background: "none", border: "none", cursor: "pointer", padding: 2, color: "#94A3B8" }}><X size={14} /></button>
+      </div>
+    )}
+  </>
   );
 }
 

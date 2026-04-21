@@ -480,6 +480,7 @@ function StatCard({ label, value, icon, color }: { label: string; value: string 
 export default function AcademyPage() {
   const { t } = useAdminTranslations();
   const [tab, setTab] = useState<"courses" | "instructors" | "enrollments">("courses");
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
   const qc = useQueryClient();
 
   // Modal/form state
@@ -506,19 +507,19 @@ export default function AcademyPage() {
   const deleteCourse = useMutation({
     mutationFn: async (id: string) => { await adminApi.delete(`/api/admin/edu/courses/${id}`); },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "academy", "courses"] }),
-    onError: (err: unknown) => { alert(err instanceof Error ? err.message : t("academy.errDeleteFailed")); },
+    onError: (err: unknown) => { setToast({ message: err instanceof Error ? err.message : t("academy.errDeleteFailed"), type: "error" }); },
   });
 
   const deleteInstructor = useMutation({
     mutationFn: async (id: string) => { await adminApi.delete(`/api/admin/edu/instructors/${id}`); },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "academy", "instructors"] }),
-    onError: (err: unknown) => { alert(err instanceof Error ? err.message : t("academy.errDeleteFailed")); },
+    onError: (err: unknown) => { setToast({ message: err instanceof Error ? err.message : t("academy.errDeleteFailed"), type: "error" }); },
   });
 
   const deleteEnrollment = useMutation({
     mutationFn: async (id: string) => { await adminApi.delete(`/api/admin/edu/enrollments/${id}`); },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "academy", "enrollments"] }),
-    onError: (err: unknown) => { alert(err instanceof Error ? err.message : t("academy.errDeleteFailed")); },
+    onError: (err: unknown) => { setToast({ message: err instanceof Error ? err.message : t("academy.errDeleteFailed"), type: "error" }); },
   });
 
   const courses = coursesData?.data ?? [];
@@ -533,6 +534,7 @@ export default function AcademyPage() {
     : "—";
 
   return (
+    <>
     <div>
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
@@ -795,5 +797,13 @@ export default function AcademyPage() {
         )}
       </AnimatePresence>
     </div>
+    {toast && (
+      <div style={{ position: "fixed", bottom: 24, right: 24, zIndex: 9999, display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", borderRadius: 12, background: "#0F172A", border: `1px solid ${toast.type === "success" ? "#22C55E" : "#CC3344"}50`, boxShadow: "0 8px 32px rgba(0,0,0,0.5)", maxWidth: 320 }}>
+        <span style={{ color: toast.type === "success" ? "#22C55E" : "#CC3344", fontSize: 16 }}>{toast.type === "success" ? "✓" : "✗"}</span>
+        <span style={{ color: "#fff", fontSize: 13 }}>{toast.message}</span>
+        <button onClick={() => setToast(null)} style={{ background: "none", border: "none", cursor: "pointer", padding: 2, color: "#94A3B8" }}><X size={14} /></button>
+      </div>
+    )}
+    </>
   );
 }

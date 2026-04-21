@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
+import { revalidatePath, revalidateTag } from "next/cache";
 import type { FeatureWhereInput } from "@/generated/prisma/models/Feature";
 
 export async function GET(req: NextRequest) {
@@ -53,6 +54,9 @@ export async function POST(req: NextRequest) {
         isRequired: data.isRequired || false,
         sortOrder: data.sortOrder || 0,
         isActive: data.isActive ?? true,
+        category: data.category ?? "Khác",
+        extraPrice: data.extraPrice ?? 0,
+        includedTiers: Array.isArray(data.includedTiers) ? data.includedTiers : "[]",
         variants: data.variants?.length
           ? {
               create: data.variants.map((v: { variantName: string; description?: string; price: number; resourceUsage?: unknown; sortOrder?: number }, idx: number) => ({
@@ -77,6 +81,10 @@ export async function POST(req: NextRequest) {
       resourceId: feature.id,
       newValues: data,
     });
+
+    revalidatePath("/vi/thiet-ke-website");
+    revalidatePath("/en/thiet-ke-website");
+    revalidateTag("pricing-config");
 
     return NextResponse.json({ data: feature }, { status: 201 });
   } catch (error) {

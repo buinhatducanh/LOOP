@@ -43,7 +43,7 @@ export interface TeamMemberBE {
 
 export type MemberStatus = "active" | "inactive" | "on-leave" | "probation";
 export type ViewMode = "table" | "grid";
-export type SortKey = "name" | "level" | "lpBalance" | "missions" | "rank" | "role" | "team" | "status";
+export type SortKey = "name" | "level" | "lpBalance" | "missions" | "rank" | "role" | "team" | "status" | "joined";
 export type ToastType = "success" | "error" | "info" | "warning";
 
 export interface ToastItem { id: number; msg: string; type: ToastType; }

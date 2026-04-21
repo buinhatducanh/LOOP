@@ -301,6 +301,9 @@ export function BookingWizardClient({ locale }: Props) {
   // LP balance — fetched from /api/pricing/config?email= when customer enters email
   const [lpBalance, setLpBalance] = useState(0);
 
+  /** Web features loaded from DB via /api/pricing/config — replaces hardcoded array */
+  const [webFeatures, setWebFeatures] = useState<WebPackageFeature[]>([]);
+
   // ── SEO service state (Step 2 — dedicated SEO step after Domain) ─────────────────
   /** Free SEO bundled with website purchase (brand keyword + GSC verification) */
   const [selectedFreeSeo, setSelectedFreeSeo] = useState<boolean>(false);
@@ -364,44 +367,9 @@ export function BookingWizardClient({ locale }: Props) {
     };
   });
 
-  /** Website feature matrix — maps to 4 tiers */
-  const webFeatures: WebPackageFeature[] = [
-    // ── 1. Giao diện & Hiển thị ────────────────────────────────
-    { id: "ui-responsive", label: "Tự động co giãn màn hình", labelEn: "Responsive Display", description: "Hiển thị đẹp trên cả điện thoại, iPad và máy tính — chuẩn mobile-first, không cần phóng to/thu nhỏ.", category: "Giao diện", includedTiers: [1, 2, 3, 4] },
-    { id: "ui-nav", label: "Bố cục điều hướng thông minh", labelEn: "Smart Navigation Layout", description: "Sắp xếp nút bấm hợp lý để giữ chân khách ở lại lâu hơn, tăng thời gian trên trang.", category: "Giao diện", includedTiers: [1, 2, 3, 4] },
-    { id: "ui-custom", label: "Vẽ giao diện độc quyền riêng", labelEn: "Custom Exclusive Design", description: "Không dùng mẫu có sẵn, vẽ riêng theo đúng nhận diện thương hiệu — phù hợp doanh nghiệp cần khác biệt hoàn toàn.", category: "Giao diện", extraPrice: 3_000_000, includedTiers: [3, 4] },
-    { id: "ui-animation", label: "Hiệu ứng chuyển động", labelEn: "Animation & Micro-interactions", description: "Ảnh nổi lên, nút bấm phát sáng khi lướt chuột — tạo cảm giác cao cấp, chuyên nghiệp.", category: "Giao diện", includedTiers: [2, 3, 4] },
-
-    // ── 2. Tính năng Cốt lõi ──────────────────────────────────
-    { id: "core-form", label: "Biểu mẫu thu thập khách", labelEn: "Lead Capture Forms", description: "Khách điền Tên/SĐT, dữ liệu báo thẳng về email của bạn — thu thập khách hàng tiềm năng tự động.", category: "Tính năng cốt lõi", includedTiers: [1, 2, 3, 4] },
-    { id: "core-blog", label: "Trang Blog & Tin tức", labelEn: "Blog & News Pages", description: "Nơi đăng tải bài viết chia sẻ kiến thức, mẹo vặt, tin công ty — tăng SEO, giữ khách ở lại lâu hơn.", category: "Tính năng cốt lõi", includedTiers: [2, 3, 4] },
-    { id: "core-cms", label: "Hệ thống Quản trị (CMS)", labelEn: "Content Management System", description: "Giao diện thao tác như dùng Word — tự thay chữ, ảnh, sản phẩm không cần biết code.", category: "Tính năng cốt lõi", extraPrice: 5_000_000, includedTiers: [2, 3, 4] },
-    { id: "core-i18n", label: "Dịch thuật Đa ngôn ngữ", labelEn: "Multi-language (i18n)", description: "Thêm nút chuyển đổi tiếng Anh, Nhật, Hàn... cho khách quốc tế — mở rộng thị trường ra quốc tế.", category: "Tính năng cốt lõi", extraPrice: 3_000_000, includedTiers: [2, 3, 4] },
-
-    // ── 3. Quản trị & Vận hành Nội bộ ─────────────────────────
-    { id: "admin-roles", label: "Tài khoản & Phân quyền", labelEn: "Account & Role-based Access", description: "Cấp quyền riêng cho nhân viên — VD: chỉ được đăng bài, không được xem doanh thu.", category: "Quản trị", includedTiers: [2, 3, 4] },
-    { id: "admin-dashboard", label: "Bảng biểu đồ Thống kê", labelEn: "Admin Dashboard & Charts", description: "Màn hình tổng quan xem hôm nay có bao nhiêu người vào, bán được bao nhiêu — real-time.", category: "Quản trị", includedTiers: [2, 3, 4] },
-    { id: "admin-ai", label: "Tìm kiếm Thông minh (AI)", labelEn: "AI-powered Smart Search", description: "Khách gõ sai chính tả hay không dấu hệ thống vẫn hiểu và gợi ý đúng — tăng trải nghiệm, giảm bounce rate.", category: "Quản trị", extraPrice: 4_000_000, includedTiers: [3, 4] },
-
-    // ── 4. Khả năng Marketing & Lên Top Google (SEO) ───────────
-    { id: "seo-config", label: "Cấu hình Chuẩn SEO", labelEn: "Standard SEO Configuration", description: "Đảm bảo các tiêu chuẩn kỹ thuật để Google dễ dàng đẩy web lên trang nhất.", category: "SEO & Marketing", includedTiers: [1, 2, 3, 4] },
-    { id: "seo-social", label: "Hiển thị đẹp trên Mạng xã hội", labelEn: "Social Media Preview", description: "Hình ảnh, tiêu đề hiển thị chuẩn kích thước khi share link qua Zalo, Facebook, LinkedIn.", category: "SEO & Marketing", includedTiers: [1, 2, 3, 4] },
-    { id: "seo-analytics", label: "Lắp đặt Công cụ đo lường Google", labelEn: "Google Analytics & GSC Setup", description: "Giúp bạn biết khách hàng đến từ đâu, độ tuổi nào, thích xem gì nhất — data-driven decisions.", category: "SEO & Marketing", extraPrice: 1_500_000, includedTiers: [1, 2, 3, 4] },
-    { id: "seo-ai", label: "Trợ lý AI Viết bài", labelEn: "AI Content Marketing Assistant", description: "Tích hợp AI tự động soạn thảo bài viết chuẩn marketing ngay trong trang quản trị — tiết kiệm 80% thời gian.", category: "SEO & Marketing", extraPrice: 6_000_000, includedTiers: [3, 4] },
-
-    // ── 5. Cỗ máy Thương mại & Chốt đơn ───────────────────────
-    { id: "ecom-categories", label: "Quản lý Danh mục", labelEn: "Product Category Management", description: "Phân loại hàng hóa khoa học, hiển thị nhiều ảnh, màu sắc, kích cỡ (size) — khách dễ tìm sản phẩm.", category: "Thương mại", extraPrice: 5_000_000, includedTiers: [2, 3, 4] },
-    { id: "ecom-cart", label: "Giỏ hàng & Đặt hàng", labelEn: "Shopping Cart & Checkout", description: "Khách gom nhiều đồ, điền thông tin nhận hàng và tự động tính tổng tiền — chốt đơn tức thì. Tích hợp sẵn trong gói này.", category: "Thương mại", extraPrice: 12_000_000, includedTiers: [2, 3, 4] },
-    { id: "ecom-coupons", label: "Tạo Mã giảm giá & Giờ vàng", labelEn: "Coupons & Flash Sales", description: "Làm các coupon giảm 50k, đồng hồ đếm ngược kích thích mua ngay — tăng tỷ lệ chuyển đổi.", category: "Thương mại", extraPrice: 3_000_000, includedTiers: [3, 4] },
-    { id: "ecom-loyalty", label: "Tích điểm Thành viên", labelEn: "Loyalty Points System", description: "Khách mua nhiều được cộng điểm để đổi lấy ưu đãi cho lần sau — tăng giá trị trọn đời (LTV).", category: "Thương mại", extraPrice: 5_000_000, includedTiers: [3, 4] },
-    { id: "ecom-inventory", label: "Quản lý tồn Kho tự động", labelEn: "Auto Inventory Management", description: "Tự động trừ số lượng khi có đơn, báo đỏ khi hàng sắp hết — không lo oversell.", category: "Thương mại", extraPrice: 4_000_000, includedTiers: [3, 4] },
-
-    // ── 6. Nâng cao, Tốc độ & Bảo mật ────────────────────────
-    { id: "adv-security", label: "Bảo mật Đa lớp & Chống Hacker", labelEn: "Multi-layer Security & SSL", description: "Ổ khóa xanh (SSL) bảo vệ dữ liệu khách hàng tuyệt đối — HTTPS, chống DDoS, backup tự động.", category: "Nâng cao", includedTiers: [1, 2, 3, 4] },
-    { id: "adv-speed", label: "Ép xung Tốc độ tải trang", labelEn: "Page Speed Optimization", description: "Dùng công nghệ nén ảnh, website mở lên ngay lập tức dưới 3 giây — Google yêu web nhanh.", category: "Nâng cao", extraPrice: 2_000_000, includedTiers: [2, 3, 4] },
-    { id: "adv-api", label: "Kết nối Phần mềm thứ 3", labelEn: "3rd-party Software Integration", description: "Tự động đẩy dữ liệu sang phần mềm bạn đang dùng (MISA, KiotViet, GHTK...) — đồng bộ không cần nhập tay. Chỉ có ở gói Doanh Nghiệp trở lên.", category: "Nâng cao", extraPrice: 6_000_000, includedTiers: [3, 4] },
-    { id: "adv-payments", label: "Tích hợp Cổng quét mã Thanh toán", labelEn: "Payment Gateway Integration", description: "Khách trả tiền trực tiếp qua MoMo, VNPay, ZaloPay, quẹt thẻ Visa — thanh toán đa kênh, an toàn.", category: "Nâng cao", extraPrice: 5_000_000, includedTiers: [3, 4] },
-  ];
+  /** Website feature matrix — loaded from DB (FeatureGroup+Feature serviceKey=web) */
+  // State webFeatures is set in useEffect from cfg.webFeatures
+  // Kept as computed var for backward compat: if DB has no data yet, show nothing (admin must seed first)
 
   /** SEO tiers — monthly subscription pricing (2026-04-19) */
   const [seoTiers, setSeoTiers] = useState<SEOPackageTier[]>([
@@ -447,10 +415,10 @@ export function BookingWizardClient({ locale }: Props) {
         if (cancelled || !json?.data) return;
         const cfg: PricingConfig = json.data;
 
-        // ── Packages: chỉ lấy type="web" (loại bỏ app/dashboard/SEO) ──
+        // ── Packages: chỉ lấy type="website" (ServicePackage type=website = gói web design) ──
         if (cfg.packages?.length) {
           const webPkgs = cfg.packages.filter((p: WizardPackage) =>
-            !p.type || p.type === "web" || p.type === "custom_web"
+            p.type === "website"
           );
           // Merge popular flag từ DB (hoặc hardcode "business" là popular mặc định)
           const withPopular = webPkgs.map((p: WizardPackage) => ({
@@ -510,6 +478,11 @@ export function BookingWizardClient({ locale }: Props) {
         }
         if (cfg.seoFeatures?.length) {
           setSEOFeatures(cfg.seoFeatures as SEOFeature[]);
+        }
+
+        // ── Web features: load from DB (FeatureGroup + Feature serviceKey=web) ──
+        if (cfg.webFeatures?.length) {
+          setWebFeatures(cfg.webFeatures as unknown as WebPackageFeature[]);
         }
       })
       .catch(() => { /* keep fallback */ });

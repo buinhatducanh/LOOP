@@ -1223,6 +1223,7 @@ export default function MediaBookingsPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [editBooking, setEditBooking] = useState<MediaBooking | null>(null);
   const [activeTab, setActiveTab] = useState<"bookings" | "portfolio" | "packages">("bookings");
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
   const translatedStatuses = Object.fromEntries(
     Object.entries(STATUS_CONFIG).map(([k, v]) => [
@@ -1537,6 +1538,7 @@ export default function MediaBookingsPage() {
 
 function MediaPackagesTab() {
   const qc = useQueryClient();
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
   const { data, isLoading, isFetching } = useQuery({
     queryKey: ["admin", "media-packages"],
     queryFn: () => adminApi.get<{ data: MediaPackage[] }>("/api/admin/pricing/packages?type=media"),
@@ -1550,13 +1552,13 @@ function MediaPackagesTab() {
       });
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "media-packages"] }),
-    onError: (err: unknown) => { alert(err instanceof Error ? err.message : "Lưu thất bại"); },
+    onError: (err: unknown) => { setToast({ message: err instanceof Error ? err.message : "Lưu thất bại", type: "error" }); },
   });
 
   const seedMutation = useMutation({
     mutationFn: () => adminApi.post("/api/pricing/media-seed", {}),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "media-packages"] }),
-    onError: (err: unknown) => { alert(err instanceof Error ? err.message : "Seed thất bại"); },
+    onError: (err: unknown) => { setToast({ message: err instanceof Error ? err.message : "Seed thất bại", type: "error" }); },
   });
 
   const packages: MediaPackage[] = data?.data ?? [];
@@ -1772,6 +1774,20 @@ function MediaPackagesTab() {
             💡 <strong style={{ color: DS.text3 }}>Tùy chỉnh thêm:</strong> Khách hàng có thể chọn thêm dịch vụ đắp thêm (extra shooting, extra clip, drone footage, makeup artist) khi đặt dịch vụ.
             Extra được ghi nhận trong <strong style={{ color: DS.text3 }}>MediaBooking.note</strong> hoặc thêm field <strong style={{ color: DS.text3 }}>addonAmount</strong>.
           </p>
+        </div>
+      )}
+
+      {/* Toast */}
+      {toast && (
+        <div style={{
+          position: "fixed", bottom: 24, right: 24, zIndex: 9999,
+          background: DS.bgCard, border: `1px solid ${toast.type === "error" ? DS.red : DS.green}`,
+          borderRadius: 12, padding: "12px 20px", minWidth: 260,
+          boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+        }}>
+          <div style={{ color: toast.type === "error" ? DS.red : DS.green, fontSize: 13, fontFamily: DS.mono }}>
+            {toast.message}
+          </div>
         </div>
       )}
     </div>

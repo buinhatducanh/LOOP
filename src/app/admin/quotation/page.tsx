@@ -14,8 +14,6 @@ import { DS, GRD } from "@/lib/design-tokens";
 import { useAdminTranslations } from "@/i18n/admin/useAdminTranslations";
 import { FileText, RefreshCw, Plus, Check, Clock, XCircle, X, AlertTriangle } from "lucide-react";
 
-const [expandedRow, setExpandedRow] = useState<string | null>(null);
-
 const fmtVND = (n: number) =>
   new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(n);
 
@@ -201,6 +199,9 @@ export default function QuotationPage() {
   const [showCreate, setShowCreate] = useState(false);
   /** Pre-filled data when opening modal from a QuoteRequest row */
   const [quoteRequestForModal, setQuoteRequestForModal] = useState<QuoteRequest | null>(null);
+  /** Expanded pricing breakdown row in requests table */
+  const [expandedRow, setExpandedRow] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
   const qc = useQueryClient();
 
   const { data: quotesData, isLoading: quotesLoading, isFetching: quotesFetching } = useQuery({
@@ -241,10 +242,10 @@ export default function QuotationPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin", "quotation", "quotes"] });
     },
-    onError: (err: unknown) => { alert(err instanceof Error ? err.message : "Cập nhật thất bại"); },
+    onError: (err: unknown) => { setToast({ message: err instanceof Error ? err.message : "Cập nhật thất bại", type: "error" }); },
   });
 
-  return (
+  return (<>
     <div>
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
@@ -485,5 +486,13 @@ export default function QuotationPage() {
         />
       )}
     </div>
+    {toast && (
+      <div style={{ position: "fixed", bottom: 24, right: 24, zIndex: 9999, display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", borderRadius: 12, background: "#0F172A", border: `1px solid ${toast.type === "success" ? "#22C55E" : "#CC3344"}50`, boxShadow: "0 8px 32px rgba(0,0,0,0.5)", maxWidth: 320 }}>
+        <span style={{ color: toast.type === "success" ? "#22C55E" : "#CC3344", fontSize: 16 }}>{toast.type === "success" ? "✓" : "✗"}</span>
+        <span style={{ color: "#fff", fontSize: 13 }}>{toast.message}</span>
+        <button onClick={() => setToast(null)} style={{ background: "none", border: "none", cursor: "pointer", padding: 2, color: "#94A3B8" }}><X size={14} /></button>
+      </div>
+    )}
+    </>
   );
 }

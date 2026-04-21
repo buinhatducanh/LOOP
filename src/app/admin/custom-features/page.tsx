@@ -216,6 +216,7 @@ export default function CustomFeaturesPage() {
   const [search, setSearch] = useState("");
   const [showInactive, setShowInactive] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<CustomFeature | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["admin", "custom-features"],
@@ -234,7 +235,7 @@ export default function CustomFeaturesPage() {
       setConfirmDelete(null);
     },
     onError: (err: unknown) => {
-      alert(err instanceof Error ? err.message : "Xóa thất bại");
+      setToast({ message: err instanceof Error ? err.message : "Xóa thất bại", type: "error" });
     },
   });
 
@@ -243,7 +244,7 @@ export default function CustomFeaturesPage() {
       await adminApi.put(`/api/admin/custom-features/${id}`, { isActive });
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "custom-features"] }),
-    onError: (err: unknown) => { alert(err instanceof Error ? err.message : "Cập nhật thất bại"); },
+    onError: (err: unknown) => { setToast({ message: err instanceof Error ? err.message : "Cập nhật thất bại", type: "error" }); },
   });
 
   const features = (data ?? []).filter(f =>
@@ -421,6 +422,20 @@ export default function CustomFeaturesPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Toast */}
+      {toast && (
+        <div style={{
+          position: "fixed", bottom: 24, right: 24, zIndex: 9999,
+          background: DS.bgCard, border: `1px solid ${toast.type === "error" ? DS.red : DS.green}`,
+          borderRadius: 12, padding: "12px 20px", minWidth: 260,
+          boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+        }}>
+          <div style={{ color: toast.type === "error" ? DS.red : DS.green, fontSize: 13, fontFamily: DS.mono }}>
+            {toast.message}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

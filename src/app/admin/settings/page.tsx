@@ -148,6 +148,7 @@ function LocaleRow({ locale, onToggle, onSetDefault, saving }: {
 function LocaleManagement() {
   const { t } = useAdminTranslations();
   const qc = useQueryClient();
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
   const { data, isLoading } = useQuery<{ data: Locale[] }>({
     queryKey: ["admin", "settings", "locales"],
@@ -157,7 +158,7 @@ function LocaleManagement() {
   const seedMutation = useMutation({
     mutationFn: () => adminApi.post("/api/admin/settings/locales/seed", {}),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "settings", "locales"] }),
-    onError: (err: unknown) => { alert(err instanceof Error ? err.message : "Seed failed"); },
+    onError: (err: unknown) => { setToast({ message: err instanceof Error ? err.message : "Seed failed", type: "error" }); },
   });
 
   const locales: Locale[] = data?.data ?? [];
@@ -230,6 +231,11 @@ function LocaleManagement() {
           </table>
         </div>
       )}
+      {toast && (
+      <div style={{ position: "fixed", bottom: 24, right: 24, zIndex: 9999, display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", borderRadius: 12, background: "#0F172A", border: `1px solid ${toast.type === "success" ? "#22C55E" : "#CC3344"}50`, boxShadow: "0 8px 32px rgba(0,0,0,0.5)", maxWidth: 320 }}>
+        <div style={{ color: toast.type === "success" ? "#22C55E" : "#CC3344", fontSize: 13 }}>{toast.message}</div>
+      </div>
+    )}
     </div>
   );
 }
@@ -716,6 +722,7 @@ export default function SettingsPage() {
   const { t } = useAdminTranslations();
   const [section, setSection] = useState("general");
   const qc = useQueryClient();
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin", "settings"],
@@ -727,7 +734,7 @@ export default function SettingsPage() {
       await adminApi.put(`/api/admin/settings/${key}`, { value });
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "settings"] }),
-    onError: (err: unknown) => { alert(err instanceof Error ? err.message : "Lưu thất bại"); },
+    onError: (err: unknown) => { setToast({ message: err instanceof Error ? err.message : "Lưu thất bại", type: "error" }); },
   });
 
   const settings = data?.data ?? [];
@@ -823,6 +830,11 @@ export default function SettingsPage() {
           )}
         </div>
       </div>
+      {toast && (
+        <div style={{ position: "fixed", bottom: 24, right: 24, zIndex: 9999, display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", borderRadius: 12, background: "#0F172A", border: `1px solid ${toast.type === "success" ? "#22C55E" : "#CC3344"}50`, boxShadow: "0 8px 32px rgba(0,0,0,0.5)", maxWidth: 320 }}>
+          <div style={{ color: toast.type === "success" ? "#22C55E" : "#CC3344", fontSize: 13 }}>{toast.message}</div>
+        </div>
+      )}
     </div>
   );
 }
