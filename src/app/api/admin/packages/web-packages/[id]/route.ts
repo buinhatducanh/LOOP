@@ -1,9 +1,81 @@
 import { NextRequest } from "next/server";
-import { handleError, ok } from "@/lib/api/response";
+import { handleError, ok, badRequest } from "@/lib/api/response";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
 import { revalidatePath } from "next/cache";
+
+/**
+ * PATCH /api/admin/packages/web-packages/[id]
+ * Partial update — only updates fields that exist in the Prisma schema.
+ * Safe for inline single-field edits (name, price, color, tagline).
+ */
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await requirePermission("packages", "update");
+    const { id } = await params;
+    const data = await req.json() as Record<string, unknown>;
+
+    const existing = await prisma.servicePackage.findUnique({ where: { id } });
+    if (!existing) {
+      return badRequest("Not found");
+    }
+
+    // Build only known fields that exist in Prisma schema
+    const updateData: Record<string, unknown> = {};
+
+    // Map frontend field names → DB field names
+    if ("industry" in data || "name" in data) {
+      updateData.title = (data.industry ?? data.name ?? "") as string;
+    }
+    if ("fullPrice" in data || "price" in data) {
+      updateData.price = Number(data.fullPrice ?? data.price ?? 0);
+    }
+    if ("marketPrice" in data) {
+      updateData.marketPrice = Number(data.marketPrice) || null;
+    }
+    if ("tagline" in data) {
+      updateData.tagline = (data.tagline as string) || null;
+      updateData.shortDesc = (data.tagline as string) || null;
+    }
+    if ("color" in data) {
+      updateData.color = (data.color as string) || null;
+    }
+    if ("badge" in data) {
+      updateData.tagline = (data.badge as string) || null;
+    }
+    if ("isActive" in data) {
+      updateData.isActive = Boolean(data.isActive);
+    }
+    if ("sortOrder" in data) {
+      updateData.sortOrder = Number(data.sortOrder) || 0;
+    }
+
+    const updated = await prisma.servicePackage.update({
+      where: { id },
+      data: updateData,
+    });
+
+    await createAuditLog({
+      userId: session.userId,
+      action: "update",
+      resource: "service_package",
+      resourceId: id,
+      oldValues: existing as unknown as Record<string, unknown>,
+      newValues: data,
+    });
+
+    revalidatePath("/vi/thiet-ke-website");
+    revalidatePath("/en/thiet-ke-website");
+
+    return ok(updated);
+  } catch (error) {
+    return handleError(error);
+  }
+}
 
 export async function PUT(
   req: NextRequest,

@@ -14,7 +14,7 @@ import { adminApi } from "@/lib/api/client";
 import { DS, GRD } from "@/lib/design-tokens";
 import {
   Plus, Edit3, X, ToggleRight, ToggleLeft,
-  Globe, Search,
+  Globe, Search, Trash2,
 } from "lucide-react";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -50,11 +50,18 @@ type FormData = {
 const fmtVND = (n: number) =>
   new Intl.NumberFormat("vi-VN").format(n) + "₫";
 
+// Unified period options: 1 year, 2 years, 3 years (tên miền tối thiểu 1 năm)
+const PERIOD_OPTIONS: Array<{ value: string; labelEn: string; labelVi: string }> = [
+  { value: "1 year",  labelEn: "1 year",  labelVi: "1 năm" },
+  { value: "2 years", labelEn: "2 years", labelVi: "2 năm" },
+  { value: "3 years", labelEn: "3 years", labelVi: "3 năm" },
+];
+
 const defaultForm: FormData = {
   extension: "",
   registrationPrice: 0,
   renewalPrice: 0,
-  period: "1 năm",
+  period: "1 year",
   periodVi: "1 năm",
   note: "",
   noteVi: "",
@@ -71,11 +78,12 @@ export default function DomainPricesPage() {
   const [modal, setModal] = useState<{ open: boolean; edit?: DomainPrice }>({ open: false });
   const [form, setForm] = useState<FormData>(defaultForm);
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
   // Fetch
   const { data, isLoading } = useQuery({
     queryKey: ["domain-prices"],
-    queryFn: () => adminApi.get<{ data: DomainPrice[] }>("/packages/domain-prices").then(r => r.data ?? []),
+    queryFn: () => adminApi.get<{ data: DomainPrice[] }>("/api/admin/pricing/domain-prices").then(r => r.data ?? []),
   });
 
   const items = (data ?? []).filter(d => {
@@ -89,16 +97,29 @@ export default function DomainPricesPage() {
   const save = useMutation({
     mutationFn: (payload: FormData) =>
       modal.edit
-        ? adminApi.put(`/packages/domain-prices/${modal.edit.id}`, payload)
-        : adminApi.post("/packages/domain-prices", payload),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["domain-prices"] }); closeModal(); },
+        ? adminApi.put(`/api/admin/pricing/domain-prices/${modal.edit.id}`, payload)
+        : adminApi.post("/api/admin/pricing/domain-prices", payload),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["domain-prices"] });
+      closeModal();
+      setToast({ message: modal.edit ? "Cập nhật thành công" : "Tạo mới thành công", type: "success" });
+    },
+    onError: (err: Error) => setToast({ message: "Lỗi: " + err.message, type: "error" }),
   });
 
   // Toggle active
   const toggle = useMutation({
     mutationFn: (item: DomainPrice) =>
-      adminApi.put(`/packages/domain-prices/${item.id}`, { ...item, isActive: !item.isActive }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["domain-prices"] }),
+      adminApi.put(`/api/admin/pricing/domain-prices/${item.id}`, { ...item, isActive: !item.isActive }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["domain-prices"] }); setToast({ message: "Cập nhật trạng thái thành công", type: "success" }); },
+    onError: (err: Error) => setToast({ message: "Lỗi: " + err.message, type: "error" }),
+  });
+
+  // Delete
+  const remove = useMutation({
+    mutationFn: (id: string) => adminApi.delete(`/api/admin/pricing/domain-prices/${id}`),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["domain-prices"] }); setToast({ message: "Xóa thành công", type: "success" }); },
+    onError: (err: Error) => setToast({ message: "Lỗi: " + err.message, type: "error" }),
   });
 
   const openCreate = () => { setForm(defaultForm); setErrors({}); setModal({ open: true }); };
@@ -199,7 +220,21 @@ export default function DomainPricesPage() {
           </thead>
           <tbody>
             {isLoading ? (
-              <tr><td colSpan={8} style={{ padding: 32, textAlign: "center", color: DS.text4 }}>Đang tải...</td></tr>
+              Array.from({ length: 4 }).map((_, i) => (
+                <tr key={i} style={{ borderTop: `1px solid ${DS.border}` }}>
+                  {Array.from({ length: 8 }).map((_, j) => (
+                    <td key={j} style={{ padding: "14px 16px" }}>
+                      <div style={{
+                        height: 16, borderRadius: 6,
+                        background: "rgba(255,255,255,0.04)",
+                        animation: "pulse 1.5s infinite",
+                        width: j === 0 ? 60 : j === 3 ? 80 : j === 7 ? 32 : "100%",
+                        maxWidth: j === 3 ? 80 : undefined,
+                      }} />
+                    </td>
+                  ))}
+                </tr>
+              ))
             ) : items.length === 0 ? (
               <tr><td colSpan={8} style={{ padding: 32, textAlign: "center", color: DS.text4 }}>Chưa có dữ liệu</td></tr>
             ) : items.map(d => (
@@ -245,6 +280,14 @@ export default function DomainPricesPage() {
                     <button onClick={() => openEdit(d)} style={{ background: "none", border: "none", cursor: "pointer", padding: 4, borderRadius: 6 }}
                       className="hover:bg-white/10 transition-colors">
                       <Edit3 size={15} style={{ color: DS.pink }} />
+                    </button>
+                    <button
+                      onClick={() => { if (confirm(`Xóa ${d.extension}?`)) remove.mutate(d.id); }}
+                      disabled={remove.isPending}
+                      style={{ background: "none", border: "none", cursor: remove.isPending ? "not-allowed" : "pointer", padding: 4, borderRadius: 6, opacity: remove.isPending ? 0.5 : 1 }}
+                      className="hover:bg-white/10 transition-colors"
+                    >
+                      <Trash2 size={15} style={{ color: DS.red }} />
                     </button>
                   </div>
                 </td>
@@ -338,37 +381,28 @@ export default function DomainPricesPage() {
                 </div>
 
                 {/* Period */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.1em", display: "block", marginBottom: 6 }}>
-                      Thời hạn (EN)
-                    </label>
-                    <input
-                      value={form.period}
-                      onChange={e => setForm(f => ({ ...f, period: e.target.value }))}
-                      placeholder="1 year"
-                      style={{
-                        width: "100%", padding: "10px 14px",
-                        background: "rgba(15,23,42,0.6)", border: `1px solid ${DS.border}`,
-                        borderRadius: 10, color: DS.text, fontSize: 14,
-                      }}
-                    />
-                  </div>
-                  <div>
-                    <label style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.1em", display: "block", marginBottom: 6 }}>
-                      Thời hạn (VI)
-                    </label>
-                    <input
-                      value={form.periodVi}
-                      onChange={e => setForm(f => ({ ...f, periodVi: e.target.value }))}
-                      placeholder="1 năm"
-                      style={{
-                        width: "100%", padding: "10px 14px",
-                        background: "rgba(15,23,42,0.6)", border: `1px solid ${DS.border}`,
-                        borderRadius: 10, color: DS.text, fontSize: 14,
-                      }}
-                    />
-                  </div>
+                <div>
+                  <label style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.1em", display: "block", marginBottom: 6 }}>
+                    Thời hạn <span style={{ color: DS.pink }}>*</span>
+                  </label>
+                  <select
+                    value={form.period}
+                    onChange={e => {
+                      const opt = PERIOD_OPTIONS.find(o => o.value === e.target.value);
+                      setForm(f => ({ ...f, period: e.target.value, periodVi: opt?.labelVi ?? f.periodVi }));
+                    }}
+                    style={{
+                      width: "100%", padding: "10px 14px",
+                      background: "rgba(15,23,42,0.9)", border: `1px solid ${DS.border}`,
+                      borderRadius: 10, color: DS.text, fontSize: 14,
+                    }}
+                  >
+                    {PERIOD_OPTIONS.map(o => (
+                      <option key={o.value} value={o.value} style={{ background: DS.bgCard }}>
+                        {o.labelVi} ({o.labelEn})
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 {/* Notes */}
@@ -460,6 +494,23 @@ export default function DomainPricesPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {toast && (
+        <div style={{
+          position: "fixed", bottom: 24, right: 24, zIndex: 9999,
+          display: "flex", alignItems: "center", gap: 10, padding: "10px 16px",
+          borderRadius: 12, background: DS.bgCard,
+          border: `1px solid ${toast.type === "success" ? DS.green : DS.red}50`,
+          boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+          maxWidth: 320,
+        }}>
+          <span style={{ color: toast.type === "success" ? DS.green : DS.red, fontSize: 16 }}>{toast.type === "success" ? "✓" : "✗"}</span>
+          <span style={{ color: DS.text, fontSize: 13 }}>{toast.message}</span>
+          <button onClick={() => setToast(null)} style={{ background: "none", border: "none", cursor: "pointer", padding: 2, color: DS.text4 }}>
+            <X size={14} />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

@@ -1328,6 +1328,8 @@ model FeatureGroup {
   slug      String    @unique
   sortOrder Int       @default(0) @map("sort_order")
   isActive  Boolean   @default(true) @map("is_active")
+  /// "web" | "seo" | ... — dùng để filter features theo service
+  serviceKey String?  @map("service_key")
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")
   features  Feature[]
@@ -1344,11 +1346,19 @@ model Feature {
   isRequired  Boolean          @default(false) @map("is_required")
   sortOrder   Int              @default(0) @map("sort_order")
   isActive    Boolean          @default(true) @map("is_active")
+  /// Danh mục hiển thị trên public page (VD: "Giao diện", "Tính năng cốt lõi")
+  category    String           @default("Khác") @map("category")
+  /// Giá extra phải trả thêm nếu tính năng không nằm trong gói (VNĐ)
+  extraPrice  Int              @default(0) @map("extra_price")
+  /// Các tier level bao gồm tính năng này (VD: [1,2,3,4] = tất cả gói)
+  /// Chỉ dùng cho website feature matrix
+  includedTiers Json           @default("[]") @map("included_tiers")
   createdAt   DateTime         @default(now()) @map("created_at")
   updatedAt   DateTime         @updatedAt @map("updated_at")
   variants    FeatureVariant[]
   group       FeatureGroup     @relation(fields: [groupId], references: [id], onDelete: Cascade)
 
+  @@unique([groupId, featureName])
   @@map("features")
 }
 
@@ -1479,7 +1489,7 @@ model PricingHostingPlan {
 
 model PricingDomainPrice {
   id                String  @id @default(cuid())
-  extension         String  @unique
+  extension         String
   registrationPrice Int     @map("registration_price")
   renewalPrice      Int     @map("renewal_price")
   period            String
@@ -1491,6 +1501,7 @@ model PricingDomainPrice {
   /// Whether the domain can be purchased immediately (via WHOIS check / inet.com availability API).
   isAvailable       Boolean @default(true) @map("is_available")
 
+  @@unique([extension, period])
   @@map("pricing_domain_prices")
 }
 

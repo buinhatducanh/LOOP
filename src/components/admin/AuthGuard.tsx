@@ -122,12 +122,33 @@ function makeDecision(opts: {
 }): DecisionResult {
   const { isAuthenticated, accountType } = opts;
 
-  // ── Check 1: Zustand says authenticated + staff ──────────────────────────────
-  if (isAuthenticated && accountType === "staff") {
-    return "allowed";
+  // ── Check: Must have a valid localStorage token (not just Zustand state).
+  //    Zustand state may be stale (e.g. persisted from previous session after
+  //    server redirected to login?reason=expired). Only trust Zustand when a
+  //    valid, non-expired localStorage token also exists.
+  const localToken =
+    typeof window !== "undefined"
+      ? localStorage.getItem("loop-staff-token")
+      : null;
+
+  if (localToken) {
+    // Token in localStorage — decode and verify expiry (avoids SSR issues)
+    try {
+      const parts = localToken.split(".");
+      if (parts.length === 3) {
+        const payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")));
+        const isExpired = payload.exp ? Date.now() >= payload.exp * 1000 : true;
+        if (!isExpired && isAuthenticated && accountType === "staff") {
+          return "allowed";
+        }
+        // Token expired — treat as no token
+      }
+    } catch {
+      // Malformed token — treat as no token
+    }
   }
 
-  // ── Check 2: Nothing — block ───────────────────────────────────────────────
+  // ── No valid localStorage token — block ──────────────────────────────────
   return "blocked";
 }
 
@@ -155,16 +176,10 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
     const decide = () => {
       const fresh = useAuthStore.getState();
-
-      const hasLocalToken =
-        typeof window !== "undefined" &&
-        !!localStorage.getItem("loop-staff-token");
-
       const result = makeDecision({
-        isAuthenticated: fresh.isAuthenticated || hasLocalToken,
+        isAuthenticated: fresh.isAuthenticated,
         accountType: fresh.accountType,
       });
-
       setStatus(result);
     };
 
@@ -205,11 +220,12 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     }
   }, [status]);
 
-  // ── Dismiss modal → clear stale token, show login form ─────────────────────────
+  // ── Dismiss modal → clear stale token, redirect to home ──────────────────────
   const handleDismiss = () => {
     localStorage.removeItem("loop-staff-token");
     setShowExpiryModal(false);
-    // Modal stays open — user can log in again
+    // Redirect to home page — token is expired, no point showing login form
+    router.push("/vi");
   };
 
   // ── Sync: clear stale token when Zustand session is cleared by 401 ─────────────

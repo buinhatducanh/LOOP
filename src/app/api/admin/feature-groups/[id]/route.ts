@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
+import { revalidatePath, revalidateTag } from "next/cache";
 
 export async function GET(
   req: NextRequest,
@@ -30,7 +31,32 @@ export async function GET(
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    return NextResponse.json({ data: group });
+    // Resolve includedTiers from ServicePackage.features (same as list route)
+    const packages = await prisma.servicePackage.findMany({
+      where: { type: "website" },
+      select: { tierLevel: true, features: true },
+    });
+
+    const featureTiersMap = new Map<string, number[]>();
+    for (const pkg of packages) {
+      for (const fid of (pkg.features ?? [])) {
+        if (!featureTiersMap.has(fid)) featureTiersMap.set(fid, []);
+        const tiers = featureTiersMap.get(fid)!;
+        if (!tiers.includes(pkg.tierLevel ?? 1)) tiers.push(pkg.tierLevel ?? 1);
+      }
+    }
+
+    const enrichedGroup = {
+      ...group,
+      features: group.features.map(f => ({
+        ...f,
+        includedTiers: (f.includedTiers as unknown as number[] ?? []).length > 0
+          ? f.includedTiers
+          : featureTiersMap.get(f.id) ?? [],
+      })),
+    };
+
+    return NextResponse.json({ data: enrichedGroup });
   } catch (error) {
     return handleError(error);
   }
@@ -57,6 +83,7 @@ export async function PUT(
         slug: data.slug,
         sortOrder: data.sortOrder,
         isActive: data.isActive,
+        serviceKey: data.serviceKey ?? null,
       },
     });
 
@@ -68,6 +95,10 @@ export async function PUT(
       oldValues: existing as unknown as Record<string, unknown>,
       newValues: data,
     });
+
+    revalidatePath("/vi/thiet-ke-website");
+    revalidatePath("/en/thiet-ke-website");
+    revalidateTag("pricing-config");
 
     return NextResponse.json({ data: group });
   } catch (error) {

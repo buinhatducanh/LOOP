@@ -137,7 +137,7 @@ export default function PortfolioTabPage() {
   const pagination = data?.pagination;
   const totalPages = pagination?.totalPages ?? 1;
 
-  return (
+  return (<>
     <div>
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
@@ -225,12 +225,14 @@ export default function PortfolioTabPage() {
         </div>
       )}
     </div>
+    </>
   );
 }
 
 function EditProjectForm({ project, onClose, onUpdated }: { project: Project; onClose: () => void; onUpdated: () => void }) {
   const { t } = useAdminTranslations();
   const qc = useQueryClient();
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
   const [title, setTitle] = useState(project.title || "");
   const [slug, setSlug] = useState(project.slug || "");
   const [category, setCategory] = useState(project.category || "");
@@ -242,7 +244,7 @@ function EditProjectForm({ project, onClose, onUpdated }: { project: Project; on
       await adminApi.put(`/api/admin/projects/${project.id}`, { title, slug, category, client, image: image || undefined });
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: qk.adminProjects() }); onUpdated(); },
-    onError: (err) => { alert(err instanceof Error ? err.message : "Cập nhật thất bại"); },
+    onError: (err) => { setToast({ message: err instanceof Error ? err.message : "Cập nhật thất bại", type: "error" }); },
   });
 
   const inputStyle: React.CSSProperties = {
@@ -250,7 +252,7 @@ function EditProjectForm({ project, onClose, onUpdated }: { project: Project; on
     borderRadius: 8, padding: "8px 12px", color: DS.text, fontSize: 13, outline: "none", boxSizing: "border-box", fontFamily: DS.body,
   };
 
-  return (
+  return (<>
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -297,6 +299,14 @@ function EditProjectForm({ project, onClose, onUpdated }: { project: Project; on
         </button>
       </div>
     </motion.div>
+    {toast && (
+      <div style={{ position: "fixed", bottom: 24, right: 24, zIndex: 9999, display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", borderRadius: 12, background: "#0F172A", border: `1px solid ${toast.type === "success" ? "#22C55E" : "#CC3344"}50`, boxShadow: "0 8px 32px rgba(0,0,0,0.5)", maxWidth: 320 }}>
+        <span style={{ color: toast.type === "success" ? "#22C55E" : "#CC3344", fontSize: 16 }}>{toast.type === "success" ? "✓" : "✗"}</span>
+        <span style={{ color: "#fff", fontSize: 13 }}>{toast.message}</span>
+        <button onClick={() => setToast(null)} style={{ background: "none", border: "none", cursor: "pointer", padding: 2, color: "#94A3B8" }}><X size={14} /></button>
+      </div>
+    )}
+    </>
   );
 }
 

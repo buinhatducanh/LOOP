@@ -194,7 +194,15 @@
       "WebFetch(domain:nhanhoa.com)",
       "WebFetch(domain:www.godaddy.com)",
       "Bash(py:*)",
-      "Bash(py -c \":*)"
+      "Bash(py -c \":*)",
+      "Bash(psql:*)",
+      "Bash(sed -i '952i\\\\    </div>' src/app/admin/pricing/page.tsx)",
+      "Bash(sed -i '853i\\\\    </div>' src/app/admin/pricing/page.tsx)",
+      "Bash(sed -i '674i\\\\    </div>' src/app/admin/pricing/page.tsx)",
+      "Bash(sed -i '298s|    </>|    </div>|' src/app/admin/pricing/page.tsx)",
+      "Bash(sed -i '673s|    </>|    </div>|' src/app/admin/pricing/page.tsx)",
+      "Bash(sed -i '852s|    </>|    </div>|' src/app/admin/pricing/page.tsx)",
+      "Bash(sed -i '952s|    </>|    </div>|' src/app/admin/pricing/page.tsx)"
     ],
     "additionalDirectories": []
   }

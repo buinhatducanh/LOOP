@@ -120,12 +120,6 @@ export default async function AdminLayout({
     // Build hydration payload from verified JWT
     // token is needed for localStorage sync in AdminSessionHydrator
     const cookieStore = await cookies();
-    console.log("[DEBUG] AdminLayout: verifiedPayload =", verifiedPayload ? {
-        sub: verifiedPayload.sub,
-        eml: verifiedPayload.eml,
-        rl: verifiedPayload.rl,
-        acc: verifiedPayload.acc,
-    } : null);
     const rawToken =
         cookieStore.get(COOKIES.STAFF_TOKEN)?.value ??
         cookieStore.get("auth-token")?.value ??

@@ -156,6 +156,7 @@ function ClientEditModal({
 }
 
 export default function ClientsTabPage() {
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const [editClient, setEditClient] = useState<Client | null>(null);
@@ -176,7 +177,7 @@ export default function ClientsTabPage() {
       await adminApi.delete(`/api/admin/sales-leads/${id}`);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "clients"] }),
-    onError: (err: unknown) => { alert(err instanceof Error ? err.message : "Xóa thất bại"); },
+    onError: (err: unknown) => { setToast({ message: err instanceof Error ? err.message : "Xóa thất bại", type: "error" }); },
   });
 
   const clients = data?.data ?? [];
@@ -193,7 +194,7 @@ export default function ClientsTabPage() {
 
   const totalRevenue = clients.reduce((s, c) => s + (c.totalSpent ?? 0), 0);
 
-  return (
+  return (<>
     <div>
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
@@ -337,5 +338,13 @@ export default function ClientsTabPage() {
         onSuccess={() => qc.invalidateQueries({ queryKey: ["admin", "clients"] })}
       />
     </div>
+    {toast && (
+      <div style={{ position: "fixed", bottom: 24, right: 24, zIndex: 9999, display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", borderRadius: 12, background: "#0F172A", border: `1px solid ${toast.type === "success" ? "#22C55E" : "#CC3344"}50`, boxShadow: "0 8px 32px rgba(0,0,0,0.5)", maxWidth: 320 }}>
+        <span style={{ color: toast.type === "success" ? "#22C55E" : "#CC3344", fontSize: 16 }}>{toast.type === "success" ? "✓" : "✗"}</span>
+        <span style={{ color: "#fff", fontSize: 13 }}>{toast.message}</span>
+        <button onClick={() => setToast(null)} style={{ background: "none", border: "none", cursor: "pointer", padding: 2, color: "#94A3B8" }}><X size={14} /></button>
+      </div>
+    )}
+    </>
   );
 }

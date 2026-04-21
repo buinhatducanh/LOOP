@@ -333,6 +333,7 @@ export async function GET(request: Request) {
       packages, features, addons, infraTiers, hostingPlans, domainPrices,
       basePriceSetting, vatSetting, websitePricingConfig, lpRateSetting,
       customerLp, freebiesSetting, seoTiers, seoFeatures, seoMatrix,
+      webFeatureGroups,
     ] = await Promise.all([
       prisma.servicePackage.findMany({
         where: { isActive: true },
@@ -525,6 +526,18 @@ export async function GET(request: Request) {
         where: { key: "seo_feature_matrix" },
         select: { value: true },
       }),
+
+      // Web features: FeatureGroup + Feature where serviceKey = "web"
+      prisma.featureGroup.findMany({
+        where: { isActive: true, serviceKey: "web" },
+        orderBy: { sortOrder: "asc" },
+        include: {
+          features: {
+            where: { isActive: true },
+            orderBy: { sortOrder: "asc" },
+          },
+        },
+      }),
     ]);
 
     const basePrice = basePriceSetting ? parseInt(basePriceSetting.value, 10) : 3_000_000;
@@ -635,6 +648,23 @@ export async function GET(request: Request) {
       ])
     );
 
+    // Build wizardWebFeatures from FeatureGroup + Feature DB data
+    // Shape matches WebPackageFeature interface used by BookingWizardClient
+    const wizardWebFeatures = (webFeatureGroups ?? []).flatMap((group) =>
+      group.features.map((f) => ({
+        id: f.id,
+        label: getLocalizedName(locale, f.featureName, f.featureName, f.featureName, f.featureName, f.featureName, f.featureName),
+        labelEn: f.featureName,
+        description: f.description ?? "",
+        category: f.category,
+        extraPrice: f.extraPrice ?? 0,
+        // Parse includedTiers from JSON — stored as Json field in DB
+        includedTiers: (typeof f.includedTiers === "string"
+          ? JSON.parse(f.includedTiers)
+          : Array.isArray(f.includedTiers) ? f.includedTiers : []) as number[],
+      }))
+    );
+
     return ok(
       {
         basePrice,
@@ -677,6 +707,8 @@ export async function GET(request: Request) {
         /** SEO tiers + features — wired from DB (ServiceTier + ServiceAttribute serviceKey=seo) */
         seoTiers: wizardSeoTiers,
         seoFeatures: wizardSeoFeatures,
+        /** Web features — loaded from FeatureGroup+Feature DB (serviceKey="web") */
+        webFeatures: wizardWebFeatures,
         meta: {
           locale,
           cached: true,

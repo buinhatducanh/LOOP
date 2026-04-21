@@ -654,6 +654,7 @@ async function seedPricing() {
       type: "website",
       price: 1890000,
       priceText: "1.89 triệu",
+      marketPrice: 2500000,
       features: [
         "Giao diện Hiện đại, Responsive",
         "Tối ưu Trải nghiệm UI/UX",
@@ -669,7 +670,6 @@ async function seedPricing() {
       color: "#6EB1A8",
       pages: "8",
       pagesVi: "8",
-      marketPrice: 2500000,
       isPopular: false,
       isActive: true,
       sortOrder: 1,
@@ -679,8 +679,8 @@ async function seedPricing() {
       title: "Bán Hàng Cơ Bản",
       shortDesc: "Shop online nhỏ & vừa, bắt đầu chuyển đổi số. Phù hợp cửa hàng online, boutique, dịch vụ nhỏ.",
       type: "website",
-      price: 3890000,
-      priceText: "3.89 triệu",
+      price: 5500000,
+      priceText: "5.50 triệu",
       features: [
         "Bao gồm mọi tính năng Landing Page",
         "Danh mục & Chi tiết sản phẩm",
@@ -694,7 +694,7 @@ async function seedPricing() {
       color: "#3B82F6",
       pages: "8",
       pagesVi: "8",
-      marketPrice: 5500000,
+      marketPrice: 3890000,
       isPopular: true,
       isActive: true,
       sortOrder: 2,
@@ -704,8 +704,8 @@ async function seedPricing() {
       title: "Quản Trị Doanh Nghiệp",
       shortDesc: "Doanh nghiệp, hệ thống bán hàng quy mô lớn. Phù hợp doanh nghiệp vừa và lớn, cần quản lý phức tạp.",
       type: "website",
-      price: 5890000,
-      priceText: "5.89 triệu",
+      price: 8900000,
+      priceText: "8.90 triệu",
       features: [
         "Bao gồm mọi tính năng Bán Hàng",
         "Giỏ hàng đa dịch vụ/sản phẩm",
@@ -720,7 +720,7 @@ async function seedPricing() {
       color: "#8B5CF6",
       pages: "8",
       pagesVi: "8",
-      marketPrice: 8900000,
+      marketPrice: 5890000,
       isPopular: false,
       isActive: true,
       sortOrder: 3,
@@ -730,8 +730,8 @@ async function seedPricing() {
       title: "Theo Yêu Cầu",
       shortDesc: "Startups, nền tảng App-web có logic phức tạp. Phù hợp startup, platform, web app có yêu cầu đặc thù riêng.",
       type: "website",
-      price: 7890000,
-      priceText: "7.89 triệu",
+      price: 12000000,
+      priceText: "12.0 triệu",
       features: [
         "Bao gồm mọi tính năng Doanh Nghiệp",
         "UI/UX Độc quyền (Không mẫu)",
@@ -745,7 +745,7 @@ async function seedPricing() {
       color: "#EC4899",
       pages: "8",
       pagesVi: "8",
-      marketPrice: 12000000,
+      marketPrice: 7890000,
       isPopular: false,
       isActive: true,
       sortOrder: 4,
@@ -830,111 +830,143 @@ async function seedPricing() {
   // monthlyPrice × months = basePrice; discountedPrice = basePrice × (1 - discountPct/100)
   // Free plan: 0đ, 12 months, no discount
   // Longer terms get progressive discounts
+  // Hosting Plans — Storage-tier pricing (PO spec: 2026-04-21)
+  // 10GB free | 100GB-220k | 200GB-390k | 400GB-680k | 1TB-1,250k
   const hostingPlans = [
     {
-      slug: "free",
-      name: "Free",
-      nameVi: "Miễn Phí",
+      slug: "free-10gb",
+      name: "Free 10GB",
+      nameVi: "Miễn Phí 10GB",
       monthlyPrice: 0,
       period: "1 năm",
       periodVi: "1 năm",
       months: 12,
       discountPct: 0,
-      features: ["Tên miền sub-domain .loops.vn", "Shared hosting", "1GB SSD", "SSL miễn phí", "99% uptime", "Cơ bản support"],
-      featuresVi: ["Tên miền sub-domain .loops.vn", "Shared hosting", "1GB SSD", "SSL miễn phí", "99% uptime", "Cơ bản support"],
+      features: ["Lưu trữ 10GB SSD", "Băng thông 10GB/tháng", "SSL miễn phí", "Sub-domain .loops.vn", "99% uptime"],
+      featuresVi: ["Lưu trữ 10GB SSD", "Băng thông 10GB/tháng", "SSL miễn phí", "Sub-domain .loops.vn", "99% uptime"],
       highlighted: false,
       color: "#6B7280",
       sortOrder: 1,
     },
     {
-      slug: "starter-1yr",
-      name: "Starter",
-      nameVi: "Starter",
-      monthlyPrice: 99000,
+      slug: "starter-100gb",
+      name: "Starter 100GB",
+      nameVi: "Starter 100GB",
+      monthlyPrice: 220000,
       period: "1 năm",
       periodVi: "1 năm",
       months: 12,
       discountPct: 0,
-      features: ["Tên miền .com/.vn riêng", "Shared hosting", "5GB SSD", "SSL miễn phí", "Hỗ trợ email", "99.5% uptime", "Backup hàng tuần"],
-      featuresVi: ["Tên miền .com/.vn riêng", "Shared hosting", "5GB SSD", "SSL miễn phí", "Hỗ trợ email", "99.5% uptime", "Backup hàng tuần"],
+      features: ["Lưu trữ 100GB SSD", "Băng thông không giới hạn", "SSL miễn phí", "Tên miền .com/.vn riêng", "Backup hàng tuần", "99.5% uptime", "Hỗ trợ email"],
+      featuresVi: ["Lưu trữ 100GB SSD", "Băng thông không giới hạn", "SSL miễn phí", "Tên miền .com/.vn riêng", "Backup hàng tuần", "99.5% uptime", "Hỗ trợ email"],
       highlighted: false,
       color: "#3B82F6",
       sortOrder: 2,
     },
     {
-      slug: "starter-2yr",
-      name: "Starter 2 Năm",
-      nameVi: "Starter 2 Năm",
-      monthlyPrice: 99000,
+      slug: "starter-100gb-2yr",
+      name: "Starter 100GB 2 Năm",
+      nameVi: "Starter 100GB 2 Năm",
+      monthlyPrice: 220000,
       period: "2 năm",
       periodVi: "2 năm",
       months: 24,
-      discountPct: 15,
-      features: ["Tên miền .com/.vn riêng", "Shared hosting", "5GB SSD", "SSL miễn phí", "Hỗ trợ email", "99.5% uptime", "Backup hàng tuần", "Tặng 1 tháng"],
-      featuresVi: ["Tên miền .com/.vn riêng", "Shared hosting", "5GB SSD", "SSL miễn phí", "Hỗ trợ email", "99.5% uptime", "Backup hàng tuần", "Tặng 1 tháng"],
+      discountPct: 18,
+      features: ["Lưu trữ 100GB SSD", "Băng thông không giới hạn", "SSL miễn phí", "Tên miền .com/.vn riêng", "Backup hàng ngày", "99.5% uptime", "Hỗ trợ email", "Tặng 1 tháng"],
+      featuresVi: ["Lưu trữ 100GB SSD", "Băng thông không giới hạn", "SSL miễn phí", "Tên miền .com/.vn riêng", "Backup hàng ngày", "99.5% uptime", "Hỗ trợ email", "Tặng 1 tháng"],
       highlighted: false,
       color: "#3B82F6",
       sortOrder: 3,
     },
     {
-      slug: "pro-1yr",
-      name: "Pro",
-      nameVi: "Pro",
-      monthlyPrice: 199000,
+      slug: "pro-200gb",
+      name: "Pro 200GB",
+      nameVi: "Pro 200GB",
+      monthlyPrice: 390000,
       period: "1 năm",
       periodVi: "1 năm",
       months: 12,
       discountPct: 0,
-      features: ["Tên miền .com/.vn riêng", "VPS hosting", "20GB SSD", "SSL cao cấp", "CDN integration", "99.9% uptime", "Backup hàng ngày", "Priority support"],
-      featuresVi: ["Tên miền .com/.vn riêng", "VPS hosting", "20GB SSD", "SSL cao cấp", "CDN integration", "99.9% uptime", "Backup hàng ngày", "Priority support"],
+      features: ["Lưu trữ 200GB SSD", "Băng thông không giới hạn", "SSL cao cấp", "Tên miền .com/.vn riêng", "CDN tích hợp", "Backup hàng ngày", "99.9% uptime", "Priority support"],
+      featuresVi: ["Lưu trữ 200GB SSD", "Băng thông không giới hạn", "SSL cao cấp", "Tên miền .com/.vn riêng", "CDN tích hợp", "Backup hàng ngày", "99.9% uptime", "Priority support"],
       highlighted: true,
       color: "#6366F1",
       sortOrder: 4,
     },
     {
-      slug: "pro-2yr",
-      name: "Pro 2 Năm",
-      nameVi: "Pro 2 Năm",
-      monthlyPrice: 199000,
+      slug: "pro-200gb-2yr",
+      name: "Pro 200GB 2 Năm",
+      nameVi: "Pro 200GB 2 Năm",
+      monthlyPrice: 390000,
       period: "2 năm",
       periodVi: "2 năm",
       months: 24,
       discountPct: 20,
-      features: ["Tên miền .com/.vn riêng", "VPS hosting", "20GB SSD", "SSL cao cấp", "CDN integration", "99.9% uptime", "Backup hàng ngày", "Priority support", "Tặng 2 tháng"],
-      featuresVi: ["Tên miền .com/.vn riêng", "VPS hosting", "20GB SSD", "SSL cao cấp", "CDN integration", "99.9% uptime", "Backup hàng ngày", "Priority support", "Tặng 2 tháng"],
+      features: ["Lưu trữ 200GB SSD", "Băng thông không giới hạn", "SSL cao cấp", "Tên miền .com/.vn riêng", "CDN tích hợp", "Backup hàng ngày", "99.9% uptime", "Priority support", "Tặng 2 tháng"],
+      featuresVi: ["Lưu trữ 200GB SSD", "Băng thông không giới hạn", "SSL cao cấp", "Tên miền .com/.vn riêng", "CDN tích hợp", "Backup hàng ngày", "99.9% uptime", "Priority support", "Tặng 2 tháng"],
       highlighted: false,
       color: "#6366F1",
       sortOrder: 5,
     },
     {
-      slug: "enterprise-1yr",
-      name: "Enterprise",
-      nameVi: "Enterprise",
-      monthlyPrice: 499000,
+      slug: "business-400gb",
+      name: "Business 400GB",
+      nameVi: "Business 400GB",
+      monthlyPrice: 680000,
       period: "1 năm",
       periodVi: "1 năm",
       months: 12,
       discountPct: 0,
-      features: ["Tên miền .com/.vn riêng", "Dedicated server", "Unlimited SSD", "SSL cao cấp", "CDN premium", "99.99% uptime SLA", "Backup real-time", "24/7 monitoring", "Dedicated support"],
-      featuresVi: ["Tên miền .com/.vn riêng", "Server chuyên dụng", "Không giới hạn SSD", "SSL cao cấp", "CDN premium", "99.99% uptime SLA", "Backup real-time", "24/7 monitoring", "Dedicated support"],
+      features: ["Lưu trữ 400GB NVMe SSD", "Băng thông không giới hạn", "SSL cao cấp", "Tên miền .com/.vn riêng", "CDN premium", "Backup real-time", "99.95% uptime", "Dedicated support"],
+      featuresVi: ["Lưu trữ 400GB NVMe SSD", "Băng thông không giới hạn", "SSL cao cấp", "Tên miền .com/.vn riêng", "CDN premium", "Backup real-time", "99.95% uptime", "Dedicated support"],
       highlighted: false,
       color: "#8B5CF6",
       sortOrder: 6,
     },
     {
-      slug: "enterprise-2yr",
-      name: "Enterprise 2 Năm",
-      nameVi: "Enterprise 2 Năm",
-      monthlyPrice: 499000,
+      slug: "business-400gb-2yr",
+      name: "Business 400GB 2 Năm",
+      nameVi: "Business 400GB 2 Năm",
+      monthlyPrice: 680000,
       period: "2 năm",
       periodVi: "2 năm",
       months: 24,
-      discountPct: 25,
-      features: ["Tên miền .com/.vn riêng", "Dedicated server", "Unlimited SSD", "SSL cao cấp", "CDN premium", "99.99% uptime SLA", "Backup real-time", "24/7 monitoring", "Dedicated support", "Tặng 3 tháng"],
-      featuresVi: ["Tên miền .com/.vn riêng", "Server chuyên dụng", "Không giới hạn SSD", "SSL cao cấp", "CDN premium", "99.99% uptime SLA", "Backup real-time", "24/7 monitoring", "Dedicated support", "Tặng 3 tháng"],
+      discountPct: 22,
+      features: ["Lưu trữ 400GB NVMe SSD", "Băng thông không giới hạn", "SSL cao cấp", "Tên miền .com/.vn riêng", "CDN premium", "Backup real-time", "99.95% uptime", "Dedicated support", "Tặng 3 tháng"],
+      featuresVi: ["Lưu trữ 400GB NVMe SSD", "Băng thông không giới hạn", "SSL cao cấp", "Tên miền .com/.vn riêng", "CDN premium", "Backup real-time", "99.95% uptime", "Dedicated support", "Tặng 3 tháng"],
       highlighted: false,
       color: "#8B5CF6",
       sortOrder: 7,
+    },
+    {
+      slug: "enterprise-1tb",
+      name: "Enterprise 1TB",
+      nameVi: "Enterprise 1TB",
+      monthlyPrice: 1250000,
+      period: "1 năm",
+      periodVi: "1 năm",
+      months: 12,
+      discountPct: 0,
+      features: ["Lưu trữ 1TB NVMe SSD", "Băng thông không giới hạn", "SSL cao cấp", "Tên miền .com/.vn riêng", "CDN enterprise", "Backup real-time", "99.99% uptime SLA", "24/7 monitoring", "Dedicated support"],
+      featuresVi: ["Lưu trữ 1TB NVMe SSD", "Băng thông không giới hạn", "SSL cao cấp", "Tên miền .com/.vn riêng", "CDN enterprise", "Backup real-time", "99.99% uptime SLA", "24/7 monitoring", "Dedicated support"],
+      highlighted: false,
+      color: "#EC4899",
+      sortOrder: 8,
+    },
+    {
+      slug: "enterprise-1tb-2yr",
+      name: "Enterprise 1TB 2 Năm",
+      nameVi: "Enterprise 1TB 2 Năm",
+      monthlyPrice: 1250000,
+      period: "2 năm",
+      periodVi: "2 năm",
+      months: 24,
+      discountPct: 24,
+      features: ["Lưu trữ 1TB NVMe SSD", "Băng thông không giới hạn", "SSL cao cấp", "Tên miền .com/.vn riêng", "CDN enterprise", "Backup real-time", "99.99% uptime SLA", "24/7 monitoring", "Dedicated support", "Tặng 3 tháng"],
+      featuresVi: ["Lưu trữ 1TB NVMe SSD", "Băng thông không giới hạn", "SSL cao cấp", "Tên miền .com/.vn riêng", "CDN enterprise", "Backup real-time", "99.99% uptime SLA", "24/7 monitoring", "Dedicated support", "Tặng 3 tháng"],
+      highlighted: false,
+      color: "#EC4899",
+      sortOrder: 9,
     },
   ];
   for (const p of hostingPlans) {
@@ -945,20 +977,62 @@ async function seedPricing() {
   // ── Domain Prices ────────────────────────────────────────────────────────────
   // inet.com prices × 1.25 for LOOP markup (as agreed with user)
   // Source: inet.com.vn domain registration prices (2026)
-  const domainPrices = [
-    { extension: ".com", registrationPrice: 350000, renewalPrice: 350000, period: "year", periodVi: "năm", note: "Phổ biến nhất — phù hợp mọi loại website", noteVi: "Phổ biến nhất — phù hợp mọi loại website", sortOrder: 1, isAvailable: true },
-    { extension: ".vn", registrationPrice: 438000, renewalPrice: 438000, period: "year", periodVi: "năm", note: "Yêu cầu GPKD hoặc chứng minh thư (theo quy định .VN)", noteVi: "Yêu cầu GPKD hoặc chứng minh thư (theo quy định .VN)", sortOrder: 2, isAvailable: true },
-    { extension: ".com.vn", registrationPrice: 563000, renewalPrice: 563000, period: "year", periodVi: "năm", note: "Yêu cầu GPKD", noteVi: "Yêu cầu GPKD", sortOrder: 3, isAvailable: true },
-    { extension: ".net", registrationPrice: 400000, renewalPrice: 400000, period: "year", periodVi: "năm", note: "Phù hợp website công nghệ, network services", noteVi: "Phù hợp website công nghệ, network services", sortOrder: 4, isAvailable: true },
-    { extension: ".org", registrationPrice: 438000, renewalPrice: 438000, period: "year", periodVi: "năm", note: "Thường dùng cho tổ chức phi lợi nhuận", noteVi: "Thường dùng cho tổ chức phi lợi nhuận", sortOrder: 5, isAvailable: true },
-    { extension: ".info", registrationPrice: 313000, renewalPrice: 313000, period: "year", periodVi: "năm", note: "Phù hợp blog, trang thông tin", noteVi: "Phù hợp blog, trang thông tin", sortOrder: 6, isAvailable: true },
-    { extension: ".biz", registrationPrice: 350000, renewalPrice: 350000, period: "year", periodVi: "năm", note: "Phù hợp website thương mại nhỏ", noteVi: "Phù hợp website thương mại nhỏ", sortOrder: 7, isAvailable: true },
-    { extension: ".io", registrationPrice: 875000, renewalPrice: 875000, period: "year", periodVi: "năm", note: "Phổ biến trong giới startup/tech — giá cao do demand", noteVi: "Phổ biến trong giới startup/tech — giá cao do demand", sortOrder: 8, isAvailable: true },
+  // Supports 4 periods per TLD: 6 months, 1 year, 2 years, 3 years
+  const periodOptions = [
+    { period: "1 year",  periodVi: "1 năm" },
+    { period: "2 years", periodVi: "2 năm" },
+    { period: "3 years", periodVi: "3 năm" },
   ];
-  for (const d of domainPrices) {
-    await prisma.pricingDomainPrice.upsert({ where: { extension: d.extension }, update: d, create: d });
+
+  const tldBasePrices: Array<{ extension: string; reg1y: number; note: string; noteVi: string; sortOrder: number }> = [
+    { extension: ".com",    reg1y: 350000, note: "Most popular — suitable for all websites", noteVi: "Phổ biến nhất — phù hợp mọi loại website", sortOrder: 1 },
+    { extension: ".vn",     reg1y: 438000, note: "Requires business license or ID (per .VN regulations)", noteVi: "Yêu cầu GPKD hoặc chứng minh thư (theo quy định .VN)", sortOrder: 2 },
+    { extension: ".com.vn", reg1y: 563000, note: "Requires business license", noteVi: "Yêu cầu GPKD", sortOrder: 3 },
+    { extension: ".net",    reg1y: 400000, note: "Suitable for technology & network service websites", noteVi: "Phù hợp website công nghệ, network services", sortOrder: 4 },
+    { extension: ".org",    reg1y: 438000, note: "Commonly used for non-profit organizations", noteVi: "Thường dùng cho tổ chức phi lợi nhuận", sortOrder: 5 },
+    { extension: ".info",   reg1y: 313000, note: "Suitable for blogs and informational sites", noteVi: "Phù hợp blog, trang thông tin", sortOrder: 6 },
+    { extension: ".biz",    reg1y: 350000, note: "Suitable for small business websites", noteVi: "Phù hợp website thương mại nhỏ", sortOrder: 7 },
+    { extension: ".io",     reg1y: 875000, note: "Popular among startups/tech — premium pricing due to demand", noteVi: "Phổ biến trong giới startup/tech — giá cao do demand", sortOrder: 8 },
+  ];
+
+  // Period multipliers: multi-year registrations get ~5% discount per extra year
+  const periodMultipliers: Record<string, number> = {
+    "1 year":   1.00,
+    "2 years":  1.90,
+    "3 years":  2.70,
+  };
+
+  for (const tld of tldBasePrices) {
+    for (const po of periodOptions) {
+      const reg = Math.round(tld.reg1y * periodMultipliers[po.period]);
+      await prisma.pricingDomainPrice.upsert({
+        where: { extension_period: { extension: tld.extension, period: po.period } },
+        update: {
+          registrationPrice: reg,
+          renewalPrice: tld.reg1y,
+          periodVi: po.periodVi,
+          note: tld.note,
+          noteVi: tld.noteVi,
+          sortOrder: tld.sortOrder,
+          isActive: true,
+          isAvailable: true,
+        },
+        create: {
+          extension: tld.extension,
+          registrationPrice: reg,
+          renewalPrice: tld.reg1y,
+          period: po.period,
+          periodVi: po.periodVi,
+          note: tld.note,
+          noteVi: tld.noteVi,
+          sortOrder: tld.sortOrder,
+          isActive: true,
+          isAvailable: true,
+        },
+      });
+    }
   }
-  console.log("  ✓ Domain Prices");
+  console.log("  ✓ Domain Prices (4 periods × 8 TLDs = 32 rows)");
 
   // ── Deployment Items ───────────────────────────────────────────────────────────
   const deploymentItems = [
@@ -3389,12 +3463,6 @@ async function main() {
     await seedR2(deptIds); // <-- NEW: R2 unified demo data (pass deptIds for FK)
     await seedAboutSections();
     await seedFaqs();
- // ─── P1: Web Package Pricing ────────────────────────────────────────────────
- console.log("\n[WEB PACKAGE] Hosting Plans + Domain Prices...");
- await prisma.pricingHostingPlan.upsert({ where:{slug:"professional"}, update:{}, create:{slug:"professional",name:"Professional",nameVi:"Gói Chuyên nghiệp",monthlyPrice:199000,months:12,discountPct:10,period:"1 năm",periodVi:"12 tháng",features:["SSD 30GB","SSL miễn phí","Email 5 hộp thư","Backup hàng ngày","CDN miễn phí","Hỗ trợ 24/7"],featuresVi:["SSD 30GB","SSL miễn phí","Email 5 hộp thư","Backup hàng ngày","CDN miễn phí","Hỗ trợ 24/7"],color:"#EC4899",sortOrder:2} });
- await prisma.pricingDomainPrice.upsert({ where:{extension:"com.vn"}, update:{}, create:{extension:"com.vn",registrationPrice:299000,renewalPrice:299000,period:"1 năm",periodVi:"12 tháng",note:"Phổ biến nhất",noteVi:"Phổ biến nhất",sortOrder:1} });
- console.log(" ✓ Web package pricing seeded");
-
 
     // Verify counts
     const [tm, us, pr, ord, pm, ef, ov, lp, tx, qp, ec, tsk, q, ev, exp, me, svc, at, mr, st, bt, hp, dp, faq] = await Promise.all([

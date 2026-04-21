@@ -786,18 +786,20 @@ function LocaleFields({
 
 function PostRow({ post, onEdit, t }: { post: BlogPost; onEdit: (post: BlogPost) => void; t: ReturnType<typeof useAdminTranslations>["t"] }) {
   const qc = useQueryClient();
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
   const delete_ = useMutation({
     mutationFn: async () => {
       await adminApi.delete(`/api/admin/blog-posts/${post.id}`);
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "blog"] }),
-    onError: (err: unknown) => { alert(err instanceof Error ? err.message : "Delete failed"); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin", "blog"] }); setToast({ message: "Xóa thành công", type: "success" }); },
+    onError: (err: unknown) => { setToast({ message: err instanceof Error ? err.message : "Xóa thất bại", type: "error" }); },
   });
 
   const sc = STATUS_CONFIG[post.status] ?? { label: post.status, color: DS.text4, bg: "transparent" };
 
   return (
+    <>
     <motion.div
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
@@ -856,6 +858,14 @@ function PostRow({ post, onEdit, t }: { post: BlogPost; onEdit: (post: BlogPost)
         </button>
       </div>
     </motion.div>
+    {toast && (
+      <div style={{ position: "fixed", bottom: 24, right: 24, zIndex: 9999, display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", borderRadius: 12, background: "#0F172A", border: `1px solid ${toast.type === "success" ? "#22C55E" : "#CC3344"}50`, boxShadow: "0 8px 32px rgba(0,0,0,0.5)", maxWidth: 320 }}>
+        <span style={{ color: toast.type === "success" ? "#22C55E" : "#CC3344", fontSize: 16 }}>{toast.type === "success" ? "✓" : "✗"}</span>
+        <span style={{ color: "#fff", fontSize: 13 }}>{toast.message}</span>
+        <button onClick={() => setToast(null)} style={{ background: "none", border: "none", cursor: "pointer", padding: 2, color: "#94A3B8" }}><X size={14} /></button>
+      </div>
+    )}
+    </>
   );
 }
 

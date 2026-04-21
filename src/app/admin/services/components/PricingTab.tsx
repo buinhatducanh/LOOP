@@ -180,6 +180,7 @@ function TierModal({ tier, serviceKey, defaultLevel, onClose, onSaved }: {
   onSaved: () => void;
 }) {
   const qc = useQueryClient();
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
   const [svcKey, setSvcKey] = useState(tier?.serviceKey ?? serviceKey ?? "web");
   const [level, setLevel] = useState(tier?.level ?? defaultLevel ?? 1);
   const [name, setName] = useState(tier?.name ?? "");
@@ -214,7 +215,7 @@ function TierModal({ tier, serviceKey, defaultLevel, onClose, onSaved }: {
       }
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: qk.adminServiceTiers() }); onSaved(); },
-    onError: (err) => { alert(err instanceof Error ? err.message : "Lưu thất bại"); },
+    onError: (err) => { setToast({ message: err instanceof Error ? err.message : "Lưu thất bại", type: "error" }); },
   });
 
   const inputStyle: React.CSSProperties = {
@@ -658,6 +659,7 @@ function WebFeatureMatrixTab() {
 
 export function PricingTab() {
   const qc = useQueryClient();
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
   // Top-level service tab
   const [activeBranch, setActiveBranch] = useState<ServiceBranch>("web");
@@ -908,6 +910,20 @@ export function PricingTab() {
           />
         )}
       </AnimatePresence>
+
+      {/* Toast */}
+      {toast && (
+        <div style={{
+          position: "fixed", bottom: 24, right: 24, zIndex: 9999,
+          background: DS.bgCard, border: `1px solid ${toast.type === "error" ? DS.red : DS.green}`,
+          borderRadius: 12, padding: "12px 20px", minWidth: 260,
+          boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+        }}>
+          <div style={{ color: toast.type === "error" ? DS.red : DS.green, fontSize: 13, fontFamily: "monospace" }}>
+            {toast.message}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

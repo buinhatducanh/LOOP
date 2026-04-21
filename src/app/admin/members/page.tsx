@@ -366,6 +366,8 @@ export default function AdminMembersPage() {
         const bRoles = (b.roles && b.roles.length > 0 ? b.roles : [b.systemRole ?? b.role ?? ""]).sort();
         cmp = aRoles[0].localeCompare(bRoles[0]);
       } else if (sortKey === "team") cmp = (a.team ?? "").localeCompare(b.team ?? "");
+      else if (sortKey === "status") cmp = (a.status ?? "").localeCompare(b.status ?? "");
+      else if (sortKey === "joined") cmp = new Date(a.joinedDate ?? 0).getTime() - new Date(b.joinedDate ?? 0).getTime();
       return sortAsc ? cmp : -cmp;
     });
   }, [members, search, teamFilter, statusFilter, rankFilter, sortKey, sortAsc]);
@@ -689,6 +691,136 @@ export default function AdminMembersPage() {
           )}
         </div>
       </div>
+    );
+  }
+
+  // =============================================================================
+  // TableRow — with hover + sticky columns
+  function TableRow_({
+    m, cfg, primaryRole, isCeo, checked, rankCfg
+  }: {
+    m: MemberExt;
+    cfg: { color: string; symbol: string; label: string };
+    primaryRole: string;
+    isCeo: boolean;
+    checked: boolean;
+    rankCfg: typeof RANKS;
+  }) {
+    const [hovered, setHovered] = useState(false);
+    const statusCfg = STATUS_CFG[m.status];
+    const joined = m.joinedDate ? fmtDate(m.joinedDate) : "—";
+
+    return (
+      <tr
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        onClick={() => setDetailMember(m)}
+        style={{
+          borderBottom: `1px solid ${DS.border}22`,
+          backgroundColor: checked ? DS.blue + "0a" : hovered ? DS.border + "18" : "transparent",
+          cursor: "pointer",
+          transition: "background-color 0.12s",
+        }}
+      >
+        {/* Sticky: Thành viên */}
+        <td style={{ padding: "8px 14px", position: "sticky", left: 0, zIndex: 1, background: hovered || checked ? DS.border + "18" : DS.bgCard }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div
+              onClick={(e) => { e.stopPropagation(); toggleSelect(m.id); }}
+              style={{
+                width: 16, height: 16, borderRadius: 4, cursor: "pointer",
+                border: `1.5px solid ${checked ? DS.blue : DS.text3}`,
+                backgroundColor: checked ? DS.blue + "33" : "transparent",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                flexShrink: 0,
+              }}
+            >
+              {checked && <Check size={10} color={DS.blue} />}
+            </div>
+            <div style={{ width: 32, height: 32, borderRadius: "50%", backgroundColor: cfg.color + "33", border: `1.5px solid ${cfg.color}`, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: DS.heading, fontSize: 11, color: cfg.color, overflow: "hidden", flexShrink: 0 }}>
+              {m.avatar ? <img src={m.avatar} alt={m.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : m.name.slice(0, 2).toUpperCase()}
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontFamily: DS.heading, fontSize: 13, color: DS.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.name}</div>
+              <div style={{ fontFamily: DS.mono, fontSize: 10, color: DS.text3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.email}</div>
+            </div>
+          </div>
+        </td>
+        {/* Vai trò */}
+        <td style={{ padding: "8px 14px" }}>
+          <span style={{ fontFamily: DS.mono, fontSize: 11, color: isCeo ? DS.gold : DS.text2 }}>
+            {isCeo ? "CEO" : capitalize(primaryRole)}
+          </span>
+        </td>
+        {/* Hạng */}
+        <td style={{ padding: "8px 14px" }}>
+          <span style={{ fontFamily: DS.mono, fontSize: 11, color: cfg.color }}>
+            {cfg.symbol} {cfg.label}
+          </span>
+        </td>
+        {/* Level */}
+        <td style={{ padding: "8px 14px" }}>
+          <span style={{ fontFamily: DS.mono, fontSize: 11, color: DS.text2 }}>{m.level}</span>
+        </td>
+        {/* LP */}
+        <td style={{ padding: "8px 14px" }}>
+          <span style={{ fontFamily: DS.mono, fontSize: 11, color: DS.amber }}>{(m.availableLp ?? 0).toLocaleString()}</span>
+        </td>
+        {/* Task */}
+        <td style={{ padding: "8px 14px" }}>
+          <span style={{ fontFamily: DS.mono, fontSize: 11, color: DS.text2 }}>{m.missionsCompleted}</span>
+        </td>
+        {/* Phòng ban */}
+        <td style={{ padding: "8px 14px" }}>
+          <span style={{ fontFamily: DS.mono, fontSize: 11, color: deptColor(m.team) }}>
+            {m.team || "—"}
+          </span>
+        </td>
+        {/* Trạng thái */}
+        <td style={{ padding: "8px 14px" }}>
+          <div style={{
+            display: "inline-flex", alignItems: "center", gap: 4,
+            padding: "2px 8px", borderRadius: 20,
+            backgroundColor: statusCfg.color + "22",
+            border: `1px solid ${statusCfg.color}55`,
+            fontFamily: DS.mono, fontSize: 9, color: statusCfg.color, whiteSpace: "nowrap",
+          }}>
+            {statusCfg.icon}
+            <span style={{ maxWidth: 70, overflow: "hidden", textOverflow: "ellipsis" }}>{statusCfg.label}</span>
+          </div>
+        </td>
+        {/* Ngày tham gia */}
+        <td style={{ padding: "8px 14px" }}>
+          <span style={{ fontFamily: DS.mono, fontSize: 10, color: DS.text3 }}>{joined}</span>
+        </td>
+        {/* Sticky right: Thao tác */}
+        <td style={{ padding: "8px 14px", position: "sticky", right: 0, zIndex: 1, background: hovered || checked ? DS.border + "18" : DS.bgCard }}>
+          <div style={{ display: "flex", gap: 4, alignItems: "center", justifyContent: "flex-end" }}>
+            <button
+              onClick={(e) => { e.stopPropagation(); setDetailMember(m); }}
+              style={{ ...smallBtn(DS.blue), padding: "3px 7px" }}
+            >
+              <Eye size={10} />
+            </button>
+            {editing && (
+              <button
+                onClick={(e) => { e.stopPropagation(); setFormMember(m); }}
+                style={{ ...smallBtn(DS.purple), padding: "3px 7px" }}
+              >
+                <Edit2 size={10} />
+              </button>
+            )}
+            {canAwardLP && (
+              <button
+                onClick={(e) => { e.stopPropagation(); setLpMember(m); }}
+                style={{ ...smallBtn(DS.amber), padding: "3px 7px" }}
+              >
+                <Award size={10} />
+              </button>
+            )}
+          </div>
+        </td>
+      </tr>
     );
   }
 
@@ -2167,28 +2299,52 @@ export default function AdminMembersPage() {
           /* ── Table View ── */
           <div style={{
             background: DS.bgCard, borderRadius: 12,
-            border: `1px solid ${DS.border}`, overflow: "hidden",
+            border: `1px solid ${DS.border}`,
+            overflow: "visible",
           }}>
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <div
+              className="member-table-scroll"
+              style={{
+                overflowX: "auto",
+                maxHeight: "calc(100vh - 340px)",
+                overflowY: "auto",
+                scrollbarWidth: "thin",
+                scrollbarColor: `${DS.border} transparent`,
+              }}
+            >
+              <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "fixed" }}>
+                <colgroup>
+                  <col style={{ width: 280, minWidth: 280 }} />
+                  <col style={{ width: 120, minWidth: 120 }} />
+                  <col style={{ width: 100, minWidth: 100 }} />
+                  <col style={{ width: 64, minWidth: 64 }} />
+                  <col style={{ width: 100, minWidth: 100 }} />
+                  <col style={{ width: 80, minWidth: 80 }} />
+                  <col style={{ width: 140, minWidth: 140 }} />
+                  <col style={{ width: 100, minWidth: 100 }} />
+                  <col style={{ width: 120, minWidth: 120 }} />
+                </colgroup>
                 <thead>
-                  <tr style={{ borderBottom: `1px solid ${DS.border}` }}>
+                  <tr style={{ borderBottom: `1px solid ${DS.border}`, position: "sticky", top: 0, zIndex: 2, background: DS.bgCard }}>
                     {[
-                      { key: "name" as SortKey, label: "Thành viên" },
+                      { key: "name" as SortKey, label: "Thành viên", sticky: true },
                       { key: "role" as SortKey, label: "Vai trò" },
                       { key: "rank" as SortKey, label: "Hạng" },
-                      { key: "level" as SortKey, label: "Level" },
+                      { key: "level" as SortKey, label: "Lv" },
                       { key: "lpBalance" as SortKey, label: "LP" },
-                      { key: "missions" as SortKey, label: "Nhiệm vụ" },
+                      { key: "missions" as SortKey, label: "Task" },
                       { key: "team" as SortKey, label: "Phòng ban" },
+                      { key: "status" as SortKey, label: "Trạng thái" },
+                      { key: "joined" as SortKey, label: "Ngày tham gia" },
                     ].map((col) => {
                       const active = sortKey === col.key;
+                      const isFirst = col.key === "name";
                       return (
                         <th
                           key={col.key}
                           onClick={() => {
                             if (sortKey === col.key) setSortAsc((a) => !a);
-                            else { setSortKey(col.key); setSortAsc(true); }
+                            else { setSortKey(col.key as SortKey); setSortAsc(true); }
                           }}
                           style={{
                             padding: "10px 14px", cursor: "pointer", userSelect: "none",
@@ -2196,6 +2352,10 @@ export default function AdminMembersPage() {
                             color: active ? DS.blue : DS.text3,
                             textTransform: "uppercase", letterSpacing: "0.06em",
                             textAlign: "left", whiteSpace: "nowrap",
+                            position: isFirst ? "sticky" : undefined,
+                            left: isFirst ? 0 : undefined,
+                            zIndex: isFirst ? 3 : undefined,
+                            background: isFirst ? DS.bgCard : undefined,
                           }}
                         >
                           <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
@@ -2205,7 +2365,7 @@ export default function AdminMembersPage() {
                         </th>
                       );
                     })}
-                    <th style={{ padding: "10px 14px", fontFamily: DS.mono, fontSize: 10, color: DS.text3, textTransform: "uppercase" }}>
+                    <th style={{ padding: "10px 14px", fontFamily: DS.mono, fontSize: 10, color: DS.text3, textTransform: "uppercase", textAlign: "right", position: "sticky", right: 0, background: DS.bgCard, zIndex: 3 }}>
                       Thao tác
                     </th>
                   </tr>
@@ -2217,85 +2377,17 @@ export default function AdminMembersPage() {
                     const checked = selectedIds.has(m.id);
                     const roles = m.roles && m.roles.length > 0 ? m.roles : (m.systemRole ? [m.systemRole] : []);
                     const primaryRole = roles[0] ?? "member";
+                    const isCeo = primaryRole === "ceo" || primaryRole === "super_admin";
                     return (
-                      <tr
+                      <TableRow_
                         key={m.id}
-                        onClick={() => setDetailMember(m)}
-                        style={{
-                          borderBottom: `1px solid ${DS.border}22`,
-                          backgroundColor: checked ? DS.blue + "0a" : "transparent",
-                          cursor: "pointer",
-                          transition: "background-color 0.15s",
-                        }}
-                      >
-                        <td style={{ padding: "10px 14px", display: "flex", alignItems: "center", gap: 10 }}>
-                          <div
-                            onClick={(e) => { e.stopPropagation(); toggleSelect(m.id); }}
-                            style={{
-                              width: 16, height: 16, borderRadius: 4, cursor: "pointer",
-                              border: `1.5px solid ${checked ? DS.blue : DS.text3}`,
-                              backgroundColor: checked ? DS.blue + "33" : "transparent",
-                              display: "flex", alignItems: "center", justifyContent: "center",
-                              flexShrink: 0,
-                            }}
-                          >
-                            {checked && <Check size={10} color={DS.blue} />}
-                          </div>
-                          <div style={{ width: 32, height: 32, borderRadius: "50%", backgroundColor: cfg.color + "33", border: `1.5px solid ${cfg.color}`, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: DS.heading, fontSize: 11, color: cfg.color, overflow: "hidden", flexShrink: 0 }}>
-                            {m.avatar ? <img src={m.avatar} alt={m.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : m.name.slice(0, 2).toUpperCase()}
-                          </div>
-                          <div>
-                            <div style={{ fontFamily: DS.heading, fontSize: 13, color: DS.text }}>{m.name}</div>
-                            <div style={{ fontFamily: DS.mono, fontSize: 10, color: DS.text3 }}>{m.email}</div>
-                          </div>
-                        </td>
-                        <td style={{ padding: "10px 14px" }}>
-                          <span style={{ fontFamily: DS.mono, fontSize: 11, color: DS.text2 }}>
-                            {primaryRole}
-                          </span>
-                        </td>
-                        <td style={{ padding: "10px 14px" }}>
-                          <span style={{ fontFamily: DS.mono, fontSize: 11, color: cfg.color }}>
-                            {cfg.symbol} {cfg.label}
-                          </span>
-                        </td>
-                        <td style={{ padding: "10px 14px" }}>
-                          <span style={{ fontFamily: DS.mono, fontSize: 11, color: DS.text2 }}>{m.level}</span>
-                        </td>
-                        <td style={{ padding: "10px 14px" }}>
-                          <span style={{ fontFamily: DS.mono, fontSize: 11, color: DS.text2 }}>{(m.availableLp ?? 0).toLocaleString()}</span>
-                        </td>
-                        <td style={{ padding: "10px 14px" }}>
-                          <span style={{ fontFamily: DS.mono, fontSize: 11, color: DS.text2 }}>{m.missionsCompleted}</span>
-                        </td>
-                        <td style={{ padding: "10px 14px" }}>
-                          <span style={{ fontFamily: DS.mono, fontSize: 11, color: DS.text2 }}>{m.team || "—"}</span>
-                        </td>
-                        <td style={{ padding: "10px 14px", display: "flex", gap: 6, alignItems: "center" }}>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); setDetailMember(m); }}
-                            style={{ ...smallBtn(DS.blue), padding: "4px 8px" }}
-                          >
-                            <Eye size={11} />
-                          </button>
-                          {editing && (
-                            <button
-                              onClick={(e) => { e.stopPropagation(); setFormMember(m); }}
-                              style={{ ...smallBtn(DS.purple), padding: "4px 8px" }}
-                            >
-                              <Edit2 size={11} />
-                            </button>
-                          )}
-                          {canAwardLP && (
-                            <button
-                              onClick={(e) => { e.stopPropagation(); setLpMember(m); }}
-                              style={{ ...smallBtn(DS.amber), padding: "4px 8px" }}
-                            >
-                              <Award size={11} />
-                            </button>
-                          )}
-                        </td>
-                      </tr>
+                        m={m}
+                        cfg={cfg}
+                        primaryRole={primaryRole}
+                        isCeo={isCeo}
+                        checked={checked}
+                        rankCfg={RANKS}
+                      />
                     );
                   })}
                 </tbody>
@@ -2343,6 +2435,14 @@ export default function AdminMembersPage() {
         * { box-sizing: border-box; }
         input[type="number"]::-webkit-inner-spin-button,
         input[type="number"]::-webkit-outer-spin-button { opacity: 0.4; }
+        /* Table scrollbar */
+        .member-table-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+        .member-table-scroll::-webkit-scrollbar-track { background: transparent; }
+        .member-table-scroll::-webkit-scrollbar-thumb { background: ${DS.border}; border-radius: 3px; }
+        .member-table-scroll::-webkit-scrollbar-thumb:hover { background: ${DS.text4}; }
+        .member-table-scroll::-webkit-scrollbar-corner { background: transparent; }
+        /* Row hover highlight */
+        table tbody tr:hover td { background-color: rgba(255,255,255,0.02) !important; }
       `}</style>
     </div>
   );

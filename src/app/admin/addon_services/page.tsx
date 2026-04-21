@@ -3,8 +3,8 @@
 /**
  * Addon Services Admin Page — LOOP Solutions
  * Route: /admin/addon_services
- * CRUD for AddonService: slug, name, nameVi, description, descriptionVi,
- * icon, type, price, billingPeriod, lpCost, sortOrder, isActive.
+ * CRUD for AddonService: slug, name, nameVi, type (one_time|recurring),
+ * price, billingPeriod, sortOrder, isActive.
  */
 
 import { useState } from "react";
@@ -14,39 +14,30 @@ import { adminApi } from "@/lib/api/client";
 import { DS, GRD } from "@/lib/design-tokens";
 import {
   Plus, Edit3, X, ToggleRight, ToggleLeft,
-  Layers, Search,
+  Trash2, Loader2, Search, RefreshCw,
 } from "lucide-react";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type AddonService = {
+type Addon = {
   id: string;
   slug: string;
   name: string;
   nameVi: string;
-  description: string | null;
-  descriptionVi: string | null;
-  icon: string | null;
-  type: string;
+  type: string; // "one_time" | "recurring"
   price: number;
   billingPeriod: string | null;
-  lpCost: number | null;
-  sortOrder: number;
   isActive: boolean;
-  createdAt?: string;
+  sortOrder: number;
 };
 
 type FormData = {
-  slug: string;
-  name: string;
   nameVi: string;
-  description: string;
-  descriptionVi: string;
-  icon: string;
+  name: string;
+  slug: string;
   type: string;
   price: number;
   billingPeriod: string | null;
-  lpCost: number | null;
   sortOrder: number;
   isActive: boolean;
 };
@@ -56,41 +47,20 @@ type FormData = {
 const fmtVND = (n: number) =>
   new Intl.NumberFormat("vi-VN").format(n) + "₫";
 
-const TYPES = [
-  { value: "hosting", label: "Hosting" },
-  { value: "domain", label: "Tên miền" },
-  { value: "maintenance", label: "Bảo trì" },
-  { value: "analytics", label: "Analytics" },
-  { value: "training", label: "Training" },
-  { value: "priority", label: "Hỗ trợ ưu tiên" },
-  { value: "seo", label: "SEO" },
-  { value: "other", label: "Khác" },
-];
-
-const ICONS = [
-  { value: "Server", label: "Server (Hosting)" },
-  { value: "Globe", label: "Globe (Domain)" },
-  { value: "Shield", label: "Shield (Security)" },
-  { value: "BarChart3", label: "BarChart (Analytics)" },
-  { value: "Users", label: "Users (Training)" },
-  { value: "Sparkles", label: "Sparkles (Priority)" },
-  { value: "Target", label: "Target (SEO)" },
-  { value: "Layers", label: "Layers (Other)" },
-];
-
 const defaultForm: FormData = {
-  slug: "",
-  name: "",
   nameVi: "",
-  description: "",
-  descriptionVi: "",
-  icon: "Layers",
-  type: "other",
+  name: "",
+  slug: "",
+  type: "one_time",
   price: 0,
   billingPeriod: null,
-  lpCost: null,
   sortOrder: 0,
   isActive: true,
+};
+
+const typeLabels: Record<string, string> = {
+  one_time: "Một lần",
+  recurring: "Định kỳ",
 };
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -98,22 +68,29 @@ const defaultForm: FormData = {
 export default function AddonServicesPage() {
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
-  const [typeFilter, setTypeFilter] = useState<string>("");
   const [showActive, setShowActive] = useState<boolean | null>(null);
-  const [modal, setModal] = useState<{ open: boolean; edit?: AddonService }>({ open: false });
+  const [modal, setModal] = useState<{ open: boolean; edit?: Addon }>({ open: false });
+  const [deleteTarget, setDeleteTarget] = useState<Addon | null>(null);
   const [form, setForm] = useState<FormData>(defaultForm);
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
 
-  // Fetch paginated list
-  const { data, isLoading } = useQuery({
+  // Fetch list
+  const { data, isLoading, refetch } = useQuery({
     queryKey: ["addon-services"],
-    queryFn: () => adminApi.get<{ data: AddonService[] }>("/addon-services?limit=100").then(r => r.data ?? []),
+    queryFn: () =>
+      adminApi
+        .get<{ data: Addon[] }>("/api/admin/pricing/addons?limit=100")
+        .then((r) => r.data ?? []),
   });
 
-  const items = (data ?? []).filter(a => {
-    const term = search.toLowerCase();
-    if (search && !a.name.toLowerCase().includes(term) && !a.nameVi.toLowerCase().includes(term) && !a.slug.toLowerCase().includes(term)) return false;
-    if (typeFilter && a.type !== typeFilter) return false;
+  const items = (data ?? []).filter((a) => {
+    if (
+      search &&
+      !a.name.toLowerCase().includes(search.toLowerCase()) &&
+      !a.nameVi.toLowerCase().includes(search.toLowerCase()) &&
+      !a.slug.toLowerCase().includes(search.toLowerCase())
+    )
+      return false;
     if (showActive === true && !a.isActive) return false;
     if (showActive === false && a.isActive) return false;
     return true;
@@ -123,50 +100,87 @@ export default function AddonServicesPage() {
   const save = useMutation({
     mutationFn: (payload: FormData) =>
       modal.edit
-        ? adminApi.put(`/addon-services/${modal.edit.id}`, payload)
-        : adminApi.post("/addon-services", payload),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["addon-services"] }); closeModal(); },
+        ? adminApi.put(`/api/admin/pricing/addons/${modal.edit.id}`, {
+            id: modal.edit.id,
+            ...payload,
+          })
+        : adminApi.post("/api/admin/pricing/addons", payload),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["addon-services"] });
+      closeModal();
+    },
   });
 
   // Toggle active
   const toggle = useMutation({
-    mutationFn: (item: AddonService) =>
-      adminApi.put(`/addon-services/${item.id}`, { ...item, isActive: !item.isActive }),
+    mutationFn: (item: Addon) =>
+      adminApi.put(`/api/admin/pricing/addons/${item.id}`, {
+        id: item.id,
+        nameVi: item.nameVi,
+        name: item.name,
+        slug: item.slug,
+        type: item.type,
+        price: item.price,
+        billingPeriod: item.billingPeriod,
+        sortOrder: item.sortOrder,
+        isActive: !item.isActive,
+      }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["addon-services"] }),
   });
 
-  const openCreate = () => { setForm(defaultForm); setErrors({}); setModal({ open: true }); };
-  const openEdit = (a: AddonService) => {
+  // Delete
+  const remove = useMutation({
+    mutationFn: (id: string) =>
+      adminApi.delete(`/api/admin/pricing/addons?id=${id}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["addon-services"] });
+      setDeleteTarget(null);
+    },
+  });
+
+  const openCreate = () => {
+    setForm(defaultForm);
+    setErrors({});
+    setModal({ open: true });
+  };
+
+  const openEdit = (a: Addon) => {
     setForm({
-      slug: a.slug,
-      name: a.name ?? "",
       nameVi: a.nameVi ?? "",
-      description: a.description ?? "",
-      descriptionVi: a.descriptionVi ?? "",
-      icon: a.icon ?? "Layers",
+      name: a.name ?? "",
+      slug: a.slug,
       type: a.type,
       price: a.price,
       billingPeriod: a.billingPeriod ?? null,
-      lpCost: a.lpCost ?? null,
       sortOrder: a.sortOrder,
       isActive: a.isActive,
     });
     setErrors({});
     setModal({ open: true, edit: a });
   };
+
   const closeModal = () => setModal({ open: false });
 
   const generateSlug = () => {
-    const s = (form.nameVi || form.name || "").toLowerCase()
+    const s = (form.nameVi || form.name || "")
+      .toLowerCase()
       .replace(/\s+/g, "-")
       .replace(/[^a-z0-9-]/g, "");
-    setForm(f => ({ ...f, slug: s }));
+    setForm((f) => ({ ...f, slug: s }));
+  };
+
+  const handleNameViChange = (value: string) => {
+    setForm((f) => ({ ...f, nameVi: value }));
+    // auto-fill name (EN) if empty
+    if (!form.name.trim()) {
+      setForm((f) => ({ ...f, name: value }));
+    }
   };
 
   const validate = (): boolean => {
     const e: Partial<Record<keyof FormData, string>> = {};
-    if (!form.name.trim() && !form.nameVi.trim()) e.nameVi = "Cần nhập tên tiếng Việt hoặc EN";
-    if (!form.type) e.type = "Cần chọn loại dịch vụ";
+    if (!form.nameVi.trim()) e.nameVi = "Không được trống";
+    if (!form.slug.trim()) e.slug = "Không được trống";
     if (form.price < 0) e.price = "Giá không hợp lệ";
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -177,75 +191,93 @@ export default function AddonServicesPage() {
     save.mutate(form);
   };
 
-  const typeColor: Record<string, string> = {
-    hosting: DS.purple,
-    domain: DS.cyan,
-    maintenance: DS.green,
-    analytics: DS.amber,
-    training: DS.teal,
-    priority: DS.pink,
-    seo: DS.gold,
-    other: DS.text4,
-  };
-
   return (
     <div style={{ padding: "1.5rem", minHeight: "100vh", background: DS.bgCosmic }}>
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 22, fontWeight: 900 }}>
-            Dịch Vụ Bổ Sung
+          <h1
+            style={{
+              color: DS.text,
+              fontFamily: DS.heading,
+              fontSize: 22,
+              fontWeight: 900,
+            }}
+          >
+            Quản lý Dịch vụ Bổ sung
           </h1>
           <p style={{ color: DS.text4, fontSize: 13, marginTop: 4 }}>
-            Quản lý dịch vụ bổ sung hiển thị trong booking wizard (hosting, bảo trì, SEO...)
+            CRUD dịch vụ thêm: Domain, SSL, Hosting upgrade...
           </p>
         </div>
-        <button
-          onClick={openCreate}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl font-medium text-sm"
-          style={{ background: GRD.primary, color: "#fff" }}
-        >
-          <Plus size={16} />
-          Thêm dịch vụ
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => refetch()}
+            className="flex items-center gap-1 px-3 py-2 rounded-xl text-xs"
+            style={{
+              background: "rgba(255,255,255,0.04)",
+              border: `1px solid ${DS.border}`,
+              color: DS.text4,
+            }}
+          >
+            <RefreshCw
+              size={13}
+              style={{ color: DS.text4 }}
+              className={isLoading ? "animate-spin" : ""}
+            />
+          </button>
+          <button
+            onClick={openCreate}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl font-medium text-sm"
+            style={{ background: GRD.primary, color: "#fff" }}
+          >
+            <Plus size={16} />
+            Thêm dịch vụ
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
       <div className="flex items-center gap-3 mb-4 flex-wrap">
         <div className="relative" style={{ flex: 1, minWidth: 200 }}>
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: DS.text4 }} />
+          <Search
+            size={14}
+            className="absolute left-3 top-1/2 -translate-y-1/2"
+            style={{ color: DS.text4 }}
+          />
           <input
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={(e) => setSearch(e.target.value)}
             placeholder="Tìm tên, slug..."
             style={{
-              width: "100%", paddingLeft: 36, paddingRight: 16, paddingTop: 10, paddingBottom: 10,
-              background: "rgba(15,23,42,0.6)", border: `1px solid ${DS.border}`,
-              borderRadius: 10, color: DS.text, fontSize: 14,
+              width: "100%",
+              paddingLeft: 36,
+              paddingRight: 16,
+              paddingTop: 10,
+              paddingBottom: 10,
+              background: "rgba(15,23,42,0.6)",
+              border: `1px solid ${DS.border}`,
+              borderRadius: 10,
+              color: DS.text,
+              fontSize: 14,
             }}
           />
         </div>
-        <select
-          value={typeFilter}
-          onChange={e => setTypeFilter(e.target.value)}
-          style={{
-            padding: "10px 14px",
-            background: "rgba(15,23,42,0.6)", border: `1px solid ${DS.border}`,
-            borderRadius: 10, color: DS.text3, fontSize: 13,
-          }}
-        >
-          <option value="">Tất cả loại</option>
-          {TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-        </select>
         <div className="flex gap-1">
-          {([null, true, false] as const).map(s => (
-            <button key={String(s)} onClick={() => setShowActive(s)}
+          {([null, true, false] as const).map((s) => (
+            <button
+              key={String(s)}
+              onClick={() => setShowActive(s)}
               className="px-3 py-1.5 rounded-lg text-xs font-medium"
               style={{
-                background: showActive === s ? DS.pink : "rgba(255,255,255,0.04)",
+                background:
+                  showActive === s ? DS.pink : "rgba(255,255,255,0.04)",
                 color: showActive === s ? "#fff" : DS.text4,
-                border: `1px solid ${showActive === s ? DS.pink : DS.border}`,
-              }}>
+                border: `1px solid ${
+                  showActive === s ? DS.pink : DS.border
+                }`,
+              }}
+            >
               {s === null ? "Tất cả" : s ? "Đang bật" : "Đã tắt"}
             </button>
           ))}
@@ -253,16 +285,38 @@ export default function AddonServicesPage() {
       </div>
 
       {/* Table */}
-      <div style={{ borderRadius: 16, overflow: "hidden", border: `1px solid ${DS.border}`, background: DS.bgCard }}>
+      <div
+        style={{
+          borderRadius: 16,
+          overflow: "hidden",
+          border: `1px solid ${DS.border}`,
+          background: DS.bgCard,
+        }}
+      >
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ background: "rgba(255,255,255,0.03)" }}>
-              {["Tên dịch vụ", "Loại", "Giá", "Billing", "LP Cost", "Slug", "Thứ tự", "TT", "HĐ"].map((h, i) => (
-                <th key={h} style={{
-                  padding: "12px 16px", color: DS.text4, fontSize: 11, fontFamily: DS.mono,
-                  letterSpacing: "0.1em", textAlign: "left",
-                  width: i === 0 ? undefined : "auto",
-                }}>
+              {[
+                "Tên",
+                "Slug",
+                "Loại",
+                "Giá",
+                "Giai đoạn",
+                "Thứ tự",
+                "Trạng thái",
+                "Hành động",
+              ].map((h) => (
+                <th
+                  key={h}
+                  style={{
+                    padding: "12px 16px",
+                    color: DS.text4,
+                    fontSize: 11,
+                    fontFamily: DS.mono,
+                    letterSpacing: "0.1em",
+                    textAlign: "left",
+                  }}
+                >
                   {h}
                 </th>
               ))}
@@ -270,340 +324,736 @@ export default function AddonServicesPage() {
           </thead>
           <tbody>
             {isLoading ? (
-              <tr><td colSpan={9} style={{ padding: 32, textAlign: "center", color: DS.text4 }}>Đang tải...</td></tr>
-            ) : items.length === 0 ? (
-              <tr><td colSpan={9} style={{ padding: 32, textAlign: "center", color: DS.text4 }}>Chưa có dữ liệu</td></tr>
-            ) : items.map(a => (
-              <tr key={a.id} style={{ borderTop: `1px solid ${DS.border}` }}>
-                <td style={{ padding: "14px 16px" }}>
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                      style={{ background: `${typeColor[a.type] ?? DS.purple}15`, color: typeColor[a.type] ?? DS.purple }}>
-                      <Layers size={15} />
-                    </div>
-                    <div>
-                      <div style={{ color: DS.text, fontWeight: 600, fontSize: 13 }}>{a.nameVi || a.name}</div>
-                      <div style={{ color: DS.text4, fontSize: 11 }}>{a.name && a.name !== a.nameVi ? a.name : ""}</div>
-                    </div>
-                  </div>
-                </td>
-                <td style={{ padding: "14px 16px" }}>
-                  <span className="px-2 py-0.5 rounded text-xs font-medium"
-                    style={{ background: `${typeColor[a.type] ?? DS.text4}15`, color: typeColor[a.type] ?? DS.text4 }}>
-                    {TYPES.find(t => t.value === a.type)?.label ?? a.type}
-                  </span>
-                </td>
-                <td style={{ padding: "14px 16px" }}>
-                  <span style={{ color: a.price > 0 ? DS.text : DS.text4, fontFamily: DS.mono, fontSize: 13 }}>
-                    {a.price > 0 ? fmtVND(a.price) : "Miễn phí"}
-                  </span>
-                </td>
-                <td style={{ padding: "14px 16px" }}>
-                  <span style={{ color: DS.text4, fontSize: 12 }}>{a.billingPeriod ?? "—"}</span>
-                </td>
-                <td style={{ padding: "14px 16px" }}>
-                  <span style={{ color: a.lpCost ? DS.gold : DS.text4, fontFamily: DS.mono, fontSize: 12 }}>
-                    {a.lpCost ? `${a.lpCost.toLocaleString()} LP` : "—"}
-                  </span>
-                </td>
-                <td style={{ padding: "14px 16px" }}>
-                  <span style={{ color: DS.text4, fontFamily: DS.mono, fontSize: 11 }}>{a.slug}</span>
-                </td>
-                <td style={{ padding: "14px 16px" }}>
-                  <span style={{ color: DS.text4, fontFamily: DS.mono, fontSize: 12 }}>{a.sortOrder}</span>
-                </td>
-                <td style={{ padding: "14px 16px" }}>
-                  <button onClick={() => toggle.mutate(a)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}>
-                    {a.isActive
-                      ? <ToggleRight size={22} style={{ color: DS.green }} />
-                      : <ToggleLeft size={22} style={{ color: DS.text4 }} />}
-                  </button>
-                </td>
-                <td style={{ padding: "14px 16px" }}>
-                  <div className="flex items-center gap-2">
-                    <button onClick={() => openEdit(a)} style={{ background: "none", border: "none", cursor: "pointer", padding: 4, borderRadius: 6 }}
-                      className="hover:bg-white/10 transition-colors">
-                      <Edit3 size={15} style={{ color: DS.pink }} />
-                    </button>
-                  </div>
+              <tr>
+                <td
+                  colSpan={8}
+                  style={{
+                    padding: 32,
+                    textAlign: "center",
+                    color: DS.text4,
+                  }}
+                >
+                  <Loader2
+                    size={20}
+                    className="animate-spin"
+                    style={{ margin: "0 auto" }}
+                  />
                 </td>
               </tr>
-            ))}
+            ) : items.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={8}
+                  style={{
+                    padding: 32,
+                    textAlign: "center",
+                    color: DS.text4,
+                  }}
+                >
+                  Chưa có dữ liệu
+                </td>
+              </tr>
+            ) : (
+              items.map((a) => (
+                <tr
+                  key={a.id}
+                  style={{ borderTop: `1px solid ${DS.border}` }}
+                >
+                  <td style={{ padding: "14px 16px" }}>
+                    <span
+                      style={{
+                        color: DS.text,
+                        fontWeight: 600,
+                        fontSize: 13,
+                      }}
+                    >
+                      {a.nameVi || a.name}
+                    </span>
+                  </td>
+                  <td style={{ padding: "14px 16px" }}>
+                    <span
+                      style={{
+                        color: DS.text4,
+                        fontFamily: DS.mono,
+                        fontSize: 11,
+                      }}
+                    >
+                      {a.slug}
+                    </span>
+                  </td>
+                  <td style={{ padding: "14px 16px" }}>
+                    <span
+                      className="px-2 py-0.5 rounded text-xs font-medium"
+                      style={{
+                        background:
+                          a.type === "recurring"
+                            ? `${DS.purple}20`
+                            : `${DS.cyan}20`,
+                        color:
+                          a.type === "recurring" ? DS.purple : DS.cyan,
+                      }}
+                    >
+                      {typeLabels[a.type] ?? a.type}
+                    </span>
+                  </td>
+                  <td style={{ padding: "14px 16px" }}>
+                    <span
+                      style={{
+                        color: a.price > 0 ? DS.text : DS.text4,
+                        fontFamily: DS.mono,
+                        fontSize: 13,
+                      }}
+                    >
+                      {a.price > 0 ? fmtVND(a.price) : "Miễn phí"}
+                    </span>
+                  </td>
+                  <td style={{ padding: "14px 16px" }}>
+                    <span style={{ color: DS.text4, fontSize: 12 }}>
+                      {a.billingPeriod ?? "—"}
+                    </span>
+                  </td>
+                  <td style={{ padding: "14px 16px" }}>
+                    <span
+                      style={{
+                        color: DS.text4,
+                        fontFamily: DS.mono,
+                        fontSize: 12,
+                      }}
+                    >
+                      {a.sortOrder}
+                    </span>
+                  </td>
+                  <td style={{ padding: "14px 16px" }}>
+                    <button
+                      onClick={() => toggle.mutate(a)}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        padding: 0,
+                      }}
+                    >
+                      {a.isActive ? (
+                        <ToggleRight size={22} style={{ color: DS.green }} />
+                      ) : (
+                        <ToggleLeft size={22} style={{ color: DS.text4 }} />
+                      )}
+                    </button>
+                  </td>
+                  <td style={{ padding: "14px 16px" }}>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => openEdit(a)}
+                        style={{
+                          background: "none",
+                          border: "none",
+                          cursor: "pointer",
+                          padding: 4,
+                          borderRadius: 6,
+                        }}
+                        className="hover:bg-white/10 transition-colors"
+                      >
+                        <Edit3 size={15} style={{ color: DS.pink }} />
+                      </button>
+                      <button
+                        onClick={() => setDeleteTarget(a)}
+                        style={{
+                          background: "none",
+                          border: "none",
+                          cursor: "pointer",
+                          padding: 4,
+                          borderRadius: 6,
+                        }}
+                        className="hover:bg-white/10 transition-colors"
+                      >
+                        <Trash2 size={15} style={{ color: DS.red }} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
 
-      {/* Modal */}
+      {/* Create/Edit Modal */}
       <AnimatePresence>
         {modal.open && (
           <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             style={{
-              position: "fixed", inset: 0, zIndex: 1000, display: "flex", alignItems: "center",
-              justifyContent: "center", padding: "1rem",
-              background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)",
+              position: "fixed",
+              inset: 0,
+              zIndex: 1000,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "1rem",
+              background: "rgba(0,0,0,0.7)",
+              backdropFilter: "blur(8px)",
             }}
-            onClick={e => e.target === e.currentTarget && closeModal()}
+            onClick={(e) =>
+              e.target === e.currentTarget && closeModal()
+            }
           >
             <motion.div
-              initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
               style={{
-                width: "100%", maxWidth: 560, background: DS.bgCard,
-                borderRadius: 20, border: `1px solid ${DS.border}`, overflow: "hidden",
+                width: "100%",
+                maxWidth: 520,
+                background: DS.bgCard,
+                borderRadius: 20,
+                border: `1px solid ${DS.border}`,
+                overflow: "hidden",
               }}
             >
-              {/* Header */}
-              <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: `1px solid ${DS.border}` }}>
+              {/* Modal header */}
+              <div
+                className="flex items-center justify-between px-6 py-4"
+                style={{ borderBottom: `1px solid ${DS.border}` }}
+              >
                 <div>
-                  <h2 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 16, fontWeight: 900 }}>
-                    {modal.edit ? "Sửa dịch vụ" : "Thêm dịch vụ bổ sung"}
+                  <h2
+                    style={{
+                      color: DS.text,
+                      fontFamily: DS.heading,
+                      fontSize: 16,
+                      fontWeight: 900,
+                    }}
+                  >
+                    {modal.edit ? "Sửa dịch vụ" : "Thêm dịch vụ mới"}
                   </h2>
                   <p style={{ color: DS.text4, fontSize: 12, marginTop: 2 }}>
-                    {modal.edit ? `Chỉnh sửa: ${modal.edit.nameVi || modal.edit.name}` : "Tạo dịch vụ mới cho booking wizard"}
+                    {modal.edit
+                      ? `Chỉnh sửa: ${modal.edit.nameVi || modal.edit.name}`
+                      : "Tạo dịch vụ bổ sung mới cho booking wizard"}
                   </p>
                 </div>
-                <button onClick={closeModal} style={{ background: "none", border: "none", cursor: "pointer", padding: 4 }}>
+                <button
+                  onClick={closeModal}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    padding: 4,
+                  }}
+                >
                   <X size={18} style={{ color: DS.text4 }} />
                 </button>
               </div>
 
               {/* Form */}
               <div className="px-6 py-5 space-y-4">
-                {/* Type */}
+                {/* nameVi */}
                 <div>
-                  <label style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.1em", display: "block", marginBottom: 6 }}>
-                    Loại dịch vụ <span style={{ color: DS.pink }}>*</span>
-                  </label>
-                  <div className="flex flex-wrap gap-2">
-                    {TYPES.map(t => (
-                      <button key={t.value} type="button"
-                        onClick={() => setForm(f => ({ ...f, type: t.value }))}
-                        className="px-3 py-1.5 rounded-lg text-xs font-medium"
-                        style={{
-                          background: form.type === t.value ? `${typeColor[t.value] ?? DS.purple}20` : "rgba(255,255,255,0.04)",
-                          color: form.type === t.value ? (typeColor[t.value] ?? DS.purple) : DS.text4,
-                          border: `1px solid ${form.type === t.value ? (typeColor[t.value] ?? DS.purple) : DS.border}`,
-                          cursor: "pointer",
-                        }}>
-                        {t.label}
-                      </button>
-                    ))}
-                  </div>
-                  {errors.type && <p style={{ color: DS.red, fontSize: 11, marginTop: 4 }}>{errors.type}</p>}
-                </div>
-
-                {/* Name VI */}
-                <div>
-                  <label style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.1em", display: "block", marginBottom: 6 }}>
-                    Tên tiếng Việt <span style={{ color: DS.pink }}>*</span>
+                  <label
+                    style={{
+                      color: DS.text3,
+                      fontSize: 11,
+                      fontFamily: DS.mono,
+                      letterSpacing: "0.1em",
+                      display: "block",
+                      marginBottom: 6,
+                    }}
+                  >
+                    Tên VN <span style={{ color: DS.pink }}>*</span>
                   </label>
                   <input
                     value={form.nameVi}
-                    onChange={e => setForm(f => ({ ...f, nameVi: e.target.value }))}
-                    placeholder="VD: Hosting 1 năm, Bảo trì website..."
+                    onChange={(e) => handleNameViChange(e.target.value)}
+                    placeholder="VD: Hosting 1 năm, SSL Certificate..."
                     style={{
-                      width: "100%", padding: "10px 14px",
-                      background: "rgba(15,23,42,0.6)", border: `1px solid ${errors.nameVi ? DS.red : DS.border}`,
-                      borderRadius: 10, color: DS.text, fontSize: 14,
+                      width: "100%",
+                      padding: "10px 14px",
+                      background: "rgba(15,23,42,0.6)",
+                      border: `1px solid ${
+                        errors.nameVi ? DS.red : DS.border
+                      }`,
+                      borderRadius: 10,
+                      color: DS.text,
+                      fontSize: 14,
                     }}
                   />
-                  {errors.nameVi && <p style={{ color: DS.red, fontSize: 11, marginTop: 4 }}>{errors.nameVi}</p>}
+                  {errors.nameVi && (
+                    <p style={{ color: DS.red, fontSize: 11, marginTop: 4 }}>
+                      {errors.nameVi}
+                    </p>
+                  )}
                 </div>
 
-                {/* Name EN */}
+                {/* name (auto-filled) */}
                 <div>
-                  <label style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.1em", display: "block", marginBottom: 6 }}>
-                    Tên tiếng Anh
-                  </label>
-                  <input
-                    value={form.name}
-                    onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                    placeholder="VD: 1-Year Hosting, Website Maintenance..."
-                    style={{
-                      width: "100%", padding: "10px 14px",
-                      background: "rgba(15,23,42,0.6)", border: `1px solid ${DS.border}`,
-                      borderRadius: 10, color: DS.text, fontSize: 14,
-                    }}
-                  />
-                </div>
-
-                {/* Slug + icon row */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <label style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.1em" }}>
-                        Slug
-                      </label>
-                      <button type="button" onClick={generateSlug}
-                        style={{ background: "none", border: "none", color: DS.pink, fontSize: 11, cursor: "pointer", padding: 0 }}>
-                        Auto
-                      </button>
-                    </div>
-                    <input
-                      value={form.slug}
-                      onChange={e => setForm(f => ({ ...f, slug: e.target.value }))}
-                      placeholder="hosting-1-nam"
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label
                       style={{
-                        width: "100%", padding: "10px 14px",
-                        background: "rgba(15,23,42,0.6)", border: `1px solid ${DS.border}`,
-                        borderRadius: 10, color: DS.text, fontSize: 14,
-                      }}
-                    />
-                  </div>
-                  <div>
-                    <label style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.1em", display: "block", marginBottom: 6 }}>
-                      Icon (lucide)
-                    </label>
-                    <select
-                      value={form.icon ?? "Layers"}
-                      onChange={e => setForm(f => ({ ...f, icon: e.target.value }))}
-                      style={{
-                        width: "100%", padding: "10px 14px",
-                        background: "rgba(15,23,42,0.6)", border: `1px solid ${DS.border}`,
-                        borderRadius: 10, color: DS.text, fontSize: 14,
+                        color: DS.text3,
+                        fontSize: 11,
+                        fontFamily: DS.mono,
+                        letterSpacing: "0.1em",
                       }}
                     >
-                      {ICONS.map(i => <option key={i.value} value={i.value}>{i.label}</option>)}
-                    </select>
+                      Tên EN
+                    </label>
+                    {form.nameVi && !form.name && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setForm((f) => ({ ...f, name: f.nameVi }))
+                        }
+                        style={{
+                          background: "none",
+                          border: "none",
+                          color: DS.pink,
+                          fontSize: 11,
+                          cursor: "pointer",
+                          padding: 0,
+                        }}
+                      >
+                        Copy VN
+                      </button>
+                    )}
+                  </div>
+                  <input
+                    value={form.name}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, name: e.target.value }))
+                    }
+                    placeholder="English name (auto from Vietnamese)"
+                    style={{
+                      width: "100%",
+                      padding: "10px 14px",
+                      background: "rgba(15,23,42,0.6)",
+                      border: `1px solid ${DS.border}`,
+                      borderRadius: 10,
+                      color: DS.text,
+                      fontSize: 14,
+                    }}
+                  />
+                </div>
+
+                {/* slug */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label
+                      style={{
+                        color: DS.text3,
+                        fontSize: 11,
+                        fontFamily: DS.mono,
+                        letterSpacing: "0.1em",
+                      }}
+                    >
+                      Slug <span style={{ color: DS.pink }}>*</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={generateSlug}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        color: DS.pink,
+                        fontSize: 11,
+                        cursor: "pointer",
+                        padding: 0,
+                      }}
+                    >
+                      Auto
+                    </button>
+                  </div>
+                  <input
+                    value={form.slug}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, slug: e.target.value }))
+                    }
+                    placeholder="hosting-1-nam"
+                    style={{
+                      width: "100%",
+                      padding: "10px 14px",
+                      background: "rgba(15,23,42,0.6)",
+                      border: `1px solid ${
+                        errors.slug ? DS.red : DS.border
+                      }`,
+                      borderRadius: 10,
+                      color: DS.text,
+                      fontSize: 14,
+                    }}
+                  />
+                  {errors.slug && (
+                    <p style={{ color: DS.red, fontSize: 11, marginTop: 4 }}>
+                      {errors.slug}
+                    </p>
+                  )}
+                </div>
+
+                {/* type (radio) */}
+                <div>
+                  <label
+                    style={{
+                      color: DS.text3,
+                      fontSize: 11,
+                      fontFamily: DS.mono,
+                      letterSpacing: "0.1em",
+                      display: "block",
+                      marginBottom: 8,
+                    }}
+                  >
+                    Loại
+                  </label>
+                  <div className="flex gap-3">
+                    {(["one_time", "recurring"] as const).map((t) => (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => setForm((f) => ({ ...f, type: t }))}
+                        className="px-4 py-2 rounded-lg text-xs font-medium"
+                        style={{
+                          background:
+                            form.type === t
+                              ? `${DS.pink}20`
+                              : "rgba(255,255,255,0.04)",
+                          color: form.type === t ? DS.pink : DS.text4,
+                          border: `1px solid ${
+                            form.type === t ? DS.pink : DS.border
+                          }`,
+                          cursor: "pointer",
+                        }}
+                      >
+                        {typeLabels[t]}
+                      </button>
+                    ))}
                   </div>
                 </div>
 
-                {/* Description */}
+                {/* price + sortOrder */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.1em", display: "block", marginBottom: 6 }}>
-                      Mô tả (VI)
-                    </label>
-                    <input
-                      value={form.descriptionVi ?? ""}
-                      onChange={e => setForm(f => ({ ...f, descriptionVi: e.target.value }))}
-                      placeholder="Mô tả ngắn bằng tiếng Việt"
+                    <label
                       style={{
-                        width: "100%", padding: "10px 14px",
-                        background: "rgba(15,23,42,0.6)", border: `1px solid ${DS.border}`,
-                        borderRadius: 10, color: DS.text, fontSize: 14,
+                        color: DS.text3,
+                        fontSize: 11,
+                        fontFamily: DS.mono,
+                        letterSpacing: "0.1em",
+                        display: "block",
+                        marginBottom: 6,
                       }}
-                    />
-                  </div>
-                  <div>
-                    <label style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.1em", display: "block", marginBottom: 6 }}>
-                      Mô tả (EN)
-                    </label>
-                    <input
-                      value={form.description ?? ""}
-                      onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-                      placeholder="Short description in English"
-                      style={{
-                        width: "100%", padding: "10px 14px",
-                        background: "rgba(15,23,42,0.6)", border: `1px solid ${DS.border}`,
-                        borderRadius: 10, color: DS.text, fontSize: 14,
-                      }}
-                    />
-                  </div>
-                </div>
-
-                {/* Price + billing */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.1em", display: "block", marginBottom: 6 }}>
-                      Giá (VNĐ) <span style={{ color: DS.pink }}>*</span>
+                    >
+                      Giá (VNĐ)
                     </label>
                     <input
                       type="number"
                       value={form.price}
-                      onChange={e => setForm(f => ({ ...f, price: Number(e.target.value) }))}
+                      onChange={(e) =>
+                        setForm((f) => ({
+                          ...f,
+                          price: Number(e.target.value),
+                        }))
+                      }
                       placeholder="0"
                       style={{
-                        width: "100%", padding: "10px 14px",
-                        background: "rgba(15,23,42,0.6)", border: `1px solid ${errors.price ? DS.red : DS.border}`,
-                        borderRadius: 10, color: DS.text, fontSize: 14,
+                        width: "100%",
+                        padding: "10px 14px",
+                        background: "rgba(15,23,42,0.6)",
+                        border: `1px solid ${
+                          errors.price ? DS.red : DS.border
+                        }`,
+                        borderRadius: 10,
+                        color: DS.text,
+                        fontSize: 14,
                       }}
                     />
-                    {errors.price && <p style={{ color: DS.red, fontSize: 11, marginTop: 4 }}>{errors.price}</p>}
+                    {errors.price && (
+                      <p
+                        style={{
+                          color: DS.red,
+                          fontSize: 11,
+                          marginTop: 4,
+                        }}
+                      >
+                        {errors.price}
+                      </p>
+                    )}
                   </div>
                   <div>
-                    <label style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.1em", display: "block", marginBottom: 6 }}>
-                      Billing period
-                    </label>
-                    <input
-                      value={form.billingPeriod ?? ""}
-                      onChange={e => setForm(f => ({ ...f, billingPeriod: e.target.value || null }))}
-                      placeholder="VD: 1 năm, hàng tháng"
+                    <label
                       style={{
-                        width: "100%", padding: "10px 14px",
-                        background: "rgba(15,23,42,0.6)", border: `1px solid ${DS.border}`,
-                        borderRadius: 10, color: DS.text, fontSize: 14,
+                        color: DS.text3,
+                        fontSize: 11,
+                        fontFamily: DS.mono,
+                        letterSpacing: "0.1em",
+                        display: "block",
+                        marginBottom: 6,
                       }}
-                    />
-                  </div>
-                </div>
-
-                {/* LP Cost + sort */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.1em", display: "block", marginBottom: 6 }}>
-                      LP Cost (tùy chọn)
-                    </label>
-                    <input
-                      type="number"
-                      value={form.lpCost ?? ""}
-                      onChange={e => setForm(f => ({ ...f, lpCost: e.target.value ? Number(e.target.value) : null }))}
-                      placeholder="LP cost cho nhân viên đổi — để trống nếu không cho LP"
-                      style={{
-                        width: "100%", padding: "10px 14px",
-                        background: "rgba(15,23,42,0.6)", border: `1px solid ${DS.border}`,
-                        borderRadius: 10, color: DS.text, fontSize: 14,
-                      }}
-                    />
-                  </div>
-                  <div>
-                    <label style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.1em", display: "block", marginBottom: 6 }}>
+                    >
                       Thứ tự hiển thị
                     </label>
                     <input
                       type="number"
                       value={form.sortOrder}
-                      onChange={e => setForm(f => ({ ...f, sortOrder: Number(e.target.value) }))}
+                      onChange={(e) =>
+                        setForm((f) => ({
+                          ...f,
+                          sortOrder: Number(e.target.value),
+                        }))
+                      }
                       style={{
-                        width: "100%", padding: "10px 14px",
-                        background: "rgba(15,23,42,0.6)", border: `1px solid ${DS.border}`,
-                        borderRadius: 10, color: DS.text, fontSize: 14,
+                        width: "100%",
+                        padding: "10px 14px",
+                        background: "rgba(15,23,42,0.6)",
+                        border: `1px solid ${DS.border}`,
+                        borderRadius: 10,
+                        color: DS.text,
+                        fontSize: 14,
                       }}
                     />
                   </div>
                 </div>
 
-                {/* Active */}
+                {/* billingPeriod */}
+                <div>
+                  <label
+                    style={{
+                      color: DS.text3,
+                      fontSize: 11,
+                      fontFamily: DS.mono,
+                      letterSpacing: "0.1em",
+                      display: "block",
+                      marginBottom: 6,
+                    }}
+                  >
+                    Giai đoạn thanh toán (tùy chọn)
+                  </label>
+                  <input
+                    value={form.billingPeriod ?? ""}
+                    onChange={(e) =>
+                      setForm((f) => ({
+                        ...f,
+                        billingPeriod: e.target.value || null,
+                      }))
+                    }
+                    placeholder="VD: 1 năm, hàng tháng, hàng quý..."
+                    style={{
+                      width: "100%",
+                      padding: "10px 14px",
+                      background: "rgba(15,23,42,0.6)",
+                      border: `1px solid ${DS.border}`,
+                      borderRadius: 10,
+                      color: DS.text,
+                      fontSize: 14,
+                    }}
+                  />
+                </div>
+
+                {/* isActive */}
                 <div className="flex items-center gap-3">
-                  <button type="button" onClick={() => setForm(f => ({ ...f, isActive: !f.isActive }))}
-                    style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}>
-                    {form.isActive
-                      ? <ToggleRight size={22} style={{ color: DS.green }} />
-                      : <ToggleLeft size={22} style={{ color: DS.text4 }} />}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setForm((f) => ({ ...f, isActive: !f.isActive }))
+                    }
+                    style={{
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      padding: 0,
+                    }}
+                  >
+                    {form.isActive ? (
+                      <ToggleRight size={22} style={{ color: DS.green }} />
+                    ) : (
+                      <ToggleLeft size={22} style={{ color: DS.text4 }} />
+                    )}
                   </button>
                   <span style={{ color: DS.text3, fontSize: 13 }}>
-                    {form.isActive ? "Đang bật — hiển thị trong booking wizard" : "Đã tắt — ẩn khỏi booking wizard"}
+                    {form.isActive ? "Đang bật" : "Đã tắt"}
                   </span>
                 </div>
               </div>
 
               {/* Footer */}
-              <div className="flex items-center justify-end gap-3 px-6 py-4" style={{ borderTop: `1px solid ${DS.border}` }}>
-                <button onClick={closeModal}
+              <div
+                className="flex items-center justify-end gap-3 px-6 py-4"
+                style={{ borderTop: `1px solid ${DS.border}` }}
+              >
+                <button
+                  onClick={closeModal}
                   style={{
-                    padding: "10px 20px", borderRadius: 10, border: `1px solid ${DS.border}`,
-                    background: "rgba(255,255,255,0.04)", color: DS.text3, fontSize: 14, cursor: "pointer",
-                  }}>
+                    padding: "10px 20px",
+                    borderRadius: 10,
+                    border: `1px solid ${DS.border}`,
+                    background: "rgba(255,255,255,0.04)",
+                    color: DS.text3,
+                    fontSize: 14,
+                    cursor: "pointer",
+                  }}
+                >
                   Hủy
                 </button>
-                <button onClick={handleSave} disabled={save.isPending}
+                <button
+                  onClick={handleSave}
+                  disabled={save.isPending}
                   style={{
-                    padding: "10px 24px", borderRadius: 10, border: "none",
-                    background: GRD.primary, color: "#fff", fontSize: 14, fontWeight: 600,
+                    padding: "10px 24px",
+                    borderRadius: 10,
+                    border: "none",
+                    background: GRD.primary,
+                    color: "#fff",
+                    fontSize: 14,
+                    fontWeight: 600,
                     cursor: save.isPending ? "not-allowed" : "pointer",
                     opacity: save.isPending ? 0.6 : 1,
-                  }}>
-                  {save.isPending ? "Đang lưu..." : (modal.edit ? "Lưu thay đổi" : "Tạo mới")}
+                  }}
+                >
+                  {save.isPending ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 size={14} className="animate-spin" />
+                      Đang lưu...
+                    </span>
+                  ) : modal.edit ? (
+                    "Lưu thay đổi"
+                  ) : (
+                    "Tạo mới"
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {deleteTarget && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{
+              position: "fixed",
+              inset: 0,
+              zIndex: 1001,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "1rem",
+              background: "rgba(0,0,0,0.7)",
+              backdropFilter: "blur(8px)",
+            }}
+            onClick={(e) =>
+              e.target === e.currentTarget && setDeleteTarget(null)
+            }
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              style={{
+                width: "100%",
+                maxWidth: 400,
+                background: DS.bgCard,
+                borderRadius: 20,
+                border: `1px solid ${DS.border}`,
+                overflow: "hidden",
+              }}
+            >
+              <div
+                className="flex items-center justify-between px-6 py-4"
+                style={{ borderBottom: `1px solid ${DS.border}` }}
+              >
+                <div className="flex items-center gap-3">
+                  <div
+                    className="w-10 h-10 rounded-full flex items-center justify-center"
+                    style={{ background: `${DS.red}20` }}
+                  >
+                    <Trash2 size={18} style={{ color: DS.red }} />
+                  </div>
+                  <div>
+                    <h2
+                      style={{
+                        color: DS.text,
+                        fontFamily: DS.heading,
+                        fontSize: 16,
+                        fontWeight: 900,
+                      }}
+                    >
+                      Xóa dịch vụ
+                    </h2>
+                    <p style={{ color: DS.text4, fontSize: 12, marginTop: 2 }}>
+                      Hành động này không thể hoàn tác
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setDeleteTarget(null)}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    padding: 4,
+                  }}
+                >
+                  <X size={18} style={{ color: DS.text4 }} />
+                </button>
+              </div>
+
+              <div className="px-6 py-5">
+                <p style={{ color: DS.text3, fontSize: 14 }}>
+                  Bạn có chắc muốn xóa dịch vụ{" "}
+                  <strong style={{ color: DS.text }}>
+                    {deleteTarget.nameVi || deleteTarget.name}
+                  </strong>{" "}
+                  (slug:{" "}
+                  <span style={{ fontFamily: DS.mono, color: DS.text4 }}>
+                    {deleteTarget.slug}
+                  </span>
+                  )?
+                </p>
+              </div>
+
+              <div
+                className="flex items-center justify-end gap-3 px-6 py-4"
+                style={{ borderTop: `1px solid ${DS.border}` }}
+              >
+                <button
+                  onClick={() => setDeleteTarget(null)}
+                  style={{
+                    padding: "10px 20px",
+                    borderRadius: 10,
+                    border: `1px solid ${DS.border}`,
+                    background: "rgba(255,255,255,0.04)",
+                    color: DS.text3,
+                    fontSize: 14,
+                    cursor: "pointer",
+                  }}
+                >
+                  Hủy
+                </button>
+                <button
+                  onClick={() => remove.mutate(deleteTarget.id)}
+                  disabled={remove.isPending}
+                  style={{
+                    padding: "10px 20px",
+                    borderRadius: 10,
+                    border: "none",
+                    background: DS.red,
+                    color: "#fff",
+                    fontSize: 14,
+                    fontWeight: 600,
+                    cursor: remove.isPending ? "not-allowed" : "pointer",
+                    opacity: remove.isPending ? 0.6 : 1,
+                  }}
+                >
+                  {remove.isPending ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 size={14} className="animate-spin" />
+                      Đang xóa...
+                    </span>
+                  ) : (
+                    "Xóa"
+                  )}
                 </button>
               </div>
             </motion.div>

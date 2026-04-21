@@ -611,6 +611,7 @@ export default function LpManagePage() {
   const [filterPeriod, setFilterPeriod] = useState<string>("all");
   const [activeView, setActiveView] = useState<"transactions" | "summary">("transactions");
   const [isSavingRate, setIsSavingRate] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
   const qc = useQueryClient();
 
@@ -633,7 +634,7 @@ export default function LpManagePage() {
       qc.invalidateQueries({ queryKey: ["admin", "settings", "lp-rate"] });
     },
     onError: () => {
-      alert("Lỗi lưu cấu hình LP rate. Vui lòng thử lại.");
+      setToast({ message: "Lỗi lưu cấu hình LP rate. Vui lòng thử lại.", type: "error" });
     },
   });
 
@@ -642,6 +643,8 @@ export default function LpManagePage() {
     try {
       await saveRateMutation.mutateAsync(draft);
       setRate(draft);
+    } catch {
+      // error handled silently — mutateAsync rethrows after onError
     } finally {
       setIsSavingRate(false);
     }
@@ -1034,6 +1037,20 @@ export default function LpManagePage() {
           />
         )}
       </AnimatePresence>
+
+      {/* Toast */}
+      {toast && (
+        <div style={{
+          position: "fixed", bottom: 24, right: 24, zIndex: 9999,
+          background: DS.bgCard, border: `1px solid ${toast.type === "error" ? DS.red : DS.green}`,
+          borderRadius: 12, padding: "12px 20px", minWidth: 260,
+          boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+        }}>
+          <div style={{ color: toast.type === "error" ? DS.red : DS.green, fontSize: 13, fontFamily: DS.mono }}>
+            {toast.message}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

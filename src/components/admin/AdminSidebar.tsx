@@ -24,6 +24,7 @@ import {
   Briefcase, Camera, Receipt, Package, FolderCheck,
   Sparkles, Star, Bell, Zap, Calculator, Building2, ShoppingCart, TrendingUp,
   Monitor, X, ChevronRight, Globe, Layers, FilePlus, HelpCircle, Info,
+  HardDrive, Search, PlusCircle, Server,
 } from "lucide-react";
 import { useAuthStore, canAccessTab, type AdminTab } from "@/app/store/authStore";
 import { useAdminTranslations } from "@/i18n/admin/useAdminTranslations";
@@ -120,6 +121,10 @@ const SIDEBAR_GROUPS_CONFIG: NavGroup[] = [
     items: [
       { id: "web_packages", icon: <Package size={16} />, labelKey: "sidebar.nav.web_packages" },
       { id: "domain_prices", icon: <Globe size={16} />, labelKey: "sidebar.nav.domain_prices" },
+      { id: "hosting_plans", icon: <HardDrive size={16} />, labelKey: "sidebar.nav.hosting_plans" },
+      { id: "seo_packages", icon: <Search size={16} />, labelKey: "sidebar.nav.seo_packages" },
+      { id: "addon_services", icon: <PlusCircle size={16} />, labelKey: "sidebar.nav.addon_services" },
+      { id: "infrastructure", icon: <Server size={16} />, labelKey: "sidebar.nav.infrastructure" },
     ],
   },
   {

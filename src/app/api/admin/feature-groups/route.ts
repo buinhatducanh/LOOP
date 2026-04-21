@@ -38,8 +38,36 @@ export async function GET(req: NextRequest) {
       prisma.featureGroup.count({ where }),
     ]);
 
+    // Build feature → tierLevel map from ServicePackage.features arrays
+    // This correctly populates includedTiers even if seed set it to []
+    const packages = await prisma.servicePackage.findMany({
+      where: { type: "website" },
+      select: { tierLevel: true, features: true },
+    });
+
+    const featureTiersMap = new Map<string, number[]>();
+    for (const pkg of packages) {
+      for (const fid of (pkg.features ?? [])) {
+        if (!featureTiersMap.has(fid)) featureTiersMap.set(fid, []);
+        const tiers = featureTiersMap.get(fid)!;
+        if (!tiers.includes(pkg.tierLevel ?? 1)) tiers.push(pkg.tierLevel ?? 1);
+      }
+    }
+
+    // Attach resolved includedTiers to each feature (overrides empty seed values)
+    const enrichedGroups = groups.map(g => ({
+      ...g,
+      features: g.features.map(f => ({
+        ...f,
+        // Prefer DB value if non-empty, otherwise use resolved from packages
+        includedTiers: (f.includedTiers as unknown as number[] ?? []).length > 0
+          ? f.includedTiers
+          : featureTiersMap.get(f.id) ?? [],
+      })),
+    }));
+
     return NextResponse.json({
-      data: groups,
+      data: enrichedGroups,
       pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
     });
   } catch (error) {
@@ -58,6 +86,7 @@ export async function POST(req: NextRequest) {
         slug: data.slug,
         sortOrder: data.sortOrder || 0,
         isActive: data.isActive ?? true,
+        serviceKey: data.serviceKey ?? null,
       },
     });
 

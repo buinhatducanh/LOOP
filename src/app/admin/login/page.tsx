@@ -136,26 +136,32 @@ function hasStoredToken(): boolean {
 
 function AdminLoginContent() {
  const [mounted, setMounted] = useState(false);
+ const [expired, setExpired] = useState(false);
  const router = useRouter();
  const searchParams = useSearchParams();
 
  useEffect(() => {
- // Loop prevention: If AdminLayout server-side rejected the session (e.g. cookie missing/expired),
- // it redirects here with ?reason=expired. We MUST clear stale client data instead of auto-redirecting back.
- if (searchParams.get("reason") === "expired") {
- localStorage.removeItem("loop-staff-token");
- useAuthStore.getState().logout(); // sync condition with Zustand
- setMounted(true);
- // Cleanly strip the query param so refresh doesn't trigger it again
- // DO NOT use window.history.replaceState in App Router as it causes RSC infinite fetch loop!
- router.replace("/admin/login", { scroll: false });
- return;
+ const isExpired = searchParams.get("reason") === "expired";
+
+ // If redirected here due to expired session — clear stale client state and show clean UI.
+ // MUST check this BEFORE hasStoredToken() to prevent race condition.
+ if (isExpired) {
+  localStorage.removeItem("loop-staff-token");
+  useAuthStore.getState().logout();
+  // Show "session expired" UI (no cosmic animation)
+  setExpired(true);
+  setMounted(true);
+  // Strip the query param so refresh doesn't retrigger
+  router.replace("/admin/login", { scroll: false });
+  return;
  }
 
+ // Normal flow: if a valid token exists in localStorage, redirect to admin
  if (hasStoredToken()) {
- router.replace("/admin/overview");
- return;
+  router.replace("/admin/overview");
+  return;
  }
+
  setMounted(true);
  }, [searchParams, router]);
 
@@ -172,7 +178,7 @@ function AdminLoginContent() {
  overflow: "hidden",
  }}
  >
- <AdminAnimatedBg />
+ {!expired && <AdminAnimatedBg />}
 
  {mounted && (
  <motion.div
@@ -235,6 +241,76 @@ function AdminLoginContent() {
  </motion.div>
 
  {/* Form */}
+ <AdminLoginForm />
+ </div>
+ </motion.div>
+ )}
+
+ {/* Session expired — clean UI, no cosmic animation */}
+ {expired && (
+ <motion.div
+ initial={{ opacity: 0, scale: 0.93, y: 24 }}
+ animate={{ opacity: 1, scale: 1, y: 0 }}
+ transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+ style={{
+ width: "100%",
+ maxWidth: 480,
+ margin: "1rem",
+ position: "relative",
+ zIndex: 10,
+ }}
+ >
+ <div style={{
+ background: "rgba(13,21,38,0.88)",
+ backdropFilter: "blur(32px)",
+ WebkitBackdropFilter: "blur(32px)",
+ borderRadius: "1.5rem",
+ border: "1px solid rgba(239,68,68,0.2)",
+ boxShadow: "0 40px 80px rgba(0,0,0,0.5)",
+ padding: "2.5rem",
+ position: "relative",
+ textAlign: "center",
+ }}>
+ {/* Logo */}
+ <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.75rem", marginBottom: "1.75rem" }}>
+ <img
+ src="/assets/design-company/logo-cosmic-infinity.png"
+ alt="LOOP"
+ style={{ width: 40, height: 40, objectFit: "contain" }}
+ />
+ <div>
+ <div style={{ color: DS.text, fontFamily: DS.heading, fontSize: 20, fontWeight: 900, letterSpacing: "0.12em" }}>LOOP</div>
+ <div style={{ color: DS.text5, fontSize: "0.625rem", fontFamily: DS.mono, letterSpacing: "0.2em" }}>SOLUTIONS</div>
+ </div>
+ </div>
+
+ {/* Warning icon */}
+ <div style={{
+ display: "flex",
+ alignItems: "center",
+ justifyContent: "center",
+ width: 56,
+ height: 56,
+ borderRadius: "50%",
+ background: "rgba(239,68,68,0.1)",
+ border: "1px solid rgba(239,68,68,0.25)",
+ margin: "0 auto 1.25rem",
+ }}>
+ <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(239,68,68,0.8)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+ <circle cx="12" cy="12" r="10"/>
+ <line x1="12" y1="8" x2="12" y2="12"/>
+ <line x1="12" y1="16" x2="12.01" y2="16"/>
+ </svg>
+ </div>
+
+ <h2 style={{ color: DS.text, fontSize: "1.125rem", fontWeight: 700, marginBottom: "0.5rem", fontFamily: DS.body }}>
+ Phiên đăng nhập đã hết hạn
+ </h2>
+ <p style={{ color: DS.text5, fontSize: "0.875rem", lineHeight: 1.6, marginBottom: "1.75rem" }}>
+ Vui lòng đăng nhập lại để tiếp tục sử dụng hệ thống quản trị.
+ </p>
+
+ {/* Login form — same form shown below */}
  <AdminLoginForm />
  </div>
  </motion.div>
