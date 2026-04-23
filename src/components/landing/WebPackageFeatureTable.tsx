@@ -11,8 +11,10 @@ import { motion, AnimatePresence } from "motion/react";
 import { DS } from "@/lib/design-tokens";
 import { Check, ChevronDown, ChevronUp, Layers } from "lucide-react";
 
-const fmtVND = (n: number) =>
-    new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(n);
+const fmtVND = (n: number) => {
+    if (n === 0) return "Miễn phí";
+    return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(n);
+};
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -29,11 +31,14 @@ export interface WebPackageFeature {
 }
 
 export interface WebPackageTier {
+    id?: string;
+    slug?: string;
     level: number;
     name: string;
     shortDesc: string;
     basePrice: number;
     marketPrice?: number;
+    savingPct?: number;
     color: string;
 }
 
@@ -88,11 +93,11 @@ function FeatureRow({
                         </span>
                         <div className="min-w-0">
                             <p style={{ color: DS.text, fontSize: 12.5, fontWeight: 600, lineHeight: 1.4 }}>{feature.label}</p>
-                            {feature.labelEn && (
+                            {!!feature.labelEn && (
                                 <p style={{ color: DS.text5, fontSize: 9.5, fontFamily: DS.mono }}>{feature.labelEn}</p>
                             )}
                         </div>
-                        {feature.extraPrice && feature.extraPrice > 0 && (
+                        {typeof feature.extraPrice === 'number' && feature.extraPrice > 0 ? (
                             <span
                                 className="px-1.5 py-0.5 rounded-md flex-shrink-0"
                                 style={{
@@ -105,7 +110,7 @@ function FeatureRow({
                             >
                                 +{fmtVND(feature.extraPrice)}
                             </span>
-                        )}
+                        ) : null}
                     </div>
                 </td>
 
@@ -346,9 +351,14 @@ export function WebPackageFeatureTable({
                                             }}>
                                                 {TIER_NAMES[tier]}
                                             </div>
-                                            {tierData && (
+                                            {tierData && tierData.basePrice > 0 && (
                                                 <div style={{ color: isSelected ? DS.text : DS.text5, fontSize: 10, fontFamily: DS.mono, marginTop: 2 }}>
                                                     {fmtVND(tierData.basePrice)}
+                                                </div>
+                                            )}
+                                            {tierData && tierData.basePrice === 0 && (
+                                                <div style={{ color: isSelected ? DS.text : DS.text5, fontSize: 10, fontFamily: DS.mono, marginTop: 2 }}>
+                                                    Liên hệ
                                                 </div>
                                             )}
                                             {isSelected && (

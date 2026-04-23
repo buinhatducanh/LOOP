@@ -20,10 +20,10 @@ import {
   Shield, Search, Globe, Code2, BarChart3, Layers, Zap, Package,
 } from "lucide-react";
 
-const fmtVND = (n: number) =>
-  new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(n);
-
-// ── Types ──────────────────────────────────────────────────────────────────────
+const fmtVND = (n: number) => {
+  if (n === 0) return "Miễn phí";
+  return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(n);
+};
 
 export interface WizardFeature {
   id: string;

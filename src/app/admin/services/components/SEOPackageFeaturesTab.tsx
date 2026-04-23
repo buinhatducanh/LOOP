@@ -491,7 +491,7 @@ function FeatureRow({
                         <p style={{ color: DS.text, fontSize: 13, fontWeight: 600, marginBottom: 2 }}>
                             {feature.nameVi}
                         </p>
-                        {feature.descriptionVi && (
+                        {!!feature.descriptionVi && (
                             <p style={{ color: DS.text4, fontSize: 11, lineHeight: 1.5, marginBottom: 4 }}>
                                 {feature.descriptionVi}
                             </p>

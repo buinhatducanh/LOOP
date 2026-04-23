@@ -11,8 +11,12 @@ import { motion, AnimatePresence } from "motion/react";
 import { DS } from "@/lib/design-tokens";
 import { Check, X, ChevronDown, ChevronUp, Search, ExternalLink } from "lucide-react";
 
-const fmtVND = (n: number) =>
-    new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(n);
+// ── Utils ──────────────────────────────────────────────────────────────────────
+
+const fmtVND = (n: number) => {
+    if (n === 0) return "Miễn phí";
+    return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(n);
+};
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -92,11 +96,11 @@ function FeatureTableRow({
                         </span>
                         <div className="min-w-0">
                             <p style={{ color: DS.text, fontSize: 13, fontWeight: 600, lineHeight: 1.4 }}>{feature.label}</p>
-                            {feature.labelEn && (
+                            {!!feature.labelEn && (
                                 <p style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono }}>{feature.labelEn}</p>
                             )}
                         </div>
-                        {feature.videoUrl && (
+                        {!!feature.videoUrl && (
                             <a
                                 href={feature.videoUrl}
                                 target="_blank"
@@ -113,7 +117,7 @@ function FeatureTableRow({
                                 <ExternalLink size={10} /> Video
                             </a>
                         )}
-                        {feature.extraPrice && feature.extraPrice > 0 && (
+                        {typeof feature.extraPrice === 'number' && feature.extraPrice > 0 ? (
                             <span
                                 className="px-2 py-0.5 rounded-md"
                                 style={{
@@ -124,7 +128,7 @@ function FeatureTableRow({
                             >
                                 +{fmtVND(feature.extraPrice)}
                             </span>
-                        )}
+                        ) : null}
                     </div>
                 </td>
 
@@ -342,7 +346,7 @@ export function SEOPackageFeatureTable({
                         </div>
                         {tiers && tiers[i + 1] && (
                             <div style={{ color: DS.text5, fontSize: 9, fontFamily: DS.mono }}>
-                                {fmtVND(tiers[i + 1].basePrice)}
+                                {tiers[i + 1].basePrice > 0 ? fmtVND(tiers[i + 1].basePrice) : "Liên hệ"}
                             </div>
                         )}
                     </div>

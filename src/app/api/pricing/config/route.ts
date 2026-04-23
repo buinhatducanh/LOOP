@@ -56,102 +56,102 @@ function getLocalizedName(
  * features are NEW in each tier.
  */
 function mapPackage(
- p: {
- id: string;
- slug: string;
- title: string;
- titleEn?: string | null;
- titleJa?: string | null;
- titleKo?: string | null;
- titleZh?: string | null;
- shortDesc: string;
- shortDescEn?: string | null;
- shortDescJa?: string | null;
- shortDescKo?: string | null;
- shortDescZh?: string | null;
- price: number | null;
- priceText?: string | null;
- features: string[];
- type: string;
- isSubscription: boolean;
- billingPeriod?: string | null;
- sortOrder: number;
- videoUrl?: string | null;
- videoThumbnail?: string | null;
- showFeatureAcknowledge?: boolean;
- acknowledgmentItems?: unknown;
- // Admin-managed fields
- isPopular?: boolean | null;
- tagline?: string | null;
- color?: string | null;
- pages?: string | null;
- pagesVi?: string | null;
- marketPrice?: number | null;
- serviceKey?: string | null;
- tierLevel?: number | null;
- lpReward?: number | null;
- },
- locale: Locale,
- marketPrices: Record<string, number>,
- allPackages: typeof arguments[0][],
+  p: {
+    id: string;
+    slug: string;
+    title: string;
+    titleEn?: string | null;
+    titleJa?: string | null;
+    titleKo?: string | null;
+    titleZh?: string | null;
+    shortDesc: string;
+    shortDescEn?: string | null;
+    shortDescJa?: string | null;
+    shortDescKo?: string | null;
+    shortDescZh?: string | null;
+    price: number | null;
+    priceText?: string | null;
+    features: string[];
+    type: string;
+    isSubscription: boolean;
+    billingPeriod?: string | null;
+    sortOrder: number;
+    videoUrl?: string | null;
+    videoThumbnail?: string | null;
+    showFeatureAcknowledge?: boolean;
+    acknowledgmentItems?: unknown;
+    // Admin-managed fields
+    isPopular?: boolean | null;
+    tagline?: string | null;
+    color?: string | null;
+    pages?: string | null;
+    pagesVi?: string | null;
+    marketPrice?: number | null;
+    serviceKey?: string | null;
+    tierLevel?: number | null;
+    lpReward?: number | null;
+  },
+  locale: Locale,
+  marketPrices: Record<string, number>,
+  allPackages: typeof arguments[0][],
 ) {
- const pkgPrice = p.price ?? 0;
- const marketPrice = marketPrices[p.slug] ?? pkgPrice;
- const saving = marketPrice - pkgPrice;
+  const pkgPrice = p.price ?? 0;
+  const marketPrice = marketPrices[p.slug] ?? pkgPrice;
+  const saving = marketPrice - pkgPrice;
 
- // Compute allFeatures: union of features up to and including this package
- const allFeatures = [...new Set(
- allPackages
- .filter(other => other.sortOrder <= p.sortOrder)
- .flatMap(other => other.features ?? [])
- )];
+  // Compute allFeatures: union of features up to and including this package
+  const allFeatures = [...new Set(
+    allPackages
+      .filter(other => other.sortOrder <= p.sortOrder)
+      .flatMap(other => other.features ?? [])
+  )];
 
- // Parse acknowledgment items from JSON
- const ackItems = (p.acknowledgmentItems ?? []) as {
- key: string;
- ackLabel: string;
- ackLabelEn?: string;
- icon?: string;
- sortOrder?: number;
- }[];
+  // Parse acknowledgment items from JSON
+  const ackItems = (p.acknowledgmentItems ?? []) as {
+    key: string;
+    ackLabel: string;
+    ackLabelEn?: string;
+    icon?: string;
+    sortOrder?: number;
+  }[];
 
- // Build featureAcknowledgments map keyed by feature label
- const featureAcknowledgments: Record<string, (typeof ackItems)[0]> = {};
- for (const item of ackItems) {
- featureAcknowledgments[item.key] = item;
- }
+  // Build featureAcknowledgments map keyed by feature label
+  const featureAcknowledgments: Record<string, (typeof ackItems)[0]> = {};
+  for (const item of ackItems) {
+    featureAcknowledgments[item.key] = item;
+  }
 
- return {
- id: p.id,
- slug: p.slug,
- name: getLocalizedName(locale, p.title, p.title, p.titleEn, p.titleJa, p.titleKo, p.titleZh),
- desc: getLocalizedName(locale, p.shortDesc, p.shortDesc, p.shortDescEn, p.shortDescJa, p.shortDescKo, p.shortDescZh),
- priceText: p.priceText ?? (pkgPrice > 0 ? `${(pkgPrice / 1_000_000).toFixed(0)} triệu` : "Liên hệ báo giá"),
- price: pkgPrice,
- multiplier: 1,
- features: p.features ?? [],
- /** All features up to this tier (inclusive) */
- allFeatures,
- type: p.type,
- isSubscription: p.isSubscription,
- billingPeriod: p.billingPeriod,
- marketPrice,
- savingPct: saving > 0 ? Math.round((saving / marketPrice) * 100) : 0,
- /** Video & acknowledgment fields */
- videoUrl: p.videoUrl ?? null,
- videoThumbnail: p.videoThumbnail ?? null,
- showFeatureAcknowledge: p.showFeatureAcknowledge ?? true,
- acknowledgmentItems: ackItems,
- featureAcknowledgments,
- /** Admin-managed fields from ServicePackage */
- isPopular: p.isPopular ?? false,
- tagline: p.tagline ?? null,
- color: p.color ?? null,
- pages: p.pages ?? null,
- pagesVi: p.pagesVi ?? null,
- serviceKey: p.serviceKey ?? null,
- tierLevel: p.tierLevel ?? 1,
- };
+  return {
+    id: p.id,
+    slug: p.slug,
+    name: getLocalizedName(locale, p.title, p.title, p.titleEn, p.titleJa, p.titleKo, p.titleZh),
+    desc: getLocalizedName(locale, p.shortDesc, p.shortDesc, p.shortDescEn, p.shortDescJa, p.shortDescKo, p.shortDescZh),
+    priceText: p.priceText ?? (pkgPrice > 0 ? `${(pkgPrice / 1_000_000).toFixed(0)} triệu` : "Liên hệ báo giá"),
+    price: pkgPrice,
+    multiplier: 1,
+    features: p.features ?? [],
+    /** All features up to this tier (inclusive) */
+    allFeatures,
+    type: p.type,
+    isSubscription: p.isSubscription,
+    billingPeriod: p.billingPeriod,
+    marketPrice,
+    savingPct: saving > 0 ? Math.round((saving / marketPrice) * 100) : 0,
+    /** Video & acknowledgment fields */
+    videoUrl: p.videoUrl ?? null,
+    videoThumbnail: p.videoThumbnail ?? null,
+    showFeatureAcknowledge: p.showFeatureAcknowledge ?? true,
+    acknowledgmentItems: ackItems,
+    featureAcknowledgments,
+    /** Admin-managed fields from ServicePackage */
+    isPopular: p.isPopular ?? false,
+    tagline: p.tagline ?? null,
+    color: p.color ?? null,
+    pages: p.pages ?? null,
+    pagesVi: p.pagesVi ?? null,
+    serviceKey: p.serviceKey ?? null,
+    tierLevel: p.tierLevel ?? 1,
+  };
 }
 
 function mapFeature(f: {
@@ -299,6 +299,7 @@ function mapHostingPlan(h: {
 }
 
 function mapDomainPrice(d: {
+  id: string;
   extension: string;
   registrationPrice: number;
   renewalPrice: number;
@@ -309,7 +310,8 @@ function mapDomainPrice(d: {
   isAvailable: boolean;
 }, locale: Locale) {
   return {
-    extension: d.extension,
+    id: d.id,
+    extension: d.extension.startsWith('.') ? d.extension : `.${d.extension}`,
     registrationPrice: d.registrationPrice,
     renewalPrice: d.renewalPrice,
     period: getLocalizedName(locale, d.period, d.periodVi, d.periodVi, d.periodVi, d.periodVi, d.periodVi),
@@ -548,7 +550,7 @@ export async function GET(request: Request) {
     // Package freebies
     let packageFreebies: Record<string, { hosting?: string; domain?: string[]; note: string }> = {};
     if (freebiesSetting?.value) {
-      try { packageFreebies = JSON.parse(freebiesSetting.value); } catch {}
+      try { packageFreebies = JSON.parse(freebiesSetting.value); } catch { }
     }
 
     // SEO tiers — map to wizard format (no includedTiers needed for tiers themselves)
@@ -573,7 +575,7 @@ export async function GET(request: Request) {
     // SEO feature matrix — override includedTiers per feature from SiteSetting
     let seoFeatureMatrix: Record<string, number[]> = {};
     if (seoMatrix?.value) {
-      try { seoFeatureMatrix = JSON.parse(seoMatrix.value); } catch {}
+      try { seoFeatureMatrix = JSON.parse(seoMatrix.value); } catch { }
     }
 
     // SEO features — includedTiers from SiteSetting matrix
@@ -634,19 +636,50 @@ export async function GET(request: Request) {
 
     // Map with locale-aware fields — mapPackage gets marketPrices for anchor display
     const wizardPackages = packages.map((p) => mapPackage(p, locale, marketPrices, packages));
+    // Deduplicate packages by slug
+    const uniqueWizardPackages = wizardPackages.filter((p, i, self) => i === self.findIndex(t => t.slug === p.slug));
+
     const wizardFeatures = features.map((f) => mapFeature(f, locale));
+    // Deduplicate features by id
+    const uniqueWizardFeatures = wizardFeatures.filter((f, i, self) => i === self.findIndex(t => t.id === f.id));
+
     const wizardAddons = addons.map((a) => mapAddon(a, locale));
+    // Deduplicate addons by slug
+    const uniqueWizardAddons = wizardAddons.filter((a, i, self) => i === self.findIndex(t => t.slug === a.slug));
+
     const wizardInfraTiers = infraTiers.map((t) => mapInfraTier(t, locale));
+    // Deduplicate infra tiers by slug
+    const uniqueWizardInfraTiers = wizardInfraTiers.filter((t, i, self) => i === self.findIndex(x => x.slug === t.slug));
+
     const wizardHostingPlans = hostingPlans.map((h) => mapHostingPlan(h, locale));
-    const wizardDomainPrices = domainPrices.map((d) => mapDomainPrice(d, locale));
+    // Deduplicate hosting plans by slug
+    const uniqueWizardHostingPlans = wizardHostingPlans.filter((h, i, self) => i === self.findIndex(t => t.slug === h.slug));
+
+    // Deduplicate domain prices by extension (take the first one found)
+    const uniqueDomainPrices: typeof domainPrices = [];
+    const seenExtensions = new Set<string>();
+    for (const d of domainPrices) {
+      if (!seenExtensions.has(d.extension)) {
+        seenExtensions.add(d.extension);
+        uniqueDomainPrices.push(d);
+      }
+    }
+    const wizardDomainPrices = uniqueDomainPrices.map((d) => mapDomainPrice(d, locale));
 
     // Group localized features by localized category key
     const localizedFeaturesByCategory = Object.fromEntries(
       Object.entries(featuresByCategory).map(([catKey, feats]) => [
         catKey,
-        feats.map((f) => mapFeature(f, locale)),
+        feats.map((f) => mapFeature(f, locale)).filter((f, i, self) => i === self.findIndex(t => t.id === f.id)),
       ])
     );
+
+    // Deduplicate SEO tiers by level
+    const uniqueSeoTiers = wizardSeoTiers.filter((t, i, self) => i === self.findIndex(x => x.level === t.level));
+    // Deduplicate SEO features by id
+    const uniqueSeoFeatures = wizardSeoFeatures.filter((f, i, self) => i === self.findIndex(x => x.id === f.id));
+
+
 
     // Build wizardWebFeatures from FeatureGroup + Feature DB data
     // Shape matches WebPackageFeature interface used by BookingWizardClient
@@ -665,17 +698,20 @@ export async function GET(request: Request) {
       }))
     );
 
+    // Deduplicate Web features by id
+    const uniqueWebFeatures = wizardWebFeatures.filter((f, i, self) => i === self.findIndex(x => x.id === f.id));
+
     return ok(
       {
         basePrice,
         sampleXp: sampleCalc.totalXp,
         sampleRewardLevel: sampleCalc.rewardLevel,
-        packages: wizardPackages,
-        features: wizardFeatures,
+        packages: uniqueWizardPackages,
+        features: uniqueWizardFeatures,
         featuresByCategory: localizedFeaturesByCategory,
-        addons: wizardAddons,
-        infraTiers: wizardInfraTiers,
-        hostingPlans: wizardHostingPlans,
+        addons: uniqueWizardAddons,
+        infraTiers: uniqueWizardInfraTiers,
+        hostingPlans: uniqueWizardHostingPlans,
         domainPrices: wizardDomainPrices,
         lpRate: {
           lpPerVnd: lpToVnd,
@@ -697,18 +733,18 @@ export async function GET(request: Request) {
           return acc;
         }, {}),
         vatRate,
-         /** Package freebies per slug */
+        /** Package freebies per slug */
         packageFreebies,
-/** Marketing data — loaded from SiteSetting "website_pricing_config" */
+        /** Marketing data — loaded from SiteSetting "website_pricing_config" */
         marketing: {
           promotion: promotion?.active ? promotion : undefined,
           slotsLeft: slotsLeft ?? undefined,
         },
         /** SEO tiers + features — wired from DB (ServiceTier + ServiceAttribute serviceKey=seo) */
-        seoTiers: wizardSeoTiers,
-        seoFeatures: wizardSeoFeatures,
+        seoTiers: uniqueSeoTiers,
+        seoFeatures: uniqueSeoFeatures,
         /** Web features — loaded from FeatureGroup+Feature DB (serviceKey="web") */
-        webFeatures: wizardWebFeatures,
+        webFeatures: uniqueWebFeatures,
         meta: {
           locale,
           cached: true,

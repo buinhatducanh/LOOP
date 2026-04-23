@@ -97,6 +97,7 @@ interface WizardHostingPlan {
   color: string;
 }
 interface WizardDomainPrice {
+  id?: string;
   extension: string;
   registrationPrice: number;
   renewalPrice: number;
@@ -108,6 +109,7 @@ interface WizardDomainPrice {
 }
 
 interface DomainSearchResult {
+  id?: string;
   extension: string;
   registrationPrice: number;
   renewalPrice: number;
@@ -176,10 +178,20 @@ const DEFAULT_LP_RATE: LpRateConfig = {
   lpPerVnd: 500, vndPerLp: 2, maxDiscountPercent: 20, lpEarnPerMillion: 50,
 };
 
+/** Package prices keyed by slug — module-level so always available before render */
+const PKG_PRICE_MAP: Record<string, { basePrice: number; marketPrice: number; name: string }> = {
+  landing: { basePrice: 1_890_000, marketPrice: 2_500_000, name: "Landing Page" },
+  "ban-hang": { basePrice: 3_890_000, marketPrice: 5_500_000, name: "Bán Hàng Cơ Bản" },
+  "doanh-nghiep": { basePrice: 7_890_000, marketPrice: 8_900_000, name: "Doanh Nghiệp" },
+  "yeu-cau": { basePrice: 10_890_000, marketPrice: 12_000_000, name: "Theo Yêu Cầu" },
+};
+
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
-const fmtVND = (n: number) =>
-  new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(n);
+const fmtVND = (n: number) => {
+  if (n === 0) return "Miễn phí";
+  return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(n);
+};
 
 const calcLpDiscount = (subtotal: number, lpToRedeem: number, lpBalance: number, rate: LpRateConfig) => {
   const lpCapped = Math.min(lpToRedeem, lpBalance);
@@ -340,13 +352,8 @@ export function BookingWizardClient({ locale }: Props) {
     1: "Landing Page", 2: "Bán Hàng Cơ Bản", 3: "Doanh Nghiệp", 4: "Theo Yêu Cầu",
   };
 
-  /** Known DB prices by slug — these are the real prices stored in ServicePackage DB */
-  const DB_PACKAGE_PRICES: Record<string, { basePrice: number; marketPrice: number; name: string; nameVi: string }> = {
-    landing: { basePrice: 1_890_000, marketPrice: 2_500_000, name: "Landing Page", nameVi: "Thiết kế Landing Page" },
-    "ban-hang": { basePrice: 3_890_000, marketPrice: 5_500_000, name: "Bán Hàng Cơ Bản", nameVi: "Bán Hàng Cơ Bản" },
-    "doanh-nghiep": { basePrice: 7_890_000, marketPrice: 11_900_000, name: "Doanh Nghiệp", nameVi: "Thiết Kế Website Doanh Nghiệp" },
-    "yeu-cau": { basePrice: 12_900_000, marketPrice: 18_000_000, name: "Theo Yêu Cầu", nameVi: "Thiết Kế Theo Yêu Cầu" },
-  };
+  // DB_PACKAGE_PRICES → moved to module-level as PKG_PRICE_MAP
+  const DB_PACKAGE_PRICES = PKG_PRICE_MAP;
 
   /** Build webTiers — uses DB prices from DB_PACKAGE_PRICES keyed by slug */
   const webTiers: WebPackageTier[] = [1, 2, 3, 4].map(level => {
@@ -558,12 +565,19 @@ export function BookingWizardClient({ locale }: Props) {
 
   // ── Derived values ────────────────────────────────────────────────────
   const service = WEBSITE_SERVICE;
-  const selectedPkg = packages.find(p => p.id === selectedPackage);
+  const selectedPkg = packages.find(p => p.id === selectedPackage || p.slug === selectedPackage) || webTiers.find(t => TIER_TO_PKG[t.level] === selectedPackage);
 
-  // Base price: from DB_PACKAGE_PRICES keyed by pkg.id (the slug)
-  const currentBasePrice = selectedPkg
-    ? (DB_PACKAGE_PRICES[selectedPkg.id]?.basePrice ?? selectedPkg.price ?? selectedPkg.marketPrice ?? 1_890_000)
-    : 0;
+  // Summary bar data — uses module-level PKG_PRICE_MAP, never undefined
+  const _pkgStatic = PKG_PRICE_MAP[selectedPackage];
+  const summaryName = (selectedPkg as any)?.name ?? _pkgStatic?.name ?? "";
+  const summaryColor = (selectedPkg as any)?.color ?? TIER_COLORS_WEB[PKG_TO_TIER[selectedPackage] ?? 2] ?? DS.blue;
+  const summarySavingPct = _pkgStatic && _pkgStatic.marketPrice > _pkgStatic.basePrice
+    ? Math.round((_pkgStatic.marketPrice - _pkgStatic.basePrice) / _pkgStatic.marketPrice * 100)
+    : ((selectedPkg as any)?.savingPct ?? 0);
+  const showSummary = !!_pkgStatic; // true whenever selectedPackage is a known slug
+
+  // Base price — always from PKG_PRICE_MAP (module-level, always reliable)
+  const currentBasePrice = _pkgStatic?.basePrice ?? 0;
 
   // Filter: only count non-included features for price
   const extraFeaturePrice = currentFeatureOptions
@@ -573,7 +587,9 @@ export function BookingWizardClient({ locale }: Props) {
   const selectedHosting = hostingPlans.find(h => h.slug === selectedHostingPlan);
   const hostingCost = selectedHosting?.discountedPrice ?? 0;
   const domainCost = selectedDomains.reduce((s, d) => s + d.registrationPrice, 0);
-  const currentSubtotal = currentBasePrice + extraFeaturePrice + currentExtraPrice + hostingCost + domainCost;
+  const selectedSeo = seoTiers.find(t => t.level === selectedSeoTier);
+  const seoCost = selectedSeo?.basePrice ?? 0;
+  const currentSubtotal = currentBasePrice + extraFeaturePrice + currentExtraPrice + hostingCost + domainCost + seoCost;
 
   useEffect(() => {
     const maxDiscountVnd = currentSubtotal * (lpRate.maxDiscountPercent / 100);
@@ -607,6 +623,7 @@ export function BookingWizardClient({ locale }: Props) {
           d.domain === domainQuery + price.extension
         );
         return {
+          id: price.id,
           extension: price.extension,
           registrationPrice: apiResult?.price ?? price.registrationPrice,
           renewalPrice: price.renewalPrice,
@@ -620,6 +637,7 @@ export function BookingWizardClient({ locale }: Props) {
     } catch {
       // On error, fall back to all available with local prices
       const results: DomainSearchResult[] = domainPrices.map(price => ({
+        id: price.id,
         extension: price.extension,
         registrationPrice: price.registrationPrice,
         renewalPrice: price.renewalPrice,
@@ -655,7 +673,7 @@ export function BookingWizardClient({ locale }: Props) {
       landing: 1_890_000,
       "ban-hang": 3_890_000,
       "doanh-nghiep": 7_890_000,
-      "yeu-cau": 12_900_000,
+      "yeu-cau": 10_890_000,
     };
 
     const basePrice = pkg ? (PACKAGE_PRICES_SUBMIT[pkg.id] ?? DB_PACKAGE_PRICES[pkg.id]?.basePrice ?? 1_890_000) : 1_890_000;
@@ -666,7 +684,9 @@ export function BookingWizardClient({ locale }: Props) {
     const extraPricesTotal = extraOptions.filter(e => selectedExtras.includes(e.id)).reduce((s, e) => s + e.price, 0);
     const domainTotalCost = selectedDomains.reduce((s, d) => s + d.registrationPrice, 0);
     const hostingTotalCost = selectedHosting?.discountedPrice ?? 0;
-    const subtotal = basePrice + featPrices + extraPricesTotal + hostingTotalCost + domainTotalCost;
+    const selectedSeo = seoTiers.find(t => t.level === selectedSeoTier);
+    const seoTotalCost = selectedSeo?.basePrice ?? 0;
+    const subtotal = basePrice + featPrices + extraPricesTotal + hostingTotalCost + domainTotalCost + seoTotalCost;
     // Deduct LP discount from total (lpDiscount already capped at 20% in useEffect)
     const vndDiscount = Math.round(lpDiscount * lpRate.lpPerVnd);
     const total = Math.round((subtotal - vndDiscount) * (1 + vatRate));
@@ -722,6 +742,11 @@ export function BookingWizardClient({ locale }: Props) {
           name: domainQuery + d.extension,
           price: d.registrationPrice,
         })),
+        seo: selectedSeo ? {
+          level: selectedSeo.level,
+          name: selectedSeo.name,
+          price: selectedSeo.basePrice,
+        } : null,
         lpDiscount: vndDiscount,
         lpUsed: lpDiscount,
         vatRate,
@@ -787,12 +812,12 @@ export function BookingWizardClient({ locale }: Props) {
   const extraTotalForDisplay = extraOptions.filter(e => selectedExtras.includes(e.id)).reduce((s, e) => s + e.price, 0);
   const hostingTotal = selectedHosting?.discountedPrice ?? 0;
   const domainTotal = selectedDomains.reduce((s, d) => s + d.registrationPrice, 0);
-  const subtotalForDisplay = currentBasePrice + featTotalForDisplay + extraTotalForDisplay + hostingTotal + domainTotal;
+  const subtotalForDisplay = currentBasePrice + featTotalForDisplay + extraTotalForDisplay + hostingTotal + domainTotal + seoCost;
   const lpDisc = calcLpDiscount(subtotalForDisplay, lpDiscount, lpBalance, lpRate);
   const vatAmt = Math.round((subtotalForDisplay - lpDisc.vndDiscount) * vatRate);
   const grandForDisplay = subtotalForDisplay - lpDisc.vndDiscount + vatAmt;
   const lpEarnedDisplay = Math.floor(grandForDisplay / 1_000_000) * lpRate.lpEarnPerMillion;
-  const pkgColor = selectedPkg?.color ?? DS.blue;
+  const pkgColor = summaryColor;
 
   // ── Inline package selector ──────────────────────────────────────────────────
   const getPkgPrice = (pkg: WizardPackage) => pkg.price ?? pkg.marketPrice ?? DB_PACKAGE_PRICES[pkg.id]?.basePrice ?? 1_890_000;
@@ -850,14 +875,14 @@ export function BookingWizardClient({ locale }: Props) {
               {/* Left: package badge + total */}
               <div>
                 <div style={{ color: pkgColor, fontSize: 9, fontFamily: DS.mono, letterSpacing: "0.2em", marginBottom: 4 }}>
-                  {selectedPkg ? "GÓI ĐÃ CHỌN" : "CHỌN GÓI WEBSITE"}
+                  {showSummary ? "GÓI ĐÃ CHỌN" : "CHỌN GÓI WEBSITE"}
                 </div>
-                {selectedPkg ? (
+                {showSummary ? (
                   <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
                     <span style={{ color: DS.text, fontFamily: DS.heading, fontSize: 32, fontWeight: 900 }}>{fmtVND(grandForDisplay)}</span>
-                    <span style={{ color: pkgColor, fontSize: 13, fontFamily: DS.mono }}>{selectedPkg.name}</span>
-                    {selectedPkg.savingPct && selectedPkg.savingPct > 0 && (
-                      <span style={{ background: "rgba(34,197,94,0.12)", color: DS.green, fontSize: 11, fontFamily: DS.mono, padding: "2px 8px", borderRadius: 6 }}>−{selectedPkg.savingPct}%</span>
+                    <span style={{ color: pkgColor, fontSize: 13, fontFamily: DS.mono }}>{summaryName}</span>
+                    {summarySavingPct > 0 && (
+                      <span style={{ background: "rgba(34,197,94,0.12)", color: DS.green, fontSize: 11, fontFamily: DS.mono, padding: "2px 8px", borderRadius: 6 }}>−{summarySavingPct}%</span>
                     )}
                   </div>
                 ) : (
@@ -866,7 +891,7 @@ export function BookingWizardClient({ locale }: Props) {
               </div>
 
               {/* Right: price breakdown chips */}
-              {selectedPkg && (
+              {showSummary && (
                 <div className="flex flex-wrap gap-2">
                   {currentBasePrice > 0 && (
                     <div style={{ background: `${pkgColor}10`, border: `1px solid ${pkgColor}25`, borderRadius: 8, padding: "4px 12px" }}>
@@ -891,6 +916,11 @@ export function BookingWizardClient({ locale }: Props) {
                   {domainTotal > 0 && (
                     <div style={{ background: `${DS.cyan}10`, border: `1px solid ${DS.cyan}25`, borderRadius: 8, padding: "4px 12px" }}>
                       <span style={{ color: DS.cyan, fontSize: 12, fontFamily: DS.mono }}>+Domain: {fmtVND(domainTotal)}</span>
+                    </div>
+                  )}
+                  {seoCost > 0 && (
+                    <div style={{ background: `${DS.amber}10`, border: `1px solid ${DS.amber}25`, borderRadius: 8, padding: "4px 12px" }}>
+                      <span style={{ color: DS.amber, fontSize: 12, fontFamily: DS.mono }}>+SEO: {fmtVND(seoCost)}</span>
                     </div>
                   )}
                   {vatAmt > 0 && (
@@ -1018,7 +1048,7 @@ export function BookingWizardClient({ locale }: Props) {
                                 {selectedPkg.name}
                               </span>
                             </div>
-                            {selectedPkg.savingPct && selectedPkg.savingPct > 0 && (
+                            {!!selectedPkg.savingPct && selectedPkg.savingPct > 0 && (
                               <div style={{
                                 display: "inline-block",
                                 background: "rgba(34,197,94,0.12)",
@@ -1083,6 +1113,12 @@ export function BookingWizardClient({ locale }: Props) {
                             <div style={{ background: `${DS.cyan}10`, border: `1px solid ${DS.cyan}30`, borderRadius: 12, padding: "8px 16px" }}>
                               <div style={{ color: DS.text4, fontSize: 9, fontFamily: DS.mono, marginBottom: 2 }}>DOMAIN</div>
                               <div style={{ color: DS.cyan, fontSize: 15, fontFamily: DS.mono, fontWeight: 700 }}>+{fmtVND(domainTotal)}</div>
+                            </div>
+                          )}
+                          {seoCost > 0 && (
+                            <div style={{ background: `${DS.amber}10`, border: `1px solid ${DS.amber}30`, borderRadius: 12, padding: "8px 16px" }}>
+                              <div style={{ color: DS.text4, fontSize: 9, fontFamily: DS.mono, marginBottom: 2 }}>SEO</div>
+                              <div style={{ color: DS.amber, fontSize: 15, fontFamily: DS.mono, fontWeight: 700 }}>+{fmtVND(seoCost)}</div>
                             </div>
                           )}
                           {vatAmt > 0 && (
@@ -1173,7 +1209,7 @@ export function BookingWizardClient({ locale }: Props) {
                         >
                           {domainPrices.map(d => (
                             <option key={d.extension} value={d.extension} style={{ background: "#0F172A" }}>
-                              {d.extension}
+                              {d.extension.startsWith('.') ? d.extension : `.${d.extension}`}
                             </option>
                           ))}
                         </select>
@@ -1238,7 +1274,7 @@ export function BookingWizardClient({ locale }: Props) {
                             const isSelected = selectedDomains.some(d => d.extension === result.extension);
                             return (
                               <motion.div
-                                key={result.extension}
+                                key={result.id || result.extension}
                                 onClick={() => {
                                   if (result.available) {
                                     setSelectedDomains(prev =>
@@ -1315,7 +1351,7 @@ export function BookingWizardClient({ locale }: Props) {
                             <div className="flex flex-wrap gap-2">
                               {selectedDomains.map(d => (
                                 <span
-                                  key={d.extension}
+                                  key={d.id || d.extension}
                                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs"
                                   style={{ background: `${DS.green}15`, color: DS.green, border: "1px solid rgba(34,197,94,0.3)", fontFamily: DS.mono }}
                                 >
@@ -1367,7 +1403,7 @@ export function BookingWizardClient({ locale }: Props) {
                           </thead>
                           <tbody>
                             {domainPrices.map(d => (
-                              <tr key={d.extension} style={{ borderBottom: `1px solid ${DS.border}` }}>
+                              <tr key={d.id || d.extension} style={{ borderBottom: `1px solid ${DS.border}` }}>
                                 <td style={{ padding: "10px 14px" }}><span style={{ color: DS.blue, fontFamily: DS.mono, fontSize: 13, fontWeight: 700 }}>{d.extension}</span></td>
                                 <td style={{ padding: "10px 14px", textAlign: "right" }}><span style={{ color: DS.text, fontFamily: DS.mono, fontSize: 12 }}>{fmtVND(d.registrationPrice)}</span></td>
                                 <td style={{ padding: "10px 14px", textAlign: "right" }}><span style={{ color: DS.text4, fontFamily: DS.mono, fontSize: 12 }}>{fmtVND(d.renewalPrice)}</span></td>
@@ -1963,37 +1999,79 @@ export function BookingWizardClient({ locale }: Props) {
 
           {/* ── Navigation Buttons (Next / Back) ── */}
           {!submitted && (
-            <div style={{ marginTop: 32, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16 }}>
-              <button
-                onClick={() => setStep(s => Math.max(0, s - 1))}
-                disabled={step === 0}
-                style={{
-                  padding: "12px 28px", borderRadius: 12, fontSize: 14, fontWeight: 600, fontFamily: DS.body,
-                  cursor: step === 0 ? "not-allowed" : "pointer",
-                  background: step === 0 ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.06)",
-                  border: step === 0 ? "1px solid rgba(255,255,255,0.06)" : `1px solid ${DS.border}`,
-                  color: step === 0 ? DS.text5 : DS.text3,
-                  display: "flex", alignItems: "center", gap: 8, transition: "all 0.2s",
-                }}>
-                <ArrowLeft size={15} /> Quay lại
-              </button>
-              {step < 5 && (
-                <button
-                  onClick={() => { if (canNext()) setStep(s => s + 1); }}
-                  disabled={!canNext()}
+            <div style={{ marginTop: 32 }}>
+              {/* Bottom Summary — show in all steps including payment */}
+              {selectedPkg && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
                   style={{
-                    padding: "12px 32px", borderRadius: 12, fontSize: 14, fontWeight: 700, fontFamily: DS.body,
-                    cursor: canNext() ? "pointer" : "not-allowed",
-                    background: canNext() ? GRD.primary : "rgba(255,255,255,0.05)",
-                    border: "none",
-                    color: canNext() ? "#fff" : DS.text4,
-                    display: "flex", alignItems: "center", gap: 8,
-                    boxShadow: canNext() ? "0 0 20px rgba(129,140,248,0.3)" : "none",
-                    transition: "all 0.3s",
-                  }}>
-                  Tiếp tục <ArrowRight size={15} />
-                </button>
+                    background: "rgba(15,23,42,0.8)",
+                    backdropFilter: "blur(12px)",
+                    border: `1px solid ${pkgColor}30`,
+                    borderRadius: 16,
+                    padding: "16px 20px",
+                    marginBottom: 20,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    flexWrap: "wrap",
+                    gap: 12,
+                    boxShadow: `0 -10px 30px rgba(0,0,0,0.3)`,
+                  }}
+                >
+                  <div>
+                    <div style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.1em", marginBottom: 2 }}>TỔNG CỘNG TẠM TÍNH</div>
+                    <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+                      <span style={{ color: DS.text, fontSize: 24, fontWeight: 900, fontFamily: DS.heading }}>{fmtVND(grandForDisplay)}</span>
+                      <span style={{ color: pkgColor, fontSize: 11, fontFamily: DS.mono }}>{selectedPkg.name}</span>
+                    </div>
+                  </div>
+
+                  <div className="hidden sm:flex items-center gap-4">
+                    <div style={{ textAlign: "right" }}>
+                      <div style={{ color: DS.text5, fontSize: 9, fontFamily: DS.mono }}>TIẾN ĐỘ</div>
+                      <div style={{ color: DS.text3, fontSize: 11, fontWeight: 600 }}>Bước {step + 1} / 6</div>
+                    </div>
+                    <div style={{ width: 60, height: 4, background: "rgba(255,255,255,0.06)", borderRadius: 2, overflow: "hidden" }}>
+                      <div style={{ width: `${((step + 1) / 6) * 100}%`, height: "100%", background: GRD.primary }} />
+                    </div>
+                  </div>
+                </motion.div>
               )}
+
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16 }}>
+                <button
+                  onClick={() => setStep(s => Math.max(0, s - 1))}
+                  disabled={step === 0}
+                  style={{
+                    padding: "12px 28px", borderRadius: 12, fontSize: 14, fontWeight: 600, fontFamily: DS.body,
+                    cursor: step === 0 ? "not-allowed" : "pointer",
+                    background: step === 0 ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.06)",
+                    border: step === 0 ? "1px solid rgba(255,255,255,0.06)" : `1px solid ${DS.border}`,
+                    color: step === 0 ? DS.text5 : DS.text3,
+                    display: "flex", alignItems: "center", gap: 8, transition: "all 0.2s",
+                  }}>
+                  <ArrowLeft size={15} /> Quay lại
+                </button>
+                {step < 5 && (
+                  <button
+                    onClick={() => { if (canNext()) setStep(s => s + 1); }}
+                    disabled={!canNext()}
+                    style={{
+                      padding: "12px 32px", borderRadius: 12, fontSize: 14, fontWeight: 700, fontFamily: DS.body,
+                      cursor: canNext() ? "pointer" : "not-allowed",
+                      background: canNext() ? GRD.primary : "rgba(255,255,255,0.05)",
+                      border: "none",
+                      color: canNext() ? "#fff" : DS.text4,
+                      display: "flex", alignItems: "center", gap: 8,
+                      boxShadow: canNext() ? "0 0 20px rgba(129,140,248,0.3)" : "none",
+                      transition: "all 0.3s",
+                    }}>
+                    {step === 4 ? "Xem báo giá & Thanh toán" : "Tiếp tục"} <ArrowRight size={15} />
+                  </button>
+                )}
+              </div>
             </div>
           )}
 

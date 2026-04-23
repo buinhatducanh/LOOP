@@ -124,10 +124,10 @@ function TierRow({ tier, onEdit, onDelete }: {
         <div style={{ color: DS.text, fontFamily: DS.mono, fontWeight: 700, fontSize: 13 }}>
           {fmtVND(tier.basePrice)}
         </div>
-        {tier.marketPrice && tier.marketPrice > tier.basePrice && (
-          <div style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono, textDecoration: "line-through" }}>
+        {!!tier.marketPrice && tier.marketPrice > tier.basePrice && (
+          <span style={{ color: DS.text5, fontSize: 11, fontFamily: DS.mono, textDecoration: "line-through" }}>
             {fmtVND(tier.marketPrice)}
-          </div>
+          </span>
         )}
       </div>
 
@@ -537,7 +537,7 @@ function WebFeatureMatrixTab() {
                 <span style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono }}>{fi + 1}</span>
                 <div>
                   <div style={{ color: DS.text, fontSize: 12, fontWeight: 600 }}>{f.label}</div>
-                  {f.extraPrice && f.extraPrice > 0 && (
+                  {typeof f.extraPrice === 'number' && f.extraPrice > 0 && (
                     <span style={{ color: DS.amber, fontSize: 9, fontFamily: DS.mono }}>+{fmtVND(f.extraPrice)}</span>
                   )}
                 </div>

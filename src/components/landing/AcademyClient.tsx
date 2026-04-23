@@ -568,7 +568,7 @@ function CourseCard({
               {t("featured")}
             </div>
           )}
-          {course.lpReward && (
+          {!!course.lpReward && (
             <div style={{ position: "absolute", top: 10, right: 10, background: `${DS.cyan}20`, border: `1px solid ${DS.cyan}60`, color: DS.cyan, borderRadius: 8, padding: "3px 8px", fontSize: 10, fontFamily: DS.mono, fontWeight: 700 }}>
               +{course.lpReward} LP
             </div>

@@ -591,7 +591,7 @@ export function WebPurchaseWizard({ locale, isAuthenticated, t }: Props) {
  {dbTldOptions.length > 0 ? (
  dbTldOptions.map((tld) => (
  <option key={tld.extension} value={tld.extension}>
- .{tld.extension}
+ {tld.extension.startsWith('.') ? tld.extension : `.${tld.extension}`}
  </option>
  ))
  ) : (
