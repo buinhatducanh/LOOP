@@ -13,9 +13,11 @@ import { motion, AnimatePresence } from "motion/react";
 import { adminApi } from "@/lib/api/client";
 import { DS, GRD } from "@/lib/design-tokens";
 import {
-  Plus, Edit3, X, ToggleRight, ToggleLeft,
-  Trash2, Loader2, Search, RefreshCw,
+  Plus, Edit3, X,
+  Trash2, Search, RefreshCw,
+  ToggleRight, ToggleLeft,
 } from "lucide-react";
+import { InlineLoader } from "@/components/ui/LoadingScreen";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -333,11 +335,7 @@ export default function AddonServicesPage() {
                     color: DS.text4,
                   }}
                 >
-                  <Loader2
-                    size={20}
-                    className="animate-spin"
-                    style={{ margin: "0 auto" }}
-                  />
+                  <InlineLoader size={32} />
                 </td>
               </tr>
             ) : items.length === 0 ? (
@@ -908,10 +906,7 @@ export default function AddonServicesPage() {
                   }}
                 >
                   {save.isPending ? (
-                    <span className="flex items-center gap-2">
-                      <Loader2 size={14} className="animate-spin" />
-                      Đang lưu...
-                    </span>
+                    <InlineLoader size={14} color="#fff" />
                   ) : modal.edit ? (
                     "Lưu thay đổi"
                   ) : (
@@ -1047,10 +1042,7 @@ export default function AddonServicesPage() {
                   }}
                 >
                   {remove.isPending ? (
-                    <span className="flex items-center gap-2">
-                      <Loader2 size={14} className="animate-spin" />
-                      Đang xóa...
-                    </span>
+                    <InlineLoader size={14} color="#fff" />
                   ) : (
                     "Xóa"
                   )}

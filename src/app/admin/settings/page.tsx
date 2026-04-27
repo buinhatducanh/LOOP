@@ -16,8 +16,9 @@ import { useAdminTranslations } from "@/i18n/admin/useAdminTranslations";
 import { useAuthStore } from "@/app/store/authStore";
 import {
   Settings, RefreshCw, Check, Shield, Globe, Bell, Database,
-  Languages, User, Save, Loader2, CheckCircle2, CreditCard,
+  Languages, User, Save, CheckCircle2, CreditCard,
 } from "lucide-react";
+import { InlineLoader } from "@/components/ui/LoadingScreen";
 
 type Setting = {
   id: string;
@@ -190,15 +191,16 @@ function LocaleManagement() {
         <button
           onClick={() => seedMutation.mutate()}
           disabled={seedMutation.isPending}
-          style={{ padding: "6px 12px", background: seedMutation.isPending ? DS.text4 : "rgba(59,130,246,0.1)", border: `1px solid rgba(59,130,246,0.3)`, borderRadius: 8, color: seedMutation.isPending ? DS.text4 : DS.blue, cursor: seedMutation.isPending ? "not-allowed" : "pointer", fontSize: 11, fontFamily: DS.mono }}
+          style={{ padding: "6px 12px", background: seedMutation.isPending ? DS.text4 : "rgba(59,130,246,0.1)", border: `1px solid rgba(59,130,246,0.3)`, borderRadius: 8, color: seedMutation.isPending ? DS.text4 : DS.blue, cursor: seedMutation.isPending ? "not-allowed" : "pointer", fontSize: 11, fontFamily: DS.mono, display: "flex", alignItems: "center", gap: 8 }}
         >
+          {seedMutation.isPending ? <InlineLoader size={14} color={DS.text4} /> : null}
           {seedMutation.isPending ? t("common.loading") : t("settings.seedLocales")}
         </button>
       </div>
 
       {isLoading ? (
         <div style={{ display: "flex", justifyContent: "center", padding: 24 }}>
-          <div style={{ width: 24, height: 24, border: `2px solid ${DS.border}`, borderTop: `2px solid ${DS.blue}`, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+          <InlineLoader size={24} />
         </div>
       ) : locales.length === 0 ? (
         <div style={{ textAlign: "center", padding: "2rem", color: DS.text4, fontSize: 13 }}>
@@ -484,7 +486,7 @@ function PermissionsManagement() {
  opacity: saving || !hasChanges ? 0.5 : 1,
  }}
  >
- {saving ? <><Loader2 size={12} style={{ animation: "spin 1s linear infinite" }} /> Đang lưu...</> : <><Save size={12} /> Lưu thay đổi</>}
+ {saving ? <><InlineLoader size={12} color="#fff" /> Đang lưu...</> : <><Save size={12} /> Lưu thay đổi</>}
  </button>
  </div>
  </div>
@@ -507,7 +509,7 @@ function PermissionsManagement() {
  <div style={{ maxHeight: 500, overflowY: "auto" }}>
  {membersLoading ? (
  <div style={{ display: "flex", justifyContent: "center", padding: 24 }}>
- <div style={{ width: 20, height: 20, border: `2px solid ${DS.border}`, borderTop: `2px solid ${DS.blue}`, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+ <InlineLoader size={20} />
  </div>
  ) : filtered.length === 0 ? (
  <div style={{ textAlign: "center", padding: "1.5rem", color: DS.text4, fontSize: 12 }}>Không tìm thấy</div>
@@ -554,7 +556,7 @@ function PermissionsManagement() {
  {selectedId ? (
  permLoading ? (
  <div style={{ display: "flex", justifyContent: "center", alignItems: "center", padding: 48 }}>
- <div style={{ width: 24, height: 24, border: `2px solid ${DS.border}`, borderTop: `2px solid ${DS.blue}`, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+ <InlineLoader size={24} />
  </div>
  ) : perm ? (
  <div>
@@ -805,7 +807,7 @@ export default function SettingsPage() {
 
               {isLoading ? (
                 <div style={{ display: "flex", justifyContent: "center", padding: 24 }}>
-                  <div style={{ width: 24, height: 24, border: `2px solid ${DS.border}`, borderTop: `2px solid ${DS.blue}`, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+                  <InlineLoader size={24} />
                 </div>
               ) : settings.length === 0 ? (
                 <div style={{ textAlign: "center", padding: "2rem", color: DS.text4, fontSize: 13 }}>
@@ -926,7 +928,7 @@ function MyAccountSection() {
   if (isLoading) {
     return (
       <div style={{ display: "flex", justifyContent: "center", padding: "3rem 0" }}>
-        <div style={{ width: 24, height: 24, border: `2px solid ${DS.border}`, borderTop: `2px solid ${DS.blue}`, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+        <InlineLoader size={24} />
       </div>
     );
   }
@@ -962,7 +964,7 @@ function MyAccountSection() {
               opacity: saving || !hasChanges ? 0.5 : 1,
             }}
           >
-            {saving ? <><Loader2 size={12} style={{ animation: "spin 1s linear infinite" }} /> Đang lưu...</> : <><Save size={12} /> Lưu thay đổi</>}
+            {saving ? <><InlineLoader size={14} color="#fff" /> Đang lưu...</> : <><Save size={12} /> Lưu thay đổi</>}
           </button>
         </div>
       </div>

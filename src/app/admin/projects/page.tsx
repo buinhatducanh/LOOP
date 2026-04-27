@@ -20,6 +20,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { adminApi } from "@/lib/api/client";
 import { DS } from "@/lib/design-tokens";
 import { Plus, RefreshCw, Search, GripVertical, Calendar, X, Edit2, Trash2, AlertTriangle } from "lucide-react";
+import { InlineLoader } from "@/components/ui/LoadingScreen";
 
 const fmtDate = (d: string | Date | null | undefined) => {
   if (!d) return "—";
@@ -355,9 +356,10 @@ function ProjectModal({
                   border: "none", borderRadius: 10,
                   color: "#fff", fontWeight: 700,
                   cursor: saving ? "not-allowed" : "pointer", fontSize: 13,
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
                 }}
               >
-                {saving ? "Đang lưu..." : isEdit ? "Lưu thay đổi" : "Tạo dự án"}
+                {saving ? <InlineLoader size={16} color="#fff" /> : isEdit ? "Lưu thay đổi" : "Tạo dự án"}
               </button>
             </div>
           </form>
@@ -657,7 +659,7 @@ export default function ProjectsPage() {
       {/* Board */}
       {isLoading ? (
         <div style={{ display: "flex", justifyContent: "center", padding: 40 }}>
-          <div style={{ width: 32, height: 32, border: `2px solid ${DS.border}`, borderTop: `2px solid ${DS.blue}`, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+          <InlineLoader size={32} />
         </div>
       ) : (
         <div style={{ display: "flex", gap: "1rem", overflowX: "auto", paddingBottom: "1rem" }}>

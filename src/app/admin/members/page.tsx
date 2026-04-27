@@ -19,11 +19,12 @@ import { TeamMemberBE, MemberStatus, ViewMode, SortKey, ToastType, ToastItem, Me
 import { ImageUpload } from "@/components/ui/ImageUpload";
 import { MemberFormDrawer } from "@/components/admin/members/MemberFormDrawer";
 import {
- Plus, Trash2, Edit2, Award, Users, TrendingUp,
- ChevronDown, ChevronUp, X, Check, Crown, Zap, Grid3x3, List, Search,
- UserMinus, Clock, AlertTriangle, CheckCircle2, Eye, Info, Loader2,
- UserCheck, ShieldCheck, CheckCircle,
+  Plus, Trash2, Edit2, Award, Users, TrendingUp,
+  ChevronDown, ChevronUp, X, Check, Crown, Zap, Grid3x3, List, Search,
+  UserMinus, Clock, AlertTriangle, CheckCircle2, Eye, Info,
+  UserCheck, ShieldCheck, CheckCircle,
 } from "lucide-react";
+import { InlineLoader } from "@/components/ui/LoadingScreen";
 import {
   RANKS,
   getRankFromLevel,
@@ -261,15 +262,15 @@ export default function AdminMembersPage() {
   const [lpMember, setLpMember] = useState<MemberExt | null>(null);
   const [bulkMembers, setBulkMembers] = useState<MemberExt[]>([]);
   const [formMember, setFormMember] = useState<MemberExt | null>(null); // null = closed | MemberExt = edit mode
- const [showAddModal, setShowAddModal] = useState(false); // add mode flag
- const closeAllForms = () => { setFormMember(null); setShowAddModal(false); };
+  const [showAddModal, setShowAddModal] = useState(false); // add mode flag
+  const closeAllForms = () => { setFormMember(null); setShowAddModal(false); };
   const [deleteMember, setDeleteMember] = useState<MemberExt | null>(null);
   // Pending requests state (CEO/Admin only)
   const [pendingRequest, setPendingRequest] = useState<PendingRequest | null>(null);
   const [showApprovalModal, setShowApprovalModal] = useState(false);
   const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
   const [selectedRole, setSelectedRole] = useState<string>("member");
-  
+
   const [approvalNotes, setApprovalNotes] = useState("");
   const [rejectReason, setRejectReason] = useState("");
 
@@ -359,7 +360,7 @@ export default function AdminMembersPage() {
       else if (sortKey === "lpBalance") cmp = (a.availableLp ?? 0) - (b.availableLp ?? 0);
       else if (sortKey === "missions") cmp = a.missionsCompleted - b.missionsCompleted;
       else if (sortKey === "rank") {
-        const rankOrder = ["iron","bronze","silver","gold","platinum","ruby","diamond"];
+        const rankOrder = ["iron", "bronze", "silver", "gold", "platinum", "ruby", "diamond"];
         cmp = rankOrder.indexOf(getRankFromLevel(a.level ?? 1)) - rankOrder.indexOf(getRankFromLevel(b.level ?? 1));
       } else if (sortKey === "role") {
         const aRoles = (a.roles && a.roles.length > 0 ? a.roles : [a.systemRole ?? a.role ?? ""]).sort();
@@ -628,7 +629,7 @@ export default function AdminMembersPage() {
   // =============================================================================
 
   function RankBar_() {
-    const ranks: RankKey[] = ["iron","bronze","silver","gold","platinum","ruby","diamond"];
+    const ranks: RankKey[] = ["iron", "bronze", "silver", "gold", "platinum", "ruby", "diamond"];
     const total = members.length || 1;
     return (
       <div style={{
@@ -844,8 +845,8 @@ export default function AdminMembersPage() {
     const isAdmin = primaryRole === "super_admin" || primaryRole === "admin";
     const roleLabel = isCeo ? "CEO"
       : isAdmin ? capitalize(primaryRole)
-      : m.team ? `Trưởng phòng ${m.team}`
-      : capitalize(primaryRole);
+        : m.team ? `Trưởng phòng ${m.team}`
+          : capitalize(primaryRole);
 
     return (
       <motion.div
@@ -1134,8 +1135,8 @@ export default function AdminMembersPage() {
                       const isAdmin = primaryRole === "super_admin" || primaryRole === "admin";
                       return isCeo ? "CEO"
                         : isAdmin ? capitalize(primaryRole)
-                        : m.team ? `Trưởng phòng ${m.team}`
-                        : capitalize(m.role ?? primaryRole);
+                          : m.team ? `Trưởng phòng ${m.team}`
+                            : capitalize(m.role ?? primaryRole);
                     })()}
                   </div>
                 </div>
@@ -1407,7 +1408,7 @@ export default function AdminMembersPage() {
             display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
           }}
         >
-          {lpMutation.isPending && <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} />}
+          {lpMutation.isPending && <InlineLoader size={14} color="#000" />}
           {mode === "award" ? "Thưởng" : "Trừ"} {fmtLP(num)} LP
         </button>
       </ModalWrapper>
@@ -1507,10 +1508,10 @@ export default function AdminMembersPage() {
             backgroundColor: num > 0 ? (mode === "award" ? DS.green : DS.amber) : DS.border,
             color: num > 0 ? "#000" : DS.text3,
             fontFamily: DS.heading, fontSize: 13, cursor: num > 0 ? "pointer" : "not-allowed",
-            display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
           }}
         >
-          {bulkLpMutation.isPending && <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} />}
+          {bulkLpMutation.isPending ? <InlineLoader size={16} color={num > 0 ? "#000" : DS.text3} /> : null}
           Xác nhận {mode === "award" ? "thưởng" : "trừ"} LP
         </button>
       </ModalWrapper>
@@ -1521,7 +1522,7 @@ export default function AdminMembersPage() {
   // MemberFormModal — Redesigned v3 (2026-04-10)
   // Layout: 2-column — left sidebar (role preview) | right: 4 form tabs
   // Phân quyền: System Role preset → auto-fill tabs, tùy chỉnh thêm bớt
-  
+
 
   function ApprovalModal_() {
     if (!pendingRequest) return null;
@@ -1708,11 +1709,11 @@ export default function AdminMembersPage() {
                   background: "rgba(239,68,68,0.08)",
                   color: DS.red, fontFamily: DS.mono, fontSize: 13,
                   cursor: isProcessing ? "not-allowed" : "pointer",
-                  display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
                   opacity: isProcessing ? 0.5 : 1,
                 }}
               >
-                {isProcessing && rejectMutation.isPending ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : <X size={14} />}
+                {isProcessing && rejectMutation.isPending ? <InlineLoader size={16} color={DS.red} /> : <X size={14} />}
                 Từ chối
               </button>
             </div>
@@ -1734,11 +1735,11 @@ export default function AdminMembersPage() {
                   color: "#fff", fontFamily: DS.mono, fontSize: 13,
                   fontWeight: 700,
                   cursor: isProcessing ? "not-allowed" : "pointer",
-                  display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
                 }}
               >
                 {isProcessing && approveMutation.isPending ? (
-                  <><Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> Đang xử lý...</>
+                  <><InlineLoader size={16} color="#fff" /> Đang xử lý...</>
                 ) : (
                   <><CheckCircle size={14} /> Duyệt &amp; Kích hoạt</>
                 )}
@@ -1766,7 +1767,7 @@ export default function AdminMembersPage() {
 
   function DeleteConfirmModal_({ m }: { m: MemberExt }) {
     const rankKey = getRankFromLevel(m.level ?? 1);
-     RANKS[rankKey];
+    RANKS[rankKey];
 
     return (
       <ModalWrapper onClose={() => setDeleteMember(null)} title="Xác nhận xóa">
@@ -1826,7 +1827,7 @@ export default function AdminMembersPage() {
               display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
             }}
           >
-            {deleteMutation.isPending && <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} />}
+            {deleteMutation.isPending && <InlineLoader size={14} color="#fff" />}
             Xóa thành viên
           </button>
         </div>
@@ -1880,7 +1881,7 @@ export default function AdminMembersPage() {
               display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
               borderRadius: 16,
             }}>
-              <Loader2 size={32} style={{ animation: "spin 1s linear infinite", color: DS.blue }} />
+              <InlineLoader size={32} />
               <div style={{ color: DS.text3, fontFamily: DS.mono, fontSize: 11, marginTop: 12 }}>
                 Đang lưu...
               </div>
@@ -2120,7 +2121,7 @@ export default function AdminMembersPage() {
                 opacity: pendingQuery.isLoading ? 0.6 : 1,
               }}
             >
-              {pendingQuery.isLoading ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : <ShieldCheck size={14} />}
+              {pendingQuery.isLoading ? <InlineLoader size={14} /> : <ShieldCheck size={14} />}
               Duyệt ngay
             </button>
           )}
@@ -2235,7 +2236,7 @@ export default function AdminMembersPage() {
               }}
               disabled={bulkDeleteMutation.isPending}
               style={{
-                display: "flex", alignItems: "center", gap: 5,
+                display: "flex", alignItems: "center", gap: 8,
                 padding: "6px 14px", borderRadius: 8,
                 border: `1px solid ${DS.red}55`, backgroundColor: DS.red + "15",
                 color: DS.red, fontFamily: DS.mono, fontSize: 11, cursor: "pointer",
@@ -2243,7 +2244,7 @@ export default function AdminMembersPage() {
               }}
             >
               {bulkDeleteMutation.isPending
-                ? <Loader2 size={12} style={{ animation: "spin 1s linear infinite" }} />
+                ? <InlineLoader size={14} color={DS.red} />
                 : <Trash2 size={12} />}
               Xóa ({selectedIds.size})
             </button>
@@ -2286,7 +2287,7 @@ export default function AdminMembersPage() {
             display: "flex", alignItems: "center", justifyContent: "center",
             padding: 60, color: DS.text3,
           }}>
-            <Loader2 size={28} style={{ animation: "spin 1s linear infinite" }} />
+            <InlineLoader size={32} />
           </div>
         ) : filtered.length === 0 ? (
           <div style={{
@@ -2447,4 +2448,3 @@ export default function AdminMembersPage() {
     </div>
   );
 }
-

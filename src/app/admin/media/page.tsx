@@ -9,8 +9,9 @@ import { useAdminTranslations } from "@/i18n/admin/useAdminTranslations";
 import {
   X, Camera, CheckCircle2, Eye, ChevronRight, Search,
   RefreshCw, Trash2, Plus, ChevronLeft, Upload, FileText, TrendingUp,
-  Image, ZoomIn, ExternalLink, LayoutGrid, List, Package as PackageIcon, Check, Loader2, Edit2,
+  Image, ZoomIn, ExternalLink, LayoutGrid, List, Package as PackageIcon, Check, Edit2,
 } from "lucide-react";
+import { InlineLoader } from "@/components/ui/LoadingScreen";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -1593,7 +1594,7 @@ function MediaPackagesTab() {
             opacity: seedMutation.isPending ? 0.6 : 1,
           }}
         >
-          {seedMutation.isPending ? <Loader2 size={13} style={{ animation: "spin 1s linear infinite" }} /> : <RefreshCw size={13} />}
+          {seedMutation.isPending ? <InlineLoader size={13} /> : <RefreshCw size={13} />}
           Seed / Sync
         </button>
       </div>
@@ -1601,7 +1602,7 @@ function MediaPackagesTab() {
       {/* Loading */}
       {isLoading && (
         <div style={{ display: "flex", justifyContent: "center", padding: 48 }}>
-          <Loader2 size={32} style={{ animation: "spin 1s linear infinite", color: DS.pink }} />
+          <InlineLoader size={32} />
         </div>
       )}
 

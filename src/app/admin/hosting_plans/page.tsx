@@ -15,8 +15,9 @@ import { adminApi } from "@/lib/api/client";
 import { DS, GRD } from "@/lib/design-tokens";
 import {
   Plus, Search, X, Trash2, Edit3,
-  ToggleRight, ToggleLeft, RefreshCw, Loader2, Server,
+  ToggleRight, ToggleLeft, RefreshCw, Server,
 } from "lucide-react";
+import { InlineLoader } from "@/components/ui/LoadingScreen";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -450,13 +451,7 @@ export default function HostingPlansPage() {
                   }}
                 >
                   <div className="flex items-center justify-center gap-2">
-                    <Loader2
-                      size={18}
-                      style={{
-                        animation: "spin 1s linear infinite",
-                        color: DS.text4,
-                      }}
-                    />
+                    <InlineLoader size={18} />
                     Đang tải...
                   </div>
                 </td>
@@ -1088,17 +1083,13 @@ export default function HostingPlansPage() {
                     gap: 8,
                   }}
                 >
-                  {save.isPending && (
-                    <Loader2
-                      size={13}
-                      style={{ animation: "spin 1s linear infinite" }}
-                    />
+                  {save.isPending ? (
+                    <InlineLoader size={14} color="#fff" />
+                  ) : modal.edit ? (
+                    "Lưu thay đổi"
+                  ) : (
+                    "Tạo mới"
                   )}
-                  {save.isPending
-                    ? "Đang lưu..."
-                    : modal.edit
-                      ? "Lưu thay đổi"
-                      : "Tạo mới"}
                 </button>
               </div>
             </motion.div>
@@ -1203,13 +1194,11 @@ export default function HostingPlansPage() {
                     gap: 6,
                   }}
                 >
-                  {remove.isPending && (
-                    <Loader2
-                      size={13}
-                      style={{ animation: "spin 1s linear infinite" }}
-                    />
+                  {remove.isPending ? (
+                    <InlineLoader size={14} color="#fff" />
+                  ) : (
+                    "Xóa"
                   )}
-                  {remove.isPending ? "Đang xóa..." : "Xóa"}
                 </button>
               </div>
             </motion.div>

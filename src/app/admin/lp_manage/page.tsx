@@ -20,8 +20,9 @@ import { DS, GRD } from "@/lib/design-tokens";
 import {
   Wallet, Plus, X, BarChart3, Users,
   FolderKanban, Trophy, Briefcase, DollarSign, Gift, Star,
-  Settings, RefreshCw, Send, Loader2, Save,
+  Settings, RefreshCw, Send, Save,
 } from "lucide-react";
+import { InlineLoader } from "@/components/ui/LoadingScreen";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -592,7 +593,7 @@ function AddLPModal({
               fontSize: 14, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
               boxShadow: (selectedIds.size === 0 || saving) ? "none" : "0 0 20px rgba(129,140,248,0.25)",
             }}>
-            {saving ? <><Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> Đang cấp {progress ? `${progress.done}/${progress.total}` : "..."}...</> : <><Send size={14} /> Cấp LP cho {selectedIds.size} thành viên</>}
+            {saving ? <><InlineLoader size={14} color="#fff" /> Đang cấp {progress ? `${progress.done}/${progress.total}` : "..."}...</> : <><Send size={14} /> Cấp LP cho {selectedIds.size} thành viên</>}
           </button>
         </div>
       </motion.div>

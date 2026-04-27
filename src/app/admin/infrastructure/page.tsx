@@ -12,9 +12,10 @@ import { motion, AnimatePresence } from "motion/react";
 import { adminApi } from "@/lib/api/client";
 import { DS, GRD } from "@/lib/design-tokens";
 import {
-  Plus, Edit3, X, Trash2, Loader2, RefreshCw,
+  Plus, Edit3, X, Trash2, RefreshCw,
   ToggleRight, ToggleLeft, Search, Server,
 } from "lucide-react";
+import { InlineLoader } from "@/components/ui/LoadingScreen";
 
 const fmtVND = (n: number) =>
   new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(n);
@@ -173,7 +174,7 @@ export default function InfrastructurePage() {
       {/* Grid */}
       {isLoading ? (
         <div style={{ display: "flex", justifyContent: "center", padding: "3rem" }}>
-          <Loader2 size={24} style={{ color: DS.text4, animation: "spin 1s linear infinite" }} />
+          <InlineLoader size={24} />
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>

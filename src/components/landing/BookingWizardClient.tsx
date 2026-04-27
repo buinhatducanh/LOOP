@@ -15,6 +15,7 @@ import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { motion, AnimatePresence } from "motion/react";
 import { DS, GRD } from "@/lib/design-tokens";
+import { InlineLoader } from "@/components/ui/LoadingScreen";
 import { FeatureToggleTable } from "./FeatureToggleTable";
 import { SEOPackageFeatureTable, type SEOFeature, type SEOPackageTier } from "./SEOPackageFeatureTable";
 import { WebPackageFeatureTable, type WebPackageFeature, type WebPackageTier } from "./WebPackageFeatureTable";
@@ -1202,9 +1203,7 @@ export function BookingWizardClient({ locale }: Props) {
                       >
                         {isSearchingDomain ? (
                           <>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: "spin 0.8s linear infinite" }}>
-                              <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-                            </svg>
+                            <InlineLoader size={16} color="#fff" />
                             Đang kiểm tra...
                           </>
                         ) : (
@@ -1835,7 +1834,9 @@ export function BookingWizardClient({ locale }: Props) {
                                   </div>
                                 ) : qrLoading ? (
                                   <div className="text-center py-4">
-                                    <div style={{ width: 24, height: 24, border: `2px solid ${DS.border}`, borderTop: `2px solid ${DS.blue}`, borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 8px" }} />
+                                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}>
+                                      <InlineLoader size={24} color={DS.blue} />
+                                    </div>
                                     <div style={{ color: DS.text4, fontSize: 11 }}>Đang tạo mã QR...</div>
                                   </div>
                                 ) : (
@@ -1905,7 +1906,9 @@ export function BookingWizardClient({ locale }: Props) {
                         {/* QR loading — shown when MoMo/VNPay API is called */}
                         {qrLoading && (
                           <div className="mb-4 p-4 rounded-xl text-center" style={{ background: DS.bgCard, border: `1px solid ${DS.border}` }}>
-                            <div style={{ width: 24, height: 24, border: `2px solid ${DS.border}`, borderTop: `2px solid ${DS.green}`, borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 8px" }} />
+                            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}>
+                              <InlineLoader size={24} color={DS.green} />
+                            </div>
                             <div style={{ color: DS.text3, fontSize: 12 }}>
                               {paymentMethod === "momo" ? "Đang chuyển hướng MoMo..." : "Đang chuyển hướng VNPay..."}
                             </div>
@@ -1947,7 +1950,12 @@ export function BookingWizardClient({ locale }: Props) {
                           transition: "all 0.3s", width: "100%",
                         }}>
                         <Shield size={16} />
-                        {submitLoading ? t("submitting") : t("submitButton")}
+                        {submitLoading ? (
+                          <>
+                            <InlineLoader size={16} color="#fff" />
+                            {t("submitting")}
+                          </>
+                        ) : t("submitButton")}
                         {!submitLoading && <ArrowRight size={15} />}
                       </button>
                       <div style={{ color: DS.text5, fontSize: 11, marginTop: 10, textAlign: "center" }}>

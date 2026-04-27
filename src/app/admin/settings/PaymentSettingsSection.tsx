@@ -7,8 +7,9 @@ import { adminApi } from "@/lib/api/client";
 import { DS } from "@/lib/design-tokens";
 import { useAdminTranslations } from "@/i18n/admin/useAdminTranslations";
 import {
- CreditCard, CheckCircle2, Loader2, AlertCircle, Wifi, WifiOff, RefreshCw, Save, ExternalLink,
+ CreditCard, CheckCircle2, AlertCircle, Wifi, WifiOff, RefreshCw, Save, ExternalLink,
 } from "lucide-react";
+import { InlineLoader } from "@/components/ui/LoadingScreen";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -174,12 +175,12 @@ function VietQRCard({ data, onSave, saving }: {
  <div style={{ display: "flex", gap: 8 }}>
  <button onClick={testConnection} disabled={testing || !form.apiKey}
  style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 12px", background: `${DS.blue}10`, border: `1px solid ${DS.blue}30`, borderRadius: 8, color: DS.blue, cursor: testing ? "not-allowed" : "pointer", fontSize: 11, fontFamily: DS.mono }}>
- {testing ? <Loader2 size={10} style={{ animation: "spin 1s linear infinite" }} /> : <RefreshCw size={10} />}
+ {testing ? <InlineLoader size={10} color={DS.blue} /> : <RefreshCw size={10} />}
  Test ket noi
  </button>
  <button onClick={() => onSave(form)} disabled={saving}
  style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 12px", background: saving ? DS.text4 : DS.green, border: "none", borderRadius: 8, color: "#fff", cursor: saving ? "not-allowed" : "pointer", fontSize: 11, fontFamily: DS.mono }}>
- {saving ? <Loader2 size={10} style={{ animation: "spin 1s linear infinite" }} /> : <Save size={10} />}
+ {saving ? <InlineLoader size={10} color="#fff" /> : <Save size={10} />}
  Luu
  </button>
  </div>
@@ -240,7 +241,7 @@ function MoMoCard({ data, onSave, saving }: {
  <div style={{ display: "flex", gap: 8 }}>
  <button onClick={() => onSave(form)} disabled={saving}
  style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 12px", background: saving ? DS.text4 : DS.green, border: "none", borderRadius: 8, color: "#fff", cursor: saving ? "not-allowed" : "pointer", fontSize: 11, fontFamily: DS.mono }}>
- {saving ? <Loader2 size={10} style={{ animation: "spin 1s linear infinite" }} /> : <Save size={10} />}
+ {saving ? <InlineLoader size={10} color="#fff" /> : <Save size={10} />}
  Luu
  </button>
  </div>
@@ -314,7 +315,7 @@ function VNPayCard({ data, onSave, saving }: {
  </a>
  <button onClick={() => onSave(form)} disabled={saving}
  style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 12px", background: saving ? DS.text4 : DS.green, border: "none", borderRadius: 8, color: "#fff", cursor: saving ? "not-allowed" : "pointer", fontSize: 11, fontFamily: DS.mono }}>
- {saving ? <Loader2 size={10} style={{ animation: "spin 1s linear infinite" }} /> : <Save size={10} />}
+ {saving ? <InlineLoader size={10} color="#fff" /> : <Save size={10} />}
  Luu
  </button>
  </div>
@@ -371,7 +372,7 @@ function ReferralTiersCard({ data, onSave, saving }: {
 
  <button onClick={() => onSave(tiers)} disabled={saving}
  style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 12px", background: saving ? DS.text4 : DS.green, border: "none", borderRadius: 8, color: "#fff", cursor: saving ? "not-allowed" : "pointer", fontSize: 11, fontFamily: DS.mono }}>
- {saving ? <Loader2 size={10} style={{ animation: "spin 1s linear infinite" }} /> : <Save size={10} />}
+ {saving ? <InlineLoader size={10} color="#fff" /> : <Save size={10} />}
  Luu tiers
  </button>
  </div>
@@ -415,7 +416,7 @@ function QuoteExpiryCard({ data, onSave, saving }: {
 
  <button onClick={() => onSave(form)} disabled={saving}
  style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 12px", background: saving ? DS.text4 : DS.green, border: "none", borderRadius: 8, color: "#fff", cursor: saving ? "not-allowed" : "pointer", fontSize: 11, fontFamily: DS.mono }}>
- {saving ? <Loader2 size={10} style={{ animation: "spin 1s linear infinite" }} /> : <Save size={10} />}
+ {saving ? <InlineLoader size={10} color="#fff" /> : <Save size={10} />}
  Luu
  </button>
  </div>
