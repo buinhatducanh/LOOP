@@ -12,9 +12,10 @@ import { motion, AnimatePresence } from "motion/react";
 import { adminApi } from "@/lib/api/client";
 import { DS, GRD } from "@/lib/design-tokens";
 import {
-  Plus, Edit3, X, Trash2, Loader2, RefreshCw,
+  Plus, Edit3, X, Trash2, RefreshCw,
   ToggleRight, ToggleLeft, Search, Zap, Layers,
 } from "lucide-react";
+import { InlineLoader } from "@/components/ui/LoadingScreen";
 
 const fmtVND = (n: number) =>
   new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(n);
@@ -218,7 +219,7 @@ export default function SeoPackagesPage() {
           </thead>
           <tbody>
             {isLoading ? (
-              <tr><td colSpan={8} style={{ padding: 32, textAlign: "center", color: DS.text4 }}>Đang tải...</td></tr>
+              <tr><td colSpan={8} style={{ padding: 32, textAlign: "center", color: DS.text4 }}><InlineLoader /></td></tr>
             ) : items.length === 0 ? (
               <tr><td colSpan={8} style={{ padding: 32, textAlign: "center", color: DS.text4 }}>Chưa có dữ liệu</td></tr>
             ) : items.map(t => (
@@ -271,7 +272,7 @@ export default function SeoPackagesPage() {
                       style={{ background: "none", border: "none", cursor: "pointer", padding: 4, borderRadius: 6 }}
                       className="hover:bg-white/10 transition-colors"
                     >
-                      <Trash2 size={15} style={{ color: DS.text4 }} />
+                      {deleteMutation.isPending ? <InlineLoader size={15} /> : <Trash2 size={15} style={{ color: DS.text4 }} />}
                     </button>
                   </div>
                 </td>

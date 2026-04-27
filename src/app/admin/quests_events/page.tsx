@@ -12,6 +12,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { adminApi } from "@/lib/api/client";
 import { DS, GRD } from "@/lib/design-tokens";
 import { useAdminTranslations } from "@/i18n/admin/useAdminTranslations";
+import { InlineLoader } from "@/components/ui/LoadingScreen";
 import {
   Star, Zap, RefreshCw, Plus, Calendar, Users, CheckCircle2,
   X, AlertTriangle, Pencil, Trash2, ChevronDown, ChevronUp,
@@ -285,8 +286,8 @@ function QuestFormModal({
                 {t("common.cancel")}
               </button>
               <button type="submit" disabled={saving}
-                style={{ flex: 1, padding: "10px", background: saving ? text4 : GRD.primary, border: "none", borderRadius: 10, color: "#fff", fontWeight: 700, cursor: saving ? "not-allowed" : "pointer", fontSize: 13 }}>
-                {saving ? t("quests_events.formBtnCreating") : (isEdit ? t("common.save") : t("quests_events.formBtnCreateQuest"))}
+                style={{ flex: 1, padding: "10px", background: saving ? text4 : GRD.primary, border: "none", borderRadius: 10, color: "#fff", fontWeight: 700, cursor: saving ? "not-allowed" : "pointer", fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                {saving ? <InlineLoader size={16} color="#fff" /> : (isEdit ? t("common.save") : t("quests_events.formBtnCreateQuest"))}
               </button>
             </div>
           </form>
@@ -473,8 +474,8 @@ function EventFormModal({
                 {t("common.cancel")}
               </button>
               <button type="submit" disabled={saving}
-                style={{ flex: 1, padding: "10px", background: saving ? text4 : GRD.primary, border: "none", borderRadius: 10, color: "#fff", fontWeight: 700, cursor: saving ? "not-allowed" : "pointer", fontSize: 13 }}>
-                {saving ? t("quests_events.formBtnCreating") : (isEdit ? t("common.save") : t("quests_events.formBtnCreateEvent"))}
+                style={{ flex: 1, padding: "10px", background: saving ? text4 : GRD.primary, border: "none", borderRadius: 10, color: "#fff", fontWeight: 700, cursor: saving ? "not-allowed" : "pointer", fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                {saving ? <InlineLoader size={16} color="#fff" /> : (isEdit ? t("common.save") : t("quests_events.formBtnCreateEvent"))}
               </button>
             </div>
           </form>
@@ -543,8 +544,8 @@ function DeleteConfirmModal({
               {t("common.cancel")}
             </button>
             <button onClick={handleConfirm} disabled={deleting}
-              style={{ flex: 1, padding: "10px", background: deleting ? text4 : "#EF4444", border: "none", borderRadius: 10, color: "#fff", fontWeight: 700, cursor: deleting ? "not-allowed" : "pointer", fontSize: 13 }}>
-              {deleting ? "..." : t("common.delete")}
+              style={{ flex: 1, padding: "10px", background: deleting ? text4 : "#EF4444", border: "none", borderRadius: 10, color: "#fff", fontWeight: 700, cursor: deleting ? "not-allowed" : "pointer", fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+              {deleting ? <InlineLoader size={16} color="#fff" /> : t("common.delete")}
             </button>
           </div>
         </motion.div>
@@ -631,7 +632,7 @@ export default function QuestsEventsPage() {
   // Loading spinner
   const Spinner = () => (
     <div style={{ display: "flex", justifyContent: "center", padding: 40 }}>
-      <div style={{ width: 32, height: 32, border: `2px solid ${border}`, borderTop: `2px solid ${DS.purple}`, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+      <InlineLoader size={32} color={DS.purple} />
     </div>
   );
 

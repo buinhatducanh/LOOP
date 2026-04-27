@@ -12,9 +12,10 @@ import { DS, GRD } from "@/lib/design-tokens";
 import {
   Building2, Users, Crown, ChevronRight, ChevronDown,
   X, Save, Search, BarChart3, UserPlus, Layers,
-  CheckSquare, Square, RefreshCw, Loader2, AlertCircle,
+  CheckSquare, Square, RefreshCw, AlertCircle,
   Plus, Pencil, Trash2, ChevronLeft, Network,
 } from "lucide-react";
+import { InlineLoader } from "@/components/ui/LoadingScreen";
 // ── Types ─────────────────────────────────────────────────────────────────────
 type RankKey = "iron" | "bronze" | "silver" | "gold" | "platinum" | "ruby" | "diamond";
 interface RankConfig { label: string; symbol: string; color: string; glowColor: string; }
@@ -167,7 +168,7 @@ function DivisionModal({ division, onClose, onSave }: {
       <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
         <button onClick={onClose} style={{ flex: 1, ...btnSecondary }}>Hủy</button>
         <button onClick={handleSave} disabled={saving} style={{ flex: 2, ...btnPrimary }}>
-          {saving ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : <Save size={14} />}
+          {saving ? <InlineLoader size={14} color="#fff" /> : <Save size={14} />}
           {saving ? "Đang lưu…" : division ? "Lưu thay đổi" : "Tạo Ban"}
         </button>
       </div>
@@ -242,7 +243,7 @@ function DepartmentModal({ department, divisions, onClose, onSave }: {
       <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
         <button onClick={onClose} style={{ flex: 1, ...btnSecondary }}>Hủy</button>
         <button onClick={handleSave} disabled={saving} style={{ flex: 2, ...btnPrimary }}>
-          {saving ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : <Save size={14} />}
+          {saving ? <InlineLoader size={14} color="#fff" /> : <Save size={14} />}
           {saving ? "Đang lưu…" : department ? "Lưu thay đổi" : "Tạo Phòng"}
         </button>
       </div>
@@ -339,7 +340,7 @@ function AssignModal({ department, allMembers, onClose, onSave }: {
       <div style={{ display: "flex", gap: 12, marginTop: 16 }}>
         <button onClick={onClose} style={{ flex: 1, ...btnSecondary }}>Hủy</button>
         <button onClick={handleSave} disabled={saving} style={{ flex: 2, ...btnPrimary }}>
-          {saving ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : <Save size={14} />}
+          {saving ? <InlineLoader size={14} color="#fff" /> : <Save size={14} />}
           {saving ? "Đang lưu…" : `Lưu (${selectedIds.length} nhân sự)`}
         </button>
       </div>
@@ -699,7 +700,7 @@ export default function DepartmentsPage() {
   if (loading) return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 320 }}>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
-        <Loader2 size={32} style={{ color: DS.purple, animation: "spin 1s linear infinite" }} />
+        <InlineLoader size={32} />
         <span style={{ color: DS.text4, fontSize: 13, fontFamily: DS.mono }}>Đang tải Ban-Phòng…</span>
       </div>
     </div>

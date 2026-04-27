@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { ImageUpload } from "@/components/ui/ImageUpload";
 import { RichTextEditor } from "@/components/admin/blog/RichTextEditor";
+import { InlineLoader } from "@/components/ui/LoadingScreen";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -710,8 +711,8 @@ function BlogPostEditModal({
                 <button type="button" onClick={onClose} style={{ flex: 1, padding: "10px", background: DS.bg, border: `1px solid ${DS.border}`, borderRadius: 10, color: DS.text3, cursor: "pointer", fontSize: 13 }}>
                   {t("blog.formBtnCancel")}
                 </button>
-                <button type="submit" disabled={saving} style={{ flex: 1, padding: "10px", background: saving ? DS.text4 : GRD.primary, border: "none", borderRadius: 10, color: "#fff", fontWeight: 700, cursor: saving ? "not-allowed" : "pointer", fontSize: 13 }}>
-                  {saving ? t("blog.formBtnSaving") : isEdit ? t("blog.formBtnSave") : t("blog.formBtnPublish")}
+                <button type="submit" disabled={saving} style={{ flex: 1, padding: "10px", background: saving ? DS.text4 : GRD.primary, border: "none", borderRadius: 10, color: "#fff", fontWeight: 700, cursor: saving ? "not-allowed" : "pointer", fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                  {saving ? <InlineLoader size={16} color="#fff" /> : (isEdit ? t("blog.formBtnSave") : t("blog.formBtnPublish"))}
                 </button>
               </div>
             </div>
@@ -932,7 +933,7 @@ export default function BlogTabPage() {
       {/* Loading */}
       {isLoading && (
         <div style={{ display: "flex", justifyContent: "center", padding: 40 }}>
-          <div style={{ width: 32, height: 32, border: `2px solid ${DS.border}`, borderTop: `2px solid ${DS.blue}`, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+          <InlineLoader size={32} />
         </div>
       )}
 
