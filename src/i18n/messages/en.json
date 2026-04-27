@@ -643,7 +643,9 @@
     "teamTitle": "Team | LOOP Solutions",
     "teamDescription": "27 outstanding experts - developers, designers, media, marketing and sales. Rank up with LP, Iron to Diamond system.",
     "academyTitle": "アカデミー — LOOP Solutions",
-    "academyDescription": "Learn from LOOP Solutions experts — coding, marketing, design, and business courses. Earn LP rewards upon completion."
+    "academyDescription": "Learn from LOOP Solutions experts — coding, marketing, design, and business courses. Earn LP rewards upon completion.",
+    "servicesTitle": "WebPackage & Custom Services | LOOP Solutions",
+    "servicesDescription": "Explore our diverse range of WebPackages across industries (Food, Health, Real Estate...) and premium custom design services from LOOP Solutions."
   },
   "Navigation": {
     "home": "Home",

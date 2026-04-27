@@ -643,7 +643,9 @@
     "teamTitle": "Đội ngũ | LOOP Solutions",
     "teamDescription": "27 chuyên gia xuất sắc - developer, designer, media, marketing, sales. Thăng hạng qua LP, xếp hạng Iron đến Diamond.",
     "academyTitle": "Học viện | LOOP Solutions",
-    "academyDescription": "Học từ chuyên gia LOOP Solutions — các khóa học về lập trình, marketing, thiết kế, kinh doanh. Hoàn thành nhận thưởng LP."
+    "academyDescription": "Học từ chuyên gia LOOP Solutions — các khóa học về lập trình, marketing, thiết kế, kinh doanh. Hoàn thành nhận thưởng LP.",
+    "servicesTitle": "Dịch vụ WebPackage & Tùy chỉnh | LOOP Solutions",
+    "servicesDescription": "Khám phá danh sách WebPackages đa dạng ngành nghề (Ăn uống, Sức khỏe, Bất động sản...) và dịch vụ thiết kế tùy chỉnh cao cấp từ LOOP Solutions."
   },
   "Navigation": {
     "home": "Trang chủ",
