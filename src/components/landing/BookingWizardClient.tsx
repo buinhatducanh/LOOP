@@ -232,6 +232,135 @@ function ProgressBar({ step, stepLabels }: { step: number; stepLabels: string[] 
 }
 
 // ── Price Sidebar ────────────────────────────────────────────────────────────
+// ── Custom Components ────────────────────────────────────────────────────────
+interface TLDDropdownProps {
+  options: WizardDomainPrice[];
+  selected: string;
+  onSelect: (val: string) => void;
+}
+
+function TLDDropdown({ options, selected, onSelect }: TLDDropdownProps) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (isOpen && !(e.target as HTMLElement).closest("#tld-dropdown-container")) {
+        setIsOpen(false);
+      }
+    };
+    window.addEventListener("click", handleOutsideClick);
+    return () => window.removeEventListener("click", handleOutsideClick);
+  }, [isOpen]);
+
+  return (
+    <div className="relative h-full">
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        style={{
+          height: "100%",
+          background: "rgba(15,23,42,0.8)",
+          border: `1px solid ${DS.border}`,
+          borderRadius: 10,
+          padding: "0 14px",
+          color: DS.text,
+          fontSize: 14,
+          fontFamily: DS.mono,
+          outline: "none",
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          minWidth: 100,
+          justifyContent: "space-between",
+        }}
+      >
+        <span>{selected}</span>
+        <motion.div animate={{ rotate: isOpen ? 180 : 0 }}>
+          <svg width="10" height="6" viewBox="0 0 10 6" fill="none">
+            <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </motion.div>
+      </button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: 8, scale: 0.95 }}
+            animate={{ opacity: 1, y: 4, scale: 1 }}
+            exit={{ opacity: 0, y: 8, scale: 0.95 }}
+            style={{
+              position: "absolute",
+              top: "100%",
+              right: 0,
+              zIndex: 100,
+              minWidth: "120px",
+              background: "#0F172A",
+              border: `1px solid ${DS.border}`,
+              borderRadius: 12,
+              boxShadow: "0 10px 30px rgba(0,0,0,0.5), 0 0 20px rgba(59,130,246,0.1)",
+              padding: "6px",
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                maxHeight: "260px",
+                overflowY: "auto",
+                scrollbarWidth: "thin",
+                scrollbarColor: `${DS.blue}30 transparent`,
+              }}
+              className="custom-scrollbar"
+            >
+              {options.map((opt) => (
+                <button
+                  key={opt.extension}
+                  type="button"
+                  onClick={() => {
+                    onSelect(opt.extension);
+                    setIsOpen(false);
+                  }}
+                  style={{
+                    width: "100%",
+                    padding: "10px 12px",
+                    borderRadius: 8,
+                    textAlign: "left",
+                    color: selected === opt.extension ? DS.blue : DS.text3,
+                    background: selected === opt.extension ? "rgba(59,130,246,0.1)" : "transparent",
+                    fontSize: 13,
+                    fontFamily: DS.mono,
+                    border: "none",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    transition: "all 0.15s",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (selected !== opt.extension) {
+                      e.currentTarget.style.background = "rgba(255,255,255,0.04)";
+                      e.currentTarget.style.color = DS.text;
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (selected !== opt.extension) {
+                      e.currentTarget.style.background = "transparent";
+                      e.currentTarget.style.color = DS.text3;
+                    }
+                  }}
+                >
+                  <span>{opt.extension}</span>
+                  {selected === opt.extension && <Check size={12} />}
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 // ── Main BookingWizardClient ────────────────────────────────────────────────
 
 interface Props { locale: string }
@@ -456,7 +585,13 @@ export function BookingWizardClient({ locale }: Props) {
 
         // ── Hosting + Domain ──
         if (cfg.hostingPlans?.length) setHostingPlans(cfg.hostingPlans);
-        if (cfg.domainPrices?.length) setDomainPrices(cfg.domainPrices);
+        if (cfg.domainPrices?.length) {
+          // Deduplicate by extension to prevent long messy lists
+          const uniqueDomains = Array.from(
+            new Map(cfg.domainPrices.map((d: WizardDomainPrice) => [d.extension, d])).values()
+          );
+          setDomainPrices(uniqueDomains);
+        }
 
         // ── Rates ──
         if (cfg.lpRate) setLpRate(cfg.lpRate);
@@ -1155,29 +1290,15 @@ export function BookingWizardClient({ locale }: Props) {
                           boxSizing: "border-box",
                         }}
                       />
-                      {domainPrices.length > 0 && (
-                        <select
-                          value={domainSelectedTld}
-                          onChange={e => setDomainSelectedTld(e.target.value)}
-                          style={{
-                            background: "rgba(15,23,42,0.8)",
-                            border: `1px solid ${DS.border}`,
-                            borderRadius: 10,
-                            padding: "12px 14px",
-                            color: DS.text,
-                            fontSize: 14,
-                            fontFamily: DS.mono,
-                            outline: "none",
-                            cursor: "pointer",
-                          }}
-                        >
-                          {domainPrices.map(d => (
-                            <option key={d.extension} value={d.extension} style={{ background: "#0F172A" }}>
-                              {d.extension}
-                            </option>
-                          ))}
-                        </select>
-                      )}
+                      <div className="relative" id="tld-dropdown-container">
+                        {domainPrices.length > 0 && (
+                          <TLDDropdown
+                            options={domainPrices}
+                            selected={domainSelectedTld}
+                            onSelect={setDomainSelectedTld}
+                          />
+                        )}
+                      </div>
                       <motion.button
                         onClick={handleDomainSearch}
                         disabled={!domainQuery || isSearchingDomain}
