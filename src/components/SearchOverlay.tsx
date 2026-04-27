@@ -12,6 +12,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { Search, X, ArrowRight } from "lucide-react";
 import Fuse from "fuse.js";
 import { DS } from "@/lib/design-tokens";
+import { InlineLoader } from "./ui/LoadingScreen";
 import { useTranslations } from "next-intl";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -257,8 +258,8 @@ export default function SearchOverlay({ locale, onClose }: SearchOverlayProps) {
           }}
         >
           {loading ? (
-            <div className="search-spinner" style={{ width: 20, height: 20, flexShrink: 0 }}>
-              <div style={{ width: 20, height: 20, border: `2px solid rgba(236,72,153,0.2)`, borderTopColor: DS.pink, borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
+            <div className="search-spinner" style={{ width: 20, height: 20, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <InlineLoader size={20} color={DS.pink} />
             </div>
           ) : (
             <Search size={20} style={{ color: DS.pink, flexShrink: 0 }} />

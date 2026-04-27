@@ -17,6 +17,7 @@ import {
   Edit2, Trash2, X, AlertTriangle, Save,
 } from "lucide-react";
 import { ImageUpload } from "@/components/ui/ImageUpload";
+import { InlineLoader } from "@/components/ui/LoadingScreen";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -265,8 +266,8 @@ function CourseEditModal({
               <button type="button" onClick={onClose} style={{ flex: 1, padding: "10px", background: DS.bg, border: `1px solid ${DS.border}`, borderRadius: 10, color: DS.text3, cursor: "pointer", fontSize: 13 }}>
                 {t("academy.formBtnCancel")}
               </button>
-              <button type="submit" disabled={saving} style={{ flex: 1, padding: "10px", background: saving ? DS.text4 : GRD.primary, border: "none", borderRadius: 10, color: "#fff", fontWeight: 700, cursor: saving ? "not-allowed" : "pointer", fontSize: 13 }}>
-                {saving ? t("academy.formBtnSaving") : isEdit ? t("academy.formBtnSave") : t("academy.formBtnCreate")}
+              <button type="submit" disabled={saving} style={{ flex: 1, padding: "10px", background: saving ? DS.text4 : GRD.primary, border: "none", borderRadius: 10, color: "#fff", fontWeight: 700, cursor: saving ? "not-allowed" : "pointer", fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                {saving ? <InlineLoader size={16} color="#fff" /> : (isEdit ? t("academy.formBtnSave") : t("academy.formBtnCreate"))}
               </button>
             </div>
           </form>
@@ -386,8 +387,8 @@ function InstructorEditModal({
               <button type="button" onClick={onClose} style={{ flex: 1, padding: "10px", background: DS.bg, border: `1px solid ${DS.border}`, borderRadius: 10, color: DS.text3, cursor: "pointer", fontSize: 13 }}>
                 {t("academy.formBtnCancel")}
               </button>
-              <button type="submit" disabled={saving} style={{ flex: 1, padding: "10px", background: saving ? DS.text4 : GRD.primary, border: "none", borderRadius: 10, color: "#fff", fontWeight: 700, cursor: saving ? "not-allowed" : "pointer", fontSize: 13 }}>
-                {saving ? t("academy.formBtnSaving") : isEdit ? t("academy.formBtnSave") : t("academy.formBtnCreateInstructor")}
+              <button type="submit" disabled={saving} style={{ flex: 1, padding: "10px", background: saving ? DS.text4 : GRD.primary, border: "none", borderRadius: 10, color: "#fff", fontWeight: 700, cursor: saving ? "not-allowed" : "pointer", fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                {saving ? <InlineLoader size={16} color="#fff" /> : (isEdit ? t("academy.formBtnSave") : t("academy.formBtnCreateInstructor"))}
               </button>
             </div>
           </form>
@@ -453,8 +454,9 @@ function EnrollmentCreateForm({
           <AlertTriangle size={12} style={{ display: "inline", marginRight: 6 }} />{error}
         </div>
       )}
-      <button type="submit" disabled={saving} style={{ padding: "9px 18px", background: saving ? DS.text4 : GRD.primary, border: "none", borderRadius: 10, color: "#fff", fontWeight: 700, cursor: saving ? "not-allowed" : "pointer", fontSize: 13, display: "flex", alignItems: "center", gap: 6, alignSelf: "flex-end" }}>
-        <Save size={13} />{saving ? t("academy.formBtnSaving") : t("academy.formBtnEnroll")}
+      <button type="submit" disabled={saving} style={{ padding: "9px 18px", background: saving ? DS.text4 : GRD.primary, border: "none", borderRadius: 10, color: "#fff", fontWeight: 700, cursor: saving ? "not-allowed" : "pointer", fontSize: 13, display: "flex", alignItems: "center", gap: 8, alignSelf: "flex-end" }}>
+        {saving ? <InlineLoader size={16} color="#fff" /> : <Save size={13} />}
+        {saving ? t("academy.formBtnSaving") : t("academy.formBtnEnroll")}
       </button>
     </form>
   );
@@ -610,7 +612,7 @@ export default function AcademyPage() {
         <div style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 12, overflow: "hidden" }}>
           {coursesLoading ? (
             <div style={{ display: "flex", justifyContent: "center", padding: 40 }}>
-              <div style={{ width: 32, height: 32, border: `2px solid ${DS.border}`, borderTop: `2px solid ${DS.blue}`, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+              <InlineLoader size={32} />
             </div>
           ) : courses.length === 0 ? (
             <div style={{ textAlign: "center", padding: "3rem", color: DS.text4 }}>{t("academy.emptyCourses")}</div>
@@ -674,7 +676,7 @@ export default function AcademyPage() {
         <div style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 12, overflow: "hidden" }}>
           {instructorsLoading ? (
             <div style={{ display: "flex", justifyContent: "center", padding: 40 }}>
-              <div style={{ width: 32, height: 32, border: `2px solid ${DS.border}`, borderTop: `2px solid ${DS.blue}`, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+              <InlineLoader size={32} />
             </div>
           ) : instructors.length === 0 ? (
             <div style={{ textAlign: "center", padding: "3rem", color: DS.text4 }}>{t("academy.emptyInstructors")}</div>
@@ -734,7 +736,7 @@ export default function AcademyPage() {
           <div style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 12, overflow: "hidden" }}>
             {enrollmentsLoading ? (
               <div style={{ display: "flex", justifyContent: "center", padding: 40 }}>
-                <div style={{ width: 32, height: 32, border: `2px solid ${DS.border}`, borderTop: `2px solid ${DS.blue}`, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+                <InlineLoader size={32} />
               </div>
             ) : enrollments.length === 0 ? (
               <div style={{ textAlign: "center", padding: "3rem", color: DS.text4 }}>{t("academy.emptyEnrollments")}</div>

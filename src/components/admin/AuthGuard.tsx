@@ -23,6 +23,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/app/store/authStore";
 import { AdminLoginModal } from "./AdminLoginModal";
+import { LoadingScreen } from "../ui/LoadingScreen";
 
 // ── Session Expiry Modal ────────────────────────────────────────────────────────
 
@@ -241,7 +242,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
   // ── Render ───────────────────────────────────────────────────────────────────
 
-  if (status === "pending") return null;
+  if (status === "pending") return <LoadingScreen message="Đang xác thực quyền truy cập..." />;
 
   // Blocked: show login form (expiry modal overlays it)
   if (status === "blocked") {

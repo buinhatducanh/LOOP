@@ -25,6 +25,7 @@ import {
   ArrowDownRight,
 } from "lucide-react";
 import { qk } from "@/lib/query/provider";
+import { InlineLoader } from "@/components/ui/LoadingScreen";
 
 import { useAuthStore } from "@/app/store/authStore";
 
@@ -338,6 +339,16 @@ export default function AdminOverviewPage() {
 
   const orders = ordersData && "data" in ordersData ? ordersData.data : [];
   const totalOrders = ordersData && "pagination" in ordersData ? (ordersData as { pagination: { total: number } }).pagination.total : 0;
+
+  const isLoading = !ordersData && !teamData && !clientsData && !enrollData;
+
+  if (isLoading) {
+    return (
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh" }}>
+        <InlineLoader size={48} color={DS.blue} />
+      </div>
+    );
+  }
 
   // Real KPIs computed from orders
   const monthRevenue = orders

@@ -22,8 +22,9 @@ import { DS, GRD } from "@/lib/design-tokens";
 import { useAdminTranslations } from "@/i18n/admin/useAdminTranslations";
 import {
   Settings, Layers, Server, Package as PackageIcon, PlusCircle,
-  Save, Trash2, RefreshCw, Loader2, Edit2, X, Globe, CheckSquare, HardDrive,
+  Save, Trash2, RefreshCw, Edit2, X, Globe, CheckSquare, HardDrive,
 } from "lucide-react";
+import { InlineLoader } from "@/components/ui/LoadingScreen";
 
 // ── Types ───────────────────────────────────────────────────────────────────────
 
@@ -249,7 +250,7 @@ function SettingsTab() {
               transition: "all 0.2s",
             }}
           >
-            {saveMutation.isPending ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : <Save size={14} />}
+            {saveMutation.isPending ? <InlineLoader size={14} color="#fff" /> : <Save size={14} />}
             Lưu thay đổi
           </button>
         </div>
@@ -257,7 +258,7 @@ function SettingsTab() {
 
       {isLoading ? (
         <div style={{ display: "flex", justifyContent: "center", padding: "3rem" }}>
-          <Loader2 size={24} style={{ color: DS.text4, animation: "spin 1s linear infinite" }} />
+          <InlineLoader size={24} />
         </div>
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
@@ -603,7 +604,7 @@ function FeaturesTab() {
 
       {isLoading ? (
         <div style={{ display: "flex", justifyContent: "center", padding: "3rem" }}>
-          <Loader2 size={24} style={{ color: DS.text4, animation: "spin 1s linear infinite" }} />
+          <InlineLoader size={24} />
         </div>
       ) : filtered.length === 0 ? (
         <div style={{ textAlign: "center", padding: "3rem", color: DS.text4 }}>Không có tính năng nào</div>
@@ -709,7 +710,7 @@ function InfraTiersTab() {
 
       {isLoading ? (
         <div style={{ display: "flex", justifyContent: "center", padding: "3rem" }}>
-          <Loader2 size={24} style={{ color: DS.text4, animation: "spin 1s linear infinite" }} />
+          <InlineLoader size={24} />
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -790,7 +791,7 @@ function PackagesTab() {
 
       {isLoading ? (
         <div style={{ display: "flex", justifyContent: "center", padding: "3rem" }}>
-          <Loader2 size={24} style={{ color: DS.text4, animation: "spin 1s linear infinite" }} />
+          <InlineLoader size={24} />
         </div>
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 14 }}>
@@ -904,7 +905,7 @@ function AddonsTab() {
 
       {isLoading ? (
         <div style={{ display: "flex", justifyContent: "center", padding: "3rem" }}>
-          <Loader2 size={24} style={{ color: DS.text4, animation: "spin 1s linear infinite" }} />
+          <InlineLoader size={24} />
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -1061,7 +1062,7 @@ function HostingTab() {
 
  {isLoading ? (
  <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem' }}>
- <Loader2 size={24} style={{ color: DS.text4, animation: 'spin 1s linear infinite' }} />
+ <InlineLoader size={24} />
   </div>
  ) : (
  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -1194,8 +1195,7 @@ function HostingTab() {
  <button onClick={() => setShowForm(false)} style={{ padding: '8px 16px', border: `1px solid ${DS.border}`, borderRadius: 10, background: 'transparent', color: DS.text3, cursor: 'pointer', fontFamily: DS.mono, fontSize: 13 }}>Hủy</button>
  <button onClick={handleSave} disabled={saving}
  style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 20px', background: saving ? DS.text4 : DS.blue, color: '#fff', border: 'none', borderRadius: 10, cursor: saving ? 'not-allowed' : 'pointer', fontFamily: DS.mono, fontSize: 13, fontWeight: 600 }}>
- {saving && <Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} />}
- {saving ? 'Đang lưu...' : 'Lưu'}
+ {saving ? <InlineLoader size={13} color="#fff" /> : 'Lưu'}
  </button>
  </div>
  </motion.div>
@@ -1265,7 +1265,7 @@ function DomainPricesTab() {
 
  {isLoading ? (
  <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem' }}>
- <Loader2 size={24} style={{ color: DS.text4, animation: 'spin 1s linear infinite' }} />
+ <InlineLoader size={24} />
  </div>
  ) : (
  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 12 }}>
@@ -1363,8 +1363,7 @@ function DomainPricesTab() {
  setSaving(false);
  }} disabled={saving}
   style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 20px', background: saving ? DS.text4 : DS.blue, color: '#fff', border: 'none', borderRadius: 10, cursor: saving ? 'not-allowed' : 'pointer', fontFamily: DS.mono, fontSize: 13, fontWeight: 600 }}>
- {saving && <Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} />}
- {saving ? 'Đang lưu...' : 'Lưu'}
+ {saving ? <InlineLoader size={13} color="#fff" /> : 'Lưu'}
  </button>
  </div>
  </motion.div>

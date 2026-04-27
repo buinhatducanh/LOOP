@@ -23,8 +23,9 @@ import {
   CheckCircle2, ArrowUpDown, Package, DollarSign,
   PlusCircle, RefreshCw, Globe, Server, CheckCircle,
   AlertCircle, Clock, ExternalLink, RotateCcw, ShieldCheck, Rocket,
-  Loader2, List, ChevronRight, ChevronDown, Trash2, ChevronLeft,
+  List, ChevronRight, ChevronDown, Trash2, ChevronLeft,
 } from "lucide-react";
+import { InlineLoader } from "@/components/ui/LoadingScreen";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -371,7 +372,7 @@ function DrawerShell({
                 alignItems: "center", justifyContent: "center",
                 borderRadius: 0,
               }}>
-                <Loader2 size={32} style={{ animation: "spin 1s linear infinite", color: accentColor }} />
+                <InlineLoader size={32} color={accentColor} />
                 <div style={{ color: DS.text3, fontFamily: DS.mono, fontSize: 11, marginTop: 12 }}>
                   Đang lưu...
                 </div>
@@ -515,7 +516,7 @@ function EditPackageDrawer({
               gap: 8,
             }}
           >
-            {isMutating && <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} />}
+            {isMutating && <InlineLoader size={14} color="#fff" />}
             Lưu thay đổi
           </button>
         </>
@@ -826,7 +827,7 @@ function TierFeatureDrawer({
             >
               {isMutating ? (
                 <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} />
+                  <InlineLoader size={14} color="#fff" />
                   Đang lưu...
                 </span>
               ) : pendingCount > 0 ? (
@@ -1096,7 +1097,7 @@ function AddPackageDrawer({
               gap: 8,
             }}
           >
-            {isMutating && <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} />}
+            {isMutating && <InlineLoader size={14} color="#fff" />}
             Thêm gói web
           </button>
         </>
@@ -1306,7 +1307,7 @@ function ConfirmDomainDrawer({
               gap: 8,
             }}
           >
-            {isMutating && <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} />}
+            {isMutating && <InlineLoader size={14} color="#fff" />}
             <ShieldCheck size={14} />
             Xác nhận domain
           </button>
@@ -1465,7 +1466,7 @@ function ConfigureDoneDrawer({
               gap: 8,
             }}
           >
-            {isMutating && <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} />}
+            {isMutating && <InlineLoader size={14} color="#fff" />}
             <CheckCircle size={14} />
             Hoàn tất cấu hình
           </button>
@@ -1598,7 +1599,7 @@ function InlineField({
             fontFamily: DS.mono,
           }}
         >
-          {saving ? <Loader2 size={9} style={{ animation: "spin 1s linear infinite" }} /> : <CheckCircle size={9} />}
+          {saving ? <InlineLoader size={9} color="#fff" /> : <CheckCircle size={9} />}
         </button>
         <button
           onClick={onCancel}
@@ -2266,7 +2267,7 @@ function CustomerWebsitesSection({
 
         {isLoading ? (
           <div style={{ display: "flex", justifyContent: "center", padding: 40 }}>
-            <Loader2 size={32} style={{ animation: "spin 1s linear infinite", color: DS.blue }} />
+            <InlineLoader size={32} />
           </div>
         ) : filtered.length === 0 ? (
           <div style={{ textAlign: "center", padding: "3rem", color: DS.text4 }}>
@@ -3789,7 +3790,7 @@ export default function WebPackagesPage() {
             <AnimatePresence>
               {isLoading ? (
                 <div style={{ display: "flex", justifyContent: "center", padding: 40 }}>
-                  <Loader2 size={32} style={{ animation: "spin 1s linear infinite", color: DS.blue }} />
+                  <InlineLoader size={32} />
                 </div>
               ) : filtered.length === 0 ? (
                 <div style={{

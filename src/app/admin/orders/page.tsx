@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "motion/react";
 import { qk } from "@/lib/query/provider";
 import { adminApi } from "@/lib/api/client";
+import { InlineLoader } from "@/components/ui/LoadingScreen";
 
 import { DS, GRD } from "@/lib/design-tokens";
 import {
@@ -462,8 +463,8 @@ function OrderEditModal({ order, onClose, onSuccess }: { order: Order | null; on
                         )}
                         <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
                             <button type="button" onClick={onClose} style={{ flex: 1, padding: "10px", background: DS.bg, border: `1px solid ${DS.border}`, borderRadius: 10, color: DS.text3, cursor: "pointer", fontSize: 13 }}>Hủy</button>
-                            <button type="submit" disabled={saving} style={{ flex: 1, padding: "10px", background: saving ? DS.text4 : GRD.primary, border: "none", borderRadius: 10, color: "#fff", fontWeight: 700, cursor: saving ? "not-allowed" : "pointer", fontSize: 13 }}>
-                                {saving ? "Đang lưu..." : isEdit ? "Lưu thay đổi" : "Tạo đơn hàng"}
+                            <button type="submit" disabled={saving} style={{ flex: 1, padding: "10px", background: saving ? DS.text4 : GRD.primary, border: "none", borderRadius: 10, color: "#fff", fontWeight: 700, cursor: saving ? "not-allowed" : "pointer", fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                                {saving ? <InlineLoader size={16} color="#fff" /> : (isEdit ? "Lưu thay đổi" : "Tạo đơn hàng")}
                             </button>
                         </div>
                     </form>
@@ -1410,7 +1411,7 @@ export default function OrdersPage() {
             {/* Loading */}
             {isLoading && (
                 <div style={{ display: "flex", justifyContent: "center", padding: 40 }}>
-                    <div style={{ width: 32, height: 32, border: `2px solid ${DS.border}`, borderTop: `2px solid ${DS.blue}`, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+                    <InlineLoader size={32} />
                 </div>
             )}
 
