@@ -20,8 +20,8 @@ import {
   Shield, Search, Globe, Code2, BarChart3, Layers, Zap, Package,
 } from "lucide-react";
 
-const fmtVND = (n: number) => {
-  if (n === 0) return "Miễn phí";
+const fmtVND = (n: number | null | undefined) => {
+  if (n == null || n === 0) return "Miễn phí";
   return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(n);
 };
 
@@ -392,7 +392,7 @@ function CategorySection({
         aria-label={`${open ? "Thu gọn" : "Mở rộng"} ${category}`}
       >
         {/* Category icon + color dot */}
-        <div
+        <span
           className="flex items-center justify-center flex-shrink-0 rounded-lg"
           style={{
             width: 30, height: 30,
@@ -402,7 +402,7 @@ function CategorySection({
           }}
         >
           {catStyle.icon}
-        </div>
+        </span>
 
         {/* Category name */}
         <span style={{
@@ -416,7 +416,7 @@ function CategorySection({
         </span>
 
         {/* Feature count badges */}
-        <div className="flex items-center gap-1.5">
+        <span className="flex items-center gap-1.5">
           {/* Included count */}
           {includedCount > 0 && (
             <span
@@ -445,7 +445,7 @@ function CategorySection({
               {extraSelectedCount > 0 ? `${extraSelectedCount}/${extraCount}` : extraCount} thêm
             </span>
           )}
-        </div>
+        </span>
 
         {/* Chevron */}
         <span className="ml-auto" style={{ color: "#64748B" }}>

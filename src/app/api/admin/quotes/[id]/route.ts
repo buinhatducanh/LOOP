@@ -20,11 +20,12 @@ const updateSchema = z.object({
   infrastructureTierSlug: z.string().optional().nullable(),
   /** Infrastructure tier ID for auto-pricing */
   infrastructureTierId: z.string().optional().nullable(),
-  status: z.enum(["draft", "sent", "approved", "rejected", "expired"]).optional(),
+  status: z.enum(["draft", "sent", "viewed", "approved", "signed", "rejected", "expired", "cancelled"]).optional(),
   validUntil: z.string().transform(s => new Date(s)).optional().or(z.literal("")),
   sentAt: z.string().transform(s => new Date(s)).optional().or(z.literal("")),
   approvedAt: z.string().transform(s => new Date(s)).optional().or(z.literal("")),
   signedAt: z.string().transform(s => new Date(s)).optional().or(z.literal("")),
+  viewedAt: z.string().transform(s => new Date(s)).optional().or(z.literal("")),
   note: z.string().optional(),
 });
 
@@ -111,7 +112,7 @@ export async function PATCH(
     if (parsed.data.note !== undefined) updateData.note = parsed.data.note || null;
 
     // Handle nullable datetime fields
-    const nullableFields = ["validUntil", "sentAt", "approvedAt", "signedAt"] as const;
+    const nullableFields = ["validUntil", "sentAt", "approvedAt", "signedAt", "viewedAt"] as const;
     for (const field of nullableFields) {
       if (parsed.data[field] !== undefined) {
         updateData[field] = parsed.data[field] === "" ? null : parsed.data[field];

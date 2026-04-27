@@ -14,7 +14,7 @@ import { ok, serverError } from "@/lib/api/response";
 import { prisma } from "@/lib/prisma";
 import { calculateOrderPrice } from "@/lib/pricing/calculate-order-price";
 
-export const revalidate = 300;
+export const revalidate = 0; // Disable cache to always fetch fresh DB data
 
 // ── Locale types ───────────────────────────────────────────────────────────────
 
@@ -690,7 +690,7 @@ export async function GET(request: Request) {
         labelEn: f.featureName,
         description: f.description ?? "",
         category: f.category,
-        extraPrice: f.extraPrice ?? 0,
+        extraPrice: (f.extraPrice && f.extraPrice > 0) ? f.extraPrice : undefined,
         // Parse includedTiers from JSON — stored as Json field in DB
         includedTiers: (typeof f.includedTiers === "string"
           ? JSON.parse(f.includedTiers)

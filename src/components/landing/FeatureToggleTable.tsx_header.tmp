@@ -1,0 +1,49 @@
+"use client";
+
+/**
+ * FeatureToggleTable — Reusable interactive feature selector
+ * Used by: BookingWizardClient (step 1) + /thiet-ke-website page
+ *
+ * UX principles for non-tech customers:
+ * 1. Every feature has a PLAIN-LANGUAGE description (visible by default, 2 lines)
+ * 2. "Chi tiết" → expand full description with concrete examples
+ * 3. Included features: clearly labeled "Đã có" — no confusing pricing
+ * 4. Extra features: "+X,XXX,XXXđ" prominent, instant price feedback
+ * 5. Visual cues (colors, icons, badges) reinforce meaning, not decoration
+ */
+
+import { useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import { DS } from "@/lib/design-tokens";
+import {
+  Check, HelpCircle, ChevronDown, ChevronRight,
+  Shield, Search, Globe, Code2, BarChart3, Layers, Zap, Package,
+} from "lucide-react";
+
+const fmtVND = (n: number) => {
+  if (n === 0) return "Miễn phí";
+  return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(n);
+};
+
+export interface WizardFeature {
+  id: string;
+  /** Tên hiển thị (tiếng Việt, dễ hiểu) */
+  label: string;
+  labelEn?: string;
+  /** Giá bổ sung — 0 nếu đã bao gồm */
+  price: number;
+  category: string;
+  xpPoints?: number;
+  tier?: string;
+  /** Mô tả thân thiện — cho khách hàng không biết kỹ thuật */
+  description: string;
+  /** Lợi ích ngắn gọn 1 dòng */
+  benefit?: string;
+  /** true = đã bao gồm trong gói đã chọn */
+  includedInBase?: boolean;
+  isUpgradeable?: boolean;
+  parentId?: string | null;
+  categoryEn?: string;
+}
+
+// ── Design tokens per category ──────────────────────────────────────────────────

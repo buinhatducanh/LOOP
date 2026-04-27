@@ -11,6 +11,7 @@
  *   order.lpAllocation → buildLpAwardsFromOrder → batch-insert via createMany inside tx
  */
 
+import { randomUUID } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { calculateOrderPrice } from "@/lib/pricing/calculate-order-price";
 
@@ -67,7 +68,7 @@ export async function approveQuoteAndCreateOrder(
   });
 
   if (!quote) return { ok: false, error: "Quote not found" };
-  if (quote.status !== "draft" && quote.status !== "sent") {
+  if (quote.status !== "draft" && quote.status !== "sent" && quote.status !== "viewed") {
     return { ok: false, error: `Quote is already ${quote.status}` };
   }
 
@@ -101,7 +102,7 @@ export async function approveQuoteAndCreateOrder(
     const created = await tx.order.create({
       data: {
         // P1: Use crypto.randomUUID() to prevent collision (Date.now() could duplicate)
-        orderNumber: `ORD-${crypto.randomUUID().replace(/-/g, "").slice(0, 12).toUpperCase()}`,
+        orderNumber: `ORD-${randomUUID().replace(/-/g, "").slice(0, 12).toUpperCase()}`,
         // P0-1: Link order back to lead — was missing, orphans entire lead→order lineage
         salesLeadId: quote.salesLead?.id ?? null,
         customerName: quote.salesLead?.customerName ?? "Unknown",

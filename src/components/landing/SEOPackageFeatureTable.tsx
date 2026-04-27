@@ -13,8 +13,8 @@ import { Check, X, ChevronDown, ChevronUp, Search, ExternalLink } from "lucide-r
 
 // ── Utils ──────────────────────────────────────────────────────────────────────
 
-const fmtVND = (n: number) => {
-    if (n === 0) return "Miễn phí";
+const fmtVND = (n: number | null | undefined) => {
+    if (n == null || n === 0) return "Miễn phí";
     return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(n);
 };
 
@@ -96,7 +96,7 @@ function FeatureTableRow({
                         </span>
                         <div className="min-w-0">
                             <p style={{ color: DS.text, fontSize: 13, fontWeight: 600, lineHeight: 1.4 }}>{feature.label}</p>
-                            {!!feature.labelEn && (
+                            {!!feature.labelEn && feature.labelEn !== feature.label && (
                                 <p style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono }}>{feature.labelEn}</p>
                             )}
                         </div>

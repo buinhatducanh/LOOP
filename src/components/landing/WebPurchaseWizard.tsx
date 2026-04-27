@@ -378,8 +378,8 @@ export function WebPurchaseWizard({ locale, isAuthenticated, t }: Props) {
  };
 
  // ─── Format price ────────────────────────────────────────────────────────────
- const fmt = (n: number) =>
- n.toLocaleString("vi-VN") + "đ";
+  const fmt = (n: number) =>
+    n === 0 ? "Miễn phí" : n.toLocaleString("vi-VN") + "đ";
 
  const isVi = locale === "vi";
 

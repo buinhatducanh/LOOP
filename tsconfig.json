@@ -48,6 +48,7 @@
     "CHECKING FE",
     "tests/e2e/**",
     "playwright.config.ts",
-    "scripts/**"
+    "scripts/**",
+    "scratch/**"
   ]
 }

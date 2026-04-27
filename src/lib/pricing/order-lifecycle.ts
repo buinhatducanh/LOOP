@@ -186,12 +186,12 @@ export async function transitionOrderStatus(
       await awardReferralLpOnCompletion(orderId, order.orderNumber, order.paidAmount);
     }
 
-     // ── Credit sales commission on order completion (done) ──────────────────
- if (toStatus === "completed") {
- await creditSalesCommissionForOrderTx(orderId, tx);
- }
+    // ── Credit sales commission on order completion (done) ──────────────────
+    if (toStatus === "completed") {
+      await creditSalesCommissionForOrderTx(orderId, tx);
+    }
 
-// ── P1-2 FIX: audit log inside tx ─────────────────────────────────────────
+    // ── P1-2 FIX: audit log inside tx ─────────────────────────────────────────
     if (auditUserId && auditResourceId) {
       await tx.auditLog.create({
         data: {
@@ -214,7 +214,7 @@ export async function transitionOrderStatus(
     message: `Trạng thái đơn ${order.orderNumber}: ${order.status} → ${toStatus}`,
     link: `/admin/orders`,
     priority,
-  }).catch(() => {/* silent */});
+  }).catch(() => {/* silent */ });
 
   return { success: true };
 }

@@ -30,8 +30,11 @@ type Course = {
   requirements?: string[];
 };
 
-const fmtVND = (n?: number) =>
-  n == null ? "Liên hệ" : new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(n);
+const fmtVND = (n?: number) => {
+  if (n == null) return "Liên hệ";
+  if (n === 0) return "Miễn phí";
+  return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(n);
+};
 
 export function CourseDetailClient({ locale, course }: { locale: string; course: Course }) {
   const t = useTranslations("Academy");

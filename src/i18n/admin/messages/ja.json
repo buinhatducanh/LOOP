@@ -421,6 +421,7 @@
     "statusPending": "保留",
     "statusApproved": "承認済み",
     "statusSent": "送信済み",
+    "statusViewed": "閲覧済み",
     "statusSigned": "署名済み",
     "statusRejected": "却下",
     "statusCancelled": "キャンセル",

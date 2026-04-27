@@ -421,6 +421,7 @@
     "statusPending": "待处理",
     "statusApproved": "已批准",
     "statusSent": "已发送",
+    "statusViewed": "已查看",
     "statusSigned": "已签",
     "statusRejected": "已拒绝",
     "statusCancelled": "已取消",

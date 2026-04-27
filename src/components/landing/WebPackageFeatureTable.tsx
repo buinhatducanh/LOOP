@@ -11,8 +11,8 @@ import { motion, AnimatePresence } from "motion/react";
 import { DS } from "@/lib/design-tokens";
 import { Check, ChevronDown, ChevronUp, Layers } from "lucide-react";
 
-const fmtVND = (n: number) => {
-    if (n === 0) return "Miễn phí";
+const fmtVND = (n: number | null | undefined) => {
+    if (n == null || n === 0) return "Miễn phí";
     return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(n);
 };
 
@@ -93,7 +93,7 @@ function FeatureRow({
                         </span>
                         <div className="min-w-0">
                             <p style={{ color: DS.text, fontSize: 12.5, fontWeight: 600, lineHeight: 1.4 }}>{feature.label}</p>
-                            {!!feature.labelEn && (
+                            {!!feature.labelEn && feature.labelEn !== feature.label && (
                                 <p style={{ color: DS.text5, fontSize: 9.5, fontFamily: DS.mono }}>{feature.labelEn}</p>
                             )}
                         </div>
@@ -224,7 +224,7 @@ function CategoryGroup({
                         padding: "1px 6px",
                         borderRadius: 9999,
                     }}>
-                        {features.length}
+                        {features.length} tính năng
                     </span>
                 </div>
                 <div className="flex items-center gap-3">
@@ -339,32 +339,35 @@ export function WebPackageFeatureTable({
                                                 cursor: "pointer",
                                                 width: "100%",
                                                 transition: "all 0.15s",
+                                                display: "block",
                                             }}
                                         >
-                                            <div style={{
+                                            <span style={{
                                                 color: isSelected ? color : DS.text4,
                                                 fontSize: 10,
                                                 fontFamily: DS.mono,
                                                 fontWeight: 700,
                                                 letterSpacing: "0.06em",
                                                 transition: "color 0.15s",
+                                                display: "block",
                                             }}>
                                                 {TIER_NAMES[tier]}
-                                            </div>
+                                            </span>
                                             {tierData && tierData.basePrice > 0 && (
-                                                <div style={{ color: isSelected ? DS.text : DS.text5, fontSize: 10, fontFamily: DS.mono, marginTop: 2 }}>
+                                                <span style={{ color: isSelected ? DS.text : DS.text5, fontSize: 10, fontFamily: DS.mono, marginTop: 2, display: "block" }}>
                                                     {fmtVND(tierData.basePrice)}
-                                                </div>
+                                                </span>
                                             )}
                                             {tierData && tierData.basePrice === 0 && (
-                                                <div style={{ color: isSelected ? DS.text : DS.text5, fontSize: 10, fontFamily: DS.mono, marginTop: 2 }}>
+                                                <span style={{ color: isSelected ? DS.text : DS.text5, fontSize: 10, fontFamily: DS.mono, marginTop: 2, display: "block" }}>
                                                     Liên hệ
-                                                </div>
+                                                </span>
                                             )}
                                             {isSelected && (
-                                                <div style={{
+                                                <span style={{
                                                     width: 6, height: 6, borderRadius: "50%",
                                                     background: color, margin: "4px auto 0",
+                                                    display: "block",
                                                 }} />
                                             )}
                                         </motion.button>

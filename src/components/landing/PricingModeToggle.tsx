@@ -162,7 +162,7 @@ export function PricingModeToggle({ locale, isAuthenticated, t }: Props) {
  const displayPlans = hasDbPlans
  ? plans.map((p) => ({
  name: p.name,
- price: p.price != null ? `${p.price.toLocaleString()}đ` : t.planCustom,
+ price: p.price != null ? (p.price === 0 ? "Miễn phí" : `${p.price.toLocaleString()}đ`) : t.planCustom,
  period: p.period,
  tagline: p.tagline,
  features: p.features,

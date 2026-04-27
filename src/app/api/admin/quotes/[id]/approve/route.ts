@@ -16,9 +16,10 @@ export async function POST(
     const session = await requirePermission("quotes", "approve");
     const { id } = await params;
     const data = await req.json();
-    const { action, adminOverridePrice } = data as {
+    const { action, adminOverridePrice, note } = data as {
       action: "send" | "approve" | "reject";
       adminOverridePrice?: number | null;
+      note?: string;
     };
 
     const quote = await prisma.quote.findUnique({
@@ -42,11 +43,11 @@ export async function POST(
       // P0-3: Also update lead status when quote is sent to customer
       if (quote.salesLead?.id) {
         await prisma.$transaction([
-          prisma.quote.update({ where: { id }, data: { status: "sent", sentAt: new Date() } }),
+          prisma.quote.update({ where: { id }, data: { status: "sent", sentAt: new Date(), note: note || quote.note } }),
           prisma.salesLead.update({ where: { id: quote.salesLead.id }, data: { status: "quoted" } }),
         ]);
       } else {
-        await prisma.quote.update({ where: { id }, data: { status: "sent", sentAt: new Date() } });
+        await prisma.quote.update({ where: { id }, data: { status: "sent", sentAt: new Date(), note: note || quote.note } });
       }
       return NextResponse.json({ data: { status: "sent" } });
     }
@@ -63,7 +64,7 @@ export async function POST(
       });
       const updated = await prisma.quote.update({
         where: { id },
-        data: { status: "rejected" },
+        data: { status: "rejected", note: note || quote.note },
       });
       return NextResponse.json({ data: updated });
     }

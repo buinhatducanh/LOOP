@@ -11,7 +11,7 @@ import {
     X, CheckCircle2, Eye, ChevronRight, Search,
     RefreshCw, Plus, Trash2, Edit2, AlertTriangle,
     Monitor, CreditCard, Users, Clock, CheckCheck,
-    DollarSign, Package, List, UserCheck,
+    DollarSign, Package, List, UserCheck, History,
 } from "lucide-react";
 
 // ── Status config ─────────────────────────────────────────────────────────────
@@ -37,9 +37,9 @@ const CUSTOM_TRANSITIONS: Record<string, string[]> = {
     draft: ["pending", "cancelled"],
     pending: ["quoted", "cancelled"],
     quoted: ["accepted", "cancelled"],
-    accepted: ["paid_partial", "paid_full", "cancelled"],
-    paid_partial: ["paid_full", "contracted", "cancelled"],
-    paid_full: ["contracted", "cancelled"],
+    accepted: ["paid_partial", "paid_full", "designing", "contracted", "cancelled"],
+    paid_partial: ["paid_full", "contracted", "designing", "cancelled"],
+    paid_full: ["contracted", "designing", "cancelled"],
     contracted: ["designing", "cancelled"],
     designing: ["developing", "cancelled"],
     developing: ["reviewing", "cancelled"],
@@ -190,7 +190,7 @@ function OrderRow({
     onAssignSalesRep,
 }: {
     order: Order;
-    onTransition: (id: string, status: string) => void;
+    onTransition: (order: Order) => void;
     onDetail: (order: Order) => void;
     onEdit: (order: Order) => void;
     onDelete: (order: Order) => void;
@@ -243,7 +243,7 @@ function OrderRow({
                             {typeCfg.label}
                         </span>
                         <span style={{ fontSize: 10, color: DS.text4, fontFamily: DS.mono }}>
-                            #{order.orderNumber.slice(-8)}
+                            #{order.orderNumber?.slice(-8) || "..."}
                         </span>
                     </div>
                     <p style={{ color: DS.text4, fontSize: 12, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
@@ -298,7 +298,7 @@ function OrderRow({
 
                     {/* Next transition */}
                     {primaryNext && !TERMINAL_STATUSES.has(order.status) ? (
-                        <button onClick={() => onTransition(order.id, primaryNext as string)} title={`Chuyển → ${STATUS_CONFIG[primaryNext]?.label ?? ""}`}
+                        <button onClick={() => onTransition(order)} title={`Chuyển → ${STATUS_CONFIG[primaryNext]?.label ?? ""}`}
                             style={{ background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.3)", borderRadius: 8, padding: "5px 10px", cursor: "pointer", color: DS.green, display: "flex", alignItems: "center", fontSize: 11, fontFamily: DS.mono }}>
                             <ChevronRight size={12} />
                         </button>
@@ -478,7 +478,23 @@ function OrderEditModal({ order, onClose, onSuccess }: { order: Order | null; on
 // ───────────────────────────────────────────────────────────────────────────────
 function PaymentModal({ order, onClose, onSuccess }: { order: Order | null; onClose: () => void; onSuccess: () => void }) {
     const { t } = useAdminTranslations();
+    const qc = useQueryClient();
     if (!order) return null;
+
+    const { data: paymentsData, isLoading: loadingHistory } = useQuery({
+        queryKey: ["admin", "orders", order.id, "payments"],
+        queryFn: () => adminApi.get<{ data: any[] }>(`/api/admin/orders/${order.id}/payments`),
+    });
+
+    const deletePayment = useMutation({
+        mutationFn: (paymentId: string) => adminApi.delete(`/api/admin/orders/${order.id}/payments/${paymentId}`),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ["admin", "orders", order.id, "payments"] });
+            onSuccess(); // Refresh main list to update paidAmount
+        }
+    });
+
+    const payments = paymentsData?.data ?? [];
 
     const total = order.finalPrice ?? order.totalAmount ?? 0;
     const paid = order.paidAmount ?? 0;
@@ -597,6 +613,40 @@ function PaymentModal({ order, onClose, onSuccess }: { order: Order | null; onCl
                             </button>
                         </div>
                     </form>
+
+                    {/* Payment History */}
+                    <div style={{ marginTop: 20, paddingTop: 16, borderTop: `1px solid ${DS.border}` }}>
+                        <h4 style={{ color: DS.text, fontSize: 13, marginBottom: 12, display: "flex", alignItems: "center", gap: 6 }}>
+                            <History size={14} style={{ color: DS.text4 }} /> Lịch sử thanh toán
+                        </h4>
+                        {loadingHistory ? (
+                            <div style={{ color: DS.text4, fontSize: 12, textAlign: "center", padding: 10 }}>Đang tải...</div>
+                        ) : payments.length === 0 ? (
+                            <div style={{ color: DS.text4, fontSize: 12, textAlign: "center", padding: 10 }}>Chưa có giao dịch nào.</div>
+                        ) : (
+                            <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 180, overflowY: "auto", paddingRight: 4 }}>
+                                {payments.map(p => (
+                                    <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", background: DS.bg, borderRadius: 10, border: `1px solid ${DS.border}` }}>
+                                        <div style={{ flex: 1 }}>
+                                            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 2 }}>
+                                                <span style={{ color: "#10B981", fontWeight: 700, fontSize: 13 }}>+{fmt(p.amount)}</span>
+                                                <span style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono }}>{new Date(p.createdAt).toLocaleDateString("vi-VN")}</span>
+                                            </div>
+                                            <div style={{ color: DS.text4, fontSize: 11 }}>{p.method} {p.note ? `· ${p.note}` : ""}</div>
+                                        </div>
+                                        <button 
+                                            onClick={() => {
+                                                if (confirm("Xóa giao dịch này? Số tiền sẽ được trừ lại vào công nợ.")) deletePayment.mutate(p.id);
+                                            }}
+                                            disabled={deletePayment.isPending}
+                                            style={{ background: "none", border: "none", color: DS.text4, cursor: "pointer", padding: 4 }}>
+                                            <Trash2 size={14} />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 </motion.div>
             </motion.div>
         </AnimatePresence>
@@ -605,6 +655,113 @@ function PaymentModal({ order, onClose, onSuccess }: { order: Order | null; onCl
 
 // ───────────────────────────────────────────────────────────────────────────────
 // SEND DEMO MODAL
+// ───────────────────────────────────────────────────────────────────────────────
+// TRANSITION MODAL
+// ───────────────────────────────────────────────────────────────────────────────
+function TransitionModal({ order, onClose, onSuccess }: { order: Order | null; onClose: () => void; onSuccess: (status: string, note: string) => void }) {
+    const { t } = useAdminTranslations();
+    if (!order) return null;
+
+    const nextStatuses = getTransitions(order.orderType, order.status);
+    const [selected, setSelected] = useState(nextStatuses[0] ?? "");
+    const [note, setNote] = useState("");
+    const [saving, setSaving] = useState(false);
+
+    const handleConfirm = async () => {
+        if (!selected) return;
+        setSaving(true);
+        try {
+            await onSuccess(selected, note);
+            onClose();
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const inputStyle = {
+        width: "100%", background: DS.bg, border: `1px solid ${DS.border}`,
+        borderRadius: 10, padding: "9px 12px", color: DS.text, fontSize: 13,
+        outline: "none", boxSizing: "border-box" as const, fontFamily: DS.body,
+    };
+
+    return (
+        <AnimatePresence>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                onClick={onClose}
+                style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", backdropFilter: "blur(8px)", zIndex: 70, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+                <motion.div initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
+                    onClick={(e) => e.stopPropagation()}
+                    style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 16, padding: 24, width: "100%", maxWidth: 440 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                            <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.3)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                <ChevronRight size={18} style={{ color: "#22C55E" }} />
+                            </div>
+                            <div>
+                                <h3 style={{ color: DS.text, fontWeight: 700, fontSize: 18, margin: 0 }}>Chuyển giai đoạn</h3>
+                                <p style={{ color: DS.text4, fontSize: 11, margin: 0 }}>#{order?.orderNumber?.slice(-8) || "..."} · {order?.customerName || "..."}</p>
+                            </div>
+                        </div>
+                        <button onClick={onClose} style={{ background: "none", border: "none", color: DS.text4, cursor: "pointer" }}><X size={18} /></button>
+                    </div>
+
+                    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                        <div>
+                            <label style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.08em", display: "block", marginBottom: 6 }}>
+                                {nextStatuses.length > 0 ? "BƯỚC TIẾP THEO GỢI Ý" : "CHỌN TRẠNG THÁI MỚI"}
+                            </label>
+                            
+                            {nextStatuses.length > 0 ? (
+                                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                                    {nextStatuses.map(s => (
+                                        <button
+                                            key={s}
+                                            onClick={() => setSelected(s)}
+                                            style={{
+                                                display: "flex", alignItems: "center", justifyContent: "space-between",
+                                                padding: "10px 14px", borderRadius: 10, cursor: "pointer",
+                                                background: selected === s ? "rgba(34,197,94,0.1)" : DS.bg,
+                                                border: `1px solid ${selected === s ? "#22C55E" : DS.border}`,
+                                                transition: "all 0.2s"
+                                            }}>
+                                            <span style={{ color: selected === s ? "#22C55E" : DS.text, fontWeight: 600, fontSize: 13 }}>{STATUS_CONFIG[s]?.label ?? s}</span>
+                                            {selected === s && <CheckCircle2 size={14} style={{ color: "#22C55E" }} />}
+                                        </button>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div style={{ color: DS.text4, fontSize: 13, textAlign: "center", padding: "20px 0" }}>
+                                    Không có trạng thái tiếp theo khả dụng.
+                                </div>
+                            )}
+                        </div>
+
+                        <div>
+                            <label style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.08em", display: "block", marginBottom: 6 }}>GHI CHÚ (TÙY CHỌN)</label>
+                            <textarea
+                                style={{ ...inputStyle, minHeight: 80, resize: "vertical" }}
+                                value={note}
+                                onChange={(e) => setNote(e.target.value)}
+                                placeholder="Lý do chuyển trạng thái, ghi chú cho team..."
+                            />
+                        </div>
+
+                        <div style={{ display: "flex", gap: 10 }}>
+                            <button onClick={onClose} style={{ flex: 1, padding: "10px", background: DS.bg, border: `1px solid ${DS.border}`, borderRadius: 10, color: DS.text3, cursor: "pointer", fontSize: 13 }}>Hủy</button>
+                            <button
+                                onClick={handleConfirm}
+                                disabled={!selected || saving}
+                                style={{ flex: 1, padding: "10px", background: !selected || saving ? DS.text4 : "#22C55E", border: "none", borderRadius: 10, color: "#fff", fontWeight: 700, cursor: !selected || saving ? "not-allowed" : "pointer", fontSize: 13 }}>
+                                {saving ? "Đang xử lý..." : "Xác nhận chuyển"}
+                            </button>
+                        </div>
+                    </div>
+                </motion.div>
+            </motion.div>
+        </AnimatePresence>
+    );
+}
+
 // ───────────────────────────────────────────────────────────────────────────────
 function SendDemoModal({ order, onClose, onSuccess }: { order: Order | null; onClose: () => void; onSuccess: (data: { orderId: string; title: string; figmaUrl: string }) => void }) {
     const { t } = useAdminTranslations();
@@ -790,7 +947,7 @@ function ProjectMembersModal({ order, onClose }: { order: Order | null; onClose:
                 style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", backdropFilter: "blur(8px)", zIndex: 70, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
                 <motion.div initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
                     onClick={(e) => e.stopPropagation()}
-                    style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 16, padding: 24, width: "100%", maxWidth: 540 }}>
+                    style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 16, padding: 24, width: "100%", maxWidth: 600 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                             <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(234,179,8,0.15)", border: "1px solid rgba(234,179,8,0.3)", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -798,19 +955,19 @@ function ProjectMembersModal({ order, onClose }: { order: Order | null; onClose:
                             </div>
                             <div>
                                 <h3 style={{ color: DS.text, fontWeight: 700, fontSize: 18, margin: 0 }}>Gán thành viên</h3>
-                                <p style={{ color: DS.text4, fontSize: 11, margin: 0 }}>{order.customerName} · #{order.orderNumber.slice(-8)}</p>
+                                <p style={{ color: DS.text4, fontSize: 11, margin: 0 }}>{order.customerName} · #{order.orderNumber?.slice(-8) || "..."}</p>
                             </div>
                         </div>
                         <button onClick={onClose} style={{ background: "none", border: "none", color: DS.text4, cursor: "pointer" }}><X size={18} /></button>
                     </div>
 
                     {/* Add member form */}
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr auto auto", gap: 8, marginBottom: 16 }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 140px 90px", gap: 8, marginBottom: 16 }}>
                         <select
                             value={form.memberId}
                             onChange={(e) => setForm(f => ({ ...f, memberId: e.target.value }))}
                             disabled={adding || loadingTeam}
-                            style={{ background: DS.bg, border: `1px solid ${DS.border}`, borderRadius: 10, padding: "9px 12px", color: DS.text, fontSize: 13, outline: "none", cursor: "pointer", fontFamily: DS.body }}>
+                            style={{ width: "100%", background: DS.bg, border: `1px solid ${DS.border}`, borderRadius: 10, padding: "9px 12px", color: DS.text, fontSize: 13, outline: "none", cursor: "pointer", fontFamily: DS.body }}>
                             <option value="">Chọn thành viên...</option>
                             {availableMembers.map(m => (
                                 <option key={m.id} value={m.id}>{m.name} ({m.email})</option>
@@ -819,7 +976,7 @@ function ProjectMembersModal({ order, onClose }: { order: Order | null; onClose:
                         <select
                             value={form.projectRoleKey}
                             onChange={(e) => setForm(f => ({ ...f, projectRoleKey: e.target.value }))}
-                            style={{ background: DS.bg, border: `1px solid ${DS.border}`, borderRadius: 10, padding: "9px 12px", color: DS.text, fontSize: 13, outline: "none", cursor: "pointer", fontFamily: DS.body, minWidth: 130 }}>
+                            style={{ width: "100%", background: DS.bg, border: `1px solid ${DS.border}`, borderRadius: 10, padding: "9px 12px", color: DS.text, fontSize: 13, outline: "none", cursor: "pointer", fontFamily: DS.body }}>
                             {PROJECT_ROLES.map(r => (
                                 <option key={r.key} value={r.key}>{r.label}</option>
                             ))}
@@ -827,8 +984,8 @@ function ProjectMembersModal({ order, onClose }: { order: Order | null; onClose:
                         <button
                             onClick={() => { setAdding(true); addMember.mutate(); }}
                             disabled={!form.memberId || adding}
-                            style={{ padding: "9px 14px", background: !form.memberId ? DS.text4 : "#EAB308", border: "none", borderRadius: 10, color: "#fff", fontWeight: 700, cursor: !form.memberId ? "not-allowed" : "pointer", fontSize: 13, display: "flex", alignItems: "center", gap: 4 }}>
-                            <Plus size={13} /> Thêm
+                            style={{ padding: "9px 12px", background: !form.memberId ? DS.text4 : "#EAB308", border: "none", borderRadius: 10, color: "#fff", fontWeight: 700, cursor: !form.memberId ? "not-allowed" : "pointer", fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center", gap: 4, whiteSpace: "nowrap" }}>
+                            {adding ? "..." : <><Plus size={13} /> Thêm</>}
                         </button>
                     </div>
                     {addError && (
@@ -923,7 +1080,7 @@ function SalesRepModal({ order, onClose, onSuccess }: { order: Order | null; onC
                             </div>
                             <div>
                                 <h3 style={{ color: DS.text, fontWeight: 700, fontSize: 18, margin: 0 }}>Sales Rep</h3>
-                                <p style={{ color: DS.text4, fontSize: 11, margin: 0 }}>{order.customerName} · #{order.orderNumber.slice(-8)}</p>
+                                <p style={{ color: DS.text4, fontSize: 11, margin: 0 }}>{order.customerName} · #{order.orderNumber?.slice(-8) || "..."}</p>
                             </div>
                         </div>
                         <button onClick={onClose} style={{ background: "none", border: "none", color: DS.text4, cursor: "pointer" }}><X size={18} /></button>
@@ -1280,6 +1437,7 @@ export default function OrdersPage() {
     const [paymentOrder, setPaymentOrder] = useState<Order | null>(null);
     const [assignMemberOrder, setAssignMemberOrder] = useState<Order | null>(null);
     const [salesRepOrder, setSalesRepOrder] = useState<Order | null>(null);
+    const [transitionOrder, setTransitionOrder] = useState<Order | null>(null);
     const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
     const { data, isLoading, isFetching } = useQuery({
@@ -1307,12 +1465,15 @@ export default function OrdersPage() {
     const pagination = data?.pagination;
     const totalPages = pagination?.totalPages ?? 1;
 
-    const transition = useMutation({
-        mutationFn: async ({ id, status }: { id: string; status: string }) => {
-            const res = await adminApi.post<{ data: unknown }>(`/api/admin/orders/${id}/transition`, { toStatus: status });
+    const transitionMutation = useMutation({
+        mutationFn: async ({ id, status, note }: { id: string; status: string; note?: string }) => {
+            const res = await adminApi.post<{ data: unknown }>(`/api/admin/orders/${id}/transition`, { toStatus: status, note });
             return res;
         },
-        onSuccess: () => qc.invalidateQueries({ queryKey: qk.orders() }),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: qk.orders() });
+            setTransitionOrder(null);
+        },
         onError: (err: unknown) => setToast({ message: err instanceof Error ? err.message : "Chuyển trạng thái thất bại", type: "error" }),
     });
 
@@ -1426,7 +1587,7 @@ export default function OrdersPage() {
                             <OrderRow
                                 key={order.id}
                                 order={order}
-                                onTransition={(id, nextStatus) => transition.mutate({ id, status: nextStatus })}
+                                onTransition={(order) => setTransitionOrder(order)}
                                 onDetail={setSelectedOrder}
                                 onEdit={setEditOrder}
                                 onDelete={setDeleteOrder}
@@ -1482,6 +1643,13 @@ export default function OrdersPage() {
             )}
             {!!salesRepOrder && (
                 <SalesRepModal order={salesRepOrder} onClose={() => setSalesRepOrder(null)} onSuccess={() => qc.invalidateQueries({ queryKey: qk.orders() })} />
+            )}
+            {!!transitionOrder && (
+                <TransitionModal 
+                    order={transitionOrder} 
+                    onClose={() => setTransitionOrder(null)} 
+                    onSuccess={(status, note) => transitionMutation.mutate({ id: transitionOrder.id, status, note })} 
+                />
             )}
         </div>
         {toast && (

@@ -188,8 +188,8 @@ const PKG_PRICE_MAP: Record<string, { basePrice: number; marketPrice: number; na
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
-const fmtVND = (n: number) => {
-  if (n === 0) return "Miễn phí";
+const fmtVND = (n: number | null | undefined) => {
+  if (n == null || n === 0) return "Miễn phí";
   return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(n);
 };
 
@@ -253,6 +253,8 @@ export function BookingWizardClient({ locale }: Props) {
 
   // ── Wizard state ────────────────────────────────────────────────────────────
   const [step, setStep] = useState(0);
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => { setIsMounted(true); }, []);
   const [paymentPlan, setPaymentPlan] = useState<"50" | "100">("50");
   const [paymentMethod, setPaymentMethod] = useState("bank");
   const [qrData, setQrData] = useState<{ qrDataURL?: string; payUrl?: string; amount?: number; expiresAt?: string; message?: string } | null>(null);
@@ -282,6 +284,11 @@ export function BookingWizardClient({ locale }: Props) {
   const [submitLoading, setSubmitLoading] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [newOrderId, setNewOrderId] = useState("");
+  const [paymentVerified, setPaymentVerified] = useState(false);
+  const [isCheckingPayment, setIsCheckingPayment] = useState(false);
+  const [paymentError, setPaymentError] = useState("");
+  const [paidAmount, setPaidAmount] = useState(0);
+  const [requiredAmount, setRequiredAmount] = useState(0);
 
   /**
    * Initial state — fallback packages shown while API loads.
@@ -301,6 +308,7 @@ export function BookingWizardClient({ locale }: Props) {
   const [hostingPlans, setHostingPlans] = useState<WizardHostingPlan[]>([]);
   const [domainPrices, setDomainPrices] = useState<WizardDomainPrice[]>([]);
   const [selectedHostingPlan, setSelectedHostingPlan] = useState<string>("");
+  const [selectedHostingPeriod, setSelectedHostingPeriod] = useState<string>("1 năm");
   const [domainQuery, setDomainQuery] = useState("");
   const [domainSelectedTld, setDomainSelectedTld] = useState(".com");
   const [domainSearchResults, setDomainSearchResults] = useState<DomainSearchResult[]>([]);
@@ -513,14 +521,45 @@ export function BookingWizardClient({ locale }: Props) {
       .catch(() => { /* keep defaults */ });
   }, []);
 
-  // Generate payment QR / redirect when paymentMethod changes after order creation
-  const generatePaymentQr = async (amount: number) => {
-    if (!newOrderId) return;
+  // Poll for payment status
+  useEffect(() => {
+    if (!newOrderId || !isCheckingPayment || paymentVerified) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/payment/check-status?orderId=${newOrderId}`);
+        if (!res.ok) return;
+        const json = await res.json();
+        const data = json.data;
+
+        if (data?.isPaid) {
+          setPaymentVerified(true);
+          setIsCheckingPayment(false);
+          setSubmitted(true); // Final success state
+          clearInterval(interval);
+        } else if (data?.paidAmount > 0 && data?.paidAmount < data?.requiredAmount) {
+          // If transaction detected but amount is low
+          setPaidAmount(data.paidAmount);
+          setRequiredAmount(data.requiredAmount);
+          setPaymentError(`Bạn chưa chuyển đủ tiền. Đã nhận: ${fmtVND(data.paidAmount)} / Cần: ${fmtVND(data.requiredAmount)}`);
+        }
+      } catch (err) {
+        console.error("Payment check failed:", err);
+      }
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [newOrderId, isCheckingPayment, paymentVerified]);
+
+  // Generate payment QR / redirect — works with or without newOrderId
+  const generatePaymentQr = async (amount: number, orderRefOverride?: string) => {
     setQrLoading(true);
     setQrError("");
     try {
       if (paymentMethod === "bank" && bankInfo?.bankBin && bankInfo?.accountNo) {
-        // Generate bank transfer QR using our own QR API
+        // Generate bank transfer QR — works as preview (no orderId required)
+        const orderRef = orderRefOverride
+          ?? (newOrderId ? `LOOP-${newOrderId.slice(-8).toUpperCase()}` : `LOOP-PREVIEW`);
         const res = await fetch("/api/payment/bank-qr", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -529,13 +568,17 @@ export function BookingWizardClient({ locale }: Props) {
             accountNo: bankInfo.accountNo,
             accountName: bankInfo.accountName,
             amount,
-            orderRef: `LOOP-${newOrderId.slice(-8).toUpperCase()}`,
+            orderRef,
           }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data?.error || "Tạo QR thất bại");
         setQrData({ qrDataURL: data.data.qrDataURL, amount: data.data.amount });
       } else if (paymentMethod === "momo") {
+        if (!newOrderId) {
+          setQrError("Vui lòng xác nhận đơn hàng trước khi thanh toán MoMo.");
+          return;
+        }
         const res = await fetch("/api/payment/momo/create", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -546,6 +589,10 @@ export function BookingWizardClient({ locale }: Props) {
         if (data.data?.payUrl) { window.location.href = data.data.payUrl; return; }
         setQrData(data.data);
       } else if (paymentMethod === "vnpay") {
+        if (!newOrderId) {
+          setQrError("Vui lòng xác nhận đơn hàng trước khi thanh toán VNPay.");
+          return;
+        }
         const res = await fetch("/api/payment/vnpay/create", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -568,25 +615,26 @@ export function BookingWizardClient({ locale }: Props) {
   const selectedPkg = packages.find(p => p.id === selectedPackage || p.slug === selectedPackage) || webTiers.find(t => TIER_TO_PKG[t.level] === selectedPackage);
 
   // Summary bar data — uses module-level PKG_PRICE_MAP, never undefined
-  const _pkgStatic = PKG_PRICE_MAP[selectedPackage];
+  const _pkgStatic = PKG_PRICE_MAP[selectedPkg?.slug || ""] || PKG_PRICE_MAP[selectedPackage];
   const summaryName = (selectedPkg as any)?.name ?? _pkgStatic?.name ?? "";
   const summaryColor = (selectedPkg as any)?.color ?? TIER_COLORS_WEB[PKG_TO_TIER[selectedPackage] ?? 2] ?? DS.blue;
-  const summarySavingPct = _pkgStatic && _pkgStatic.marketPrice > _pkgStatic.basePrice
+  const summarySavingPct = (selectedPkg as any)?.savingPct ?? (_pkgStatic && _pkgStatic.marketPrice > _pkgStatic.basePrice
     ? Math.round((_pkgStatic.marketPrice - _pkgStatic.basePrice) / _pkgStatic.marketPrice * 100)
-    : ((selectedPkg as any)?.savingPct ?? 0);
-  const showSummary = !!_pkgStatic; // true whenever selectedPackage is a known slug
+    : 0);
 
-  // Base price — always from PKG_PRICE_MAP (module-level, always reliable)
-  const currentBasePrice = _pkgStatic?.basePrice ?? 0;
+  // FIXED: showSummary now depends on selectedPkg (ID/Slug) for robust DB support
+  const showSummary = !!selectedPkg;
+  const pkgColor = summaryColor;
+  const currentBasePrice = (selectedPkg as any)?.price ?? (selectedPkg as any)?.basePrice ?? _pkgStatic?.basePrice ?? 0;
 
   // Filter: only count non-included features for price
   const extraFeaturePrice = currentFeatureOptions
     .filter(f => selectedFeatures.includes(f.id) && !f.includedInBase)
-    .reduce((s, f) => s + f.price, 0);
-  const currentExtraPrice = extraOptions.filter(e => selectedExtras.includes(e.id)).reduce((s, e) => s + e.price, 0);
+    .reduce((s, f) => s + (f.price || 0), 0);
+  const currentExtraPrice = extraOptions.filter(e => selectedExtras.includes(e.id)).reduce((s, e) => s + (e.price || 0), 0);
   const selectedHosting = hostingPlans.find(h => h.slug === selectedHostingPlan);
   const hostingCost = selectedHosting?.discountedPrice ?? 0;
-  const domainCost = selectedDomains.reduce((s, d) => s + d.registrationPrice, 0);
+  const domainCost = selectedDomains.reduce((s, d) => s + (d.registrationPrice || 0), 0);
   const selectedSeo = seoTiers.find(t => t.level === selectedSeoTier);
   const seoCost = selectedSeo?.basePrice ?? 0;
   const currentSubtotal = currentBasePrice + extraFeaturePrice + currentExtraPrice + hostingCost + domainCost + seoCost;
@@ -687,9 +735,16 @@ export function BookingWizardClient({ locale }: Props) {
     const selectedSeo = seoTiers.find(t => t.level === selectedSeoTier);
     const seoTotalCost = selectedSeo?.basePrice ?? 0;
     const subtotal = basePrice + featPrices + extraPricesTotal + hostingTotalCost + domainTotalCost + seoTotalCost;
+    
     // Deduct LP discount from total (lpDiscount already capped at 20% in useEffect)
     const vndDiscount = Math.round(lpDiscount * lpRate.lpPerVnd);
-    const total = Math.round((subtotal - vndDiscount) * (1 + vatRate));
+    const totalWithoutFullPayDiscount = Math.round((subtotal - vndDiscount) * (1 + vatRate));
+
+    // Apply 5% discount for 100% payment plan on the final amount
+    const total = paymentPlan === "100" 
+      ? Math.round(totalWithoutFullPayDiscount * 0.95) 
+      : totalWithoutFullPayDiscount;
+
     // Chỉ gửi features có phí thêm (non-includedInBase) trong selectedItems
     const paidFeatureItems = featOpts
       .filter(f => selectedFeatures.includes(f.id) && !f.includedInBase)
@@ -771,21 +826,31 @@ export function BookingWizardClient({ locale }: Props) {
           notes: `Dịch vụ: ${svc?.title ?? ""} | Tính năng: ${selectedFeatures.length} | Ghi chú đội ngũ: ${talentNote || "—"} | Bắt đầu: ${startDate || "—"} | Thời gian: ${duration || "—"}`,
           hostingPlanSlug: selectedHosting?.slug || undefined,
           domainNames: selectedDomains.map(d => domainQuery + d.extension),
-          domainTotal: selectedDomains.reduce((s, d) => s + d.registrationPrice, 0),
+          domainTotal: selectedDomains.reduce((s, d) => s + (d.registrationPrice || 0), 0),
           source,
           pricingBreakdown,
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "submission failed");
-      // QuoteRequest has no orderNumber — use the created row's id as reference
-      setNewOrderId(data?.data?.id ?? data?.data?.orderNumber ?? "");
-      setSubmitted(true);
+
+      const orderId = data?.data?.id ?? data?.data?.orderNumber ?? "";
+      setNewOrderId(orderId);
+
       // Auto-trigger payment for MoMo/VNPay/bank after quote submission
       const payAmount = paymentPlan === "100" ? total : Math.round(total * 0.5);
-      if (payAmount >= 1000 && (paymentMethod === "bank" || paymentMethod === "momo" || paymentMethod === "vnpay")) {
+
+      if (paymentMethod === "bank") {
+        setIsCheckingPayment(true);
+        // Ensure we use the full order ID for the reference
+        await generatePaymentQr(payAmount, `LOOP-${orderId.toString().slice(-8).toUpperCase()}`);
+      } else if (payAmount >= 1000 && (paymentMethod === "momo" || paymentMethod === "vnpay")) {
+        setSubmitted(true); 
         setTimeout(() => generatePaymentQr(payAmount), 100);
+      } else {
+        setSubmitted(true);
       }
+
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : "Đã có lỗi xảy ra");
     } finally {
@@ -808,16 +873,16 @@ export function BookingWizardClient({ locale }: Props) {
   // Compute prices for the top summary bar
   const featTotalForDisplay = currentFeatureOptions
     .filter(f => selectedFeatures.includes(f.id) && !f.includedInBase)
-    .reduce((s, f) => s + f.price, 0);
-  const extraTotalForDisplay = extraOptions.filter(e => selectedExtras.includes(e.id)).reduce((s, e) => s + e.price, 0);
+    .reduce((s, f) => s + (f.price || 0), 0);
+  const extraTotalForDisplay = extraOptions.filter(e => selectedExtras.includes(e.id)).reduce((s, e) => s + (e.price || 0), 0);
   const hostingTotal = selectedHosting?.discountedPrice ?? 0;
-  const domainTotal = selectedDomains.reduce((s, d) => s + d.registrationPrice, 0);
+  const domainTotal = selectedDomains.reduce((s, d) => s + (d.registrationPrice || 0), 0);
   const subtotalForDisplay = currentBasePrice + featTotalForDisplay + extraTotalForDisplay + hostingTotal + domainTotal + seoCost;
+  
   const lpDisc = calcLpDiscount(subtotalForDisplay, lpDiscount, lpBalance, lpRate);
   const vatAmt = Math.round((subtotalForDisplay - lpDisc.vndDiscount) * vatRate);
   const grandForDisplay = subtotalForDisplay - lpDisc.vndDiscount + vatAmt;
   const lpEarnedDisplay = Math.floor(grandForDisplay / 1_000_000) * lpRate.lpEarnPerMillion;
-  const pkgColor = summaryColor;
 
   // ── Inline package selector ──────────────────────────────────────────────────
   const getPkgPrice = (pkg: WizardPackage) => pkg.price ?? pkg.marketPrice ?? DB_PACKAGE_PRICES[pkg.id]?.basePrice ?? 1_890_000;
@@ -835,6 +900,36 @@ export function BookingWizardClient({ locale }: Props) {
 
   // ── Feature categorisation (for FeatureToggleTable includedIds) ─────────────────
   const baseFeatures = currentFeatureOptions.filter(f => f.includedInBase);
+
+  // ── Automatic QR trigger for bank transfer ─────────────────────────────
+  useEffect(() => {
+    if (isMounted && step === 5 && paymentMethod === "bank" && !qrLoading && !submitted) {
+      if (name && email && phone && grandForDisplay > 0) {
+         // Apply 5% discount for full payment only in the QR amount
+         const finalAmount = paymentPlan === "100" 
+           ? Math.round(grandForDisplay * 0.95) 
+           : grandForDisplay;
+           
+         const expectedPay = paymentPlan === "100" 
+           ? finalAmount 
+           : Math.round(finalAmount * 0.5);
+         
+         // Only regenerate if amount changed or no QR yet
+         if (expectedPay >= 1000 && (!qrData || qrData.amount !== expectedPay)) {
+           generatePaymentQr(expectedPay);
+         }
+      }
+    }
+  }, [isMounted, step, paymentMethod, qrData, qrLoading, submitted, name, email, phone, grandForDisplay, paymentPlan]);
+
+  // 1. Core hydration guard — skip rendering on server to avoid extension conflicts
+  if (!isMounted) {
+    return (
+      <main style={{ background: "#020b1d", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ width: 32, height: 32, border: "3px solid rgba(255,255,255,0.1)", borderTop: "3px solid #818cf8", borderRadius: "50%", animation: "spin 1s linear infinite" }} />
+      </main>
+    );
+  }
 
   return (
     <main style={{ background: DS.bg, minHeight: "100vh" }}>
@@ -1345,7 +1440,7 @@ export function BookingWizardClient({ locale }: Props) {
                                 {selectedDomains.length} tên miền đã chọn
                               </span>
                               <span style={{ color: DS.green, fontSize: 13, fontFamily: DS.mono, marginLeft: "auto" }}>
-                                Tổng: <strong>{fmtVND(selectedDomains.reduce((s, d) => s + d.registrationPrice, 0))}</strong>
+                                Tổng: <strong>{fmtVND(selectedDomains.reduce((s, d) => s + (d.registrationPrice || 0), 0))}</strong>
                               </span>
                             </div>
                             <div className="flex flex-wrap gap-2">
@@ -1461,7 +1556,7 @@ export function BookingWizardClient({ locale }: Props) {
                         KHỞI ĐỘNG — MIỄN PHÍ
                       </div>
                       <div style={{ color: DS.text, fontFamily: DS.heading, fontSize: 18, fontWeight: 800, marginBottom: 4 }}>
-                        0đ
+                        {fmtVND(0)}
                       </div>
                       <div style={{ color: DS.text4, fontSize: 10, lineHeight: 1.4, marginBottom: 10 }}>
                         5 bài viết chuẩn SEO · Từ khóa thương hiệu · Xác minh Google Search Console
@@ -1593,42 +1688,108 @@ export function BookingWizardClient({ locale }: Props) {
 
                   {hostingPlans.length > 0 && (
                     <div style={{ marginBottom: 28 }}>
-                      <div className="flex items-center gap-3 mb-4">
-                        <div style={{ width: 3, height: 16, background: DS.purple, borderRadius: 2 }} />
-                        <h3 style={{ color: DS.text2, fontSize: 12, fontFamily: DS.mono, letterSpacing: "0.14em" }}>HOSTING</h3>
-                        <div style={{ flex: 1, height: 1, background: DS.border }} />
-                        <span style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono }}>Không bắt buộc</span>
+                      {/* New Duration Selector */}
+                      <div className="flex flex-col items-center mb-8">
+                        <div className="flex p-1 rounded-xl bg-slate-900/50 border border-slate-800">
+                          {["1 tháng", "6 tháng", "1 năm", "2 năm", "3 năm"].map((period) => {
+                            const isActive = selectedHostingPeriod === period;
+                            const discountLabel = period === "1 năm" ? "-10%" : period === "2 năm" ? "-15%" : period === "3 năm" ? "-18%" : null;
+                            return (
+                              <button
+                                key={period}
+                                onClick={() => setSelectedHostingPeriod(period)}
+                                className="px-5 py-2 rounded-lg text-xs font-medium transition-all relative"
+                                style={{ 
+                                  background: isActive ? DS.purple : "transparent",
+                                  color: isActive ? "#fff" : DS.text3,
+                                }}
+                              >
+                                {period}
+                                {discountLabel && (
+                                  <span className="absolute -top-2 -right-1 px-1 py-0.5 rounded-[4px] text-[7px] font-bold bg-green-500 text-white border border-slate-900">
+                                    {discountLabel}
+                                  </span>
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
                       </div>
-                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 10 }}>
-                        {hostingPlans.map(plan => {
-                          const isSelected = selectedExtras.includes("hosting") && selectedHostingPlan === plan.slug;
-                          const hasDiscount = plan.discountPct > 0;
-                          return (
-                            <motion.button key={plan.slug} onClick={() => {
-                              if (isSelected) { setSelectedHostingPlan(""); }
-                              else { setSelectedHostingPlan(plan.slug); if (!selectedExtras.includes("hosting")) toggleExtra("hosting"); }
-                            }} className="text-left p-4 rounded-xl relative"
-                              style={{ background: isSelected ? `${plan.color}0C` : "rgba(15,23,42,0.5)", border: isSelected ? `1.5px solid ${plan.color}50` : `1px solid ${DS.border}`, cursor: "pointer" }}
-                              whileHover={{ scale: 1.02 }}>
-                              {plan.highlighted && <div style={{ position: "absolute", top: 0, left: 0, right: 0, padding: "2px", textAlign: "center", background: GRD.primary, fontSize: 8, color: "#fff", fontFamily: DS.mono, borderRadius: "10px 10px 0 0" }}>★ PHỔ BIẾN NHẤT</div>}
-                              <div style={{ marginTop: plan.highlighted ? 14 : 0 }}>
-                                <div style={{ color: isSelected ? plan.color : DS.text2, fontSize: 12, fontFamily: DS.mono, fontWeight: 700, marginBottom: 4 }}>{plan.name.toUpperCase()}</div>
-                                <div style={{ display: "flex", alignItems: "baseline", gap: 4, marginBottom: 2 }}>
-                                  <span style={{ color: DS.text, fontFamily: DS.heading, fontSize: 17, fontWeight: 900 }}>{fmtVND(plan.discountedPrice)}</span>
-                                  {hasDiscount && <span className="px-1 py-0.5 rounded text-xs" style={{ background: `${DS.green}15`, color: DS.green, fontFamily: DS.mono }}>-{plan.discountPct}%</span>}
-                                </div>
-                                {plan.monthlyPrice > 0 && <div style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono }}>~{fmtVND(plan.monthlyPrice)}/tháng · {plan.period}</div>}
-                                {hasDiscount && <div style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono, textDecoration: "line-through" }}>{fmtVND(plan.basePrice)}</div>}
-                                {isSelected && <Check size={12} style={{ color: plan.color, marginTop: 4 }} />}
-                              </div>
-                            </motion.button>
-                          );
-                        })}
+
+                      <div className="flex items-center gap-3 mb-6">
+                        <div style={{ width: 3, height: 16, background: DS.purple, borderRadius: 2 }} />
+                        <h3 style={{ color: DS.text2, fontSize: 12, fontFamily: DS.mono, letterSpacing: "0.14em" }}>CHỌN CẤU HÌNH HOSTING</h3>
+                        <div style={{ flex: 1, height: 1, background: DS.border }} />
+                      </div>
+
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 20 }}>
+                        {(() => {
+                           const baseNames = Array.from(new Set(hostingPlans.map(p => p.name.split(" (")[0])));
+                           return baseNames.map(baseName => {
+                             const plan = hostingPlans.find(p => p.name.startsWith(baseName) && p.period === selectedHostingPeriod);
+                             if (!plan) return null;
+                             const isSelected = selectedExtras.includes("hosting") && selectedHostingPlan === plan.slug;
+                             const color = plan.color || DS.purple;
+                             const highlights = plan.name.includes("Khởi đầu") ? ["2GB SSD", "100GB Băng thông"] : plan.name.includes("Tiêu chuẩn") ? ["5GB SSD", "Không giới hạn"] : plan.name.includes("Nâng cao") ? ["10GB SSD", "Không giới hạn"] : ["20GB SSD", "Không giới hạn"];
+
+                             return (
+                               <motion.button key={baseName} onClick={() => {
+                                 if (isSelected) { setSelectedHostingPlan(""); }
+                                 else { setSelectedHostingPlan(plan.slug); if (!selectedExtras.includes("hosting")) toggleExtra("hosting"); }
+                               }} className="text-left p-5 rounded-2xl relative overflow-hidden h-full flex flex-col"
+                                 style={{ background: isSelected ? `${color}10` : "rgba(15,23,42,0.4)", border: isSelected ? `2px solid ${color}` : `1px solid ${DS.border}`, cursor: "pointer" }}
+                                 whileHover={{ y: -4 }}>
+                                 {plan.highlighted && <div style={{ position: "absolute", top: 0, left: 0, right: 0, padding: "2px", textAlign: "center", background: GRD.primary, fontSize: 8, color: "#fff", fontFamily: DS.mono }}>★ PHỔ BIẾN NHẤT</div>}
+                                 <div className="mt-4 flex-1">
+                                   <div style={{ color: isSelected ? color : DS.text2, fontSize: 13, fontFamily: DS.mono, fontWeight: 700, marginBottom: 4 }}>{baseName.toUpperCase()}</div>
+                                   <div className="mb-4">
+                                      <div className="flex items-baseline gap-2">
+                                        <span style={{ color: DS.text, fontFamily: DS.heading, fontSize: 20, fontWeight: 900 }}>{fmtVND(plan.discountedPrice)}</span>
+                                        {plan.discountPct > 0 && (
+                                          <span style={{ color: DS.text5, fontSize: 11, fontFamily: DS.mono, textDecoration: "line-through" }}>
+                                            {fmtVND(plan.basePrice)}
+                                          </span>
+                                        )}
+                                      </div>
+                                      <div style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono }}>
+                                        ~{(() => {
+                                          const months = selectedHostingPeriod === "1 tháng" ? 1 : selectedHostingPeriod === "6 tháng" ? 6 : selectedHostingPeriod === "1 năm" ? 12 : selectedHostingPeriod === "2 năm" ? 24 : 36;
+                                          return fmtVND(Math.round(plan.discountedPrice / months));
+                                        })()}/tháng
+                                      </div>
+                                   </div>
+                                   <div className="space-y-1 mb-6">
+                                      {highlights.map(h => (
+                                        <div key={h} className="flex items-center gap-2">
+                                          <Check size={10} style={{ color }} />
+                                          <span className="text-slate-400 text-[10px]">{h}</span>
+                                        </div>
+                                      ))}
+                                   </div>
+                                 </div>
+                                 <div className="w-full py-2 rounded-lg text-center text-[10px] font-bold mt-auto" style={{ background: isSelected ? color : "rgba(255,255,255,0.05)", color: isSelected ? "#fff" : DS.text3 }}>
+                                   {isSelected ? "ĐÃ CHỌN" : "CHỌN GÓI"}
+                                 </div>
+                               </motion.button>
+                             );
+                           });
+                        })()}
+                      </div>
+
+                      {/* "I'll prepare myself" moved to its own row */}
+                      <div className="flex justify-center mt-4">
                         <motion.button onClick={() => { setSelectedHostingPlan(""); if (selectedExtras.includes("hosting")) toggleExtra("hosting"); }}
-                          className="text-center flex items-center justify-center"
-                          style={{ background: !selectedExtras.includes("hosting") ? "rgba(255,255,255,0.04)" : "rgba(15,23,42,0.4)", border: !selectedExtras.includes("hosting") ? `1.5px solid ${DS.text4}60` : `1px solid ${DS.border}`, borderRadius: 12, cursor: "pointer" }}
+                          className="flex flex-col items-center justify-center p-4 px-10 group"
+                          style={{ 
+                            background: !selectedExtras.includes("hosting") ? "rgba(255,255,255,0.04)" : "rgba(15,23,42,0.4)", 
+                            border: !selectedExtras.includes("hosting") ? `2px dashed ${DS.text4}` : `1px solid ${DS.border}`, 
+                            borderRadius: 20, 
+                            cursor: "pointer",
+                            width: "fit-content"
+                          }}
                           whileHover={{ scale: 1.02 }}>
-                          <span style={{ color: DS.text4, fontSize: 12 }}>Tự chuẩn bị</span>
+                          <Server size={20} className="text-slate-600 mb-1 group-hover:text-slate-400 transition-colors" />
+                          <span style={{ color: DS.text, fontSize: 12, fontWeight: 700 }}>Tôi tự chuẩn bị Hosting</span>
                         </motion.button>
                       </div>
                     </div>
@@ -1654,11 +1815,11 @@ export function BookingWizardClient({ locale }: Props) {
                               <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${color}15`, color }}>
                                 {ext.id === "hosting" ? <Server size={16} /> : ext.id === "domain" ? <Globe size={16} /> : ext.id === "maintenance" ? <Shield size={16} /> : ext.id === "analytics-setup" ? <BarChart3 size={16} /> : ext.id === "training" ? <Users size={16} /> : ext.id === "priority" ? <Sparkles size={16} /> : ext.id === "seo-basic" ? <Target size={16} /> : <Layers size={16} />}
                               </div>
-                              <div className="flex-1 min-w-0">
-                                <div style={{ color: DS.text, fontSize: 12, fontWeight: 600, marginBottom: 2 }}>{ext.label}</div>
-                                {ext.price > 0 && <div style={{ color, fontSize: 12, fontFamily: DS.mono, fontWeight: 700 }}>+{fmtVND(ext.price)}</div>}
+                              <span className="flex-1 min-w-0">
+                                <span style={{ color: DS.text, fontSize: 12, fontWeight: 600, marginBottom: 2, display: "block" }}>{ext.label}</span>
+                                {ext.price > 0 && <span style={{ color, fontSize: 12, fontFamily: DS.mono, fontWeight: 700, display: "block" }}>+{fmtVND(ext.price)}</span>}
                                 {isSelected && <Check size={12} style={{ color, marginTop: 2 }} />}
-                              </div>
+                              </span>
                             </motion.button>
                           );
                         })}
@@ -1693,7 +1854,7 @@ export function BookingWizardClient({ locale }: Props) {
                       ].map(f => (
                         <div key={f.label}>
                           <label style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.1em", display: "block", marginBottom: 6 }}>{f.label}</label>
-                          <input value={f.value} onChange={e => f.set(e.target.value)} placeholder={f.placeholder}
+                          <input suppressHydrationWarning value={f.value} onChange={e => f.set(e.target.value)} placeholder={f.placeholder}
                             style={{ width: "100%", background: "rgba(15,23,42,0.6)", border: `1px solid ${DS.border}`, borderRadius: 10, padding: "11px 14px", color: DS.text, fontSize: 14, outline: "none", fontFamily: DS.body, boxSizing: "border-box" }} />
                         </div>
                       ))}
@@ -1851,10 +2012,12 @@ export function BookingWizardClient({ locale }: Props) {
                               <div className="space-y-2">
                                 {/* QR image: generated dynamically or static fallback */}
                                 {qrData?.qrDataURL ? (
-                                  <div className="text-center mb-3">
-                                    <div style={{ color: DS.green, fontSize: 10, fontFamily: DS.mono, marginBottom: 6 }}>QUÉT MÃ QR ĐỂ CHUYỂN KHOẢN</div>
-                                    <img src={qrData.qrDataURL} alt="Bank QR" style={{ maxWidth: 200, borderRadius: 12, boxShadow: `0 0 20px ${DS.blue}30` }} />
-                                    <div style={{ color: DS.text4, fontSize: 11, marginTop: 6 }}>
+                                  <div className="flex flex-col items-center text-center mb-4">
+                                    <div style={{ color: DS.green, fontSize: 10, fontFamily: DS.mono, marginBottom: 10 }}>QUÉT MÃ QR ĐỂ CHUYỂN KHOẢN</div>
+                                    <div style={{ position: "relative", padding: 12, background: "#fff", borderRadius: 16, boxShadow: `0 0 30px ${DS.blue}30`, marginBottom: 12 }}>
+                                      <img src={qrData.qrDataURL} alt="Bank QR" style={{ width: 180, height: 180, display: "block" }} />
+                                    </div>
+                                    <div style={{ color: DS.text4, fontSize: 11, marginBottom: 8 }}>
                                       Số tiền: <span style={{ color: DS.blue, fontWeight: 700 }}>{qrData.amount?.toLocaleString()} VND</span>
                                     </div>
                                     <button
@@ -1864,9 +2027,9 @@ export function BookingWizardClient({ locale }: Props) {
                                         const pay = paymentPlan === "100" ? grandTotal : Math.round(grandTotal * 0.5);
                                         if (pay >= 1000) generatePaymentQr(pay);
                                       }}
-                                      style={{ marginTop: 8, padding: "6px 16px", borderRadius: 8, fontSize: 11, fontFamily: DS.mono, cursor: "pointer", background: `${DS.blue}15`, border: `1px solid ${DS.blue}40`, color: DS.blue }}
+                                      style={{ padding: "6px 16px", borderRadius: 8, fontSize: 11, fontFamily: DS.mono, cursor: "pointer", background: `${DS.blue}15`, border: `1px solid ${DS.blue}40`, color: DS.blue }}
                                     >
-                                      Tạo QR mới
+                                      Tạo mã QR thanh toán
                                     </button>
                                   </div>
                                 ) : qrLoading ? (
@@ -1875,19 +2038,38 @@ export function BookingWizardClient({ locale }: Props) {
                                     <div style={{ color: DS.text4, fontSize: 11 }}>Đang tạo mã QR...</div>
                                   </div>
                                 ) : (
-                                  <div className="text-center mb-3">
-                                    <div style={{ color: DS.text4, fontSize: 11, marginBottom: 6 }}>Quét mã QR bằng app ngân hàng</div>
+                                  <div className="flex flex-col items-center text-center mb-3">
+                                    <div style={{ color: DS.text4, fontSize: 11, marginBottom: 12 }}>Xác nhận thông tin & thanh toán để hoàn tất đơn hàng</div>
                                     <button
-                                      onClick={() => {
-                                        const disc = Math.round(lpDiscount * lpRate.lpPerVnd);
-                                        const grandTotal = Math.round((currentSubtotal - disc) * (1 + vatRate));
-                                        const pay = paymentPlan === "100" ? grandTotal : Math.round(grandTotal * 0.5);
-                                        if (pay >= 1000) generatePaymentQr(pay);
+                                      onClick={handleSubmit}
+                                      disabled={!name || !email || !phone || submitLoading}
+                                      style={{
+                                        padding: "12px 24px", borderRadius: 12, fontSize: 14, fontFamily: DS.mono,
+                                        cursor: (name && email && phone && !submitLoading) ? "pointer" : "not-allowed",
+                                        background: (name && email && phone && !submitLoading) ? GRD.primary : "rgba(255,255,255,0.05)",
+                                        border: "none", color: (name && email && phone && !submitLoading) ? "#fff" : DS.text4,
+                                        fontWeight: 700, display: "flex", alignItems: "center", gap: 10,
+                                        boxShadow: (name && email && phone && !submitLoading) ? "0 0 20px rgba(129,140,248,0.3)" : "none",
+                                        transition: "all 0.3s"
                                       }}
-                                      style={{ padding: "10px 20px", borderRadius: 10, fontSize: 12, fontFamily: DS.mono, cursor: "pointer", background: `${DS.blue}15`, border: `1px solid ${DS.blue}40`, color: DS.blue }}
                                     >
-                                      Tạo mã QR thanh toán
+                                      {submitLoading ? (
+                                        <div style={{ width: 14, height: 14, border: "2px solid #fff", borderTop: "2px solid transparent", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+                                      ) : <Zap size={15} />}
+                                      {submitLoading ? "Đang xử lý..." : "Xác nhận & Thanh toán"}
                                     </button>
+                                    {!name || !email || !phone ? (
+                                      <div style={{ color: DS.pink, fontSize: 10, marginTop: 8 }}>Vui lòng điền thông tin liên hệ ở bước trước</div>
+                                    ) : null}
+                                  </div>
+                                )}
+
+                                {isCheckingPayment && (
+                                  <div className="mt-4 p-3 rounded-lg text-center mx-auto" style={{ background: "rgba(34,197,94,0.05)", border: "1px dashed rgba(34,197,94,0.3)", maxWidth: 300 }}>
+                                    <div className="flex items-center justify-center gap-2 mb-1">
+                                      <div style={{ width: 10, height: 10, border: `1.5px solid ${DS.green}`, borderTop: "1.5px solid transparent", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+                                      <span style={{ color: DS.green, fontSize: 11, fontFamily: DS.mono, fontWeight: 700 }}>ĐANG CHỜ THANH TOÁN...</span>
+                                    </div>
                                   </div>
                                 )}
                                 {/* Account details */}
@@ -1971,21 +2153,24 @@ export function BookingWizardClient({ locale }: Props) {
                         )}
                       </div>
 
-                      {/* Submit button */}
-                      <button onClick={handleSubmit} disabled={!name || !email || !phone || submitLoading}
-                        style={{
-                          background: (name && email && phone && !submitLoading) ? GRD.primary : "rgba(255,255,255,0.05)",
-                          color: (name && email && phone && !submitLoading) ? "#fff" : DS.text4,
-                          fontSize: 15, fontWeight: 700, padding: "14px 32px", borderRadius: 14, border: "none",
-                          cursor: (name && email && phone && !submitLoading) ? "pointer" : "not-allowed",
-                          display: "flex", alignItems: "center", gap: 10, justifyContent: "center",
-                          boxShadow: (name && email && phone && !submitLoading) ? "0 0 30px rgba(129,140,248,0.4)" : "none",
-                          transition: "all 0.3s", width: "100%",
-                        }}>
-                        <Shield size={16} />
-                        {submitLoading ? t("submitting") : t("submitButton")}
-                        {!submitLoading && <ArrowRight size={15} />}
-                      </button>
+                      {/* Submit button — Hidden for bank transfer as it's merged into QR button */}
+                      {paymentMethod !== "bank" && (
+                        <button onClick={handleSubmit} disabled={!name || !email || !phone || submitLoading}
+                          style={{
+                            background: (name && email && phone && !submitLoading) ? GRD.primary : "rgba(255,255,255,0.05)",
+                            color: (name && email && phone && !submitLoading) ? "#fff" : DS.text4,
+                            fontSize: 15, fontWeight: 700, padding: "14px 32px", borderRadius: 14, border: "none",
+                            cursor: (name && email && phone && !submitLoading) ? "pointer" : "not-allowed",
+                            display: "flex", alignItems: "center", gap: 10, justifyContent: "center",
+                            boxShadow: (name && email && phone && !submitLoading) ? "0 0 30px rgba(129,140,248,0.4)" : "none",
+                            transition: "all 0.3s", width: "100%",
+                          }}>
+                          <Shield size={16} />
+                          {submitLoading ? t("submitting") : t("submitButton")}
+                          {!submitLoading && <ArrowRight size={15} />}
+                        </button>
+                      )}
+
                       <div style={{ color: DS.text5, fontSize: 11, marginTop: 10, textAlign: "center" }}>
                         {paymentPlan === "100" ? "Thanh toán 100% ngay — giảm 5%." : t("depositNote")}
                       </div>
@@ -2042,6 +2227,7 @@ export function BookingWizardClient({ locale }: Props) {
 
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16 }}>
                 <button
+                  suppressHydrationWarning
                   onClick={() => setStep(s => Math.max(0, s - 1))}
                   disabled={step === 0}
                   style={{
@@ -2056,6 +2242,7 @@ export function BookingWizardClient({ locale }: Props) {
                 </button>
                 {step < 5 && (
                   <button
+                    suppressHydrationWarning
                     onClick={() => { if (canNext()) setStep(s => s + 1); }}
                     disabled={!canNext()}
                     style={{

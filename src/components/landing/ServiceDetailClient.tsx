@@ -16,14 +16,15 @@ function hexRgba(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-const fmtVND = (n: number | null | undefined) =>
-  n == null
-    ? "—"
-    : new Intl.NumberFormat("vi-VN", {
-      style: "currency",
-      currency: "VND",
-      maximumFractionDigits: 0,
-    }).format(n);
+const fmtVND = (n: number | null | undefined) => {
+  if (n == null) return "—";
+  if (n === 0) return "Miễn phí";
+  return new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency: "VND",
+    maximumFractionDigits: 0,
+  }).format(n);
+};
 
 interface DetailLabels {
   backLink: string;

@@ -21,8 +21,8 @@ import {
 import { DS, GRD } from "@/lib/design-tokens";
 import type { ServicesPackage } from "@/app/data/locales/services-vi";
 
-const fmtVND = (n: number | null | undefined, fallbackLabel = "—") =>
-  n == null ? fallbackLabel : new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(n);
+const fmtVND = (n: number | null | undefined, fallbackLabel = "Miễn phí") =>
+  (n == null || n === 0) ? fallbackLabel : new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(n);
 
 const _fmtLP = (n: number) =>
   n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M` : n >= 1_000 ? `${(n / 1_000).toFixed(0)}K` : String(n);
@@ -300,7 +300,7 @@ function PackageModal({
                       {labels.modalFullSection}
                     </div>
                     <div style={{ color: pkg.color, fontSize: "1.25rem", fontWeight: 900 }}>
-                      {new Intl.NumberFormat("vi-VN").format(pkg.fullPrice)}
+                      {fmtVND(pkg.fullPrice)}
                     </div>
                     <div style={{ color: DS.text5, fontSize: 10 }}>
                       {labels.modalFullWarranty}

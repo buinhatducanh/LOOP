@@ -84,8 +84,10 @@ const STATUS_CFG: Record<string, { label: string; color: string; bg: string }> =
   done: { label: "Hoàn thành", color: DS.green, bg: "rgba(34,197,94,0.1)" },
 };
 
-const fmtVND = (n: number) =>
-  new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(n);
+const fmtVND = (n: number) => {
+  if (n === 0) return "Miễn phí";
+  return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(n);
+};
 
 function KpiCard({ icon, label, value, sub, color }: { icon: React.ReactNode; label: string; value: string; sub?: string; color: string }) {
   return (

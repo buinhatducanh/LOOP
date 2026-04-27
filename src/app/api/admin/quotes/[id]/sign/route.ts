@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
+import { approveQuoteAndCreateOrder } from "@/lib/pricing/quote-to-order";
 
 // POST /api/admin/quotes/[id]/sign
 // Marks a quote as signed by the customer.
@@ -20,12 +21,22 @@ export async function POST(
     const quote = await prisma.quote.findUnique({ where: { id } });
     if (!quote) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-    // Only signed quotes can transition to signed status
-    if (quote.status !== "approved") {
+    // Allow signing if quote is approved, sent, or viewed by customer
+    const ALLOWED_SIGN_STATUSES = ["approved", "sent", "viewed"];
+    if (!ALLOWED_SIGN_STATUSES.includes(quote.status)) {
       return NextResponse.json(
-        { error: `Quote must be approved before signing. Current status: ${quote.status}` },
+        { error: `Quote must be approved or sent before signing. Current status: ${quote.status}` },
         { status: 400 }
       );
+    }
+
+    // P0-2: If quote hasn't been "approved" (which creates the Order), 
+    // we must do it now during signing to ensure data integrity.
+    if (!quote.orderId) {
+      const result = await approveQuoteAndCreateOrder(id, null);
+      if (!result.ok) {
+        return NextResponse.json({ error: result.error }, { status: 400 });
+      }
     }
 
     const updated = await prisma.quote.update({
@@ -33,6 +44,8 @@ export async function POST(
       data: {
         status: "signed",
         signedAt: new Date(),
+        // If it was just 'sent' or 'viewed' but not 'approved', marking as signed implicitly approves it
+        ...(["sent", "viewed"].includes(quote.status) ? { approvedAt: new Date() } : {})
       },
     });
 
@@ -41,11 +54,18 @@ export async function POST(
       action: "sign",
       resource: "quotes",
       resourceId: id,
-      newValues: { signedAt: updated.signedAt },
+      newValues: { 
+        signedAt: updated.signedAt,
+        autoApproved: !quote.orderId
+      },
     });
 
     return NextResponse.json({ data: updated });
-  } catch (error) {
-    return handleError(error);
+  } catch (error: any) {
+    console.error("[SIGN_QUOTE_ERROR]", error);
+    const details = error.message || String(error);
+    return NextResponse.json({ 
+      error: `Lỗi: ${details}`
+    }, { status: 500 });
   }
 }

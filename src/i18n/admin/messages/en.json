@@ -406,6 +406,7 @@
     "statusPending": "Pending",
     "statusApproved": "Approved",
     "statusSent": "Sent",
+    "statusViewed": "Viewed",
     "statusSigned": "Signed",
     "statusRejected": "Rejected",
     "statusCancelled": "Cancelled",

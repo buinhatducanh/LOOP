@@ -640,6 +640,7 @@ export default function SiteFooter({ locale = "vi" }: { locale?: string }) {
 
           {/* Back to top */}
           <button
+            suppressHydrationWarning
             onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
             style={{
               display: "inline-flex", alignItems: "center", gap: "0.375rem",
