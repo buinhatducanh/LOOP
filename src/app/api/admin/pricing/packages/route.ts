@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
     const {
       slug, title, titleEn, titleJa, titleKo, titleZh,
       shortDesc, shortDescEn, shortDescJa, shortDescKo, shortDescZh,
-      type, price, priceText, features, isSubscription, billingPeriod, sortOrder, isActive,
+      type, price, priceText, features, isSubscription, billingPeriod, sortOrder, isActive, serviceKey, tagline, color, isPopular,
     } = body;
 
     if (!slug || typeof slug !== "string") return badRequest("slug là bắt buộc");
@@ -88,6 +88,10 @@ export async function POST(req: NextRequest) {
         billingPeriod: billingPeriod?.trim() || null,
         sortOrder: Number(sortOrder) || 0,
         isActive: isActive !== undefined ? Boolean(isActive) : true,
+        serviceKey: serviceKey?.trim() || null,
+        tagline: tagline?.trim() || null,
+        color: color?.trim() || null,
+        isPopular: Boolean(isPopular),
       },
     });
 
@@ -119,25 +123,29 @@ export async function PUT(req: NextRequest) {
     const updated = await prisma.servicePackage.update({
       where: { id },
       data: {
-        ...(data.slug !== undefined && { slug: String(data.slug).trim() }),
-        ...(data.title !== undefined && { title: String(data.title).trim() }),
-        ...(data.titleEn !== undefined && { titleEn: String(data.titleEn).trim() || null }),
-        ...(data.titleJa !== undefined && { titleJa: String(data.titleJa).trim() || null }),
-        ...(data.titleKo !== undefined && { titleKo: String(data.titleKo).trim() || null }),
-        ...(data.titleZh !== undefined && { titleZh: String(data.titleZh).trim() || null }),
-        ...(data.shortDesc !== undefined && { shortDesc: String(data.shortDesc).trim() }),
-        ...(data.shortDescEn !== undefined && { shortDescEn: String(data.shortDescEn).trim() || null }),
-        ...(data.shortDescJa !== undefined && { shortDescJa: String(data.shortDescJa).trim() || null }),
-        ...(data.shortDescKo !== undefined && { shortDescKo: String(data.shortDescKo).trim() || null }),
-        ...(data.shortDescZh !== undefined && { shortDescZh: String(data.shortDescZh).trim() || null }),
-        ...(data.type !== undefined && { type: String(data.type).trim() }),
-        ...(data.price !== undefined && { price: data.price !== null ? Number(data.price) : null }),
-        ...(data.priceText !== undefined && { priceText: String(data.priceText).trim() || null }),
-        ...(data.features !== undefined && { features: Array.isArray(data.features) ? data.features : [] }),
-        ...(data.isSubscription !== undefined && { isSubscription: Boolean(data.isSubscription) }),
-        ...(data.billingPeriod !== undefined && { billingPeriod: String(data.billingPeriod).trim() || null }),
-        ...(data.sortOrder !== undefined && { sortOrder: Number(data.sortOrder) || 0 }),
-        ...(data.isActive !== undefined && { isActive: Boolean(data.isActive) }),
+        slug: data.slug !== undefined ? String(data.slug).trim() : undefined,
+        title: data.title !== undefined ? String(data.title).trim() : undefined,
+        titleEn: data.titleEn !== undefined ? (String(data.titleEn).trim() || null) : undefined,
+        titleJa: data.titleJa !== undefined ? (String(data.titleJa).trim() || null) : undefined,
+        titleKo: data.titleKo !== undefined ? (String(data.titleKo).trim() || null) : undefined,
+        titleZh: data.titleZh !== undefined ? (String(data.titleZh).trim() || null) : undefined,
+        shortDesc: data.shortDesc !== undefined ? String(data.shortDesc).trim() : undefined,
+        shortDescEn: data.shortDescEn !== undefined ? (String(data.shortDescEn).trim() || null) : undefined,
+        shortDescJa: data.shortDescJa !== undefined ? (String(data.shortDescJa).trim() || null) : undefined,
+        shortDescKo: data.shortDescKo !== undefined ? (String(data.shortDescKo).trim() || null) : undefined,
+        shortDescZh: data.shortDescZh !== undefined ? (String(data.shortDescZh).trim() || null) : undefined,
+        type: data.type !== undefined ? String(data.type).trim() : undefined,
+        price: data.price !== undefined ? (data.price !== null ? Number(data.price) : null) : undefined,
+        priceText: data.priceText !== undefined ? (String(data.priceText).trim() || null) : undefined,
+        features: data.features !== undefined ? (Array.isArray(data.features) ? data.features : []) : undefined,
+        isSubscription: data.isSubscription !== undefined ? Boolean(data.isSubscription) : undefined,
+        billingPeriod: data.billingPeriod !== undefined ? (String(data.billingPeriod).trim() || null) : undefined,
+        sortOrder: data.sortOrder !== undefined ? (Number(data.sortOrder) || 0) : undefined,
+        isActive: data.isActive !== undefined ? Boolean(data.isActive) : undefined,
+        serviceKey: data.serviceKey !== undefined ? (String(data.serviceKey).trim() || null) : undefined,
+        tagline: data.tagline !== undefined ? (String(data.tagline).trim() || null) : undefined,
+        color: data.color !== undefined ? (String(data.color).trim() || null) : undefined,
+        isPopular: data.isPopular !== undefined ? Boolean(data.isPopular) : undefined,
       },
     });
 

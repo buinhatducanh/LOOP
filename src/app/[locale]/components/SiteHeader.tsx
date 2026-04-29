@@ -84,6 +84,7 @@ function LocaleSwitcher({ locale }: { locale: string }) {
   return (
     <div style={{ position: "relative" }} ref={ref}>
       <button
+        suppressHydrationWarning
         onClick={() => setOpen(!open)}
         title="Change language"
         className="nav-icon-btn"
@@ -133,6 +134,7 @@ function LocaleSwitcher({ locale }: { locale: string }) {
               const active = loc === locale;
               return (
                 <button
+                  suppressHydrationWarning
                   key={loc}
                   onClick={() => switchLocale(loc)}
                   style={{
@@ -211,6 +213,7 @@ function MegaDropdown({
   return (
     <div style={{ position: "relative" }}>
       <button
+        suppressHydrationWarning
         onClick={onToggle}
         onMouseEnter={onToggle}
         className="nav-pill-btn"
@@ -701,6 +704,7 @@ export default function SiteHeader({ locale }: { locale: string }) {
 
             {/* Search icon button */}
             <button
+              suppressHydrationWarning
               onClick={() => setSearchOpen(true)}
               title="Search (⌘K)"
               className="nav-icon-btn"
@@ -729,6 +733,7 @@ export default function SiteHeader({ locale }: { locale: string }) {
             {/* Notification Bell */}
             <div style={{ position: "relative" }} ref={notifRef}>
               <button
+                suppressHydrationWarning
                 className="hide-mobile nav-icon-btn"
                 title="Thông báo"
                 onClick={() => setNotifPanelOpen(!notifPanelOpen)}
@@ -792,6 +797,7 @@ export default function SiteHeader({ locale }: { locale: string }) {
             {mounted && hasValidToken && user ? (
               <div style={{ position: "relative" }} ref={userMenuRef}>
                 <button
+                  suppressHydrationWarning
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
                   title={user.name}
                   className="nav-user-btn"

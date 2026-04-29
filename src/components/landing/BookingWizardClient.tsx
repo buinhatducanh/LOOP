@@ -276,12 +276,8 @@ export function BookingWizardClient({ locale }: Props) {
    * After API responds, packages are replaced with real DB data.
    * Prices / content must be edited in DB → ServicePackage table.
    */
-  const [packages, setPackages] = useState<WizardPackage[]>([
-    { id: "landing", slug: "landing", name: "Landing Page", multiplier: 1, color: "#6EB1A8", desc: "Chiến dịch Marketing, giới thiệu cá nhân, offline. Phù hợp landing page, trang giới thiệu cá nhân, sản phẩm đơn lẻ.", features: ["Giao diện Hiện đại, Responsive", "Tối ưu Trải nghiệm UI/UX", "Hỗ trợ chỉnh sửa sau bàn giao", "Trang giới thiệu SP/Dịch vụ", "Admin quản lý bài viết", "Form thu thập dữ liệu KH", "Quản lý tệp KH cơ bản", "Tối ưu SEO On-page"], lp: 80, price: 1_890_000, marketPrice: 2_500_000, savingPct: 24 },
-    { id: "ban-hang", slug: "ban-hang", name: "Bán Hàng Cơ Bản", multiplier: 1, color: DS.blue, desc: "Shop online nhỏ & vừa, bắt đầu chuyển đổi số. Phù hợp cửa hàng online, boutique, dịch vụ nhỏ.", features: ["Bao gồm mọi tính năng Landing Page", "Danh mục & Chi tiết sản phẩm", "Chức năng Giỏ hàng thông minh", "Thống kê đơn hàng & Doanh thu", "Tài khoản Admin & Khách hàng", "Tặng 5 trang nội dung miễn phí"], lp: 160, popular: true, price: 3_890_000, marketPrice: 5_500_000, savingPct: 29 },
-    { id: "doanh-nghiep", slug: "doanh-nghiep", name: "Quản Trị Doanh Nghiệp", multiplier: 1, color: "#8B5CF6", desc: "E-commerce toàn diện + vận hành nội bộ. Phù hợp doanh nghiệp vừa và lớn, quản lý kho hàng, nhà cung cấp, khách hàng VIP.", features: ["Bao gồm mọi tính năng Bán Hàng", "Giỏ hàng đa dịch vụ/sản phẩm", "Quản lý Kho hàng & Nhà cung cấp", "Tích điểm & Đổi quà thành viên", "Hệ thống Mã giảm giá/Flash sale", "Tìm kiếm AI thông minh", "Giao diện tùy chỉnh theo thương hiệu"], lp: 240, price: 7_890_000, marketPrice: 11_900_000, savingPct: 34 },
-    { id: "yeu-cau", slug: "yeu-cau", name: "Theo Yêu Cầu", multiplier: 1, color: DS.pink, desc: "Startups, platform, app-web có logic phức tạp. Phù hợp startup, platform, web app có yêu cầu đặc thù riêng.", features: ["Bao gồm mọi tính năng Doanh Nghiệp", "UI/UX Độc quyền (Không mẫu)", "Tùy chỉnh chức năng Core System", "Tích hợp ERP/MISA/KiotViet/GHTK", "API kết nối bên thứ 3 (Zalo, App...)", "Bảo mật đa lớp & Tối ưu Speed cực hạn", "Hỗ trợ ưu tiên 24/7"], lp: 320, price: 12_900_000, marketPrice: 18_000_000, savingPct: 28 },
-  ]);
+  const [packages, setPackages] = useState<WizardPackage[]>([]);
+  const [isLoadingPackages, setIsLoadingPackages] = useState(true);
   const [featureOptions, setFeatureOptions] = useState<Record<string, WizardFeature[]>>({
     web: WEBSITE_FEATURES_FALLBACK,
   });
@@ -485,7 +481,10 @@ export function BookingWizardClient({ locale }: Props) {
           setWebFeatures(cfg.webFeatures as unknown as WebPackageFeature[]);
         }
       })
-      .catch(() => { /* keep fallback */ });
+      .catch(() => { /* keep fallback */ })
+      .finally(() => {
+        if (!cancelled) setIsLoadingPackages(false);
+      });
     return () => { cancelled = true; };
   }, [locale, email]);
 
@@ -953,15 +952,27 @@ export function BookingWizardClient({ locale }: Props) {
 
                   {/* ── Package feature matrix table (4 columns × feature rows) ── */}
                   <div style={{ marginBottom: 28 }}>
-                    <WebPackageFeatureTable
-                      features={webFeatures}
-                      selectedTier={currentWebTier}
-                      tiers={webTiers}
-                      onSelectTier={(tier) => {
-                        const pkgId = TIER_TO_PKG[tier];
-                        if (pkgId) setSelectedPackage(pkgId);
-                      }}
-                    />
+                    {isLoadingPackages ? (
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
+                        {Array.from({ length: 4 }).map((_, i) => (
+                          <div key={i} style={{ height: 400, background: DS.bgCard, borderRadius: 20, border: `1px solid ${DS.border}`, position: "relative", overflow: "hidden" }}>
+                            <motion.div animate={{ opacity: [0.3, 0.7, 0.3] }} transition={{ duration: 1.5, repeat: Infinity }} style={{ position: "absolute", top: 20, left: 20, right: 20, height: 40, background: DS.border, borderRadius: 8 }} />
+                            <motion.div animate={{ opacity: [0.3, 0.7, 0.3] }} transition={{ duration: 1.5, repeat: Infinity }} style={{ position: "absolute", top: 80, left: 20, right: 20, height: 20, background: DS.border, borderRadius: 4 }} />
+                            <motion.div animate={{ opacity: [0.3, 0.7, 0.3] }} transition={{ duration: 1.5, repeat: Infinity }} style={{ position: "absolute", top: 120, left: 20, right: 20, height: 200, background: DS.border, borderRadius: 8 }} />
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <WebPackageFeatureTable
+                        features={webFeatures}
+                        selectedTier={currentWebTier}
+                        tiers={webTiers}
+                        onSelectTier={(tier) => {
+                          const pkgId = TIER_TO_PKG[tier];
+                          if (pkgId) setSelectedPackage(pkgId);
+                        }}
+                      />
+                    )}
                   </div>
 
                   {/* ── Selected package summary bar ── */}

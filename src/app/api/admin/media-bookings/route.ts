@@ -40,11 +40,14 @@ export async function GET(req: NextRequest) {
     if (paymentStatus) fieldWhere.paymentStatus = paymentStatus;
     if (bookingType) fieldWhere.bookingType = bookingType;
 
-    // Portfolio filter: only approved bookings that have delivered assets
+    // Standard Filtering: Separate Portfolio from regular Bookings
     if (portfolio === "true") {
-      fieldWhere.status = "approved";
-      // Prisma Json fields can't be filtered directly, so we fetch all approved
-      // and filter in JS — acceptable since approved set is small
+      fieldWhere.bookingType = "portfolio";
+    } else if (bookingType) {
+      fieldWhere.bookingType = bookingType;
+    } else {
+      // General list: Show all except explicit portfolio entries
+      fieldWhere.bookingType = { not: "portfolio" };
     }
 
     const where = { ...searchWhere, ...fieldWhere };
@@ -53,7 +56,7 @@ export async function GET(req: NextRequest) {
     const [allBookings, total] = await Promise.all([
       portfolio === "true"
         ? prisma.mediaBooking.findMany({
-            where: { ...searchWhere, status: "approved" },
+            where, // Uses the built where clause which includes bookingType: "portfolio"
             orderBy,
             include: {
               package: { select: { title: true } },
@@ -114,11 +117,17 @@ export async function POST(req: NextRequest) {
     // Booking number: MBK-{12-char-uuid}
     const bookingNumber = `MBK-${crypto.randomUUID().replace(/-/g, "").slice(0, 12).toUpperCase()}`;
 
+    // Parse amounts with safety check for 32-bit Int range (max ~2.1B)
+    const MAX_INT = 2147483647;
+    const totalAmount = data.totalAmount ? Math.min(parseInt(data.totalAmount, 10), MAX_INT) : null;
+    const paidAmount = data.paidAmount ? Math.min(parseInt(data.paidAmount, 10), MAX_INT) : 0;
+
     const booking = await prisma.mediaBooking.create({
       data: {
         bookingNumber,
-        packageId: data.packageId || null,
-        orderId: data.orderId || null,
+        package: (data.packageId && data.packageId !== "") ? { connect: { id: data.packageId } } : undefined,
+        order: (data.orderId && data.orderId !== "") ? { connect: { id: data.orderId } } : undefined,
+        teamMember: (data.teamMemberId && data.teamMemberId !== "") ? { connect: { id: data.teamMemberId } } : undefined,
         customerName: data.customerName,
         customerEmail: data.customerEmail,
         customerPhone: data.customerPhone || null,
@@ -128,24 +137,18 @@ export async function POST(req: NextRequest) {
         requirements: data.requirements || null,
         note: data.note || null,
         deadline: data.deadline ? new Date(data.deadline) : null,
-        status: "pending",
+        status: data.status || "pending",
         paymentStatus: data.paymentStatus || "unpaid",
-        totalAmount: data.totalAmount ? parseInt(data.totalAmount, 10) : null,
+        totalAmount,
+        paidAmount,
+        deliveredAssets: data.deliveredAssets || [],
         assignedTo: data.assignedTo || null,
-        teamMemberId: data.teamMemberId || null,
+        isFeatured: !!data.isFeatured,
       },
       include: {
         package: { select: { title: true } },
         teamMember: { select: { name: true } },
       },
-    });
-
-    await createAuditLog({
-      userId: "system",
-      action: "create",
-      resource: "media-bookings",
-      resourceId: booking.id,
-      newValues: data,
     });
 
     return ok(booking, 201);
