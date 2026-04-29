@@ -182,6 +182,7 @@ export const GLOW = {
   cardShadow: "0 8px 32px rgba(0,0,0,0.40)",
   cardGlow: "0 0 60px rgba(107,61,245,0.12)",
   cardPinkGlow: "0 0 60px rgba(236,72,153,0.12), 0 0 120px rgba(107,61,245,0.06)",
+  soft: "0 4px 20px rgba(0,0,0,0.25)",
 } as const;
 
 export const NAV_LINKS = [

@@ -71,8 +71,32 @@ export async function PUT(
     const updateData: Record<string, unknown> = {};
 
     // Scalar fields
-    if (data.packageId !== undefined) updateData.packageId = data.packageId || null;
-    if (data.orderId !== undefined) updateData.orderId = data.orderId || null;
+    // Relational fields - only update if provided
+    if (data.packageId !== undefined) {
+      if (data.packageId && data.packageId !== "") {
+        updateData.package = { connect: { id: data.packageId } };
+      } else {
+        updateData.package = { disconnect: true };
+      }
+    }
+    
+    if (data.orderId !== undefined) {
+      if (data.orderId && data.orderId !== "") {
+        updateData.order = { connect: { id: data.orderId } };
+      } else {
+        updateData.order = { disconnect: true };
+      }
+    }
+
+    if (data.teamMemberId !== undefined) {
+      if (data.teamMemberId && data.teamMemberId !== "") {
+        updateData.teamMember = { connect: { id: data.teamMemberId } };
+      } else {
+        updateData.teamMember = { disconnect: true };
+      }
+    }
+
+    // Scalar fields
     if (data.customerName !== undefined) updateData.customerName = data.customerName;
     if (data.customerEmail !== undefined) updateData.customerEmail = data.customerEmail;
     if (data.customerPhone !== undefined) updateData.customerPhone = data.customerPhone || null;
@@ -88,7 +112,8 @@ export async function PUT(
     if (data.totalAmount !== undefined) updateData.totalAmount = data.totalAmount ? parseInt(data.totalAmount, 10) : null;
     if (data.paidAmount !== undefined) updateData.paidAmount = parseInt(data.paidAmount, 10);
     if (data.assignedTo !== undefined) updateData.assignedTo = data.assignedTo || null;
-    if (data.teamMemberId !== undefined) updateData.teamMemberId = data.teamMemberId || null;
+    if (data.isFeatured !== undefined) updateData.isFeatured = !!data.isFeatured;
+    if (data.deliveredAssets !== undefined) updateData.deliveredAssets = data.deliveredAssets;
 
     // Timestamps: only set if not already set (idempotent)
     if (data.deliveredAt !== undefined && !existing.deliveredAt) {

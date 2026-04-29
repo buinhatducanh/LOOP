@@ -43,6 +43,9 @@ const MEDIA_PACKAGES = [
     isSubscription: false,
     sortOrder: 1,
     isActive: true,
+    serviceKey: "media",
+    tagline: "E-commerce Ready",
+    color: "#6EB1A8",
   },
   {
     slug: "quay-va-dung",
@@ -72,6 +75,9 @@ const MEDIA_PACKAGES = [
     isSubscription: false,
     sortOrder: 2,
     isActive: true,
+    serviceKey: "media",
+    tagline: "Standard Shooting",
+    color: "#4F7DF3",
   },
   {
     slug: "quay-dung-content",
@@ -105,6 +111,9 @@ const MEDIA_PACKAGES = [
     isSubscription: false,
     sortOrder: 3,
     isActive: true,
+    serviceKey: "media",
+    tagline: "Premium Content",
+    color: "#EC4899",
   },
 ];
 

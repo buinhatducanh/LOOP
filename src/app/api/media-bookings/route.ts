@@ -23,11 +23,12 @@ const createSchema = z.object({
   customerEmail: z.string().email("invalid email address"),
   customerPhone: z.string().optional(),
   companyName: z.string().optional(),
-  bookingType: z.enum(["event", "product", "corporate", "social", "custom"]),
+  bookingType: z.enum(["event", "product", "corporate", "social", "custom", "media"]),
   title: z.string().min(1, "project title is required"),
   requirements: z.string().optional(),
   deadline: z.string().optional(), // ISO date string
   budget: z.number().optional(),
+  packageId: z.string().optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -40,9 +41,13 @@ export async function POST(req: NextRequest) {
 
     const bookingNumber = generateBookingNumber();
 
+    const deadlineDate = parsed.data.deadline ? new Date(parsed.data.deadline) : null;
+    const finalDeadline = (deadlineDate && !isNaN(deadlineDate.getTime())) ? deadlineDate : null;
+
     const booking = await prisma.mediaBooking.create({
       data: {
         bookingNumber,
+        package: parsed.data.packageId ? { connect: { id: parsed.data.packageId } } : undefined,
         customerName: parsed.data.customerName,
         customerEmail: parsed.data.customerEmail,
         customerPhone: parsed.data.customerPhone ?? null,
@@ -50,7 +55,7 @@ export async function POST(req: NextRequest) {
         bookingType: parsed.data.bookingType,
         title: parsed.data.title,
         requirements: parsed.data.requirements ?? null,
-        deadline: parsed.data.deadline ? new Date(parsed.data.deadline) : null,
+        deadline: finalDeadline,
         status: "pending",
         paymentStatus: "unpaid",
         totalAmount: parsed.data.budget ?? null,

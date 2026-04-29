@@ -148,8 +148,9 @@ export function handleError(error: unknown) {
   // ⚠️  Only match errors that are OUR own classes.
   //      Third-party errors (DB driver, external APIs) may carry generic messages
   //      like "Not found" or "Unauthorized" that should NOT map to 4xx.
+  // Plain Error
   if (error instanceof Error) {
-    return serverError();
+    return serverError(error.message);
   }
 
   return serverError();

@@ -111,8 +111,9 @@ async function apiFetch<T>(
     if (qs) url += `?${qs}`;
   }
 
+  const isFormData = fetchOptions.body instanceof FormData;
   const headers: HeadersInit = {
-    "Content-Type": "application/json",
+    ...(isFormData ? {} : { "Content-Type": "application/json" }),
     Accept: "application/json",
     ...fetchOptions.headers,
   };
@@ -182,7 +183,7 @@ export const apiClient = {
     return apiFetch<T>(endpoint, {
       ...options,
       method: "POST",
-      body: body ? JSON.stringify(body) : undefined,
+      body: body instanceof FormData ? body : body ? JSON.stringify(body) : undefined,
     });
   },
 
@@ -194,7 +195,7 @@ export const apiClient = {
     return apiFetch<T>(endpoint, {
       ...options,
       method: "PUT",
-      body: body ? JSON.stringify(body) : undefined,
+      body: body instanceof FormData ? body : body ? JSON.stringify(body) : undefined,
     });
   },
 
@@ -206,7 +207,7 @@ export const apiClient = {
     return apiFetch<T>(endpoint, {
       ...options,
       method: "PATCH",
-      body: body ? JSON.stringify(body) : undefined,
+      body: body instanceof FormData ? body : body ? JSON.stringify(body) : undefined,
     });
   },
 
@@ -236,7 +237,7 @@ export const adminApi = {
     return apiFetch<T>(endpoint, {
       ...options,
       method: "POST",
-      body: body ? JSON.stringify(body) : undefined,
+      body: body instanceof FormData ? body : body ? JSON.stringify(body) : undefined,
       withCredentials: true,
     });
   },
@@ -249,7 +250,7 @@ export const adminApi = {
     return apiFetch<T>(endpoint, {
       ...options,
       method: "PUT",
-      body: body ? JSON.stringify(body) : undefined,
+      body: body instanceof FormData ? body : body ? JSON.stringify(body) : undefined,
       withCredentials: true,
     });
   },
@@ -262,7 +263,7 @@ export const adminApi = {
     return apiFetch<T>(endpoint, {
       ...options,
       method: "PATCH",
-      body: body ? JSON.stringify(body) : undefined,
+      body: body instanceof FormData ? body : body ? JSON.stringify(body) : undefined,
       withCredentials: true,
     });
   },
