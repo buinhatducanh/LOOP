@@ -388,7 +388,21 @@
     "errSlugRequired": "Slug is required",
     "errSaveFailed": "Save failed",
     "errDeleteFailed": "Delete failed",
-    "confirmDelete": "Delete this article?"
+    "confirmDelete": "Delete this article?",
+    "formAssignment": "Project & Author Assignment",
+    "formProject": "PROJECT (ORDER)",
+    "formAuthorSelect": "AUTHOR",
+    "formBasicInfo": "Basic Information",
+    "formMedia": "Media & Video",
+    "formVideoUrl": "VIDEO (YouTube / Vimeo URL)",
+    "formTags": "Tags",
+    "formSeoSection": "SEO Configuration",
+    "formSeoTitle": "META TITLE (SEO)",
+    "formSeoDesc": "META DESCRIPTION (SEO)",
+    "formCanonical": "CANONICAL URL",
+    "formBacklinks": "External Links",
+    "formI18n": "Multi-language Content",
+    "viewPost": "View Post"
   },
   "quotation": {
     "title": "Quotation",

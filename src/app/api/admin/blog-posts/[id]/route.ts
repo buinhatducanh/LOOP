@@ -46,7 +46,7 @@ const updateSchema = z.object({
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    await requirePermission("blogs", "read");
+    await requirePermission("blog-posts", "read");
     const { id } = await params;
     const data = await prisma.blogPost.findUnique({
       where: { id },
@@ -63,9 +63,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   }
 }
 
-export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const session = await requirePermission("blogs", "update");
+    const session = await requirePermission("blog-posts", "update");
     const { id } = await params;
     const body = await req.json();
     const parsed = updateSchema.safeParse(body);
@@ -97,7 +97,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     await createAuditLog({
       userId: session.userId,
       action: "update",
-      resource: "blogs",
+      resource: "blog-posts",
       resourceId: id,
       newValues: postData,
     });
@@ -109,10 +109,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const session = await requirePermission("blogs", "delete");
+    const session = await requirePermission("blog-posts", "delete");
     const { id } = await params;
     await prisma.blogPost.delete({ where: { id } });
-    await createAuditLog({ userId: session.userId, action: "delete", resource: "blogs", resourceId: id });
+    await createAuditLog({ userId: session.userId, action: "delete", resource: "blog-posts", resourceId: id });
     return ok({ success: true });
   } catch (error) {
     return handleError(error);

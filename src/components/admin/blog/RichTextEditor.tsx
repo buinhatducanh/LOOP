@@ -8,11 +8,12 @@ import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
 import { Youtube } from "@tiptap/extension-youtube";
 import CodeBlock from "@tiptap/extension-code-block";
+import { ImageUpload } from "@/components/ui/ImageUpload";
 import { DS } from "@/lib/design-tokens";
 import {
   Bold, Italic, Strikethrough, Code, Heading2, Heading3,
   List, ListOrdered, Quote, Minus, Link2, ImageIcon,
-  Video, Terminal, Undo, Redo,
+  Video, Terminal, Undo, Redo, X,
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -119,7 +120,7 @@ function LinkModal({
   );
 }
 
-// ─── Image URL Modal ────────────────────────────────────────────────────────────
+// ─── Image Modal (Updated to support Upload) ───────────────────────────────────
 
 function ImageModal({
   onConfirm, onCancel,
@@ -127,22 +128,60 @@ function ImageModal({
   onConfirm: (url: string, alt: string) => void;
   onCancel: () => void;
 }) {
+  const [mode, setMode] = useState<"upload" | "url">("upload");
   const [url, setUrl] = useState("");
   const [alt, setAlt] = useState("");
 
+  const tabStyle = (active: boolean): React.CSSProperties => ({
+    flex: 1, padding: "8px 4px", fontSize: 12, fontWeight: 600,
+    background: active ? "rgba(59,130,246,0.1)" : "transparent",
+    color: active ? DS.blue : DS.text4,
+    border: "none", borderBottom: `2px solid ${active ? DS.blue : "transparent"}`,
+    cursor: "pointer", transition: "all 0.2s",
+  });
+
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 12, padding: 20, width: 360 }}>
-        <p style={{ color: DS.text, fontSize: 14, fontWeight: 600, marginBottom: 12 }}>Chèn ảnh</p>
-        <input autoFocus placeholder="URL ảnh (https://...)" value={url} onChange={e => setUrl(e.target.value)} style={{ ...inpStyle, marginBottom: 8 }} />
-        <input placeholder="Mô tả ảnh (alt text)" value={alt} onChange={e => setAlt(e.target.value)} style={inpStyle} />
-        <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-          <button onClick={onCancel} style={{ flex: 1, padding: "8px", borderRadius: 8, border: `1px solid ${DS.border}`, background: "transparent", color: DS.text3, cursor: "pointer", fontSize: 13 }}>Hủy</button>
+      <div style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 12, padding: 20, width: 400 }}>
+        <p style={{ color: DS.text, fontSize: 14, fontWeight: 600, marginBottom: 16 }}>Chèn ảnh</p>
+
+        {/* Mode Tabs */}
+        <div style={{ display: "flex", borderBottom: `1px solid ${DS.border}`, marginBottom: 20 }}>
+          <button onClick={() => setMode("upload")} style={tabStyle(mode === "upload")}>Tải ảnh lên</button>
+          <button onClick={() => setMode("url")} style={tabStyle(mode === "url")}>Dùng URL</button>
+        </div>
+
+        {mode === "upload" ? (
+          <div style={{ marginBottom: 16 }}>
+            <ImageUpload
+              value={url}
+              onChange={(newUrl) => setUrl(newUrl)}
+              folder="loop-blog-inline"
+              aspectRatio="auto"
+            />
+          </div>
+        ) : (
+          <input
+            autoFocus
+            placeholder="URL ảnh (https://...)"
+            value={url}
+            onChange={e => setUrl(e.target.value)}
+            style={{ ...inpStyle, marginBottom: 16 }}
+          />
+        )}
+
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ display: "block", color: DS.text4, fontSize: 11, marginBottom: 6, fontFamily: DS.mono }}>Mô tả ảnh (Alt text)</label>
+          <input placeholder="VD: Giao diện website LOOP" value={alt} onChange={e => setAlt(e.target.value)} style={inpStyle} />
+        </div>
+
+        <div style={{ display: "flex", gap: 8, marginTop: 20 }}>
+          <button onClick={onCancel} style={{ flex: 1, padding: "10px", borderRadius: 8, border: `1px solid ${DS.border}`, background: "transparent", color: DS.text3, cursor: "pointer", fontSize: 13, fontWeight: 600 }}>Hủy</button>
           <button
             onClick={() => onConfirm(url, alt)}
             disabled={!url}
-            style={{ flex: 1, padding: "8px", borderRadius: 8, border: "none", background: url ? DS.blue : DS.text4, color: "#fff", cursor: url ? "pointer" : "not-allowed", fontSize: 13, fontWeight: 600 }}
-          >Chèn</button>
+            style={{ flex: 1, padding: "10px", borderRadius: 8, border: "none", background: url ? DS.blue : DS.text4, color: "#fff", cursor: url ? "pointer" : "not-allowed", fontSize: 13, fontWeight: 700, boxShadow: url ? "0 4px 12px rgba(59,130,246,0.3)" : "none" }}
+          >Chèn vào bài viết</button>
         </div>
       </div>
     </div>
@@ -199,6 +238,7 @@ export function RichTextEditor({
   const [showYtModal, setShowYtModal] = useState(false);
 
   const editor = useEditor({
+    immediatelyRender: false,
     extensions: [
       StarterKit.configure({ codeBlock: false }),
       Image.configure({ inline: false, allowBase64: false }),
