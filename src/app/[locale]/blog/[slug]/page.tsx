@@ -130,11 +130,15 @@ export default async function BlogPostPage({ params }: DetailProps) {
     select: {
       id: true, slug: true, title: true, excerpt: true,
       content: true, coverImage: true, publishedAt: true, authorId: true,
+      videoUrl: true, backlinks: true, canonicalUrl: true,
+      seoTitle: true, seoDesc: true,
 
       // all i18n
       titleEn: true, titleJa: true, titleKo: true, titleZh: true,
       excerptEn: true, excerptJa: true, excerptKo: true, excerptZh: true,
       contentEn: true, contentJa: true, contentKo: true, contentZh: true,
+      seoTitleEn: true, seoTitleJa: true, seoTitleKo: true, seoTitleZh: true,
+      seoDescEn: true, seoDescJa: true, seoDescKo: true, seoDescZh: true,
     },
   });
 
@@ -196,9 +200,12 @@ export default async function BlogPostPage({ params }: DetailProps) {
         post={post as Record<string, unknown>}
         authorName={authorName}
         related={related as Record<string, unknown>[]}
-        tNav={tNav as unknown as Record<string, string>}
-
-
+        tNav={{
+          home: tNav("home"),
+          blog: tNav("blog"),
+        }}
+        videoUrl={post.videoUrl as string}
+        backlinks={post.backlinks as string}
       />
     </>
   );
