@@ -27,9 +27,27 @@ export async function POST(req: NextRequest) {
       }
       fileUrlOrBase64 = body.file;
       if (body.folder) folder = body.folder;
-      
-      // Basic type inference for URL or base64
-      if (fileUrlOrBase64.startsWith("data:video")) isImage = false;
+
+      // Validate base64 data URI prefix (security: prevent arbitrary data injection)
+      const base64PrefixPattern = /^data:(image\/\w+|video\/\w+);base64,/;
+      if (!base64PrefixPattern.test(fileUrlOrBase64)) {
+        return badRequest("Invalid file format. Only images and videos are allowed");
+      }
+
+      // Validate type from data URI
+      isImage = fileUrlOrBase64.startsWith("data:image/");
+      if (!isImage && !fileUrlOrBase64.startsWith("data:video/")) {
+        return badRequest("Only image and video files are allowed");
+      }
+
+      // Enforce size limits based on type
+      const isVideo = fileUrlOrBase64.startsWith("data:video/");
+      const maxSize = isVideo ? 50 * 1024 * 1024 : 10 * 1024 * 1024; // 50MB video, 10MB image
+      // base64 inflates size by ~4/3, so decode check: if (base64.length * 3/4) > maxSize → reject
+      const estimatedSize = Math.ceil(fileUrlOrBase64.length * 0.75);
+      if (estimatedSize > maxSize) {
+        return badRequest(`File too large. Maximum size is ${isVideo ? "50MB" : "10MB"}`);
+      }
     } else {
       const formData = await req.formData();
       const file = formData.get("file") as File | null;

@@ -1710,6 +1710,7 @@ export default function MediaBookingsPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [featuredFilter, setFeaturedFilter] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<MediaBooking | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [editBooking, setEditBooking] = useState<MediaBooking | null>(null);
@@ -1731,13 +1732,13 @@ export default function MediaBookingsPage() {
     ])
   );
   const { data, isLoading, isFetching } = useQuery({
-    queryKey: ["admin", "media-bookings", { page, limit: 20, search, status: statusFilter }],
+    queryKey: ["admin", "media-bookings", { page, limit: 20, search, status: statusFilter, featured: featuredFilter }],
     queryFn: async () => {
       const res = await adminApi.get<{
         data: MediaBooking[];
         pagination: { page: number; limit: number; total: number; totalPages: number };
       }>("/api/admin/media-bookings", {
-        params: { page, limit: 20, ...(search ? { search } : {}), ...(statusFilter ? { status: statusFilter } : {}) },
+        params: { page, limit: 20, ...(search ? { search } : {}), ...(statusFilter ? { status: statusFilter } : {}), ...(featuredFilter ? { featured: true } : {}) },
       });
       return res;
     },
@@ -1885,6 +1886,23 @@ export default function MediaBookingsPage() {
             <option key={s} value={s}>{translatedStatuses[s]?.label ?? s}</option>
           ))}
         </select>
+
+        <button
+          onClick={() => { setFeaturedFilter((f) => !f); setPage(1); }}
+          style={{
+            display: "flex", alignItems: "center", gap: 6,
+            padding: "8px 14px",
+            background: featuredFilter ? "rgba(236,72,153,0.15)" : DS.bgCard,
+            border: `1px solid ${featuredFilter ? "rgba(236,72,153,0.5)" : DS.border}`,
+            borderRadius: 10,
+            color: featuredFilter ? DS.pink : DS.text4,
+            fontSize: 13, fontFamily: DS.mono, cursor: "pointer",
+            transition: "all 0.15s",
+          }}
+        >
+          <TrendingUp size={13} />
+          {t("media.featuredOnly") ?? "Featured"}
+        </button>
       </div>
 
       {/* KPI MiniStats */}
