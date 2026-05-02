@@ -34,11 +34,13 @@ export async function GET(req: NextRequest) {
     const paymentStatus = searchParams.get("paymentStatus");
     const bookingType = searchParams.get("bookingType");
     const portfolio = searchParams.get("portfolio"); // "true" = approved bookings with assets
+    const featured = searchParams.get("featured"); // "true" = isFeatured bookings
 
     const fieldWhere: Record<string, unknown> = {};
     if (status) fieldWhere.status = status;
     if (paymentStatus) fieldWhere.paymentStatus = paymentStatus;
     if (bookingType) fieldWhere.bookingType = bookingType;
+    if (featured === "true") fieldWhere.isFeatured = true;
 
     // Standard Filtering: Separate Portfolio from regular Bookings
     if (portfolio === "true") {
@@ -103,7 +105,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    await requirePermission("media-bookings", "create");
+    const session = await requirePermission("media-bookings", "create");
     const data = await req.json();
 
     // Required fields
@@ -149,6 +151,14 @@ export async function POST(req: NextRequest) {
         package: { select: { title: true } },
         teamMember: { select: { name: true } },
       },
+    });
+
+    await createAuditLog({
+      userId: session.userId,
+      action: "create",
+      resource: "media-bookings",
+      resourceId: booking.id,
+      newValues: { ...data, bookingNumber },
     });
 
     return ok(booking, 201);
