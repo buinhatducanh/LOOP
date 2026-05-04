@@ -46,7 +46,7 @@ function buildPagination(page: number, limit: number, total: number) {
 
 export async function GET(req: NextRequest) {
   try {
-    await requirePermission("blogs", "read");
+    await requirePermission("blog-posts", "read");
 
     const { searchParams } = req.nextUrl;
     const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10));
@@ -83,7 +83,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    await requirePermission("blogs", "create");
+    await requirePermission("blog-posts", "create");
 
     const body = await req.json();
     const parsed = TagCreateSchema.safeParse(body);

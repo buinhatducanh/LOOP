@@ -1,4 +1,4 @@
-import { handleError, ok, badRequest } from "@/lib/api/response";
+import { handleError, ok, badRequest, list, buildPagination } from "@/lib/api/response";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
@@ -51,14 +51,14 @@ const createSchema = z.object({
 
 export async function GET(req: NextRequest) {
   try {
-    await requirePermission("blogs", "read");
+    await requirePermission("blog-posts", "read");
     const { searchParams } = new URL(req.url);
     // Support both orderId and projectId
     const projectId = searchParams.get("projectId") ?? searchParams.get("orderId");
     const status = searchParams.get("status");
     const search = searchParams.get("search");
 
-    const where: Record<string, unknown> = {};
+    const where: Record<string, any> = {};
     if (projectId) where.projectId = projectId;
     if (status) where.status = status;
     if (search) {
@@ -68,16 +68,26 @@ export async function GET(req: NextRequest) {
       ];
     }
 
-    const data = await prisma.blogPost.findMany({
-      where,
-      include: {
-        project: { select: { id: true, orderNumber: true, customerName: true } },
-        author: { select: { id: true, name: true } },
-        tags: { include: { tag: true } },
-      },
-      orderBy: { createdAt: "desc" },
-    });
-    return ok(data);
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "20");
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await Promise.all([
+      prisma.blogPost.findMany({
+        where,
+        include: {
+          project: { select: { id: true, orderNumber: true, customerName: true } },
+          author: { select: { id: true, name: true } },
+          tags: { include: { tag: true } },
+        },
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: limit,
+      }),
+      prisma.blogPost.count({ where }),
+    ]);
+
+    return list(data, buildPagination(page, limit, total));
   } catch (error) {
     return handleError(error);
   }
@@ -85,8 +95,8 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    // Auth FIRST — before any body parsing or DB queries
-    const session = await requirePermission("blogs", "create");
+    // Auth FIRST
+    const session = await requirePermission("blog-posts", "create");
 
     const body = await req.json();
 
@@ -109,6 +119,24 @@ export async function POST(req: NextRequest) {
     // Auto-generate slug from title if not provided
     const resolvedSlug = parsed.data.slug ?? toSlug(parsed.data.title);
 
+    if (!resolvedProjectId) {
+      return badRequest("projectId is required. No active order found to assign this post to.");
+    }
+
+    // Check for duplicate slug in the same project
+    const existing = await prisma.blogPost.findUnique({
+      where: {
+        projectId_slug: {
+          projectId: resolvedProjectId,
+          slug: resolvedSlug,
+        },
+      },
+    });
+
+    if (existing) {
+      return badRequest(`Slug "${resolvedSlug}" đã tồn tại trong dự án này. Vui lòng đổi tiêu đề hoặc slug.`);
+    }
+
     // Resolve authorId: use provided, or find by name/email, or use session teamMemberId
     let authorId = parsed.data.authorId;
     if (!authorId && (parsed.data.authorName || parsed.data.authorEmail)) {
@@ -120,17 +148,22 @@ export async function POST(req: NextRequest) {
         select: { id: true },
       });
       if (!member) {
-        return badRequest("Author not found. Please create the team member first.");
+        return badRequest("Tác giả không tồn tại. Vui lòng kiểm tra lại họ tên hoặc email.");
       }
       authorId = member.id;
     }
 
-    if (!authorId) {
-      return badRequest("authorId, authorName, or authorEmail is required");
+    // Fallback to session user if they are a team member
+    if (!authorId && session.userId) {
+      const self = await prisma.teamMember.findFirst({
+        where: { user: { id: session.userId } },
+        select: { id: true },
+      });
+      if (self) authorId = self.id;
     }
 
-    if (!resolvedProjectId) {
-      return badRequest("projectId is required. No active order found to assign this post to.");
+    if (!authorId) {
+      return badRequest("Vui lòng chọn tác giả cho bài viết.");
     }
 
     const result = await prisma.blogPost.create({
@@ -165,7 +198,7 @@ export async function POST(req: NextRequest) {
     await createAuditLog({
       userId: session.userId,
       action: "create",
-      resource: "blogs",
+      resource: "blog-posts",
       resourceId: result.id,
       newValues: { title: result.title, slug: resolvedSlug, authorId },
     });
