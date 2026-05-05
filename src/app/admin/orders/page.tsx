@@ -674,7 +674,7 @@ function TransitionModal({ order, onClose, onSuccess }: { order: Order | null; o
     const currentIndex = flow.indexOf(order.status as any);
     const availableStatuses = flow.slice(currentIndex + 1);
 
-    const [selected, setSelected] = useState(availableStatuses[0] ?? "");
+    const [selected, setSelected] = useState<string>(availableStatuses[0] ?? "");
     const [note, setNote] = useState("");
     const [saving, setSaving] = useState(false);
 

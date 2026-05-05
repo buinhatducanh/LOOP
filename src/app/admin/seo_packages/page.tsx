@@ -60,9 +60,12 @@ export default function SeoPackagesPage() {
   const [search, setSearch] = useState("");
   const [showActive, setShowActive] = useState<boolean | null>(null);
   const [modal, setModal] = useState<{ open: boolean; edit?: SeoTier }>({ open: false });
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<{
+    level: number; nameVi: string; nameEn: string; shortDesc: string; shortDescEn: string;
+    basePrice: string; marketPrice: string; lpReward: string; sortOrder: number; isActive: boolean;
+  }>({
     level: 1, nameVi: "", nameEn: "", shortDesc: "", shortDescEn: "",
-    basePrice: 900_000, marketPrice: 1_200_000, lpReward: 50, sortOrder: 1, isActive: true,
+    basePrice: "900000", marketPrice: "1200000", lpReward: "50", sortOrder: 1, isActive: true,
   });
   const [error, setError] = useState("");
 
@@ -83,9 +86,15 @@ export default function SeoPackagesPage() {
 
   const saveMutation = useMutation({
     mutationFn: async (payload: typeof form & { id?: string }) => {
-      // Map form.nameVi → API name field
-      const { nameVi, ...rest } = payload;
-      const apiPayload = { ...rest, name: nameVi };
+      // Map form.nameVi → API name field; convert string price fields to numbers
+      const { nameVi, basePrice, marketPrice, lpReward, ...rest } = payload;
+      const apiPayload = {
+        ...rest,
+        name: nameVi,
+        basePrice: Number(basePrice) || 0,
+        marketPrice: Number(marketPrice) || 0,
+        lpReward: Number(lpReward) || 0,
+      };
 
       if (modal.edit) {
         await adminApi.put(`/api/admin/seo-tiers/${modal.edit.id}`, apiPayload);
@@ -121,7 +130,7 @@ export default function SeoPackagesPage() {
   });
 
   const openCreate = () => {
-    setForm({ level: 1, nameVi: "", nameEn: "", shortDesc: "", shortDescEn: "", basePrice: 900_000, marketPrice: 1_200_000, lpReward: 50, sortOrder: 1, isActive: true });
+    setForm({ level: 1, nameVi: "", nameEn: "", shortDesc: "", shortDescEn: "", basePrice: "900000", marketPrice: "1200000", lpReward: "50", sortOrder: 1, isActive: true });
     setError("");
     setModal({ open: true });
   };
@@ -129,7 +138,7 @@ export default function SeoPackagesPage() {
   const openEdit = (t: SeoTier) => {
     setForm({
       level: t.level, nameVi: t.nameVi ?? t.name ?? "", nameEn: t.nameEn ?? "", shortDesc: t.shortDesc ?? "", shortDescEn: t.shortDescEn ?? "",
-      basePrice: t.basePrice, marketPrice: t.marketPrice ?? 0, lpReward: t.lpReward, sortOrder: t.sortOrder, isActive: t.isActive,
+      basePrice: String(t.basePrice), marketPrice: String(t.marketPrice ?? 0), lpReward: String(t.lpReward), sortOrder: t.sortOrder, isActive: t.isActive,
     });
     setError("");
     setModal({ open: true, edit: t });
@@ -137,7 +146,7 @@ export default function SeoPackagesPage() {
 
   const handleSave = () => {
     if (!form.nameVi.trim()) { setError("Tên gói là bắt buộc"); return; }
-    if (form.basePrice < 0) { setError("Giá không được âm"); return; }
+    if (Number(form.basePrice) < 0) { setError("Giá không được âm"); return; }
     saveMutation.mutate(form);
   };
 

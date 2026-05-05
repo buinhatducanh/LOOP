@@ -2,5 +2,5 @@
  * Services Packages — Chinese
  * Fallback to English for now (professional ZH translations TBD).
  */
-import { servicesPackagesEn } from "./services-en";
-export const servicesPackagesZh = servicesPackagesEn;
+// TODO: add professional Chinese translations
+export const servicesPackagesZh: never[] = [];

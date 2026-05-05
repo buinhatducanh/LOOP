@@ -461,7 +461,9 @@
     "formBtnCreate": "创建报价",
     "errTitleRequired": "标题必填",
     "errCreateFailed": "创建失败",
-    "errSaveFailed": "更新失败"
+    "errSaveFailed": "更新失败",
+    "statusQuoted": "已报价",
+    "statusExpired": "已过期"
   },
   "media": {
     "title": "媒体预约管理",

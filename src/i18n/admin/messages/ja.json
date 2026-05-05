@@ -461,7 +461,9 @@
     "formBtnCreate": "見積作成",
     "errTitleRequired": "タイトルは必須です",
     "errCreateFailed": "作成失敗",
-    "errSaveFailed": "更新失敗"
+    "errSaveFailed": "更新失敗",
+    "statusQuoted": "見積もり済み",
+    "statusExpired": "期限切れ"
   },
   "media": {
     "title": "メディア予約管理",

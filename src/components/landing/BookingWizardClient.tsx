@@ -939,10 +939,10 @@ export function BookingWizardClient({ locale }: Props) {
   // ── Submit logic ──
   const handleSubmit = async () => {
     // Determine the selected package details from state or fallback
-    const targetPkg = packages.find(p => p.slug === selectedPackage || p.id === selectedPackage) || PKG_PRICE_MAP[selectedPackage];
+    const targetPkg = packages.find(p => p.slug === selectedPackage || p.id === selectedPackage) || PKG_PRICE_MAP[selectedPackage] || null;
 
     const svc = WEBSITE_SERVICE;
-    const basePrice = targetPkg?.price ?? (targetPkg as any)?.basePrice ?? 1_890_000;
+    const basePrice = (targetPkg as any)?.price ?? (targetPkg as any)?.basePrice ?? 1_890_000;
     const featOpts = currentFeatureOptions;
     // Only charge for non-included features
     const featPrices = featOpts
@@ -972,8 +972,8 @@ export function BookingWizardClient({ locale }: Props) {
       }));
     const selectedItems = [
       {
-        featureId: targetPkg?.id ?? selectedPackage,
-        featureName: `${svc?.title ?? "Website"} — ${targetPkg?.name ?? "Basic"}`,
+        featureId: (targetPkg as any)?.id ?? selectedPackage,
+        featureName: `${svc?.title ?? "Website"} — ${(targetPkg as any)?.name ?? "Basic"}`,
         variantId: "",
         variantName: "Custom",
         price: basePrice,
@@ -996,10 +996,10 @@ export function BookingWizardClient({ locale }: Props) {
 
       const pricingBreakdown = {
         package: {
-          slug: targetPkg?.slug ?? selectedPackage,
-          name: targetPkg?.name ?? "",
+          slug: (targetPkg as any)?.slug ?? selectedPackage,
+          name: (targetPkg as any)?.name ?? "",
           price: basePrice,
-          marketPrice: targetPkg?.marketPrice ?? basePrice,
+          marketPrice: (targetPkg as any)?.marketPrice ?? basePrice,
           color: (targetPkg as WizardPackage)?.color ?? null,
         },
         features: paidFeatureItems,

@@ -85,7 +85,7 @@ export async function POST(req: NextRequest) {
         hostingPlanSlug: validated.hostingPlanSlug || null,
         domainName: validated.domainName || null,
         domainPurchaseTime: validated.domainPurchaseTime,
-        pricingBreakdown: (validated.pricingBreakdown || {}) as any,
+        pricingBreakdown: (validated.pricingBreakdown ?? {}) as any,
         source: validated.source,
       },
     });

@@ -187,25 +187,29 @@ export async function PUT(req: NextRequest) {
       });
 
       // SYNC: Update Feature (Comparison Matrix) if nameVi, name, or slug matches
+      const nameViVal = (data.nameVi as string) || existing.nameVi || "";
+      const nameVal = (data.name as string) || existing.name || "";
+      const slugVal = (data.slug as string) || existing.slug || "";
       const featuresToSync = await tx.feature.findMany({
         where: {
           OR: [
-            { featureName: { equals: data.nameVi || existing.nameVi, mode: "insensitive" } },
-            { featureName: { equals: data.name || existing.name, mode: "insensitive" } },
-            { featureName: { equals: data.slug || existing.slug, mode: "insensitive" } },
+            ...(nameViVal ? [{ featureName: { equals: nameViVal, mode: "insensitive" as const } }] : []),
+            ...(nameVal ? [{ featureName: { equals: nameVal, mode: "insensitive" as const } }] : []),
+            ...(slugVal ? [{ featureName: { equals: slugVal, mode: "insensitive" as const } }] : []),
           ],
         },
         select: { id: true },
       });
 
       if (featuresToSync.length > 0) {
+        const syncData: Record<string, unknown> = {
+          isActive: data.isActive !== undefined ? Boolean(data.isActive) : existing.isActive,
+        };
+        if (data.nameVi) syncData.featureName = String(data.nameVi).trim();
+        if (data.categoryVi) syncData.category = String(data.categoryVi).trim();
         await tx.feature.updateMany({
           where: { id: { in: featuresToSync.map((f) => f.id) } },
-          data: {
-            isActive: data.isActive !== undefined ? Boolean(data.isActive) : existing.isActive,
-            ...(data.nameVi && { featureName: String(data.nameVi).trim() }),
-            ...(data.categoryVi && { category: String(data.categoryVi).trim() }),
-          },
+          data: syncData,
         });
       }
 

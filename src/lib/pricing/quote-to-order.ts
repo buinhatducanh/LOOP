@@ -127,7 +127,7 @@ export async function approveQuoteAndCreateOrder(
         // Customer's LP spend from QuoteRequest (captured for audit trail)
         lpUsed: lpUsed,
         // P1: Store full breakdown and source for rendering and tracking
-        pricingBreakdown: (quote as any).pricingBreakdown ?? null,
+        pricingBreakdown: (quote as any).pricingBreakdown ?? null as any,
         source: (quote as any).source ?? "fixed",
       },
     });

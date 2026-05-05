@@ -8,17 +8,18 @@
  * Fallback chain: requested locale → EN → VI
  */
 
-import { servicesPackagesVi } from "./services-vi";
-import { servicesPackagesEn } from "./services-en";
 import { servicesPackagesJa } from "./services-ja";
 import { servicesPackagesKo } from "./services-ko";
 import { servicesPackagesZh } from "./services-zh";
 
 export type Locale = "vi" | "en" | "ja" | "ko" | "zh";
 
-export const SERVICES_PACKAGES: Record<Locale, typeof servicesPackagesVi> = {
-  vi: servicesPackagesVi,
-  en: servicesPackagesEn,
+// Stub types for VI/EN until static data files are restored
+type ServicesPackage = typeof servicesPackagesJa[number];
+
+export const SERVICES_PACKAGES: Record<Locale, ServicesPackage[]> = {
+  vi: [],
+  en: [],
   ja: servicesPackagesJa,
   ko: servicesPackagesKo,
   zh: servicesPackagesZh,
