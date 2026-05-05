@@ -4,7 +4,11 @@ import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
 import { revalidatePath, revalidateTag } from "next/cache";
-import type { FeatureWhereInput } from "@/generated/prisma/models/Feature";
+import type { Prisma } from "@/generated/prisma/index.d.ts";
+type FeatureWhereInput = Prisma.FeatureWhereInput;
+
+// Also expose InputJsonValue for audit log uses
+type InputJsonValue = Prisma.InputJsonValue;
 
 export async function GET(req: NextRequest) {
   try {

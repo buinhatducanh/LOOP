@@ -12,7 +12,8 @@ import { handleError } from "@/lib/api/response";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
-import type { InputJsonValue } from "@/generated/prisma/internal/prismaNamespace";
+import type { Prisma } from "@/generated/prisma/index.d.ts";
+type InputJsonValue = Prisma.InputJsonValue;
 import { computeRankFieldsFromLp } from "@/lib/rank/xp";
 
 const LP_VND_RATE = 20_000;

@@ -1,7 +1,7 @@
 import { handleError } from "@/lib/api/response";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import type { UserModel } from "@/generated/prisma/models/User";
+import type { User } from "@/generated/prisma/index.d.ts";
 import { requirePermission } from "@/lib/auth/permissions";
 import { hashPassword } from "@/lib/auth/password";
 import { createAuditLog } from "@/lib/auth/audit";
@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
 
     // Normalize email: lowercase + trim before all DB lookups
     const normalizedEmail = String(email).toLowerCase().trim();
-    const existing: UserModel | null = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+    const existing: User | null = await prisma.user.findUnique({ where: { email: normalizedEmail } });
     const existingId = existing?.id;
     if (existing) {
       return NextResponse.json(

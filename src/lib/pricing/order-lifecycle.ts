@@ -14,6 +14,7 @@ type NotifData = {
   link?: string;
   priority?: string;
 };
+// InputJsonValue for Prisma audit fields
 
 /**
  * Fire-and-forget admin notification creation.
@@ -27,6 +28,8 @@ async function fireNotif(data: NotifData): Promise<void> {
   }
 }
 import { LP_VND_RATE } from "@/lib/constants";
+import type { Prisma } from "@/generated/prisma/index.d.ts";
+type InputJsonValue = Prisma.InputJsonValue;
 
 /**
  * Trạng thái hợp lệ cho đơn hàng Custom
@@ -199,7 +202,7 @@ export async function transitionOrderStatus(
           action: "update",
           resource: "orders",
           resourceId: auditResourceId,
-          newValues: { toStatus, note } as unknown as import("@/generated/prisma/internal/prismaNamespace").InputJsonValue,
+          newValues: { toStatus, note } as unknown as InputJsonValue,
         },
       });
     }

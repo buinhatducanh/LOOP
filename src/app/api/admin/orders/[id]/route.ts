@@ -3,7 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
-import type { InputJsonValue } from "@/generated/prisma/internal/prismaNamespace";
+import type { Prisma } from "@/generated/prisma/index.d.ts";
+type InputJsonValue = Prisma.InputJsonValue;
 import { CUSTOM_ORDER_STATUSES, TEMPLATE_ORDER_STATUSES } from "@/lib/pricing/order-lifecycle";
 
 export async function GET(
