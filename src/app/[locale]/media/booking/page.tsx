@@ -1,17 +1,24 @@
 /**
- * Media Booking (Legacy) — LOOP Solutions
+ * Media Booking / Quotation — LOOP Solutions
  * Route: /[locale]/media/booking
- * Redirects to /{locale}/thiet-ke-website (website booking is the primary booking flow)
+ * Provides a 3-step wizard for media service quotation.
  */
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 import { routing } from "@/i18n/routing";
+import { MediaQuotationClient } from "@/components/landing/media/MediaQuotationClient";
+import { getTranslations } from "next-intl/server";
+import { Suspense } from "react";
 
 type Props = { params: Promise<{ locale: string }> };
 
-export async function generateMetadata(): Promise<{ title: string; robots: { index: boolean; follow: boolean } }> {
-  return { title: "Thiết kế Website", robots: { index: false, follow: false } };
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations("seo");
+  return { 
+    title: t("mediaBookingTitle") || "Báo giá Media",
+    description: t("mediaBookingDescription") || "Nhận báo giá dịch vụ media chuyên nghiệp từ LOOP Solutions."
+  };
 }
 
 export function generateStaticParams() {
@@ -21,5 +28,10 @@ export function generateStaticParams() {
 export default async function MediaBookingPage({ params }: Props) {
   const { locale } = await params;
   setRequestLocale(locale);
-  redirect(`/${locale}/thiet-ke-website`);
+
+  return (
+    <Suspense fallback={<div style={{ minHeight: "80vh", background: "#0B0F1A" }} />}>
+      <MediaQuotationClient locale={locale} />
+    </Suspense>
+  );
 }

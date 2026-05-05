@@ -14,68 +14,91 @@ export async function POST(req: NextRequest) {
   try {
     const _authUser = await requireAuth(req);
 
-    const formData = await req.formData();
-    const file = formData.get("file") as File | null;
-    const folder = formData.get("folder") as string | null;
+    let fileUrlOrBase64 = "";
+    let folder = "loop-uploads";
+    let isImage = true;
 
-    if (!file) {
-      return badRequest("No file provided");
+    const contentType = req.headers.get("content-type") || "";
+    
+    if (contentType.includes("application/json")) {
+      const body = await req.json();
+      if (!body.file) {
+        return badRequest("No file provided");
+      }
+      fileUrlOrBase64 = body.file;
+      if (body.folder) folder = body.folder;
+
+      // Validate base64 data URI prefix (security: prevent arbitrary data injection)
+      const base64PrefixPattern = /^data:(image\/\w+|video\/\w+);base64,/;
+      if (!base64PrefixPattern.test(fileUrlOrBase64)) {
+        return badRequest("Invalid file format. Only images and videos are allowed");
+      }
+
+      // Validate type from data URI
+      isImage = fileUrlOrBase64.startsWith("data:image/");
+      if (!isImage && !fileUrlOrBase64.startsWith("data:video/")) {
+        return badRequest("Only image and video files are allowed");
+      }
+
+      // Enforce size limits based on type
+      const isVideo = fileUrlOrBase64.startsWith("data:video/");
+      const maxSize = isVideo ? 50 * 1024 * 1024 : 10 * 1024 * 1024; // 50MB video, 10MB image
+      // base64 inflates size by ~4/3, so decode check: if (base64.length * 3/4) > maxSize → reject
+      const estimatedSize = Math.ceil(fileUrlOrBase64.length * 0.75);
+      if (estimatedSize > maxSize) {
+        return badRequest(`File too large. Maximum size is ${isVideo ? "50MB" : "10MB"}`);
+      }
+    } else {
+      const formData = await req.formData();
+      const file = formData.get("file") as File | null;
+      const folderParam = formData.get("folder") as string | null;
+      if (folderParam) folder = folderParam;
+
+      if (!file) {
+        return badRequest("No file provided");
+      }
+
+      // Validate file type
+      isImage = file.type.startsWith("image/");
+      const isVideo = file.type.startsWith("video/");
+      
+      if (!isImage && !isVideo) {
+        return badRequest("Invalid file type. Only images and videos are allowed.");
+      }
+
+      // Validate file size (max 50MB for videos, 10MB for images)
+      const maxSize = isVideo ? 50 * 1024 * 1024 : 10 * 1024 * 1024;
+      if (file.size > maxSize) {
+        return badRequest(`File too large. Maximum size is ${isVideo ? "50MB" : "10MB"}.`);
+      }
+
+      // Convert file to base64
+      const bytes = await file.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+      fileUrlOrBase64 = `data:${file.type};base64,${buffer.toString("base64")}`;
     }
 
-    // Validate file type
-    const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml"];
-    if (!allowedTypes.includes(file.type)) {
-      return badRequest("Invalid file type. Only JPEG, PNG, GIF, WebP, and SVG are allowed.");
+    try {
+      const uploadResult = await cloudinary.uploader.upload(fileUrlOrBase64, {
+        folder: folder,
+        resource_type: "auto",
+        transformation: isImage ? [
+          { quality: "auto", fetch_format: "auto" },
+        ] : undefined,
+      });
+
+      return ok({
+        success: true,
+        url: uploadResult.secure_url,
+        publicId: uploadResult.public_id,
+        width: uploadResult.width,
+        height: uploadResult.height,
+        format: uploadResult.format,
+      });
+    } catch (uploadError: any) {
+      console.error("Cloudinary upload error:", uploadError);
+      throw new Error(`Cloudinary Error: ${uploadError.message || "Unknown error"}`);
     }
-
-    // Validate file size (max 10MB)
-    const maxSize = 10 * 1024 * 1024; // 10MB
-    if (file.size > maxSize) {
-      return badRequest("File too large. Maximum size is 10MB.");
-    }
-
-    // Convert file to buffer
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
-    const uploadPromise = new Promise<Record<string, unknown>>((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        reject(new Error("Upload timeout - please try again"));
-      }, 60000); // 60 second timeout
-
-      cloudinary.uploader
-        .upload_stream(
-          {
-            folder: folder || "loop-uploads",
-            resource_type: "image",
-            transformation: [
-              { quality: "auto", fetch_format: "auto" },
-            ],
-          },
-          (error, result) => {
-            clearTimeout(timeout);
-            // Always check for error first - even if result exists
-            if (error) {
-              reject(error);
-            } else if (result) {
-              resolve(result);
-            } else {
-              reject(new Error("No result from Cloudinary"));
-            }
-          }
-        )
-        .end(buffer);
-    });
-
-    const uploadResult = await uploadPromise;
-    return ok({
-      success: true,
-      url: uploadResult.secure_url,
-      publicId: uploadResult.public_id,
-      width: uploadResult.width,
-      height: uploadResult.height,
-      format: uploadResult.format,
-    });
   } catch (error) {
     return handleError(error);
   }

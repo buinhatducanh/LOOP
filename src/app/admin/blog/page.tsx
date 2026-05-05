@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { motion, AnimatePresence } from "motion/react";
+import { AnimatePresence } from "motion/react";
 import { adminApi } from "@/lib/api/client";
 import { DS, GRD } from "@/lib/design-tokens";
 import { useAdminTranslations } from "@/i18n/admin/useAdminTranslations";
@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { ImageUpload } from "@/components/ui/ImageUpload";
 import { RichTextEditor } from "@/components/admin/blog/RichTextEditor";
+import { BlogDetailClient } from "@/components/landing/BlogDetailClient";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -165,17 +166,13 @@ function Section({
       </button>
       <AnimatePresence initial={false}>
         {open && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
+          <div
             style={{ overflow: "hidden" }}
           >
             <div style={{ padding: "12px 14px", display: "flex", flexDirection: "column", gap: 10 }}>
               {children}
             </div>
-          </motion.div>
+          </div>
         )}
       </AnimatePresence>
     </div>
@@ -294,7 +291,7 @@ function BlogPostEditModal({
   onSuccess: () => void;
 }) {
   const { t } = useAdminTranslations();
-  const isEdit = !!post;
+  const isEdit = !!post?.id;
 
   // Load options
   const { data: ordersData } = useQuery({
@@ -358,6 +355,7 @@ function BlogPostEditModal({
   const [activeLocale, setActiveLocale] = useState<LocaleKey>("en");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [previewMode, setPreviewMode] = useState(false);
 
   const words = countWords(form.content);
   const readTime = readingTime(words);
@@ -417,308 +415,277 @@ function BlogPostEditModal({
   };
 
   const contentText = form[`content${activeLocale === "vi" ? "" : activeLocale.charAt(0).toUpperCase() + activeLocale.slice(1)}` as keyof PostFormData] as string ?? "";
-
   return (
-    <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-        onClick={onClose}
+    <div
+      onClick={onClose}
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,0.85)",
+        backdropFilter: "blur(8px)",
+        zIndex: 60,
+        display: "flex",
+        alignItems: "flex-start",
+        justifyContent: "center",
+        padding: "16px 16px 0",
+        overflowY: "auto",
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
         style={{
-          position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)",
-          backdropFilter: "blur(8px)", zIndex: 60,
-          display: "flex", alignItems: "flex-start", justifyContent: "center",
-          padding: "16px 16px 0", overflowY: "auto",
+          background: DS.bgCard,
+          border: `1px solid ${DS.border}`,
+          borderRadius: 20,
+          padding: 0,
+          width: "100%",
+          maxWidth: 1550,
+          marginBottom: 24,
+          flexShrink: 0,
+          overflow: "hidden",
+          display: "flex",
+          flexDirection: "column",
+          height: "calc(100vh - 64px)",
         }}
       >
-        <motion.div
-          initial={{ opacity: 0, scale: 0.97, y: 10 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.97 }}
-          onClick={(e) => e.stopPropagation()}
-          style={{
-            background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 16,
-            padding: 24, width: "100%", maxWidth: 760,
-            marginBottom: 24, flexShrink: 0,
-          }}
-        >
           {/* Header */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-            <div>
-              <h3 style={{ color: DS.text, fontWeight: 700, fontSize: 18, marginBottom: 2 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 24px", borderBottom: `1px solid ${DS.border}`, background: "rgba(15,23,42,0.5)", backdropFilter: "blur(10px)" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <h3 style={{ color: DS.text, fontWeight: 700, fontSize: 16 }}>
                 {isEdit ? t("blog.formEditTitle") : t("blog.formCreateTitle")}
               </h3>
-              {isEdit && (
-                <p style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono }}>
-                  {form.title || "—"} · /{form.slug}
-                </p>
-              )}
+              <div style={{ height: 16, width: 1, background: DS.border }} />
+              <p style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono }}>
+                {form.title || "—"} {isEdit && `· /${form.slug}`}
+              </p>
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              {isEdit && (
-                <a
-                  href={`/${form.slug}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    padding: "6px 10px", borderRadius: 8,
-                    background: "rgba(59,130,246,0.1)", border: `1px solid rgba(59,130,246,0.3)`,
-                    color: DS.blue, fontSize: 12, fontFamily: DS.mono, textDecoration: "none",
-                    display: "flex", alignItems: "center", gap: 4,
-                  }}
-                >
-                  <ExternalLink size={12} /> {t("blog.viewPost")}
-                </a>
-              )}
-              <button onClick={onClose} style={{ background: "none", border: "none", color: DS.text4, cursor: "pointer" }}>
-                <X size={18} />
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div style={{ fontSize: 11, color: DS.text5, fontFamily: DS.mono, display: "flex", gap: 12 }}>
+                <span>{words.toLocaleString()} words</span>
+                <span>{readTime}</span>
+              </div>
+              <button onClick={onClose} style={{ background: "rgba(255,255,255,0.05)", border: "none", color: DS.text3, cursor: "pointer", width: 28, height: 28, borderRadius: 6, display: "grid", placeItems: "center" }}>
+                <X size={16} />
               </button>
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "minmax(400px, 600px) 1fr", flex: 1, overflow: "hidden" }}>
+            {/* Left: Editor */}
+            <div style={{ overflowY: "auto", padding: 24, borderRight: `1px solid ${DS.border}`, background: "#0b0f1a" }}>
+              <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+                {/* ── 1. Gán dự án & tác giả ── */}
+                <Section title={t("blog.formAssignment") ?? "Gán dự án & tác giả"} icon={<span style={{ fontSize: 13 }}>🎯</span>} defaultOpen={!isEdit}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                    <div>
+                      <label style={labelStyle}>{t("blog.formProject") ?? "DỰ ÁN (ORDER)"}</label>
+                      <select
+                        value={form.projectId}
+                        onChange={e => setForm(f => ({ ...f, projectId: e.target.value }))}
+                        style={{ ...inp, cursor: "pointer" }}
+                      >
+                        <option value="">— Chọn dự án —</option>
+                        {ordersData?.map(o => (
+                          <option key={o.id} value={o.id}>
+                            {o.orderNumber} · {o.customerName}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={labelStyle}>{t("blog.formAuthorSelect") ?? "TÁC GIẢ"}</label>
+                      <select
+                        value={form.authorId}
+                        onChange={e => setForm(f => ({ ...f, authorId: e.target.value }))}
+                        style={{ ...inp, cursor: "pointer" }}
+                      >
+                        <option value="">— Chọn tác giả —</option>
+                        {membersData?.map(m => (
+                          <option key={m.id} value={m.id}>{m.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </Section>
 
-            {/* ── 1. Gán dự án & tác giả ── */}
-            <Section title={t("blog.formAssignment") ?? "Gán dự án & tác giả"} icon={<span style={{ fontSize: 13 }}>🎯</span>} defaultOpen={!isEdit}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                <div>
-                  <label style={labelStyle}>{t("blog.formProject") ?? "DỰ ÁN (ORDER)"}</label>
-                  <select
-                    value={form.projectId}
-                    onChange={e => setForm(f => ({ ...f, projectId: e.target.value }))}
-                    style={{ ...inp, cursor: "pointer" }}
-                  >
-                    <option value="">— Chọn dự án —</option>
-                    {ordersData?.map(o => (
-                      <option key={o.id} value={o.id}>
-                        {o.orderNumber} · {o.customerName}
-                      </option>
+                {/* ── 2. Thông tin cơ bản ── */}
+                <Section title={t("blog.formBasicInfo") ?? "Thông tin cơ bản"} icon={<span style={{ fontSize: 13 }}>📝</span>} defaultOpen>
+                  <div>
+                    <label style={labelStyle}>{t("blog.formTitle")} *</label>
+                    <input style={inp} value={form.title} onChange={e => setTitle(e.target.value)} placeholder={t("blog.formTitlePlaceholder") ?? "Nhập tiêu đề bài viết"} required />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>{t("blog.formSlug")}</label>
+                    <input style={inp} value={form.slug} onChange={e => setForm(f => ({ ...f, slug: e.target.value }))} placeholder="slug-bai-viet" />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>{t("blog.formDescription")}</label>
+                    <textarea style={{ ...inp, resize: "vertical", minHeight: 64 }} value={form.excerpt} onChange={e => setForm(f => ({ ...f, excerpt: e.target.value }))} placeholder={t("blog.formDescPlaceholder") ?? "Mô tả tóm tắt..."} />
+                  </div>
+                </Section>
+
+                {/* ── 3. Ảnh & Video ── */}
+                <Section title={t("blog.formMedia") ?? "Hình ảnh & Video"} icon={<Video size={14} color={DS.purple} />}>
+                  <div>
+                    <label style={labelStyle}>{t("blog.formThumbnail")}</label>
+                    <ImageUpload
+                      value={form.coverImage}
+                      onChange={url => setForm(f => ({ ...f, coverImage: url }))}
+                      folder="loop-blog"
+                      aspectRatio="video"
+                      label=""
+                    />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>{t("blog.formVideoUrl") ?? "VIDEO (YouTube / Vimeo URL)"}</label>
+                    <input
+                      style={inp}
+                      value={form.videoUrl}
+                      onChange={e => setForm(f => ({ ...f, videoUrl: e.target.value }))}
+                      placeholder="https://www.youtube.com/watch?v=..."
+                    />
+                  </div>
+                </Section>
+
+                {/* ── Tags ── */}
+                <Section title={`${t("blog.formTags") ?? "Tags"} (${form.tagIds.length})`} icon={<span style={{ fontSize: 13 }}>🏷️</span>}>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    {(tagsData ?? []).map(tag => {
+                      const active = form.tagIds.includes(tag.id);
+                      return (
+                        <button
+                          key={tag.id}
+                          type="button"
+                          onClick={() => setForm(f => ({
+                            ...f,
+                            tagIds: active
+                              ? f.tagIds.filter(id => id !== tag.id)
+                              : [...f.tagIds, tag.id],
+                          }))}
+                          style={{
+                            padding: "4px 10px",
+                            borderRadius: 9999,
+                            border: `1px solid ${active ? tag.color : DS.border}`,
+                            background: active ? `${tag.color}22` : "transparent",
+                            color: active ? tag.color : DS.text4,
+                            fontSize: 12,
+                            fontFamily: DS.mono,
+                            cursor: "pointer",
+                          }}
+                        >
+                          {tag.nameEn ?? tag.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </Section>
+
+                {/* ── 4. Nội dung (Tiptap WYSIWYG) ── */}
+                <Section title={t("blog.formContent") ?? "Nội dung bài viết"} icon={<BookOpen size={14} color={DS.teal} />} defaultOpen>
+                  <div style={{ display: "flex", gap: 10, marginBottom: 12, borderBottom: `1px solid ${DS.border}`, paddingBottom: 8 }}>
+                    {(["vi", "en", "ja", "ko", "zh"] as const).map(l => (
+                      <button
+                        key={l} type="button"
+                        onClick={() => setActiveLocale(l)}
+                        style={{
+                          padding: "4px 10px", borderRadius: 6, fontSize: 11, fontWeight: 700, cursor: "pointer",
+                          border: activeLocale === l ? `1px solid ${DS.blue}` : `1px solid ${DS.border}`,
+                          background: activeLocale === l ? `${DS.blue}15` : "transparent",
+                          color: activeLocale === l ? DS.blue : DS.text4,
+                        }}
+                      >
+                        {l.toUpperCase()}
+                      </button>
                     ))}
-                  </select>
-                </div>
-                <div>
-                  <label style={labelStyle}>{t("blog.formAuthorSelect") ?? "TÁC GIẢ"}</label>
-                  <select
-                    value={form.authorId}
-                    onChange={e => setForm(f => ({ ...f, authorId: e.target.value }))}
-                    style={{ ...inp, cursor: "pointer" }}
-                  >
-                    <option value="">— Chọn tác giả —</option>
-                    {membersData?.map(m => (
-                      <option key={m.id} value={m.id}>{m.name}</option>
+                  </div>
+
+                  <RichTextEditor
+                    value={contentText}
+                    onChange={v => setForm(f => ({
+                      ...f,
+                      [`content${activeLocale === "vi" ? "" : activeLocale.charAt(0).toUpperCase() + activeLocale.slice(1)}`]: v
+                    }))}
+                  />
+                </Section>
+
+                {/* ── 5. SEO ── */}
+                <Section title={t("blog.formSeoSection") ?? "Cấu hình SEO"} icon={<Globe size={14} color={DS.blue} />}>
+                  <div>
+                    <label style={labelStyle}>{t("blog.formSeoTitle") ?? "META TITLE (SEO)"}</label>
+                    <input style={inp} value={form.seoTitle} onChange={e => setForm(f => ({ ...f, seoTitle: e.target.value }))} placeholder="Title for Google..." />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>{t("blog.formSeoDesc") ?? "META DESCRIPTION (SEO)"}</label>
+                    <textarea style={{ ...inp, resize: "vertical", minHeight: 64 }} value={form.seoDesc} onChange={e => setForm(f => ({ ...f, seoDesc: e.target.value }))} placeholder="Description for Google..." />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>{t("blog.formCanonical") ?? "CANONICAL URL"}</label>
+                    <input style={inp} value={form.canonicalUrl} onChange={e => setForm(f => ({ ...f, canonicalUrl: e.target.value }))} placeholder="https://..." />
+                  </div>
+                </Section>
+
+                {/* ── 6. External Links ── */}
+                <Section title={t("blog.formBacklinks") ?? "Liên kết ngoài"} icon={<Link size={14} color={DS.pink} />}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {form.backlinks.map((b, i) => (
+                      <div key={i} style={{ display: "flex", gap: 6 }}>
+                        <input style={{ ...inp, flex: 1 }} value={b.label} onChange={e => setForm(f => {
+                          const nb = [...f.backlinks];
+                          nb[i].label = e.target.value;
+                          return { ...f, backlinks: nb };
+                        })} placeholder="Nhãn (VD: Nguồn tham khảo)" />
+                        <input style={{ ...inp, flex: 2 }} value={b.url} onChange={e => setForm(f => {
+                          const nb = [...f.backlinks];
+                          nb[i].url = e.target.value;
+                          return { ...f, backlinks: nb };
+                        })} placeholder="https://..." />
+                        <button type="button" onClick={() => setForm(f => ({ ...f, backlinks: f.backlinks.filter((_, idx) => idx !== i) }))} style={{ background: "none", border: "none", color: DS.red, cursor: "pointer" }}><X size={14} /></button>
+                      </div>
                     ))}
-                  </select>
-                </div>
-              </div>
-            </Section>
+                    <button type="button" onClick={() => setForm(f => ({ ...f, backlinks: [...f.backlinks, { url: "", label: "" }] }))} style={{ alignSelf: "flex-start", background: "none", border: `1px dashed ${DS.border}`, color: DS.blue, fontSize: 12, padding: "4px 10px", borderRadius: 6, cursor: "pointer" }}>+ Thêm link</button>
+                  </div>
+                </Section>
 
-            {/* ── 2. Thông tin cơ bản ── */}
-            <Section title={t("blog.formBasicInfo") ?? "Thông tin cơ bản"} icon={<span style={{ fontSize: 13 }}>📝</span>} defaultOpen>
-              <div>
-                <label style={labelStyle}>{t("blog.formTitle")} *</label>
-                <input style={inp} value={form.title} onChange={e => setTitle(e.target.value)} placeholder={t("blog.formTitlePlaceholder") ?? "Nhập tiêu đề bài viết"} required />
-              </div>
-              <div>
-                <label style={labelStyle}>{t("blog.formSlug")}</label>
-                <input style={inp} value={form.slug} onChange={e => setForm(f => ({ ...f, slug: e.target.value }))} placeholder="slug-bai-viet" />
-              </div>
-              <div>
-                <label style={labelStyle}>{t("blog.formDescription")}</label>
-                <textarea style={{ ...inp, resize: "vertical", minHeight: 64 }} value={form.excerpt} onChange={e => setForm(f => ({ ...f, excerpt: e.target.value }))} placeholder={t("blog.formDescPlaceholder") ?? "Mô tả tóm tắt..."} />
-              </div>
-            </Section>
+                {error && <p style={{ color: DS.red, fontSize: 13, marginTop: 10 }}>{error}</p>}
 
-            {/* ── 3. Ảnh & Video ── */}
-            <Section title={t("blog.formMedia") ?? "Hình ảnh & Video"} icon={<Video size={14} color={DS.purple} />}>
-              <div>
-                <label style={labelStyle}>{t("blog.formThumbnail")}</label>
-                <ImageUpload
-                  value={form.coverImage}
-                  onChange={url => setForm(f => ({ ...f, coverImage: url }))}
-                  folder="loop-blog"
-                  aspectRatio="video"
-                  label=""
-                />
-              </div>
-              <div>
-                <label style={labelStyle}>{t("blog.formVideoUrl") ?? "VIDEO (YouTube / Vimeo URL)"}</label>
-                <input
-                  style={inp}
-                  value={form.videoUrl}
-                  onChange={e => setForm(f => ({ ...f, videoUrl: e.target.value }))}
-                  placeholder="https://www.youtube.com/watch?v=..."
-                />
-                {form.videoUrl && (
-                  <a
-                    href={form.videoUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ color: DS.blue, fontSize: 11, fontFamily: DS.mono, display: "inline-flex", alignItems: "center", gap: 4, marginTop: 4 }}
-                  >
-                    <ExternalLink size={11} /> Kiểm tra video
-                  </a>
-                )}
-              </div>
-            </Section>
-
-            {/* ── Tags ── */}
-            <Section title={`${t("blog.formTags") ?? "Tags"} (${form.tagIds.length})`} icon={<span style={{ fontSize: 13 }}>🏷️</span>}>
-              <p style={{ color: DS.text4, fontSize: 12, margin: 0 }}>
-                Gắn tags để phân loại bài viết và hiển thị bộ lọc trên trang blog công khai.
-              </p>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                {(tagsData ?? []).map(tag => {
-                  const active = form.tagIds.includes(tag.id);
-                  return (
-                    <button
-                      key={tag.id}
-                      type="button"
-                      onClick={() => setForm(f => ({
-                        ...f,
-                        tagIds: active
-                          ? f.tagIds.filter(id => id !== tag.id)
-                          : [...f.tagIds, tag.id],
-                      }))}
-                      style={{
-                        padding: "4px 10px",
-                        borderRadius: 9999,
-                        border: `1px solid ${active ? tag.color : DS.border}`,
-                        background: active ? `${tag.color}22` : "transparent",
-                        color: active ? tag.color : DS.text4,
-                        fontSize: 12,
-                        fontFamily: DS.mono,
-                        cursor: "pointer",
-                        transition: "all 0.15s",
-                      }}
-                    >
-                      {tag.nameEn ?? tag.name}
-                    </button>
-                  );
-                })}
-              </div>
-            </Section>
-
-            {/* ── 4. Nội dung (Tiptap WYSIWYG) ── */}
-            <Section title={t("blog.formContent") ?? "Nội dung bài viết"} icon={<BookOpen size={14} color={DS.teal} />} defaultOpen>
-              <RichTextEditor
-                value={form.content}
-                onChange={html => setForm(f => ({ ...f, content: html }))}
-                placeholder={t("blog.formContentPlaceholder") ?? "Bắt đầu viết bài viết của bạn..."}
-                minHeight={300}
-                label="NỘI DUNG (TIẾNG VIỆT)"
-              />
-            </Section>
-
-            {/* ── 5. SEO ── */}
-            <Section title={t("blog.formSeoSection") ?? "Cấu hình SEO"} icon={<Globe size={14} color={DS.cosmicPurple} />}>
-              <div>
-                <label style={labelStyle}>{t("blog.formSeoTitle") ?? "META TITLE (SEO)"}</label>
-                <input
-                  style={inp}
-                  value={form.seoTitle}
-                  onChange={e => setForm(f => ({ ...f, seoTitle: e.target.value }))}
-                  placeholder="Tiêu đề hiển thị trên Google (≤ 60 ký tự)"
-                />
-                <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 2 }}>
-                  <span style={{ color: form.seoTitle.length > 60 ? DS.red : DS.text4, fontSize: 10, fontFamily: DS.mono }}>
-                    {form.seoTitle.length}/60
-                  </span>
-                </div>
-              </div>
-              <div>
-                <label style={labelStyle}>{t("blog.formSeoDesc") ?? "META DESCRIPTION (SEO)"}</label>
-                <textarea
-                  style={{ ...inp, resize: "vertical", minHeight: 72 }}
-                  value={form.seoDesc}
-                  onChange={e => setForm(f => ({ ...f, seoDesc: e.target.value }))}
-                  placeholder="Mô tả hiển thị trên Google (≤ 160 ký tự)"
-                />
-                <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 2 }}>
-                  <span style={{ color: form.seoDesc.length > 160 ? DS.red : DS.text4, fontSize: 10, fontFamily: DS.mono }}>
-                    {form.seoDesc.length}/160
-                  </span>
-                </div>
-              </div>
-              <div>
-                <label style={labelStyle}>{t("blog.formCanonical") ?? "CANONICAL URL"}</label>
-                <input
-                  style={inp}
-                  value={form.canonicalUrl}
-                  onChange={e => setForm(f => ({ ...f, canonicalUrl: e.target.value }))}
-                  placeholder="https://loop.vn/vi/blog/bai-viet (nếu có bài trùng lặp)"
-                />
-              </div>
-            </Section>
-
-            {/* ── 6. Liên kết ngoài (Backlinks) ── */}
-            <Section title={`${t("blog.formBacklinks") ?? "Liên kết ngoài"} (${form.backlinks.length})`} icon={<Link size={14} color={DS.cyan} />}>
-              <p style={{ color: DS.text4, fontSize: 12, margin: 0 }}>
-                Danh sách các trang web được tham chiếu trong bài viết (citation/backlink).
-              </p>
-              <BacklinkEditor
-                value={form.backlinks}
-                onChange={v => setForm(f => ({ ...f, backlinks: v }))}
-              />
-            </Section>
-
-            {/* ── 7. Đa ngôn ngữ (5 locales) ── */}
-            <Section title={`${t("blog.formI18n") ?? "Nội dung đa ngôn ngữ"} (EN / JA / KO / ZH)`} icon={<Globe size={14} color={DS.cosmicMagenta} />}>
-              <LocaleTabs active={activeLocale} onChange={setActiveLocale}>
-                {/* Each locale's content fields */}
-                <LocaleFields
-                  locale={activeLocale}
-                  form={form}
-                  setForm={setForm}
-                  labelStyle={labelStyle}
-                  inp={inp}
-                />
-              </LocaleTabs>
-            </Section>
-
-            {/* ── 8. Trạng thái ── */}
-            <div style={{ marginTop: 8 }}>
-              <label style={labelStyle}>{t("blog.formStatus")}</label>
-              <div style={{ display: "flex", gap: 8 }}>
-                {(["draft", "published", "archived"] as const).map(s => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => setForm(f => ({ ...f, status: s }))}
-                    style={{
-                      flex: 1, padding: "8px",
-                      borderRadius: 10,
-                      border: `1px solid ${form.status === s ? STATUS_CONFIG[s].color : DS.border}`,
-                      background: form.status === s ? STATUS_CONFIG[s].bg : "transparent",
-                      color: form.status === s ? STATUS_CONFIG[s].color : DS.text4,
-                      fontSize: 12, fontFamily: DS.mono, fontWeight: 600,
-                      cursor: "pointer",
-                    }}
-                  >
-                    {t(`blog.status${s.charAt(0).toUpperCase() + s.slice(1)}` as `blog.status${string}`)}
+                {/* Form Actions Footer (Internal) */}
+                <div style={{ display: "flex", gap: 12, marginTop: 20, paddingTop: 20, borderTop: `1px solid ${DS.border}` }}>
+                  <button type="button" onClick={onClose} style={{ flex: 1, padding: "10px", borderRadius: 10, background: "rgba(255,255,255,0.05)", border: `1px solid ${DS.border}`, color: DS.text, cursor: "pointer", fontWeight: 600 }}>{t("blog.formBtnCancel")}</button>
+                  <button type="submit" disabled={saving} style={{ flex: 2, padding: "10px", borderRadius: 10, background: GRD.primary, border: "none", color: "#fff", cursor: "pointer", fontWeight: 700, boxShadow: "0 4px 15px rgba(59,130,246,0.3)" }}>
+                    {saving ? t("blog.formBtnSaving") : isEdit ? t("blog.formBtnSave") : t("blog.formBtnCreate")}
                   </button>
-                ))}
-              </div>
+                </div>
+              </form>
             </div>
 
-            {/* ── Error + Actions ── */}
-            <div style={{ marginTop: 16 }}>
-              {error && (
-                <div style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8, padding: "8px 12px", color: "#EF4444", fontSize: 12, marginBottom: 10 }}>
-                  <AlertTriangle size={12} style={{ display: "inline", marginRight: 6 }} />{error}
+            {/* Right: Preview */}
+            <div style={{ overflowY: "auto", background: "#020617", padding: "40px 0" }}>
+              <div style={{ maxWidth: 800, margin: "0 auto", padding: "0 24px" }}>
+                <div style={{ marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
+                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#22c55e", boxShadow: "0 0 10px #22c55e" }} />
+                  <span style={{ fontSize: 11, color: "#22c55e", fontWeight: 700, letterSpacing: "0.1em" }}>LIVE PREVIEW</span>
                 </div>
-              )}
-              <div style={{ display: "flex", gap: 10 }}>
-                <button type="button" onClick={onClose} style={{ flex: 1, padding: "10px", background: DS.bg, border: `1px solid ${DS.border}`, borderRadius: 10, color: DS.text3, cursor: "pointer", fontSize: 13 }}>
-                  {t("blog.formBtnCancel")}
-                </button>
-                <button type="submit" disabled={saving} style={{ flex: 1, padding: "10px", background: saving ? DS.text4 : GRD.primary, border: "none", borderRadius: 10, color: "#fff", fontWeight: 700, cursor: saving ? "not-allowed" : "pointer", fontSize: 13 }}>
-                  {saving ? t("blog.formBtnSaving") : isEdit ? t("blog.formBtnSave") : t("blog.formBtnPublish")}
-                </button>
+                <div style={{ borderRadius: 16, overflow: "hidden", border: `1px solid ${DS.border}`, background: DS.bg }}>
+                  <BlogDetailClient
+                    locale={activeLocale}
+                    post={{
+                      title: (form[`title${activeLocale === "vi" ? "" : activeLocale.charAt(0).toUpperCase() + activeLocale.slice(1)}` as keyof PostFormData] as string) || form.title || "Tiêu đề bài viết",
+                      excerpt: (form[`excerpt${activeLocale === "vi" ? "" : activeLocale.charAt(0).toUpperCase() + activeLocale.slice(1)}` as keyof PostFormData] as string) || form.excerpt,
+                      content: (form[`content${activeLocale === "vi" ? "" : activeLocale.charAt(0).toUpperCase() + activeLocale.slice(1)}` as keyof PostFormData] as string) || form.content,
+                      coverImage: form.coverImage,
+                      publishedAt: new Date().toISOString(),
+                    }}
+                    authorName={membersData?.find(m => m.id === form.authorId)?.name ?? "Tác giả"}
+                    related={[]}
+                    tNav={{ home: "Home", blog: "Blog" }}
+                    videoUrl={form.videoUrl}
+                  />
+                </div>
               </div>
             </div>
-          </form>
-        </motion.div>
-      </motion.div>
-    </AnimatePresence>
+          </div>
+        </div>
+    </div>
   );
 }
 
@@ -796,13 +763,11 @@ function PostRow({ post, onEdit, t }: { post: BlogPost; onEdit: (post: BlogPost)
     onError: (err: unknown) => { setToast({ message: err instanceof Error ? err.message : "Xóa thất bại", type: "error" }); },
   });
 
-  const sc = STATUS_CONFIG[post.status] ?? { label: post.status, color: DS.text4, bg: "transparent" };
+  const sc = STATUS_CONFIG[post.status] || STATUS_CONFIG.draft;
 
   return (
     <>
-    <motion.div
-      initial={{ opacity: 0, y: 6 }}
-      animate={{ opacity: 1, y: 0 }}
+    <div
       style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 12, padding: "12px 14px", display: "flex", alignItems: "center", gap: 12 }}
     >
       {/* Cover */}
@@ -857,7 +822,7 @@ function PostRow({ post, onEdit, t }: { post: BlogPost; onEdit: (post: BlogPost)
           <Trash2 size={13} />
         </button>
       </div>
-    </motion.div>
+    </div>
     {toast && (
       <div style={{ position: "fixed", bottom: 24, right: 24, zIndex: 9999, display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", borderRadius: 12, background: "#0F172A", border: `1px solid ${toast.type === "success" ? "#22C55E" : "#CC3344"}50`, boxShadow: "0 8px 32px rgba(0,0,0,0.5)", maxWidth: 320 }}>
         <span style={{ color: toast.type === "success" ? "#22C55E" : "#CC3344", fontSize: 16 }}>{toast.type === "success" ? "✓" : "✗"}</span>
@@ -959,11 +924,16 @@ export default function BlogTabPage() {
       )}
 
       {/* Modal */}
-      <BlogPostEditModal
-        post={editPost}
-        onClose={() => setEditPost(null)}
-        onSuccess={() => qc.invalidateQueries({ queryKey: ["admin", "blog"] })}
-      />
+      <AnimatePresence>
+        {editPost && (
+          <BlogPostEditModal
+            key={editPost.id || "new"}
+            post={editPost}
+            onClose={() => setEditPost(null)}
+            onSuccess={() => qc.invalidateQueries({ queryKey: ["admin", "blog"] })}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

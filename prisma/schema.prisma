@@ -539,6 +539,7 @@ model TeamMember {
   salesCommissionEvents  SalesCommissionEvent[] @relation("SalesCommissionMember")
   /// Multi-department: member co the tham gia nhieu phong ban cung luc
   memberDepartments      MemberDepartment[]
+  mediaStoriesAuthored   MediaStory[]               @relation("MediaStoryAuthor")
 
   @@index([departmentId])
   @@index([isActive])
@@ -747,6 +748,7 @@ model Order {
   backlogs              Backlog[]
   blogPosts             BlogPost[]
   customerWebsites      CustomerWebsite[]
+  mediaBookings         MediaBooking[]
   dailyStandups         DailyStandup[]
   deployments           Deployment[]
   envFiles              EnvFile[]
@@ -2841,10 +2843,13 @@ model MediaBooking {
   assignedTo      String?         @map("assigned_to")
   /// * FK → TeamMember.id
   teamMemberId    String?         @map("team_member_id")
+  /// * Whether this project is featured on the media showcase page
+  isFeatured      Boolean         @default(false) @map("is_featured")
   createdAt       DateTime        @default(now()) @map("created_at")
   updatedAt       DateTime        @updatedAt @map("updated_at")
   package         ServicePackage? @relation(fields: [packageId], references: [id])
   teamMember      TeamMember?     @relation(fields: [teamMemberId], references: [id])
+  order           Order?          @relation(fields: [orderId], references: [id])
 
   @@index([status])
   @@index([status, createdAt])
@@ -2852,6 +2857,82 @@ model MediaBooking {
   @@index([teamMemberId])
   @@index([deadline])
   @@map("media_bookings")
+}
+
+// ── Media Showcase: Testimonials ───────────────────────────────────────────────
+/// Client testimonial specific to media production services.
+/// Separate from the general `Testimonial` model to keep media-specific data
+/// (e.g. linked booking, project type) isolated.
+model MediaTestimonial {
+  id             String        @id @default(cuid())
+  customerName   String        @map("customer_name")
+  customerCompany String?      @map("customer_company")
+  customerAvatar String?       @map("customer_avatar")
+  /// Star rating 1-5
+  rating         Int           @default(5)
+  /// Review text (Vietnamese — default)
+  text           String
+  textEn         String?       @map("text_en")
+  textJa         String?       @map("text_ja")
+  textKo         String?       @map("text_ko")
+  textZh         String?       @map("text_zh")
+  /// Media booking type this review relates to: event | product | corporate | social | custom
+  projectType    String?       @map("project_type")
+  /// Optional link to the booking this review belongs to
+  mediaBookingId String?       @map("media_booking_id")
+  isActive       Boolean       @default(true) @map("is_active")
+  sortOrder      Int           @default(0) @map("sort_order")
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+
+  @@index([isActive, sortOrder])
+  @@map("media_testimonials")
+}
+
+// ── Media Showcase: Stories (behind-the-scenes) ────────────────────────────────
+/// Behind-the-scenes blog post from the media team.
+/// Covers topics like: how we found the perfect shooting spot, production
+/// challenges, tips & tricks, and "making of" stories.
+model MediaStory {
+  id                 String      @id @default(cuid())
+  title              String
+  titleEn            String?     @map("title_en")
+  titleJa            String?     @map("title_ja")
+  titleKo            String?     @map("title_ko")
+  titleZh            String?     @map("title_zh")
+  slug               String      @unique
+  /// Rich-text content (HTML)
+  content            String?
+  contentEn          String?     @map("content_en")
+  contentJa          String?     @map("content_ja")
+  contentKo          String?     @map("content_ko")
+  contentZh          String?     @map("content_zh")
+  /// Short excerpt for cards (2-3 lines)
+  excerpt            String?
+  excerptEn          String?     @map("excerpt_en")
+  excerptJa          String?     @map("excerpt_ja")
+  excerptKo          String?     @map("excerpt_ko")
+  excerptZh          String?     @map("excerpt_zh")
+  /// Cover image (Cloudinary URL)
+  coverImage         String?     @map("cover_image")
+  coverImagePublicId String?     @map("cover_image_public_id")
+  /// FK → TeamMember who authored this story
+  authorId           String      @map("author_id")
+  author             TeamMember  @relation("MediaStoryAuthor", fields: [authorId], references: [id])
+  /// Optional link to the media booking this story is about
+  mediaBookingId     String?     @map("media_booking_id")
+  /// draft | published | archived
+  status             String      @default("draft")
+  publishedAt        DateTime?   @map("published_at")
+  /// SEO fields
+  seoTitle           String?     @map("seo_title")
+  seoDesc            String?     @map("seo_desc")
+  createdAt          DateTime    @default(now()) @map("created_at")
+  updatedAt          DateTime    @updatedAt @map("updated_at")
+
+  @@index([status, publishedAt])
+  @@index([authorId])
+  @@map("media_stories")
 }
 
 // ── Rank Effects System ────────────────────────────────────────────────────────

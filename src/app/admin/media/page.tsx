@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "motion/react";
 import { adminApi } from "@/lib/api/client";
-import { DS, GRD } from "@/lib/design-tokens";
+import { DS, GRD, GLOW } from "@/lib/design-tokens";
 import { useAdminTranslations } from "@/i18n/admin/useAdminTranslations";
 import {
   X, Camera, CheckCircle2, Eye, ChevronRight, Search,
@@ -24,9 +24,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }
   confirmed:     { label: "confirmed", color: "#3B82F6", bg: "rgba(59,130,246,0.1)" },
   in_progress:   { label: "inProgress", color: "#818CF8", bg: "rgba(129,140,248,0.1)" },
   delivered:     { label: "delivered", color: "#A78BFA", bg: "rgba(167,139,250,0.1)" },
-  approved:      { label: "approved", color: "#22C55E", bg: "rgba(34,197,94,0.1)" },
   rejected:      { label: "rejected", color: "#EF4444", bg: "rgba(239,68,68,0.1)" },
-  cancelled:     { label: "cancelled", color: "#6B7280", bg: "rgba(107,114,128,0.1)" },
 };
 
 const ALL_STATUSES = Object.keys(STATUS_CONFIG);
@@ -43,6 +41,7 @@ const BOOKING_TYPE_OPTIONS = [
   { value: "product", labelKey: "typeProduct" },
   { value: "corporate", labelKey: "typeCorporate" },
   { value: "social", labelKey: "typeSocial" },
+  { value: "media", labelKey: "typeMedia" },
   { value: "custom", labelKey: "typeCustom" },
 ];
 
@@ -71,8 +70,11 @@ type MediaBooking = {
   rejectedAt?: string;
   approvedByUser?: { name: string };
   rejectedByUser?: { name: string };
-  teamMember?: { id: string; name: string };
+  packageId?: string;
   package?: { title: string };
+  teamMember?: { id: string; name: string };
+  isFeatured?: boolean;
+  orderId?: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -84,6 +86,8 @@ type MediaPackage = {
   titleEn?: string | null;
   shortDesc: string;
   shortDescEn?: string | null;
+  tagline?: string | null;
+  color?: string | null;
   type: string;
   price: number | null;
   priceText?: string | null;
@@ -106,6 +110,25 @@ type BookingFormData = {
   totalAmount: string;
   teamMemberId: string;
   paymentStatus: string;
+  packageId: string;
+  orderId?: string; // Links to parent order
+  linkedBookingId?: string; // UI only - for auto-fill
+  isFeatured: boolean;
+};
+
+type PackageFormData = {
+  title: string;
+  slug: string;
+  shortDesc: string;
+  type: string;
+  price: string;
+  priceText: string;
+  tagline: string;
+  color: string;
+  features: string;
+  sortOrder: string;
+  isActive: boolean;
+  isPopular: boolean;
 };
 
 // ─── Row component ─────────────────────────────────────────────────────────────
@@ -137,7 +160,7 @@ function BookingRow({
     pending:     ["confirmed", "cancelled"],
     confirmed:   ["in_progress", "cancelled"],
     in_progress: ["delivered", "cancelled"],
-    delivered:   ["approved", "rejected"],
+    delivered:   [],
     approved:    [],
     rejected:    ["in_progress"],
     cancelled:   [],
@@ -185,7 +208,7 @@ function BookingRow({
           )}
         </div>
         <p style={{ color: DS.text4, fontSize: 12, fontFamily: DS.mono, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          {booking.bookingNumber} · {booking.customerName} · {booking.customerEmail}
+          {booking.bookingNumber} · {booking.customerName} · {booking.customerEmail} {booking.package && ` · ${booking.package.title}`}
         </p>
       </div>
 
@@ -210,7 +233,7 @@ function BookingRow({
           <button
             key={ns}
             onClick={() => onTransition(booking.id, ns)}
-            title={`→ ${t(`media.status${ns.charAt(0).toUpperCase() + ns.slice(1)}` as `media.status${string}`)}`}
+            title={`→ ${t(`media.status${(STATUS_CONFIG[ns]?.label || ns).charAt(0).toUpperCase() + (STATUS_CONFIG[ns]?.label || ns).slice(1)}` as `media.status${string}`)}`}
             style={{
               background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.3)",
               borderRadius: 8, padding: "5px 10px", cursor: "pointer", color: DS.green,
@@ -231,19 +254,17 @@ function BookingRow({
         >
           <Eye size={13} />
         </button>
-        {(booking.status === "pending" || booking.status === "cancelled") && (
-          <button
-            onClick={() => onDelete(booking.id)}
-            title={t("common.delete")}
-            style={{
-              background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)",
-              borderRadius: 8, padding: "5px 10px", cursor: "pointer", color: "#EF4444",
-              display: "flex", alignItems: "center",
-            }}
-          >
-            <Trash2 size={13} />
-          </button>
-        )}
+        <button
+          onClick={() => onDelete(booking.id)}
+          title={t("common.delete")}
+          style={{
+            background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)",
+            borderRadius: 8, padding: "5px 10px", cursor: "pointer", color: "#EF4444",
+            display: "flex", alignItems: "center",
+          }}
+        >
+          <Trash2 size={13} />
+        </button>
       </div>
     </motion.div>
   );
@@ -256,19 +277,21 @@ function DetailModal({
   onClose,
   onTransition,
   onEdit,
+  onUpdatePayment,
   t,
 }: {
   booking: MediaBooking | null;
   onClose: () => void;
   onTransition: (id: string, toStatus: string, note?: string) => void;
   onEdit: (b: MediaBooking) => void;
+  onUpdatePayment: (id: string, paymentStatus: string) => void;
   t: ReturnType<typeof useAdminTranslations>["t"];
 }) {
   if (!booking) return null;
 
   const cfg = STATUS_CONFIG[booking.status] ?? { label: booking.status, color: DS.text4, bg: "transparent" };
   const _payCfg = PAYMENT_CONFIG[booking.paymentStatus] ?? { label: booking.paymentStatus, color: DS.text4 };
-  const statusLabel = (raw: string) => t(`media.status${raw.charAt(0).toUpperCase() + raw.slice(1)}` as `media.status${string}`);
+  const statusLabel = (raw: string) => { const lbl = STATUS_CONFIG[raw]?.label || raw; return t(`media.status${lbl.charAt(0).toUpperCase() + lbl.slice(1)}` as `media.status${string}`); };
   const fmt = (n?: number) =>
     n != null
       ? new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(n)
@@ -278,7 +301,7 @@ function DetailModal({
     pending: ["confirmed", "cancelled"],
     confirmed: ["in_progress", "cancelled"],
     in_progress: ["delivered", "cancelled"],
-    delivered: ["approved", "rejected"],
+    delivered: [],
     approved: [],
     rejected: ["in_progress"],
     cancelled: [],
@@ -441,8 +464,23 @@ function DetailModal({
           )}
 
           {/* Status transition buttons */}
-          {VALID_NEXT.length > 0 && (
+          {(VALID_NEXT.length > 0 || (booking.status === "delivered" && booking.paymentStatus !== "paid")) && (
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
+              {booking.status === "delivered" && booking.paymentStatus !== "paid" && (
+                <button
+                  onClick={() => { onUpdatePayment(booking.id, "paid"); onClose(); }}
+                  style={{
+                    flex: 1, padding: "8px 12px", borderRadius: 10, cursor: "pointer",
+                    background: "rgba(34,197,94,0.1)",
+                    border: `1px solid rgba(34,197,94,0.4)`,
+                    color: "#22C55E", fontSize: 12, fontWeight: 700,
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
+                  }}
+                >
+                  <CheckCircle2 size={13} />
+                  Đã thanh toán
+                </button>
+              )}
               {VALID_NEXT.map((ns) => {
                 const nsCfg = STATUS_CONFIG[ns] ?? { label: ns, color: DS.text4, bg: "transparent" };
                 return (
@@ -458,7 +496,7 @@ function DetailModal({
                   }}
                 >
                   <CheckCircle2 size={13} />
-                  {t(`media.status${ns.charAt(0).toUpperCase() + ns.slice(1)}` as `media.status${string}`)}
+                  {t(`media.status${nsCfg.label.charAt(0).toUpperCase() + nsCfg.label.slice(1)}` as `media.status${string}`)}
                 </button>
               );
               })}
@@ -487,13 +525,24 @@ function BookingFormModal({
   booking,
   onClose,
   onSuccess,
+  mode = "booking",
 }: {
   booking?: MediaBooking | null;
   onClose: () => void;
   onSuccess: () => void;
+  mode?: "booking" | "project";
 }) {
   const { t } = useAdminTranslations();
   const isEdit = !!booking;
+
+  const { data: pkgsData } = useQuery({
+    queryKey: ["admin", "pricing-packages"],
+    queryFn: async () => {
+      const res = await adminApi.get<{ data: MediaPackage[] }>("/api/admin/pricing/packages", { params: { limit: 100, type: "media" } });
+      return res;
+    },
+  });
+  const pkgOptionsRaw = pkgsData?.data ?? [];
 
   const { data: membersData } = useQuery({
     queryKey: ["admin", "team-options"],
@@ -503,6 +552,18 @@ function BookingFormModal({
     },
   });
   const memberOptions = membersData?.data ?? [];
+
+  const { data: mediaJobsData } = useQuery({
+    queryKey: ["admin", "media-jobs-options"],
+    queryFn: async () => {
+      const res = await adminApi.get<{ data: MediaBooking[] }>("/api/admin/media-bookings", { 
+        params: { limit: 100, status: "delivered" } 
+      });
+      return res;
+    },
+  });
+  const mediaJobOptions = mediaJobsData?.data ?? [];
+
 
   const [form, setForm] = useState<BookingFormData>({
     customerName: booking?.customerName ?? "",
@@ -516,8 +577,23 @@ function BookingFormModal({
     deadline: booking?.deadline ?? "",
     totalAmount: booking?.totalAmount?.toString() ?? "",
     teamMemberId: booking?.teamMember?.id ?? "",
-    paymentStatus: (booking as MediaBooking | undefined)?.paymentStatus ?? "unpaid",
+    paymentStatus: (booking as MediaBooking | undefined)?.paymentStatus ?? (mode === "project" ? "paid" : "unpaid"),
+    packageId: booking?.packageId ?? "",
+    orderId: booking?.orderId ?? "",
+    isFeatured: booking?.isFeatured ?? false,
   });
+
+  const currentJob = mediaJobOptions.find(j => j.id === form.linkedBookingId);
+  const pkgOptions = [...pkgOptionsRaw];
+  if (currentJob?.packageId && !pkgOptions.some(p => p.id === currentJob.packageId)) {
+    pkgOptions.push({
+      id: currentJob.packageId,
+      title: (currentJob as any).package?.title || "Gói dịch vụ liên kết",
+      slug: "",
+      shortDesc: "",
+      type: "media",
+    } as any);
+  }
 
   const [deliveredAssets, setDeliveredAssets] = useState<(string | { url?: string; name?: string })[]>(
     Array.isArray(booking?.deliveredAssets) ? booking.deliveredAssets : []
@@ -525,17 +601,24 @@ function BookingFormModal({
   const [assetUrl, setAssetUrl] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const qc = useQueryClient();
 
   const mutation = useMutation({
     mutationFn: async () => {
+      const { linkedBookingId: _lb, ...formToSave } = form;
       const payload = {
-        ...form,
+        ...formToSave,
         totalAmount: form.totalAmount ? parseInt(form.totalAmount, 10) : null,
         teamMemberId: form.teamMemberId || null,
+        packageId: form.packageId || null,
+        orderId: form.orderId || null,
         deliveredAssets: deliveredAssets,
         paymentStatus: form.paymentStatus,
+        isFeatured: form.isFeatured,
+        ...(mode === "project" ? { bookingType: "portfolio", status: "approved" } : {}),
       };
       if (isEdit && booking) {
         return adminApi.put(`/api/admin/media-bookings/${booking.id}`, payload);
@@ -555,31 +638,137 @@ function BookingFormModal({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.customerName.trim() || !form.customerEmail.trim()) {
-      setError(t("media.errRequired"));
+    
+    // Auto-fill for project mode
+    if (mode === "project") {
+      if (!form.customerName.trim()) form.customerName = "Dự án mới";
+      if (!form.customerEmail.trim()) form.customerEmail = "media@loop.vn";
+    }
+
+    if (!form.customerName.trim()) {
+      setError("Vui lòng nhập tên dự án");
       return;
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.customerEmail.trim())) {
-      setError(t("media.errInvalidEmail"));
-      return;
+    
+    if (mode !== "project") {
+      if (!form.customerEmail.trim()) {
+        setError(t("media.errRequired"));
+        return;
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.customerEmail.trim())) {
+        setError(t("media.errInvalidEmail"));
+        return;
+      }
     }
+
     setSaving(true);
     mutation.mutate();
   };
 
-  const addAsset = () => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploading(true);
+    setError("");
+
+    try {
+      for (const file of Array.from(files)) {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("folder", "media-portfolio");
+
+        const res = await adminApi.post<{ data: { url: string } }>("/api/admin/upload", formData);
+        if (res.data?.url) {
+          setDeliveredAssets((prev) => [...prev, res.data.url]);
+        } else {
+          throw new Error("Không nhận được URL từ máy chủ");
+        }
+      }
+    } catch (err: any) {
+      setError(err?.message || err?.error || "Lỗi khi tải lên tệp");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const addAsset = async () => {
+    setError(""); // Clear any previous errors
     const trimmed = assetUrl.trim();
     if (!trimmed) return;
-    const newItem = trimmed.startsWith("{") ? JSON.parse(trimmed) : trimmed;
-    const key = typeof newItem === "string" ? newItem : JSON.stringify(newItem);
-    const alreadyExists = deliveredAssets.some((a) => {
-      const aKey = typeof a === "string" ? a : JSON.stringify(a);
-      return aKey === key;
-    });
-    if (!alreadyExists) {
-      setDeliveredAssets((prev) => [...prev, newItem]);
+
+    const lower = trimmed.toLowerCase();
+    // Prepend https:// if it starts with www.
+    const uploadSource = lower.startsWith("www.") ? `https://${trimmed}` : trimmed;
+    const finalLower = uploadSource.toLowerCase();
+
+    // Check if it's a direct upload candidate (Base64 or URL)
+    const shouldUpload = 
+      finalLower.startsWith("data:image") || 
+      finalLower.startsWith("data:video") || 
+      finalLower.startsWith("http://") || 
+      finalLower.startsWith("https://");
+
+    if (shouldUpload) {
+      setUploading(true);
+      try {
+        const res = await adminApi.post<any>("/api/admin/upload", { 
+          file: uploadSource,
+          folder: "media-portfolio" 
+        });
+        
+        // Resilience: check both wrapped and unwrapped response shapes
+        const url = res?.data?.url || res?.url;
+        
+        if (url) {
+          setDeliveredAssets((prev) => {
+            const exists = prev.some(a => {
+              const aUrl = typeof a === "string" ? a : (a as any).url;
+              return aUrl === url;
+            });
+            if (exists) return prev;
+            return [...prev, url];
+          });
+          setAssetUrl("");
+          setError("");
+        } else {
+          throw new Error("Máy chủ không trả về URL sau khi tải lên.");
+        }
+      } catch (err: any) {
+        console.error("Add asset upload error:", err);
+        setError(`Không thể tải lên từ URL: ${err.message || "Lỗi không xác định"}.`);
+      } finally {
+        setUploading(false);
+      }
+      return;
     }
-    setAssetUrl("");
+
+    try {
+      let newItem: string | object = trimmed;
+      if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
+        try {
+          newItem = JSON.parse(trimmed);
+        } catch (e) {
+          newItem = trimmed;
+        }
+      }
+      
+      const key = typeof newItem === "string" ? newItem : JSON.stringify(newItem);
+      const alreadyExists = deliveredAssets.some((a) => {
+        const aKey = typeof a === "string" ? a : JSON.stringify(a);
+        return aKey === key;
+      });
+      
+      if (!alreadyExists) {
+        setDeliveredAssets((prev) => [...prev, newItem]);
+      }
+      setAssetUrl("");
+    } catch (err) {
+      console.error("Add asset error:", err);
+      setDeliveredAssets((prev) => [...prev, trimmed]);
+      setAssetUrl("");
+    }
   };
 
   const removeAsset = (item: string | { url?: string; name?: string }) => {
@@ -631,9 +820,9 @@ function BookingFormModal({
           {/* Header */}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <Camera size={20} style={{ color: DS.blue }} />
+              <Camera size={20} style={{ color: mode === "project" ? "#F472B6" : DS.blue }} />
               <h3 style={{ color: DS.text, fontWeight: 700, fontSize: 17 }}>
-                {isEdit ? t("media.formEditTitle") : t("media.formCreateTitle")}
+                {isEdit ? "Cập nhật Portfolio" : mode === "project" ? "Đăng dự án Portfolio" : t("media.formCreateTitle")}
               </h3>
             </div>
             <button onClick={onClose} style={{ background: "none", border: "none", color: DS.text4, cursor: "pointer" }}>
@@ -642,44 +831,81 @@ function BookingFormModal({
           </div>
 
           <form onSubmit={handleSubmit}>
+            {/* Link to Order (Top of form for Portfolio Mode) */}
+            {mode === "project" && (
+              <div style={{ ...groupStyle, padding: "16px", background: "rgba(244,114,182,0.03)", border: "1px solid rgba(244,114,182,0.15)", borderRadius: 16, marginBottom: 24 }}>
+                <label style={{ ...labelStyle, color: "#F472B6", fontSize: 11, letterSpacing: "0.05em", marginBottom: 10 }}>LIÊN KẾT DỮ LIỆU TỪ BOOKING (TÙY CHỌN)</label>
+                <select
+                  style={{ ...fieldStyle, background: "rgba(15,23,42,0.5)", border: "1px solid rgba(244,114,182,0.2)", color: DS.text }}
+                  value={form.linkedBookingId || ""}
+                  onChange={(e) => {
+                    const oid = e.target.value;
+                    const selectedJob = mediaJobOptions.find(j => j.id === oid);
+                    if (selectedJob) {
+                      setForm((f) => ({ 
+                        ...f, 
+                        linkedBookingId: oid,
+                        orderId: selectedJob.orderId || "",
+                        customerName: selectedJob.customerName || "",
+                        customerEmail: selectedJob.customerEmail || "",
+                        customerPhone: selectedJob.customerPhone || "",
+                        companyName: selectedJob.companyName || "",
+                        packageId: selectedJob.packageId || "",
+                        title: selectedJob.title || "",
+                        requirements: selectedJob.requirements || "",
+                        bookingType: selectedJob.bookingType || "event",
+                      }));
+                      if (Array.isArray(selectedJob.deliveredAssets)) {
+                        setDeliveredAssets(selectedJob.deliveredAssets);
+                      }
+                    } else {
+                      setForm(f => ({ ...f, linkedBookingId: oid }));
+                    }
+                  }}
+                >
+                  <option value="" style={{ background: "#1E293B" }}>— Đăng dự án mới (Không liên kết) —</option>
+                  {mediaJobOptions.map((j) => (
+                    <option key={j.id} value={j.id} style={{ background: "#1E293B" }}>
+                      {j.bookingNumber} - {j.customerName} ({j.title})
+                    </option>
+                  ))}
+                </select>
+                <div style={{ marginTop: 8, fontSize: 10, color: DS.text5, fontStyle: "italic", lineHeight: 1.4 }}>
+                  * Sau khi lưu, Portfolio này sẽ là một bản ghi riêng biệt, không thay đổi dữ liệu Booking gốc của khách hàng.
+                </div>
+              </div>
+            )}
+
             {/* Customer info */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, ...groupStyle }}>
+            <div style={{ display: "grid", gridTemplateColumns: mode === "project" ? "1fr" : "1fr 1fr", gap: 12, ...groupStyle }}>
               <div>
-                <label style={labelStyle}>{t("media.formCustomerName")}</label>
+                <label style={labelStyle}>{mode === "project" ? "TÊN KHÁCH HÀNG / THƯƠNG HIỆU" : t("media.formCustomerName")}</label>
                 <input style={fieldStyle} value={form.customerName}
+                  placeholder={mode === "project" ? "Ví dụ: GENTLE MONSTER" : "Nguyễn Văn A"}
                   onChange={(e) => setForm((f) => ({ ...f, customerName: e.target.value }))} />
               </div>
-              <div>
-                <label style={labelStyle}>{t("media.formEmail")}</label>
-                <input style={fieldStyle} type="email" value={form.customerEmail}
-                  onChange={(e) => setForm((f) => ({ ...f, customerEmail: e.target.value }))} />
-              </div>
-            </div>
-
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, ...groupStyle }}>
-              <div>
-                <label style={labelStyle}>{t("media.formPhone")}</label>
-                <input style={fieldStyle} value={form.customerPhone}
-                  onChange={(e) => setForm((f) => ({ ...f, customerPhone: e.target.value }))} />
-              </div>
-              <div>
-                <label style={labelStyle}>{t("media.formCompany")}</label>
-                <input style={fieldStyle} value={form.companyName}
-                  onChange={(e) => setForm((f) => ({ ...f, companyName: e.target.value }))} />
-              </div>
+              {mode !== "project" && (
+                <div>
+                  <label style={labelStyle}>{t("media.formEmail")}</label>
+                  <input style={fieldStyle} type="email" value={form.customerEmail}
+                    onChange={(e) => setForm((f) => ({ ...f, customerEmail: e.target.value }))} />
+                </div>
+              )}
             </div>
 
             {/* Booking type + title */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 12, ...groupStyle }}>
-              <div>
-                <label style={labelStyle}>{t("media.formBookingType")}</label>
-                <select style={fieldStyle} value={form.bookingType}
-                  onChange={(e) => setForm((f) => ({ ...f, bookingType: e.target.value }))}>
-                  {BOOKING_TYPE_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>{t(`media.${opt.labelKey}`)}</option>
-                  ))}
-                </select>
-              </div>
+            <div style={{ display: "grid", gridTemplateColumns: mode === "project" ? "1fr" : "1fr 2fr", gap: 12, ...groupStyle }}>
+              {mode !== "project" && (
+                <div>
+                  <label style={labelStyle}>{t("media.formBookingType")}</label>
+                  <select style={fieldStyle} value={form.bookingType}
+                    onChange={(e) => setForm((f) => ({ ...f, bookingType: e.target.value }))}>
+                    {BOOKING_TYPE_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>{t(`media.${opt.labelKey}`)}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
               <div>
                 <label style={labelStyle}>{t("media.formTitle")}</label>
                 <input style={fieldStyle} value={form.title}
@@ -688,23 +914,61 @@ function BookingFormModal({
               </div>
             </div>
 
-            {/* Deadline + amount */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, ...groupStyle }}>
-              <div>
-                <label style={labelStyle}>{t("media.formDeadline")}</label>
-                <input type="date" style={fieldStyle} value={form.deadline}
-                  onChange={(e) => setForm((f) => ({ ...f, deadline: e.target.value }))} />
+            {mode === "project" && (
+              <div style={{ marginTop: -10, marginBottom: 20, display: "flex", alignItems: "center", gap: 10 }}>
+                <input 
+                  type="checkbox" 
+                  id="isFeatured"
+                  checked={form.isFeatured}
+                  onChange={(e) => setForm((f) => ({ ...f, isFeatured: e.target.checked }))}
+                  style={{ width: 18, height: 18, cursor: "pointer" }}
+                />
+                <label htmlFor="isFeatured" style={{ fontSize: 14, fontWeight: 700, color: DS.pink, cursor: "pointer" }}>
+                  DỰ ÁN TIÊU BIỂU (Hiện lên khung 5 ảnh ở trang chủ)
+                </label>
               </div>
-              <div>
-                <label style={labelStyle}>{t("media.formTotal")}</label>
-                <input style={fieldStyle} type="number" placeholder="VD: 5000000"
-                  value={form.totalAmount}
-                  onChange={(e) => setForm((f) => ({ ...f, totalAmount: e.target.value }))} />
-              </div>
+            )}
+
+            {/* Service Package selection */}
+            <div style={groupStyle}>
+              <label style={labelStyle}>{mode === "project" ? "GÓI DỊCH VỤ ĐÃ SỬ DỤNG" : (t("media.formService") || "Gói dịch vụ")}</label>
+              <select style={fieldStyle} value={form.packageId}
+                onChange={(e) => {
+                  const pkgId = e.target.value;
+                  const pkg = pkgOptions.find(p => p.id === pkgId);
+                  setForm((f) => ({ 
+                    ...f, 
+                    packageId: pkgId,
+                    ...(pkg && !f.totalAmount ? { totalAmount: pkg.price?.toString() || "" } : {}),
+                    ...(pkg && (!f.bookingType || f.bookingType === "event") ? { bookingType: pkg.type } : {}),
+                  }));
+                }}>
+                <option value="">— {t("media.formSelectPackage") || "Chọn gói dịch vụ"} —</option>
+                {pkgOptions.map((p) => (
+                  <option key={p.id} value={p.id}>{p.title} ({p.price ? fmtVND(p.price) : "Liên hệ"})</option>
+                ))}
+              </select>
             </div>
 
+            {/* Deadline + amount */}
+            {mode !== "project" && (
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, ...groupStyle }}>
+                <div>
+                  <label style={labelStyle}>{t("media.formDeadline")}</label>
+                  <input type="date" style={fieldStyle} value={form.deadline}
+                    onChange={(e) => setForm((f) => ({ ...f, deadline: e.target.value }))} />
+                </div>
+                <div>
+                  <label style={labelStyle}>{t("media.formTotal")}</label>
+                  <input style={fieldStyle} type="number" placeholder="VD: 5000000"
+                    value={form.totalAmount}
+                    onChange={(e) => setForm((f) => ({ ...f, totalAmount: e.target.value }))} />
+                </div>
+              </div>
+            )}
+
             {/* Assignee + payment status */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, ...groupStyle }}>
+            <div style={{ display: "grid", gridTemplateColumns: mode === "project" ? "1fr" : "1fr 1fr", gap: 12, ...groupStyle }}>
               <div>
                 <label style={labelStyle}>{t("media.formAssignee")}</label>
                 <select style={fieldStyle} value={form.teamMemberId}
@@ -715,24 +979,26 @@ function BookingFormModal({
                   ))}
                 </select>
               </div>
-              <div>
-                <label style={labelStyle}>{t("media.formPaymentStatus")}</label>
-                <select style={fieldStyle} value={form.paymentStatus}
-                  onChange={(e) => setForm((f) => ({ ...f, paymentStatus: e.target.value }))}>
-                  <option value="unpaid">{t("media.paymentUnpaid")}</option>
-                  <option value="partial">{t("media.paymentPartial")}</option>
-                  <option value="paid">{t("media.paymentPaid")}</option>
-                  <option value="refunded">{t("media.paymentRefunded")}</option>
-                </select>
-              </div>
+              {mode !== "project" && (
+                <div>
+                  <label style={labelStyle}>{t("media.formPaymentStatus")}</label>
+                  <select style={fieldStyle} value={form.paymentStatus}
+                    onChange={(e) => setForm((f) => ({ ...f, paymentStatus: e.target.value }))}>
+                    <option value="unpaid">{t("media.paymentUnpaid")}</option>
+                    <option value="partial">{t("media.paymentPartial")}</option>
+                    <option value="paid">{t("media.paymentPaid")}</option>
+                    <option value="refunded">{t("media.paymentRefunded")}</option>
+                  </select>
+                </div>
+              )}
             </div>
 
             {/* Requirements */}
             <div style={groupStyle}>
-              <label style={labelStyle}>{t("media.formRequirements")}</label>
+              <label style={labelStyle}>{mode === "project" ? "MÔ TẢ DỰ ÁN" : t("media.formRequirements")}</label>
               <textarea style={{ ...fieldStyle, minHeight: 80, resize: "vertical" }}
                 value={form.requirements}
-                placeholder="Mô tả chi tiết yêu cầu media..."
+                placeholder={mode === "project" ? "Mô tả ngắn gọn về sản phẩm để khách hàng nắm bắt..." : "Mô tả chi tiết yêu cầu media..."}
                 onChange={(e) => setForm((f) => ({ ...f, requirements: e.target.value }))} />
             </div>
 
@@ -745,21 +1011,37 @@ function BookingFormModal({
                 onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))} />
             </div>
 
-            {/* Delivered assets (edit only) */}
-            {isEdit && (
+            {/* Delivered assets (edit or project mode) */}
+            {(isEdit || mode === "project") && (
               <div style={groupStyle}>
                 <label style={labelStyle}>{t("media.formDocs")}</label>
                 <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
                   <input
                     style={{ ...fieldStyle, flex: 1 }}
-                    placeholder="URL tài liệu (Cloudinary, Google Drive...)"
+                    placeholder="Dán URL hoặc chọn tệp..."
                     value={assetUrl}
-                    onChange={(e) => setAssetUrl(e.target.value)}
+                    onChange={(e) => {
+                      setAssetUrl(e.target.value);
+                      if (error) setError("");
+                    }}
                     onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addAsset())}
                   />
+                  <input
+                    type="file"
+                    multiple
+                    ref={fileInputRef}
+                    onChange={handleFileUpload}
+                    style={{ display: "none" }}
+                    accept="image/*"
+                  />
+                  <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading}
+                    style={{ padding: "10px 14px", background: DS.bg, color: DS.text, border: `1px solid ${DS.border}`, borderRadius: 10, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+                    {uploading ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />}
+                    Tải lên
+                  </button>
                   <button type="button" onClick={addAsset}
                     style={{ padding: "10px 14px", background: GRD.primary, color: "#fff", border: "none", borderRadius: 10, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
-                    <Upload size={13} /> {t("media.formBtnAdd")}
+                    <Plus size={14} /> {t("media.formBtnAdd")}
                   </button>
                 </div>
                 {deliveredAssets.length > 0 && (
@@ -806,11 +1088,12 @@ function BookingFormModal({
               </button>
               <button type="submit" disabled={saving}
                 style={{
-                  flex: 2, padding: "11px", background: saving ? `${DS.blue}80` : GRD.primary,
+                  flex: 2, padding: "11px", background: saving ? `${DS.blue}80` : mode === "project" ? DS.pink : GRD.primary,
                   color: "#fff", border: "none", borderRadius: 10, fontWeight: 700,
                   cursor: saving ? "not-allowed" : "pointer", fontSize: 13,
+                  boxShadow: mode === "project" ? "0 4px 12px rgba(236,72,153,0.3)" : "none"
                 }}>
-                {saving ? t("common.loading") : isEdit ? t("common.save") : t("media.formBtnCreate")}
+                {saving ? t("common.loading") : isEdit ? t("common.save") : mode === "project" ? "Đăng dự án ngay" : t("media.formBtnCreate")}
               </button>
             </div>
           </form>
@@ -991,9 +1274,13 @@ function LightboxModal({
 
 function PortfolioGallery({
   onEditBooking,
+  onDeleteBooking,
+  onAdd,
   t,
 }: {
   onEditBooking: (booking: MediaBooking) => void;
+  onDeleteBooking: (id: string) => void;
+  onAdd: () => void;
   t: ReturnType<typeof useAdminTranslations>["t"];
 }) {
   const [lightbox, setLightbox] = useState<{
@@ -1026,174 +1313,209 @@ function PortfolioGallery({
     );
   }
 
-  if (bookings.length === 0) {
-    return (
-      <div style={{ textAlign: "center", padding: "60px 0", color: DS.text4 }}>
-        <Image size={40} style={{ margin: "0 auto 12px", opacity: 0.4 }} />
-        <p style={{ fontSize: 14, fontWeight: 600 }}>{t("media.portfolioEmpty")}</p>
-        <p style={{ fontSize: 12, marginTop: 4 }}>{t("media.portfolioEmptyHint")}</p>
-      </div>
-    );
-  }
-
   return (
     <>
-      <div style={{ marginBottom: 16 }}>
-        <p style={{ color: DS.text4, fontSize: 12, fontFamily: DS.mono }}>
-          {t("media.portfolioCount", { n: bookings.length })}
-        </p>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+        <div>
+          <h3 style={{ fontFamily: DS.heading, fontSize: 16, fontWeight: 700, color: DS.text, margin: "0 0 4px" }}>
+            Portfolio Showcase
+          </h3>
+          <p style={{ color: DS.text4, fontSize: 12, fontFamily: DS.mono, margin: 0 }}>
+            {t("media.portfolioCount", { n: bookings.length })}
+          </p>
+        </div>
+        <button
+          onClick={onAdd}
+          style={{
+            display: "flex", alignItems: "center", gap: 8,
+            padding: "10px 24px", borderRadius: 12, cursor: "pointer",
+            background: DS.pink, border: "none",
+            color: "#fff", fontSize: 14, fontWeight: 800,
+            boxShadow: "0 0 20px rgba(236,72,153,0.4)",
+            transition: "transform 0.2s",
+          }}
+          onMouseOver={(e) => e.currentTarget.style.transform = "scale(1.02)"}
+          onMouseOut={(e) => e.currentTarget.style.transform = "scale(1)"}
+        >
+          <Plus size={18} />
+          Thêm dự án
+        </button>
       </div>
 
-      {/* Grid */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}>
-        {bookings.map((booking) => {
-          const assets = (booking.deliveredAssets as (string | { url?: string; name?: string })[]);
-          const cover = assets[0];
-          const coverSrc = typeof cover === "string" ? cover : (cover as { url?: string }).url ?? "";
+      {bookings.length === 0 ? (
+        <div style={{ textAlign: "center", padding: "60px 0", color: DS.text4 }}>
+          <Image size={40} style={{ margin: "0 auto 12px", opacity: 0.4 }} />
+          <p style={{ fontSize: 14, fontWeight: 600 }}>{t("media.portfolioEmpty")}</p>
+          <p style={{ fontSize: 12, marginTop: 4 }}>{t("media.portfolioEmptyHint")}</p>
+        </div>
+      ) : (
+        /* Grid */
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}>
+          {bookings.map((booking) => {
+            const assets = (booking.deliveredAssets as (string | { url?: string; name?: string })[]);
+            const cover = assets[0];
+            const coverSrc = typeof cover === "string" ? cover : (cover as { url?: string }).url ?? "";
 
-          return (
-            <motion.div
-              key={booking.id}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              style={{
-                background: DS.bgCard, border: `1px solid ${DS.border}`,
-                borderRadius: 16, overflow: "hidden",
-                transition: "border-color 0.2s",
-              }}
-            >
-              {/* Cover image */}
-              <div
+            return (
+              <motion.div
+                key={booking.id}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
                 style={{
-                  height: 180, background: DS.bg, position: "relative",
-                  overflow: "hidden", cursor: "pointer",
+                  background: DS.bgCard, border: `1px solid ${DS.border}`,
+                  borderRadius: 16, overflow: "hidden",
+                  transition: "border-color 0.2s",
                 }}
-                onClick={() => assets.length > 0 && openLightbox(booking, 0)}
               >
-                {coverSrc ? (
-                  <>
-                    <img
-                      src={coverSrc}
-                      alt={booking.title}
-                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                    />
-                    <div style={{
-                      position: "absolute", inset: 0,
-                      background: "linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 50%)",
-                    }} />
-                  </>
-                ) : (
-                  <div style={{
-                    width: "100%", height: "100%", display: "flex",
-                    alignItems: "center", justifyContent: "center", color: DS.text4,
-                  }}>
-                    <Camera size={32} />
-                  </div>
-                )}
-                {/* Overlay icon */}
-                <div style={{
-                  position: "absolute", inset: 0, display: "flex",
-                  alignItems: "center", justifyContent: "center",
-                  background: "rgba(0,0,0,0.4)", opacity: 0,
-                  transition: "opacity 0.2s",
-                }}
-                  onMouseEnter={(e) => ((e.currentTarget as HTMLDivElement).style.opacity = "1")}
-                  onMouseLeave={(e) => ((e.currentTarget as HTMLDivElement).style.opacity = "0")}
+                {/* Cover image */}
+                <div
+                  style={{
+                    height: 180, background: DS.bg, position: "relative",
+                    overflow: "hidden", cursor: "pointer",
+                  }}
+                  onClick={() => assets.length > 0 && openLightbox(booking, 0)}
                 >
-                  <div style={{
-                    width: 44, height: 44, borderRadius: "50%",
-                    background: "rgba(255,255,255,0.2)", backdropFilter: "blur(4px)",
-                    border: "1px solid rgba(255,255,255,0.3)",
-                    display: "flex", alignItems: "center", justifyContent: "center", color: "#fff",
-                  }}>
-                    <ZoomIn size={18} />
-                  </div>
-                </div>
-                {/* Asset count badge */}
-                {assets.length > 1 && (
-                  <div style={{
-                    position: "absolute", top: 8, right: 8,
-                    background: "rgba(0,0,0,0.7)", color: "#fff",
-                    fontSize: 10, fontFamily: DS.mono, fontWeight: 700,
-                    padding: "2px 8px", borderRadius: 99,
-                  }}>
-                    +{assets.length - 1}
-                  </div>
-                )}
-              </div>
-
-              {/* Info */}
-              <div style={{ padding: "12px 16px 16px" }}>
-                <p style={{
-                  color: DS.text, fontWeight: 700, fontSize: 14,
-                  marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                }}>
-                  {booking.title}
-                </p>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 8px", alignItems: "center", marginBottom: 8 }}>
-                  <span style={{
-                    fontSize: 10, padding: "1px 6px", borderRadius: 99,
-                    background: `${DS.purple}15`, color: DS.purple,
-                    fontFamily: DS.mono, fontWeight: 600,
-                  }}>
-                    {t(`media.${BOOKING_TYPE_OPTIONS.find((o) => o.value === booking.bookingType)?.labelKey ?? "typeCustom"}`)}
-                  </span>
-                  {booking.teamMember && (
-                    <span style={{
-                      fontSize: 10, padding: "1px 6px", borderRadius: 99,
-                      background: "rgba(139,92,246,0.1)", color: "#8B5CF6",
-                      fontFamily: DS.mono, fontWeight: 600,
+                  {coverSrc ? (
+                    <>
+                      <img
+                        src={coverSrc}
+                        alt={booking.title}
+                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                      />
+                      <div style={{
+                        position: "absolute", inset: 0,
+                        background: "linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 50%)",
+                      }} />
+                    </>
+                  ) : (
+                    <div style={{
+                      width: "100%", height: "100%", display: "flex",
+                      alignItems: "center", justifyContent: "center", color: DS.text4,
                     }}>
-                      {booking.teamMember.name}
-                    </span>
+                      <Camera size={32} />
+                    </div>
+                  )}
+                  {/* Overlay icon */}
+                  <div style={{
+                    position: "absolute", inset: 0, display: "flex",
+                    alignItems: "center", justifyContent: "center",
+                    background: "rgba(0,0,0,0.4)", opacity: 0,
+                    transition: "opacity 0.2s",
+                  }}
+                    onMouseEnter={(e) => ((e.currentTarget as HTMLDivElement).style.opacity = "1")}
+                    onMouseLeave={(e) => ((e.currentTarget as HTMLDivElement).style.opacity = "0")}
+                  >
+                    <div style={{
+                      width: 44, height: 44, borderRadius: "50%",
+                      background: "rgba(255,255,255,0.2)", backdropFilter: "blur(4px)",
+                      border: "1px solid rgba(255,255,255,0.3)",
+                      display: "flex", alignItems: "center", justifyContent: "center", color: "#fff",
+                    }}>
+                      <ZoomIn size={18} />
+                    </div>
+                  </div>
+                  {/* Asset count badge */}
+                  {assets.length > 1 && (
+                    <div style={{
+                      position: "absolute", top: 8, right: 8,
+                      background: "rgba(0,0,0,0.7)", color: "#fff",
+                      fontSize: 10, fontFamily: DS.mono, fontWeight: 700,
+                      padding: "2px 8px", borderRadius: 99,
+                    }}>
+                      +{assets.length - 1}
+                    </div>
                   )}
                 </div>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <div>
-                    <p style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono }}>
-                      {booking.customerName}
-                    </p>
-                    {booking.deliveredAt && (
-                      <p style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, marginTop: 2 }}>
-                        {new Date(booking.deliveredAt).toLocaleDateString("vi-VN")}
-                      </p>
+
+                {/* Info */}
+                <div style={{ padding: "12px 16px 16px" }}>
+                  <p style={{
+                    color: DS.text, fontWeight: 700, fontSize: 14,
+                    marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}>
+                    {booking.title}
+                  </p>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 8px", alignItems: "center", marginBottom: 8 }}>
+                    <span style={{
+                      fontSize: 10, padding: "1px 6px", borderRadius: 99,
+                      background: `${DS.purple}15`, color: DS.purple,
+                      fontFamily: DS.mono, fontWeight: 600,
+                    }}>
+                      {t(`media.${BOOKING_TYPE_OPTIONS.find((o) => o.value === booking.bookingType)?.labelKey ?? "typeCustom"}`)}
+                    </span>
+                    {booking.teamMember && (
+                      <span style={{
+                        fontSize: 10, padding: "1px 6px", borderRadius: 99,
+                        background: "rgba(139,92,246,0.1)", color: "#8B5CF6",
+                        fontFamily: DS.mono, fontWeight: 600,
+                      }}>
+                        {booking.teamMember.name}
+                      </span>
                     )}
                   </div>
-                  <div style={{ display: "flex", gap: 6 }}>
-                    {assets.length > 0 && (
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div>
+                      <p style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono }}>
+                        {booking.customerName}
+                      </p>
+                      {booking.deliveredAt && (
+                        <p style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, marginTop: 2 }}>
+                          {new Date(booking.deliveredAt).toLocaleDateString("vi-VN")}
+                        </p>
+                      )}
+                    </div>
+                    <div style={{ display: "flex", gap: 6 }}>
+                      {assets.length > 0 && (
+                        <button
+                          onClick={() => openLightbox(booking, 0)}
+                          title={t("media.portfolioViewAll")}
+                          style={{
+                            padding: "5px 8px", borderRadius: 8, cursor: "pointer",
+                            background: "rgba(59,130,246,0.1)",
+                            border: "1px solid rgba(59,130,246,0.3)",
+                            color: DS.blue, display: "flex", alignItems: "center",
+                          }}
+                        >
+                          <ZoomIn size={12} />
+                        </button>
+                      )}
                       <button
-                        onClick={() => openLightbox(booking, 0)}
-                        title={t("media.portfolioViewAll")}
+                        onClick={() => onEditBooking(booking)}
+                        title={t("btnEdit")}
                         style={{
                           padding: "5px 8px", borderRadius: 8, cursor: "pointer",
-                          background: "rgba(59,130,246,0.1)",
-                          border: "1px solid rgba(59,130,246,0.3)",
-                          color: DS.blue, display: "flex", alignItems: "center",
+                          background: "rgba(139,92,246,0.1)",
+                          border: "1px solid rgba(139,92,246,0.3)",
+                          color: "#8B5CF6", display: "flex", alignItems: "center",
                         }}
                       >
-                        <ZoomIn size={12} />
+                        <Eye size={12} />
                       </button>
-                    )}
-                    <button
-                      onClick={() => onEditBooking(booking)}
-                      title={t("btnEdit")}
-                      style={{
-                        padding: "5px 8px", borderRadius: 8, cursor: "pointer",
-                        background: "rgba(139,92,246,0.1)",
-                        border: "1px solid rgba(139,92,246,0.3)",
-                        color: "#8B5CF6", display: "flex", alignItems: "center",
-                      }}
-                    >
-                      <Eye size={12} />
-                    </button>
+                      <button
+                        onClick={() => {
+                          if (confirm(t("media.confirmDelete"))) {
+                            onDeleteBooking(booking.id);
+                          }
+                        }}
+                        title={t("btnDelete")}
+                        style={{
+                          padding: "5px 8px", borderRadius: 8, cursor: "pointer",
+                          background: "rgba(239,68,68,0.1)",
+                          border: "1px solid rgba(239,68,68,0.3)",
+                          color: DS.red, display: "flex", alignItems: "center",
+                        }}
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </motion.div>
-          );
-        })}
-      </div>
+              </motion.div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Lightbox */}
       {lightbox && (
@@ -1211,6 +1533,175 @@ function PortfolioGallery({
   );
 }
 
+// ─── Package Form Modal ────────────────────────────────────────────────────────
+function PackageFormModal({
+  pkg,
+  onClose,
+  onSuccess,
+}: {
+  pkg?: MediaPackage | null;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const { t } = useAdminTranslations();
+  const isEdit = !!pkg;
+
+  const [form, setForm] = useState<PackageFormData>({
+    title: pkg?.title ?? "",
+    slug: pkg?.slug ?? "",
+    shortDesc: pkg?.shortDesc ?? "",
+    type: pkg?.type ?? "media",
+    price: pkg?.price?.toString() ?? "",
+    priceText: pkg?.priceText ?? "",
+    tagline: pkg?.tagline ?? "",
+    color: pkg?.color ?? DS.pink,
+    features: pkg?.features?.join("\n") ?? "",
+    sortOrder: pkg?.sortOrder?.toString() ?? "0",
+    isActive: pkg?.isActive ?? true,
+    isPopular: (pkg as any)?.isPopular ?? false,
+  });
+
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const qc = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: async () => {
+      const payload = {
+        ...form,
+        id: pkg?.id,
+        type: "media",
+        price: form.price ? parseInt(form.price, 10) : null,
+        sortOrder: parseInt(form.sortOrder, 10) || 0,
+        isPopular: form.isPopular,
+        serviceKey: "media",
+        features: form.features.split("\n").filter(f => f.trim()),
+      };
+      if (isEdit) {
+        return adminApi.put("/api/admin/pricing/packages", payload);
+      } else {
+        return adminApi.post("/api/admin/pricing/packages", payload);
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin", "media-packages"] });
+      onSuccess();
+    },
+    onError: (err: any) => {
+      setError(err?.response?.data?.error || err.message || "Failed to save package");
+    }
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    setError("");
+    mutation.mutate();
+    setSaving(false);
+  };
+
+  const fieldStyle: React.CSSProperties = {
+    width: "100%", background: DS.bg, border: `1px solid ${DS.border}`,
+    borderRadius: 10, padding: "9px 12px", color: DS.text, fontSize: 13, outline: "none",
+  };
+  const labelStyle: React.CSSProperties = {
+    display: "block", fontSize: 11, fontWeight: 700, color: DS.text4, marginBottom: 6, fontFamily: DS.mono, letterSpacing: "0.05em"
+  };
+  const groupStyle: React.CSSProperties = { marginBottom: 16 };
+
+  return (
+    <AnimatePresence>
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+        <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+          style={{ background: DS.bgCard, width: "100%", maxWidth: 500, borderRadius: 24, border: `1px solid ${DS.border}`, overflow: "hidden", boxShadow: GLOW.cardShadow }}>
+          <div style={{ padding: "20px 24px", borderBottom: `1px solid ${DS.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: DS.text }}>
+              {isEdit ? "Chỉnh sửa gói" : "Tạo gói dịch vụ Media"}
+            </h3>
+            <button onClick={onClose} style={{ background: "none", border: "none", color: DS.text4, cursor: "pointer" }}><X size={20} /></button>
+          </div>
+
+          <form onSubmit={handleSubmit} style={{ padding: 24, maxHeight: "80vh", overflowY: "auto" }}>
+            <div style={groupStyle}>
+              <label style={labelStyle}>Tên gói</label>
+              <input required style={fieldStyle} value={form.title}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  const slug = val.toLowerCase().trim().replace(/\s+/g, "-").replace(/[^\w-]+/g, "");
+                  setForm(f => ({ ...f, title: val, ...(!isEdit ? { slug } : {}) }));
+                }} />
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, ...groupStyle }}>
+              <div>
+                <label style={labelStyle}>Slug</label>
+                <input required style={fieldStyle} value={form.slug} onChange={(e) => setForm(f => ({ ...f, slug: e.target.value }))} />
+              </div>
+              <div>
+                <label style={labelStyle}>Màu chủ đạo (HEX)</label>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <input style={{ ...fieldStyle, flex: 1 }} value={form.color} onChange={(e) => setForm(f => ({ ...f, color: e.target.value }))} />
+                  <div style={{ width: 36, height: 36, borderRadius: 8, background: form.color, border: `1px solid ${DS.border}` }} />
+                </div>
+              </div>
+            </div>
+
+            <div style={groupStyle}>
+              <label style={labelStyle}>Tagline (Mô tả ngắn gọn)</label>
+              <input style={fieldStyle} value={form.tagline} onChange={(e) => setForm(f => ({ ...f, tagline: e.target.value }))} placeholder="E-commerce Ready" />
+            </div>
+
+            <div style={groupStyle}>
+              <label style={labelStyle}>Mô tả chi tiết</label>
+              <textarea style={{ ...fieldStyle, minHeight: 80, resize: "vertical" }} value={form.shortDesc} onChange={(e) => setForm(f => ({ ...f, shortDesc: e.target.value }))} />
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, ...groupStyle }}>
+              <div>
+                <label style={labelStyle}>Giá (VNĐ)</label>
+                <input type="number" style={fieldStyle} value={form.price} onChange={(e) => setForm(f => ({ ...f, price: e.target.value }))} />
+              </div>
+              <div>
+                <label style={labelStyle}>Text hiển thị giá</label>
+                <input style={fieldStyle} value={form.priceText} onChange={(e) => setForm(f => ({ ...f, priceText: e.target.value }))} placeholder="Từ 5.000.000₫" />
+              </div>
+            </div>
+
+            <div style={groupStyle}>
+              <label style={labelStyle}>Tính năng (mỗi dòng 1 tính năng)</label>
+              <textarea style={{ ...fieldStyle, minHeight: 120, resize: "vertical", fontFamily: DS.mono, fontSize: 12 }} 
+                value={form.features} onChange={(e) => setForm(f => ({ ...f, features: e.target.value }))} />
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, ...groupStyle }}>
+              <div>
+                <label style={labelStyle}>Thứ tự sắp xếp</label>
+                <input type="number" style={fieldStyle} value={form.sortOrder} onChange={(e) => setForm(f => ({ ...f, sortOrder: e.target.value }))} />
+              </div>
+              <div style={{ display: "flex", alignItems: "flex-end", paddingBottom: 8 }}>
+                <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 13, color: DS.text }}>
+                  <input type="checkbox" checked={form.isPopular} onChange={(e) => setForm(f => ({ ...f, isPopular: e.target.checked }))} />
+                  Gói phổ biến (Badge)
+                </label>
+              </div>
+            </div>
+
+            {error && <div style={{ color: DS.red, fontSize: 13, marginBottom: 16 }}>{error}</div>}
+
+            <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
+              <button type="button" onClick={onClose} style={{ flex: 1, padding: 12, borderRadius: 12, background: DS.bg, color: DS.text3, border: `1px solid ${DS.border}`, fontWeight: 600, cursor: "pointer" }}>Hủy</button>
+              <button type="submit" disabled={saving} style={{ flex: 2, padding: 12, borderRadius: 12, background: GRD.primary, color: "#fff", border: "none", fontWeight: 700, cursor: "pointer", opacity: saving ? 0.7 : 1 }}>
+                {saving ? "Đang lưu..." : isEdit ? "Lưu thay đổi" : "Tạo gói mới"}
+              </button>
+            </div>
+          </form>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
 // ─── Main page ─────────────────────────────────────────────────────────────────
 
 export default function MediaBookingsPage() {
@@ -1219,26 +1710,35 @@ export default function MediaBookingsPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [featuredFilter, setFeaturedFilter] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<MediaBooking | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [editBooking, setEditBooking] = useState<MediaBooking | null>(null);
+  const [showPackageCreate, setShowPackageCreate] = useState(false);
+  const [editPackage, setEditPackage] = useState<MediaPackage | null>(null);
   const [activeTab, setActiveTab] = useState<"bookings" | "portfolio" | "packages">("bookings");
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+  const [showProjectCreate, setShowProjectCreate] = useState(false);
+
+  // Expose trigger to global for tab access
+  if (typeof window !== "undefined") {
+    (window as any).triggerPackageCreate = () => setShowPackageCreate(true);
+  }
 
   const translatedStatuses = Object.fromEntries(
     Object.entries(STATUS_CONFIG).map(([k, v]) => [
       k,
-      { ...v, label: t(`media.status${k.charAt(0).toUpperCase() + k.slice(1)}` as `media.status${string}`) },
+      { ...v, label: t(`media.status${v.label.charAt(0).toUpperCase() + v.label.slice(1)}` as `media.status${string}`) },
     ])
   );
   const { data, isLoading, isFetching } = useQuery({
-    queryKey: ["admin", "media-bookings", { page, limit: 20, search, status: statusFilter }],
+    queryKey: ["admin", "media-bookings", { page, limit: 20, search, status: statusFilter, featured: featuredFilter }],
     queryFn: async () => {
       const res = await adminApi.get<{
         data: MediaBooking[];
         pagination: { page: number; limit: number; total: number; totalPages: number };
       }>("/api/admin/media-bookings", {
-        params: { page, limit: 20, ...(search ? { search } : {}), ...(statusFilter ? { status: statusFilter } : {}) },
+        params: { page, limit: 20, ...(search ? { search } : {}), ...(statusFilter ? { status: statusFilter } : {}), ...(featuredFilter ? { featured: true } : {}) },
       });
       return res;
     },
@@ -1260,6 +1760,13 @@ export default function MediaBookingsPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "media-bookings"] }),
   });
 
+  const updatePaymentMutation = useMutation({
+    mutationFn: async ({ id, paymentStatus }: { id: string; paymentStatus: string }) => {
+      return adminApi.put(`/api/admin/media-bookings/${id}`, { paymentStatus });
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "media-bookings"] }),
+  });
+
   return (
     <div>
       {/* Header */}
@@ -1271,34 +1778,6 @@ export default function MediaBookingsPage() {
           <p style={{ color: DS.text4, fontSize: 12, fontFamily: DS.mono }}>
             {t("media.titleCount", { n: pagination?.total ?? 0 })}
           </p>
-        </div>
-        <div style={{ display: "flex", gap: 8 }}>
-          <button
-            onClick={() => {
-              if (activeTab === "bookings") {
-                qc.invalidateQueries({ queryKey: ["admin", "media-bookings"] });
-              } else {
-                qc.invalidateQueries({ queryKey: ["admin", "media-bookings", "portfolio"] });
-              }
-            }}
-            style={{
-              display: "flex", alignItems: "center", gap: 6, padding: "8px 14px",
-              background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 10,
-              color: DS.text3, cursor: "pointer", fontSize: 12, fontFamily: DS.mono,
-            }}
-          >
-            <RefreshCw size={13} className={isFetching ? "animate-spin" : ""} /> {t("media.refreshBtn")}
-          </button>
-          <button
-            onClick={() => setShowCreate(true)}
-            style={{
-              display: "flex", alignItems: "center", gap: 6, padding: "8px 16px",
-              background: GRD.primary, border: "none", borderRadius: 10,
-              color: "#fff", cursor: "pointer", fontSize: 12, fontWeight: 700,
-            }}
-          >
-            <Plus size={14} /> {t("media.createBtn")}
-          </button>
         </div>
       </div>
 
@@ -1334,15 +1813,48 @@ export default function MediaBookingsPage() {
 
       {/* Packages tab */}
       {activeTab === "packages" ? (
-        <MediaPackagesTab />
+        <MediaPackagesTab onEdit={setEditPackage} onAdd={() => setShowPackageCreate(true)} />
       ) : activeTab === "portfolio" ? (
         <PortfolioGallery
-          onEditBooking={(booking) => setSelectedBooking(booking)}
+          onEditBooking={(booking) => setEditBooking(booking)}
+          onDeleteBooking={(id) => deleteMutation.mutate(id)}
+          onAdd={() => setShowProjectCreate(true)}
           t={t}
         />
       ) : (
       /* Bookings tab */
       <>
+
+      {/* Bookings Header Actions */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+        <div style={{ display: "flex", gap: 10 }}>
+          <button
+            onClick={() => qc.invalidateQueries({ queryKey: ["admin", "media-bookings"] })}
+            style={{
+              display: "flex", alignItems: "center", gap: 6, padding: "8px 14px",
+              background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 10,
+              color: DS.text3, cursor: "pointer", fontSize: 12, fontFamily: DS.mono,
+            }}
+          >
+            <RefreshCw size={13} className={isFetching ? "animate-spin" : ""} /> {t("media.refreshBtn")}
+          </button>
+          
+          <button
+            onClick={() => setShowCreate(true)}
+            style={{
+              display: "flex", alignItems: "center", gap: 8, padding: "10px 20px",
+              background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 12,
+              color: DS.text, cursor: "pointer", fontSize: 13, fontWeight: 700,
+              boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+              transition: "transform 0.2s",
+            }}
+            onMouseOver={(e) => e.currentTarget.style.transform = "translateY(-1px)"}
+            onMouseOut={(e) => e.currentTarget.style.transform = "translateY(0)"}
+          >
+            <Plus size={16} style={{ color: DS.pink }} /> {t("media.createBtn")}
+          </button>
+        </div>
+      </div>
 
       {/* Filters */}
       <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
@@ -1374,6 +1886,23 @@ export default function MediaBookingsPage() {
             <option key={s} value={s}>{translatedStatuses[s]?.label ?? s}</option>
           ))}
         </select>
+
+        <button
+          onClick={() => { setFeaturedFilter((f) => !f); setPage(1); }}
+          style={{
+            display: "flex", alignItems: "center", gap: 6,
+            padding: "8px 14px",
+            background: featuredFilter ? "rgba(236,72,153,0.15)" : DS.bgCard,
+            border: `1px solid ${featuredFilter ? "rgba(236,72,153,0.5)" : DS.border}`,
+            borderRadius: 10,
+            color: featuredFilter ? DS.pink : DS.text4,
+            fontSize: 13, fontFamily: DS.mono, cursor: "pointer",
+            transition: "all 0.15s",
+          }}
+        >
+          <TrendingUp size={13} />
+          {t("media.featuredOnly") ?? "Featured"}
+        </button>
       </div>
 
       {/* KPI MiniStats */}
@@ -1519,15 +2048,35 @@ export default function MediaBookingsPage() {
         onClose={() => setSelectedBooking(null)}
         onTransition={(id, toStatus) => transitionMutation.mutate({ id, toStatus })}
         onEdit={(b) => { setSelectedBooking(null); setEditBooking(b); }}
+        onUpdatePayment={(id, paymentStatus) => updatePaymentMutation.mutate({ id, paymentStatus })}
         t={t}
       />
 
-      {/* Create/Edit Modal */}
+      {/* Create/Edit Booking Modal */}
       {(showCreate || editBooking) && (
         <BookingFormModal
           booking={editBooking}
+          mode={editBooking?.status === "delivered" || editBooking?.status === "approved" ? "project" : "booking"}
           onClose={() => { setShowCreate(false); setEditBooking(null); }}
           onSuccess={() => { setShowCreate(false); setEditBooking(null); }}
+        />
+      )}
+
+      {/* Create Project Modal */}
+      {showProjectCreate && (
+        <BookingFormModal
+          mode="project"
+          onClose={() => setShowProjectCreate(false)}
+          onSuccess={() => { setShowProjectCreate(false); qc.invalidateQueries({ queryKey: ["admin", "media-bookings", "portfolio"] }); }}
+        />
+      )}
+
+      {/* Create/Edit Media Package Modal */}
+      {(showPackageCreate || editPackage) && (
+        <PackageFormModal
+          pkg={editPackage}
+          onClose={() => { setShowPackageCreate(false); setEditPackage(null); }}
+          onSuccess={() => { setShowPackageCreate(false); setEditPackage(null); }}
         />
       )}
     </div>
@@ -1536,7 +2085,13 @@ export default function MediaBookingsPage() {
 
 // ─── Tab 3: Media Packages ─────────────────────────────────────────────────────
 
-function MediaPackagesTab() {
+function MediaPackagesTab({ 
+  onEdit,
+  onAdd
+}: { 
+  onEdit: (pkg: MediaPackage) => void;
+  onAdd: () => void;
+}) {
   const qc = useQueryClient();
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
   const { data, isLoading, isFetching } = useQuery({
@@ -1561,6 +2116,12 @@ function MediaPackagesTab() {
     onError: (err: unknown) => { setToast({ message: err instanceof Error ? err.message : "Seed thất bại", type: "error" }); },
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => adminApi.delete(`/api/admin/pricing/packages?id=${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "media-packages"] }),
+    onError: (err: unknown) => { setToast({ message: err instanceof Error ? err.message : "Xóa thất bại", type: "error" }); },
+  });
+
   const packages: MediaPackage[] = data?.data ?? [];
 
   // Card gradient + icon color config per package slug
@@ -1582,20 +2143,40 @@ function MediaPackagesTab() {
             3 gói: Chụp Ảnh · Quay & Dựng · Quay & Dựng + Content
           </p>
         </div>
-        <button
-          onClick={() => seedMutation.mutate()}
-          disabled={seedMutation.isPending}
-          style={{
-            display: "flex", alignItems: "center", gap: 6,
-            padding: "7px 14px", borderRadius: 9, cursor: "pointer",
-            background: "rgba(139,92,246,0.1)", border: `1px solid rgba(139,92,246,0.3)`,
-            color: "#8B5CF6", fontSize: 12, fontFamily: DS.mono, fontWeight: 600,
-            opacity: seedMutation.isPending ? 0.6 : 1,
-          }}
-        >
-          {seedMutation.isPending ? <Loader2 size={13} style={{ animation: "spin 1s linear infinite" }} /> : <RefreshCw size={13} />}
-          Seed / Sync
-        </button>
+        <div style={{ display: "flex", gap: 12 }}>
+          <button
+            onClick={() => seedMutation.mutate()}
+            disabled={seedMutation.isPending}
+            style={{
+              display: "flex", alignItems: "center", gap: 8,
+              padding: "10px 20px", borderRadius: 12, cursor: "pointer",
+              background: "rgba(139,92,246,0.15)", border: `1px solid rgba(139,92,246,0.4)`,
+              color: "#A78BFA", fontSize: 13, fontFamily: DS.mono, fontWeight: 700,
+              opacity: seedMutation.isPending ? 0.6 : 1,
+              transition: "all 0.2s",
+            }}
+          >
+            {seedMutation.isPending ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
+            Seed / Sync
+          </button>
+
+          <button
+            onClick={onAdd}
+            style={{
+              display: "flex", alignItems: "center", gap: 8,
+              padding: "10px 24px", borderRadius: 12, cursor: "pointer",
+              background: DS.pink, border: "none",
+              color: "#fff", fontSize: 14, fontWeight: 800,
+              boxShadow: "0 0 20px rgba(236,72,153,0.4)",
+              transition: "transform 0.2s",
+            }}
+            onMouseOver={(e) => e.currentTarget.style.transform = "scale(1.02)"}
+            onMouseOut={(e) => e.currentTarget.style.transform = "scale(1)"}
+          >
+            <Plus size={18} />
+            Thêm gói mới
+          </button>
+        </div>
       </div>
 
       {/* Loading */}
@@ -1713,7 +2294,6 @@ function MediaPackagesTab() {
                     }}>
                       {pkg.price != null ? fmtVND(pkg.price) : "Liên hệ"}
                     </span>
-                    <span style={{ color: DS.text4, fontSize: 12, marginLeft: 4 }}>VND</span>
                   </div>
 
                   {/* Features */}
@@ -1735,6 +2315,31 @@ function MediaPackagesTab() {
                       <span style={{ fontSize: 11, color: DS.text4, fontFamily: DS.mono }}>
                         {pkg.isActive ? "Đang bật" : "Đã tắt"}
                       </span>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button
+                        onClick={() => onEdit(pkg)}
+                        style={{
+                          width: 32, height: 32, borderRadius: 8, border: `1px solid ${DS.border}`,
+                          background: DS.bg, color: DS.text3, cursor: "pointer",
+                          display: "flex", alignItems: "center", justifyContent: "center"
+                        }}
+                      >
+                        <Edit2 size={14} />
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (confirm(`Xóa gói "${pkg.title}"?`)) {
+                            deleteMutation.mutate(pkg.id);
+                          }
+                        }}
+                        style={{
+                          width: 32, height: 32, borderRadius: 8, border: `1px solid ${DS.border}`,
+                          background: DS.bg, color: DS.red, cursor: "pointer",
+                          display: "flex", alignItems: "center", justifyContent: "center"
+                        }}
+                      >
+                        <Trash2 size={14} />
+                      </button>
                       <button
                         onClick={() => toggleMutation.mutate(pkg)}
                         disabled={toggleMutation.isPending}
@@ -1742,6 +2347,7 @@ function MediaPackagesTab() {
                           width: 36, height: 20, borderRadius: 10, border: "none", cursor: "pointer",
                           background: pkg.isActive ? "#22C55E" : DS.border,
                           transition: "background 0.2s", position: "relative",
+                          marginTop: 6,
                           opacity: toggleMutation.isPending ? 0.6 : 1,
                         }}
                       >
@@ -1752,6 +2358,7 @@ function MediaPackagesTab() {
                           transition: "left 0.2s",
                         }} />
                       </button>
+                    </div>
                     </div>
                     <span style={{ fontSize: 10, color: DS.text5, fontFamily: DS.mono }}>
                       #{pkg.sortOrder}

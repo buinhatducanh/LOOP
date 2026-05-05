@@ -556,6 +556,7 @@ export default function SiteFooter({ locale = "vi" }: { locale?: string }) {
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.375rem" }}>
               <input
+                suppressHydrationWarning
                 type="email"
                 placeholder={t("newsletterPlaceholder")}
                 style={{
@@ -569,6 +570,7 @@ export default function SiteFooter({ locale = "vi" }: { locale?: string }) {
                 onBlur={e => { (e.currentTarget as HTMLInputElement).style.borderColor = DS.border; }}
               />
               <button
+                suppressHydrationWarning
                 style={{
                   background: GRD.primary, border: "none",
                   borderRadius: 8, padding: "7px 12px",

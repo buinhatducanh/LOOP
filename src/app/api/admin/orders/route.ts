@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
         skip: (page - 1) * limit,
         take: limit,
         include: {
-          package: { select: { title: true } },
+          package: { select: { id: true, title: true } },
           figmaDemos: {
             orderBy: { createdAt: "desc" },
             take: 1,

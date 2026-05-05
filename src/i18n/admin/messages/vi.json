@@ -388,7 +388,21 @@
     "errSlugRequired": "Slug là bắt buộc",
     "errSaveFailed": "Lưu thất bại",
     "errDeleteFailed": "Xóa thất bại",
-    "confirmDelete": "Xóa bài này?"
+    "confirmDelete": "Xóa bài này?",
+    "formAssignment": "Gán dự án & tác giả",
+    "formProject": "DỰ ÁN (ORDER)",
+    "formAuthorSelect": "TÁC GIẢ",
+    "formBasicInfo": "Thông tin cơ bản",
+    "formMedia": "Hình ảnh & Video",
+    "formVideoUrl": "VIDEO (YouTube / Vimeo URL)",
+    "formTags": "Gắn thẻ (Tags)",
+    "formSeoSection": "Cấu hình SEO",
+    "formSeoTitle": "META TITLE (SEO)",
+    "formSeoDesc": "META DESCRIPTION (SEO)",
+    "formCanonical": "CANONICAL URL",
+    "formBacklinks": "Liên kết ngoài",
+    "formI18n": "Nội dung đa ngôn ngữ",
+    "viewPost": "Xem bài viết"
   },
   "quotation": {
     "title": "Báo giá",
