@@ -616,6 +616,8 @@
     "careersDescription": "Gia nhập LOOP Solutions — công ty chuyển đổi số tăng trưởng 200%/năm. Các vị trí đang tuyển: developer, designer, media, marketing, sales.",
     "whyUsTitle": "Tại sao chọn LOOP | LOOP Solutions",
     "whyUsDescription": "Tìm hiểu vì sao 200+ doanh nghiệp Việt Nam tin tưởng LOOP Solutions là đối tác chuyển đổi số.",
+    "aboutTitle": "Về chúng tôi | LOOP Solutions",
+    "aboutDescription": "Tìm hiểu về đội ngũ, sứ mệnh và hành trình kiến tạo giải pháp số của LOOP Solutions.",
     "partnersTitle": "Đối tác công nghệ | LOOP Solutions",
     "partnersDescription": "LOOP Solutions là đối tác của các nền tảng công nghệ hàng đầu: Vercel, Supabase, Shopify, HubSpot, Cloudinary...",
     "consultationTitle": "Đặt lịch tư vấn | LOOP Solutions",
@@ -640,10 +642,14 @@
     "pricingTitle": "Bảng Giá Dịch Vụ Web, App, Dashboard, SEO | LOOP Solutions",
     "pricingDescription": "Xem bảng giá chi tiết 4 dịch vụ: Website, App/SaaS, Dashboard, SEO — mỗi dịch vụ 3 cấp Basic / Business / Experience. Basic từ 3.9M, Business từ 5.9M. Miễn phí SSL, bảo hành.",
     "brandMetaDescription": "LOOP Solutions - Đối tác chuyển đổi số hàng đầu Việt Nam. Thiết kế web, app, dashboard, SEO chuyên nghiệp.",
+    "servicesTitle": "Dịch vụ Web, App, Dashboard & SEO | LOOP Solutions",
+    "servicesDescription": "Khám phá danh mục dịch vụ số toàn diện từ LOOP Solutions: Thiết kế Website, Phát triển App/SaaS, Hệ thống Dashboard và Chiến lược SEO Marketing tối ưu.",
     "teamTitle": "Đội ngũ | LOOP Solutions",
     "teamDescription": "27 chuyên gia xuất sắc - developer, designer, media, marketing, sales. Thăng hạng qua LP, xếp hạng Iron đến Diamond.",
     "academyTitle": "Học viện | LOOP Solutions",
-    "academyDescription": "Học từ chuyên gia LOOP Solutions — các khóa học về lập trình, marketing, thiết kế, kinh doanh. Hoàn thành nhận thưởng LP."
+    "academyDescription": "Học từ chuyên gia LOOP Solutions — các khóa học về lập trình, marketing, thiết kế, kinh doanh. Hoàn thành nhận thưởng LP.",
+    "contactTitle": "Liên hệ | LOOP Solutions",
+    "contactDescription": "Liên hệ với LOOP Solutions để được tư vấn giải pháp chuyển đổi số tối ưu cho doanh nghiệp của bạn."
   },
   "Navigation": {
     "home": "Trang chủ",
@@ -1659,6 +1665,7 @@
     "fixed": "Đã sửa",
     "security": "Bảo mật"
   },
+
   "MediaPage": {
     "heroBadge": "MEDIA PRODUCTION — v3.0",
     "heroTitle": "KỂ CÂU CHUYỆN THƯƠNG HIỆU QUA HÌNH ẢNH",
@@ -1726,5 +1733,48 @@
       "featSecure": "Bảo mật thông tin",
       "featSecureDesc": "Cam kết bảo mật dự án"
     }
+  },
+  "quotation": {
+    "title": "Báo giá",
+    "tabQuotes": "Báo giá",
+    "tabRequests": "Yêu cầu",
+    "refreshBtn": "Làm mới",
+    "createBtn": "Tạo báo giá",
+    "kpiTotal": "Tổng báo giá",
+    "kpiSigned": "Đã ký",
+    "kpiPending": "Chờ duyệt",
+    "kpiNewRequests": "Yêu cầu mới",
+    "kpiFrom": "từ khách hàng",
+    "emptyStateQuotes": "Chưa có báo giá nào",
+    "emptyStateRequests": "Chưa có yêu cầu báo giá mới",
+    "colId": "Mã BG",
+    "colTitle": "Tên báo giá",
+    "colCustomer": "Khách hàng",
+    "colEmail": "Email",
+    "colCompany": "Công ty",
+    "colValue": "Giá trị",
+    "colDeadline": "Hạn duyệt",
+    "colDate": "Ngày",
+    "colStatus": "Trạng thái",
+    "colActions": "Thao tác",
+    "formTitle": "Tạo báo giá mới",
+    "formQuoteTitle": "Tiêu đề báo giá",
+    "formCustomerName": "Họ và tên",
+    "formEmail": "Email",
+    "formCompany": "Công ty",
+    "formPhone": "Số điện thoại",
+    "formValue": "Giá trị",
+    "formDeadline": "Hạn duyệt",
+    "formBtnCancel": "Hủy",
+    "formBtnCreating": "Đang tạo...",
+    "formBtnCreate": "Tạo báo giá",
+    "errTitleRequired": "Vui lòng nhập tiêu đề báo giá",
+    "errCreateFailed": "Không thể tạo báo giá",
+    "statusQuoted": "Đã báo giá",
+    "statusPending": "Chờ duyệt",
+    "statusSigned": "Đã ký",
+    "statusExpired": "Hết hạn",
+    "statusRejected": "Từ chối"
+
   }
 }

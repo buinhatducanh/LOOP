@@ -261,22 +261,17 @@ function MegaDropdown({
               <span style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.15em", textTransform: "uppercase" }}>
                 {triggerLabel}
               </span>
-              <Link href={`/${locale}/services`} onClick={onSelect} style={{
-                color: DS.text5, fontSize: 11, textDecoration: "none",
+              <span style={{ color: DS.text5, fontSize: 11, textDecoration: "none",
                 display: "flex", alignItems: "center", gap: 4, fontFamily: DS.mono,
-                transition: "color 0.15s",
-              }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = DS.pink; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = DS.text5; }}
-              >
-                {t("viewAll")} <ArrowRight size={10} />
-              </Link>
+              }}>
+                {t("viewAll") || "Xem tất cả"}
+              </span>
             </div>
 
             {/* 2-col grid */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4, padding: "0 12px 12px" }}>
               {items.map((item, i) => (
-                <Link key={item.href} href={item.href} onClick={onSelect} style={{ textDecoration: "none" }}>
+                <Link key={item.label} href={item.href} onClick={onSelect} style={{ textDecoration: "none" }}>
                   <motion.div
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -477,9 +472,9 @@ export default function SiteHeader({ locale }: { locale: string }) {
         triggerLabel: t("servicesDropdown"),
         items: [
           { label: t("serviceWebsite"), href: `/${locale}/thiet-ke-website`, icon: "🌐", description: "Thiết kế & phát triển website chuyên nghiệp, tối ưu SEO, responsive trên mọi thiết bị.", color: DS.cosmicBlue },
-          { label: t("serviceApp"), href: `/${locale}/services?cat=app`, icon: "📱", description: "Xây dựng ứng dụng di động & phần mềm SaaS với trải nghiệm người dùng hiện đại.", color: DS.cosmicPurple },
-          { label: t("serviceDashboard"), href: `/${locale}/services?cat=dashboard`, icon: "📊", description: "Hệ thống dashboard quản trị, phân tích dữ liệu trực quan, báo cáo thông minh.", color: DS.cyan },
-          { label: t("serviceSeo"), href: `/${locale}/services?cat=seo`, icon: "🎯", description: "Tối ưu hóa công cụ tìm kiếm, Google & TikTok Ads, tăng trưởng bền vững.", color: DS.amber },
+          { label: t("serviceApp"), href: `/${locale}/dich-vu`, icon: "📱", description: "Xây dựng ứng dụng di động & phần mềm SaaS với trải nghiệm người dùng hiện đại.", color: DS.cosmicPurple },
+          { label: t("serviceDashboard"), href: `/${locale}/dich-vu`, icon: "📊", description: "Hệ thống dashboard quản trị, phân tích dữ liệu trực quan, báo cáo thông minh.", color: DS.cyan },
+          { label: t("serviceSeo"), href: `/${locale}/dich-vu`, icon: "🎯", description: "Tối ưu hóa công cụ tìm kiếm, Google & TikTok Ads, tăng trưởng bền vững.", color: DS.amber },
           { label: t("quayChupDropdown"), href: `/${locale}/media`, icon: "🎬", description: "Quay phim, chụp ảnh sản phẩm & quảng cáo thương mại chất lượng cao.", color: DS.rose },
         ],
       },

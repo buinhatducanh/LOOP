@@ -1502,10 +1502,10 @@ function ConfigureDoneDrawer({
 // ── Package Row ────────────────────────────────────────────────────────────────
 
 const WEB_TIERS = [
-  { level: 1, name: "Landing Page",       shortName: "Tier 1", color: "#6EB1A8" },
-  { level: 2, name: "Bán Hàng Cơ Bản",   shortName: "Tier 2", color: "#3B82F6" },
+  { level: 1, name: "Landing Page", shortName: "Tier 1", color: "#6EB1A8" },
+  { level: 2, name: "Bán Hàng Cơ Bản", shortName: "Tier 2", color: "#3B82F6" },
   { level: 3, name: "Quản Trị Doanh Nghiệp", shortName: "Tier 3", color: "#8B5CF6" },
-  { level: 4, name: "Theo Yêu Cầu",       shortName: "Tier 4", color: "#EC4899" },
+  { level: 4, name: "Theo Yêu Cầu", shortName: "Tier 4", color: "#EC4899" },
 ];
 
 function InlineField({
@@ -2208,8 +2208,8 @@ function CustomerWebsitesSection({
             >
               {f === "all" ? "Tất cả"
                 : f === "pending_config" ? "Chờ duyệt"
-                : f === "configured" ? "Đã cấu hình"
-                : "Đã bàn giao"}
+                  : f === "configured" ? "Đã cấu hình"
+                    : "Đã bàn giao"}
             </button>
           ))}
         </div>
@@ -2660,35 +2660,8 @@ function ServiceAttributeTab({ onToast }: { onToast: (message: string, type: "su
     zh: { name: "nameZh", category: "categoryZh" },
   };
 
-  const FormFields = ({ attr }: { attr?: ServiceAttr }) => {
-    const [form, setForm] = useState<Partial<ServiceAttr>>(() => ({
-      slug: attr?.slug ?? "",
-      nameVi: attr?.nameVi ?? "",
-      nameEn: attr?.nameEn ?? "",
-      nameJa: attr?.nameJa ?? "",
-      nameKo: attr?.nameKo ?? "",
-      nameZh: attr?.nameZh ?? "",
-      categoryVi: attr?.categoryVi ?? "",
-      categoryEn: attr?.categoryEn ?? "",
-      categoryJa: attr?.categoryJa ?? "",
-      categoryKo: attr?.categoryKo ?? "",
-      categoryZh: attr?.categoryZh ?? "",
-      description: attr?.description ?? "",
-      descriptionVi: attr?.descriptionVi ?? "",
-      icon: attr?.icon ?? "",
-      price: attr?.price ?? 0,
-      sortOrder: attr?.sortOrder ?? 0,
-      tier: attr?.tier ?? "basic",
-      xpPoints: attr?.xpPoints ?? 0,
-      serviceKey: attr?.serviceKey ?? "",
-      videoUrl: attr?.videoUrl ?? "",
-      isRequired: attr?.isRequired ?? false,
-      isActive: attr?.isActive ?? true,
-      includedInBase: attr?.includedInBase ?? false,
-      isUpgradeable: attr?.isUpgradeable ?? false,
-    }));
-
-    const set = (key: keyof ServiceAttr, val: unknown) => setForm(f => ({ ...f, [key]: val }));
+  const FormFields = ({ form, onChange }: { form: Partial<ServiceAttr>; onChange: (k: keyof ServiceAttr, v: unknown) => void }) => {
+    const set = onChange;
 
     const LocaleInput = ({ label, field }: { label: string; field: keyof ServiceAttr }) => (
       <div>
@@ -2843,6 +2816,7 @@ function ServiceAttributeTab({ onToast }: { onToast: (message: string, type: "su
         nameJa: formData.nameJa || null,
         nameKo: formData.nameKo || null,
         nameZh: formData.nameZh || null,
+        category: formData.category || formData.categoryVi,
         categoryVi: formData.categoryVi,
         categoryEn: formData.categoryEn || null,
         categoryJa: formData.categoryJa || null,
@@ -2871,10 +2845,10 @@ function ServiceAttributeTab({ onToast }: { onToast: (message: string, type: "su
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<ServiceAttr> }) => {
       const payload: Record<string, unknown> = { id };
-      (["slug","nameVi","nameEn","nameJa","nameKo","nameZh","categoryVi","categoryEn","categoryJa","categoryKo","categoryZh",
-        "description","descriptionVi","icon","price","sortOrder","tier","xpPoints","isRequired","isActive","includedInBase","isUpgradeable"] as const).forEach(k => {
-        if (data[k] !== undefined) payload[k] = data[k];
-      });
+      (["slug", "nameVi", "nameEn", "nameJa", "nameKo", "nameZh", "category", "categoryVi", "categoryEn", "categoryJa", "categoryKo", "categoryZh",
+        "description", "descriptionVi", "icon", "price", "sortOrder", "tier", "xpPoints", "isRequired", "isActive", "includedInBase", "isUpgradeable"] as const).forEach(k => {
+          if (data[k] !== undefined) payload[k] = data[k];
+        });
       if (data.serviceKey !== undefined) payload.serviceKey = data.serviceKey || null;
       if (data.videoUrl !== undefined) payload.videoUrl = data.videoUrl || null;
       return adminApi.put("/api/admin/pricing/features", payload);
@@ -2943,8 +2917,10 @@ function ServiceAttributeTab({ onToast }: { onToast: (message: string, type: "su
         <div style={{ display: "flex", gap: 4 }}>
           {(["all", "active", "inactive"] as const).map(f => (
             <button key={f} onClick={() => setFilterActive(f)}
-              style={{ padding: "6px 12px", borderRadius: 6, border: "none", cursor: "pointer", fontSize: 11, fontFamily: DS.mono, fontWeight: 600,
-                background: filterActive === f ? DS.pink : DS.bgCard, color: filterActive === f ? "#fff" : DS.text4 }}>
+              style={{
+                padding: "6px 12px", borderRadius: 6, border: "none", cursor: "pointer", fontSize: 11, fontFamily: DS.mono, fontWeight: 600,
+                background: filterActive === f ? DS.pink : DS.bgCard, color: filterActive === f ? "#fff" : DS.text4
+              }}>
               {f === "all" ? "Tất cả" : f === "active" ? "Active" : "Inactive"}
             </button>
           ))}
@@ -3071,7 +3047,7 @@ function ServiceAttributeTab({ onToast }: { onToast: (message: string, type: "su
       {showAdd && addForm !== null && (
         <SlideDrawer title="Thêm thuộc tính" onClose={() => { setShowAdd(false); setAddForm(null); }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            <FormFields />
+            <FormFields form={addForm!} onChange={(k, v) => setAddForm(f => ({ ...f, [k]: v }))} />
             <div style={{ display: "flex", gap: 8, paddingTop: 8, borderTop: `1px solid ${DS.border}` }}>
               <button onClick={() => { setShowAdd(false); setAddForm(null); }}
                 style={{ flex: 1, padding: "10px", background: DS.bgCard3, border: `1px solid ${DS.border}`, borderRadius: 8, color: DS.text3, cursor: "pointer", fontFamily: DS.mono, fontSize: 13 }}>
@@ -3096,7 +3072,7 @@ function ServiceAttributeTab({ onToast }: { onToast: (message: string, type: "su
       {editAttr && editForm !== null && (
         <SlideDrawer title={`Sửa: ${editAttr.nameVi}`} onClose={() => { setEditAttr(null); setEditForm(null); }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            <FormFields attr={editAttr} />
+            <FormFields form={editForm} onChange={(k, v) => setEditForm(f => ({ ...f, [k]: v }))} />
             <div style={{ display: "flex", gap: 8, paddingTop: 8, borderTop: `1px solid ${DS.border}` }}>
               <button onClick={() => { setEditAttr(null); setEditForm(null); }}
                 style={{ flex: 1, padding: "10px", background: DS.bgCard3, border: `1px solid ${DS.border}`, borderRadius: 8, color: DS.text3, cursor: "pointer", fontFamily: DS.mono, fontSize: 13 }}>
@@ -3367,8 +3343,8 @@ export default function WebPackagesPage() {
               flexShrink: 0,
             }}>
               <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke={DS.pink} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-                <polyline points="9 22 9 12 15 12 15 22"/>
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                <polyline points="9 22 9 12 15 12 15 22" />
               </svg>
             </div>
 
@@ -3739,7 +3715,7 @@ export default function WebPackagesPage() {
                 >
                   {f === "all" ? `TẤT CẢ (${allPackages.length})`
                     : f === "active" ? `ACTIVE (${activeCount})`
-                    : `ẨN (${allPackages.length - activeCount})`}
+                      : `ẨN (${allPackages.length - activeCount})`}
                 </button>
               ))}
               <span style={{ color: DS.text5, fontSize: 11, fontFamily: DS.mono, marginLeft: "auto" }}>

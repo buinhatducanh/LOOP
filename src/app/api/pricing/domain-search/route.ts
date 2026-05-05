@@ -11,6 +11,11 @@
  */
 import { NextResponse } from "next/server";
 import { ok, badRequest, handleError } from "@/lib/api";
+import { Resolver } from "dns/promises";
+
+// Configure a custom resolver for better reliability
+const resolver = new Resolver();
+resolver.setServers(["8.8.8.8", "1.1.1.1", "8.8.4.4"]);
 
 const DOMAIN_RE = /^[a-z0-9][a-z0-9-]{0,61}[a-z0-9]$|^[a-z0-9]$/i;
 const RESERVED_TLDS = new Set([".gov.vn", ".edu.vn", ".org.vn", ".mil.vn"]);
@@ -20,23 +25,25 @@ const BLOCKED_KEYWORDS = [
 ];
 
 async function checkDnsAvailable(domain: string): Promise<boolean> {
-  const dns = await import("dns/promises");
   try {
-    // Check ANY record to see if domain exists
-    await dns.resolve(domain).catch(async () => {
-      // If ANY fails, try A record as fallback
-      await dns.resolve4(domain);
-    });
-    // If it resolves, it's taken
-    return false;
-  } catch (err: any) {
-    // ENOTFOUND = NXDOMAIN = available
-    // ENODATA = domain exists but no records of requested type
-    if (err.code === "ENOTFOUND") {
-      return true;
-    }
-    // If ENODATA, it might be taken but just no A records (e.g. only NS)
-    // For availability check, ENOTFOUND is the most reliable "available" indicator
+    // Try NS and SOA in parallel for speed
+    const checks = await Promise.allSettled([
+      resolver.resolveNs(domain),
+      resolver.resolveSoa(domain),
+      resolver.resolve4(domain)
+    ]);
+
+    // If any check succeeded (fulfilled), the domain is TAKEN
+    const isTaken = checks.some(c => c.status === "fulfilled");
+    if (isTaken) return false;
+
+    // If all failed, check if they all failed with ENOTFOUND
+    const allNotFound = checks.every(c => c.status === "rejected" && (c as any).reason?.code === "ENOTFOUND");
+    
+    // If all are ENOTFOUND, it's available. Otherwise, assume it's taken (safety first)
+    return allNotFound;
+  } catch (err) {
+    // Safety fallback
     return false;
   }
 }

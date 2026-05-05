@@ -59,3 +59,32 @@ export async function PUT(
     return handleError(error);
   }
 }
+
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await requirePermission("quote-requests", "delete");
+    const { id } = await params;
+
+    const existing = await prisma.quoteRequest.findUnique({ where: { id } });
+    if (!existing) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
+    await prisma.quoteRequest.delete({ where: { id } });
+
+    await createAuditLog({
+      userId: session.userId,
+      action: "delete",
+      resource: "quote_requests",
+      resourceId: id,
+      oldValues: existing,
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    return handleError(error);
+  }
+}

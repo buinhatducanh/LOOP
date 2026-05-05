@@ -67,32 +67,68 @@ export async function POST(req: NextRequest) {
     const existing = await prisma.serviceAttribute.findUnique({ where: { slug } });
     if (existing) return badRequest("slug đã tồn tại");
 
-    const created = await prisma.serviceAttribute.create({
-      data: {
-        slug: slug.trim(),
-        name: nameVi.trim(),
-        nameVi: nameVi.trim(),
-        nameEn: nameEn?.trim() || null,
-        nameJa: nameJa?.trim() || null,
-        nameKo: nameKo?.trim() || null,
-        nameZh: nameZh?.trim() || null,
-        description: description?.trim() || null,
-        descriptionVi: descriptionVi?.trim() || null,
-        category: category.trim(),
-        categoryVi: categoryVi.trim(),
-        categoryEn: categoryEn?.trim() || null,
-        categoryJa: categoryJa?.trim() || null,
-        categoryKo: categoryKo?.trim() || null,
-        categoryZh: categoryZh?.trim() || null,
-        icon: icon?.trim() || null,
-        price: Number(price) || 0,
-        isRequired: Boolean(isRequired),
-        sortOrder: Number(sortOrder) || 0,
-        isActive: isActive !== undefined ? Boolean(isActive) : true,
-        tier: tier || "basic",
-        xpPoints: Number(xpPoints) || 0,
-        parentId: parentId || null,
-      },
+    const created = await prisma.$transaction(async (tx) => {
+      const attr = await tx.serviceAttribute.create({
+        data: {
+          slug: slug.trim(),
+          name: nameVi.trim(),
+          nameVi: nameVi.trim(),
+          nameEn: nameEn?.trim() || null,
+          nameJa: nameJa?.trim() || null,
+          nameKo: nameKo?.trim() || null,
+          nameZh: nameZh?.trim() || null,
+          description: description?.trim() || null,
+          descriptionVi: descriptionVi?.trim() || null,
+          category: category.trim(),
+          categoryVi: categoryVi.trim(),
+          categoryEn: categoryEn?.trim() || null,
+          categoryJa: categoryJa?.trim() || null,
+          categoryKo: categoryKo?.trim() || null,
+          categoryZh: categoryZh?.trim() || null,
+          icon: icon?.trim() || null,
+          price: Number(price) || 0,
+          isRequired: Boolean(isRequired),
+          sortOrder: Number(sortOrder) || 0,
+          isActive: isActive !== undefined ? Boolean(isActive) : true,
+          tier: tier || "basic",
+          xpPoints: Number(xpPoints) || 0,
+          parentId: parentId || null,
+          serviceKey: body.serviceKey || "web",
+        },
+      });
+
+      // SYNC: Create Feature in Matrix
+      // 1. Find or create group
+      const groupName = categoryVi.trim();
+      const groupSlug = category.trim().toLowerCase().replace(/[^a-z0-9-]/g, "-");
+      
+      let group = await tx.featureGroup.findFirst({
+        where: { groupName: { equals: groupName, mode: "insensitive" } }
+      });
+
+      if (!group) {
+        group = await tx.featureGroup.create({
+          data: {
+            groupName,
+            slug: groupSlug,
+            serviceKey: body.serviceKey || "web",
+            sortOrder: 99,
+          }
+        });
+      }
+
+      // 2. Create feature
+      await tx.feature.create({
+        data: {
+          groupId: group.id,
+          featureName: nameVi.trim(),
+          isActive: isActive !== undefined ? Boolean(isActive) : true,
+          category: groupName,
+          includedTiers: [], // Default to empty, admin will configure tiers later
+        }
+      });
+
+      return attr;
     });
 
     await createAuditLog({
@@ -120,33 +156,60 @@ export async function PUT(req: NextRequest) {
     const existing = await prisma.serviceAttribute.findUnique({ where: { id } });
     if (!existing) return badRequest("Không tìm thấy feature");
 
-    const updated = await prisma.serviceAttribute.update({
-      where: { id },
-      data: {
-        ...(data.slug !== undefined && { slug: String(data.slug).trim() }),
-        ...(data.name !== undefined && { name: String(data.name).trim() }),
-        ...(data.nameVi !== undefined && { nameVi: String(data.nameVi).trim() }),
-        ...(data.nameEn !== undefined && { nameEn: String(data.nameEn).trim() || null }),
-        ...(data.nameJa !== undefined && { nameJa: String(data.nameJa).trim() || null }),
-        ...(data.nameKo !== undefined && { nameKo: String(data.nameKo).trim() || null }),
-        ...(data.nameZh !== undefined && { nameZh: String(data.nameZh).trim() || null }),
-        ...(data.description !== undefined && { description: String(data.description).trim() || null }),
-        ...(data.descriptionVi !== undefined && { descriptionVi: String(data.descriptionVi).trim() || null }),
-        ...(data.category !== undefined && { category: String(data.category).trim() }),
-        ...(data.categoryVi !== undefined && { categoryVi: String(data.categoryVi).trim() }),
-        ...(data.categoryEn !== undefined && { categoryEn: String(data.categoryEn).trim() || null }),
-        ...(data.categoryJa !== undefined && { categoryJa: String(data.categoryJa).trim() || null }),
-        ...(data.categoryKo !== undefined && { categoryKo: String(data.categoryKo).trim() || null }),
-        ...(data.categoryZh !== undefined && { categoryZh: String(data.categoryZh).trim() || null }),
-        ...(data.icon !== undefined && { icon: String(data.icon).trim() || null }),
-        ...(data.price !== undefined && { price: Number(data.price) || 0 }),
-        ...(data.isRequired !== undefined && { isRequired: Boolean(data.isRequired) }),
-        ...(data.sortOrder !== undefined && { sortOrder: Number(data.sortOrder) || 0 }),
-        ...(data.isActive !== undefined && { isActive: Boolean(data.isActive) }),
-        ...(data.tier !== undefined && { tier: String(data.tier) }),
-        ...(data.xpPoints !== undefined && { xpPoints: Number(data.xpPoints) || 0 }),
-        ...(data.parentId !== undefined && { parentId: data.parentId ? String(data.parentId) : null }),
-      },
+    const updated = await prisma.$transaction(async (tx) => {
+      const u = await tx.serviceAttribute.update({
+        where: { id },
+        data: {
+          ...(data.slug !== undefined && { slug: String(data.slug).trim() }),
+          ...(data.name !== undefined && { name: String(data.name).trim() }),
+          ...(data.nameVi !== undefined && { nameVi: String(data.nameVi).trim() }),
+          ...(data.nameEn !== undefined && { nameEn: String(data.nameEn).trim() || null }),
+          ...(data.nameJa !== undefined && { nameJa: String(data.nameJa).trim() || null }),
+          ...(data.nameKo !== undefined && { nameKo: String(data.nameKo).trim() || null }),
+          ...(data.nameZh !== undefined && { nameZh: String(data.nameZh).trim() || null }),
+          ...(data.description !== undefined && { description: String(data.description).trim() || null }),
+          ...(data.descriptionVi !== undefined && { descriptionVi: String(data.descriptionVi).trim() || null }),
+          ...(data.category !== undefined && { category: String(data.category).trim() }),
+          ...(data.categoryVi !== undefined && { categoryVi: String(data.categoryVi).trim() }),
+          ...(data.categoryEn !== undefined && { categoryEn: String(data.categoryEn).trim() || null }),
+          ...(data.categoryJa !== undefined && { categoryJa: String(data.categoryJa).trim() || null }),
+          ...(data.categoryKo !== undefined && { categoryKo: String(data.categoryKo).trim() || null }),
+          ...(data.categoryZh !== undefined && { categoryZh: String(data.categoryZh).trim() || null }),
+          ...(data.icon !== undefined && { icon: String(data.icon).trim() || null }),
+          ...(data.price !== undefined && { price: Number(data.price) || 0 }),
+          ...(data.isRequired !== undefined && { isRequired: Boolean(data.isRequired) }),
+          ...(data.sortOrder !== undefined && { sortOrder: Number(data.sortOrder) || 0 }),
+          ...(data.isActive !== undefined && { isActive: Boolean(data.isActive) }),
+          ...(data.tier !== undefined && { tier: String(data.tier) }),
+          ...(data.xpPoints !== undefined && { xpPoints: Number(data.xpPoints) || 0 }),
+          ...(data.parentId !== undefined && { parentId: data.parentId ? String(data.parentId) : null }),
+        },
+      });
+
+      // SYNC: Update Feature (Comparison Matrix) if nameVi, name, or slug matches
+      const featuresToSync = await tx.feature.findMany({
+        where: {
+          OR: [
+            { featureName: { equals: data.nameVi || existing.nameVi, mode: "insensitive" } },
+            { featureName: { equals: data.name || existing.name, mode: "insensitive" } },
+            { featureName: { equals: data.slug || existing.slug, mode: "insensitive" } },
+          ],
+        },
+        select: { id: true },
+      });
+
+      if (featuresToSync.length > 0) {
+        await tx.feature.updateMany({
+          where: { id: { in: featuresToSync.map((f) => f.id) } },
+          data: {
+            isActive: data.isActive !== undefined ? Boolean(data.isActive) : existing.isActive,
+            ...(data.nameVi && { featureName: String(data.nameVi).trim() }),
+            ...(data.categoryVi && { category: String(data.categoryVi).trim() }),
+          },
+        });
+      }
+
+      return u;
     });
 
     await createAuditLog({

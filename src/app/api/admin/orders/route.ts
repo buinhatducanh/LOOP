@@ -27,6 +27,14 @@ export async function GET(req: NextRequest) {
         take: limit,
         include: {
           package: { select: { id: true, title: true } },
+          template: { select: { nameVi: true } },
+          infrastructureTier: { select: { nameVi: true, nameEn: true } },
+          selectedAttributes: {
+            include: {
+              attribute: { select: { nameVi: true, category: true } }
+            }
+          },
+
           figmaDemos: {
             orderBy: { createdAt: "desc" },
             take: 1,

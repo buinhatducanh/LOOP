@@ -9,9 +9,21 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+// Check if config is loaded correctly
+const isCloudinaryConfigured = !!(
+  process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME &&
+  process.env.CLOUDINARY_API_KEY &&
+  process.env.CLOUDINARY_API_SECRET
+);
+
 // Require authentication for upload
 export async function POST(req: NextRequest) {
   try {
+    if (!isCloudinaryConfigured) {
+      console.error("Cloudinary is not configured. Check your environment variables.");
+      return badRequest("Cấu hình Cloudinary bị thiếu trong file .env.local");
+    }
+
     const _authUser = await requireAuth(req);
 
     let fileUrlOrBase64 = "";
@@ -99,7 +111,9 @@ export async function POST(req: NextRequest) {
       console.error("Cloudinary upload error:", uploadError);
       throw new Error(`Cloudinary Error: ${uploadError.message || "Unknown error"}`);
     }
+
   } catch (error) {
+    console.error("Upload API Error:", error);
     return handleError(error);
   }
 }

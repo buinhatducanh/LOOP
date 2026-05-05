@@ -48,26 +48,54 @@ export async function PUT(
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    const attribute = await prisma.serviceAttribute.update({
-      where: { id },
-      data: {
-        slug: data.slug,
-        name: data.name,
-        nameVi: data.nameVi,
-        description: data.description ?? null,
-        descriptionVi: data.descriptionVi ?? null,
-        category: data.category,
-        categoryVi: data.categoryVi,
-        icon: data.icon ?? null,
-        price: Number(data.price) || 0,
-        isRequired: data.isRequired ?? false,
-        sortOrder: Number(data.sortOrder) || 0,
-        isActive: data.isActive ?? true,
-        tier: data.tier || "basic",
-        xpPoints: Number(data.xpPoints) || 0,
-        parentId: data.parentId || null,
-        isUpgradeable: data.isUpgradeable ?? false,
-      },
+    const attribute = await prisma.$transaction(async (tx) => {
+      const updated = await tx.serviceAttribute.update({
+        where: { id },
+        data: {
+          ...(data.slug !== undefined && { slug: data.slug }),
+          ...(data.name !== undefined && { name: data.name }),
+          ...(data.nameVi !== undefined && { nameVi: data.nameVi }),
+          ...(data.description !== undefined && { description: data.description }),
+          ...(data.descriptionVi !== undefined && { descriptionVi: data.descriptionVi }),
+          ...(data.category !== undefined && { category: data.category }),
+          ...(data.categoryVi !== undefined && { categoryVi: data.categoryVi }),
+          ...(data.icon !== undefined && { icon: data.icon }),
+          ...(data.price !== undefined && { price: Number(data.price) }),
+          ...(data.isRequired !== undefined && { isRequired: data.isRequired }),
+          ...(data.sortOrder !== undefined && { sortOrder: Number(data.sortOrder) }),
+          ...(data.isActive !== undefined && { isActive: data.isActive }),
+          ...(data.tier !== undefined && { tier: data.tier }),
+          ...(data.xpPoints !== undefined && { xpPoints: Number(data.xpPoints) }),
+          ...(data.parentId !== undefined && { parentId: data.parentId || null }),
+          ...(data.isUpgradeable !== undefined && { isUpgradeable: data.isUpgradeable }),
+        },
+      });
+
+      // SYNC: Update Feature (Comparison Matrix) if nameVi, name, or slug matches
+      const featuresToSync = await tx.feature.findMany({
+        where: {
+          OR: [
+            { featureName: { equals: data.nameVi || existing.nameVi, mode: "insensitive" } },
+            { featureName: { equals: data.name || existing.name, mode: "insensitive" } },
+            { featureName: { equals: data.slug || existing.slug, mode: "insensitive" } },
+          ],
+        },
+        select: { id: true },
+      });
+
+      if (featuresToSync.length > 0) {
+        await tx.feature.updateMany({
+          where: { id: { in: featuresToSync.map((f) => f.id) } },
+          data: {
+            isActive: data.isActive !== undefined ? data.isActive : existing.isActive,
+            // Only update name/category if they are explicitly provided in the request
+            ...(data.nameVi && { featureName: data.nameVi }),
+            ...(data.categoryVi && { category: data.categoryVi }),
+          },
+        });
+      }
+
+      return updated;
     });
 
     await createAuditLog({
@@ -81,6 +109,9 @@ export async function PUT(
 
     revalidatePath("/vi/services");
     revalidatePath("/en/services");
+    // Also revalidate website paths to show updated matrix immediately
+    revalidatePath("/vi/thiet-ke-website");
+    revalidatePath("/en/thiet-ke-website");
 
     return NextResponse.json({ data: attribute });
   } catch (error) {
@@ -101,7 +132,26 @@ export async function DELETE(
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    await prisma.serviceAttribute.delete({ where: { id } });
+    await prisma.$transaction(async (tx) => {
+      // SYNC: Delete from Feature (Matrix) if name match (case-insensitive)
+      const featuresToDelete = await tx.feature.findMany({
+        where: {
+          OR: [
+            { featureName: { equals: existing.nameVi, mode: "insensitive" } },
+            { featureName: { equals: existing.name, mode: "insensitive" } },
+          ],
+        },
+        select: { id: true },
+      });
+
+      if (featuresToDelete.length > 0) {
+        await tx.feature.deleteMany({
+          where: { id: { in: featuresToDelete.map((f) => f.id) } },
+        });
+      }
+
+      await tx.serviceAttribute.delete({ where: { id } });
+    });
 
     await createAuditLog({
       userId: session.userId,
@@ -113,6 +163,8 @@ export async function DELETE(
 
     revalidatePath("/vi/services");
     revalidatePath("/en/services");
+    revalidatePath("/vi/thiet-ke-website");
+    revalidatePath("/en/thiet-ke-website");
 
     return ok({ success: true });
   } catch (error) {

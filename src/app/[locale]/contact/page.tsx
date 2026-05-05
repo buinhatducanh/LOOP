@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+// Dummy comment to force rebuild
+
 import { notFound } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 import { getTranslations } from "next-intl/server";

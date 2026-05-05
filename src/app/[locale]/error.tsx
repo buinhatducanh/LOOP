@@ -22,32 +22,61 @@ export default function ErrorPage({ error, reset }: Props) {
   }, [error]);
 
   return (
-    <html lang={locale}>
-      <body style={{ fontFamily: "system-ui, sans-serif", padding: "2rem", textAlign: "center" }}>
-        <h1 style={{ fontSize: "2rem", marginBottom: "1rem" }}>Đã xảy ra lỗi</h1>
-        <p style={{ color: "#666", marginBottom: "1.5rem" }}>
-          Xin lỗi, đã có lỗi không mong muốn xảy ra.
-        </p>
-        {process.env.NODE_ENV === "development" && (
-          <pre style={{ textAlign: "left", background: "#f5f5f5", padding: "1rem", overflow: "auto", fontSize: "0.875rem" }}>
-            {error.message}
+    <div style={{ 
+      fontFamily: "system-ui, sans-serif", 
+      padding: "4rem 2rem", 
+      textAlign: "center",
+      minHeight: "60vh",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center"
+    }}>
+      <h1 style={{ fontSize: "2rem", marginBottom: "1rem", color: "white" }}>Đã xảy ra lỗi</h1>
+      <p style={{ color: "#94a3b8", marginBottom: "1.5rem", maxWidth: "400px" }}>
+        Xin lỗi, đã có lỗi không mong muốn xảy ra.
+      </p>
+      
+      {process.env.NODE_ENV === "development" && (
+        <div style={{ maxWidth: "100%", width: "600px", margin: "0 auto" }}>
+          <pre style={{ 
+            textAlign: "left", 
+            background: "rgba(255,255,255,0.05)", 
+            color: "#f87171",
+            padding: "1rem", 
+            overflow: "auto", 
+            fontSize: "0.875rem",
+            borderRadius: "8px",
+            border: "1px solid rgba(248,113,113,0.2)"
+          }}>
+            {error.message || "Unknown error"}
+            {error.stack && (
+              <div style={{ marginTop: "10px", fontSize: "0.75rem", opacity: 0.7, color: "#94a3b8" }}>
+                {error.stack}
+              </div>
+            )}
           </pre>
-        )}
-        <button
-          onClick={reset}
-          style={{
-            marginTop: "1.5rem",
-            padding: "0.5rem 1.5rem",
-            background: "#0070f3",
-            color: "white",
-            border: "none",
-            borderRadius: "4px",
-            cursor: "pointer",
-          }}
-        >
-          Thử lại
-        </button>
-      </body>
-    </html>
+        </div>
+      )}
+      
+      <button
+        onClick={reset}
+        style={{
+          marginTop: "2rem",
+          padding: "0.75rem 2rem",
+          background: "#3b82f6",
+          color: "white",
+          border: "none",
+          borderRadius: "12px",
+          cursor: "pointer",
+          fontWeight: "bold",
+          transition: "all 0.2s"
+        }}
+        onMouseOver={(e) => e.currentTarget.style.background = "#2563eb"}
+        onMouseOut={(e) => e.currentTarget.style.background = "#3b82f6"}
+      >
+        Thử lại
+      </button>
+    </div>
   );
 }

@@ -49,6 +49,8 @@
     "tests/e2e/**",
     "playwright.config.ts",
     "scripts/**",
-    "scratch/**"
+    "scratch/**",
+    "brain/**",
+    ".gemini/**"
   ]
 }

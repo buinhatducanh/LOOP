@@ -40,15 +40,15 @@ type FormData = {
   slug: string;
   name: string;
   nameVi: string;
-  monthlyPrice: number;
+  monthlyPrice: number | string;
   months: number;
-  discountPct: number;
+  discountPct: number | string;
   features: string;
   periodLabel: string;
   featuresVi: string;
   highlighted: boolean;
   color: string;
-  sortOrder: number;
+  sortOrder: number | string;
   isActive: boolean;
 };
 
@@ -59,6 +59,8 @@ const fmtVND = (n: number) =>
 
 // Unified period options: 6 months, 1 year, 2 years, 3 years
 const MONTHS_OPTIONS: Array<{ value: number; labelEn: string; labelVi: string }> = [
+  { value: 1,  labelEn: "1 month",  labelVi: "1 tháng" },
+  { value: 6,  labelEn: "6 months", labelVi: "6 tháng" },
   { value: 12, labelEn: "1 year",  labelVi: "1 năm" },
   { value: 24, labelEn: "2 years", labelVi: "2 năm" },
   { value: 36, labelEn: "3 years", labelVi: "3 năm" },
@@ -822,15 +824,16 @@ export default function HostingPlansPage() {
                   <div>
                     <label style={labelStyle}>Giá/tháng (VND)</label>
                     <input
-                      type="number"
+                      type="text"
                       style={inpStyle}
                       value={form.monthlyPrice}
-                      onChange={(e) =>
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/[^0-9-]/g, "");
                         setForm((f) => ({
                           ...f,
-                          monthlyPrice: Number(e.target.value),
-                        }))
-                      }
+                          monthlyPrice: val,
+                        }));
+                      }}
                     />
                   </div>
                   <div>
@@ -854,17 +857,16 @@ export default function HostingPlansPage() {
                   <div>
                     <label style={labelStyle}>Giảm giá (%)</label>
                     <input
-                      type="number"
-                      min={0}
-                      max={100}
+                      type="text"
                       style={inpStyle}
                       value={form.discountPct}
-                      onChange={(e) =>
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/[^0-9-]/g, "");
                         setForm((f) => ({
                           ...f,
-                          discountPct: Number(e.target.value),
-                        }))
-                      }
+                          discountPct: val,
+                        }));
+                      }}
                     />
                   </div>
                 </div>
@@ -981,15 +983,16 @@ export default function HostingPlansPage() {
                   <div>
                     <label style={labelStyle}>Thứ tự hiển thị</label>
                     <input
-                      type="number"
+                      type="text"
                       style={inpStyle}
                       value={form.sortOrder}
-                      onChange={(e) =>
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/[^0-9-]/g, "");
                         setForm((f) => ({
                           ...f,
-                          sortOrder: Number(e.target.value),
-                        }))
-                      }
+                          sortOrder: val,
+                        }));
+                      }}
                     />
                   </div>
                   <div>

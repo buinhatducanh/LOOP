@@ -34,3 +34,36 @@ export async function GET(req: NextRequest) {
     return handleError(error);
   }
 }
+
+export async function POST(req: NextRequest) {
+  try {
+    await requirePermission("pricing_features", "create");
+    const body = await req.json();
+
+    // Parse rich configuration if provided from admin form
+    const pricingBreakdown = body.configuration 
+      ? JSON.parse(body.configuration) 
+      : (body.pricingBreakdown || {});
+
+    const request = await prisma.quoteRequest.create({
+      data: {
+        customerName: body.customerName,
+        customerEmail: body.customerEmail,
+        customerPhone: body.customerPhone || null,
+        companyName: body.companyName || null,
+        totalAmount: Math.round(body.totalAmount),
+        selectedItems: body.selectedItems || [],
+        pricingBreakdown: pricingBreakdown,
+        source: body.source || "admin",
+        status: "new",
+        hostingPlanSlug: body.hostingPlanSlug || null,
+        domainName: body.domainName || null,
+        notes: body.notes || null,
+      },
+    });
+
+    return NextResponse.json({ data: request }, { status: 201 });
+  } catch (error) {
+    return handleError(error);
+  }
+}

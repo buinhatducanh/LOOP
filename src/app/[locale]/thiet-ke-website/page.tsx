@@ -7,7 +7,7 @@ import { getTranslations } from "next-intl/server";
 import { setRequestLocale } from "next-intl/server";
 import { routing } from "@/i18n/routing";
 import { Suspense } from "react";
-import { BookingWizardClient } from "@/components/landing/BookingWizardClient";
+import { BookingWizardPageClient } from "./BookingWizardPageClient";
 
 type Props = { params: Promise<{ locale: string }> };
 
@@ -59,9 +59,10 @@ export function generateStaticParams() {
 export default async function ThietKeWebsitePage({ params }: Props) {
   const { locale } = await params;
   setRequestLocale(locale);
+
   return (
     <Suspense fallback={<div style={{ minHeight: "100vh", background: "#020617" }} />}>
-      <BookingWizardClient locale={locale} />
+      <BookingWizardPageClient locale={locale} />
     </Suspense>
   );
 }

@@ -112,12 +112,13 @@ export async function approveQuoteAndCreateOrder(
         // P0-6: Set orderType = "custom" so CUSTOM_TRANSITIONS apply (was defaulting to "package")
         orderType: "custom",
         // Pricing
-        totalAmount: priceResult.finalPrice,
-        basePrice: priceResult.basePrice,
-        systemCalculatedPrice: priceResult.systemPrice,
-        finalPrice: priceResult.finalPrice,
+        // P1: Priority 1: pricingBreakdown (Wizard), Priority 2: quote.totalAmount (Signed value), Priority 3: recalculated price
+        totalAmount: (quote as any).pricingBreakdown?.total ?? quote.totalAmount ?? priceResult.finalPrice,
+        basePrice: (quote as any).pricingBreakdown?.package?.price ?? quote.totalAmount ?? priceResult.basePrice,
+        systemCalculatedPrice: (quote as any).pricingBreakdown?.subtotal ?? quote.totalAmount ?? priceResult.systemPrice,
+        finalPrice: (quote as any).pricingBreakdown?.total ?? quote.totalAmount ?? priceResult.finalPrice,
         // P0-6: Capture rewardLevel from pricing engine (was never saved to Order)
-        rewardLevel: priceResult.rewardLevel,
+        rewardLevel: (quote as any).pricingBreakdown ? 1 : priceResult.rewardLevel,
         // Infrastructure
         infrastructureTierId: priceResult.infraTier?.id ?? null,
         // LP allocation from quote (distribued when paid)
@@ -125,6 +126,9 @@ export async function approveQuoteAndCreateOrder(
         lpAllocation: lpAllocation,
         // Customer's LP spend from QuoteRequest (captured for audit trail)
         lpUsed: lpUsed,
+        // P1: Store full breakdown and source for rendering and tracking
+        pricingBreakdown: (quote as any).pricingBreakdown ?? null,
+        source: (quote as any).source ?? "fixed",
       },
     });
 

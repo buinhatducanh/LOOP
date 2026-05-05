@@ -42,11 +42,10 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
         ...(body.level !== undefined && { level: Number(body.level) }),
         ...(body.name !== undefined && { name: String(body.name).trim() }),
         ...(body.nameEn !== undefined && { nameEn: body.nameEn?.trim() || null }),
-        ...(body.nameVi !== undefined && { nameVi: body.nameVi?.trim() || null }),
         ...(body.shortDesc !== undefined && { shortDesc: body.shortDesc?.trim() || null }),
         ...(body.shortDescEn !== undefined && { shortDescEn: body.shortDescEn?.trim() || null }),
         ...(body.basePrice !== undefined && { basePrice: Number(body.basePrice) }),
-        ...(body.marketPrice !== undefined && { marketPrice: body.marketPrice ? Number(body.marketPrice) : null }),
+        ...(body.marketPrice !== undefined && { marketPrice: (body.marketPrice !== null && body.marketPrice !== "") ? Number(body.marketPrice) : null }),
         ...(body.lpReward !== undefined && { lpReward: Number(body.lpReward ?? 0) }),
         ...(body.sortOrder !== undefined && { sortOrder: Number(body.sortOrder) }),
         ...(body.isActive !== undefined && { isActive: Boolean(body.isActive) }),
@@ -62,7 +61,12 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
     });
 
     return ok(updated);
-  } catch (err) {
+  } catch (err: any) {
+    console.error("[PUT /api/admin/seo-tiers/[id]] Error:", err);
+    // Bắt lỗi trùng Level (Unique constraint của Prisma là P2002)
+    if (err.code === "P2002") {
+      return badRequest("Level này đã tồn tại trong hệ thống SEO. Vui lòng chọn Level khác.");
+    }
     return handleError(err);
   }
 }

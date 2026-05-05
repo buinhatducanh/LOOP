@@ -514,7 +514,7 @@ export async function GET(request: Request) {
       // SEO tiers (ServiceTier where serviceKey = "seo")
       prisma.serviceTier.findMany({
         where: { serviceKey: "seo", isActive: true },
-        orderBy: { level: "asc" },
+        orderBy: { sortOrder: "asc" },
       }),
 
       // SEO features (ServiceAttribute where serviceKey = "seo")

@@ -184,7 +184,7 @@ function ServicesSectionInner({ locale }: { locale: string }) {
               transition={{ delay: i * 0.1, duration: 0.5 }}
             >
               <Link
-                href={`/${locale}/services/${svc.slug}`}
+                href={`/${locale}/dich-vu`}
                 style={{ textDecoration: "none", display: "block", height: "100%" }}
               >
                 <motion.div

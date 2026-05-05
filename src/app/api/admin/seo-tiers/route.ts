@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
     const [tiers, total] = await Promise.all([
       prisma.serviceTier.findMany({
         where,
-        orderBy: { level: "asc" },
+        orderBy: { sortOrder: "asc" },
       }),
       prisma.serviceTier.count({ where }),
     ]);
@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
       basePrice, marketPrice, lpReward, sortOrder, isActive,
     } = body;
 
-    if (!level || !name || basePrice === undefined) {
+    if (level === undefined || !name || basePrice === undefined) {
       return badRequest("level, name, basePrice are required");
     }
 
@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
         nameEn: nameEn?.trim() || null,
         shortDesc: shortDesc?.trim() || null,
         basePrice: Number(basePrice),
-        marketPrice: marketPrice ? Number(marketPrice) : null,
+        marketPrice: (marketPrice !== undefined && marketPrice !== null && marketPrice !== "") ? Number(marketPrice) : null,
         lpReward: Number(lpReward ?? 0),
         sortOrder: Number(sortOrder ?? level),
         isActive: isActive !== undefined ? Boolean(isActive) : true,
@@ -70,7 +70,10 @@ export async function POST(req: NextRequest) {
     });
 
     return ok(tier, 201);
-  } catch (err) {
+  } catch (err: any) {
+    if (err.code === "P2002") {
+      return badRequest("Level này đã tồn tại trong hệ thống SEO. Vui lòng chọn Level khác.");
+    }
     return handleError(err);
   }
 }

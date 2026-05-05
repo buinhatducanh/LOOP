@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client"
+  provider = "prisma-client-js"
   output   = "../src/generated/prisma"
 }
 
@@ -13,15 +13,15 @@ model Role {
   displayName       String             @map("display_name")
   description       String?
   /// *
-  ///    * Colour for UI badges, e.g. "red", "indigo", "amber"
+  /// * Colour for UI badges, e.g. "red", "indigo", "amber"
   color             String             @default("slate") @map("color")
   level             Int                @default(0)
   isSystem          Boolean            @default(false) @map("is_system")
   createdAt         DateTime           @default(now()) @map("created_at")
   updatedAt         DateTime           @updatedAt @map("updated_at")
   permissions       Permission[]
-  users             UserRole[]
   userRoleApprovals UserRoleApproval[]
+  users             UserRole[]
 
   @@index([level])
   @@map("roles")
@@ -32,7 +32,7 @@ model Permission {
   resource    String
   action      String
   /// *
-  ///    * "all" | "own" | comma-separated IDs
+  /// * "all" | "own" | comma-separated IDs
   scope       String  @default("all")
   description String?
   roleId      String  @map("role_id")
@@ -154,7 +154,7 @@ model NotificationTemplate {
   /// Notification title — supports {{variable}} placeholders
   title     String
   /// Notification message body — supports {{variable}} placeholders
-  message   String   @db.Text
+  message   String
   /// Whether this template is active (admin can disable per locale)
   isActive  Boolean  @default(true) @map("is_active")
   createdAt DateTime @default(now()) @map("created_at")
@@ -189,32 +189,31 @@ model User {
   lastLogin            DateTime?          @map("last_login")
   /// Daily login streak for staff (resets to 1 if a day is missed)
   loginStreak          Int                @default(0) @map("login_streak")
-  /// 2FA TOTP
-  totpSecret           String?            @map("totp_secret")
-  totpEnabled          Boolean            @default(false) @map("totp_enabled")
-  /// Hashed backup codes (up to 8)
-  totpBackupCodes      String?            @map("totp_backup_codes")
   createdAt            DateTime           @default(now()) @map("created_at")
   updatedAt            DateTime           @updatedAt @map("updated_at")
   teamMemberId         String?            @unique @map("team_member_id")
+  /// Hashed backup codes (up to 8)
+  totpBackupCodes      String?            @map("totp_backup_codes")
+  totpEnabled          Boolean            @default(false) @map("totp_enabled")
+  /// 2FA TOTP
+  totpSecret           String?            @map("totp_secret")
   auditLogs            AuditLog[]
   eduInstructedCourses Course[]           @relation("CourseToInstructorUser")
   courseEnrollments    Enrollment[]       @relation("EnrollmentUser")
   instructorsAsUser    Instructor?        @relation("InstructorToUser")
-  loginHistory         LoginHistory[]
   loginAttempts        LoginAttempt[]
+  loginHistory         LoginHistory[]
+  memberRequests       MemberRequest[]    @relation("MemberRequestUser")
   notifications        Notification[]
+  otps                 OtpCode[]
+  reviews              ProjectReview[]
+  questParticipants    QuestParticipant[]
   refreshTokens        RefreshToken[]
   sessions             Session[]
+  supportTickets       SupportTicket[]
+  userRoleApprovals    UserRoleApproval[]
   userRoles            UserRole[]
   teamMember           TeamMember?        @relation(fields: [teamMemberId], references: [id])
-  questParticipants    QuestParticipant[]
-  memberRequests       MemberRequest[]    @relation("MemberRequestUser")
-  userRoleApprovals    UserRoleApproval[]
-  otps                 OtpCode[]
-
-  reviews        ProjectReview[]
-  supportTickets SupportTicket[]
 
   @@map("users")
 }
@@ -231,8 +230,8 @@ model OtpCode {
   used      Boolean  @default(false) @map("used")
   attempts  Int      @default(0)
   createdAt DateTime @default(now()) @map("created_at")
-  user      User?    @relation(fields: [userId], references: [id])
   userId    String?  @map("user_id")
+  user      User?    @relation(fields: [userId], references: [id])
 
   @@index([email, type])
   @@index([userId])
@@ -243,8 +242,6 @@ model Service {
   id                 String    @id @default(cuid())
   slug               String    @unique
   icon               String
-  /// Cloudinary publicId for icon — used for deletion when replaced
-  iconPublicId       String?   @map("icon_public_id")
   title              String
   shortDescription   String    @map("short_description")
   longDescription    String    @map("long_description")
@@ -277,32 +274,35 @@ model Service {
   technologiesJa     String[]  @map("technologies_ja")
   technologiesKo     String[]  @map("technologies_ko")
   technologiesZh     String[]  @map("technologies_zh")
+  /// Cloudinary publicId for icon — used for deletion when replaced
+  iconPublicId       String?   @map("icon_public_id")
   projects           Project[]
 
   @@map("services")
 }
 
 model ServiceTier {
-  id          String   @id @default(cuid())
-  serviceKey  String   @map("service_key")
-  level       Int      @map("tier_level")
-  name        String
-  nameEn      String?  @map("name_en")
-  nameJa      String?  @map("name_ja")
-  nameKo      String?  @map("name_ko")
-  nameZh      String?  @map("name_zh")
-  shortDesc   String?  @map("short_desc")
-  shortDescEn String?  @map("short_desc_en")
-  shortDescJa String?  @map("short_desc_ja")
-  shortDescKo String?  @map("short_desc_ko")
-  shortDescZh String?  @map("short_desc_zh")
-  basePrice   Int      @map("base_price")
-  marketPrice Int?     @map("market_price")
-  lpReward    Int      @default(50) @map("lp_reward")
-  sortOrder   Int      @default(0) @map("sort_order")
-  isActive    Boolean  @default(true) @map("is_active")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id            String         @id @default(cuid())
+  serviceKey    String         @map("service_key")
+  level         Int            @map("tier_level")
+  name          String
+  nameEn        String?        @map("name_en")
+  nameJa        String?        @map("name_ja")
+  nameKo        String?        @map("name_ko")
+  nameZh        String?        @map("name_zh")
+  shortDesc     String?        @map("short_desc")
+  shortDescEn   String?        @map("short_desc_en")
+  shortDescJa   String?        @map("short_desc_ja")
+  shortDescKo   String?        @map("short_desc_ko")
+  shortDescZh   String?        @map("short_desc_zh")
+  basePrice     Int            @map("base_price")
+  marketPrice   Int?           @map("market_price")
+  lpReward      Int            @default(50) @map("lp_reward")
+  sortOrder     Int            @default(0) @map("sort_order")
+  isActive      Boolean        @default(true) @map("is_active")
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+
 
   @@unique([serviceKey, level])
   @@index([serviceKey, isActive])
@@ -317,13 +317,11 @@ model Project {
   client               String
   year                 String
   image                String
-  imagePublicId        String?     @map("image_public_id")
   description          String
   techStack            String[]    @map("tech_stack")
   features             String[]
   results              String
   screenshots          String[]
-  screenshotsPublicIds String[]    @map("gallery_public_ids")
   isPublished          Boolean     @default(true) @map("is_published")
   sortOrder            Int         @default(0) @map("sort_order")
   createdAt            DateTime    @default(now()) @map("created_at")
@@ -350,23 +348,23 @@ model Project {
   featuresJa           String[]    @map("features_ja")
   featuresKo           String[]    @map("features_ko")
   featuresZh           String[]    @map("features_zh")
+  challenge            String?
+  clientQuote          String?     @map("client_quote")
+  clientRole           String?     @map("client_role")
+  duration             String?
+  galleryImages        String[]    @map("gallery_images")
+  industry             String?
+  isCaseStudy          Boolean     @default(false) @map("is_case_study")
+  primaryMetric        String?     @map("primary_metric")
+  projectScope         String?
+  roiMetric            String?     @map("roi_metric")
+  solution             String?
+  teamSize             Int?        @map("team_size")
+  videoUrl             String?     @map("video_url")
+  screenshotsPublicIds String[]    @map("gallery_public_ids")
+  imagePublicId        String?     @map("image_public_id")
   service              Service?    @relation(fields: [serviceId], references: [id])
   teamMember           TeamMember? @relation(fields: [teamMemberId], references: [id])
-
-  // Case study fields (P0 — 2026-04-11)
-  isCaseStudy   Boolean  @default(false) @map("is_case_study")
-  industry      String? // fintech | retail | manufacturing | healthcare | education | logistics | other
-  projectScope  String? // "MVP", "Full platform", "Migration", ...
-  teamSize      Int?     @map("team_size")
-  duration      String? // "3 tháng", "6 tuần", ...
-  challenge     String? // Business challenge
-  solution      String? // Methodology & approach
-  clientQuote   String?  @map("client_quote")
-  clientRole    String?  @map("client_role") // "CEO", "CTO", ...
-  roiMetric     String?  @map("roi_metric") // "300% ROI in 6 months"
-  primaryMetric String?  @map("primary_metric") // "conversion_rate_up_45%"
-  videoUrl      String?  @map("video_url")
-  galleryImages String[] @map("gallery_images")
 
   @@map("projects")
 }
@@ -434,65 +432,46 @@ model ContactMessage {
 }
 
 model TeamMember {
-  id                 String      @id @default(cuid())
-  slug               String      @unique
-  name               String
-  role               String
+  id                     String                 @id @default(cuid())
+  slug                   String                 @unique
+  name                   String
+  role                   String
   /// Department: engineering/design/media/marketing/sales/finance/hr/management
-  department         String      @default("engineering") @map("department")
-  departmentId       String?     @map("department_id")
-  departmentRelation Department? @relation(fields: [departmentId], references: [id])
-  tabPermissions     String[]    @default([]) @map("tab_permissions")
-  /// Chức danh — do HR/Admin nhập tay (VD: "Lập trình viên", "Senior Designer")
-  position           String?
+  department             String                 @default("engineering") @map("department")
   /// Access tags granted by CEO during onboarding
-  accessTags         String[]    @default([]) @map("access_tags")
+  accessTags             String[]               @default([]) @map("access_tags")
   /// Onboarding status: pending = waiting CEO approval, approved = active
-  requestStatus      String      @default("approved") @map("request_status")
-  bio                String?
-  shortBio           String?     @map("short_bio")
-  imagePublicId      String?     @map("image_public_id")
-  image              String?
-  achievements       String[]
-  linkedin           String?
-  twitter            String?
-  github             String?
-  sortOrder          Int         @default(0) @map("sort_order")
-  isActive           Boolean     @default(true) @map("is_active")
-  createdAt          DateTime    @default(now()) @map("created_at")
-  updatedAt          DateTime    @updatedAt @map("updated_at")
-  roleLevel          Int         @default(4) @map("role_level")
-  coverImagePublicId String?     @map("cover_image_public_id")
-  coverImage         String?     @map("cover_image")
-  quote              String?
-  email              String?     @unique
-  phone              String?
-  skills             String[]
-  experience         String?
-  social             Json?
-  isWorking          Boolean     @default(true) @map("is_working")
-  isFeatured         Boolean     @default(false) @map("is_featured")
-  birthDate          DateTime?   @map("birth_date")
-  address            String?     @map("address")
-  cccd               String?     @map("cccd")
-  contractStart      DateTime?   @map("contract_start")
-  joinedDate         DateTime?   @map("joined_date")
-  experienceFrom     Int?        @map("experience_from")
-  facebook           String?     @map("facebook")
-  tiktok             String?     @map("tiktok")
-
-  // Banking off-system info
-  bankName               String?                @map("bank_name")
-  bankAccount            String?                @map("bank_account")
-  bankAccountName        String?                @map("bank_account_name")
+  requestStatus          String                 @default("approved") @map("request_status")
+  bio                    String?
+  shortBio               String?                @map("short_bio")
+  image                  String?
+  achievements           String[]
+  linkedin               String?
+  twitter                String?
+  github                 String?
+  sortOrder              Int                    @default(0) @map("sort_order")
+  isActive               Boolean                @default(true) @map("is_active")
+  createdAt              DateTime               @default(now()) @map("created_at")
+  updatedAt              DateTime               @updatedAt @map("updated_at")
+  roleLevel              Int                    @default(4) @map("role_level")
+  coverImage             String?                @map("cover_image")
+  quote                  String?
+  email                  String?                @unique
+  phone                  String?
+  skills                 String[]
+  experience             String?
+  social                 Json?
+  isWorking              Boolean                @default(true) @map("is_working")
+  isFeatured             Boolean                @default(false) @map("is_featured")
+  birthDate              DateTime?              @map("birth_date")
+  address                String?                @map("address")
+  cccd                   String?                @map("cccd")
+  contractStart          DateTime?              @map("contract_start")
+  experienceFrom         Int?                   @map("experience_from")
+  facebook               String?                @map("facebook")
+  tiktok                 String?                @map("tiktok")
   currentXp              Int                    @default(0) @map("current_xp")
   level                  Int                    @default(1) @map("level")
-  /// Tổng LP commission đã nhận
-  totalSalesCommission   Int                    @default(0) @map("total_sales_commission")
-  /// LP commission đang chờ (chưa done)
-  pendingCommission      Int                    @default(0) @map("pending_commission")
-  /// LP commission đã nhận (done)
-  completedCommission    Int                    @default(0) @map("completed_commission")
   maxXp                  Int                    @default(100) @map("max_xp")
   rank                   String                 @default("iron") @map("rank")
   availableLp            Int                    @default(0) @map("available_lp")
@@ -513,6 +492,22 @@ model TeamMember {
   shortBioJa             String?                @map("short_bio_ja")
   shortBioKo             String?                @map("short_bio_ko")
   shortBioZh             String?                @map("short_bio_zh")
+  departmentId           String?                @map("department_id")
+  tabPermissions         String[]               @default([]) @map("tab_permissions")
+  /// LP commission đã nhận (done)
+  completedCommission    Int                    @default(0) @map("completed_commission")
+  /// LP commission đang chờ (chưa done)
+  pendingCommission      Int                    @default(0) @map("pending_commission")
+  /// Tổng LP commission đã nhận
+  totalSalesCommission   Int                    @default(0) @map("total_sales_commission")
+  coverImagePublicId     String?                @map("cover_image_public_id")
+  imagePublicId          String?                @map("image_public_id")
+  bankAccount            String?                @map("bank_account")
+  bankAccountName        String?                @map("bank_account_name")
+  bankName               String?                @map("bank_name")
+  joinedDate             DateTime?              @map("joined_date")
+  /// Chức danh — do HR/Admin nhập tay (VD: "Lập trình viên", "Senior Designer")
+  position               String?
   blogPostsAuthored      BlogPost[]
   bugNotesAuthored       BugNote[]              @relation("BugNoteAuthor")
   eduCourses             Course[]               @relation("CourseToInstructorMember")
@@ -527,19 +522,19 @@ model TeamMember {
   lpTransactionsCreated  LpTransaction[]        @relation("LpTransactionCreator")
   lpTransactions         LpTransaction[]
   mediaBookings          MediaBooking[]
-  memberExpertise        MemberExpertise[]
+  memberDepartments      MemberDepartment[]
   effectOverrides        MemberEffectOverride[] @relation("MemberEffectOverrides")
+  memberExpertise        MemberExpertise[]
+  offSystemSplits        OffSystemSplit[]
   projectMemberships     ProjectMember[]
   projects               Project[]
   referralCodes          ReferralCode[]
-  assignedTasks          Task[]                 @relation("TaskAssignee")
-  user                   User?
-  offSystemSplits        OffSystemSplit[]
-  /// Sales commission events (audit trail)
   salesCommissionEvents  SalesCommissionEvent[] @relation("SalesCommissionMember")
-  /// Multi-department: member co the tham gia nhieu phong ban cung luc
-  memberDepartments      MemberDepartment[]
-  mediaStoriesAuthored   MediaStory[]               @relation("MediaStoryAuthor")
+  mediaStoriesAuthored   MediaStory[]           @relation("MediaStoryAuthor")
+  assignedTasks          Task[]                 @relation("TaskAssignee")
+  departmentRelation     Department?            @relation(fields: [departmentId], references: [id])
+  user                   User?
+
 
   @@index([departmentId])
   @@index([isActive])
@@ -557,9 +552,9 @@ model Division {
   shortName   String
   color       String       @default("#3B82F6")
   description String?
-  sortOrder   Int          @default(0)
   createdAt   DateTime     @default(now()) @map("created_at")
   updatedAt   DateTime     @updatedAt @map("updated_at")
+  sortOrder   Int          @default(0)
   departments Department[]
 
   @@index([key])
@@ -567,22 +562,21 @@ model Division {
 }
 
 model Department {
-  id          String   @id @default(cuid())
-  key         String?  @unique
-  name        String?
-  shortName   String?
-  color       String?
-  description String?
-  mission     String?
-  sortOrder   Int      @default(0) @map("sort_order")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-
-  divisionId  String?   @map("division_id")
-  division    Division? @relation(fields: [divisionId], references: [id])
+  id                String             @id @default(cuid())
+  key               String?            @unique
+  name              String?
+  shortName         String?
+  color             String?
+  description       String?
+  mission           String?
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime           @updatedAt @map("updated_at")
+  divisionId        String?            @map("division_id")
+  sortOrder         Int                @default(0) @map("sort_order")
+  division          Division?          @relation(fields: [divisionId], references: [id])
   memberDepartments MemberDepartment[]
-  members           TeamMember[]
   quests            Quest[]
+  members           TeamMember[]
 
   @@index([divisionId])
   @@map("departments")
@@ -593,16 +587,16 @@ model Department {
 model MemberDepartment {
   id           String      @id @default(cuid())
   memberId     String      @map("member_id")
-  member       TeamMember  @relation(fields: [memberId], references: [id], onDelete: Cascade)
   departmentId String?     @map("department_id")
-  department   Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
-  /// Chức danh trong phòng ban này — do HR/Admin nhập
-  position     String?
-  /// Trưởng phòng = đúng 1 member có isDeptHead=true trong phòng
-  isDeptHead   Boolean     @default(false) @map("is_dept_head")
   /// Phòng ban này là primary (hiển thị chính)
   isPrimary    Boolean     @default(false) @map("is_primary")
   joinedAt     DateTime    @default(now()) @map("joined_at")
+  /// Trưởng phòng = đúng 1 member có isDeptHead=true trong phòng
+  isDeptHead   Boolean     @default(false) @map("is_dept_head")
+  /// Chức danh trong phòng ban này — do HR/Admin nhập
+  position     String?
+  department   Department? @relation(fields: [departmentId], references: [id])
+  member       TeamMember  @relation(fields: [memberId], references: [id], onDelete: Cascade)
 
   @@unique([memberId, departmentId])
   @@index([memberId])
@@ -675,21 +669,22 @@ model ServicePackage {
   serviceKey             String?        @map("service_key")
   /// Tier level: 1=Basic, 2=Business, 3=Experience — matches ServiceTier.level
   tierLevel              Int            @default(1) @map("tier_level")
-  videoUrl               String?        @map("video_url")
-  videoThumbnail         String?        @map("video_thumbnail")
-  showFeatureAcknowledge Boolean        @default(true) @map("show_feature_acknowledge")
   acknowledgmentItems    Json?          @map("acknowledgment_items")
-  /// Tagline hiển thị trên card gói (mô tả ngắn)
-  tagline                String?        @map("tagline")
+  showFeatureAcknowledge Boolean        @default(true) @map("show_feature_acknowledge")
+  videoThumbnail         String?        @map("video_thumbnail")
+  videoUrl               String?        @map("video_url")
   /// Màu chủ đạo của gói (hex)
   color                  String?        @map("color")
+  /// Đánh dấu gói phổ biến
+  isPopular              Boolean        @default(false) @map("is_popular")
+  /// Giá gốc (để tính % tiết kiệm hiển thị)
+  marketPrice            Int?           @map("market_price")
   /// Số trang mặc định
   pages                  String?        @map("pages")
   pagesVi                String?        @map("pages_vi")
-  /// Giá gốc (để tính % tiết kiệm hiển thị)
-  marketPrice            Int?           @map("market_price")
-  /// Đánh dấu gói phổ biến
-  isPopular              Boolean        @default(false) @map("is_popular")
+  /// Tagline hiển thị trên card gói (mô tả ngắn)
+  tagline                String?        @map("tagline")
+
   mediaBookings          MediaBooking[]
   orders                 Order[]
 
@@ -733,18 +728,32 @@ model Order {
   totalProjectLp        Int                    @default(0) @map("total_project_lp")
   salesLeadId           String?                @map("sales_lead_id")
   /// *
-  ///    * Referral code used to create this order
+  /// * Referral code used to create this order
   referralCodeId        String?                @map("referral_code_id")
   /// *
-  ///    * Infrastructure tier (Basic/Pro/Enterprise) applied to this order
+  /// * Infrastructure tier (Basic/Pro/Enterprise) applied to this order
   infrastructureTierId  String?                @map("infrastructure_tier_id")
+  /// Stores the full JSON breakdown from the BookingWizard (packages, hosting, seo, etc.)
+  pricingBreakdown      Json?                  @map("pricing_breakdown")
+  /// Detects if it's a fixed package or custom/advanced features
+  source                String?                @default("fixed")
   /// *
-  ///    * LP allocation from quote (% per role) — used to distribute LP when order is paid
+  /// * LP allocation from quote (% per role) — used to distribute LP when order is paid
   lpAllocation          Json?                  @map("lp_allocation")
   /// LP used by customer to offset totalAmount (captured from QuoteRequest)
   lpUsed                Int                    @default(0) @map("lp_used")
   /// LP reward to customer on order completion (manual entry by admin/PM)
   lpReward              Int                    @default(0) @map("lp_reward")
+  externalProjectId     String?                @unique @map("external_project_id")
+  /// Whether commission has been credited to salesRep
+  commissionPaid        Boolean                @default(false) @map("commission_paid")
+  /// When commission was credited
+  commissionPaidAt      DateTime?              @map("commission_paid_at")
+  /// LP earned from addons (5% addon commission)
+  salesAddonCommission  Int                    @default(0) @map("sales_addon_commission")
+  /// LP earned from main service (10% direct commission)
+  salesDirectCommission Int                    @default(0) @map("sales_direct_commission")
+  salesRepId            String?                @map("sales_rep_id")
   backlogs              Backlog[]
   blogPosts             BlogPost[]
   customerWebsites      CustomerWebsite[]
@@ -759,9 +768,12 @@ model Order {
   handoverPackages      HandoverPackage[]
   lpAwards              LpAward[]
   maintenanceContracts  MaintenanceContract[]
+  offSystemPayments     OffSystemPayment[]
   selectedAttributes    OrderAttribute[]
+  orderRevenueLines     OrderRevenueLine[]
   orderRewards          OrderReward[]
   statusHistory         OrderStatusHistory[]
+  externalProject       ExternalProject?       @relation("OrderExternalProject", fields: [externalProjectId], references: [id])
   infrastructureTier    InfrastructureTier?    @relation("OrderInfrastructure", fields: [infrastructureTierId], references: [id])
   package               ServicePackage?        @relation(fields: [packageId], references: [id])
   referralCode          ReferralCode?          @relation("ReferralCodeOrders", fields: [referralCodeId], references: [id])
@@ -770,27 +782,13 @@ model Order {
   payments              Payment[]
   projectMembers        ProjectMember[]
   portalTokens          ProjectPortalToken[]
+  reviews               ProjectReview[]
   quotes                Quote[]
+  salesCommissionEvents SalesCommissionEvent[] @relation("SalesCommissionOrder")
   slaRules              SlaRule[]
   socialPosts           SocialPost[]
-  offSystemPayments     OffSystemPayment[]
-  taskKanbans           TaskKanban[]
-  externalProject       ExternalProject?       @relation("OrderExternalProject", fields: [externalProjectId], references: [id])
-  externalProjectId     String?                @unique @map("external_project_id")
-  salesRepId            String?                @map("sales_rep_id")
-  /// LP earned from main service (10% direct commission)
-  salesDirectCommission Int                    @default(0) @map("sales_direct_commission")
-  /// LP earned from addons (5% addon commission)
-  salesAddonCommission  Int                    @default(0) @map("sales_addon_commission")
-  /// Whether commission has been credited to salesRep
-  commissionPaid        Boolean                @default(false) @map("commission_paid")
-  /// When commission was credited
-  commissionPaidAt      DateTime?              @map("commission_paid_at")
-  /// Sales commission events for this order
-  salesCommissionEvents SalesCommissionEvent[] @relation("SalesCommissionOrder")
-  reviews               ProjectReview[]
   supportTickets        SupportTicket[]
-  orderRevenueLines     OrderRevenueLine[]
+  taskKanbans           TaskKanban[]
 
   @@index([status, createdAt])
   @@index([orderType, status])
@@ -830,8 +828,8 @@ model SupportTicket {
   status      String   @default("open")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
+  order       Order?   @relation(fields: [orderId], references: [id])
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  order       Order?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
 
   @@index([userId])
   @@index([orderId])
@@ -889,8 +887,7 @@ model ExternalProject {
   createdBy     String    @map("created_by")
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
-
-  order Order? @relation("OrderExternalProject")
+  order         Order?    @relation("OrderExternalProject")
 
   @@index([type])
   @@index([status])
@@ -910,13 +907,13 @@ model InfrastructureTier {
   nameKo        String?  @map("name_ko")
   nameZh        String?  @map("name_zh")
   /// *
-  ///    * Monthly cost in VND for this tier. Used in pricing formula.
+  /// * Monthly cost in VND for this tier. Used in pricing formula.
   monthlyCost   Int      @map("monthly_cost")
   /// *
-  ///    * Setup fee in VND (one-time).
+  /// * Setup fee in VND (one-time).
   setupCost     Int      @default(0) @map("setup_cost")
   /// *
-  ///    * Description shown in the pricing calculator
+  /// * Description shown in the pricing calculator
   description   String?
   descriptionVi String?  @map("description_vi")
   descriptionEn String?  @map("description_en")
@@ -924,13 +921,13 @@ model InfrastructureTier {
   descriptionKo String?  @map("description_ko")
   descriptionZh String?  @map("description_zh")
   /// *
-  ///    * Icon name (lucide-react) for the UI
+  /// * Icon name (lucide-react) for the UI
   icon          String?
   /// *
-  ///    * Color for the UI badge
+  /// * Color for the UI badge
   color         String   @default("#6366F1")
   /// *
-  ///    * Display order in the calculator
+  /// * Display order in the calculator
   sortOrder     Int      @default(0) @map("sort_order")
   isActive      Boolean  @default(true) @map("is_active")
   createdAt     DateTime @default(now()) @map("created_at")
@@ -1007,9 +1004,9 @@ model TaskKanban {
   qaId        String?   @map("qa_id")
   envFileId   String?   @map("env_file_id")
   completedAt DateTime? @map("completed_at")
-  dueDate     DateTime? @map("due_date")
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
+  dueDate     DateTime? @map("due_date")
   order       Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@index([orderId, column])
@@ -1021,7 +1018,6 @@ model TaskKanban {
 model HomeSlider {
   id            String   @id @default(cuid())
   image         String
-  imagePublicId String?  @map("image_public_id")
   title         String?
   subtitle      String?
   link          String?
@@ -1037,6 +1033,7 @@ model HomeSlider {
   titleJa       String?  @map("title_ja")
   titleKo       String?  @map("title_ko")
   titleZh       String?  @map("title_zh")
+  imagePublicId String?  @map("image_public_id")
 
   @@map("home_sliders")
 }
@@ -1045,13 +1042,13 @@ model HomeVideo {
   id                String   @id @default(cuid())
   videoUrl          String
   thumbnail         String?
-  thumbnailPublicId String?  @map("thumbnail_public_id")
   title             String?
   description       String?
   isActive          Boolean  @default(true) @map("is_active")
   sortOrder         Int      @default(0) @map("sort_order")
   createdAt         DateTime @default(now()) @map("created_at")
   updatedAt         DateTime @updatedAt @map("updated_at")
+  thumbnailPublicId String?  @map("thumbnail_public_id")
 
   @@map("home_videos")
 }
@@ -1117,8 +1114,6 @@ model WebTemplate {
   descriptionVi        String?                @map("description_vi")
   category             String
   categoryVi           String                 @map("category_vi")
-  thumbnailPublicId    String?                @map("thumbnail_public_id")
-  screenshotsPublicIds String[]               @map("screenshots_public_ids")
   thumbnail            String
   screenshots          String[]
   demoUrl              String                 @map("demo_url")
@@ -1135,6 +1130,32 @@ model WebTemplate {
   level                Int                    @default(1)
   levelLabel           String?                @map("level_label")
   levelLabelVi         String?                @map("level_label_vi")
+  screenshotsPublicIds String[]               @map("screenshots_public_ids")
+  thumbnailPublicId    String?                @map("thumbnail_public_id")
+  badge                String?
+  badgeColor           String?                @map("badge_color")
+  badgeEn              String?                @map("badge_en")
+  badgeVi              String?                @map("badge_vi")
+  color                String?
+  descriptionEn        String?                @map("description_en")
+  features             String[]               @default([])
+  featuresEn           String[]               @default([]) @map("features_en")
+  featuresVi           String[]               @default([]) @map("features_vi")
+  gradFrom             String?                @map("grad_from")
+  gradTo               String?                @map("grad_to")
+  icon                 String?                @default("🌐")
+  lpReward             Int?                   @default(0) @map("lp_reward")
+  nameEn               String?                @map("name_en")
+  tagline              String?
+  taglineEn            String?                @map("tagline_en")
+  taglineVi            String?                @map("tagline_vi")
+  trialDays            Int?                   @default(0) @map("trial_days")
+  trialPrice           Int?                   @default(0) @map("trial_price")
+  activateTime         String?                @map("activate_time")
+  /// Default hosting plan ID associated with this template
+  defaultHostingId     String?                @map("default_hosting_id")
+  /// Default SEO package ID associated with this template
+  defaultSeoId         String?                @map("default_seo_id")
   orders               Order[]
   bundledAttributes    WebTemplateAttribute[]
 
@@ -1171,26 +1192,26 @@ model OrderAttribute {
 model ReferralCode {
   id         String             @id @default(cuid())
   /// *
-  ///    * Unique human-readable code, e.g. "THANGDEV", "LOOP-AI-2026"
+  /// * Unique human-readable code, e.g. "THANGDEV", "LOOP-AI-2026"
   code       String             @unique @map("code")
   /// *
-  ///    * Display name, e.g. "Thang Dev - 2026 Campaign"
+  /// * Display name, e.g. "Thang Dev - 2026 Campaign"
   name       String
   /// *
-  ///    * Staff member who earns LP when referrals convert
+  /// * Staff member who earns LP when referrals convert
   memberId   String             @map("member_id")
   /// *
-  ///    * Optional campaign label, e.g. "2026-Q1", "Summer Promo"
+  /// * Optional campaign label, e.g. "2026-Q1", "Summer Promo"
   campaign   String?
   /// *
-  ///    * VND revenue threshold for this tier. Referrer LP = floor(totalRevenue × tierRate).
+  /// * VND revenue threshold for this tier. Referrer LP = floor(totalRevenue × tierRate).
   minRevenue Int                @default(0) @map("min_revenue")
   maxRevenue Int?               @map("max_revenue")
   /// *
-  ///    * LP reward rate for this tier. Example: 0.10 = 10% of referral revenue in LP for referrer.
+  /// * LP reward rate for this tier. Example: 0.10 = 10% of referral revenue in LP for referrer.
   lpRate     Float              @default(0.05) @map("lp_rate")
   /// *
-  ///    * Number of uses / max uses (null = unlimited).
+  /// * Number of uses / max uses (null = unlimited).
   useCount   Int                @default(0) @map("use_count")
   maxUses    Int?               @map("max_uses")
   isActive   Boolean            @default(true) @map("is_active")
@@ -1212,35 +1233,35 @@ model ReferralTracking {
   id             String       @id @default(cuid())
   referralCodeId String       @map("referral_code_id")
   /// *
-  ///    * Event type: click | signup | lead | order
+  /// * Event type: click | signup | lead | order
   event          String
   /// *
-  ///    * The landing page URL that was visited
+  /// * The landing page URL that was visited
   landingUrl     String?      @map("landing_url")
   /// *
-  ///    * Visitor UTM parameters (stored as JSON)
+  /// * Visitor UTM parameters (stored as JSON)
   utmSource      String?      @map("utm_source")
   utmMedium      String?      @map("utm_medium")
   utmCampaign    String?      @map("utm_campaign")
   utmTerm        String?      @map("utm_term")
   utmContent     String?      @map("utm_content")
   /// *
-  ///    * Visitor IP (hashed for privacy)
+  /// * Visitor IP (hashed for privacy)
   ipHash         String?      @map("ip_hash")
   /// *
-  ///    * Visitor user-agent
+  /// * Visitor user-agent
   userAgent      String?      @map("user_agent")
   /// *
-  ///    * Attributed SalesLead ID (if event = lead or order)
+  /// * Attributed SalesLead ID (if event = lead or order)
   salesLeadId    String?      @map("sales_lead_id")
   /// *
-  ///    * Attributed Order ID (if event = order)
+  /// * Attributed Order ID (if event = order)
   orderId        String?      @map("order_id")
   /// *
-  ///    * Revenue in VND for order events
+  /// * Revenue in VND for order events
   revenue        Int          @default(0)
   /// *
-  ///    * LP awarded to referrer for this conversion
+  /// * LP awarded to referrer for this conversion
   lpAwarded      Int          @default(0) @map("lp_awarded")
   createdAt      DateTime     @default(now()) @map("created_at")
   referralCode   ReferralCode @relation(fields: [referralCodeId], references: [id])
@@ -1268,7 +1289,7 @@ model SalesLead {
   createdAt       DateTime      @default(now()) @map("created_at")
   updatedAt       DateTime      @updatedAt @map("updated_at")
   /// *
-  ///    * Referral code used to create this lead
+  /// * Referral code used to create this lead
   referralCodeId  String?       @map("referral_code_id")
   orders          Order[]
   quotes          Quote[]
@@ -1299,22 +1320,26 @@ model Quote {
   createdAt              DateTime            @default(now()) @map("created_at")
   updatedAt              DateTime            @updatedAt @map("updated_at")
   /// *
-  ///    * Infrastructure tier ID snapshot at time of quote
+  /// * Infrastructure tier ID snapshot at time of quote
   infrastructureTierId   String?             @map("infrastructure_tier_id")
   /// *
-  ///    * Infrastructure tier slug (e.g. "basic", "pro", "enterprise") for auto-pricing
+  /// * Infrastructure tier slug (e.g. "basic", "pro", "enterprise") for auto-pricing
   infrastructureTierSlug String?             @map("infrastructure_tier_slug")
   /// *
-  ///    * Selected advanced feature IDs for auto-pricing
+  /// * Selected advanced feature IDs for auto-pricing
   selectedFeatureIds     Json?               @default("[]") @map("selected_feature_ids")
   /// LP used by customer to offset totalAmount (copied from QuoteRequest at quote creation)
   lpUsed                 Int                 @default(0) @map("lp_used")
   /// Links this quote to the originating QuoteRequest (set when admin creates quote from a wizard submission)
   quoteRequestId         String?             @unique @map("quote_request_id")
+  /// Stores the full JSON breakdown from the BookingWizard (packages, hosting, seo, etc.)
+  pricingBreakdown       Json?               @map("pricing_breakdown")
+  /// Detects if it's a fixed package or custom/advanced features
+  source                 String?             @default("fixed")
   infrastructureTier     InfrastructureTier? @relation(fields: [infrastructureTierId], references: [id])
   order                  Order?              @relation(fields: [orderId], references: [id])
-  salesLead              SalesLead           @relation(fields: [salesLeadId], references: [id])
   quoteRequest           QuoteRequest?       @relation(fields: [quoteRequestId], references: [id])
+  salesLead              SalesLead           @relation(fields: [salesLeadId], references: [id])
 
   @@index([salesLeadId])
   @@index([orderId])
@@ -1325,40 +1350,40 @@ model Quote {
 }
 
 model FeatureGroup {
-  id        String    @id @default(cuid())
-  groupName String    @map("group_name")
-  slug      String    @unique
-  sortOrder Int       @default(0) @map("sort_order")
-  isActive  Boolean   @default(true) @map("is_active")
+  id         String    @id @default(cuid())
+  groupName  String    @map("group_name")
+  slug       String    @unique
+  sortOrder  Int       @default(0) @map("sort_order")
+  isActive   Boolean   @default(true) @map("is_active")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
   /// "web" | "seo" | ... — dùng để filter features theo service
-  serviceKey String?  @map("service_key")
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
-  features  Feature[]
+  serviceKey String?   @map("service_key")
+  features   Feature[]
 
   @@map("feature_groups")
 }
 
 model Feature {
-  id          String           @id @default(cuid())
-  groupId     String           @map("group_id")
-  featureName String           @map("feature_name")
-  description String?
-  logicLevel  String           @default("Medium") @map("logic_level")
-  isRequired  Boolean          @default(false) @map("is_required")
-  sortOrder   Int              @default(0) @map("sort_order")
-  isActive    Boolean          @default(true) @map("is_active")
+  id            String           @id @default(cuid())
+  groupId       String           @map("group_id")
+  featureName   String           @map("feature_name")
+  description   String?
+  logicLevel    String           @default("Medium") @map("logic_level")
+  isRequired    Boolean          @default(false) @map("is_required")
+  sortOrder     Int              @default(0) @map("sort_order")
+  isActive      Boolean          @default(true) @map("is_active")
+  createdAt     DateTime         @default(now()) @map("created_at")
+  updatedAt     DateTime         @updatedAt @map("updated_at")
   /// Danh mục hiển thị trên public page (VD: "Giao diện", "Tính năng cốt lõi")
-  category    String           @default("Khác") @map("category")
+  category      String           @default("Khác") @map("category")
   /// Giá extra phải trả thêm nếu tính năng không nằm trong gói (VNĐ)
-  extraPrice  Int              @default(0) @map("extra_price")
+  extraPrice    Int              @default(0) @map("extra_price")
   /// Các tier level bao gồm tính năng này (VD: [1,2,3,4] = tất cả gói)
   /// Chỉ dùng cho website feature matrix
-  includedTiers Json           @default("[]") @map("included_tiers")
-  createdAt   DateTime         @default(now()) @map("created_at")
-  updatedAt   DateTime         @updatedAt @map("updated_at")
-  variants    FeatureVariant[]
-  group       FeatureGroup     @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  includedTiers Json             @default("[]") @map("included_tiers")
+  variants      FeatureVariant[]
+  group         FeatureGroup     @relation(fields: [groupId], references: [id], onDelete: Cascade)
 
   @@unique([groupId, featureName])
   @@map("features")
@@ -1401,8 +1426,11 @@ model QuoteRequest {
   domainName         String?  @map("domain_name")
   /// Whether domain will be purchased now or deferred until handover
   domainPurchaseTime String?  @default("now") @map("domain_purchase_time")
-  /// Links to Quotes created from this request (reverse of Quote.quoteRequest)
-  quotes             Quote[]
+  /// Stores the full JSON breakdown from the BookingWizard (packages, hosting, seo, etc.)
+  pricingBreakdown   Json?    @map("pricing_breakdown")
+  /// Detects if it's a fixed package or custom/advanced features
+  source             String?  @default("fixed")
+  quotes             Quote?
 
   @@map("quote_requests")
 }
@@ -1424,11 +1452,11 @@ model PricingWebPackage {
   color           String            @default("#3B82F6")
   pages           String
   pagesVi         String            @map("pages_vi")
-  templateRepoUrl String?           @map("template_repo_url")
   sortOrder       Int               @default(0) @map("sort_order")
   isActive        Boolean           @default(true) @map("is_active")
   createdAt       DateTime          @default(now()) @map("created_at")
   updatedAt       DateTime          @updatedAt @map("updated_at")
+  templateRepoUrl String?           @map("template_repo_url")
   websites        CustomerWebsite[]
 
   @@map("pricing_web_packages")
@@ -1462,32 +1490,35 @@ model PricingComparisonFeature {
 }
 
 model PricingHostingPlan {
-  id           String            @id @default(cuid())
-  slug         String            @unique
-  name         String
-  nameVi       String            @map("name_vi")
-  /// Base monthly price (used to compute period-prorated prices).
-  monthlyPrice Int               @map("monthly_price")
+  id            String            @id @default(cuid())
+  slug          String            @unique
+  name          String
+  nameVi        String            @map("name_vi")
   /// Human-readable period label, e.g. "1 năm", "2 năm".
-  period       String
-  periodVi     String            @map("period_vi")
+  period        String
+  periodVi      String            @map("period_vi")
+  features      String[]
+  featuresVi    String[]          @map("features_vi")
+  highlighted   Boolean           @default(false)
+  color         String            @default("#3B82F6")
+  sortOrder     Int               @default(0) @map("sort_order")
+  isActive      Boolean           @default(true) @map("is_active")
+  createdAt     DateTime          @default(now()) @map("created_at")
+  updatedAt     DateTime          @updatedAt @map("updated_at")
+  /// Base monthly price (used to compute period-prorated prices).
+  monthlyPrice  Int               @map("monthly_price")
   /// Number of months this plan is billed for (e.g. 6, 12, 24).
-  months       Int               @default(12)
+  months        Int               @default(12)
   /// Discount % applied when purchasing this plan upfront.
   /// E.g. 10 = 10% off the sum of monthlyPrice × months.
-  discountPct  Float             @default(0) @map("discount_pct")
-  features     String[]
-  featuresVi   String[]          @map("features_vi")
-  highlighted  Boolean           @default(false)
-  color        String            @default("#3B82F6")
-  sortOrder    Int               @default(0) @map("sort_order")
-  isActive     Boolean           @default(true) @map("is_active")
-  createdAt    DateTime          @default(now()) @map("created_at")
-  updatedAt    DateTime          @updatedAt @map("updated_at")
-  websites     CustomerWebsite[] @relation("HostingPlanWebsite")
+  discountPct   Float             @default(0) @map("discount_pct")
+
+  websites      CustomerWebsite[] @relation("HostingPlanWebsite")
 
   @@map("pricing_hosting_plans")
 }
+
+
 
 model PricingDomainPrice {
   id                String  @id @default(cuid())
@@ -1549,7 +1580,7 @@ model AddonService {
   createdAt       DateTime         @default(now()) @map("created_at")
   updatedAt       DateTime         @updatedAt @map("updated_at")
   /// *
-  ///    * LP cost for staff redemption. Null = not redeemable with LP.
+  /// * LP cost for staff redemption. Null = not redeemable with LP.
   lpCost          Int?             @map("lp_cost")
   redemptions     LpRedemption[]
   orderRewards    OrderReward[]
@@ -1690,8 +1721,6 @@ model CustomerWebsite {
   configStatus      String              @default("pending_config") @map("config_status")
   isMonitored       Boolean             @default(true) @map("is_monitored")
   deployedAt        DateTime?           @map("deployed_at")
-  vercelProjectId   String?             @map("vercel_project_id")
-  vercelProjectUrl  String?             @map("vercel_project_url")
   deployedUrl       String?             @map("deployed_url")
   expiresAt         DateTime?           @map("expires_at")
   createdAt         DateTime            @default(now()) @map("created_at")
@@ -1701,6 +1730,8 @@ model CustomerWebsite {
   ekycIdNumber      String?             @map("ekyc_id_number")
   ekycDob           String?             @map("ekyc_dob")
   ekycAddress       String?             @map("ekyc_address")
+  vercelProjectId   String?             @map("vercel_project_id")
+  vercelProjectUrl  String?             @map("vercel_project_url")
   /// Domain purchase fields
   registeredAt      DateTime?           @map("registered_at")
   domainTermMonths  Int?                @map("domain_term_months")
@@ -1710,11 +1741,11 @@ model CustomerWebsite {
   domainExpiresAt   DateTime?           @map("domain_expires_at")
   /// Hosting purchase fields
   hostingPlanId     String?             @map("hosting_plan_id")
-  hostingPlan       PricingHostingPlan? @relation("HostingPlanWebsite", fields: [hostingPlanId], references: [id])
   hostingTermMonths Int?                @map("hosting_term_months")
   hostingCost       Float?              @map("hosting_cost")
   autoRenewHosting  Boolean             @default(false) @map("auto_renew_hosting")
   hostingExpiresAt  DateTime?           @map("hosting_expires_at")
+  hostingPlan       PricingHostingPlan? @relation("HostingPlanWebsite", fields: [hostingPlanId], references: [id])
   order             Order?              @relation(fields: [orderId], references: [id])
   package           PricingWebPackage?  @relation(fields: [packageId], references: [id])
   pageViews         WebsitePageView[]
@@ -1766,12 +1797,10 @@ model WebsitePageView {
   @@map("website_page_views")
 }
 
-// About page sections — admin can CRUD each section
 model AboutSection {
   id              String   @id @default(cuid())
-  sectionType     String // "hero" | "stats" | "story" | "timeline" | "values" | "team_preview" | "cta"
+  sectionType     String
   locale          String   @default("vi") @map("locale")
-  // Hero
   badge           String?
   title           String?
   titleHighlight  String?  @map("title_highlight")
@@ -1781,20 +1810,13 @@ model AboutSection {
   ctaLink         String?  @map("cta_link")
   cta2Text        String?  @map("cta_2_text")
   cta2Link        String?  @map("cta_2_link")
-  // Stats — JSON array of {value, label, icon, color}
   stats           Json?
-  // Story paragraphs — JSON array of strings
   story           Json?
-  // Timeline — JSON array of {year, title, description}
   timeline        Json?
-  // Values — JSON array of {icon, title, description, color}
   values          Json?
-  // Team preview — JSON array of {name, role, department, avatar, deptColor}
   teamPreview     Json?    @map("team_preview")
-  // CTA section
   ctaSectionTitle String?  @map("cta_section_title")
   ctaSectionSub   String?  @map("cta_section_sub")
-  // General
   isActive        Boolean  @default(true) @map("is_active")
   sortOrder       Int      @default(0) @map("sort_order")
   createdAt       DateTime @default(now()) @map("created_at")
@@ -1826,17 +1848,15 @@ model CustomerPoint {
   @@map("customer_points")
 }
 
-// ─── Client VIP Status ─────────────────────────────────────────────────────────
-
 /// Tracks VIP tier for each customer based on spending + VIP points.
 /// Tier auto-promotes (never demotes) when conditions are met.
 model ClientVipStatus {
   id            String   @id @default(cuid())
   userId        String?  @unique @map("user_id")
   userEmail     String   @unique @map("user_email")
-  tier          String   @default("regular") // regular | vip1 | vip2 | vip3
-  totalSpending Float    @default(0) // VNĐ — sum of Order.paidAmount (paid orders)
-  vipPoints     Int      @default(0) // accumulated from client quests
+  tier          String   @default("regular")
+  totalSpending Float    @default(0)
+  vipPoints     Int      @default(0)
   updatedAt     DateTime @updatedAt @map("updated_at")
 
   @@map("client_vip_status")
@@ -1892,7 +1912,6 @@ model Advertisement {
   description       String?
   descriptionVi     String?  @map("description_vi")
   videoUrl          String   @map("video_url")
-  thumbnailPublicId String?  @map("thumbnail_public_id")
   thumbnailUrl      String?  @map("thumbnail_url")
   duration          Int
   points            Int      @default(10)
@@ -1905,6 +1924,7 @@ model Advertisement {
   requiresPurchase  Boolean  @default(false) @map("requires_purchase")
   createdAt         DateTime @default(now()) @map("created_at")
   updatedAt         DateTime @updatedAt @map("updated_at")
+  thumbnailPublicId String?  @map("thumbnail_public_id")
 
   @@map("advertisements")
 }
@@ -2147,29 +2167,26 @@ model LpAward {
 
 /// Sales LP commission events — audit trail for sales commission credits.
 model SalesCommissionEvent {
-  id            String   @id @default(cuid())
+  id            String      @id @default(cuid())
   /// TeamMember.id — nhân viên nhận commission
-  salesRepId    String   @map("sales_rep_id")
+  salesRepId    String      @map("sales_rep_id")
   /// Loại nguồn: "order" | "enrollment" | "media_booking"
-  referenceType String   @map("reference_type")
+  referenceType String      @map("reference_type")
   /// Order.id / Enrollment.id / ...
-  referenceId   String   @map("reference_id")
+  referenceId   String      @map("reference_id")
   /// LP từ dịch vụ chính (10%)
-  directLp      Int      @default(0) @map("direct_lp")
+  directLp      Int         @default(0) @map("direct_lp")
   /// LP từ addon (5%)
-  addonLp       Int      @default(0) @map("addon_lp")
+  addonLp       Int         @default(0) @map("addon_lp")
   /// Tổng LP đã credited
-  totalLp       Int      @map("total_lp")
+  totalLp       Int         @map("total_lp")
   /// Thời điểm credited
-  paidAt        DateTime @default(now()) @map("paid_at")
-
-  salesRep     TeamMember  @relation("SalesCommissionMember", fields: [salesRepId], references: [id])
-  /// Back-ref to Order (nullable)
-  order        Order?      @relation("SalesCommissionOrder", fields: [orderId], references: [id])
-  orderId      String?     @map("order_id")
-  /// Back-ref to Enrollment (nullable)
-  enrollment   Enrollment? @relation("SalesCommissionEnrollment", fields: [enrollmentId], references: [id])
-  enrollmentId String?     @map("enrollment_id")
+  paidAt        DateTime    @default(now()) @map("paid_at")
+  orderId       String?     @map("order_id")
+  enrollmentId  String?     @map("enrollment_id")
+  enrollment    Enrollment? @relation("SalesCommissionEnrollment", fields: [enrollmentId], references: [id])
+  order         Order?      @relation("SalesCommissionOrder", fields: [orderId], references: [id])
+  salesRep      TeamMember  @relation("SalesCommissionMember", fields: [salesRepId], references: [id])
 
   @@index([salesRepId])
   @@index([orderId])
@@ -2245,7 +2262,6 @@ model BlogPost {
   slug               String
   content            String?
   authorId           String        @map("author_id")
-  coverImagePublicId String?       @map("cover_image_public_id")
   status             String        @default("draft") @map("status")
   seoTitle           String?       @map("seo_title")
   seoDesc            String?       @map("seo_desc")
@@ -2277,15 +2293,16 @@ model BlogPost {
   titleJa            String?       @map("title_ja")
   titleKo            String?       @map("title_ko")
   titleZh            String?       @map("title_zh")
-  /// YouTube / Vimeo embed URL for video posts
-  videoUrl           String?       @map("video_url")
-  /// Canonical URL for duplicate content (SEO)
-  canonicalUrl       String?       @map("canonical_url")
   /// External links cited in the article (JSON: [{url, label}])
   backlinks          String?       @map("backlinks")
+  /// Canonical URL for duplicate content (SEO)
+  canonicalUrl       String?       @map("canonical_url")
+  /// YouTube / Vimeo embed URL for video posts
+  videoUrl           String?       @map("video_url")
+  coverImagePublicId String?       @map("cover_image_public_id")
+  tags               BlogPostTag[]
   author             TeamMember    @relation(fields: [authorId], references: [id])
   project            Order         @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  tags               BlogPostTag[]
 
   @@unique([projectId, slug])
   @@index([projectId])
@@ -2298,17 +2315,17 @@ model BlogPost {
 /// Tag phân loại bài viết blog (VD: "SEO", "Web Design", "Marketing")
 model BlogTag {
   id        String        @id @default(cuid())
-  key       String        @unique @map("tag_key") // "seo", "web-design", "marketing"
-  name      String // "SEO"
+  key       String        @unique @map("tag_key")
+  name      String
   nameEn    String?       @map("name_en")
   nameJa    String?       @map("name_ja")
   nameKo    String?       @map("name_ko")
   nameZh    String?       @map("name_zh")
-  color     String        @default("#3B82F6") // màu hiển thị
+  color     String        @default("#3B82F6")
   sortOrder Int           @default(0) @map("sort_order")
-  posts     BlogPostTag[]
   createdAt DateTime      @default(now()) @map("created_at")
   updatedAt DateTime      @updatedAt @map("updated_at")
+  posts     BlogPostTag[]
 
   @@map("blog_tags")
 }
@@ -2318,9 +2335,9 @@ model BlogPostTag {
   id         String   @id @default(cuid())
   blogPostId String   @map("blog_post_id")
   tagId      String   @map("tag_id")
+  createdAt  DateTime @default(now()) @map("created_at")
   blogPost   BlogPost @relation(fields: [blogPostId], references: [id], onDelete: Cascade)
   tag        BlogTag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
-  createdAt  DateTime @default(now()) @map("created_at")
 
   @@unique([blogPostId, tagId])
   @@index([tagId])
@@ -2529,9 +2546,9 @@ model Course {
   status             String       @default("draft")
   createdAt          DateTime     @default(now()) @map("created_at")
   updatedAt          DateTime     @updatedAt @map("updated_at")
-  price              Int          @default(0)
   thumbnail          String?      @map("thumbnail")
   thumbnailPublicId  String?      @map("thumbnail_public_id")
+  price              Int          @default(0)
   instructor         Instructor   @relation(fields: [instructorId], references: [id], onDelete: Cascade)
   instructorMember   TeamMember?  @relation("CourseToInstructorMember", fields: [instructorMemberId], references: [id])
   instructorUser     User?        @relation("CourseToInstructorUser", fields: [instructorUserId], references: [id])
@@ -2563,10 +2580,10 @@ model Lesson {
   updatedAt       DateTime          @updatedAt @map("updated_at")
   attendances     Attendance[]
   feedbacks       Feedback[]
+  comments        LessonComment[]
+  exercises       LessonExercise[]
   course          Course            @relation(fields: [courseId], references: [id], onDelete: Cascade)
   progresses      StudentProgress[]
-  exercises       LessonExercise[]
-  comments        LessonComment[]
 
   @@index([courseId, orderIndex])
   @@map("lessons")
@@ -2586,20 +2603,19 @@ model Enrollment {
   progressPercent       Int                    @default(0) @map("progress_percent")
   createdAt             DateTime               @default(now()) @map("created_at")
   updatedAt             DateTime               @updatedAt @map("updated_at")
+  /// Whether academy commission has been credited
+  commissionPaid        Boolean                @default(false) @map("commission_paid")
+  /// When commission was credited
+  commissionPaidAt      DateTime?              @map("commission_paid_at")
+  salesRepId            String?                @map("sales_rep_id")
   attendances           Attendance[]
   payments              EduPayment[]
   course                Course                 @relation(fields: [courseId], references: [id], onDelete: Cascade)
   member                TeamMember?            @relation("EnrollmentTeamMember", fields: [memberId], references: [id])
   user                  User?                  @relation("EnrollmentUser", fields: [userId], references: [id])
   feedbacks             Feedback[]
-  progresses            StudentProgress[]
-  salesRepId            String?                @map("sales_rep_id")
-  /// Whether academy commission has been credited
-  commissionPaid        Boolean                @default(false) @map("commission_paid")
-  /// When commission was credited
-  commissionPaidAt      DateTime?              @map("commission_paid_at")
-  /// Sales commission events for this enrollment
   salesCommissionEvents SalesCommissionEvent[] @relation("SalesCommissionEnrollment")
+  progresses            StudentProgress[]
 
   @@index([courseId])
   @@index([userId])
@@ -2728,7 +2744,7 @@ model LpRedemption {
   addonId    String       @map("addon_id")
   lpCost     Int
   /// *
-  ///    * For recurring items: expiry date; for one-time, null
+  /// * For recurring items: expiry date; for one-time, null
   expiresAt  DateTime?    @map("expires_at")
   status     String       @default("active")
   redeemedAt DateTime?    @map("redeemed_at")
@@ -2751,28 +2767,28 @@ model LpTransaction {
   id             String      @id @default(cuid())
   memberId       String      @map("member_id")
   /// *
-  ///    * Amount in absolute LP. Positive = credit, negative = debit.
+  /// * Amount in absolute LP. Positive = credit, negative = debit.
   amount         Int
   /// *
-  ///    * Running balance after this transaction (for audit / consistency).
+  /// * Running balance after this transaction (for audit / consistency).
   balanceAfter   Int         @default(0) @map("balance_after")
   /// *
-  ///    * Transaction type drives UI label + validation rules.
+  /// * Transaction type drives UI label + validation rules.
   type           String
   status         String      @default("completed")
   /// *
-  ///    * human-readable description
+  /// * human-readable description
   description    String?
   source         String      @default("manual")
   /// *
-  ///    * ID of the originating record (LpAward.id, LpTransaction.id for transfer, etc.)
+  /// * ID of the originating record (LpAward.id, LpTransaction.id for transfer, etc.)
   referenceId    String?     @map("reference_id")
   referenceType  String?     @map("reference_type")
   /// *
-  ///    * For transfers: counterparty member
+  /// * For transfers: counterparty member
   counterpartyId String?     @map("counterparty_id")
   /// *
-  ///    * Fee charged on this transaction (e.g. transfer fee)
+  /// * Fee charged on this transaction (e.g. transfer fee)
   fee            Int         @default(0)
   createdBy      String?     @map("created_by")
   createdAt      DateTime    @default(now()) @map("created_at")
@@ -2789,12 +2805,12 @@ model LpTransaction {
 }
 
 /// *
-///  * Tracks media booking lifecycle from customer request to final delivery.
-///  * Status flow: pending → confirmed → in_progress → delivered → approved | rejected
-///  * - customer requests media service
-///  * - admin confirms booking + assigns media staff
-///  * - media team delivers assets
-///  * - customer reviews + approves or requests revision
+/// * Tracks media booking lifecycle from customer request to final delivery.
+/// * Status flow: pending → confirmed → in_progress → delivered → approved | rejected
+/// * - customer requests media service
+/// * - admin confirms booking + assigns media staff
+/// * - media team delivers assets
+/// * - customer reviews + approves or requests revision
 model MediaBooking {
   id              String          @id @default(cuid())
   /// * Human-readable booking number, e.g. "MBK-XXXXXXXXXXXX"
@@ -2858,6 +2874,7 @@ model MediaBooking {
   @@index([deadline])
   @@map("media_bookings")
 }
+
 
 // ── Media Showcase: Testimonials ───────────────────────────────────────────────
 /// Client testimonial specific to media production services.
@@ -2936,6 +2953,7 @@ model MediaStory {
 }
 
 // ── Rank Effects System ────────────────────────────────────────────────────────
+
 model RankEffect {
   id              String                 @id @default(cuid())
   name            String
@@ -2959,17 +2977,16 @@ model RankEffect {
 }
 
 model MemberEffectOverride {
-  id               String   @id @default(cuid())
-  memberId         String   @map("member_id")
-  effectId         String   @map("effect_id")
-  visible          Boolean  @default(true)
-  selectedByMember Boolean  @default(true) @map("selected_by_member")
-  priority         Int      @default(0)
-  createdAt        DateTime @default(now()) @map("created_at")
-  updatedAt        DateTime @updatedAt @map("updated_at")
-
-  member TeamMember @relation("MemberEffectOverrides", fields: [memberId], references: [id], onDelete: Cascade)
-  effect RankEffect @relation("RankEffectOverrides", fields: [effectId], references: [id], onDelete: Cascade)
+  id               String     @id @default(cuid())
+  memberId         String     @map("member_id")
+  effectId         String     @map("effect_id")
+  visible          Boolean    @default(true)
+  selectedByMember Boolean    @default(true) @map("selected_by_member")
+  priority         Int        @default(0)
+  createdAt        DateTime   @default(now()) @map("created_at")
+  updatedAt        DateTime   @updatedAt @map("updated_at")
+  effect           RankEffect @relation("RankEffectOverrides", fields: [effectId], references: [id], onDelete: Cascade)
+  member           TeamMember @relation("MemberEffectOverrides", fields: [memberId], references: [id], onDelete: Cascade)
 
   @@unique([memberId, effectId])
   @@index([memberId])
@@ -2978,67 +2995,60 @@ model MemberEffectOverride {
   @@map("member_effect_overrides")
 }
 
-// ── Quests ─────────────────────────────────────────────────────────────────────
 model Quest {
-  id           String      @id @default(cuid())
+  id           String             @id @default(cuid())
   title        String
   description  String
-  lpReward     Int         @map("lp_reward")
-  xpReward     Int         @default(0) @map("xp_reward")
+  lpReward     Int                @map("lp_reward")
+  xpReward     Int                @default(0) @map("xp_reward")
   /// * Frequency: daily | weekly | monthly | one_time | event | seasonal
   frequency    String
   /// * Category: engagement | project | social | learning | achievement
   category     String
-  /// * Scope: company (all staff) | department (same dept) | personal (per member)
-  scope        String      @default("company")
-  departmentId String?     @map("department_id") // null = company-wide or personal
-  department   Department? @relation(fields: [departmentId], references: [id])
   icon         String
   color        String
-  target       Int         @default(1)
-  forRoles     String[]    @map("for_roles")
-  isActive     Boolean     @default(true) @map("is_active")
-  sortOrder    Int         @default(0) @map("sort_order")
-  createdAt    DateTime    @default(now()) @map("created_at")
-  updatedAt    DateTime    @updatedAt @map("updated_at")
-
+  target       Int                @default(1)
+  forRoles     String[]           @map("for_roles")
+  isActive     Boolean            @default(true) @map("is_active")
+  sortOrder    Int                @default(0) @map("sort_order")
+  createdAt    DateTime           @default(now()) @map("created_at")
+  updatedAt    DateTime           @updatedAt @map("updated_at")
+  departmentId String?            @map("department_id")
+  /// * Scope: company (all staff) | department (same dept) | personal (per member)
+  scope        String             @default("company")
   participants QuestParticipant[]
+  department   Department?        @relation(fields: [departmentId], references: [id])
 
   @@map("quests")
 }
 
-// ── Company Events ─────────────────────────────────────────────────────────────
 model CompanyEvent {
-  id          String   @id @default(cuid())
-  title       String
-  description String
+  id           String             @id @default(cuid())
+  title        String
+  description  String
   /// * Event type: seasonal | competition | celebration | promotional
-  type        String
-  startDate   DateTime @map("start_date")
-  endDate     DateTime @map("end_date")
-  lpBonus     Int      @map("lp_bonus")
-  color       String
-  icon        String
-  bannerUrl   String?  @map("banner_url")
-  isActive    Boolean  @default(true) @map("is_active")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-
+  type         String
+  startDate    DateTime           @map("start_date")
+  endDate      DateTime           @map("end_date")
+  lpBonus      Int                @map("lp_bonus")
+  color        String
+  icon         String
+  bannerUrl    String?            @map("banner_url")
+  isActive     Boolean            @default(true) @map("is_active")
+  createdAt    DateTime           @default(now()) @map("created_at")
+  updatedAt    DateTime           @updatedAt @map("updated_at")
   participants QuestParticipant[]
 
   @@index([isActive, startDate])
   @@map("company_events")
 }
 
-// ── Inngest Job Run (DLQ observability) ──────────────────────────────────────
-// Tracks every Inngest job execution for ops visibility and dead-letter monitoring.
-// Mirrors Inngest run lifecycle: pending → running → succeeded │ failed │ dead
 model InngestJob {
   id           String    @id @default(cuid())
-  runId        String    @unique @map("run_id") // Inngest run ID (e.g. "01J9X…")
-  functionId   String    @map("function_id") // Inngest function ID (e.g. "contact-confirmation-job")
-  functionName String    @map("function_name") // Human-readable name (e.g. "Contact Confirmation")
-  eventName    String    @map("event_name") // Triggering event or cron expression
+  runId        String    @unique @map("run_id")
+  functionId   String    @map("function_id")
+  functionName String    @map("function_name")
+  eventName    String    @map("event_name")
   /// Status: pending | running | succeeded | failed | dead
   status       String    @default("pending")
   attemptCount Int       @default(0) @map("attempt_count")
@@ -3063,21 +3073,6 @@ model InngestJob {
   @@map("inngest_jobs")
 }
 
-// ── Idempotency Keys (BE deduplication) ─────────────────────────────────────
-// Stores idempotency keys sent by FE client.ts to prevent duplicate mutations.
-// Each endpoint that performs a non-idempotent write must support Idempotency-Key.
-//
-// Usage: Extract key from `Idempotency-Key` header → check existence → execute or return cached.
-// TTL: 24 hours (auto-expire via DB-side cleanup job).
-//
-// Endpoints wired:
-//   POST /api/services/order          → operation: "create_order"
-//   POST /api/admin/orders           → operation: "create_order_admin"
-//   POST /api/academy/enroll         → operation: "create_enrollment"
-//   POST /api/admin/lp-awards        → operation: "create_lp_award"
-//   POST /api/admin/lp-redemptions   → operation: "create_lp_redemption"
-//
-// @see src/lib/idempotency.ts for deduplication logic
 model IdempotencyKey {
   id           String   @id @default(cuid())
   /// The raw Idempotency-Key header value (UUID)
@@ -3097,28 +3092,26 @@ model IdempotencyKey {
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   @@index([key])
-  @@index([expiresAt]) // For TTL cleanup queries
+  @@index([expiresAt])
   @@index([operation, userId])
   @@index([operation, memberId])
   @@map("idempotency_keys")
 }
 
-// ── Quest Participants (join table) ───────────────────────────────────────────
 model QuestParticipant {
-  id        String    @id @default(cuid())
-  userId    String    @map("user_id")
-  questId   String?   @map("quest_id")
-  eventId   String?   @map("event_id")
-  progress  Int       @default(0)
-  completed Boolean   @default(false) @map("completed")
-  lpEarned  Int       @default(0) @map("lp_earned")
-  xpEarned  Int       @default(0) @map("xp_earned")
-  claimedAt DateTime? @map("claimed_at")
-  joinedAt  DateTime  @default(now()) @map("joined_at")
-
-  user  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  quest Quest?        @relation(fields: [questId], references: [id], onDelete: Cascade)
-  event CompanyEvent? @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  id        String        @id @default(cuid())
+  userId    String        @map("user_id")
+  questId   String?       @map("quest_id")
+  eventId   String?       @map("event_id")
+  progress  Int           @default(0)
+  completed Boolean       @default(false) @map("completed")
+  lpEarned  Int           @default(0) @map("lp_earned")
+  xpEarned  Int           @default(0) @map("xp_earned")
+  claimedAt DateTime?     @map("claimed_at")
+  joinedAt  DateTime      @default(now()) @map("joined_at")
+  event     CompanyEvent? @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  quest     Quest?        @relation(fields: [questId], references: [id], onDelete: Cascade)
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, questId])
   @@unique([userId, eventId])
@@ -3128,20 +3121,16 @@ model QuestParticipant {
   @@map("quest_participants")
 }
 
-// ── Supported Locales (admin-configurable locale allowlist) ────────────────
-// Controls which locales are available to clients on public pages.
-// Admin can enable/disable locales from Settings tab without code changes.
 model SupportedLocale {
-  id         String  @id @default(cuid())
-  code       String  @unique @map("code") // e.g. "vi", "en", "ja", "ko", "zh"
-  name       String  @map("name") // e.g. "Tiếng Việt", "English"
-  nativeName String  @map("native_name") // e.g. "Tiếng Việt", "English", "日本語"
-  isEnabled  Boolean @default(true) @map("is_enabled")
-  isDefault  Boolean @default(false) @map("is_default") // exactly one locale should be true
-  order      Int     @default(0) @map("order") // display order in locale switcher
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id         String   @id @default(cuid())
+  code       String   @unique @map("code")
+  name       String   @map("name")
+  nativeName String   @map("native_name")
+  isEnabled  Boolean  @default(true) @map("is_enabled")
+  isDefault  Boolean  @default(false) @map("is_default")
+  order      Int      @default(0) @map("order")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
 
   @@map("supported_locales")
 }
@@ -3211,15 +3200,13 @@ model UserRoleApproval {
   approvedAt DateTime @default(now()) @map("approved_at")
   /// Optional note, e.g. "Approved during onboarding"
   notes      String?  @map("notes")
-  user       User     @relation(fields: [userId], references: [id])
   role       Role     @relation(fields: [roleId], references: [id])
+  user       User     @relation(fields: [userId], references: [id])
 
   @@unique([userId, roleId])
   @@index([userId])
   @@map("user_role_approvals")
 }
-
-// ── Auth / Sessions ──────────────────────────────────────────────────────────────
 
 /// Refresh token — issued on login, rotated on use, revocable.
 /// Bridges access token (short-lived, stateless) with a persistent session (revocable).
@@ -3259,15 +3246,13 @@ model LoginAttempt {
   /// When set, all login attempts for this email are rejected until this time passes
   lockedUntil DateTime? @map("locked_until")
   lastAttempt DateTime  @default(now()) @map("last_attempt")
-  user        User?     @relation(fields: [userId], references: [id])
   userId      String?   @map("user_id")
+  user        User?     @relation(fields: [userId], references: [id])
 
   @@index([email, lastAttempt])
   @@index([ipAddress, lastAttempt])
   @@map("login_attempts")
 }
-
-// ── Revenue Split Config ───────────────────────────────────────────────────────
 
 /// Admin-configurable revenue split percentages per role.
 /// Example: pm=35%, dev=25%, qa=15%, design=15%, seo=10%.
@@ -3285,27 +3270,24 @@ model RevenueSplitConfig {
   @@map("revenue_split_configs")
 }
 
-// ── Off-System Payments ───────────────────────────────────────────────────────
-
 /// Records payments received outside the standard order system.
 /// Auto-generates OffSystemSplit records based on RevenueSplitConfig.
 model OffSystemPayment {
-  id          String   @id @default(cuid())
+  id          String           @id @default(cuid())
   /// Optional link to an existing Order
-  orderId     String?  @map("order_id")
+  orderId     String?          @map("order_id")
   /// Amount in VNĐ
-  amountVnd   Float    @map("amount_vnd")
+  amountVnd   Float            @map("amount_vnd")
   /// LP-to-VND rate at time of recording (e.g. 1000 = 1 LP = 1000 VND)
-  lpRate      Float    @map("lp_rate")
+  lpRate      Float            @map("lp_rate")
   /// Computed total LP: amountVnd / lpRate
-  totalLp     Int      @map("total_lp")
-  description String?  @map("description")
-  note        String?  @map("note")
-  createdBy   String   @map("created_by")
-  createdAt   DateTime @default(now()) @map("created_at")
-
-  order  Order?           @relation(fields: [orderId], references: [id])
-  splits OffSystemSplit[]
+  totalLp     Int              @map("total_lp")
+  description String?          @map("description")
+  note        String?          @map("note")
+  createdBy   String           @map("created_by")
+  createdAt   DateTime         @default(now()) @map("created_at")
+  order       Order?           @relation(fields: [orderId], references: [id])
+  splits      OffSystemSplit[]
 
   @@index([orderId])
   @@index([createdAt])
@@ -3315,21 +3297,20 @@ model OffSystemPayment {
 /// Per-role LP split for an OffSystemPayment.
 /// Status: pending → approved (LP credited) or rejected.
 model OffSystemSplit {
-  id                 String    @id @default(cuid())
-  offSystemPaymentId String    @map("off_system_payment_id")
+  id                 String           @id @default(cuid())
+  offSystemPaymentId String           @map("off_system_payment_id")
   /// TeamMember who receives this LP share
-  memberId           String    @map("member_id")
+  memberId           String           @map("member_id")
   /// Role this split belongs to: "pm" | "dev" | "qa" | etc.
-  projectRole        String    @map("project_role")
-  percentage         Float     @default(0) @map("percentage")
-  lpAmount           Int       @default(0) @map("lp_amount")
-  status             String    @default("pending") @map("status")
-  approvedBy         String?   @map("approved_by")
-  approvedAt         DateTime? @map("approved_at")
-  createdAt          DateTime  @default(now()) @map("created_at")
-
-  offSystemPayment OffSystemPayment @relation(fields: [offSystemPaymentId], references: [id], onDelete: Cascade)
-  member           TeamMember       @relation(fields: [memberId], references: [id])
+  projectRole        String           @map("project_role")
+  percentage         Float            @default(0) @map("percentage")
+  lpAmount           Int              @default(0) @map("lp_amount")
+  status             String           @default("pending") @map("status")
+  approvedBy         String?          @map("approved_by")
+  approvedAt         DateTime?        @map("approved_at")
+  createdAt          DateTime         @default(now()) @map("created_at")
+  member             TeamMember       @relation(fields: [memberId], references: [id])
+  offSystemPayment   OffSystemPayment @relation(fields: [offSystemPaymentId], references: [id], onDelete: Cascade)
 
   @@index([offSystemPaymentId])
   @@index([memberId])
@@ -3350,60 +3331,53 @@ model PermissionAudit {
   @@map("permission_audits")
 }
 
-// ─── P0: FAQ ───────────────────────────────────────────────────────────────────
 model Faq {
-  id        String   @id @default(cuid())
-  question  String
-  answer    String   @db.Text
-  category  String   @default("general") // general | services | technical | payment | lp | academy
-  sortOrder Int      @default(0) @map("sort_order")
-  isActive  Boolean  @default(true) @map("is_active")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  // i18n
-  questionEn String? @map("question_en")
-  questionJa String? @map("question_ja")
-  questionKo String? @map("question_ko")
-  questionZh String? @map("question_zh")
-  answerEn   String? @map("answer_en") @db.Text
-  answerJa   String? @map("answer_ja") @db.Text
-  answerKo   String? @map("answer_ko") @db.Text
-  answerZh   String? @map("answer_zh") @db.Text
+  id         String   @id @default(cuid())
+  question   String
+  answer     String
+  category   String   @default("general")
+  sortOrder  Int      @default(0) @map("sort_order")
+  isActive   Boolean  @default(true) @map("is_active")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  questionEn String?  @map("question_en")
+  questionJa String?  @map("question_ja")
+  questionKo String?  @map("question_ko")
+  questionZh String?  @map("question_zh")
+  answerEn   String?  @map("answer_en")
+  answerJa   String?  @map("answer_ja")
+  answerKo   String?  @map("answer_ko")
+  answerZh   String?  @map("answer_zh")
 
   @@index([category, isActive])
   @@index([isActive, sortOrder])
   @@map("faqs")
 }
 
-// ─── P1: Careers ───────────────────────────────────────────────────────────────
 model JobPosting {
-  id             String    @id @default(cuid())
+  id             String           @id @default(cuid())
   title          String
-  department     String // engineering | design | media | marketing | sales | finance | hr | management
-  role           String // junior | mid | senior | lead | manager
-  employmentType String    @default("full_time") @map("employment_type") // full_time | part_time | contract | internship
-  location       String    @default("Ho Chi Minh City, Vietnam")
-  salaryMin      Int?      @map("salary_min")
-  salaryMax      Int?      @map("salary_max")
-  salaryCurrency String    @default("VND") @map("salary_currency")
-  description    String    @db.Text
-  requirements   String    @db.Text
-  benefits       String    @db.Text
-  status         String    @default("open") @map("status") // open | closed | draft
-  isActive       Boolean   @default(true) @map("is_active")
-  sortOrder      Int       @default(0) @map("sort_order")
-  createdAt      DateTime  @default(now()) @map("created_at")
-  updatedAt      DateTime  @updatedAt @map("updated_at")
-  expiresAt      DateTime? @map("expires_at")
-
-  // i18n
-  titleEn String? @map("title_en")
-  descEn  String? @map("desc_en") @db.Text
-  reqEn   String? @map("req_en") @db.Text
-  benEn   String? @map("ben_en") @db.Text
-
-  applications JobApplication[]
+  department     String
+  role           String
+  employmentType String           @default("full_time") @map("employment_type")
+  location       String           @default("Ho Chi Minh City, Vietnam")
+  salaryMin      Int?             @map("salary_min")
+  salaryMax      Int?             @map("salary_max")
+  salaryCurrency String           @default("VND") @map("salary_currency")
+  description    String
+  requirements   String
+  benefits       String
+  status         String           @default("open") @map("status")
+  isActive       Boolean          @default(true) @map("is_active")
+  sortOrder      Int              @default(0) @map("sort_order")
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
+  expiresAt      DateTime?        @map("expires_at")
+  titleEn        String?          @map("title_en")
+  descEn         String?          @map("desc_en")
+  reqEn          String?          @map("req_en")
+  benEn          String?          @map("ben_en")
+  applications   JobApplication[]
 
   @@index([status, isActive])
   @@index([department, status])
@@ -3419,10 +3393,10 @@ model JobApplication {
   phone        String?
   linkedinUrl  String?    @map("linkedin_url")
   portfolioUrl String?    @map("portfolio_url")
-  coverLetter  String?    @map("cover_letter") @db.Text
+  coverLetter  String?    @map("cover_letter")
   resumeUrl    String?    @map("resume_url")
-  status       String     @default("applied") @map("status") // applied | screening | interview | offer | hired | rejected
-  note         String?    @map("note") @db.Text
+  status       String     @default("applied") @map("status")
+  note         String?    @map("note")
   createdAt    DateTime   @default(now()) @map("created_at")
   updatedAt    DateTime   @updatedAt @map("updated_at")
   jobPosting   JobPosting @relation(fields: [jobPostingId], references: [id], onDelete: Cascade)
@@ -3432,22 +3406,21 @@ model JobApplication {
   @@map("job_applications")
 }
 
-// ─── P1: Contracts ─────────────────────────────────────────────────────────────
 model Contract {
   id         String    @id @default(cuid())
   title      String
   orderId    String?   @map("order_id")
   customerId String?   @map("customer_id")
-  status     String    @default("draft") @map("status") // draft | sent | signed | expired | cancelled
+  status     String    @default("draft") @map("status")
   fileUrl    String?   @map("file_url")
-  value      Int? // Contract value in VND
+  value      Int?
   sentAt     DateTime? @map("sent_at")
   signedAt   DateTime? @map("signed_at")
   expiresAt  DateTime? @map("expires_at")
   createdBy  String    @map("created_by")
   createdAt  DateTime  @default(now()) @map("created_at")
   updatedAt  DateTime  @updatedAt @map("updated_at")
-  note       String?   @map("note") @db.Text
+  note       String?   @map("note")
 
   @@index([status])
   @@index([orderId])
@@ -3455,28 +3428,26 @@ model Contract {
   @@map("contracts")
 }
 
-// ─── P1: Invoices ──────────────────────────────────────────────────────────────
 model Invoice {
-  id            String    @id @default(cuid())
-  invoiceNumber String    @unique @map("invoice_number")
-  orderId       String?   @map("order_id")
-  customerId    String?   @map("customer_id")
-  type          String    @default("income") @map("type") // income | expense
+  id            String            @id @default(cuid())
+  invoiceNumber String            @unique @map("invoice_number")
+  orderId       String?           @map("order_id")
+  customerId    String?           @map("customer_id")
+  type          String            @default("income") @map("type")
   amount        Int
-  taxAmount     Int       @default(0) @map("tax_amount")
-  totalAmount   Int       @default(0) @map("total_amount")
-  currency      String    @default("VND")
-  status        String    @default("draft") @map("status") // draft | sent | paid | overdue | cancelled
-  dueDate       DateTime? @map("due_date")
-  paidAt        DateTime? @map("paid_at")
-  paidMethod    String?   @map("paid_method") // bank_transfer | cash | vn_pay | momo
-  description   String?   @map("description")
-  note          String?   @map("note") @db.Text
-  createdBy     String    @map("created_by")
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt @map("updated_at")
-
-  lineItems InvoiceLineItem[]
+  taxAmount     Int               @default(0) @map("tax_amount")
+  totalAmount   Int               @default(0) @map("total_amount")
+  currency      String            @default("VND")
+  status        String            @default("draft") @map("status")
+  dueDate       DateTime?         @map("due_date")
+  paidAt        DateTime?         @map("paid_at")
+  paidMethod    String?           @map("paid_method")
+  description   String?           @map("description")
+  note          String?           @map("note")
+  createdBy     String            @map("created_by")
+  createdAt     DateTime          @default(now()) @map("created_at")
+  updatedAt     DateTime          @updatedAt @map("updated_at")
+  lineItems     InvoiceLineItem[]
 
   @@index([status, type])
   @@index([orderId])
@@ -3500,17 +3471,17 @@ model InvoiceLineItem {
 
 model Expense {
   id          String    @id @default(cuid())
-  category    String // software | hardware | marketing | salary | office | travel | other
+  category    String
   description String
   amount      Int
   currency    String    @default("VND")
   date        DateTime  @default(now()) @map("date")
   vendor      String?
   receiptUrl  String?   @map("receipt_url")
-  status      String    @default("pending") @map("status") // pending | approved | rejected | reimbursed
+  status      String    @default("pending") @map("status")
   approvedBy  String?   @map("approved_by")
   approvedAt  DateTime? @map("approved_at")
-  note        String?   @map("note") @db.Text
+  note        String?   @map("note")
   createdBy   String    @map("created_by")
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
@@ -3521,13 +3492,12 @@ model Expense {
   @@map("expenses")
 }
 
-// ─── P2: Knowledge Base ────────────────────────────────────────────────────────
 model KnowledgeArticle {
   id          String   @id @default(cuid())
   title       String
   slug        String   @unique
-  category    String   @default("general") @map("category") // engineering | design | hr | processes | general
-  content     String   @db.Text
+  category    String   @default("general") @map("category")
+  content     String
   excerpt     String?
   authorId    String?  @map("author_id")
   isPinned    Boolean  @default(false) @map("is_pinned")
@@ -3535,24 +3505,22 @@ model KnowledgeArticle {
   viewCount   Int      @default(0) @map("view_count")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
-
-  tags String[]
+  tags        String[]
 
   @@index([category, isPublished])
   @@index([isPinned])
   @@map("knowledge_articles")
 }
 
-// ─── P2: Leave Request ────────────────────────────────────────────────────────
 model LeaveRequest {
   id          String    @id @default(cuid())
   memberId    String    @map("member_id")
-  type        String // annual | sick | unpaid | maternity | paternity | bereavement
+  type        String
   startDate   DateTime  @map("start_date")
   endDate     DateTime  @map("end_date")
   days        Int       @default(1)
-  reason      String?   @db.Text
-  status      String    @default("pending") @map("status") // pending | approved | rejected | cancelled
+  reason      String?
+  status      String    @default("pending") @map("status")
   respondedBy String?   @map("responded_by")
   respondedAt DateTime? @map("responded_at")
   note        String?

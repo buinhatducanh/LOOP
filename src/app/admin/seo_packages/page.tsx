@@ -84,9 +84,11 @@ export default function SeoPackagesPage() {
   const saveMutation = useMutation({
     mutationFn: async (payload: typeof form & { id?: string }) => {
       // Map form.nameVi → API name field
-      const apiPayload = { ...payload, name: payload.nameVi };
+      const { nameVi, ...rest } = payload;
+      const apiPayload = { ...rest, name: nameVi };
+
       if (modal.edit) {
-        await adminApi.put(`/api/admin/seo-tiers/${modal.edit.id}`, { ...apiPayload, id: modal.edit.id });
+        await adminApi.put(`/api/admin/seo-tiers/${modal.edit.id}`, apiPayload);
       } else {
         await adminApi.post("/api/admin/seo-tiers", apiPayload);
       }
@@ -135,12 +137,12 @@ export default function SeoPackagesPage() {
 
   const handleSave = () => {
     if (!form.nameVi.trim()) { setError("Tên gói là bắt buộc"); return; }
-    if (form.basePrice <= 0) { setError("Giá phải lớn hơn 0"); return; }
+    if (form.basePrice < 0) { setError("Giá không được âm"); return; }
     saveMutation.mutate(form);
   };
 
   const inpStyle: React.CSSProperties = {
-    width: "100%", background: "rgba(15,23,42,0.6)", border: `1px solid ${error ? DS.red : DS.border}`,
+    width: "100%", background: "rgba(15,23,42,0.6)", border: `1px solid ${DS.border}`,
     borderRadius: 10, padding: "10px 14px", color: DS.text, fontSize: 14, outline: "none", boxSizing: "border-box",
   };
 
@@ -158,11 +160,13 @@ export default function SeoPackagesPage() {
         </div>
         <div className="flex gap-3">
           <button
-            onClick={() => qc.invalidateQueries({ queryKey: ["admin", "seo-tiers"] })}
-            className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm"
+            onClick={() => {
+              qc.invalidateQueries({ queryKey: ["admin", "seo-tiers"] });
+            }}
+            className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm group"
             style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, color: DS.text3 }}
           >
-            <RefreshCw size={14} /> Làm mới
+            <RefreshCw size={14} className="group-active:rotate-180 transition-transform duration-500" /> Làm mới
           </button>
           <button
             onClick={openCreate}
@@ -246,12 +250,12 @@ export default function SeoPackagesPage() {
                 </td>
                 <td style={{ padding: "14px 16px" }}>
                   <span style={{ color: DS.text4, fontFamily: DS.mono, fontSize: 12 }}>
-                    {t.marketPrice ? fmtVND(t.marketPrice) : "—"}
+                    {(t.marketPrice !== null && t.marketPrice !== undefined) ? fmtVND(t.marketPrice) : "—"}
                   </span>
                 </td>
                 <td style={{ padding: "14px 16px" }}>
                   <span style={{ color: DS.amber, fontFamily: DS.mono, fontSize: 13 }}>
-                    {t.lpReward > 0 ? `${t.lpReward} LP` : "—"}
+                    {(t.lpReward !== null && t.lpReward !== undefined) ? `${t.lpReward} LP` : "—"}
                   </span>
                 </td>
                 <td style={{ padding: "14px 16px" }}>
@@ -313,7 +317,7 @@ export default function SeoPackagesPage() {
                     <label style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.1em", display: "block", marginBottom: 6 }}>
                       Level *
                     </label>
-                    <input type="number" min={1} max={10}
+                    <input type="number" min={0} max={10}
                       value={form.level}
                       onChange={e => setForm(f => ({ ...f, level: Number(e.target.value) }))}
                       style={inpStyle} />
@@ -322,7 +326,7 @@ export default function SeoPackagesPage() {
                     <label style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.1em", display: "block", marginBottom: 6 }}>
                       Thứ tự
                     </label>
-                    <input type="number" min={0}
+                    <input type="number" min={-99}
                       value={form.sortOrder}
                       onChange={e => setForm(f => ({ ...f, sortOrder: Number(e.target.value) }))}
                       style={inpStyle} />
@@ -354,18 +358,24 @@ export default function SeoPackagesPage() {
                     <label style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.1em", display: "block", marginBottom: 6 }}>
                       Giá / tháng (VNĐ) <span style={{ color: DS.pink }}>*</span>
                     </label>
-                    <input type="number" min={0}
+                    <input type="text"
                       value={form.basePrice}
-                      onChange={e => setForm(f => ({ ...f, basePrice: Number(e.target.value) }))}
+                      onChange={e => {
+                        const val = e.target.value.replace(/[^0-9-]/g, "");
+                        setForm(f => ({ ...f, basePrice: val }));
+                      }}
                       style={inpStyle} />
                   </div>
                   <div>
                     <label style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.1em", display: "block", marginBottom: 6 }}>
                       Giá thị trường (VNĐ)
                     </label>
-                    <input type="number" min={0}
+                    <input type="text"
                       value={form.marketPrice}
-                      onChange={e => setForm(f => ({ ...f, marketPrice: Number(e.target.value) }))}
+                      onChange={e => {
+                        const val = e.target.value.replace(/[^0-9-]/g, "");
+                        setForm(f => ({ ...f, marketPrice: val }));
+                      }}
                       style={inpStyle} />
                   </div>
                 </div>
@@ -375,9 +385,12 @@ export default function SeoPackagesPage() {
                     <label style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.1em", display: "block", marginBottom: 6 }}>
                       LP thưởng
                     </label>
-                    <input type="number" min={0}
+                    <input type="text"
                       value={form.lpReward}
-                      onChange={e => setForm(f => ({ ...f, lpReward: Number(e.target.value) }))}
+                      onChange={e => {
+                        const val = e.target.value.replace(/[^0-9-]/g, "");
+                        setForm(f => ({ ...f, lpReward: val }));
+                      }}
                       style={inpStyle} />
                   </div>
                   <div className="flex items-center gap-3 pt-6">

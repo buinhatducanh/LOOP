@@ -6,16 +6,18 @@ import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
 
 const createSchema = z.object({
-  /** Required unless quoteRequestId is provided (API auto-creates SalesLead). */
   salesLeadId: z.string().optional(),
   quoteNumber: z.string().min(1, "quoteNumber bắt buộc"),
   title: z.string().min(1, "Tiêu đề bắt buộc"),
   totalAmount: z.number().int().min(0),
   lpAllocation: z.record(z.string(), z.number()).default({}),
-  /** LP used by customer (copied from QuoteRequest.lpUsed) */
   lpUsed: z.number().int().min(0).default(0),
-  /** Optional: link Quote to its originating QuoteRequest — API auto-creates SalesLead if missing */
   quoteRequestId: z.string().optional(),
+  customerName: z.string().optional(),
+  customerEmail: z.string().optional(),
+  customerPhone: z.string().optional(),
+  companyName: z.string().optional(),
+  configuration: z.string().optional(),
   milestones: z.array(z.object({
     name: z.string(),
     amount: z.number(),
@@ -106,15 +108,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Resolve salesLeadId + parse selectedFeatureIds — single DB call
+    const configData = parsed.data.configuration ? JSON.parse(parsed.data.configuration) : null;
+    // Resolve salesLeadId
     let salesLeadId = parsed.data.salesLeadId;
     let selectedFeatureIds: string[] = [];
+    let qr: any = null;
+
     if (parsed.data.quoteRequestId) {
-      const qr = await prisma.quoteRequest.findUnique({
+      qr = await prisma.quoteRequest.findUnique({
         where: { id: parsed.data.quoteRequestId },
       });
       if (qr) {
-        // Upsert SalesLead by customerEmail — find existing or create new
         const existingLead = qr.customerEmail
           ? await prisma.salesLead.findFirst({ where: { customerEmail: qr.customerEmail } })
           : null;
@@ -133,18 +137,30 @@ export async function POST(req: NextRequest) {
           });
           salesLeadId = newLead.id;
         }
-        // Parse selectedFeatureIds from the same qr we already fetched
         if (qr.selectedItems && Array.isArray(qr.selectedItems)) {
           selectedFeatureIds = (qr.selectedItems as Array<{ featureId?: string }>)
             .filter(item => item?.featureId)
             .map(item => item.featureId as string);
         }
       }
+    } else if (!salesLeadId && parsed.data.customerName) {
+      // Auto-create SalesLead if manual info provided
+      const newLead = await prisma.salesLead.create({
+        data: {
+          customerName: parsed.data.customerName,
+          customerEmail: parsed.data.customerEmail ?? undefined,
+          customerPhone: parsed.data.customerPhone ?? undefined,
+          companyName: parsed.data.companyName ?? undefined,
+          source: "direct",
+          status: "new",
+        },
+      });
+      salesLeadId = newLead.id;
     }
 
     if (!salesLeadId) {
       return NextResponse.json(
-        { error: "salesLeadId bắt buộc khi không có quoteRequestId" },
+        { error: "Vui lòng cung cấp salesLeadId hoặc thông tin khách hàng mới" },
         { status: 400 }
       );
     }
@@ -162,6 +178,14 @@ export async function POST(req: NextRequest) {
         note: parsed.data.note ?? null,
         quoteRequestId: parsed.data.quoteRequestId ?? undefined,
         selectedFeatureIds,
+        // Save detailed configuration into pricingBreakdown
+        pricingBreakdown: configData || (qr as any)?.pricingBreakdown || (qr ? {
+          package: { name: (qr.selectedItems as any)?.[0]?.featureName || "Website Tùy chỉnh" },
+          hosting: qr.hostingPlanSlug ? { name: qr.hostingPlanSlug, slug: qr.hostingPlanSlug } : null,
+          domains: qr.domainName ? [{ name: qr.domainName }] : [],
+          total: qr.totalAmount,
+        } : null),
+        source: (qr as any)?.source ?? "fixed",
       },
       include: {
         salesLead: { select: { id: true, customerName: true, customerEmail: true } },

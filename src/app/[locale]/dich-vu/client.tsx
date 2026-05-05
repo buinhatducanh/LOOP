@@ -822,91 +822,100 @@ export function DichVuClient({ data, locale }: Props) {
     <main style={{ background: DS.bg, minHeight: "100vh", fontFamily: DS.body }}>
       {/* ── Hero ── */}
       <section style={{
-        background: GRD.hero,
-        padding: "48px 0 32px",
-        borderBottom: `1px solid ${DS.border}`,
+        background: `radial-gradient(circle at 50% -20%, ${color}15, transparent 70%), ${DS.bg}`,
+        padding: "80px 0 60px",
+        position: "relative",
+        overflow: "hidden",
       }}>
-        <div className="max-w-5xl mx-auto px-6 text-center">
+        {/* Animated background blobs */}
+        <motion.div 
+          animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
+          transition={{ duration: 8, repeat: Infinity }}
+          style={{ position: "absolute", top: "-10%", left: "20%", width: "40%", height: "40%", background: `${color}10`, filter: "blur(80px)", borderRadius: "50%", zIndex: 0 }} 
+        />
+        <motion.div 
+          animate={{ scale: [1.2, 1, 1.2], opacity: [0.2, 0.4, 0.2] }}
+          transition={{ duration: 10, repeat: Infinity, delay: 1 }}
+          style={{ position: "absolute", top: "10%", right: "10%", width: "35%", height: "35%", background: `${DS.pink}08`, filter: "blur(100px)", borderRadius: "50%", zIndex: 0 }} 
+        />
+
+        <div className="max-w-5xl mx-auto px-6 text-center relative z-10">
           {/* Badge */}
           <motion.div
-            className="inline-flex items-center gap-2 mb-5 px-4 py-1.5 rounded-full"
-            style={{ background: "rgba(236,72,153,0.1)", border: "1px solid rgba(236,72,153,0.25)" }}
-            initial={{ opacity: 0, y: -10 }}
+            className="inline-flex items-center gap-2 mb-6 px-4 py-1.5 rounded-full"
+            style={{ 
+              background: "rgba(255,255,255,0.03)", 
+              border: `1px solid ${DS.border}`,
+              backdropFilter: "blur(10px)"
+            }}
+            initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            <span style={{ color: DS.pink, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.22em" }}>
-              {isVi ? "BẢNG GIÁ 2026" : "PRICING 2026"}
+            <div style={{ width: 6, height: 6, borderRadius: "50%", background: DS.pink, boxShadow: GLOW.pink }} />
+            <span style={{ color: DS.text2, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.25em", fontWeight: 700 }}>
+              {isVi ? "BẢNG GIÁ NIÊM YẾT 2026" : "OFFICIAL PRICING 2026"}
             </span>
           </motion.div>
 
           {/* Title */}
           <motion.h1
             style={{
-              fontFamily: DS.heading, fontSize: 38, fontWeight: 900, letterSpacing: "0.03em",
-              background: GRD.heroText, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-              marginBottom: 14, lineHeight: 1.2,
+              fontFamily: DS.heading, fontSize: 52, fontWeight: 900, letterSpacing: "-0.02em",
+              background: "linear-gradient(180deg, #FFFFFF 0%, #94A3B8 100%)", 
+              WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+              marginBottom: 18, lineHeight: 1.1,
             }}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ type: "spring", damping: 20 }}
           >
-            {isVi
-              ? "Giải Pháp Số Toàn Diện"
-              : "Comprehensive Digital Solutions"}
+            {isVi ? "Giải Pháp Số Toàn Diện" : "Comprehensive Digital Solutions"}
           </motion.h1>
 
           <motion.p
-            style={{ color: DS.text3, fontSize: 15, lineHeight: 1.7, maxWidth: 560, margin: "0 auto 28px" }}
+            style={{ color: DS.text3, fontSize: 16, lineHeight: 1.6, maxWidth: 600, margin: "0 auto 40px", opacity: 0.8 }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
           >
             {isVi
-              ? "Website · App/SaaS · Dashboard · SEO — Basic đến Experience. Miễn phí SSL, bảo hành, bàn giao code nguồn."
-              : "Website · App/SaaS · Dashboard · SEO — Basic to Experience. Free SSL, warranty, full source code handover."}
+              ? "Tối ưu hóa quy trình kinh doanh và hiện diện thương hiệu với hệ sinh thái công nghệ Loop Solutions."
+              : "Optimize business processes and brand presence with the Loop Solutions technology ecosystem."}
           </motion.p>
 
           {/* Service Tabs */}
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
             style={{
-              display: "inline-flex", gap: 6, padding: 6,
-              background: "rgba(15,23,42,0.9)",
-              borderRadius: 16, border: `1px solid ${DS.border}`,
+              display: "inline-flex", gap: 4, padding: 6,
+              background: "rgba(15,23,42,0.4)",
+              backdropFilter: "blur(20px)",
+              borderRadius: 20, border: `1px solid ${DS.border}`,
+              boxShadow: "0 10px 40px rgba(0,0,0,0.3)",
             }}
           >
             {SERVICE_KEYS.map(key => {
               const svc = SERVICE_META[key];
               const isActive = activeService === key;
-              const count = tiersByService[key]?.length ?? 0;
               return (
                 <button
                   key={key}
                   onClick={() => setActiveService(key)}
                   style={{
-                    display: "flex", alignItems: "center", gap: 6,
-                    padding: "8px 16px", borderRadius: 12,
-                    background: isActive ? `${svc.color}18` : "transparent",
+                    display: "flex", alignItems: "center", gap: 8,
+                    padding: "10px 20px", borderRadius: 16,
+                    background: isActive ? `${svc.color}20` : "transparent",
                     border: isActive ? `1px solid ${svc.color}40` : "1px solid transparent",
-                    color: isActive ? svc.color : DS.text4,
-                    cursor: "pointer", fontSize: 13, fontWeight: isActive ? 700 : 400,
-                    fontFamily: DS.body, transition: "all 0.2s",
+                    color: isActive ? "#fff" : DS.text4,
+                    cursor: "pointer", fontSize: 14, fontWeight: isActive ? 700 : 500,
+                    fontFamily: DS.heading, transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                    boxShadow: isActive ? `0 0 20px ${svc.color}20` : "none",
                   }}
                 >
-                  <span>{svc.icon}</span>
+                  <span style={{ fontSize: 18, filter: isActive ? "grayscale(0)" : "grayscale(1)" }}>{svc.icon}</span>
                   <span>{svc.label[locale] ?? svc.label.vi}</span>
-                  {count > 0 && (
-                    <span style={{
-                      fontSize: 10, fontFamily: DS.mono,
-                      background: isActive ? `${svc.color}20` : DS.bg,
-                      color: isActive ? svc.color : DS.text5,
-                      padding: "1px 5px", borderRadius: 9999,
-                    }}>
-                      {count}
-                    </span>
-                  )}
                 </button>
               );
             })}
@@ -914,176 +923,175 @@ export function DichVuClient({ data, locale }: Props) {
         </div>
       </section>
 
-      {/* ── Package Cards (Side-by-Side Comparison) ── */}
-      <section style={{ padding: "36px 0 48px" }}>
+      {/* ── Package Cards ── */}
+      <section style={{ padding: "60px 0 100px", background: `linear-gradient(180deg, ${DS.bg} 0%, ${DS.bgCosmic} 100%)` }}>
         <div className="max-w-6xl mx-auto px-6">
           {/* Service headline */}
-          <div style={{ textAlign: "center", marginBottom: 28 }}>
-            <div style={{
-              display: "inline-flex", alignItems: "center", gap: 8,
-              background: `${color}10`, border: `1px solid ${color}25`,
-              borderRadius: 9999, padding: "4px 12px", marginBottom: 8,
-            }}>
-              <span>{meta.icon}</span>
-              <span style={{ color, fontSize: 12, fontFamily: DS.mono, fontWeight: 600 }}>
+          <div style={{ textAlign: "center", marginBottom: 50 }}>
+            <motion.div 
+              key={activeService + "-headline"}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              style={{
+                display: "inline-flex", alignItems: "center", gap: 10,
+                background: `${color}15`, border: `1px solid ${color}30`,
+                borderRadius: 9999, padding: "6px 16px", marginBottom: 12,
+                boxShadow: `0 0 20px ${color}10`,
+              }}
+            >
+              <span style={{ fontSize: 20 }}>{meta.icon}</span>
+              <span style={{ color, fontSize: 13, fontFamily: DS.mono, fontWeight: 700, letterSpacing: "0.05em" }}>
                 {meta.heroTitle[locale] ?? meta.heroTitle.vi}
               </span>
-            </div>
+            </motion.div>
             <h2 style={{
-              color: DS.text2, fontSize: 14, fontFamily: DS.mono,
-              letterSpacing: "0.05em",
+              color: DS.text, fontSize: 32, fontFamily: DS.heading, fontWeight: 800,
+              letterSpacing: "-0.01em", marginBottom: 12
             }}>
-              {isVi ? "SO SÁNH CHI TIẾT 3 GÓI" : "DETAILED COMPARISON — 3 PLANS"}
+              {isVi ? "Bảng giá so sánh chi tiết" : "Detailed Price Comparison"}
             </h2>
+            <p style={{ color: DS.text4, fontSize: 15, maxWidth: 500, margin: "0 auto" }}>
+              {isVi ? "Lựa chọn gói dịch vụ tối ưu nhất cho quy mô và mục tiêu của doanh nghiệp bạn." : "Select the optimal service package for your business scale and goals."}
+            </p>
           </div>
 
-          {/* Escalating 4-column comparison table */}
           <AnimatePresence mode="wait">
             <motion.div
               key={activeService}
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.3 }}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
             >
               {serviceTiers.length === 0 ? (
-                <div style={{ textAlign: "center", padding: "4rem", color: DS.text4 }}>
-                  {isVi ? "Đang cập nhật bảng giá..." : "Updating pricing..."}
+                <div style={{ textAlign: "center", padding: "6rem", color: DS.text4 }}>
+                  <Zap className="animate-spin mx-auto mb-4" size={40} style={{ color }} />
+                  {isVi ? "Đang chuẩn bị dữ liệu..." : "Preparing data..."}
                 </div>
               ) : (
                 <div style={{
-                  background: "rgba(15,23,42,0.5)",
+                  background: "rgba(15,23,42,0.3)",
+                  backdropFilter: "blur(30px)",
                   border: `1px solid ${DS.border}`,
-                  borderRadius: 20,
+                  borderRadius: 32,
                   overflow: "hidden",
+                  boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
                 }}>
-                  {/* 4-column header: Feature | Basic | Business | Experience */}
+                  {/* Dynamic Table Header based on tier count */}
                   <div style={{
                     display: "grid",
-                    gridTemplateColumns: "2fr 1fr 1.4fr 1.8fr",
+                    gridTemplateColumns: `1.4fr repeat(${serviceTiers.length}, 1fr)`,
                     borderBottom: `2px solid ${DS.border}`,
+                    background: "rgba(15,23,42,0.6)",
                   }}>
-                    {/* Column header — feature label area */}
                     <div style={{
-                      padding: "20px 20px",
-                      borderRight: `1px solid ${DS.border}40`,
+                      padding: "32px 24px",
                       display: "flex", alignItems: "flex-end",
+                      borderRight: `1px solid ${DS.border}50`,
                     }}>
-                      <span style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono }}>
-                        {isVi ? "TÍNH NĂNG" : "FEATURES"}
-                      </span>
+                      <div style={{ color: DS.text4, fontSize: 12, fontFamily: DS.mono, letterSpacing: "0.1em", fontWeight: 700 }}>
+                        {isVi ? "TÍNH NĂNG DỊCH VỤ" : "SERVICE FEATURES"}
+                      </div>
                     </div>
 
                     {serviceTiers.map((tier, idx) => {
                       const isPopular = tier.id === popularTierId;
-                      const tierColor = idx === 1 ? color : idx === 0 ? "#64748B" : color;
-                      // Escalation: each tier is visually "higher" — more shadow, brighter border
-                      const escalationShadow = idx === 0 ? "none" : idx === 1 ? `0 0 20px ${tierColor}15` : `0 0 30px ${tierColor}25`;
-                      const escalationBorder = idx === 0 ? `1px solid ${DS.border}30` : `2px solid ${tierColor}50`;
-                      const escalationBg = idx === 0 ? "transparent" : idx === 1 ? `${tierColor}08` : `${tierColor}12`;
-                      const escalationPadding = idx === 0 ? "20px 14px" : "20px 12px";
-
+                      const tierColor = idx === 0 ? DS.text4 : idx === 1 ? color : DS.pink;
+                      const isExperience = tier.level === 3;
+                      
                       return (
                         <div
                           key={tier.id}
                           style={{
-                            padding: escalationPadding,
-                            borderLeft: escalationBorder,
-                            background: escalationBg,
+                            padding: "32px 16px",
+                            borderLeft: idx === 0 ? "none" : `1px solid ${DS.border}50`,
+                            background: isPopular ? `${color}08` : isExperience ? `${DS.pink}05` : "transparent",
                             textAlign: "center",
                             position: "relative",
-                            boxShadow: escalationShadow,
+                            transition: "all 0.3s",
                           }}
                         >
                           {isPopular && (
                             <div style={{
-                              position: "absolute", top: 0, left: 0, right: 0,
-                              padding: "3px 8px",
-                              background: `linear-gradient(90deg, ${color}, ${color}CC)`,
+                              position: "absolute", top: 12, left: "50%", transform: "translateX(-50%)",
+                              padding: "4px 12px", borderRadius: 99,
+                              background: GRD.primary,
                               fontSize: 9, color: "#fff", fontFamily: DS.mono,
-                              letterSpacing: "0.1em", display: "flex",
-                              alignItems: "center", justifyContent: "center", gap: 3,
+                              fontWeight: 800, display: "flex", alignItems: "center", gap: 4,
+                              boxShadow: GLOW.pink,
                             }}>
-                              <Zap size={9} />
+                              <Zap size={10} fill="currentColor" />
                               {isVi ? "PHỔ BIẾN" : "POPULAR"}
                             </div>
                           )}
-                          <div style={{ marginTop: isPopular ? 18 : 0 }}>
-                            <div style={{
-                              fontSize: 10, fontFamily: DS.mono,
-                              color: tierColor, letterSpacing: "0.15em", marginBottom: 6,
-                              fontWeight: idx * 100 + 500,
+                          
+                          <div style={{ marginTop: isPopular ? 12 : 0 }}>
+                            <h3 style={{
+                              fontSize: 12, fontFamily: DS.mono,
+                              color: tierColor, letterSpacing: "0.1em", marginBottom: 10,
+                              fontWeight: 800,
                             }}>
                               {tier.name.toUpperCase()}
-                            </div>
+                            </h3>
 
-                            {tier.marketPrice && tier.marketPrice > tier.basePrice && (
-                              <div style={{
-                                color: DS.text5, fontSize: 10, fontFamily: DS.mono,
-                                textDecoration: "line-through",
-                              }}>
-                                {fmtVND(tier.marketPrice)}
-                              </div>
-                            )}
+                            <div style={{ height: 20 }}>
+                              {tier.marketPrice && tier.marketPrice > tier.basePrice && (
+                                <span style={{
+                                  color: DS.text5, fontSize: 12, fontFamily: DS.mono,
+                                  textDecoration: "line-through",
+                                }}>
+                                  {fmtVND(tier.marketPrice)}
+                                </span>
+                              )}
+                            </div>
 
                             <div style={{
                               fontFamily: DS.heading,
-                              fontSize: idx === 0 ? 20 : idx === 1 ? 22 : 24,
-                              fontWeight: idx === 0 ? 700 : idx === 1 ? 800 : 900,
-                              color: tierColor, lineHeight: 1.1,
+                              fontSize: 32,
+                              fontWeight: 900,
+                              color: DS.text,
+                              lineHeight: 1,
+                              margin: "4px 0",
+                              background: isExperience ? GRD.primary : "none",
+                              WebkitBackgroundClip: isExperience ? "text" : "initial",
+                              WebkitTextFillColor: isExperience ? "transparent" : "initial",
                             }}>
                               {fmtVND(tier.basePrice)}
                             </div>
 
-                            {(() => {
-                              const savingPct = tier.marketPrice && tier.marketPrice > tier.basePrice
-                                ? Math.round((1 - tier.basePrice / tier.marketPrice) * 100) : 0;
-                              return savingPct > 0 ? (
-                                <div style={{
-                                  marginTop: 4, display: "inline-block",
-                                  padding: "1px 7px", borderRadius: 9999,
-                                  background: "rgba(34,197,94,0.12)",
-                                  color: "#22C55E", fontSize: 9, fontFamily: DS.mono, fontWeight: 700,
-                                }}>
-                                  −{savingPct}%
-                                </div>
-                              ) : null;
-                            })()}
-
                             <div style={{
-                              marginTop: 6, color: DS.text5, fontSize: 10,
-                              fontFamily: DS.mono, lineHeight: 1.3,
+                              marginBottom: 20, color: DS.text5, fontSize: 11,
+                              fontFamily: DS.body, fontWeight: 500, fontStyle: "italic"
                             }}>
-                              {tier.shortDesc ?? (isVi ? "Phù hợp nhu cầu cơ bản" : "Essential features")}
+                              {tier.shortDesc}
                             </div>
 
                             <Link
                               href={`/${locale}/thiet-ke-website?service=${activeService}&package=${tier.id}`}
                               style={{
-                                display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
-                                marginTop: 10, padding: "8px 10px",
-                                borderRadius: 10,
-                                background: idx === 0
-                                  ? "rgba(255,255,255,0.06)"
-                                  : idx === 1
-                                    ? `linear-gradient(135deg, ${tierColor}, ${color})`
-                                    : `linear-gradient(135deg, ${color}, ${tierColor}CC)`,
-                                color: "#fff", fontWeight: 700, fontSize: 11,
-                                textDecoration: "none", fontFamily: DS.mono,
-                                boxShadow: idx > 0 ? `0 4px 12px ${tierColor}30` : "none",
-                                transition: "all 0.2s",
+                                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                                padding: "12px 16px",
+                                borderRadius: 14,
+                                background: isPopular ? color : isExperience ? GRD.primary : "rgba(255,255,255,0.06)",
+                                color: "#fff", fontWeight: 800, fontSize: 13,
+                                textDecoration: "none", fontFamily: DS.heading,
+                                boxShadow: isPopular ? `0 8px 24px ${color}30` : isExperience ? GLOW.pink : "none",
+                                transition: "all 0.3s ease",
                               }}
                             >
-                              {isVi ? "Chọn gói" : "Select"}
-                              <ArrowRight size={11} />
+                              {isVi ? "Đăng ký" : "Register"}
+                              <ArrowRight size={14} strokeWidth={3} />
                             </Link>
 
                             <div style={{
-                              marginTop: 6, color: DS.purple, fontSize: 10,
-                              fontFamily: DS.mono, display: "flex",
-                              alignItems: "center", justifyContent: "center", gap: 3,
+                              marginTop: 12, color: DS.purple, fontSize: 11,
+                              fontFamily: DS.mono, fontWeight: 700,
+                              background: "rgba(167,139,250,0.08)",
+                              padding: "4px 8px", borderRadius: 8,
+                              display: "inline-flex", alignItems: "center", gap: 4
                             }}>
-                              ◈ +{tier.lpReward.toLocaleString()} LP
+                              <Zap size={11} fill="currentColor" />
+                              +{tier.lpReward.toLocaleString()} LP REWARD
                             </div>
                           </div>
                         </div>
@@ -1091,135 +1099,120 @@ export function DichVuClient({ data, locale }: Props) {
                     })}
                   </div>
 
-                  {/* Feature rows */}
-                  {(SERVICE_FEATURES[activeService] ?? []).map((feature, rowIdx) => {
-                    const values = [feature.basic, feature.business, feature.experience] as Array<string | boolean>;
-
-                    return (
-                      <div
-                        key={rowIdx}
-                        style={{
-                          display: "grid",
-                          gridTemplateColumns: "2fr 1fr 1.4fr 1.8fr",
-                          borderBottom: `1px solid ${DS.border}20`,
-                          background: rowIdx % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)",
-                        }}
-                      >
-                        {/* Feature label */}
-                        <div style={{
-                          padding: "11px 20px",
-                          borderRight: `1px solid ${DS.border}30`,
-                          display: "flex", alignItems: "center",
-                        }}>
-                          <span style={{ color: DS.text3, fontSize: 12, lineHeight: 1.4 }}>
-                            {isVi ? feature.label : feature.labelEn}
-                          </span>
-                        </div>
-
-                        {/* Values per tier — escalating visual weight */}
-                        {values.map((val, colIdx) => {
-                          const valColor = colIdx === 0 ? "#64748B" : colIdx === 1 ? color : color;
-
-                          return (
-                            <div
-                              key={colIdx}
-                              style={{
-                                padding: "11px 14px",
-                                borderLeft: colIdx === 0 ? `1px solid ${DS.border}20` : `1px solid ${DS.border}40`,
-                                background: colIdx === 0 ? "transparent" : colIdx === 1 ? `${color}04` : `${color}08`,
-                                display: "flex", alignItems: "center", justifyContent: "center",
-                              }}
-                            >
-                              {typeof val === "boolean" ? (
-                                val ? (
-                                  <div style={{
-                                    width: 20, height: 20, borderRadius: 6,
-                                    background: colIdx === 0 ? "rgba(255,255,255,0.05)" : `${valColor}18`,
-                                    display: "flex", alignItems: "center", justifyContent: "center",
-                                  }}>
-                                    <Check size={12} color={valColor} strokeWidth={2.5} />
-                                  </div>
-                                ) : (
-                                  <div style={{
-                                    width: 20, height: 20, borderRadius: 6,
-                                    background: "rgba(255,255,255,0.02)",
-                                    display: "flex", alignItems: "center", justifyContent: "center",
-                                  }}>
-                                    <Minus size={12} color={DS.text5} strokeWidth={2} />
-                                  </div>
-                                )
-                              ) : (
-                                <span style={{
-                                  color: colIdx === 0 ? DS.text4 : valColor,
-                                  fontSize: 11, fontFamily: DS.mono,
-                                  fontWeight: colIdx > 0 ? 700 : 400,
-                                  lineHeight: 1.3,
-                                }}>
-                                  {val}
-                                </span>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    );
-                  })}
-
-                  {/* Footer CTA row */}
-                  <div style={{
-                    display: "grid",
-                    gridTemplateColumns: "2fr 1fr 1.4fr 1.8fr",
-                    borderTop: `2px solid ${DS.border}`,
-                    background: "rgba(15,23,42,0.6)",
-                  }}>
-                    <div style={{ padding: "14px 20px", borderRight: `1px solid ${DS.border}40` }}>
-                      <Link
-                        href={`/${locale}/contact`}
-                        style={{
-                          display: "inline-flex", alignItems: "center", gap: 6,
-                          padding: "7px 14px", borderRadius: 9,
-                          background: `${color}10`, border: `1px solid ${color}30`,
-                          color: color, fontSize: 11, fontFamily: DS.mono,
-                          textDecoration: "none", cursor: "pointer",
-                          transition: "all 0.2s",
-                        }}
-                      >
-                        {isVi ? "Cần tư vấn?" : "Need help?"}
-                      </Link>
-                    </div>
-
-                    {serviceTiers.map((tier, idx) => {
-                      const isPopular = tier.id === popularTierId;
+                  {/* Feature Rows */}
+                  <div style={{ maxHeight: 600, overflowY: "auto" }}>
+                    {(SERVICE_FEATURES[activeService] ?? []).map((feature, rowIdx) => {
                       return (
-                        <div
-                          key={tier.id}
+                        <motion.div
+                          key={rowIdx}
+                          whileHover={{ background: "rgba(255,255,255,0.03)" }}
                           style={{
-                            padding: "14px 12px",
-                            borderLeft: `1px solid ${DS.border}40`,
-                            background: idx === 0 ? "transparent" : idx === 1 ? `${color}04` : `${color}08`,
-                            textAlign: "center",
+                            display: "grid",
+                            gridTemplateColumns: `1.4fr repeat(${serviceTiers.length}, 1fr)`,
+                            borderBottom: `1px solid ${DS.border}30`,
+                            transition: "background 0.2s",
                           }}
                         >
-                          <Link
-                            href={`/${locale}/thiet-ke-website?service=${activeService}&package=${tier.id}`}
-                            style={{
-                              display: "inline-flex", alignItems: "center", gap: 4,
-                              padding: "7px 14px", borderRadius: 9,
-                              background: idx === 0
-                                ? "rgba(255,255,255,0.05)"
-                                : GRD.primary,
-                              color: "#fff", fontWeight: 700, fontSize: 11,
-                              textDecoration: "none", fontFamily: DS.mono,
-                              boxShadow: idx > 0 ? GLOW.pink : "none",
-                              transition: "all 0.2s",
-                            }}
-                          >
-                            <Zap size={11} />
-                            {isVi ? "Đặt ngay" : "Book now"}
-                          </Link>
-                        </div>
+                          <div style={{
+                            padding: "16px 24px",
+                            borderRight: `1px solid ${DS.border}30`,
+                            display: "flex", alignItems: "center",
+                          }}>
+                            <span style={{ color: DS.text3, fontSize: 14, fontWeight: 500 }}>
+                              {isVi ? feature.label : feature.labelEn}
+                            </span>
+                          </div>
+
+                          {serviceTiers.map((tier, colIdx) => {
+                            // Map feature value based on tier level
+                            let val: string | boolean = false;
+                            if (tier.level === 1) val = feature.basic;
+                            else if (tier.level === 2) val = feature.business;
+                            else if (tier.level === 3) val = feature.experience;
+                            else val = isVi ? "Tùy chỉnh" : "Custom"; // Fallback for level 4+ (Theo yêu cầu)
+
+                            const isSpecial = tier.level >= 2;
+                            const tierColor = tier.level === 1 ? DS.text4 : tier.level === 2 ? color : DS.pink;
+                            
+                            return (
+                              <div
+                                key={tier.id}
+                                style={{
+                                  padding: "16px 12px",
+                                  borderLeft: `1px solid ${DS.border}30`,
+                                  background: tier.level === 2 ? `${color}04` : tier.level === 3 ? `${DS.pink}04` : "transparent",
+                                  display: "flex", alignItems: "center", justifyContent: "center",
+                                  textAlign: "center",
+                                }}
+                              >
+                                {typeof val === "boolean" ? (
+                                  val ? (
+                                    <div style={{
+                                      width: 24, height: 24, borderRadius: 8,
+                                      background: `${tierColor}20`,
+                                      display: "flex", alignItems: "center", justifyContent: "center",
+                                    }}>
+                                      <Check size={14} color={tierColor} strokeWidth={3} />
+                                    </div>
+                                  ) : (
+                                    <Minus size={14} color={DS.text5} strokeWidth={2} />
+                                  )
+                                ) : (
+                                  <span style={{
+                                    color: isSpecial ? DS.text : DS.text3,
+                                    fontSize: 13, fontFamily: DS.mono,
+                                    fontWeight: isSpecial ? 700 : 500,
+                                  }}>
+                                    {val}
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </motion.div>
                       );
                     })}
+                  </div>
+
+                  {/* Footer Action Strip */}
+                  <div style={{
+                    display: "grid",
+                    gridTemplateColumns: `1.4fr repeat(${serviceTiers.length}, 1fr)`,
+                    background: "rgba(15,23,42,0.8)",
+                    borderTop: `1px solid ${DS.border}`,
+                  }}>
+                    <div style={{ padding: "24px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <Link
+                        href={`/${locale}/contact`}
+                        className="group"
+                        style={{
+                          display: "inline-flex", alignItems: "center", gap: 8,
+                          color: DS.text4, fontSize: 13, fontWeight: 600,
+                          textDecoration: "none", transition: "color 0.2s"
+                        }}
+                      >
+                        {isVi ? "Cần giải pháp tùy chỉnh?" : "Need custom solution?"}
+                        <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                      </Link>
+                    </div>
+                    {serviceTiers.map((tier, idx) => (
+                      <div key={tier.id} style={{ padding: "24px 12px", textAlign: "center", borderLeft: `1px solid ${DS.border}30` }}>
+                        <Link
+                          href={`/${locale}/thiet-ke-website?service=${activeService}&package=${tier.id}`}
+                          style={{
+                            display: "inline-flex", alignItems: "center", gap: 6,
+                            padding: "10px 20px", borderRadius: 12,
+                            background: idx === 0 ? "transparent" : idx === 1 ? color : GRD.primary,
+                            border: idx === 0 ? `1px solid ${DS.border}` : "none",
+                            color: "#fff", fontWeight: 700, fontSize: 13,
+                            textDecoration: "none",
+                            boxShadow: idx === 1 ? `0 4px 12px ${color}30` : idx === 2 ? GLOW.pink : "none"
+                          }}
+                        >
+                          {isVi ? "Bắt đầu" : "Get Started"}
+                        </Link>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}

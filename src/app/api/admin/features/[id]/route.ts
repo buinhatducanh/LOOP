@@ -54,16 +54,20 @@ export async function PUT(
       const _updated = await tx.feature.update({
         where: { id },
         data: {
-          featureName: data.featureName,
-          description: data.description,
-          logicLevel: data.logicLevel,
-          isRequired: data.isRequired,
-          sortOrder: data.sortOrder,
-          isActive: data.isActive,
-          groupId: data.groupId,
-          category: data.category ?? "Khác",
-          extraPrice: data.extraPrice ?? 0,
-          includedTiers: Array.isArray(data.includedTiers) ? data.includedTiers : (typeof data.includedTiers === "string" ? data.includedTiers : "[]"),
+          ...(data.featureName !== undefined && { featureName: data.featureName }),
+          ...(data.description !== undefined && { description: data.description }),
+          ...(data.logicLevel !== undefined && { logicLevel: data.logicLevel }),
+          ...(data.isRequired !== undefined && { isRequired: data.isRequired }),
+          ...(data.sortOrder !== undefined && { sortOrder: data.sortOrder }),
+          ...(data.isActive !== undefined && { isActive: data.isActive }),
+          ...(data.groupId !== undefined && { groupId: data.groupId }),
+          ...(data.category !== undefined && { category: data.category }),
+          ...(data.extraPrice !== undefined && { extraPrice: data.extraPrice }),
+          ...(data.includedTiers !== undefined && { 
+            includedTiers: Array.isArray(data.includedTiers) 
+              ? data.includedTiers 
+              : (typeof data.includedTiers === "string" ? data.includedTiers : "[]") 
+          }),
         },
       });
 
@@ -128,6 +132,9 @@ export async function PUT(
 
     revalidatePath("/vi/thiet-ke-website");
     revalidatePath("/en/thiet-ke-website");
+    revalidatePath("/ja/thiet-ke-website");
+    revalidatePath("/ko/thiet-ke-website");
+    revalidatePath("/zh/thiet-ke-website");
     revalidateTag("pricing-config");
 
     return NextResponse.json({ data: feature });

@@ -1,5 +1,5 @@
 "use client";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useAdminTranslations } from "@/i18n/admin/useAdminTranslations";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "motion/react";
@@ -129,6 +129,10 @@ type Order = {
     paymentStatus: string;
     createdAt: string;
     package?: { title: string };
+    template?: { nameVi: string };
+    infrastructureTier?: { nameVi: string; nameEn: string };
+    selectedAttributes?: { attribute: { nameVi: string; category: string } }[];
+    domainName?: string;
     projectTitle?: string;
     note?: string;
     demo?: {
@@ -247,7 +251,11 @@ function OrderRow({
                         </span>
                     </div>
                     <p style={{ color: DS.text4, fontSize: 12, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {order.package?.title ?? order.customerEmail}
+                        {(order as any).pricingBreakdown?.package?.name
+                            ?? order.package?.title
+                            ?? order.template?.nameVi
+                            ?? (order as any).pricingBreakdown?.package?.slug
+                            ?? order.customerEmail}
                     </p>
                 </div>
 
@@ -634,7 +642,7 @@ function PaymentModal({ order, onClose, onSuccess }: { order: Order | null; onCl
                                             </div>
                                             <div style={{ color: DS.text4, fontSize: 11 }}>{p.method} {p.note ? `· ${p.note}` : ""}</div>
                                         </div>
-                                        <button 
+                                        <button
                                             onClick={() => {
                                                 if (confirm("Xóa giao dịch này? Số tiền sẽ được trừ lại vào công nợ.")) deletePayment.mutate(p.id);
                                             }}
@@ -662,8 +670,11 @@ function TransitionModal({ order, onClose, onSuccess }: { order: Order | null; o
     const { t } = useAdminTranslations();
     if (!order) return null;
 
-    const nextStatuses = getTransitions(order.orderType, order.status);
-    const [selected, setSelected] = useState(nextStatuses[0] ?? "");
+    const flow = order.orderType === "template" || order.orderType === "web_package" ? TEMPLATE_FLOW : CUSTOM_FLOW;
+    const currentIndex = flow.indexOf(order.status as any);
+    const availableStatuses = flow.slice(currentIndex + 1);
+
+    const [selected, setSelected] = useState(availableStatuses[0] ?? "");
     const [note, setNote] = useState("");
     const [saving, setSaving] = useState(false);
 
@@ -708,30 +719,32 @@ function TransitionModal({ order, onClose, onSuccess }: { order: Order | null; o
                     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                         <div>
                             <label style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.08em", display: "block", marginBottom: 6 }}>
-                                {nextStatuses.length > 0 ? "BƯỚC TIẾP THEO GỢI Ý" : "CHỌN TRẠNG THÁI MỚI"}
+                                CHỌN TRẠNG THÁI TIẾP THEO (BƯỚC NHẢY)
                             </label>
-                            
-                            {nextStatuses.length > 0 ? (
-                                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                                    {nextStatuses.map(s => (
-                                        <button
-                                            key={s}
-                                            onClick={() => setSelected(s)}
-                                            style={{
-                                                display: "flex", alignItems: "center", justifyContent: "space-between",
-                                                padding: "10px 14px", borderRadius: 10, cursor: "pointer",
-                                                background: selected === s ? "rgba(34,197,94,0.1)" : DS.bg,
-                                                border: `1px solid ${selected === s ? "#22C55E" : DS.border}`,
-                                                transition: "all 0.2s"
-                                            }}>
-                                            <span style={{ color: selected === s ? "#22C55E" : DS.text, fontWeight: 600, fontSize: 13 }}>{STATUS_CONFIG[s]?.label ?? s}</span>
-                                            {selected === s && <CheckCircle2 size={14} style={{ color: "#22C55E" }} />}
-                                        </button>
-                                    ))}
-                                </div>
-                            ) : (
+
+                            <select
+                                value={selected}
+                                onChange={(e) => setSelected(e.target.value)}
+                                style={{
+                                    width: "100%", background: DS.bg, border: `1px solid ${DS.border}`,
+                                    borderRadius: 10, padding: "10px 12px", color: DS.text, fontSize: 13,
+                                    outline: "none", cursor: "pointer", fontFamily: DS.body,
+                                    boxSizing: "border-box"
+                                }}>
+                                <option value="" disabled>— Chọn trạng thái —</option>
+                                {flow.map(s => {
+                                    const isPassedOrCurrent = flow.indexOf(s as any) <= currentIndex;
+                                    return (
+                                        <option key={s} value={s} disabled={isPassedOrCurrent} style={{ color: isPassedOrCurrent ? DS.text4 : DS.text }}>
+                                            {STATUS_CONFIG[s]?.label ?? s} {isPassedOrCurrent ? "(Đã qua)" : ""}
+                                        </option>
+                                    );
+                                })}
+                            </select>
+
+                            {availableStatuses.length === 0 && (
                                 <div style={{ color: DS.text4, fontSize: 13, textAlign: "center", padding: "20px 0" }}>
-                                    Không có trạng thái tiếp theo khả dụng.
+                                    Đơn hàng đã ở trạng thái cuối cùng.
                                 </div>
                             )}
                         </div>
@@ -970,7 +983,7 @@ function ProjectMembersModal({ order, onClose }: { order: Order | null; onClose:
                             style={{ width: "100%", background: DS.bg, border: `1px solid ${DS.border}`, borderRadius: 10, padding: "9px 12px", color: DS.text, fontSize: 13, outline: "none", cursor: "pointer", fontFamily: DS.body }}>
                             <option value="">Chọn thành viên...</option>
                             {availableMembers.map(m => (
-                                <option key={m.id} value={m.id}>{m.name} ({m.email})</option>
+                                <option key={m.id} value={m.id}>{m.name}{m.email ? ` (${m.email})` : ""}</option>
                             ))}
                         </select>
                         <select
@@ -1097,7 +1110,7 @@ function SalesRepModal({ order, onClose, onSuccess }: { order: Order | null; onC
                         style={{ width: "100%", background: DS.bg, border: `1px solid ${DS.border}`, borderRadius: 10, padding: "10px 12px", color: DS.text, fontSize: 13, outline: "none", cursor: "pointer", fontFamily: DS.body, boxSizing: "border-box", marginBottom: 12 }}>
                         <option value="">— Không chọn —</option>
                         {team.map(m => (
-                            <option key={m.id} value={m.id}>{m.name} ({m.rank})</option>
+                            <option key={m.id} value={m.id}>{m.name}{m.rank ? ` (${m.rank})` : ""}</option>
                         ))}
                     </select>
 
@@ -1237,7 +1250,74 @@ function OrderDetailModal({ order, onClose, setToast }: { order: Order | null; o
                         <>
                             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
                                 {[
-                                    { label: "Gói dịch vụ", value: order.package?.title ?? "—" },
+                                    {
+                                        label: "Gói dịch vụ",
+                                        value: (order as any).pricingBreakdown?.package?.name
+                                            ?? order.package?.title
+                                            ?? order.template?.nameVi
+                                            ?? "—"
+                                    },
+                                ].map((item) => (
+                                    <div key={item.label} style={{ background: DS.bg, border: `1px solid ${DS.border}`, borderRadius: 10, padding: "10px 14px" }}>
+                                        <p style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.1em", marginBottom: 4 }}>{item.label.toUpperCase()}</p>
+                                        <p style={{ color: DS.text, fontWeight: 600, fontSize: 14 }}>{item.value}</p>
+                                    </div>
+                                ))}
+                                {/* Domain - multi-domain support */}
+                                {(() => {
+                                    const domains = (order as any).pricingBreakdown?.domains ?? [];
+                                    const fallback = order.domainName ?? "—";
+                                    if (domains.length <= 1) {
+                                        return (
+                                            <div style={{ background: DS.bg, border: `1px solid ${DS.border}`, borderRadius: 10, padding: "10px 14px" }}>
+                                                <p style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.1em", marginBottom: 4 }}>TÊN MIỀN</p>
+                                                <p style={{ color: DS.text, fontWeight: 600, fontSize: 14 }}>{domains[0]?.name ?? fallback}</p>
+                                            </div>
+                                        );
+                                    }
+                                    return (
+                                        <div style={{ background: DS.bg, border: `1px solid ${DS.border}`, borderRadius: 10, padding: "10px 14px", gridColumn: "1 / -1" }}>
+                                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                                                <p style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.1em", margin: 0 }}>TÊN MIỀN</p>
+                                                <span style={{ background: "rgba(6,182,212,0.15)", color: "#06B6D4", padding: "1px 7px", borderRadius: 9999, fontSize: 10, fontWeight: 700, fontFamily: DS.mono }}>{domains.length} tên miền</span>
+                                            </div>
+                                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+                                                {domains.map((d: any, i: number) => (
+                                                    <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "4px 0" }}>
+                                                        <span style={{ color: DS.text, fontWeight: 600, fontSize: 13 }}>{d.name}</span>
+                                                        <span style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono }}>{fmt(d.price || 0)}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    );
+                                })()}
+                                {[
+                                    {
+                                        label: "Hosting",
+                                        value: (order as any).pricingBreakdown?.hosting?.name
+                                            ?? order.infrastructureTier?.nameVi
+                                            ?? order.infrastructureTier?.nameEn
+                                            ?? "—"
+                                    },
+                                    {
+                                        label: "SEO / Addon",
+                                        value: (() => {
+                                            const bd = (order as any).pricingBreakdown;
+                                            const seoName = bd?.seo?.name;
+                                            const featureNames = bd?.features?.map((f: any) => f.featureName || f.label) || [];
+                                            const attributeNames = order.selectedAttributes?.map(a => a.attribute.nameVi) || [];
+
+                                            const all = [
+                                                ...(seoName ? [seoName] : []),
+                                                ...featureNames,
+                                                ...attributeNames
+                                            ];
+
+                                            const unique = Array.from(new Set(all));
+                                            return unique.length > 0 ? unique.join(", ") : "—";
+                                        })()
+                                    },
                                     { label: "Tổng tiền", value: fmt(total), bold: true },
                                     { label: "Đã thanh toán", value: fmt(paid), color: "#10B981" },
                                     { label: "Còn lại", value: fmt(remaining), color: remaining > 0 ? "#F59E0B" : "#10B981" },
@@ -1248,7 +1328,7 @@ function OrderDetailModal({ order, onClose, setToast }: { order: Order | null; o
                                 ].map((item) => (
                                     <div key={item.label} style={{ background: DS.bg, border: `1px solid ${DS.border}`, borderRadius: 10, padding: "10px 14px" }}>
                                         <p style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.1em", marginBottom: 4 }}>{item.label.toUpperCase()}</p>
-                                        <p style={{ color: (item as { color?: string }).color ?? DS.text, fontWeight: (item as { bold?: boolean }).bold ? 700 : 600, fontSize: 14 }}>{item.value}</p>
+                                        <p style={{ color: (item as any).color ?? DS.text, fontWeight: (item as any).bold ? 700 : 600, fontSize: 14 }}>{item.value}</p>
                                     </div>
                                 ))}
                             </div>
@@ -1439,6 +1519,12 @@ export default function OrdersPage() {
     const [salesRepOrder, setSalesRepOrder] = useState<Order | null>(null);
     const [transitionOrder, setTransitionOrder] = useState<Order | null>(null);
     const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+    useEffect(() => {
+        if (toast) {
+            const timer = setTimeout(() => setToast(null), 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [toast]);
 
     const { data, isLoading, isFetching } = useQuery({
         queryKey: qk.orders({ page, limit: 20, search, status: statusFilter }),
@@ -1471,7 +1557,7 @@ export default function OrdersPage() {
             return res;
         },
         onSuccess: () => {
-            qc.invalidateQueries({ queryKey: qk.orders() });
+            qc.invalidateQueries({ queryKey: ["admin", "orders"] });
             setTransitionOrder(null);
         },
         onError: (err: unknown) => setToast({ message: err instanceof Error ? err.message : "Chuyển trạng thái thất bại", type: "error" }),
@@ -1481,7 +1567,7 @@ export default function OrdersPage() {
         mutationFn: async (id: string) => {
             await adminApi.delete(`/api/admin/orders/${id}`);
         },
-        onSuccess: () => { qc.invalidateQueries({ queryKey: qk.orders() }); setDeleteOrder(null); },
+        onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin", "orders"] }); setDeleteOrder(null); },
         onError: (err: unknown) => setToast({ message: err instanceof Error ? err.message : "Xóa thất bại", type: "error" }),
     });
 
@@ -1493,7 +1579,7 @@ export default function OrdersPage() {
             });
         },
         onSuccess: () => {
-            qc.invalidateQueries({ queryKey: qk.orders() });
+            qc.invalidateQueries({ queryKey: ["admin", "orders"] });
             setSendDemoOrder(null);
         },
         onError: (err: unknown) => setToast({ message: err instanceof Error ? err.message : "Gửi demo thất bại", type: "error" }),
@@ -1503,167 +1589,167 @@ export default function OrdersPage() {
 
     return (
         <>
-        <div>
-            {/* Header */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-                <div>
-                    <h2 style={{ fontFamily: DS.heading, fontSize: 20, fontWeight: 800, color: DS.text, marginBottom: 2 }}>{t("orders.title")}</h2>
-                    <p style={{ color: DS.text4, fontSize: 12, fontFamily: DS.mono }}>
-                        {stats?.total ?? pagination?.total ?? 0} đơn hàng
-                    </p>
-                </div>
-                <div style={{ display: "flex", gap: 8 }}>
-                    <button onClick={() => setShowCreateModal(true)}
-                        style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", background: GRD.primary, border: "none", borderRadius: 10, color: "#fff", cursor: "pointer", fontSize: 12, fontFamily: DS.mono, fontWeight: 700 }}>
-                        <Plus size={13} /> {t("orders.create")}
-                    </button>
-                    <button onClick={() => { qc.invalidateQueries({ queryKey: qk.orders({ page }) }); qc.invalidateQueries({ queryKey: ["admin", "orders", "stats", orderTypeFilter] }); }}
-                        style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 10, color: DS.text3, cursor: "pointer", fontSize: 12, fontFamily: DS.mono }}>
-                        <RefreshCw size={13} className={isFetching ? "animate-spin" : ""} /> {t("common.refresh")}
-                    </button>
-                </div>
-            </div>
-
-            {/* Filters */}
-            <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
-                <div style={{ position: "relative", flex: 1, minWidth: 200 }}>
-                    <Search size={14} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: DS.text4 }} />
-                    <input type="text" placeholder="Tìm theo tên, email, mã..."
-                        value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                        style={{ width: "100%", background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 10, padding: "8px 12px 8px 36px", color: DS.text, fontSize: 13, outline: "none", boxSizing: "border-box", fontFamily: DS.body }} />
-                </div>
-                <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-                    style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 10, padding: "8px 12px", color: DS.text3, fontSize: 13, outline: "none", cursor: "pointer", fontFamily: DS.mono }}>
-                    <option value="">Tất cả trạng thái</option>
-                    {currentFlow.map(s => (
-                        <option key={s} value={s}>{STATUS_CONFIG[s].label}</option>
-                    ))}
-                </select>
-                <select value={orderTypeFilter} onChange={(e) => { setOrderTypeFilter(e.target.value); setPage(1); qc.invalidateQueries({ queryKey: ["admin", "orders", "stats", e.target.value] }); }}
-                    style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 10, padding: "8px 12px", color: DS.text3, fontSize: 13, outline: "none", cursor: "pointer", fontFamily: DS.mono }}>
-                    <option value="">Tất cả loại</option>
-                    <option value="package">Gói dịch vụ</option>
-                    <option value="template">Web mẫu</option>
-                    <option value="custom">Tùy chỉnh</option>
-                </select>
-            </div>
-
-            {/* Status chips */}
-            <div style={{ display: "flex", gap: 6, marginBottom: 16, flexWrap: "wrap" }}>
-                {currentFlow.map(s => {
-                    const cfg = STATUS_CONFIG[s];
-                    const count = statusCounts[s] ?? 0;
-                    return (
-                        <button key={s} onClick={() => setStatusFilter(statusFilter === s ? "" : s)}
-                            style={{
-                                padding: "4px 12px", borderRadius: 9999,
-                                border: `1px solid ${statusFilter === s ? cfg.color : DS.border}`,
-                                background: statusFilter === s ? cfg.bg : "transparent",
-                                color: statusFilter === s ? cfg.color : DS.text4,
-                                fontSize: 11, fontFamily: DS.mono, cursor: "pointer", fontWeight: statusFilter === s ? 700 : 400,
-                            }}>
-                            {cfg.label} {count > 0 && <span>({count})</span>}
+            <div>
+                {/* Header */}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+                    <div>
+                        <h2 style={{ fontFamily: DS.heading, fontSize: 20, fontWeight: 800, color: DS.text, marginBottom: 2 }}>{t("orders.title")}</h2>
+                        <p style={{ color: DS.text4, fontSize: 12, fontFamily: DS.mono }}>
+                            {stats?.total ?? pagination?.total ?? 0} đơn hàng
+                        </p>
+                    </div>
+                    <div style={{ display: "flex", gap: 8 }}>
+                        <button onClick={() => setToast({ message: "Tính năng đang phát triển", type: "error" })}
+                            style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", background: GRD.primary, border: "none", borderRadius: 10, color: "#fff", cursor: "pointer", fontSize: 12, fontFamily: DS.mono, fontWeight: 700 }}>
+                            <Plus size={13} /> {t("orders.create")}
                         </button>
-                    );
-                })}
-            </div>
-
-            {/* Loading */}
-            {isLoading && (
-                <div style={{ display: "flex", justifyContent: "center", padding: 40 }}>
-                    <div style={{ width: 32, height: 32, border: `2px solid ${DS.border}`, borderTop: `2px solid ${DS.blue}`, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-                </div>
-            )}
-
-            {/* Order list */}
-            {!isLoading && (
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                    {orders.length === 0 ? (
-                        <div style={{ textAlign: "center", padding: "3rem", color: DS.text4, fontSize: 14 }}>
-                            {t("orders.empty")}
-                        </div>
-                    ) : (
-                        orders.map(order => (
-                            <OrderRow
-                                key={order.id}
-                                order={order}
-                                onTransition={(order) => setTransitionOrder(order)}
-                                onDetail={setSelectedOrder}
-                                onEdit={setEditOrder}
-                                onDelete={setDeleteOrder}
-                                onSendDemo={setSendDemoOrder}
-                                onRecordPayment={setPaymentOrder}
-                                onAssignMember={setAssignMemberOrder}
-                                onAssignSalesRep={setSalesRepOrder}
-                            />
-                        ))
-                    )}
-                </div>
-            )}
-
-            {/* Pagination */}
-            {!isLoading && totalPages > 1 && (
-                <div style={{ display: "flex", justifyContent: "center", gap: 8, marginTop: 20 }}>
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
-                        <button key={p} onClick={() => setPage(p)}
-                            style={{
-                                width: 32, height: 32, borderRadius: 8,
-                                border: `1px solid ${page === p ? DS.blue : DS.border}`,
-                                background: page === p ? "rgba(59,130,246,0.1)" : "transparent",
-                                color: page === p ? DS.blue : DS.text4,
-                                cursor: "pointer", fontSize: 13, fontFamily: DS.mono,
-                            }}>
-                            {p}
+                        <button onClick={() => { qc.invalidateQueries({ queryKey: qk.orders({ page }) }); qc.invalidateQueries({ queryKey: ["admin", "orders", "stats", orderTypeFilter] }); }}
+                            style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 10, color: DS.text3, cursor: "pointer", fontSize: 12, fontFamily: DS.mono }}>
+                            <RefreshCw size={13} className={isFetching ? "animate-spin" : ""} /> {t("common.refresh")}
                         </button>
-                    ))}
+                    </div>
                 </div>
-            )}
 
-            {/* Modals */}
-            {!!selectedOrder && (
-                <OrderDetailModal order={selectedOrder} onClose={() => setSelectedOrder(null)} setToast={setToast} />
-            )}
-            {showCreateModal && (
-                <OrderEditModal order={null} onClose={() => setShowCreateModal(false)} onSuccess={() => { qc.invalidateQueries({ queryKey: qk.orders() }); setShowCreateModal(false); }} />
-            )}
-            {!!editOrder && (
-                <OrderEditModal order={editOrder} onClose={() => setEditOrder(null)} onSuccess={() => qc.invalidateQueries({ queryKey: qk.orders() })} />
-            )}
-            {!!deleteOrder && (
-                <DeleteConfirmModal order={deleteOrder} onClose={() => setDeleteOrder(null)} onConfirm={() => { if (deleteOrder) deleteMutation.mutate(deleteOrder.id); }} />
-            )}
-            {!!sendDemoOrder && (
-                <SendDemoModal order={sendDemoOrder} onClose={() => setSendDemoOrder(null)} onSuccess={(data) => sendDemoMutation.mutate(data)} />
-            )}
-            {!!paymentOrder && (
-                <PaymentModal order={paymentOrder} onClose={() => setPaymentOrder(null)} onSuccess={() => qc.invalidateQueries({ queryKey: qk.orders() })} />
-            )}
-            {!!assignMemberOrder && (
-                <ProjectMembersModal order={assignMemberOrder} onClose={() => setAssignMemberOrder(null)} />
-            )}
-            {!!salesRepOrder && (
-                <SalesRepModal order={salesRepOrder} onClose={() => setSalesRepOrder(null)} onSuccess={() => qc.invalidateQueries({ queryKey: qk.orders() })} />
-            )}
-            {!!transitionOrder && (
-                <TransitionModal 
-                    order={transitionOrder} 
-                    onClose={() => setTransitionOrder(null)} 
-                    onSuccess={(status, note) => transitionMutation.mutate({ id: transitionOrder.id, status, note })} 
-                />
-            )}
-        </div>
-        {toast && (
-            <div style={{
-                position: "fixed", bottom: 24, right: 24, zIndex: 9999,
-                background: DS.bgCard, border: `1px solid ${toast.type === "error" ? DS.red : DS.green}`,
-                borderRadius: 12, padding: "12px 20px", minWidth: 260,
-                boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
-            }}>
-                <div style={{ color: toast.type === "error" ? DS.red : DS.green, fontSize: 13, fontFamily: DS.mono }}>
-                    {toast.message}
+                {/* Filters */}
+                <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
+                    <div style={{ position: "relative", flex: 1, minWidth: 200 }}>
+                        <Search size={14} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: DS.text4 }} />
+                        <input type="text" placeholder="Tìm theo tên, email, mã..."
+                            value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                            style={{ width: "100%", background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 10, padding: "8px 12px 8px 36px", color: DS.text, fontSize: 13, outline: "none", boxSizing: "border-box", fontFamily: DS.body }} />
+                    </div>
+                    <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+                        style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 10, padding: "8px 12px", color: DS.text3, fontSize: 13, outline: "none", cursor: "pointer", fontFamily: DS.mono }}>
+                        <option value="">Tất cả trạng thái</option>
+                        {currentFlow.map(s => (
+                            <option key={s} value={s}>{STATUS_CONFIG[s].label}</option>
+                        ))}
+                    </select>
+                    <select value={orderTypeFilter} onChange={(e) => { setOrderTypeFilter(e.target.value); setPage(1); qc.invalidateQueries({ queryKey: ["admin", "orders", "stats", e.target.value] }); }}
+                        style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 10, padding: "8px 12px", color: DS.text3, fontSize: 13, outline: "none", cursor: "pointer", fontFamily: DS.mono }}>
+                        <option value="">Tất cả loại</option>
+                        <option value="package">Gói dịch vụ</option>
+                        <option value="template">Web mẫu</option>
+                        <option value="custom">Tùy chỉnh</option>
+                    </select>
                 </div>
+
+                {/* Status chips */}
+                <div style={{ display: "flex", gap: 6, marginBottom: 16, flexWrap: "wrap" }}>
+                    {currentFlow.map(s => {
+                        const cfg = STATUS_CONFIG[s];
+                        const count = statusCounts[s] ?? 0;
+                        return (
+                            <button key={s} onClick={() => setStatusFilter(statusFilter === s ? "" : s)}
+                                style={{
+                                    padding: "4px 12px", borderRadius: 9999,
+                                    border: `1px solid ${statusFilter === s ? cfg.color : DS.border}`,
+                                    background: statusFilter === s ? cfg.bg : "transparent",
+                                    color: statusFilter === s ? cfg.color : DS.text4,
+                                    fontSize: 11, fontFamily: DS.mono, cursor: "pointer", fontWeight: statusFilter === s ? 700 : 400,
+                                }}>
+                                {cfg.label} {count > 0 && <span>({count})</span>}
+                            </button>
+                        );
+                    })}
+                </div>
+
+                {/* Loading */}
+                {isLoading && (
+                    <div style={{ display: "flex", justifyContent: "center", padding: 40 }}>
+                        <div style={{ width: 32, height: 32, border: `2px solid ${DS.border}`, borderTop: `2px solid ${DS.blue}`, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+                    </div>
+                )}
+
+                {/* Order list */}
+                {!isLoading && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        {orders.length === 0 ? (
+                            <div style={{ textAlign: "center", padding: "3rem", color: DS.text4, fontSize: 14 }}>
+                                {t("orders.empty")}
+                            </div>
+                        ) : (
+                            orders.map(order => (
+                                <OrderRow
+                                    key={order.id}
+                                    order={order}
+                                    onTransition={(order) => setTransitionOrder(order)}
+                                    onDetail={setSelectedOrder}
+                                    onEdit={setEditOrder}
+                                    onDelete={setDeleteOrder}
+                                    onSendDemo={setSendDemoOrder}
+                                    onRecordPayment={setPaymentOrder}
+                                    onAssignMember={setAssignMemberOrder}
+                                    onAssignSalesRep={setSalesRepOrder}
+                                />
+                            ))
+                        )}
+                    </div>
+                )}
+
+                {/* Pagination */}
+                {!isLoading && totalPages > 1 && (
+                    <div style={{ display: "flex", justifyContent: "center", gap: 8, marginTop: 20 }}>
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                            <button key={p} onClick={() => setPage(p)}
+                                style={{
+                                    width: 32, height: 32, borderRadius: 8,
+                                    border: `1px solid ${page === p ? DS.blue : DS.border}`,
+                                    background: page === p ? "rgba(59,130,246,0.1)" : "transparent",
+                                    color: page === p ? DS.blue : DS.text4,
+                                    cursor: "pointer", fontSize: 13, fontFamily: DS.mono,
+                                }}>
+                                {p}
+                            </button>
+                        ))}
+                    </div>
+                )}
+
+                {/* Modals */}
+                {!!selectedOrder && (
+                    <OrderDetailModal order={selectedOrder} onClose={() => setSelectedOrder(null)} setToast={setToast} />
+                )}
+                {showCreateModal && (
+                    <OrderEditModal order={null} onClose={() => setShowCreateModal(false)} onSuccess={() => { qc.invalidateQueries({ queryKey: ["admin", "orders"] }); setShowCreateModal(false); }} />
+                )}
+                {!!editOrder && (
+                    <OrderEditModal order={editOrder} onClose={() => setEditOrder(null)} onSuccess={() => qc.invalidateQueries({ queryKey: ["admin", "orders"] })} />
+                )}
+                {!!deleteOrder && (
+                    <DeleteConfirmModal order={deleteOrder} onClose={() => setDeleteOrder(null)} onConfirm={() => { if (deleteOrder) deleteMutation.mutate(deleteOrder.id); }} />
+                )}
+                {!!sendDemoOrder && (
+                    <SendDemoModal order={sendDemoOrder} onClose={() => setSendDemoOrder(null)} onSuccess={(data) => sendDemoMutation.mutate(data)} />
+                )}
+                {!!paymentOrder && (
+                    <PaymentModal order={paymentOrder} onClose={() => setPaymentOrder(null)} onSuccess={() => qc.invalidateQueries({ queryKey: ["admin", "orders"] })} />
+                )}
+                {!!assignMemberOrder && (
+                    <ProjectMembersModal order={assignMemberOrder} onClose={() => setAssignMemberOrder(null)} />
+                )}
+                {!!salesRepOrder && (
+                    <SalesRepModal order={salesRepOrder} onClose={() => setSalesRepOrder(null)} onSuccess={() => qc.invalidateQueries({ queryKey: ["admin", "orders"] })} />
+                )}
+                {!!transitionOrder && (
+                    <TransitionModal
+                        order={transitionOrder}
+                        onClose={() => setTransitionOrder(null)}
+                        onSuccess={(status, note) => transitionMutation.mutate({ id: transitionOrder.id, status, note })}
+                    />
+                )}
             </div>
-        )}
+            {toast && (
+                <div style={{
+                    position: "fixed", bottom: 24, right: 24, zIndex: 9999,
+                    background: DS.bgCard, border: `1px solid ${toast.type === "error" ? DS.red : DS.green}`,
+                    borderRadius: 12, padding: "12px 20px", minWidth: 260,
+                    boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+                }}>
+                    <div style={{ color: toast.type === "error" ? DS.red : DS.green, fontSize: 13, fontFamily: DS.mono }}>
+                        {toast.message}
+                    </div>
+                </div>
+            )}
         </>
     );
 }

@@ -723,14 +723,14 @@ export async function globalSearch(
       .sort((a, b) => (b.score ?? 0) - (a.score ?? 0)),
 
     total: services.length + teamMembers.length + projects.length +
-           blogPosts.length + courses.length + faqs.length +
-           testimonials.length + instructors.length + expertises.length +
-           webTemplates.length + landingPages.length + pricingPackages.length +
-           addonServices.length,
+      blogPosts.length + courses.length + faqs.length +
+      testimonials.length + instructors.length + expertises.length +
+      webTemplates.length + landingPages.length + pricingPackages.length +
+      addonServices.length,
     totalHits: services.length + teamMembers.length + projects.length +
-               blogPosts.length + courses.length + faqs.length +
-               testimonials.length + instructors.length + expertises.length +
-               webTemplates.length + landingPages.length + pricingPackages.length +
-               addonServices.length,
+      blogPosts.length + courses.length + faqs.length +
+      testimonials.length + instructors.length + expertises.length +
+      webTemplates.length + landingPages.length + pricingPackages.length +
+      addonServices.length,
   };
 }

@@ -289,6 +289,7 @@ export function BookingWizardClient({ locale }: Props) {
   const [paymentError, setPaymentError] = useState("");
   const [paidAmount, setPaidAmount] = useState(0);
   const [requiredAmount, setRequiredAmount] = useState(0);
+  const [validationError, setValidationError] = useState("");
 
   /**
    * Initial state — fallback packages shown while API loads.
@@ -304,12 +305,197 @@ export function BookingWizardClient({ locale }: Props) {
   const [hostingPlans, setHostingPlans] = useState<WizardHostingPlan[]>([]);
   const [domainPrices, setDomainPrices] = useState<WizardDomainPrice[]>([]);
   const [selectedHostingPlan, setSelectedHostingPlan] = useState<string>("");
-  const [selectedHostingPeriod, setSelectedHostingPeriod] = useState<string>("1 năm");
+  const [selectedHostingPeriod, setSelectedHostingPeriod] = useState<string>("1 tháng");
+  const [selectedYears, setSelectedYears] = useState<number>(1 / 12);
   const [domainQuery, setDomainQuery] = useState("");
   const [domainSelectedTld, setDomainSelectedTld] = useState(".com");
   const [domainSearchResults, setDomainSearchResults] = useState<DomainSearchResult[]>([]);
   const [selectedDomains, setSelectedDomains] = useState<DomainSearchResult[]>([]);
   const [isSearchingDomain, setIsSearchingDomain] = useState(false);
+
+  // ── Pricing Helpers ──────────────────────────────────────────────────────────
+
+  const formatYearsLabel = (years: number) => {
+    if (Math.abs(years - 1 / 12) < 0.01) return "1 tháng";
+    if (Math.abs(years - 0.5) < 0.01) return "6 tháng";
+    return `${years} năm`;
+  };
+
+  const getDomainPrice = (d: DomainSearchResult | WizardDomainPrice, years: number) => {
+    const reg = d.registrationPrice || 0;
+    const ren = d.renewalPrice || reg;
+    if (years <= 1) return reg;
+
+    const total = reg + (years - 1) * ren;
+    return Math.round(total);
+  };
+
+  const getHostingPlanForPeriod = (baseName: string, years: number) => {
+    const period = formatYearsLabel(years);
+    let plan = hostingPlans.find(p => p.name.startsWith(baseName) && p.period === period);
+
+    if (!plan) {
+      // Fallback: calculate from monthly or 1 year plan
+      const monthlyPlan = hostingPlans.find(p => p.name.startsWith(baseName) && p.period === "1 tháng");
+      const yearlyPlan = hostingPlans.find(p => p.name.startsWith(baseName) && (p.period === "1 năm" || p.months === 12));
+      const basePlan = monthlyPlan || yearlyPlan;
+
+      if (!basePlan) return null;
+
+      const months = years * 12;
+      // Target total discounts from monthly price: 1yr=10%, 2yr=15%, 3yr=18%
+      const totalTargetDiscount = years >= 3 ? 18 : years >= 2 ? 15 : years >= 1 ? 10 : 0;
+
+      let basePrice, discountedPrice, discountPct;
+
+      if (monthlyPlan) {
+        // Calculate directly from monthly
+        basePrice = monthlyPlan.monthlyPrice * months;
+        discountPct = totalTargetDiscount;
+        discountedPrice = Math.round(basePrice * (1 - discountPct / 100));
+      } else if (yearlyPlan) {
+        // Calculate relative to yearly plan (which is already ~10% off monthly)
+        basePrice = yearlyPlan.monthlyPrice * months;
+        // If target is 15% off monthly, and yearly is 10% off monthly:
+        // (1-0.15) / (1-0.10) = 0.85 / 0.9 = 0.944 (which is ~5.6% off yearly)
+        const baseDiscount = 0.10;
+        const targetDiscount = totalTargetDiscount / 100;
+
+        if (years <= 1) {
+          discountPct = 0;
+          discountedPrice = basePrice;
+        } else {
+          const relativeDiscount = 1 - (1 - targetDiscount) / (1 - baseDiscount);
+          discountPct = Math.max(0, Math.round(relativeDiscount * 100));
+          discountedPrice = Math.round(basePrice * (1 - discountPct / 100));
+        }
+      } else {
+        // Fallback if no plan found
+        basePrice = 0;
+        discountPct = 0;
+        discountedPrice = 0;
+      }
+
+      return {
+        ...basePlan,
+        months,
+        period,
+        basePrice,
+        discountedPrice,
+        discountPct: totalTargetDiscount // Show the total discount in UI
+      };
+    }
+    return plan;
+  };
+
+  const renderDurationSelector = (compact: boolean = false, isHosting: boolean = false) => {
+    const options = isHosting
+      ? [
+        { label: "1 Tháng", value: 1 / 12, period: "1 tháng" },
+        { label: "6 Tháng", value: 0.5, period: "6 tháng" },
+        { label: "1 Năm", value: 1, period: "1 năm" },
+        { label: "2 Năm", value: 2, period: "2 năm" },
+        { label: "3 Năm", value: 3, period: "3 năm" },
+      ]
+      : [
+        { label: "1 Năm", value: 1, period: "1 năm" },
+        { label: "2 Năm", value: 2, period: "2 năm" },
+        { label: "3 Năm", value: 3, period: "3 năm" },
+      ];
+
+    return (
+      <div className={`flex flex-col items-center ${compact ? "" : "mb-10"}`}>
+        {!compact && (
+          <div className="flex items-center gap-3 mb-4">
+            <div style={{ width: 12, height: 1.5, background: GRD.primary, borderRadius: 1 }} />
+            <div style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.25em", textTransform: "uppercase", fontWeight: 700 }}>Ưu đãi đăng ký nhiều năm</div>
+            <div style={{ width: 12, height: 1.5, background: GRD.primary, borderRadius: 1 }} />
+          </div>
+        )}
+
+        <div className={`relative flex flex-wrap justify-center ${compact ? "p-1 rounded-lg" : "p-1.5 rounded-2xl"} bg-slate-950/80 border border-white/5 shadow-[0_0_40px_rgba(0,0,0,0.4)] backdrop-blur-xl`}>
+          {options.map((opt) => {
+            const isActive = isHosting
+              ? Math.abs(selectedYears - opt.value) < 0.01
+              : (opt.value === 1 && selectedYears < 1) || (Math.abs(selectedYears - opt.value) < 0.01);
+            const years = opt.value;
+
+            // Calculate discount label based on service type
+            let discountLabel = null;
+            if (isHosting) {
+              if (years === 1) discountLabel = "-10%";
+              else if (years === 2) discountLabel = "-15%";
+              else if (years === 3) discountLabel = "-18%";
+            }
+
+            return (
+              <button
+                key={opt.label}
+                onClick={() => {
+                  setSelectedYears(opt.value);
+                  setSelectedHostingPeriod(opt.period);
+                }}
+                className={`group relative transition-all duration-300 outline-none ${compact ? "px-4 py-2 rounded-md" : "px-10 py-3 rounded-xl"}`}
+                style={{
+                  minWidth: compact ? (isHosting ? 75 : 90) : 130,
+                  zIndex: 10
+                }}
+              >
+                {/* Active indicator with Framer Motion */}
+                {isActive && (
+                  <motion.div
+                    layoutId="duration-active"
+                    className={`absolute inset-0 shadow-[0_4px_15px_rgba(99,102,241,0.4)] ${compact ? "rounded-md" : "rounded-xl"}`}
+                    style={{ background: GRD.primary }}
+                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                  />
+                )}
+
+                <div className={`relative z-20 flex ${compact ? "flex-row items-center justify-center gap-1" : "flex-col items-center"}`}>
+                  <span
+                    className={`font-black uppercase transition-colors duration-300 ${compact ? (isHosting ? "text-[8px]" : "text-[10px]") : "text-[11px] tracking-widest"}`}
+                    style={{ color: isActive ? "#fff" : DS.text3 }}
+                  >
+                    {opt.label}
+                  </span>
+
+                  {discountLabel && (
+                    <span
+                      className={`font-bold rounded-md transition-all duration-300 ${compact ? "text-[8px] px-1 py-0.5 ml-0.5" : "mt-1 text-[8px] px-1.5 py-0.5"} ${isActive
+                        ? "bg-white/20 text-white"
+                        : "bg-green-500/10 text-green-400 border border-green-500/20"
+                        }`}
+                    >
+                      {compact ? discountLabel : `Tiết kiệm ${discountLabel.replace("-", "")}`}
+                    </span>
+                  )}
+                  {!compact && !discountLabel && (
+                    <span className="mt-1 text-[8px] opacity-0" aria-hidden="true">Free</span>
+                  )}
+                </div>
+
+                {/* Hover effect for non-active buttons */}
+                {!isActive && (
+                  <div className={`absolute inset-0 bg-white/0 group-hover:bg-white/5 transition-colors duration-200 ${compact ? "rounded-md" : "rounded-xl"}`} />
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {!compact && (
+          <div className="mt-4 flex items-center gap-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+            <span style={{ color: DS.text5, fontSize: 11, fontFamily: DS.mono }}>
+              {selectedYears === 1
+                ? "Chọn 2-3 năm để nhận ưu đãi lên đến 10%"
+                : `Bạn đang được áp dụng mức giá ưu đãi ${selectedYears} năm`}
+            </span>
+          </div>
+        )}
+      </div>
+    );
+  };
   const [lpRate, setLpRate] = useState<LpRateConfig>(DEFAULT_LP_RATE);
   const [vatRate, setVatRate] = useState(0.10);
   const [maxLpRedeem, setMaxLpRedeem] = useState(0);
@@ -633,7 +819,8 @@ export function BookingWizardClient({ locale }: Props) {
   const currentExtraPrice = extraOptions.filter(e => selectedExtras.includes(e.id)).reduce((s, e) => s + (e.price || 0), 0);
   const selectedHosting = hostingPlans.find(h => h.slug === selectedHostingPlan);
   const hostingCost = selectedHosting?.discountedPrice ?? 0;
-  const domainCost = selectedDomains.reduce((s, d) => s + (d.registrationPrice || 0), 0);
+  // Total domain cost based on selected years
+  const domainCost = selectedDomains.reduce((s, d) => s + getDomainPrice(d, selectedYears), 0);
   const selectedSeo = seoTiers.find(t => t.level === selectedSeoTier);
   const seoCost = selectedSeo?.basePrice ?? 0;
   const currentSubtotal = currentBasePrice + extraFeaturePrice + currentExtraPrice + hostingCost + domainCost + seoCost;
@@ -657,8 +844,12 @@ export function BookingWizardClient({ locale }: Props) {
     setIsSearchingDomain(true);
     setDomainSearchResults([]);
     try {
+      // Clean TLD (remove leading dot if present)
+      const cleanTld = domainSelectedTld.startsWith(".") ? domainSelectedTld.slice(1) : domainSelectedTld;
+      const targetDomain = (domainQuery + (domainSelectedTld.startsWith(".") ? domainSelectedTld : "." + domainSelectedTld)).toLowerCase();
+
       const res = await fetch(
-        `/api/pricing/domain-search?q=${encodeURIComponent(domainQuery)}`,
+        `/api/pricing/domain-search?q=${encodeURIComponent(domainQuery)}&tld=${encodeURIComponent(cleanTld)}`,
         { signal: AbortSignal.timeout(10_000) }
       );
       const json = await res.json();
@@ -666,8 +857,9 @@ export function BookingWizardClient({ locale }: Props) {
       // Map API results to our DomainSearchResult[] using local pricing
       const domainData = json?.data?.domains ?? [];
       const results: DomainSearchResult[] = domainPrices.map(price => {
+        const fullDomain = domainQuery + price.extension;
         const apiResult = domainData.find((d: { domain: string; available: boolean; reason?: string; price: number }) =>
-          d.domain === domainQuery + price.extension
+          d.domain.toLowerCase() === fullDomain.toLowerCase()
         );
         return {
           id: price.id,
@@ -680,8 +872,28 @@ export function BookingWizardClient({ locale }: Props) {
           selected: false,
         };
       });
-      setDomainSearchResults(results);
-    } catch {
+
+      // SORTING: Move the target domain (matching selected TLD) to the first position
+      const sortedResults = [...results].sort((a, b) => {
+        const aFull = (domainQuery + a.extension).toLowerCase();
+        const bFull = (domainQuery + b.extension).toLowerCase();
+        if (aFull === targetDomain) return -1;
+        if (bFull === targetDomain) return 1;
+        return 0;
+      });
+
+      setDomainSearchResults(sortedResults);
+
+      // AUTO-SELECT: If the primary domain is available, select it automatically
+      const primaryResult = sortedResults.find(r => (domainQuery + r.extension).toLowerCase() === targetDomain);
+      if (primaryResult?.available) {
+        setSelectedDomains(prev => {
+          if (prev.some(d => d.extension === primaryResult.extension)) return prev;
+          return [...prev, primaryResult];
+        });
+      }
+    } catch (err) {
+      console.error("Domain search failed:", err);
       // On error, fall back to all available with local prices
       const results: DomainSearchResult[] = domainPrices.map(price => ({
         id: price.id,
@@ -701,29 +913,37 @@ export function BookingWizardClient({ locale }: Props) {
 
   const canNext = () => {
     if (step === 0) return !!selectedPackage;      // must select a package
-    if (step === 1) return true;                    // domain is optional
-    if (step === 2) return true;                    // SEO is optional (free tier or paid)
+    if (step === 1) return selectedDomains.length > 0;  // must select a domain
+    if (step === 2) return selectedSeoTier > 0 || selectedFreeSeo; // must select SEO (free or paid)
     if (step === 3) return true;                    // hosting + addons optional
-    if (step === 4) return !!(name && email && phone); // contact info required
+    if (step === 4) return true; // Always allow click to show validation messages
     if (step === 5) return true;
     return true;
   };
 
-  // ── Submit ────────────────────────────────────────────────────────────
-  const handleSubmit = async () => {
-    const svc = service;
-    const pkg = packages.find(p => p.id === selectedPackage);
-    const featOpts = currentFeatureOptions;
-    // Base price = WEB_BASE_PRICE × package multiplier (all = 1 for now)
-    // Fixed package prices — not derived from multiplier
-    const PACKAGE_PRICES_SUBMIT: Record<string, number> = {
-      landing: 1_890_000,
-      "ban-hang": 3_890_000,
-      "doanh-nghiep": 7_890_000,
-      "yeu-cau": 10_890_000,
-    };
+  const handleNext = () => {
+    setValidationError("");
+    if (step === 4) {
+      if (!name) { setValidationError("Vui lòng nhập Họ và tên"); return; }
+      if (!email) { setValidationError("Vui lòng nhập Email"); return; }
+      const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+      if (!isEmailValid) { setValidationError("Email không hợp lệ"); return; }
+      if (!phone) { setValidationError("Vui lòng nhập Số điện thoại"); return; }
+      const phoneDigits = phone.replace(/\D/g, "");
+      if (phoneDigits.length !== 10) { setValidationError("Số điện thoại phải có đúng 10 chữ số"); return; }
+      if (!startDate) { setValidationError("Vui lòng chọn Ngày bắt đầu dự án"); return; }
+    }
+    setStep(s => s + 1);
+  };
 
-    const basePrice = pkg ? (PACKAGE_PRICES_SUBMIT[pkg.id] ?? DB_PACKAGE_PRICES[pkg.id]?.basePrice ?? 1_890_000) : 1_890_000;
+  // ── Submit logic ──
+  const handleSubmit = async () => {
+    // Determine the selected package details from state or fallback
+    const targetPkg = packages.find(p => p.slug === selectedPackage || p.id === selectedPackage) || PKG_PRICE_MAP[selectedPackage];
+
+    const svc = WEBSITE_SERVICE;
+    const basePrice = targetPkg?.price ?? (targetPkg as any)?.basePrice ?? 1_890_000;
+    const featOpts = currentFeatureOptions;
     // Only charge for non-included features
     const featPrices = featOpts
       .filter(f => selectedFeatures.includes(f.id) && !f.includedInBase)
@@ -734,14 +954,14 @@ export function BookingWizardClient({ locale }: Props) {
     const selectedSeo = seoTiers.find(t => t.level === selectedSeoTier);
     const seoTotalCost = selectedSeo?.basePrice ?? 0;
     const subtotal = basePrice + featPrices + extraPricesTotal + hostingTotalCost + domainTotalCost + seoTotalCost;
-    
+
     // Deduct LP discount from total (lpDiscount already capped at 20% in useEffect)
     const vndDiscount = Math.round(lpDiscount * lpRate.lpPerVnd);
     const totalWithoutFullPayDiscount = Math.round((subtotal - vndDiscount) * (1 + vatRate));
 
     // Apply 5% discount for 100% payment plan on the final amount
-    const total = paymentPlan === "100" 
-      ? Math.round(totalWithoutFullPayDiscount * 0.95) 
+    const total = paymentPlan === "100"
+      ? Math.round(totalWithoutFullPayDiscount * 0.95)
       : totalWithoutFullPayDiscount;
 
     // Chỉ gửi features có phí thêm (non-includedInBase) trong selectedItems
@@ -752,8 +972,8 @@ export function BookingWizardClient({ locale }: Props) {
       }));
     const selectedItems = [
       {
-        featureId: pkg?.id ?? selectedPackage,
-        featureName: `${svc?.title ?? "Website"} — ${pkg?.name ?? "Basic"}`,
+        featureId: targetPkg?.id ?? selectedPackage,
+        featureName: `${svc?.title ?? "Website"} — ${targetPkg?.name ?? "Basic"}`,
         variantId: "",
         variantName: "Custom",
         price: basePrice,
@@ -776,11 +996,11 @@ export function BookingWizardClient({ locale }: Props) {
 
       const pricingBreakdown = {
         package: {
-          slug: pkg?.slug ?? selectedPackage,
-          name: pkg?.name ?? "",
+          slug: targetPkg?.slug ?? selectedPackage,
+          name: targetPkg?.name ?? "",
           price: basePrice,
-          marketPrice: pkg?.marketPrice ?? basePrice,
-          color: (pkg as WizardPackage)?.color ?? null,
+          marketPrice: targetPkg?.marketPrice ?? basePrice,
+          color: (targetPkg as WizardPackage)?.color ?? null,
         },
         features: paidFeatureItems,
         extras: extraOptions.filter(e => selectedExtras.includes(e.id)).map(e => ({
@@ -825,7 +1045,7 @@ export function BookingWizardClient({ locale }: Props) {
           notes: `Dịch vụ: ${svc?.title ?? ""} | Tính năng: ${selectedFeatures.length} | Ghi chú đội ngũ: ${talentNote || "—"} | Bắt đầu: ${startDate || "—"} | Thời gian: ${duration || "—"}`,
           hostingPlanSlug: selectedHosting?.slug || undefined,
           domainNames: selectedDomains.map(d => domainQuery + d.extension),
-          domainTotal: selectedDomains.reduce((s, d) => s + (d.registrationPrice || 0), 0),
+          domainTotal: selectedDomains.reduce((s, d) => s + getDomainPrice(d, selectedYears), 0),
           source,
           pricingBreakdown,
         }),
@@ -844,14 +1064,16 @@ export function BookingWizardClient({ locale }: Props) {
         // Ensure we use the full order ID for the reference
         await generatePaymentQr(payAmount, `LOOP-${orderId.toString().slice(-8).toUpperCase()}`);
       } else if (payAmount >= 1000 && (paymentMethod === "momo" || paymentMethod === "vnpay")) {
-        setSubmitted(true); 
+        setSubmitted(true);
         setTimeout(() => generatePaymentQr(payAmount), 100);
       } else {
         setSubmitted(true);
       }
 
+      return true; // Return success status
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : "Đã có lỗi xảy ra");
+      return false; // Return failure status
     } finally {
       setSubmitLoading(false);
     }
@@ -859,12 +1081,12 @@ export function BookingWizardClient({ locale }: Props) {
 
   // ── i18n step labels ──────────────────────────────────────────────────
   const STEP_LABELS = [
-    t("bookingPackage"),  // Step 0: Package + Features
-    t("bookingDomain"),   // Step 1: Domain
-    t("bookingSeo"),     // Step 2: SEO (NEW — dedicated step after domain)
-    t("bookingHosting"),  // Step 3: Hosting + Add-ons
-    t("bookingContact"),  // Step 4: Contact info
-    t("bookingPayment"),  // Step 5: Payment + Submit
+    t("bookingPackage"),  // Step 0
+    t("bookingDomain"),   // Step 1
+    t("bookingSeo"),      // Step 2
+    t("bookingHosting"),  // Step 3
+    t("bookingContact"),  // Step 4
+    t("bookingPayment"),  // Step 5 (Unified Payment & QR)
   ];
 
   // ── Step-based wizard layout ─────────────────────────────────────────
@@ -875,9 +1097,9 @@ export function BookingWizardClient({ locale }: Props) {
     .reduce((s, f) => s + (f.price || 0), 0);
   const extraTotalForDisplay = extraOptions.filter(e => selectedExtras.includes(e.id)).reduce((s, e) => s + (e.price || 0), 0);
   const hostingTotal = selectedHosting?.discountedPrice ?? 0;
-  const domainTotal = selectedDomains.reduce((s, d) => s + (d.registrationPrice || 0), 0);
+  const domainTotal = selectedDomains.reduce((s, d) => s + getDomainPrice(d, selectedYears), 0);
   const subtotalForDisplay = currentBasePrice + featTotalForDisplay + extraTotalForDisplay + hostingTotal + domainTotal + seoCost;
-  
+
   const lpDisc = calcLpDiscount(subtotalForDisplay, lpDiscount, lpBalance, lpRate);
   const vatAmt = Math.round((subtotalForDisplay - lpDisc.vndDiscount) * vatRate);
   const grandForDisplay = subtotalForDisplay - lpDisc.vndDiscount + vatAmt;
@@ -904,19 +1126,19 @@ export function BookingWizardClient({ locale }: Props) {
   useEffect(() => {
     if (isMounted && step === 5 && paymentMethod === "bank" && !qrLoading && !submitted) {
       if (name && email && phone && grandForDisplay > 0) {
-         // Apply 5% discount for full payment only in the QR amount
-         const finalAmount = paymentPlan === "100" 
-           ? Math.round(grandForDisplay * 0.95) 
-           : grandForDisplay;
-           
-         const expectedPay = paymentPlan === "100" 
-           ? finalAmount 
-           : Math.round(finalAmount * 0.5);
-         
-         // Only regenerate if amount changed or no QR yet
-         if (expectedPay >= 1000 && (!qrData || qrData.amount !== expectedPay)) {
-           generatePaymentQr(expectedPay);
-         }
+        // Apply 5% discount for full payment only in the QR amount
+        const finalAmount = paymentPlan === "100"
+          ? Math.round(grandForDisplay * 0.95)
+          : grandForDisplay;
+
+        const expectedPay = paymentPlan === "100"
+          ? finalAmount
+          : Math.round(finalAmount * 0.5);
+
+        // Only regenerate if amount changed or no QR yet
+        if (expectedPay >= 1000 && (!qrData || qrData.amount !== expectedPay)) {
+          generatePaymentQr(expectedPay);
+        }
       }
     }
   }, [isMounted, step, paymentMethod, qrData, qrLoading, submitted, name, email, phone, grandForDisplay, paymentPlan]);
@@ -1274,7 +1496,10 @@ export function BookingWizardClient({ locale }: Props) {
 
                   {/* ── Search bar ── */}
                   <div className="mb-6 p-5 rounded-2xl" style={{ background: "rgba(15,23,42,0.5)", border: `1px solid ${DS.cyan}20` }}>
-                    <div style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.1em", marginBottom: 10 }}>TÊN MIỀN BẠN MUỐN ĐĂNG KÝ</div>
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
+                      <div style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.1em" }}>TÊN MIỀN BẠN MUỐN ĐĂNG KÝ</div>
+                      {renderDurationSelector(true)}
+                    </div>
 
                     {/* Input row: name + TLD dropdown + search button */}
                     <div className="flex gap-3 mb-4">
@@ -1426,11 +1651,20 @@ export function BookingWizardClient({ locale }: Props) {
                                     </div>
                                   )}
                                 </div>
-                                <div style={{ color: isSelected ? DS.green : DS.text3, fontSize: 13, fontFamily: DS.mono, fontWeight: 700 }}>
-                                  {fmtVND(result.registrationPrice)}
-                                </div>
-                                <div style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono }}>
-                                  Gia hạn: {fmtVND(result.renewalPrice)}/năm
+                                <div className="flex flex-col">
+                                  <div className="flex items-baseline gap-2">
+                                    <span style={{ color: isSelected ? DS.green : DS.text, fontSize: 16, fontWeight: 800, fontFamily: DS.mono }}>
+                                      {fmtVND(getDomainPrice(result, selectedYears))}
+                                    </span>
+                                    {selectedYears > 1 && (
+                                      <span style={{ color: DS.text5, fontSize: 11, textDecoration: "line-through", fontFamily: DS.mono }}>
+                                        {fmtVND(result.registrationPrice * selectedYears)}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono }}>
+                                    Đăng ký {formatYearsLabel(selectedYears >= 1 ? selectedYears : 1)} ({fmtVND(Math.round(getDomainPrice(result, selectedYears) / (selectedYears >= 1 ? selectedYears : 1)))}/năm)
+                                  </div>
                                 </div>
                                 {!result.available && (
                                   <div style={{ color: DS.red, fontSize: 10, fontFamily: DS.mono, marginTop: 4 }}>
@@ -1451,7 +1685,7 @@ export function BookingWizardClient({ locale }: Props) {
                                 {selectedDomains.length} tên miền đã chọn
                               </span>
                               <span style={{ color: DS.green, fontSize: 13, fontFamily: DS.mono, marginLeft: "auto" }}>
-                                Tổng: <strong>{fmtVND(selectedDomains.reduce((s, d) => s + (d.registrationPrice || 0), 0))}</strong>
+                                Tổng: <strong>{fmtVND(domainCost)}</strong>
                               </span>
                             </div>
                             <div className="flex flex-wrap gap-2">
@@ -1492,32 +1726,50 @@ export function BookingWizardClient({ locale }: Props) {
                         </div>
                       </div>
                     )}
+
                   </div>
 
                   {/* Domain price reference table */}
                   {domainPrices.length > 0 && (
-                    <div>
-                      <div style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, marginBottom: 8 }}>BẢNG GIÁ TÊN MIỀN (tham khảo)</div>
-                      <div className="overflow-x-auto rounded-xl" style={{ border: `1px solid ${DS.border}` }}>
-                        <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                          <thead>
-                            <tr style={{ background: "rgba(15,23,42,0.8)" }}>
-                              {["ĐUÔI", "ĐĂNG KÝ", "GIA HẠN", "GHI CHÚ"].map((h, i) => (
-                                <th key={h} style={{ padding: "10px 14px", textAlign: i === 1 || i === 2 ? "right" : "left", color: DS.text4, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.1em", borderBottom: `1px solid ${DS.border}` }}>{h}</th>
-                              ))}
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {domainPrices.map(d => (
-                              <tr key={d.id || d.extension} style={{ borderBottom: `1px solid ${DS.border}` }}>
-                                <td style={{ padding: "10px 14px" }}><span style={{ color: DS.blue, fontFamily: DS.mono, fontSize: 13, fontWeight: 700 }}>{d.extension}</span></td>
-                                <td style={{ padding: "10px 14px", textAlign: "right" }}><span style={{ color: DS.text, fontFamily: DS.mono, fontSize: 12 }}>{fmtVND(d.registrationPrice)}</span></td>
-                                <td style={{ padding: "10px 14px", textAlign: "right" }}><span style={{ color: DS.text4, fontFamily: DS.mono, fontSize: 12 }}>{fmtVND(d.renewalPrice)}</span></td>
-                                <td style={{ padding: "10px 14px" }}><span style={{ color: d.note ? DS.text4 : DS.text5, fontSize: 11 }}>{d.note || "—"}</span></td>
+                    <div className="mb-6">
+                      <div className="flex items-center gap-3 mb-4 px-2">
+                        <div style={{ width: 12, height: 1.5, background: DS.blue, borderRadius: 1 }} />
+                        <div style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.22em", textTransform: "uppercase", fontWeight: 700 }}>BẢNG GIÁ TÊN MIỀN THAM KHẢO</div>
+                        <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.05)" }} />
+                      </div>
+
+                      <div className="p-5 rounded-2xl" style={{ background: "rgba(15,23,42,0.5)", border: `1px solid ${DS.cyan}20` }}>
+                        <div className="overflow-x-auto rounded-2xl bg-slate-950/40 border border-white/5 backdrop-blur-sm">
+                          <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: 0 }}>
+                            <thead>
+                              <tr style={{ background: "rgba(15,23,42,0.6)" }}>
+                                <th style={{ padding: "16px 20px", textAlign: "left", color: DS.text3, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.15em", borderBottom: `1px solid ${DS.border}`, fontWeight: 800 }}>ĐUÔI</th>
+                                <th style={{ padding: "16px 20px", textAlign: "right", color: DS.text3, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.15em", borderBottom: `1px solid ${DS.border}`, fontWeight: 800 }}>THỜI HẠN {formatYearsLabel(selectedYears >= 1 ? selectedYears : 1).toUpperCase()}</th>
+                                <th style={{ padding: "16px 20px", textAlign: "right", color: DS.text3, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.15em", borderBottom: `1px solid ${DS.border}`, fontWeight: 800 }}>GIA HẠN</th>
+                                <th style={{ padding: "16px 20px", textAlign: "left", color: DS.text3, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.15em", borderBottom: `1px solid ${DS.border}`, fontWeight: 800 }}>GHI CHÚ</th>
                               </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                            </thead>
+                            <tbody>
+                              {domainPrices.map((d, idx) => (
+                                <tr key={d.id || d.extension} className="group hover:bg-white/[0.02] transition-colors">
+                                  <td style={{ padding: "16px 20px", borderBottom: idx === domainPrices.length - 1 ? "none" : `1px solid rgba(255,255,255,0.03)` }}>
+                                    <span style={{ color: DS.blue, fontFamily: DS.mono, fontSize: 14, fontWeight: 900 }}>{d.extension}</span>
+                                  </td>
+                                  <td style={{ padding: "16px 20px", textAlign: "right", borderBottom: idx === domainPrices.length - 1 ? "none" : `1px solid rgba(255,255,255,0.03)` }}>
+                                    <div style={{ color: DS.text, fontFamily: DS.mono, fontSize: 13, fontWeight: 800 }}>{fmtVND(getDomainPrice(d, selectedYears))}</div>
+                                    {selectedYears > 1 && <div style={{ color: DS.text5, fontSize: 10, fontFamily: DS.mono, textDecoration: "line-through", opacity: 0.7 }}>{fmtVND(d.registrationPrice * selectedYears)}</div>}
+                                  </td>
+                                  <td style={{ padding: "16px 20px", textAlign: "right", borderBottom: idx === domainPrices.length - 1 ? "none" : `1px solid rgba(255,255,255,0.03)` }}>
+                                    <span style={{ color: DS.text4, fontFamily: DS.mono, fontSize: 12 }}>{fmtVND(d.renewalPrice)}<span className="text-[10px] opacity-60 ml-0.5">/năm</span></span>
+                                  </td>
+                                  <td style={{ padding: "16px 20px", borderBottom: idx === domainPrices.length - 1 ? "none" : `1px solid rgba(255,255,255,0.03)` }}>
+                                    <span style={{ color: d.note ? DS.text4 : DS.text5, fontSize: 11, fontFamily: DS.mono }}>{d.note || "—"}</span>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -1538,67 +1790,23 @@ export function BookingWizardClient({ locale }: Props) {
 
                   {/* SEO tier cards */}
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 200px), 1fr))", gap: 12, marginBottom: 24 }}>
-                    {/* FREE tier — bundled with website purchase */}
-                    <motion.button
-                      onClick={() => {
-                        if (selectedFreeSeo) { setSelectedFreeSeo(false); setSelectedSeoTier(0); }
-                        else { setSelectedFreeSeo(true); setSelectedSeoTier(0); }
-                      }}
-                      style={{
-                        background: selectedFreeSeo ? `${DS.green}12` : "rgba(15,23,42,0.5)",
-                        border: selectedFreeSeo ? `2px solid ${DS.green}50` : `1px solid ${DS.border}`,
-                        borderRadius: 16, padding: "18px 16px", cursor: "pointer",
-                        textAlign: "left", position: "relative", overflow: "hidden",
-                        transition: "all 0.2s",
-                      }}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                    >
-                      {selectedFreeSeo && (
-                        <div style={{
-                          position: "absolute", top: 10, right: 10,
-                          width: 22, height: 22, borderRadius: "50%",
-                          background: DS.green, display: "flex", alignItems: "center", justifyContent: "center",
-                        }}>
-                          <Check size={12} style={{ color: "#fff", strokeWidth: 3 }} />
-                        </div>
-                      )}
-                      <div style={{ color: DS.green, fontSize: 9, fontFamily: DS.mono, letterSpacing: "0.15em", marginBottom: 6 }}>
-                        KHỞI ĐỘNG — MIỄN PHÍ
-                      </div>
-                      <div style={{ color: DS.text, fontFamily: DS.heading, fontSize: 18, fontWeight: 800, marginBottom: 4 }}>
-                        {fmtVND(0)}
-                      </div>
-                      <div style={{ color: DS.text4, fontSize: 10, lineHeight: 1.4, marginBottom: 10 }}>
-                        5 bài viết chuẩn SEO · Từ khóa thương hiệu · Xác minh Google Search Console
-                      </div>
-                      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                        {["5 bài viết chuẩn SEO", "Từ khóa thương hiệu lên search", "Xác minh Google Search Console", "SSL tăng hiệu quả SEO"].map(f => (
-                          <div key={f} style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                            <Check size={10} style={{ color: DS.green, flexShrink: 0 }} />
-                            <span style={{ color: DS.text3, fontSize: 10 }}>{f}</span>
-                          </div>
-                        ))}
-                      </div>
-                      {selectedFreeSeo && (
-                        <div style={{ marginTop: 10, padding: "6px 10px", borderRadius: 8, background: `${DS.green}15`, border: `1px solid ${DS.green}30` }}>
-                          <span style={{ color: DS.green, fontSize: 10, fontFamily: DS.mono, fontWeight: 700 }}>✓ Đã chọn — Tặng kèm website</span>
-                        </div>
-                      )}
-                    </motion.button>
-
-                    {/* Paid SEO tiers */}
+                    {/* Paid SEO tiers (including level 0 from DB) */}
                     {seoTiers.map(tier => {
-                      const isSelected = selectedSeoTier === tier.level;
-                      const tierColors = ["", "#94A3B8", "#4F7DF3", "#F59E0B"];
+                      const isSelected = tier.level === 0 ? selectedFreeSeo : (selectedSeoTier === tier.level && !selectedFreeSeo);
+                      const tierColors = [DS.green, "#94A3B8", "#4F7DF3", "#F59E0B"];
                       const color = tierColors[tier.level] ?? "#94A3B8";
-                      const tierArticles = ["", "5", "10", "20"];
+                      const tierArticles = ["5", "5", "10", "20"];
                       return (
                         <motion.button
                           key={tier.level}
                           onClick={() => {
-                            if (isSelected) { setSelectedSeoTier(0); setSelectedFreeSeo(false); }
-                            else { setSelectedSeoTier(tier.level); setSelectedFreeSeo(false); }
+                            if (tier.level === 0) {
+                              if (isSelected) { setSelectedFreeSeo(false); setSelectedSeoTier(0); }
+                              else { setSelectedFreeSeo(true); setSelectedSeoTier(0); }
+                            } else {
+                              if (isSelected) { setSelectedSeoTier(0); setSelectedFreeSeo(false); }
+                              else { setSelectedSeoTier(tier.level); setSelectedFreeSeo(false); }
+                            }
                           }}
                           style={{
                             background: isSelected ? `${color}12` : "rgba(15,23,42,0.5)",
@@ -1625,21 +1833,25 @@ export function BookingWizardClient({ locale }: Props) {
                             </div>
                           )}
                           <div style={{ color: isSelected ? color : DS.text4, fontSize: 9, fontFamily: DS.mono, letterSpacing: "0.15em", marginBottom: 6, marginTop: tier.level === 3 ? 20 : 0, transition: "color 0.2s" }}>
-                            {tier.name.toUpperCase()}
+                            {tier.level === 0 ? "KHỞI ĐỘNG — MIỄN PHÍ" : tier.name.toUpperCase()}
                           </div>
                           <div style={{ color: DS.text, fontFamily: DS.heading, fontSize: 18, fontWeight: 800, marginBottom: 2 }}>
-                            {fmtVND(tier.basePrice)}
-                            <span style={{ color: DS.text4, fontSize: 10, fontWeight: 400 }}>/tháng</span>
+                            {tier.basePrice === 0 ? fmtVND(0) : (
+                              <>
+                                {fmtVND(tier.basePrice)}
+                                <span style={{ color: DS.text4, fontSize: 10, fontWeight: 400 }}>/tháng</span>
+                              </>
+                            )}
                           </div>
                           <div style={{ color: color, fontSize: 10, fontFamily: DS.mono, marginBottom: 8 }}>
                             {tierArticles[tier.level]} bài/tháng · {tier.shortDesc}
                           </div>
                           <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
                             {[
-                              tier.level === 1 ? "5 bài viết chuẩn SEO" : tier.level === 2 ? "10 bài viết chuẩn SEO" : "20 bài viết chuẩn SEO",
-                              tier.level === 1 ? "1 từ khóa focus" : tier.level === 2 ? "2 từ khóa focus" : "3 từ khóa focus + đối thủ",
-                              "Audit kỹ thuật SEO",
-                              "Báo cáo tháng",
+                              tier.level === 0 ? "5 bài viết chuẩn SEO" : tier.level === 1 ? "5 bài viết chuẩn SEO" : tier.level === 2 ? "10 bài viết chuẩn SEO" : "20 bài viết chuẩn SEO",
+                              tier.level === 0 ? "Từ khóa thương hiệu" : tier.level === 1 ? "1 từ khóa focus" : tier.level === 2 ? "2 từ khóa focus" : "3 từ khóa focus + đối thủ",
+                              tier.level === 0 ? "Xác minh Google Search Console" : "Audit kỹ thuật SEO",
+                              tier.level === 0 ? "SSL tặng kèm" : "Báo cáo tháng",
                             ].map(f => (
                               <div key={f} style={{ display: "flex", alignItems: "center", gap: 6 }}>
                                 <Check size={10} style={{ color, flexShrink: 0 }} />
@@ -1647,6 +1859,11 @@ export function BookingWizardClient({ locale }: Props) {
                               </div>
                             ))}
                           </div>
+                          {isSelected && tier.level === 0 && (
+                            <div style={{ marginTop: 10, padding: "6px 10px", borderRadius: 8, background: `${DS.green}15`, border: `1px solid ${DS.green}30` }}>
+                              <span style={{ color: DS.green, fontSize: 10, fontFamily: DS.mono, fontWeight: 700 }}>✓ Đã chọn — Tặng kèm website</span>
+                            </div>
+                          )}
                         </motion.button>
                       );
                     })}
@@ -1699,91 +1916,62 @@ export function BookingWizardClient({ locale }: Props) {
 
                   {hostingPlans.length > 0 && (
                     <div style={{ marginBottom: 28 }}>
-                      {/* New Duration Selector */}
-                      <div className="flex flex-col items-center mb-8">
-                        <div className="flex p-1 rounded-xl bg-slate-900/50 border border-slate-800">
-                          {["1 tháng", "6 tháng", "1 năm", "2 năm", "3 năm"].map((period) => {
-                            const isActive = selectedHostingPeriod === period;
-                            const discountLabel = period === "1 năm" ? "-10%" : period === "2 năm" ? "-15%" : period === "3 năm" ? "-18%" : null;
-                            return (
-                              <button
-                                key={period}
-                                onClick={() => setSelectedHostingPeriod(period)}
-                                className="px-5 py-2 rounded-lg text-xs font-medium transition-all relative"
-                                style={{ 
-                                  background: isActive ? DS.purple : "transparent",
-                                  color: isActive ? "#fff" : DS.text3,
-                                }}
-                              >
-                                {period}
-                                {discountLabel && (
-                                  <span className="absolute -top-2 -right-1 px-1 py-0.5 rounded-[4px] text-[7px] font-bold bg-green-500 text-white border border-slate-900">
-                                    {discountLabel}
-                                  </span>
-                                )}
-                              </button>
-                            );
-                          })}
+                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-6">
+                        <div className="flex items-center gap-3">
+                          <div style={{ width: 3, height: 16, background: DS.purple, borderRadius: 2 }} />
+                          <h3 style={{ color: DS.text2, fontSize: 12, fontFamily: DS.mono, letterSpacing: "0.14em" }}>CHỌN CẤU HÌNH HOSTING</h3>
                         </div>
-                      </div>
-
-                      <div className="flex items-center gap-3 mb-6">
-                        <div style={{ width: 3, height: 16, background: DS.purple, borderRadius: 2 }} />
-                        <h3 style={{ color: DS.text2, fontSize: 12, fontFamily: DS.mono, letterSpacing: "0.14em" }}>CHỌN CẤU HÌNH HOSTING</h3>
-                        <div style={{ flex: 1, height: 1, background: DS.border }} />
+                        {renderDurationSelector(true, true)}
                       </div>
 
                       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 20 }}>
                         {(() => {
-                           const baseNames = Array.from(new Set(hostingPlans.map(p => p.name.split(" (")[0])));
-                           return baseNames.map(baseName => {
-                             const plan = hostingPlans.find(p => p.name.startsWith(baseName) && p.period === selectedHostingPeriod);
-                             if (!plan) return null;
-                             const isSelected = selectedExtras.includes("hosting") && selectedHostingPlan === plan.slug;
-                             const color = plan.color || DS.purple;
-                             const highlights = plan.name.includes("Khởi đầu") ? ["2GB SSD", "100GB Băng thông"] : plan.name.includes("Tiêu chuẩn") ? ["5GB SSD", "Không giới hạn"] : plan.name.includes("Nâng cao") ? ["10GB SSD", "Không giới hạn"] : ["20GB SSD", "Không giới hạn"];
+                          const baseNames = Array.from(new Set(hostingPlans.map(p => p.name.split(" (")[0])));
+                          return baseNames.map(baseName => {
+                            const plan = getHostingPlanForPeriod(baseName, selectedYears);
+                            if (!plan) return null;
+                            const isSelected = selectedExtras.includes("hosting") && selectedHostingPlan === plan.slug;
+                            const color = plan.color || DS.purple;
+                            const highlights = plan.name.includes("Khởi đầu") ? ["2GB SSD", "100GB Băng thông"] : plan.name.includes("Tiêu chuẩn") ? ["5GB SSD", "Không giới hạn"] : plan.name.includes("Nâng cao") ? ["10GB SSD", "Không giới hạn"] : ["20GB SSD", "Không giới hạn"];
 
-                             return (
-                               <motion.button key={baseName} onClick={() => {
-                                 if (isSelected) { setSelectedHostingPlan(""); }
-                                 else { setSelectedHostingPlan(plan.slug); if (!selectedExtras.includes("hosting")) toggleExtra("hosting"); }
-                               }} className="text-left p-5 rounded-2xl relative overflow-hidden h-full flex flex-col"
-                                 style={{ background: isSelected ? `${color}10` : "rgba(15,23,42,0.4)", border: isSelected ? `2px solid ${color}` : `1px solid ${DS.border}`, cursor: "pointer" }}
-                                 whileHover={{ y: -4 }}>
-                                 {plan.highlighted && <div style={{ position: "absolute", top: 0, left: 0, right: 0, padding: "2px", textAlign: "center", background: GRD.primary, fontSize: 8, color: "#fff", fontFamily: DS.mono }}>★ PHỔ BIẾN NHẤT</div>}
-                                 <div className="mt-4 flex-1">
-                                   <div style={{ color: isSelected ? color : DS.text2, fontSize: 13, fontFamily: DS.mono, fontWeight: 700, marginBottom: 4 }}>{baseName.toUpperCase()}</div>
-                                   <div className="mb-4">
-                                      <div className="flex items-baseline gap-2">
-                                        <span style={{ color: DS.text, fontFamily: DS.heading, fontSize: 20, fontWeight: 900 }}>{fmtVND(plan.discountedPrice)}</span>
-                                        {plan.discountPct > 0 && (
-                                          <span style={{ color: DS.text5, fontSize: 11, fontFamily: DS.mono, textDecoration: "line-through" }}>
-                                            {fmtVND(plan.basePrice)}
-                                          </span>
-                                        )}
+                            return (
+                              <motion.button key={baseName} onClick={() => {
+                                if (isSelected) { setSelectedHostingPlan(""); }
+                                else { setSelectedHostingPlan(plan.slug); if (!selectedExtras.includes("hosting")) toggleExtra("hosting"); }
+                              }} className="text-left p-5 rounded-2xl relative overflow-hidden h-full flex flex-col"
+                                style={{ background: isSelected ? `${color}10` : "rgba(15,23,42,0.4)", border: isSelected ? `2px solid ${color}` : `1px solid ${DS.border}`, cursor: "pointer" }}
+                                whileHover={{ y: -4 }}>
+                                {plan.highlighted && <div style={{ position: "absolute", top: 0, left: 0, right: 0, padding: "2px", textAlign: "center", background: GRD.primary, fontSize: 8, color: "#fff", fontFamily: DS.mono }}>★ PHỔ BIẾN NHẤT</div>}
+                                <div className="mt-4 flex-1">
+                                  <div style={{ color: isSelected ? color : DS.text2, fontSize: 13, fontFamily: DS.mono, fontWeight: 700, marginBottom: 4 }}>{baseName.toUpperCase()}</div>
+                                  <div className="mb-4">
+                                    <div className="flex items-baseline gap-2">
+                                      <span style={{ color: DS.text, fontFamily: DS.heading, fontSize: 20, fontWeight: 900 }}>{fmtVND(plan.discountedPrice)}</span>
+                                      {plan.discountPct > 0 && (
+                                        <span style={{ color: DS.text5, fontSize: 11, fontFamily: DS.mono, textDecoration: "line-through" }}>
+                                          {fmtVND(plan.basePrice)}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono }}>
+                                      {formatYearsLabel(selectedYears)} ({fmtVND(Math.round(plan.discountedPrice / (selectedYears * 12)))}/tháng)
+                                    </div>
+                                  </div>
+                                  <div className="space-y-1 mb-6">
+                                    {highlights.map(h => (
+                                      <div key={h} className="flex items-center gap-2">
+                                        <Check size={10} style={{ color }} />
+                                        <span className="text-slate-400 text-[10px]">{h}</span>
                                       </div>
-                                      <div style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono }}>
-                                        ~{(() => {
-                                          const months = selectedHostingPeriod === "1 tháng" ? 1 : selectedHostingPeriod === "6 tháng" ? 6 : selectedHostingPeriod === "1 năm" ? 12 : selectedHostingPeriod === "2 năm" ? 24 : 36;
-                                          return fmtVND(Math.round(plan.discountedPrice / months));
-                                        })()}/tháng
-                                      </div>
-                                   </div>
-                                   <div className="space-y-1 mb-6">
-                                      {highlights.map(h => (
-                                        <div key={h} className="flex items-center gap-2">
-                                          <Check size={10} style={{ color }} />
-                                          <span className="text-slate-400 text-[10px]">{h}</span>
-                                        </div>
-                                      ))}
-                                   </div>
-                                 </div>
-                                 <div className="w-full py-2 rounded-lg text-center text-[10px] font-bold mt-auto" style={{ background: isSelected ? color : "rgba(255,255,255,0.05)", color: isSelected ? "#fff" : DS.text3 }}>
-                                   {isSelected ? "ĐÃ CHỌN" : "CHỌN GÓI"}
-                                 </div>
-                               </motion.button>
-                             );
-                           });
+                                    ))}
+                                  </div>
+                                </div>
+                                <div className="w-full py-2 rounded-lg text-center text-[10px] font-bold mt-auto" style={{ background: isSelected ? color : "rgba(255,255,255,0.05)", color: isSelected ? "#fff" : DS.text3 }}>
+                                  {isSelected ? "ĐÃ CHỌN" : "CHỌN GÓI"}
+                                </div>
+                              </motion.button>
+                            );
+                          });
                         })()}
                       </div>
 
@@ -1791,10 +1979,10 @@ export function BookingWizardClient({ locale }: Props) {
                       <div className="flex justify-center mt-4">
                         <motion.button onClick={() => { setSelectedHostingPlan(""); if (selectedExtras.includes("hosting")) toggleExtra("hosting"); }}
                           className="flex flex-col items-center justify-center p-4 px-10 group"
-                          style={{ 
-                            background: !selectedExtras.includes("hosting") ? "rgba(255,255,255,0.04)" : "rgba(15,23,42,0.4)", 
-                            border: !selectedExtras.includes("hosting") ? `2px dashed ${DS.text4}` : `1px solid ${DS.border}`, 
-                            borderRadius: 20, 
+                          style={{
+                            background: !selectedExtras.includes("hosting") ? "rgba(255,255,255,0.04)" : "rgba(15,23,42,0.4)",
+                            border: !selectedExtras.includes("hosting") ? `2px dashed ${DS.text4}` : `1px solid ${DS.border}`,
+                            borderRadius: 20,
                             cursor: "pointer",
                             width: "fit-content"
                           }}
@@ -1881,8 +2069,9 @@ export function BookingWizardClient({ locale }: Props) {
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
-                        <label style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.1em", display: "block", marginBottom: 6 }}>Ngày bắt đầu</label>
+                        <label style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.1em", display: "block", marginBottom: 6 }}>Ngày bắt đầu *</label>
                         <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
+                          min={new Date().toISOString().split("T")[0]}
                           style={{ width: "100%", background: "rgba(15,23,42,0.6)", border: `1px solid ${DS.border}`, borderRadius: 10, padding: "11px 14px", color: DS.text, fontSize: 14, outline: "none", fontFamily: DS.body, boxSizing: "border-box" }} />
                       </div>
                       <div>
@@ -2015,109 +2204,120 @@ export function BookingWizardClient({ locale }: Props) {
                           </div>
                         </div>
 
-                        {/* Bank transfer — show account info + generated QR */}
-                        {paymentMethod === "bank" && (
-                          <div className="mb-4 p-4 rounded-xl" style={{ background: `${DS.blue}08`, border: `1px solid ${DS.blue}20` }}>
-                            <div style={{ color: DS.blue, fontSize: 11, fontFamily: DS.mono, marginBottom: 8 }}>◈ Thông tin tài khoản ngân hàng</div>
-                            {bankInfo?.accountNo ? (
-                              <div className="space-y-2">
-                                {/* QR image: generated dynamically or static fallback */}
-                                {qrData?.qrDataURL ? (
-                                  <div className="flex flex-col items-center text-center mb-4">
-                                    <div style={{ color: DS.green, fontSize: 10, fontFamily: DS.mono, marginBottom: 10 }}>QUÉT MÃ QR ĐỂ CHUYỂN KHOẢN</div>
-                                    <div style={{ position: "relative", padding: 12, background: "#fff", borderRadius: 16, boxShadow: `0 0 30px ${DS.blue}30`, marginBottom: 12 }}>
-                                      <img src={qrData.qrDataURL} alt="Bank QR" style={{ width: 180, height: 180, display: "block" }} />
-                                    </div>
-                                    <div style={{ color: DS.text4, fontSize: 11, marginBottom: 8 }}>
-                                      Số tiền: <span style={{ color: DS.blue, fontWeight: 700 }}>{qrData.amount?.toLocaleString()} VND</span>
-                                    </div>
-                                    <button
-                                      onClick={() => {
-                                        const disc = Math.round(lpDiscount * lpRate.lpPerVnd);
-                                        const grandTotal = Math.round((currentSubtotal - disc) * (1 + vatRate));
-                                        const pay = paymentPlan === "100" ? grandTotal : Math.round(grandTotal * 0.5);
-                                        if (pay >= 1000) generatePaymentQr(pay);
-                                      }}
-                                      style={{ padding: "6px 16px", borderRadius: 8, fontSize: 11, fontFamily: DS.mono, cursor: "pointer", background: `${DS.blue}15`, border: `1px solid ${DS.blue}40`, color: DS.blue }}
-                                    >
-                                      Tạo mã QR thanh toán
-                                    </button>
-                                  </div>
-                                ) : qrLoading ? (
-                                  <div className="text-center py-4">
-                                    <div style={{ width: 24, height: 24, border: `2px solid ${DS.border}`, borderTop: `2px solid ${DS.blue}`, borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 8px" }} />
-                                    <div style={{ color: DS.text4, fontSize: 11 }}>Đang tạo mã QR...</div>
-                                  </div>
-                                ) : (
-                                  <div className="flex flex-col items-center text-center mb-3">
-                                    <div style={{ color: DS.text4, fontSize: 11, marginBottom: 12 }}>Xác nhận thông tin & thanh toán để hoàn tất đơn hàng</div>
-                                    <button
-                                      onClick={handleSubmit}
-                                      disabled={!name || !email || !phone || submitLoading}
-                                      style={{
-                                        padding: "12px 24px", borderRadius: 12, fontSize: 14, fontFamily: DS.mono,
-                                        cursor: (name && email && phone && !submitLoading) ? "pointer" : "not-allowed",
-                                        background: (name && email && phone && !submitLoading) ? GRD.primary : "rgba(255,255,255,0.05)",
-                                        border: "none", color: (name && email && phone && !submitLoading) ? "#fff" : DS.text4,
-                                        fontWeight: 700, display: "flex", alignItems: "center", gap: 10,
-                                        boxShadow: (name && email && phone && !submitLoading) ? "0 0 20px rgba(129,140,248,0.3)" : "none",
-                                        transition: "all 0.3s"
-                                      }}
-                                    >
-                                      {submitLoading ? (
-                                        <div style={{ width: 14, height: 14, border: "2px solid #fff", borderTop: "2px solid transparent", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-                                      ) : <Zap size={15} />}
-                                      {submitLoading ? "Đang xử lý..." : "Xác nhận & Thanh toán"}
-                                    </button>
-                                    {!name || !email || !phone ? (
-                                      <div style={{ color: DS.pink, fontSize: 10, marginTop: 8 }}>Vui lòng điền thông tin liên hệ ở bước trước</div>
-                                    ) : null}
-                                  </div>
-                                )}
+                        {/* Bank transfer — Professional Layout (Image 1 Style) */}
+                        {paymentMethod === "bank" && bankInfo?.accountNo && (
+                          <div className="mt-8">
+                            {/* Status Header */}
+                            <div className="flex flex-col items-center text-center mb-8">
+                              <div className="flex items-center gap-2 mb-3 px-4 py-1.5 rounded-full" style={{ background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.2)" }}>
+                                <div style={{ width: 8, height: 8, borderRadius: "50%", background: DS.green, animation: "pulse 2s infinite" }} />
+                                <span style={{ color: DS.green, fontSize: 11, fontFamily: DS.mono, fontWeight: 700, letterSpacing: "0.1em" }}>ĐANG CHỜ THANH TOÁN...</span>
+                              </div>
+                              <h3 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 32, fontWeight: 900, marginBottom: 8 }}>Quét mã QR để hoàn tất</h3>
+                              <p style={{ color: DS.text4, fontSize: 14, maxWidth: 500 }}>Vui lòng sử dụng ứng dụng ngân hàng để quét mã QR bên dưới. Hệ thống sẽ tự động xác nhận sau khi nhận được tiền.</p>
+                            </div>
 
-                                {isCheckingPayment && (
-                                  <div className="mt-4 p-3 rounded-lg text-center mx-auto" style={{ background: "rgba(34,197,94,0.05)", border: "1px dashed rgba(34,197,94,0.3)", maxWidth: 300 }}>
-                                    <div className="flex items-center justify-center gap-2 mb-1">
-                                      <div style={{ width: 10, height: 10, border: `1.5px solid ${DS.green}`, borderTop: "1.5px solid transparent", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-                                      <span style={{ color: DS.green, fontSize: 11, fontFamily: DS.mono, fontWeight: 700 }}>ĐANG CHỜ THANH TOÁN...</span>
+                            {/* Main QR Card — Balanced Layout */}
+                            <div className="flex flex-col lg:flex-row items-stretch gap-6 max-w-4xl mx-auto">
+                              {/* Left: QR Image Area */}
+                              <div className="flex-1 flex flex-col items-center justify-center p-8 rounded-[32px]" style={{
+                                background: "rgba(255,255,255,0.03)",
+                                border: `1px solid ${DS.border}`,
+                              }}>
+                                <div style={{
+                                  background: "#fff",
+                                  padding: 24,
+                                  borderRadius: 28,
+                                  boxShadow: `0 20px 50px rgba(0,0,0,0.3), 0 0 20px ${DS.blue}20`,
+                                  position: "relative",
+                                  overflow: "hidden",
+                                  width: 288,
+                                  height: 288,
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center"
+                                }}>
+                                  {qrLoading ? (
+                                    <div className="flex flex-col items-center gap-3">
+                                      <div style={{ width: 32, height: 32, border: `3px solid ${DS.border}`, borderTop: `3px solid ${DS.blue}`, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+                                      <span style={{ color: "#94a3b8", fontSize: 11, fontFamily: DS.mono }}>ĐANG TẠO...</span>
                                     </div>
-                                  </div>
-                                )}
-                                {/* Account details */}
-                                <div className="space-y-1">
-                                  <div className="flex justify-between text-xs" style={{ color: DS.text4, fontFamily: DS.mono }}>
-                                    <span>Ngân hàng</span>
-                                    <span style={{ color: DS.text }}>{bankInfo.bankName || "—"}</span>
-                                  </div>
-                                  <div className="flex justify-between text-xs" style={{ color: DS.text4, fontFamily: DS.mono }}>
-                                    <span>Số TK</span>
-                                    <span style={{ color: DS.blue, fontWeight: 700 }}>{bankInfo.accountNo || "—"}</span>
-                                  </div>
-                                  <div className="flex justify-between text-xs" style={{ color: DS.text4, fontFamily: DS.mono }}>
-                                    <span>Chủ TK</span>
-                                    <span style={{ color: DS.text }}>{bankInfo.accountName || "—"}</span>
-                                  </div>
-                                  {bankInfo.phone && (
-                                    <div className="flex justify-between text-xs" style={{ color: DS.text4, fontFamily: DS.mono }}>
-                                      <span>ĐT</span>
-                                      <span style={{ color: DS.text }}>{bankInfo.phone}</span>
+                                  ) : qrData?.qrDataURL ? (
+                                    <motion.img
+                                      initial={{ opacity: 0, scale: 0.95 }}
+                                      animate={{ opacity: 1, scale: 1 }}
+                                      src={qrData.qrDataURL}
+                                      alt="Bank QR"
+                                      style={{ width: 240, height: 240, display: "block" }}
+                                    />
+                                  ) : (
+                                    <div className="text-center px-4">
+                                      <button
+                                        onClick={handleSubmit}
+                                        style={{ color: DS.blue, fontSize: 12, fontWeight: 800, background: "none", border: "none", cursor: "pointer", fontFamily: DS.mono }}
+                                      >
+                                        LẤY MÃ QR THANH TOÁN
+                                      </button>
                                     </div>
                                   )}
                                 </div>
-                                {/* Nội dung chuyển khoản */}
-                                <div className="mt-3 pt-3" style={{ borderTop: `1px dashed ${DS.border}` }}>
-                                  <div style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, marginBottom: 4 }}>NỘI DUNG CHUYỂN KHOẢN</div>
-                                  <div style={{ color: DS.blue, fontSize: 12, fontFamily: DS.mono, fontWeight: 700 }}>
-                                    Thanh toan don LOOP #{newOrderId?.slice(-6).toUpperCase() || "—"}
+
+                                <div className="mt-6 flex flex-col items-center gap-2">
+                                  <div className="px-4 py-1.5 rounded-full" style={{ background: "rgba(59,130,246,0.1)", border: `1px solid ${DS.blue}30` }}>
+                                    <span style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono }}>SỐ TIỀN: </span>
+                                    <span style={{ color: DS.blue, fontSize: 14, fontWeight: 800, fontFamily: DS.mono }}>{fmtVND(qrData?.amount || 0)}</span>
                                   </div>
                                 </div>
                               </div>
-                            ) : (
-                              <div style={{ color: DS.text4, fontSize: 12 }}>Chưa có thông tin tài khoản.</div>
-                            )}
+
+                              {/* Right: Details Area */}
+                              <div className="flex-1 p-8 rounded-[32px]" style={{
+                                background: "rgba(15,23,42,0.6)",
+                                border: `1px solid ${DS.border}`,
+                                display: "flex",
+                                flexDirection: "column",
+                                justifyContent: "center"
+                              }}>
+                                <div className="space-y-6">
+                                  <div className="flex flex-col gap-1">
+                                    <span style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.15em" }}>SỐ TIỀN CẦN CHUYỂN</span>
+                                    <span style={{ color: DS.text, fontSize: 42, fontWeight: 900, fontFamily: DS.heading, lineHeight: 1 }}>{fmtVND(qrData?.amount || (paymentPlan === '100' ? Math.round(grandForDisplay * 0.95) : Math.round(grandForDisplay * 0.5)))}</span>
+                                  </div>
+
+                                  <div className="space-y-1">
+                                    {[
+                                      { label: "Ngân hàng", value: bankInfo.bankName || "Techcombank", color: DS.text },
+                                      { label: "Số tài khoản", value: bankInfo.accountNo || "3378443602", color: DS.blue, isMono: true, isBold: true },
+                                      { label: "Chủ tài khoản", value: bankInfo.accountName || "BUI NHAT DUC ANH", color: DS.text, isBold: true },
+                                    ].map((item, idx) => (
+                                      <div key={idx} className="flex justify-between items-center py-4 border-b last:border-0" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
+                                        <span style={{ color: DS.text4, fontSize: 13 }}>{item.label}</span>
+                                        <span style={{
+                                          color: item.color,
+                                          fontSize: item.isMono ? 16 : 14,
+                                          fontWeight: item.isBold ? 800 : 500,
+                                          fontFamily: item.isMono ? DS.mono : DS.body
+                                        }}>
+                                          {item.value}
+                                        </span>
+                                      </div>
+                                    ))}
+                                  </div>
+
+                                  <div className="mt-2 p-6 rounded-2xl text-center" style={{
+                                    background: `linear-gradient(135deg, ${DS.blue}10, transparent)`,
+                                    border: `1px dashed ${DS.blue}40`,
+                                  }}>
+                                    <div style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, marginBottom: 8, letterSpacing: "0.1em" }}>NỘI DUNG CHUYỂN KHOẢN</div>
+                                    <div style={{ color: DS.blue, fontSize: 20, fontWeight: 900, fontFamily: DS.mono }}>
+                                      {newOrderId ? `LOOP ${newOrderId.slice(-6).toUpperCase()}` : "LOOP XXXXXX"}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
                           </div>
                         )}
-
 
                         {/* MoMo static QR fallback */}
                         {paymentMethod === "momo" && !qrData && (
@@ -2182,7 +2382,32 @@ export function BookingWizardClient({ locale }: Props) {
                         </button>
                       )}
 
-                      <div style={{ color: DS.text5, fontSize: 11, marginTop: 10, textAlign: "center" }}>
+                      <button
+                        onClick={async () => {
+                          const ok = await handleSubmit();
+                          if (ok) {
+                            alert("✅ THÀNH CÔNG: Dữ liệu báo giá đã được gửi lên hệ thống Admin!");
+                          }
+                        }}
+                        style={{
+                          marginTop: 24,
+                          padding: "12px 24px",
+                          background: "rgba(239, 68, 68, 0.1)",
+                          border: "1px dashed #ef4444",
+                          color: "#ef4444",
+                          borderRadius: 12,
+                          cursor: "pointer",
+                          fontSize: 12,
+                          fontWeight: 700,
+                          fontFamily: DS.mono,
+                          width: "100%",
+                          transition: "all 0.2s"
+                        }}
+                      >
+                        ⚠️ TEST: GỬI BÁO GIÁ NGAY (BỎ QUA THANH TOÁN)
+                      </button>
+
+                      <div style={{ color: DS.text5, fontSize: 11, marginTop: 12, textAlign: "center" }}>
                         {paymentPlan === "100" ? "Thanh toán 100% ngay — giảm 5%." : t("depositNote")}
                       </div>
                     </div>
@@ -2220,7 +2445,7 @@ export function BookingWizardClient({ locale }: Props) {
                     <div style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.1em", marginBottom: 2 }}>TỔNG CỘNG TẠM TÍNH</div>
                     <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
                       <span style={{ color: DS.text, fontSize: 24, fontWeight: 900, fontFamily: DS.heading }}>{fmtVND(grandForDisplay)}</span>
-                      <span style={{ color: pkgColor, fontSize: 11, fontFamily: DS.mono }}>{selectedPkg.name}</span>
+                      <span style={{ color: pkgColor, fontSize: 11, fontFamily: DS.mono }}>{selectedPkg?.name || "Website Tùy chỉnh"}</span>
                     </div>
                   </div>
 
@@ -2252,22 +2477,33 @@ export function BookingWizardClient({ locale }: Props) {
                   <ArrowLeft size={15} /> Quay lại
                 </button>
                 {step < 5 && (
-                  <button
-                    suppressHydrationWarning
-                    onClick={() => { if (canNext()) setStep(s => s + 1); }}
-                    disabled={!canNext()}
-                    style={{
-                      padding: "12px 32px", borderRadius: 12, fontSize: 14, fontWeight: 700, fontFamily: DS.body,
-                      cursor: canNext() ? "pointer" : "not-allowed",
-                      background: canNext() ? GRD.primary : "rgba(255,255,255,0.05)",
-                      border: "none",
-                      color: canNext() ? "#fff" : DS.text4,
-                      display: "flex", alignItems: "center", gap: 8,
-                      boxShadow: canNext() ? "0 0 20px rgba(129,140,248,0.3)" : "none",
-                      transition: "all 0.3s",
-                    }}>
-                    {step === 4 ? "Xem báo giá & Thanh toán" : "Tiếp tục"} <ArrowRight size={15} />
-                  </button>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
+                    {validationError && step === 4 && (
+                      <motion.div 
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        style={{ color: DS.red, fontSize: 12, fontFamily: DS.mono, fontWeight: 600, background: "rgba(239,68,68,0.1)", padding: "6px 12px", borderRadius: 8, border: "1px solid rgba(239,68,68,0.2)" }}
+                      >
+                        ⚠️ {validationError}
+                      </motion.div>
+                    )}
+                    <button
+                      suppressHydrationWarning
+                      onClick={handleNext}
+                      disabled={!canNext()}
+                      style={{
+                        padding: "12px 32px", borderRadius: 12, fontSize: 14, fontWeight: 700, fontFamily: DS.body,
+                        cursor: canNext() ? "pointer" : "not-allowed",
+                        background: canNext() ? GRD.primary : "rgba(255,255,255,0.05)",
+                        border: "none",
+                        color: canNext() ? "#fff" : DS.text4,
+                        display: "flex", alignItems: "center", gap: 8,
+                        boxShadow: canNext() ? "0 0 20px rgba(129,140,248,0.3)" : "none",
+                        transition: "all 0.3s",
+                      }}>
+                      {step === 4 ? "Xem báo giá & Thanh toán" : "Tiếp tục"} <ArrowRight size={15} />
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
@@ -2276,6 +2512,7 @@ export function BookingWizardClient({ locale }: Props) {
         </div>
       </section>
 
-      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } `}</style></main>
+      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+    </main>
   );
 }

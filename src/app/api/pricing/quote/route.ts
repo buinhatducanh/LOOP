@@ -7,9 +7,9 @@ import type { NextRequest } from "next/server";
 // VIP discount caps per tier (G3 fix)
 const VIP_DISCOUNT_CAPS: Record<string, number> = {
   regular: 0.10,
-  vip1:    0.15,
-  vip2:    0.20,
-  vip3:    0.25,
+  vip1: 0.15,
+  vip2: 0.20,
+  vip3: 0.25,
 };
 
 const quoteSchema = z.object({
@@ -37,6 +37,10 @@ const quoteSchema = z.object({
   domainName: z.string().optional(),
   /** "now" = purchase domain now; "after_handover" = purchase after project delivery */
   domainPurchaseTime: z.enum(["now", "after_handover"]).default("now"),
+  /** Detailed breakdown of costs */
+  pricingBreakdown: z.any().optional(),
+  /** Source of request: fixed | custom */
+  source: z.string().default("fixed"),
 });
 
 export async function POST(req: NextRequest) {
@@ -59,20 +63,30 @@ export async function POST(req: NextRequest) {
     const maxLpAllowed = Math.floor(validated.totalAmount * discountCap);
     const lpUsed = Math.min(validated.lpUsed, maxLpAllowed);
 
+    console.log("DEBUG: Creating QuoteRequest with data:", {
+      customerName: validated.customerName,
+      customerEmail: validated.customerEmail,
+      totalAmount: validated.totalAmount,
+      lpUsed,
+      source: validated.source,
+    });
+
     const quoteRequest = await prisma.quoteRequest.create({
       data: {
         customerName: validated.customerName,
         customerEmail: validated.customerEmail,
         customerPhone: validated.customerPhone || null,
         companyName: validated.companyName || null,
-        selectedItems: validated.selectedItems,
-        totalAmount: validated.totalAmount,
-        lpUsed,                          // stored for downstream approval flow
+        selectedItems: validated.selectedItems as any,
+        totalAmount: Math.round(validated.totalAmount),
+        lpUsed,
         paymentPlan: validated.paymentPlan || null,
         notes: validated.notes || null,
         hostingPlanSlug: validated.hostingPlanSlug || null,
         domainName: validated.domainName || null,
         domainPurchaseTime: validated.domainPurchaseTime,
+        pricingBreakdown: (validated.pricingBreakdown || {}) as any,
+        source: validated.source,
       },
     });
 
@@ -87,10 +101,10 @@ export async function POST(req: NextRequest) {
       201
     );
   } catch (error) {
+    console.error("CRITICAL ERROR in /api/pricing/quote:", error);
     if (error instanceof z.ZodError) {
       return badRequest(error.issues.map((i) => i.message).join("; "));
     }
-    console.error("Failed to create quote request:", error);
-    return serverError();
+    return serverError(error instanceof Error ? error.message : "Internal Server Error");
   }
 }

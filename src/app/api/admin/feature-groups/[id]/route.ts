@@ -79,11 +79,11 @@ export async function PUT(
     const group = await prisma.featureGroup.update({
       where: { id },
       data: {
-        groupName: data.groupName,
-        slug: data.slug,
-        sortOrder: data.sortOrder,
-        isActive: data.isActive,
-        serviceKey: data.serviceKey ?? null,
+        ...(data.groupName !== undefined && { groupName: data.groupName }),
+        ...(data.slug !== undefined && { slug: data.slug }),
+        ...(data.sortOrder !== undefined && { sortOrder: data.sortOrder }),
+        ...(data.isActive !== undefined && { isActive: data.isActive }),
+        ...(data.serviceKey !== undefined && { serviceKey: data.serviceKey }),
       },
     });
 
@@ -98,6 +98,9 @@ export async function PUT(
 
     revalidatePath("/vi/thiet-ke-website");
     revalidatePath("/en/thiet-ke-website");
+    revalidatePath("/ja/thiet-ke-website");
+    revalidatePath("/ko/thiet-ke-website");
+    revalidatePath("/zh/thiet-ke-website");
     revalidateTag("pricing-config");
 
     return NextResponse.json({ data: group });
