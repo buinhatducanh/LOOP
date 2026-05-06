@@ -11,6 +11,12 @@ export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
       {
+        // Allow social crawlers to access OG image endpoint
+        userAgent: ["facebookexternalhit", "Twitterbot", "LinkedInBot", "Slackbot", "WhatsApp", "ZaloBot"],
+        allow: ["/", "/api/og"],
+        disallow: ["/admin/"],
+      },
+      {
         userAgent: "*",
         allow: "/",
         disallow: ["/admin/", "/api/"],
