@@ -28,8 +28,8 @@ type ClientFormData = {
 };
 
 const CLIENT_STATUS_CFG: Record<string, { label: string; color: string; bg: string }> = {
-  active:   { label: "Hoạt động", color: DS.green, bg: "rgba(34,197,94,0.1)" },
-  lead:     { label: "Lead", color: DS.blue, bg: "rgba(59,130,246,0.1)" },
+  active: { label: "Hoạt động", color: DS.green, bg: "rgba(34,197,94,0.1)" },
+  lead: { label: "Lead", color: DS.blue, bg: "rgba(59,130,246,0.1)" },
   inactive: { label: "Không hoạt động", color: DS.text4, bg: "rgba(148,163,184,0.1)" },
 };
 
@@ -345,6 +345,6 @@ export default function ClientsTabPage() {
         <button onClick={() => setToast(null)} style={{ background: "none", border: "none", cursor: "pointer", padding: 2, color: "#94A3B8" }}><X size={14} /></button>
       </div>
     )}
-    </>
+  </>
   );
 }

@@ -828,23 +828,23 @@ export function DichVuClient({ data, locale }: Props) {
         overflow: "hidden",
       }}>
         {/* Animated background blobs */}
-        <motion.div 
+        <motion.div
           animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
           transition={{ duration: 8, repeat: Infinity }}
-          style={{ position: "absolute", top: "-10%", left: "20%", width: "40%", height: "40%", background: `${color}10`, filter: "blur(80px)", borderRadius: "50%", zIndex: 0 }} 
+          style={{ position: "absolute", top: "-10%", left: "20%", width: "40%", height: "40%", background: `${color}10`, filter: "blur(80px)", borderRadius: "50%", zIndex: 0 }}
         />
-        <motion.div 
+        <motion.div
           animate={{ scale: [1.2, 1, 1.2], opacity: [0.2, 0.4, 0.2] }}
           transition={{ duration: 10, repeat: Infinity, delay: 1 }}
-          style={{ position: "absolute", top: "10%", right: "10%", width: "35%", height: "35%", background: `${DS.pink}08`, filter: "blur(100px)", borderRadius: "50%", zIndex: 0 }} 
+          style={{ position: "absolute", top: "10%", right: "10%", width: "35%", height: "35%", background: `${DS.pink}08`, filter: "blur(100px)", borderRadius: "50%", zIndex: 0 }}
         />
 
         <div className="max-w-5xl mx-auto px-6 text-center relative z-10">
           {/* Badge */}
           <motion.div
             className="inline-flex items-center gap-2 mb-6 px-4 py-1.5 rounded-full"
-            style={{ 
-              background: "rgba(255,255,255,0.03)", 
+            style={{
+              background: "rgba(255,255,255,0.03)",
               border: `1px solid ${DS.border}`,
               backdropFilter: "blur(10px)"
             }}
@@ -861,7 +861,7 @@ export function DichVuClient({ data, locale }: Props) {
           <motion.h1
             style={{
               fontFamily: DS.heading, fontSize: 52, fontWeight: 900, letterSpacing: "-0.02em",
-              background: "linear-gradient(180deg, #FFFFFF 0%, #94A3B8 100%)", 
+              background: "linear-gradient(180deg, #FFFFFF 0%, #94A3B8 100%)",
               WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
               marginBottom: 18, lineHeight: 1.1,
             }}
@@ -928,7 +928,7 @@ export function DichVuClient({ data, locale }: Props) {
         <div className="max-w-6xl mx-auto px-6">
           {/* Service headline */}
           <div style={{ textAlign: "center", marginBottom: 50 }}>
-            <motion.div 
+            <motion.div
               key={activeService + "-headline"}
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -998,7 +998,7 @@ export function DichVuClient({ data, locale }: Props) {
                       const isPopular = tier.id === popularTierId;
                       const tierColor = idx === 0 ? DS.text4 : idx === 1 ? color : DS.pink;
                       const isExperience = tier.level === 3;
-                      
+
                       return (
                         <div
                           key={tier.id}
@@ -1024,7 +1024,7 @@ export function DichVuClient({ data, locale }: Props) {
                               {isVi ? "PHỔ BIẾN" : "POPULAR"}
                             </div>
                           )}
-                          
+
                           <div style={{ marginTop: isPopular ? 12 : 0 }}>
                             <h3 style={{
                               fontSize: 12, fontFamily: DS.mono,
@@ -1133,7 +1133,7 @@ export function DichVuClient({ data, locale }: Props) {
 
                             const isSpecial = tier.level >= 2;
                             const tierColor = tier.level === 1 ? DS.text4 : tier.level === 2 ? color : DS.pink;
-                            
+
                             return (
                               <div
                                 key={tier.id}

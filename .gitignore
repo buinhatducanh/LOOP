@@ -53,5 +53,18 @@ FE-ARCHIVE/
 DESIGN LOOPS/
 DESIGN-LOOPS-ARCHIVE/
 
-.env.docker.local
 .env.docker
+.env.docker.local
+
+# Maintenance & Inspection Scripts
+check_*.js
+inspect_*.js
+test_*.js
+update_*.js
+*.db.js
+
+# Internal & Temp
+brain/
+scratch/
+prisma/seed-*.ts
+src/app/store/uiStore.ts

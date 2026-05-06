@@ -138,7 +138,7 @@ export default function PortfolioTabPage() {
   const totalPages = pagination?.totalPages ?? 1;
 
   return (<>
-    <div>
+    <div style={{ padding: "2rem", minHeight: "100vh", background: DS.bgCosmic ?? "var(--figma-bg-cosmic, #09090b)" }}>
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
         <div>
