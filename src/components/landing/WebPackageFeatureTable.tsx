@@ -86,7 +86,14 @@ function FeatureRow({
                 }}
             >
                 {/* Feature name + badge — width matches header th width: 40% */}
-                <td style={{ padding: "10px 14px", width: "40%" }}>
+                <td style={{ 
+                    padding: "10px 14px", 
+                    width: 220,
+                    position: "sticky",
+                    left: 0,
+                    zIndex: 10,
+                    background: expanded ? catStyle.bg : DS.bg,
+                }}>
                     <div className="flex items-center gap-2">
                         <span style={{ color: catStyle.color, flexShrink: 0 }}>
                             <Layers size={12} />
@@ -121,7 +128,7 @@ function FeatureRow({
                     return (
                         <td
                             key={tier}
-                            style={{ padding: "10px 6px", textAlign: "center", width: "15%" }}
+                            style={{ padding: "10px 6px", textAlign: "center", width: 130 }}
                         >
                             {has ? (
                                 <div
@@ -200,6 +207,7 @@ function CategoryGroup({
                 borderRadius: 12,
                 overflow: "hidden",
                 marginBottom: 10,
+                minWidth: 740,
             }}
         >
             {/* Category header */}
@@ -213,28 +221,27 @@ function CategoryGroup({
                     transition: "background 0.15s",
                 }}
             >
-                <div className="flex items-center gap-2">
-                    <span style={{ color: catStyle.color }}><Layers size={13} /></span>
-                    <span style={{ color: DS.text, fontWeight: 700, fontSize: 12 }}>{category}</span>
-                    <span style={{
-                        background: `${catStyle.color}20`,
-                        color: catStyle.color,
-                        fontSize: 9,
-                        fontFamily: DS.mono,
-                        padding: "1px 6px",
-                        borderRadius: 9999,
-                    }}>
-                        {features.length} tính năng
-                    </span>
-                </div>
-                <div className="flex items-center gap-3">
-                    <span style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono }}>
-                        {includedCount}/{features.length} trong gói bạn chọn
-                    </span>
-                    {open ? <ChevronUp size={13} style={{ color: catStyle.color }} /> : <ChevronDown size={13} style={{ color: catStyle.color }} />}
-                </div>
-            </button>
-
+                    <div className="flex items-center gap-2">
+                        <span style={{ color: catStyle.color }}><Layers size={13} /></span>
+                        <span style={{ color: DS.text, fontWeight: 700, fontSize: 12 }}>{category}</span>
+                        <span style={{
+                            background: `${catStyle.color}20`,
+                            color: catStyle.color,
+                            fontSize: 9,
+                            fontFamily: DS.mono,
+                            padding: "1px 6px",
+                            borderRadius: 9999,
+                        }}>
+                            {features.length} tính năng
+                        </span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <span style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono }}>
+                            {includedCount}/{features.length} trong gói bạn chọn
+                        </span>
+                        {open ? <ChevronUp size={13} style={{ color: catStyle.color }} /> : <ChevronDown size={13} style={{ color: catStyle.color }} />}
+                    </div>
+                </button>
             {/* Feature rows */}
             <AnimatePresence>
                 {open && (
@@ -293,42 +300,50 @@ export function WebPackageFeatureTable({
     });
 
     return (
-        <div>
-            {/* Table header: tier selector bar — uses <table> so columns align with body */}
-            <div style={{
-                marginBottom: 12,
-                background: "rgba(15,23,42,0.6)",
-                borderRadius: 10,
-                border: `1px solid ${DS.border}`,
-                overflow: "hidden",
-            }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "fixed" }}>
-                    <thead>
-                        <tr>
-                            {/* Feature label column — matches td width */}
-                            <th style={{ padding: "10px 14px", textAlign: "left", minWidth: 220, width: "40%" }}>
-                                <p style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.1em", marginBottom: 2 }}>
-                                    TÍNH NĂNG WEBSITE
-                                </p>
-                                <p style={{ color: DS.text3, fontSize: 10.5 }}>
-                                    Ma trận so sánh tính năng giữa 4 gói
-                                </p>
-                            </th>
-                            {/* 4 tier columns */}
-                            {[1, 2, 3, 4].map(tier => {
-                                const tierData = tiers ? tiers[tier - 1] : null;
-                                const color = TIER_COLORS[tier];
-                                const isSelected = selectedTier === tier;
-                                return (
-                                    <th
-                                        key={tier}
-                                        style={{
-                                            textAlign: "center",
-                                            minWidth: 130,
-                                            padding: "8px 6px",
-                                            width: "15%",
-                                        }}
-                                    >
+        <div className="w-full overflow-x-auto pb-4 scrollbar-zen">
+            <div style={{ minWidth: 740 }}>
+                {/* Table header: tier selector bar — uses <table> so columns align with body */}
+                <div style={{
+                    marginBottom: 12,
+                    background: DS.bg,
+                    borderRadius: 10,
+                    border: `1px solid ${DS.border}`,
+                    overflow: "hidden",
+                }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "fixed" }}>
+                        <thead>
+                            <tr>
+                                {/* Feature label column — matches td width */}
+                                <th style={{ 
+                                    padding: "10px 14px", 
+                                    textAlign: "left", 
+                                    width: 220,
+                                    position: "sticky",
+                                    left: 0,
+                                    zIndex: 20,
+                                    background: DS.bg,
+                                }}>
+                                    <p style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.1em", marginBottom: 2 }}>
+                                        TÍNH NĂNG WEBSITE
+                                    </p>
+                                    <p style={{ color: DS.text3, fontSize: 10.5 }}>
+                                        Ma trận so sánh tính năng
+                                    </p>
+                                </th>
+                                {/* 4 tier columns */}
+                                {[1, 2, 3, 4].map(tier => {
+                                    const tierData = tiers ? tiers[tier - 1] : null;
+                                    const color = TIER_COLORS[tier];
+                                    const isSelected = selectedTier === tier;
+                                    return (
+                                        <th
+                                            key={tier}
+                                            style={{
+                                                textAlign: "center",
+                                                padding: "8px 6px",
+                                                width: 130,
+                                            }}
+                                        >
                                         <motion.button
                                             onClick={() => onSelectTier?.(tier)}
                                             style={{
@@ -379,16 +394,16 @@ export function WebPackageFeatureTable({
                 </table>
             </div>
 
-            {/* Category groups */}
-            {sortedCategories.map(cat => (
-                <CategoryGroup
-                    key={cat}
-                    category={cat}
-                    features={byCategory[cat]}
-                    selectedTier={selectedTier}
-                    defaultOpen={true}
-                />
-            ))}
+                {sortedCategories.map(cat => (
+                    <CategoryGroup
+                        key={cat}
+                        category={cat}
+                        features={byCategory[cat]}
+                        selectedTier={selectedTier}
+                        defaultOpen={true}
+                    />
+                ))}
+            </div>
 
             {/* Legend */}
             <div style={{

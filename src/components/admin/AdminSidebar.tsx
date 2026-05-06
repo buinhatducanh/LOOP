@@ -24,8 +24,9 @@ import {
   Briefcase, Camera, Receipt, Package, FolderCheck,
   Sparkles, Star, Bell, Zap, Calculator, Building2, ShoppingCart, TrendingUp,
   Monitor, X, ChevronRight, Globe, Layers, FilePlus, HelpCircle, Info,
-  HardDrive, Search, PlusCircle, Server,
+  HardDrive, Search, PlusCircle, Server, Menu,
 } from "lucide-react";
+import { useUIStore } from "@/app/store/uiStore";
 import { useAuthStore, canAccessTab, type AdminTab } from "@/app/store/authStore";
 import { useAdminTranslations } from "@/i18n/admin/useAdminTranslations";
 import { DS } from "@/lib/design-tokens";
@@ -202,7 +203,7 @@ const RANK_COLORS: Record<string, string> = {
 
 export function AdminSidebar({ userName, userAvatar, userRole, userRank, userLpBalance }: AdminSidebarProps) {
   const pathname = usePathname();
-  const [isOpen, setIsOpen] = useState(false);
+  const { isSidebarOpen: isOpen, setSidebarOpen: setIsOpen } = useUIStore();
   const { t } = useAdminTranslations();
 
   // Read role + dept from Zustand store (set by SessionHydrator on mount)
@@ -228,6 +229,7 @@ export function AdminSidebar({ userName, userAvatar, userRole, userRank, userLpB
       {isOpen && (
         <div
           onClick={() => setIsOpen(false)}
+          className="lg:hidden"
           style={{
             position: "fixed",
             inset: 0,
@@ -238,6 +240,7 @@ export function AdminSidebar({ userName, userAvatar, userRole, userRank, userLpB
       )}
 
       <aside
+        className={`admin-sidebar transition-transform duration-300 ${isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}
         style={{
           position: "fixed",
           top: 0,
@@ -249,8 +252,6 @@ export function AdminSidebar({ userName, userAvatar, userRole, userRank, userLpB
           display: "flex",
           flexDirection: "column",
           zIndex: 50,
-          transition: "transform 0.3s ease",
-          transform: isOpen ? "translateX(0)" : undefined,
         }}
       >
         {/* Logo */}
@@ -264,13 +265,17 @@ export function AdminSidebar({ userName, userAvatar, userRole, userRank, userLpB
             <button
               onClick={() => setIsOpen(false)}
               style={{
-                background: "none",
-                border: "none",
+                background: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                borderRadius: 8,
                 cursor: "pointer",
-                color: "var(--figma-text4, #64748B)",
-                padding: 4,
-                display: "none",
+                color: "var(--figma-text, #fff)",
+                padding: 6,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
               }}
+              className="lg:hidden"
             >
               <X size={18} />
             </button>

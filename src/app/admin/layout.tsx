@@ -169,15 +169,18 @@ export default async function AdminLayout({
                             flex: 1,
                             display: "flex",
                             flexDirection: "column",
-                            marginLeft: 260,
                             minHeight: "100vh",
-                            background: "var(--figma-bg, #020617)",
+                            background: "var(--figma-bg, #0C0C14)",
                             color: "var(--figma-text, #fff)",
                             fontFamily: "var(--font-dm-sans, 'DM Sans', system-ui, sans-serif)",
                         }}
+                        className="transition-all duration-300 ml-0 lg:ml-[260px]"
                     >
                         <AdminTopbar />
-                        <main style={{ flex: 1, padding: "1.5rem", overflowY: "auto" }}>
+                        <main 
+                            className="p-4 lg:p-0"
+                            style={{ flex: 1, overflowY: "auto" }}
+                        >
                             {children}
                         </main>
                     </div>

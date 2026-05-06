@@ -310,7 +310,7 @@ export default function HostingPlansPage() {
       }}
     >
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
         <div>
           <h1
             style={{
@@ -331,7 +331,7 @@ export default function HostingPlansPage() {
             onClick={() =>
               qc.invalidateQueries({ queryKey: ["hosting-plans"] })
             }
-            className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm"
+            className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm whitespace-nowrap"
             style={{
               background: "rgba(255,255,255,0.04)",
               border: `1px solid ${DS.border}`,
@@ -346,11 +346,11 @@ export default function HostingPlansPage() {
           </button>
           <button
             onClick={openCreate}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl font-medium text-sm"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl font-medium text-sm whitespace-nowrap"
             style={{ background: GRD.primary, color: "#fff" }}
           >
             <Plus size={16} />
-            Thêm gói hosting
+            Thêm gói
           </button>
         </div>
       </div>
@@ -404,12 +404,12 @@ export default function HostingPlansPage() {
       <div
         style={{
           borderRadius: 16,
-          overflow: "hidden",
+          overflowX: "auto",
           border: `1px solid ${DS.border}`,
           background: DS.bgCard,
         }}
       >
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 1000 }}>
           <thead>
             <tr style={{ background: "rgba(255,255,255,0.03)" }}>
               {[
@@ -433,6 +433,7 @@ export default function HostingPlansPage() {
                     fontFamily: DS.mono,
                     letterSpacing: "0.1em",
                     textAlign: "left",
+                    whiteSpace: "nowrap",
                   }}
                 >
                   {h}
@@ -491,7 +492,7 @@ export default function HostingPlansPage() {
                       opacity: d.isActive ? 1 : 0.5,
                     }}
                   >
-                    <td style={{ padding: "14px 16px" }}>
+                    <td style={{ padding: "14px 16px", whiteSpace: "nowrap" }}>
                       <div className="flex items-center gap-2">
                         <div
                           style={{
@@ -528,7 +529,7 @@ export default function HostingPlansPage() {
                         </div>
                       </div>
                     </td>
-                    <td style={{ padding: "14px 16px" }}>
+                    <td style={{ padding: "14px 16px", whiteSpace: "nowrap" }}>
                       <span
                         style={{
                           color: DS.text,
@@ -539,7 +540,7 @@ export default function HostingPlansPage() {
                         {fmtVND(d.monthlyPrice)}
                       </span>
                     </td>
-                    <td style={{ padding: "14px 16px" }}>
+                    <td style={{ padding: "14px 16px", whiteSpace: "nowrap" }}>
                       <span
                         style={{
                           color: DS.text3,
@@ -550,7 +551,7 @@ export default function HostingPlansPage() {
                         {MONTHS_OPTIONS.find(o => o.value === d.months)?.labelVi ?? `${d.months} tháng`}
                       </span>
                     </td>
-                    <td style={{ padding: "14px 16px" }}>
+                    <td style={{ padding: "14px 16px", whiteSpace: "nowrap" }}>
                       {d.discountPct > 0 ? (
                         <span
                           style={{
@@ -568,7 +569,7 @@ export default function HostingPlansPage() {
                         <span style={{ color: DS.text4, fontSize: 12 }}>—</span>
                       )}
                     </td>
-                    <td style={{ padding: "14px 16px" }}>
+                    <td style={{ padding: "14px 16px", whiteSpace: "nowrap" }}>
                       <span
                         style={{
                           color: DS.blue,
@@ -580,7 +581,7 @@ export default function HostingPlansPage() {
                         {fmtVND(total)}
                       </span>
                     </td>
-                    <td style={{ padding: "14px 16px" }}>
+                    <td style={{ padding: "14px 16px", whiteSpace: "nowrap" }}>
                       <div style={{ maxWidth: 200 }}>
                         {(d.featuresVi || d.features || [])
                           .slice(0, 3)
@@ -612,7 +613,7 @@ export default function HostingPlansPage() {
                         )}
                       </div>
                     </td>
-                    <td style={{ padding: "14px 16px" }}>
+                    <td style={{ padding: "14px 16px", whiteSpace: "nowrap" }}>
                       <span
                         style={{
                           color: DS.text4,
@@ -623,7 +624,7 @@ export default function HostingPlansPage() {
                         {d.sortOrder}
                       </span>
                     </td>
-                    <td style={{ padding: "14px 16px" }}>
+                    <td style={{ padding: "14px 16px", whiteSpace: "nowrap" }}>
                       {d.highlighted ? (
                         <span
                           style={{
@@ -641,7 +642,7 @@ export default function HostingPlansPage() {
                         <span style={{ color: DS.text4, fontSize: 12 }}>—</span>
                       )}
                     </td>
-                    <td style={{ padding: "14px 16px" }}>
+                    <td style={{ padding: "14px 16px", whiteSpace: "nowrap" }}>
                       <button
                         onClick={() => toggle.mutate(d)}
                         style={{
@@ -658,7 +659,7 @@ export default function HostingPlansPage() {
                         )}
                       </button>
                     </td>
-                    <td style={{ padding: "14px 16px" }}>
+                    <td style={{ padding: "14px 16px", whiteSpace: "nowrap" }}>
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => openEdit(d)}

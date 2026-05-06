@@ -158,7 +158,7 @@ export default function SeoPackagesPage() {
   return (
     <div style={{ padding: "1.5rem", minHeight: "100vh", background: DS.bgCosmic }}>
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
         <div>
           <h1 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 22, fontWeight: 900 }}>
             Quản lý Gói SEO
@@ -167,19 +167,19 @@ export default function SeoPackagesPage() {
             CRUD gói SEO: Cơ bản, Nâng cao, Chuyên nghiệp
           </p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex items-center gap-2">
           <button
             onClick={() => {
               qc.invalidateQueries({ queryKey: ["admin", "seo-tiers"] });
             }}
-            className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm group"
+            className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm group whitespace-nowrap"
             style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, color: DS.text3 }}
           >
             <RefreshCw size={14} className="group-active:rotate-180 transition-transform duration-500" /> Làm mới
           </button>
           <button
             onClick={openCreate}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap"
             style={{ background: GRD.primary, color: "#fff" }}
           >
             <Plus size={16} /> Thêm gói SEO
@@ -218,12 +218,12 @@ export default function SeoPackagesPage() {
       </div>
 
       {/* Table */}
-      <div style={{ borderRadius: 16, overflow: "hidden", border: `1px solid ${DS.border}`, background: DS.bgCard }}>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+      <div style={{ borderRadius: 16, overflowX: "auto", border: `1px solid ${DS.border}`, background: DS.bgCard }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 900 }}>
           <thead>
             <tr style={{ background: "rgba(255,255,255,0.03)" }}>
               {["Level", "Tên gói", "Giá tháng", "Giá thị trường", "LP thưởng", "Thứ tự", "Trạng thái", "Hành động"].map(h => (
-                <th key={h} style={{ padding: "12px 16px", color: DS.text4, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.1em", textAlign: "left" }}>
+                <th key={h} style={{ padding: "12px 16px", color: DS.text4, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.1em", textAlign: "left", whiteSpace: "nowrap" }}>
                   {h}
                 </th>
               ))}
@@ -236,7 +236,7 @@ export default function SeoPackagesPage() {
               <tr><td colSpan={8} style={{ padding: 32, textAlign: "center", color: DS.text4 }}>Chưa có dữ liệu</td></tr>
             ) : items.map(t => (
               <tr key={t.id} style={{ borderTop: `1px solid ${DS.border}` }}>
-                <td style={{ padding: "14px 16px" }}>
+                <td style={{ padding: "14px 16px", whiteSpace: "nowrap" }}>
                   <span style={{
                     background: `${TIER_COLORS[t.level] ?? DS.blue}22`,
                     color: TIER_COLORS[t.level] ?? DS.blue,
@@ -246,34 +246,34 @@ export default function SeoPackagesPage() {
                     Lv.{t.level}
                   </span>
                 </td>
-                <td style={{ padding: "14px 16px" }}>
+                <td style={{ padding: "14px 16px", whiteSpace: "nowrap" }}>
                   <div>
                     <div style={{ color: DS.text, fontWeight: 600, fontSize: 14 }}>{t.nameVi || t.name}</div>
                     {t.shortDesc && <div style={{ color: DS.text4, fontSize: 11 }}>{t.shortDesc}</div>}
                   </div>
                 </td>
-                <td style={{ padding: "14px 16px" }}>
+                <td style={{ padding: "14px 16px", whiteSpace: "nowrap" }}>
                   <span style={{ color: DS.green, fontFamily: DS.mono, fontWeight: 700, fontSize: 13 }}>
                     {fmtVND(t.basePrice)}
                   </span>
                 </td>
-                <td style={{ padding: "14px 16px" }}>
+                <td style={{ padding: "14px 16px", whiteSpace: "nowrap" }}>
                   <span style={{ color: DS.text4, fontFamily: DS.mono, fontSize: 12 }}>
                     {(t.marketPrice !== null && t.marketPrice !== undefined) ? fmtVND(t.marketPrice) : "—"}
                   </span>
                 </td>
-                <td style={{ padding: "14px 16px" }}>
+                <td style={{ padding: "14px 16px", whiteSpace: "nowrap" }}>
                   <span style={{ color: DS.amber, fontFamily: DS.mono, fontSize: 13 }}>
                     {(t.lpReward !== null && t.lpReward !== undefined) ? `${t.lpReward} LP` : "—"}
                   </span>
                 </td>
-                <td style={{ padding: "14px 16px" }}>
+                <td style={{ padding: "14px 16px", whiteSpace: "nowrap" }}>
                   <span style={{ color: DS.text4, fontFamily: DS.mono, fontSize: 12 }}>{t.sortOrder}</span>
                 </td>
-                <td style={{ padding: "14px 16px" }}>
+                <td style={{ padding: "14px 16px", whiteSpace: "nowrap" }}>
                   <Toggle checked={t.isActive} onChange={() => toggleMutation.mutate(t)} />
                 </td>
-                <td style={{ padding: "14px 16px" }}>
+                <td style={{ padding: "14px 16px", whiteSpace: "nowrap" }}>
                   <div className="flex items-center gap-2">
                     <button onClick={() => openEdit(t)} style={{ background: "none", border: "none", cursor: "pointer", padding: 4, borderRadius: 6 }}
                       className="hover:bg-white/10 transition-colors">
