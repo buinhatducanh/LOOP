@@ -838,18 +838,29 @@ function TierFeatureDrawer({
           </div>
         }
       >
-        <div style={{ display: "flex", height: "100%", gap: 0 }}>
+        <div className="flex flex-col lg:flex-row h-full gap-0 overflow-hidden">
           {/* Sidebar: group list */}
-          <div style={{
-            width: 180,
-            borderRight: `1px solid ${DS.border}`,
-            display: "flex",
-            flexDirection: "column",
-            gap: 2,
-            paddingRight: 8,
-            flexShrink: 0,
-          }}>
-            <div style={{ color: DS.text5, fontSize: 9, fontFamily: DS.mono, padding: "8px 8px 4px", letterSpacing: 1 }}>
+          <div
+            className="flex flex-row lg:flex-column overflow-x-auto lg:overflow-y-auto lg:w-[180px] scrollbar-hide"
+            style={{
+              borderBottom: `1px solid ${DS.border}`,
+              borderRight: `none`,
+              display: "flex",
+              gap: 4,
+              padding: "4px 8px",
+              flexShrink: 0,
+            }}
+          >
+            {/* On Desktop, restore border and width */}
+            <style>{`
+              @media (min-width: 1024px) {
+                .lg\\:flex-column { flex-direction: column; }
+                .lg\\:w-\\[180px\\] { width: 180px; border-right: 1px solid ${DS.border}; border-bottom: none; padding-right: 8px; }
+              }
+              .scrollbar-hide::-webkit-scrollbar { display: none; }
+              .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+            `}</style>
+            <div className="hidden lg:block" style={{ color: DS.text5, fontSize: 9, fontFamily: DS.mono, padding: "8px 8px 4px", letterSpacing: 1 }}>
               NHÓM TÍNH NĂNG
             </div>
             {groups.map(g => {
@@ -865,7 +876,7 @@ function TierFeatureDrawer({
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
-                    padding: "8px 10px",
+                    padding: "8px 12px",
                     borderRadius: 8,
                     border: "none",
                     cursor: "pointer",
@@ -873,6 +884,7 @@ function TierFeatureDrawer({
                     borderLeft: `3px solid ${isActive ? tierColor : "transparent"}`,
                     textAlign: "left",
                     transition: "all 0.12s",
+                    whiteSpace: "nowrap",
                   }}
                   onMouseEnter={e => {
                     if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = DS.bgCard3;
@@ -881,7 +893,7 @@ function TierFeatureDrawer({
                     if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = "transparent";
                   }}
                 >
-                  <div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
                     <div style={{
                       color: isActive ? tierColor : changed > 0 ? DS.amber : DS.text3,
                       fontSize: 11,
@@ -890,7 +902,7 @@ function TierFeatureDrawer({
                     }}>
                       {g.groupName}
                     </div>
-                    <div style={{ color: changed > 0 ? DS.amber : DS.text5, fontSize: 9, fontFamily: DS.mono, marginTop: 2 }}>
+                    <div className="hidden lg:block" style={{ color: changed > 0 ? DS.amber : DS.text5, fontSize: 9, fontFamily: DS.mono }}>
                       {changed > 0 ? `● ${changed} thay đổi` : `${inThisTier}/${totalFeatures}`}
                     </div>
                   </div>
@@ -900,7 +912,7 @@ function TierFeatureDrawer({
           </div>
 
           {/* Content: feature list */}
-          <div style={{ flex: 1, overflowY: "auto", padding: "0 16px 16px" }}>
+          <div className="flex-1 overflow-y-auto p-2 lg:p-[0_16px_16px]">
             <div style={{
               display: "flex",
               alignItems: "center",
@@ -963,9 +975,10 @@ function TierFeatureDrawer({
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{
                         color: isIncluded ? DS.text : DS.text3,
-                        fontSize: 12,
+                        fontSize: 11,
                         fontFamily: DS.heading,
                         fontWeight: isIncluded ? 600 : 400,
+                        lineHeight: 1.3,
                       }}>
                         {f.featureName}
                       </div>
@@ -1757,201 +1770,171 @@ function PackageRow({
         transition: "all 0.2s",
       }}>
         {/* Row header */}
-        <div style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 16,
-          padding: "14px 16px",
+        <div className="flex flex-col lg:grid lg:grid-cols-[250px_1fr_100px] lg:items-center p-3 lg:p-[10px_16px] gap-4 lg:gap-4" style={{
           background: DS.bgCard2,
         }}>
-          {/* Color swatch */}
-          <div style={{
-            width: 4,
-            height: 40,
-            borderRadius: 4,
-            background: pkg.color,
-            flexShrink: 0,
-            boxShadow: `0 0 10px ${pkg.color}40`,
-          }} />
-
-          {/* Package info — editable */}
-          <div style={{ minWidth: 180, flexShrink: 0 }}>
-            <InlineField
-              label="Tên"
-              value={pkg.industry || pkg.name}
-              editing={editingField === "industry"}
-              saving={saving}
-              onStartEdit={() => startEdit("industry", pkg.industry || pkg.name)}
-              onSave={saveEdit}
-              onCancel={cancelEdit}
-              inputValue={editValue}
-              onInputChange={setEditValue}
-              placeholder="Tên gói web"
-            />
-            <InlineField
-              label="Tagline"
-              value={pkg.tagline || pkg.taglineVi}
-              editing={editingField === "tagline"}
-              saving={saving}
-              onStartEdit={() => startEdit("tagline", pkg.tagline || pkg.taglineVi)}
-              onSave={saveEdit}
-              onCancel={cancelEdit}
-              inputValue={editValue}
-              onInputChange={setEditValue}
-              placeholder="Mô tả ngắn"
-            />
-          </div>
-
-          {/* Price */}
-          <div style={{ minWidth: 120, flexShrink: 0 }}>
-            <InlineField
-              label="Giá"
-              value={pkg.fullPrice ? `${(pkg.fullPrice || pkg.price || 0).toLocaleString("vi-VN")}đ` : "—"}
-              editing={editingField === "fullPrice"}
-              saving={saving}
-              onStartEdit={() => startEdit("fullPrice", pkg.fullPrice || pkg.price || 0)}
-              onSave={saveEdit}
-              onCancel={cancelEdit}
-              inputType="number"
-              inputValue={editValue}
-              onInputChange={setEditValue}
-              placeholder="Giá VNĐ"
-            />
-            <InlineField
-              label="LP"
-              value={pkg.lp ? `${pkg.lp.toLocaleString()} LP` : "0 LP"}
-              editing={editingField === "lp"}
-              saving={saving}
-              onStartEdit={() => startEdit("lp", pkg.lp || 0)}
-              onSave={saveEdit}
-              onCancel={cancelEdit}
-              inputType="number"
-              inputValue={editValue}
-              onInputChange={setEditValue}
-              placeholder="LP thưởng"
-            />
-          </div>
-
-          {/* Color + Badge */}
-          <div style={{ minWidth: 100, flexShrink: 0 }}>
-            <InlineField
-              label="Badge"
-              value={pkg.badge || "—"}
-              editing={editingField === "badge"}
-              saving={saving}
-              onStartEdit={() => startEdit("badge", pkg.badge || "")}
-              onSave={saveEdit}
-              onCancel={cancelEdit}
-              inputValue={editValue}
-              onInputChange={setEditValue}
-              placeholder="HOT, PHỔ BIẾN..."
-            />
-            <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "1px 3px" }}>
-              <span style={{ color: DS.text4, fontSize: 9, fontFamily: DS.mono, opacity: 0.6 }}>Màu: </span>
-              <div style={{ display: "flex", gap: 3 }}>
-                {COLORS.map(c => (
-                  <div
-                    key={c}
-                    onClick={async () => {
-                      setEditValue(c);
-                      try {
-                        await onUpdate("color", c);
-                        setToast({ message: "Đã lưu màu", type: "success" });
-                      } catch {
-                        setToast({ message: "Lưu màu thất bại", type: "error" });
-                      }
-                    }}
-                    title={c}
-                    style={{
-                      width: 14,
-                      height: 14,
-                      borderRadius: "50%",
-                      background: c,
-                      cursor: "pointer",
-                      border: pkg.color === c ? `2px solid #fff` : "2px solid transparent",
-                      boxShadow: pkg.color === c ? `0 0 6px ${c}` : "none",
-                      transition: "all 0.12s",
-                    }}
-                  />
-                ))}
+          {/* Column 1: Info */}
+          <div className="flex items-center gap-3">
+            <div style={{
+              width: 3,
+              height: 32,
+              borderRadius: 2,
+              background: pkg.color,
+              flexShrink: 0,
+              boxShadow: `0 0 8px ${pkg.color}30`,
+            }} />
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <InlineField
+                label="Tên"
+                value={pkg.industry || pkg.name}
+                editing={editingField === "industry"}
+                saving={saving}
+                onStartEdit={() => startEdit("industry", pkg.industry || pkg.name)}
+                onSave={saveEdit}
+                onCancel={cancelEdit}
+                inputValue={editValue}
+                onInputChange={setEditValue}
+                placeholder="Tên gói web"
+              />
+              <div style={{ marginTop: -2 }}>
+                <InlineField
+                  label="Tagline"
+                  value={pkg.tagline || pkg.taglineVi}
+                  editing={editingField === "tagline"}
+                  saving={saving}
+                  onStartEdit={() => startEdit("tagline", pkg.tagline || pkg.taglineVi)}
+                  onSave={saveEdit}
+                  onCancel={cancelEdit}
+                  inputValue={editValue}
+                  onInputChange={setEditValue}
+                  placeholder="Mô tả ngắn"
+                />
               </div>
             </div>
           </div>
 
-          {/* Tier buttons */}
-          <div style={{ flex: 1, display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6 }}>
+          {/* Column 2: Middle Grid (Price, Badge, Tiers) */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-[130px_130px_repeat(4,1fr)] items-center gap-4 lg:gap-3">
+            {/* Price/LP */}
+            <div>
+              <InlineField
+                label="Giá"
+                value={pkg.fullPrice ? `${(pkg.fullPrice || pkg.price || 0).toLocaleString("vi-VN")}đ` : "—"}
+                editing={editingField === "fullPrice"}
+                saving={saving}
+                onStartEdit={() => startEdit("fullPrice", pkg.fullPrice || pkg.price || 0)}
+                onSave={saveEdit}
+                onCancel={cancelEdit}
+                inputType="number"
+                inputValue={editValue}
+                onInputChange={setEditValue}
+                placeholder="Giá VNĐ"
+              />
+              <InlineField
+                label="LP"
+                value={pkg.lp ? `${pkg.lp.toLocaleString()} LP` : "0 LP"}
+                editing={editingField === "lp"}
+                saving={saving}
+                onStartEdit={() => startEdit("lp", pkg.lp || 0)}
+                onSave={saveEdit}
+                onCancel={cancelEdit}
+                inputType="number"
+                inputValue={editValue}
+                onInputChange={setEditValue}
+                placeholder="LP thưởng"
+              />
+            </div>
+
+            {/* Badge/Color */}
+            <div>
+              <InlineField
+                label="Badge"
+                value={pkg.badge || "—"}
+                editing={editingField === "badge"}
+                saving={saving}
+                onStartEdit={() => startEdit("badge", pkg.badge || "")}
+                onSave={saveEdit}
+                onCancel={cancelEdit}
+                inputValue={editValue}
+                onInputChange={setEditValue}
+                placeholder="Badge"
+              />
+              <div style={{ display: "flex", alignItems: "center", gap: 3, marginTop: 4 }}>
+                <span style={{ fontSize: 8, color: DS.text5, fontFamily: DS.mono, opacity: 0.6 }}>Màu:</span>
+                <div style={{ display: "flex", gap: 2 }}>
+                  {COLORS.map(c => (
+                    <div
+                      key={c}
+                      onClick={() => onUpdate("color", c)}
+                      style={{
+                        width: 10,
+                        height: 10,
+                        borderRadius: "50%",
+                        background: c,
+                        cursor: "pointer",
+                        border: pkg.color === c ? `1.5px solid #fff` : "1.5px solid transparent",
+                        boxShadow: pkg.color === c ? `0 0 4px ${c}` : "none",
+                        transition: "all 0.12s",
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Tiers */}
             {WEB_TIERS.map(t => (
               <button
                 key={t.level}
                 onClick={() => onManageTier(t.level, t.name)}
-                title={`Quản lý tính năng ${t.name}`}
                 style={{
                   display: "flex",
                   flexDirection: "column",
                   alignItems: "center",
                   justifyContent: "center",
-                  gap: 2,
-                  padding: "7px 4px",
-                  borderRadius: 10,
-                  border: `1px solid ${pkg.color}30`,
+                  padding: "6px 2px",
+                  borderRadius: 8,
+                  border: `1px solid ${pkg.color}25`,
                   background: `${pkg.color}08`,
                   cursor: "pointer",
-                  transition: "all 0.15s",
-                }}
-                onMouseEnter={e => {
-                  (e.currentTarget as HTMLButtonElement).style.background = `${pkg.color}18`;
-                  (e.currentTarget as HTMLButtonElement).style.borderColor = `${pkg.color}50`;
-                  (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)";
-                }}
-                onMouseLeave={e => {
-                  (e.currentTarget as HTMLButtonElement).style.background = `${pkg.color}08`;
-                  (e.currentTarget as HTMLButtonElement).style.borderColor = `${pkg.color}30`;
-                  (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)";
+                  minWidth: 50,
                 }}
               >
-                <div style={{ color: pkg.color, fontSize: 10, fontFamily: DS.mono, fontWeight: 700 }}>
+                <div style={{ color: pkg.color, fontSize: 11, fontFamily: DS.mono, fontWeight: 700 }}>
                   {tierCounts?.[t.level] ?? 0}
                 </div>
-                <div style={{ color: DS.text4, fontSize: 8, fontFamily: DS.mono, textAlign: "center", lineHeight: 1.2 }}>
+                <div style={{ color: DS.text4, fontSize: 7, fontFamily: DS.mono, textTransform: "uppercase", opacity: 0.8 }}>
                   {t.shortName}
                 </div>
               </button>
             ))}
           </div>
 
-          {/* Actions */}
-          <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+          {/* Column 3: Actions */}
+          <div className="flex items-center justify-end gap-2">
             <button
               onClick={onToggle}
-              title={pkg.isActive ? "Tắt" : "Bật"}
               style={{
                 background: "none",
                 border: "none",
                 cursor: "pointer",
                 color: pkg.isActive ? DS.green : DS.text5,
-                display: "flex",
-                alignItems: "center",
                 padding: 4,
               }}
             >
-              {pkg.isActive
-                ? <ToggleRight size={22} style={{ color: DS.green }} />
-                : <ToggleLeft size={22} />}
+              {pkg.isActive ? <ToggleRight size={20} /> : <ToggleLeft size={20} />}
             </button>
             <button
               onClick={() => setExpanded(v => !v)}
-              title={expanded ? "Thu gọn" : "Xem tính năng"}
               style={{
                 background: "none",
                 border: "none",
                 cursor: "pointer",
                 color: DS.text5,
                 padding: 4,
-                display: "flex",
-                alignItems: "center",
               }}
             >
-              {expanded ? <X size={15} /> : <PlusCircle size={15} />}
+              {expanded ? <X size={14} /> : <PlusCircle size={14} />}
             </button>
           </div>
         </div>
@@ -2152,12 +2135,7 @@ function CustomerWebsitesSection({
       </div>
 
       {/* Toolbar */}
-      <div style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 8,
-        marginBottom: "1rem",
-      }}>
+      <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2 mb-4">
         <div style={{
           flex: 1,
           display: "flex",
@@ -2180,69 +2158,59 @@ function CustomerWebsitesSection({
               color: DS.text3,
               fontSize: 13,
               flex: 1,
+              width: "100%",
             }}
           />
         </div>
-        <div style={{
-          display: "flex",
-          gap: 6,
-          padding: "8px 12px",
-          borderRadius: 12,
-          background: DS.bgCard,
-          border: `1px solid ${DS.border}`,
-        }}>
-          {(["all", "pending_config", "configured", "delivered"] as const).map(f => (
-            <button
-              key={f}
-              onClick={() => { setFilterStatus(f); setPage(1); }}
-              style={{
-                padding: "4px 12px",
-                borderRadius: 20,
-                fontSize: 10,
-                fontFamily: DS.mono,
-                cursor: "pointer",
-                border: `1px solid ${filterStatus === f ? DS.blue : "transparent"}`,
-                background: filterStatus === f ? "rgba(59,130,246,0.12)" : "none",
-                color: filterStatus === f ? DS.blue : DS.text5,
-              }}
-            >
-              {f === "all" ? "Tất cả"
-                : f === "pending_config" ? "Chờ duyệt"
-                  : f === "configured" ? "Đã cấu hình"
-                    : "Đã bàn giao"}
-            </button>
-          ))}
+        <div className="flex items-center gap-2 w-full min-w-0 md:w-auto">
+          <div className="flex-1 flex overflow-x-auto scrollbar-hide gap-2 p-[8px_12px] rounded-xl border border-border bg-card items-center min-w-0">
+            {(["all", "pending_config", "configured", "delivered"] as const).map(f => (
+              <button
+                key={f}
+                onClick={() => { setFilterStatus(f); setPage(1); }}
+                className="whitespace-nowrap"
+                style={{
+                  padding: "4px 12px",
+                  borderRadius: 20,
+                  fontSize: 10,
+                  fontFamily: DS.mono,
+                  cursor: "pointer",
+                  border: `1px solid ${filterStatus === f ? DS.blue : "transparent"}`,
+                  background: filterStatus === f ? "rgba(59,130,246,0.12)" : "none",
+                  color: filterStatus === f ? DS.blue : DS.text5,
+                  flexShrink: 0,
+                }}
+              >
+                {f === "all" ? "Tất cả"
+                  : f === "pending_config" ? "Chờ duyệt"
+                    : f === "configured" ? "Đã cấu hình"
+                      : "Đã bàn giao"}
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={() => refetch()}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "10px",
+              background: DS.bgCard,
+              border: `1px solid ${DS.border}`,
+              borderRadius: 12,
+              color: DS.text3,
+              cursor: "pointer",
+            }}
+          >
+            <RefreshCw size={14} className={isFetching ? "animate-spin" : ""} />
+          </button>
         </div>
-        <button
-          onClick={() => refetch()}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-            padding: "8px 14px",
-            background: DS.bgCard,
-            border: `1px solid ${DS.border}`,
-            borderRadius: 10,
-            color: DS.text3,
-            cursor: "pointer",
-            fontSize: 12,
-            fontFamily: DS.mono,
-          }}
-        >
-          <RefreshCw size={13} className={isFetching ? "animate-spin" : ""} />
-        </button>
       </div>
 
       {/* Table */}
-      <div style={{
-        background: DS.bgCard,
-        border: `1px solid ${DS.border}`,
-        borderRadius: 12,
-        overflow: "visible",
-      }}>
+      <div className="bg-transparent lg:bg-card border-none lg:border lg:border-border rounded-xl overflow-visible">
         {/* Sticky header */}
-        <div style={{
-          display: "grid",
+        <div className="hidden lg:grid" style={{
           gridTemplateColumns: "180px 1fr 110px 100px 90px 130px",
           gap: 12,
           padding: "10px 16px",
@@ -2274,7 +2242,7 @@ function CustomerWebsitesSection({
             <div>Không tìm thấy website nào</div>
           </div>
         ) : (
-          <div style={{ overflowX: "auto", maxHeight: "calc(100vh - 520px)", overflowY: "auto" }}>
+          <div className="flex flex-col gap-4 lg:gap-0 lg:block p-1 lg:p-0" style={{ overflowX: "auto", maxHeight: "calc(100vh - 520px)", overflowY: "auto" }}>
             {filtered.map(site => {
               const domainDays = daysUntil(site.domainExpiresAt);
               const hostingDays = daysUntil(site.hostingExpiresAt);
@@ -2287,80 +2255,111 @@ function CustomerWebsitesSection({
               return (
                 <div
                   key={site.id}
+                  className="flex flex-col lg:grid p-4 lg:p-[12px_16px] gap-4 lg:gap-3 border border-border lg:border-0 lg:border-b lg:border-border/30 rounded-xl lg:rounded-none bg-card lg:bg-transparent shadow-sm lg:shadow-none"
                   style={{
-                    display: "grid",
                     gridTemplateColumns: "180px 1fr 110px 100px 90px 130px",
-                    gap: 12,
-                    padding: "12px 16px",
-                    borderBottom: `1px solid ${DS.border}30`,
                     alignItems: "center",
                   }}
                 >
                   {/* Website */}
-                  <div>
-                    <div style={{
-                      color: DS.text,
-                      fontSize: 12,
-                      fontWeight: 600,
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                    }}>
-                      {site.name}
-                    </div>
-                    {site.domain && (
-                      <div style={{ color: DS.blue, fontSize: 10, fontFamily: DS.mono }}>
-                        <Globe size={10} style={{ marginRight: 3, verticalAlign: "middle" }} />
-                        {site.domain}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Customer */}
-                  <div>
-                    <div style={{ color: DS.text3, fontSize: 12 }}>{site.customerName || "—"}</div>
-                    <div style={{ color: DS.text5, fontSize: 10 }}>{site.customerEmail || "—"}</div>
-                  </div>
-
-                  {/* Hosting */}
-                  <div>
-                    <div style={{ color: DS.text3, fontSize: 11 }}>
-                      {site.hostingPlan?.name || site.hostingPlan?.nameVi || "—"}
-                    </div>
-                    <div style={{ color: DS.text5, fontSize: 10 }}>
-                      {site.hostingTermMonths} tháng · {(site.hostingCost || 0).toLocaleString("vi-VN")}đ
-                    </div>
-                  </div>
-
-                  {/* Expiry */}
-                  <div>
-                    {domainDays !== null && (
+                  <div className="flex justify-between items-start lg:block">
+                    <div>
                       <div style={{
-                        color: domainUrgent ? DS.red : DS.text3,
-                        fontSize: 11,
-                        fontWeight: domainUrgent ? 700 : 400,
+                        color: DS.text,
+                        fontSize: 13,
+                        fontWeight: 600,
                       }}>
-                        <Clock size={10} style={{ marginRight: 3, verticalAlign: "middle" }} />
-                        Domain: {domainDays}d
+                        {site.name}
                       </div>
-                    )}
-                    {hostingDays !== null && (
-                      <div style={{
-                        color: hostingUrgent ? DS.red : DS.text3,
-                        fontSize: 11,
-                        fontWeight: hostingUrgent ? 700 : 400,
+                      {site.domain && (
+                        <div style={{ color: DS.blue, fontSize: 11, fontFamily: DS.mono }}>
+                          <Globe size={11} style={{ marginRight: 3, verticalAlign: "middle" }} />
+                          {site.domain}
+                        </div>
+                      )}
+                    </div>
+                    {/* Mobile status */}
+                    <div className="flex flex-col gap-1 items-end lg:hidden">
+                      <span style={{
+                        fontSize: 9,
+                        fontFamily: DS.mono,
+                        background: `${csColor}15`,
+                        border: `1px solid ${csColor}40`,
+                        color: csColor,
+                        padding: "2px 6px",
+                        borderRadius: 6,
+                        display: "inline-block",
                       }}>
-                        <Server size={10} style={{ marginRight: 3, verticalAlign: "middle" }} />
-                        Host: {hostingDays}d
-                      </div>
-                    )}
-                    {domainDays === null && hostingDays === null && (
-                      <span style={{ color: DS.text5, fontSize: 11 }}>—</span>
-                    )}
+                        {CONFIG_STATUS_LABELS[site.configStatus] || site.configStatus}
+                      </span>
+                      <span style={{
+                        fontSize: 9,
+                        fontFamily: DS.mono,
+                        background: `${stColor}15`,
+                        border: `1px solid ${stColor}40`,
+                        color: stColor,
+                        padding: "2px 6px",
+                        borderRadius: 6,
+                        display: "inline-block",
+                      }}>
+                        {site.status}
+                      </span>
+                    </div>
                   </div>
 
-                  {/* Status */}
-                  <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                  {/* Mobile Grid for info */}
+                  <div className="grid grid-cols-2 gap-3 lg:contents">
+                    {/* Customer */}
+                    <div className="p-3 lg:p-0 rounded-xl lg:rounded-none border border-border/50 lg:border-none bg-card2/30 lg:bg-transparent flex flex-col justify-center">
+                      <div className="lg:hidden" style={{ color: DS.text5, fontSize: 9, fontFamily: DS.mono, marginBottom: 4 }}>KHÁCH HÀNG</div>
+                      <div style={{ color: DS.text3, fontSize: 12, fontWeight: 600 }}>{site.customerName || "—"}</div>
+                      <div style={{ color: DS.text5, fontSize: 10, marginTop: 2 }}>{site.customerEmail || "—"}</div>
+                    </div>
+
+                    {/* Hosting */}
+                    <div className="p-3 lg:p-0 rounded-xl lg:rounded-none border border-border/50 lg:border-none bg-card2/30 lg:bg-transparent flex flex-col justify-center">
+                      <div className="lg:hidden" style={{ color: DS.text5, fontSize: 9, fontFamily: DS.mono, marginBottom: 4 }}>HOSTING</div>
+                      <div style={{ color: DS.text3, fontSize: 11, fontWeight: 600 }}>
+                        {site.hostingPlan?.name || site.hostingPlan?.nameVi || "—"}
+                      </div>
+                      <div style={{ color: DS.text5, fontSize: 10, marginTop: 2 }}>
+                        {site.hostingTermMonths} tháng · {(site.hostingCost || 0).toLocaleString("vi-VN")}đ
+                      </div>
+                    </div>
+
+                    {/* Expiry */}
+                    <div className="col-span-2 lg:col-span-1 p-3 lg:p-0 rounded-xl lg:rounded-none border border-border/50 lg:border-none bg-card2/30 lg:bg-transparent flex flex-col justify-center">
+                      <div className="lg:hidden" style={{ color: DS.text5, fontSize: 9, fontFamily: DS.mono, marginBottom: 4 }}>HẠN DÙNG</div>
+                      <div className="flex flex-row lg:flex-col gap-4 lg:gap-0">
+                        {domainDays !== null && (
+                          <div style={{
+                            color: domainUrgent ? DS.red : DS.text3,
+                            fontSize: 11,
+                            fontWeight: domainUrgent ? 700 : 400,
+                          }}>
+                            <Clock size={10} style={{ marginRight: 3, verticalAlign: "middle" }} />
+                            Domain: {domainDays}d
+                          </div>
+                        )}
+                        {hostingDays !== null && (
+                          <div style={{
+                            color: hostingUrgent ? DS.red : DS.text3,
+                            fontSize: 11,
+                            fontWeight: hostingUrgent ? 700 : 400,
+                          }}>
+                            <Server size={10} style={{ marginRight: 3, verticalAlign: "middle" }} />
+                            Host: {hostingDays}d
+                          </div>
+                        )}
+                        {domainDays === null && hostingDays === null && (
+                          <span style={{ color: DS.text5, fontSize: 11 }}>—</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Status (Desktop) */}
+                  <div className="hidden lg:flex" style={{ flexDirection: "column", gap: 4 }}>
                     <span style={{
                       fontSize: 9,
                       fontFamily: DS.mono,
@@ -2878,7 +2877,7 @@ function ServiceAttributeTab({ onToast }: { onToast: (message: string, type: "su
       {/* Header */}
       <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 16, flexWrap: "wrap" }}>
         {/* Stats */}
-        <div style={{ display: "flex", gap: 8, marginRight: "auto" }}>
+        <div style={{ display: "flex", gap: 8, marginRight: "auto", flexWrap: "wrap" }}>
           {[
             { label: "Tổng", value: attrCount, color: DS.text },
             { label: "Hoạt động", value: activeCount, color: DS.green },
@@ -2904,14 +2903,17 @@ function ServiceAttributeTab({ onToast }: { onToast: (message: string, type: "su
       {/* Filters */}
       <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
         <input value={search} onChange={e => setSearch(e.target.value)}
-          style={{ ...inputStyle, width: 200 }} placeholder="Tìm kiếm..." />
+          className="flex-1 min-w-[150px] lg:w-200"
+          style={inputStyle} placeholder="Tìm kiếm..." />
         <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)}
-          style={{ ...inputStyle, width: 160, cursor: "pointer" }}>
+          className="flex-1 min-w-[140px] lg:w-160"
+          style={{ ...inputStyle, cursor: "pointer" }}>
           <option value="">Tất cả danh mục</option>
           {categories.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
         <select value={filterService} onChange={e => setFilterService(e.target.value)}
-          style={{ ...inputStyle, width: 130, cursor: "pointer" }}>
+          className="flex-1 min-w-[110px] lg:w-130"
+          style={{ ...inputStyle, cursor: "pointer" }}>
           {SERVICE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
         <div style={{ display: "flex", gap: 4 }}>
@@ -3289,7 +3291,7 @@ export default function WebPackagesPage() {
   const isMutatingConfigure = configureMutation.isPending;
 
   return (
-    <div style={{ padding: "24px", minHeight: "100vh", backgroundColor: DS.bg }}>
+    <div className="p-4 lg:p-6 min-h-screen" style={{ backgroundColor: DS.bg }}>
       <style>{`
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         * { box-sizing: border-box; }
@@ -3303,9 +3305,9 @@ export default function WebPackagesPage() {
       <div style={{
         background: DS.bgCard,
         border: `1px solid ${DS.border}`,
-        borderRadius: 20,
-        padding: "20px 24px",
-        marginBottom: "1.5rem",
+        borderRadius: 16,
+        padding: "16px 20px",
+        marginBottom: "1rem",
         position: "relative",
         overflow: "hidden",
       }}>
@@ -3571,22 +3573,22 @@ export default function WebPackagesPage() {
               <div key={s.label} style={{
                 background: DS.bgCard,
                 border: `1px solid ${DS.border}`,
-                borderRadius: 16,
-                padding: "1rem",
+                borderRadius: 12,
+                padding: "12px 16px",
               }}>
                 <div style={{
-                  width: 40, height: 40, borderRadius: 12,
+                  width: 32, height: 32, borderRadius: 10,
                   background: `${s.color}15`,
                   border: `1px solid ${s.color}25`,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  marginBottom: 12,
+                  marginBottom: 8,
                 }}>
                   <span style={{ color: s.color }}>{s.icon}</span>
                 </div>
-                <div style={{ color: s.color, fontFamily: DS.mono, fontSize: 20, fontWeight: 700 }}>{s.value}</div>
-                <div style={{ color: DS.text3, fontSize: 12, marginTop: 3 }}>{s.label}</div>
+                <div style={{ color: s.color, fontFamily: DS.mono, fontSize: 18, fontWeight: 700 }}>{s.value}</div>
+                <div style={{ color: DS.text3, fontSize: 11, marginTop: 2 }}>{s.label}</div>
               </div>
             ))}
           </div>
@@ -3595,9 +3597,9 @@ export default function WebPackagesPage() {
           <div style={{
             background: DS.bgCard,
             border: `1px solid ${DS.border}`,
-            borderRadius: 16,
-            padding: "1.25rem",
-            marginBottom: "1.5rem",
+            borderRadius: 12,
+            padding: "1rem",
+            marginBottom: "1rem",
           }}>
             <div style={{
               color: DS.text3,
@@ -3648,8 +3650,8 @@ export default function WebPackagesPage() {
                 display: "flex",
                 alignItems: "center",
                 gap: 8,
-                padding: "8px 12px",
-                borderRadius: 12,
+                padding: "6px 10px",
+                borderRadius: 10,
                 background: DS.bgCard,
                 border: `1px solid ${DS.border}`,
               }}>
@@ -3672,8 +3674,8 @@ export default function WebPackagesPage() {
                 display: "flex",
                 alignItems: "center",
                 gap: 6,
-                padding: "8px 12px",
-                borderRadius: 12,
+                padding: "6px 10px",
+                borderRadius: 10,
                 background: DS.bgCard,
                 border: `1px solid ${DS.border}`,
               }}>
@@ -3725,29 +3727,25 @@ export default function WebPackagesPage() {
           </div>
 
           {/* Column headers */}
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "200px 1fr 120px",
-            gap: 16,
-            padding: "0 1rem",
-            marginBottom: 8,
-          }}>
+          <div className="hidden lg:grid grid-cols-[250px_1fr_100px] gap-4 px-4 mb-2">
             <div style={{ color: DS.text5, fontSize: 9, fontFamily: DS.mono, letterSpacing: "0.12em" }}>
               TÊN GÓI WEB
             </div>
             <div style={{
               display: "grid",
-              gridTemplateColumns: "repeat(4, 1fr)",
+              gridTemplateColumns: "130px 130px repeat(4, 1fr)",
               gap: 12,
               color: DS.text5,
               fontSize: 9,
               fontFamily: DS.mono,
               letterSpacing: "0.12em",
             }}>
-              <span style={{ textAlign: "center" }}>GIÁ FULL</span>
-              <span style={{ textAlign: "center" }}>ĐƠN ĐÃ BÁN</span>
-              <span style={{ textAlign: "center" }}>DOANH THU</span>
-              <span style={{ textAlign: "center" }}>LP THƯỞNG</span>
+              <span style={{ textAlign: "left" }}>GIÁ & LP</span>
+              <span style={{ textAlign: "left" }}>BADGE & MÀU</span>
+              <span style={{ textAlign: "center" }}>TIER 1</span>
+              <span style={{ textAlign: "center" }}>TIER 2</span>
+              <span style={{ textAlign: "center" }}>TIER 3</span>
+              <span style={{ textAlign: "center" }}>TIER 4</span>
             </div>
             <div style={{
               color: DS.text5,

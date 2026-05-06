@@ -19,13 +19,13 @@ import {
 type RankKey = "iron" | "bronze" | "silver" | "gold" | "platinum" | "ruby" | "diamond";
 interface RankConfig { label: string; symbol: string; color: string; glowColor: string; }
 const RANKS: Record<RankKey, RankConfig> = {
-  iron:     { label: "Iron",     symbol: "⬡", color: "#9CA3AF", glowColor: "rgba(156,163,175,0.3)" },
-  bronze:   { label: "Bronze",   symbol: "◈", color: "#CD7F32", glowColor: "rgba(205,127,50,0.3)" },
-  silver:   { label: "Silver",   symbol: "◇", color: "#CBD5E1", glowColor: "rgba(203,213,225,0.3)" },
-  gold:     { label: "Gold",     symbol: "★", color: "#FFD700", glowColor: "rgba(255,215,0,0.3)" },
+  iron: { label: "Iron", symbol: "⬡", color: "#9CA3AF", glowColor: "rgba(156,163,175,0.3)" },
+  bronze: { label: "Bronze", symbol: "◈", color: "#CD7F32", glowColor: "rgba(205,127,50,0.3)" },
+  silver: { label: "Silver", symbol: "◇", color: "#CBD5E1", glowColor: "rgba(203,213,225,0.3)" },
+  gold: { label: "Gold", symbol: "★", color: "#FFD700", glowColor: "rgba(255,215,0,0.3)" },
   platinum: { label: "Platinum", symbol: "❋", color: "#14B8A6", glowColor: "rgba(20,184,166,0.3)" },
-  ruby:     { label: "Ruby",     symbol: "♦", color: "#EF4444", glowColor: "rgba(239,68,68,0.3)" },
-  diamond:  { label: "Diamond",  symbol: "✦", color: "#818CF8", glowColor: "rgba(129,140,248,0.3)" },
+  ruby: { label: "Ruby", symbol: "♦", color: "#EF4444", glowColor: "rgba(239,68,68,0.3)" },
+  diamond: { label: "Diamond", symbol: "✦", color: "#818CF8", glowColor: "rgba(129,140,248,0.3)" },
 };
 function getRank(rank: string): RankConfig {
   return RANKS[rank as RankKey] ?? RANKS.iron;
@@ -140,7 +140,7 @@ function DivisionModal({ division, onClose, onSave }: {
     catch (e) { setError(e instanceof Error ? e.message : "Lỗi"); }
     finally { setSaving(false); }
   };
-  const COLORS = ["#3B82F6","#EC4899","#22C55E","#F59E0B","#8B5CF6","#06B6D4","#EAB308","#EF4444","#14B8A6","#6366F1"];
+  const COLORS = ["#3B82F6", "#EC4899", "#22C55E", "#F59E0B", "#8B5CF6", "#06B6D4", "#EAB308", "#EF4444", "#14B8A6", "#6366F1"];
   return (
     <Modal title={division ? "Sửa Ban" : "Thêm Ban mới"} onClose={onClose}>
       {error && <div style={{ background: `${DS.red}10`, border: `1px solid ${DS.red}30`, borderRadius: 10, padding: "10px 14px", color: DS.red, fontSize: 12 }}>{error}</div>}
@@ -194,13 +194,15 @@ function DepartmentModal({ department, divisions, onClose, onSave }: {
     if (!name.trim() || !shortName.trim() || !key.trim()) { setError("Tên, tên viết tắt và key bắt buộc"); return; }
     setSaving(true); setError(null);
     try {
-      await onSave({ name: name.trim(), shortName: shortName.trim().toUpperCase(),
-        key: key.trim().toLowerCase().replace(/\s+/g, "-"), color, description: description.trim(), mission: mission.trim(), divisionId });
+      await onSave({
+        name: name.trim(), shortName: shortName.trim().toUpperCase(),
+        key: key.trim().toLowerCase().replace(/\s+/g, "-"), color, description: description.trim(), mission: mission.trim(), divisionId
+      });
       onClose();
     } catch (e) { setError(e instanceof Error ? e.message : "Lỗi"); }
     finally { setSaving(false); }
   };
-  const COLORS = ["#3B82F6","#EC4899","#22C55E","#F59E0B","#8B5CF6","#06B6D4","#EAB308","#EF4444","#14B8A6","#6366F1"];
+  const COLORS = ["#3B82F6", "#EC4899", "#22C55E", "#F59E0B", "#8B5CF6", "#06B6D4", "#EAB308", "#EF4444", "#14B8A6", "#6366F1"];
   return (
     <Modal title={department ? "Sửa Phòng" : "Thêm Phòng mới"} onClose={onClose}>
       {error && <div style={{ background: `${DS.red}10`, border: `1px solid ${DS.red}30`, borderRadius: 10, padding: "10px 14px", color: DS.red, fontSize: 12 }}>{error}</div>}
@@ -315,9 +317,11 @@ function AssignModal({ department, allMembers, onClose, onSave }: {
           const rc = getRank(m.rank);
           return (
             <div key={m.id} onClick={() => toggle(m.id)}
-              style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 12px", borderRadius: 12, cursor: "pointer",
+              style={{
+                display: "flex", alignItems: "center", gap: 12, padding: "8px 12px", borderRadius: 12, cursor: "pointer",
                 background: sel ? `${rc.color}08` : "rgba(255,255,255,0.01)",
-                border: `1px solid ${sel ? rc.color + "35" : DS.border}`, transition: "all 0.15s" }}>
+                border: `1px solid ${sel ? rc.color + "35" : DS.border}`, transition: "all 0.15s"
+              }}>
               <MiniAvatar m={m} size={32} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -499,10 +503,12 @@ function DivisionRow({ division, isSelected, onSelect, onAddDept, onEdit }: {
   return (
     <motion.div key={division.id} onClick={onSelect}
       whileHover={{ borderColor: `${division.color}35` }}
-      style={{ padding: "1rem", borderRadius: 16, cursor: "pointer",
+      style={{
+        padding: "1rem", borderRadius: 16, cursor: "pointer",
         background: DS.bgCard,
         border: `1px solid ${isSelected ? `${division.color}50` : DS.border}`,
-        boxShadow: isSelected ? `0 0 20px ${division.color}10` : "none" }}>
+        boxShadow: isSelected ? `0 0 20px ${division.color}10` : "none"
+      }}>
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
         <div style={{ width: 40, height: 40, borderRadius: 12, background: `${division.color}15`, border: `1px solid ${division.color}30`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
           <Network size={18} style={{ color: division.color }} />
@@ -574,10 +580,12 @@ function DeptListPanel({ division, selectedDeptId, onSelectDept, onAddDept, onEd
             return (
               <motion.div key={d.id} onClick={() => onSelectDept(d.id)}
                 whileHover={{ borderColor: `${d.color}35` }}
-                style={{ padding: "1rem", borderRadius: 16, cursor: "pointer",
+                style={{
+                  padding: "1rem", borderRadius: 16, cursor: "pointer",
                   background: DS.bgCard,
                   border: `1px solid ${isSelected ? `${d.color}50` : DS.border}`,
-                  boxShadow: isSelected ? `0 0 20px ${d.color}10` : "none" }}>
+                  boxShadow: isSelected ? `0 0 20px ${d.color}10` : "none"
+                }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
                   <div style={{ width: 40, height: 40, borderRadius: 12, background: `${d.color}15`, border: `1px solid ${d.color}30`, display: "flex", alignItems: "center", justifyContent: "center" }}>
                     <Building2 size={18} style={{ color: d.color }} />
@@ -714,7 +722,7 @@ export default function DepartmentsPage() {
     </div>
   );
   return (
-    <div>
+    <div style={{ padding: "2rem", minHeight: "100vh", background: DS.bgCosmic }}>
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
         <div>
