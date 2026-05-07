@@ -613,6 +613,7 @@
     "webCompleted": "완료된 프로젝트"
   },
   "Footer": {
+    "ctaBadge": "시작할 준비가 되셨나요?",
     "ctaTitle": "프로젝트를 시작할 준비가 되셨나요?",
     "ctaDesc": "무료 30분 상담을 예약하세요. 오늘 등록하면 500 LP 포인트를 받으세요.",
     "getInTouch": "문의하기",

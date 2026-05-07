@@ -313,7 +313,7 @@ function AuthInput({
     return (
         <motion.div {...motionProps}>
             <label style={{
-                color: DS.text3, fontSize: "0.6875rem",
+                color: "#64748B", fontSize: "0.6875rem",
                 fontFamily: DS.mono, letterSpacing: "0.12em", display: "block", marginBottom: "0.5rem",
             }}>
                 {label.toUpperCase()}
@@ -326,7 +326,7 @@ function AuthInput({
                 style={{
                     display: "flex", alignItems: "center", gap: "0.5rem",
                     padding: "0 1rem",
-                    background: "rgba(13,21,38,0.85)",
+                    background: "rgba(255,255,255,0.8)",
                     border: `1.5px solid ${borderColor}`,
                     borderRadius: "0.875rem",
                     height: 52,
@@ -344,7 +344,7 @@ function AuthInput({
                     onBlur={() => setFocused(false)}
                     style={{
                         flex: 1, background: "none", border: "none", outline: "none",
-                        color: DS.text, fontSize: "0.9375rem", fontFamily: DS.body,
+                        color: "#0F172A", fontSize: "0.9375rem", fontFamily: DS.body,
                     }}
                 />
                 {isPassword && (
@@ -431,11 +431,11 @@ function GoogleButton({ label }: { label: string }) {
             whileTap={{ scale: 0.98 }}
             animate={{
                 borderColor: hovered ? hexRgba(DS.pink, 0.6) : hexRgba(DS.cosmicPurple, 0.3),
-                background: hovered ? hexRgba(DS.pink, 0.06) : "rgba(13,21,38,0.6)",
+                background: hovered ? "rgba(107,61,245,0.05)" : "rgba(255,255,255,0.8)",
             }}
             style={{
                 width: "100%", border: "1px solid", borderRadius: "0.875rem", padding: "0.75rem",
-                fontSize: "0.875rem", color: DS.text3,
+                fontSize: "0.875rem", color: "#475569",
                 display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem",
                 transition: "border-color 0.15s, background 0.15s",
                 cursor: "pointer",
@@ -539,7 +539,7 @@ function RegisterForm({ onSwitch }: { onSwitch: () => void }) {
                     transition={{ delay: 0.2, duration: 0.3 }}
                     style={{
                         fontFamily: DS.heading, fontSize: "1.375rem", fontWeight: 900,
-                        background: `linear-gradient(135deg, #FFFFFF 0%, ${DS.pink} 100%)`,
+                        background: `linear-gradient(135deg, ${DS.cosmicPurple} 0%, ${DS.pink} 100%)`,
                         WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                         marginBottom: "0.375rem",
                     }}
@@ -550,7 +550,7 @@ function RegisterForm({ onSwitch }: { onSwitch: () => void }) {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.3 }}
-                    style={{ color: DS.text4, fontSize: "0.8125rem" }}
+                    style={{ color: "#475569", fontSize: "0.8125rem" }}
                 >
                     Đăng ký miễn phí để trải nghiệm dịch vụ
                 </motion.p>
@@ -860,7 +860,7 @@ function LoginForm({ onSwitch }: { onSwitch: () => void }) {
                     transition={{ delay: 0.2, duration: 0.3 }}
                     style={{
                         fontFamily: DS.heading, fontSize: "1.375rem", fontWeight: 900,
-                        background: `linear-gradient(135deg, #FFFFFF 0%, ${DS.pink} 100%)`,
+                        background: `linear-gradient(135deg, ${DS.cosmicPurple} 0%, ${DS.pink} 100%)`,
                         WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                         marginBottom: "0.375rem",
                     }}
@@ -871,7 +871,7 @@ function LoginForm({ onSwitch }: { onSwitch: () => void }) {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.3 }}
-                    style={{ color: DS.text4, fontSize: "0.8125rem" }}
+                    style={{ color: "#475569", fontSize: "0.8125rem" }}
                 >
                     <TypingText text="Đăng nhập để tiếp tục hành trình của bạn" delay={400} />
                 </motion.p>
@@ -1040,21 +1040,21 @@ export default function AuthPage() {
                 {/* Outer glow */}
                 <div style={{
                     position: "absolute", inset: -1,
-                    background: `linear-gradient(135deg, ${hexRgba(DS.cosmicPurple, 0.3)}, ${hexRgba(DS.pink, 0.2)}, ${hexRgba(DS.cosmicCyan, 0.15)})`,
+                    background: `linear-gradient(135deg, rgba(107,61,245,0.1), rgba(236,72,153,0.1))`,
                     borderRadius: "1.625rem",
-                    opacity: 0.6,
-                    filter: "blur(1px)",
+                    opacity: 0.8,
+                    filter: "blur(2px)",
                 }} />
 
                 {/* Card */}
                 <div style={{
-                    background: "rgba(13,21,38,0.88)",
+                    background: "rgba(255,255,255,0.88)",
                     backdropFilter: "blur(32px)",
                     WebkitBackdropFilter: "blur(32px)",
                     borderRadius: "1.5rem",
                     padding: "2.5rem",
-                    border: `1px solid ${hexRgba(DS.cosmicPurple, 0.2)}`,
-                    boxShadow: `0 0 0 1px ${hexRgba(DS.cosmicPurple, 0.06)} inset, 0 40px 80px rgba(0,0,0,0.5), 0 0 100px ${hexRgba(DS.cosmicPurple, 0.05)}`,
+                    border: `1px solid rgba(107,61,245,0.15)`,
+                    boxShadow: `0 10px 40px rgba(0,0,0,0.08), 0 0 100px rgba(107,61,245,0.03)`,
                     position: "relative",
                 }}>
                     {/* Logo */}
@@ -1070,7 +1070,7 @@ export default function AuthPage() {
                             style={{ width: 40, height: 40, objectFit: "contain" }}
                         />
                         <div>
-                            <div style={{ color: DS.text, fontFamily: DS.heading, fontSize: 20, fontWeight: 900, letterSpacing: "0.12em" }}>LOOP</div>
+                            <div style={{ color: "#0F172A", fontFamily: DS.heading, fontSize: 20, fontWeight: 900, letterSpacing: "0.12em" }}>LOOP</div>
                             <div style={{ color: DS.text5, fontSize: "0.625rem", fontFamily: DS.mono, letterSpacing: "0.2em" }}>SOLUTIONS</div>
                         </div>
                         <div style={{

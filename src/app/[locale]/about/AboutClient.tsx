@@ -10,9 +10,11 @@ import {
   Target, Lightbulb, Handshake, Globe2,
   ChevronRight, ArrowRight, Star,
   Users, TrendingUp, Award, Clock,
-  MapPin, Calendar, CheckCircle2,
+  MapPin, Calendar, CheckCircle2, Zap, MessageCircle
 } from "lucide-react";
 import { DS, GRD, GLOW } from "@/lib/design-tokens";
+import { rgba } from "@/components/ui/utils";
+import { useState, useEffect } from "react";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function hexRgba(hex: string, alpha: number): string {
@@ -265,6 +267,11 @@ type AboutClientProps = { locale: string; dbSections?: DbSection[] };
 // ── Main Component ─────────────────────────────────────────────────────────────
 export default function AboutClient({ locale, dbSections = [] }: AboutClientProps) {
   const t = useTranslations("AboutPage");
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Use DB data when available, fallback to i18n defaults
   const stats: StatProps[] = (() => {
@@ -322,14 +329,16 @@ export default function AboutClient({ locale, dbSections = [] }: AboutClientProp
   })();
 
   const teamPreview: TeamMemberProps[] = (() => {
- const raw = db<Array<{name: string; role: string; department: string; avatar: string; deptColor: string}>>(dbSections, "teamPreview", []);
- if (raw.length > 0) return raw;
- return [
- { name: "CEO", role: "Chief Executive Officer", department: "Management", avatar: "", deptColor: DS.gold },
- { name: "CTO", role: "Chief Technology Officer", department: "Engineering", avatar: "", deptColor: DS.cosmicBlue },
- { name: "COO", role: "Chief Operations Officer", department: "Management", avatar: "", deptColor: DS.pink },
- ];
- })();
+  const raw = db<Array<{name: string; role: string; department: string; avatar: string; deptColor: string}>>(dbSections, "teamPreview", []);
+  if (raw.length > 0) return raw;
+  return [
+  { name: "CEO", role: "Chief Executive Officer", department: "Management", avatar: "", deptColor: DS.gold },
+  { name: "CTO", role: "Chief Technology Officer", department: "Engineering", avatar: "", deptColor: DS.cosmicBlue },
+  { name: "COO", role: "Chief Operations Officer", department: "Management", avatar: "", deptColor: DS.pink },
+  ];
+  })();
+
+  if (!mounted) return <div style={{ background: DS.bg, minHeight: "100vh" }} />;
 
   return (
     <div style={{ background: DS.bg, minHeight: "100vh" }}>
@@ -338,12 +347,16 @@ export default function AboutClient({ locale, dbSections = [] }: AboutClientProp
           0%, 100% { opacity: 0.4; }
           50% { opacity: 0.8; }
         }
+        @keyframes spin-ring {
+          from { transform: rotate(0deg); }
+          to   { transform: rotate(360deg); }
+        }
       `}</style>
 
       {/* ── Hero ── */}
       <section style={{
         position: "relative",
-        background: DS.bgDeep || "#0A0A14",
+        background: DS.bg,
         padding: "7rem 2rem 5rem",
         textAlign: "center",
         overflow: "hidden",
@@ -352,8 +365,8 @@ export default function AboutClient({ locale, dbSections = [] }: AboutClientProp
         <div style={{
           position: "absolute",
           inset: 0,
-          background: GRD.cosmicBg1,
-          opacity: 0.6,
+          background: "linear-gradient(180deg, rgba(107,61,245,0.06) 0%, transparent 100%)",
+          opacity: 1,
         }} />
         {/* Nebula orbs */}
         <div style={{
@@ -383,9 +396,9 @@ export default function AboutClient({ locale, dbSections = [] }: AboutClientProp
           >
             <span style={{
               display: "inline-block",
-              background: hexRgba(DS.cosmicPurple, 0.15),
-              border: `1px solid ${hexRgba(DS.cosmicPurple, 0.35)}`,
-              color: DS.cosmicCyan,
+              background: rgba(DS.cosmicPurple, 0.1),
+              border: `1px solid ${rgba(DS.cosmicPurple, 0.3)}`,
+              color: DS.cosmicPurple,
               padding: "0.375rem 1.25rem",
               borderRadius: "9999px",
               fontSize: "0.875rem",
@@ -401,7 +414,7 @@ export default function AboutClient({ locale, dbSections = [] }: AboutClientProp
               fontWeight: 900,
               lineHeight: 1.1,
               marginBottom: "1.5rem",
-              background: `linear-gradient(135deg, ${DS.text} 0%, ${DS.cosmicCyan} 40%, ${DS.pink} 100%)`,
+              background: `linear-gradient(180deg, ${DS.text} 0%, ${rgba(DS.text, 0.6)} 100%)`,
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
               backgroundClip: "text",
@@ -498,7 +511,7 @@ export default function AboutClient({ locale, dbSections = [] }: AboutClientProp
             <h2 style={{
               fontSize: "2rem",
               fontWeight: 900,
-              background: `linear-gradient(135deg, ${DS.text} 0%, ${DS.cosmicPurple} 100%)`,
+              background: `linear-gradient(180deg, ${DS.text} 0%, ${rgba(DS.text, 0.6)} 100%)`,
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
               backgroundClip: "text",
@@ -577,7 +590,7 @@ export default function AboutClient({ locale, dbSections = [] }: AboutClientProp
       {/* ── Team Preview ── */}
       <section style={{
         padding: "5rem 2rem",
-        background: DS.bgDeep || "#0A0A14",
+        background: DS.bg,
       }}>
         <div style={{ maxWidth: 1100, margin: "0 auto" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "3rem", flexWrap: "wrap", gap: "1rem" }}>
@@ -632,46 +645,137 @@ export default function AboutClient({ locale, dbSections = [] }: AboutClientProp
 
       {/* ── CTA ── */}
       <section style={{
-        padding: "5rem 2rem",
-        background: GRD.cosmicBg2 || GRD.cosmicPurple,
-        textAlign: "center",
+        padding: "6rem 2rem",
+        background: "linear-gradient(135deg, #FDF2F8 0%, #F5F3FF 100%)",
         position: "relative",
         overflow: "hidden",
       }}>
+        {/* Decorative Graphic */}
         <div style={{
           position: "absolute",
-          inset: 0,
-          background: "rgba(0,0,0,0.3)",
+          right: "12%",
+          top: "50%",
+          transform: "translateY(-50%)",
+          width: 140,
+          height: 140,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
           pointerEvents: "none",
-        }} />
-        <div style={{ position: "relative", maxWidth: 600, margin: "0 auto" }}>
-          <h2 style={{
-            fontSize: "2rem",
-            fontWeight: 900,
-            color: DS.text,
-            marginBottom: "1rem",
-          }}>
-            {(dbSections.find((s: DbSection) => s.sectionType === "cta")?.ctaSectionTitle) ?? t("ctaTitle")}
-          </h2>
-          <p style={{ color: DS.text3, marginBottom: "2rem", lineHeight: 1.7 }}>
-            {(dbSections.find((s: DbSection) => s.sectionType === "cta")?.ctaSectionSub) ?? t("ctaSub")}
-          </p>
-          <Link href={`/${locale}/contact`} style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "0.5rem",
-            padding: "0.875rem 2.5rem",
-            background: DS.text,
-            color: DS.cosmicPurple,
-            borderRadius: 8,
-            fontWeight: 800,
-            fontSize: "0.9375rem",
-            textDecoration: "none",
-            boxShadow: GLOW.pinkCosmic,
-          }}>
-            {t("btnContact")}
-            <ArrowRight size={16} />
-          </Link>
+        }}>
+          {/* Outer ring */}
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
+            style={{
+              position: "absolute",
+              inset: 0,
+              borderRadius: "50%",
+              border: "1px solid rgba(107,61,245,0.08)",
+            }}
+          />
+          {/* Mid ring (dashed) */}
+          <motion.div
+            animate={{ rotate: -360 }}
+            transition={{ duration: 18, repeat: Infinity, ease: "linear" }}
+            style={{
+              position: "absolute",
+              inset: 12,
+              borderRadius: "50%",
+              border: "1px dashed rgba(236,72,153,0.15)",
+            }}
+          />
+          {/* Inner ring (gradient arc) */}
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
+            style={{
+              position: "absolute",
+              inset: 26,
+              borderRadius: "50%",
+              border: "2px solid transparent",
+              borderTopColor: "rgba(236,72,153,0.5)",
+              borderRightColor: "rgba(107,61,245,0.2)",
+            }}
+          />
+
+          {/* Center glowing dot */}
+          <motion.div
+            animate={{ scale: [1, 1.15, 1], opacity: [0.5, 0.8, 0.5] }}
+            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+            style={{
+              width: 32, height: 32, borderRadius: "50%",
+              background: "radial-gradient(circle, #EC4899 0%, #6B3DF5 100%)",
+              boxShadow: "0 0 20px rgba(236,72,153,0.4), 0 0 40px rgba(107,61,245,0.2)",
+              zIndex: 1,
+            }}
+          />
+        </div>
+
+        <div style={{ position: "relative", maxWidth: 1100, margin: "0 auto", textAlign: "left" }}>
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+          >
+            <div style={{
+              display: "inline-flex", alignItems: "center", gap: 8,
+              background: "rgba(236,72,153,0.06)", border: "1px solid rgba(236,72,153,0.15)",
+              borderRadius: 9999, padding: "4px 12px", marginBottom: 20
+            }}>
+              <Zap size={10} style={{ color: "#EC4899" }} />
+              <span style={{ color: "#EC4899", fontSize: 9, fontWeight: 800, fontFamily: DS.mono, letterSpacing: "0.15em" }}>BẮT ĐẦU NGAY HÔM NAY</span>
+            </div>
+
+            <h2 style={{
+              fontSize: "clamp(2rem, 4vw, 3rem)",
+              fontWeight: 900,
+              color: DS.text,
+              marginBottom: "1rem",
+              letterSpacing: "-0.01em"
+            }}>
+              SẴN SÀNG NÂNG CẤP DIGITAL?
+            </h2>
+            <p style={{ color: DS.text4, marginBottom: "2.5rem", fontSize: "1rem", maxWidth: 500, lineHeight: 1.7 }}>
+              Tư vấn miễn phí 30 phút. Nhận ngay 500 LP điểm thưởng khi đăng ký hôm nay.
+            </p>
+
+            <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
+              <Link href={`/${locale}/booking`} style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.75rem",
+                padding: "1rem 2rem",
+                background: GRD.primary,
+                color: "#fff",
+                borderRadius: 14,
+                fontWeight: 700,
+                fontSize: "0.9375rem",
+                textDecoration: "none",
+                boxShadow: "0 10px 25px rgba(107,61,245,0.25)",
+              }}>
+                <Zap size={16} fill="#fff" />
+                Nhận báo giá Website →
+              </Link>
+
+              <Link href={`/${locale}/contact`} style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.5rem",
+                padding: "1rem 2rem",
+                background: "rgba(236,72,153,0.08)",
+                color: "#EC4899",
+                borderRadius: 14,
+                fontWeight: 700,
+                fontSize: "0.9375rem",
+                textDecoration: "none",
+                border: "1px solid rgba(236,72,153,0.1)",
+              }}>
+                <MessageCircle size={16} />
+                Liên hệ ngay
+              </Link>
+            </div>
+          </motion.div>
         </div>
       </section>
     </div>

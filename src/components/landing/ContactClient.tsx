@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { CEO_CONTACT } from "@/lib/constants";
 import { DS, GRD } from "@/lib/design-tokens";
+import { rgba } from "@/components/ui/utils";
 import { Mail, Phone, MapPin, Send, Check, Clock, MessageCircle } from "lucide-react";
 
 export function ContactClient({ locale: _locale }: { locale: string }) {
+  const [mounted, setMounted] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [name, setName] = useState("");
@@ -14,8 +16,15 @@ export function ContactClient({ locale: _locale }: { locale: string }) {
   const [phone, setPhone] = useState("");
   const [service, setService] = useState("");
   const [budget, setBudget] = useState("");
+
   const [msg, setMsg] = useState("");
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) return <main style={{ background: DS.bg, minHeight: "100vh" }} />;
 
   async function submitForm(e: React.FormEvent) {
     e.preventDefault();
@@ -69,10 +78,10 @@ export function ContactClient({ locale: _locale }: { locale: string }) {
     <main style={{ background: DS.bg, minHeight: "100vh" }}>
       <section className="py-16 px-6 text-center" style={{ background: "linear-gradient(180deg, rgba(20,184,166,0.06) 0%, transparent 100%)" }}>
         <div className="max-w-xl mx-auto">
-          <div className="inline-flex items-center gap-2 mb-4 px-4 py-1.5 rounded-full" style={{ background: "rgba(20,184,166,0.08)", border: "1px solid rgba(20,184,166,0.25)" }}>
-            <span style={{ color: DS.cyan, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.22em" }}>LIÊN HỆ & TƯ VẤN</span>
+          <div className="inline-flex items-center gap-2 mb-4 px-4 py-1.5 rounded-full" style={{ background: rgba(DS.mint, 0.1), border: `1px solid ${rgba(DS.mint, 0.4)}` }}>
+            <span style={{ color: DS.mint, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.22em" }}>LIÊN HỆ & TƯ VẤN</span>
           </div>
-          <h1 style={{ fontFamily: DS.heading, fontSize: 38, fontWeight: 900, letterSpacing: "0.06em", background: "linear-gradient(135deg, #FFFFFF, #94A3B8)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", marginBottom: 12 }}>
+          <h1 style={{ fontFamily: DS.heading, fontSize: 38, fontWeight: 900, letterSpacing: "0.06em", background: `linear-gradient(180deg, ${DS.text} 0%, ${rgba(DS.text, 0.6)} 100%)`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", marginBottom: 12 }}>
             HÃY NÓI CHUYỆN
           </h1>
           <p style={{ color: DS.text3, fontSize: 15, lineHeight: 1.8 }}>Tư vấn miễn phí 30 phút. Nhận ngay 500 LP khi đặt lịch hôm nay.</p>

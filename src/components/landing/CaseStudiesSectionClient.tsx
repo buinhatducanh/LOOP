@@ -8,6 +8,7 @@ import Link from "next/link";
 import { motion } from "motion/react";
 import { ArrowRight, TrendingUp, Users, Clock } from "lucide-react";
 import { DS, GRD, GLOW } from "@/lib/design-tokens";
+import { rgba } from "@/components/ui/utils";
 
 type ProjectRecord = Record<string, unknown>;
 
@@ -52,20 +53,20 @@ function CaseStudyCard({
             background: DS.bgCard,
             borderRadius: 16,
             overflow: "hidden",
-            border: "1px solid rgba(255,255,255,0.06)",
+            border: `1px solid ${rgba(DS.text, 0.1)}`,
             cursor: "pointer",
             height: "100%",
             transition: "transform 0.25s, box-shadow 0.25s, border-color 0.25s",
           }}
           onMouseEnter={(e) => {
             (e.currentTarget as HTMLDivElement).style.transform = "translateY(-4px)";
-            (e.currentTarget as HTMLDivElement).style.boxShadow = `0 12px 40px rgba(236,72,153,0.18)`;
-            (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(236,72,153,0.3)";
+            (e.currentTarget as HTMLDivElement).style.boxShadow = `0 12px 40px ${rgba(DS.pink, 0.18)}`;
+            (e.currentTarget as HTMLDivElement).style.borderColor = rgba(DS.pink, 0.3);
           }}
           onMouseLeave={(e) => {
             (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)";
             (e.currentTarget as HTMLDivElement).style.boxShadow = "none";
-            (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(255,255,255,0.06)";
+            (e.currentTarget as HTMLDivElement).style.borderColor = rgba(DS.text, 0.06);
           }}
         >
           {/* Image */}
@@ -95,8 +96,8 @@ function CaseStudyCard({
                     fontSize: 10,
                     fontWeight: 700,
                     color,
-                    background: `${color}18`,
-                    border: `1px solid ${color}35`,
+                    background: rgba(color, 0.18),
+                    border: `1px solid ${rgba(color, 0.35)}`,
                     textTransform: "uppercase",
                     letterSpacing: "0.06em",
                   }}
@@ -169,12 +170,12 @@ export function CaseStudiesSection({
     <section
       style={{
         padding: "80px 24px",
-        background: "linear-gradient(180deg, rgba(236,72,153,0.04) 0%, transparent 100%)",
+        background: `linear-gradient(180deg, ${rgba(DS.pink, 0.04)} 0%, transparent 100%)`,
       }}
     >
       <div style={{ maxWidth: 1200, margin: "0 auto" }}>
         {/* Header */}
-        <div style={{ textAlign: "center", marginBottom: 48 }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 48 }}>
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -189,8 +190,8 @@ export function CaseStudiesSection({
                 marginBottom: 16,
                 padding: "6px 16px",
                 borderRadius: 9999,
-                background: "rgba(236,72,153,0.08)",
-                border: "1px solid rgba(236,72,153,0.2)",
+                background: rgba(DS.pink, 0.08),
+                border: `1px solid ${rgba(DS.pink, 0.2)}`,
               }}
             >
               <div
