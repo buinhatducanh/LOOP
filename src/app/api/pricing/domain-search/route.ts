@@ -24,27 +24,34 @@ const BLOCKED_KEYWORDS = [
   "test", "demo", "api", "ns1", "ns2", "mx", "smtp",
 ];
 
+// Helper to timeout slow DNS requests
+const timeout = (ms: number) => new Promise<never>((_, reject) => setTimeout(() => reject(new Error("timeout")), ms));
+
 async function checkDnsAvailable(domain: string): Promise<boolean> {
   try {
-    // Try NS and SOA in parallel for speed
+    // Try NS and SOA in parallel for speed, with a 2-second timeout per query
     const checks = await Promise.allSettled([
-      resolver.resolveNs(domain),
-      resolver.resolveSoa(domain),
-      resolver.resolve4(domain)
+      Promise.race([resolver.resolveNs(domain), timeout(2000)]),
+      Promise.race([resolver.resolveSoa(domain), timeout(2000)]),
+      Promise.race([resolver.resolve4(domain), timeout(2000)])
     ]);
 
     // If any check succeeded (fulfilled), the domain is TAKEN
     const isTaken = checks.some(c => c.status === "fulfilled");
     if (isTaken) return false;
 
-    // If all failed, check if they all failed with ENOTFOUND
+    // If we get here, all failed.
+    // If they failed due to timeout, we conservatively say it's available so the user can still order.
+    const hasTimeout = checks.some(c => c.status === "rejected" && (c as any).reason?.message === "timeout");
+    if (hasTimeout) return true;
+
+    // Otherwise, check if they all failed with ENOTFOUND (which means available)
     const allNotFound = checks.every(c => c.status === "rejected" && (c as any).reason?.code === "ENOTFOUND");
     
-    // If all are ENOTFOUND, it's available. Otherwise, assume it's taken (safety first)
     return allNotFound;
   } catch (err) {
     // Safety fallback
-    return false;
+    return true; // Return true on unknown errors to not block sales
   }
 }
 

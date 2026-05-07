@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
-import type { InputJsonValue } from "@/generated/prisma/internal/prismaNamespace";
+import { Prisma } from "@/generated/prisma/client";
 
 // POST /api/admin/tasks/[id]/revoke
 // Kỷ luật kép: PM thu hồi LP + reassign task
@@ -51,8 +51,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           action: "revoke",
           resource: "tasks",
           resourceId: id,
-          oldValues: task as unknown as InputJsonValue,
-          newValues: { type, description, revokedLp, assigneeId } as unknown as InputJsonValue,
+          oldValues: task as Prisma.InputJsonValue,
+          newValues: { type, description, revokedLp, assigneeId } as Prisma.InputJsonValue,
         },
       });
 

@@ -1,3 +1,4 @@
+import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { awardCustomerLpOnPayment } from "@/lib/services/customer/lp.service";
 import { awardReferralLpOnPayment, awardReferralLpOnCompletion } from "@/lib/services/customer/referral.service";
@@ -199,7 +200,7 @@ export async function transitionOrderStatus(
           action: "update",
           resource: "orders",
           resourceId: auditResourceId,
-          newValues: { toStatus, note } as unknown as import("@/generated/prisma/internal/prismaNamespace").InputJsonValue,
+          newValues: { toStatus, note } as Prisma.InputJsonValue,
         },
       });
     }

@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { headers } from "next/headers";
-import type { InputJsonValue } from "@/generated/prisma/internal/prismaNamespace";
+import { Prisma } from "@/generated/prisma/client";
 
 export async function createAuditLog(params: {
   userId?: string;
@@ -20,8 +20,8 @@ export async function createAuditLog(params: {
       action: params.action,
       resource: params.resource,
       resourceId: params.resourceId,
-      oldValues: params.oldValues as InputJsonValue | undefined,
-      newValues: params.newValues as InputJsonValue | undefined,
+      oldValues: params.oldValues as Prisma.InputJsonValue | undefined,
+      newValues: params.newValues as Prisma.InputJsonValue | undefined,
       ipAddress,
       userAgent,
     },

@@ -1,7 +1,7 @@
 import { handleError } from "@/lib/api/response";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import type { TeamMemberCreateInput } from "@/generated/prisma/models/TeamMember";
+import { Prisma } from "@/generated/prisma/client";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
 import { addAvatar } from "@/lib/api/mappings";
@@ -286,7 +286,7 @@ export async function POST(req: NextRequest) {
     // Sequential writes (PrismaNeon HTTP adapter does NOT support $transaction)
     const created = await prisma.teamMember.create({
       data: {
-        ...(cleanedData as TeamMemberCreateInput),
+        ...(cleanedData as Prisma.TeamMemberCreateInput),
         // Map FE field name "avatar" → Prisma "image" if provided
         ...(avatar !== undefined && { image: avatar }),
       },

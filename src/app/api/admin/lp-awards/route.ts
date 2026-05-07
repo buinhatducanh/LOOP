@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
-import type { InputJsonValue } from "@/generated/prisma/internal/prismaNamespace";
+import { Prisma } from "@/generated/prisma/client";
 import { lpLogger } from "@/lib/logger";
 import { withIdempotency } from "@/lib/idempotency";
 
@@ -125,7 +125,7 @@ export const POST = withIdempotency(
           action: "create",
           resource: "lp-awards",
           resourceId: created.id,
-          newValues: data as unknown as InputJsonValue,
+          newValues: data as Prisma.InputJsonValue,
         },
       }).catch(() => { /* non-critical */ });
 

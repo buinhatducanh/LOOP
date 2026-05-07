@@ -266,6 +266,7 @@ export function BookingWizardClient({ locale }: Props) {
   const [staticQrInfo, setStaticQrInfo] = useState<{ bankTransfer?: { qrUrl?: string | null }; momo?: { qrUrl?: string | null } }>({});
   const [qrLoading, setQrLoading] = useState(false);
   const [qrError, setQrError] = useState("");
+  const [lastQrAmount, setLastQrAmount] = useState(0);
   const [bankInfo, setBankInfo] = useState<{ bankName?: string; accountNo?: string; accountName?: string; phone?: string; bankBin?: string } | null>(null);
   // Package selection (website-only — packages are the primary selection)
   const [selectedPackage, setSelectedPackage] = useState<string>("ban-hang"); // default to decoy
@@ -281,6 +282,7 @@ export function BookingWizardClient({ locale }: Props) {
   const [company, setCompany] = useState("");
   const [talentNote, setTalentNote] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [tempRef, setTempRef] = useState("");
   const [submitLoading, setSubmitLoading] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [newOrderId, setNewOrderId] = useState("");
@@ -708,50 +710,53 @@ export function BookingWizardClient({ locale }: Props) {
 
   // Poll for payment status
   useEffect(() => {
-    if (!newOrderId || !isCheckingPayment || paymentVerified) return;
+    if (!tempRef || !isCheckingPayment || paymentVerified) return;
 
     const interval = setInterval(async () => {
       try {
-        const res = await fetch(`/api/payment/check-status?orderId=${newOrderId}`);
-        if (!res.ok) return;
+        const res = await fetch(`/api/payment/check-status?ref=${tempRef}`);
         const json = await res.json();
-        const data = json.data;
-
-        if (data?.isPaid) {
+        if (json.data?.verified) {
           setPaymentVerified(true);
           setIsCheckingPayment(false);
-          setSubmitted(true); // Final success state
           clearInterval(interval);
-        } else if (data?.paidAmount > 0 && data?.paidAmount < data?.requiredAmount) {
-          // If transaction detected but amount is low
-          setPaidAmount(data.paidAmount);
-          setRequiredAmount(data.requiredAmount);
-          setPaymentError(`Bạn chưa chuyển đủ tiền. Đã nhận: ${fmtVND(data.paidAmount)} / Cần: ${fmtVND(data.requiredAmount)}`);
+          // ONLY NOW create the actual Quote Request in DB
+          handleSubmit();
         }
       } catch (err) {
-        console.error("Payment check failed:", err);
+        console.error("Polling error:", err);
       }
-    }, 4000);
+    }, 3000);
 
     return () => clearInterval(interval);
-  }, [newOrderId, isCheckingPayment, paymentVerified]);
+  }, [tempRef, isCheckingPayment, paymentVerified]);
 
   // Generate payment QR / redirect — works with or without newOrderId
   const generatePaymentQr = async (amount: number, orderRefOverride?: string) => {
+    console.log("[BookingWizard] Generating QR for amount:", amount, "Ref:", orderRefOverride || "auto");
+    if (paymentMethod === "vnpay") {
+      // VNPay needs to be handled differently (direct redirect usually)
+    }
+
     setQrLoading(true);
     setQrError("");
     try {
-      if (paymentMethod === "bank" && bankInfo?.bankBin && bankInfo?.accountNo) {
-        // Generate bank transfer QR — works as preview (no orderId required)
+      if (paymentMethod === "bank") {
+        // Fallback bank details if not configured in DB
+        const bin = bankInfo?.bankBin || "970407"; // Techcombank BIN
+        const acc = bankInfo?.accountNo || "3378443602";
+        const name = bankInfo?.accountName || "BUI NHAT DUC ANH";
+
         const orderRef = orderRefOverride
           ?? (newOrderId ? `LOOP-${newOrderId.slice(-8).toUpperCase()}` : `LOOP-PREVIEW`);
+
         const res = await fetch("/api/payment/bank-qr", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            bankBin: bankInfo.bankBin,
-            accountNo: bankInfo.accountNo,
-            accountName: bankInfo.accountName,
+            bankBin: bin,
+            accountNo: acc,
+            accountName: name,
             amount,
             orderRef,
           }),
@@ -760,28 +765,22 @@ export function BookingWizardClient({ locale }: Props) {
         if (!res.ok) throw new Error(data?.error || "Tạo QR thất bại");
         setQrData({ qrDataURL: data.data.qrDataURL, amount: data.data.amount });
       } else if (paymentMethod === "momo") {
-        if (!newOrderId) {
-          setQrError("Vui lòng xác nhận đơn hàng trước khi thanh toán MoMo.");
-          return;
-        }
+        const orderRef = orderRefOverride ?? `LOOP-${Date.now().toString().slice(-8)}`;
         const res = await fetch("/api/payment/momo/create", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ orderId: newOrderId, amount }),
+          body: JSON.stringify({ orderId: orderRef, amount }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data?.error || "MoMo failed");
         if (data.data?.payUrl) { window.location.href = data.data.payUrl; return; }
         setQrData(data.data);
       } else if (paymentMethod === "vnpay") {
-        if (!newOrderId) {
-          setQrError("Vui lòng xác nhận đơn hàng trước khi thanh toán VNPay.");
-          return;
-        }
+        const orderRef = orderRefOverride ?? `LOOP-${Date.now().toString().slice(-8)}`;
         const res = await fetch("/api/payment/vnpay/create", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ orderId: newOrderId, amount }),
+          body: JSON.stringify({ orderId: orderRef, amount }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data?.error || "VNPay failed");
@@ -824,6 +823,10 @@ export function BookingWizardClient({ locale }: Props) {
   const selectedSeo = seoTiers.find(t => t.level === selectedSeoTier);
   const seoCost = selectedSeo?.basePrice ?? 0;
   const currentSubtotal = currentBasePrice + extraFeaturePrice + currentExtraPrice + hostingCost + domainCost + seoCost;
+  const vndDiscount = Math.round(lpDiscount * lpRate.lpPerVnd);
+  const vatAmt = Math.round((currentSubtotal - vndDiscount) * vatRate);
+  const grandForDisplay = (currentSubtotal - vndDiscount) + vatAmt;
+  const lpEarnedDisplay = Math.floor(grandForDisplay / 1_000_000) * lpRate.lpEarnPerMillion;
 
   useEffect(() => {
     const maxDiscountVnd = currentSubtotal * (lpRate.maxDiscountPercent / 100);
@@ -932,17 +935,27 @@ export function BookingWizardClient({ locale }: Props) {
       const phoneDigits = phone.replace(/\D/g, "");
       if (phoneDigits.length !== 10) { setValidationError("Số điện thoại phải có đúng 10 chữ số"); return; }
       if (!startDate) { setValidationError("Vui lòng chọn Ngày bắt đầu dự án"); return; }
+
+      // Generate a temporary reference for the QR before the actual order is created
+      const ref = `LOOP${phone.replace(/\D/g, "").slice(-6)}${Math.floor(Math.random() * 100).toString().padStart(2, "0")}`.toUpperCase();
+      setTempRef(ref);
+      setIsCheckingPayment(true);
+
+      const finalAmount = paymentPlan === "100" ? Math.round(grandForDisplay * 0.95) : grandForDisplay;
+      const payAmount = paymentPlan === "100" ? finalAmount : Math.round(finalAmount * 0.5);
+      generatePaymentQr(payAmount, ref);
     }
     setStep(s => s + 1);
   };
 
   // ── Submit logic ──
   const handleSubmit = async () => {
+    if (submitLoading || submitted) return;
     // Determine the selected package details from state or fallback
-    const targetPkg = packages.find(p => p.slug === selectedPackage || p.id === selectedPackage) || PKG_PRICE_MAP[selectedPackage];
+    const targetPkg: any = packages.find(p => p.slug === selectedPackage || p.id === selectedPackage) || PKG_PRICE_MAP[selectedPackage];
 
     const svc = WEBSITE_SERVICE;
-    const basePrice = targetPkg?.price ?? (targetPkg as any)?.basePrice ?? 1_890_000;
+    const basePrice = targetPkg?.price ?? targetPkg?.basePrice ?? 1_890_000;
     const featOpts = currentFeatureOptions;
     // Only charge for non-included features
     const featPrices = featOpts
@@ -1042,12 +1055,13 @@ export function BookingWizardClient({ locale }: Props) {
           totalAmount: total,
           lpUsed: lpDiscount,
           paymentPlan,
-          notes: `Dịch vụ: ${svc?.title ?? ""} | Tính năng: ${selectedFeatures.length} | Ghi chú đội ngũ: ${talentNote || "—"} | Bắt đầu: ${startDate || "—"} | Thời gian: ${duration || "—"}`,
+          notes: `Dịch vụ: ${svc?.title ?? ""} | Tính năng: ${selectedFeatures.length} | Ghi chú đội ngũ: ${talentNote || "—"} | Bắt đầu: ${startDate || "—"} | Thời gian: ${duration || "—"} | Mã thanh toán: ${tempRef}`,
           hostingPlanSlug: selectedHosting?.slug || undefined,
           domainNames: selectedDomains.map(d => domainQuery + d.extension),
           domainTotal: selectedDomains.reduce((s, d) => s + getDomainPrice(d, selectedYears), 0),
           source,
           pricingBreakdown,
+          status: paymentVerified ? "paid" : "new",
         }),
       });
       const data = await res.json();
@@ -1059,7 +1073,9 @@ export function BookingWizardClient({ locale }: Props) {
       // Auto-trigger payment for MoMo/VNPay/bank after quote submission
       const payAmount = paymentPlan === "100" ? total : Math.round(total * 0.5);
 
-      if (paymentMethod === "bank") {
+      if (paymentVerified) {
+        setSubmitted(true);
+      } else if (paymentMethod === "bank") {
         setIsCheckingPayment(true);
         // Ensure we use the full order ID for the reference
         await generatePaymentQr(payAmount, `LOOP-${orderId.toString().slice(-8).toUpperCase()}`);
@@ -1091,19 +1107,7 @@ export function BookingWizardClient({ locale }: Props) {
 
   // ── Step-based wizard layout ─────────────────────────────────────────
 
-  // Compute prices for the top summary bar
-  const featTotalForDisplay = currentFeatureOptions
-    .filter(f => selectedFeatures.includes(f.id) && !f.includedInBase)
-    .reduce((s, f) => s + (f.price || 0), 0);
-  const extraTotalForDisplay = extraOptions.filter(e => selectedExtras.includes(e.id)).reduce((s, e) => s + (e.price || 0), 0);
-  const hostingTotal = selectedHosting?.discountedPrice ?? 0;
-  const domainTotal = selectedDomains.reduce((s, d) => s + getDomainPrice(d, selectedYears), 0);
-  const subtotalForDisplay = currentBasePrice + featTotalForDisplay + extraTotalForDisplay + hostingTotal + domainTotal + seoCost;
 
-  const lpDisc = calcLpDiscount(subtotalForDisplay, lpDiscount, lpBalance, lpRate);
-  const vatAmt = Math.round((subtotalForDisplay - lpDisc.vndDiscount) * vatRate);
-  const grandForDisplay = subtotalForDisplay - lpDisc.vndDiscount + vatAmt;
-  const lpEarnedDisplay = Math.floor(grandForDisplay / 1_000_000) * lpRate.lpEarnPerMillion;
 
   // ── Inline package selector ──────────────────────────────────────────────────
   const getPkgPrice = (pkg: WizardPackage) => pkg.price ?? pkg.marketPrice ?? DB_PACKAGE_PRICES[pkg.id]?.basePrice ?? 1_890_000;
@@ -1125,8 +1129,7 @@ export function BookingWizardClient({ locale }: Props) {
   // ── Automatic QR trigger for bank transfer ─────────────────────────────
   useEffect(() => {
     if (isMounted && step === 5 && paymentMethod === "bank" && !qrLoading && !submitted) {
-      if (name && email && phone && grandForDisplay > 0) {
-        // Apply 5% discount for full payment only in the QR amount
+      if (grandForDisplay > 0) {
         const finalAmount = paymentPlan === "100"
           ? Math.round(grandForDisplay * 0.95)
           : grandForDisplay;
@@ -1135,13 +1138,14 @@ export function BookingWizardClient({ locale }: Props) {
           ? finalAmount
           : Math.round(finalAmount * 0.5);
 
-        // Only regenerate if amount changed or no QR yet
-        if (expectedPay >= 1000 && (!qrData || qrData.amount !== expectedPay)) {
+        // Only try if amount changed AND it's different from our last attempt (to avoid loops on error)
+        if (expectedPay >= 1000 && (!qrData || qrData.amount !== expectedPay) && lastQrAmount !== expectedPay) {
+          setLastQrAmount(expectedPay);
           generatePaymentQr(expectedPay);
         }
       }
     }
-  }, [isMounted, step, paymentMethod, qrData, qrLoading, submitted, name, email, phone, grandForDisplay, paymentPlan]);
+  }, [isMounted, step, paymentMethod, qrData, qrLoading, submitted, grandForDisplay, paymentPlan, lastQrAmount]);
 
   // 1. Core hydration guard — skip rendering on server to avoid extension conflicts
   if (!isMounted) {
@@ -1214,24 +1218,24 @@ export function BookingWizardClient({ locale }: Props) {
                       <span style={{ color: pkgColor, fontSize: 12, fontFamily: DS.mono }}>Gói: {fmtVND(currentBasePrice)}</span>
                     </div>
                   )}
-                  {featTotalForDisplay > 0 && (
+                  {extraFeaturePrice > 0 && (
                     <div style={{ background: `${DS.blue}10`, border: `1px solid ${DS.blue}25`, borderRadius: 8, padding: "4px 12px" }}>
-                      <span style={{ color: DS.blue, fontSize: 12, fontFamily: DS.mono }}>+Tính năng: {fmtVND(featTotalForDisplay)}</span>
+                      <span style={{ color: DS.blue, fontSize: 12, fontFamily: DS.mono }}>+Tính năng: {fmtVND(extraFeaturePrice)}</span>
                     </div>
                   )}
-                  {extraTotalForDisplay > 0 && (
+                  {currentExtraPrice > 0 && (
                     <div style={{ background: `${DS.purple}10`, border: `1px solid ${DS.purple}25`, borderRadius: 8, padding: "4px 12px" }}>
-                      <span style={{ color: DS.purple, fontSize: 12, fontFamily: DS.mono }}>+Dịch vụ: {fmtVND(extraTotalForDisplay)}</span>
+                      <span style={{ color: DS.purple, fontSize: 12, fontFamily: DS.mono }}>+Dịch vụ: {fmtVND(currentExtraPrice)}</span>
                     </div>
                   )}
-                  {hostingTotal > 0 && (
+                  {hostingCost > 0 && (
                     <div style={{ background: `${DS.amber}10`, border: `1px solid ${DS.amber}25`, borderRadius: 8, padding: "4px 12px" }}>
-                      <span style={{ color: DS.amber, fontSize: 12, fontFamily: DS.mono }}>+Hosting: {fmtVND(hostingTotal)}</span>
+                      <span style={{ color: DS.amber, fontSize: 12, fontFamily: DS.mono }}>+Hosting: {fmtVND(hostingCost)}</span>
                     </div>
                   )}
-                  {domainTotal > 0 && (
+                  {domainCost > 0 && (
                     <div style={{ background: `${DS.cyan}10`, border: `1px solid ${DS.cyan}25`, borderRadius: 8, padding: "4px 12px" }}>
-                      <span style={{ color: DS.cyan, fontSize: 12, fontFamily: DS.mono }}>+Domain: {fmtVND(domainTotal)}</span>
+                      <span style={{ color: DS.cyan, fontSize: 12, fontFamily: DS.mono }}>+Domain: {fmtVND(domainCost)}</span>
                     </div>
                   )}
                   {seoCost > 0 && (
@@ -1244,9 +1248,9 @@ export function BookingWizardClient({ locale }: Props) {
                       <span style={{ color: DS.text4, fontSize: 12, fontFamily: DS.mono }}>+VAT: {fmtVND(vatAmt)}</span>
                     </div>
                   )}
-                  {lpDisc.vndDiscount > 0 && (
+                  {vndDiscount > 0 && (
                     <div style={{ background: `${DS.purple}10`, border: `1px solid ${DS.purple}30`, borderRadius: 8, padding: "4px 12px" }}>
-                      <span style={{ color: DS.purple, fontSize: 12, fontFamily: DS.mono }}>−LP: {fmtVND(lpDisc.vndDiscount)}</span>
+                      <span style={{ color: DS.purple, fontSize: 12, fontFamily: DS.mono }}>−LP: {fmtVND(vndDiscount)}</span>
                     </div>
                   )}
                 </div>
@@ -1419,28 +1423,28 @@ export function BookingWizardClient({ locale }: Props) {
                               <div style={{ color: DS.green, fontSize: 15, fontFamily: DS.mono, fontWeight: 700 }}>{fmtVND(currentBasePrice)}</div>
                             </div>
                           )}
-                          {featTotalForDisplay > 0 && (
+                          {extraFeaturePrice > 0 && (
                             <div style={{ background: `${DS.blue}10`, border: `1px solid ${DS.blue}30`, borderRadius: 12, padding: "8px 16px" }}>
                               <div style={{ color: DS.text4, fontSize: 9, fontFamily: DS.mono, marginBottom: 2 }}>TÍNH NĂNG</div>
-                              <div style={{ color: DS.blue, fontSize: 15, fontFamily: DS.mono, fontWeight: 700 }}>+{fmtVND(featTotalForDisplay)}</div>
+                              <div style={{ color: DS.blue, fontSize: 15, fontFamily: DS.mono, fontWeight: 700 }}>+{fmtVND(extraFeaturePrice)}</div>
                             </div>
                           )}
-                          {extraTotalForDisplay > 0 && (
+                          {currentExtraPrice > 0 && (
                             <div style={{ background: `${DS.purple}10`, border: `1px solid ${DS.purple}30`, borderRadius: 12, padding: "8px 16px" }}>
                               <div style={{ color: DS.text4, fontSize: 9, fontFamily: DS.mono, marginBottom: 2 }}>DỊCH VỤ</div>
-                              <div style={{ color: DS.purple, fontSize: 15, fontFamily: DS.mono, fontWeight: 700 }}>+{fmtVND(extraTotalForDisplay)}</div>
+                              <div style={{ color: DS.purple, fontSize: 15, fontFamily: DS.mono, fontWeight: 700 }}>+{fmtVND(currentExtraPrice)}</div>
                             </div>
                           )}
-                          {hostingTotal > 0 && (
+                          {hostingCost > 0 && (
                             <div style={{ background: `${DS.amber}10`, border: `1px solid ${DS.amber}30`, borderRadius: 12, padding: "8px 16px" }}>
                               <div style={{ color: DS.text4, fontSize: 9, fontFamily: DS.mono, marginBottom: 2 }}>HOSTING</div>
-                              <div style={{ color: DS.amber, fontSize: 15, fontFamily: DS.mono, fontWeight: 700 }}>+{fmtVND(hostingTotal)}</div>
+                              <div style={{ color: DS.amber, fontSize: 15, fontFamily: DS.mono, fontWeight: 700 }}>+{fmtVND(hostingCost)}</div>
                             </div>
                           )}
-                          {domainTotal > 0 && (
+                          {domainCost > 0 && (
                             <div style={{ background: `${DS.cyan}10`, border: `1px solid ${DS.cyan}30`, borderRadius: 12, padding: "8px 16px" }}>
                               <div style={{ color: DS.text4, fontSize: 9, fontFamily: DS.mono, marginBottom: 2 }}>DOMAIN</div>
-                              <div style={{ color: DS.cyan, fontSize: 15, fontFamily: DS.mono, fontWeight: 700 }}>+{fmtVND(domainTotal)}</div>
+                              <div style={{ color: DS.cyan, fontSize: 15, fontFamily: DS.mono, fontWeight: 700 }}>+{fmtVND(domainCost)}</div>
                             </div>
                           )}
                           {seoCost > 0 && (
@@ -1455,10 +1459,10 @@ export function BookingWizardClient({ locale }: Props) {
                               <div style={{ color: DS.text3, fontSize: 15, fontFamily: DS.mono, fontWeight: 700 }}>+{fmtVND(vatAmt)}</div>
                             </div>
                           )}
-                          {lpDisc.vndDiscount > 0 && (
+                          {vndDiscount > 0 && (
                             <div style={{ background: `${DS.pink}10`, border: `1px solid ${DS.pink}30`, borderRadius: 12, padding: "8px 16px" }}>
                               <div style={{ color: DS.text4, fontSize: 9, fontFamily: DS.mono, marginBottom: 2 }}>GIẢM LP</div>
-                              <div style={{ color: DS.pink, fontSize: 15, fontFamily: DS.mono, fontWeight: 700 }}>−{fmtVND(lpDisc.vndDiscount)}</div>
+                              <div style={{ color: DS.pink, fontSize: 15, fontFamily: DS.mono, fontWeight: 700 }}>−{fmtVND(vndDiscount)}</div>
                             </div>
                           )}
                         </div>
@@ -2205,7 +2209,7 @@ export function BookingWizardClient({ locale }: Props) {
                         </div>
 
                         {/* Bank transfer — Professional Layout (Image 1 Style) */}
-                        {paymentMethod === "bank" && bankInfo?.accountNo && (
+                        {paymentMethod === "bank" && (
                           <div className="mt-8">
                             {/* Status Header */}
                             <div className="flex flex-col items-center text-center mb-8">
@@ -2252,12 +2256,22 @@ export function BookingWizardClient({ locale }: Props) {
                                     />
                                   ) : (
                                     <div className="text-center px-4">
-                                      <button
-                                        onClick={handleSubmit}
-                                        style={{ color: DS.blue, fontSize: 12, fontWeight: 800, background: "none", border: "none", cursor: "pointer", fontFamily: DS.mono }}
-                                      >
-                                        LẤY MÃ QR THANH TOÁN
-                                      </button>
+                                      {qrError ? (
+                                        <div className="flex flex-col items-center gap-3">
+                                          <div style={{ color: "#ef4444", fontSize: 11, fontFamily: DS.mono, lineHeight: 1.4 }}>{qrError}</div>
+                                          <button
+                                            onClick={() => { setLastQrAmount(0); generatePaymentQr(paymentPlan === "100" ? Math.round(grandForDisplay * 0.95) : grandForDisplay); }}
+                                            style={{ padding: "6px 12px", background: `${DS.blue}20`, color: DS.blue, border: `1px solid ${DS.blue}40`, borderRadius: 8, fontSize: 10, fontWeight: 700, cursor: "pointer" }}
+                                          >
+                                            THỬ LẠI
+                                          </button>
+                                        </div>
+                                      ) : (
+                                        <>
+                                          <div style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, marginBottom: 4 }}>ĐANG TẠO MÃ QR...</div>
+                                          <div style={{ color: DS.text5, fontSize: 10 }}>Vui lòng đợi trong giây lát</div>
+                                        </>
+                                      )}
                                     </div>
                                   )}
                                 </div>
@@ -2265,7 +2279,9 @@ export function BookingWizardClient({ locale }: Props) {
                                 <div className="mt-6 flex flex-col items-center gap-2">
                                   <div className="px-4 py-1.5 rounded-full" style={{ background: "rgba(59,130,246,0.1)", border: `1px solid ${DS.blue}30` }}>
                                     <span style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono }}>SỐ TIỀN: </span>
-                                    <span style={{ color: DS.blue, fontSize: 14, fontWeight: 800, fontFamily: DS.mono }}>{fmtVND(qrData?.amount || 0)}</span>
+                                    <span style={{ color: DS.blue, fontSize: 14, fontWeight: 800, fontFamily: DS.mono }}>
+                                      {fmtVND(qrData?.amount || (paymentPlan === '100' ? Math.round(grandForDisplay * 0.95) : Math.round(grandForDisplay * 0.5)))}
+                                    </span>
                                   </div>
                                 </div>
                               </div>
@@ -2286,9 +2302,9 @@ export function BookingWizardClient({ locale }: Props) {
 
                                   <div className="space-y-1">
                                     {[
-                                      { label: "Ngân hàng", value: bankInfo.bankName || "Techcombank", color: DS.text },
-                                      { label: "Số tài khoản", value: bankInfo.accountNo || "3378443602", color: DS.blue, isMono: true, isBold: true },
-                                      { label: "Chủ tài khoản", value: bankInfo.accountName || "BUI NHAT DUC ANH", color: DS.text, isBold: true },
+                                      { label: "Ngân hàng", value: bankInfo?.bankName || "Techcombank", color: DS.text },
+                                      { label: "Số tài khoản", value: bankInfo?.accountNo || "3378443602", color: DS.blue, isMono: true, isBold: true },
+                                      { label: "Chủ tài khoản", value: bankInfo?.accountName || "BUI NHAT DUC ANH", color: DS.text, isBold: true },
                                     ].map((item, idx) => (
                                       <div key={idx} className="flex justify-between items-center py-4 border-b last:border-0" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
                                         <span style={{ color: DS.text4, fontSize: 13 }}>{item.label}</span>
@@ -2346,66 +2362,23 @@ export function BookingWizardClient({ locale }: Props) {
                           </div>
                         )}
 
-                        {/* LP redemption */}
-                        {lpBalance > 0 && (
-                          <div className="mb-4 p-4 rounded-xl" style={{ background: `${DS.purple}08`, border: `1px solid ${DS.purple}20` }}>
-                            <div className="flex items-center justify-between mb-2">
-                              <div>
-                                <div style={{ color: DS.purple, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.1em", marginBottom: 2 }}>◈ Sử dụng LP giảm giá</div>
-                                <div style={{ color: DS.text4, fontSize: 10 }}>Số dư: {lpBalance.toLocaleString()} LP · Tối đa dùng: {maxLpRedeem.toLocaleString()} LP (20%)</div>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              <button onClick={() => setLpDiscount(Math.max(0, lpDiscount - 1000))} style={{ width: 28, height: 28, borderRadius: 7, background: `${DS.purple}15`, border: `1px solid ${DS.purple}30`, color: DS.purple, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><Minus size={12} /></button>
-                              <div style={{ color: DS.purple, fontFamily: DS.mono, fontSize: 15, fontWeight: 700, minWidth: 80, textAlign: "center" }}>{lpDiscount.toLocaleString()} LP</div>
-                              <button onClick={() => setLpDiscount(Math.min(maxLpRedeem, lpDiscount + 1000))} style={{ width: 28, height: 28, borderRadius: 7, background: `${DS.purple}15`, border: `1px solid ${DS.purple}30`, color: DS.purple, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><Plus size={12} /></button>
-                            </div>
-                          </div>
-                        )}
                       </div>
 
-                      {/* Submit button — Hidden for bank transfer as it's merged into QR button */}
-                      {paymentMethod !== "bank" && (
-                        <button onClick={handleSubmit} disabled={!name || !email || !phone || submitLoading}
-                          style={{
-                            background: (name && email && phone && !submitLoading) ? GRD.primary : "rgba(255,255,255,0.05)",
-                            color: (name && email && phone && !submitLoading) ? "#fff" : DS.text4,
-                            fontSize: 15, fontWeight: 700, padding: "14px 32px", borderRadius: 14, border: "none",
-                            cursor: (name && email && phone && !submitLoading) ? "pointer" : "not-allowed",
-                            display: "flex", alignItems: "center", gap: 10, justifyContent: "center",
-                            boxShadow: (name && email && phone && !submitLoading) ? "0 0 30px rgba(129,140,248,0.4)" : "none",
-                            transition: "all 0.3s", width: "100%",
-                          }}>
-                          <Shield size={16} />
-                          {submitLoading ? t("submitting") : t("submitButton")}
-                          {!submitLoading && <ArrowRight size={15} />}
-                        </button>
-                      )}
-
-                      <button
-                        onClick={async () => {
-                          const ok = await handleSubmit();
-                          if (ok) {
-                            alert("✅ THÀNH CÔNG: Dữ liệu báo giá đã được gửi lên hệ thống Admin!");
-                          }
-                        }}
+                      <button onClick={handleSubmit} disabled={!name || !email || !phone || submitLoading || isCheckingPayment}
                         style={{
-                          marginTop: 24,
-                          padding: "12px 24px",
-                          background: "rgba(239, 68, 68, 0.1)",
-                          border: "1px dashed #ef4444",
-                          color: "#ef4444",
-                          borderRadius: 12,
-                          cursor: "pointer",
-                          fontSize: 12,
-                          fontWeight: 700,
-                          fontFamily: DS.mono,
-                          width: "100%",
-                          transition: "all 0.2s"
-                        }}
-                      >
-                        ⚠️ TEST: GỬI BÁO GIÁ NGAY (BỎ QUA THANH TOÁN)
+                          background: (name && email && phone && !submitLoading && !isCheckingPayment) ? GRD.primary : "rgba(255,255,255,0.05)",
+                          color: (name && email && phone && !submitLoading && !isCheckingPayment) ? "#fff" : DS.text4,
+                          fontSize: 15, fontWeight: 700, padding: "14px 32px", borderRadius: 14, border: "none",
+                          cursor: (name && email && phone && !submitLoading && !isCheckingPayment) ? "pointer" : "not-allowed",
+                          display: "flex", alignItems: "center", gap: 10, justifyContent: "center",
+                          boxShadow: (name && email && phone && !submitLoading && !isCheckingPayment) ? "0 0 30px rgba(129,140,248,0.4)" : "none",
+                          transition: "all 0.3s", width: "100%",
+                        }}>
+                        {isCheckingPayment ? <div style={{ width: 16, height: 16, border: "2px solid rgba(255,255,255,0.1)", borderTop: "2px solid #fff", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} /> : <Shield size={16} />}
+                        {isCheckingPayment ? "ĐANG KIỂM TRA THANH TOÁN..." : (submitLoading ? t("submitting") : "XÁC NHẬN THANH TOÁN")}
+                        {!submitLoading && !isCheckingPayment && <ArrowRight size={15} />}
                       </button>
+
 
                       <div style={{ color: DS.text5, fontSize: 11, marginTop: 12, textAlign: "center" }}>
                         {paymentPlan === "100" ? "Thanh toán 100% ngay — giảm 5%." : t("depositNote")}
@@ -2479,7 +2452,7 @@ export function BookingWizardClient({ locale }: Props) {
                 {step < 5 && (
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
                     {validationError && step === 4 && (
-                      <motion.div 
+                      <motion.div
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         style={{ color: DS.red, fontSize: 12, fontFamily: DS.mono, fontWeight: 600, background: "rgba(239,68,68,0.1)", padding: "6px 12px", borderRadius: 8, border: "1px solid rgba(239,68,68,0.2)" }}

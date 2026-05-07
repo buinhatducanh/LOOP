@@ -44,7 +44,7 @@
  */
 
 import { prisma } from "@/lib/prisma";
-import type { InputJsonValue } from "@/generated/prisma/internal/prismaNamespace";
+import { Prisma } from "@/generated/prisma/client";
 
 /* ─── Types ──────────────────────────────────────────────────────────────── */
 
@@ -146,7 +146,7 @@ export async function storeEvent(
     await prisma.serverAnalyticsEvent.create({
       data: {
         event,
-        properties: properties as InputJsonValue,
+        properties: properties as Prisma.InputJsonValue,
         sessionId: context.sessionId ?? null,
         visitorId: context.visitorId ?? null,
         userId: context.userId ?? null,

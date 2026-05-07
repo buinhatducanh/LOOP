@@ -41,6 +41,8 @@ const quoteSchema = z.object({
   pricingBreakdown: z.any().optional(),
   /** Source of request: fixed | custom */
   source: z.string().default("fixed"),
+  /** Status of the quote request, used for payment-first flow */
+  status: z.string().optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -69,6 +71,7 @@ export async function POST(req: NextRequest) {
       totalAmount: validated.totalAmount,
       lpUsed,
       source: validated.source,
+      status: validated.status || "new",
     });
 
     const quoteRequest = await prisma.quoteRequest.create({
@@ -87,6 +90,7 @@ export async function POST(req: NextRequest) {
         domainPurchaseTime: validated.domainPurchaseTime,
         pricingBreakdown: (validated.pricingBreakdown || {}) as any,
         source: validated.source,
+        status: validated.status || "new",
       },
     });
 

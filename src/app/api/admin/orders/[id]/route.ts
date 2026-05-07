@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
-import type { InputJsonValue } from "@/generated/prisma/internal/prismaNamespace";
+import { Prisma } from "@/generated/prisma/client";
 import { CUSTOM_ORDER_STATUSES, TEMPLATE_ORDER_STATUSES } from "@/lib/pricing/order-lifecycle";
 
 export async function GET(
@@ -78,8 +78,8 @@ export async function PUT(
         action: "update",
         resource: "orders",
         resourceId: id,
-        oldValues: existing as unknown as InputJsonValue,
-        newValues: data as unknown as InputJsonValue,
+        oldValues: existing as Prisma.InputJsonValue,
+        newValues: data as Prisma.InputJsonValue,
       },
     }).catch(() => { /* non-critical */ });
 
@@ -124,7 +124,7 @@ export async function DELETE(
         action: "delete",
         resource: "orders",
         resourceId: id,
-        oldValues: existing as unknown as InputJsonValue,
+        oldValues: existing as Prisma.InputJsonValue,
       },
     }).catch(() => { /* non-critical */ });
 

@@ -70,6 +70,14 @@ type QuoteRequest = {
   source?: string;
   /** Full pricing breakdown sent by wizard */
   pricingBreakdown?: Record<string, unknown>;
+  /** Optional: pre-selected hosting plan slug */
+  hostingPlanSlug?: string | null;
+  /** Optional: pre-selected domain name */
+  domainName?: string | null;
+  /** Optional: payment plan (e.g. "100", "50") */
+  paymentPlan?: string | null;
+  updatedAt?: string;
+  domainPurchaseTime?: string | null;
 };
 
 const WORKFLOW_ACTIONS: Record<string, { next: string; label: string; action: string }[]> = {
@@ -134,7 +142,7 @@ function QuoteCreateModal({
   const [selectedTLDId, setSelectedTLDId] = useState("");
   const [addedDomains, setAddedDomains] = useState<{ id: string, name: string, extension: string, price: number, years: number, available?: boolean }[]>([]);
   const [checkingDomain, setCheckingDomain] = useState(false);
-  const [checkResult, setCheckResult] = useState<{ checked: boolean, available: boolean } | null>(null);
+  const [checkResult, setCheckResult] = useState<{ domain: string, available: boolean, extension: string, price: number }[]>([]);
 
   // Unique hosting levels (Khởi Đầu, Tiêu Chuẩn, etc.)
   const hostingLevels = Array.from(new Set(hostingPlans.map((h: any) => h.name.split(" (")[0].trim())));
@@ -273,7 +281,7 @@ function QuoteCreateModal({
     };
     setAddedDomains(prev => [...prev, newDomain]);
     setDomainQuery("");
-    setCheckResult(null);
+    setCheckResult([]);
   };
 
   const handleAddDomain = () => {
@@ -501,8 +509,8 @@ function QuoteCreateModal({
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 <label style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, display: "block" }}>Tên miền</label>
                 <div style={{ display: "flex", gap: 6 }}>
-                  <input style={{ ...inp, flex: 1 }} value={domainQuery} onChange={e => { setDomainQuery(e.target.value); setCheckResult(null); }} placeholder="Nhập tên miền (VD: loop)" />
-                  <select style={{ ...inp, width: 110 }} value={selectedTLDId} onChange={e => { setSelectedTLDId(e.target.value); setCheckResult(null); }}>
+                  <input style={{ ...inp, flex: 1 }} value={domainQuery} onChange={e => { setDomainQuery(e.target.value); setCheckResult([]); }} placeholder="Nhập tên miền (VD: loop)" />
+                  <select style={{ ...inp, width: 110 }} value={selectedTLDId} onChange={e => { setSelectedTLDId(e.target.value); setCheckResult([]); }}>
                     <option value="">-- Đuôi --</option>
                     {domainPrices.map((d: any) => (
                       <option key={d.id} value={d.id}>{d.extension}</option>
@@ -1065,7 +1073,7 @@ function RequestDetailModal({ request, onClose, configData }: { request: QuoteRe
                     <div style={{ height: 1, background: "rgba(255,255,255,0.05)", margin: "4px 0" }} />
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <span style={{ color: DS.text, fontSize: 15, fontWeight: 800 }}>TỔNG CỘNG:</span>
-                      <span style={{ color: DS.green, fontSize: 24, fontWeight: 900, fontFamily: DS.heading }}>{fmtVND(request.totalAmount)}</span>
+                      <span style={{ color: DS.green, fontSize: 24, fontWeight: 900, fontFamily: DS.heading }}>{fmtVND(request.totalAmount || 0)}</span>
                     </div>
                     <div style={{ marginTop: 8, padding: "8px 12px", borderRadius: 10, background: "rgba(59,130,246,0.1)", border: `1px solid ${DS.blue}20`, textAlign: "center" }}>
                       <span style={{ color: DS.blue, fontSize: 11, fontWeight: 700, fontFamily: DS.mono }}>

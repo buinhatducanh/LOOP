@@ -461,7 +461,9 @@
     "formBtnCreate": "创建报价",
     "errTitleRequired": "标题必填",
     "errCreateFailed": "创建失败",
-    "errSaveFailed": "更新失败"
+    "errSaveFailed": "更新失败",
+    "statusQuoted": "Đã báo giá",
+    "statusExpired": "Hết hạn"
   },
   "media": {
     "title": "媒体预约管理",

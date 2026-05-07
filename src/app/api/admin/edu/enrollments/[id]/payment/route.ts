@@ -12,7 +12,7 @@ import { handleError } from "@/lib/api/response";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
-import type { InputJsonValue } from "@/generated/prisma/internal/prismaNamespace";
+import { Prisma } from "@/generated/prisma/client";
 import { computeRankFieldsFromLp } from "@/lib/rank/xp";
 
 const LP_VND_RATE = 20_000;
@@ -189,7 +189,7 @@ export async function POST(
             method,
             studentLpEarned,
             instructorLp,
-          } as unknown as InputJsonValue,
+          } as Prisma.InputJsonValue,
         },
       });
 

@@ -424,6 +424,8 @@
     "statusSigned": "署名済み",
     "statusRejected": "却下",
     "statusCancelled": "キャンセル",
+    "statusQuoted": "見積済み",
+    "statusExpired": "期限切れ",
     "actionSubmit": "承認に送信",
     "actionApprove": "承認",
     "actionSend": "客户に送信",

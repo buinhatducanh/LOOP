@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
 import { revalidatePath, revalidateTag } from "next/cache";
-import type { FeatureWhereInput } from "@/generated/prisma/models/Feature";
+import { Prisma } from "@/generated/prisma/client";
 
 export async function GET(req: NextRequest) {
   try {
@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "50");
 
-    const where: FeatureWhereInput = groupId ? { groupId } : {};
+    const where: Prisma.FeatureWhereInput = groupId ? { groupId } : {};
 
     const [features, total] = await Promise.all([
       prisma.feature.findMany({
