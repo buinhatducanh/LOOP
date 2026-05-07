@@ -1,4 +1,4 @@
-import { Prisma } from "@/generated/prisma/client";
+
 import { prisma } from "@/lib/prisma";
 import { awardCustomerLpOnPayment } from "@/lib/services/customer/lp.service";
 import { awardReferralLpOnPayment, awardReferralLpOnCompletion } from "@/lib/services/customer/referral.service";
