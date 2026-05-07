@@ -124,15 +124,15 @@ export default async function MediaPage({ params }: Props) {
 
   const projects = rawBookings
     .filter(
-      (b) => Array.isArray(b.deliveredAssets) && b.deliveredAssets.length > 0
+      (b: typeof rawBookings[number]) => Array.isArray(b.deliveredAssets) && b.deliveredAssets.length > 0
     )
-    .map((b) => ({
+    .map((b: typeof rawBookings[number]) => ({
       ...b,
       deliveredAssets: Array.isArray(b.deliveredAssets) ? b.deliveredAssets : [],
       deliveredAt: b.deliveredAt ? b.deliveredAt.toISOString() : null,
     }));
 
-  const stories = rawStories.map((s) => ({
+  const stories = rawStories.map((s: typeof rawStories[number]) => ({
     ...s,
     publishedAt: s.publishedAt ? s.publishedAt.toISOString() : null,
   }));
