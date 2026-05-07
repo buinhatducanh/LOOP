@@ -60,8 +60,7 @@ export default async function TeamPage({ params }: Props) {
   let members: Record<string, unknown>[] = [];
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const raw: any[] = await prisma.teamMember.findMany({
+    const raw = await prisma.teamMember.findMany({
       where: { isActive: true },
       select: {
         id: true,
@@ -86,7 +85,7 @@ export default async function TeamPage({ params }: Props) {
     });
 
     // Aggregate LP from both sources per member (same logic as leaderboard)
-    const memberIds = raw.map((m) => m.id);
+    const memberIds = raw.map((m: typeof raw[number]) => m.id);
     const [awardAggs, txAggs] = await Promise.all([
       memberIds.length > 0
         ? prisma.lpAward.groupBy({
@@ -119,7 +118,7 @@ export default async function TeamPage({ params }: Props) {
     }
 
     // Compute rank + enrich member data (same fallback logic as leaderboard)
-    members = raw.map((m) => {
+    members = raw.map((m: typeof raw[number]) => {
       const totalLp = lpMap.get(m.id) ?? 0;
       const computed = computeRankFieldsFromLp(totalLp);
 

@@ -70,11 +70,11 @@ type QuoteRequest = {
   source?: string;
   /** Full pricing breakdown sent by wizard */
   pricingBreakdown?: Record<string, unknown>;
-  /** Optional: pre-selected hosting plan slug */
+  /** Hosting plan slug selected in wizard */
   hostingPlanSlug?: string | null;
-  /** Optional: pre-selected domain name */
+  /** Domain name selected in wizard */
   domainName?: string | null;
-  /** Optional: payment plan (e.g. "100", "50") */
+  /** Payment plan: "50" (deposit) or "100" (full) */
   paymentPlan?: string | null;
   updatedAt?: string;
   domainPurchaseTime?: string | null;
@@ -146,9 +146,9 @@ function QuoteCreateModal({
 
   // Unique hosting levels (Khởi Đầu, Tiêu Chuẩn, etc.)
   const hostingLevels = Array.from(new Set(hostingPlans.map((h: any) => h.name.split(" (")[0].trim())));
-  
+
   // Available durations for selected level
-  const availableDurations = hostingPlans.filter((h: any) => 
+  const availableDurations = hostingPlans.filter((h: any) =>
     selectedHostingLevel && h.name.includes(selectedHostingLevel)
   );
 
@@ -180,13 +180,13 @@ function QuoteCreateModal({
     const hSlug = bd.hosting?.slug || quoteRequest.hostingPlanSlug;
     const hName = bd.hosting?.name;
     let foundHost = null;
-    
+
     if (hSlug) {
       foundHost = hostingPlans.find((h: any) => h.slug === hSlug);
     }
     if (!foundHost && hName) {
-      foundHost = hostingPlans.find((h: any) => 
-        h.name.toLowerCase() === hName.toLowerCase() || 
+      foundHost = hostingPlans.find((h: any) =>
+        h.name.toLowerCase() === hName.toLowerCase() ||
         h.name.toLowerCase().includes(hName.toLowerCase())
       );
     }
@@ -226,18 +226,18 @@ function QuoteCreateModal({
       }));
       setAddedDomains(mapped);
     } else if (quoteRequest.domainName) {
-        // Fallback to legacy field
-        const ext = "." + quoteRequest.domainName.split(".").slice(1).join(".");
-        const name = quoteRequest.domainName.split(".")[0];
-        const tldPrice = domainPrices.find((p: any) => p.extension === ext)?.registrationPrice || 0;
-        setAddedDomains([{
-            id: "legacy-1",
-            name,
-            extension: ext,
-            price: tldPrice,
-            years: 1,
-            available: true
-        }]);
+      // Fallback to legacy field
+      const ext = "." + quoteRequest.domainName.split(".").slice(1).join(".");
+      const name = quoteRequest.domainName.split(".")[0];
+      const tldPrice = domainPrices.find((p: any) => p.extension === ext)?.registrationPrice || 0;
+      setAddedDomains([{
+        id: "legacy-1",
+        name,
+        extension: ext,
+        price: tldPrice,
+        years: 1,
+        available: true
+      }]);
     }
   }, [quoteRequest, config, packages, hostingPlans, domainPrices]);
 
@@ -262,15 +262,15 @@ function QuoteCreateModal({
   const handleAddDomainFromList = (domainObj: any) => {
     // Prevent duplicates
     const fullName = domainObj.domain.toLowerCase().trim();
-    const isDuplicate = addedDomains.some(d => 
+    const isDuplicate = addedDomains.some(d =>
       `${d.name}${d.extension}`.toLowerCase().trim() === fullName
     );
-    
+
     if (isDuplicate) {
       alert("Tên miền này đã có trong danh sách!");
       return;
     }
-    
+
     const newDomain = {
       id: Math.random().toString(36).substring(7),
       name: domainObj.domain.split(".")[0],
@@ -302,7 +302,7 @@ function QuoteCreateModal({
     const pkg = packages.find((p: any) => p.id === selectedPkg);
     if (pkg) total += pkg.price;
 
-    const host = hostingPlans.find((h: any) => 
+    const host = hostingPlans.find((h: any) =>
       h.name.startsWith(selectedHostingLevel) && h.months === Number(selectedHostingMonths)
     );
     if (host) total += host.discountedPrice;
@@ -337,7 +337,7 @@ function QuoteCreateModal({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const inp = { width: "100%", background: DS.bg, border: `1px solid ${DS.border}`, borderRadius: 8, padding: "8px 12px", color: DS.text, fontSize: 13, outline: "none", boxSizing: "border-box" as const, fontFamily: DS.body };
-  
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.title.trim()) return setError(t("quotation.errTitleRequired"));
@@ -348,10 +348,10 @@ function QuoteCreateModal({
     try {
       // Find descriptive details for storage using EXACT same logic as total calculation
       const pkg = packages.find((p: any) => p.id === selectedPkg);
-      
+
       const seo = seoTiers.find((s: any) => Number(s.level) === Number(selectedSeo));
-      
-      const hosting = hostingPlans.find((h: any) => 
+
+      const hosting = hostingPlans.find((h: any) =>
         h.name.startsWith(selectedHostingLevel) && Number(h.months) === Number(selectedHostingMonths)
       );
 
@@ -396,7 +396,7 @@ function QuoteCreateModal({
         hostingPlanSlug: selectedHostingLevel || undefined,
         domainName: addedDomains.length > 0 ? `${addedDomains[0].name}${addedDomains[0].extension}` : undefined,
       });
-      
+
       onSuccess(); onClose();
     } catch (err: unknown) { setError(err instanceof Error ? err.message : t("quotation.errCreateFailed")); }
     finally { setSaving(false); }
@@ -423,7 +423,7 @@ function QuoteCreateModal({
             </div>
             <button onClick={onClose} style={{ background: "none", border: "none", color: DS.text4, cursor: "pointer" }}><X size={18} /></button>
           </div>
-          
+
           <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <div>
               <label style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, display: "block", marginBottom: 4 }}>{t("quotation.formQuoteTitle")}</label>
@@ -455,7 +455,7 @@ function QuoteCreateModal({
             {/* Service Selectors */}
             <div style={{ background: "rgba(255,255,255,0.03)", padding: 12, borderRadius: 12, border: `1px solid ${DS.border}`, display: "flex", flexDirection: "column", gap: 10 }}>
               <div style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.05em", borderBottom: `1px solid ${DS.border}`, paddingBottom: 6 }}>CẤU HÌNH GÓI DỊCH VỤ</div>
-              
+
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                 <div>
                   <label style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, display: "block", marginBottom: 4 }}>Gói Website</label>
@@ -545,7 +545,7 @@ function QuoteCreateModal({
                           {checkResult.slice(1).filter(d => d.available).slice(0, 4).map(d => (
                             <button key={d.domain} type="button" onClick={() => handleAddDomainFromList(d)}
                               style={{ padding: "4px 10px", background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.2)", borderRadius: 20, color: "#10B981", fontSize: 10, fontWeight: 600, cursor: "pointer" }}>
-                              + {d.extension} ({fmtVND(d.price)})
+                              + {d.extension} ({fmtVND(d.price ?? 0)})
                             </button>
                           ))}
                         </div>
@@ -553,7 +553,7 @@ function QuoteCreateModal({
                     )}
                   </div>
                 )}
-                
+
                 {addedDomains.length > 0 && (
                   <div style={{ marginTop: 4, display: "flex", flexDirection: "column", gap: 6, maxHeight: 120, overflowY: "auto", paddingRight: 4 }}>
                     <div style={{ color: DS.text4, fontSize: 9, fontFamily: DS.mono, letterSpacing: "0.05em", marginBottom: 2 }}>DANH SÁCH ĐÃ CHỌN ({addedDomains.length})</div>
@@ -587,18 +587,18 @@ function QuoteCreateModal({
               </div>
               <div>
                 <label style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, display: "block", marginBottom: 4 }}>{t("quotation.formDeadline")}</label>
-                <input 
-                  style={inp} 
-                  type="date" 
-                  min={new Date().toLocaleDateString('en-CA')} 
-                  value={form.validUntil} 
-                  onChange={e => setForm(f => ({ ...f, validUntil: e.target.value }))} 
+                <input
+                  style={inp}
+                  type="date"
+                  min={new Date().toLocaleDateString('en-CA')}
+                  value={form.validUntil}
+                  onChange={e => setForm(f => ({ ...f, validUntil: e.target.value }))}
                 />
               </div>
             </div>
 
             {error && <div style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8, padding: "8px 12px", color: "#EF4444", fontSize: 12 }}><AlertTriangle size={12} style={{ display: "inline", marginRight: 6 }} />{error}</div>}
-            
+
             <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
               <button type="button" onClick={onClose} style={{ flex: 1, padding: "12px", background: DS.bg, border: `1px solid ${DS.border}`, borderRadius: 10, color: DS.text3, cursor: "pointer", fontSize: 13, fontWeight: 600 }}>{t("quotation.formBtnCancel")}</button>
               <button type="submit" disabled={saving} style={{ flex: 1, padding: "12px", background: saving ? DS.text4 : GRD.primary, border: "none", borderRadius: 10, color: "#fff", fontWeight: 700, cursor: saving ? "not-allowed" : "pointer", fontSize: 13 }}>{saving ? t("quotation.formBtnCreating") : t("quotation.formBtnCreate")}</button>
@@ -681,7 +681,7 @@ export default function QuotationPage() {
   });
 
   return (<>
-    <div>
+    <div style={{ padding: "2rem", minHeight: "100vh", background: DS.bgCosmic ?? "var(--figma-bg-cosmic, #09090b)" }}>
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
         <div>
@@ -1073,7 +1073,7 @@ function RequestDetailModal({ request, onClose, configData }: { request: QuoteRe
                     <div style={{ height: 1, background: "rgba(255,255,255,0.05)", margin: "4px 0" }} />
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <span style={{ color: DS.text, fontSize: 15, fontWeight: 800 }}>TỔNG CỘNG:</span>
-                      <span style={{ color: DS.green, fontSize: 24, fontWeight: 900, fontFamily: DS.heading }}>{fmtVND(request.totalAmount || 0)}</span>
+                      <span style={{ color: DS.green, fontSize: 24, fontWeight: 900, fontFamily: DS.heading }}>{fmtVND(request.totalAmount ?? 0)}</span>
                     </div>
                     <div style={{ marginTop: 8, padding: "8px 12px", borderRadius: 10, background: "rgba(59,130,246,0.1)", border: `1px solid ${DS.blue}20`, textAlign: "center" }}>
                       <span style={{ color: DS.blue, fontSize: 11, fontWeight: 700, fontFamily: DS.mono }}>

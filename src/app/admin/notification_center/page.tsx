@@ -428,7 +428,13 @@ export default function NotificationCenterPage() {
  const handleFilterChange = (setter: (v: any) => void) => (v: any) => { setter(v); setPage(0); };
 
  return (
- <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+ <div style={{ padding: "var(--admin-padding, 2rem)", minHeight: "100vh", background: DS.bgCosmic, display: "flex", flexDirection: "column", gap: "1rem" }}>
+      <style>{`
+        :root { --admin-padding: 2rem; }
+        @media (max-width: 640px) { :root { --admin-padding: 1rem; } }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      `}</style>
  {/* Header */}
  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "0.75rem" }}>
  <div>
@@ -631,8 +637,9 @@ export default function NotificationCenterPage() {
  </div>
  )}
 
- {/* Notification list */}
- <div style={{ display: "flex", flexDirection: "column", gap: "0.375rem" }}>
+  {/* Notification list */}
+  <div style={{ overflowX: "auto", paddingBottom: 10 }} className="hide-scrollbar">
+    <div style={{ display: "flex", flexDirection: "column", gap: "0.375rem", minWidth: 450 }}>
  {isLoading ? (
  <div style={{
  textAlign: "center", padding: "4rem", borderRadius: 12,
@@ -832,6 +839,7 @@ export default function NotificationCenterPage() {
  </motion.div>
  );
  })}
+  </div>
   </div>
 
  {/* Pagination */}

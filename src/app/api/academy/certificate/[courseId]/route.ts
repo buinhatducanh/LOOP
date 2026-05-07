@@ -114,7 +114,7 @@ export async function GET(
 
     // Use most recent progress as completion date
     const completedAt = enrollment.progresses
-      .map((p) => p.completedAt)
+      .map((p: typeof enrollment.progresses[number]) => p.completedAt)
       .filter(Boolean)
       .sort((a, b) => (b && a ? (b > a ? 1 : -1) : 0))[0] ?? enrollment.enrolledAt;
 

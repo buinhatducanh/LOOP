@@ -181,8 +181,8 @@ export async function POST(req: NextRequest) {
         // Save detailed configuration into pricingBreakdown
         pricingBreakdown: configData || (qr as any)?.pricingBreakdown || (qr ? {
           package: { name: (qr.selectedItems as any)?.[0]?.featureName || "Website Tùy chỉnh" },
-          hosting: qr.hostingPlanSlug ? { name: qr.hostingPlanSlug, slug: qr.hostingPlanSlug } : null,
-          domains: qr.domainName ? [{ name: qr.domainName }] : [],
+          hosting: (qr as any)?.hostingPlanSlug ? { name: (qr as any).hostingPlanSlug, slug: (qr as any).hostingPlanSlug } : null,
+          domains: (qr as any)?.domainName ? [{ name: (qr as any).domainName }] : [],
           total: qr.totalAmount,
         } : null),
         source: (qr as any)?.source ?? "fixed",

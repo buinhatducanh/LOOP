@@ -952,10 +952,10 @@ export function BookingWizardClient({ locale }: Props) {
   const handleSubmit = async () => {
     if (submitLoading || submitted) return;
     // Determine the selected package details from state or fallback
-    const targetPkg: any = packages.find(p => p.slug === selectedPackage || p.id === selectedPackage) || PKG_PRICE_MAP[selectedPackage];
+    const targetPkg = packages.find(p => p.slug === selectedPackage || p.id === selectedPackage) || PKG_PRICE_MAP[selectedPackage] || null;
 
     const svc = WEBSITE_SERVICE;
-    const basePrice = targetPkg?.price ?? targetPkg?.basePrice ?? 1_890_000;
+    const basePrice = (targetPkg as any)?.price ?? (targetPkg as any)?.basePrice ?? 1_890_000;
     const featOpts = currentFeatureOptions;
     // Only charge for non-included features
     const featPrices = featOpts
@@ -985,8 +985,8 @@ export function BookingWizardClient({ locale }: Props) {
       }));
     const selectedItems = [
       {
-        featureId: targetPkg?.id ?? selectedPackage,
-        featureName: `${svc?.title ?? "Website"} — ${targetPkg?.name ?? "Basic"}`,
+        featureId: (targetPkg as any)?.id ?? selectedPackage,
+        featureName: `${svc?.title ?? "Website"} — ${(targetPkg as any)?.name ?? "Basic"}`,
         variantId: "",
         variantName: "Custom",
         price: basePrice,
@@ -1009,10 +1009,10 @@ export function BookingWizardClient({ locale }: Props) {
 
       const pricingBreakdown = {
         package: {
-          slug: targetPkg?.slug ?? selectedPackage,
-          name: targetPkg?.name ?? "",
+          slug: (targetPkg as any)?.slug ?? selectedPackage,
+          name: (targetPkg as any)?.name ?? "",
           price: basePrice,
-          marketPrice: targetPkg?.marketPrice ?? basePrice,
+          marketPrice: (targetPkg as any)?.marketPrice ?? basePrice,
           color: (targetPkg as WizardPackage)?.color ?? null,
         },
         features: paidFeatureItems,
@@ -1506,54 +1506,60 @@ export function BookingWizardClient({ locale }: Props) {
                     </div>
 
                     {/* Input row: name + TLD dropdown + search button */}
-                    <div className="flex gap-3 mb-4">
-                      <input
-                        value={domainQuery}
-                        onChange={e => setDomainQuery(e.target.value.replace(/[^a-zA-Z0-9À-ỹ]/g, ""))}
-                        onKeyDown={e => e.key === "Enter" && domainQuery && handleDomainSearch()}
-                        placeholder="ví dụ: mysite"
-                        style={{
-                          flex: 1,
-                          background: "rgba(15,23,42,0.6)",
-                          border: `1px solid ${DS.border}`,
-                          borderRadius: 10,
-                          padding: "12px 16px",
-                          color: DS.text,
-                          fontSize: 16,
-                          fontWeight: 600,
-                          outline: "none",
-                          fontFamily: DS.body,
-                          boxSizing: "border-box",
-                        }}
-                      />
-                      {domainPrices.length > 0 && (
-                        <select
-                          value={domainSelectedTld}
-                          onChange={e => setDomainSelectedTld(e.target.value)}
+                    <div className="flex flex-wrap gap-2 md:gap-3 mb-4">
+                      <div className="flex flex-1 gap-2 md:gap-3 min-w-[200px]">
+                        <input
+                          value={domainQuery}
+                          onChange={e => setDomainQuery(e.target.value.replace(/[^a-zA-Z0-9À-ỹ]/g, ""))}
+                          onKeyDown={e => e.key === "Enter" && domainQuery && handleDomainSearch()}
+                          placeholder="ví dụ: mysite"
                           style={{
-                            background: "rgba(15,23,42,0.8)",
+                            flex: 1,
+                            background: "rgba(15,23,42,0.6)",
                             border: `1px solid ${DS.border}`,
                             borderRadius: 10,
-                            padding: "12px 14px",
+                            padding: "12px 16px",
                             color: DS.text,
-                            fontSize: 14,
-                            fontFamily: DS.mono,
+                            fontSize: 16,
+                            fontWeight: 600,
                             outline: "none",
-                            cursor: "pointer",
+                            fontFamily: DS.body,
+                            boxSizing: "border-box",
+                            minWidth: 0, // Prevent flex item from overflowing
                           }}
-                        >
-                          {domainPrices.map(d => (
-                            <option key={d.extension} value={d.extension} style={{ background: "#0F172A" }}>
-                              {d.extension.startsWith('.') ? d.extension : `.${d.extension}`}
-                            </option>
-                          ))}
-                        </select>
-                      )}
+                        />
+                        {domainPrices.length > 0 && (
+                          <select
+                            value={domainSelectedTld}
+                            onChange={e => setDomainSelectedTld(e.target.value)}
+                            style={{
+                              background: "rgba(15,23,42,0.8)",
+                              border: `1px solid ${DS.border}`,
+                              borderRadius: 10,
+                              padding: "12px 14px",
+                              color: DS.text,
+                              fontSize: 14,
+                              fontFamily: DS.mono,
+                              outline: "none",
+                              cursor: "pointer",
+                              width: "auto",
+                            }}
+                          >
+                            {domainPrices.map(d => (
+                              <option key={d.extension} value={d.extension} style={{ background: "#0F172A" }}>
+                                {d.extension.startsWith('.') ? d.extension : `.${d.extension}`}
+                              </option>
+                            ))}
+                          </select>
+                        )}
+                      </div>
+
                       <motion.button
                         onClick={handleDomainSearch}
                         disabled={!domainQuery || isSearchingDomain}
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
+                        className="w-full md:w-auto"
                         style={{
                           padding: "12px 24px",
                           borderRadius: 10,
@@ -1566,6 +1572,7 @@ export function BookingWizardClient({ locale }: Props) {
                           cursor: !domainQuery || isSearchingDomain ? "not-allowed" : "pointer",
                           display: "flex",
                           alignItems: "center",
+                          justifyContent: "center",
                           gap: 8,
                           whiteSpace: "nowrap",
                           transition: "all 0.15s",
@@ -1747,10 +1754,10 @@ export function BookingWizardClient({ locale }: Props) {
                           <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: 0 }}>
                             <thead>
                               <tr style={{ background: "rgba(15,23,42,0.6)" }}>
-                                <th style={{ padding: "16px 20px", textAlign: "left", color: DS.text3, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.15em", borderBottom: `1px solid ${DS.border}`, fontWeight: 800 }}>ĐUÔI</th>
-                                <th style={{ padding: "16px 20px", textAlign: "right", color: DS.text3, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.15em", borderBottom: `1px solid ${DS.border}`, fontWeight: 800 }}>THỜI HẠN {formatYearsLabel(selectedYears >= 1 ? selectedYears : 1).toUpperCase()}</th>
-                                <th style={{ padding: "16px 20px", textAlign: "right", color: DS.text3, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.15em", borderBottom: `1px solid ${DS.border}`, fontWeight: 800 }}>GIA HẠN</th>
-                                <th style={{ padding: "16px 20px", textAlign: "left", color: DS.text3, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.15em", borderBottom: `1px solid ${DS.border}`, fontWeight: 800 }}>GHI CHÚ</th>
+                                <th style={{ padding: "16px 20px", textAlign: "left", color: DS.text3, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.15em", borderBottom: `1px solid ${DS.border}`, fontWeight: 800, whiteSpace: "nowrap" }}>ĐUÔI</th>
+                                <th style={{ padding: "16px 20px", textAlign: "right", color: DS.text3, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.15em", borderBottom: `1px solid ${DS.border}`, fontWeight: 800, whiteSpace: "nowrap" }}>THỜI HẠN {formatYearsLabel(selectedYears >= 1 ? selectedYears : 1).toUpperCase()}</th>
+                                <th style={{ padding: "16px 20px", textAlign: "right", color: DS.text3, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.15em", borderBottom: `1px solid ${DS.border}`, fontWeight: 800, whiteSpace: "nowrap" }}>GIA HẠN</th>
+                                <th style={{ padding: "16px 20px", textAlign: "left", color: DS.text3, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.15em", borderBottom: `1px solid ${DS.border}`, fontWeight: 800, whiteSpace: "nowrap" }}>GHI CHÚ</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -1928,7 +1935,7 @@ export function BookingWizardClient({ locale }: Props) {
                         {renderDurationSelector(true, true)}
                       </div>
 
-                      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 20 }}>
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12, marginBottom: 20 }}>
                         {(() => {
                           const baseNames = Array.from(new Set(hostingPlans.map(p => p.name.split(" (")[0])));
                           return baseNames.map(baseName => {

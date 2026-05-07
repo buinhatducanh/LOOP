@@ -360,7 +360,7 @@ export default function AdminOverviewPage() {
   ];
 
   return (
-    <div style={{ padding: "0 0 2rem" }}>
+    <div style={{ padding: "2rem", minHeight: "100vh", background: DS.bgCosmic ?? "var(--figma-bg-cosmic, #09090b)" }}>
       {/* Header */}
       <div style={{ marginBottom: "1.5rem" }}>
         <h1

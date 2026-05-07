@@ -162,7 +162,7 @@ export default async function BlogPostPage({ params }: DetailProps) {
     select: { id: true, slug: true, title: true, excerpt: true, coverImage: true, publishedAt: true },
     take: 3,
   });
-  const related = relatedRaw.map((r) => mapLocalizedBlogPost(r, resolvedLocale));
+  const related = relatedRaw.map((r: typeof relatedRaw[number]) => mapLocalizedBlogPost(r, resolvedLocale));
 
   // JSON-LD Article schema — locale-aware URL
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.loops.vn";

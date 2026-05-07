@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
         companyName: body.companyName || null,
         totalAmount: Math.round(body.totalAmount),
         selectedItems: body.selectedItems || [],
-        pricingBreakdown: pricingBreakdown,
+        pricingBreakdown: (pricingBreakdown as any),
         source: body.source || "admin",
         status: "new",
         hostingPlanSlug: body.hostingPlanSlug || null,

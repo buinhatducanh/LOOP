@@ -34,13 +34,13 @@ interface RankConfig {
 }
 
 const RANKS: Record<RankKey, RankConfig> = {
-  iron:     { label: "Iron",     symbol: "⬡", color: "#9CA3AF", glowColor: "rgba(156,163,175,0.3)" },
-  bronze:   { label: "Bronze",   symbol: "◈", color: "#CD7F32", glowColor: "rgba(205,127,50,0.3)" },
-  silver:   { label: "Silver",   symbol: "◇", color: "#CBD5E1", glowColor: "rgba(203,213,225,0.3)" },
-  gold:     { label: "Gold",     symbol: "★", color: "#FFD700", glowColor: "rgba(255,215,0,0.3)" },
+  iron: { label: "Iron", symbol: "⬡", color: "#9CA3AF", glowColor: "rgba(156,163,175,0.3)" },
+  bronze: { label: "Bronze", symbol: "◈", color: "#CD7F32", glowColor: "rgba(205,127,50,0.3)" },
+  silver: { label: "Silver", symbol: "◇", color: "#CBD5E1", glowColor: "rgba(203,213,225,0.3)" },
+  gold: { label: "Gold", symbol: "★", color: "#FFD700", glowColor: "rgba(255,215,0,0.3)" },
   platinum: { label: "Platinum", symbol: "❋", color: "#14B8A6", glowColor: "rgba(20,184,166,0.3)" },
-  ruby:     { label: "Ruby",     symbol: "♦", color: "#EF4444", glowColor: "rgba(239,68,68,0.3)" },
-  diamond:  { label: "Diamond",  symbol: "✦", color: "#818CF8", glowColor: "rgba(129,140,248,0.3)" },
+  ruby: { label: "Ruby", symbol: "♦", color: "#EF4444", glowColor: "rgba(239,68,68,0.3)" },
+  diamond: { label: "Diamond", symbol: "✦", color: "#818CF8", glowColor: "rgba(129,140,248,0.3)" },
 };
 
 // ── Mock members (from memberData.ts) ─────────────────────────────────────────
@@ -78,13 +78,13 @@ interface TaxBracket {
 }
 
 const PIT_BRACKETS: TaxBracket[] = [
-  { from: 0,          to: 5_000_000,   rate: 5,  label: "Bậc 1" },
-  { from: 5_000_000,  to: 10_000_000,  rate: 10, label: "Bậc 2" },
-  { from: 10_000_000, to: 18_000_000,  rate: 15, label: "Bậc 3" },
-  { from: 18_000_000, to: 32_000_000,  rate: 20, label: "Bậc 4" },
-  { from: 32_000_000, to: 52_000_000,  rate: 25, label: "Bậc 5" },
-  { from: 52_000_000, to: 80_000_000,  rate: 30, label: "Bậc 6" },
-  { from: 80_000_000, to: null,          rate: 35, label: "Bậc 7" },
+  { from: 0, to: 5_000_000, rate: 5, label: "Bậc 1" },
+  { from: 5_000_000, to: 10_000_000, rate: 10, label: "Bậc 2" },
+  { from: 10_000_000, to: 18_000_000, rate: 15, label: "Bậc 3" },
+  { from: 18_000_000, to: 32_000_000, rate: 20, label: "Bậc 4" },
+  { from: 32_000_000, to: 52_000_000, rate: 25, label: "Bậc 5" },
+  { from: 52_000_000, to: 80_000_000, rate: 30, label: "Bậc 6" },
+  { from: 80_000_000, to: null, rate: 35, label: "Bậc 7" },
 ];
 
 // ── Insurance rates (standard 2026) ─────────────────────────────────────────
@@ -99,12 +99,12 @@ const INSURANCE = {
 // ── Salary base by rank (VND/month) ─────────────────────────────────────────
 
 const SALARY_VND: Record<RankKey, number> = {
-  iron:     10_000_000,
-  bronze:   16_000_000,
-  silver:   26_000_000,
-  gold:     45_000_000,
+  iron: 10_000_000,
+  bronze: 16_000_000,
+  silver: 26_000_000,
+  gold: 45_000_000,
   platinum: 75_000_000,
-  ruby:    120_000_000,
+  ruby: 120_000_000,
   diamond: 200_000_000,
 };
 
@@ -172,7 +172,7 @@ const MONTHS_VI = ["Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5", "
 
 function TaxCalcPanel({ member, dependants }: { member: MockMember; dependants: number }) {
   const [selectedMonth, setSelectedMonth] = useState<number | "year">("year");
-   RANKS[member.rank];
+  RANKS[member.rank];
 
   const monthlyData = useMemo(
     () => Array.from({ length: 12 }, (_, i) => genMonthlyIncome(member, i + 1)),
@@ -181,14 +181,14 @@ function TaxCalcPanel({ member, dependants }: { member: MockMember; dependants: 
 
   const income = selectedMonth === "year"
     ? {
-        baseSalary: monthlyData.reduce((s, m) => s + m.baseSalary, 0),
-        projectBonus: monthlyData.reduce((s, m) => s + m.projectBonus, 0),
-        performanceBonus: monthlyData.reduce((s, m) => s + m.performanceBonus, 0),
-        serviceBonus: monthlyData.reduce((s, m) => s + m.serviceBonus, 0),
-        tetBonus: monthlyData.reduce((s, m) => s + m.tetBonus, 0),
-        otherBonus: 0,
-        totalGross: monthlyData.reduce((s, m) => s + m.totalGross, 0),
-      }
+      baseSalary: monthlyData.reduce((s, m) => s + m.baseSalary, 0),
+      projectBonus: monthlyData.reduce((s, m) => s + m.projectBonus, 0),
+      performanceBonus: monthlyData.reduce((s, m) => s + m.performanceBonus, 0),
+      serviceBonus: monthlyData.reduce((s, m) => s + m.serviceBonus, 0),
+      tetBonus: monthlyData.reduce((s, m) => s + m.tetBonus, 0),
+      otherBonus: 0,
+      totalGross: monthlyData.reduce((s, m) => s + m.totalGross, 0),
+    }
     : monthlyData[selectedMonth - 1];
 
   const periodLabel = selectedMonth === "year" ? "Cả năm" : MONTHS_VI[Number(selectedMonth) - 1];
@@ -240,11 +240,11 @@ function TaxCalcPanel({ member, dependants }: { member: MockMember; dependants: 
             ── PHÂN TÍCH THU NHẬP · {periodLabel}
           </div>
           {[
-            { label: "Lương cứng",        value: income.baseSalary,       color: DS.green,  pct: income.totalGross > 0 ? income.baseSalary / income.totalGross * 100 : 0 },
-            { label: "Thưởng dự án",       value: income.projectBonus,     color: DS.blue,   pct: income.totalGross > 0 ? income.projectBonus / income.totalGross * 100 : 0 },
-            { label: "Thưởng hiệu suất",   value: income.performanceBonus, color: DS.amber,  pct: income.totalGross > 0 ? income.performanceBonus / income.totalGross * 100 : 0 },
-            { label: "Dịch vụ",            value: income.serviceBonus,     color: DS.cyan,   pct: income.totalGross > 0 ? income.serviceBonus / income.totalGross * 100 : 0 },
-            { label: "Thưởng Tết",         value: income.tetBonus,         color: DS.red,    pct: income.totalGross > 0 ? income.tetBonus / income.totalGross * 100 : 0 },
+            { label: "Lương cứng", value: income.baseSalary, color: DS.green, pct: income.totalGross > 0 ? income.baseSalary / income.totalGross * 100 : 0 },
+            { label: "Thưởng dự án", value: income.projectBonus, color: DS.blue, pct: income.totalGross > 0 ? income.projectBonus / income.totalGross * 100 : 0 },
+            { label: "Thưởng hiệu suất", value: income.performanceBonus, color: DS.amber, pct: income.totalGross > 0 ? income.performanceBonus / income.totalGross * 100 : 0 },
+            { label: "Dịch vụ", value: income.serviceBonus, color: DS.cyan, pct: income.totalGross > 0 ? income.serviceBonus / income.totalGross * 100 : 0 },
+            { label: "Thưởng Tết", value: income.tetBonus, color: DS.red, pct: income.totalGross > 0 ? income.tetBonus / income.totalGross * 100 : 0 },
           ].map(row => (
             <div key={row.label} style={{ marginBottom: 12 }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>

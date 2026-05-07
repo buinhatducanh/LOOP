@@ -1,6 +1,6 @@
 import { ok, badRequest, serverError } from "@/lib/api/response";
 import { prisma } from "@/lib/prisma";
-import { Prisma } from "@/generated/prisma";
+import type { Prisma } from "@/generated/prisma/index.d.ts";
 import { z } from "zod";
 import type { NextRequest } from "next/server";
 
@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
         hostingPlanSlug: validated.hostingPlanSlug || null,
         domainName: validated.domainName || null,
         domainPurchaseTime: validated.domainPurchaseTime,
-        pricingBreakdown: (validated.pricingBreakdown || {}) as any,
+        pricingBreakdown: (validated.pricingBreakdown ?? {}) as any,
         source: validated.source,
         status: validated.status || "new",
       },

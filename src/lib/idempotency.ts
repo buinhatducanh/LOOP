@@ -32,7 +32,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { lpLogger } from "@/lib/logger";
-import type { Prisma } from "@/generated/prisma";
+import type { Prisma } from "@/generated/prisma/index.d.ts";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 

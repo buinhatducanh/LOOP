@@ -535,238 +535,130 @@ export default function AcademyPage() {
 
   return (
     <>
-    <div>
-      {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
-        <div>
-          <h2 style={{ fontFamily: DS.heading, fontSize: 20, fontWeight: 800, color: DS.text, margin: "0 0 4px" }}>
-            {t("academy.title")}
-          </h2>
-          <p style={{ color: DS.text4, fontSize: 12, fontFamily: DS.mono, margin: 0 }}>
-            {t("academy.subtitle")}
-          </p>
-        </div>
-        <div style={{ display: "flex", gap: 8 }}>
-          <button
-            onClick={() => qc.invalidateQueries({ queryKey: ["admin", "academy"] })}
-            style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 14px", background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 10, color: DS.text3, cursor: "pointer", fontSize: 12, fontFamily: DS.mono }}
-          >
-            <RefreshCw size={13} /> {t("academy.refreshBtn")}
-          </button>
-          {tab === "courses" && (
-            <button
-              onClick={() => setEditCourse(null)}
-              style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 16px", background: GRD.primary, color: "#fff", border: "none", borderRadius: 10, cursor: "pointer", fontSize: 13, fontWeight: 700 }}
-            >
-              <Plus size={13} /> {t("academy.addCourseBtn")}
-            </button>
-          )}
-          {tab === "instructors" && (
-            <button
-              onClick={() => setEditInstructor(null)}
-              style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 16px", background: GRD.primary, color: "#fff", border: "none", borderRadius: 10, cursor: "pointer", fontSize: 13, fontWeight: 700 }}
-            >
-              <Plus size={13} /> {t("academy.addInstructorBtn")}
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* KPI */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: "1rem", marginBottom: "1.5rem" }}>
-        <StatCard label={t("academy.kpiCourses")} value={courses.length} icon={<BookOpen size={16} />} color={DS.blue} />
-        <StatCard label={t("academy.kpiPublished")} value={publishedCourses} icon={<Play size={16} />} color={DS.green} />
-        <StatCard label={t("academy.kpiEnrollments")} value={totalEnrolled} icon={<Users size={16} />} color={DS.purple} />
-        <StatCard label={t("academy.kpiCompleted")} value={completedEnrollments} icon={<BookText size={16} />} color={DS.cyan} />
-        <StatCard label={t("academy.kpiAvgRating")} value={avgRating} icon={<Star size={16} />} color={DS.amber} />
-      </div>
-
-      {/* Tabs */}
-      <div style={{ display: "flex", gap: 4, marginBottom: "1rem", borderBottom: `1px solid ${DS.border}` }}>
-        {(["courses", "instructors", "enrollments"] as const).map(tKey => (
-          <button
-            key={tKey}
-            onClick={() => setTab(tKey)}
-            style={{
-              padding: "8px 16px",
-              background: "none",
-              border: "none",
-              borderBottom: `2px solid ${tab === tKey ? DS.blue : "transparent"}`,
-              color: tab === tKey ? DS.blue : DS.text4,
-              fontSize: 13,
-              fontFamily: DS.mono,
-              cursor: "pointer",
-              marginBottom: -1,
-              fontWeight: tab === tKey ? 600 : 400,
-            }}
-          >
-            {tKey === "courses" ? t("academy.tabCourses") : tKey === "instructors" ? t("academy.tabInstructors") : t("academy.tabEnrollments")}
-          </button>
-        ))}
-      </div>
-
-      {/* Courses */}
-      {tab === "courses" && (
-        <div style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 12, overflow: "hidden" }}>
-          {coursesLoading ? (
-            <div style={{ display: "flex", justifyContent: "center", padding: 40 }}>
-              <div style={{ width: 32, height: 32, border: `2px solid ${DS.border}`, borderTop: `2px solid ${DS.blue}`, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-            </div>
-          ) : courses.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "3rem", color: DS.text4 }}>{t("academy.emptyCourses")}</div>
-          ) : (
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead>
-                  <tr style={{ borderBottom: `1px solid ${DS.border}` }}>
-                    {[t("academy.colCourse"), t("academy.colLessons"), t("academy.colStudents"), t("academy.colPrice"), t("academy.colStatus"), t("academy.colFeatured"), t("academy.colActions")].map(h => (
-                      <th key={h} style={{ textAlign: "left", padding: "10px 16px", color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.1em", textTransform: "uppercase" }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {courses.map(c => (
-                    <tr key={c.id} style={{ borderBottom: `1px solid ${DS.border}` }}>
-                      <td style={{ padding: "12px 16px" }}>
-                        <div style={{ color: DS.text, fontSize: 13, fontWeight: 600 }}>{c.title}</div>
-                        <div style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono }}>{c.slug}</div>
-                      </td>
-                      <td style={{ padding: "12px 16px", color: DS.text3, fontSize: 12 }}>{c.lessonCount}</td>
-                      <td style={{ padding: "12px 16px", color: DS.text3, fontSize: 12 }}>{c.enrolledCount}</td>
-                      <td style={{ padding: "12px 16px", color: DS.green, fontSize: 12, fontFamily: DS.mono, fontWeight: 700 }}>
-                        {c.price ? fmtVND(c.price) : t("common.noData")}
-                      </td>
-                      <td style={{ padding: "12px 16px" }}>
-                        <span style={{ background: c.isPublished ? "rgba(34,197,94,0.1)" : "rgba(245,158,11,0.1)", color: c.isPublished ? DS.green : DS.amber, padding: "2px 10px", borderRadius: 9999, fontSize: 11, fontFamily: DS.mono, fontWeight: 600 }}>
-                          {c.isPublished ? t("academy.kpiPublished") : t("academy.statusDraft")}
-                        </span>
-                      </td>
-                      <td style={{ padding: "12px 16px" }}>
-                        {c.isFeatured && <Star size={14} style={{ color: DS.amber }} />}
-                      </td>
-                      <td style={{ padding: "12px 16px" }}>
-                        <div style={{ display: "flex", gap: 5 }}>
-                          <button
-                            onClick={() => setEditCourse(c)}
-                            style={{ background: "rgba(59,130,246,0.1)", border: "1px solid rgba(59,130,246,0.3)", borderRadius: 8, padding: "5px 8px", cursor: "pointer", color: DS.blue, display: "flex", alignItems: "center" }}
-                          >
-                            <Edit2 size={13} />
-                          </button>
-                          <button
-                            onClick={() => { if (confirm(t("academy.confirmDeleteCourse"))) deleteCourse.mutate(c.id); }}
-                            style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8, padding: "5px 8px", cursor: "pointer", color: DS.red, display: "flex", alignItems: "center" }}
-                          >
-                            <Trash2 size={13} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Instructors */}
-      {tab === "instructors" && (
-        <div style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 12, overflow: "hidden" }}>
-          {instructorsLoading ? (
-            <div style={{ display: "flex", justifyContent: "center", padding: 40 }}>
-              <div style={{ width: 32, height: 32, border: `2px solid ${DS.border}`, borderTop: `2px solid ${DS.blue}`, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-            </div>
-          ) : instructors.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "3rem", color: DS.text4 }}>{t("academy.emptyInstructors")}</div>
-          ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "1rem", padding: "1rem" }}>
-              {instructors.map((inst: Instructor) => (
-                <motion.div
-                  key={inst.id}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  style={{ background: DS.bg, border: `1px solid ${DS.border}`, borderRadius: 10, padding: "1rem" }}
-                >
-                  <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 8 }}>
-                    <div style={{ width: 44, height: 44, borderRadius: "50%", background: `${DS.purple}20`, border: `1px solid ${DS.purple}40`, display: "grid", placeItems: "center", color: DS.purple, fontWeight: 700, fontSize: 16, flexShrink: 0 }}>
-                      {inst.avatar ? <img src={inst.avatar} alt={inst.name} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} /> : inst.name.charAt(0)}
-                    </div>
-                    <div>
-                      <div style={{ color: DS.text, fontWeight: 600, fontSize: 13 }}>{inst.name}</div>
-                      <div style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono }}>{inst.courseCount} {t("academy.colCoursesCount")} · {inst.studentCount} {t("academy.colStudentsCount")}</div>
-                    </div>
-                  </div>
-                  <div style={{ color: DS.text3, fontSize: 12, lineHeight: 1.4 }}>{inst.bio || "—"}</div>
-                  <div style={{ display: "flex", gap: 5, marginTop: 8 }}>
-                    <button
-                      onClick={() => setEditInstructor(inst)}
-                      style={{ background: "rgba(59,130,246,0.1)", border: "1px solid rgba(59,130,246,0.3)", borderRadius: 8, padding: "5px 8px", cursor: "pointer", color: DS.blue, display: "flex", alignItems: "center" }}
-                    >
-                      <Edit2 size={13} />
-                    </button>
-                    <button
-                      onClick={() => { if (confirm(t("academy.confirmDeleteInstructor"))) deleteInstructor.mutate(inst.id); }}
-                      style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8, padding: "5px 8px", cursor: "pointer", color: DS.red, display: "flex", alignItems: "center" }}
-                    >
-                      <Trash2 size={13} />
-                    </button>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Enrollments */}
-      {tab === "enrollments" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-          {/* Create enrollment form */}
-          <div style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 12, padding: "1rem" }}>
-            <p style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.08em", marginBottom: 12, textTransform: "uppercase" }}>{t("academy.formEnrollmentSection")}</p>
-            <EnrollmentCreateForm
-              courses={courses}
-              onSuccess={() => qc.invalidateQueries({ queryKey: ["admin", "academy", "enrollments"] })}
-            />
+      <div>
+        {/* Header */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
+          <div>
+            <h2 style={{ fontFamily: DS.heading, fontSize: 20, fontWeight: 800, color: DS.text, margin: "0 0 4px" }}>
+              {t("academy.title")}
+            </h2>
+            <p style={{ color: DS.text4, fontSize: 12, fontFamily: DS.mono, margin: 0 }}>
+              {t("academy.subtitle")}
+            </p>
           </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button
+              onClick={() => qc.invalidateQueries({ queryKey: ["admin", "academy"] })}
+              style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 14px", background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 10, color: DS.text3, cursor: "pointer", fontSize: 12, fontFamily: DS.mono }}
+            >
+              <RefreshCw size={13} /> {t("academy.refreshBtn")}
+            </button>
+            {tab === "courses" && (
+              <button
+                onClick={() => setEditCourse(null)}
+                style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 16px", background: GRD.primary, color: "#fff", border: "none", borderRadius: 10, cursor: "pointer", fontSize: 13, fontWeight: 700 }}
+              >
+                <Plus size={13} /> {t("academy.addCourseBtn")}
+              </button>
+            )}
+            {tab === "instructors" && (
+              <button
+                onClick={() => setEditInstructor(null)}
+                style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 16px", background: GRD.primary, color: "#fff", border: "none", borderRadius: 10, cursor: "pointer", fontSize: 13, fontWeight: 700 }}
+              >
+                <Plus size={13} /> {t("academy.addInstructorBtn")}
+              </button>
+            )}
+          </div>
+        </div>
 
-          {/* Enrollment list */}
+        {/* KPI */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: "1rem", marginBottom: "1.5rem" }}>
+          <StatCard label={t("academy.kpiCourses")} value={courses.length} icon={<BookOpen size={16} />} color={DS.blue} />
+          <StatCard label={t("academy.kpiPublished")} value={publishedCourses} icon={<Play size={16} />} color={DS.green} />
+          <StatCard label={t("academy.kpiEnrollments")} value={totalEnrolled} icon={<Users size={16} />} color={DS.purple} />
+          <StatCard label={t("academy.kpiCompleted")} value={completedEnrollments} icon={<BookText size={16} />} color={DS.cyan} />
+          <StatCard label={t("academy.kpiAvgRating")} value={avgRating} icon={<Star size={16} />} color={DS.amber} />
+        </div>
+
+        {/* Tabs */}
+        <div style={{ display: "flex", gap: 4, marginBottom: "1rem", borderBottom: `1px solid ${DS.border}` }}>
+          {(["courses", "instructors", "enrollments"] as const).map(tKey => (
+            <button
+              key={tKey}
+              onClick={() => setTab(tKey)}
+              style={{
+                padding: "8px 16px",
+                background: "none",
+                border: "none",
+                borderBottom: `2px solid ${tab === tKey ? DS.blue : "transparent"}`,
+                color: tab === tKey ? DS.blue : DS.text4,
+                fontSize: 13,
+                fontFamily: DS.mono,
+                cursor: "pointer",
+                marginBottom: -1,
+                fontWeight: tab === tKey ? 600 : 400,
+              }}
+            >
+              {tKey === "courses" ? t("academy.tabCourses") : tKey === "instructors" ? t("academy.tabInstructors") : t("academy.tabEnrollments")}
+            </button>
+          ))}
+        </div>
+
+        {/* Courses */}
+        {tab === "courses" && (
           <div style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 12, overflow: "hidden" }}>
-            {enrollmentsLoading ? (
+            {coursesLoading ? (
               <div style={{ display: "flex", justifyContent: "center", padding: 40 }}>
                 <div style={{ width: 32, height: 32, border: `2px solid ${DS.border}`, borderTop: `2px solid ${DS.blue}`, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
               </div>
-            ) : enrollments.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "3rem", color: DS.text4 }}>{t("academy.emptyEnrollments")}</div>
+            ) : courses.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "3rem", color: DS.text4 }}>{t("academy.emptyCourses")}</div>
             ) : (
               <div style={{ overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
                   <thead>
                     <tr style={{ borderBottom: `1px solid ${DS.border}` }}>
-                      {[t("academy.colStudent"), t("academy.colCourse"), t("academy.colEnrolledDate"), t("academy.colCompletion"), t("academy.colEnrollmentStatus"), t("academy.colActions")].map(h => (
+                      {[t("academy.colCourse"), t("academy.colLessons"), t("academy.colStudents"), t("academy.colPrice"), t("academy.colStatus"), t("academy.colFeatured"), t("academy.colActions")].map(h => (
                         <th key={h} style={{ textAlign: "left", padding: "10px 16px", color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.1em", textTransform: "uppercase" }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {enrollments.map(e => (
-                      <tr key={e.id} style={{ borderBottom: `1px solid ${DS.border}` }}>
-                        <td style={{ padding: "12px 16px", color: DS.text, fontSize: 13, fontWeight: 500 }}>{e.memberName ?? e.studentEmail ?? e.memberId}</td>
-                        <td style={{ padding: "12px 16px", color: DS.text3, fontSize: 12 }}>{e.courseTitle ?? "—"}</td>
-                        <td style={{ padding: "12px 16px", color: DS.text4, fontSize: 12, fontFamily: DS.mono }}>{fmtDate(e.enrolledAt)}</td>
-                        <td style={{ padding: "12px 16px", color: DS.text4, fontSize: 12, fontFamily: DS.mono }}>{fmtDate(e.completedAt)}</td>
+                    {courses.map(c => (
+                      <tr key={c.id} style={{ borderBottom: `1px solid ${DS.border}` }}>
                         <td style={{ padding: "12px 16px" }}>
-                          <span style={{ background: e.completedAt ? "rgba(34,197,94,0.1)" : "rgba(245,158,11,0.1)", color: e.completedAt ? DS.green : DS.amber, padding: "2px 10px", borderRadius: 9999, fontSize: 11, fontFamily: DS.mono, fontWeight: 600 }}>
-                            {e.completedAt ? t("academy.statusCompleted") : t("academy.statusEnrolled")}
+                          <div style={{ color: DS.text, fontSize: 13, fontWeight: 600 }}>{c.title}</div>
+                          <div style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono }}>{c.slug}</div>
+                        </td>
+                        <td style={{ padding: "12px 16px", color: DS.text3, fontSize: 12 }}>{c.lessonCount}</td>
+                        <td style={{ padding: "12px 16px", color: DS.text3, fontSize: 12 }}>{c.enrolledCount}</td>
+                        <td style={{ padding: "12px 16px", color: DS.green, fontSize: 12, fontFamily: DS.mono, fontWeight: 700 }}>
+                          {c.price ? fmtVND(c.price) : t("common.noData")}
+                        </td>
+                        <td style={{ padding: "12px 16px" }}>
+                          <span style={{ background: c.isPublished ? "rgba(34,197,94,0.1)" : "rgba(245,158,11,0.1)", color: c.isPublished ? DS.green : DS.amber, padding: "2px 10px", borderRadius: 9999, fontSize: 11, fontFamily: DS.mono, fontWeight: 600 }}>
+                            {c.isPublished ? t("academy.kpiPublished") : t("academy.statusDraft")}
                           </span>
                         </td>
                         <td style={{ padding: "12px 16px" }}>
-                          <button
-                            onClick={() => { if (confirm(t("academy.confirmDeleteEnrollment"))) deleteEnrollment.mutate(e.id); }}
-                            style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8, padding: "5px 8px", cursor: "pointer", color: DS.red, display: "flex", alignItems: "center" }}
-                          >
-                            <Trash2 size={13} />
-                          </button>
+                          {c.isFeatured && <Star size={14} style={{ color: DS.amber }} />}
+                        </td>
+                        <td style={{ padding: "12px 16px" }}>
+                          <div style={{ display: "flex", gap: 5 }}>
+                            <button
+                              onClick={() => setEditCourse(c)}
+                              style={{ background: "rgba(59,130,246,0.1)", border: "1px solid rgba(59,130,246,0.3)", borderRadius: 8, padding: "5px 8px", cursor: "pointer", color: DS.blue, display: "flex", alignItems: "center" }}
+                            >
+                              <Edit2 size={13} />
+                            </button>
+                            <button
+                              onClick={() => { if (confirm(t("academy.confirmDeleteCourse"))) deleteCourse.mutate(c.id); }}
+                              style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8, padding: "5px 8px", cursor: "pointer", color: DS.red, display: "flex", alignItems: "center" }}
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -775,35 +667,143 @@ export default function AcademyPage() {
               </div>
             )}
           </div>
+        )}
+
+        {/* Instructors */}
+        {tab === "instructors" && (
+          <div style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 12, overflow: "hidden" }}>
+            {instructorsLoading ? (
+              <div style={{ display: "flex", justifyContent: "center", padding: 40 }}>
+                <div style={{ width: 32, height: 32, border: `2px solid ${DS.border}`, borderTop: `2px solid ${DS.blue}`, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+              </div>
+            ) : instructors.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "3rem", color: DS.text4 }}>{t("academy.emptyInstructors")}</div>
+            ) : (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "1rem", padding: "1rem" }}>
+                {instructors.map((inst: Instructor) => (
+                  <motion.div
+                    key={inst.id}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    style={{ background: DS.bg, border: `1px solid ${DS.border}`, borderRadius: 10, padding: "1rem" }}
+                  >
+                    <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 8 }}>
+                      <div style={{ width: 44, height: 44, borderRadius: "50%", background: `${DS.purple}20`, border: `1px solid ${DS.purple}40`, display: "grid", placeItems: "center", color: DS.purple, fontWeight: 700, fontSize: 16, flexShrink: 0 }}>
+                        {inst.avatar ? <img src={inst.avatar} alt={inst.name} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} /> : inst.name.charAt(0)}
+                      </div>
+                      <div>
+                        <div style={{ color: DS.text, fontWeight: 600, fontSize: 13 }}>{inst.name}</div>
+                        <div style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono }}>{inst.courseCount} {t("academy.colCoursesCount")} · {inst.studentCount} {t("academy.colStudentsCount")}</div>
+                      </div>
+                    </div>
+                    <div style={{ color: DS.text3, fontSize: 12, lineHeight: 1.4 }}>{inst.bio || "—"}</div>
+                    <div style={{ display: "flex", gap: 5, marginTop: 8 }}>
+                      <button
+                        onClick={() => setEditInstructor(inst)}
+                        style={{ background: "rgba(59,130,246,0.1)", border: "1px solid rgba(59,130,246,0.3)", borderRadius: 8, padding: "5px 8px", cursor: "pointer", color: DS.blue, display: "flex", alignItems: "center" }}
+                      >
+                        <Edit2 size={13} />
+                      </button>
+                      <button
+                        onClick={() => { if (confirm(t("academy.confirmDeleteInstructor"))) deleteInstructor.mutate(inst.id); }}
+                        style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8, padding: "5px 8px", cursor: "pointer", color: DS.red, display: "flex", alignItems: "center" }}
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Enrollments */}
+        {tab === "enrollments" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+            {/* Create enrollment form */}
+            <div style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 12, padding: "1rem" }}>
+              <p style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.08em", marginBottom: 12, textTransform: "uppercase" }}>{t("academy.formEnrollmentSection")}</p>
+              <EnrollmentCreateForm
+                courses={courses}
+                onSuccess={() => qc.invalidateQueries({ queryKey: ["admin", "academy", "enrollments"] })}
+              />
+            </div>
+
+            {/* Enrollment list */}
+            <div style={{ background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 12, overflow: "hidden" }}>
+              {enrollmentsLoading ? (
+                <div style={{ display: "flex", justifyContent: "center", padding: 40 }}>
+                  <div style={{ width: 32, height: 32, border: `2px solid ${DS.border}`, borderTop: `2px solid ${DS.blue}`, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+                </div>
+              ) : enrollments.length === 0 ? (
+                <div style={{ textAlign: "center", padding: "3rem", color: DS.text4 }}>{t("academy.emptyEnrollments")}</div>
+              ) : (
+                <div style={{ overflowX: "auto" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                    <thead>
+                      <tr style={{ borderBottom: `1px solid ${DS.border}` }}>
+                        {[t("academy.colStudent"), t("academy.colCourse"), t("academy.colEnrolledDate"), t("academy.colCompletion"), t("academy.colEnrollmentStatus"), t("academy.colActions")].map(h => (
+                          <th key={h} style={{ textAlign: "left", padding: "10px 16px", color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.1em", textTransform: "uppercase" }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {enrollments.map(e => (
+                        <tr key={e.id} style={{ borderBottom: `1px solid ${DS.border}` }}>
+                          <td style={{ padding: "12px 16px", color: DS.text, fontSize: 13, fontWeight: 500 }}>{e.memberName ?? e.studentEmail ?? e.memberId}</td>
+                          <td style={{ padding: "12px 16px", color: DS.text3, fontSize: 12 }}>{e.courseTitle ?? "—"}</td>
+                          <td style={{ padding: "12px 16px", color: DS.text4, fontSize: 12, fontFamily: DS.mono }}>{fmtDate(e.enrolledAt)}</td>
+                          <td style={{ padding: "12px 16px", color: DS.text4, fontSize: 12, fontFamily: DS.mono }}>{fmtDate(e.completedAt)}</td>
+                          <td style={{ padding: "12px 16px" }}>
+                            <span style={{ background: e.completedAt ? "rgba(34,197,94,0.1)" : "rgba(245,158,11,0.1)", color: e.completedAt ? DS.green : DS.amber, padding: "2px 10px", borderRadius: 9999, fontSize: 11, fontFamily: DS.mono, fontWeight: 600 }}>
+                              {e.completedAt ? t("academy.statusCompleted") : t("academy.statusEnrolled")}
+                            </span>
+                          </td>
+                          <td style={{ padding: "12px 16px" }}>
+                            <button
+                              onClick={() => { if (confirm(t("academy.confirmDeleteEnrollment"))) deleteEnrollment.mutate(e.id); }}
+                              style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8, padding: "5px 8px", cursor: "pointer", color: DS.red, display: "flex", alignItems: "center" }}
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Modals */}
+        <AnimatePresence>
+          {editCourse !== null && (
+            <CourseEditModal
+              course={editCourse}
+              instructors={instructors}
+              onClose={() => setEditCourse(null)}
+              onSuccess={() => qc.invalidateQueries({ queryKey: ["admin", "academy", "courses"] })}
+            />
+          )}
+          {editInstructor !== null && (
+            <InstructorEditModal
+              instructor={editInstructor}
+              onClose={() => setEditInstructor(null)}
+              onSuccess={() => qc.invalidateQueries({ queryKey: ["admin", "academy", "instructors"] })}
+            />
+          )}
+        </AnimatePresence>
+      </div>
+      {toast && (
+        <div style={{ position: "fixed", bottom: 24, right: 24, zIndex: 9999, display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", borderRadius: 12, background: "#0F172A", border: `1px solid ${toast.type === "success" ? "#22C55E" : "#CC3344"}50`, boxShadow: "0 8px 32px rgba(0,0,0,0.5)", maxWidth: 320 }}>
+          <span style={{ color: toast.type === "success" ? "#22C55E" : "#CC3344", fontSize: 16 }}>{toast.type === "success" ? "✓" : "✗"}</span>
+          <span style={{ color: "#fff", fontSize: 13 }}>{toast.message}</span>
+          <button onClick={() => setToast(null)} style={{ background: "none", border: "none", cursor: "pointer", padding: 2, color: "#94A3B8" }}><X size={14} /></button>
         </div>
       )}
-
-      {/* Modals */}
-      <AnimatePresence>
-        {editCourse !== null && (
-          <CourseEditModal
-            course={editCourse}
-            instructors={instructors}
-            onClose={() => setEditCourse(null)}
-            onSuccess={() => qc.invalidateQueries({ queryKey: ["admin", "academy", "courses"] })}
-          />
-        )}
-        {editInstructor !== null && (
-          <InstructorEditModal
-            instructor={editInstructor}
-            onClose={() => setEditInstructor(null)}
-            onSuccess={() => qc.invalidateQueries({ queryKey: ["admin", "academy", "instructors"] })}
-          />
-        )}
-      </AnimatePresence>
-    </div>
-    {toast && (
-      <div style={{ position: "fixed", bottom: 24, right: 24, zIndex: 9999, display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", borderRadius: 12, background: "#0F172A", border: `1px solid ${toast.type === "success" ? "#22C55E" : "#CC3344"}50`, boxShadow: "0 8px 32px rgba(0,0,0,0.5)", maxWidth: 320 }}>
-        <span style={{ color: toast.type === "success" ? "#22C55E" : "#CC3344", fontSize: 16 }}>{toast.type === "success" ? "✓" : "✗"}</span>
-        <span style={{ color: "#fff", fontSize: 13 }}>{toast.message}</span>
-        <button onClick={() => setToast(null)} style={{ background: "none", border: "none", cursor: "pointer", padding: 2, color: "#94A3B8" }}><X size={14} /></button>
-      </div>
-    )}
     </>
   );
 }
