@@ -140,7 +140,7 @@ export default async function MediaPage({ params }: Props) {
   // ── Compute stats ─────────────────────────────────────────────────────
 
   const uniqueCustomers = new Set(projects.map((p: typeof projects[number]) => p.customerName));
-  const totalFiles = projects.reduce((sum, p: typeof projects[number]) => {
+  const totalFiles = projects.reduce((sum: number, p: typeof projects[number]) => {
     return sum + (Array.isArray(p.deliveredAssets) ? p.deliveredAssets.length : 0);
   }, 0);
 
