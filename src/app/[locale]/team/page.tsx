@@ -60,8 +60,7 @@ export default async function TeamPage({ params }: Props) {
   let members: Record<string, unknown>[] = [];
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const raw: any[] = await prisma.teamMember.findMany({
+    const raw = await prisma.teamMember.findMany({
       where: { isActive: true },
       select: {
         id: true,
