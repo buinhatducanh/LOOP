@@ -206,8 +206,8 @@ function ContactBtn({ btn, index }: { btn: Btn; index: number }) {
               background: btn.key === "phone"
                 ? "rgba(236,72,153,0.35)"
                 : btn.key === "facebook"
-                ? "rgba(24,119,242,0.35)"
-                : "rgba(0,104,255,0.35)",
+                  ? "rgba(24,119,242,0.35)"
+                  : "rgba(0,104,255,0.35)",
               zIndex: -1,
             }}
           />

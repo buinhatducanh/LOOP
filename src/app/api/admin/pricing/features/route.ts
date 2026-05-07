@@ -238,7 +238,31 @@ export async function DELETE(req: NextRequest) {
 
     if (!id) return badRequest("id là bắt buộc");
 
-    await prisma.serviceAttribute.delete({ where: { id } });
+    const existing = await prisma.serviceAttribute.findUnique({ where: { id } });
+    if (!existing) return ok({ id });
+
+    await prisma.$transaction(async (tx) => {
+      // 1. Delete the ServiceAttribute
+      await tx.serviceAttribute.delete({ where: { id } });
+
+      // 2. SYNC: Delete corresponding features from the Comparison Matrix
+      // Match by featureName (using nameVi, name, or slug to be safe, matching PUT logic)
+      const nameViVal = existing.nameVi || "";
+      const nameVal = existing.name || "";
+      const slugVal = existing.slug || "";
+
+      await tx.feature.deleteMany({
+        where: {
+          OR: [
+            ...(nameViVal ? [{ featureName: { equals: nameViVal, mode: "insensitive" as const } }] : []),
+            ...(nameVal ? [{ featureName: { equals: nameVal, mode: "insensitive" as const } }] : []),
+            ...(slugVal ? [{ featureName: { equals: slugVal, mode: "insensitive" as const } }] : []),
+          ],
+        },
+      });
+
+      // Optional: Clean up empty groups if needed, but safer to leave them or manage them separately
+    });
 
     await createAuditLog({
       userId: session.userId,

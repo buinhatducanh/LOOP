@@ -52,7 +52,7 @@ const fmtVND = (n: number) =>
 
 // Unified period options: 1 year, 2 years, 3 years (tên miền tối thiểu 1 năm)
 const PERIOD_OPTIONS: Array<{ value: string; labelEn: string; labelVi: string }> = [
-  { value: "1 year",  labelEn: "1 year",  labelVi: "1 năm" },
+  { value: "1 year", labelEn: "1 year", labelVi: "1 năm" },
   { value: "2 years", labelEn: "2 years", labelVi: "2 năm" },
   { value: "3 years", labelEn: "3 years", labelVi: "3 năm" },
 ];
@@ -157,7 +157,7 @@ export default function DomainPricesPage() {
   return (
     <div style={{ padding: "1.5rem", minHeight: "100vh", background: DS.bgCosmic }}>
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
         <div>
           <h1 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 22, fontWeight: 900 }}>
             Giá Tên Miền
@@ -168,7 +168,7 @@ export default function DomainPricesPage() {
         </div>
         <button
           onClick={openCreate}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl font-medium text-sm"
+          className="flex items-center gap-2 px-4 py-2 rounded-xl font-medium text-sm whitespace-nowrap"
           style={{ background: GRD.primary, color: "#fff" }}
         >
           <Plus size={16} />
@@ -207,12 +207,12 @@ export default function DomainPricesPage() {
       </div>
 
       {/* Table */}
-      <div style={{ borderRadius: 16, overflow: "hidden", border: `1px solid ${DS.border}`, background: DS.bgCard }}>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+      <div style={{ borderRadius: 16, overflowX: "auto", border: `1px solid ${DS.border}`, background: DS.bgCard }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 800 }}>
           <thead>
             <tr style={{ background: "rgba(255,255,255,0.03)" }}>
               {["TLD", "Giá đăng ký", "Giá gia hạn", "Thời hạn", "Ghi chú", "Thứ tự", "Trạng thái", "Hành động"].map(h => (
-                <th key={h} style={{ padding: "12px 16px", color: DS.text4, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.1em", textAlign: "left" }}>
+                <th key={h} style={{ padding: "12px 16px", color: DS.text4, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.1em", textAlign: "left", whiteSpace: "nowrap" }}>
                   {h}
                 </th>
               ))}
@@ -223,7 +223,7 @@ export default function DomainPricesPage() {
               Array.from({ length: 4 }).map((_, i) => (
                 <tr key={i} style={{ borderTop: `1px solid ${DS.border}` }}>
                   {Array.from({ length: 8 }).map((_, j) => (
-                    <td key={j} style={{ padding: "14px 16px" }}>
+                    <td key={j} style={{ padding: "14px 16px", whiteSpace: "nowrap" }}>
                       <div style={{
                         height: 16, borderRadius: 6,
                         background: "rgba(255,255,255,0.04)",
@@ -239,7 +239,7 @@ export default function DomainPricesPage() {
               <tr><td colSpan={8} style={{ padding: 32, textAlign: "center", color: DS.text4 }}>Chưa có dữ liệu</td></tr>
             ) : items.map(d => (
               <tr key={d.id} style={{ borderTop: `1px solid ${DS.border}` }}>
-                <td style={{ padding: "14px 16px" }}>
+                <td style={{ padding: "14px 16px", whiteSpace: "nowrap" }}>
                   <div className="flex items-center gap-2">
                     <Globe size={16} style={{ color: DS.cyan }} />
                     <span style={{ color: DS.text, fontFamily: DS.mono, fontWeight: 700, fontSize: 14 }}>
@@ -247,35 +247,35 @@ export default function DomainPricesPage() {
                     </span>
                   </div>
                 </td>
-                <td style={{ padding: "14px 16px" }}>
+                <td style={{ padding: "14px 16px", whiteSpace: "nowrap" }}>
                   <span style={{ color: DS.text, fontFamily: DS.mono, fontSize: 13 }}>
                     {fmtVND(d.registrationPrice)}
                   </span>
                 </td>
-                <td style={{ padding: "14px 16px" }}>
+                <td style={{ padding: "14px 16px", whiteSpace: "nowrap" }}>
                   <span style={{ color: DS.text4, fontFamily: DS.mono, fontSize: 13 }}>
                     {fmtVND(d.renewalPrice)}
                   </span>
                 </td>
-                <td style={{ padding: "14px 16px" }}>
+                <td style={{ padding: "14px 16px", whiteSpace: "nowrap" }}>
                   <span style={{ color: DS.text3, fontSize: 13 }}>{d.periodVi}</span>
                 </td>
-                <td style={{ padding: "14px 16px" }}>
+                <td style={{ padding: "14px 16px", whiteSpace: "nowrap" }}>
                   <span style={{ color: DS.text4, fontSize: 12, maxWidth: 160, display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {d.noteVi ?? d.note ?? "—"}
                   </span>
                 </td>
-                <td style={{ padding: "14px 16px" }}>
+                <td style={{ padding: "14px 16px", whiteSpace: "nowrap" }}>
                   <span style={{ color: DS.text4, fontFamily: DS.mono, fontSize: 12 }}>{d.sortOrder}</span>
                 </td>
-                <td style={{ padding: "14px 16px" }}>
+                <td style={{ padding: "14px 16px", whiteSpace: "nowrap" }}>
                   <button onClick={() => toggle.mutate(d)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}>
                     {d.isActive
                       ? <ToggleRight size={22} style={{ color: DS.green }} />
                       : <ToggleLeft size={22} style={{ color: DS.text4 }} />}
                   </button>
                 </td>
-                <td style={{ padding: "14px 16px" }}>
+                <td style={{ padding: "14px 16px", whiteSpace: "nowrap" }}>
                   <div className="flex items-center gap-2">
                     <button onClick={() => openEdit(d)} style={{ background: "none", border: "none", cursor: "pointer", padding: 4, borderRadius: 6 }}
                       className="hover:bg-white/10 transition-colors">

@@ -15,6 +15,8 @@ import { useAdminTranslations } from "@/i18n/admin/useAdminTranslations";
 import {
   Star, Zap, RefreshCw, Plus, Calendar, Users, CheckCircle2,
   X, AlertTriangle, Pencil, Trash2, ChevronDown, ChevronUp,
+  MessageSquare, BookOpen, PenTool, GraduationCap,
+  ShoppingCart, Flame, CheckSquare,
 } from "lucide-react";
 
 // ── Design token aliases ──────────────────────────────────────────────────────
@@ -36,16 +38,16 @@ const fmtLP = (n: number) => {
 
 // ── Frequency map (no i18n dependency — safe for all call sites) ─────────────
 const FREQ_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
-  daily:     { label: "Hằng ngày",    color: "#3B82F6", bg: "rgba(59,130,246,0.1)" },
-  weekly:    { label: "Hàng tuần",    color: "#8B5CF6", bg: "rgba(139,92,246,0.1)" },
-  monthly:   { label: "Hàng tháng",  color: "#F59E0B", bg: "rgba(245,158,11,0.1)" },
-  one_time:  { label: "Một lần",      color: "#22C55E", bg: "rgba(34,197,94,0.1)" },
-  event:     { label: "Sự kiện",      color: "#EC4899", bg: "rgba(236,72,153,0.1)" },
-  seasonal:  { label: "Theo mùa",     color: "#EC4899", bg: "rgba(236,72,153,0.1)" },
-  competition:{ label: "Thi đua",      color: "#F59E0B", bg: "rgba(245,158,11,0.1)" },
-  celebration:{ label: "Kỷ niệm",     color: "#6B3DF5", bg: "rgba(107,61,245,0.1)" },
-  milestone: { label: "Cột mốc",      color: "#14B8A6", bg: "rgba(20,184,166,0.1)" },
-  training:  { label: "�ào tạo",       color: "#6EB1A8", bg: "rgba(110,177,168,0.1)" },
+  daily: { label: "Hằng ngày", color: "#3B82F6", bg: "rgba(59,130,246,0.1)" },
+  weekly: { label: "Hàng tuần", color: "#8B5CF6", bg: "rgba(139,92,246,0.1)" },
+  monthly: { label: "Hàng tháng", color: "#F59E0B", bg: "rgba(245,158,11,0.1)" },
+  one_time: { label: "Một lần", color: "#22C55E", bg: "rgba(34,197,94,0.1)" },
+  event: { label: "Sự kiện", color: "#EC4899", bg: "rgba(236,72,153,0.1)" },
+  seasonal: { label: "Theo mùa", color: "#EC4899", bg: "rgba(236,72,153,0.1)" },
+  competition: { label: "Thi đua", color: "#F59E0B", bg: "rgba(245,158,11,0.1)" },
+  celebration: { label: "Kỷ niệm", color: "#6B3DF5", bg: "rgba(107,61,245,0.1)" },
+  milestone: { label: "Cột mốc", color: "#14B8A6", bg: "rgba(20,184,166,0.1)" },
+  training: { label: "�ào tạo", color: "#6EB1A8", bg: "rgba(110,177,168,0.1)" },
 };
 
 const freqLabel = (freq: string) => FREQ_CONFIG[freq]?.label ?? freq;
@@ -96,19 +98,19 @@ function QuestFormModal({
   const { t } = useAdminTranslations();
   const isEdit = !!initial;
   const [form, setForm] = useState({
-    title:       initial?.title       ?? "",
+    title: initial?.title ?? "",
     description: initial?.description ?? "",
-    lpReward:    String(initial?.lpReward ?? ""),
-    xpReward:    String(initial?.xpReward ?? ""),
-    frequency:   initial?.frequency   ?? "daily",
-    category:    initial?.category    ?? "engagement",
-    icon:        initial?.icon        ?? "★",
-    color:       initial?.color       ?? "#3B82F6",
-    target:      String(initial?.target ?? "1"),
-    isActive:    initial?.isActive   ?? true,
+    lpReward: String(initial?.lpReward ?? ""),
+    xpReward: String(initial?.xpReward ?? ""),
+    frequency: initial?.frequency ?? "daily",
+    category: initial?.category ?? "engagement",
+    icon: initial?.icon ?? "★",
+    color: initial?.color ?? "#3B82F6",
+    target: String(initial?.target ?? "1"),
+    isActive: initial?.isActive ?? true,
   });
   const [saving, setSaving] = useState(false);
-  const [error, setError]   = useState("");
+  const [error, setError] = useState("");
 
   const inp = {
     width: "100%",
@@ -128,16 +130,16 @@ function QuestFormModal({
     if (!form.title.trim()) return setError(t("quests_events.errTitleRequired"));
     setSaving(true); setError("");
     const payload = {
-      title:       form.title.trim(),
+      title: form.title.trim(),
       description: form.description.trim(),
-      lpReward:    Number(form.lpReward) || 0,
-      xpReward:    Number(form.xpReward) || 0,
-      frequency:   form.frequency,
-      category:    form.category,
-      icon:        form.icon,
-      color:       form.color,
-      target:      Number(form.target) || 1,
-      isActive:    form.isActive,
+      lpReward: Number(form.lpReward) || 0,
+      xpReward: Number(form.xpReward) || 0,
+      frequency: form.frequency,
+      category: form.category,
+      icon: form.icon,
+      color: form.color,
+      target: Number(form.target) || 1,
+      isActive: form.isActive,
     };
     try {
       if (isEdit && initial) {
@@ -309,18 +311,18 @@ function EventFormModal({
   const { t } = useAdminTranslations();
   const isEdit = !!initial;
   const [form, setForm] = useState({
-    title:       initial?.title       ?? "",
+    title: initial?.title ?? "",
     description: initial?.description ?? "",
-    type:        initial?.type        ?? "seasonal",
-    icon:        initial?.icon        ?? "◈",
-    color:       initial?.color       ?? "#EC4899",
-    startDate:   initial?.startDate   ? new Date(initial.startDate).toISOString().split("T")[0] : "",
-    endDate:     initial?.endDate     ? new Date(initial.endDate).toISOString().split("T")[0] : "",
-    lpBonus:     String(initial?.lpBonus ?? ""),
-    isActive:    initial?.isActive   ?? true,
+    type: initial?.type ?? "seasonal",
+    icon: initial?.icon ?? "◈",
+    color: initial?.color ?? "#EC4899",
+    startDate: initial?.startDate ? new Date(initial.startDate).toISOString().split("T")[0] : "",
+    endDate: initial?.endDate ? new Date(initial.endDate).toISOString().split("T")[0] : "",
+    lpBonus: String(initial?.lpBonus ?? ""),
+    isActive: initial?.isActive ?? true,
   });
   const [saving, setSaving] = useState(false);
-  const [error, setError]   = useState("");
+  const [error, setError] = useState("");
 
   const inp = {
     width: "100%", background: DS.bg, border: `1px solid ${border}`,
@@ -333,15 +335,15 @@ function EventFormModal({
     if (!form.title.trim()) return setError(t("quests_events.errTitleRequired"));
     setSaving(true); setError("");
     const payload = {
-      title:       form.title.trim(),
+      title: form.title.trim(),
       description: form.description.trim(),
-      type:        form.type,
-      icon:        form.icon,
-      color:       form.color,
-      startDate:   form.startDate || undefined,
-      endDate:     form.endDate   || undefined,
-      lpBonus:     Number(form.lpBonus) || 0,
-      isActive:    form.isActive,
+      type: form.type,
+      icon: form.icon,
+      color: form.color,
+      startDate: form.startDate || undefined,
+      endDate: form.endDate || undefined,
+      lpBonus: Number(form.lpBonus) || 0,
+      isActive: form.isActive,
     };
     try {
       if (isEdit && initial) {
@@ -559,12 +561,12 @@ export default function QuestsEventsPage() {
   const [tab, setTab] = useState<"quests" | "events">("quests");
   const [showQuestModal, setShowQuestModal] = useState(false);
   const [showEventModal, setShowEventModal] = useState(false);
-  const [editQuest, setEditQuest]     = useState<Quest | null>(null);
-  const [editEvent, setEditEvent]     = useState<CompanyEvent | null>(null);
+  const [editQuest, setEditQuest] = useState<Quest | null>(null);
+  const [editEvent, setEditEvent] = useState<CompanyEvent | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<{ type: "quest" | "event"; id: string; title: string } | null>(null);
 
   // Filters
-  const [freqFilter, setFreqFilter]   = useState("all");
+  const [freqFilter, setFreqFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
 
   const qc = useQueryClient();
@@ -579,31 +581,31 @@ export default function QuestsEventsPage() {
     queryFn: () => adminApi.get<{ data: CompanyEvent[] }>("/api/admin/company-events", { params: { limit: 100 } }),
   });
 
-  const allQuests: Quest[]   = questsData?.data ?? [];
+  const allQuests: Quest[] = questsData?.data ?? [];
   const allEvents: CompanyEvent[] = eventsData?.data ?? [];
 
   // Filtered data
   const quests = useMemo(() => {
     return allQuests.filter(q => {
       if (freqFilter !== "all" && q.frequency !== freqFilter) return false;
-      if (statusFilter === "active"   && !q.isActive) return false;
-      if (statusFilter === "inactive"  &&  q.isActive) return false;
+      if (statusFilter === "active" && !q.isActive) return false;
+      if (statusFilter === "inactive" && q.isActive) return false;
       return true;
     });
   }, [allQuests, freqFilter, statusFilter]);
 
   const events = useMemo(() => {
     return allEvents.filter(e => {
-      if (statusFilter === "active"   && !e.isActive) return false;
-      if (statusFilter === "inactive"  &&  e.isActive) return false;
+      if (statusFilter === "active" && !e.isActive) return false;
+      if (statusFilter === "inactive" && e.isActive) return false;
       return true;
     });
   }, [allEvents, statusFilter]);
 
   // Stats
-  const totalLpGiven  = quests.reduce((s, q) => s + (q.lpReward ?? 0), 0);
-  const activeQuests  = allQuests.filter(q => q.isActive).length;
-  const activeEvents  = allEvents.filter(e => e.isActive).length;
+  const totalLpGiven = quests.reduce((s, q) => s + (q.lpReward ?? 0), 0);
+  const activeQuests = allQuests.filter(q => q.isActive).length;
+  const activeEvents = allEvents.filter(e => e.isActive).length;
   const now = new Date();
   const upcomingEvents = allEvents.filter(e => {
     try { return new Date(e.startDate) > now; }
@@ -636,7 +638,13 @@ export default function QuestsEventsPage() {
   );
 
   return (
-    <div>
+    <div style={{ padding: "var(--admin-padding, 2rem)", minHeight: "100vh", background: DS.bgCosmic }}>
+      <style>{`
+        :root { --admin-padding: 2rem; }
+        @media (max-width: 640px) { :root { --admin-padding: 1rem; } }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      `}</style>
       {/* ── Header ── */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
         <div>
@@ -731,52 +739,78 @@ export default function QuestsEventsPage() {
 
       {/* ── Filters ── */}
       {tab === "quests" && (
-        <div style={{ display: "flex", gap: 8, marginBottom: "1rem", flexWrap: "wrap" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: "1.5rem" }}>
           {/* Frequency */}
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <span style={{ color: text4, fontSize: 11, fontFamily: DS.mono }}>{t("quests_events.formQuestFrequency")}:</span>
-            {(["all", "daily", "weekly", "monthly", "one_time", "event"] as const).map(f => (
-              <button key={f} onClick={() => setFreqFilter(f)}
-                style={{
-                  padding: "3px 10px", borderRadius: 9999, fontSize: 11, fontFamily: DS.mono,
-                  fontWeight: 600, cursor: "pointer",
-                  background: freqFilter === f ? freqColor(f) : "rgba(255,255,255,0.05)",
-                  color: freqFilter === f ? "#fff" : text4,
-                  border: `1px solid ${freqFilter === f ? freqColor(f) : border}`,
-                  transition: "all 0.15s",
-                }}>
-                {f === "all" ? t("common.all") : freqLabel(f)}
-              </button>
-            ))}
+          <div style={{ display: "flex", alignItems: "center", gap: 10, width: "100%" }}>
+            <span style={{ color: text4, fontSize: 11, fontFamily: DS.mono, flexShrink: 0 }}>{t("quests_events.formQuestFrequency")}:</span>
+            <div 
+              style={{ 
+                display: "flex", 
+                gap: 6, 
+                overflowX: "auto", 
+                paddingBottom: 6, 
+                whiteSpace: "nowrap", 
+                flex: 1,
+                WebkitOverflowScrolling: "touch"
+              }} 
+              className="hide-scrollbar"
+            >
+              {(["all", "daily", "weekly", "monthly", "one_time", "event"] as const).map(f => (
+                <button key={f} onClick={() => setFreqFilter(f)}
+                  style={{
+                    padding: "4px 14px", borderRadius: 9999, fontSize: 11, fontFamily: DS.mono,
+                    fontWeight: 600, cursor: "pointer", flexShrink: 0,
+                    background: freqFilter === f ? freqColor(f) : "rgba(255,255,255,0.05)",
+                    color: freqFilter === f ? "#fff" : text4,
+                    border: `1px solid ${freqFilter === f ? freqColor(f) : border}`,
+                    transition: "all 0.15s",
+                  }}>
+                  {f === "all" ? t("common.all") : freqLabel(f)}
+                </button>
+              ))}
+            </div>
           </div>
           {/* Status */}
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <span style={{ color: text4, fontSize: 11, fontFamily: DS.mono }}>{t("common.status")}:</span>
-            {([["all", t("common.all")], ["active", t("common.active")], ["inactive", t("common.inactive")]] as const).map(([val, label]) => (
-              <button key={val} onClick={() => setStatusFilter(val)}
-                style={{
-                  padding: "3px 10px", borderRadius: 9999, fontSize: 11, fontFamily: DS.mono,
-                  fontWeight: 600, cursor: "pointer",
-                  background: statusFilter === val ? DS.purple : "rgba(255,255,255,0.05)",
-                  color: statusFilter === val ? "#fff" : text4,
-                  border: `1px solid ${statusFilter === val ? DS.purple : border}`,
-                  transition: "all 0.15s",
-                }}>
-                {label}
-              </button>
-            ))}
+          <div style={{ display: "flex", alignItems: "center", gap: 10, width: "100%" }}>
+            <span style={{ color: text4, fontSize: 11, fontFamily: DS.mono, flexShrink: 0 }}>{t("common.status")}:</span>
+            <div 
+              style={{ 
+                display: "flex", 
+                gap: 6, 
+                overflowX: "auto", 
+                paddingBottom: 6, 
+                whiteSpace: "nowrap", 
+                flex: 1,
+                WebkitOverflowScrolling: "touch"
+              }} 
+              className="hide-scrollbar"
+            >
+              {([["all", t("common.all")], ["active", t("common.active")], ["inactive", t("common.inactive")]] as const).map(([val, label]) => (
+                <button key={val} onClick={() => setStatusFilter(val)}
+                  style={{
+                    padding: "4px 14px", borderRadius: 9999, fontSize: 11, fontFamily: DS.mono,
+                    fontWeight: 600, cursor: "pointer", flexShrink: 0,
+                    background: statusFilter === val ? DS.purple : "rgba(255,255,255,0.05)",
+                    color: statusFilter === val ? "#fff" : text4,
+                    border: `1px solid ${statusFilter === val ? DS.purple : border}`,
+                    transition: "all 0.15s",
+                  }}>
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       )}
       {tab === "events" && (
-        <div style={{ display: "flex", gap: 8, marginBottom: "1rem", flexWrap: "wrap" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <span style={{ color: text4, fontSize: 11, fontFamily: DS.mono }}>{t("common.status")}:</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: "1.5rem" }}>
+          <span style={{ color: text4, fontSize: 11, fontFamily: DS.mono, flexShrink: 0 }}>{t("common.status")}:</span>
+          <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4, whiteSpace: "nowrap", flex: 1, minWidth: 0 }} className="hide-scrollbar">
             {([["all", t("common.all")], ["active", t("common.active")], ["inactive", t("common.inactive")]] as const).map(([val, label]) => (
               <button key={val} onClick={() => setStatusFilter(val)}
                 style={{
-                  padding: "3px 10px", borderRadius: 9999, fontSize: 11, fontFamily: DS.mono,
-                  fontWeight: 600, cursor: "pointer",
+                  padding: "3px 12px", borderRadius: 9999, fontSize: 11, fontFamily: DS.mono,
+                  fontWeight: 600, cursor: "pointer", flexShrink: 0,
                   background: statusFilter === val ? DS.purple : "rgba(255,255,255,0.05)",
                   color: statusFilter === val ? "#fff" : text4,
                   border: `1px solid ${statusFilter === val ? DS.purple : border}`,
@@ -791,13 +825,13 @@ export default function QuestsEventsPage() {
 
       {/* ── Quests Panel ── */}
       {tab === "quests" && (
-        <div style={{ background: DS.bgCard, border: `1px solid ${border}`, borderRadius: 12, overflow: "hidden" }}>
+        <div style={{ background: DS.bgCard, border: `1px solid ${border}`, borderRadius: 12, overflowX: "auto" }} className="hide-scrollbar">
           {questsLoading ? <Spinner /> : quests.length === 0 ? (
             <div style={{ textAlign: "center", padding: "3rem", color: text4, fontFamily: DS.mono }}>
               {allQuests.length === 0 ? t("quests_events.emptyQuests") : t("common.noResults")}
             </div>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", padding: "1rem" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", padding: "1rem", minWidth: 450 }}>
               {quests.map((q, i) => {
                 const fc = FREQ_CONFIG[q.frequency] ?? { label: q.frequency, color: DS.text4, bg: "transparent" };
                 return (
@@ -825,7 +859,24 @@ export default function QuestsEventsPage() {
                       display: "flex", alignItems: "center", justifyContent: "center",
                       fontSize: 20, color: q.color ?? DS.purple,
                     }}>
-                      {q.icon ?? "★"}
+                      {(() => {
+                        const iconProps = { size: 20, color: q.color ?? DS.purple };
+                        switch (q.icon) {
+                          case "CheckCircle":   return <CheckCircle2 {...iconProps} />;
+                          case "Zap":           return <Zap {...iconProps} />;
+                          case "Star":          return <Star {...iconProps} />;
+                          case "Users":         return <Users {...iconProps} />;
+                          case "Calendar":      return <Calendar {...iconProps} />;
+                          case "MessageSquare": return <MessageSquare {...iconProps} />;
+                          case "BookOpen":      return <BookOpen {...iconProps} />;
+                          case "PenTool":       return <PenTool {...iconProps} />;
+                          case "GraduationCap": return <GraduationCap {...iconProps} />;
+                          case "ShoppingCart":  return <ShoppingCart {...iconProps} />;
+                          case "Flame":         return <Flame {...iconProps} />;
+                          case "CheckSquare":   return <CheckSquare {...iconProps} />;
+                          default:              return <span>{q.icon ?? "★"}</span>;
+                        }
+                      })()}
                     </div>
                     {/* Info */}
                     <div style={{ flex: 1, minWidth: 0 }}>
@@ -842,7 +893,20 @@ export default function QuestsEventsPage() {
                       </div>
                     </div>
                     {/* Badges */}
-                    <div style={{ display: "flex", gap: 6, flexShrink: 0, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
+                    <div 
+                      style={{ 
+                        display: "flex", 
+                        gap: 6, 
+                        flexShrink: 1, 
+                        alignItems: "center", 
+                        flexWrap: "nowrap", 
+                        justifyContent: "flex-end", 
+                        overflowX: "auto",
+                        maxWidth: "45%", // Prevent it from squishing the title too much
+                        WebkitOverflowScrolling: "touch"
+                      }} 
+                      className="hide-scrollbar"
+                    >
                       <span style={{ background: freqBg(q.frequency), color: freqColor(q.frequency), padding: "2px 8px", borderRadius: 9999, fontSize: 10, fontFamily: DS.mono, fontWeight: 700 }}>
                         {freqLabel(q.frequency)}
                       </span>
@@ -898,13 +962,13 @@ export default function QuestsEventsPage() {
                 <thead>
                   <tr style={{ borderBottom: `1px solid ${border}` }}>
                     {[
-                      { key: "colEvent",         label: t("quests_events.colEvent") },
-                      { key: "colType",          label: t("quests_events.colType") },
-                      { key: "colPeriod",        label: t("quests_events.colPeriod") },
-                      { key: "colLpBonus",       label: t("quests_events.colLpBonus") },
-                      { key: "colParticipants",  label: t("quests_events.colParticipants") },
-                      { key: "colEventStatus",   label: t("quests_events.colEventStatus") },
-                      { key: "actions",          label: t("common.actions") },
+                      { key: "colEvent", label: t("quests_events.colEvent") },
+                      { key: "colType", label: t("quests_events.colType") },
+                      { key: "colPeriod", label: t("quests_events.colPeriod") },
+                      { key: "colLpBonus", label: t("quests_events.colLpBonus") },
+                      { key: "colParticipants", label: t("quests_events.colParticipants") },
+                      { key: "colEventStatus", label: t("quests_events.colEventStatus") },
+                      { key: "actions", label: t("common.actions") },
                     ].map(h => (
                       <th key={h.key} style={{ textAlign: "left", padding: "10px 16px", color: text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.1em", textTransform: "uppercase" }}>
                         {h.label}
