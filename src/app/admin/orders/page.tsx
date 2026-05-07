@@ -724,7 +724,7 @@ function TransitionModal({ order, onClose, onSuccess }: { order: Order | null; o
 
                             <select
                                 value={selected}
-                                onChange={(e) => setSelected(e.target.value)}
+                                onChange={(e) => setSelected(e.target.value as any)}
                                 style={{
                                     width: "100%", background: DS.bg, border: `1px solid ${DS.border}`,
                                     borderRadius: 10, padding: "10px 12px", color: DS.text, fontSize: 13,

@@ -106,8 +106,8 @@ export async function PUT(
             action: "update",
             resource: "team",
             resourceId: id,
-            oldValues: { image: existing.image } as unknown as InputJsonValue,
-            newValues: { image: member.image } as unknown as InputJsonValue,
+            oldValues: { image: existing.image } as Prisma.InputJsonValue,
+            newValues: { image: member.image } as Prisma.InputJsonValue,
           },
         });
       } catch (prismaErr: unknown) {
@@ -298,8 +298,8 @@ export async function PUT(
           action: "update",
           resource: "team",
           resourceId: id,
-          oldValues: existing as unknown as InputJsonValue,
-          newValues: freshMember as unknown as InputJsonValue,
+          oldValues: existing as Prisma.InputJsonValue,
+          newValues: freshMember as Prisma.InputJsonValue,
         },
       });
 
@@ -368,7 +368,7 @@ export async function DELETE(
         action: "delete",
         resource: "team",
         resourceId: id,
-        oldValues: existing as unknown as InputJsonValue,
+        oldValues: existing as Prisma.InputJsonValue,
       },
     });
 

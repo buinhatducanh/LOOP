@@ -34,36 +34,35 @@ function crc16Ccitt(data: string): string {
 }
 
 function buildVietQR(bankBin: string, accountNo: string, amount: number, orderRef?: string): string {
- const f = (id: string, val: string) => `${id}${String(val).length.toString().padStart(2, "0")}${val}`;
+  const f = (id: string, val: string) => `${id}${String(val).length.toString().padStart(2, "0")}${val}`;
 
- const payload = [
- // 00: Payload format (always 01)
- "00",
- // 01: Point of initiation (12 = dynamic QR — new QR each time with amount)
- "0112",
- // 52: Merchant Category Code
- "52040000",
- // 53: Currency — 704 = VND
- "5303",
- "704",
- // 54: Amount (with decimal 00 for VND)
- f("54", amount.toString()),
- // 58: Country code
- "5802",
- "VN",
- // 59: Merchant name (from account name, max 25 chars)
- f("59", accountNo), // placeholder — no merchant name in personal QR
- // 60: Merchant city
- f("60", "Ho Chi Minh"),
- // 69: Merchant ID / BIN
- f("69", bankBin),
- // 70: Transaction Reference (order code)
- orderRef ? f("70", orderRef) : null,
- ].filter(Boolean).join("");
+  // Tag 38: Consumer Account Information
+  const beneficiaryOrg = f("00", bankBin) + f("01", accountNo);
+  const consumerAccountInfo = f("00", "A000000727") + f("01", beneficiaryOrg);
 
- // CRC-16-CCITT over entire payload
- const crc = crc16Ccitt(payload);
- return payload + "630" + crc.length.toString() + crc;
+  // Tag 62: Additional Data Field Template
+  const additionalData = orderRef ? f("08", orderRef) : "";
+
+  let payload = 
+    f("00", "01") + // Payload Format Indicator
+    f("01", "12") + // Point of Initiation Method (12 = dynamic)
+    f("38", consumerAccountInfo) +
+    f("52", "0000") +
+    f("53", "704") + // Currency (VND)
+    f("54", amount.toString()) +
+    f("58", "VN") +
+    f("59", "LOOP") + // Merchant Name placeholder
+    f("60", "Ho Chi Minh");
+
+  if (additionalData) {
+    payload += f("62", additionalData);
+  }
+
+  payload += "6304"; // Tag 63 (CRC) indicator
+
+  // CRC-16-CCITT over entire payload (including 6304)
+  const crc = crc16Ccitt(payload);
+  return payload + crc;
 }
 
 export async function POST(req: NextRequest) {

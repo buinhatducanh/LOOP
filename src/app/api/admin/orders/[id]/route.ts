@@ -79,8 +79,8 @@ export async function PUT(
         action: "update",
         resource: "orders",
         resourceId: id,
-        oldValues: existing as unknown as InputJsonValue,
-        newValues: data as unknown as InputJsonValue,
+        oldValues: existing as Prisma.InputJsonValue,
+        newValues: data as Prisma.InputJsonValue,
       },
     }).catch(() => { /* non-critical */ });
 
@@ -125,7 +125,7 @@ export async function DELETE(
         action: "delete",
         resource: "orders",
         resourceId: id,
-        oldValues: existing as unknown as InputJsonValue,
+        oldValues: existing as Prisma.InputJsonValue,
       },
     }).catch(() => { /* non-critical */ });
 

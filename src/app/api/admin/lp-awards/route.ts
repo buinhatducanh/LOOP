@@ -126,7 +126,7 @@ export const POST = withIdempotency(
           action: "create",
           resource: "lp-awards",
           resourceId: created.id,
-          newValues: data as unknown as InputJsonValue,
+          newValues: data as Prisma.InputJsonValue,
         },
       }).catch(() => { /* non-critical */ });
 

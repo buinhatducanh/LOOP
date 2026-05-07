@@ -52,8 +52,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           action: "revoke",
           resource: "tasks",
           resourceId: id,
-          oldValues: task as unknown as InputJsonValue,
-          newValues: { type, description, revokedLp, assigneeId } as unknown as InputJsonValue,
+          oldValues: task as Prisma.InputJsonValue,
+          newValues: { type, description, revokedLp, assigneeId } as Prisma.InputJsonValue,
         },
       });
 

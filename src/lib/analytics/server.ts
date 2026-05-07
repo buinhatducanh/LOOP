@@ -148,7 +148,7 @@ export async function storeEvent(
     await prisma.serverAnalyticsEvent.create({
       data: {
         event,
-        properties: properties as InputJsonValue,
+        properties: properties as Prisma.InputJsonValue,
         sessionId: context.sessionId ?? null,
         visitorId: context.visitorId ?? null,
         userId: context.userId ?? null,

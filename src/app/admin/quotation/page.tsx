@@ -76,6 +76,8 @@ type QuoteRequest = {
   domainName?: string | null;
   /** Payment plan: "50" (deposit) or "100" (full) */
   paymentPlan?: string | null;
+  updatedAt?: string;
+  domainPurchaseTime?: string | null;
 };
 
 const WORKFLOW_ACTIONS: Record<string, { next: string; label: string; action: string }[]> = {
@@ -140,7 +142,7 @@ function QuoteCreateModal({
   const [selectedTLDId, setSelectedTLDId] = useState("");
   const [addedDomains, setAddedDomains] = useState<{ id: string, name: string, extension: string, price: number, years: number, available?: boolean }[]>([]);
   const [checkingDomain, setCheckingDomain] = useState(false);
-  const [checkResult, setCheckResult] = useState<{ domain?: string; extension?: string; price?: number; available: boolean }[] | null>(null);
+  const [checkResult, setCheckResult] = useState<{ domain: string, available: boolean, extension: string, price: number }[]>([]);
 
   // Unique hosting levels (Khởi Đầu, Tiêu Chuẩn, etc.)
   const hostingLevels = Array.from(new Set(hostingPlans.map((h: any) => h.name.split(" (")[0].trim())));
@@ -279,7 +281,7 @@ function QuoteCreateModal({
     };
     setAddedDomains(prev => [...prev, newDomain]);
     setDomainQuery("");
-    setCheckResult(null);
+    setCheckResult([]);
   };
 
   const handleAddDomain = () => {
@@ -507,8 +509,8 @@ function QuoteCreateModal({
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 <label style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, display: "block" }}>Tên miền</label>
                 <div style={{ display: "flex", gap: 6 }}>
-                  <input style={{ ...inp, flex: 1 }} value={domainQuery} onChange={e => { setDomainQuery(e.target.value); setCheckResult(null); }} placeholder="Nhập tên miền (VD: loop)" />
-                  <select style={{ ...inp, width: 110 }} value={selectedTLDId} onChange={e => { setSelectedTLDId(e.target.value); setCheckResult(null); }}>
+                  <input style={{ ...inp, flex: 1 }} value={domainQuery} onChange={e => { setDomainQuery(e.target.value); setCheckResult([]); }} placeholder="Nhập tên miền (VD: loop)" />
+                  <select style={{ ...inp, width: 110 }} value={selectedTLDId} onChange={e => { setSelectedTLDId(e.target.value); setCheckResult([]); }}>
                     <option value="">-- Đuôi --</option>
                     {domainPrices.map((d: any) => (
                       <option key={d.id} value={d.id}>{d.extension}</option>

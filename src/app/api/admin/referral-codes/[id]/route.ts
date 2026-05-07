@@ -99,8 +99,8 @@ export async function PUT(
           action: "update",
           resource: "referral-codes",
           resourceId: id,
-          oldValues: existing as unknown as InputJsonValue,
-          newValues: body as unknown as InputJsonValue,
+          oldValues: existing as Prisma.InputJsonValue,
+          newValues: body as Prisma.InputJsonValue,
         },
       });
       return u;
@@ -135,7 +135,7 @@ export async function DELETE(
           action: "delete",
           resource: "referral-codes",
           resourceId: id,
-          oldValues: existing as unknown as InputJsonValue,
+          oldValues: existing as Prisma.InputJsonValue,
         },
       });
     });

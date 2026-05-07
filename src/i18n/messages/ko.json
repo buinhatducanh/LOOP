@@ -1195,7 +1195,18 @@
       "featQualityDesc": "Đội ngũ chuyên nghiệp nhất",
       "featSecure": "Bảo mật thông tin",
       "featSecureDesc": "Cam kết bảo mật dự án"
-    }
+    },
+    "tabPackages": "Gói dịch vụ",
+    "bookingCta": "Đặt gói ngay",
+    "pkgProduct": "Gói chụp, quay sản phẩm",
+    "pkgContent": "Gói chụp quay content marketing",
+    "pkgLivestream": "Gói thuê đội ngũ livestream",
+    "pkgBundle": "Gói tổng hợp",
+    "pkgProductDesc": "Chụp ảnh, quay phim sản phẩm chuyên nghiệp cho e-commerce, website.",
+    "pkgContentDesc": "Sản xuất nội dung media cho các chiến dịch marketing, social media.",
+    "pkgLivestreamDesc": "Cung cấp đội ngũ kỹ thuật, thiết bị livestream bán hàng chuyên nghiệp.",
+    "pkgBundleDesc": "Giải pháp media toàn diện cho doanh nghiệp.",
+    "files": "{n} files"
   },
   "search": {
     "searchPlaceholder": "Search services, courses...",

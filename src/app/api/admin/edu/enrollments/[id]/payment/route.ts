@@ -190,7 +190,7 @@ export async function POST(
             method,
             studentLpEarned,
             instructorLp,
-          } as unknown as InputJsonValue,
+          } as Prisma.InputJsonValue,
         },
       });
 

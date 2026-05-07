@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import fs from "fs";
+import path from "path";
 
 /**
  * POST /api/payment/sepay-webhook
@@ -10,12 +12,12 @@ import { prisma } from "@/lib/prisma";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    
+
     // 1. Verify API Key (Optional but recommended)
     // SePay sends the API Key in the 'x-api-key' header if configured
     const apiKey = req.headers.get("x-api-key");
     const expectedApiKey = process.env.SEPAY_API_KEY;
-    
+
     if (expectedApiKey && apiKey !== expectedApiKey) {
       console.error("[SePay Webhook] Unauthorized request");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -32,12 +34,12 @@ export async function POST(req: NextRequest) {
 
     if (!shortId) {
       console.warn("[SePay Webhook] Could not parse shortId from content:", content);
-      return NextResponse.json({ ok: true }); 
+      return NextResponse.json({ ok: true });
     }
 
     // Find the QuoteRequest that matches this short ID (last 8 chars of CUID)
     const quoteRequests = await prisma.quoteRequest.findMany({
-      where: { 
+      where: {
         status: { not: "paid" },
       },
       orderBy: { createdAt: 'desc' },
@@ -47,8 +49,32 @@ export async function POST(req: NextRequest) {
     const quote = quoteRequests.find(q => q.id.slice(-8).toUpperCase() === shortId.toUpperCase());
 
     if (!quote) {
-      console.error("[SePay Webhook] No matching QuoteRequest found for:", shortId);
-      return NextResponse.json({ ok: true });
+      console.warn("[SePay Webhook] No matching QuoteRequest found for shortId:", shortId, ". Saving to orphan cache.");
+      
+      // Save to temporary cache for 'payment-first' flow
+      const cachePath = path.join(process.cwd(), "scratch", "orphan_payments.json");
+      let orphans = [];
+      try {
+        if (fs.existsSync(cachePath)) {
+          orphans = JSON.parse(fs.readFileSync(cachePath, "utf8"));
+        }
+      } catch (e) { orphans = []; }
+
+      orphans.push({
+        ref: content.toUpperCase(),
+        amount: Number(transferAmount),
+        transactionId,
+        timestamp: new Date().toISOString()
+      });
+
+      // Keep only last 1000 orphans to avoid bloat
+      if (orphans.length > 1000) orphans.shift();
+      
+      const scratchDir = path.dirname(cachePath);
+      if (!fs.existsSync(scratchDir)) fs.mkdirSync(scratchDir, { recursive: true });
+      fs.writeFileSync(cachePath, JSON.stringify(orphans, null, 2));
+
+      return NextResponse.json({ ok: true, message: "Saved to orphan cache" });
     }
 
     // 3. Create Payment record
@@ -63,8 +89,8 @@ export async function POST(req: NextRequest) {
     });
 
     // 4. Create Order if enough paid
-    const requiredAmount = quote.paymentPlan === "100" 
-      ? quote.totalAmount 
+    const requiredAmount = quote.paymentPlan === "100"
+      ? quote.totalAmount
       : Math.round(quote.totalAmount * 0.5);
 
     // Apply the 5% discount logic if it's 100% plan
@@ -74,7 +100,7 @@ export async function POST(req: NextRequest) {
 
     if (Number(transferAmount) >= actualRequired) {
       const orderNumber = `LOOP-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${quote.id.slice(-4).toUpperCase()}`;
-      
+
       await prisma.order.create({
         data: {
           orderNumber,
