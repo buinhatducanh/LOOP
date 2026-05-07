@@ -85,7 +85,7 @@ export default async function TeamMemberPage({ params }: Props) {
     .filter(Boolean);
 
   // Related members: same department first, then by expertise
-  const expertiseIds = member.memberExpertise.map((me) => me.expertiseId);
+  const expertiseIds = member.memberExpertise.map((me: typeof member.memberExpertise[number]) => me.expertiseId);
   const memberDeptKey = member.department;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const related = await (prisma.teamMember.findMany as any)({
