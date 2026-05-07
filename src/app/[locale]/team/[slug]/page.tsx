@@ -77,7 +77,7 @@ export default async function TeamMemberPage({ params }: Props) {
   const mapped = mapLocalizedTeamMember(member, resolvedLocale) as Record<string, string | null | undefined | number | unknown>;
 
   const expertises: string[] = member.memberExpertise
-    .map((me) => {
+    .map((me: typeof member.memberExpertise[number]) => {
       const suffix = resolvedLocale === "vi" ? "" : resolvedLocale.charAt(0).toUpperCase() + resolvedLocale.slice(1);
       const fieldKey = suffix ? `name${suffix}` : "name";
       return (me.expertise as Record<string, unknown>)[fieldKey] as string | undefined ?? me.expertise.name;
