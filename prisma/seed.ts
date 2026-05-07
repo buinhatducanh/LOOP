@@ -8,8 +8,8 @@ import { resolve } from "path";
 // Load .env.local explicitly (next.js style)
 config({ path: resolve(process.cwd(), ".env.local") });
 
-import { PrismaClient } from "@/generated/prisma/client";
-import type { Prisma } from "@/generated/prisma/client";
+import { PrismaClient } from "../src/generated/prisma";
+import type { Prisma } from "../src/generated/prisma";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { hashPassword } from "@/lib/auth/password";
 
