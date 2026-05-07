@@ -33,6 +33,7 @@
 
   /* FE Gaming/Cyberpunk dark palette — synced with DS cosmic palette (2026-04-07) */
   --bg: #0C0C14;
+  --bg-cosmic: #0C0C14;
   --bg-card: #0F172A;
   --bg-card2: #111827;
   --bg-card3: #0D1526;
@@ -84,6 +85,63 @@
   --font-dm-sans: var(--font-dm-sans), system-ui, sans-serif;
   --font-heading: var(--font-plus-jakarta), system-ui, sans-serif;
   --font-mono: var(--font-mono);
+}
+
+[data-theme='light'] {
+  --background: #F8FAFC;
+  --foreground: #0F172A;
+  --card: #FFFFFF;
+  --card-foreground: #0F172A;
+  --popover: #FFFFFF;
+  --popover-foreground: #0F172A;
+  --primary: #4F7DF3;
+  --primary-foreground: #ffffff;
+  --secondary: #F1F5F9;
+  --secondary-foreground: #1E293B;
+  --muted: #F1F5F9;
+  --muted-foreground: #64748B;
+  --accent: #6B3DF5;
+  --accent-foreground: #ffffff;
+  --destructive: #EF4444;
+  --destructive-foreground: #ffffff;
+  --border: #E2E8F0;
+  --input: #E2E8F0;
+  --ring: #4F7DF3;
+
+  /* FE Gaming/Cyberpunk light palette */
+  --bg: #F8FAFC;
+  --bg-cosmic: #FFFFFF;
+  --bg-card: #FFFFFF;
+  --bg-card2: #F1F5F9;
+  --bg-card3: #E2E8F0;
+  --text: #0F172A;
+  --text2: #1E293B;
+  --text3: #475569;
+  --text4: #64748B;
+  --text5: #94A3B8;
+  --border2: #CBD5E1;
+
+  /* Figma tokens (alias) — Light theme */
+  --figma-bg: #F8FAFC;
+  --figma-bg-card: #FFFFFF;
+  --figma-bg-card2: #F1F5F9;
+  --figma-bg-card3: #E2E8F0;
+  --figma-border: #E2E8F0;
+  --figma-border2: #CBD5E1;
+  --figma-text: #0F172A;
+  --figma-text2: #1E293B;
+  --figma-text3: #475569;
+  --figma-text4: #64748B;
+  --figma-text5: #94A3B8;
+  --figma-glow-card: 0 8px 32px rgba(0,0,0,0.08);
+}
+
+.gradient-text {
+  background-clip: text !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  color: transparent !important;
+  display: inline-block;
 }
 
 @theme inline {
@@ -341,11 +399,19 @@
   animation: constellation-pulse 8s ease-in-out infinite;
 }
 
-/* Admin login responsive card */
-@media (max-width: 640px) {
- .admin-login-card {
- padding: 1.75rem !important;
- }
+/* ── Theme Specific Adjustments ─────────────────────────────────────────── */
+[data-theme='light'] .cosmic-bg {
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+[data-theme='light'] .figma-grid-bg::before {
+  opacity: 0.05;
+}
+
+[data-theme='light'] .figma-card {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
 }
 
 /* Admin login responsive card */

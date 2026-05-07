@@ -24,6 +24,7 @@ import {
   ChevronDown, Globe, Rocket,
   Search, ArrowRight, Phone, Mail, MapPin, Clock,
   MessageCircle, Bell, User, LayoutDashboard, Sparkles,
+  Sun, Moon,
 } from "lucide-react";
 import { CEO_CONTACT } from "@/lib/constants";
 import { DS, GRD } from "@/lib/design-tokens";
@@ -38,8 +39,11 @@ const DynamicNotificationPanel = dynamic(() => import("@/components/Notification
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
-function rgba(hex: string, a: number): string {
-  const h = hex.replace("#", "");
+function rgba(color: string, a: number): string {
+  if (color.startsWith("var(")) {
+    return `color-mix(in srgb, ${color}, transparent ${Math.round((1 - a) * 100)}%)`;
+  }
+  const h = color.replace("#", "");
   return `rgba(${parseInt(h.slice(0, 2), 16)},${parseInt(h.slice(2, 4), 16)},${parseInt(h.slice(4, 6), 16)},${a})`;
 }
 
@@ -53,7 +57,7 @@ const LOCALE_LABELS: Record<string, { short: string; long: string; flag: string 
   zh: { short: "ZH", long: "中文", flag: "🇨🇳" },
 };
 
-function LocaleSwitcher({ locale }: { locale: string }) {
+function LocaleSwitcher({ locale, theme }: { locale: string; theme: string }) {
   const router = useRouter();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -115,12 +119,12 @@ function LocaleSwitcher({ locale }: { locale: string }) {
             style={{
               position: "absolute", top: "calc(100% + 8px)", right: 0,
               width: 168,
-              background: "rgba(10,10,20,0.98)",
+              background: rgba(DS.bgCosmic, 0.98),
               border: `1px solid ${rgba(DS.pink, 0.2)}`,
               borderRadius: 14,
               backdropFilter: "blur(24px)",
               WebkitBackdropFilter: "blur(24px)",
-              boxShadow: `0 20px 60px rgba(0,0,0,0.7), 0 0 20px ${rgba(DS.pink, 0.08)}`,
+              boxShadow: theme === "dark" ? `0 20px 60px rgba(0,0,0,0.7), 0 0 20px ${rgba(DS.pink, 0.08)}` : `0 12px 40px rgba(0,0,0,0.08), 0 0 0 1px ${rgba(DS.pink, 0.1)}`,
               zIndex: 110, padding: "6px", overflow: "hidden",
             }}
           >
@@ -193,11 +197,12 @@ function MobileNavItem({
 interface MegaItem { label: string; href: string; icon: string; description: string; color: string; }
 
 function MegaDropdown({
-  triggerLabel, items, isOpen, onToggle, onSelect, locale, t,
+  triggerLabel, items, isOpen, onToggle, onSelect, locale, t, theme,
 }: {
   triggerLabel: string; items: MegaItem[];
   isOpen: boolean; onToggle: () => void; onSelect: () => void;
   locale: string; t: ReturnType<typeof useTranslations<"Navigation">>;
+  theme: string;
 }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
@@ -243,11 +248,11 @@ function MegaDropdown({
             style={{
               position: "absolute", top: "calc(100% + 8px)", left: "50%", transform: "translateX(-50%)",
               width: 680,
-              background: "rgba(8,9,18,0.98)",
+              background: rgba(DS.bgCosmic, 0.98),
               border: `1px solid ${rgba(DS.pink, 0.15)}`,
               borderRadius: 20,
               backdropFilter: "blur(28px)", WebkitBackdropFilter: "blur(28px)",
-              boxShadow: `0 24px 80px rgba(0,0,0,0.8), 0 0 60px ${rgba(DS.pink, 0.06)}`,
+              boxShadow: theme === "dark" ? `0 24px 80px rgba(0,0,0,0.8), 0 0 60px ${rgba(DS.pink, 0.06)}` : `0 20px 50px rgba(0,0,0,0.1), 0 0 0 1px ${rgba(DS.pink, 0.05)}`,
               overflow: "hidden", zIndex: 200,
             }}
           >
@@ -429,6 +434,26 @@ export default function SiteHeader({ locale }: { locale: string }) {
     return () => window.removeEventListener("keydown", fn);
   }, []);
 
+  // Theme logic
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
+  useEffect(() => {
+    const saved = localStorage.getItem("loop-theme") as "dark" | "light";
+    if (saved) {
+      setTheme(saved);
+      document.documentElement.setAttribute("data-theme", saved);
+    } else {
+      // Default is dark (galaxy)
+      document.documentElement.setAttribute("data-theme", "dark");
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    const next = theme === "dark" ? "light" : "dark";
+    setTheme(next);
+    document.documentElement.setAttribute("data-theme", next);
+    localStorage.setItem("loop-theme", next);
+  };
+
   // Outside click to close dropdowns
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -486,8 +511,8 @@ export default function SiteHeader({ locale }: { locale: string }) {
     ];
 
   // Scroll-aware styles
-  const headerBg = scrolled ? "rgba(6,7,16,0.98)" : "rgba(8,9,20,0.95)";
-  const headerBorder = scrolled ? rgba(DS.pink, 0.25) : rgba(DS.cosmicPurple, 0.15);
+  const headerBg = scrolled ? rgba(DS.bg, 0.98) : rgba(DS.bg, 0.95);
+  const headerBorder = scrolled ? rgba(DS.pink, 0.25) : rgba(DS.border, 0.15);
   const headerBlur = scrolled ? 28 : 20;
   const headerHeight = scrolled ? 56 : 64;
   const logoSize = scrolled ? 34 : 42;
@@ -508,8 +533,8 @@ export default function SiteHeader({ locale }: { locale: string }) {
       {/* Top contact bar — hides on scroll */}
       <div style={{
         position: "fixed", top: 2, left: 0, right: 0, zIndex: 51,
-        background: "rgba(6,7,16,0.98)",
-        borderBottom: `1px solid ${rgba(DS.cosmicPurple, 0.08)}`,
+        background: rgba(DS.bg, 0.98),
+        borderBottom: `1px solid ${rgba(DS.text, 0.05)}`,
         height: topBarHeight, overflow: "hidden",
         opacity: topBarOpacity,
         transition: "height 0.35s ease, opacity 0.35s ease",
@@ -616,12 +641,14 @@ export default function SiteHeader({ locale }: { locale: string }) {
               <img src="/logo.png" alt="LOOP Solutions" style={{ width: logoSize - 8, height: logoSize - 8, objectFit: "contain", borderRadius: 6 }} />
             </div>
             <div>
-              <div style={{
-                fontFamily: DS.heading, fontSize: 13, fontWeight: 900,
-                letterSpacing: "0.06em", lineHeight: 1,
-                background: GRD.primary,
-                WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-              }}>
+              <div 
+                className="gradient-text"
+                style={{
+                  fontFamily: DS.heading, fontSize: 13, fontWeight: 900,
+                  letterSpacing: "0.06em", lineHeight: 1,
+                  backgroundImage: GRD.primary,
+                }}
+              >
                 LOOP
               </div>
               <div style={{ color: DS.text5, fontSize: 7, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.18em", marginTop: 2 }}>
@@ -645,6 +672,7 @@ export default function SiteHeader({ locale }: { locale: string }) {
                     onToggle={() => setOpenDropdown(prev => prev === mega.labelKey ? null : mega.labelKey)}
                     onSelect={() => setOpenDropdown(null)}
                     locale={locale} t={t}
+                    theme={theme}
                   />
                 );
               }
@@ -786,7 +814,51 @@ export default function SiteHeader({ locale }: { locale: string }) {
             </div>
 
             {/* Locale Switcher */}
-            <LocaleSwitcher locale={locale} />
+            <LocaleSwitcher locale={locale} theme={theme} />
+
+            {/* Theme Toggle */}
+            <button
+              suppressHydrationWarning
+              onClick={toggleTheme}
+              title={theme === "dark" ? "Chế độ Trắng" : "Chế độ Galaxy"}
+              className="nav-icon-btn"
+              style={{
+                display: "flex", alignItems: "center", justifyContent: "center",
+                width: 36, height: 36,
+                background: rgba(DS.text, 0.03),
+                border: `1px solid ${rgba(DS.text, 0.06)}`,
+                borderRadius: 10, cursor: "pointer",
+                transition: "all 0.18s",
+                position: "relative",
+                overflow: "hidden",
+              }}
+              onMouseEnter={e => {
+                const el = e.currentTarget as HTMLButtonElement;
+                el.style.borderColor = rgba(DS.pink, 0.35);
+                el.style.background = rgba(DS.pink, 0.06);
+              }}
+              onMouseLeave={e => {
+                const el = e.currentTarget as HTMLButtonElement;
+                el.style.borderColor = rgba(DS.text, 0.06);
+                el.style.background = rgba(DS.text, 0.03);
+              }}
+            >
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={theme}
+                  initial={{ y: 10, opacity: 0, rotate: -45 }}
+                  animate={{ y: 0, opacity: 1, rotate: 0 }}
+                  exit={{ y: -10, opacity: 0, rotate: 45 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  {theme === "dark" ? (
+                    <Sparkles size={14} style={{ color: DS.pink }} />
+                  ) : (
+                    <Sun size={14} style={{ color: "#E6C75F" }} />
+                  )}
+                </motion.div>
+              </AnimatePresence>
+            </button>
 
             {/* User menu */}
             {mounted && hasValidToken && user ? (
@@ -844,12 +916,12 @@ export default function SiteHeader({ locale }: { locale: string }) {
                       style={{
                         position: "absolute", top: "calc(100% + 8px)", right: 0,
                         width: 224,
-                        background: "rgba(8,9,18,0.98)",
+                        background: rgba(DS.bgCosmic, 0.98),
                         border: `1px solid ${rgba(DS.pink, 0.18)}`,
                         borderRadius: 16,
                         backdropFilter: "blur(24px)",
                         WebkitBackdropFilter: "blur(24px)",
-                        boxShadow: `0 20px 60px rgba(0,0,0,0.7), 0 0 20px ${rgba(DS.pink, 0.06)}`,
+                        boxShadow: theme === "dark" ? `0 20px 60px rgba(0,0,0,0.7), 0 0 20px ${rgba(DS.pink, 0.06)}` : `0 15px 40px rgba(0,0,0,0.08), 0 0 0 1px ${rgba(DS.pink, 0.05)}`,
                         overflow: "hidden", zIndex: 110,
                       }}
                     >
@@ -963,7 +1035,7 @@ export default function SiteHeader({ locale }: { locale: string }) {
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
               transition={{ duration: 0.28, ease: [0.4, 0, 0.2, 1] }}
-              style={{ overflow: "hidden", background: "rgba(2,5,18,0.99)", borderTop: `1px solid ${rgba(DS.cosmicPurple, 0.12)}` }}
+              style={{ overflow: "hidden", background: rgba(DS.bgCosmic, 0.98), borderTop: `1px solid ${rgba(DS.cosmicPurple, 0.12)}` }}
             >
               <nav style={{ padding: "12px 1.5rem 20px", display: "flex", flexDirection: "column", gap: 3 }}>
                 {navLinks.map((link, idx) => {

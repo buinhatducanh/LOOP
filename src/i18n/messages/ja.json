@@ -608,6 +608,7 @@
     "webCompleted": "完了プロジェクト"
   },
   "Footer": {
+    "ctaBadge": "始める準備はできましたか？",
     "ctaTitle": "プロジェクトを始めましょう？",
     "ctaDesc": "一緒に素晴らしいものを作りましょう。",
     "getInTouch": "お問い合わせ",

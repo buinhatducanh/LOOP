@@ -16,6 +16,7 @@ import {
   ArrowRight,
   MousePointer,
 } from "lucide-react";
+import { rgba } from "@/components/ui/utils";
 import { DS, GRD, GLOW } from "@/lib/design-tokens";
 import { apiClient } from "@/lib/api/client";
 import { QueryProvider } from "@/lib/query/provider";
@@ -75,8 +76,8 @@ function Badge({ label, color = DS.blue }: { label: string; color?: string }) {
         marginBottom: "1.25rem",
         padding: "0.375rem 1rem",
         borderRadius: "9999px",
-        background: `${color}10`,
-        border: `1px solid ${color}30`,
+        background: rgba(color, 0.1),
+        border: `1px solid ${rgba(color, 0.3)}`,
       }}
     >
       <div
@@ -146,18 +147,16 @@ function ServicesSectionInner({ locale }: { locale: string }) {
   return (
     <section style={{ padding: "6rem 1.5rem" }}>
       <div style={{ maxWidth: "72rem", margin: "0 auto" }}>
-        <div style={{ textAlign: "center", marginBottom: "4rem" }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: "4rem" }}>
           <Badge label={t("servicesSectionBadge")} />
           <h2
+            className="gradient-text"
             style={{
               fontFamily: DS.heading,
               fontSize: "clamp(1.75rem, 4vw, 2.75rem)",
               fontWeight: 900,
               letterSpacing: "0.05em",
-              background: "linear-gradient(135deg, #FFFFFF, #94A3B8)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              backgroundClip: "text",
+              backgroundImage: `linear-gradient(135deg, ${DS.text}, ${DS.text4})`,
               marginBottom: "0.875rem",
             }}
           >
@@ -192,9 +191,9 @@ function ServicesSectionInner({ locale }: { locale: string }) {
                     height: "100%",
                     borderRadius: "1rem",
                     padding: "1.75rem",
-                    background: "rgba(15,23,42,0.7)",
+                    background: rgba(DS.bgCard, 0.7),
                     backdropFilter: "blur(16px)",
-                    border: `1px solid ${DS.border}`,
+                    border: `1px solid ${rgba(DS.text, 0.1)}`,
                     cursor: "pointer",
                   }}
                   whileHover={{
@@ -220,8 +219,8 @@ function ServicesSectionInner({ locale }: { locale: string }) {
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        background: `${svc.color}15`,
-                        border: `1px solid ${svc.color}30`,
+                        background: rgba(svc.color, 0.15),
+                        border: `1px solid ${rgba(svc.color, 0.30)}`,
                       }}
                     >
                       <span style={{ color: svc.color }}>
@@ -270,8 +269,8 @@ function ServicesSectionInner({ locale }: { locale: string }) {
                           fontFamily: DS.mono,
                           padding: "0.1875rem 0.5rem",
                           borderRadius: 4,
-                          background: `${svc.color}10`,
-                          border: `1px solid ${svc.color}20`,
+                          background: rgba(svc.color, 0.1),
+                          border: `1px solid ${rgba(svc.color, 0.2)}`,
                         }}
                       >
                         {t}
