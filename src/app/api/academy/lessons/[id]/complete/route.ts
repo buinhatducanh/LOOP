@@ -47,6 +47,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@/generated/prisma";
 
 import { handleError, badRequest, notFound } from "@/lib/api/response";
 
@@ -264,7 +265,7 @@ export async function POST(
 
             select: { lessonId: true, completedAt: true },
 
-          }).then((p) => p.map((x) => ({ lessonId: x.lessonId, completedAt: x.completedAt })))
+          }).then((p: Array<{ lessonId: string; completedAt: Date | null }>) => p.map((x) => ({ lessonId: x.lessonId, completedAt: x.completedAt })))
 
         ),
 
@@ -304,7 +305,7 @@ export async function POST(
 
 
 
-      await prisma.$transaction(async (tx) => {
+      await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
 
         await tx.enrollment.update({
 
