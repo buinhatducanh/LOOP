@@ -67,4 +67,4 @@ update_*.js
 brain/
 scratch/
 prisma/seed-*.ts
-src/app/store/uiStore.ts
+src/app/store/
