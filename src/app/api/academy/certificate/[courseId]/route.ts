@@ -116,7 +116,7 @@ export async function GET(
     const completedAt = enrollment.progresses
       .map((p: typeof enrollment.progresses[number]) => p.completedAt)
       .filter(Boolean)
-      .sort((a, b) => (b && a ? (b > a ? 1 : -1) : 0))[0] ?? enrollment.enrolledAt;
+      .sort((a: Date | null, b: Date | null) => (b && a ? (b > a ? 1 : -1) : 0))[0] ?? enrollment.enrolledAt;
 
     const studentName = enrollment.user?.name ?? enrollment.member?.name ?? "Học viên";
 
