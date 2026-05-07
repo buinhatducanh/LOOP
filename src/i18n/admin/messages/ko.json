@@ -462,8 +462,8 @@
     "errTitleRequired": "제목은 필수입니다",
     "errCreateFailed": "생성 실패",
     "errSaveFailed": "업데이트 실패",
-    "statusQuoted": "Đã báo giá",
-    "statusExpired": "Hết hạn"
+    "statusQuoted": "견적서 제출됨",
+    "statusExpired": "만료됨"
   },
   "media": {
     "title": "미디어 예약 관리",

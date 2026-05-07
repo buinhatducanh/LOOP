@@ -569,7 +569,8 @@ function KpiBar({ entries }: { entries: LeaderboardEntry[] }) {
   ];
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 10, marginBottom: 24 }}>
+    <div style={{ overflowX: "auto", paddingBottom: 10 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 10, minWidth: 700 }}>
       {kpis.map((k) => (
         <div key={k.label} style={{
           background: DS.bgCard, border: `1px solid ${DS.border}`,
@@ -585,6 +586,7 @@ function KpiBar({ entries }: { entries: LeaderboardEntry[] }) {
           {k.sub && <div style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, marginTop: 1 }}>{k.sub}</div>}
         </div>
       ))}
+      </div>
     </div>
   );
 }
@@ -646,9 +648,9 @@ export default function LeaderboardAdminPage() {
   ];
 
   return (
-    <div>
+    <div style={{ padding: "2rem", minHeight: "100vh", background: DS.bgCosmic ?? "var(--figma-bg-cosmic, #09090b)" }}>
       {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
         <div>
           <h2 style={{ fontFamily: DS.heading, fontSize: 20, fontWeight: 800, color: DS.text, marginBottom: 2 }}>
             Bảng xếp hạng LP
@@ -657,7 +659,7 @@ export default function LeaderboardAdminPage() {
             {entries.length} thành viên · cập nhật real-time từ approved awards
           </p>
         </div>
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <div className="flex items-center gap-2">
           {/* Sort selector */}
           <select
             value={sort}
@@ -674,6 +676,7 @@ export default function LeaderboardAdminPage() {
           </select>
           <button
             onClick={() => refetch()}
+            className="whitespace-nowrap"
             style={{
               display: "flex", alignItems: "center", gap: 6, padding: "8px 14px",
               background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 10,
@@ -735,15 +738,17 @@ export default function LeaderboardAdminPage() {
       ) : (
         <>
           {/* Table header */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            {displayList.map((entry, idx) => (
-              <LeaderboardRow
-                key={entry.id}
-                entry={entry}
-                rank={sort === "rank" ? sortedByRank.indexOf(entry) + 1 : idx + 1}
-                onAward={setAwardTarget}
-              />
-            ))}
+          <div style={{ overflowX: "auto", paddingBottom: 16 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6, minWidth: 600 }}>
+              {displayList.map((entry, idx) => (
+                <LeaderboardRow
+                  key={entry.id}
+                  entry={entry}
+                  rank={sort === "rank" ? sortedByRank.indexOf(entry) + 1 : idx + 1}
+                  onAward={setAwardTarget}
+                />
+              ))}
+            </div>
           </div>
 
           {/* Show more */}

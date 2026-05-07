@@ -194,7 +194,7 @@ export default function AddonServicesPage() {
   return (
     <div style={{ padding: "1.5rem", minHeight: "100vh", background: DS.bgCosmic }}>
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
         <div>
           <h1
             style={{
@@ -213,7 +213,7 @@ export default function AddonServicesPage() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => refetch()}
-            className="flex items-center gap-1 px-3 py-2 rounded-xl text-xs"
+            className="flex items-center gap-1 px-3 py-2 rounded-xl text-xs whitespace-nowrap"
             style={{
               background: "rgba(255,255,255,0.04)",
               border: `1px solid ${DS.border}`,
@@ -228,7 +228,7 @@ export default function AddonServicesPage() {
           </button>
           <button
             onClick={openCreate}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl font-medium text-sm"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl font-medium text-sm whitespace-nowrap"
             style={{ background: GRD.primary, color: "#fff" }}
           >
             <Plus size={16} />
@@ -288,12 +288,12 @@ export default function AddonServicesPage() {
       <div
         style={{
           borderRadius: 16,
-          overflow: "hidden",
+          overflowX: "auto",
           border: `1px solid ${DS.border}`,
           background: DS.bgCard,
         }}
       >
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 800 }}>
           <thead>
             <tr style={{ background: "rgba(255,255,255,0.03)" }}>
               {[
@@ -315,6 +315,7 @@ export default function AddonServicesPage() {
                     fontFamily: DS.mono,
                     letterSpacing: "0.1em",
                     textAlign: "left",
+                    whiteSpace: "nowrap",
                   }}
                 >
                   {h}
@@ -359,7 +360,7 @@ export default function AddonServicesPage() {
                   key={a.id}
                   style={{ borderTop: `1px solid ${DS.border}` }}
                 >
-                  <td style={{ padding: "14px 16px" }}>
+                  <td style={{ padding: "14px 16px", whiteSpace: "nowrap" }}>
                     <span
                       style={{
                         color: DS.text,
@@ -370,7 +371,7 @@ export default function AddonServicesPage() {
                       {a.nameVi || a.name}
                     </span>
                   </td>
-                  <td style={{ padding: "14px 16px" }}>
+                  <td style={{ padding: "14px 16px", whiteSpace: "nowrap" }}>
                     <span
                       style={{
                         color: DS.text4,
@@ -381,7 +382,7 @@ export default function AddonServicesPage() {
                       {a.slug}
                     </span>
                   </td>
-                  <td style={{ padding: "14px 16px" }}>
+                  <td style={{ padding: "14px 16px", whiteSpace: "nowrap" }}>
                     <span
                       className="px-2 py-0.5 rounded text-xs font-medium"
                       style={{
@@ -396,7 +397,7 @@ export default function AddonServicesPage() {
                       {typeLabels[a.type] ?? a.type}
                     </span>
                   </td>
-                  <td style={{ padding: "14px 16px" }}>
+                  <td style={{ padding: "14px 16px", whiteSpace: "nowrap" }}>
                     <span
                       style={{
                         color: a.price > 0 ? DS.text : DS.text4,
@@ -407,12 +408,12 @@ export default function AddonServicesPage() {
                       {a.price > 0 ? fmtVND(a.price) : "Miễn phí"}
                     </span>
                   </td>
-                  <td style={{ padding: "14px 16px" }}>
+                  <td style={{ padding: "14px 16px", whiteSpace: "nowrap" }}>
                     <span style={{ color: DS.text4, fontSize: 12 }}>
                       {a.billingPeriod ?? "—"}
                     </span>
                   </td>
-                  <td style={{ padding: "14px 16px" }}>
+                  <td style={{ padding: "14px 16px", whiteSpace: "nowrap" }}>
                     <span
                       style={{
                         color: DS.text4,
@@ -423,7 +424,7 @@ export default function AddonServicesPage() {
                       {a.sortOrder}
                     </span>
                   </td>
-                  <td style={{ padding: "14px 16px" }}>
+                  <td style={{ padding: "14px 16px", whiteSpace: "nowrap" }}>
                     <button
                       onClick={() => toggle.mutate(a)}
                       style={{
@@ -440,7 +441,7 @@ export default function AddonServicesPage() {
                       )}
                     </button>
                   </td>
-                  <td style={{ padding: "14px 16px" }}>
+                  <td style={{ padding: "14px 16px", whiteSpace: "nowrap" }}>
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => openEdit(a)}

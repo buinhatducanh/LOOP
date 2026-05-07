@@ -674,7 +674,7 @@ function TransitionModal({ order, onClose, onSuccess }: { order: Order | null; o
     const currentIndex = flow.indexOf(order.status as any);
     const availableStatuses = flow.slice(currentIndex + 1);
 
-    const [selected, setSelected] = useState(availableStatuses[0] ?? "");
+    const [selected, setSelected] = useState<string>(availableStatuses[0] ?? "");
     const [note, setNote] = useState("");
     const [saving, setSaving] = useState(false);
 
@@ -1589,21 +1589,23 @@ export default function OrdersPage() {
 
     return (
         <>
-            <div>
+            <div style={{ padding: "2rem", minHeight: "100vh", background: DS.bgCosmic ?? "var(--figma-bg-cosmic, #09090b)" }}>
                 {/* Header */}
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
                     <div>
                         <h2 style={{ fontFamily: DS.heading, fontSize: 20, fontWeight: 800, color: DS.text, marginBottom: 2 }}>{t("orders.title")}</h2>
                         <p style={{ color: DS.text4, fontSize: 12, fontFamily: DS.mono }}>
                             {stats?.total ?? pagination?.total ?? 0} đơn hàng
                         </p>
                     </div>
-                    <div style={{ display: "flex", gap: 8 }}>
+                    <div className="flex items-center gap-2">
                         <button onClick={() => setToast({ message: "Tính năng đang phát triển", type: "error" })}
+                            className="whitespace-nowrap"
                             style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", background: GRD.primary, border: "none", borderRadius: 10, color: "#fff", cursor: "pointer", fontSize: 12, fontFamily: DS.mono, fontWeight: 700 }}>
                             <Plus size={13} /> {t("orders.create")}
                         </button>
                         <button onClick={() => { qc.invalidateQueries({ queryKey: qk.orders({ page }) }); qc.invalidateQueries({ queryKey: ["admin", "orders", "stats", orderTypeFilter] }); }}
+                            className="whitespace-nowrap"
                             style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", background: DS.bgCard, border: `1px solid ${DS.border}`, borderRadius: 10, color: DS.text3, cursor: "pointer", fontSize: 12, fontFamily: DS.mono }}>
                             <RefreshCw size={13} className={isFetching ? "animate-spin" : ""} /> {t("common.refresh")}
                         </button>
@@ -1663,27 +1665,29 @@ export default function OrdersPage() {
 
                 {/* Order list */}
                 {!isLoading && (
-                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                        {orders.length === 0 ? (
-                            <div style={{ textAlign: "center", padding: "3rem", color: DS.text4, fontSize: 14 }}>
-                                {t("orders.empty")}
-                            </div>
-                        ) : (
-                            orders.map(order => (
-                                <OrderRow
-                                    key={order.id}
-                                    order={order}
-                                    onTransition={(order) => setTransitionOrder(order)}
-                                    onDetail={setSelectedOrder}
-                                    onEdit={setEditOrder}
-                                    onDelete={setDeleteOrder}
-                                    onSendDemo={setSendDemoOrder}
-                                    onRecordPayment={setPaymentOrder}
-                                    onAssignMember={setAssignMemberOrder}
-                                    onAssignSalesRep={setSalesRepOrder}
-                                />
-                            ))
-                        )}
+                    <div style={{ overflowX: "auto", paddingBottom: 16 }}>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 800 }}>
+                            {orders.length === 0 ? (
+                                <div style={{ textAlign: "center", padding: "3rem", color: DS.text4, fontSize: 14 }}>
+                                    {t("orders.empty")}
+                                </div>
+                            ) : (
+                                orders.map(order => (
+                                    <OrderRow
+                                        key={order.id}
+                                        order={order}
+                                        onTransition={(order) => setTransitionOrder(order)}
+                                        onDetail={setSelectedOrder}
+                                        onEdit={setEditOrder}
+                                        onDelete={setDeleteOrder}
+                                        onSendDemo={setSendDemoOrder}
+                                        onRecordPayment={setPaymentOrder}
+                                        onAssignMember={setAssignMemberOrder}
+                                        onAssignSalesRep={setSalesRepOrder}
+                                    />
+                                ))
+                            )}
+                        </div>
                     </div>
                 )}
 

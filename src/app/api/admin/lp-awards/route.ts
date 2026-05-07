@@ -3,7 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
-import { Prisma } from "@/generated/prisma/client";
+import type { Prisma } from "@/generated/prisma/index.d.ts";
+type InputJsonValue = Prisma.InputJsonValue;
 import { lpLogger } from "@/lib/logger";
 import { withIdempotency } from "@/lib/idempotency";
 

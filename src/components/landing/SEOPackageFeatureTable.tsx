@@ -89,7 +89,14 @@ function FeatureTableRow({
                 }}
             >
                 {/* Feature name */}
-                <td style={{ padding: "12px 16px", maxWidth: 280 }}>
+                <td style={{ 
+                    padding: "12px 16px", 
+                    width: 220,
+                    position: "sticky",
+                    left: 0,
+                    zIndex: 10,
+                    background: expanded ? catStyle.bg : DS.bg,
+                }}>
                     <div className="flex items-center gap-2">
                         <span style={{ color: catStyle.color, flexShrink: 0 }}>
                             <Search size={13} />
@@ -223,6 +230,7 @@ function CategoryGroup({
                 borderRadius: 12,
                 overflow: "hidden",
                 marginBottom: 12,
+                minWidth: 580,
             }}
         >
             {/* Category header */}
@@ -309,60 +317,73 @@ export function SEOPackageFeatureTable({
     });
 
     return (
-        <div>
-            {/* Table header */}
-            <div style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 2,
-                marginBottom: 12,
-                padding: "10px 14px",
-                background: "rgba(15,23,42,0.6)",
-                borderRadius: 10,
-                border: `1px solid ${DS.border}`,
-            }}>
-                <div style={{ flex: 1 }}>
-                    <p style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.1em" }}>
-                        TÍNH NĂNG SEO
-                    </p>
-                    <p style={{ color: DS.text3, fontSize: 11 }}>
-                        Ma trận so sánh tính năng giữa các gói
-                    </p>
+        <div className="w-full overflow-x-auto pb-4 scrollbar-zen">
+            <div style={{ minWidth: 580 }}>
+                {/* Table header */}
+                <div style={{
+                    marginBottom: 12,
+                    background: DS.bg,
+                    borderRadius: 10,
+                    border: `1px solid ${DS.border}`,
+                    overflow: "hidden",
+                }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "fixed" }}>
+                        <thead>
+                            <tr>
+                                <th style={{ 
+                                    padding: "10px 14px", 
+                                    textAlign: "left", 
+                                    width: 220,
+                                    position: "sticky",
+                                    left: 0,
+                                    zIndex: 20,
+                                    background: DS.bg,
+                                }}>
+                                    <p style={{ color: DS.text4, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.1em" }}>
+                                        TÍNH NĂNG SEO
+                                    </p>
+                                    <p style={{ color: DS.text3, fontSize: 11 }}>
+                                        Ma trận so sánh tính năng
+                                    </p>
+                                </th>
+                                {TIER_NAMES.slice(1).map((name, i) => (
+                                    <th
+                                        key={name}
+                                        style={{
+                                            textAlign: "center", 
+                                            width: 120,
+                                            padding: "8px 6px",
+                                        }}
+                                    >
+                                        <div style={{
+                                            color: TIER_COLORS[i + 1],
+                                            fontSize: 10, fontFamily: DS.mono, fontWeight: 700,
+                                            letterSpacing: "0.08em",
+                                        }}>
+                                            {name.toUpperCase()}
+                                        </div>
+                                        {tiers && tiers[i + 1] && (
+                                            <div style={{ color: DS.text5, fontSize: 9, fontFamily: DS.mono }}>
+                                                {tiers[i + 1].basePrice > 0 ? fmtVND(tiers[i + 1].basePrice) : "Liên hệ"}
+                                            </div>
+                                        )}
+                                    </th>
+                                ))}
+                            </tr>
+                        </thead>
+                    </table>
                 </div>
-                {TIER_NAMES.slice(1).map((name, i) => (
-                    <div
-                        key={name}
-                        style={{
-                            textAlign: "center", minWidth: 100,
-                            padding: "4px 8px",
-                        }}
-                    >
-                        <div style={{
-                            color: TIER_COLORS[i + 1],
-                            fontSize: 10, fontFamily: DS.mono, fontWeight: 700,
-                            letterSpacing: "0.08em",
-                        }}>
-                            {name.toUpperCase()}
-                        </div>
-                        {tiers && tiers[i + 1] && (
-                            <div style={{ color: DS.text5, fontSize: 9, fontFamily: DS.mono }}>
-                                {tiers[i + 1].basePrice > 0 ? fmtVND(tiers[i + 1].basePrice) : "Liên hệ"}
-                            </div>
-                        )}
-                    </div>
+
+                {sortedCategories.map(cat => (
+                    <CategoryGroup
+                        key={cat}
+                        category={cat}
+                        features={byCategory[cat]}
+                        selectedTier={selectedTier}
+                        defaultOpen={true}
+                    />
                 ))}
             </div>
-
-            {/* Category groups */}
-            {sortedCategories.map(cat => (
-                <CategoryGroup
-                    key={cat}
-                    category={cat}
-                    features={byCategory[cat]}
-                    selectedTier={selectedTier}
-                    defaultOpen={true}
-                />
-            ))}
 
             {/* Legend */}
             <div style={{

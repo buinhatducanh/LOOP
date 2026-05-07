@@ -77,7 +77,7 @@ export default async function TeamMemberPage({ params }: Props) {
   const mapped = mapLocalizedTeamMember(member, resolvedLocale) as Record<string, string | null | undefined | number | unknown>;
 
   const expertises: string[] = member.memberExpertise
-    .map((me) => {
+    .map((me: typeof member.memberExpertise[number]) => {
       const suffix = resolvedLocale === "vi" ? "" : resolvedLocale.charAt(0).toUpperCase() + resolvedLocale.slice(1);
       const fieldKey = suffix ? `name${suffix}` : "name";
       return (me.expertise as Record<string, unknown>)[fieldKey] as string | undefined ?? me.expertise.name;
@@ -85,7 +85,7 @@ export default async function TeamMemberPage({ params }: Props) {
     .filter(Boolean);
 
   // Related members: same department first, then by expertise
-  const expertiseIds = member.memberExpertise.map((me) => me.expertiseId);
+  const expertiseIds = member.memberExpertise.map((me: typeof member.memberExpertise[number]) => me.expertiseId);
   const memberDeptKey = member.department;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const related = await (prisma.teamMember.findMany as any)({

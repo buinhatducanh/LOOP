@@ -73,7 +73,7 @@ export default async function PortfolioPage({ params }: Props) {
       orderBy: [{ year: "desc" }, { createdAt: "desc" }],
       take: 100,
     });
-    projects = raw.map((p) => mapLocalizedProject(p, resolvedLocale));
+    projects = raw.map((p: typeof raw[number]) => mapLocalizedProject(p, resolvedLocale));
   } catch {
     projects = [];
   }

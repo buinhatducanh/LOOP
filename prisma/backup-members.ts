@@ -8,7 +8,7 @@ import { config } from "dotenv";
 import { resolve } from "path";
 config({ path: resolve(process.cwd(), ".env.local") });
 
-import { PrismaClient } from "../src/generated/prisma/client";
+import { PrismaClient } from "../src/generated/prisma";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
 import * as fs from "fs";

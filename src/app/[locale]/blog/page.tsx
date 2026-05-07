@@ -71,7 +71,7 @@ export default async function BlogPage({ params }: Props) {
       orderBy: { publishedAt: "desc" },
       take: 50,
     });
-    posts = raw.map((p) => mapLocalizedBlogPost(p, resolvedLocale));
+    posts = raw.map((p: typeof raw[number]) => mapLocalizedBlogPost(p, resolvedLocale));
   } catch {
     posts = [];
   }

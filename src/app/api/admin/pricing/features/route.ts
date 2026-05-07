@@ -187,25 +187,29 @@ export async function PUT(req: NextRequest) {
       });
 
       // SYNC: Update Feature (Comparison Matrix) if nameVi, name, or slug matches
+      const nameViVal = (data.nameVi as string) || existing.nameVi || "";
+      const nameVal = (data.name as string) || existing.name || "";
+      const slugVal = (data.slug as string) || existing.slug || "";
       const featuresToSync = await tx.feature.findMany({
         where: {
           OR: [
-            { featureName: { equals: (data.nameVi as string) || existing.nameVi, mode: "insensitive" } },
-            { featureName: { equals: (data.name as string) || existing.name, mode: "insensitive" } },
-            { featureName: { equals: (data.slug as string) || existing.slug, mode: "insensitive" } },
+            ...(nameViVal ? [{ featureName: { equals: nameViVal, mode: "insensitive" as const } }] : []),
+            ...(nameVal ? [{ featureName: { equals: nameVal, mode: "insensitive" as const } }] : []),
+            ...(slugVal ? [{ featureName: { equals: slugVal, mode: "insensitive" as const } }] : []),
           ],
         },
         select: { id: true },
       });
 
       if (featuresToSync.length > 0) {
+        const syncData: Record<string, unknown> = {
+          isActive: data.isActive !== undefined ? Boolean(data.isActive) : existing.isActive,
+        };
+        if (data.nameVi) syncData.featureName = String(data.nameVi).trim();
+        if (data.categoryVi) syncData.category = String(data.categoryVi).trim();
         await tx.feature.updateMany({
           where: { id: { in: featuresToSync.map((f) => f.id) } },
-          data: {
-            isActive: data.isActive !== undefined ? Boolean(data.isActive) : existing.isActive,
-            ...(data.nameVi ? { featureName: String(data.nameVi).trim() } : {}),
-            ...(data.categoryVi ? { category: String(data.categoryVi).trim() } : {}),
-          },
+          data: syncData,
         });
       }
 
@@ -234,7 +238,31 @@ export async function DELETE(req: NextRequest) {
 
     if (!id) return badRequest("id là bắt buộc");
 
-    await prisma.serviceAttribute.delete({ where: { id } });
+    const existing = await prisma.serviceAttribute.findUnique({ where: { id } });
+    if (!existing) return ok({ id });
+
+    await prisma.$transaction(async (tx) => {
+      // 1. Delete the ServiceAttribute
+      await tx.serviceAttribute.delete({ where: { id } });
+
+      // 2. SYNC: Delete corresponding features from the Comparison Matrix
+      // Match by featureName (using nameVi, name, or slug to be safe, matching PUT logic)
+      const nameViVal = existing.nameVi || "";
+      const nameVal = existing.name || "";
+      const slugVal = existing.slug || "";
+
+      await tx.feature.deleteMany({
+        where: {
+          OR: [
+            ...(nameViVal ? [{ featureName: { equals: nameViVal, mode: "insensitive" as const } }] : []),
+            ...(nameVal ? [{ featureName: { equals: nameVal, mode: "insensitive" as const } }] : []),
+            ...(slugVal ? [{ featureName: { equals: slugVal, mode: "insensitive" as const } }] : []),
+          ],
+        },
+      });
+
+      // Optional: Clean up empty groups if needed, but safer to leave them or manage them separately
+    });
 
     await createAuditLog({
       userId: session.userId,

@@ -14,40 +14,40 @@ import { adminApi } from "@/lib/api/client";
 import { DS, GRD } from "@/lib/design-tokens";
 import {
   Sparkles, Info, RefreshCw, ToggleLeft, ToggleRight,
-  Cpu, Layers, BookOpen,  Edit3, Trash2, Save,
-  Plus, X, SparklesIcon as SparkIcon, Eye, 
-  Code2, Copy, Check, 
+  Cpu, Layers, BookOpen, Edit3, Trash2, Save,
+  Plus, X, SparklesIcon as SparkIcon, Eye,
+  Code2, Copy, Check,
 } from "lucide-react";
 
 // ── Shared configs ────────────────────────────────────────────────────────────
 
 const RARITY_CFG = {
-  common:    { label: "Phổ thông",    color: DS.text3 },
-  rare:      { label: "Hiếm",          color: DS.blue },
-  epic:      { label: "Sử thi",        color: DS.purple },
-  legendary: { label: "Huyền thoại",  color: DS.amber },
+  common: { label: "Phổ thông", color: DS.text3 },
+  rare: { label: "Hiếm", color: DS.blue },
+  epic: { label: "Sử thi", color: DS.purple },
+  legendary: { label: "Huyền thoại", color: DS.amber },
 };
 
 const TYPE_CFG: Record<string, { label: string; icon: ReactNode }> = {
   particle: { label: "Particle", icon: <Sparkles size={12} /> },
-  glow:     { label: "Glow",     icon: <SparkIcon size={12} /> },
-  border:   { label: "Border",   icon: <Layers size={12} /> },
-  aura:     { label: "Aura",     icon: <Sparkles size={12} /> },
-  badge:    { label: "Badge",    icon: <Sparkles size={12} /> },
-  trail:    { label: "Trail",    icon: <Sparkles size={12} /> },
+  glow: { label: "Glow", icon: <SparkIcon size={12} /> },
+  border: { label: "Border", icon: <Layers size={12} /> },
+  aura: { label: "Aura", icon: <Sparkles size={12} /> },
+  badge: { label: "Badge", icon: <Sparkles size={12} /> },
+  trail: { label: "Trail", icon: <Sparkles size={12} /> },
 };
 
 const RANK_ORDER = ["iron", "bronze", "silver", "gold", "platinum", "ruby", "diamond"] as const;
 type RankKey = typeof RANK_ORDER[number];
 
 const RANK_COLORS: Record<RankKey, string> = {
-  iron:     "#9CA3AF",
-  bronze:   "#CD7F32",
-  silver:   "#CBD5E1",
-  gold:     "#FFD700",
+  iron: "#9CA3AF",
+  bronze: "#CD7F32",
+  silver: "#CBD5E1",
+  gold: "#FFD700",
   platinum: "#14B8A6",
-  ruby:     "#EF4444",
-  diamond:  "#818CF8",
+  ruby: "#EF4444",
+  diamond: "#818CF8",
 };
 
 const RANK_LABELS: Record<RankKey, string> = {
@@ -176,7 +176,7 @@ type RankEffect = {
 
 const _fmtLP = (n: number) =>
   n >= 1_000_000 ? `${(n / 1_000_000).toFixed(2)}M` :
-  n >= 1_000 ? `${(n / 1_000).toFixed(1)}K` : String(n);
+    n >= 1_000 ? `${(n / 1_000).toFixed(1)}K` : String(n);
 
 // ── Code Block ────────────────────────────────────────────────────────────────
 
@@ -742,7 +742,7 @@ export default function EffectsPage() {
   ];
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+    <div style={{ padding: "2rem", minHeight: "100vh", background: DS.bgCosmic, display: "flex", flexDirection: "column", gap: "1.25rem" }}>
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div>
