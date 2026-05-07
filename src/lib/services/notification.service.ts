@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@/generated/prisma";
 
 export async function createUserNotification(params: {
   userId: string;
@@ -16,7 +17,7 @@ export async function createUserNotification(params: {
         title: params.title,
         message: params.message,
         link: params.link,
-        data: params.data ? (params.data as any) : undefined,
+        data: (params.data as Prisma.InputJsonValue) ?? undefined,
       },
     });
   } catch (error) {
@@ -43,7 +44,7 @@ export async function createBulkNotifications(params: {
         title: params.title,
         message: params.message,
         link: params.link,
-        data: params.data ? (params.data as any) : undefined,
+        data: (params.data as Prisma.InputJsonValue) ?? undefined,
       })),
     });
   } catch (error) {

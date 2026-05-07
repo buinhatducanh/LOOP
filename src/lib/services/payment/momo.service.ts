@@ -135,7 +135,6 @@ export async function createMoMoPayment(
  request: MoMoPaymentRequest,
  config: MoMoConfig
 ): Promise<MoMoPaymentResponse> {
- const now = new Date();
  const orderId = request.orderId;
 
  const params: Record<string, string | number> = {
