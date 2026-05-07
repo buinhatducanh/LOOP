@@ -23,6 +23,7 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@/generated/prisma";
 import { handleError, badRequest, notFound, conflict } from "@/lib/api/response";
 import { academyLogger } from "@/lib/logger";
 import { withIdempotency } from "@/lib/idempotency";
@@ -154,7 +155,8 @@ export const POST = withIdempotency(
       }
 
       // ── Transaction: enrollment + LP deduction + ledger entry ──────────────
-      const enrollment = await prisma.$transaction(async (tx) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const enrollment = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
         if (lpCost > 0) {
           if (actorMemberId) {
             // Staff: atomic LP deduction with TOCTOU guard

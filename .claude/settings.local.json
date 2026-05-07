@@ -202,7 +202,9 @@
       "Bash(sed -i '298s|    </>|    </div>|' src/app/admin/pricing/page.tsx)",
       "Bash(sed -i '673s|    </>|    </div>|' src/app/admin/pricing/page.tsx)",
       "Bash(sed -i '852s|    </>|    </div>|' src/app/admin/pricing/page.tsx)",
-      "Bash(sed -i '952s|    </>|    </div>|' src/app/admin/pricing/page.tsx)"
+      "Bash(sed -i '952s|    </>|    </div>|' src/app/admin/pricing/page.tsx)",
+      "Bash(sort -t'|' -k2 -rn)",
+      "Bash(node_modules/.bin/next build:*)"
     ],
     "additionalDirectories": []
   }
