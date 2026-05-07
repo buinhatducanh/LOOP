@@ -14,6 +14,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "motion/react";
+import { rgba } from "@/components/ui/utils";
 import {
   Zap, Shield, ChevronRight,
   ArrowRight, Users, Award, Sparkles,
@@ -68,8 +69,9 @@ function Badge({ label, color = DS.blue }: { label: string; color?: string }) {
         marginBottom: "1.25rem",
         padding: "0.375rem 1rem",
         borderRadius: "9999px",
-        background: `${color}10`,
-        border: `1px solid ${color}30`,
+        background: DS.bgCard,
+        border: `1px solid ${rgba(color, 0.25)}`,
+        boxShadow: `0 0 16px ${rgba(color, 0.1)}`,
       }}
     >
       <div
@@ -118,7 +120,7 @@ function HeroSection({ locale }: { locale: string }) {
         }}
       >
         {/* ── GALAXY BACKGROUND (enhanced cosmic depth) ── */}
-        <div style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 0, overflow: "hidden" }}>
+        <div className="cosmic-bg" style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 0, overflow: "hidden" }}>
           {/* Layer 1 — Deep space base with layered radial depth */}
           <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at 20% 40%, #071529 0%, #010e24 40%, #010a1c 70%, #000814 100%)" }} />
           {/* Layer 2 — Cosmic horizon glow (bottom horizon light bleed) */}
@@ -358,10 +360,9 @@ function HeroSection({ locale }: { locale: string }) {
                 style={{ display: "block", fontSize: "clamp(2.5rem, 6vw, 4.5rem)", fontWeight: 900 }}
               >
                 <span
+                  className="gradient-text"
                   style={{
-                    background: `linear-gradient(135deg, #FFFFFF 0%, #E2E8F0 30%, ${DS.pink} 65%, ${DS.cosmicPurple} 100%)`,
-                    WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-                    backgroundClip: "text",
+                    backgroundImage: `linear-gradient(135deg, ${DS.text} 0%, ${DS.pink} 65%, ${DS.cosmicPurple} 100%)`,
                   }}
                 >
                   {t("heroTitle1")}
@@ -397,11 +398,11 @@ function HeroSection({ locale }: { locale: string }) {
               <Link
                 href={`/${locale}/portfolio`}
                 style={{
-                  color: DS.text2, fontSize: "0.9375rem", fontWeight: 500,
+                  color: DS.text, fontSize: "0.9375rem", fontWeight: 600,
                   padding: "0.875rem 2rem", borderRadius: "0.875rem",
-                  border: "1px solid rgba(255,255,255,0.12)", textDecoration: "none",
+                  border: `1px solid ${rgba(DS.text, 0.1)}`, textDecoration: "none",
                   display: "flex", alignItems: "center", gap: "0.625rem",
-                  background: "rgba(255,255,255,0.04)", backdropFilter: "blur(12px)",
+                  background: rgba(DS.text, 0.05), backdropFilter: "blur(12px)",
                 }}
               >
                 <Eye size={16} />
@@ -568,21 +569,7 @@ function HeroSection({ locale }: { locale: string }) {
           </motion.div>
         </div>
 
-        {/* Scroll indicator */}
-        <motion.div
-          style={{ position: "absolute", bottom: "2rem", left: "50%", transform: "translateX(-50%)" }}
-          animate={{ y: [0, 8, 0] }}
-          transition={{ duration: 2, repeat: Infinity }}
-        >
-          <div
-            style={{
-              width: 24, height: 40, border: "2px solid rgba(255,255,255,0.15)",
-              borderRadius: 12, display: "flex", justifyContent: "center", paddingTop: "0.25rem",
-            }}
-          >
-            <div style={{ width: 3, height: 10, background: DS.blue, borderRadius: 2 }} />
-          </div>
-        </motion.div>
+
       </section>
     </>
   );
@@ -644,7 +631,7 @@ function StatsSection() {
     <section
       style={{
         padding: "5rem 1.5rem",
-        background: "linear-gradient(180deg, rgba(15,23,42,0.4) 0%, rgba(2,6,23,0) 100%)",
+        background: `linear-gradient(180deg, ${rgba(DS.text, 0.04)} 0%, transparent 100%)`,
       }}
     >
       <div style={{ maxWidth: "72rem", margin: "0 auto" }}>
@@ -659,7 +646,7 @@ function StatsSection() {
               key={s.labelKey}
               style={{
                 textAlign: "center", padding: "1.25rem", borderRadius: "1.25rem",
-                background: "rgba(15,23,42,0.6)", border: `1px solid ${DS.border}`,
+                background: rgba(DS.bgCard, 0.6), border: `1px solid ${rgba(DS.text, 0.1)}`,
                 backdropFilter: "blur(12px)",
               }}
               initial={{ opacity: 0, y: 30 }}
@@ -681,7 +668,7 @@ function StatsSection() {
               <div
                 style={{
                   color: s.color, fontFamily: DS.heading,
-                  fontSize: "1.625rem", fontWeight: 900, textShadow: `0 0 16px ${s.color}50`,
+                  fontSize: "1.625rem", fontWeight: 900, textShadow: `0 0 16px ${rgba(s.color, 0.4)}`,
                 }}
               >
                 <AnimatedCounter to={s.value} suffix={s.suffix} />
@@ -724,19 +711,19 @@ function LPSystemSection({ locale }: { locale: string }) {
   ];
 
   return (
-    <section style={{ padding: "6rem 1.5rem", background: "linear-gradient(160deg, rgba(15,23,42,0.5) 0%, rgba(2,6,23,0.5) 100%)" }}>
+    <section style={{ padding: "6rem 1.5rem", background: `linear-gradient(160deg, ${rgba(DS.text, 0.05)} 0%, transparent 100%)` }}>
       <div style={{ maxWidth: "72rem", margin: "0 auto" }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "4rem", alignItems: "center" }}>
           {/* Left */}
           <div>
             <Badge label={t("lpSectionBadge")} color={DS.purple} />
             <h2
+              className="gradient-text"
               style={{
                 fontFamily: DS.heading, fontSize: "clamp(1.5rem, 3.5vw, 2.5rem)",
                 fontWeight: 900, letterSpacing: "0.05em",
-                background: `linear-gradient(135deg, #FFFFFF 0%, ${DS.pink} 60%, ${DS.pinkLight} 100%)`,
-                WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-                backgroundClip: "text", marginBottom: "1rem",
+                backgroundImage: `linear-gradient(135deg, ${DS.text} 0%, ${DS.pink} 60%, ${DS.pinkLight} 100%)`,
+                marginBottom: "1rem",
               }}
             >
               {t("lpSectionTitle")}
@@ -786,7 +773,7 @@ function LPSystemSection({ locale }: { locale: string }) {
             <div
               style={{
                 borderRadius: "1rem", padding: "1.75rem",
-                background: "rgba(15,23,42,0.7)", border: `1px solid ${DS.border}`,
+                background: rgba(DS.bgCard, 0.7), border: `1px solid ${DS.border}`,
                 backdropFilter: "blur(12px)",
               }}
             >
@@ -800,8 +787,8 @@ function LPSystemSection({ locale }: { locale: string }) {
                     style={{
                       display: "flex", alignItems: "center", gap: "1rem",
                       padding: "0.75rem", borderRadius: "0.75rem",
-                      background: r.highlight ? `${r.color}12` : "rgba(255,255,255,0.03)",
-                      border: `1px solid ${r.highlight ? `${r.color}30` : "transparent"}`,
+                      background: r.highlight ? rgba(r.color, 0.12) : rgba(DS.text, 0.03),
+                      border: `1px solid ${r.highlight ? rgba(r.color, 0.30) : rgba(DS.text, 0.08)}`,
                     }}
                     initial={{ opacity: 0, x: 20 }}
                     whileInView={{ opacity: 1, x: 0 }}
@@ -826,14 +813,14 @@ function LPSystemSection({ locale }: { locale: string }) {
                         style={{
                           display: "flex", alignItems: "center", gap: "0.375rem",
                           padding: "0.25rem 0.625rem", borderRadius: "0.5rem",
-                          background: `${r.color}20`, border: `1px solid ${r.color}40`,
+                          background: rgba(r.color, 0.20), border: `1px solid ${rgba(r.color, 0.40)}`,
                         }}
                       >
                         <span style={{ width: 6, height: 6, borderRadius: "50%", background: r.color }} />
                         <span style={{ color: r.color, fontSize: "0.5625rem", fontFamily: "'JetBrains Mono', monospace" }}>{t("rankBoardYou")}</span>
                       </div>
                     )}
-                    <div style={{ width: 80, height: 6, borderRadius: 3, background: "rgba(255,255,255,0.05)" }}>
+                    <div style={{ width: 80, height: 6, borderRadius: 3, background: rgba(DS.text, 0.05) }}>
                       <div style={{ height: 6, borderRadius: 3, width: `${Math.min(100, (7 - i) * 15)}%`, background: r.color }} />
                     </div>
                   </motion.div>
@@ -842,7 +829,7 @@ function LPSystemSection({ locale }: { locale: string }) {
               <div
                 style={{
                   marginTop: "1.5rem", padding: "1rem", borderRadius: "0.75rem",
-                  background: "rgba(79,125,243,0.08)", border: "1px solid rgba(79,125,243,0.2)",
+                  background: rgba(DS.blue, 0.08), border: `1px solid ${rgba(DS.blue, 0.2)}`,
                 }}
               >
                 <div style={{ color: DS.text4, fontSize: "0.75rem", lineHeight: 1.6 }}>
@@ -888,7 +875,7 @@ function CTASection({ locale }: { locale: string }) {
       <div
         style={{
           position: "absolute", inset: 0,
-          background: "radial-gradient(ellipse at 50% 50%, rgba(79,125,243,0.15) 0%, transparent 70%)",
+          background: `radial-gradient(ellipse at 50% 50%, ${rgba(DS.blue, 0.15)} 0%, transparent 70%)`,
           pointerEvents: "none",
         }}
       />
@@ -929,7 +916,7 @@ function CTASection({ locale }: { locale: string }) {
               padding: "1rem 2rem", borderRadius: "0.875rem",
               border: `1px solid ${DS.border2}`, textDecoration: "none",
               display: "flex", alignItems: "center", gap: "0.625rem",
-              background: "rgba(255,255,255,0.04)",
+              background: rgba(DS.text, 0.04),
             }}
           >
             <ChevronRight size={18} />

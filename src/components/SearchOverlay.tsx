@@ -16,13 +16,7 @@ import { useTranslations } from "next-intl";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
-function hexRgba(hex: string, alpha: number): string {
-  const h = hex.replace("#", "");
-  const r = parseInt(h.substring(0, 2), 16);
-  const g = parseInt(h.substring(2, 4), 16);
-  const b = parseInt(h.substring(4, 6), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
+import { rgba } from "@/components/ui/utils";
 
 // Entity type config: icon emoji + DS color + label key
 const ENTITY_CONFIG: Record<string, { icon: string; color: string; pill: string }> = {
@@ -234,7 +228,7 @@ export default function SearchOverlay({ locale, onClose }: SearchOverlayProps) {
       onClick={onClose}
       style={{
         position: "fixed", inset: 0, zIndex: 200,
-        background: "rgba(2,6,23,0.94)", backdropFilter: "blur(20px)",
+        background: rgba(DS.bgCosmic, 0.94), backdropFilter: "blur(20px)",
         display: "flex", flexDirection: "column", alignItems: "center", paddingTop: 80,
       }}
     >
@@ -251,9 +245,9 @@ export default function SearchOverlay({ locale, onClose }: SearchOverlayProps) {
           style={{
             display: "flex", alignItems: "center", gap: "0.75rem",
             padding: "1rem 1.5rem", borderRadius: 16,
-            background: DS.bgCard2,
-            border: `1px solid rgba(236,72,153,0.4)`,
-            boxShadow: `0 0 60px rgba(236,72,153,0.12), 0 25px 80px rgba(0,0,0,0.7)`,
+            background: DS.bgCard,
+            border: `1px solid ${rgba(DS.pink, 0.35)}`,
+            boxShadow: `0 0 40px ${rgba(DS.pink, 0.1)}, var(--figma-glow-card)`,
           }}
         >
           {loading ? (
@@ -295,8 +289,8 @@ export default function SearchOverlay({ locale, onClose }: SearchOverlayProps) {
               transition={{ duration: 0.15 }}
               style={{
                 marginTop: 8, borderRadius: 16, overflow: "hidden",
-                background: DS.bgCard2, border: `1px solid rgba(107,61,245,0.2)`,
-                boxShadow: "0 20px 60px rgba(0,0,0,0.6)", maxHeight: "70vh", overflowY: "auto",
+                background: DS.bgCard, border: `1px solid ${rgba(DS.cosmicPurple, 0.15)}`,
+                boxShadow: "var(--figma-glow-card)", maxHeight: "70vh", overflowY: "auto",
               }}
             >
               {/* Loading skeletons */}
@@ -445,7 +439,7 @@ export default function SearchOverlay({ locale, onClose }: SearchOverlayProps) {
                       <button key={r} onClick={() => setQuery(r)} style={{
                         display: "flex", alignItems: "center", gap: 5,
                         padding: "5px 12px", borderRadius: 8,
-                        background: "rgba(255,255,255,0.04)",
+                        background: rgba(DS.text, 0.05),
                         border: `1px solid ${DS.border}`,
                         color: DS.text3, fontSize: 12, cursor: "pointer",
                       }}>

@@ -6,10 +6,11 @@
  * Fetches from /api/services/pricing (server component passes data).
  */
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 import { DS, GRD, GLOW } from "@/lib/design-tokens";
+import { rgba } from "@/components/ui/utils";
 import { ArrowRight, ChevronDown, Eye, X, Check, Minus, ArrowUpDown, Zap } from "lucide-react";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -781,9 +782,14 @@ function TrustStrip({ locale }: { locale: string }) {
 // ── Main Component ─────────────────────────────────────────────────────────────
 
 export function DichVuClient({ data, locale }: Props) {
+  const [mounted, setMounted] = useState(false);
   const [activeService, setActiveService] = useState<string>("web");
   const [selectedTier, setSelectedTier] = useState<string | null>(null);
   const [showComparison, setShowComparison] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const isVi = locale === "vi";
 
@@ -817,6 +823,8 @@ export function DichVuClient({ data, locale }: Props) {
     setShowComparison(false);
     setSelectedTier(null);
   }, []);
+
+  if (!mounted) return <main style={{ background: DS.bg, minHeight: "100vh" }} />;
 
   return (
     <main style={{ background: DS.bg, minHeight: "100vh", fontFamily: DS.body }}>
@@ -861,7 +869,7 @@ export function DichVuClient({ data, locale }: Props) {
           <motion.h1
             style={{
               fontFamily: DS.heading, fontSize: 52, fontWeight: 900, letterSpacing: "-0.02em",
-              background: "linear-gradient(180deg, #FFFFFF 0%, #94A3B8 100%)",
+              background: `linear-gradient(180deg, ${DS.text} 0%, ${rgba(DS.text, 0.6)} 100%)`,
               WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
               marginBottom: 18, lineHeight: 1.1,
             }}
@@ -890,10 +898,10 @@ export function DichVuClient({ data, locale }: Props) {
             transition={{ delay: 0.3 }}
             style={{
               display: "inline-flex", gap: 4, padding: 6,
-              background: "rgba(15,23,42,0.4)",
+              background: rgba(DS.bgCosmic, 0.4),
               backdropFilter: "blur(20px)",
-              borderRadius: 20, border: `1px solid ${DS.border}`,
-              boxShadow: "0 10px 40px rgba(0,0,0,0.3)",
+              borderRadius: 20, border: `1px solid ${rgba(DS.text, 0.08)}`,
+              boxShadow: `0 10px 40px ${rgba(DS.text, 0.08)}`,
             }}
           >
             {SERVICE_KEYS.map(key => {
@@ -970,7 +978,7 @@ export function DichVuClient({ data, locale }: Props) {
                 </div>
               ) : (
                 <div style={{
-                  background: "rgba(15,23,42,0.3)",
+                  background: rgba(DS.bgCosmic, 0.3),
                   backdropFilter: "blur(30px)",
                   border: `1px solid ${DS.border}`,
                   borderRadius: 32,
@@ -982,7 +990,7 @@ export function DichVuClient({ data, locale }: Props) {
                     display: "grid",
                     gridTemplateColumns: `1.4fr repeat(${serviceTiers.length}, 1fr)`,
                     borderBottom: `2px solid ${DS.border}`,
-                    background: "rgba(15,23,42,0.6)",
+                    background: rgba(DS.bgCosmic, 0.6),
                   }}>
                     <div style={{
                       padding: "32px 24px",
@@ -1178,7 +1186,7 @@ export function DichVuClient({ data, locale }: Props) {
                   <div style={{
                     display: "grid",
                     gridTemplateColumns: `1.4fr repeat(${serviceTiers.length}, 1fr)`,
-                    background: "rgba(15,23,42,0.8)",
+                    background: rgba(DS.bgCosmic, 0.8),
                     borderTop: `1px solid ${DS.border}`,
                   }}>
                     <div style={{ padding: "24px", display: "flex", alignItems: "center", justifyContent: "center" }}>

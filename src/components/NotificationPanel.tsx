@@ -14,10 +14,7 @@ import { useAuthStore } from "@/app/store/authStore";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
-function hexRgba(hex: string, alpha: number): string {
-  const h = hex.replace("#", "");
-  return `rgba(${parseInt(h.slice(0, 2), 16)},${parseInt(h.slice(2, 4), 16)},${parseInt(h.slice(4, 6), 16)},${alpha})`;
-}
+import { rgba } from "@/components/ui/utils";
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
@@ -126,12 +123,12 @@ export default function NotificationPanel({ locale, onClose, initialCount }: Not
         position: "absolute", top: "calc(100% + 8px)", right: 0,
         width: 380,
         maxHeight: 480,
-        background: "rgba(10,10,18,0.98)",
-        border: "1px solid rgba(236,72,153,0.2)",
+        background: rgba(DS.bgCosmic, 0.98),
+        border: `1px solid ${rgba(DS.pink, 0.2)}`,
         borderRadius: 16,
         backdropFilter: "blur(24px)",
         WebkitBackdropFilter: "blur(24px)",
-        boxShadow: "0 20px 60px rgba(0,0,0,0.7), 0 0 20px rgba(236,72,153,0.08)",
+        boxShadow: "0 20px 60px rgba(0,0,0,0.15), 0 0 20px rgba(236,72,153,0.08)",
         overflow: "hidden", zIndex: 110,
         display: "flex", flexDirection: "column",
       }}

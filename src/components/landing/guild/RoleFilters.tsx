@@ -4,6 +4,8 @@
  * RoleFilters — Department / role filter pills with holographic active state
  */
 import { motion } from "motion/react";
+import { DS } from "@/lib/design-tokens";
+import { rgba } from "@/components/ui/utils";
 
 export type RoleFilter =
   | "all"
@@ -49,9 +51,9 @@ export function RoleFilters({ activeFilter, onFilterChange, labels }: RoleFilter
               backgroundImage: active
                 ? `linear-gradient(135deg, ${filter.color}22, ${filter.color}11)`
                 : "none",
-              backgroundColor: active ? "transparent" : "#0F172A",
-              border: `1px solid ${active ? filter.color + "80" : "#1F2937"}`,
-              color: active ? filter.color : "#64748B",
+              backgroundColor: active ? "transparent" : rgba(DS.bgCosmic, 0.5),
+              border: `1px solid ${active ? filter.color + "80" : DS.border}`,
+              color: active ? filter.color : DS.text4,
             }}
             whileHover={{ scale: 1.05, y: -2 }}
             whileTap={{ scale: 0.98 }}
