@@ -371,7 +371,7 @@ export default function SeoPackagesPage() {
                       value={form.basePrice}
                       onChange={e => {
                         const val = e.target.value.replace(/[^0-9-]/g, "");
-                        setForm(f => ({ ...f, basePrice: Number(val) || 0 }));
+                        setForm(f => ({ ...f, basePrice: val }));
                       }}
                       style={inpStyle} />
                   </div>
@@ -383,7 +383,7 @@ export default function SeoPackagesPage() {
                       value={form.marketPrice}
                       onChange={e => {
                         const val = e.target.value.replace(/[^0-9-]/g, "");
-                        setForm(f => ({ ...f, marketPrice: Number(val) || 0 }));
+                        setForm(f => ({ ...f, marketPrice: val }));
                       }}
                       style={inpStyle} />
                   </div>
@@ -398,7 +398,7 @@ export default function SeoPackagesPage() {
                       value={form.lpReward}
                       onChange={e => {
                         const val = e.target.value.replace(/[^0-9-]/g, "");
-                        setForm(f => ({ ...f, lpReward: Number(val) || 0 }));
+                        setForm(f => ({ ...f, lpReward: val }));
                       }}
                       style={inpStyle} />
                   </div>
