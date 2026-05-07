@@ -22,14 +22,16 @@ import {
   Mail, Phone, MapPin, Clock, Zap, Rocket, Globe, Shield,
   BookOpen, Send, MessageCircle, ChevronRight,
 } from "lucide-react";
+import { rgba } from "@/components/ui/utils";
+
 
 const RANK_COLORS = [
-  { key: "iron",    color: "#9CA3AF" },
-  { key: "bronze",  color: "#CD7F32" },
-  { key: "silver",  color: "#CBD5E1" },
-  { key: "gold",    color: "#FFD700" },
-  { key: "platinum",color: "#14B8A6" },
-  { key: "ruby",    color: "#EF4444" },
+  { key: "iron", color: "#9CA3AF" },
+  { key: "bronze", color: "#CD7F32" },
+  { key: "silver", color: "#CBD5E1" },
+  { key: "gold", color: "#FFD700" },
+  { key: "platinum", color: "#14B8A6" },
+  { key: "ruby", color: "#EF4444" },
   { key: "diamond", color: "#818CF8" },
 ];
 
@@ -173,10 +175,10 @@ export default function SiteFooter({ locale = "vi" }: { locale?: string }) {
       title: t("services"),
       icon: <Globe size={14} />,
       links: [
-        { label: t("servicesLinks.webDesign"),       href: `/${locale}/dich-vu` },
-        { label: t("servicesLinks.appDev"),          href: `/${locale}/dich-vu` },
-        { label: t("servicesLinks.saas"),             href: `/${locale}/dich-vu` },
-        { label: t("servicesLinks.seoMarketing"),    href: `/${locale}/dich-vu` },
+        { label: t("servicesLinks.webDesign"), href: `/${locale}/dich-vu` },
+        { label: t("servicesLinks.appDev"), href: `/${locale}/dich-vu` },
+        { label: t("servicesLinks.saas"), href: `/${locale}/dich-vu` },
+        { label: t("servicesLinks.seoMarketing"), href: `/${locale}/dich-vu` },
         { label: t("servicesLinks.bookConsultation"), href: `/${locale}/thiet-ke-website` },
       ],
     },
@@ -184,23 +186,23 @@ export default function SiteFooter({ locale = "vi" }: { locale?: string }) {
       title: t("resources"),
       icon: <BookOpen size={14} />,
       links: [
-        { label: t("resourcesLinks.academy"),    href: `/${locale}/academy` },
-        { label: t("resourcesLinks.blog"),        href: `/${locale}/blog` },
-        { label: t("resourcesLinks.portfolio"),   href: `/${locale}/portfolio` },
-        { label: t("resourcesLinks.lpSystem"),    href: `/${locale}/khach-hang` },
-        { label: t("resourcesLinks.pricing"),     href: `/${locale}/pricing` },
+        { label: t("resourcesLinks.academy"), href: `/${locale}/academy` },
+        { label: t("resourcesLinks.blog"), href: `/${locale}/blog` },
+        { label: t("resourcesLinks.portfolio"), href: `/${locale}/portfolio` },
+        { label: t("resourcesLinks.lpSystem"), href: `/${locale}/khach-hang` },
+        { label: t("resourcesLinks.pricing"), href: `/${locale}/pricing` },
       ],
     },
     {
       title: t("company"),
       icon: <Shield size={14} />,
       links: [
-        { label: t("companyLinks.about"),           href: `/${locale}` },
-        { label: tNav("team"),                      href: `/${locale}/team` },
-        { label: t("companyLinks.careers"),         href: `/${locale}/contact` },
-        { label: t("companyLinks.companyProcess"),  href: `/${locale}/quy-trinh` },
-        { label: t("companyLinks.terms"),           href: `/${locale}/terms` },
-        { label: t("companyLinks.contact"),         href: `/${locale}/contact` },
+        { label: t("companyLinks.about"), href: `/${locale}` },
+        { label: tNav("team"), href: `/${locale}/team` },
+        { label: t("companyLinks.careers"), href: `/${locale}/contact` },
+        { label: t("companyLinks.companyProcess"), href: `/${locale}/quy-trinh` },
+        { label: t("companyLinks.terms"), href: `/${locale}/terms` },
+        { label: t("companyLinks.contact"), href: `/${locale}/contact` },
       ],
     },
   ];
@@ -226,7 +228,7 @@ export default function SiteFooter({ locale = "vi" }: { locale?: string }) {
           display: grid;
           grid-template-columns: 1fr;
           gap: 1px;
-          background: rgba(255,255,255,0.06);
+          background: ${rgba(DS.text, 0.08)};
           border-radius: 16px;
           overflow: hidden;
           margin-bottom: 2.5rem;
@@ -246,13 +248,14 @@ export default function SiteFooter({ locale = "vi" }: { locale?: string }) {
       {/* ═══════════════════════════════════════════════════════════════
           CTA BANNER — Full-width cosmic gradient
       ═══════════════════════════════════════════════════════════════ */}
-      <div style={{
-        padding: "4.5rem 1.5rem",
-        background: "linear-gradient(135deg, rgba(107,61,245,0.18) 0%, rgba(79,125,243,0.10) 40%, rgba(236,72,153,0.08) 100%)",
-        borderBottom: `1px solid rgba(107,61,245,0.18)`,
-        position: "relative",
-        overflow: "hidden",
-      }}>
+      {!pathname.endsWith("/about") && (
+        <div style={{
+          padding: "4.5rem 1.5rem",
+          background: "linear-gradient(135deg, rgba(107,61,245,0.18) 0%, rgba(79,125,243,0.10) 40%, rgba(236,72,153,0.08) 100%)",
+          borderBottom: `1px solid rgba(107,61,245,0.18)`,
+          position: "relative",
+          overflow: "hidden",
+        }}>
         {/* Background glow blobs */}
         <div style={{
           position: "absolute", top: "-40%", left: "-10%",
@@ -279,13 +282,13 @@ export default function SiteFooter({ locale = "vi" }: { locale?: string }) {
               display: "inline-flex", alignItems: "center", gap: "0.5rem",
               marginBottom: "1.25rem", padding: "0.375rem 1rem",
               borderRadius: "9999px",
-              background: "rgba(236,72,153,0.10)",
-              border: "1px solid rgba(236,72,153,0.30)",
-              boxShadow: "0 0 16px rgba(236,72,153,0.12)",
+              background: DS.bgCard,
+              border: `1px solid ${rgba(DS.pink, 0.25)}`,
+              boxShadow: `0 0 16px ${rgba(DS.pink, 0.1)}`,
             }}>
               <Zap size={12} style={{ color: DS.pink }} />
-              <span style={{ color: DS.pinkLight, fontSize: "0.6875rem", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.18em" }}>
-                BẮT ĐẦU HÀNH TRÌNH
+              <span style={{ color: DS.pink, fontSize: "0.6875rem", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.18em", fontWeight: 700 }}>
+                {t("ctaBadge")}
               </span>
             </div>
 
@@ -293,7 +296,7 @@ export default function SiteFooter({ locale = "vi" }: { locale?: string }) {
               fontFamily: DS.heading,
               fontSize: "clamp(1.75rem, 4vw, 2.5rem)",
               fontWeight: 900, letterSpacing: "0.05em", lineHeight: 1.2,
-              background: `linear-gradient(135deg, #FFFFFF 0%, ${DS.pink} 55%, ${DS.pinkLight} 100%)`,
+              background: `linear-gradient(135deg, ${DS.text} 0%, ${DS.pink} 55%, ${DS.pinkLight} 100%)`,
               WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
               backgroundClip: "text",
               marginBottom: "0.875rem",
@@ -359,13 +362,14 @@ export default function SiteFooter({ locale = "vi" }: { locale?: string }) {
             <CosmicRing />
           </div>
         </div>
-      </div>
+        </div>
+      )}
 
       {/* ═══════════════════════════════════════════════════════════════
           CONTACT STRIP — highlighted bar with call + zalo + email
       ═══════════════════════════════════════════════════════════════ */}
       <div style={{
-        background: "rgba(12,12,20,0.95)",
+        background: rgba(DS.bg, 0.95),
         borderBottom: `1px solid ${DS.border}`,
         padding: "1.25rem 1.5rem",
       }}>
@@ -379,10 +383,10 @@ export default function SiteFooter({ locale = "vi" }: { locale?: string }) {
             display: "flex", flexWrap: "wrap", alignItems: "center", gap: "1.5rem",
           }}>
             {[
-              { icon: <Phone size={15} />,   label: "Hotline",         val: "+84 37 844 3602", color: DS.pink },
-              { icon: <Mail size={15} />,    label: "Email",            val: "ducanhnhatbui@gmail.com", color: DS.blue },
-              { icon: <MapPin size={15} />,  label: "Địa chỉ",          val: "Cái Răng, Cần Thơ", color: DS.cyan },
-              { icon: <Clock size={15} />,   label: "Giờ làm việc",    val: "T2–T6 · 09:00–18:00", color: DS.amber },
+              { icon: <Phone size={15} />, label: "Hotline", val: "+84 37 844 3602", color: DS.pink },
+              { icon: <Mail size={15} />, label: "Email", val: "ducanhnhatbui@gmail.com", color: DS.blue },
+              { icon: <MapPin size={15} />, label: "Địa chỉ", val: "Cái Răng, Cần Thơ", color: DS.cyan },
+              { icon: <Clock size={15} />, label: "Giờ làm việc", val: "T2–T6 · 09:00–18:00", color: DS.amber },
             ].map((item) => (
               <div key={item.label} style={{
                 display: "flex", alignItems: "center", gap: "0.5rem",
@@ -460,7 +464,7 @@ export default function SiteFooter({ locale = "vi" }: { locale?: string }) {
               }}
             >
               <svg width={13} height={13} viewBox="0 0 80 80" fill="none" aria-hidden="true">
-                <path d="M70.58 55.27C71.36 51.84 72 48.49 72 44.52C72 31.12 63.45 20.5 50.06 20.5C46.35 20.5 42.76 21.32 39.59 22.84L28 14.5 37.19 24.88C33.24 26.72 30.16 29.73 28.11 33.63L19.38 27.19 26.88 41.21C26.88 41.21 22.81 55.27 10.12 55.27C5.46 55.27 1 59.11 1 64.08C1 69.05 5.46 73.58 10.12 73.58C16.15 73.58 25.27 70.66 27.58 65.08C31.04 74.38 40.65 79.58 50.65 79.58C63.45 79.58 72 67.89 72 55.27H70.58Z" fill="white"/>
+                <path d="M70.58 55.27C71.36 51.84 72 48.49 72 44.52C72 31.12 63.45 20.5 50.06 20.5C46.35 20.5 42.76 21.32 39.59 22.84L28 14.5 37.19 24.88C33.24 26.72 30.16 29.73 28.11 33.63L19.38 27.19 26.88 41.21C26.88 41.21 22.81 55.27 10.12 55.27C5.46 55.27 1 59.11 1 64.08C1 69.05 5.46 73.58 10.12 73.58C16.15 73.58 25.27 70.66 27.58 65.08C31.04 74.38 40.65 79.58 50.65 79.58C63.45 79.58 72 67.89 72 55.27H70.58Z" fill="white" />
               </svg>
               <span>Zalo</span>
             </motion.a>

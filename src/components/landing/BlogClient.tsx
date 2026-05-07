@@ -1,8 +1,10 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
 import { DS } from "@/lib/design-tokens";
+import { rgba } from "@/components/ui/utils";
 
 type BlogRecord = Record<string, unknown>;
 
@@ -12,14 +14,22 @@ function formatDate(date: Date, locale: string): string {
 }
 
 export function BlogClient({ locale, posts }: { locale: string; posts: BlogRecord[] }) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) return <main style={{ background: DS.bg, minHeight: "100vh" }} />;
+
   return (
     <main style={{ background: DS.bg, minHeight: "100vh" }}>
       <section className="py-20 px-6 text-center" style={{ background: "linear-gradient(180deg, rgba(59,130,246,0.07) 0%, transparent 100%)" }}>
         <div className="max-w-2xl mx-auto">
-          <div className="inline-flex items-center gap-2 mb-5 px-4 py-1.5 rounded-full" style={{ background: "rgba(59,130,246,0.08)", border: "1px solid rgba(59,130,246,0.2)" }}>
+          <div className="inline-flex items-center gap-2 mb-5 px-4 py-1.5 rounded-full" style={{ background: rgba(DS.blue, 0.1), border: `1px solid ${rgba(DS.blue, 0.4)}` }}>
             <span style={{ color: DS.blue, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.22em" }}>BLOG & INSIGHTS</span>
           </div>
-          <h1 style={{ fontFamily: DS.heading, fontSize: 40, fontWeight: 900, letterSpacing: "0.06em", background: "linear-gradient(135deg, #FFFFFF, #94A3B8)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", marginBottom: 14 }}>
+          <h1 style={{ fontFamily: DS.heading, fontSize: 40, fontWeight: 900, letterSpacing: "0.06em", background: `linear-gradient(180deg, ${DS.text} 0%, ${rgba(DS.text, 0.6)} 100%)`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", marginBottom: 14 }}>
             KIẾN THỨC CHUYÊN MÔN
           </h1>
           <p style={{ color: DS.text3, fontSize: 15, lineHeight: 1.8 }}>Cập nhật xu hướng công nghệ, design, performance và case study thực tế từ LOOP.</p>

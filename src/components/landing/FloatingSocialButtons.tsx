@@ -10,18 +10,20 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Phone } from "lucide-react";
 import { CEO_CONTACT } from "@/lib/constants";
+import { DS } from "@/lib/design-tokens";
+import { rgba } from "@/components/ui/utils";
 
 /* ── Design tokens ── */
 const T = {
-  bgCard: "rgba(10,10,20,0.82)",
+  bgCard: rgba(DS.bgCosmic, 0.82),
   pink: "#EC4899",
   pinkLight: "#F472B6",
   purple: "#6B3DF5",
   blue: "#1877F2",
   white: "#FFFFFF",
-  text3: "#94A3B8",
-  text4: "#64748B",
-  border: "rgba(255,255,255,0.07)",
+  text3: DS.text3,
+  text4: DS.text4,
+  border: rgba(DS.text, 0.07),
 } as const;
 
 /* ── Keyframe styles (injected once) ── */
@@ -167,7 +169,7 @@ function ContactBtn({ btn, index }: { btn: Btn; index: number }) {
               padding: "9px 14px",
               backdropFilter: "blur(18px)",
               WebkitBackdropFilter: "blur(18px)",
-              boxShadow: "0 8px 32px rgba(0,0,0,0.55), 0 0 20px rgba(0,0,0,0.2)",
+              boxShadow: `0 8px 32px ${rgba(DS.text, 0.1)}, 0 0 20px ${rgba(DS.text, 0.05)}`,
               pointerEvents: "none",
               zIndex: 20,
             }}
@@ -184,7 +186,7 @@ function ContactBtn({ btn, index }: { btn: Btn; index: number }) {
               borderTop: `1px solid ${btn.borderColor}`,
               borderRight: `1px solid ${btn.borderColor}`,
             }} />
-            <div style={{ color: T.white, fontSize: 13, fontWeight: 700, marginBottom: 2 }}>{btn.label}</div>
+            <div style={{ color: DS.text, fontSize: 13, fontWeight: 700, marginBottom: 2 }}>{btn.label}</div>
             <div style={{ color: T.text3, fontSize: 11 }}>{btn.sub}</div>
           </motion.div>
         )}
@@ -238,7 +240,7 @@ function ContactBtn({ btn, index }: { btn: Btn; index: number }) {
           borderRadius: 15,
           background: btn.gradient,
           border: `1px solid ${btn.borderColor}`,
-          boxShadow: "0 4px 16px rgba(0,0,0,0.35)",
+          boxShadow: `0 4px 16px ${rgba(DS.text, 0.15)}`,
           color: T.white,
           textDecoration: "none",
           cursor: "pointer",
@@ -337,7 +339,7 @@ export function FloatingSocialButtons() {
           backdropFilter: "blur(22px)",
           WebkitBackdropFilter: "blur(22px)",
           border: `1px solid ${T.border}`,
-          boxShadow: "0 12px 48px rgba(0,0,0,0.65), 0 0 80px rgba(107,61,245,0.06)",
+          boxShadow: `0 12px 48px ${rgba(DS.text, 0.12)}, 0 0 80px ${rgba(DS.purple, 0.06)}`,
         }}
       >
         {BTNS.map((btn, i) => (

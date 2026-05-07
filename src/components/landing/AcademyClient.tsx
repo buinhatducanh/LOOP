@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api/client";
 import { useAuthStore } from "@/app/store/authStore";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 import { DS, GRD } from "@/lib/design-tokens";
+import { rgba } from "@/components/ui/utils";
 import {
   Search, Star, Users, Play, BookOpen, Check, ChevronDown, Award, Zap,
   Clock, Code2, Palette, Server, GraduationCap,
@@ -750,10 +751,15 @@ function InstructorCard({ ins }: { ins: typeof INSTRUCTORS[0] }) {
 export function AcademyClient({ locale }: { locale: string }) {
   const t = useTranslations("Academy");
   const userLp = useUserLp();
+  const [mounted, setMounted] = useState(false);
   const [search, setSearch] = useState("");
   const [cat, setCat] = useState("");
   const [level, setLevel] = useState("");
   const [enrolling, setEnrolling] = useState<Course | null>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Fetch real courses from API (fallback to MOCK_COURSES if loading/error)
   const { data: apiData } = useQuery({
@@ -799,6 +805,8 @@ export function AcademyClient({ locale }: { locale: string }) {
     });
   }, [search, cat, level]);
 
+  if (!mounted) return <main style={{ background: DS.bg, minHeight: "100vh" }} />;
+
   const featured = MOCK_COURSES.find((c) => c.isFeatured);
 
   return (
@@ -808,15 +816,15 @@ export function AcademyClient({ locale }: { locale: string }) {
       <section style={{ background: "linear-gradient(180deg, rgba(20,184,166,0.05) 0%, transparent 100%)", padding: "64px 24px 48px" }}>
         <div style={{ maxWidth: 900, margin: "0 auto", textAlign: "center" }}>
           <div className="inline-flex items-center gap-2 mb-4 px-4 py-1.5 rounded-full"
-            style={{ background: "rgba(20,184,166,0.08)", border: "1px solid rgba(20,184,166,0.25)" }}>
-            <GraduationCap size={12} style={{ color: DS.cyan }} />
-            <span style={{ color: DS.cyan, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.22em" }}>ACADEMY & LEARNING</span>
+            style={{ background: rgba(DS.mint, 0.1), border: `1px solid ${rgba(DS.mint, 0.3)}` }}>
+            <GraduationCap size={12} style={{ color: DS.mint }} />
+            <span style={{ color: DS.mint, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.22em" }}>ACADEMY & LEARNING</span>
           </div>
 
           <h1 style={{
             fontFamily: DS.heading, fontSize: 48, fontWeight: 900,
             letterSpacing: "0.06em",
-            background: "linear-gradient(135deg, #FFFFFF 0%, #94A3B8 100%)",
+            background: `linear-gradient(180deg, ${DS.text} 0%, ${rgba(DS.text, 0.6)} 100%)`,
             WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
             marginBottom: 16,
           }}>
@@ -829,7 +837,7 @@ export function AcademyClient({ locale }: { locale: string }) {
           {/* LP Banner */}
           <div style={{
             display: "inline-flex", alignItems: "center", gap: 12,
-            background: `${DS.cyan}10`, border: `1px solid ${DS.cyan}40`,
+            background: rgba(DS.cyan, 0.1), border: `1px solid ${rgba(DS.cyan, 0.4)}`,
             borderRadius: 12, padding: "10px 20px",
           }}>
             <Zap size={16} style={{ color: DS.cyan }} />

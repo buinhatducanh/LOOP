@@ -16,16 +16,16 @@
 
 export const DS = {
   // ── Backgrounds ──────────────────────────────────────────────────────────
-  bg: "#020b1d",   // Deep space
-  bgCosmic: "#0C0C14",
-  bgDeep: "#1A1A2E",
-  bgCard: "#111827",
-  bgCard2: "#111827",
-  bgCard3: "#0D1526",
+  bg: "var(--bg, #0C0C14)",
+  bgCosmic: "var(--bg-cosmic, #0C0C14)",
+  bgDeep: "var(--bg-deep, #1A1A2E)",
+  bgCard: "var(--bg-card, #111827)",
+  bgCard2: "var(--bg-card2, #111827)",
+  bgCard3: "var(--bg-card3, #0D1526)",
 
   // ── Borders ──────────────────────────────────────────────────────────────
-  border: "#2A2A4A",
-  border2: "#374151",
+  border: "var(--border, #2A2A4A)",
+  border2: "var(--border2, #374151)",
 
   // ── Cosmic Palette (color_2.png — deep blue cosmos) ───────────────────────
   cosmicPurple: "#6B3DF5",   // Bright cosmic purple
@@ -89,11 +89,11 @@ export const DS = {
   red: "#CC3344",   // was #EF4444 → cosmic red
 
   // ── Text ─────────────────────────────────────────────────────────────────
-  text: "#FFFFFF",
-  text2: "#E2E8F0",
-  text3: "#B8C4D4",
-  text4: "#7A8A9E",
-  text5: "#5A6A7E",
+  text: "var(--text, #FFFFFF)",
+  text2: "var(--text2, #E2E8F0)",
+  text3: "var(--text3, #B8C4D4)",
+  text4: "var(--text4, #7A8A9E)",
+  text5: "var(--text5, #5A6A7E)",
 
   // ── Fonts ────────────────────────────────────────────────────────────────
   mono: "'JetBrains Mono', monospace",

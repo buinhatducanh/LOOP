@@ -15,6 +15,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { DS } from "@/lib/design-tokens";
+import { rgba } from "@/components/ui/utils";
 import {
   Check, HelpCircle, ChevronDown, ChevronRight,
   Shield, Search, Globe, Code2, BarChart3, Layers, Zap, Package,
@@ -128,16 +129,16 @@ function FeatureRow({
   // DISABLED: reduced opacity
 
   const rowBg = isIncluded
-    ? "rgba(20,40,30,0.5)"
+    ? "rgba(34,197,94,0.08)"
     : isSelected
       ? catStyle.bgLight
-      : "rgba(15,23,42,0.5)";
+      : rgba(DS.bgCosmic, 0.6);
 
   const rowBorder = isIncluded
-    ? "1px solid rgba(34,197,94,0.18)"
+    ? `1px solid ${rgba("#22C55E", 0.2)}`
     : isSelected
       ? `1px solid ${catStyle.border}`
-      : "1px solid rgba(255,255,255,0.05)";
+      : `1px solid ${rgba(DS.text, 0.08)}`;
 
   return (
     <motion.div
@@ -151,7 +152,7 @@ function FeatureRow({
         transition: "background 0.2s, border 0.2s",
       }}
       whileHover={!isDisabled ? {
-        background: isIncluded ? "rgba(25,50,38,0.6)" : isSelected ? catStyle.bgHover : "rgba(20,30,50,0.6)",
+        background: isIncluded ? "rgba(34,197,94,0.12)" : isSelected ? catStyle.bgHover : rgba(DS.text, 0.04),
       } : {}}
     >
       {/* Main content row */}
@@ -168,12 +169,12 @@ function FeatureRow({
               ? "rgba(34,197,94,0.15)"
               : isSelected
                 ? catStyle.color
-                : "rgba(255,255,255,0.04)",
+                : rgba(DS.text, 0.04),
             border: isIncluded
-              ? "1.5px solid rgba(34,197,94,0.4)"
+              ? `1.5px solid ${rgba("#22C55E", 0.4)}`
               : isSelected
                 ? "none"
-                : "1.5px solid rgba(255,255,255,0.12)",
+                : `1.5px solid ${rgba(DS.text, 0.12)}`,
             cursor: isDisabled ? "not-allowed" : "pointer",
           }}
         >
@@ -192,7 +193,7 @@ function FeatureRow({
                 {catStyle.icon}
               </span>
               <span style={{
-                color: isIncluded ? "#22C55E" : "#F1F5F9",
+                color: isIncluded ? "#22C55E" : DS.text,
                 fontSize: 14, fontWeight: 600, lineHeight: 1.4,
               }}>
                 {feature.label}
@@ -310,15 +311,15 @@ function FeatureRow({
           >
             <div
               style={{
-                borderTop: `1px solid ${isIncluded ? "rgba(34,197,94,0.12)" : "rgba(255,255,255,0.06)"}`,
+                borderTop: `1px solid ${isIncluded ? rgba("#22C55E", 0.12) : rgba(DS.text, 0.06)}`,
                 padding: "14px 16px 14px 58px",
                 background: isIncluded
-                  ? "rgba(20,40,30,0.3)"
-                  : "rgba(10,18,35,0.4)",
+                  ? "rgba(34,197,94,0.05)"
+                  : rgba(DS.bgCosmic, 0.8),
               }}
             >
               {/* Full description */}
-              <p style={{ color: "#94A3B8", fontSize: 12.5, lineHeight: 1.75, marginBottom: 8 }}>
+              <p style={{ color: DS.text3, fontSize: 12.5, lineHeight: 1.75, marginBottom: 8 }}>
                 {feature.description}
               </p>
 
@@ -406,7 +407,7 @@ function CategorySection({
 
         {/* Category name */}
         <span style={{
-          color: "#E2E8F0",
+          color: DS.text,
           fontSize: 13,
           fontWeight: 700,
           letterSpacing: "0.06em",
@@ -541,8 +542,9 @@ export function FeatureToggleTable({
       <div
         className="rounded-2xl p-5 mb-6"
         style={{
-          background: "rgba(15,23,42,0.6)",
-          border: `1px solid rgba(255,255,255,0.07)`,
+          background: rgba(DS.bgCosmic, 0.6),
+          border: `1px solid ${rgba(DS.text, 0.08)}`,
+          boxShadow: `0 4px 20px ${rgba(DS.text, 0.02)}`,
         }}
       >
         <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
@@ -564,7 +566,7 @@ export function FeatureToggleTable({
                 </span>
               )}
               <h4 style={{
-                color: "#F1F5F9",
+                color: DS.text,
                 fontFamily: "Cinzel, serif",
                 fontSize: 18,
                 fontWeight: 700,

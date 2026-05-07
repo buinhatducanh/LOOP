@@ -5,6 +5,8 @@
  */
 import { motion } from "motion/react";
 import { Search, ArrowUpDown } from "lucide-react";
+import { DS } from "@/lib/design-tokens";
+import { rgba } from "@/components/ui/utils";
 
 export type SortOption =
   | "level-desc"
@@ -62,10 +64,10 @@ export function SearchSortBar({
           placeholder={tSearchPlaceholder}
           className="w-full pl-10 pr-4 py-2.5 rounded-sm outline-none transition-all duration-300"
           style={{
-            background: "#0F172A",
-            border: "1px solid #1F2937",
-            color: "#E2E8F0",
-            fontFamily: "'JetBrains Mono', monospace",
+            background: rgba(DS.bgCosmic, 0.5),
+            border: `1px solid ${DS.border}`,
+            color: DS.text,
+            fontFamily: DS.mono,
             fontSize: 11,
             letterSpacing: "0.04em",
           }}
@@ -103,14 +105,14 @@ export function SearchSortBar({
       <div className="relative flex items-center gap-2">
         <div
           className="flex items-center gap-1 px-2 py-1 rounded-sm"
-          style={{ background: "#0F172A", border: "1px solid #1F2937" }}
+          style={{ background: rgba(DS.bgCosmic, 0.5), border: `1px solid ${DS.border}` }}
         >
-          <ArrowUpDown size={12} style={{ color: "#475569" }} />
+          <ArrowUpDown size={12} style={{ color: DS.text4 }} />
           <span
             style={{
-              color: "#64748B",
+              color: DS.text4,
               fontSize: 10,
-              fontFamily: "'JetBrains Mono', monospace",
+              fontFamily: DS.mono,
               letterSpacing: "0.08em",
             }}
           >
@@ -122,10 +124,10 @@ export function SearchSortBar({
           onChange={(e) => onSortChange(e.target.value as SortOption)}
           className="px-3 py-2.5 rounded-sm outline-none cursor-pointer transition-all duration-300"
           style={{
-            background: "#0F172A",
-            border: "1px solid #1F2937",
-            color: "#3B82F6",
-            fontFamily: "'JetBrains Mono', monospace",
+            background: rgba(DS.bgCosmic, 0.5),
+            border: `1px solid ${DS.border}`,
+            color: DS.blue,
+            fontFamily: DS.mono,
             fontSize: 11,
             letterSpacing: "0.08em",
             fontWeight: 600,

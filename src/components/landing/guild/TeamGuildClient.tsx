@@ -26,6 +26,7 @@ import { HUDPanel } from "./HUDPanel";
 import { RANKS, normalizeRank, formatLP, type RankKey } from "./guildMemberData";
 import { Users, Trophy, ChevronRight, ArrowRight } from "lucide-react";
 import { DS, GRD, GLOW } from "@/lib/design-tokens";
+import { rgba } from "@/components/ui/utils";
 
 type MemberRecord = Record<string, unknown>;
 
@@ -182,7 +183,7 @@ function RankStrip({ members, active, onChange }: { members: MemberRecord[]; act
               whileHover={{ y: -4 }}
               className="relative rounded-xl p-3 text-left cursor-pointer"
               style={{
-                background: isActive ? `linear-gradient(135deg, ${cfg.gradientFrom}20, ${cfg.gradientTo}10)` : "rgba(15,23,42,0.6)",
+                background: isActive ? `linear-gradient(135deg, ${cfg.gradientFrom}20, ${cfg.gradientTo}10)` : rgba(DS.bgCosmic, 0.6),
                 border: `1px solid ${isActive ? cfg.color + "70" : cfg.color + "18"}`,
                 boxShadow: isActive ? `0 0 20px ${cfg.glowColor}, 0 4px 20px rgba(0,0,0,0.3)` : "none",
                 cursor: "pointer",
@@ -330,7 +331,7 @@ function HeroSection({ members, hero, locale }: HeroSectionProps) {
               className="rounded-2xl p-5 text-center relative overflow-hidden"
               whileHover={{ borderColor: `${k.color}50`, boxShadow: `0 0 24px ${k.color}15` }}
               transition={{ delay: 0.55 + i * 0.06 }}
-              style={{ background: "rgba(15,23,42,0.7)", border: `1px solid ${k.color}20`, backdropFilter: "blur(12px)" }}
+              style={{ background: rgba(DS.bgCosmic, 0.7), border: `1px solid ${k.color}20`, backdropFilter: "blur(12px)" }}
             >
               <div style={{ position: "absolute", inset: 0, background: `radial-gradient(circle at 50% 0%, ${k.color}06, transparent 60%)`, pointerEvents: "none" }} />
               <div style={{ color: k.color, fontFamily: DS.heading, fontSize: 28, fontWeight: 700, textShadow: `0 0 16px ${k.color}50`, lineHeight: 1 }}>
@@ -361,10 +362,15 @@ interface TeamGuildClientProps {
 export function TeamGuildClient({ locale, members, hero }: TeamGuildClientProps) {
   const t = useTranslations("TeamPage");
 
+  const [mounted, setMounted] = useState(false);
   const [roleFilter, setRoleFilter] = useState<RoleFilter>("all");
   const [rankFilter, setRankFilter] = useState<RankKey | "all">("all");
   const [search, setSearch] = useState("");
   const [sortOption, setSortOption] = useState<SortOption>("level-desc");
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Inject guild CSS animations once
   useEffect(() => {
@@ -443,6 +449,8 @@ export function TeamGuildClient({ locale, members, hero }: TeamGuildClientProps)
       return idA.localeCompare(idB);
     });
   }, [members, search, roleFilter, rankFilter, sortOption]);
+
+  if (!mounted) return <main style={{ background: DS.bg, minHeight: "100vh" }} />;
 
   const isFiltered = roleFilter !== "all" || rankFilter !== "all" || !!search;
   const row1 = filtered.slice(0, 4);

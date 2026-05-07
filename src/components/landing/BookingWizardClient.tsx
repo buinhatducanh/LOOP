@@ -15,6 +15,7 @@ import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { motion, AnimatePresence } from "motion/react";
 import { DS, GRD } from "@/lib/design-tokens";
+import { rgba } from "@/components/ui/utils";
 import { FeatureToggleTable } from "./FeatureToggleTable";
 import { SEOPackageFeatureTable, type SEOFeature, type SEOPackageTier } from "./SEOPackageFeatureTable";
 import { WebPackageFeatureTable, type WebPackageFeature, type WebPackageTier } from "./WebPackageFeatureTable";
@@ -218,9 +219,9 @@ function ProgressBar({ step, stepLabels }: { step: number; stepLabels: string[] 
               <div
                 className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-300"
                 style={{
-                  background: i < step ? GRD.primary : i === step ? `${DS.blue}30` : "rgba(255,255,255,0.06)",
-                  border: i === step ? `2px solid ${DS.blue}` : i < step ? "none" : "1px solid rgba(255,255,255,0.12)",
-                  boxShadow: i === step ? `0 0 16px ${DS.blue}80` : "none",
+                  background: i < step ? GRD.primary : i === step ? `${DS.blue}30` : rgba(DS.text, 0.06),
+                  border: i === step ? `2px solid ${DS.blue}` : i < step ? "none" : `1px solid ${rgba(DS.text, 0.12)}`,
+                  boxShadow: i === step ? `0 0 16px ${rgba(DS.blue, 0.4)}` : "none",
                 }}
               >
                 {i < step ? (
@@ -230,7 +231,7 @@ function ProgressBar({ step, stepLabels }: { step: number; stepLabels: string[] 
                 )}
               </div>
               {i < stepLabels.length - 1 && (
-                <div className="flex-1 h-0.5 mx-1" style={{ background: i < step ? GRD.primary : "rgba(255,255,255,0.06)" }} />
+                <div className="flex-1 h-0.5 mx-1" style={{ background: i < step ? GRD.primary : rgba(DS.text, 0.06) }} />
               )}
             </div>
             <div style={{ color: i === step ? DS.blue : i < step ? DS.text4 : DS.text5, fontSize: 9, fontFamily: DS.mono, marginTop: 6, letterSpacing: "0.08em", textAlign: "center", maxWidth: 72 }}>
@@ -258,10 +259,10 @@ export function BookingWizardClient({ locale }: Props) {
   const [paymentPlan, setPaymentPlan] = useState<"50" | "100">("50");
   const [paymentMethod, setPaymentMethod] = useState("bank");
   const [qrData, setQrData] = useState<{ qrDataURL?: string; payUrl?: string; amount?: number; expiresAt?: string; message?: string } | null>(null);
-  const [paymentMethods, setPaymentMethods] = useState<{ value: string; label: string; icon: string; hasDynamicQR?: boolean; bankName?: string; accountNo?: string; accountName?: string; bankBin?: string }[]>([
-    { value: "bank", label: "Chuyển khoản", icon: "🏦" },
-    { value: "momo", label: "MoMo", icon: "💜" },
-    { value: "vnpay", label: "VNPay", icon: "💳" },
+  const [paymentMethods, setPaymentMethods] = useState<{ value: string; label: string; icon: string; color: string; hasDynamicQR?: boolean; bankName?: string; accountNo?: string; accountName?: string; bankBin?: string }[]>([
+    { value: "bank", label: "Chuyển khoản", icon: "🏦", color: DS.blue },
+    { value: "momo", label: "MoMo", icon: "💜", color: "#A50064" },
+    { value: "vnpay", label: "VNPay", icon: "💳", color: "#005BAA" },
   ]);
   const [staticQrInfo, setStaticQrInfo] = useState<{ bankTransfer?: { qrUrl?: string | null }; momo?: { qrUrl?: string | null } }>({});
   const [qrLoading, setQrLoading] = useState(false);
@@ -413,7 +414,13 @@ export function BookingWizardClient({ locale }: Props) {
           </div>
         )}
 
-        <div className={`relative flex flex-wrap justify-center ${compact ? "p-1 rounded-lg" : "p-1.5 rounded-2xl"} bg-slate-950/80 border border-white/5 shadow-[0_0_40px_rgba(0,0,0,0.4)] backdrop-blur-xl`}>
+        <div className={`relative flex flex-wrap justify-center ${compact ? "p-1 rounded-lg" : "p-1.5 rounded-2xl"} backdrop-blur-xl`}
+          style={{
+            background: rgba(DS.bgCosmic, 0.8),
+            border: `1px solid ${rgba(DS.text, 0.08)}`,
+            boxShadow: `0 4px 24px ${rgba(DS.text, 0.04)}`,
+          }}
+        >
           {options.map((opt) => {
             const isActive = isHosting
               ? Math.abs(selectedYears - opt.value) < 0.01
@@ -695,7 +702,8 @@ export function BookingWizardClient({ locale }: Props) {
       .then(r => r.json())
       .then(json => {
         if (json?.data?.methods?.length) {
-          setPaymentMethods(json.data.methods.map((m: Record<string, unknown>) => ({
+          setPaymentMethods(json.data.methods.map((m: any) => ({
+            color: DS.blue, // fallback
             ...m,
             value: m.value === "bank_transfer" ? "bank" : m.value,
           })));
@@ -1161,7 +1169,7 @@ export function BookingWizardClient({ locale }: Props) {
             <Sparkles size={10} style={{ color: DS.blue }} />
             <span style={{ color: DS.blue, fontSize: 9, fontFamily: DS.mono, letterSpacing: "0.22em" }}>{t("badge")}</span>
           </div>
-          <h1 style={{ fontFamily: DS.heading, fontSize: 34, fontWeight: 900, letterSpacing: "0.06em", background: GRD.heroText, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", marginBottom: 8 }}>
+          <h1 style={{ fontFamily: DS.heading, fontSize: 34, fontWeight: 900, letterSpacing: "0.06em", background: `linear-gradient(135deg, ${DS.text} 0%, ${DS.text3} 100%)`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", marginBottom: 8 }}>
             {t("heroTitle")}
           </h1>
           <p style={{ color: DS.text3, fontSize: 14, lineHeight: 1.7, marginBottom: 20 }}>{t("heroDesc")}</p>
@@ -1175,14 +1183,14 @@ export function BookingWizardClient({ locale }: Props) {
 
           {/* ── SECTION 1: Price summary bar (always visible) ── */}
           <div style={{
-            background: "rgba(10,15,30,0.92)",
-            border: `1px solid ${pkgColor}30`,
+            background: rgba(DS.bgCosmic, 0.92),
+            border: `1px solid ${rgba(pkgColor, 0.3)}`,
             borderRadius: 20,
             padding: "20px 24px",
             marginBottom: 28,
             position: "relative",
             overflow: "hidden",
-            boxShadow: `0 0 40px ${DS.green}12`,
+            boxShadow: `0 8px 32px ${rgba(DS.text, 0.04)}, 0 0 40px ${rgba(DS.green, 0.08)}`,
           }}>
             {/* Glow */}
             <div style={{ position: "absolute", top: -40, right: -40, width: 160, height: 160, borderRadius: "50%", background: `radial-gradient(circle, ${pkgColor}12 0%, transparent 70%)`, pointerEvents: "none" }} />
@@ -1486,7 +1494,7 @@ export function BookingWizardClient({ locale }: Props) {
               {step === 1 && (
                 <div>
                   {/* Header */}
-                  <div className="mb-6 p-5 rounded-2xl" style={{ background: "rgba(15,23,42,0.7)", border: `1px solid ${DS.cyan}15` }}>
+                  <div className="mb-6 p-5 rounded-2xl" style={{ background: rgba(DS.bgCosmic, 0.7), border: `1px solid ${rgba(DS.cyan, 0.15)}` }}>
                     <div style={{ color: DS.cyan, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.22em", marginBottom: 8 }}>ĐĂNG KÝ TÊN MIỀN</div>
                     <h3 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 26, fontWeight: 900, letterSpacing: "0.04em", marginBottom: 6 }}>Kiểm tra & đăng ký tên miền</h3>
                     <p style={{ color: DS.text3, fontSize: 14, lineHeight: 1.7 }}>
@@ -1495,7 +1503,7 @@ export function BookingWizardClient({ locale }: Props) {
                   </div>
 
                   {/* ── Search bar ── */}
-                  <div className="mb-6 p-5 rounded-2xl" style={{ background: "rgba(15,23,42,0.5)", border: `1px solid ${DS.cyan}20` }}>
+                  <div className="mb-6 p-5 rounded-2xl" style={{ background: rgba(DS.bgCosmic, 0.5), border: `1px solid ${rgba(DS.cyan, 0.2)}` }}>
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
                       <div style={{ color: DS.text4, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.1em" }}>TÊN MIỀN BẠN MUỐN ĐĂNG KÝ</div>
                       {renderDurationSelector(true)}
@@ -1511,8 +1519,8 @@ export function BookingWizardClient({ locale }: Props) {
                           placeholder="ví dụ: mysite"
                           style={{
                             flex: 1,
-                            background: "rgba(15,23,42,0.6)",
-                            border: `1px solid ${DS.border}`,
+                            background: rgba(DS.bgCosmic, 0.6),
+                            border: `1px solid ${rgba(DS.text, 0.12)}`,
                             borderRadius: 10,
                             padding: "12px 16px",
                             color: DS.text,
@@ -1529,8 +1537,8 @@ export function BookingWizardClient({ locale }: Props) {
                             value={domainSelectedTld}
                             onChange={e => setDomainSelectedTld(e.target.value)}
                             style={{
-                              background: "rgba(15,23,42,0.8)",
-                              border: `1px solid ${DS.border}`,
+                              background: rgba(DS.bgCosmic, 0.8),
+                              border: `1px solid ${rgba(DS.text, 0.12)}`,
                               borderRadius: 10,
                               padding: "12px 14px",
                               color: DS.text,
@@ -1542,7 +1550,7 @@ export function BookingWizardClient({ locale }: Props) {
                             }}
                           >
                             {domainPrices.map(d => (
-                              <option key={d.extension} value={d.extension} style={{ background: "#0F172A" }}>
+                              <option key={d.extension} value={d.extension} style={{ background: DS.bgCosmic, color: DS.text }}>
                                 {d.extension.startsWith('.') ? d.extension : `.${d.extension}`}
                               </option>
                             ))}
@@ -1627,15 +1635,15 @@ export function BookingWizardClient({ locale }: Props) {
                                   padding: "14px",
                                   borderRadius: 12,
                                   background: isSelected
-                                    ? `rgba(34,197,94,0.1)`
+                                    ? "rgba(34,197,94,0.1)"
                                     : result.available
-                                      ? "rgba(15,23,42,0.6)"
-                                      : "rgba(15,23,42,0.3)",
+                                      ? rgba(DS.bgCosmic, 0.6)
+                                      : rgba(DS.bgCosmic, 0.3),
                                   border: isSelected
-                                    ? "1.5px solid rgba(34,197,94,0.5)"
+                                    ? `1.5px solid ${rgba("#22C55E", 0.5)}`
                                     : result.available
-                                      ? "1.5px solid rgba(255,255,255,0.08)"
-                                      : "1px solid rgba(255,255,255,0.04)",
+                                      ? `1.5px solid ${rgba(DS.text, 0.08)}`
+                                      : `1px solid ${rgba(DS.text, 0.04)}`,
                                   cursor: result.available ? "pointer" : "not-allowed",
                                   opacity: result.available ? 1 : 0.5,
                                   transition: "all 0.15s",
@@ -1745,11 +1753,11 @@ export function BookingWizardClient({ locale }: Props) {
                         <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.05)" }} />
                       </div>
 
-                      <div className="p-5 rounded-2xl" style={{ background: "rgba(15,23,42,0.5)", border: `1px solid ${DS.cyan}20` }}>
-                        <div className="overflow-x-auto rounded-2xl bg-slate-950/40 border border-white/5 backdrop-blur-sm">
+                      <div className="p-5 rounded-2xl" style={{ background: rgba(DS.bgCosmic, 0.5), border: `1px solid ${rgba(DS.cyan, 0.2)}` }}>
+                        <div className="overflow-x-auto rounded-2xl bg-white/5 border border-black/5 backdrop-blur-sm">
                           <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: 0 }}>
                             <thead>
-                              <tr style={{ background: "rgba(15,23,42,0.6)" }}>
+                              <tr style={{ background: rgba(DS.bgCosmic, 0.6) }}>
                                 <th style={{ padding: "16px 20px", textAlign: "left", color: DS.text3, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.15em", borderBottom: `1px solid ${DS.border}`, fontWeight: 800, whiteSpace: "nowrap" }}>ĐUÔI</th>
                                 <th style={{ padding: "16px 20px", textAlign: "right", color: DS.text3, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.15em", borderBottom: `1px solid ${DS.border}`, fontWeight: 800, whiteSpace: "nowrap" }}>THỜI HẠN {formatYearsLabel(selectedYears >= 1 ? selectedYears : 1).toUpperCase()}</th>
                                 <th style={{ padding: "16px 20px", textAlign: "right", color: DS.text3, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.15em", borderBottom: `1px solid ${DS.border}`, fontWeight: 800, whiteSpace: "nowrap" }}>GIA HẠN</th>
@@ -1758,8 +1766,8 @@ export function BookingWizardClient({ locale }: Props) {
                             </thead>
                             <tbody>
                               {domainPrices.map((d, idx) => (
-                                <tr key={d.id || d.extension} className="group hover:bg-white/[0.02] transition-colors">
-                                  <td style={{ padding: "16px 20px", borderBottom: idx === domainPrices.length - 1 ? "none" : `1px solid rgba(255,255,255,0.03)` }}>
+                                <tr key={d.id || d.extension} className="group hover:bg-black/[0.02] transition-colors">
+                                  <td style={{ padding: "16px 20px", borderBottom: idx === domainPrices.length - 1 ? "none" : `1px solid ${rgba(DS.text, 0.03)}` }}>
                                     <span style={{ color: DS.blue, fontFamily: DS.mono, fontSize: 14, fontWeight: 900 }}>{d.extension}</span>
                                   </td>
                                   <td style={{ padding: "16px 20px", textAlign: "right", borderBottom: idx === domainPrices.length - 1 ? "none" : `1px solid rgba(255,255,255,0.03)` }}>
@@ -1787,7 +1795,7 @@ export function BookingWizardClient({ locale }: Props) {
               {step === 2 && (
                 <div>
                   {/* Header */}
-                  <div className="mb-6 p-5 rounded-2xl" style={{ background: "rgba(15,23,42,0.7)", border: `1px solid ${DS.amber}15` }}>
+                  <div className="mb-6 p-5 rounded-2xl" style={{ background: rgba(DS.bgCosmic, 0.7), border: `1px solid ${rgba(DS.amber, 0.15)}` }}>
                     <div style={{ color: DS.amber, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.22em", marginBottom: 8 }}>SEO — TỐI ƯU TÌM KIẾM</div>
                     <h3 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 26, fontWeight: 900, letterSpacing: "0.04em", marginBottom: 6 }}>Đẩy website lên Top Google</h3>
                     <p style={{ color: DS.text3, fontSize: 14, lineHeight: 1.7 }}>
@@ -1816,8 +1824,8 @@ export function BookingWizardClient({ locale }: Props) {
                             }
                           }}
                           style={{
-                            background: isSelected ? `${color}12` : "rgba(15,23,42,0.5)",
-                            border: isSelected ? `2px solid ${color}50` : `1px solid ${DS.border}`,
+                            background: isSelected ? `${color}12` : rgba(DS.bgCosmic, 0.5),
+                            border: isSelected ? `2px solid ${color}50` : `1px solid ${rgba(DS.text, 0.12)}`,
                             borderRadius: 16, padding: "18px 16px", cursor: "pointer",
                             textAlign: "left", position: "relative", overflow: "hidden",
                             transition: "all 0.2s",
@@ -1895,7 +1903,7 @@ export function BookingWizardClient({ locale }: Props) {
                   {selectedSeoTier === 0 && !selectedFreeSeo && (
                     <div style={{
                       padding: "14px 16px", borderRadius: 12,
-                      background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.2)",
+                      background: rgba("#F59E0B", 0.06), border: `1px solid ${rgba("#F59E0B", 0.2)}`,
                       display: "flex", alignItems: "center", gap: 10,
                     }}>
                       <span style={{ fontSize: 18 }}>💡</span>
@@ -1915,7 +1923,7 @@ export function BookingWizardClient({ locale }: Props) {
               {/* ── STEP 3: Hosting + Add-ons ───────────────────────────── */}
               {step === 3 && (
                 <div>
-                  <div className="mb-6 p-5 rounded-2xl" style={{ background: "rgba(15,23,42,0.7)", border: `1px solid ${DS.purple}15` }}>
+                  <div className="mb-6 p-5 rounded-2xl" style={{ background: rgba(DS.bgCosmic, 0.7), border: `1px solid ${rgba(DS.purple, 0.15)}` }}>
                     <div style={{ color: DS.purple, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.22em", marginBottom: 8 }}>HOSTING & DỊCH VỤ BỔ SUNG</div>
                     <h3 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 26, fontWeight: 900, letterSpacing: "0.04em", marginBottom: 6 }}>Hosting & Các dịch vụ bổ sung</h3>
                     <p style={{ color: DS.text3, fontSize: 14, lineHeight: 1.7 }}>Chọn gói hosting và các dịch vụ đi kèm để website hoạt động tối ưu.</p>
@@ -1946,7 +1954,7 @@ export function BookingWizardClient({ locale }: Props) {
                                 if (isSelected) { setSelectedHostingPlan(""); }
                                 else { setSelectedHostingPlan(plan.slug); if (!selectedExtras.includes("hosting")) toggleExtra("hosting"); }
                               }} className="text-left p-5 rounded-2xl relative overflow-hidden h-full flex flex-col"
-                                style={{ background: isSelected ? `${color}10` : "rgba(15,23,42,0.4)", border: isSelected ? `2px solid ${color}` : `1px solid ${DS.border}`, cursor: "pointer" }}
+                                style={{ background: isSelected ? `${color}10` : rgba(DS.bgCosmic, 0.4), border: isSelected ? `2px solid ${color}` : `1px solid ${rgba(DS.text, 0.08)}`, cursor: "pointer" }}
                                 whileHover={{ y: -4 }}>
                                 {plan.highlighted && <div style={{ position: "absolute", top: 0, left: 0, right: 0, padding: "2px", textAlign: "center", background: GRD.primary, fontSize: 8, color: "#fff", fontFamily: DS.mono }}>★ PHỔ BIẾN NHẤT</div>}
                                 <div className="mt-4 flex-1">
@@ -1973,7 +1981,13 @@ export function BookingWizardClient({ locale }: Props) {
                                     ))}
                                   </div>
                                 </div>
-                                <div className="w-full py-2 rounded-lg text-center text-[10px] font-bold mt-auto" style={{ background: isSelected ? color : "rgba(255,255,255,0.05)", color: isSelected ? "#fff" : DS.text3 }}>
+                                <div className="w-full py-2.5 rounded-lg text-center text-[10px] font-bold mt-auto transition-all" 
+                                  style={{ 
+                                    background: isSelected ? color : rgba(DS.bgCosmic, 1), 
+                                    color: isSelected ? "#fff" : DS.text3,
+                                    border: isSelected ? `1px solid ${color}` : `1px solid ${rgba(DS.text, 0.08)}`,
+                                    boxShadow: isSelected ? `0 4px 12px ${rgba(color, 0.3)}` : "none"
+                                  }}>
                                   {isSelected ? "ĐÃ CHỌN" : "CHỌN GÓI"}
                                 </div>
                               </motion.button>
@@ -1987,8 +2001,8 @@ export function BookingWizardClient({ locale }: Props) {
                         <motion.button onClick={() => { setSelectedHostingPlan(""); if (selectedExtras.includes("hosting")) toggleExtra("hosting"); }}
                           className="flex flex-col items-center justify-center p-4 px-10 group"
                           style={{
-                            background: !selectedExtras.includes("hosting") ? "rgba(255,255,255,0.04)" : "rgba(15,23,42,0.4)",
-                            border: !selectedExtras.includes("hosting") ? `2px dashed ${DS.text4}` : `1px solid ${DS.border}`,
+                            background: !selectedExtras.includes("hosting") ? rgba(DS.text, 0.04) : rgba(DS.bgCosmic, 0.4),
+                            border: !selectedExtras.includes("hosting") ? `2px dashed ${rgba(DS.text, 0.2)}` : `1px solid ${rgba(DS.text, 0.08)}`,
                             borderRadius: 20,
                             cursor: "pointer",
                             width: "fit-content"
@@ -2016,7 +2030,7 @@ export function BookingWizardClient({ locale }: Props) {
                           return (
                             <motion.button key={ext.id} onClick={() => toggleExtra(ext.id)}
                               className="w-full text-left p-3 rounded-xl flex items-start gap-3"
-                              style={{ background: isSelected ? `${color}0C` : "rgba(15,23,42,0.4)", border: isSelected ? `1.5px solid ${color}50` : `1px solid ${DS.border}`, cursor: "pointer" }}
+                              style={{ background: isSelected ? `${color}0C` : rgba(DS.bgCosmic, 0.4), border: isSelected ? `1.5px solid ${color}50` : `1px solid ${rgba(DS.text, 0.08)}`, cursor: "pointer" }}
                               whileHover={{ scale: 1.01 }}>
                               <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${color}15`, color }}>
                                 {ext.id === "hosting" ? <Server size={16} /> : ext.id === "domain" ? <Globe size={16} /> : ext.id === "maintenance" ? <Shield size={16} /> : ext.id === "analytics-setup" ? <BarChart3 size={16} /> : ext.id === "training" ? <Users size={16} /> : ext.id === "priority" ? <Sparkles size={16} /> : ext.id === "seo-basic" ? <Target size={16} /> : <Layers size={16} />}
@@ -2038,7 +2052,7 @@ export function BookingWizardClient({ locale }: Props) {
               {/* ── STEP 4: Contact Info ────────────────────────────────── */}
               {step === 4 && (
                 <div>
-                  <div className="mb-6 p-5 rounded-2xl" style={{ background: "rgba(15,23,42,0.7)", border: `1px solid ${DS.pink}15` }}>
+                  <div className="mb-6 p-5 rounded-2xl" style={{ background: rgba(DS.bgCosmic, 0.7), border: `1px solid ${rgba(DS.pink, 0.15)}` }}>
                     <div style={{ color: DS.pink, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.22em", marginBottom: 8 }}>THÔNG TIN LIÊN HỆ</div>
                     <h3 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 26, fontWeight: 900, letterSpacing: "0.04em", marginBottom: 6 }}>Thông tin liên hệ</h3>
                     <p style={{ color: DS.text3, fontSize: 14, lineHeight: 1.7 }}>Điền thông tin để chúng tôi liên hệ tư vấn và gửi báo giá chi tiết.</p>
@@ -2061,7 +2075,7 @@ export function BookingWizardClient({ locale }: Props) {
                         <div key={f.label}>
                           <label style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.1em", display: "block", marginBottom: 6 }}>{f.label}</label>
                           <input suppressHydrationWarning value={f.value} onChange={e => f.set(e.target.value)} placeholder={f.placeholder}
-                            style={{ width: "100%", background: "rgba(15,23,42,0.6)", border: `1px solid ${DS.border}`, borderRadius: 10, padding: "11px 14px", color: DS.text, fontSize: 14, outline: "none", fontFamily: DS.body, boxSizing: "border-box" }} />
+                            style={{ width: "100%", background: rgba(DS.bgCosmic, 0.6), border: `1px solid ${rgba(DS.text, 0.12)}`, borderRadius: 10, padding: "11px 14px", color: DS.text, fontSize: 14, outline: "none", fontFamily: DS.body, boxSizing: "border-box" }} />
                         </div>
                       ))}
                     </div>
@@ -2079,7 +2093,7 @@ export function BookingWizardClient({ locale }: Props) {
                         <label style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.1em", display: "block", marginBottom: 6 }}>Ngày bắt đầu *</label>
                         <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
                           min={new Date().toISOString().split("T")[0]}
-                          style={{ width: "100%", background: "rgba(15,23,42,0.6)", border: `1px solid ${DS.border}`, borderRadius: 10, padding: "11px 14px", color: DS.text, fontSize: 14, outline: "none", fontFamily: DS.body, boxSizing: "border-box" }} />
+                          style={{ width: "100%", background: rgba(DS.bgCosmic, 0.6), border: `1px solid ${rgba(DS.text, 0.12)}`, borderRadius: 10, padding: "11px 14px", color: DS.text, fontSize: 14, outline: "none", fontFamily: DS.body, boxSizing: "border-box" }} />
                       </div>
                       <div>
                         <label style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.1em", display: "block", marginBottom: 6 }}>Thời gian thực hiện</label>
@@ -2088,8 +2102,8 @@ export function BookingWizardClient({ locale }: Props) {
                             <button key={d.val} onClick={() => setDuration(d.val)}
                               style={{
                                 padding: "7px 12px", borderRadius: 8, fontSize: 11, fontFamily: DS.mono, cursor: "pointer",
-                                background: duration === d.val ? GRD.primary : "rgba(15,23,42,0.6)",
-                                border: duration === d.val ? "none" : `1px solid ${DS.border}`,
+                                background: duration === d.val ? GRD.primary : rgba(DS.bgCosmic, 0.6),
+                                border: duration === d.val ? "none" : `1px solid ${rgba(DS.text, 0.1)}`,
                                 color: duration === d.val ? "#fff" : DS.text3
                               }}>{d.label}</button>
                           ))}
@@ -2106,7 +2120,7 @@ export function BookingWizardClient({ locale }: Props) {
                       <h4 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 16, fontWeight: 700, letterSpacing: "0.04em" }}>Ghi chú thêm</h4>
                     </div>
                     <textarea value={talentNote} onChange={e => setTalentNote(e.target.value)} placeholder="Yêu cầu đặc biệt, thông tin bổ sung..." rows={3}
-                      style={{ width: "100%", background: "rgba(15,23,42,0.6)", border: `1px solid ${DS.border}`, borderRadius: 10, padding: "11px 14px", color: DS.text, fontSize: 14, outline: "none", fontFamily: DS.body, boxSizing: "border-box", resize: "vertical" }} />
+                      style={{ width: "100%", background: rgba(DS.bgCosmic, 0.6), border: `1px solid ${rgba(DS.text, 0.12)}`, borderRadius: 10, padding: "11px 14px", color: DS.text, fontSize: 14, outline: "none", fontFamily: DS.body, boxSizing: "border-box", resize: "vertical" }} />
                   </div>
                 </div>
               )}
@@ -2141,14 +2155,14 @@ export function BookingWizardClient({ locale }: Props) {
 
                   {!submitted && !submitError && (
                     <div>
-                      <div className="mb-6 p-5 rounded-2xl" style={{ background: "rgba(15,23,42,0.7)", border: `1px solid ${DS.green}15` }}>
-                        <div style={{ color: DS.green, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.22em", marginBottom: 8 }}>THANH TOÁN</div>
+                      <div className="mb-6 p-5 rounded-2xl" style={{ background: rgba(DS.bgCosmic, 0.7), border: `1px solid ${rgba(DS.blue, 0.15)}` }}>
+                        <div style={{ color: DS.blue, fontSize: 10, fontFamily: DS.mono, letterSpacing: "0.22em", marginBottom: 8 }}>THANH TOÁN</div>
                         <h3 style={{ color: DS.text, fontFamily: DS.heading, fontSize: 26, fontWeight: 900, letterSpacing: "0.04em", marginBottom: 6 }}>Phương thức thanh toán</h3>
                         <p style={{ color: DS.text3, fontSize: 14, lineHeight: 1.7 }}>Chọn hình thức thanh toán và xác nhận đơn hàng.</p>
                       </div>
 
                       {/* Order tags */}
-                      <div className="mb-5 p-4 rounded-xl flex items-center justify-between flex-wrap gap-3" style={{ background: "rgba(15,23,42,0.7)", border: `1px solid ${DS.border}` }}>
+                      <div className="mb-8 p-3 rounded-2xl flex items-center justify-between flex-wrap gap-4" style={{ background: rgba(DS.bgCosmic, 0.5), border: `1px solid ${rgba(DS.text, 0.08)}` }}>
                         <div className="flex flex-wrap gap-2">
                           {selectedPkg && <span className="px-3 py-1.5 rounded-lg text-xs" style={{ background: `${pkgColor}15`, color: pkgColor, border: `1px solid ${pkgColor}30`, fontFamily: DS.mono, fontWeight: 600 }}>{selectedPkg.name}</span>}
                           {selectedFeatures.length > 0 && <span className="px-3 py-1.5 rounded-lg text-xs" style={{ background: `${DS.cyan}12`, color: DS.cyan, border: `1px solid ${DS.cyan}30`, fontFamily: DS.mono }}>+{selectedFeatures.length} tính năng</span>}
@@ -2171,15 +2185,15 @@ export function BookingWizardClient({ locale }: Props) {
                             <button key={plan} onClick={() => setPaymentPlan(plan as "50" | "100")}
                               style={{
                                 padding: "14px 16px", borderRadius: 12, cursor: "pointer", textAlign: "left",
-                                background: paymentPlan === plan ? `${clr}12` : "rgba(15,23,42,0.5)",
-                                border: paymentPlan === plan ? `1.5px solid ${clr}60` : `1px solid ${DS.border}`,
+                                background: paymentPlan === plan ? `${clr}12` : rgba(DS.bgCosmic, 0.6),
+                                border: paymentPlan === plan ? `1.5px solid ${clr}` : `1px solid ${rgba(DS.text, 0.1)}`,
                                 color: paymentPlan === plan ? DS.text : DS.text3
                               }}>
                               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
                                 <div style={{ width: 16, height: 16, borderRadius: "50%", border: `2px solid ${paymentPlan === plan ? clr : DS.text4}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
                                   {paymentPlan === plan && <div style={{ width: 8, height: 8, borderRadius: "50%", background: clr }} />}
                                 </div>
-                                <span style={{ fontFamily: DS.mono, fontWeight: 700, fontSize: 13 }}>{label}</span>
+                                <span style={{ fontFamily: DS.mono, fontWeight: 700, fontSize: 13, color: paymentPlan === plan ? DS.text : DS.text3 }}>{label}</span>
                                 {plan === "100" && <span style={{ fontSize: 10, padding: "2px 6px", borderRadius: 6, background: `${DS.green}15`, color: DS.green, fontFamily: DS.mono }}>−5%</span>}
                               </div>
                               <div style={{ color: DS.text4, fontSize: 11, marginLeft: 24, lineHeight: 1.5 }}>{desc}</div>
@@ -2191,20 +2205,20 @@ export function BookingWizardClient({ locale }: Props) {
                         <div className="mb-4">
                           <label style={{ color: DS.text3, fontSize: 11, fontFamily: DS.mono, letterSpacing: "0.1em", display: "block", marginBottom: 8 }}>Hình thức thanh toán</label>
                           <div className="flex gap-3 flex-wrap">
-                            {paymentMethods.map(m => {
-                              const isActive = paymentMethod === m.value;
+                            {paymentMethods.map(method => {
+                              const isSelected = paymentMethod === method.value;
                               return (
-                                <button key={m.value}
-                                  onClick={() => { setPaymentMethod(m.value); setQrData(null); setQrError(""); }}
+                                <button key={method.value}
+                                  onClick={() => { setPaymentMethod(method.value); setQrData(null); setQrError(""); }}
                                   style={{
                                     padding: "10px 18px", borderRadius: 10, fontSize: 13, cursor: "pointer",
-                                    background: isActive ? `${DS.green}15` : "rgba(15,23,42,0.5)",
-                                    border: isActive ? `1.5px solid ${DS.green}60` : `1px solid ${DS.border}`,
-                                    color: isActive ? DS.green : DS.text3,
+                                    background: isSelected ? `${method.color}15` : rgba(DS.bgCosmic, 0.6),
+                                    border: isSelected ? `1.5px solid ${method.color}` : `1px solid ${rgba(DS.text, 0.1)}`,
+                                    color: isSelected ? method.color : DS.text3,
                                     display: "flex", alignItems: "center", gap: 8, fontFamily: DS.mono, transition: "all 0.2s",
                                   }}>
-                                  <span style={{ fontSize: 16 }}>{m.icon}</span>{m.label}
-                                  {m.hasDynamicQR && <span style={{ fontSize: 9, padding: "1px 5px", borderRadius: 4, background: `${DS.green}15`, color: DS.green }}>QR</span>}
+                                  <span style={{ fontSize: 16 }}>{method.icon}</span>{method.label}
+                                  {method.hasDynamicQR && <span style={{ fontSize: 9, padding: "1px 5px", borderRadius: 4, background: `${method.color}15`, color: method.color }}>QR</span>}
                                 </button>
                               );
                             })}
@@ -2434,9 +2448,9 @@ export function BookingWizardClient({ locale }: Props) {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   style={{
-                    background: "rgba(15,23,42,0.8)",
+                    background: rgba(DS.bgCosmic, 0.8),
                     backdropFilter: "blur(12px)",
-                    border: `1px solid ${pkgColor}30`,
+                    border: `1px solid ${rgba(pkgColor, 0.3)}`,
                     borderRadius: 16,
                     padding: "16px 20px",
                     marginBottom: 20,
@@ -2445,7 +2459,7 @@ export function BookingWizardClient({ locale }: Props) {
                     justifyContent: "space-between",
                     flexWrap: "wrap",
                     gap: 12,
-                    boxShadow: `0 -10px 30px rgba(0,0,0,0.3)`,
+                    boxShadow: `0 -10px 30px ${rgba(DS.text, 0.08)}`,
                   }}
                 >
                   <div>
@@ -2461,7 +2475,7 @@ export function BookingWizardClient({ locale }: Props) {
                       <div style={{ color: DS.text5, fontSize: 9, fontFamily: DS.mono }}>TIẾN ĐỘ</div>
                       <div style={{ color: DS.text3, fontSize: 11, fontWeight: 600 }}>Bước {step + 1} / 6</div>
                     </div>
-                    <div style={{ width: 60, height: 4, background: "rgba(255,255,255,0.06)", borderRadius: 2, overflow: "hidden" }}>
+                    <div style={{ width: 60, height: 4, background: rgba(DS.text, 0.06), borderRadius: 2, overflow: "hidden" }}>
                       <div style={{ width: `${((step + 1) / 6) * 100}%`, height: "100%", background: GRD.primary }} />
                     </div>
                   </div>
