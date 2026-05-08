@@ -18,6 +18,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@/generated/prisma";
 import { requireAuth } from "@/lib/auth/permissions";
 import { handleError, ok } from "@/lib/api";
 
@@ -49,7 +50,7 @@ export async function POST(req: NextRequest) {
     yesterday.setDate(yesterday.getDate() - 1);
 
     // ── Atomic transaction ─────────────────────────────────────────────────────
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // Re-read inside tx — prevents TOCTOU race on duplicate claim
       const user = await tx.user.findUnique({
         where: { id: session.userId },

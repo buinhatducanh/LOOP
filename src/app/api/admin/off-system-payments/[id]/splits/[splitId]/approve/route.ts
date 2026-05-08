@@ -12,6 +12,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { computeRankFieldsFromLp } from "@/lib/rank/xp";
+import type { Prisma } from "@/generated/prisma";
 
 interface RouteParams { params: Promise<{ id: string; splitId: string }> }
 
@@ -33,7 +34,7 @@ export async function POST(_req: NextRequest, { params }: RouteParams) {
     if (split.status === "rejected") return badRequest("split was rejected");
 
     // ── Atomic transaction ─────────────────────────────────────────────────────
-    const updatedMember = await prisma.$transaction(async (tx) => {
+    const updatedMember = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // Protective re-read inside transaction
       const fresh = await tx.offSystemSplit.findUnique({
         where: { id: splitId },

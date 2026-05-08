@@ -5,6 +5,7 @@ import { createAuditLog } from "@/lib/auth/audit";
 import { syncRankFields } from "@/lib/rank/xp";
 import { handleError } from "@/lib/api";
 import { lpLogger } from "@/lib/logger";
+import type { Prisma } from "@/generated/prisma";
 
 // ── LP award cap (configurable ceiling per award) ──────────────────────────
 const MAX_APPROVE_LP = 5_000_000;
@@ -69,7 +70,7 @@ export async function POST(
     // ── Atomic transaction: all sequential writes wrapped ───────────────────────
     if (action === "reject") {
       // Within the transaction: re-read award status (idempotency guard), then write.
-      const result = await prisma.$transaction(async (tx) => {
+      const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
         const fresh = await tx.lpAward.findUnique({
           where: { id },
           select: { status: true, lpAmount: true, memberId: true },
@@ -125,7 +126,7 @@ export async function POST(
     }
 
     // ── Approve ───────────────────────────────────────────────────────────────
-    const txResult = await prisma.$transaction(async (tx) => {
+    const txResult = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // Protective re-read inside transaction — prevents concurrent approve attempts
       const fresh = await tx.lpAward.findUnique({
         where: { id },

@@ -1,6 +1,7 @@
 import { handleError, ok } from "@/lib/api/response";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@/generated/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
 import { revalidatePath, revalidateTag } from "next/cache";
@@ -49,7 +50,7 @@ export async function PUT(
     }
 
     // Update feature and handle variants (upsert pattern)
-    const feature = await prisma.$transaction(async (tx) => {
+    const feature = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // Update the feature itself
       const _updated = await tx.feature.update({
         where: { id },

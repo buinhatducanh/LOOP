@@ -1,6 +1,7 @@
 import { handleError, ok } from "@/lib/api/response";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@/generated/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
 import { revalidatePath } from "next/cache";
@@ -52,7 +53,7 @@ export async function PUT(
     }
 
     // Update template + sync bundled attributes in a transaction
-    const template = await prisma.$transaction(async (tx) => {
+    const template = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const _updated = await tx.webTemplate.update({
         where: { id },
         data: {

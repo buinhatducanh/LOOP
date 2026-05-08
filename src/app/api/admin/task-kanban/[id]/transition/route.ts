@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
 import { XP_PER_LP } from "@/lib/rank/xp";
+import type { Prisma } from "@/generated/prisma";
 
 // Valid kanban column transitions
 const VALID_TRANSITIONS: Record<string, string[]> = {
@@ -51,7 +52,7 @@ export async function POST(
 
     const now = new Date();
 
-    const updated = await prisma.$transaction(async (tx) => {
+    const updated = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // 1. Update column (and completedAt for done/reopen)
       const updateData: Record<string, unknown> = { column };
       if (column === "done") {

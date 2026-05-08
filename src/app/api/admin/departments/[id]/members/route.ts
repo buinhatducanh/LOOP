@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth/permissions";
 import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@/generated/prisma";
 import { handleError, ok, notFound, badRequest } from "@/lib/api";
 
 type Params = { params: Promise<{ id: string }> };
@@ -25,7 +26,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
     const department = await prisma.department.findUnique({ where: { id } });
     if (!department) return notFound("Department not found");
 
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // Remove all existing junction records for this department
       await tx.memberDepartment.deleteMany({
         where: { departmentId: id },

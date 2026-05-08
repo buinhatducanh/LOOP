@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
-import type { Prisma } from "@/generated/prisma/index.d.ts";
+import type { Prisma } from "@/generated/prisma";
 type InputJsonValue = Prisma.InputJsonValue;
 
 // POST /api/admin/tasks/[id]/revoke
@@ -18,7 +18,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     if (!task) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
     // P1-2 FIX: wrap all writes + audit log in a transaction.
-    const updated = await prisma.$transaction(async (tx) => {
+    const updated = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // 1. Log violation
       await tx.taskViolation.create({
         data: {

@@ -1,6 +1,7 @@
 import { handleError } from "@/lib/api/response";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@/generated/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
 
@@ -38,7 +39,7 @@ export async function POST(
 
     // Atomic: task update and LP award creation must be in the same transaction
     // to prevent "task marked done but no LP awarded" inconsistency.
-    const updated = await prisma.$transaction(async (tx) => {
+    const updated = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const updateData: Record<string, unknown> = {};
 
       if (status) {

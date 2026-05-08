@@ -8,6 +8,7 @@
  */
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@/generated/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { ok, list, handleError, badRequest } from "@/lib/api";
 import { createAuditLog } from "@/lib/auth/audit";
@@ -67,7 +68,7 @@ export async function POST(req: NextRequest) {
     const existing = await prisma.serviceAttribute.findUnique({ where: { slug } });
     if (existing) return badRequest("slug đã tồn tại");
 
-    const created = await prisma.$transaction(async (tx) => {
+    const created = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const attr = await tx.serviceAttribute.create({
         data: {
           slug: slug.trim(),
@@ -156,7 +157,7 @@ export async function PUT(req: NextRequest) {
     const existing = await prisma.serviceAttribute.findUnique({ where: { id } });
     if (!existing) return badRequest("Không tìm thấy feature");
 
-    const updated = await prisma.$transaction(async (tx) => {
+    const updated = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const u = await tx.serviceAttribute.update({
         where: { id },
         data: {
@@ -241,7 +242,7 @@ export async function DELETE(req: NextRequest) {
     const existing = await prisma.serviceAttribute.findUnique({ where: { id } });
     if (!existing) return ok({ id });
 
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // 1. Delete the ServiceAttribute
       await tx.serviceAttribute.delete({ where: { id } });
 

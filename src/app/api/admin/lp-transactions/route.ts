@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
 import { syncRankFields } from "@/lib/rank/xp";
+import type { Prisma } from "@/generated/prisma";
 
 // GET /api/admin/lp-transactions
 // List LP transactions with optional filters.
@@ -93,7 +94,7 @@ export async function POST(req: NextRequest) {
     // PrismaNeon (WebSocket mode) supports $transaction.
     // The protective re-read of availableLp inside the tx ensures no overdraw from
     // concurrent adjustments.
-    const txn = await prisma.$transaction(async (tx) => {
+    const txn = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // Re-read balance inside transaction (idempotency + overdraw guard)
       const freshMember = await tx.teamMember.findUnique({
         where: { id: memberId },

@@ -3,6 +3,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { syncRankFields } from "@/lib/rank/xp";
+import type { Prisma } from "@/generated/prisma";
 
 /**
  * PATCH /api/admin/quest-participants/[id]
@@ -37,7 +38,7 @@ export async function PATCH(
       // P0-4 FIX: wrap participant update + LP transaction in a transaction.
       // Previously used Promise.all — if lpTransaction.create failed, participant
       // was marked complete but LP was never credited (phantom completion).
-      const updated = await prisma.$transaction(async (tx) => {
+      const updated = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
         const up = await tx.questParticipant.update({
           where: { id },
           data: {

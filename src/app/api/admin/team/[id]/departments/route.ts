@@ -10,6 +10,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requirePermission } from "@/lib/auth/permissions";
 import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@/generated/prisma";
 import { handleError, ok, notFound, badRequest } from "@/lib/api";
 
 type Params = { params: Promise<{ id: string }> };
@@ -28,7 +29,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
     const member = await prisma.teamMember.findUnique({ where: { id } });
     if (!member) return notFound("Member not found");
 
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // Remove all existing junction records for this member
       await tx.memberDepartment.deleteMany({
         where: { memberId: id },

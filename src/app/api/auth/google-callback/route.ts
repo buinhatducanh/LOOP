@@ -17,6 +17,7 @@ import { createSession } from "@/lib/auth/session";
 import { ROLE_LEVEL, AUTH_COOKIES } from "@/lib/auth/roles";
 import { authLogger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@/generated/prisma";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
@@ -84,7 +85,7 @@ export async function GET(req: NextRequest) {
           teamMemberMatchId = invitedMember.id;
           accountType = "staff";
           if (dbUserId) {
-            await prisma.$transaction(async (tx) => {
+            await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
               if (dbUser?.accountType === "customer") {
                 await tx.user.update({
                   where: { id: dbUserId },
@@ -121,7 +122,7 @@ export async function GET(req: NextRequest) {
           const userId = dbUserId; // stable reference for closure
           const tmId = teamMemberMatchId; // stable reference for closure
           const isCustomer = dbUser?.accountType === "customer"; // capture before transaction
-          await prisma.$transaction(async (tx) => {
+          await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
             if (!isCustomer && tmId) {
               // Case B-3b: Link pre-created member (HR made member, user logs in first time)
               await tx.user.update({

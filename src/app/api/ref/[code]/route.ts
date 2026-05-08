@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@/generated/prisma";
 import { ok, notFound, serverError, badRequest } from "@/lib/api/response";
 import { createHash } from "crypto";
 
@@ -108,7 +109,7 @@ export async function POST(
         if (!msg.includes("P2002") && !msg.includes("Unique constraint")) throw e;
       };
 
-      await prisma.$transaction(async (tx) => {
+      await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
         if (salesLeadId) {
           await tx.salesLead.update({
             where: { id: salesLeadId },

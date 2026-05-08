@@ -1,6 +1,7 @@
 import { handleError, ok } from "@/lib/api/response";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@/generated/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
 import { revalidatePath } from "next/cache";
@@ -48,7 +49,7 @@ export async function PUT(
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    const attribute = await prisma.$transaction(async (tx) => {
+    const attribute = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const updated = await tx.serviceAttribute.update({
         where: { id },
         data: {
@@ -132,7 +133,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // SYNC: Delete from Feature (Matrix) if name match (case-insensitive)
       const featuresToDelete = await tx.feature.findMany({
         where: {

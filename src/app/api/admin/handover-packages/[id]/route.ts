@@ -4,6 +4,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { sendHandoverDelivered } from "@/lib/email/sender";
+import type { Prisma } from "@/generated/prisma";
 
 const updateSchema = z.object({
   status: z.enum(["draft", "pending_review", "approved", "handed_over"]).optional(),
@@ -57,7 +58,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     // Transaction: update handover + auto-complete Order
     if (isHandedOver) {
-      await prisma.$transaction(async (tx) => {
+      await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
         await tx.handoverPackage.update({
           where: { id },
           data: { ...updateData, handoverDate: updateData.handoverDate ?? new Date() },

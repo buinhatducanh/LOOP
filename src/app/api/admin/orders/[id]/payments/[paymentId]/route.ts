@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
+import type { Prisma } from "@/generated/prisma";
 
 // DELETE /api/admin/orders/[id]/payments/[paymentId]
 // Deletes a payment record and reverses its effects on order totals and LP awards.
@@ -24,7 +25,7 @@ export async function DELETE(
     }
 
     // Atomic transaction to delete payment and update order
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // 1. Delete the payment record
       await tx.payment.delete({ where: { id: paymentId } });
 

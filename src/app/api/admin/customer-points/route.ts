@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { handleError } from "@/lib/api/response";
 import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@/generated/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
 
@@ -89,7 +90,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const point = await tx.customerPoint.findUnique({
         where: { userEmail: email },
         select: { id: true, balance: true },

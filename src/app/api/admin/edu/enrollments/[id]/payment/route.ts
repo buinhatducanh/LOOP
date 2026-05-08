@@ -12,7 +12,7 @@ import { handleError } from "@/lib/api/response";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
-import type { Prisma } from "@/generated/prisma/index.d.ts";
+import type { Prisma } from "@/generated/prisma";
 type InputJsonValue = Prisma.InputJsonValue;
 import { computeRankFieldsFromLp } from "@/lib/rank/xp";
 
@@ -75,7 +75,7 @@ export async function POST(
 
     // ── Atomic transaction ─────────────────────────────────────────
     // P1-2 FIX: moved syncRankFields and createAuditLog inside this tx.
-    const payment = await prisma.$transaction(async (tx) => {
+    const payment = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // 1. EduPayment record
       const eduPayment = await tx.eduPayment.create({
         data: {

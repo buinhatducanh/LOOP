@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@/generated/prisma";
 import { auth } from "@/auth";
 
 /**
@@ -240,7 +241,7 @@ export async function POST(req: NextRequest) {
       }
 
       // Atomic: re-read balance inside tx to prevent race-condition double-spend
-      const updated = await prisma.$transaction(async (tx) => {
+      const updated = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
         // Re-read balance inside the transaction — prevents TOCTOU race
         const fresh = await tx.customerPoint.findUnique({
           where: { id: customerPoint.id },
@@ -289,7 +290,7 @@ export async function POST(req: NextRequest) {
     // ── Daily login ─────────────────────────────────────────────────────
     if (action === "daily_login") {
       // All reads and writes inside transaction — prevents concurrent login bonus abuse
-      const result = await prisma.$transaction(async (tx) => {
+      const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
         const fresh = await tx.customerPoint.findUnique({
           where: { id: customerPoint.id },
           select: { lastLoginDate: true, loginStreak: true, level: true, currentXp: true, balance: true, totalEarned: true },
@@ -386,7 +387,7 @@ export async function POST(req: NextRequest) {
       }
 
       // All reads + writes inside transaction — prevents concurrent ad-watch abuse
-      const result = await prisma.$transaction(async (tx) => {
+      const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
         // Re-read last watch inside tx for cooldown check
         const lastWatch = await tx.adWatchHistory.findFirst({
           where: { customerPointId: customerPoint.id },

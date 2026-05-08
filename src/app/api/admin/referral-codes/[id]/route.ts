@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
-import type { Prisma } from "@/generated/prisma/index.d.ts";
+import type { Prisma } from "@/generated/prisma";
 type InputJsonValue = Prisma.InputJsonValue;
 
 export async function GET(
@@ -79,7 +79,7 @@ export async function PUT(
     if (!existing) return NextResponse.json({ error: "Referral code not found" }, { status: 404 });
 
     // ⚠️ FIX: wrap referral code update + audit log in a transaction.
-    const updated = await prisma.$transaction(async (tx) => {
+    const updated = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const u = await tx.referralCode.update({
         where: { id },
         data: {
@@ -124,7 +124,7 @@ export async function DELETE(
     if (!existing) return NextResponse.json({ error: "Referral code not found" }, { status: 404 });
 
     // ⚠️ FIX: wrap soft delete + audit log in a transaction.
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       await tx.referralCode.update({
         where: { id },
         data: { isActive: false },

@@ -12,6 +12,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@/generated/prisma";
 import { hashPassword } from "@/lib/auth/password";
 import { createSession } from "@/lib/auth/session";
 import { ROLE_LEVEL } from "@/lib/auth/roles";
@@ -31,7 +32,7 @@ export async function POST(req: NextRequest) {
     }
 
     // ── Transaction: validate + activate atomically ────────────────────────────
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const memberRequest = await tx.memberRequest.findUnique({
         where: { inviteToken: token },
       });

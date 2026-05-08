@@ -11,6 +11,7 @@ import { NextRequest } from "next/server";
 import { requirePermissionFast, isSuperAdmin, requireAuth } from "@/lib/auth/permissions";
 import { ok, handleError, notFound, badRequest } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@/generated/prisma";
 
 export async function POST(
   req: NextRequest,
@@ -45,7 +46,7 @@ export async function POST(
       return badRequest("Lý do từ chối là bắt buộc");
     }
 
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // Update request status
       const _updated = await tx.memberRequest.update({
         where: { id },
