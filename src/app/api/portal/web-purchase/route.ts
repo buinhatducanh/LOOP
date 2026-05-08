@@ -96,12 +96,13 @@ export async function POST(req: NextRequest) {
  const orderNumber = `ORD-${crypto.randomUUID().replace(/-/g, "").slice(0, 12).toUpperCase()}`;
 
  // Resolve domains: prefer new array, fallback to legacy single domain
- const resolvedDomains = domains.length > 0
- ? domains
+ type DomainEntry = { domain: string; tld: string; price: number; available: boolean };
+ const resolvedDomains: DomainEntry[] = domains.length > 0
+ ? domains as DomainEntry[]
  : (domain ? [{ domain, tld: domainTld, price: domainCost, available: true }] : []);
 
  const primaryDomain = resolvedDomains[0]?.domain ?? domain ?? "";
- const totalDomainCost = resolvedDomains.reduce((sum, d) => sum + (d.price ?? 0), 0);
+ const totalDomainCost = resolvedDomains.reduce((sum: number, d: DomainEntry) => sum + (d.price ?? 0), 0);
  const totalAmount = pkg.price + totalDomainCost + hostingCost;
 
  const order = await prisma.order.create({
@@ -132,7 +133,7 @@ export async function POST(req: NextRequest) {
  const hostingExpiresAt = new Date(now);
  hostingExpiresAt.setMonth(hostingExpiresAt.getMonth() + hostingTermMonths);
 
- const websiteCreates = resolvedDomains.map((d) => {
+ const websiteCreates = resolvedDomains.map((d: DomainEntry) => {
  const domainExpiresAt = new Date(now);
  domainExpiresAt.setMonth(domainExpiresAt.getMonth() + domainTermMonths);
  return {
@@ -229,7 +230,7 @@ export async function POST(req: NextRequest) {
 
  // ── 4. Notify admin ─────────────────────────────────────────────────────
  const domainList = resolvedDomains.length > 0
- ? resolvedDomains.map((d) => d.domain).join(", ")
+ ? resolvedDomains.map((d: DomainEntry) => d.domain).join(", ")
  : (domain ?? "—");
  await prisma.adminNotification.create({
  data: {
