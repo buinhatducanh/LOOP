@@ -50,7 +50,7 @@ export async function GET(
  }, {} as Record<string, { pageUrl: string; pageTitle: string | null; views: number }>);
 
  const topPages = Object.values(pageViewsByUrl)
- .sort((a, b) => b.views - a.views)
+ .sort((a, b: { pageUrl: string; pageTitle: string | null; views: number }) => b.views - a.views)
  .slice(0, 10);
 
  return NextResponse.json({
