@@ -45,29 +45,29 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    const performance = members.map(member => {
-      const memberAwards = lpAwards.filter(a => a.memberId === member.id);
-      const memberTasks = tasks.filter(t => t.assigneeId === member.id);
+    const performance = members.map((member: typeof members[number]) => {
+      const memberAwards = lpAwards.filter((a: typeof lpAwards[number]) => a.memberId === member.id);
+      const memberTasks = tasks.filter((t: typeof tasks[number]) => t.assigneeId === member.id);
       const memberViolations = violations.length;
 
-      const totalLp = memberAwards.reduce((s, a) => s + a.lpAmount, 0);
-      const totalExp = memberAwards.reduce((s, a) => s + a.expAmount, 0);
-      const doneTasks = memberTasks.filter(t => t.status === "done");
+      const totalLp = memberAwards.reduce((s: number, a: typeof memberAwards[number]) => s + a.lpAmount, 0);
+      const totalExp = memberAwards.reduce((s: number, a: typeof memberAwards[number]) => s + a.expAmount, 0);
+      const doneTasks = memberTasks.filter((t: typeof memberTasks[number]) => t.status === "done");
       const completedCount = doneTasks.length;
-      const violatedCount = memberTasks.filter(t => t.violated).length;
+      const violatedCount = memberTasks.filter((t: typeof memberTasks[number]) => t.violated).length;
 
       const score = Math.max(0, Math.round(
         (totalLp * 2) + (completedCount * 10) - (violatedCount * 20) - (memberViolations * 5)
       ));
 
-      const memberProjectMembers = projectMembers.filter(pm => pm.memberId === member.id);
+      const memberProjectMembers = projectMembers.filter((pm: typeof projectMembers[number]) => pm.memberId === member.id);
 
       return {
         id: member.id,
         name: member.name,
         email: member.email,
         role: member.role,
-        projects: memberProjectMembers.map(pm => ({
+        projects: memberProjectMembers.map((pm: typeof memberProjectMembers[number]) => ({
           projectId: pm.projectId,
           orderNumber: pm.project.orderNumber,
           customerName: pm.project.customerName,

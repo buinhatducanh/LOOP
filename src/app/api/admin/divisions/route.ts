@@ -48,7 +48,7 @@ export async function GET(req: Request) {
         shortName: d.shortName,
         color: d.color,
         memberCount: d.memberDepartments.length,
-        headId: d.memberDepartments.find((md) => md.isDeptHead)?.id ?? null,
+        headId: d.memberDepartments.find((md: typeof d.memberDepartments[number]) => md.isDeptHead)?.id ?? null,
       })),
     }));
 

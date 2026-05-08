@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
 
     let slaDeadline: Date | null = null;
     if (backlog && data.priority) {
-      const slaRule = backlog.project.slaRules.find(r => r.priority === data.priority);
+      const slaRule = backlog.project.slaRules.find((r: typeof backlog.project.slaRules[number]) => r.priority === data.priority);
       if (slaRule) {
         slaDeadline = new Date(Date.now() + slaRule.maxHours * 60 * 60 * 1000);
       }

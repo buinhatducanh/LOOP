@@ -50,16 +50,16 @@ export async function GET(req: NextRequest) {
           where: { referralCodeId: code.id, status: { in: ["completed", "contracted", "delivered", "paid_full", "paid"] } },
           select: { id: true, paidAmount: true },
         });
-        const totalRevenue = orders.reduce((s, o) => s + (o.paidAmount ?? 0), 0);
+        const totalRevenue = orders.reduce((s: number, o: typeof orders[number]) => s + (o.paidAmount ?? 0), 0);
         const tracking = await prisma.referralTracking.groupBy({
           by: ["event"],
           where: { referralCodeId: code.id },
           _count: { event: true },
         });
-        const clicks = tracking.find((t) => t.event === "click")?._count.event ?? 0;
-        const signups = tracking.find((t) => t.event === "signup")?._count.event ?? 0;
-        const leads = tracking.find((t) => t.event === "lead")?._count.event ?? 0;
-        const conversions = tracking.find((t) => t.event === "order")?._count.event ?? 0;
+        const clicks = tracking.find((t: typeof tracking[number]) => t.event === "click")?._count.event ?? 0;
+        const signups = tracking.find((t: typeof tracking[number]) => t.event === "signup")?._count.event ?? 0;
+        const leads = tracking.find((t: typeof tracking[number]) => t.event === "lead")?._count.event ?? 0;
+        const conversions = tracking.find((t: typeof tracking[number]) => t.event === "order")?._count.event ?? 0;
         const lpAwardedAgg = await prisma.referralTracking.aggregate({
           where: { referralCodeId: code.id },
           _sum: { lpAwarded: true },

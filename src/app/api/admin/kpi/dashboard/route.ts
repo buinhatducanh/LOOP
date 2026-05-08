@@ -95,12 +95,12 @@ export async function GET(req: NextRequest) {
     const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
     const violationRate = totalTasks > 0 ? Math.round((violatedTasks / totalTasks) * 100) : 0;
 
-    const projectsWithHealth = projectHealth.map(p => {
+    const projectsWithHealth = projectHealth.map((p: typeof projectHealth[number]) => {
       const allTasks = p.backlogs.flatMap(b => b.tasks);
       const total = allTasks.length;
-      const done = allTasks.filter(t => t.status === "done").length;
-      const violated = allTasks.filter(t => t.violated).length;
-      const overdue = allTasks.filter(t =>
+      const done = allTasks.filter((t: typeof allTasks[number]) => t.status === "done").length;
+      const violated = allTasks.filter((t: typeof allTasks[number]) => t.violated).length;
+      const overdue = allTasks.filter((t: typeof allTasks[number]) =>
         t.slaDeadline && new Date(t.slaDeadline) < new Date() && t.status !== "done"
       ).length;
       const compRate = total > 0 ? Math.round((done / total) * 100) : 0;
@@ -126,9 +126,9 @@ export async function GET(req: NextRequest) {
       where: { id: { in: memberIds } },
       select: { id: true, name: true, email: true },
     });
-    const topMembersWithNames = topMembers.map(m => ({
+    const topMembersWithNames = topMembers.map((m: typeof topMembers[number]) => ({
       memberId: m.memberId,
-      name: members.find(mem => mem.id === m.memberId)?.name ?? "Unknown",
+      name: members.find((mem: typeof members[number]) => mem.id === m.memberId)?.name ?? "Unknown",
       totalLp: m._sum?.lpAmount ?? 0,
     }));
 
@@ -151,8 +151,8 @@ export async function GET(req: NextRequest) {
         recentViolations,
         topMembers: topMembersWithNames,
         projectHealth: projectsWithHealth,
-        lpTrend: lpTrend.map(d => ({ day: d.day, total: Number(d.total) })),
-        violationTrend: violationTrend.map(d => ({ day: d.day, total: Number(d.total) })),
+        lpTrend: lpTrend.map((d: typeof lpTrend[number]) => ({ day: d.day, total: Number(d.total) })),
+        violationTrend: violationTrend.map((d: typeof violationTrend[number]) => ({ day: d.day, total: Number(d.total) })),
       },
     });
   } catch (error) {

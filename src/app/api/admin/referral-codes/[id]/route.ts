@@ -44,17 +44,17 @@ export async function GET(
       _sum: { lpAwarded: true },
     });
 
-    const totalRevenue = orders.reduce((s, o) => s + (o.paidAmount ?? 0), 0);
+    const totalRevenue = orders.reduce((s: number, o: typeof orders[number]) => s + (o.paidAmount ?? 0), 0);
 
     return NextResponse.json({
       data: {
         ...code,
         tracking: {
-          total: tracking.reduce((s, t) => s + t._count.event, 0),
-          clicks:  tracking.find((t) => t.event === "click")?._count.event ?? 0,
-          signups: tracking.find((t) => t.event === "signup")?._count.event ?? 0,
-          leads:   tracking.find((t) => t.event === "lead")?._count.event ?? 0,
-          orders:  tracking.find((t) => t.event === "order")?._count.event ?? 0,
+          total: tracking.reduce((s: number, t: typeof tracking[number]) => s + t._count.event, 0),
+          clicks:  tracking.find((t: typeof tracking[number]) => t.event === "click")?._count.event ?? 0,
+          signups: tracking.find((t: typeof tracking[number]) => t.event === "signup")?._count.event ?? 0,
+          leads:   tracking.find((t: typeof tracking[number]) => t.event === "lead")?._count.event ?? 0,
+          orders:  tracking.find((t: typeof tracking[number]) => t.event === "order")?._count.event ?? 0,
         },
         orders,
         totalRevenue,

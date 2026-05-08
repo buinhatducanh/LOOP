@@ -27,10 +27,10 @@ export async function GET(req: NextRequest) {
     });
 
     // Compute LP totals per epic
-    const epicsWithStats = epics.map(epic => ({
+    const epicsWithStats = epics.map((epic: typeof epics[number]) => ({
       ...epic,
-      totalLp: epic.backlogs.reduce((s, b) => s + b.tasks.reduce((t, task) => t + task.lp, 0), 0),
-      allocatedLp: epic.backlogs.reduce((s, b) => s + b.tasks.reduce((t, task) => t + task.lp, 0), 0),
+      totalLp: epic.backlogs.reduce((s: number, b: typeof epic.backlogs[number]) => s + b.tasks.reduce((t: number, task: typeof b.tasks[number]) => t + task.lp, 0), 0),
+      allocatedLp: epic.backlogs.reduce((s: number, b: typeof epic.backlogs[number]) => s + b.tasks.reduce((t: number, task: typeof b.tasks[number]) => t + task.lp, 0), 0),
       status: epic.isActive ? "active" : "archived",
     }));
 

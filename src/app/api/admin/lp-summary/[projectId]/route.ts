@@ -46,13 +46,13 @@ export async function GET(
     // 5. Task stats
     const taskStats = {
       total: tasks.length,
-      backlog: tasks.filter(t => t.status === "backlog").length,
-      inProgress: tasks.filter(t => t.status === "in_progress").length,
-      inReview: tasks.filter(t => t.status === "in_review").length,
-      done: tasks.filter(t => t.status === "done").length,
-      violated: tasks.filter(t => t.violated).length,
-      totalLpAllocated: tasks.reduce((s, t) => s + t.lp, 0),
-      totalLpEarned: awards.filter(a => a.status === "approved").reduce((s, a) => s + a.lpAmount, 0),
+      backlog: tasks.filter((t: typeof tasks[number]) => t.status === "backlog").length,
+      inProgress: tasks.filter((t: typeof tasks[number]) => t.status === "in_progress").length,
+      inReview: tasks.filter((t: typeof tasks[number]) => t.status === "in_review").length,
+      done: tasks.filter((t: typeof tasks[number]) => t.status === "done").length,
+      violated: tasks.filter((t: typeof tasks[number]) => t.violated).length,
+      totalLpAllocated: tasks.reduce((s: number, t: typeof tasks[number]) => s + t.lp, 0),
+      totalLpEarned: awards.filter((a: typeof awards[number]) => a.status === "approved").reduce((s: number, a: typeof awards[number]) => s + a.lpAmount, 0),
     };
 
     // 6. Recent awards
@@ -62,7 +62,7 @@ export async function GET(
       take: 10,
     });
 
-    const membersWithStats = projectMembers.map(pm => ({
+    const membersWithStats = projectMembers.map((pm: typeof projectMembers[number]) => ({
       id: pm.member.id,
       name: pm.member.name,
       role: pm.member.role,
@@ -78,8 +78,8 @@ export async function GET(
         memberStats,
         taskStats,
         recentAwards,
-        totalLpAwarded: awards.filter(a => a.status === "approved").reduce((s, a) => s + a.lpAmount, 0),
-        totalLpPending: awards.filter(a => a.status === "pending").reduce((s, a) => s + a.lpAmount, 0),
+        totalLpAwarded: awards.filter((a: typeof awards[number]) => a.status === "approved").reduce((s: number, a: typeof awards[number]) => s + a.lpAmount, 0),
+        totalLpPending: awards.filter((a: typeof awards[number]) => a.status === "pending").reduce((s: number, a: typeof awards[number]) => s + a.lpAmount, 0),
       },
     });
   } catch (error) {
