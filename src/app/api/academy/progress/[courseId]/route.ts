@@ -72,7 +72,7 @@ export async function GET(
 
     if (!enrollment) return notFound("Enrollment not found");
 
-    const completedLessonIds = enrollment.progresses.map((p) => p.lessonId);
+    const completedLessonIds = enrollment.progresses.map((p: typeof enrollment.progresses[number]) => p.lessonId);
     const totalLessons = enrollment.course._count.lessons;
     const progressPercent = totalLessons > 0
       ? Math.round((completedLessonIds.length / totalLessons) * 100)
