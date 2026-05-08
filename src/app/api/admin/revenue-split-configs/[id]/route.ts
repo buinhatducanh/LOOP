@@ -47,7 +47,7 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
         where: { isActive: true, key: { not: "company" }, id: { not: id } },
         select: { percentage: true },
       });
-      const currentSum = activeConfigs.reduce((s, c) => s + c.percentage, 0);
+      const currentSum = activeConfigs.reduce((s: number, c: typeof activeConfigs[number]) => s + c.percentage, 0);
       if (currentSum + percentage > 100) {
         return badRequest(
           `Total percentage would be ${currentSum + percentage}% (limit: 100%). ` +

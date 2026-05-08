@@ -68,8 +68,8 @@ export async function POST(_req: NextRequest) {
       })
     );
 
-    const synced = results.filter((r) => r.status === "fulfilled").length;
-    const failed = results.filter((r) => r.status === "rejected");
+    const synced = results.filter((r: typeof results[number]) => r.status === "fulfilled").length;
+    const failed = results.filter((r: typeof results[number]) => r.status === "rejected");
 
     return ok({
       synced,

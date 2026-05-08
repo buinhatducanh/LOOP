@@ -131,7 +131,7 @@ export async function PUT(
     // Do NOT spread existing values — FE sends everything, missing fields mean "no change".
     const updateData: Record<string, unknown> = {};
 
-    for (const [key, value] of Object.entries(memberData)) {
+    for (const [key, value] of Object.entries(memberData) as [string, unknown][]) {
       const prismaKey = fieldMap[key] ?? key;
 
       // Skip auto-managed fields
@@ -197,7 +197,7 @@ export async function PUT(
     const systemRole = updateData.systemRole as string | undefined;
     const forceRank = body.forceRank === true;
     const teamUpdateData = Object.fromEntries(
-      Object.entries(updateData).filter(([k]) => k !== "systemRole" && k !== "roles" && k !== "forceRank")
+      Object.entries(updateData).filter(([k]: [string, unknown]) => k !== "systemRole" && k !== "roles" && k !== "forceRank")
     ) as Record<string, unknown>;
 
     // ── Resolve expertise IDs (reads — safe outside tx) ─────────────────────────

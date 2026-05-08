@@ -95,9 +95,9 @@ export async function GET(req: NextRequest) {
  ]);
 
  // Calculate pending LP for orders (direct 10% + addon 5%)
- const pendingOrderLp = pendingOrders.reduce((sum, order) => {
+ const pendingOrderLp = pendingOrders.reduce((sum: number, order: typeof pendingOrders[number]) => {
  const addonTotal = order.selectedAttributes.reduce(
- (s, a) => s + (a.priceAtOrder ?? 0),
+ (s: number, a: typeof order.selectedAttributes[number]) => s + (a.priceAtOrder ?? 0),
  0
  );
  return sum + calcOrderCommissionLp(order.basePrice ?? 0, addonTotal);
@@ -105,7 +105,7 @@ export async function GET(req: NextRequest) {
 
  // Calculate pending LP for enrollments (direct 10%)
  const pendingEnrollmentLp = pendingEnrollments.reduce(
- (sum, e) => sum + calcEnrollmentCommissionLp(e.paidAmount ?? 0),
+ (sum: number, e: typeof pendingEnrollments[number]) => sum + calcEnrollmentCommissionLp(e.paidAmount ?? 0),
  0
  );
 
@@ -131,7 +131,7 @@ export async function GET(req: NextRequest) {
  });
 
  // ── Pending details for display ────────────────────────────────────────────
- const pendingOrderDetails = pendingOrders.map((o) => ({
+ const pendingOrderDetails = pendingOrders.map((o: typeof pendingOrders[number]) => ({
  type: "order" as const,
  referenceId: o.id,
  orderNumber: o.orderNumber,
@@ -140,11 +140,11 @@ export async function GET(req: NextRequest) {
  createdAt: o.createdAt,
  pendingLp: calcOrderCommissionLp(
  o.basePrice ?? 0,
- o.selectedAttributes.reduce((s, a) => s + (a.priceAtOrder ?? 0), 0)
+ o.selectedAttributes.reduce((s: number, a: typeof o.selectedAttributes[number]) => s + (a.priceAtOrder ?? 0), 0)
  ),
  }));
 
- const pendingEnrollmentDetails = pendingEnrollments.map((e) => ({
+ const pendingEnrollmentDetails = pendingEnrollments.map((e: typeof pendingEnrollments[number]) => ({
  type: "enrollment" as const,
  referenceId: e.id,
  courseName: e.course.title,
@@ -161,7 +161,7 @@ export async function GET(req: NextRequest) {
  completedCount: completedEvents.length,
  },
  pendingDetails: [...pendingOrderDetails, ...pendingEnrollmentDetails],
- completedEvents: completedEvents.map((e) => ({
+ completedEvents: completedEvents.map((e: typeof completedEvents[number]) => ({
  id: e.id,
  salesRepId: e.salesRepId,
  referenceType: e.referenceType,

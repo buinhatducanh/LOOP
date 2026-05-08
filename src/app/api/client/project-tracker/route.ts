@@ -117,7 +117,7 @@ export async function GET(req: NextRequest) {
     });
 
     // Map image -> avatar for TeamMember
-    const mapped = orders.map((o) => ({
+    const mapped = orders.map((o: typeof orders[number]) => ({
       id: o.id,
       orderNumber: o.orderNumber,
       status: o.status,
@@ -127,12 +127,12 @@ export async function GET(req: NextRequest) {
       gitRepoUrl: o.gitRepoUrl,
       package: o.package,
       figmaDemos: o.figmaDemos,
-      handoverPackages: o.handoverPackages.map((hp) => ({
+      handoverPackages: o.handoverPackages.map((hp: typeof o.handoverPackages[number]) => ({
         ...hp,
         deploymentUrl: hp.deploymentUrl,
         githubUrl: hp.githubUrl,
       })),
-      projectMembers: o.projectMembers.map((pm) => ({
+      projectMembers: o.projectMembers.map((pm: typeof o.projectMembers[number]) => ({
         id: pm.id,
         member: {
           id: pm.member.id,

@@ -99,12 +99,12 @@ export async function GET(
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.loops.vn";
 
     const codesWithStats = await Promise.all(
-      referralCodes.map(async (code) => {
+      referralCodes.map(async (code: typeof referralCodes[number]) => {
         const completedOrders = await prisma.order.findMany({
           where: { referralCodeId: code.id, status: { in: completedStatuses } },
           select: { paidAmount: true },
         });
-        const totalRevenue = completedOrders.reduce((s, o) => s + (o.paidAmount ?? 0), 0);
+        const totalRevenue = completedOrders.reduce((s: number, o: typeof completedOrders[number]) => s + (o.paidAmount ?? 0), 0);
         const lpAgg = await prisma.lpTransaction.aggregate({
           where: { memberId, source: "referral", referenceType: "Order" },
           _sum: { amount: true },

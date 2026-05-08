@@ -48,7 +48,7 @@ export async function GET(
       select: { paidAmount: true },
     });
 
-    const totalRevenue = orders.reduce((s, o) => s + (o.paidAmount ?? 0), 0);
+    const totalRevenue = orders.reduce((s: number, o: typeof orders[number]) => s + (o.paidAmount ?? 0), 0);
     const effectiveRate = referralCode.lpRate > 0 ? referralCode.lpRate : getTierLpRate(totalRevenue);
     const tier = effectiveRate >= 0.10 ? 3 : effectiveRate >= 0.07 ? 2 : 1;
 
