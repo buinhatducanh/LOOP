@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
     ]);
 
     return list(
-      events.map(e => ({ ...e, participantCount: (e as { _count?: { participants: number } })._count?.participants ?? 0 })),
+      events.map((e: typeof events[number]) => ({ ...e, participantCount: e._count?.participants ?? 0 })),
       { page, limit, total, totalPages: Math.ceil(total / limit) },
     );
   } catch (error) {
