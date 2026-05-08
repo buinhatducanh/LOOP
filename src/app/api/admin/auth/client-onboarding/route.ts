@@ -121,9 +121,11 @@ export async function POST(req: NextRequest) {
 
     if (!freshUser) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
-    const roles = freshUser.userRoles.map((ur) => ur.role.name);
-    const roleLevel = freshUser.userRoles.length > 0
-      ? Math.min(...freshUser.userRoles.map((ur) => ur.role.level ?? 99))
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const userWithRoles = freshUser as any;
+    const roles = userWithRoles.userRoles.map((ur: { role: { name: string } }) => ur.role.name);
+    const roleLevel = userWithRoles.userRoles.length > 0
+      ? Math.min(...userWithRoles.userRoles.map((ur: { role: { level: number | null } }) => ur.role.level ?? 99))
       : 5;
 
     const ipAddress = req.headers.get("x-forwarded-for")
