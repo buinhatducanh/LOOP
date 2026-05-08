@@ -230,7 +230,7 @@ export async function POST(req: NextRequest) {
     const requiredFields = ['name', 'slug', 'role'];
     const dateFields = ['birthDate', 'contractStart', 'joinedDate'];
     const cleanedData = Object.fromEntries(
-      Object.entries(memberData).map(([key, value]) => {
+      Object.entries(memberData).map(([key, value]: [string, unknown]) => {
         if (requiredFields.includes(key)) {
           return [key, value];
         }

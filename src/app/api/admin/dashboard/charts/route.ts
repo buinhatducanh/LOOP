@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
       monthlyData[key] = { orders: 0, revenue: 0 };
     }
 
-    recentOrders.forEach((order) => {
+    recentOrders.forEach((order: typeof recentOrders[number]) => {
       const d = new Date(order.createdAt);
       const key = `${months[d.getMonth()]}/${d.getFullYear()}`;
       if (monthlyData[key]) {
@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
       }
     });
 
-    const monthlyTrend = Object.entries(monthlyData).map(([month, data]) => ({
+    const monthlyTrend = Object.entries(monthlyData).map(([month, data]: [string, { orders: number; revenue: number }]) => ({
       month,
       orders: data.orders,
       revenue: data.revenue,
@@ -73,7 +73,7 @@ export async function GET(req: NextRequest) {
       monthlyMessages[key] = 0;
     }
 
-    recentMessages.forEach((msg) => {
+    recentMessages.forEach((msg: typeof recentMessages[number]) => {
       const d = new Date(msg.createdAt);
       const key = `${months[d.getMonth()]}/${d.getFullYear()}`;
       if (monthlyMessages[key] !== undefined) {
@@ -81,7 +81,7 @@ export async function GET(req: NextRequest) {
       }
     });
 
-    const messageTrend = Object.entries(monthlyMessages).map(([month, count]) => ({
+    const messageTrend = Object.entries(monthlyMessages).map(([month, count]: [string, number]) => ({
       month,
       messages: count,
     }));
