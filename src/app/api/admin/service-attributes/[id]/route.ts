@@ -86,7 +86,7 @@ export async function PUT(
 
       if (featuresToSync.length > 0) {
         await tx.feature.updateMany({
-          where: { id: { in: featuresToSync.map((f) => f.id) } },
+          where: { id: { in: featuresToSync.map((f: typeof featuresToSync[number]) => f.id) } },
           data: {
             isActive: data.isActive !== undefined ? data.isActive : existing.isActive,
             // Only update name/category if they are explicitly provided in the request
@@ -147,7 +147,7 @@ export async function DELETE(
 
       if (featuresToDelete.length > 0) {
         await tx.feature.deleteMany({
-          where: { id: { in: featuresToDelete.map((f) => f.id) } },
+          where: { id: { in: featuresToDelete.map((f: typeof featuresToDelete[number]) => f.id) } },
         });
       }
 

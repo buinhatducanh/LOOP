@@ -45,7 +45,7 @@ export async function GET(req: NextRequest) {
     };
 
     const merged = PRICING_KEYS.map((key) => {
-      const found = settings.find((s) => s.key === key);
+      const found = settings.find((s: typeof settings[number]) => s.key === key);
       return {
         key,
         value: found?.value ?? defaults[key] ?? "",

@@ -34,14 +34,14 @@ export async function GET(req: Request) {
       (await import("@/lib/prisma")).prisma.division.count(),
     ]);
 
-    const enriched = divisions.map((div) => ({
+    const enriched = divisions.map((div: typeof divisions[number]) => ({
       ...div,
       departmentCount: div.departments.length,
       memberCount: div.departments.reduce(
-        (sum, d) => sum + d.memberDepartments.length,
+        (sum: number, d: typeof div.departments[number]) => sum + d.memberDepartments.length,
         0
       ),
-      departments: div.departments.map((d) => ({
+      departments: div.departments.map((d: typeof div.departments[number]) => ({
         id: d.id,
         key: d.key,
         name: d.name,

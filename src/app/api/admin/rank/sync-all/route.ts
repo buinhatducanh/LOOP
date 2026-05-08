@@ -74,8 +74,8 @@ export async function POST(_req: NextRequest) {
     return ok({
       synced,
       failed: failed.length,
-      errors: failed.map((r) =>
-        r.status === "rejected" ? String((r as PromiseRejectedResult).reason) : null
+      errors: failed.map((r: PromiseRejectedResult) =>
+        r.status === "rejected" ? String(r.reason) : null
       ),
       syncedAt: new Date().toISOString(),
     });

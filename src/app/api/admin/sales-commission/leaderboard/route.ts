@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
  where: { referenceType: "order" },
  });
 
- const salesRepIds = commissionEvents.map((e) => e.salesRepId);
+ const salesRepIds = commissionEvents.map((e: typeof commissionEvents[number]) => e.salesRepId);
 
  // Fetch team members who have commission data
  const members = await prisma.teamMember.findMany({
@@ -56,10 +56,10 @@ export async function GET(req: NextRequest) {
 
  // Build the leaderboard entries
  const eventMap = new Map(
- commissionEvents.map((e) => [e.salesRepId, { dealCount: e._count.id, totalLp: e._sum.totalLp ?? 0 }])
+ commissionEvents.map((e: typeof commissionEvents[number]) => [e.salesRepId, { dealCount: e._count.id, totalLp: e._sum.totalLp ?? 0 }])
  );
 
- const entries: CommissionEntry[] = members.map((m) => {
+ const entries: CommissionEntry[] = members.map((m: typeof members[number]) => {
  const evt = eventMap.get(m.id);
  return {
  id: m.id,

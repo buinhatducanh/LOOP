@@ -109,7 +109,7 @@ export async function POST(
       // Assign ALL roles from the array (multi-role support)
       if (roles.length > 0) {
         await tx.userRole.createMany({
-          data: roles.map((r) => ({
+          data: roles.map((r: typeof roles[number]) => ({
             userId: user.id,
             roleId: r.id,
             isActive: true,

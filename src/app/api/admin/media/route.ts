@@ -89,7 +89,7 @@ export async function GET(req: NextRequest) {
     for (const c of courses) if (c.thumbnailPublicId) usedIds.add(c.thumbnailPublicId);
     for (const i of instructors) if (i.avatarPublicId) usedIds.add(i.avatarPublicId);
 
-    const enriched = resources.map((r) => ({
+    const enriched = resources.map((r: typeof resources[number]) => ({
       publicId: r.public_id,
       url: r.secure_url,
       format: r.format,
@@ -100,8 +100,8 @@ export async function GET(req: NextRequest) {
       isUsed: usedIds.has(r.public_id),
     }));
 
-    const orphanCount = enriched.filter((r) => !r.isUsed).length;
-    const usedCount = enriched.filter((r) => r.isUsed).length;
+    const orphanCount = enriched.filter((r: typeof enriched[number]) => !r.isUsed).length;
+    const usedCount = enriched.filter((r: typeof enriched[number]) => r.isUsed).length;
 
     return ok({
       resources: enriched,

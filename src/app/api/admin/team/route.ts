@@ -54,11 +54,11 @@ export async function GET(req: NextRequest) {
       ]),
     ]);
 
-    const deptIdToName = new Map(departments.map((d) => [d.id, d.name]));
-    const deptKeyToName = new Map(departments.map((d) => [d.key, d.name]));
+    const deptIdToName = new Map(departments.map((d: typeof departments[number]) => [d.id, d.name]));
+    const deptKeyToName = new Map(departments.map((d: typeof departments[number]) => [d.key, d.name]));
 
     // ── Aggregate LP from BOTH sources per member and compute rank fields ───
-    const memberIds = members.map((m) => m.id);
+    const memberIds = members.map((m: typeof members[number]) => m.id);
 
     const [awardAggs, txAggs, users] = await Promise.all([
       memberIds.length > 0

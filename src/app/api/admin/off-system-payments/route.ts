@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
       prisma.offSystemPayment.count(),
     ]);
 
-    const data = payments.map((p) => ({
+    const data = payments.map((p: typeof payments[number]) => ({
       id: p.id,
       orderId: p.orderId,
       amountVnd: p.amountVnd,
@@ -57,7 +57,7 @@ export async function GET(req: NextRequest) {
       createdBy: p.createdBy,
       createdAt: p.createdAt,
       order: p.order,
-      splits: p.splits.map((s) => ({
+      splits: p.splits.map((s: typeof p.splits[number]) => ({
         id: s.id,
         memberId: s.memberId,
         memberName: s.member.name,
@@ -75,7 +75,7 @@ export async function GET(req: NextRequest) {
     return ok({
       data,
       pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
-      summary: { totalCount: total, totalVnd: payments.reduce((s, p) => s + p.amountVnd, 0) },
+      summary: { totalCount: total, totalVnd: payments.reduce((s: number, p: typeof payments[number]) => s + p.amountVnd, 0) },
     });
   } catch (error) {
     return handleError(error);

@@ -235,9 +235,11 @@ export async function POST(req: NextRequest) {
  })();
 
  // ── Build session ──────────────────────────────────────────────────────────
- const roles = user.userRoles.map((ur) => ur.role.name);
- const permissions = user.userRoles.flatMap((ur) =>
- ur.role.permissions.map((p) => ({
+ // eslint-disable-next-line @typescript-eslint/no-explicit-any
+ const u = user as any;
+ const roles = u.userRoles.map((ur: { role: { name: string } }) => ur.role.name);
+ const permissions = u.userRoles.flatMap((ur: { role: { permissions: { resource: string; action: string; scope?: string }[] } }) =>
+ ur.role.permissions.map((p: { resource: string; action: string; scope?: string }) => ({
  resource: p.resource,
  action: p.action,
  scope: p.scope ?? "global",

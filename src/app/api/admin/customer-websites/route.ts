@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
  prisma.customerWebsite.count({ where }),
  ]);
 
- const mapped = websites.map((w) => ({
+ const mapped = websites.map((w: typeof websites[number]) => ({
   id: w.id,
  orderId: w.orderId,
  packageId: w.packageId,

@@ -46,14 +46,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       });
 
       if (existingBacklogs.length === 0) {
-        const defaultBacklogs = [
+        const defaultBacklogs: Array<{ name: string; title: string; sortOrder: number }> = [
           { name: "Backlog",      title: "Backlog",      sortOrder: 0 },
           { name: "In Progress", title: "In Progress",  sortOrder: 1 },
           { name: "Review",      title: "Review",       sortOrder: 2 },
           { name: "Done",        title: "Done",          sortOrder: 3 },
         ];
         await tx.backlog.createMany({
-          data: defaultBacklogs.map((b) => ({
+          data: defaultBacklogs.map((b: typeof defaultBacklogs[number]) => ({
             projectId: demo.projectId,
             ...b,
           })),

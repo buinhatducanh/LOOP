@@ -94,17 +94,17 @@ export async function GET(req: NextRequest) {
     });
 
     return NextResponse.json({
-      ordersByStatus: ordersByStatus.map((s) => ({
+      ordersByStatus: ordersByStatus.map((s: typeof ordersByStatus[number]) => ({
         status: s.status,
         count: s._count.id,
       })),
       monthlyTrend,
-      messagesByStatus: messagesByStatus.map((s) => ({
+      messagesByStatus: messagesByStatus.map((s: typeof messagesByStatus[number]) => ({
         status: s.status,
         count: s._count.id,
       })),
       messageTrend,
-      paymentBreakdown: paymentBreakdown.map((p) => ({
+      paymentBreakdown: paymentBreakdown.map((p: typeof paymentBreakdown[number]) => ({
         status: p.paymentStatus,
         count: p._count.id,
         amount: p._sum.totalAmount || 0,

@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
     // ── Aggregate LP from BOTH sources per member ─────────────────────────
     // 1. Approved LpAward records
     // 2. Completed LpTransaction(type=award) — teaching, referral, lp_allocation, manual
-    const memberIds = members.map((m) => m.id);
+    const memberIds = members.map((m: typeof members[number]) => m.id);
 
     // ── Dual-source LP aggregation: LpAward(approved) + LpTransaction(type=award, completed) ──
     const lpMap = new Map<string, number>();
@@ -69,7 +69,7 @@ export async function GET(req: NextRequest) {
     }
 
     // ── Compute rank fields + enrich member data ────────────────────────────
-    const enriched = members.map((m) => {
+    const enriched = members.map((m: typeof members[number]) => {
       const totalLp = lpMap.get(m.id) ?? 0;
       const computed = computeRankFieldsFromLp(totalLp);
 

@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
         where: { courseId },
         select: { id: true },
       });
-      enrollmentIds = enrollments.map((e) => e.id);
+      enrollmentIds = enrollments.map((e: typeof enrollments[number]) => e.id);
       if (enrollmentIds.length === 0) {
         return NextResponse.json({ data: [], pagination: { page, limit, total: 0, pages: 0 } });
       }

@@ -37,10 +37,10 @@ export async function GET(req: NextRequest, { params }: Params) {
       ...division,
       departmentCount: division.departments.length,
       memberCount: division.departments.reduce(
-        (sum, d) => sum + d.memberDepartments.length,
+        (sum: number, d: typeof division.departments[number]) => sum + d.memberDepartments.length,
         0
       ),
-      departments: division.departments.map((d) => ({
+      departments: division.departments.map((d: typeof division.departments[number]) => ({
         id: d.id,
         key: d.key,
         name: d.name,
@@ -49,7 +49,7 @@ export async function GET(req: NextRequest, { params }: Params) {
         description: d.description,
         mission: d.mission,
         memberCount: d.memberDepartments.length,
-        members: d.memberDepartments.map((md) => ({
+        members: d.memberDepartments.map((md: typeof d.memberDepartments[number]) => ({
           id: md.member.id,
           name: md.member.name,
           avatar: md.member.image,
