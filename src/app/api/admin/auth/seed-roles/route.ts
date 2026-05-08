@@ -270,7 +270,7 @@ export async function POST() {
 
     return NextResponse.json({
       message: "Roles & permissions seeded successfully",
-      roles: roles.map((r) => ({
+      roles: roles.map((r: typeof roles[number]) => ({
         name: r.name,
         displayName: r.displayName,
         level: r.level,
