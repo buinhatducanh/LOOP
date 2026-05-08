@@ -250,7 +250,7 @@ export async function POST() {
     });
 
     // 3. Insert fresh permissions
-    const permData = PERMISSIONS.filter((p) => roleIds[p.role]).map((p) => ({
+    const permData = PERMISSIONS.filter((p: typeof PERMISSIONS[number]) => roleIds[p.role]).map((p: typeof PERMISSIONS[number]) => ({
       roleId: roleIds[p.role],
       resource: p.resource,
       action: p.action,

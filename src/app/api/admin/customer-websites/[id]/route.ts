@@ -30,19 +30,20 @@ export async function GET(
 
  // Compute summary stats
  const stats = website.websiteStats;
- const totalVisitors = stats.reduce((sum, s) => sum + s.visitors, 0);
- const totalPageViews = stats.reduce((sum, s) => sum + s.pageViews, 0);
+ const totalVisitors = stats.reduce((sum: number, s: typeof stats[number]) => sum + s.visitors, 0);
+ const totalPageViews = stats.reduce((sum: number, s: typeof stats[number]) => sum + s.pageViews, 0);
  const avgUptime =
- stats.length > 0 ? stats.reduce((sum, s) => sum + s.uptime, 0) / stats.length : 100;
- const responseTimeStats = stats.filter((s) => s.responseTime != null);
+ stats.length > 0 ? stats.reduce((sum: number, s: typeof stats[number]) => sum + s.uptime, 0) / stats.length : 100;
+ const responseTimeStats = stats.filter((s: typeof stats[number]) => s.responseTime != null);
  const avgResponseTime =
  responseTimeStats.length > 0
- ? responseTimeStats.reduce((sum, s) => sum + (s.responseTime ?? 0), 0) /
+ ? responseTimeStats.reduce((sum: number, s: typeof stats[number]) => sum + (s.responseTime ?? 0), 0) /
  responseTimeStats.length
  : 0;
 
  // Top pages
- const pageViewsByUrl = website.pageViews.reduce((acc, pv) => {
+ const pageViews = website.pageViews;
+ const pageViewsByUrl = pageViews.reduce((acc, pv: typeof pageViews[number]) => {
  if (!acc[pv.pageUrl]) acc[pv.pageUrl] = { pageUrl: pv.pageUrl, pageTitle: pv.pageTitle, views: 0 };
  acc[pv.pageUrl].views += pv.views;
  return acc;

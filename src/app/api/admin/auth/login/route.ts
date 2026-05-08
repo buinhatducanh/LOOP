@@ -250,7 +250,7 @@ export async function POST(req: NextRequest) {
  user.teamMemberId !== null
  ? ROLE_LEVEL[user.role] ?? 1
  : user.userRoles.length > 0
- ? Math.min(...user.userRoles.map((ur) => ur.role.level ?? 99))
+ ? Math.min(...user!.userRoles.map((ur) => ur.role.level ?? 99))
  : ROLE_LEVEL[user.role] ?? 99;
 
  const accountType: "staff" | "customer" =

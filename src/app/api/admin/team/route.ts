@@ -105,7 +105,7 @@ export async function GET(req: NextRequest) {
     const userMap = new Map<string, { role: string; roles: string[] }>();
     for (const u of users) {
       const junctionRoles = u.userRoles
-        .filter((ur) => ur.role != null)
+        .filter((ur): ur is typeof ur & { role: NonNullable<typeof ur.role> } => ur.role != null)
         .map((ur) => ur.role.name);
       userMap.set(u.teamMemberId!, {
         role: u.role,          // User.role scalar (primary display role)
@@ -113,7 +113,7 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    const enriched = members.map((m) => {
+    const enriched = members.map((m: typeof members[number]) => {
       const totalApprovedLp = lpMap.get(m.id) ?? 0;
       // FIX: rank is admin-set and persisted in TeamMember.
       // Only compute rank from LP when there are actual LpAward records.
@@ -173,7 +173,7 @@ export async function GET(req: NextRequest) {
         // Position — chức danh do HR/Admin nhập
         position: m.position,
         // Multi-department — all departments member belongs to (from junction)
-        departments: (m.memberDepartments ?? []).filter((md) => md.department != null).map((md) => ({
+        departments: (m.memberDepartments ?? []).filter((md: typeof m.memberDepartments[number]) => md.department != null).map((md: typeof m.memberDepartments[number]) => ({
           id: md.department!.id,
           key: md.department!.key ?? "",
           name: md.department!.name ?? "",

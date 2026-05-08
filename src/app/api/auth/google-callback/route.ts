@@ -181,9 +181,9 @@ export async function GET(req: NextRequest) {
     }
     const primaryRole = dbUser?.role ?? "member";
     const isOnboarded = dbUser?.isOnboarded ?? false;
-    const roles = dbUser?.userRoles.map((ur) => ur.role.name) ?? [primaryRole];
+    const roles = dbUser?.userRoles.map((ur: typeof dbUser.userRoles[number]) => ur.role.name) ?? [primaryRole];
     const roleLevel = dbUser?.userRoles.length
-      ? Math.min(...dbUser.userRoles.map((ur) => ur.role.level ?? 99))
+      ? Math.min(...dbUser.userRoles.map((ur: typeof dbUser.userRoles[number]) => ur.role.level ?? 99))
       : ROLE_LEVEL[primaryRole] ?? 5;
 
     const ipAddress = req.headers.get("x-forwarded-for")

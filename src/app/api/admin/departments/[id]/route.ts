@@ -38,7 +38,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
 
     if (!department) return notFound("Department not found");
 
-    const members = department.memberDepartments.map((md) =>
+    const members = department.memberDepartments.map((md: typeof department.memberDepartments[number]) =>
       addAvatar({
         ...md.member,
         position: md.position,
@@ -59,7 +59,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
       division: department.division,
       memberCount: department.memberDepartments.length,
       members,
-      headId: department.memberDepartments.find((md) => md.isDeptHead)?.member.id ?? null,
+      headId: department.memberDepartments.find((md: typeof department.memberDepartments[number]) => md.isDeptHead)?.member.id ?? null,
       createdAt: department.createdAt,
       updatedAt: department.updatedAt,
     });

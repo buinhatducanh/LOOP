@@ -148,7 +148,7 @@ export async function POST(req: NextRequest) {
     // they should use /api/admin/auth/login instead. We treat them as customer here.
     const effectiveRoleLevel =
       user.userRoles.length > 0
-        ? Math.min(...user.userRoles.map((ur) => ur.role.level ?? 99))
+        ? Math.min(...user.userRoles.map((ur: typeof user.userRoles[number]) => ur.role.level ?? 99))
         : ROLE_LEVEL[user.role] ?? 99;
 
     // Force accountType = "customer" for this endpoint
@@ -164,7 +164,7 @@ export async function POST(req: NextRequest) {
       email: user.email,
       name: user.name ?? "",
       role: user.role ?? "customer",
-      roles: user.userRoles.map((ur) => ur.role.name),
+      roles: user.userRoles.map((ur: typeof user.userRoles[number]) => ur.role.name),
       accessTags: user.teamMember?.accessTags ?? [],
       accountType,
       isOnboarded: user.isOnboarded ?? false,

@@ -80,9 +80,10 @@ export async function PUT(req: NextRequest, { params }: Params) {
       },
     });
 
-    const enrichedDepts = (updated?.memberDepartments ?? [])
-      .filter((md) => md.department != null)
-      .map((md) => ({
+    const mds = updated?.memberDepartments ?? [];
+    const enrichedDepts = mds
+      .filter((md: typeof mds[number]) => md.department != null)
+      .map((md: typeof mds[number]) => ({
         id: md.department!.id,
         key: md.department!.key,
         name: md.department!.name,

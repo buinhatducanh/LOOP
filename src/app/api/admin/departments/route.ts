@@ -36,7 +36,7 @@ export async function GET(req: Request) {
       prisma.department.count(),
     ]);
 
-    const enriched = departments.map((dept) => ({
+    const enriched = departments.map((dept: typeof departments[number]) => ({
       id: dept.id,
       key: dept.key ?? "",
       name: dept.name ?? "",
@@ -51,14 +51,14 @@ export async function GET(req: Request) {
         ? { id: dept.division.id, key: dept.division.key, name: dept.division.name, shortName: dept.division.shortName }
         : null,
       // Members from junction (new way)
-      members: dept.memberDepartments.map((md) => addAvatar({
+      members: dept.memberDepartments.map((md: typeof dept.memberDepartments[number]) => addAvatar({
         ...md.member,
         position: md.position,
         isDeptHead: md.isDeptHead,
         isPrimary: md.isPrimary,
       })),
       // Head: member with isDeptHead=true in this department
-      headId: dept.memberDepartments.find((md) => md.isDeptHead)?.member.id ?? null,
+      headId: dept.memberDepartments.find((md: typeof dept.memberDepartments[number]) => md.isDeptHead)?.member.id ?? null,
       createdAt: dept.createdAt,
       updatedAt: dept.updatedAt,
     }));

@@ -128,10 +128,10 @@ export async function POST(
           where: { projectId: updatedTask.orderId },
         });
 
-        const pms = pmMembers.filter((pm) => pm.projectRoleKey === "pm");
+        const pms = pmMembers.filter((pm: typeof pmMembers[number]) => pm.projectRoleKey === "pm");
         if (pms.length > 0) {
           await tx.adminNotification.createMany({
-            data: pms.map((pm) => ({
+            data: pms.map((pm: typeof pms[number]) => ({
               type: "task_done",
               title: "Task hoàn thành",
               message: `Task "${updatedTask.title}" trong dự án ${task.order.orderNumber} (${task.order.customerName}) đã hoàn thành.`,

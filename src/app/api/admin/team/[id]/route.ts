@@ -33,8 +33,8 @@ export async function GET(
     }
 
     const junctionRoles = (user?.userRoles ?? [])
-      .filter((ur) => ur.role != null)
-      .map((ur) => ur.role.name);
+      .filter((ur: { role: { name: string } }) => ur.role != null)
+      .map((ur: { role: { name: string } }) => ur.role.name);
 
     return NextResponse.json({
       data: addAvatar({
@@ -228,7 +228,7 @@ export async function PUT(
     let roleIds: string[] = [];
     if ((systemRole !== undefined || roleNames !== undefined) && roleNames !== undefined && roleNames.length > 0) {
       const roles = await prisma.role.findMany({ where: { name: { in: roleNames } } });
-      roleIds = roles.map((r) => r.id);
+      roleIds = roles.map((r: typeof roles[number]) => r.id);
     }
 
     // ── Resolve userId for User table updates ────────────────────────────────────

@@ -58,7 +58,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
       },
     });
 
-    const members = updated?.memberDepartments.map((md) => ({
+    const members = updated?.memberDepartments.map((md: typeof updated.memberDepartments[number]) => ({
       ...md.member,
       position: md.position,
       isDeptHead: md.isDeptHead,
