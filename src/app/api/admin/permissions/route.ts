@@ -39,7 +39,7 @@ export async function GET(req: Request) {
       name: member.name ?? "",
       role: member.role ?? "",
       departmentId: member.departmentId ?? null,
-      isDeptHead: (member.memberDepartments ?? []).some((md) => md.isDeptHead) ?? false,
+      isDeptHead: (member.memberDepartments ?? []).some((md: { isDeptHead: boolean }) => md.isDeptHead) ?? false,
       tabPermissions: member.tabPermissions ?? [],
     });
   } catch (err) {

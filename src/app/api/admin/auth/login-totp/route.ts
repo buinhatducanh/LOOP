@@ -173,7 +173,7 @@ export async function POST(req: NextRequest) {
  accessTags: user.teamMember?.accessTags ?? [],
  tabPermissions: user.teamMember?.tabPermissions ?? [],
  departmentId: user.teamMember?.departmentId ?? null,
- isDeptHead: (user.teamMember?.memberDepartments ?? []).some((md: any) => md.isDeptHead) ?? false,
+ isDeptHead: (user.teamMember?.memberDepartments ?? []).some((md: { isDeptHead: boolean }) => md.isDeptHead) ?? false,
  accountType,
  isOnboarded: user.isOnboarded,
  rank: user.teamMember?.rank ?? undefined,
