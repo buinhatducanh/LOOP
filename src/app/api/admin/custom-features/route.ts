@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
     ]);
 
     // Filter to only custom features (tier = "custom")
-    const customData = data.filter(f => f.tier === "custom");
+    const customData = data.filter((f: typeof data[number]) => f.tier === "custom");
 
     return NextResponse.json({
       data: customData,
