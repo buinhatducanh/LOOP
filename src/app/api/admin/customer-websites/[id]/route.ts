@@ -43,7 +43,7 @@ export async function GET(
 
  // Top pages
  const pageViews = website.pageViews;
- const pageViewsByUrl = pageViews.reduce((acc, pv: typeof pageViews[number]) => {
+ const pageViewsByUrl = pageViews.reduce((acc: Record<string, { pageUrl: string; pageTitle: string | null; views: number }>, pv: typeof pageViews[number]) => {
  if (!acc[pv.pageUrl]) acc[pv.pageUrl] = { pageUrl: pv.pageUrl, pageTitle: pv.pageTitle, views: 0 };
  acc[pv.pageUrl].views += pv.views;
  return acc;
