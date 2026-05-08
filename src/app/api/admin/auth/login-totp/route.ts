@@ -145,10 +145,12 @@ export async function POST(req: NextRequest) {
  TOTP_LOCKOUT_STORE.delete(user.id);
 
  // Issue tokens
- const roles = user.userRoles.map((ur) => ur.role.name);
+ // eslint-disable-next-line @typescript-eslint/no-explicit-any
+ const u = user as any;
+ const roles = u.userRoles.map((ur: { role: { name: string } }) => ur.role.name);
  const effectiveRoleLevel =
- user.userRoles.length > 0
- ? Math.min(...user.userRoles.map((ur) => ur.role.level ?? 99))
+ u.userRoles.length > 0
+ ? Math.min(...u.userRoles.map((ur: { role: { level: number | null } }) => ur.role.level ?? 99))
  : ROLE_LEVEL[user.role] ?? 1;
 
  const accountType: "staff" | "customer" = effectiveRoleLevel <= 5 ? "staff" : "customer";
