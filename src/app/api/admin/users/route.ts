@@ -1,7 +1,7 @@
 import { handleError } from "@/lib/api/response";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import type { User } from "@/generated/prisma/index.d.ts";
+import type { User } from "@/generated/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { hashPassword } from "@/lib/auth/password";
 import { createAuditLog } from "@/lib/auth/audit";

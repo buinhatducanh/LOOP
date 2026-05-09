@@ -4,7 +4,7 @@ import { requirePermission } from "@/lib/auth/permissions";
 import { addAvatar } from "@/lib/api/mappings";
 import { handleError, ok } from "@/lib/api/response";
 import { syncRankFields } from "@/lib/rank/xp";
-import type { Prisma } from "@/generated/prisma/index.d.ts";
+import type { Prisma } from "@/generated/prisma";
 type InputJsonValue = Prisma.InputJsonValue;
 
 export async function GET(

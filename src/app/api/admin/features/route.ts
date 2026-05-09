@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/permissions";
 import { createAuditLog } from "@/lib/auth/audit";
 import { revalidatePath, revalidateTag } from "next/cache";
-import type { Prisma } from "@/generated/prisma/index.d.ts";
+import type { Prisma } from "@/generated/prisma";
 type FeatureWhereInput = Prisma.FeatureWhereInput;
 
 // Also expose InputJsonValue for audit log uses

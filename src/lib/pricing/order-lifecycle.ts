@@ -28,7 +28,7 @@ async function fireNotif(data: NotifData): Promise<void> {
   }
 }
 import { LP_VND_RATE } from "@/lib/constants";
-import type { Prisma } from "@/generated/prisma/index.d.ts";
+import type { Prisma } from "@/generated/prisma";
 type InputJsonValue = Prisma.InputJsonValue;
 
 /**

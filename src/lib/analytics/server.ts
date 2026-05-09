@@ -45,7 +45,7 @@
 
 import { prisma } from "@/lib/prisma";
 // InputJsonValue for Prisma JSON fields
-import type { Prisma } from "@/generated/prisma/index.d.ts";
+import type { Prisma } from "@/generated/prisma";
 type InputJsonValue = Prisma.InputJsonValue;
 
 /* ─── Types ──────────────────────────────────────────────────────────────── */

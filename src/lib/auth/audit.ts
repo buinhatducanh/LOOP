@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { headers } from "next/headers";
-import type { Prisma } from "@/generated/prisma/index.d.ts";
+import type { Prisma } from "@/generated/prisma";
 type InputJsonValue = Prisma.InputJsonValue;
 
 export async function createAuditLog(params: {
