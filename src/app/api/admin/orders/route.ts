@@ -52,7 +52,7 @@ export async function GET(req: NextRequest) {
       prisma.order.count({ where }),
     ]);
 
-    const data = orders.map((order) => {
+    const data = orders.map((order: typeof orders[number]) => {
       const latestDemo = order.figmaDemos[0] ?? null;
       return {
         ...order,
