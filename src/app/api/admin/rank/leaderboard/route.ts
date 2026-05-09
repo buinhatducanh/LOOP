@@ -108,7 +108,7 @@ export async function GET(req: NextRequest) {
     const sortKey = sort === "lp" ? "_lp" : sort === "level" ? "_level" : "_tier";
     const asc = order === "asc";
 
-    enriched.sort((a, b) => {
+    enriched.sort((a: typeof enriched[number], b: typeof enriched[number]) => {
       const av = (a as Record<string, unknown>)[sortKey] as number;
       const bv = (b as Record<string, unknown>)[sortKey] as number;
       // Default leaderboard is highest rank/level/LP first (desc); asc reverses to lowest first
