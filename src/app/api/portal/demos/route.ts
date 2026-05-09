@@ -19,8 +19,8 @@ export async function GET(req: NextRequest) {
       select: { id: true, orderNumber: true, package: { select: { title: true } } },
     });
 
-    const orderIds = orders.map(o => o.id);
-    const orderMap = Object.fromEntries(orders.map(o => [o.id, o]));
+    const orderIds = orders.map((o: typeof orders[number]) => o.id);
+    const orderMap = Object.fromEntries(orders.map((o: typeof orders[number]) => [o.id, o]));
 
     const demos = await prisma.figmaDemo.findMany({
       where: { projectId: { in: orderIds } },
@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
     });
 
     // Attach order info to each demo
-    const demosWithOrder = demos.map(d => ({
+    const demosWithOrder = demos.map((d: typeof demos[number]) => ({
       ...d,
       reviewUrl: `/figma-review/${d.clientToken}`,
       order: orderMap[d.projectId] ?? null,

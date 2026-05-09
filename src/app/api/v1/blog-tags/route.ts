@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
     };
     const nameField = localeNameField[locale] ?? "name";
 
-    const result = tags.map(tag => ({
+    const result = tags.map((tag: typeof tags[number]) => ({
       id: tag.id,
       key: tag.key,
       name: (tag as Record<string, unknown>)[nameField] as string ?? tag.name,

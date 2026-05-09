@@ -37,9 +37,9 @@ export async function GET(req: NextRequest) {
  const stats = {
  code: referral.code,
  name: referral.name,
- totalClicks: tracking.filter(t => t.event === "click").length,
- totalSignups: tracking.filter(t => t.event === "signup").length,
- totalOrders: tracking.filter(t => t.event === "order").length,
+ totalClicks: tracking.filter((t: typeof tracking[number]) => t.event === "click").length,
+ totalSignups: tracking.filter((t: typeof tracking[number]) => t.event === "signup").length,
+ totalOrders: tracking.filter((t: typeof tracking[number]) => t.event === "order").length,
  };
 
  return ok({ referral, stats });

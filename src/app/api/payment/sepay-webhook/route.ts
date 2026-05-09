@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
       take: 30
     });
 
-    const quote = quoteRequests.find(q => q.id.slice(-8).toUpperCase() === shortId.toUpperCase());
+    const quote = quoteRequests.find((q: typeof quoteRequests[number]) => q.id.slice(-8).toUpperCase() === shortId.toUpperCase());
 
     if (!quote) {
       console.error("[SePay Webhook] No matching QuoteRequest found for:", shortId);

@@ -40,14 +40,14 @@ export async function GET(req: NextRequest) {
     ]);
 
     // Join member names
-    const memberIds = [...new Set(awards.map(a => a.memberId))];
+    const memberIds = [...new Set(awards.map((a: typeof awards[number]) => a.memberId))];
     const members = await prisma.teamMember.findMany({
       where: { id: { in: memberIds } },
       select: { id: true, name: true, role: true },
     });
-    const memberMap = Object.fromEntries(members.map(m => [m.id, m]));
+    const memberMap = Object.fromEntries(members.map((m: typeof members[number]) => [m.id, m]));
 
-    const data = awards.map(a => ({
+    const data = awards.map((a: typeof awards[number]) => ({
       ...a,
       member: memberMap[a.memberId] ?? null,
     }));

@@ -84,7 +84,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     // Send email to customer when handed over (fire-and-forget)
     if (isHandedOver && updated?.project?.customerEmail) {
       const items = (Array.isArray(updated.items) ? updated.items : []) as { checked: boolean }[];
-      const checkedCount = items.filter(i => i.checked).length;
+      const checkedCount = items.filter((i: { checked: boolean }) => i.checked).length;
       sendHandoverDelivered({
         customerName: updated.project.customerName ?? "",
         customerEmail: updated.project.customerEmail,

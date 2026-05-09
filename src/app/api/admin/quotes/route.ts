@@ -139,8 +139,8 @@ export async function POST(req: NextRequest) {
         }
         if (qr.selectedItems && Array.isArray(qr.selectedItems)) {
           selectedFeatureIds = (qr.selectedItems as Array<{ featureId?: string }>)
-            .filter(item => item?.featureId)
-            .map(item => item.featureId as string);
+            .filter((item: { featureId?: string }) => item?.featureId)
+            .map((item: { featureId?: string }) => item.featureId as string);
         }
       }
     } else if (!salesLeadId && parsed.data.customerName) {

@@ -101,13 +101,13 @@ export async function GET(
     ]);
 
     const allTasks = tasks;
-    const doneTasks = allTasks.filter(t => t.status === "done").length;
+    const doneTasks = allTasks.filter((t: typeof tasks[number]) => t.status === "done").length;
     const totalTasks = allTasks.length;
     const completionRate = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
 
     const latestHandover = handover[0];
     const handoverItems = (Array.isArray(latestHandover?.items) ? latestHandover.items : []) as Array<Record<string, unknown>>;
-    const completedSections = handoverItems.filter(i => i.checked === true).length;
+    const completedSections = handoverItems.filter((i: { checked?: unknown }) => i.checked === true).length;
 
     return NextResponse.json({
       data: {
@@ -119,15 +119,15 @@ export async function GET(
           completionRate,
           memberCount: projectMembers.length,
         },
-        members: projectMembers.map(pm => pm.member),
-        epics: epics.map(epic => ({
+        members: projectMembers.map((pm: typeof projectMembers[number]) => pm.member),
+        epics: epics.map((epic: typeof epics[number]) => ({
           id: epic.id,
           name: epic.title,
           color: epic.color,
-          backlogs: epic.backlogs.map(b => ({
+          backlogs: epic.backlogs.map((b: typeof epics[number]["backlogs"][number]) => ({
             id: b.id,
             name: b.name,
-            tasks: b.tasks.map(t => ({
+            tasks: b.tasks.map((t: typeof epics[number]["backlogs"][number]["tasks"][number]) => ({
               id: t.id,
               title: t.title,
               status: t.status,
@@ -135,7 +135,7 @@ export async function GET(
             })),
           })),
         })),
-        recentDeployments: deployments.map(d => ({
+        recentDeployments: deployments.map((d: typeof deployments[number]) => ({
           ...d,
           deployedAt: d.deployedAt?.toISOString() ?? null,
         })),

@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
       take: 20 // Check last 20 requests
     });
 
-    const quote = quoteRequests.find(q => q.id.slice(-8).toUpperCase() === shortId.toUpperCase());
+    const quote = quoteRequests.find((q: typeof quoteRequests[number]) => q.id.slice(-8).toUpperCase() === shortId.toUpperCase());
 
     if (!quote) {
       console.error("[PayOS Webhook] No matching QuoteRequest found for:", shortId);
