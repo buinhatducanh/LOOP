@@ -536,7 +536,7 @@ export const DIVISIONS: Division[] = [
 ];
 
 export const DIVISION_COLORS: Record<string, string> = Object.fromEntries(
-  DIVISIONS.map(d => [d.key, d.color])
+  DIVISIONS.map((d: Division) => [d.key, d.color])
 );
 
 export interface Department {
@@ -569,7 +569,7 @@ export const DEPARTMENTS: Department[] = [
 ];
 
 export const DEPT_COLORS: Record<string, string> = Object.fromEntries(
-  DEPARTMENTS.map(d => [d.key, d.color])
+  DEPARTMENTS.map((d: Department) => [d.key, d.color])
 );
 
 // ─── Tab Permissions (v4.0) ────────────────────────────────────────────────────
