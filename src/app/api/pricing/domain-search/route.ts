@@ -65,7 +65,7 @@ export async function GET(req: Request) {
       select: { domain: true },
     });
     const purchasedSet = new Set(
-      purchased.map((r) => r.domain?.toLowerCase()).filter(Boolean) as string[],
+      purchased.map((r: typeof purchased[number]) => r.domain?.toLowerCase()).filter(Boolean) as string[],
     );
 
     const dbPrices = await prisma.pricingDomainPrice.findMany({

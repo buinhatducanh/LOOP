@@ -106,7 +106,7 @@ export async function GET(req: NextRequest) {
     for (const u of users) {
       const junctionRoles = u.userRoles
         .filter((ur): ur is typeof ur & { role: NonNullable<typeof ur.role> } => ur.role != null)
-        .map((ur) => ur.role.name);
+        .map((ur: typeof u.userRoles[number]) => ur.role.name);
       userMap.set(u.teamMemberId!, {
         role: u.role,          // User.role scalar (primary display role)
         roles: junctionRoles,    // ALL junction role names from UserRole table
