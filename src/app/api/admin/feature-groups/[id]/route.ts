@@ -48,7 +48,7 @@ export async function GET(
 
     const enrichedGroup = {
       ...group,
-      features: group.features.map(f => ({
+      features: group.features.map((f: typeof group.features[number]) => ({
         ...f,
         includedTiers: (f.includedTiers as unknown as number[] ?? []).length > 0
           ? f.includedTiers
