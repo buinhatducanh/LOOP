@@ -99,7 +99,7 @@ export async function POST(req: NextRequest) {
  type DomainEntry = { domain: string; tld: string; price: number; available: boolean };
  const resolvedDomains: DomainEntry[] = domains.length > 0
  ? domains as DomainEntry[]
- : (domain ? [{ domain, tld: domainTld, price: domainCost, available: true }] : []);
+ : (domain ? [{ domain, tld: domainTld ?? "", price: domainCost, available: true }] : []);
 
  const primaryDomain = resolvedDomains[0]?.domain ?? domain ?? "";
  const totalDomainCost = resolvedDomains.reduce((sum: number, d: DomainEntry) => sum + (d.price ?? 0), 0);

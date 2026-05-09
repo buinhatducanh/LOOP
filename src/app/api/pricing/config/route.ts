@@ -670,7 +670,7 @@ export async function GET(request: Request) {
     const localizedFeaturesByCategory = Object.fromEntries(
       Object.entries(featuresByCategory).map(([catKey, feats]: [string, typeof features]) => [
         catKey,
-        feats.map((f: typeof features[number]) => mapFeature(f, locale)).filter((f: typeof features[number], i, self) => i === self.findIndex((t: typeof features[number]) => t.id === f.id)),
+        feats.map((f: typeof features[number]) => mapFeature(f, locale)).filter((f, i, self) => i === self.findIndex((t) => t.id === f.id)),
       ])
     );
 
