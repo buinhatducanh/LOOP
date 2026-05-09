@@ -43,7 +43,7 @@ export async function GET(req: Request) {
 
     // ── Step 3: common keyword block ───────────────────────────────────────────
     const BLOCKED_KEYWORDS = ["admin", "webmail", "mail", "ftp", "localhost", "test", "demo", "api"];
-    if (BLOCKED_KEYWORDS.includes(lower) || BLOCKED_KEYWORDS.some(k => lower.startsWith(k + "."))) {
+    if (BLOCKED_KEYWORDS.includes(lower) || BLOCKED_KEYWORDS.some((k: string) => lower.startsWith(k + "."))) {
       return ok({ available: false, suggestions: [], invalid: false, blocked: true });
     }
 
@@ -63,5 +63,5 @@ function generateSuggestions(base: string): string[] {
     `${base}io`,
     `${base}co.com`,
   ];
-  return candidates.filter(c => !TAKEN_DOMAINS.has(c));
+  return candidates.filter((c: string) => !TAKEN_DOMAINS.has(c));
 }
