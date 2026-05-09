@@ -724,7 +724,7 @@ async function queryEventsByDay(
 
     return Array.from(byDate.entries())
       .sort()
-      .map(([date, count]) => ({ date, count }));
+      .map(([date, count]: [string, number]) => ({ date, count }));
   }
 }
 

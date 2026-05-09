@@ -38,7 +38,7 @@ export async function createBulkNotifications(params: {
 
   try {
     await prisma.notification.createMany({
-      data: params.userIds.map((userId) => ({
+      data: params.userIds.map((userId: string) => ({
         userId,
         type: params.type,
         title: params.title,

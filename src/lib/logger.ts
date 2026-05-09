@@ -134,7 +134,7 @@ export class Logger {
     const timestamp = entry.timestamp.split("T")[1]?.split(".")[0] ?? entry.timestamp;
     const context = Object.entries(entry)
       .filter(([k]) => k !== "timestamp" && k !== "level" && k !== "message")
-      .map(([k, v]) => `${k}=${JSON.stringify(v)}`)
+      .map(([k, v]: [string, unknown]) => `${k}=${JSON.stringify(v)}`)
       .join(" ");
     return `[${timestamp}] ${entry.level.toUpperCase()} [${this.module}] ${entry.message} ${context}`;
   }

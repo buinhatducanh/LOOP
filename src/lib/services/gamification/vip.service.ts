@@ -108,7 +108,7 @@ export async function recalculateClientVip(userIdOrEmail: string): Promise<void>
 
  // Fire promotion notification (non-blocking)
  const { createUserNotification } = await import("@/lib/services/notification.service");
- const tierConfig = VIP_TIERS.find(t => t.tier === newTier);
+ const tierConfig = VIP_TIERS.find((t: VipTierConfig) => t.tier === newTier);
  await createUserNotification({
  userId: vipStatus.userId ?? "",
  type: "vip_promotion",

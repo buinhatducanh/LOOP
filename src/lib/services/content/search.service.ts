@@ -558,7 +558,7 @@ export async function globalSearch(
   ]);
 
   // Map author names for blog posts
-  const authorIds = blogPosts.map(p => p.authorId).filter(Boolean);
+  const authorIds = blogPosts.map((p: typeof blogPosts[number]) => p.authorId).filter(Boolean);
   const authors = await prisma.teamMember.findMany({
     where: { id: { in: authorIds } },
     select: { id: true, name: true },

@@ -226,7 +226,7 @@ export async function getSupportedBanks(): Promise<
  };
 
  return (
- data.data?.map((b) => ({
+ data.data?.map((b: { id?: string; bin: string; name: string; logo?: string }) => ({
  id: b.id ?? b.bin,
  name: b.name,
  bin: b.bin,

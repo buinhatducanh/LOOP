@@ -75,7 +75,7 @@ export async function approveQuoteAndCreateOrder(
   // ── Parse selectedFeatureIds (JSON field from Prisma) ──────────────────────
   let selectedFeatureIds: string[] = [];
   if (Array.isArray(quote.selectedFeatureIds)) {
-    selectedFeatureIds = quote.selectedFeatureIds.map((v) => String(v));
+    selectedFeatureIds = quote.selectedFeatureIds.map((v: unknown) => String(v));
   }
 
   // ── Parse lpAllocation (JSON field from Prisma) ──────────────────────────

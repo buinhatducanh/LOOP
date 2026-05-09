@@ -85,7 +85,7 @@ export async function getDepartment(
   keyOrId: string
 ): Promise<DepartmentRecord | null> {
   const depts = await getDepartments();
-  return depts.find((d) => d.key === keyOrId || d.id === keyOrId) ?? null;
+  return depts.find((d: DepartmentRecord) => d.key === keyOrId || d.id === keyOrId) ?? null;
 }
 
 /**

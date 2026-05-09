@@ -39,7 +39,7 @@ export async function getQuestParticipants(questId: string): Promise<string[]> {
  where: { isActive: true, requestStatus: "approved" },
  select: { id: true },
  });
- return members.map(m => m.id);
+ return members.map((m: typeof members[number]) => m.id);
  }
 
  if (quest.scope === "department") {
@@ -53,7 +53,7 @@ export async function getQuestParticipants(questId: string): Promise<string[]> {
  },
  select: { id: true },
  });
- return members.map(m => m.id);
+ return members.map((m: typeof members[number]) => m.id);
  }
 
  // personal: handled separately by assignMemberQuest
@@ -96,7 +96,7 @@ export async function distributeQuestXp(params: {
  const xpPerMember = Math.floor(xpReward / participantIds.length);
  if (xpPerMember === 0) return;
 
- recipients = participantIds.map(id => ({ memberId: id, xpAmount: xpPerMember }));
+ recipients = participantIds.map((id: string) => ({ memberId: id, xpAmount: xpPerMember }));
  }
 
  // Credit XP to each recipient

@@ -104,7 +104,7 @@ function heuristicAnalysis(options: AnalyzeContentOptions): ContentAnalysis {
   if (h4Count > 0 && h2Count === 0) headingIssues.push('skip H2→H4');
 
   const hasGoodLength = wordCount >= 800;
-  const hasKeywords = targetKeywords.length > 0 && Object.values(keywordDensity).some((d) => d > 0);
+  const hasKeywords = targetKeywords.length > 0 && Object.values(keywordDensity).some((d: number) => d > 0);
   const seoScore = hasGoodLength && hasKeywords ? 72 : hasGoodLength || hasKeywords ? 55 : 38;
 
   const readabilityScore = wordCount > 0

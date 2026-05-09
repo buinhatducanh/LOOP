@@ -116,7 +116,7 @@ function buildSignatureString(params: Record<string, string | number>): string {
  // MoMo uses sorted key=value& format
  const sorted = Object.keys(params)
  .sort()
- .map((k) => `${k}=${params[k]}`)
+ .map((k: string) => `${k}=${params[k]}`)
  .join("&");
  return sorted;
 }

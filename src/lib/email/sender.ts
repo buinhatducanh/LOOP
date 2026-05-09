@@ -168,7 +168,7 @@ export async function sendStandupReminder(data: StandupReminderEmailData) {
 export async function sendSlaViolationAlert(data: SlaViolationEmailData) {
   const deadlineStr = format(data.deadline, "HH:mm dd/MM/yyyy", { locale: vi });
   const recipients = [
-    ...data.assignees.map(a => a.email),
+    ...data.assignees.map((a: { name: string; email: string }) => a.email),
     ...(data.pmEmail ? [data.pmEmail] : []),
   ].filter(Boolean);
 
@@ -489,7 +489,7 @@ export async function sendOrderConfirmation(data: OrderConfirmationEmailData) {
     </table>
     ${data.items.length > 0 ? `<div style="background:rgba(255,255,255,0.03);border-radius:10px;padding:16px;margin:0 0 20px 0">
       <p style="margin:0 0 8px 0;font-size:12px;color:rgba(209,213,219,0.5)">DỊCH VỤ ĐÃ ĐẶT</p>
-      ${data.items.map(item => `<p style="margin:4px 0;font-size:13px;color:#fff">• ${item}</p>`).join("")}
+      ${data.items.map((item: string) => `<p style="margin:4px 0;font-size:13px;color:#fff">• ${item}</p>`).join("")}
     </div>` : ""}
     <p style="margin:0;font-size:13px;color:rgba(209,213,219,0.5)">
       Đội ngũ LOOP sẽ liên hệ để xác nhận và bắt đầu triển khai trong thời gian sớm nhất.

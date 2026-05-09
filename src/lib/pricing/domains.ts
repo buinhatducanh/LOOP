@@ -39,5 +39,5 @@ export const TLD_LABELS: Record<string, string> = {
 
 /** Quick lookup: TLD → annual price in VND */
 export default Object.fromEntries(
- Object.entries(DOMAIN_PRICES).map(([tld, v]) => [tld, v.price]),
+ Object.entries(DOMAIN_PRICES).map(([tld, v]: [string, { price: number }]) => [tld, v.price]),
 ) as Record<string, number>;

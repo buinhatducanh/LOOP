@@ -80,7 +80,7 @@ export async function createBulkNotifications(
  if (items.length === 0) return;
  try {
  await prisma.adminNotification.createMany({
- data: items.map((item) => ({
+ data: items.map((item: AdminNotificationInput) => ({
  type: item.type,
  title: item.title,
  message: item.message,

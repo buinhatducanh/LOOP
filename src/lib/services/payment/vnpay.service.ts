@@ -135,9 +135,9 @@ export async function loadVNPayConfig(): Promise<VNPayConfig | null> {
  */
 function createVNPaySignature(params: Record<string, string>, secretKey: string): string {
  const sorted = Object.keys(params)
- .filter((k) => k.startsWith("vnp_"))
+ .filter((k: string) => k.startsWith("vnp_"))
  .sort()
- .map((k) => `${k}=${params[k]}`)
+ .map((k: string) => `${k}=${params[k]}`)
  .join("&");
  return createHmac("sha256", secretKey).update(sorted).digest("hex");
 }
@@ -214,7 +214,7 @@ export async function createVNPayUrl(
  // Build URL
  const baseUrl = config.vnp_ApiUrl;
  const queryString = Object.entries(params)
- .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
+ .map(([k, v]: [string, string]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
  .join("&");
 
  return {
