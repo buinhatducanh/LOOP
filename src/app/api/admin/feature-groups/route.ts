@@ -55,9 +55,9 @@ export async function GET(req: NextRequest) {
     }
 
     // Attach resolved includedTiers to each feature (overrides empty seed values)
-    const enrichedGroups = groups.map(g => ({
+    const enrichedGroups = groups.map((g: typeof groups[number]) => ({
       ...g,
-      features: g.features.map(f => ({
+      features: g.features.map((f: typeof groups[number]["features"][number]) => ({
         ...f,
         // Prefer DB value if non-empty, otherwise use resolved from packages
         includedTiers: (f.includedTiers as unknown as number[] ?? []).length > 0
