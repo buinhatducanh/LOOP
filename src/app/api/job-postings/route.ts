@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
     ]);
 
     // Apply i18n — title
-    const localized = postings.map((p) => {
+    const localized = postings.map((p: typeof postings[number]) => {
       const title = getLocalizedField(p as unknown as Record<string, string>, "title", lang);
       const salaryLabel =
         p.salaryMin && p.salaryMax

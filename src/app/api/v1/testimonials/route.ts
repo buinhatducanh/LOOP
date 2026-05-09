@@ -27,7 +27,7 @@ export async function GET(req: Request) {
       orderBy: { sortOrder: "asc" },
     });
 
-    const localized = testimonials.map((t) => ({
+    const localized = testimonials.map((t: typeof testimonials[number]) => ({
       id: t.id,
       name: t.name,
       avatar: t.avatar,

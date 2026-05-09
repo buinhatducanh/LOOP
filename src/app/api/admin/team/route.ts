@@ -277,7 +277,7 @@ export async function POST(req: NextRequest) {
         })
       );
       // memberId injected inside tx below (not known yet)
-      expertiseRecords.push(...resolved.map(r => ({
+      expertiseRecords.push(...resolved.map((r: typeof resolved[number]) => ({
         memberId: "", // filled below
         expertiseId: r.expertiseId,
         level: r.level,
@@ -294,7 +294,7 @@ export async function POST(req: NextRequest) {
     });
 
     // Fill memberId in expertise records now that we have it
-    const recordsWithMemberId = expertiseRecords.map(r => ({
+    const recordsWithMemberId = expertiseRecords.map((r: typeof expertiseRecords[number]) => ({
       ...r,
       memberId: created.id,
     }));

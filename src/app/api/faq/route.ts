@@ -42,7 +42,7 @@ export async function GET(req: Request) {
       },
     });
 
-    const localized = faqs.map((f) => ({
+    const localized = faqs.map((f: typeof faqs[number]) => ({
       id: f.id,
       question: getLocalizedField(f, "question", locale),
       answer: getLocalizedField(f, "answer", locale),

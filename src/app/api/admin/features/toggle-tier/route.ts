@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
         ? currentFeatures.includes(featureId)
           ? currentFeatures
           : [...currentFeatures, featureId]
-        : currentFeatures.filter(id => id !== featureId);
+        : currentFeatures.filter((id: string) => id !== featureId);
 
       await prisma.servicePackage.update({
         where: { id: pkg.id },

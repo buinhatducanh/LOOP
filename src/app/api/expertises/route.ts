@@ -20,7 +20,7 @@ export async function GET(req: Request) {
       orderBy: [{ category: "asc" }, { sortOrder: "asc" }],
     });
 
-    const localized = expertises.map((e) => ({
+    const localized = expertises.map((e: typeof expertises[number]) => ({
       id: e.id,
       name: getLocalizedField(e, "name", locale),
       category: getLocalizedField(e, "category", locale),

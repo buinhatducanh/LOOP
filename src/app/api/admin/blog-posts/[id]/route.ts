@@ -89,7 +89,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         ...(tagIds !== undefined ? {
           tags: {
             deleteMany: {},
-            ...(tagIds.length > 0 ? { create: tagIds.map(tagId => ({ tagId })) } : {}),
+            ...(tagIds.length > 0 ? { create: tagIds.map((tagId: string) => ({ tagId })) } : {}),
           },
         } : {}),
       },

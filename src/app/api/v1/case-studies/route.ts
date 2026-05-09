@@ -73,7 +73,7 @@ export async function GET(req: Request) {
       prisma.project.count({ where }),
     ]);
 
-    const localized = projects.map((p) => ({
+    const localized = projects.map((p: typeof projects[number]) => ({
       id: p.id,
       slug: p.slug,
       title: getLocalizedField(p, "title", locale),

@@ -232,7 +232,7 @@ export async function POST() {
 
     for (const sp of packages) {
       const names = PKG_FEATURES[sp.slug] ?? [];
-      const ids = names.map(n => nameToId[n]).filter(Boolean);
+      const ids = names.map((n: string) => nameToId[n]).filter(Boolean);
       await prisma.servicePackage.update({
         where: { id: sp.id },
         data: { features: ids },
