@@ -190,7 +190,7 @@ export async function POST(req: NextRequest) {
         contentZh: parsed.data.contentZh,
         // Tags
         ...(parsed.data.tagIds?.length
-          ? { tags: { create: parsed.data.tagIds.map(tagId => ({ tagId })) } }
+          ? { tags: { create: parsed.data.tagIds.map((tagId: string) => ({ tagId })) } }
           : {}),
       },
     });

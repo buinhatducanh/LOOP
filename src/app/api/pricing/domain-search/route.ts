@@ -34,11 +34,11 @@ async function checkDnsAvailable(domain: string): Promise<boolean> {
     ]);
 
     // If any check succeeded (fulfilled), the domain is TAKEN
-    const isTaken = checks.some(c => c.status === "fulfilled");
+    const isTaken = checks.some((c: PromiseSettledResult<unknown>) => c.status === "fulfilled");
     if (isTaken) return false;
 
     // If all failed, check if they all failed with ENOTFOUND
-    const allNotFound = checks.every(c => c.status === "rejected" && (c as any).reason?.code === "ENOTFOUND");
+    const allNotFound = checks.every((c: PromiseSettledResult<unknown>) => c.status === "rejected" && (c as unknown as { reason?: { code: string } }).reason?.code === "ENOTFOUND");
     
     // If all are ENOTFOUND, it's available. Otherwise, assume it's taken (safety first)
     return allNotFound;

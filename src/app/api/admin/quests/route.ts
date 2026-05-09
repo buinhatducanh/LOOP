@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
     ]);
 
     return list(
-      quests.map(q => ({ ...q, participantCount: (q as { _count?: { participants: number } })._count?.participants ?? 0 })),
+      quests.map((q: typeof quests[number]) => ({ ...q, participantCount: (q as { _count?: { participants: number } })._count?.participants ?? 0 })),
       buildPagination(page, limit, total),
     );
   } catch (error) {
