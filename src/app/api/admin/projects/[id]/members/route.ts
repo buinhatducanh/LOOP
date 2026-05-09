@@ -23,7 +23,7 @@ export async function GET(
     });
 
     return NextResponse.json({
-      data: projectMembers.map((pm) => ({
+      data: projectMembers.map((pm: typeof projectMembers[number]) => ({
         id: pm.id,
         memberId: pm.memberId,
         projectRoleKey: pm.projectRoleKey,
