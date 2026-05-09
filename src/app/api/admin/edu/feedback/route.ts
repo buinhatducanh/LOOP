@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
     const limit = Math.min(50, parseInt(searchParams.get("limit") ?? "20", 10));
 
     // If filtering by course, first resolve enrollment IDs
-    let enrollmentIds: string[] | undefined;
+    let enrollmentIds: string[] = [];
     if (courseId) {
       const enrollments = await prisma.enrollment.findMany({
         where: { courseId },
