@@ -265,7 +265,7 @@ export async function POST(
 
             select: { lessonId: true, completedAt: true },
 
-          }).then((p: Array<{ lessonId: string; completedAt: Date | null }>) => p.map((x) => ({ lessonId: x.lessonId, completedAt: x.completedAt })))
+          }).then((p: Array<{ lessonId: string; completedAt: Date | null }>) => p.map((x: { lessonId: string; completedAt: Date | null }) => ({ lessonId: x.lessonId, completedAt: x.completedAt })))
 
         ),
 

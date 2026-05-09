@@ -85,7 +85,7 @@ export async function PATCH(
 
     // Validate LP allocation if provided
     if (parsed.data.lpAllocation) {
-      const lpSum = Object.values(parsed.data.lpAllocation).reduce((s, v) => s + v, 0);
+      const lpSum = Object.values(parsed.data.lpAllocation).reduce((s: number, v: number) => s + v, 0);
       if (lpSum !== 0 && lpSum !== 100) {
         return NextResponse.json(
           { error: `LP allocation phải tổng = 100%. Hiện tại: ${lpSum}%` },

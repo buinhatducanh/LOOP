@@ -23,7 +23,7 @@ export async function GET(req: Request) {
       orderBy: { sortOrder: "asc" },
     });
 
-    const localized = projects.map((p) => ({
+    const localized = projects.map((p: typeof projects[number]) => ({
       id: p.id,
       slug: p.slug,
       category: p.category,

@@ -58,7 +58,7 @@ export async function GET(req: Request) {
       prisma.blogPost.count({ where: { status: "published" } }),
     ]);
 
-    const localized = posts.map((p) => ({
+    const localized = posts.map((p: typeof posts[number]) => ({
       id: p.id,
       slug: p.slug,
       title: getLocalizedField(p, "title", locale),
