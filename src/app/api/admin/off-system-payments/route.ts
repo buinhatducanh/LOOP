@@ -109,10 +109,9 @@ export async function POST(req: NextRequest) {
     });
 
     // Build split data (no memberId yet — splits are role-based, approved individually)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const splitData: any[] = splitConfigs
-      .filter((c) => c.percentage > 0)
-      .map((c) => ({
+    const splitData = splitConfigs
+      .filter((c: typeof splitConfigs[number]) => c.percentage > 0)
+      .map((c: typeof splitConfigs[number]) => ({
         projectRole: c.key,
         percentage: c.percentage,
         lpAmount: Math.floor((totalLp * c.percentage) / 100),
