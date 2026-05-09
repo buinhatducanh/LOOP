@@ -115,7 +115,7 @@ export async function GET(req: NextRequest) {
       return asc ? av - bv : bv - av;
     });
 
-    const result = enriched.slice(0, limit).map(({ _tier, _level, _lp, ...rest }) => rest);
+    const result = enriched.slice(0, limit).map(({ _tier, _level, _lp, ...rest }: typeof enriched[number]) => rest);
 
     // If querying a single member, return that member directly
     if (memberId) {
