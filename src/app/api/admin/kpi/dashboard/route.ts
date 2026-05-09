@@ -96,7 +96,7 @@ export async function GET(req: NextRequest) {
     const violationRate = totalTasks > 0 ? Math.round((violatedTasks / totalTasks) * 100) : 0;
 
     const projectsWithHealth = projectHealth.map((p: typeof projectHealth[number]) => {
-      const allTasks = p.backlogs.flatMap(b => b.tasks);
+      const allTasks = p.backlogs.flatMap((b: typeof projectHealth[number]["backlogs"][number]) => b.tasks);
       const total = allTasks.length;
       const done = allTasks.filter((t: typeof allTasks[number]) => t.status === "done").length;
       const violated = allTasks.filter((t: typeof allTasks[number]) => t.violated).length;
