@@ -92,7 +92,7 @@ export async function POST(
     void prisma.order.findUnique({
       where: { id },
       select: { orderNumber: true, customerName: true, customerEmail: true },
-    }).then(async (o) => {
+    }).then(async (o: { orderNumber: string; customerName: string | null; customerEmail: string | null } | null) => {
       if (!o?.customerEmail) return;
       try {
         const { sendPaymentConfirmationEmail } = await import("@/lib/email/sender");
