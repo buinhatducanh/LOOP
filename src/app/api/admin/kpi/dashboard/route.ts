@@ -121,7 +121,7 @@ export async function GET(req: NextRequest) {
       };
     });
 
-    const memberIds = topMembers.map(m => m.memberId);
+    const memberIds = topMembers.map((m: typeof topMembers[number]) => m.memberId);
     const members = await prisma.teamMember.findMany({
       where: { id: { in: memberIds } },
       select: { id: true, name: true, email: true },
