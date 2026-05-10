@@ -637,23 +637,23 @@ export async function GET(request: Request) {
     // Map with locale-aware fields — mapPackage gets marketPrices for anchor display
     const wizardPackages = packages.map((p: typeof packages[number]) => mapPackage(p, locale, marketPrices, packages));
     // Deduplicate packages by slug
-    const uniqueWizardPackages = wizardPackages.filter((p: typeof wizardPackages[number], i, self) => i === self.findIndex((t: typeof wizardPackages[number]) => t.slug === p.slug));
+    const uniqueWizardPackages = wizardPackages.filter((p: typeof wizardPackages[number], i: number, self: typeof wizardPackages) => i === self.findIndex((t: typeof wizardPackages[number]) => t.slug === p.slug));
 
     const wizardFeatures = features.map((f: typeof features[number]) => mapFeature(f, locale));
     // Deduplicate features by id
-    const uniqueWizardFeatures = wizardFeatures.filter((f: typeof wizardFeatures[number], i, self) => i === self.findIndex((t: typeof wizardFeatures[number]) => t.id === f.id));
+    const uniqueWizardFeatures = wizardFeatures.filter((f: typeof wizardFeatures[number], i: number, self: typeof wizardFeatures) => i === self.findIndex((t: typeof wizardFeatures[number]) => t.id === f.id));
 
     const wizardAddons = addons.map((a: typeof addons[number]) => mapAddon(a, locale));
     // Deduplicate addons by slug
-    const uniqueWizardAddons = wizardAddons.filter((a: typeof wizardAddons[number], i, self) => i === self.findIndex((t: typeof wizardAddons[number]) => t.slug === a.slug));
+    const uniqueWizardAddons = wizardAddons.filter((a: typeof wizardAddons[number], i: number, self: typeof wizardAddons) => i === self.findIndex((t: typeof wizardAddons[number]) => t.slug === a.slug));
 
     const wizardInfraTiers = infraTiers.map((t: typeof infraTiers[number]) => mapInfraTier(t, locale));
     // Deduplicate infra tiers by slug
-    const uniqueWizardInfraTiers = wizardInfraTiers.filter((t: typeof wizardInfraTiers[number], i, self) => i === self.findIndex((x: typeof wizardInfraTiers[number]) => x.slug === t.slug));
+    const uniqueWizardInfraTiers = wizardInfraTiers.filter((t: typeof wizardInfraTiers[number], i: number, self: typeof wizardInfraTiers) => i === self.findIndex((x: typeof wizardInfraTiers[number]) => x.slug === t.slug));
 
     const wizardHostingPlans = hostingPlans.map((h: typeof hostingPlans[number]) => mapHostingPlan(h, locale));
     // Deduplicate hosting plans by slug
-    const uniqueWizardHostingPlans = wizardHostingPlans.filter((h: typeof wizardHostingPlans[number], i, self) => i === self.findIndex((t: typeof wizardHostingPlans[number]) => t.slug === h.slug));
+    const uniqueWizardHostingPlans = wizardHostingPlans.filter((h: typeof wizardHostingPlans[number], i: number, self: typeof wizardHostingPlans) => i === self.findIndex((t: typeof wizardHostingPlans[number]) => t.slug === h.slug));
 
     // Deduplicate domain prices by extension (take the first one found)
     const uniqueDomainPrices: typeof domainPrices = [];
@@ -670,14 +670,14 @@ export async function GET(request: Request) {
     const localizedFeaturesByCategory = Object.fromEntries(
       Object.entries(featuresByCategory).map(([catKey, feats]: [string, typeof features]) => [
         catKey,
-        feats.map((f: typeof features[number]) => mapFeature(f, locale)).filter((f, i, self) => i === self.findIndex((t: ReturnType<typeof mapFeature>) => t.id === f.id)),
+        feats.map((f: typeof features[number]) => mapFeature(f, locale)).filter((f: ReturnType<typeof mapFeature>, i: number, self: ReturnType<typeof mapFeature>[]) => i === self.findIndex((t: ReturnType<typeof mapFeature>) => t.id === f.id)),
       ])
     );
 
     // Deduplicate SEO tiers by level
-    const uniqueSeoTiers = wizardSeoTiers.filter((t: typeof wizardSeoTiers[number], i, self) => i === self.findIndex((x: typeof wizardSeoTiers[number]) => x.level === t.level));
+    const uniqueSeoTiers = wizardSeoTiers.filter((t: typeof wizardSeoTiers[number], i: number, self: typeof wizardSeoTiers) => i === self.findIndex((x: typeof wizardSeoTiers[number]) => x.level === t.level));
     // Deduplicate SEO features by id
-    const uniqueSeoFeatures = wizardSeoFeatures.filter((f: typeof wizardSeoFeatures[number], i, self) => i === self.findIndex((x: typeof wizardSeoFeatures[number]) => x.id === f.id));
+    const uniqueSeoFeatures = wizardSeoFeatures.filter((f: typeof wizardSeoFeatures[number], i: number, self: typeof wizardSeoFeatures) => i === self.findIndex((x: typeof wizardSeoFeatures[number]) => x.id === f.id));
 
 
 
@@ -699,7 +699,7 @@ export async function GET(request: Request) {
     );
 
     // Deduplicate Web features by id
-    const uniqueWebFeatures = wizardWebFeatures.filter((f: typeof wizardWebFeatures[number], i, self) => i === self.findIndex((x: typeof wizardWebFeatures[number]) => x.id === f.id));
+    const uniqueWebFeatures = wizardWebFeatures.filter((f: typeof wizardWebFeatures[number], i: number, self: typeof wizardWebFeatures) => i === self.findIndex((x: typeof wizardWebFeatures[number]) => x.id === f.id));
 
     return ok(
       {
