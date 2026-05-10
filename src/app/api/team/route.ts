@@ -19,7 +19,7 @@ export async function GET(req: Request) {
       orderBy: [{ roleLevel: "asc" }, { sortOrder: "asc" }],
     });
 
-    const localized = members.map((m) => mapLocalizedTeamMember(m, locale));
+    const localized = members.map((m: typeof members[number]) => mapLocalizedTeamMember(m, locale));
     return ok(localized);
   } catch (error) {
     return handleError(error);
