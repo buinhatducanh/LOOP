@@ -57,7 +57,7 @@ export async function POST(_req: NextRequest) {
 
     // Sync each member
     const results = await Promise.allSettled(
-      memberIds.map(async (memberId) => {
+      memberIds.map(async (memberId: string) => {
         const totalLp = lpMap.get(memberId) ?? 0;
         const fields = computeRankFieldsFromLp(totalLp);
         await prisma.teamMember.update({
