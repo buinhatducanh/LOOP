@@ -103,7 +103,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error("CRITICAL ERROR in /api/pricing/quote:", error);
     if (error instanceof z.ZodError) {
-      return badRequest(error.issues.map((i) => i.message).join("; "));
+      return badRequest(error.issues.map((i: z.ZodIssue) => i.message).join("; "));
     }
     return serverError(error instanceof Error ? error.message : "Internal Server Error");
   }

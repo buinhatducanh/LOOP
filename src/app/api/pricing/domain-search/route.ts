@@ -68,7 +68,7 @@ export async function GET(req: Request) {
       purchased.map((r: typeof purchased[number]) => r.domain?.toLowerCase()).filter(Boolean) as string[],
     );
 
-    const dbPrices = await prisma.pricingDomainPrice.findMany({
+    const dbPrices: { extension: string; registrationPrice: number }[] = await prisma.pricingDomainPrice.findMany({
       where: { isActive: true },
       orderBy: { sortOrder: "asc" },
     });
