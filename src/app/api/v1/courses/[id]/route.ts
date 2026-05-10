@@ -83,7 +83,7 @@ export async function GET(
         });
       }
       // First 2 lessons per course are free for preview
-      const lessonIndex = course.lessons.findIndex((l) => l.id === lesson.id);
+      const lessonIndex = course.lessons.findIndex((l: typeof course.lessons[number]) => l.id === lesson.id);
       chapterMap.get(chapterIndex)!.lessons.push({
         id: lesson.id,
         title: locale === "vi" ? (lesson.titleVi || lesson.title) : lesson.title,

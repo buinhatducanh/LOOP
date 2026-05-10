@@ -207,7 +207,8 @@
       "Bash(node_modules/.bin/next build:*)",
       "Bash(NEXT_TEAMCITY_BUILD=1 npx next build)",
       "Bash(tee /tmp/vercel_build.log)",
-      "Bash(tee vercel_build.log)"
+      "Bash(tee vercel_build.log)",
+      "Bash(grep -rn .map\\\\\\(\\\\\\([a-z][a-z]*\\\\\\) src/app/api --include=*.ts)"
     ],
     "additionalDirectories": []
   }
