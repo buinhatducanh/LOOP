@@ -120,7 +120,7 @@ export async function POST(
 
       // Audit trail: one entry per role
       await Promise.all(
-        roles.map((r) =>
+        roles.map((r: typeof roles[number]) =>
           tx.userRoleApproval.create({
             data: {
               userId: user.id,
