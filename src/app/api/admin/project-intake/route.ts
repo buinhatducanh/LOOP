@@ -264,7 +264,7 @@ export const POST = withIdempotency(
             memberId: body.pmMemberId,
             projectId: order.id,
             projectRoleKey: "pm",
-            assignedLp: body.teamMembers?.find((m) => m.memberId === body.pmMemberId)?.assignedLp ?? 0,
+            assignedLp: body.teamMembers?.find((m: { memberId: string; assignedLp?: number }) => m.memberId === body.pmMemberId)?.assignedLp ?? 0,
           },
         });
         projectMembers.push(pmEntry);

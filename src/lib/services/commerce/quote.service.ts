@@ -23,7 +23,7 @@ export async function createQuote(
   _userId: string
 ) {
   const lp = input.lpAllocation ?? {};
-  const lpSum = Object.values(lp).reduce((s, v) => s + v, 0);
+  const lpSum = Object.values(lp).reduce((s: number, v: number) => s + v, 0);
   if (lpSum !== 0 && lpSum !== 100) {
     throw new Error(`LP allocation must sum to 0% or 100%. Got: ${lpSum}%`);
   }

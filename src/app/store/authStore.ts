@@ -633,7 +633,7 @@ export const useAuthStore = create<AuthStore>()(
         });
 
         // Call BE to award LP + XP for staff (silent — FE state already updated optimistically)
-        const dailyQuest = quests.find((q) => q.id === "q-daily-1");
+        const dailyQuest = quests.find((q: Quest) => q.id === "q-daily-1");
         try {
           const res = await apiClient.post<{
             data: { lpEarned: number; xpEarned: number; loginStreak: number };

@@ -157,7 +157,7 @@ export async function awardReferralLpOnPayment(
     select: { paidAmount: true },
   });
 
-  const totalRevenue = completedOrders.reduce((s, o) => s + (o.paidAmount ?? 0), 0) + paidAmount;
+  const totalRevenue = completedOrders.reduce((s: number, o: { paidAmount: number | null }) => s + (o.paidAmount ?? 0), 0) + paidAmount;
 
   // 2. Determine tier rate: use ReferralCode.lpRate if set, else get from tier logic
   const lpRate = referralCode.lpRate > 0 ? referralCode.lpRate : getTierLpRate(totalRevenue) /* sync fallback */;
@@ -265,7 +265,7 @@ export async function awardReferralLpOnCompletion(
     select: { paidAmount: true },
   });
 
-  const totalRevenue = completedOrders.reduce((s, o) => s + (o.paidAmount ?? 0), 0);
+  const totalRevenue = completedOrders.reduce((s: number, o: { paidAmount: number | null }) => s + (o.paidAmount ?? 0), 0);
 
   // Use individual code rate if set, else tier-based
   const lpRate = referralCode.lpRate > 0 ? referralCode.lpRate : getTierLpRate(totalRevenue) /* sync fallback */;

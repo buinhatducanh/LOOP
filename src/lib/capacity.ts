@@ -278,7 +278,7 @@ export function planSprint(options: PlanSprintOptions): SprintPlan {
   for (const member of members) {
     const committed = commitments
       .filter((c) => c.assignee === member.name)
-      .reduce((s, c) => s + c.estimateDays, 0);
+      .reduce((s: number, c: { estimateDays: number }) => s + c.estimateDays, 0);
 
     const available = workDays * member.availability;
     const utilization = available > 0 ? committed / available : 0;

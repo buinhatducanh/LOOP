@@ -222,10 +222,10 @@ export async function getAnalytics(
       prisma.serverAnalyticsEvent.count({ where: w }),
       prisma.serverAnalyticsEvent
         .groupBy({ by: ["sessionId"], where: { sessionId: { not: null } } })
-        .then((rows) => rows.filter((r) => r.sessionId !== null).length),
+        .then((rows) => rows.filter((r: { sessionId: string | null }) => r.sessionId !== null).length),
       prisma.serverAnalyticsEvent
         .groupBy({ by: ["visitorId"], where: { visitorId: { not: null } } })
-        .then((rows) => rows.filter((r) => r.visitorId !== null).length),
+        .then((rows) => rows.filter((r: { visitorId: string | null }) => r.visitorId !== null).length),
       prisma.serverAnalyticsEvent.groupBy({
         by: ["event"],
         _count: { event: true },
@@ -346,10 +346,10 @@ export async function getPageAnalytics(
       prisma.serverAnalyticsEvent.count({ where: w }),
       prisma.serverAnalyticsEvent
         .groupBy({ by: ["sessionId"], where: { ...w, sessionId: { not: null } } })
-        .then((rows) => rows.filter((r) => r.sessionId !== null).length),
+        .then((rows) => rows.filter((r: { sessionId: string | null }) => r.sessionId !== null).length),
       prisma.serverAnalyticsEvent
         .groupBy({ by: ["visitorId"], where: { ...w, visitorId: { not: null } } })
-        .then((rows) => rows.filter((r) => r.visitorId !== null).length),
+        .then((rows) => rows.filter((r: { visitorId: string | null }) => r.visitorId !== null).length),
       queryEventsByDay(startDate, endDate, w),
       prisma.serverAnalyticsEvent.groupBy({
         by: ["referrer"],
@@ -579,7 +579,7 @@ export async function getRealTimeStats(): Promise<RealTimeStats> {
             sessionId: { not: null },
           },
         })
-        .then((rows) => rows.filter((r) => r.sessionId !== null).length),
+        .then((rows) => rows.filter((r: { sessionId: string | null }) => r.sessionId !== null).length),
       prisma.serverAnalyticsEvent.groupBy({
         by: ["event"],
         _count: { event: true },
