@@ -627,7 +627,7 @@ export async function GET(request: Request) {
     const sampleCalc = await calculateOrderPrice({ selectedFeatureIds: [] });
 
     // Group features by localized category (use raw category field as group key)
-    const featuresByCategory = features.reduce<Record<string, typeof features>>((acc, f) => {
+    const featuresByCategory = features.reduce<Record<string, typeof features>>((acc, f: typeof features[number]) => {
       const cat = f.categoryVi || f.category || "Khác";
       if (!acc[cat]) acc[cat] = [];
       acc[cat]!.push(f);
@@ -728,7 +728,7 @@ export async function GET(request: Request) {
         } : null,
         /** VIP tier for this customer (G3) */
         customerVip: customerVip ?? null,
-        packageLps: packages.reduce<Record<string, number>>((acc, p) => {
+        packageLps: packages.reduce<Record<string, number>>((acc, p: typeof packages[number]) => {
           acc[p.slug] = p.isSubscription ? 30 : 50;
           return acc;
         }, {}),

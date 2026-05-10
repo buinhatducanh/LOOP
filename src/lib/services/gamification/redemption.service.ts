@@ -181,5 +181,5 @@ export async function listRedeemableItems() {
     orderBy: { lpCost: "asc" },
   });
   // Prisma returns null for optional selects; filter + cast since where: lpCost: {not:null} guarantees non-null
-  return items.filter((i): i is typeof i & { lpCost: number } => i.lpCost !== null);
+  return items.filter((i: { lpCost: number | null }): i is { lpCost: number } => i.lpCost !== null);
 }

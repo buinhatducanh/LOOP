@@ -70,7 +70,7 @@ export async function creditSalesCommissionForOrder(
 
  // Main service price (basePrice) and addon total from orderAttributes
  const mainPrice = order.basePrice ?? 0;
- const addonTotal = order.selectedAttributes.reduce((s, a) => s + (a.priceAtOrder ?? 0), 0);
+ const addonTotal = order.selectedAttributes.reduce((s: number, a: { priceAtOrder: number | null }) => s + (a.priceAtOrder ?? 0), 0);
  const { directLp, addonLp, totalLp } = calculateOrderCommission(mainPrice, addonTotal);
 
  // Atomic: create event + update order + update team member
@@ -381,7 +381,7 @@ export async function creditSalesCommissionForOrderTx(
  if (order.status !== "completed") return { credited: false, error: `Order status is "${order.status}"` };
 
  const mainPrice = order.basePrice ?? 0;
- const addonTotal = order.selectedAttributes.reduce((s, a) => s + (a.priceAtOrder ?? 0), 0);
+ const addonTotal = order.selectedAttributes.reduce((s: number, a: { priceAtOrder: number | null }) => s + (a.priceAtOrder ?? 0), 0);
  const { directLp, addonLp, totalLp } = calculateOrderCommission(mainPrice, addonTotal);
 
  await tx.salesCommissionEvent.create({

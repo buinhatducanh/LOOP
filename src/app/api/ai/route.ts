@@ -163,7 +163,7 @@ function renderHtml(data: AiResponse): string {
         const title = String(i.title ?? i.name ?? i.slug ?? "—");
         const fields = [
           i.shortDescription, i.description, i.longDescription, i.tagline,
-        ].filter((f): f is string => !!f).map((f: string) => `<p>${f}</p>`).join("\n");
+        ].filter((f: unknown): f is string => !!f).map((f: string) => `<p>${f}</p>`).join("\n");
         const features = Array.isArray(i.features)
           ? `<p><strong>Features:</strong> ${(i.features as string[]).join(", ")}</p>`
           : "";

@@ -47,7 +47,7 @@ export async function GET(req: NextRequest) {
       });
       // Filter + cast: where lpCost is not null guarantees non-null
       const redeemable = items.filter(
-        (i): i is typeof i & { lpCost: number } => i.lpCost !== null
+        (i: { lpCost: number | null }): i is { lpCost: number } => i.lpCost !== null
       );
       return NextResponse.json({ data: redeemable });
     }
@@ -106,11 +106,11 @@ export async function GET(req: NextRequest) {
     });
 
     const items = redeemableItems.filter(
-      (i): i is typeof i & { lpCost: number } =>
+      (i: { lpCost: number | null }): i is { lpCost: number } =>
         i.lpCost !== null && i.lpCost <= customerPoint!.balance
     );
     const expensiveItems = redeemableItems.filter(
-      (i): i is typeof i & { lpCost: number } =>
+      (i: { lpCost: number | null }): i is { lpCost: number } =>
         i.lpCost !== null && i.lpCost > customerPoint!.balance
     );
 
