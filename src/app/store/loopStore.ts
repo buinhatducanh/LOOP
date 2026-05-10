@@ -576,7 +576,7 @@ export const useLoopStore = create<LoopStore>((set, get) => ({
     set((s) => ({ orders: s.orders.map((o) => (o.id === orderId ? { ...o, progress } : o)) })),
 
   sendDemoLink: (orderId, demoUrl, maskedUrl, note) => set((s) => {
-    const order = s.orders.find((o) => o.id === orderId);
+    const order = s.orders.find((o: Order) => o.id === orderId);
     if (!order) return {};
     const msg: OrderMessage = {
       id: `msg_${Date.now()}`, senderId: "admin", senderName: order.assignedPM ?? "LOOP Team",
@@ -603,7 +603,7 @@ export const useLoopStore = create<LoopStore>((set, get) => ({
 
   sendAdminMessage: (orderId, content, type = "text", demoUrl, maskedUrl) =>
     set((s) => {
-      const order = s.orders.find((o) => o.id === orderId);
+      const order = s.orders.find((o: Order) => o.id === orderId);
       if (!order) return {};
       const msg: OrderMessage = {
         id: `msg_${Date.now()}`, senderId: "admin", senderName: order.assignedPM ?? "LOOP Team",
@@ -728,7 +728,7 @@ export const useLoopStore = create<LoopStore>((set, get) => ({
   getUnreadClientCount: () =>
     get().clientNotifications.filter((n) => !n.read).length,
 
-  getOrderById: (id) => get().orders.find((o) => o.id === id),
+  getOrderById: (id) => get().orders.find((o: Order) => o.id === id),
 
   getEnabledEffects: () => get().effects.filter((e) => e.enabled),
 

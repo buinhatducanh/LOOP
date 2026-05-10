@@ -174,7 +174,7 @@ export async function calculateOrderPrice(
   // ── Step 7: Calculate XP (all advanced features, regardless of includedInBase) ──
   const totalXp = validatedFeatures
     .filter((f) => f.tier === "advanced")
-    .reduce((sum, f) => sum + f.xpPoints, 0);
+    .reduce((sum: number, f: { xpPoints: number }) => sum + f.xpPoints, 0);
   const rewardLevel = Math.floor(totalXp / xpPerLevel) + 1;
 
   // ── Step 8: Resolve rewards ───────────────────────────────────────────────

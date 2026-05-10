@@ -45,7 +45,7 @@ export async function GET(req: NextRequest) {
 
     // Aggregate stats per code
     const codesWithStats = await Promise.all(
-      codes.map(async (code) => {
+      codes.map(async (code: typeof codes[number]) => {
         const orders = await prisma.order.findMany({
           where: { referralCodeId: code.id, status: { in: ["completed", "contracted", "delivered", "paid_full", "paid"] } },
           select: { id: true, paidAmount: true },

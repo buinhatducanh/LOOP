@@ -234,7 +234,7 @@ export async function POST(_req: NextRequest) {
 
  const results: { slug: string; success: boolean }[] = [];
 
- for (const [slug, data] of Object.entries(SEED_DATA)) {
+ for (const [slug, data] of Object.entries(SEED_DATA) as [string, typeof SEED_DATA[string]][]) {
  await prisma.servicePackage.update({
  where: { slug },
  data: {

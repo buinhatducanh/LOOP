@@ -100,7 +100,7 @@ export async function POST(req: NextRequest) {
 
     // Validate LP allocation sums to 100
     const lp = parsed.data.lpAllocation ?? {};
-    const lpSum = Object.values(lp as Record<string, number>).reduce((s, v) => s + v, 0);
+    const lpSum = Object.values(lp as Record<string, number>).reduce((s: number, v: number) => s + v, 0);
     if (lpSum !== 0 && lpSum !== 100) {
       return NextResponse.json(
         { error: `LP allocation phải tổng = 100%. Hiện tại: ${lpSum}%` },

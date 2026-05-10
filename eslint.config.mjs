@@ -4,7 +4,16 @@ import tsPlugin from "@typescript-eslint/eslint-plugin";
 
 export default [
   {
-    ignores: ["node_modules/**", ".next/**", "dist/**", "FE/**", "FE-ARCHIVE/**", "CHECKING FE/**"],
+    ignores: [
+      "node_modules/**",
+      ".next/**",
+      "dist/**",
+      "FE/**",
+      "FE-ARCHIVE/**",
+      "CHECKING FE/**",
+      // Generated Prisma types — auto-generated, do not edit
+      "src/generated/**",
+    ],
   },
   {
     files: ["**/*.ts", "**/*.tsx"],

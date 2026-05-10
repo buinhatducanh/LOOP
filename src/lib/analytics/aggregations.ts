@@ -304,7 +304,7 @@ export async function fetchGeoStats(limit = 20): Promise<GeoStat[]> {
     `;
 
     // Compute total for percentage.
-    const totalViews = rows.reduce((sum, r) => sum + Number(r.views), 0);
+    const totalViews = rows.reduce((sum: number, r: { views: bigint | number | string }) => sum + Number(r.views), 0);
 
     return rows.map((r) => ({
       country: r.country,
@@ -336,7 +336,7 @@ export async function fetchDeviceStats(): Promise<DeviceStat[]> {
       orderBy: { _count: { event: "desc" } },
     });
 
-    const total = rows.reduce((sum, r) => sum + Number(r._count.event), 0);
+    const total = rows.reduce((sum: number, r: { _count: { event: number } }) => sum + Number(r._count.event), 0);
 
     return rows.map((r) => ({
       device: r.device ?? "unknown",
@@ -380,7 +380,7 @@ export async function fetchReferrerStats(limit = 10): Promise<ReferrerStat[]> {
       LIMIT ${limit}
     `;
 
-    const totalViews = rows.reduce((sum, r) => sum + Number(r.views), 0);
+    const totalViews = rows.reduce((sum: number, r: { views: bigint | number | string }) => sum + Number(r.views), 0);
 
     return rows.map((r) => {
       const referrer = r.referrer ?? "Direct";

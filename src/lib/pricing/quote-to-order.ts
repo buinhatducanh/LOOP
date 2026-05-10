@@ -82,7 +82,7 @@ export async function approveQuoteAndCreateOrder(
   let lpAllocation: Record<string, number> = {};
   if (quote.lpAllocation && typeof quote.lpAllocation === "object" && !Array.isArray(quote.lpAllocation)) {
     lpAllocation = Object.fromEntries(
-      Object.entries(quote.lpAllocation as Record<string, unknown>).map(([k, v]) => [k, Number(v) || 0])
+      Object.entries(quote.lpAllocation as Record<string, unknown>).map(([k, v]: [string, unknown]) => [k, Number(v) || 0])
     );
   }
 

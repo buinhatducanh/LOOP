@@ -321,7 +321,7 @@ export const lpMonthlyReport = inngest.createFunction(
       }),
     ]);
 
-    const totalLp = awards.reduce((s, a) => s + a.lpAmount, 0);
+    const totalLp = awards.reduce((s: number, a: { lpAmount: number }) => s + a.lpAmount, 0);
     const totalTasks = tasks.length;
     const completedTasks = tasks.filter((t) => t.status === "done").length;
     const violatedTasks = tasks.filter((t) => t.violated).length;

@@ -55,7 +55,7 @@ export async function GET(req: NextRequest) {
  });
 
  // Build the leaderboard entries
- const eventMap = new Map(
+ const eventMap = new Map<string, { dealCount: number; totalLp: number }>(
  commissionEvents.map((e: typeof commissionEvents[number]) => [e.salesRepId, { dealCount: e._count.id, totalLp: e._sum.totalLp ?? 0 }])
  );
 

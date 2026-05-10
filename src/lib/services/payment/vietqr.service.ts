@@ -190,7 +190,7 @@ export async function lookupBank(bankId: string): Promise<{
  }>;
  };
 
- const bank = data.data?.find((b) => b.bin === bankId || b.name.includes(bankId));
+ const bank = data.data?.find((b: { bin: string; name: string; logo?: string }) => b.bin === bankId || b.name.includes(bankId));
  return bank ?? null;
  } catch {
  return null;

@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
       prisma.enrollment.count({ where: { userId: user.id } }),
     ]);
 
-    const data = enrollments.map((e) => {
+    const data = enrollments.map((e: typeof enrollments[number]) => {
       const completed = Array.isArray(e.completedLessons)
         ? e.completedLessons
         : [];
