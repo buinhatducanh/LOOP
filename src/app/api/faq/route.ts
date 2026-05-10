@@ -58,7 +58,7 @@ export async function GET(req: Request) {
       distinct: ["category"],
       orderBy: { category: "asc" },
     });
-    const categories = allFaqs.map((f) => f.category);
+    const categories = allFaqs.map((f: typeof allFaqs[number]) => f.category);
 
     return ok({ data: localized, categories });
   } catch (error) {

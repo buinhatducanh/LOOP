@@ -32,7 +32,7 @@ export async function GET(req: Request) {
       },
     });
 
-    const publicMembers = members.map((m) => ({
+    const publicMembers = members.map((m: typeof members[number]) => ({
       id: m.id,
       slug: m.slug,
       name: getLocalizedField(m, "name", locale),
@@ -41,7 +41,7 @@ export async function GET(req: Request) {
       bio: getLocalizedField(m, "bio", locale),
       image: m.image,
       isFeatured: m.isFeatured,
-      expertise: m.memberExpertise?.map((e) => ({
+      expertise: m.memberExpertise?.map((e: typeof m.memberExpertise[number]) => ({
         name: getLocalizedField(e.expertise, "name", locale),
         category: getLocalizedField(e.expertise, "category", locale),
         icon: e.expertise.icon,

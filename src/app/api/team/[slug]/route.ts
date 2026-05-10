@@ -56,12 +56,12 @@ export async function GET(
       linkedin: member.linkedin,
       twitter: member.twitter,
       github: member.github,
-      expertise: member.memberExpertise?.map((e) => ({
+      expertise: member.memberExpertise?.map((e: typeof member.memberExpertise[number]) => ({
         name: getLocalizedField(e.expertise as unknown as Record<string, unknown>, "name", locale),
         category: getLocalizedField(e.expertise as unknown as Record<string, unknown>, "category", locale),
         icon: e.expertise.icon,
       })) ?? [],
-      related: relatedMembers.map((m) => ({
+      related: relatedMembers.map((m: typeof relatedMembers[number]) => ({
         id: m.id,
         slug: m.slug,
         name: getLocalizedField(m as unknown as Record<string, unknown>, "name", locale),
