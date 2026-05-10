@@ -22,7 +22,7 @@ export async function POST(_req: NextRequest) {
       where: { isActive: true },
       select: { id: true },
     });
-    const memberIds = members.map((m) => m.id);
+    const memberIds = members.map((m: typeof members[number]) => m.id);
 
     if (memberIds.length === 0) {
       return ok({ synced: 0, message: "No active members found" });
