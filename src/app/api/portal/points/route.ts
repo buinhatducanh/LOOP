@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
       lifetimeSpent: customerPoint?.totalSpent ?? 0,
       rank: "Iron",
       rankColor: "#9CA3AF",
-      recentTransactions: (customerPoint?.transactions ?? []).map((tx) => ({
+      recentTransactions: (customerPoint?.transactions ?? []).map((tx: { id: string; type: string; amount: number; description: string; createdAt: Date; referenceId: string | null }) => ({
         id: tx.id,
         type: tx.type,
         amount: tx.amount,
