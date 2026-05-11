@@ -51,7 +51,7 @@ export async function GET(req: Request) {
 
     // Derive coverImage from the first lesson's video thumbnail if available
     const localized = await Promise.all(
-      courses.map(async (c) => {
+      courses.map(async (c: typeof courses[number]) => {
         // coverImage: TODO - add to Course model
         return {
           id: c.id,
