@@ -147,8 +147,8 @@ export async function getSessionFromBearer(
 
     if (!user) return null;
 
-    const permissions = user.userRoles.flatMap((ur) =>
-      ur.role.permissions.map((p) => ({
+    const permissions = user.userRoles.flatMap((ur: typeof user.userRoles[number]) =>
+      ur.role.permissions.map((p: { resource: string; action: string; scope: string }) => ({
         resource: p.resource,
         action: p.action,
         scope: p.scope,
@@ -156,7 +156,7 @@ export async function getSessionFromBearer(
     );
 
     const effectiveRoleLevel = user.userRoles.length > 0
-      ? Math.min(...user.userRoles.map((ur) => ur.role.level ?? 99))
+      ? Math.min(...user.userRoles.map((ur: typeof user.userRoles[number]) => ur.role.level ?? 99))
       : ROLE_LEVEL[user.role] ?? 99;
     const accountType: "staff" | "customer" = effectiveRoleLevel <= 5 ? "staff" : "customer";
 
@@ -177,7 +177,7 @@ export async function getSessionFromBearer(
       email: user.email,
       name: user.name,
       role: user.role,
-      roles: user.userRoles.map((ur) => ur.role.name),
+      roles: user.userRoles.map((ur: typeof user.userRoles[number]) => ur.role.name),
       avatar: user.avatar,
       accountType,
       teamMemberId: user.teamMemberId,
@@ -293,8 +293,8 @@ export async function getSession(): Promise<SessionUser | null> {
 
       if (!user) return null;
 
-      const permissions = user.userRoles.flatMap((ur) =>
-        ur.role.permissions.map((p) => ({
+      const permissions = user.userRoles.flatMap((ur: typeof user.userRoles[number]) =>
+        ur.role.permissions.map((p: { resource: string; action: string; scope: string }) => ({
           resource: p.resource,
           action: p.action,
           scope: p.scope,
@@ -302,7 +302,7 @@ export async function getSession(): Promise<SessionUser | null> {
       );
 
       const effectiveRoleLevel = user.userRoles.length > 0
-        ? Math.min(...user.userRoles.map((ur) => ur.role.level ?? 99))
+        ? Math.min(...user.userRoles.map((ur: typeof user.userRoles[number]) => ur.role.level ?? 99))
         : ROLE_LEVEL[user.role] ?? 99;
       const accountType: "staff" | "customer" = effectiveRoleLevel <= 5 ? "staff" : "customer";
 
@@ -322,7 +322,7 @@ export async function getSession(): Promise<SessionUser | null> {
         email: user.email,
         name: user.name,
         role: user.role,
-        roles: user.userRoles.map((ur) => ur.role.name),
+        roles: user.userRoles.map((ur: typeof user.userRoles[number]) => ur.role.name),
         avatar: user.avatar,
         accountType,
         teamMemberId: user.teamMemberId,
@@ -398,8 +398,8 @@ export async function getSession(): Promise<SessionUser | null> {
 
     if (!user || !user.isActive) return null;
 
-    const permissions = user.userRoles.flatMap((ur) =>
-      ur.role.permissions.map((p) => ({
+    const permissions = user.userRoles.flatMap((ur: typeof user.userRoles[number]) =>
+      ur.role.permissions.map((p: { resource: string; action: string; scope: string }) => ({
         resource: p.resource,
         action: p.action,
         scope: p.scope,
@@ -408,7 +408,7 @@ export async function getSession(): Promise<SessionUser | null> {
 
     // Derive accountType from roleLevel: ≤ 5 = staff (LOOP employee), otherwise = customer
     const effectiveRoleLevel = user.userRoles.length > 0
-      ? Math.min(...user.userRoles.map((ur) => ur.role.level ?? 99))
+      ? Math.min(...user.userRoles.map((ur: typeof user.userRoles[number]) => ur.role.level ?? 99))
       : ROLE_LEVEL[user.role] ?? 99;
     const accountType: "staff" | "customer" = effectiveRoleLevel <= 5 ? "staff" : "customer";
 
@@ -428,7 +428,7 @@ export async function getSession(): Promise<SessionUser | null> {
       email: user.email,
       name: user.name,
       role: user.role,
-      roles: user.userRoles.map((ur) => ur.role.name),
+      roles: user.userRoles.map((ur: typeof user.userRoles[number]) => ur.role.name),
       avatar: user.avatar,
       accountType,
       teamMemberId: user.teamMemberId,
@@ -592,7 +592,7 @@ export async function checkPermission(
     const defaults = DEFAULT_PERMISSIONS[roleName];
     if (!defaults) continue;
     const match = defaults.some(
-      (p) => (p.resource === "*" || p.resource === resource) && (p.actions.includes("*") || p.actions.includes(action))
+      (p: { resource: string; actions: string[] }) => (p.resource === "*" || p.resource === resource) && (p.actions.includes("*") || p.actions.includes(action))
     );
     if (match) return true;
   }
@@ -601,7 +601,7 @@ export async function checkPermission(
   const scalarDefaults = DEFAULT_PERMISSIONS[session.role];
   if (scalarDefaults) {
     const match = scalarDefaults.some(
-      (p) => (p.resource === "*" || p.resource === resource) && (p.actions.includes("*") || p.actions.includes(action))
+      (p: { resource: string; actions: string[] }) => (p.resource === "*" || p.resource === resource) && (p.actions.includes("*") || p.actions.includes(action))
     );
     if (match) return true;
   }
