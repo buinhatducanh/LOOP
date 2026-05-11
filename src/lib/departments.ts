@@ -56,7 +56,7 @@ export async function getDepartments(): Promise<DepartmentRecord[]> {
     orderBy: { key: "asc" },
   });
 
-  _cache = departments.map((d) => ({
+  _cache = departments.map((d: typeof departments[number]) => ({
     id: d.id,
     key: d.key ?? "",
     name: d.name ?? "",
@@ -123,7 +123,17 @@ export async function getDepartmentMembers(deptId: string): Promise<
     },
     orderBy: { sortOrder: "asc" },
   });
-  return members.map((m) => ({
+  return members.map((m: {
+    id: string;
+    name: string;
+    image: string | null;
+    rank: string;
+    level: number;
+    role: string;
+    departmentId: string | null;
+    tabPermissions: string[];
+    memberDepartments: { isDeptHead: boolean }[];
+  }) => ({
     id: m.id,
     name: m.name,
     image: m.image,
@@ -131,7 +141,7 @@ export async function getDepartmentMembers(deptId: string): Promise<
     level: m.level,
     role: m.role,
     departmentId: m.departmentId,
-    isDeptHead: m.memberDepartments.some((md) => md.isDeptHead),
+    isDeptHead: m.memberDepartments.some((md: { isDeptHead: boolean }) => md.isDeptHead),
     tabPermissions: m.tabPermissions,
   }));
 }
