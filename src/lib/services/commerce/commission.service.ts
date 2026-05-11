@@ -74,7 +74,7 @@ export async function creditSalesCommissionForOrder(
  const { directLp, addonLp, totalLp } = calculateOrderCommission(mainPrice, addonTotal);
 
  // Atomic: create event + update order + update team member
- const event = await prisma.$transaction(async (tx) => {
+ const event = await prisma.$transaction(async (tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0]) => {
  // Create audit trail event
  const created = await tx.salesCommissionEvent.create({
  data: {
@@ -150,7 +150,7 @@ export async function creditSalesCommissionForEnrollment(
  const directLp = Math.round((paidAmount * DIRECT_COMMISSION_PCT) / LP_DIVISOR);
  const totalLp = directLp;
 
- const event = await prisma.$transaction(async (tx) => {
+ const event = await prisma.$transaction(async (tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0]) => {
  const created = await tx.salesCommissionEvent.create({
  data: {
  salesRepId: enrollment.salesRepId!,
@@ -314,7 +314,7 @@ export async function revokeSalesCommission(
 
  if (!member) return { revoked: false, error: "Team member not found" };
 
- await prisma.$transaction(async (tx) => {
+ await prisma.$transaction(async (tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0]) => {
  // Revert commissionPaid on source Order/Enrollment
  if (event.referenceType === "order" && event.orderId) {
  await tx.order.update({

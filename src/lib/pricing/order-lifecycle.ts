@@ -171,7 +171,7 @@ export async function transitionOrderStatus(
   // Atomic: update status + history + lpReward
   // P0-3 FIX: awardReferralLpOnCompletion moved INSIDE the tx — no more fire-and-forget.
   // P1-2 FIX: audit log inside this tx — no gap between write and audit record.
-  await prisma.$transaction(async (tx) => {
+  await prisma.$transaction(async (tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0]) => {
     const updateData: Record<string, unknown> = { status: toStatus };
     if (isCompletion) {
       updateData.completedAt = new Date();
@@ -265,7 +265,7 @@ export async function recordPayment(
 
   // Atomic: create payment + update order + award LP to all parties
   // P0-2 FIX: moved awardReferralLpOnCompletion into this tx below so it commits atomically.
-  await prisma.$transaction(async (tx) => {
+  await prisma.$transaction(async (tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0]) => {
     const payment = await tx.payment.create({
       data: {
         orderId,

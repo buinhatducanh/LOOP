@@ -177,7 +177,7 @@ export async function awardReferralLpOnPayment(
 
   // ── Atomic: credit referrer + create ledger entries ─────────────────────────
   try {
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0]) => {
       const newBalance = referrer.availableLp + lpAwarded;
 
       // Credit TeamMember.availableLp
@@ -281,7 +281,7 @@ export async function awardReferralLpOnCompletion(
   ) + 1;
 
   try {
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0]) => {
       const referrer = referralCode.member!;
       const newBalance = referrer.availableLp + lpAwarded;
 

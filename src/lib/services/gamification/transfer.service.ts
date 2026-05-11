@@ -118,7 +118,7 @@ export async function executeTransfer(
   const netAmount = amount - fee; // receiver gets this
 
   try {
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0]) => {
       // ── Read sender & receiver balances ──────────────────────────────────────
       const [sender, receiver] = await Promise.all([
         tx.teamMember.findUnique({ where: { id: fromMemberId }, select: { availableLp: true, name: true } }),

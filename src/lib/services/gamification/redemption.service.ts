@@ -91,7 +91,7 @@ export async function redeemLp(params: RedeemParams): Promise<RedeemResult> {
   }
 
   try {
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0]) => {
       const newBalance = member.availableLp - totalCost;
 
       // 1. Create redemption record

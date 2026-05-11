@@ -98,7 +98,7 @@ export async function approveQuoteAndCreateOrder(
   });
 
   // ── Atomic: create Order + update Quote ─────────────────────────
-  const order = await prisma.$transaction(async (tx) => {
+  const order = await prisma.$transaction(async (tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0]) => {
     const created = await tx.order.create({
       data: {
         // P1: Use crypto.randomUUID() to prevent collision (Date.now() could duplicate)

@@ -24,7 +24,7 @@ export async function generateInvoiceNumber(): Promise<string> {
 
  // Atomic: find last + increment inside a transaction
  // This prevents two concurrent payments from getting the same invoice number.
- return prisma.$transaction(async (tx) => {
+ return prisma.$transaction(async (tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0]) => {
  const lastInvoice = await tx.invoice.findFirst({
  where: { invoiceNumber: { startsWith: prefix } },
  orderBy: { invoiceNumber: "desc" },

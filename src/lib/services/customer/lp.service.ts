@@ -96,7 +96,7 @@ export async function awardCustomerLpOnPayment(
   }
 
   try {
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0]) => {
       // ── Find or create CustomerPoint ───────────────────────────────────────
       const existing = await tx.customerPoint.findUnique({
         where: { userEmail: customerEmail },
@@ -206,7 +206,7 @@ export async function awardCustomerLpOnOrderComplete(
 
   // If called, award from the completed order (source=upgrade for loyalty)
   try {
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0]) => {
       const existing = await tx.customerPoint.findUnique({
         where: { userEmail: params.customerEmail },
         select: { id: true, balance: true, totalEarned: true },
