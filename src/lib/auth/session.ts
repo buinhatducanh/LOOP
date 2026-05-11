@@ -233,7 +233,7 @@ export async function getActiveSessions(userId: string) {
     orderBy: { createdAt: "desc" },
     select: { sessionId: true, deviceType: true, ipAddress: true, userAgent: true, createdAt: true, lastUsedAt: true, expiresAt: true },
   });
-  return sessions.map((s: { sessionId: string; deviceType: string | null; ipAddress: string | null; userAgent: string | null; createdAt: Date; lastUsedAt: Date; expiresAt: Date }) => ({ ...s, isCurrent: false }));
+  return sessions.map((s: { sessionId: string; deviceType: string | null; ipAddress: string | null; userAgent: string | null; createdAt: Date; lastUsedAt: Date | null; expiresAt: Date }) => ({ ...s, isCurrent: false }));
 }
 
 export async function isSessionValid(sessionId: string): Promise<boolean> {
