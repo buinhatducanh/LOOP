@@ -208,7 +208,13 @@
       "Bash(NEXT_TEAMCITY_BUILD=1 npx next build)",
       "Bash(tee /tmp/vercel_build.log)",
       "Bash(tee vercel_build.log)",
-      "Bash(grep -rn .map\\\\\\(\\\\\\([a-z][a-z]*\\\\\\) src/app/api --include=*.ts)"
+      "Bash(grep -rn .map\\\\\\(\\\\\\([a-z][a-z]*\\\\\\) src/app/api --include=*.ts)",
+      "Bash(mkdir -p \"D:/LOOP_COMPANY/LOOP/.git/hooks\")",
+      "Bash(\"D:/LOOP_COMPANY/LOOP/.git/hooks/pre-push\":*)",
+      "Bash(chmod +x \"D:/LOOP_COMPANY/LOOP/.git/hooks/pre-push\")",
+      "Bash(D:/LOOP_COMPANY/LOOP/.git/hooks/pre-push 2>&1)",
+      "Bash(\"D:/LOOP_COMPANY/LOOP/.husky/pre-push\":*)",
+      "Bash(chmod +x \"D:/LOOP_COMPANY/LOOP/.husky/pre-push\")"
     ],
     "additionalDirectories": []
   }

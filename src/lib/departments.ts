@@ -68,7 +68,7 @@ export async function getDepartments(): Promise<DepartmentRecord[]> {
     memberCount: d._count.members,
   }));
   _cacheAt = now;
-  return _cache;
+  return _cache!;
 }
 
 /** Invalidate the in-memory cache (call after department mutations). */
