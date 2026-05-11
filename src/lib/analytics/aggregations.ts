@@ -161,7 +161,7 @@ export async function fetchDailyStats(
       });
     }
 
-    return rows.map((row) => {
+    return rows.map((row: { date: Date; page_views: bigint; total_events: bigint }) => {
       const dateStr = row.date.toISOString().slice(0, 10);
       const { sessions = 0, bounced = 0 } = sessionMap.get(dateStr) ?? {};
       const bounceRate = sessions > 0 ? Math.round((bounced / sessions) * 10_000) / 100 : 0;
@@ -225,7 +225,7 @@ export async function fetchTopPages(limit = 10): Promise<TopPage[]> {
       });
     }
 
-    return rows.map((r) => {
+    return rows.map((r: typeof rows[number]) => {
       const page = r.page ?? "unknown";
       const { sessions = 0, visitors = 0 } = sessionMap.get(page) ?? {};
       return {
@@ -265,7 +265,7 @@ export async function fetchTopEvents(
       take: limit,
     });
 
-    return rows.map((r) => ({
+    return rows.map((r: typeof rows[number]) => ({
       event: r.event,
       count: r._count.event,
     }));
@@ -306,7 +306,7 @@ export async function fetchGeoStats(limit = 20): Promise<GeoStat[]> {
     // Compute total for percentage.
     const totalViews = rows.reduce((sum: number, r: { views: bigint | number | string }) => sum + Number(r.views), 0);
 
-    return rows.map((r) => ({
+    return rows.map((r: typeof rows[number]) => ({
       country: r.country,
       city: r.city,
       views: Number(r.views),
@@ -338,7 +338,7 @@ export async function fetchDeviceStats(): Promise<DeviceStat[]> {
 
     const total = rows.reduce((sum: number, r: { _count: { event: number } }) => sum + Number(r._count.event), 0);
 
-    return rows.map((r) => ({
+    return rows.map((r: typeof rows[number]) => ({
       device: r.device ?? "unknown",
       views: Number(r._count.event),
       percentage:
@@ -382,7 +382,7 @@ export async function fetchReferrerStats(limit = 10): Promise<ReferrerStat[]> {
 
     const totalViews = rows.reduce((sum: number, r: { views: bigint | number | string }) => sum + Number(r.views), 0);
 
-    return rows.map((r) => {
+    return rows.map((r: typeof rows[number]) => {
       const referrer = r.referrer ?? "Direct";
       const label = extractDomain(referrer);
 
