@@ -439,7 +439,7 @@ export async function getConversionFunnel(
     // For very large datasets, replace with raw SQL.
     const events = await prisma.serverAnalyticsEvent.findMany({
       where: {
-        event: { in: steps.map((s) => s.event) },
+        event: { in: steps.map((s: FunnelStep) => s.event) },
         createdAt: { gte: startDate },
       },
       select: { sessionId: true, event: true },
@@ -467,7 +467,7 @@ export async function getConversionFunnel(
 
     const firstCount = stepCounts.get(steps[0].event) ?? 0;
 
-    return steps.map((step) => {
+    return steps.map((step: FunnelStep) => {
       const totalCount = stepCounts.get(step.event) ?? 0;
       return {
         event: step.event,
@@ -481,7 +481,7 @@ export async function getConversionFunnel(
     });
   } catch (err) {
     console.error("[analytics/getConversionFunnel]", err);
-    return steps.map((step) => ({
+    return steps.map((step: FunnelStep) => ({
       event: step.event,
       label: step.label ?? step.event,
       totalCount: 0,
