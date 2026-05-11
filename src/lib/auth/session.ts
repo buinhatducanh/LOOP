@@ -170,7 +170,7 @@ export async function rotateRefreshToken(
 
   const effectiveRoleLevel =
     user.userRoles.length > 0
-      ? Math.min(...user.userRoles.map((ur) => ur.role.level ?? 99))
+      ? Math.min(...user.userRoles.map((ur: typeof user.userRoles[number]) => ur.role.level ?? 99))
       : 99;
   const accountType: "staff" | "customer" = effectiveRoleLevel <= 5 ? "staff" : "customer";
 
@@ -185,7 +185,7 @@ export async function rotateRefreshToken(
       email: user.email,
       name: user.name,
       role: user.role,
-      roles: user.userRoles.map((ur) => ur.role.name),
+      roles: user.userRoles.map((ur: typeof user.userRoles[number]) => ur.role.name),
       accessTags: user.teamMember?.accessTags ?? [],
       accountType,
       isOnboarded: user.isOnboarded,
@@ -233,7 +233,7 @@ export async function getActiveSessions(userId: string) {
     orderBy: { createdAt: "desc" },
     select: { sessionId: true, deviceType: true, ipAddress: true, userAgent: true, createdAt: true, lastUsedAt: true, expiresAt: true },
   });
-  return sessions.map((s) => ({ ...s, isCurrent: false }));
+  return sessions.map((s: { sessionId: string; deviceType: string | null; ipAddress: string | null; userAgent: string | null; createdAt: Date; lastUsedAt: Date; expiresAt: Date }) => ({ ...s, isCurrent: false }));
 }
 
 export async function isSessionValid(sessionId: string): Promise<boolean> {
