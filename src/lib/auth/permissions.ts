@@ -15,6 +15,7 @@
  *  4. UI components use PermissionGuard for conditional rendering
  */
 
+import type { Prisma } from "@/generated/prisma";
 import { prisma } from "@/lib/prisma";
 import { verifyAccessToken } from "./token";
 import { verifyToken } from "./jwt"; // backward compat wrapper — tokens signed with old jwt.ts still work
@@ -336,7 +337,7 @@ export async function getSession(): Promise<SessionUser | null> {
         isOnboarded: user.isOnboarded,
         departmentId,
         departmentKey,
-        isDeptHead: (teamMember?.memberDepartments ?? []).some((md) => md.isDeptHead) ?? false,
+        isDeptHead: (teamMember?.memberDepartments ?? []).some((md: { isDeptHead: boolean }) => md.isDeptHead) ?? false,
         departmentPermissions,
         tabPermissions: user.teamMemberId
           ? (await prisma.teamMember.findUnique({
