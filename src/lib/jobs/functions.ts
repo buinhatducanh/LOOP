@@ -214,7 +214,7 @@ export const slaViolationCheck = inngest.createFunction(
       // P0-5 FIX: wrap task update + violation record in a transaction.
       // Previously sequential writes — if crash after task.update but before
       // taskViolation.create, task is marked violated with no audit trail.
-      await prisma.$transaction(async (tx) => {
+      await prisma.$transaction(async (tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0]) => {
         await tx.task.update({
           where: { id: task.id },
           data: { violated: true },
@@ -531,7 +531,7 @@ export const eventLpBonusAward = inngest.createFunction(
 
           // ⚠️ FIX: wrap lpAward.create + teamMember.update in a transaction
           // to prevent phantom awards (award recorded but LP not credited).
-          await prisma.$transaction(async (tx) => {
+          await prisma.$transaction(async (tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0]) => {
             await tx.lpAward.create({
               data: {
                 memberId: member.id,
