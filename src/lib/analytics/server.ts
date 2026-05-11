@@ -276,31 +276,31 @@ export async function getAnalytics(
       uniqueSessions: uniqueSessionsResult,
       uniqueVisitors: uniqueVisitorsResult,
       bounceRate: bounceRateResult,
-      topEvents: topEventsResult.map((r) => ({
+      topEvents: topEventsResult.map((r: typeof topEventsResult[number]) => ({
         event: r.event,
         count: Number(r._count.event),
       })),
-      eventsByDay: eventsByDayResult.map((r) => ({
+      eventsByDay: eventsByDayResult.map((r: typeof eventsByDayResult[number]) => ({
         date: r.date,
         count: r.count,
       })),
-      eventsByLocale: eventsByLocaleResult.map((r) => ({
+      eventsByLocale: eventsByLocaleResult.map((r: typeof eventsByLocaleResult[number]) => ({
         locale: r.locale ?? "unknown",
         count: Number(r._count.event),
       })),
-      topPages: topPagesResult.map((r) => ({
+      topPages: topPagesResult.map((r: typeof topPagesResult[number]) => ({
         page: r.page ?? "unknown",
         count: Number(r._count.event),
       })),
-      topDevices: topDevicesResult.map((r) => ({
+      topDevices: topDevicesResult.map((r: typeof topDevicesResult[number]) => ({
         device: r.device ?? "unknown",
         count: Number(r._count.event),
       })),
-      topCountries: topCountriesResult.map((r) => ({
+      topCountries: topCountriesResult.map((r: typeof topCountriesResult[number]) => ({
         country: r.country ?? "unknown",
         count: Number(r._count.event),
       })),
-      topBrowsers: topBrowsersResult.map((r) => ({
+      topBrowsers: topBrowsersResult.map((r: typeof topBrowsersResult[number]) => ({
         browser: r.browser ?? "unknown",
         count: Number(r._count.event),
       })),
@@ -374,15 +374,15 @@ export async function getPageAnalytics(
       uniqueSessions: uniqueSessionsResult,
       uniqueVisitors: uniqueVisitorsResult,
       bounceRate,
-      eventsByDay: eventsByDayResult.map((r) => ({
+      eventsByDay: eventsByDayResult.map((r: typeof eventsByDayResult[number]) => ({
         date: r.date,
         count: r.count,
       })),
-      topReferrers: topReferrersResult.map((r) => ({
+      topReferrers: topReferrersResult.map((r: typeof topReferrersResult[number]) => ({
         referrer: r.referrer ?? "direct",
         count: Number(r._count.event),
       })),
-      topLocales: topLocalesResult.map((r) => ({
+      topLocales: topLocalesResult.map((r: typeof topLocalesResult[number]) => ({
         locale: r.locale ?? "unknown",
         count: Number(r._count.event),
       })),
@@ -594,7 +594,7 @@ export async function getRealTimeStats(): Promise<RealTimeStats> {
       eventsLast15Min,
       eventsLast30Min,
       activeSessions: activeSessionResult,
-      topEventsNow: topEventsNowResult.map((r) => ({
+      topEventsNow: topEventsNowResult.map((r: typeof topEventsNowResult[number]) => ({
         event: r.event,
         count: Number(r._count.event),
       })),
@@ -738,11 +738,11 @@ async function calculateBounceRate(where: EventWhereInput): Promise<number> {
       where: { ...(where as Record<string, unknown>), sessionId: { not: null } },
     });
 
-    const totalSessions = sessions.filter((s) => s.sessionId !== null).length;
+    const totalSessions = sessions.filter((s: { sessionId: string | null; _count: { event: number } }) => s.sessionId !== null).length;
     if (totalSessions === 0) return 0;
 
     const bouncedSessions = sessions.filter(
-      (s) => s.sessionId !== null && s._count.event === 1
+      (s: { sessionId: string | null; _count: { event: number } }) => s.sessionId !== null && s._count.event === 1
     ).length;
 
     return Math.round((bouncedSessions / totalSessions) * 10_000) / 100;
@@ -764,7 +764,7 @@ function whereClauseToSql(
       conditions.push(`event = '${where.event.replace(/'/g, "''")}'`);
     } else if ("in" in where.event) {
       const list = (where.event.in as string[])
-        .map((v) => `'${v.replace(/'/g, "''")}'`)
+        .map((v: string) => `'${v.replace(/'/g, "''")}'`)
         .join(",");
       conditions.push(`event IN (${list})`);
     }
