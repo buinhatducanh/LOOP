@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
 
     // Update all sliders with new sort orders
     await Promise.all(
-      updates.map((update) =>
+      updates.map((update: { id: string; sortOrder: number }) =>
         prisma.homeSlider.update({
           where: { id: update.id },
           data: { sortOrder: update.sortOrder },

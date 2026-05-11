@@ -47,7 +47,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           // Normalize: lowercase + trim to handle email whitespace / case mismatch
           const email = profile?.email?.toLowerCase().trim();
 
-          const result = await prisma.$transaction(async (tx) => {
+          const result = await prisma.$transaction(async (tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0]) => {
             // 1. Find by googleId (primary — Google account already linked)
             let dbUser = await tx.user.findUnique({
               where: { googleId: account.providerAccountId },

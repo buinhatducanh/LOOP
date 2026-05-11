@@ -262,7 +262,7 @@ export async function PUT(
         await prisma.userRole.deleteMany({ where: { userId } });
         if (roleIds.length > 0) {
           await prisma.userRole.createMany({
-            data: roleIds.map((roleId) => ({
+            data: roleIds.map((roleId: string) => ({
               userId,
               roleId,
               isActive: true,

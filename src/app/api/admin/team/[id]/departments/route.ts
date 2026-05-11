@@ -42,7 +42,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
           where: { id: { in: deptIds } },
           select: { id: true },
         });
-        const validIdSet = new Set(validDepts.map((d) => d.id));
+        const validIdSet = new Set(validDepts.map((d: { id: string }) => d.id));
 
         for (const entry of departments) {
           if (!validIdSet.has(entry.departmentId)) continue;
