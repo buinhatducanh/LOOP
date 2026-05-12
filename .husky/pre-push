@@ -1,16 +1,27 @@
 #!/bin/sh
 echo "🔍 Running local build check before push..."
 cd "$(dirname "$0")/.." || exit 1
+
+# Clean stale .next cache to avoid Windows ENOENT errors
+rm -rf .next
+
 npm run build > /tmp/loop-build.log 2>&1
 RESULT=$?
-if [ $RESULT -ne 0 ]; then
-  echo ""
-  echo "❌ Build FAILED — fix errors before pushing:"
-  grep -E "^(error|Error|Type error)" /tmp/loop-build.log | head -20
-  grep -E "^.* error " /tmp/loop-build.log | head -20
-  echo ""
-  echo "Full log: /tmp/loop-build.log"
-  exit 1
+
+if [ $RESULT -eq 0 ]; then
+  echo "✅ Build passed — safe to push"
+  exit 0
 fi
-echo "✅ Build passed — safe to push"
-exit 0
+
+echo ""
+echo "❌ Build FAILED (exit $RESULT) — TypeScript/SWC errors:"
+# SWC/TS errors always start with "./" and contain "Type error"
+grep -E "^./.*Type error" /tmp/loop-build.log | head -20
+# Also catch "Type error:" without path prefix
+grep -E "Type error:" /tmp/loop-build.log | grep -v "^./" | head -10
+# Next.js compilation errors
+grep -E "^.*error TS" /tmp/loop-build.log | head -10
+
+echo ""
+echo "Full log: /tmp/loop-build.log"
+exit 1

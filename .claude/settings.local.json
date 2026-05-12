@@ -214,7 +214,8 @@
       "Bash(chmod +x \"D:/LOOP_COMPANY/LOOP/.git/hooks/pre-push\")",
       "Bash(D:/LOOP_COMPANY/LOOP/.git/hooks/pre-push 2>&1)",
       "Bash(\"D:/LOOP_COMPANY/LOOP/.husky/pre-push\":*)",
-      "Bash(chmod +x \"D:/LOOP_COMPANY/LOOP/.husky/pre-push\")"
+      "Bash(chmod +x \"D:/LOOP_COMPANY/LOOP/.husky/pre-push\")",
+      "Bash(sh -c 'npm run build > /tmp/loop-build2.log 2>&1; echo \"\"Exit code: $?\"\"')"
     ],
     "additionalDirectories": []
   }

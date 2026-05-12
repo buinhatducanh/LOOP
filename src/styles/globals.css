@@ -89,47 +89,47 @@
 
 [data-theme='light'] {
   --background: #F8FAFC;
-  --foreground: #0F172A;
+  --foreground: #0F0F23;
   --card: #FFFFFF;
-  --card-foreground: #0F172A;
+  --card-foreground: #0F0F23;
   --popover: #FFFFFF;
-  --popover-foreground: #0F172A;
-  --primary: #4F7DF3;
+  --popover-foreground: #0F0F23;
+  --primary: #EC4899;
   --primary-foreground: #ffffff;
   --secondary: #F1F5F9;
-  --secondary-foreground: #1E293B;
+  --secondary-foreground: #334155;
   --muted: #F1F5F9;
   --muted-foreground: #64748B;
-  --accent: #6B3DF5;
+  --accent: #0D9488;
   --accent-foreground: #ffffff;
   --destructive: #EF4444;
   --destructive-foreground: #ffffff;
   --border: #E2E8F0;
   --input: #E2E8F0;
-  --ring: #4F7DF3;
+  --ring: #EC4899;
 
-  /* FE Gaming/Cyberpunk light palette */
+  /* FE Gaming/Cyberpunk light palette — LOOP Light Theme v2 (2026-05-12) */
   --bg: #F8FAFC;
   --bg-cosmic: #FFFFFF;
   --bg-card: #FFFFFF;
   --bg-card2: #F1F5F9;
   --bg-card3: #E2E8F0;
-  --text: #0F172A;
-  --text2: #1E293B;
+  --text: #0F0F23;
+  --text2: #334155;
   --text3: #475569;
   --text4: #64748B;
   --text5: #94A3B8;
   --border2: #CBD5E1;
 
-  /* Figma tokens (alias) — Light theme */
+  /* Figma tokens (alias) — Light theme v2 */
   --figma-bg: #F8FAFC;
   --figma-bg-card: #FFFFFF;
   --figma-bg-card2: #F1F5F9;
   --figma-bg-card3: #E2E8F0;
   --figma-border: #E2E8F0;
   --figma-border2: #CBD5E1;
-  --figma-text: #0F172A;
-  --figma-text2: #1E293B;
+  --figma-text: #0F0F23;
+  --figma-text2: #334155;
   --figma-text3: #475569;
   --figma-text4: #64748B;
   --figma-text5: #94A3B8;
