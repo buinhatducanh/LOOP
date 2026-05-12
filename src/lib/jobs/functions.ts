@@ -323,8 +323,8 @@ export const lpMonthlyReport = inngest.createFunction(
 
     const totalLp = awards.reduce((s: number, a: { lpAmount: number }) => s + a.lpAmount, 0);
     const totalTasks = tasks.length;
-    const completedTasks = tasks.filter((t) => t.status === "done").length;
-    const violatedTasks = tasks.filter((t) => t.violated).length;
+    const completedTasks = tasks.filter((t: { status: string }) => t.status === "done").length;
+    const violatedTasks = tasks.filter((t: { violated: boolean }) => t.violated).length;
 
     const period = new Intl.DateTimeFormat("vi-VN", {
       month: "long",
