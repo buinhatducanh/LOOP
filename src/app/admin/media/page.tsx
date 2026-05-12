@@ -588,11 +588,11 @@ function BookingFormModal({
   if (currentJob?.packageId && !pkgOptions.some(p => p.id === currentJob.packageId)) {
     pkgOptions.push({
       id: currentJob.packageId,
-      title: (currentJob as any).package?.title || "Gói dịch vụ liên kết",
+      title: (currentJob as { package?: { title?: string } }).package?.title || "Gói dịch vụ liên kết",
       slug: "",
       shortDesc: "",
       type: "media",
-    } as any);
+    } as (typeof pkgOptions)[number]);
   }
 
   const [deliveredAssets, setDeliveredAssets] = useState<(string | { url?: string; name?: string })[]>(
@@ -685,8 +685,9 @@ function BookingFormModal({
           throw new Error("Không nhận được URL từ máy chủ");
         }
       }
-    } catch (err: any) {
-      setError(err?.message || err?.error || "Lỗi khi tải lên tệp");
+    } catch (err: unknown) {
+      const e = err as { message?: string; error?: string };
+      setError(e?.message || e?.error || "Lỗi khi tải lên tệp");
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -713,18 +714,18 @@ function BookingFormModal({
     if (shouldUpload) {
       setUploading(true);
       try {
-        const res = await adminApi.post<any>("/api/admin/upload", { 
+        const res = await adminApi.post<{ data?: { url?: string }; url?: string }>("/api/admin/upload", {
           file: uploadSource,
-          folder: "media-portfolio" 
+          folder: "media-portfolio"
         });
-        
+
         // Resilience: check both wrapped and unwrapped response shapes
         const url = res?.data?.url || res?.url;
-        
+
         if (url) {
           setDeliveredAssets((prev) => {
             const exists = prev.some(a => {
-              const aUrl = typeof a === "string" ? a : (a as any).url;
+              const aUrl = typeof a === "string" ? a : (a as { url?: string }).url;
               return aUrl === url;
             });
             if (exists) return prev;
@@ -735,9 +736,10 @@ function BookingFormModal({
         } else {
           throw new Error("Máy chủ không trả về URL sau khi tải lên.");
         }
-      } catch (err: any) {
-        console.error("Add asset upload error:", err);
-        setError(`Không thể tải lên từ URL: ${err.message || "Lỗi không xác định"}.`);
+      } catch (err: unknown) {
+        const e = err as { message?: string };
+        console.error("Add asset upload error:", e);
+        setError(`Không thể tải lên từ URL: ${e.message || "Lỗi không xác định"}.`);
       } finally {
         setUploading(false);
       }
@@ -1558,7 +1560,7 @@ function PackageFormModal({
     features: pkg?.features?.join("\n") ?? "",
     sortOrder: pkg?.sortOrder?.toString() ?? "0",
     isActive: pkg?.isActive ?? true,
-    isPopular: (pkg as any)?.isPopular ?? false,
+    isPopular: (pkg as { isPopular?: boolean })?.isPopular ?? false,
   });
 
   const [saving, setSaving] = useState(false);
@@ -1587,8 +1589,9 @@ function PackageFormModal({
       qc.invalidateQueries({ queryKey: ["admin", "media-packages"] });
       onSuccess();
     },
-    onError: (err: any) => {
-      setError(err?.response?.data?.error || err.message || "Failed to save package");
+    onError: (err: unknown) => {
+      const e = err as { response?: { data?: { error?: string } }; message?: string };
+      setError(e?.response?.data?.error || e.message || "Failed to save package");
     }
   });
 
@@ -1722,7 +1725,7 @@ export default function MediaBookingsPage() {
 
   // Expose trigger to global for tab access
   if (typeof window !== "undefined") {
-    (window as any).triggerPackageCreate = () => setShowPackageCreate(true);
+    (window as Window & { triggerPackageCreate?: () => void }).triggerPackageCreate = () => setShowPackageCreate(true);
   }
 
   const translatedStatuses = Object.fromEntries(

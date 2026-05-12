@@ -191,7 +191,7 @@ export async function getSessionFromBearer(
       isOnboarded: user.isOnboarded,
       departmentId,
       departmentKey,
-      isDeptHead: (teamMember?.memberDepartments ?? []).some((md: any) => md.isDeptHead) ?? false,
+      isDeptHead: (teamMember?.memberDepartments ?? []).some((md: { isDeptHead: boolean }) => md.isDeptHead) ?? false,
       departmentPermissions,
       tabPermissions: teamMember?.tabPermissions ?? [],
     };
@@ -442,7 +442,7 @@ export async function getSession(): Promise<SessionUser | null> {
       isOnboarded: user.isOnboarded,
       departmentId,
       departmentKey,
-      isDeptHead: (teamMember?.memberDepartments ?? []).some((md: any) => md.isDeptHead) ?? false,
+      isDeptHead: (teamMember?.memberDepartments ?? []).some((md: { isDeptHead: boolean }) => md.isDeptHead) ?? false,
       departmentPermissions,
       tabPermissions: teamMember?.tabPermissions ?? [],
     };
