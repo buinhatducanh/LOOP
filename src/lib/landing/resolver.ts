@@ -28,7 +28,7 @@ export async function resolveSectionContent(section: LandingSection): Promise<La
     });
     // Preserve order from serviceIds
     const ordered = content.serviceIds
-      .map((id: string) => services.find((s) => s.id === id))
+      .map((id: string) => services.find((s: typeof services[number]) => s.id === id))
       .filter(Boolean);
     return { ...section, content: { ...content, services: ordered } };
   }
@@ -42,7 +42,7 @@ export async function resolveSectionContent(section: LandingSection): Promise<La
       },
     });
     const ordered = content.projectIds
-      .map((id: string) => projects.find((p) => p.id === id))
+      .map((id: string) => projects.find((p: typeof projects[number]) => p.id === id))
       .filter(Boolean);
     return { ...section, content: { ...content, projects: ordered } };
   }
@@ -56,7 +56,7 @@ export async function resolveSectionContent(section: LandingSection): Promise<La
       },
     });
     const ordered = content.testimonialIds
-      .map((id: string) => testimonials.find((t) => t.id === id))
+      .map((id: string) => testimonials.find((t: typeof testimonials[number]) => t.id === id))
       .filter(Boolean);
     return { ...section, content: { ...content, testimonials: ordered } };
   }
