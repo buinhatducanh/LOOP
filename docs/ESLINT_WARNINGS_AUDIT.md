@@ -1,7 +1,7 @@
 # ESLint Warnings — Full Audit
 
-> **Ngày**: 2026-05-12 (updated 2026-05-12)
-> **Build**: Vercel build tại `08:28:24` — `npm run build` fail với TypeScript error
+> **Ngày**: 2026-05-12 (cập nhật: 10:35)
+> **Build**: 10:20 Vercel fail → `resolver.ts` fix 10:35 ✅ push thành công
 > **Mục tiêu**: Fix triệt để — 0 warnings, 0 TypeScript errors
 
 ---

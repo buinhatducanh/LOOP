@@ -280,8 +280,8 @@ async function resolveRewards(rewardLevel: number): Promise<RewardItem[]> {
     orderBy: { level: "asc" },
   });
 
-  return tiers.flatMap((tier) =>
-    tier.items.map((item) => ({
+  return tiers.flatMap((tier: typeof tiers[number]) =>
+    tier.items.map((item: typeof tier.items[number]) => ({
       addonServiceId: item.addonServiceId,
       addonServiceName: item.addonService.name,
       addonServiceNameVi: item.addonService.nameVi,

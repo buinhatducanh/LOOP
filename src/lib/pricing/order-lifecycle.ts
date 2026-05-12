@@ -376,8 +376,8 @@ export async function applyOrderRewards(
   });
 
   // Tạo OrderReward records
-  const rewardData = tiers.flatMap((tier) =>
-    tier.items.map((item) => ({
+  const rewardData = tiers.flatMap((tier: typeof tiers[number]) =>
+    tier.items.map((item: typeof tier.items[number]) => ({
       orderId,
       addonServiceId: item.addonServiceId,
       rewardLevel: tier.level,
