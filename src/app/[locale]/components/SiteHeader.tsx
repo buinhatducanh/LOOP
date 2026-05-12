@@ -434,16 +434,16 @@ export default function SiteHeader({ locale }: { locale: string }) {
     return () => window.removeEventListener("keydown", fn);
   }, []);
 
-  // Theme logic
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
+  // Theme logic — default to light (user-initiated toggle only)
+  const [theme, setTheme] = useState<"dark" | "light">("light");
   useEffect(() => {
     const saved = localStorage.getItem("loop-theme") as "dark" | "light";
     if (saved) {
       setTheme(saved);
       document.documentElement.setAttribute("data-theme", saved);
     } else {
-      // Default is dark (galaxy)
-      document.documentElement.setAttribute("data-theme", "dark");
+      // Default is light — dark only when user toggles
+      document.documentElement.setAttribute("data-theme", "light");
     }
   }, []);
 

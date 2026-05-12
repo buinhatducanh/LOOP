@@ -27,6 +27,7 @@ import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { AdminTopbar } from "@/components/admin/AdminTopbar";
 import { AdminI18nProvider } from "@/i18n/admin/AdminI18nProvider";
 import { AuthGuard } from "@/components/admin/AuthGuard";
+import { AdminThemeOverride } from "@/components/admin/AdminThemeOverride";
 import { SessionHydrator } from "./SessionHydrator";
 import { MemberStatsPanel } from "@/components/shared/MemberStatsPanel";
 import { AdminSessionHydrator, type HydrationPayload } from "./AdminSessionHydrator";
@@ -139,6 +140,7 @@ export default async function AdminLayout({
 
     return (
         <QueryProvider>
+            <AdminThemeOverride />
             <AdminI18nProvider>
                 {/*
                  * CRITICAL: AdminSessionHydrator MUST be OUTSIDE AuthGuard.

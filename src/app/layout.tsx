@@ -52,7 +52,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
  return (
- <html lang="vi" suppressHydrationWarning>
+ <html lang="vi" data-theme="light" suppressHydrationWarning>
  <body style={{ overflowX: "hidden", overflowY: "auto" }}>{children}</body>
  </html>
  );
