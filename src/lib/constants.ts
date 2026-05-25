@@ -15,6 +15,18 @@ export const CEO_CONTACT = {
   email: "ducanhnhatbui@gmail.com",
 } as const;
 
+/** Default contact information for Landing Page */
+export const DEFAULT_CONTACT_SETTINGS = {
+  contact_hotline: "+84 378443602",
+  contact_email: "ducanhnhatbui@gmail.com",
+  contact_address: "123 Nguyễn Đình Chiểu, P4, Q.3, TP.HCM",
+  contact_hours: "T2-T6 · 09:00-18:00",
+  contact_zalo: "https://zalo.me/0378443602",
+  contact_facebook: "https://www.facebook.com/tarun.ducanh/",
+  cta_images: '["https://images.unsplash.com/photo-1641998148499-cb6b55a3c0d3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400","https://images.unsplash.com/photo-1758691737278-3af15b37af48?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400","https://images.unsplash.com/photo-1560250097-0b93528c311a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400","https://images.unsplash.com/photo-1764162051223-8c4a22d682c4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400"]',
+} as const;
+
+
 /** 1 LP = 20,000 VND (used for redemption calculation) */
 export const LP_VND_RATE = 20_000;
 

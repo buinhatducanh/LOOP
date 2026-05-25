@@ -142,6 +142,7 @@ const SIDEBAR_GROUPS_CONFIG: NavGroup[] = [
   {
     labelKey: "sidebar.groups.content",
     items: [
+      { id: "landingpage", icon: <Layers size={16} />, labelKey: "sidebar.nav.landingpage" },
       { id: "services", icon: <Briefcase size={16} />, labelKey: "sidebar.nav.services" },
       { id: "media", icon: <Camera size={16} />, labelKey: "sidebar.nav.media" },
       { id: "blog", icon: <FileText size={16} />, labelKey: "sidebar.nav.blog" },

@@ -9,6 +9,7 @@
       "system": "系统"
     },
     "nav": {
+      "landingpage": "着陆页管理",
       "overview": "概览",
       "orders": "订单",
       "members": "成员",

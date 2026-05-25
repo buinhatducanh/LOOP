@@ -9,6 +9,7 @@
       "system": "システム"
     },
     "nav": {
+      "landingpage": "ランディングページ管理",
       "overview": "概要",
       "orders": "注文",
       "members": "メンバー",

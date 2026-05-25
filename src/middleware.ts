@@ -168,6 +168,11 @@ export async function middleware(req: NextRequest) {
     }
   }
 
+  // ─── 3c) /landing2 — standalone landing page (no locale prefix) ────────────
+  if (pathname === "/landing2" || pathname.startsWith("/landing2/")) {
+    return NextResponse.next();
+  }
+
   // ─── 4) /api/* routes — pass through to API handlers ──────────────────────
   // API routes themselves verify tokens server-side with full jwt.verify().
   // We only need to check for extreme cases here (e.g. staff trying portal API).

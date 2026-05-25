@@ -83,7 +83,7 @@ export type AdminTab =
   | "figma_demos" | "kanban" | "home_gallery"
   | "revenue_split" | "off_system_payments" | "commission"
   | "project_intake"
-  | "faq" | "about"
+  | "faq" | "about" | "landingpage"
   | "*";
 
 // ── Quest / Event Types (from FE gamification system) ────────────────────────────
@@ -219,13 +219,13 @@ const PM_TABS: AdminTab[] = [
   "projects", "members", "departments", "notification_center",
   "leaderboard_admin", "lp_manage", "quests_events",
   "academy", "blog", "lp", "figma_demos",
-  "revenue_split", "off_system_payments", "commission",
+  "revenue_split", "off_system_payments", "commission", "landingpage",
 ];
 
 const MEDIA_TABS: AdminTab[] = [
   "media", "blog", "orders", "projects", "clients", "notification_center",
   "academy", "services", "leaderboard_admin", "quests_events",
-  "overview", "portfolio", "revenue", "figma_demos",
+  "overview", "portfolio", "revenue", "figma_demos", "landingpage",
 ];
 
 const QA_TABS: AdminTab[] = [
@@ -242,7 +242,7 @@ const MEMBER_TABS: AdminTab[] = [
 export const DEPT_TAB_BONUS: Record<string, AdminTab[]> = {
   engineering: ["kanban", "lp"],
   design: ["figma_demos", "portfolio"],
-  media: ["media", "blog"],
+  media: ["media", "blog", "landingpage"],
   marketing: ["blog", "projects"],
   sales: ["orders", "clients", "quotation", "revenue"],
   finance: ["revenue", "lp", "lp_manage", "income_tax", "revenue_split", "off_system_payments", "commission"],
