@@ -28,9 +28,6 @@ jobs:
     environment:
       name: preview
       url: ${{ steps.deploy.outputs.preview-url }}
-    concurrency:
-      group: deploy-${{ github.ref }}
-      cancel-in-progress: true
 
     steps:
       - name: Checkout
