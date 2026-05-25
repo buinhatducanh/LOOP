@@ -9,6 +9,7 @@
       "system": "SYSTEM"
     },
     "nav": {
+      "landingpage": "Landing Page Management",
       "overview": "Overview",
       "orders": "Orders",
       "members": "Members",
