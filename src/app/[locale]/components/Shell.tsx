@@ -9,6 +9,7 @@ import SiteHeader from "./SiteHeader";
 import SiteFooter from "./SiteFooter";
 import { FloatingSocialButtons } from "@/components/landing/FloatingSocialButtons";
 import { HUDPanel } from "@/components/landing/guild/HUDPanel";
+import { isTeamPageVisible } from "@/lib/config/page-visibility";
 
 const HIDE_HEADER_PATHS = [
   "/dang-nhap/client-onboarding",
@@ -28,7 +29,7 @@ export function Shell({ children, locale }: { children: React.ReactNode; locale:
       {/* FloatingSocialButtons hides itself when onboarding is active via localStorage */}
       <FloatingSocialButtons />
       {/* Global member stats panel — click any member anywhere to show stats */}
-      <HUDPanel />
+      {isTeamPageVisible && <HUDPanel />}
     </>
   );
 }

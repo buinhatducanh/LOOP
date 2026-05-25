@@ -1038,6 +1038,24 @@ model HomeSlider {
   @@map("home_sliders")
 }
 
+model HomeGalleryImage {
+  id            String   @id @default(cuid())
+  image         String              // URL or path to image
+  imagePublicId String?  @map("image_public_id") // Cloudinary public ID
+  alt           String?             // Alt text for accessibility
+  altEn         String?  @map("alt_en")
+  altJa         String?  @map("alt_ja")
+  altKo         String?  @map("alt_ko")
+  altZh         String?  @map("alt_zh")
+  sortOrder     Int      @default(0) @map("sort_order")
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@index([isActive, sortOrder])
+  @@map("home_gallery_images")
+}
+
 model HomeVideo {
   id                String   @id @default(cuid())
   videoUrl          String

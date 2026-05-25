@@ -5,13 +5,14 @@
  */
 
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 import { getTranslations } from "next-intl/server";
 import { routing } from "@/i18n/routing";
 import { prisma } from "@/lib/prisma";
 import { parseLocaleParam, mapLocalizedTeamMember } from "@/lib/i18n/localization";
 import { TeamMemberClient } from "@/components/landing/TeamMemberClient";
+import { isTeamPageVisible } from "@/lib/config/page-visibility";
 
 type Props = { params: Promise<{ locale: string; slug: string }> };
 
@@ -58,6 +59,9 @@ export default async function TeamMemberPage({ params }: Props) {
 
   if (!routing.locales.includes(locale as (typeof routing.locales)[number])) {
     notFound();
+  }
+  if (!isTeamPageVisible) {
+    redirect(`/${locale}`);
   }
   setRequestLocale(locale);
 

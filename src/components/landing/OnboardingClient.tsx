@@ -13,7 +13,9 @@ import { DS, GRD } from "@/lib/design-tokens";
 type SlideProps = { direction: number };
 
 function hexRgba(hex: string, alpha: number): string {
+  if (hex.startsWith("var(")) return `color-mix(in srgb, ${hex}, transparent ${Math.round((1 - alpha) * 100)}%)`;
   const h = hex.replace("#", "");
+  if (h.length !== 6) return hex;
   const r = parseInt(h.substring(0, 2), 16);
   const g = parseInt(h.substring(2, 4), 16);
   const b = parseInt(h.substring(4, 6), 16);
@@ -41,25 +43,26 @@ function SlideWrapper({ children, direction }: { children: React.ReactNode; dire
   );
 }
 
-function StarField() {
-  const stars = Array.from({ length: 100 }, (_, i) => ({
+function SunnyBurst() {
+  // Warm floating particles for light/sunny mode
+  const particles = Array.from({ length: 60 }, (_, i) => ({
     id: i,
-    x: (i * 13) % 100,
-    y: (i * 17) % 100,
-    size: (i % 4) + 0.5,
-    delay: (i % 10) * 0.3,
-    opacity: 0.3 + (i % 5) * 0.12,
+    x: (i * 17) % 100,
+    y: (i * 23) % 100,
+    size: (i % 5) + 1,
+    delay: (i % 8) * 0.4,
+    opacity: 0.2 + (i % 4) * 0.1,
   }));
-
+  const colors = ["var(--ds-gold, #E6C75F)", "var(--ds-pink, #EC4899)", "var(--ds-cosmic-purple, #6B3DF5)", "var(--ds-teal, #6EB1A8)"];
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {stars.map((s) => (
+      {particles.map((p) => (
         <motion.div
-          key={s.id}
+          key={p.id}
           className="absolute rounded-full"
-          style={{ left: `${s.x}%`, top: `${s.y}%`, width: s.size, height: s.size, background: "#FFF" }}
-          animate={{ opacity: [s.opacity, s.opacity * 0.25, s.opacity] }}
-          transition={{ duration: 2.5 + (s.id % 4), repeat: Infinity, delay: s.delay, ease: "easeInOut" }}
+          style={{ left: `${p.x}%`, top: `${p.y}%`, width: p.size, height: p.size, background: colors[p.id % colors.length] }}
+          animate={{ opacity: [p.opacity, p.opacity * 0.3, p.opacity], y: [-2, 2, -2] }}
+          transition={{ duration: 3 + (p.id % 4), repeat: Infinity, delay: p.delay, ease: "easeInOut" }}
         />
       ))}
     </div>
@@ -990,7 +993,7 @@ export function OnboardingClient({ onComplete }: { onComplete: () => void }) {
 
   return (
     <div className="fixed inset-0 z-[200] overflow-hidden" style={{ background: DS.bg }}>
-      <StarField />
+      <SunnyBurst />
 
       {/* Background glow overlay */}
       <div className="absolute inset-0 pointer-events-none" style={{

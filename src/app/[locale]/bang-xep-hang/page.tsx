@@ -204,7 +204,7 @@ function SeasonBanner() {
         </div>
 
         <h1 style={{ fontFamily: DS.heading, fontSize: 'clamp(24px, 4vw, 44px)', fontWeight: 900, letterSpacing: '0.06em', marginBottom: 6 }}>
-          <span style={{ background: 'linear-gradient(135deg, #FFFFFF 0%, #818CF8 50%, #14B8A6 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+          <span style={{ background: 'none', WebkitBackgroundClip: 'unset', WebkitTextFillColor: 'unset', color: 'var(--light-text, #0F172A)' }}>
             BẢNG XẾP HẠNG LP
           </span>
         </h1>

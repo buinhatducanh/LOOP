@@ -5,12 +5,13 @@
  */
 
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 import { routing } from "@/i18n/routing";
 import { parseLocaleParam, getLocalizedField } from "@/lib/i18n/localization";
 import { prisma } from "@/lib/prisma";
 import { CourseDetailClient } from "@/components/landing/CourseDetailClient";
+import { isAcademyPageVisible } from "@/lib/config/page-visibility";
 
 type Props = { params: Promise<{ locale: string; slug: string }> };
 
@@ -51,6 +52,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function CourseDetailPage({ params }: Props) {
   const { locale, slug } = await params;
   if (!routing.locales.includes(locale as (typeof routing.locales)[number])) notFound();
+  if (!isAcademyPageVisible) {
+    redirect(`/${locale}`);
+  }
   setRequestLocale(locale);
 
   const resolvedLocale = parseLocaleParam(new URLSearchParams({ lang: locale }));

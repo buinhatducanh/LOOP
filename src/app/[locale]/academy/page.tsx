@@ -1,9 +1,10 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 import { getTranslations } from "next-intl/server";
 import { routing } from "@/i18n/routing";
 import type { Metadata } from "next";
 import { AcademyClient } from "@/components/landing/AcademyClient";
+import { isAcademyPageVisible } from "@/lib/config/page-visibility";
 
 type Props = { params: Promise<{ locale: string }> };
 
@@ -41,6 +42,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function AcademyPage({ params }: Props) {
   const { locale } = await params;
   if (!routing.locales.includes(locale as (typeof routing.locales)[number])) notFound();
+
+  if (!isAcademyPageVisible) {
+    redirect(`/${locale}`);
+  }
+
   setRequestLocale(locale);
 
   return <AcademyClient locale={locale} />;

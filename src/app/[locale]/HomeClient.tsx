@@ -16,10 +16,10 @@ import { useQuery } from "@tanstack/react-query";
 import { motion } from "motion/react";
 import { rgba } from "@/components/ui/utils";
 import {
-  Zap, Shield, ChevronRight,
+  Zap, ChevronRight,
   ArrowRight, Users, Award, Sparkles,
-  Heart, Eye,
-  Clock, Rocket,
+  Eye,
+  Rocket,
 } from "lucide-react";
 import { DS, GRD } from "@/lib/design-tokens";
 import ServicesSection from "@/components/landing/ServicesSectionClient";
@@ -38,25 +38,6 @@ const GALAXY_KEYFRAMES = `
   100% { transform: translateX(60%) skewX(-8deg); opacity: 0.15; }
 }
 `;
-
-/** Animated counter using motion values */
-function AnimatedCounter({ to, suffix = "" }: { to: number; suffix?: string }) {
-  const [display, setDisplay] = useState("0");
-  useEffect(() => {
-    let start: number | null = null;
-    const duration = 1400;
-    const animate = (ts: number) => {
-      if (!start) start = ts;
-      const pct = Math.min((ts - start) / duration, 1);
-      const ease = 1 - Math.pow(1 - pct, 3);
-      setDisplay(Math.floor(to * ease).toLocaleString("vi-VN"));
-      if (pct < 1) requestAnimationFrame(animate);
-    };
-    requestAnimationFrame(animate);
-  }, [to]);
-
-  return <>{display}{suffix}</>;
-}
 
 /** Section badge */
 function Badge({ label, color = DS.blue }: { label: string; color?: string }) {
@@ -98,10 +79,10 @@ function HeroSection({ locale }: { locale: string }) {
   const t = useTranslations("home");
   const [activeMetric, setActiveMetric] = useState(0);
   const metrics = [
-    { labelKey: "heroMetricProjects", value: "120+", color: DS.blue },
-    { labelKey: "heroMetricClients", value: "98%", color: DS.green },
-    { labelKey: "heroMetricYears", value: "7+", color: DS.purple },
-    { labelKey: "heroMetricPartners", value: "50+", color: DS.cyan },
+    { labelKey: "heroMetricProjects", value: "Cam kết", color: DS.blue },
+    { labelKey: "heroMetricClients", value: "Chất lượng", color: DS.green },
+    { labelKey: "heroMetricYears", value: "Tốc độ", color: DS.purple },
+    { labelKey: "heroMetricPartners", value: "Trải nghiệm", color: DS.cyan },
   ];
 
   useEffect(() => {
@@ -616,75 +597,186 @@ function MarqueeSection() {
 
 // ── STATS SECTION ────────────────────────────────────────────────────────────
 
-function StatsSection() {
-  const t = useTranslations("home");
-  const stats = [
-    { value: 120, suffix: "+", labelKey: "statsProjects", icon: <Rocket size={22} />, color: DS.blue },
-    { value: 98, suffix: "%", labelKey: "statsSatisfaction", icon: <Heart size={22} />, color: DS.green },
-    { value: 7, suffix: "+", labelKey: "statsYears", icon: <Award size={22} />, color: DS.amber },
-    { value: 50, suffix: "+", labelKey: "statsPartners", icon: <Users size={22} />, color: DS.purple },
-    { value: 24, suffix: "/7", labelKey: "statsSupport", icon: <Clock size={22} />, color: DS.cyan },
-    { value: 99.9, suffix: "%", labelKey: "statsUptime", icon: <Shield size={22} />, color: DS.red },
+interface GalleryImage {
+  src: string;
+  alt: string;
+  _fallback?: string;
+  _idx?: number;
+}
+
+function ImageGallerySection({ locale }: { locale: string }) {
+  const [images, setImages] = useState<GalleryImage[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const lang = locale === "vi" ? "" : `?lang=${locale}`;
+    fetch(`/api/v1/home-gallery-images${lang}`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.data && Array.isArray(d.data)) {
+          setImages(d.data);
+        }
+      })
+      .catch(() => {/* silent fail — show empty */})
+      .finally(() => setLoading(false));
+  }, [locale]);
+
+  // Fallback gradients when no images or on error
+  const fallbackGradients = [
+    "linear-gradient(135deg, #7C3AED 0%, #F43F5E 100%)",
+    "linear-gradient(135deg, #2563EB 0%, #7C3AED 100%)",
+    "linear-gradient(135deg, #0891B2 0%, #2563EB 100%)",
   ];
+
+  const displayImages = images.length > 0 ? images : fallbackGradients.map((g, i) => ({
+    src: "",
+    alt: "",
+    _fallback: g,
+    _idx: i,
+  }));
 
   return (
     <section
       style={{
-        padding: "5rem 1.5rem",
-        background: `linear-gradient(180deg, ${rgba(DS.text, 0.04)} 0%, transparent 100%)`,
+        padding: "4rem 1.5rem",
+        background: "var(--bg, #FAFBFD)",
       }}
     >
-      <div style={{ maxWidth: "72rem", margin: "0 auto" }}>
+      <div style={{ maxWidth: "80rem", margin: "0 auto" }}>
+        {/* Heading */}
+        <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
+          <span
+            style={{
+              display: "inline-block",
+              color: "var(--text-secondary, #64748B)",
+              fontSize: "0.75rem",
+              fontFamily: "'JetBrains Mono', monospace",
+              letterSpacing: "0.2em",
+              marginBottom: "0.75rem",
+            }}
+          >
+            KẾT QUẢ THỰC TẾ
+          </span>
+          <h2
+            style={{
+              fontFamily: "Plus Jakarta Sans, var(--font-plus-jakarta), system-ui, sans-serif",
+              fontSize: "clamp(1.5rem, 3vw, 2.25rem)",
+              fontWeight: 800,
+              color: "var(--light-text, #0F172A)",
+              margin: 0,
+              letterSpacing: "0.02em",
+            }}
+          >
+            Dự án tiêu biểu
+          </h2>
+        </div>
+
+        {/* Image grid */}
         <div
           style={{
-            display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))",
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
             gap: "1.25rem",
           }}
         >
-          {stats.map((s, i) => (
+          {displayImages.map((img, i) => (
             <motion.div
-              key={s.labelKey}
-              style={{
-                textAlign: "center", padding: "1.25rem", borderRadius: "1.25rem",
-                background: rgba(DS.bgCard, 0.6), border: `1px solid ${rgba(DS.text, 0.1)}`,
-                backdropFilter: "blur(12px)",
-              }}
-              initial={{ opacity: 0, y: 30 }}
+              key={i}
+              initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: i * 0.08, duration: 0.5 }}
-              whileHover={{ borderColor: `${s.color}40`, boxShadow: `0 0 20px ${s.color}15` }}
+              transition={{ delay: i * 0.1, duration: 0.5 }}
+              style={{
+                borderRadius: "1rem",
+                overflow: "hidden",
+                aspectRatio: "16/9",
+                background: img._fallback ?? "var(--bg-card, #F1F5F9)",
+                boxShadow: "0 4px 24px rgba(0,0,0,0.06)",
+                position: "relative",
+              }}
             >
-              <div
-                style={{
-                  width: 44, height: 44, borderRadius: "0.75rem",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  margin: "0 auto 0.75rem", background: `${s.color}15`,
-                  border: `1px solid ${s.color}25`,
-                }}
-              >
-                <span style={{ color: s.color }}>{s.icon}</span>
-              </div>
-              <div
-                style={{
-                  color: s.color, fontFamily: DS.heading,
-                  fontSize: "1.625rem", fontWeight: 900, textShadow: `0 0 16px ${rgba(s.color, 0.4)}`,
-                }}
-              >
-                <AnimatedCounter to={s.value} suffix={s.suffix} />
-              </div>
-              <div
-                style={{
-                  color: DS.text4, fontSize: "0.6875rem",
-                  marginTop: "0.25rem", lineHeight: 1.4,
-                }}
-              >
-                {t(s.labelKey)}
-              </div>
+              {img.src ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={img.src}
+                  alt={img.alt}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                    display: "block",
+                  }}
+                  onError={(e) => {
+                    const target = e.currentTarget;
+                    target.style.display = "none";
+                    if (target.parentElement) {
+                      target.parentElement.style.background =
+                        fallbackGradients[i % fallbackGradients.length];
+                    }
+                  }}
+                />
+              ) : (
+                // Gradient placeholder — shows when no images in DB yet
+                <div
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    background: img._fallback,
+                    opacity: 0.8,
+                  }}
+                >
+                  <span
+                    style={{
+                      color: "rgba(255,255,255,0.4)",
+                      fontSize: "0.75rem",
+                      fontFamily: "'JetBrains Mono', monospace",
+                      letterSpacing: "0.1em",
+                    }}
+                  >
+                    IMAGE {i + 1}
+                  </span>
+                </div>
+              )}
             </motion.div>
           ))}
         </div>
+
+        {/* Loading shimmer */}
+        {loading && (
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+              gap: "1.25rem",
+              marginTop: "1.25rem",
+            }}
+          >
+            {[0, 1, 2].map((i) => (
+              <div
+                key={i}
+                style={{
+                  aspectRatio: "16/9",
+                  borderRadius: "1rem",
+                  background: "linear-gradient(90deg, var(--bg-card, #F1F5F9) 25%, var(--bg-deep, #E2E8F0) 50%, var(--bg-card, #F1F5F9) 75%)",
+                  backgroundSize: "200% 100%",
+                  animation: "shimmer 1.5s infinite",
+                }}
+              />
+            ))}
+          </div>
+        )}
       </div>
+
+      {/* Shimmer animation */}
+      <style>{`
+        @keyframes shimmer {
+          0% { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
+        }
+      `}</style>
     </section>
   );
 }
@@ -951,7 +1043,7 @@ export function HomeClient({ locale }: { locale: string }) {
       <main style={{ background: DS.bg, color: DS.text, minHeight: "100vh" }}>
         <HeroSection locale={locale} />
         <MarqueeSection />
-        <StatsSection />
+        <ImageGallerySection locale={locale} />
         <ServicesSection locale={locale} />
         <CaseStudiesSectionWrapper locale={locale} />
         <LPSystemSection locale={locale} />

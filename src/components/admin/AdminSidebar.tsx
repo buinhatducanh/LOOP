@@ -24,7 +24,7 @@ import {
   Briefcase, Camera, Receipt, Package, FolderCheck,
   Sparkles, Star, Bell, Zap, Calculator, Building2, ShoppingCart, TrendingUp,
   Monitor, X, ChevronRight, Globe, Layers, FilePlus, HelpCircle, Info,
-  HardDrive, Search, PlusCircle, Server, Menu,
+  HardDrive, Search, PlusCircle, Server, Menu, Image,
 } from "lucide-react";
 import { useUIStore } from "@/app/store/uiStore";
 import { useAuthStore, canAccessTab, type AdminTab } from "@/app/store/authStore";
@@ -148,6 +148,7 @@ const SIDEBAR_GROUPS_CONFIG: NavGroup[] = [
       { id: "portfolio", icon: <Package size={16} />, labelKey: "sidebar.nav.portfolio" },
       { id: "faq", icon: <HelpCircle size={16} />, labelKey: "sidebar.nav.faq" },
       { id: "figma_demos", icon: <Monitor size={16} />, labelKey: "sidebar.nav.figma_demos" },
+      { id: "home_gallery", icon: <Image size={16} />, labelKey: "sidebar.nav.home_gallery" },
     ],
   },
   {

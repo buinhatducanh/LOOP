@@ -133,14 +133,14 @@ function CosmicRing() {
       <div style={{
         position: "absolute", inset: 0,
         borderRadius: "50%",
-        border: "1px solid rgba(236,72,153,0.2)",
+        border: "1px solid var(--ds-pink, rgba(236,72,153,0.2))",
         animation: "spin-ring 8s linear infinite",
       }} />
       {/* Mid ring */}
       <div style={{
         position: "absolute", inset: 10,
         borderRadius: "50%",
-        border: "1px dashed rgba(107,61,245,0.3)",
+        border: "1px dashed var(--ds-cosmic-purple, rgba(107,61,245,0.3))",
         animation: "spin-ring 12s linear infinite reverse",
       }} />
       {/* Inner ring */}
@@ -148,16 +148,16 @@ function CosmicRing() {
         position: "absolute", inset: 22,
         borderRadius: "50%",
         border: `2px solid transparent`,
-        borderTopColor: "rgba(236,72,153,0.6)",
-        borderRightColor: "rgba(79,125,243,0.3)",
+        borderTopColor: "var(--ds-pink, rgba(236,72,153,0.6))",
+        borderRightColor: "var(--ds-cosmic-blue, rgba(79,125,243,0.3))",
         animation: "spin-ring 4s linear infinite",
       }} />
       {/* Center glow dot */}
       <div style={{
         position: "absolute", inset: "35%",
         borderRadius: "50%",
-        background: "radial-gradient(circle, rgba(236,72,153,0.8) 0%, rgba(107,61,245,0.4) 100%)",
-        boxShadow: `0 0 16px rgba(236,72,153,0.6), 0 0 32px rgba(107,61,245,0.3)`,
+        background: "radial-gradient(circle, var(--ds-pink, #EC4899) 0%, var(--ds-cosmic-purple, #6B3DF5) 100%)",
+        boxShadow: "0 0 16px var(--ds-pink, rgba(236,72,153,0.6)), 0 0 32px var(--ds-cosmic-purple, rgba(107,61,245,0.3))",
       }} />
     </div>
   );
@@ -217,8 +217,8 @@ export default function SiteFooter({ locale = "vi" }: { locale?: string }) {
           to   { transform: rotate(360deg); }
         }
         @keyframes glow-pulse {
-          0%, 100% { box-shadow: 0 0 20px rgba(236,72,153,0.3); }
-          50%       { box-shadow: 0 0 40px rgba(236,72,153,0.55), 0 0 80px rgba(107,61,245,0.2); }
+          0%, 100% { box-shadow: 0 0 20px var(--ds-pink, rgba(236,72,153,0.3)); }
+          50%       { box-shadow: 0 0 40px var(--ds-pink, rgba(236,72,153,0.55)), 0 0 80px var(--ds-cosmic-purple, rgba(107,61,245,0.2)); }
         }
         @keyframes float-y {
           0%, 100% { transform: translateY(0); }
@@ -228,7 +228,7 @@ export default function SiteFooter({ locale = "vi" }: { locale?: string }) {
           display: grid;
           grid-template-columns: 1fr;
           gap: 1px;
-          background: ${rgba(DS.text, 0.08)};
+          background: var(--border2, rgba(0,0,0,0.08));
           border-radius: 16px;
           overflow: hidden;
           margin-bottom: 2.5rem;
@@ -251,8 +251,8 @@ export default function SiteFooter({ locale = "vi" }: { locale?: string }) {
       {!pathname.endsWith("/about") && (
         <div style={{
           padding: "4.5rem 1.5rem",
-          background: "linear-gradient(135deg, rgba(107,61,245,0.18) 0%, rgba(79,125,243,0.10) 40%, rgba(236,72,153,0.08) 100%)",
-          borderBottom: `1px solid rgba(107,61,245,0.18)`,
+          background: "linear-gradient(135deg, var(--ds-cosmic-purple, rgba(107,61,245,0.18)) 0%, var(--ds-cosmic-blue, rgba(79,125,243,0.10)) 40%, var(--ds-pink, rgba(236,72,153,0.08)) 100%)",
+          borderBottom: "1px solid var(--ds-cosmic-purple, rgba(107,61,245,0.18))",
           position: "relative",
           overflow: "hidden",
         }}>
@@ -260,13 +260,13 @@ export default function SiteFooter({ locale = "vi" }: { locale?: string }) {
         <div style={{
           position: "absolute", top: "-40%", left: "-10%",
           width: 400, height: 400, borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(236,72,153,0.12) 0%, transparent 70%)",
+          background: "radial-gradient(circle, var(--ds-pink, rgba(236,72,153,0.12)) 0%, transparent 70%)",
           pointerEvents: "none",
         }} />
         <div style={{
           position: "absolute", bottom: "-30%", right: "5%",
           width: 300, height: 300, borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(79,125,243,0.12) 0%, transparent 70%)",
+          background: "radial-gradient(circle, var(--ds-cosmic-blue, rgba(79,125,243,0.12)) 0%, transparent 70%)",
           pointerEvents: "none",
         }} />
 
@@ -283,8 +283,8 @@ export default function SiteFooter({ locale = "vi" }: { locale?: string }) {
               marginBottom: "1.25rem", padding: "0.375rem 1rem",
               borderRadius: "9999px",
               background: DS.bgCard,
-              border: `1px solid ${rgba(DS.pink, 0.25)}`,
-              boxShadow: `0 0 16px ${rgba(DS.pink, 0.1)}`,
+              border: "1px solid color-mix(in srgb, var(--ds-pink, #EC4899) 25%, transparent)",
+              boxShadow: "0 0 16px color-mix(in srgb, var(--ds-pink, #EC4899) 10%, transparent)",
             }}>
               <Zap size={12} style={{ color: DS.pink }} />
               <span style={{ color: DS.pink, fontSize: "0.6875rem", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.18em", fontWeight: 700 }}>
@@ -369,7 +369,7 @@ export default function SiteFooter({ locale = "vi" }: { locale?: string }) {
           CONTACT STRIP — highlighted bar with call + zalo + email
       ═══════════════════════════════════════════════════════════════ */}
       <div style={{
-        background: rgba(DS.bg, 0.95),
+        background: "var(--bg, rgba(12,12,20,0.95))",
         borderBottom: `1px solid ${DS.border}`,
         padding: "1.25rem 1.5rem",
       }}>
@@ -659,7 +659,7 @@ export default function SiteFooter({ locale = "vi" }: { locale?: string }) {
             }}
             onMouseEnter={e => {
               const el = e.currentTarget as HTMLElement;
-              el.style.borderColor = "rgba(107,61,245,0.4)";
+              el.style.borderColor = "color-mix(in srgb, var(--ds-cosmic-purple, #6B3DF5) 40%, transparent)";
               el.style.color = DS.text;
             }}
             onMouseLeave={e => {

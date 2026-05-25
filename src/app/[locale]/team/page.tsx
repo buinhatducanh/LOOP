@@ -4,7 +4,7 @@
  * Full guild UI: Hall of Fame, rank LED effects, XP bars, LP system.
  */
 
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 import { getTranslations } from "next-intl/server";
 import { routing } from "@/i18n/routing";
@@ -13,6 +13,7 @@ import { parseLocaleParam, mapLocalizedTeamMember } from "@/lib/i18n/localizatio
 import { TeamGuildClient } from "@/components/landing/guild/TeamGuildClient";
 import { computeRankFieldsFromLp } from "@/lib/rank/xp";
 import type { Metadata } from "next";
+import { isTeamPageVisible } from "@/lib/config/page-visibility";
 
 type Props = { params: Promise<{ locale: string }> };
 
@@ -53,6 +54,11 @@ export default async function TeamPage({ params }: Props) {
   if (!routing.locales.includes(locale as (typeof routing.locales)[number])) {
     notFound();
   }
+
+  if (!isTeamPageVisible) {
+    redirect(`/${locale}`);
+  }
+
   setRequestLocale(locale);
 
   const resolvedLocale = parseLocaleParam(new URLSearchParams({ lang: locale }));

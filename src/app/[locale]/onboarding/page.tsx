@@ -582,11 +582,11 @@ function SlideWelcome({ direction }: SlideProps) {
           transition={{ delay: 0.6 }}
           style={{ fontFamily: DS.heading, fontSize: 'clamp(28px, 5vw, 52px)', letterSpacing: '0.06em', marginBottom: 16 }}
         >
-          <span style={{ background: `linear-gradient(135deg, #FFFFFF 0%, #818CF8 40%, ${DS.pink} 70%, #3B82F6 100%)`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+          <span style={{ background: "none", WebkitBackgroundClip: "unset", WebkitTextFillColor: "unset", color: "var(--light-text, #0F172A)" }}>
             CHÀO MỪNG ĐẾN VỚI
           </span>
           <br />
-          <span style={{ background: `linear-gradient(135deg, #3B82F6, #818CF8 30%, ${DS.pink} 60%, #7DD3FC)`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+          <span style={{ background: "none", WebkitBackgroundClip: "unset", WebkitTextFillColor: "unset", color: "var(--light-text, #0F172A)" }}>
             LOOP SOLUTIONS
           </span>
         </motion.h1>
@@ -626,9 +626,9 @@ function SlideWelcome({ direction }: SlideProps) {
 // SLIDE 1: About Company
 function SlideAbout({ direction }: SlideProps) {
   const pillars = [
-    { icon: <Shield size={20} />, title: 'Uy tín', desc: '7+ năm kinh nghiệm, 120+ dự án thành công', color: DS.blue },
+    { icon: <Shield size={20} />, title: 'Uy tín', desc: 'Nhiều năm kinh nghiệm, danh tiếng đã được kiểm chứng', color: DS.blue },
     { icon: <Zap size={20} />, title: 'Tốc độ', desc: 'Triển khai nhanh chóng, bàn giao đúng hạn', color: DS.amber },
-    { icon: <Heart size={20} />, title: 'Tận tâm', desc: 'Hỗ trợ 24/7, đồng hành lâu dài', color: DS.red },
+    { icon: <Heart size={20} />, title: 'Tận tâm', desc: 'Hỗ trợ 24/7, đồng hành lâu dài cùng khách hàng', color: DS.red },
     { icon: <Target size={20} />, title: 'Chất lượng', desc: 'Tiêu chuẩn quốc tế, thiết kế tinh xảo', color: DS.purple },
   ];
 
@@ -642,7 +642,7 @@ function SlideAbout({ direction }: SlideProps) {
             <span style={{ color: DS.blue, fontSize: 10, fontFamily: DS.mono, letterSpacing: '0.2em' }}>VỀ CHÚNG TÔI</span>
           </div>
           <h2 style={{ fontFamily: DS.heading, fontSize: 'clamp(24px, 4vw, 40px)', letterSpacing: '0.04em', marginBottom: 12 }}>
-            <span style={{ background: 'linear-gradient(135deg, #FFF, #94A3B8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            <span style={{ background: 'none', WebkitBackgroundClip: 'unset', WebkitTextFillColor: 'unset', color: 'var(--light-text, #0F172A)' }}>
               LOOP SOLUTIONS LÀ AI?
             </span>
           </h2>
@@ -706,7 +706,7 @@ function SlideServices({ direction }: SlideProps) {
             <span style={{ color: DS.purple, fontSize: 10, fontFamily: DS.mono, letterSpacing: '0.2em' }}>DỊCH VỤ CHÍNH</span>
           </div>
           <h2 style={{ fontFamily: DS.heading, fontSize: 'clamp(24px, 4vw, 40px)', letterSpacing: '0.04em' }}>
-            <span style={{ background: 'linear-gradient(135deg, #FFF, #94A3B8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            <span style={{ background: 'none', WebkitBackgroundClip: 'unset', WebkitTextFillColor: 'unset', color: 'var(--light-text, #0F172A)' }}>
               GIẢI PHÁP TOÀN DIỆN
             </span>
           </h2>
@@ -756,18 +756,18 @@ function SlideServices({ direction }: SlideProps) {
 // SLIDE 3: Why Choose Us + Growth
 function SlideGrowth({ direction }: SlideProps) {
   const stats = [
-    { value: 120, suffix: '+', label: 'Dự án hoàn thành', color: DS.blue, icon: <Star size={16} /> },
-    { value: 98, suffix: '%', label: 'Khách hàng hài lòng', color: DS.green, icon: <Heart size={16} /> },
-    { value: 50, suffix: '+', label: 'Đối tác tin cậy', color: DS.purple, icon: <Users size={16} /> },
-    { value: 380, suffix: '%', label: 'Tăng trưởng 2025', color: DS.cyan, icon: <TrendingUp size={16} /> },
+    { value: 100, suffix: '%', label: 'Cam kết chất lượng', color: DS.blue, icon: <Star size={16} /> },
+    { value: 24, suffix: '/7', label: 'Hỗ trợ liên tục', color: DS.green, icon: <Heart size={16} /> },
+    { value: 27, suffix: '+', label: 'Chuyên gia tận tâm', color: DS.purple, icon: <Users size={16} /> },
+    { value: 1, suffix: '-3', label: 'Ngày bàn giao', color: DS.cyan, icon: <TrendingUp size={16} /> },
   ];
 
   const reasons = [
-    'Dùng thử miễn phí 3-5 ngày trước khi quyết định',
     'Đội ngũ 27 chuyên gia, hệ thống rank từ Iron → Diamond',
     'Hệ thống LP điểm thưởng — càng đồng hành, càng có lợi',
-    'Kích hoạt website trong 2 giờ, bàn giao đúng hạn',
-    'Hỗ trợ kỹ thuật 24/7, bảo hành trọn đời',
+    'Quy trình chuyên nghiệp: thiết kế → phát triển → bàn giao',
+    'Bảo hành và hỗ trợ trọn đời sau bàn giao',
+    'Đồng hành dài hạn, không bỏ rơi khách hàng',
   ];
 
   return (
@@ -780,7 +780,7 @@ function SlideGrowth({ direction }: SlideProps) {
             <span style={{ color: DS.green, fontSize: 10, fontFamily: DS.mono, letterSpacing: '0.2em' }}>SỐ LIỆU TĂNG TRƯỞNG</span>
           </div>
           <h2 style={{ fontFamily: DS.heading, fontSize: 'clamp(24px, 4vw, 40px)', letterSpacing: '0.04em' }}>
-            <span style={{ background: 'linear-gradient(135deg, #FFF, #94A3B8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            <span style={{ background: 'none', WebkitBackgroundClip: 'unset', WebkitTextFillColor: 'unset', color: 'var(--light-text, #0F172A)' }}>
               TẠI SAO CHỌN LOOP?
             </span>
           </h2>
@@ -890,7 +890,7 @@ function SlideGetStarted({ direction, handleComplete }: SlideProps & { handleCom
             <span style={{ color: DS.amber, fontSize: 10, fontFamily: DS.mono, letterSpacing: '0.2em' }}>HỆ THỐNG LP & THĂNG HẠNG</span>
           </div>
           <h2 style={{ fontFamily: DS.heading, fontSize: 'clamp(24px, 4vw, 36px)', letterSpacing: '0.04em', marginBottom: 8 }}>
-            <span style={{ background: 'linear-gradient(135deg, #FFF, #94A3B8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            <span style={{ background: 'none', WebkitBackgroundClip: 'unset', WebkitTextFillColor: 'unset', color: 'var(--light-text, #0F172A)' }}>
               TÍCH LŨY — THĂNG HẠNG — NHẬN THƯỞNG
             </span>
           </h2>

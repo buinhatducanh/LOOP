@@ -32,6 +32,7 @@ import { useTranslations } from "next-intl";
 import { useAuthStore } from "@/app/store/authStore";
 import { routing } from "@/i18n/routing";
 import { useMounted } from "@/app/hooks/useMounted";
+import { isTeamPageVisible, isAcademyPageVisible } from "@/lib/config/page-visibility";
 
 // Lazy-load heavy overlays
 const DynamicSearchOverlay = dynamic(() => import("@/components/SearchOverlay"), { ssr: false });
@@ -43,6 +44,7 @@ function rgba(color: string, a: number): string {
   if (color.startsWith("var(")) {
     return `color-mix(in srgb, ${color}, transparent ${Math.round((1 - a) * 100)}%)`;
   }
+  if (!color.startsWith("#") || color.length !== 7) return color;
   const h = color.replace("#", "");
   return `rgba(${parseInt(h.slice(0, 2), 16)},${parseInt(h.slice(2, 4), 16)},${parseInt(h.slice(4, 6), 16)},${a})`;
 }
@@ -503,8 +505,8 @@ export default function SiteHeader({ locale }: { locale: string }) {
           { label: t("quayChupDropdown"), href: `/${locale}/media`, icon: "🎬", description: "Quay phim, chụp ảnh sản phẩm & quảng cáo thương mại chất lượng cao.", color: DS.rose },
         ],
       },
-      { label: t("team"), href: `/${locale}/team` },
-      { label: t("academy"), href: `/${locale}/academy` },
+      ...(isTeamPageVisible ? [{ label: t("team"), href: `/${locale}/team` }] : []),
+      ...(isAcademyPageVisible ? [{ label: t("academy"), href: `/${locale}/academy` }] : []),
       { label: t("blog"), href: `/${locale}/blog` },
       { label: t("contact"), href: `/${locale}/contact` },
       { label: t("about"), href: `/${locale}/about` },
@@ -1124,8 +1126,8 @@ export default function SiteHeader({ locale }: { locale: string }) {
         }
 
         @keyframes pulse-ring {
-          0%, 100% { box-shadow: 0 0 6px ${DS.pink}; }
-          50% { box-shadow: 0 0 12px ${DS.pink}, 0 0 4px ${DS.pink}; }
+          0%, 100% { box-shadow: 0 0 6px var(--ds-pink, #EC4899); }
+          50% { box-shadow: 0 0 12px var(--ds-pink, #EC4899), 0 0 4px var(--ds-pink, #EC4899); }
         }
       `}</style>
     </>

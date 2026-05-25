@@ -51,6 +51,21 @@
   --text5: #5A6A7E;
   --border2: #374151;
 
+  /* DS Design System color vars (dark defaults) */
+  --ds-pink: #EC4899;
+  --ds-pink-light: #F472B6;
+  --ds-cosmic-purple: #6B3DF5;
+  --ds-cosmic-blue: #4F7DF3;
+  --ds-cosmic-cyan: #62C5EB;
+  --ds-cosmic-red: #CC3344;
+  --ds-cosmic-magenta: #CF53B6;
+  --ds-gold: #E6C75F;
+  --ds-gold-light: #FFD700;
+  --ds-lavender: #B07CC6;
+  --ds-teal: #6EB1A8;
+  --ds-rose: #D77E8E;
+  --ds-mint: #7CB5A0;
+
   /* Figma tokens (alias) — synced with DS cosmic palette */
   --figma-bg: #0C0C14;
   --figma-bg-card: #0F172A;
@@ -88,52 +103,72 @@
 }
 
 [data-theme='light'] {
-  --background: #F8FAFC;
-  --foreground: #0F0F23;
-  --card: #FFFFFF;
-  --card-foreground: #0F0F23;
-  --popover: #FFFFFF;
-  --popover-foreground: #0F0F23;
-  --primary: #2563EB;
-  --primary-foreground: #ffffff;
-  --secondary: #F1F5F9;
-  --secondary-foreground: #334155;
-  --muted: #F1F5F9;
-  --muted-foreground: #64748B;
-  --accent: #0D9488;
-  --accent-foreground: #ffffff;
-  --destructive: #EF4444;
-  --destructive-foreground: #ffffff;
-  --border: #E2E8F0;
-  --input: #E2E8F0;
-  --ring: #2563EB;
-
-  /* FE Gaming/Cyberpunk light palette — LOOP Light Theme v2 (2026-05-12) */
-  --bg: #F8FAFC;
+  /* FE Gaming/Cyberpunk light palette — LOOP Light Theme v2 (2026-05-13) */
+  --bg: #FAFBFD;
   --bg-cosmic: #FFFFFF;
+  --bg-deep: #F1F5F9;
   --bg-card: #FFFFFF;
-  --bg-card2: #F1F5F9;
-  --bg-card3: #E2E8F0;
-  --text: #0F0F23;
+  --bg-card2: #F8FAFC;
+  --bg-card3: #F1F5F9;
+  --light-text: #0F172A;
+  --blue: #2563EB;
+  --blue-dark: #7C3AED;
+  --purple: #7C3AED;
+  --cyan: #0891B2;
+  --green: #059669;
+  --amber: #D97706;
+  --red: #DC2626;
+
+  /* DS Design System color vars (light/dark via [data-theme]) */
+  --ds-pink: #F43F5E;
+  --ds-pink-light: #FB7185;
+  --ds-cosmic-purple: #7C3AED;
+  --ds-cosmic-blue: #2563EB;
+  --ds-cosmic-cyan: #0891B2;
+  --ds-cosmic-red: #DC2626;
+  --ds-cosmic-magenta: #DB2777;
+  --ds-gold: #D97706;
+  --ds-gold-light: #F59E0B;
+  --ds-lavender: #A855F7;
+  --ds-teal: #0D9488;
+  --ds-rose: #E11D48;
+  --ds-mint: #10B981;
+  --text: #0F172A;
   --text2: #334155;
   --text3: #475569;
   --text4: #64748B;
   --text5: #94A3B8;
-  --border2: #CBD5E1;
+  --border2: #E2E8F0;
 
   /* Figma tokens (alias) — Light theme v2 */
-  --figma-bg: #F8FAFC;
+  --figma-bg: #FAFBFD;
   --figma-bg-card: #FFFFFF;
-  --figma-bg-card2: #F1F5F9;
-  --figma-bg-card3: #E2E8F0;
+  --figma-bg-card2: #F8FAFC;
+  --figma-bg-card3: #F1F5F9;
   --figma-border: #E2E8F0;
   --figma-border2: #CBD5E1;
-  --figma-text: #0F0F23;
+  --figma-text: #0F172A;
   --figma-text2: #334155;
   --figma-text3: #475569;
   --figma-text4: #64748B;
   --figma-text5: #94A3B8;
-  --figma-glow-card: 0 8px 32px rgba(0,0,0,0.08);
+  --figma-blue: #2563EB;
+  --figma-blue-dark: #7C3AED;
+  --figma-purple: #7C3AED;
+  --figma-cyan: #0891B2;
+  --figma-green: #059669;
+  --figma-amber: #D97706;
+  --figma-red: #DC2626;
+  --figma-grd-primary: linear-gradient(135deg, #7C3AED, #F43F5E);
+  --figma-grd-blue: linear-gradient(135deg, #7C3AED, #2563EB);
+  --figma-grd-purple: linear-gradient(135deg, #7C3AED, #0891B2);
+  --figma-grd-cyan: linear-gradient(135deg, #0891B2, #7C3AED);
+  --figma-grd-gold: linear-gradient(135deg, #D97706, #F59E0B);
+  --figma-grd-hero: linear-gradient(135deg, rgba(124,58,237,0.06), rgba(244,63,94,0.03));
+  --figma-glow-blue: 0 4px 16px rgba(37,99,235,0.15);
+  --figma-glow-purple: 0 4px 16px rgba(124,58,237,0.15);
+  --figma-glow-cyan: 0 4px 16px rgba(8,145,178,0.15);
+  --figma-glow-card: 0 4px 24px rgba(0,0,0,0.06);
 }
 
 .gradient-text {
@@ -356,6 +391,18 @@
   box-shadow: 0 0 6px rgba(0, 245, 255, 0.3), 0 0 12px rgba(59, 130, 246, 0.15);
 }
 
+[data-theme='light'] ::-webkit-scrollbar-thumb {
+  background: linear-gradient(
+    180deg,
+    rgba(124, 58, 237, 0.5) 0%,
+    rgba(37, 99, 235, 0.5) 50%,
+    rgba(6, 145, 178, 0.5) 100%
+  );
+  border-radius: 9999px;
+  box-shadow: 0 0 4px rgba(124, 58, 237, 0.15);
+}
+
+
 /* ── Galaxy Star Animations ─────────────────────────────────────────────── */
 @keyframes twinkle-glow-1 {
   0%, 100% { opacity: 0.15; }
@@ -401,9 +448,10 @@
 
 /* ── Theme Specific Adjustments ─────────────────────────────────────────── */
 [data-theme='light'] .cosmic-bg {
-  opacity: 0;
-  pointer-events: none;
-  visibility: hidden;
+  background: linear-gradient(135deg, rgba(251,191,36,0.05) 0%, rgba(253,224,71,0.03) 100%);
+  opacity: 1;
+  pointer-events: auto;
+  visibility: visible;
 }
 
 [data-theme='light'] .figma-grid-bg::before {

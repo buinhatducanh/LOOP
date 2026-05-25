@@ -28,15 +28,15 @@ export const DS = {
   border2: "var(--border2, #374151)",
 
   // ── Cosmic Palette (color_2.png — deep blue cosmos) ───────────────────────
-  cosmicPurple: "#6B3DF5",   // Bright cosmic purple
-  cosmicBlue: "#4F7DF3",   // Bright cosmic blue
-  cosmicRed: "#CC3344",   // Cosmic red
-  cosmicCyan: "#62C5EB",   // Bright cosmic cyan
+  cosmicPurple: "var(--ds-cosmic-purple, #6B3DF5)",   // Bright cosmic purple
+  cosmicBlue: "var(--ds-cosmic-blue, #4F7DF3)",   // Bright cosmic blue
+  cosmicRed: "var(--ds-cosmic-red, #CC3344)",   // Cosmic red
+  cosmicCyan: "var(--ds-cosmic-cyan, #62C5EB)",   // Bright cosmic cyan
   cosmicIndigo: "#18387A",   // Deep indigo
   cosmicNavy: "#143F72",   // Deep navy blue
-  cosmicMagenta: "#CF53B6",  // Cosmic magenta
+  cosmicMagenta: "var(--ds-cosmic-magenta, #CF53B6)",  // Cosmic magenta
   cosmicViolet: "#5F3C99",  // Cosmic violet
-  cosmicRose: "#8E3577",   // Cosmic rose
+  cosmicRose: "var(--ds-cosmic-rose, #8E3577)",   // Cosmic rose
   cosmicDeepMag: "#6F265A",  // Deep magenta
 
   // Secondary cosmic tones
@@ -55,17 +55,17 @@ export const DS = {
   cosmicPinkLt: "#A6689B",
 
   // ── Accent Palette (color_3.png — vibrant accent) ────────────────────────
-  gold: "#E6C75F",
-  goldLight: "#FFD700",
-  lavender: "#B07CC6",
-  teal: "#6EB1A8",
+  gold: "var(--ds-gold, #E6C75F)",
+  goldLight: "var(--ds-gold-light, #FFD700)",
+  lavender: "var(--ds-lavender, #B07CC6)",
+  teal: "var(--ds-teal, #6EB1A8)",
   sky: "#6E8EC0",
-  rose: "#D77E8E",
-  mint: "#7CB5A0",
+  rose: "var(--ds-rose, #D77E8E)",
+  mint: "var(--ds-mint, #7CB5A0)",
   navy: "#7C6DAA",
   blueAccent: "#89A8C0",
-  pink: "#EC4899",    // Hot pink — PRIMARY ACCENT (2026-04-07)
-  pinkLight: "#F472B6",    // Light pink
+  pink: "var(--ds-pink, #EC4899)",    // Hot pink — PRIMARY ACCENT (2026-04-07)
+  pinkLight: "var(--ds-pink-light, #F472B6)",    // Light pink
 
   // ── Neutral Palette (color_1.png — gray scale) ───────────────────────────
   gray50: "#FAFAFA",
@@ -80,13 +80,13 @@ export const DS = {
   gray900: "#18181B",
 
   // ── Legacy palette (mapped to cosmic/accent) ──────────────────────────────
-  blue: "#4F7DF3",   // was #3B82F6 → cosmic blue
-  blueDark: "#6B3DF5",   // was #1D4ED8 → cosmic purple
-  purple: "#6B3DF5",   // was #818CF8 → cosmic purple
-  cyan: "#6EB1A8",   // was #14B8A6 → teal accent
-  green: "#7CB5A0",   // was #22C55E → mint accent
-  amber: "#E6C75F",   // was #F59E0B → gold accent
-  red: "#CC3344",   // was #EF4444 → cosmic red
+  blue: "var(--ds-cosmic-blue, #4F7DF3)",   // was #3B82F6 → cosmic blue
+  blueDark: "var(--ds-cosmic-purple, #6B3DF5)",   // was #1D4ED8 → cosmic purple
+  purple: "var(--ds-cosmic-purple, #6B3DF5)",   // was #818CF8 → cosmic purple
+  cyan: "var(--ds-teal, #6EB1A8)",   // was #14B8A6 → teal accent
+  green: "var(--ds-mint, #7CB5A0)",   // was #22C55E → mint accent
+  amber: "var(--ds-gold, #E6C75F)",   // was #F59E0B → gold accent
+  red: "var(--ds-cosmic-red, #CC3344)",   // was #EF4444 → cosmic red
 
   // ── Text ─────────────────────────────────────────────────────────────────
   text: "var(--text, #FFFFFF)",
@@ -104,9 +104,9 @@ export const DS = {
 // ── Gradients ────────────────────────────────────────────────────────────────
 
 export const GRD = {
-  // Primary (cosmic purple → hot pink)
-  primary: "linear-gradient(135deg, #6B3DF5, #EC4899)",
-  primaryHover: "linear-gradient(135deg, #7B4FFF, #F472B6)",
+  // Primary (cosmic purple → hot pink) — resolved via --figma-grd-primary CSS var for light mode
+  primary: "var(--figma-grd-primary, linear-gradient(135deg, #6B3DF5, #EC4899))",
+  primaryHover: "var(--figma-grd-primary, linear-gradient(135deg, #6B3DF5, #EC4899))",
 
   // Pink variants
   pink: "linear-gradient(135deg, #EC4899, #F472B6)",

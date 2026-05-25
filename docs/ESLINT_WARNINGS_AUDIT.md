@@ -1,7 +1,9 @@
 # ESLint Warnings — Full Audit
 
-> **Ngày**: 2026-05-12 (cập nhật: 10:35)
-> **Build**: 10:20 Vercel fail → `resolver.ts` fix 10:35 ✅ push thành công
+> **Ngày**: 2026-05-12 (cập nhật: 16:00)
+> **Build**: 15:25 Vercel fail → `prisma.ts:1` PrismaClient import fail ✅ 16:00 push thành công
+> **Nguyên nhân**: SWC resolve `@/generated/prisma/client` qua package.json exports map — `./client` export không có `types` field riêng → SWC không tìm thấy `PrismaClient` trong `client.d.ts` re-export chain
+> **Fix**: Đổi `@/generated/prisma/client` → `@/generated/prisma` (trỏ thẳng vào `index.d.ts`)
 > **Mục tiêu**: Fix triệt để — 0 warnings, 0 TypeScript errors
 
 ---

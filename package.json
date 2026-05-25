@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --port 5833",
     "build": "next build",
     "build:ci": "npx tsc --noEmit && next build",
     "start": "next start",
