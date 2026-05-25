@@ -696,7 +696,6 @@ function ImageGallerySection({ locale }: { locale: string }) {
               }}
             >
               {img.src ? (
-                /* eslint-disable-next-line @next/next/no-img-element */
                 <img
                   src={img.src}
                   alt={img.alt}

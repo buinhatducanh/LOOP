@@ -1,6 +1,7 @@
 // @ts-check
 import tsParser from "@typescript-eslint/parser";
 import tsPlugin from "@typescript-eslint/eslint-plugin";
+import nextPlugin from "@next/eslint-plugin-next";
 
 export default [
   {
@@ -19,6 +20,7 @@ export default [
     files: ["**/*.ts", "**/*.tsx"],
     plugins: {
       "@typescript-eslint": tsPlugin,
+      "@next/next": nextPlugin,
     },
     languageOptions: {
       parser: tsParser,
@@ -28,7 +30,6 @@ export default [
       "@typescript-eslint/no-explicit-any": "warn",
       "no-console": "off",
       "no-undef": "off",
-      // Suppress @next/next rules that may be referenced but not installed (e.g. no-img-element)
       "@next/next/no-img-element": "off",
     },
   },

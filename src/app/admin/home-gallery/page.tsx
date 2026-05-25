@@ -701,7 +701,6 @@ function ImageCard({
           background: DS.bgDeep,
         }}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={img.image}
           alt={img.alt ?? ""}
