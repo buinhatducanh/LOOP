@@ -17,12 +17,16 @@ const HIDE_HEADER_PATHS = [
 
 export function Shell({ children, locale }: { children: React.ReactNode; locale: string }) {
   const pathname = usePathname() ?? "";
-  const showHeader = !HIDE_HEADER_PATHS.some((p) => pathname.endsWith(p));
+  const isHomepage = [
+    "/vi", "/en", "/ja", "/ko", "/zh"
+  ].some(p => pathname === p || pathname === `${p}/`) || pathname === "/";
+  
+  const showHeader = !HIDE_HEADER_PATHS.some((p) => pathname.endsWith(p)) && !isHomepage;
 
   return (
     <>
       {showHeader && <SiteHeader locale={locale} />}
-      <div style={{ flex: 1, overflowX: "hidden", paddingTop: 106 }}>
+      <div style={{ flex: 1, overflowX: "hidden", paddingTop: showHeader ? 106 : 0 }}>
         {children}
       </div>
       {showHeader && <SiteFooter locale={locale} />}
