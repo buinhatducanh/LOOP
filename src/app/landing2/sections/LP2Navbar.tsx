@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { Menu, X, ArrowRight, Phone, Mail, MapPin, Clock, MessageCircle, Search, Bell, Sun, Moon, User } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import Link from "next/link";
 
 const navLinks = [
   { label: "Dịch vụ", href: "#services" },
@@ -11,7 +12,7 @@ const navLinks = [
   { label: "FAQ", href: "#faq" },
 ];
 
-export function LP2Navbar({ settings }: { settings: Record<string, string> }) {
+export function LP2Navbar({ locale = "vi", settings }: { locale?: string; settings: Record<string, string> }) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -159,10 +160,10 @@ export function LP2Navbar({ settings }: { settings: Record<string, string> }) {
               <button style={iconBtnStyle} onClick={toggleTheme} aria-label="Toggle Theme">
                 {theme === "light" ? <Moon size={18} /> : <Sun size={18} />}
               </button>
-              <button style={{ ...iconBtnStyle, gap: "0.5rem", padding: "var(--lp2-sp-2) var(--lp2-sp-3)" }} aria-label="Login">
+              <Link href={`/${locale}/dang-nhap`} style={{ ...iconBtnStyle as any, gap: "0.5rem", padding: "var(--lp2-sp-2) var(--lp2-sp-3)", textDecoration: "none" }} aria-label="Login">
                 <User size={18} />
                 <span style={{ fontSize: "var(--lp2-fs-sm)", fontWeight: "var(--lp2-fw-semibold)" }}>Đăng nhập</span>
-              </button>
+              </Link>
             </div>
 
             <div className="lp2-nav-desktop" style={{ display: "flex", alignItems: "center" }}>
@@ -192,9 +193,9 @@ export function LP2Navbar({ settings }: { settings: Record<string, string> }) {
               </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: "var(--lp2-sp-3)" }}>
-                <button style={{ ...lp2BtnOutlineStyle, justifyContent: "center" }}>
+                <Link href={`/${locale}/dang-nhap`} style={{ ...lp2BtnOutlineStyle, justifyContent: "center" }} onClick={() => setMobileOpen(false)}>
                   <User size={18} /> Đăng nhập
-                </button>
+                </Link>
                 <a href="#contact" className="lp2-btn-primary" style={{ justifyContent: "center" }} onClick={() => setMobileOpen(false)}>
                   Tư vấn miễn phí <ArrowRight size={14} />
                 </a>
