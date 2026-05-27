@@ -5,7 +5,9 @@
  */
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
-import { HomeClient } from "./HomeClient";
+import Landing2Client from "../landing2/Landing2Client";
+import { prisma } from "@/lib/prisma";
+import { DEFAULT_CONTACT_SETTINGS } from "@/lib/constants";
 
 type Props = { params: Promise<{ locale: string }> };
 
@@ -55,5 +57,64 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function HomePage({ params }: Props) {
   const { locale } = await params;
-  return <HomeClient locale={locale} />;
+
+  const dbSettings = await prisma.siteSetting.findMany({
+    where: {
+      group: "contact",
+    },
+  });
+
+  const settings: Record<string, string> = { ...DEFAULT_CONTACT_SETTINGS };
+  for (const s of dbSettings) {
+    settings[s.key] = s.value;
+  }
+
+  const dbServices = await prisma.service.findMany({
+    where: {
+      isActive: true,
+    },
+    orderBy: {
+      sortOrder: "asc",
+    },
+  });
+
+  const dbFaqs = await prisma.faq.findMany({
+    where: {
+      isActive: true,
+    },
+    orderBy: {
+      sortOrder: "asc",
+    },
+  });
+
+  const dbProjects = await prisma.project.findMany({
+    where: {
+      isPublished: true,
+    },
+    orderBy: {
+      sortOrder: "asc",
+    },
+  });
+
+  const dbPortfolioImages = await prisma.portfolioImage.findMany({
+    where: {
+      isActive: true,
+    },
+    orderBy: [
+      { row: "asc" },
+      { sortOrder: "asc" },
+      { createdAt: "desc" }
+    ],
+  });
+
+  return (
+    <Landing2Client
+      locale={locale}
+      settings={settings}
+      dbServices={JSON.parse(JSON.stringify(dbServices))}
+      dbFaqs={JSON.parse(JSON.stringify(dbFaqs))}
+      dbProjects={JSON.parse(JSON.stringify(dbProjects))}
+      dbPortfolioImages={JSON.parse(JSON.stringify(dbPortfolioImages))}
+    />
+  );
 }

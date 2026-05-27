@@ -21,10 +21,10 @@ const LP2FloatingContact = dynamic(
   { ssr: false }
 );
 
-export default function Landing2Client({ settings, dbServices, dbFaqs, dbProjects, dbPortfolioImages }: { settings: Record<string, string>; dbServices: any[]; dbFaqs: any[]; dbProjects: any[]; dbPortfolioImages: any[] }) {
+export default function Landing2Client({ locale = "vi", settings, dbServices, dbFaqs, dbProjects, dbPortfolioImages }: { locale?: string; settings: Record<string, string>; dbServices: any[]; dbFaqs: any[]; dbProjects: any[]; dbPortfolioImages: any[] }) {
   return (
     <div className="lp2-root">
-      <LP2Navbar settings={settings} />
+      <LP2Navbar locale={locale} settings={settings} />
       <main style={{ position: "relative", overflowX: "hidden" }}>
         <LP2VideoHero />
         <LP2ScrollReveal intensity="gentle"><LP2TrustedLogos /></LP2ScrollReveal>
