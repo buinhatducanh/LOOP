@@ -193,9 +193,11 @@ export function LP2Navbar({ locale = "vi", settings }: { locale?: string; settin
               </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: "var(--lp2-sp-3)" }}>
-                <Link href={`/${locale}/dang-nhap`} style={{ ...lp2BtnOutlineStyle, justifyContent: "center" }} onClick={() => setMobileOpen(false)}>
-                  <User size={18} /> Đăng nhập
-                </Link>
+                <div onClick={() => setMobileOpen(false)}>
+                  <Link href={`/${locale}/dang-nhap`} style={{ ...lp2BtnOutlineStyle, justifyContent: "center", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                    <User size={18} /> Đăng nhập
+                  </Link>
+                </div>
                 <a href="#contact" className="lp2-btn-primary" style={{ justifyContent: "center" }} onClick={() => setMobileOpen(false)}>
                   Tư vấn miễn phí <ArrowRight size={14} />
                 </a>
