@@ -51,6 +51,9 @@
     "scripts/**",
     "scratch/**",
     "brain/**",
-    ".gemini/**"
+    ".gemini/**",
+    "public/Lửng lơ/**",
+    "public/Giaodienmoi/**",
+    "public/Dự án tiêu biểu/**"
   ]
 }
