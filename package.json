@@ -3,10 +3,10 @@
   "private": true,
   "version": "1.0.0",
   "scripts": {
-    "dev": "next dev --port 5833",
-    "build": "next build",
+    "dev": "node api.js && next dev --port 5833",
+    "build": "node api.js && next build",
     "build:ci": "npx tsc --noEmit && next build",
-    "start": "next start",
+    "start": "node api.js && next start",
     "lint": "next lint",
     "i18n:check": "npx tsx src/i18n/missing-keys.ts",
     "postinstall": "prisma generate && node -p \"const fs=require('fs');const p='src/generated/prisma/index.ts';if(!fs.existsSync(p))fs.writeFileSync(p,'// Re-export client for directory import\\nexport * from \\\"./client\\\";\\n')\"",
