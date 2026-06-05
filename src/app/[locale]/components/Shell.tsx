@@ -13,6 +13,8 @@ import { isTeamPageVisible } from "@/lib/config/page-visibility";
 
 const HIDE_HEADER_PATHS = [
   "/dang-nhap/client-onboarding",
+  "/portfolio",
+  "/du-an",
 ];
 
 export function Shell({ children, locale }: { children: React.ReactNode; locale: string }) {
