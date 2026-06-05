@@ -3,9 +3,10 @@ import { setRequestLocale } from "next-intl/server";
 import { getTranslations } from "next-intl/server";
 import { routing } from "@/i18n/routing";
 import { prisma } from "@/lib/prisma";
-import { parseLocaleParam, mapLocalizedProject } from "@/lib/i18n/localization";
 import type { Metadata } from "next";
-import { PortfolioClient } from "@/components/landing/PortfolioClient";
+import { DEFAULT_CONTACT_SETTINGS } from "@/lib/constants";
+import { PortfolioLungLo } from "@/components/landing/PortfolioLungLo";
+import { mapLocalizedProject } from "@/lib/i18n/localization";
 
 type Props = { params: Promise<{ locale: string }> };
 
@@ -46,37 +47,71 @@ export default async function PortfolioPage({ params }: Props) {
   if (!routing.locales.includes(locale as (typeof routing.locales)[number])) notFound();
   setRequestLocale(locale);
 
-  const resolvedLocale = parseLocaleParam(new URLSearchParams({ lang: locale }));
+  // Fetch settings for the LP2Navbar to render Hotline, Zalo, Address, etc. properly
+  const dbSettings = await prisma.siteSetting.findMany({
+    where: {
+      group: "contact",
+    },
+  });
 
-  let projects: Record<string, unknown>[] = [];
-  try {
-    const raw = await prisma.project.findMany({
-      where: { isPublished: true },
-      select: {
-        id: true,
-        slug: true,
-        category: true,
-        title: true,
-        titleEn: true,
-        titleJa: true,
-        titleKo: true,
-        titleZh: true,
-        description: true,
-        descriptionEn: true,
-        descriptionJa: true,
-        descriptionKo: true,
-        descriptionZh: true,
-        client: true,
-        year: true,
-        image: true,
-      },
-      orderBy: [{ year: "desc" }, { createdAt: "desc" }],
-      take: 100,
-    });
-    projects = raw.map((p: typeof raw[number]) => mapLocalizedProject(p, resolvedLocale));
-  } catch {
-    projects = [];
+  const settings: Record<string, string> = { ...DEFAULT_CONTACT_SETTINGS };
+  for (const s of dbSettings) {
+    settings[s.key] = s.value;
   }
 
-  return <PortfolioClient locale={locale} projects={projects} />;
+  // Fetch projects from the database
+  const rawProjects = await prisma.project.findMany({
+    where: {
+      isPublished: true,
+    },
+    orderBy: {
+      sortOrder: "asc",
+    },
+    select: {
+      id: true,
+      slug: true,
+      title: true,
+      titleEn: true,
+      titleJa: true,
+      titleKo: true,
+      titleZh: true,
+      category: true,
+      client: true,
+      year: true,
+      image: true,
+      description: true,
+      descriptionEn: true,
+      descriptionJa: true,
+      descriptionKo: true,
+      descriptionZh: true,
+      techStack: true,
+      techStackEn: true,
+      techStackJa: true,
+      techStackKo: true,
+      techStackZh: true,
+      features: true,
+      featuresEn: true,
+      featuresJa: true,
+      featuresKo: true,
+      featuresZh: true,
+      results: true,
+      resultsEn: true,
+      resultsJa: true,
+      resultsKo: true,
+      resultsZh: true,
+      screenshots: true,
+      isPublished: true,
+      isCaseStudy: true,
+      industry: true,
+      primaryMetric: true,
+      roiMetric: true,
+      sortOrder: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+
+  const projects = rawProjects.map((p) => mapLocalizedProject(p, locale));
+
+  return <PortfolioLungLo locale={locale} settings={settings} projects={projects} />;
 }
