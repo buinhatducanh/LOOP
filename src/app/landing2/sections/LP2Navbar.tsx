@@ -2,17 +2,20 @@
 import { useState, useEffect } from "react";
 import { Menu, X, ArrowRight, Phone, Mail, MapPin, Clock, MessageCircle, Search, Bell, Sun, Moon, User } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
 
-const navLinks = [
-  { label: "Dịch vụ", href: "#services" },
-  { label: "Dự án", href: "#projects" },
-  { label: "Quy trình", href: "#process" },
-  { label: "Bảng giá", href: "#pricing" },
-  { label: "FAQ", href: "#faq" },
-];
-
 export function LP2Navbar({ locale = "vi", settings }: { locale?: string; settings: Record<string, string> }) {
+  const pathname = usePathname() ?? "";
+  const isHomepage = pathname === `/${locale}` || pathname === `/${locale}/` || pathname === "/";
+
+  const navLinks = [
+    { label: "Dịch vụ", href: isHomepage ? "#services" : `/${locale}#services` },
+    { label: "Dự án", href: `/${locale}/portfolio` },
+    { label: "Quy trình", href: isHomepage ? "#process" : `/${locale}#process` },
+    { label: "Bảng giá", href: isHomepage ? "#pricing" : `/${locale}#pricing` },
+    { label: "FAQ", href: isHomepage ? "#faq" : `/${locale}#faq` },
+  ];
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -36,7 +39,7 @@ export function LP2Navbar({ locale = "vi", settings }: { locale?: string; settin
 
   if (!mounted) return null;
 
-  const isDarkOverlay = !scrolled;
+  const isDarkOverlay = !scrolled && isHomepage;
   const primaryTextColor = isDarkOverlay ? "rgba(255, 255, 255, 0.95)" : "var(--lp2-text-primary)";
   const secondaryTextColor = isDarkOverlay ? "rgba(255, 255, 255, 0.7)" : "var(--lp2-text-secondary)";
   const hoverTextColor = isDarkOverlay ? "#ffffff" : "var(--lp2-text-primary)";
@@ -114,14 +117,14 @@ export function LP2Navbar({ locale = "vi", settings }: { locale?: string; settin
         right: 0, 
         zIndex: 100, 
         height: "var(--lp2-navbar-h)", 
-        backgroundColor: scrolled ? "rgba(var(--lp2-bg-primary-rgb, 255,255,255), 0.95)" : "transparent", 
-        backdropFilter: scrolled ? "blur(24px) saturate(180%)" : "none", 
-        borderBottom: scrolled ? "1px solid var(--lp2-border-light)" : "1px solid transparent", 
+        backgroundColor: (scrolled || !isHomepage) ? "rgba(var(--lp2-bg-primary-rgb, 255,255,255), 0.95)" : "transparent", 
+        backdropFilter: (scrolled || !isHomepage) ? "blur(24px) saturate(180%)" : "none", 
+        borderBottom: (scrolled || !isHomepage) ? "1px solid var(--lp2-border-light)" : "1px solid transparent", 
         transition: "all var(--lp2-t-slow)",
         textShadow: "none"
       }}>
         <div className="lp2-container" style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <a href="#hero" style={{ display: "flex", alignItems: "center", gap: "var(--lp2-sp-2)", textDecoration: "none" }}>
+          <a href={isHomepage ? "#hero" : `/${locale}`} style={{ display: "flex", alignItems: "center", gap: "var(--lp2-sp-2)", textDecoration: "none" }}>
             <span style={{ fontSize: "var(--lp2-fs-xl)", fontWeight: "var(--lp2-fw-extrabold)", letterSpacing: "var(--lp2-ls-tight)", color: primaryTextColor, fontFamily: "var(--lp2-font-display)", transition: "color var(--lp2-t-fast)" }}>LOOPS</span>
             <span style={{ fontSize: "var(--lp2-fs-xs)", fontWeight: "var(--lp2-fw-semibold)", color: lightTextColor, letterSpacing: "var(--lp2-ls-wide)", fontFamily: "var(--lp2-font-sans)", paddingBottom: "1px", transition: "color var(--lp2-t-fast)" }}>STUDIO</span>
           </a>
@@ -167,7 +170,7 @@ export function LP2Navbar({ locale = "vi", settings }: { locale?: string; settin
             </div>
 
             <div className="lp2-nav-desktop" style={{ display: "flex", alignItems: "center" }}>
-              <a href="#contact" className="lp2-btn-primary" style={{ fontSize: "var(--lp2-fs-sm)", padding: "0.625rem 1.5rem", display: "inline-flex", alignItems: "center", gap: "0.5rem" }}>
+              <a href={isHomepage ? "#contact" : `/${locale}#contact`} className="lp2-btn-primary" style={{ fontSize: "var(--lp2-fs-sm)", padding: "0.625rem 1.5rem", display: "inline-flex", alignItems: "center", gap: "0.5rem" }}>
                 <span>Tư vấn miễn phí</span>
                 <ArrowRight size={14} />
               </a>
@@ -198,7 +201,7 @@ export function LP2Navbar({ locale = "vi", settings }: { locale?: string; settin
                     <User size={18} /> Đăng nhập
                   </Link>
                 </div>
-                <a href="#contact" className="lp2-btn-primary" style={{ justifyContent: "center" }} onClick={() => setMobileOpen(false)}>
+                <a href={isHomepage ? "#contact" : `/${locale}#contact`} className="lp2-btn-primary" style={{ justifyContent: "center" }} onClick={() => setMobileOpen(false)}>
                   Tư vấn miễn phí <ArrowRight size={14} />
                 </a>
               </div>

@@ -8,7 +8,7 @@ import { notFound } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 import { getTranslations } from "next-intl/server";
 import { routing } from "@/i18n/routing";
-import { PricingSection } from "@/components/landing/PricingSection";
+import { PricingSectionClient } from "@/components/landing/PricingSectionClient";
 
 type Props = { params: Promise<{ locale: string }> };
 
@@ -69,7 +69,7 @@ export default async function PricingPage({ params }: Props) {
 
  return (
  <div className="min-h-screen" style={{ background: "var(--ds-bg, #0C0C14)" }}>
- <PricingSection locale={locale} {...translations} />
+ <PricingSectionClient locale={locale} {...translations} />
  </div>
  );
 }
