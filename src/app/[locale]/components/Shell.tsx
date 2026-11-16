@@ -13,20 +13,18 @@ import { isTeamPageVisible } from "@/lib/config/page-visibility";
 
 const HIDE_HEADER_PATHS = [
   "/dang-nhap/client-onboarding",
+  "/portfolio",
+  "/du-an",
 ];
 
 export function Shell({ children, locale }: { children: React.ReactNode; locale: string }) {
   const pathname = usePathname() ?? "";
-  const isHomepage = [
-    "/vi", "/en", "/ja", "/ko", "/zh"
-  ].some(p => pathname === p || pathname === `${p}/`) || pathname === "/";
-  
-  const showHeader = !HIDE_HEADER_PATHS.some((p) => pathname.endsWith(p)) && !isHomepage;
+  const showHeader = !HIDE_HEADER_PATHS.some((p) => pathname.endsWith(p));
 
   return (
     <>
       {showHeader && <SiteHeader locale={locale} />}
-      <div style={{ flex: 1, overflowX: "hidden", paddingTop: showHeader ? 106 : 0 }}>
+      <div style={{ flex: 1, overflowX: "hidden", paddingTop: 106 }}>
         {children}
       </div>
       {showHeader && <SiteFooter locale={locale} />}

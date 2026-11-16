@@ -7,7 +7,7 @@ import { LP2TrustedLogos } from "./sections/LP2TrustedLogos";
 import { LP2Services } from "./sections/LP2Services";
 import { LP2ImageStrip } from "./sections/LP2ImageStrip";
 import { LP2FeaturedProjects } from "./sections/LP2FeaturedProjects";
-import { LP2Pricing } from "./sections/LP2Pricing";
+import { PricingRentalSection } from "@/components/landing/PricingRentalSection";
 import { LP2Testimonials } from "./sections/LP2Testimonials";
 import { LP2FAQ } from "./sections/LP2FAQ";
 import { LP2CTABanner } from "./sections/LP2CTABanner";
@@ -31,7 +31,7 @@ export default function Landing2Client({ locale = "vi", settings, dbServices, db
         <LP2ScrollReveal intensity="medium"><LP2Services dbServices={dbServices} /></LP2ScrollReveal>
         <LP2ScrollReveal intensity="gentle"><LP2ImageStrip dbPortfolioImages={dbPortfolioImages} /></LP2ScrollReveal>
         <LP2ScrollReveal intensity="medium"><LP2FeaturedProjects dbProjects={dbProjects} /></LP2ScrollReveal>
-        <LP2ScrollReveal intensity="medium"><LP2Pricing /></LP2ScrollReveal>
+        <LP2ScrollReveal intensity="medium"><PricingRentalSection /></LP2ScrollReveal>
         <LP2ScrollReveal intensity="medium"><LP2Testimonials /></LP2ScrollReveal>
         <LP2ScrollReveal intensity="gentle"><LP2FAQ dbFaqs={dbFaqs} /></LP2ScrollReveal>
         <LP2ScrollReveal intensity="strong"><LP2CTABanner settings={settings} /></LP2ScrollReveal>
